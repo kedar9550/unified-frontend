@@ -1,0 +1,826 @@
+/* ================================================
+   AUTH PAGE — Full-screen sliding overlay
+   Login CSS only. SignUp logic stays in SignUp.jsx.
+   ================================================ */
+
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+/* ─── ROOT ─────────────────────────────────────── */
+.auth-page {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  font-family: 'Product Sans', sans-serif;
+  background: #ffffff;
+}
+
+/* ═══════════════════════════════════════════════
+   FORM PANELS
+   Both absolute, each 58% wide.
+   signin → left:0  (visible initially, hidden after SIGN UP)
+   signup → right:0 (hidden under overlay initially)
+═══════════════════════════════════════════════ */
+.auth-panel {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  width: 50%;
+  display: flex;
+  flex-direction: column;
+  background: rgba(255, 255, 255, 0.45);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  transition: transform 0.6s cubic-bezier(0.7, 0, 0.3, 1), opacity 0.6s cubic-bezier(0.7, 0, 0.3, 1), z-index 0.6s;
+}
+
+.signin-panel {
+  left: 0;
+  z-index: 2;
+  transform: translateX(0);
+}
+
+.signup-mode .signin-panel {
+  transform: translateX(20%);
+  opacity: 0;
+  z-index: 1;
+}
+
+.signup-panel {
+  right: 0;
+  z-index: 1;
+  opacity: 0;
+  transform: translateX(-20%);
+}
+
+.signup-mode .signup-panel {
+  transform: translateX(0);
+  opacity: 1;
+  z-index: 2;
+}
+
+/* ─── FORM WRAP ─────────────────────────────────── */
+.auth-form-wrap {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  max-width: 520px;
+  /* Increased from 440px */
+  margin: 0 auto;
+  padding: 40px 8%;
+}
+
+/* Signup form gets more width for the 2-col grid */
+.signup-scroll {
+  max-width: 850px;
+  /* Increased from 620px */
+  justify-content: center;
+  /* vertically centered */
+  overflow-y: auto;
+  padding-top: 28px;
+  padding-bottom: 28px;
+  scrollbar-width: thin;
+}
+
+/* ─── FOOTER — aliceblue bar ───────────────────── */
+.footer-aliceblue .app-footer {
+  background: aliceblue;
+  border-top: 1px solid #d8e8f8;
+}
+
+.footer-aliceblue .footer-copy {
+  color: rgba(0, 0, 0, 0.5);
+}
+
+.footer-aliceblue .footer-copy span {
+  color: rgba(0, 0, 0, 0.7);
+  font-weight: 600;
+}
+
+.footer-aliceblue .footer-links a {
+  color: rgba(0, 0, 0, 0.45);
+}
+
+.footer-aliceblue .footer-links a:hover {
+  color: #0b5299;
+}
+
+.footer-aliceblue .footer-sep {
+  color: rgba(0, 0, 0, 0.2);
+}
+
+/* ─── TYPOGRAPHY ────────────────────────────────── */
+.auth-heading {
+  font-size: 1.85rem;
+  font-weight: 700;
+  color: #1a1a2e;
+  margin: 0 0 26px;
+  text-align: center;
+  letter-spacing: 0.4px;
+}
+
+.auth-error {
+  width: 100%;
+  background: #fdecea;
+  color: #c62828;
+  border-radius: 8px;
+  padding: 9px 14px;
+  font-size: 0.82rem;
+  margin-bottom: 12px;
+  text-align: center;
+}
+
+/* ─── FORM ──────────────────────────────────────── */
+.auth-form {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* 2-column grid for signup form on desktop */
+.signup-form {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  align-items: start;
+}
+
+/* Items that should span both columns */
+.field-full {
+  grid-column: 1 / -1;
+}
+
+/* On mobile — back to single column */
+@media (max-width: 768px) {
+  .signup-form {
+    grid-template-columns: 1fr;
+  }
+
+  .field-full {
+    grid-column: 1;
+  }
+}
+
+.auth-field {
+  position: relative;
+  width: 100%;
+  margin: 5px 0;
+  /* Vertical gap between fields */
+}
+
+/* ─── INPUTS ────────────────────────────────────── */
+.auth-field input,
+.auth-select {
+  width: 100%;
+  padding: 16px 25px;
+  /* Balanced padding for pill shape */
+  border: 1px solid #d1d5db;
+  border-radius: 40px;
+  /* Pill rounded corners */
+  background: transparent;
+  font-size: 0.95rem;
+  font-family: 'Product Sans', sans-serif;
+  color: #1a1a2e;
+  outline: none;
+  transition: all 0.2s ease-in-out;
+  appearance: none;
+  -webkit-appearance: none;
+  display: block;
+}
+
+/* Labels */
+.auth-label {
+  position: absolute;
+  top: 50%;
+  left: 25px;
+  transform: translateY(-50%);
+  font-size: 0.95rem;
+  color: #6b7280;
+  pointer-events: none;
+  transition: all 0.2s ease-in-out;
+  transform-origin: left top;
+  background: transparent;
+  z-index: 10;
+}
+
+/* Floating logic: sit on the border */
+.auth-field input:focus+.auth-label,
+.auth-field input:not(:placeholder-shown)+.auth-label,
+.auth-select:focus+.auth-label,
+.auth-field[data-has-value="true"] .auth-label {
+  top: 0;
+  transform: translateY(-50%) scale(0.85);
+  color: #0b5299;
+  font-weight: 600;
+  background: rgba(255, 255, 255, 0.8);
+  /* Cuts the border */
+  padding: 0 6px;
+}
+
+.auth-field input::placeholder {
+  color: transparent;
+  /* Hide original placeholder */
+}
+
+.auth-field input:focus,
+.auth-select:focus {
+  background: transparent;
+  border: 2px solid #0b5299;
+  box-shadow: 0 0 0 4px rgba(11, 82, 153, 0.08);
+  /* Subtle focus ring */
+}
+
+.auth-field input:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.auth-select-wrap {
+  position: relative;
+  width: 100%;
+}
+
+.custom-select-trigger {
+  width: 100%;
+  padding: 16px 25px;
+  border: 1px solid #d1d5db;
+  border-radius: 40px;
+  background: transparent;
+  font-size: 0.95rem;
+  font-family: 'Product Sans', sans-serif;
+  color: #1a1a2e;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  transition: all 0.2s ease-in-out;
+}
+
+.auth-select-wrap.is-open .custom-select-trigger {
+  border-color: #0b5299;
+  border-width: 2px;
+  box-shadow: 0 0 0 4px rgba(11, 82, 153, 0.08);
+}
+
+.custom-select-arrow {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-right: 2px solid #9aa0b0;
+  border-bottom: 2px solid #9aa0b0;
+  transform: rotate(45deg);
+  margin-top: -4px;
+  transition: transform 0.3s ease;
+}
+
+.auth-select-wrap.is-open .custom-select-arrow {
+  transform: rotate(-135deg);
+  margin-top: 4px;
+}
+
+.custom-select-options {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  width: 100%;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border: 1px solid #d1d5db;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+  z-index: 100;
+  overflow: hidden;
+  animation: slideDownIn 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes slideDownIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.custom-option {
+  padding: 12px 20px;
+  font-size: 0.9rem;
+  color: #1a1a2e;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.custom-option:hover {
+  background: #f3f6ff;
+  color: #0b5299;
+}
+
+.custom-option.is-selected {
+  background: #0b5299;
+  color: #fff;
+}
+
+/* Floating label logic for custom select */
+.auth-select-wrap.is-open .auth-label,
+.auth-select-wrap[data-has-value="true"] .auth-label {
+  top: 0;
+  transform: translateY(-50%) scale(0.85);
+  color: #0b5299;
+  font-weight: 600;
+  background: #fff;
+  padding: 0 10px;
+  z-index: 20;
+}
+
+/* ─── FORGOT ─────────────────────────────────────── */
+.auth-forgot {
+  display: block;
+  text-align: right;
+  font-size: 0.8rem;
+  color: #3f5ac8;
+  text-decoration: none;
+  margin-top: -3px;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  font-family: inherit;
+  width: fit-content;
+  margin-left: auto;
+}
+
+.auth-forgot:hover {
+  color: #2a409e;
+  text-decoration: underline;
+}
+
+.auth-forgot-center {
+  margin: 10px auto 0;
+  text-align: center;
+  width: 100%;
+}
+
+/* ─── FORGOT FORM ANIMATIONS ─────────────────────── */
+.anim-slide-in-top {
+  animation: slideInTop 0.85s cubic-bezier(0.19, 1, 0.22, 1) both;
+}
+
+.anim-slide-in-bottom {
+  animation: slideInBottom 0.85s cubic-bezier(0.19, 1, 0.22, 1) both;
+}
+
+.anim-slide-in-left {
+  animation: slideInLeft 0.85s cubic-bezier(0.19, 1, 0.22, 1) both;
+}
+
+.anim-slide-in-right {
+  animation: slideInRight 0.85s cubic-bezier(0.19, 1, 0.22, 1) both;
+}
+
+.anim-slide-in-tl {
+  animation: slideInTL 0.85s cubic-bezier(0.19, 1, 0.22, 1) both;
+}
+
+.anim-slide-in-tr {
+  animation: slideInTR 0.85s cubic-bezier(0.19, 1, 0.22, 1) both;
+}
+
+.anim-slide-in-bl {
+  animation: slideInBL 0.85s cubic-bezier(0.19, 1, 0.22, 1) both;
+}
+
+.anim-slide-in-br {
+  animation: slideInBR 0.85s cubic-bezier(0.19, 1, 0.22, 1) both;
+}
+
+.anim-slide-out-left {
+  animation: slideOutLeft 0.85s cubic-bezier(0.19, 1, 0.22, 1) both;
+}
+
+@keyframes slideInTop {
+  from {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideInBottom {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideInLeft {
+  from {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideInTL {
+  from {
+    transform: translate(-100%, -100%);
+    opacity: 0;
+  }
+
+  to {
+    transform: translate(0, 0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideInTR {
+  from {
+    transform: translate(100%, -100%);
+    opacity: 0;
+  }
+
+  to {
+    transform: translate(0, 0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideInBL {
+  from {
+    transform: translate(-100%, 100%);
+    opacity: 0;
+  }
+
+  to {
+    transform: translate(0, 0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideInBR {
+  from {
+    transform: translate(100%, 100%);
+    opacity: 0;
+  }
+
+  to {
+    transform: translate(0, 0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideOutLeft {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+
+  to {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+}
+
+
+/* Centered wrapper for buttons that might span grids */
+.btn-wrapper-center {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  margin-top: 10px;
+}
+
+.btn-auth-primary {
+  width: 100%;
+  max-width: 400px;
+  /* Aligns with refined input width feel */
+  padding: 13px;
+  border: none;
+  border-radius: 40px;
+  background: linear-gradient(135deg, #0b5299 0%, #031d38 50%, #033b74 100%);
+  color: #fff;
+  font-size: 0.86rem;
+  font-weight: 700;
+  font-family: 'Product Sans', sans-serif;
+  letter-spacing: 1.4px;
+  cursor: pointer;
+  box-shadow: 0 6px 20px rgba(63, 90, 200, 0.4);
+  transition: transform 0.2s, box-shadow 0.2s, opacity 0.2s;
+}
+
+.password-toggle {
+  position: absolute;
+  top: 50%;
+  right: 25px;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: #9aa0b0;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s ease;
+  z-index: 20;
+}
+
+.password-toggle:hover {
+  color: #0b5299;
+}
+
+.password-toggle svg {
+  display: block;
+}
+
+.btn-auth-primary:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 28px rgba(63, 90, 200, 0.55);
+}
+
+.btn-auth-primary:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.btn-auth-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+
+
+.auth-overlay {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 50%;
+  height: 100%;
+  z-index: 100;
+  background: linear-gradient(140deg, #0b5299 0%, #031d38 50%, #033b74 100%);
+  transition: transform 0.6s cubic-bezier(0.7, 0, 0.3, 1);
+  will-change: transform;
+  overflow: hidden;
+}
+
+/* Slide overlay to LEFT in signup mode */
+.signup-mode .auth-overlay {
+  transform: translateX(-100%);
+}
+
+/* ─── OVERLAY CONTENT (two states fade in/out) ──── */
+.overlay-side {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 36px 10%;
+  text-align: center;
+  transition: transform 0.6s cubic-bezier(0.7, 0, 0.3, 1), opacity 0.6s cubic-bezier(0.7, 0, 0.3, 1);
+}
+
+/* Default: "Hey There" side visible (login mode) */
+.overlay-right {
+  opacity: 1;
+  pointer-events: all;
+  transform: translateX(0);
+}
+
+/* "Welcome Back" side – shown after sliding left */
+.overlay-left {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateX(-20%);
+}
+
+.signup-mode .overlay-right {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateX(20%);
+}
+
+.signup-mode .overlay-left {
+  opacity: 1;
+  pointer-events: all;
+  transform: translateX(0);
+}
+
+/* ─── OVERLAY CONTENT ────────────────────────────── */
+.overlay-logo {
+  width: 390px;
+  /* Reduced for better mobile/desktop balance */
+  height: auto;
+  object-fit: contain;
+  margin-bottom: 12px;
+  filter: brightness(0) invert(1);
+  opacity: 0.9;
+}
+
+@media (max-width: 768px) {
+  .overlay-logo {
+    width: 260px;
+    margin-bottom: 8px;
+  }
+
+  .overlay-title {
+    font-size: 1.2rem;
+    margin-bottom: 6px;
+  }
+
+  .overlay-sub {
+    font-size: 0.78rem;
+    margin-bottom: 16px;
+  }
+}
+
+.overlay-title {
+  font-size: 1.7rem;
+  font-weight: 600;
+  color: #fff;
+  margin: 0 0 12px;
+  letter-spacing: 0.4px;
+}
+
+/* ─── RESET PASSWORD FORM ────────────────────────── */
+.reset-form {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(12px);
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+}
+
+.reset-form-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 8%;
+}
+
+
+
+
+.overlay-sub {
+  font-size: 0.84rem;
+  color: rgba(255, 255, 255, 0.82);
+  line-height: 1.7;
+  margin: 0 0 28px;
+}
+
+.btn-overlay {
+  padding: 11px 34px;
+  border: 2px solid #fff;
+  border-radius: 40px;
+  background: transparent;
+  color: #fff;
+  font-size: 0.8rem;
+  font-weight: 700;
+  font-family: 'Product Sans', sans-serif;
+  letter-spacing: 1.4px;
+  cursor: pointer;
+  transition: background 0.25s, transform 0.2s;
+}
+
+.btn-overlay:hover {
+  background: rgba(255, 255, 255, 0.15);
+  transform: translateY(-2px);
+}
+
+/* ─── RESPONSIVE ─────────────────────────────────── */
+@media (max-width: 768px) {
+  .auth-page {
+    height: auto;
+    min-height: 100vh;
+    overflow-y: auto;
+    overflow-x: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .auth-panel {
+    position: static;
+    width: 100%;
+    min-height: unset;
+    height: auto;
+  }
+
+  .signup-panel {
+    display: none;
+  }
+
+  .signup-mode .signin-panel {
+    display: none;
+  }
+
+  .signup-mode .signup-panel {
+    display: flex;
+  }
+
+  .auth-overlay {
+    position: static;
+    width: 100%;
+    height: auto;
+    /* grow to fit content — no fixed clip */
+    min-height: unset;
+    left: unset !important;
+    order: -1;
+    flex-shrink: 0;
+    overflow: visible;
+    /* don't clip logo at the top */
+  }
+
+  .overlay-side {
+    position: static;
+    width: 100%;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 28px 20px 24px;
+    /* enough room for all elements */
+    height: auto;
+  }
+
+  .overlay-right {
+    display: flex;
+  }
+
+  .signup-mode .overlay-right {
+    display: none;
+  }
+
+  .signup-mode .overlay-left {
+    display: flex;
+    opacity: 1;
+    pointer-events: all;
+  }
+
+  .auth-form-wrap {
+    padding: 32px 20px;
+    flex: unset;
+    justify-content: flex-start;
+  }
+
+  /* Make signup scroll panel natural height on mobile */
+  .signup-scroll {
+    overflow-y: unset;
+    max-height: unset;
+  }
+
+  /* Reset form on mobile — natural height, not absolute */
+  .reset-form {
+    position: static;
+    width: 100%;
+    height: auto;
+    min-height: unset;
+  }
+}

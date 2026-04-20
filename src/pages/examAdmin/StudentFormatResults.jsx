@@ -1,0 +1,368 @@
+import PageHeader from "../../components/common/PageHeader";
+import SectionHeader from "../../components/common/SectionHeader";
+import ActionButton from "../../components/common/ActionButton";
+import DataTable from "../../components/data/DataTable";
+import {
+  Box,
+  MenuItem,
+  Select,
+  CircularProgress,
+} from "@mui/material";
+import { useEffect, useState, useRef } from "react";
+import API from "../../api/axios";
+import {
+  Download as DownloadIcon,
+  FileUpload as UploadIcon,
+} from "@mui/icons-material";
+
+export default function StudentFormatResults() {
+  const [academicYears, setAcademicYears] = useState([]);
+  const [programs, setPrograms] = useState([]);
+  const [selectedYearId, setSelectedYearId] = useState("");
+  const [selectedProgramId, setSelectedProgramId] = useState("");
+
+  const [results, setResults] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef(null);
+
+  // 1. Fetch Academic Years and Programs on Mount
+  useEffect(() => {
+    const dataFetch = async () => {
+      try {
+        const [ayRes, progRes] = await Promise.all([
+          API.get("/api/academic-years"),
+          API.get("/api/academics/programs"),
+        ]);
+
+        const years = ayRes.data.years || [];
+        setAcademicYears(years);
+        if (years.length > 0) {
+          const active = years.find((y) => y.isActive) || years[0];
+          setSelectedYearId(active._id);
+        }
+
+        const progs = progRes.data.data || [];
+        setPrograms(progs);
+      } catch (err) {
+        console.error("Error fetching initial data:", err);
+      }
+    };
+    dataFetch();
+  }, []);
+
+  // 2. Fetch Results when filters change
+  const fetchResults = async () => {
+    if (!selectedYearId) return;
+    setLoading(true);
+    try {
+      const params = { academicYear: selectedYearId };
+      if (selectedProgramId) params.programId = selectedProgramId;
+
+      const res = await API.get("/api/student-results", { params });
+      setResults(res.data);
+    } catch (err) {
+      console.error("Error fetching results:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchResults();
+  }, [selectedYearId, selectedProgramId]);
+
+  // 4. Handle Upload
+  const handleUploadClick = () => {
+    fileInputRef.current.click();
+  };
+
+  const handleFileChange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    if (!selectedProgramId) {
+      alert("Please select a program first.");
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("programId", selectedProgramId);
+
+    setUploading(true);
+    try {
+      const res = await API.post(
+        "/api/student-results/upload",
+        formData,
+        {
+          headers: { "Content-Type": "multipart/form-data" },
+        },
+      );
+
+      const { message, errors } = res.data;
+      if (errors && errors.length > 0) {
+        alert(`${message}\n\nDetails:\n${errors.join("\n")}`);
+      } else {
+        alert(message || "Upload successful!");
+      }
+      fetchResults(); // Refresh table
+    } catch (err) {
+      console.error("Upload failed:", err);
+      const backendError = err.response?.data?.message;
+      const backendDetails = err.response?.data?.errors;
+
+      if (backendDetails && Array.isArray(backendDetails)) {
+        alert(
+          `${backendError || "Upload failed"}\n\nErrors:\n${backendDetails.join("\n")}`,
+        );
+      } else if (backendError) {
+        alert(`Upload Failed: ${backendError}`);
+      } else {
+        alert("Upload failed. Please check your network connection and CSV format (ensure all required columns like branchcode, examyear, resulttype are present).");
+      }
+    } finally {
+      setUploading(false);
+      e.target.value = ""; // Reset file input
+    }
+  };
+
+  // 5. Download Template
+  const downloadTemplate = () => {
+    const selectedYear = academicYears.find((y) => y._id === selectedYearId);
+    const yearLabel = selectedYear ? selectedYear.year : "2024-2025";
+
+    const headers = [
+      "studentid",
+      "studentname",
+      "subjectcode",
+      "subjectname",
+      "academicyear",
+      "semester",
+      "branchcode",
+      "examyear",
+      "resulttype",
+      "grade",
+      "subjecttype",
+      "sgpa",
+      "cgpa",
+    ];
+    
+    // Sample row
+    const sampleRow = [
+      "STU001",
+      "John Doe",
+      "CS101",
+      "Data Structures",
+      yearLabel,
+      "1",
+      "CSE",
+      "2025",
+      "REGULAR",
+      "A",
+      "THEORY",
+      "9.0",
+      "8.5",
+    ];
+
+    const csvContent =
+      headers.join(",") + "\n" + sampleRow.join(",") + "\n";
+
+    const blob = new Blob([csvContent], { type: "text/csv" });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "student_result_template.csv";
+    a.click();
+    window.URL.revokeObjectURL(url);
+  };
+
+  return (
+    <>
+      <input
+        type="file"
+        ref={fileInputRef}
+        style={{ display: "none" }}
+        accept=".csv"
+        onChange={handleFileChange}
+      />
+
+      {/* 🔹 HEADER */}
+      <PageHeader
+        title="Student Results"
+        subtitle="Manage and upload student performance results"
+        breadcrumbs={["Home", "Exam Cell", "Results Upload", "Student Format"]}
+      />
+
+      {/* 🔹 FILTERS */}
+      <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2, mb: 3, alignItems: "center" }}>
+        <Box sx={filterBox}>
+          Academic Year
+          <Select
+            variant="standard"
+            disableUnderline
+            value={selectedYearId}
+            onChange={(e) => setSelectedYearId(e.target.value)}
+            sx={{ ml: 2, minWidth: 120 }}
+          >
+            {academicYears.map((year) => (
+              <MenuItem key={year._id} value={year._id}>
+                {year.year}
+              </MenuItem>
+            ))}
+          </Select>
+        </Box>
+
+        <Box sx={filterBox}>
+          Program
+          <Select
+            variant="standard"
+            disableUnderline
+            value={selectedProgramId}
+            onChange={(e) => setSelectedProgramId(e.target.value)}
+            sx={{ ml: 2, minWidth: 180 }}
+            displayEmpty
+          >
+            <MenuItem value="" disabled>Select Program</MenuItem>
+            {programs.map((p) => (
+              <MenuItem key={p._id} value={p._id}>
+                {p.name}
+              </MenuItem>
+            ))}
+          </Select>
+        </Box>
+
+        {/* 🔹 Upload Specific Section (Only shown when program selected) */}
+        {selectedProgramId && (
+           <Box sx={{ display: "flex", gap: 2, ml: "auto" }}>
+             <ActionButton
+               onClick={downloadTemplate}
+               sx={{ background: "linear-gradient(135deg, #6a11cb, #2575fc)" }}
+             >
+               <DownloadIcon sx={{ mr: 1 }} /> Template
+             </ActionButton>
+
+             <ActionButton onClick={handleUploadClick} disabled={uploading}>
+               {uploading ? (
+                 <CircularProgress size={20} color="inherit" />
+               ) : (
+                 <>
+                   <UploadIcon sx={{ mr: 1 }} /> Upload CSV
+                 </>
+               )}
+             </ActionButton>
+           </Box>
+        )}
+      </Box>
+
+
+
+      {/* 🔹 RESULTS TABLE */}
+      <Box
+        sx={{
+          p: 3,
+          borderRadius: "24px",
+          background:
+            "linear-gradient(135deg, rgba(255,255,255,0.7), rgba(255,255,255,0.4))",
+          backdropFilter: "blur(20px)",
+          boxShadow: "0 20px 60px rgba(0,0,0,0.1)",
+          border: "1px solid rgba(255,255,255,0.3)",
+          minHeight: 400,
+        }}
+      >
+        <SectionHeader title="Student Results" />
+
+        {loading ? (
+          <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>
+            <CircularProgress />
+          </Box>
+        ) : (
+          <DataTable
+            key={`${selectedYearId}-${selectedProgramId}`}
+            columns={[
+              "Student ID",
+              "Student Name",
+              "Subject Code",
+              "Subject Name",
+              "Program",
+              "Branch",
+              "Semester",
+              "Exam Year",
+              "Type",
+              "Subject Type",
+              "Grade",
+              "SGPA",
+              "CGPA",
+            ]}
+            rows={results.map((r) => [
+              {
+                value: r.studentId,
+                display: <Box sx={{ fontWeight: 600 }}>{r.studentId}</Box>,
+              },
+              {
+                value: r.studentName,
+                display: <Box>{r.studentName || "—"}</Box>,
+              },
+              {
+                value: r.subjectCode,
+                display: <Box sx={{ fontWeight: 500 }}>{r.subjectCode}</Box>,
+              },
+              {
+                value: r.subjectName,
+                display: <Box>{r.subjectName || "—"}</Box>,
+              },
+              {
+                value: r.programId?.name,
+                display: <Box>{r.programId?.name || "—"}</Box>,
+              },
+              {
+                value: r.branchId?.code,
+                display: <Box>{r.branchId?.code || "—"}</Box>,
+              },
+              {
+                value: r.semester,
+                display: <Box>{r.semester || "—"}</Box>,
+              },
+              {
+                value: r.examYear,
+                display: <Box>{r.examYear}</Box>,
+              },
+              {
+                value: r.resultType,
+                display: <Box>{r.resultType}</Box>,
+              },
+              {
+                value: r.subjectType,
+                display: <Box>{r.subjectType || "—"}</Box>,
+              },
+              {
+                value: r.grade,
+                display: <Box sx={{ fontWeight: 600 }}>{r.grade}</Box>,
+              },
+              {
+                value: r.sgpa,
+                display: <Box>{r.sgpa}</Box>,
+              },
+              {
+                value: r.cgpa,
+                display: <Box>{r.cgpa}</Box>,
+              },
+            ])}
+          />
+        )}
+      </Box>
+    </>
+  );
+}
+
+const filterBox = {
+  display: "flex",
+  alignItems: "center",
+  px: 2,
+  py: 1,
+  borderRadius: "14px",
+  background: "rgba(255,255,255,0.6)",
+  backdropFilter: "blur(10px)",
+  boxShadow: "0 4px 15px rgba(0,0,0,0.05)",
+  fontSize: 14,
+};

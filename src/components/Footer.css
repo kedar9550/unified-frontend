@@ -1,0 +1,91 @@
+/* ================================================
+   FOOTER — Reusable Component
+   ================================================ */
+
+.app-footer {
+  width: 100%;
+  padding: 16px 32px;
+  background: rgba(255, 255, 255, 0.4);
+  backdrop-filter: blur(12px) saturate(160%);
+  -webkit-backdrop-filter: blur(12px) saturate(160%);
+  border-top: 1px solid rgba(255, 255, 255, 0.3);
+  position: relative;
+  z-index: 10;
+}
+
+/* When placed on white/light background (left panel) */
+.login-left .app-footer,
+.auth-footer-light .app-footer {
+  background: transparent;
+}
+
+.footer-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 2px;
+}
+
+.footer-title {
+  margin: 0;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #838383;
+  font-family: 'Product Sans', sans-serif;
+}
+
+.footer-developed {
+  margin: 0;
+  font-size: 0.72rem;
+  color: #838383;
+  font-family: 'Product Sans', sans-serif;
+}
+
+/* Footer on dark/blue background (default — right panel or standalone) */
+.footer-links {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.footer-links a {
+  font-size: 0.76rem;
+  color: rgba(255, 255, 255, 0.6);
+  text-decoration: none;
+  font-family: 'Product Sans', sans-serif;
+  transition: color 0.2s;
+}
+
+.footer-links a:hover {
+  color: #ffffff;
+}
+
+.footer-sep {
+  color: rgba(255, 255, 255, 0.35);
+  font-size: 0.75rem;
+}
+
+/* ── LIGHT VARIANT (for white panel usage) ── */
+.footer-light .footer-title {
+  color: rgba(0, 0, 0, 0.7);
+}
+
+.footer-light .footer-developed {
+  color: rgba(0, 0, 0, 0.45);
+}
+
+/* ── RESPONSIVE ── */
+@media (max-width: 600px) {
+  .footer-inner {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 4px;
+  }
+
+  .app-footer {
+    padding: 12px 20px;
+  }
+}
