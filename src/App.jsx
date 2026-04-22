@@ -12,6 +12,8 @@ import DeptProctorUploads from "./pages/hod/DeptProctorUploads";
 import AcademicStructure from "./pages/uniprime/academics/AcademicStructure";
 
 import RoleManagement from "./pages/uniprime/Roles/Rolemanagement";
+import FeedbackManagement from "./pages/feedback/FeedbackManagement";
+
 
 const PublicOnlyRoute = ({ children }) => {
   const { user } = useAuth();
@@ -123,6 +125,14 @@ function App() {
           element={
             <MainLayout>
               <RoleManagement />
+            </MainLayout>
+          }
+        />
+        <Route
+          path="/feedback-management"
+          element={
+            <MainLayout>
+              <FeedbackManagement />
             </MainLayout>
           }
         />
