@@ -20,7 +20,7 @@ export default function DataTable({ columns, rows }) {
   const [sortIndex, setSortIndex] = useState(null);
   const [sortDirection, setSortDirection] = useState("asc");
 
-  // 🔍 FILTER
+  //  FILTER
   const filteredRows = useMemo(() => {
     return rows.filter((row) =>
       row.some((cell) =>
@@ -31,7 +31,7 @@ export default function DataTable({ columns, rows }) {
     );
   }, [rows, search]);
 
-  // 🔽 SORT
+  // SORT
   const sortedRows = useMemo(() => {
     if (sortIndex === null) return filteredRows;
 
@@ -45,13 +45,13 @@ export default function DataTable({ columns, rows }) {
     });
   }, [filteredRows, sortIndex, sortDirection]);
 
-  // 📄 PAGINATION
+  // PAGINATION
   const paginatedRows = useMemo(() => {
     const start = page * rowsPerPage;
     return sortedRows.slice(start, start + rowsPerPage);
   }, [sortedRows, page, rowsPerPage]);
 
-  // 🔁 RESET PAGE ON SEARCH
+  // RESET PAGE ON SEARCH
   useEffect(() => {
     setPage(0);
   }, [search]);
@@ -68,7 +68,7 @@ export default function DataTable({ columns, rows }) {
 
   return (
     <Box sx={{ width: "100%", display: "flex", flexDirection: "column", gap: 1 }}>
-      {/* 🔍 SEARCH */}
+      {/*  SEARCH */}
       <Box sx={{ display: "flex", justifyContent: "flex-end", mb: 1 }}>
         <TextField
           placeholder="Search"
@@ -108,7 +108,7 @@ export default function DataTable({ columns, rows }) {
         />
       </Box>
 
-      {/* 📊 TABLE */}
+      {/*  TABLE */}
       <Box sx={{ overflowX: "auto", borderRadius: "12px" }}>
         <Table
           sx={{
@@ -199,7 +199,7 @@ export default function DataTable({ columns, rows }) {
                 </TableRow>
               ))
             ) : (
-               <TableRow>
+              <TableRow>
                 <TableCell
                   colSpan={columns.length}
                   align="center"
@@ -209,7 +209,7 @@ export default function DataTable({ columns, rows }) {
                 </TableCell>
               </TableRow>
             )}
-           </TableBody>
+          </TableBody>
         </Table>
       </Box>
 
@@ -235,10 +235,10 @@ export default function DataTable({ columns, rows }) {
             fontSize: "0.875rem",
           },
           "& .MuiTablePagination-actions button": {
-             background: "rgba(255, 255, 255, 0.4)",
-             margin: "0 4px",
-             backdropFilter: "blur(4px)",
-             "&:hover": { background: "rgba(255, 255, 255, 0.8)" }
+            background: "rgba(255, 255, 255, 0.4)",
+            margin: "0 4px",
+            backdropFilter: "blur(4px)",
+            "&:hover": { background: "rgba(255, 255, 255, 0.8)" }
           }
         }}
       />

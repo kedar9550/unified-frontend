@@ -154,7 +154,10 @@ export default function FacultyFormatResults() {
       "passed",
       "passPercentage",
     ];
-    const csvContent = headers.join(",") + "\n";
+    const csvContent =
+      headers.join(",") +
+      "\n" +
+      "FAC123,John Doe,2024-2025,1,Mathematics,MA101,CSE,60,55,91.67\n";
     const blob = new Blob([csvContent], { type: "text/csv" });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -281,6 +284,7 @@ export default function FacultyFormatResults() {
               "Faculty Name",
               "Subject Name",
               "Course Code",
+              "Semester",
               "Appeared",
               "Passed",
               "%",
@@ -315,6 +319,11 @@ export default function FacultyFormatResults() {
               {
                 value: r.subjectCode,
                 display: <Box>{r.subjectCode}</Box>,
+              },
+
+              {
+                value: r.semester,
+                display: <Box>{r.semester}</Box>,
               },
 
               {

@@ -184,6 +184,7 @@ export default function Teaching() {
     "COURSE NAME",
     "COURSE ID",
     "BRANCH",
+    "SEMESTER",
     "NO. OF STUDENTS APPEARED",
     "NO. OF STUDENTS PASSED",
     "PASS PERCENTAGE",
@@ -208,6 +209,10 @@ export default function Teaching() {
     {
       value: r.branch,
       display: <Box>{r.branch || "—"}</Box>,
+    },
+    {
+      value: r.semester,
+      display: <Box>{r.semester || "—"}</Box>,
     },
 
     {
