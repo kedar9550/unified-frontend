@@ -23,6 +23,8 @@ export default function FeedbackManagement() {
   const [selectedYearId, setSelectedYearId] = useState("");
   const [selectedSemId, setSelectedSemId] = useState("");
 
+  const [selectedPhase, setSelectedPhase] = useState("");
+
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -76,7 +78,7 @@ export default function FeedbackManagement() {
     setLoading(true);
     try {
       const res = await API.get("/api/faculty-feedback-results", {
-        params: { academicYear: selectedYearId, semester: selectedSemId },
+        params: { academicYear: selectedYearId, semester: selectedSemId, phase:selectedPhase? Number(selectedPhase):"" },
       });
       setResults(res.data);
     } catch (err) {
@@ -88,7 +90,7 @@ export default function FeedbackManagement() {
 
   useEffect(() => {
     fetchResults();
-  }, [selectedYearId, selectedSemId]);
+  }, [selectedYearId, selectedSemId,selectedPhase]);
 
   // 4. Handle Upload
   const handleUploadClick = () => {
@@ -147,6 +149,7 @@ export default function FeedbackManagement() {
       "subjectCode",
       "branch",
       "section",
+      "phase",
       "totalStudents",
       "givenStudents",
       "percentage",
@@ -243,6 +246,22 @@ export default function FeedbackManagement() {
             ))}
           </Select>
         </Box>
+
+        <Box sx={filterBox}>
+  Phase
+  <Select
+    variant="standard"
+    disableUnderline
+    value={selectedPhase}
+    onChange={(e) => setSelectedPhase(e.target.value)}
+    sx={{ ml: 2, minWidth: 80 }}
+  >
+    <MenuItem value="">All</MenuItem>
+    <MenuItem value={1}>Phase 1</MenuItem>
+    <MenuItem value={2}>Phase 2</MenuItem>
+  </Select>
+</Box>
+
       </Box>
 
       {/* 🔹 STATS */}
@@ -273,13 +292,14 @@ export default function FeedbackManagement() {
           </Box>
         ) : (
           <DataTable
-            key={`${selectedYearId}-${selectedSemId}`}
+            key={`${selectedYearId}-${selectedSemId}-${selectedPhase}`}
             columns={[
               "Faculty ID",
               "Faculty Name",
               "Subject Name",
               "Course Code",
               "Section",
+              "Phase",
               "Feedback Count",
               "%",
               "Overall %",
@@ -310,6 +330,10 @@ export default function FeedbackManagement() {
               {
                 value: r.section,
                 display: <Box>{r.section || "-"}</Box>,
+              },
+              {
+                value: r.phase,
+                display: <Box>{r.phase || "-"}</Box>,
               },
               {
                 value: r.givenStudents,
