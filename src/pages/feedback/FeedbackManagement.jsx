@@ -248,19 +248,19 @@ export default function FeedbackManagement() {
         </Box>
 
         <Box sx={filterBox}>
-  Phase
-  <Select
-    variant="standard"
-    disableUnderline
-    value={selectedPhase}
-    onChange={(e) => setSelectedPhase(e.target.value)}
-    sx={{ ml: 2, minWidth: 80 }}
-  >
-    <MenuItem value="">All</MenuItem>
-    <MenuItem value={1}>Phase 1</MenuItem>
-    <MenuItem value={2}>Phase 2</MenuItem>
-  </Select>
-</Box>
+          Phase
+          <Select
+            variant="standard"
+            disableUnderline
+            value={selectedPhase}
+            onChange={(e) => setSelectedPhase(e.target.value)}
+            sx={{ ml: 2, minWidth: 80 }}
+          >
+            <MenuItem value="">All</MenuItem>
+            <MenuItem value={1}>Phase 1</MenuItem>
+            <MenuItem value={2}>Phase 2</MenuItem>
+          </Select>
+        </Box>
 
       </Box>
 

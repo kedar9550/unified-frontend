@@ -93,6 +93,7 @@ export const ROLE_ROUTES = {
   "FEEDBACK COORDINATOR": [
     { text: "Dashboard", path: "/dashboard", icon: <Dashboard /> },
     { text: "Feedback Management", path: "/feedback-management", icon: <MenuBook /> },
+    { text: "Discrepancies", path: "/feedback-management/discrepancies", icon: <Flag /> },
   ],
 };
  
