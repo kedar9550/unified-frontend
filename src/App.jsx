@@ -13,6 +13,7 @@ import AcademicStructure from "./pages/uniprime/academics/AcademicStructure";
 
 import RoleManagement from "./pages/uniprime/Roles/Rolemanagement";
 import FeedbackManagement from "./pages/feedback/FeedbackManagement";
+import FeedbackDiscrepancies from "./pages/feedback/FeedbackDiscrepancies";
 
 
 const PublicOnlyRoute = ({ children }) => {
@@ -133,6 +134,14 @@ function App() {
           element={
             <MainLayout>
               <FeedbackManagement />
+            </MainLayout>
+          }
+        />
+        <Route
+          path="/feedback-management/discrepancies"
+          element={
+            <MainLayout>
+              <FeedbackDiscrepancies />
             </MainLayout>
           }
         />
