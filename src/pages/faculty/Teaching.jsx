@@ -20,9 +20,9 @@ export default function Teaching() {
 
   // ── Academic Year / Semester state ──────────────────────────────
   const [academicYears, setAcademicYears] = useState([]);
-  const [semesters, setSemesters] = useState([]);
+  const [semesterTypes, setSemesterTypes] = useState([]);
   const [selectedYearId, setSelectedYearId] = useState("");
-  const [selectedSemId, setSelectedSemId] = useState("");
+  const [selectedSemTypeId, setSelectedSemTypeId] = useState("");
 
   // ── Results state ────────────────────────────────────────────────
   const [results, setResults] = useState([]);
@@ -61,32 +61,27 @@ export default function Teaching() {
     fetchYears();
   }, []);
 
-  // 2. Fetch Semesters when Academic Year changes
+  // 2. Fetch Semester Types on mount (or when needed)
   useEffect(() => {
-    if (!selectedYearId) return;
-    const fetchSemesters = async () => {
+    const fetchSemesterTypes = async () => {
       try {
-        const res = await API.get(
-          `/api/academic-years/${selectedYearId}/semesters`,
-        );
-        const sems = res.data.semesters || [];
-        setSemesters(sems);
+        const res = await API.get("/api/semester-types");
+        const sems = res.data || [];
+        setSemesterTypes(sems);
         if (sems.length > 0) {
-          const active = sems.find((s) => s.isActive) || sems[0];
-          setSelectedSemId(active._id);
-        } else {
-          setSelectedSemId("");
+          // Default to the first one or a specific active one if we had that logic
+          setSelectedSemTypeId(sems[0]._id);
         }
       } catch (err) {
-        console.error("Error fetching semesters:", err);
+        console.error("Error fetching semester types:", err);
       }
     };
-    fetchSemesters();
-  }, [selectedYearId]);
+    fetchSemesterTypes();
+  }, []);
 
   // 3. Fetch Results for this faculty when filters change
   useEffect(() => {
-    if (!selectedYearId || !selectedSemId) return;
+    if (!selectedYearId || !selectedSemTypeId) return;
     const fetchResults = async () => {
       setLoading(true);
       try {
@@ -94,7 +89,7 @@ export default function Teaching() {
           params: {
             facultyId: user?.institutionId, // institutional ID e.g. FAC2024001
             academicYear: selectedYearId,
-            semester: selectedSemId,
+            semester: selectedSemTypeId,
           },
         });
         setResults(res.data || []);
@@ -144,7 +139,7 @@ export default function Teaching() {
     fetchResults();
     fetchProctorStats();
     fetchFeedbackStats();
-  }, [selectedYearId, selectedSemId]);
+  }, [selectedYearId, selectedSemTypeId]);
 
   // ── CSV Upload Handler ────────────────────────────────────────────
   const handleCSVUploadClick = () => {
@@ -166,7 +161,7 @@ export default function Teaching() {
       const formData = new FormData();
       formData.append("file", file);
       formData.append("academicYearId", selectedYearId);
-      formData.append("semesterId", selectedSemId);
+      formData.append("semesterTypeId", selectedSemTypeId);
 
       // TODO: Update this to your actual CSV upload endpoint
       const res = await API.post("/api/faculty-subject-results/upload-csv", formData, {
@@ -180,7 +175,7 @@ export default function Teaching() {
         params: {
           facultyId: user?.institutionId,
           academicYear: selectedYearId,
-          semester: selectedSemId,
+          semester: selectedSemTypeId,
         },
       });
       setResults(refreshRes.data || []);
@@ -199,7 +194,7 @@ export default function Teaching() {
 
   // ── Derive selected labels for display ──────────────────────────
   const selectedYear = academicYears.find((y) => y._id === selectedYearId);
-  const selectedSem = semesters.find((s) => s._id === selectedSemId);
+  const selectedSem = semesterTypes.find((s) => s._id === selectedSemTypeId);
 
   // ── Build DataTable rows ─────────────────────────────────────────
   const columns = [
@@ -374,13 +369,13 @@ export default function Teaching() {
           <Select
             variant="standard"
             disableUnderline
-            value={selectedSemId}
-            onChange={(e) => setSelectedSemId(e.target.value)}
+            value={selectedSemTypeId}
+            onChange={(e) => setSelectedSemTypeId(e.target.value)}
             sx={{ minWidth: 80, fontSize: 14 }}
           >
-            {semesters.map((s) => (
+            {semesterTypes.map((s) => (
               <MenuItem key={s._id} value={s._id}>
-                {s.type}
+                {s.name}
               </MenuItem>
             ))}
           </Select>
@@ -399,7 +394,7 @@ export default function Teaching() {
               fontWeight: 600,
             }}
           >
-            {selectedYear.year} — {selectedSem.type}
+            {selectedYear.year} — {selectedSem.name}
           </Box>
         )}
       </Box>
@@ -529,9 +524,9 @@ export default function Teaching() {
         open={discOpen}
         onClose={(refresh) => setDiscOpen(false)}
         academicYears={academicYears}
-        semesters={semesters}
+        semesterTypes={semesterTypes}
         defaultYearId={selectedYearId}
-        defaultSemId={selectedSemId}
+        defaultSemesterTypeId={selectedSemTypeId}
       />
     </>
   );

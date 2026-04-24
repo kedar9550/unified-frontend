@@ -5,7 +5,7 @@ import {
   Collapse, IconButton, FormControl, Select, MenuItem, Divider, Paper, Tooltip
 } from "@mui/material";
 import {
-  Add, ExpandMore, ExpandLess, School, Class, CheckCircle, RadioButtonUnchecked, Edit, Close
+  Add, ExpandMore, ExpandLess, School, Class, CheckCircle, RadioButtonUnchecked, Edit, Close, Delete
 } from "@mui/icons-material";
 
 const AcademicManagement = () => {
@@ -15,13 +15,22 @@ const AcademicManagement = () => {
   const [newStartYear, setNewStartYear] = useState(currentYear);
   const [newEndYear, setNewEndYear] = useState(currentYear + 1);
   const [expandedYear, setExpandedYear] = useState(null);
-  const [semesters, setSemesters] = useState([]);
-  const [newSemesterType, setNewSemesterType] = useState("ODD");
+  const [semesterTypes, setSemesterTypes] = useState([]);
   const [editingYear, setEditingYear] = useState({ id: null, value: "" });
 
   useEffect(() => {
     fetchYears();
+    fetchSemesterTypes();
   }, []);
+
+  const fetchSemesterTypes = async () => {
+    try {
+      const res = await API.get("/api/semester-types");
+      setSemesterTypes(res.data.data || []);
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   const fetchYears = async () => {
     try {
@@ -54,7 +63,6 @@ const AcademicManagement = () => {
     try {
       await API.put(`/api/academic-years/${id}/toggle-status`, { isActive: !currentState });
       fetchYears();
-      if (expandedYear === id) fetchSemesters(id);
     } catch (err) {
       console.error(err);
     }
@@ -71,41 +79,31 @@ const AcademicManagement = () => {
     }
   };
 
-  const handleExpandYear = async (id) => {
-    if (expandedYear === id) {
-      setExpandedYear(null);
-      return;
-    }
-    setExpandedYear(id);
-    fetchSemesters(id);
-  };
-
-  const fetchSemesters = async (yearId) => {
+  const deleteYear = async (id, yearName) => {
+    if (!window.confirm(`Are you sure you want to delete Academic Year ${yearName}? This will also delete all its semesters.`)) return;
     try {
-      const res = await API.get(`/api/academic-years/${yearId}/semesters`);
-      setSemesters(res.data.semesters || []);
+      await API.delete(`/api/academic-years/${id}`);
+      fetchYears();
+      if (expandedYear === id) setExpandedYear(null);
     } catch (err) {
-      console.error(err);
+      alert(err.response?.data?.message || "Failed to delete");
     }
   };
 
-  const createSemester = async (yearId) => {
+  const handleExpandYear = (id) => {
+    setExpandedYear(expandedYear === id ? null : id);
+  };
+
+  const setYearSemester = async (yearId, semesterTypeId) => {
     try {
-      await API.post(`/api/academic-years/${yearId}/semesters`, { type: newSemesterType });
-      fetchSemesters(yearId);
+      await API.put(`/api/academic-years/${yearId}/semester-type`, { semesterTypeId });
+      fetchYears();
     } catch (err) {
-      alert(err.response?.data?.message || "Failed to create semester");
+      alert(err.response?.data?.message || "Failed to update semester");
     }
   };
 
-  const toggleSemester = async (yearId, semId, currentState) => {
-    try {
-      await API.put(`/api/academic-years/${yearId}/semesters/${semId}/toggle-status`, { isActive: !currentState });
-      fetchSemesters(yearId);
-    } catch (err) {
-      alert(err.response?.data?.message || "Failed to toggle semester");
-    }
-  };
+
 
   return (
     <Box sx={{ p: 1 }}>
@@ -206,9 +204,16 @@ const AcademicManagement = () => {
                       />
                     )}
                   </Box>
-                  <IconButton onClick={() => handleExpandYear(y._id)} sx={{ background: '#f5f5f5' }}>
-                    {expandedYear === y._id ? <ExpandLess /> : <ExpandMore />}
-                  </IconButton>
+                  <Box sx={{ display: 'flex', gap: 1 }}>
+                    <Tooltip title="Delete Year">
+                      <IconButton onClick={() => deleteYear(y._id, y.year)} sx={{ background: '#fff5f5', color: '#d32f2f', '&:hover': { background: '#ffebee' } }}>
+                        <Delete fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
+                    <IconButton onClick={() => handleExpandYear(y._id)} sx={{ background: '#f5f5f5' }}>
+                      {expandedYear === y._id ? <ExpandLess /> : <ExpandMore />}
+                    </IconButton>
+                  </Box>
                 </Box>
 
                 <Collapse in={expandedYear === y._id} timeout="auto" unmountOnExit>
@@ -217,60 +222,51 @@ const AcademicManagement = () => {
                       <Class fontSize="small" /> Semesters for {y.year}
                     </Typography>
 
-                    {/* Add Semester Form */}
-                    <Box sx={{ display: 'flex', gap: 1, mb: 3 }}>
-                      <FormControl size="small" fullWidth>
-                        <Select
-                          value={newSemesterType}
-                          onChange={(e) => setNewSemesterType(e.target.value)}
-                        >
-                          <MenuItem value="ODD">ODD</MenuItem>
-                          <MenuItem value="EVEN">EVEN</MenuItem>
-                          <MenuItem value="SUMMER">SUMMER</MenuItem>
-                        </Select>
-                      </FormControl>
-                      <Button variant="outlined" size="small" color="primary" onClick={() => createSemester(y._id)}>
-                        Add
-                      </Button>
-                    </Box>
-
-                    <Divider sx={{ mb: 2 }} />
-
-                    {/* Semesters List */}
+                    {/* Semester Type Options */}
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-                      {semesters.length === 0 && (
-                        <Typography variant="body2" color="text.secondary" textAlign="center">No semesters found</Typography>
-                      )}
-                      {semesters.map((sem) => (
-                        <Paper key={sem._id} elevation={0} sx={{ p: 1.5, display: 'flex', justifyContent: 'space-between', alignItems: 'center', border: '1px solid #e0e0e0', borderRadius: 2, bgcolor: sem.isActive ? '#f0fdf4' : '#fff' }}>
-                          <Typography variant="body1" sx={{ fontWeight: sem.isActive ? 700 : 500, color: sem.isActive ? '#1b5e20' : '#444' }}>
-                            {sem.type} Semester
-                          </Typography>
-                          {sem.isActive ? (
-                            <Chip
-                              size="small"
-                              label="Active"
-                              color="success"
-                              onClick={() => toggleSemester(y._id, sem._id, true)}
-                              sx={{ cursor: 'pointer' }}
-                            />
-                          ) : (
-                            <Tooltip title={!y.isActive ? "Academic year must be active first" : ""} placement="top">
-                              <span>
-                                <Button
-                                  size="small"
-                                  variant="text"
-                                  color="inherit"
-                                  onClick={() => toggleSemester(y._id, sem._id, false)}
-                                  disabled={!y.isActive}
-                                >
-                                  Activate
-                                </Button>
-                              </span>
-                            </Tooltip>
-                          )}
-                        </Paper>
-                      ))}
+                      {semesterTypes.map((st) => {
+                        const isActive = y.activeSemesterTypeId?._id === st._id || y.activeSemesterTypeId === st._id;
+                        return (
+                          <Paper 
+                            key={st._id} 
+                            elevation={0} 
+                            sx={{ 
+                              p: 1.5, 
+                              display: 'flex', 
+                              justifyContent: 'space-between', 
+                              alignItems: 'center', 
+                              border: '1px solid #e0e0e0', 
+                              borderRadius: 2, 
+                              bgcolor: isActive ? '#f0fdf4' : '#fff' 
+                            }}
+                          >
+                            <Typography variant="body1" sx={{ fontWeight: isActive ? 700 : 500, color: isActive ? '#1b5e20' : '#444' }}>
+                              {st.name} Semester
+                            </Typography>
+                            {isActive ? (
+                              <Chip
+                                size="small"
+                                label="Active"
+                                color="success"
+                              />
+                            ) : (
+                              <Tooltip title={!y.isActive ? "Academic year must be active first" : ""} placement="top">
+                                <span>
+                                  <Button
+                                    size="small"
+                                    variant="text"
+                                    color="inherit"
+                                    onClick={() => setYearSemester(y._id, st._id)}
+                                    disabled={!y.isActive}
+                                  >
+                                    Activate
+                                  </Button>
+                                </span>
+                              </Tooltip>
+                            )}
+                          </Paper>
+                        );
+                      })}
                     </Box>
                   </Box>
                 </Collapse>

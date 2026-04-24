@@ -79,9 +79,9 @@ export default function RaiseDiscrepancyModal({
   open,
   onClose,
   academicYears = [],
-  semesters     = [],
+  semesterTypes = [],
   defaultYearId = "",
-  defaultSemId  = "",
+  defaultSemesterTypeId  = "",
 }) {
   const { user } = useAuth();
 
@@ -94,7 +94,7 @@ export default function RaiseDiscrepancyModal({
 
   // ── Raise form state ──────────────────────────────────────────────
   const [yearId,   setYearId]   = useState(defaultYearId);
-  const [semId,    setSemId]    = useState(defaultSemId);
+  const [semTypeId, setSemTypeId] = useState(defaultSemesterTypeId);
   const [section,  setSection]  = useState("TEACHING");
   const [note,     setNote]     = useState("");
   const [saving,   setSaving]   = useState(false);
@@ -104,12 +104,12 @@ export default function RaiseDiscrepancyModal({
   useEffect(() => {
     if (open) {
       setYearId(defaultYearId);
-      setSemId(defaultSemId);
+      setSemTypeId(defaultSemesterTypeId);
       setActiveTab(0);
       setSuccess(false);
       setNote("");
     }
-  }, [open, defaultYearId, defaultSemId]);
+  }, [open, defaultYearId, defaultSemesterTypeId]);
 
   // Fetch previous discrepancies when modal opens or tab 0 is active
   useEffect(() => {
@@ -136,7 +136,7 @@ export default function RaiseDiscrepancyModal({
     try {
       await API.post("/api/discrepancies", {
         academicYearId:       yearId,
-        semesterId:           semId,
+        semesterTypeId:       semTypeId,
         section,
         note:                 note.trim(),
         facultyInstitutionId: user?.institutionId || "",
@@ -350,7 +350,7 @@ export default function RaiseDiscrepancyModal({
                                 {d.academicYearId?.year || "—"}
                               </Box>
                               <Box sx={{ fontSize: 11, color: "#999" }}>
-                                {d.semesterId?.type || "—"}
+                                {d.semesterTypeId?.name || "—"}
                               </Box>
                             </TableCell>
 
@@ -485,12 +485,12 @@ export default function RaiseDiscrepancyModal({
                   <Select
                     fullWidth
                     size="small"
-                    value={semId}
-                    onChange={e => setSemId(e.target.value)}
+                    value={semTypeId}
+                    onChange={e => setSemTypeId(e.target.value)}
                     sx={selectSx}
                   >
-                    {semesters.map(s => (
-                      <MenuItem key={s._id} value={s._id}>{s.type}</MenuItem>
+                    {semesterTypes.map(s => (
+                      <MenuItem key={s._id} value={s._id}>{s.name}</MenuItem>
                     ))}
                   </Select>
                 </Box>
@@ -568,7 +568,7 @@ export default function RaiseDiscrepancyModal({
           <Button
             variant="contained"
             onClick={handleSubmit}
-            disabled={saving || !note.trim() || !yearId || !semId}
+            disabled={saving || !note.trim() || !yearId || !semTypeId}
             sx={{
               borderRadius: "20px",
               px: 4,

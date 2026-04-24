@@ -96,7 +96,7 @@ export default function FeedbackDiscrepancies() {
         params: {
           facultyId:    item.facultyInstitutionId,
           academicYear: item.academicYearId?.year,
-          semester:     item.semesterId?.type,
+          semester:     item.semesterTypeId?.name,
         },
       });
       // Make each row editable — clone the data
@@ -178,7 +178,7 @@ export default function FeedbackDiscrepancies() {
           section:           row.section,
           phase:             Number(row.phase),
           academicYearId:    selected.academicYearId?._id,
-          semesterId:        selected.semesterId?._id,
+          semesterTypeId:    selected.semesterTypeId?._id,
           totalStudents:     Number(row.totalStudents),
           givenStudents:     Number(row.givenStudents),
           percentage:        Number(row.percentage),
@@ -339,7 +339,7 @@ export default function FeedbackDiscrepancies() {
                           {item.academicYearId?.year || "—"}
                         </Typography>
                         <Chip
-                          label={item.semesterId?.type || "—"}
+                          label={item.semesterTypeId?.name || "—"}
                           size="small"
                           sx={{ fontSize: 11, height: 20, mt: 0.3 }}
                         />
@@ -521,7 +521,7 @@ export default function FeedbackDiscrepancies() {
                   <Box sx={{ textAlign: "right" }}>
                     <Typography fontSize={12} color="#888">Period</Typography>
                     <Typography fontWeight={600} fontSize={14}>
-                      {selected.academicYearId?.year} — {selected.semesterId?.type}
+                      {selected.academicYearId?.year} — {selected.semesterTypeId?.name}
                     </Typography>
                     <Box
                       sx={{
@@ -836,7 +836,7 @@ export default function FeedbackDiscrepancies() {
                 </Typography>
                 <Typography fontWeight={700}>{rejectItem.facultyName}</Typography>
                 <Typography fontSize={13} color="#666">
-                  {rejectItem.facultyInstitutionId} · {rejectItem.academicYearId?.year} – {rejectItem.semesterId?.type}
+                  {rejectItem.facultyInstitutionId} · {rejectItem.academicYearId?.year} – {rejectItem.semesterTypeId?.name}
                 </Typography>
                 <Divider sx={{ my: 1 }} />
                 <Typography fontSize={13} color="#b71c1c" mt={1}>
