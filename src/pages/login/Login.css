@@ -78,18 +78,6 @@
   padding: 40px 8%;
 }
 
-/* Signup form gets more width for the 2-col grid */
-.signup-scroll {
-  max-width: 850px;
-  /* Increased from 620px */
-  justify-content: center;
-  /* vertically centered */
-  overflow-y: auto;
-  padding-top: 28px;
-  padding-bottom: 28px;
-  scrollbar-width: thin;
-}
-
 /* ─── FOOTER — aliceblue bar ───────────────────── */
 .footer-aliceblue .app-footer {
   background: aliceblue;
@@ -810,17 +798,9 @@
     justify-content: flex-start;
   }
 
-  /* Make signup scroll panel natural height on mobile */
-  .signup-scroll {
+  /* Make signup panel natural height on mobile */
+  .signup-panel .auth-form-wrap {
     overflow-y: unset;
     max-height: unset;
-  }
-
-  /* Reset form on mobile — natural height, not absolute */
-  .reset-form {
-    position: static;
-    width: 100%;
-    height: auto;
-    min-height: unset;
   }
 }

@@ -21,81 +21,6 @@ export const loginUser = async (loginFn, credentials) => {
   }
 };
 
-// ---------------- SIGNUP VALIDATION ----------------
-const validateSignup = (data) => {
-  const errors = {};
-
-  if (!data.id?.trim()) errors.id = "ID is required";
-  if (!data.fullname?.trim()) errors.fullname = "Full name is required";
-  if (!data.department) errors.department = "Department is required";
-
-  if (!data.email?.trim()) {
-    errors.email = "Email is required";
-  } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) {
-    errors.email = "Invalid email format";
-  }
-
-  if (!data.phone) {
-    errors.phone = "Phone number required";
-  } else if (!/^[6-9]\d{9}$/.test(data.phone)) {
-    errors.phone = "Enter valid Indian mobile number";
-  }
-
-  if (!data.designation) errors.designation = "Designation is required";
-
-  if (!data.password || data.password.length < 6)
-    errors.password = "Password must be at least 6 characters";
-
-  if (data.password !== data.confirmPassword)
-    errors.confirmPassword = "Passwords do not match";
-
-  return { isValid: Object.keys(errors).length === 0, errors };
-};
-
-// ---------------- ERP FETCH ----------------
-const fetchERPData = async (id, role) => {
-  try {
-    const res = await API.post("/api/users/ecap-data", { institutionId: id, role });
-    const data = res.data;
-    if (!data || data.error) return null;
-
-    if (role === "Employee") {
-      return {
-        fullname: data?.employeename?.trim() || "",
-        department: data?.departmentname || "",
-        designation: data?.designation || "",
-        phone: data?.mobileno || "",
-      };
-    } else {
-      return {
-        fullname: data?.studentname?.trim() || "",
-        department: data?.branch || "",
-        designation: "Student",
-        phone: data?.mobilenumber || "",
-        email: data?.emailid || "",
-      };
-    }
-  } catch (err) {
-    console.error("ERP fetch error:", err);
-    return null;
-  }
-};
-
-// ---------------- SIGNUP SUBMIT ----------------
-const signupUser = async (signupFn, formData) => {
-  const payload = {
-    fullname: formData.fullname,
-    id: formData.id,
-    department: formData.department,
-    designation: formData.designation,
-    email: formData.email,
-    phone: formData.phone,
-    password: formData.password,
-    userType: formData.role,
-  };
-  return await signupFn(payload);
-};
-
 // ---------------- FORGOT PASSWORD LOGIC ----------------
 const sendOtpCode = async (institutionId) => {
   if (!institutionId?.trim()) return { success: false, message: "ID is required" };
@@ -161,18 +86,7 @@ export default function Login() {
   const [loginData, setLoginData] = useState({ id: '', password: '' });
   const [loginError, setLoginError] = useState('');
 
-  // ── signup state ──
-  const [signupData, setSignupData] = useState({
-    id: '', fullname: '', department: '', designation: '',
-    email: '', phone: '', password: 'Aditya@123', confirmPassword: 'Aditya@123', role: 'Employee',
-  });
-  const [signupError, setSignupError] = useState('');
-  const [disabledFields, setDisabledFields] = useState({});
-  const [isEcapVerified, setIsEcapVerified] = useState(false);
-  const [isVerifying, setIsVerifying] = useState(false);
-
   // ── forgot password state ──
-  const [isForgot, setIsForgot] = useState(false);
   const [fpStep, setFpStep] = useState(1);
   const [fpData, setFpData] = useState({ id: '', otp: '', newPass: 'Aditya@123', confirmPass: 'Aditya@123' });
   const [fpMsg, setFpMsg] = useState({ text: '', type: '' }); // type: error or success
@@ -195,9 +109,7 @@ export default function Login() {
 
   const handleForgotClick = (e) => {
     e.preventDefault();
-    const randomAnim = animClasses[Math.floor(Math.random() * animClasses.length)];
-    setForgotAnimClass(randomAnim);
-    setIsForgot(true);
+    setIsSignUp(true);
     setFpStep(1);
     setFpMsg({ text: '', type: '' });
   };
@@ -214,14 +126,9 @@ export default function Login() {
   }, []);
 
   const toggleForgot = () => {
-    setIsClosing(true);
-    // After animation completes, hide the panel and reset immediately
-    setTimeout(() => {
-      setIsForgot(false);
-      setIsClosing(false);
-      setFpData({ id: '', otp: '', newPass: 'Aditya@123', confirmPass: 'Aditya@123' });
-      setFpMsg({ text: '', type: '' });
-    }, 500); // Reduced to 500ms — animation is 0.85s but panel becomes invisible quickly
+    setIsSignUp(false);
+    setFpData({ id: '', otp: '', newPass: 'Aditya@123', confirmPass: 'Aditya@123' });
+    setFpMsg({ text: '', type: '' });
   };
 
   const handleSendOtp = async (e) => {
@@ -264,284 +171,121 @@ export default function Login() {
     }
   };
 
-  // ── ECAP verify on ID blur ──
-  const handleIdBlur = async () => {
-    if (!signupData.id.trim()) { setDisabledFields({}); setIsEcapVerified(false); return; }
-    setIsVerifying(true); setSignupError('');
-    try {
-      const data = await fetchERPData(signupData.id.trim(), signupData.role);
-      if (data) {
-        setSignupData(prev => ({ ...prev, ...data }));
-        const dis = {};
-        Object.keys(data).forEach(k => { if (data[k]) dis[k] = true; });
-        setDisabledFields(dis);
-        setIsEcapVerified(true);
-      } else {
-        setDisabledFields({}); setIsEcapVerified(false);
-        setSignupData(prev => ({
-          ...prev, fullname: '', department: '',
-          designation: signupData.role === 'Student' ? 'Student' : '',
-          phone: '', email: '',
-        }));
-        setSignupError(`User not found in ECAP for ${signupData.role}. Registration not allowed.`);
-      }
-    } catch {
-      setDisabledFields({}); setIsEcapVerified(false);
-      setSignupError('Error verifying user against ECAP.');
-    } finally { setIsVerifying(false); }
+  const goSignIn = () => { 
+    setIsSignUp(false); 
+    setFpStep(1);
+    setFpMsg({ text: '', type: '' });
   };
-
-  // ── role change ──
-  const handleRoleChange = (val) => {
-    setSignupData({
-      id: '', fullname: '', department: '', designation: val === 'Student' ? 'Student' : '',
-      email: '', phone: '', password: '', confirmPassword: '', role: val
-    });
-    setDisabledFields({}); setIsEcapVerified(false); setSignupError('');
-    setIsRoleOpen(false);
-  };
-
-  // ── signup submit ──
-  const handleSignupSubmit = async (e) => {
-    e.preventDefault();
-    if (!isEcapVerified) { setSignupError('Please provide a valid ID that exists in ECAP.'); return; }
-    const v = validateSignup(signupData);
-    if (!v.isValid) { setSignupError(Object.values(v.errors)[0]); return; }
-    try {
-      await signupUser(signup, signupData);
-      navigate('/dashboard');
-    } catch (err) {
-      setSignupError(err.response?.data?.message || err.message || 'Signup failed');
-    }
-  };
-
-  const goSignUp = () => { setIsSignUp(true); setLoginError(''); };
-  const goSignIn = () => { setIsSignUp(false); setSignupError(''); };
 
   return (
     <div className={`auth-page${isSignUp ? ' signup-mode' : ''}`}>
       <div className="auth-panel signin-panel">
         <div className="auth-form-wrap">
-          {!isForgot && (
-            <>
-              <h1 className="auth-heading">Sign In</h1>
-              {loginError && <p className="auth-error">{loginError}</p>}
-            </>
-          )}
-          {!isForgot && (
-            <form className="auth-form" onSubmit={handleLoginSubmit}>
-              <div className="auth-field">
-                <input id="login-id" type="text" placeholder=" "
-                  value={loginData.id}
-                  onChange={e => setLoginData({ ...loginData, id: e.target.value })} />
-                <label className="auth-label" htmlFor="login-id">Employee / Student ID</label>
-              </div>
-              <div className="auth-field">
-                <input id="login-password" type={showLogPass ? 'text' : 'password'} placeholder=" "
-                  value={loginData.password}
-                  onChange={e => setLoginData({ ...loginData, password: e.target.value })} />
-                <label className="auth-label" htmlFor="login-password">Password</label>
-                <button type="button" className="password-toggle" onClick={() => setShowLogPass(!showLogPass)}>
-                  {showLogPass ? <EyeOffIcon /> : <EyeIcon />}
-                </button>
-              </div>
-              <button type="button" className="auth-forgot" onClick={handleForgotClick}>Forgot your password?</button>
-              <div className="btn-wrapper-center">
-                <button type="submit" className="btn-auth-primary">SIGN IN</button>
-              </div>
-            </form>
-          )}
-        </div>
-        {!isForgot && <div className="footer-aliceblue"><Footer /></div>}
-
-        {isForgot && (
-          <div className={`reset-form${isClosing ? ' anim-slide-out-left' : ''}`}>
-            <div className="reset-form-content">
-              <div className={isClosing ? '' : forgotAnimClass} style={{ width: '100%', maxWidth: '520px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                <h1 className="auth-heading">Reset Password</h1>
-                {fpMsg.text && (
-                  <p className="auth-error" style={{ background: fpMsg.type === 'success' ? '#e8f5e9' : '#fdecea', color: fpMsg.type === 'success' ? '#2e7d32' : '#c62828' }}>
-                    {fpMsg.text}
-                  </p>
-                )}
-
-                {fpStep === 1 && (
-                  <form className="auth-form" onSubmit={handleSendOtp}>
-                    <div className="auth-field">
-                      <input id="fp-id" type="text" placeholder=" " value={fpData.id} onChange={e => setFpData({ ...fpData, id: e.target.value })} />
-                      <label className="auth-label" htmlFor="fp-id">Employee / Student ID</label>
-                    </div>
-                    <div className="btn-wrapper-center">
-                      <button type="submit" className="btn-auth-primary">SEND OTP</button>
-                    </div>
-                    <button type="button" className="auth-forgot auth-forgot-center" onClick={toggleForgot}>Back to Sign In</button>
-                  </form>
-                )}
-
-                {fpStep === 2 && (
-                  <form className="auth-form" onSubmit={handleVerifyOtp}>
-                    <div className="auth-field">
-                      <input id="fp-otp" type="text" placeholder=" " value={fpData.otp} onChange={e => setFpData({ ...fpData, otp: e.target.value })} />
-                      <label className="auth-label" htmlFor="fp-otp">Enter OTP</label>
-                    </div>
-                    <div className="btn-wrapper-center">
-                      <button type="submit" className="btn-auth-primary">VERIFY OTP</button>
-                    </div>
-                    <button type="button" className="auth-forgot auth-forgot-center" onClick={toggleForgot}>Cancel</button>
-                  </form>
-                )}
-
-                {fpStep === 3 && (
-                  <form className="auth-form" onSubmit={handleResetPassword}>
-                    <div className="auth-field">
-                      <input id="fp-new" type={showResetPass ? 'text' : 'password'} placeholder=" " value={fpData.newPass} onChange={e => setFpData({ ...fpData, newPass: e.target.value })} />
-                      <label className="auth-label" htmlFor="fp-new">New Password</label>
-                      <button type="button" className="password-toggle" onClick={() => setShowResetPass(!showResetPass)}>
-                        {showResetPass ? <EyeOffIcon /> : <EyeIcon />}
-                      </button>
-                    </div>
-                    <div className="auth-field">
-                      <input id="fp-confirm" type={showResetConfirm ? 'text' : 'password'} placeholder=" " value={fpData.confirmPass} onChange={e => setFpData({ ...fpData, confirmPass: e.target.value })} />
-                      <label className="auth-label" htmlFor="fp-confirm">Confirm Password</label>
-                      <button type="button" className="password-toggle" onClick={() => setShowResetConfirm(!showResetConfirm)}>
-                        {showResetConfirm ? <EyeOffIcon /> : <EyeIcon />}
-                      </button>
-                    </div>
-                    <div className="btn-wrapper-center">
-                      <button type="submit" className="btn-auth-primary">SET PASSWORD</button>
-                    </div>
-                    <button type="button" className="auth-forgot auth-forgot-center" onClick={toggleForgot}>Cancel</button>
-                  </form>
-                )}
-              </div>
-            </div>
-            <div className="footer-aliceblue"><Footer /></div>
-          </div>
-        )}
-      </div>
-
-      {/* ══ SIGN-UP FORM — always on the right ══ */}
-      <div className="auth-panel signup-panel">
-        <div className="auth-form-wrap signup-scroll">
-          <h1 className="auth-heading">Create Account</h1>
-          {signupError && <p className="auth-error">{signupError}</p>}
-          <form className="auth-form signup-form" onSubmit={handleSignupSubmit}>
-            {/* Role — custom neat dropdown */}
-            <div className={`auth-field auth-select-wrap field-full${isRoleOpen ? ' is-open' : ''}`}
-              ref={roleRef} data-has-value={!!signupData.role}>
-              <div className="custom-select-trigger" onClick={() => setIsRoleOpen(!isRoleOpen)}>
-                {signupData.role}
-                <span className="custom-select-arrow" />
-              </div>
-              <label className="auth-label">Select Role</label>
-
-              {isRoleOpen && (
-                <div className="custom-select-options">
-                  <div className={`custom-option${signupData.role === 'Student' ? ' is-selected' : ''}`}
-                    onClick={() => handleRoleChange('Student')}>
-                    Student
-                  </div>
-                  <div className={`custom-option${signupData.role === 'Employee' ? ' is-selected' : ''}`}
-                    onClick={() => handleRoleChange('Employee')}>
-                    Employee
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* ID  |  Full Name */}
+          <h1 className="auth-heading">Sign In</h1>
+          {loginError && <p className="auth-error">{loginError}</p>}
+          <form className="auth-form" onSubmit={handleLoginSubmit}>
             <div className="auth-field">
-              <input id="signup-id" type="text" placeholder=" "
-                value={signupData.id}
-                onChange={e => setSignupData({ ...signupData, id: e.target.value })}
-                onBlur={handleIdBlur} />
-              <label className="auth-label" htmlFor="signup-id">ID (auto-fills from ECAP)</label>
+              <input id="login-id" type="text" placeholder=" "
+                value={loginData.id}
+                onChange={e => setLoginData({ ...loginData, id: e.target.value })} />
+              <label className="auth-label" htmlFor="login-id">Employee / Student ID</label>
             </div>
             <div className="auth-field">
-              <input id="signup-name" type="text" placeholder=" "
-                value={signupData.fullname} disabled={!!disabledFields.fullname}
-                onChange={e => setSignupData({ ...signupData, fullname: e.target.value })} />
-              <label className="auth-label" htmlFor="signup-name">Full Name</label>
-            </div>
-
-            {/* Email  |  Phone */}
-            <div className="auth-field">
-              <input id="signup-email" type="email" placeholder=" "
-                value={signupData.email} disabled={!!disabledFields.email}
-                onChange={e => setSignupData({ ...signupData, email: e.target.value })} />
-              <label className="auth-label" htmlFor="signup-email">Email</label>
-            </div>
-            <div className="auth-field">
-              <input id="signup-phone" type="text" placeholder=" "
-                value={signupData.phone} disabled={!!disabledFields.phone}
-                onChange={e => setSignupData({ ...signupData, phone: e.target.value })} />
-              <label className="auth-label" htmlFor="signup-phone">Phone</label>
-            </div>
-
-            {/* Department  |  Designation */}
-            <div className="auth-field">
-              <input id="signup-dept" type="text" placeholder=" "
-                value={signupData.department} disabled={!!disabledFields.department}
-                onChange={e => setSignupData({ ...signupData, department: e.target.value })} />
-              <label className="auth-label" htmlFor="signup-dept">Department</label>
-            </div>
-            <div className="auth-field">
-              <input id="signup-desig" type="text" placeholder=" "
-                value={signupData.designation} disabled={!!disabledFields.designation}
-                onChange={e => setSignupData({ ...signupData, designation: e.target.value })} />
-              <label className="auth-label" htmlFor="signup-desig">Designation</label>
-            </div>
-
-            {/* Password  |  Confirm Password */}
-            <div className="auth-field">
-              <input id="signup-pass" type={showSignPass ? 'text' : 'password'} placeholder=" "
-                value={signupData.password}
-                onChange={e => setSignupData({ ...signupData, password: e.target.value })} />
-              <label className="auth-label" htmlFor="signup-pass">Password</label>
-              <button type="button" className="password-toggle" onClick={() => setShowSignPass(!showSignPass)}>
-                {showSignPass ? <EyeOffIcon /> : <EyeIcon />}
+              <input id="login-password" type={showLogPass ? 'text' : 'password'} placeholder=" "
+                value={loginData.password}
+                onChange={e => setLoginData({ ...loginData, password: e.target.value })} />
+              <label className="auth-label" htmlFor="login-password">Password</label>
+              <button type="button" className="password-toggle" onClick={() => setShowLogPass(!showLogPass)}>
+                {showLogPass ? <EyeOffIcon /> : <EyeIcon />}
               </button>
             </div>
-            <div className="auth-field">
-              <input id="signup-confirm" type={showSignConfirm ? 'text' : 'password'} placeholder=" "
-                value={signupData.confirmPassword}
-                onChange={e => setSignupData({ ...signupData, confirmPassword: e.target.value })} />
-              <label className="auth-label" htmlFor="signup-confirm">Confirm Password</label>
-              <button type="button" className="password-toggle" onClick={() => setShowSignConfirm(!showSignConfirm)}>
-                {showSignConfirm ? <EyeOffIcon /> : <EyeIcon />}
-              </button>
-            </div>
-
-            {/* REGISTER — centered wrapper instead of field-full */}
+            <button type="button" className="auth-forgot" onClick={handleForgotClick}>Forgot your password?</button>
             <div className="btn-wrapper-center">
-              <button type="submit" className="btn-auth-primary"
-                disabled={!isEcapVerified || isVerifying}>
-                {isVerifying ? 'Verifying…' : 'REGISTER'}
-              </button>
+              <button type="submit" className="btn-auth-primary">SIGN IN</button>
             </div>
           </form>
         </div>
         <div className="footer-aliceblue"><Footer /></div>
       </div>
 
+      {/* ══ FORGOT PASSWORD FORM — always on the right ══ */}
+      <div className="auth-panel signup-panel">
+        <div className="auth-form-wrap">
+          <h1 className="auth-heading">Reset Password</h1>
+          {fpMsg.text && (
+            <p className="auth-error" style={{ background: fpMsg.type === 'success' ? '#e8f5e9' : '#fdecea', color: fpMsg.type === 'success' ? '#2e7d32' : '#c62828' }}>
+              {fpMsg.text}
+            </p>
+          )}
+
+          {fpStep === 1 && (
+            <form className="auth-form" onSubmit={handleSendOtp}>
+              <div className="auth-field">
+                <input id="fp-id" type="text" placeholder=" " value={fpData.id} onChange={e => setFpData({ ...fpData, id: e.target.value })} />
+                <label className="auth-label" htmlFor="fp-id">Employee / Student ID</label>
+              </div>
+              <div className="btn-wrapper-center">
+                <button type="submit" className="btn-auth-primary">SEND OTP</button>
+              </div>
+              <button type="button" className="auth-forgot auth-forgot-center" onClick={toggleForgot}>Back to Sign In</button>
+            </form>
+          )}
+
+          {fpStep === 2 && (
+            <form className="auth-form" onSubmit={handleVerifyOtp}>
+              <div className="auth-field">
+                <input id="fp-otp" type="text" placeholder=" " value={fpData.otp} onChange={e => setFpData({ ...fpData, otp: e.target.value })} />
+                <label className="auth-label" htmlFor="fp-otp">Enter OTP</label>
+              </div>
+              <div className="btn-wrapper-center">
+                <button type="submit" className="btn-auth-primary">VERIFY OTP</button>
+              </div>
+              <button type="button" className="auth-forgot auth-forgot-center" onClick={toggleForgot}>Cancel</button>
+            </form>
+          )}
+
+          {fpStep === 3 && (
+            <form className="auth-form" onSubmit={handleResetPassword}>
+              <div className="auth-field">
+                <input id="fp-new" type={showResetPass ? 'text' : 'password'} placeholder=" " value={fpData.newPass} onChange={e => setFpData({ ...fpData, newPass: e.target.value })} />
+                <label className="auth-label" htmlFor="fp-new">New Password</label>
+                <button type="button" className="password-toggle" onClick={() => setShowResetPass(!showResetPass)}>
+                  {showResetPass ? <EyeOffIcon /> : <EyeIcon />}
+                </button>
+              </div>
+              <div className="auth-field">
+                <input id="fp-confirm" type={showResetConfirm ? 'text' : 'password'} placeholder=" " value={fpData.confirmPass} onChange={e => setFpData({ ...fpData, confirmPass: e.target.value })} />
+                <label className="auth-label" htmlFor="fp-confirm">Confirm Password</label>
+                <button type="button" className="password-toggle" onClick={() => setShowResetConfirm(!showResetConfirm)}>
+                  {showResetConfirm ? <EyeOffIcon /> : <EyeIcon />}
+                </button>
+              </div>
+              <div className="btn-wrapper-center">
+                <button type="submit" className="btn-auth-primary">SET PASSWORD</button>
+              </div>
+              <button type="button" className="auth-forgot auth-forgot-center" onClick={toggleForgot}>Cancel</button>
+            </form>
+          )}
+        </div>
+        <div className="footer-aliceblue"><Footer /></div>
+      </div>
+
       {/* ══ OVERLAY — blue panel that slides left/right ══ */}
       <div className="auth-overlay">
-        {/* Left half — visible after sliding left (signup mode) */}
+        {/* Left half — visible after sliding left */}
         <div className="overlay-side overlay-left">
           <img src={loginLogo} alt="Aditya University" className="overlay-logo" />
-          <h2 className="overlay-title">Welcome to Unified Portal</h2>
-          <p className="overlay-sub">Already have an account? Sign in to continue.</p>
-          <button className="btn-overlay" onClick={goSignIn}>SIGN IN</button>
+          <h2 className="overlay-title">Reset Your Password</h2>
+          <p className="overlay-sub">Remembered your password? Sign in to access your portal.</p>
+          <button className="btn-overlay" onClick={goSignIn}>BACK TO LOGIN</button>
         </div>
-        {/* Right half — visible by default (login mode) */}
+        {/* Right half — visible by default */}
         <div className="overlay-side overlay-right">
           <img src={loginLogo} alt="Aditya University" className="overlay-logo" />
           <h2 className="overlay-title">Welcome to Unified Portal</h2>
-          <p className="overlay-sub">You don't have an account? Sign up to continue.</p>
-          <button className="btn-overlay" onClick={goSignUp}>SIGN UP</button>
+          <p className="overlay-sub">Access all your academic resources in one place.</p>
         </div>
       </div>
-
     </div>
   );
 }
