@@ -48,16 +48,12 @@ export default function FeedbackManagement() {
     fetchYears();
   }, []);
 
-  // 2. Fetch Semesters when Academic Year changes
+  // 2. Fetch Global Semesters on Mount
   useEffect(() => {
-    if (!selectedYearId) return;
-
     const fetchSemesters = async () => {
       try {
-        const res = await API.get(
-          `/api/academic-years/${selectedYearId}/semesters`,
-        );
-        const sems = res.data.semesters || [];
+        const res = await API.get('/api/semester-types');
+        const sems = res.data.data || [];
         setSemesters(sems);
         if (sems.length > 0) {
           const active = sems.find((s) => s.isActive) || sems[0];
@@ -70,7 +66,7 @@ export default function FeedbackManagement() {
       }
     };
     fetchSemesters();
-  }, [selectedYearId]);
+  }, []);
 
   // 3. Fetch Results when filters change
   const fetchResults = async () => {
@@ -241,7 +237,7 @@ export default function FeedbackManagement() {
           >
             {semesters.map((sem) => (
               <MenuItem key={sem._id} value={sem._id}>
-                {sem.type}
+                {sem.name}
               </MenuItem>
             ))}
           </Select>

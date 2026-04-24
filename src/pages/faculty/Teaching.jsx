@@ -66,7 +66,7 @@ export default function Teaching() {
     const fetchSemesterTypes = async () => {
       try {
         const res = await API.get("/api/semester-types");
-        const sems = res.data || [];
+        const sems = res.data.data || [];
         setSemesterTypes(sems);
         if (sems.length > 0) {
           // Default to the first one or a specific active one if we had that logic
@@ -107,7 +107,7 @@ export default function Teaching() {
           params: {
             facultyId: user?.institutionId,
             academicYear: selectedYearId,
-            semester: selectedSemId,
+            semester: selectedSemTypeId,
           },
         });
         setProctorStats(res.data);
@@ -125,7 +125,7 @@ export default function Teaching() {
           params: {
             facultyId: user?.institutionId,
             academicYear: selectedYearId,
-            semester: selectedSemId,
+            semester: selectedSemTypeId,
           },
         });
         setFeedbackResults(res.data || []);
