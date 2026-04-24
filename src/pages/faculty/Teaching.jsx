@@ -32,6 +32,10 @@ export default function Teaching() {
   const [proctorStats, setProctorStats] = useState(null);
   const [proctorLoading, setProctorLoading] = useState(false);
 
+  // ── Feedback state ──────────────────────────────────────────────
+  const [feedbackResults, setFeedbackResults] = useState([]);
+  const [feedbackLoading, setFeedbackLoading] = useState(false);
+
   // ── Discrepancy modal state ──────────────────────────────────────
   const [discOpen, setDiscOpen] = useState(false);
 
@@ -119,8 +123,27 @@ export default function Teaching() {
       }
     };
 
+    const fetchFeedbackStats = async () => {
+      setFeedbackLoading(true);
+      try {
+        const res = await API.get("/api/faculty-feedback-results", {
+          params: {
+            facultyId: user?.institutionId,
+            academicYear: selectedYearId,
+            semester: selectedSemId,
+          },
+        });
+        setFeedbackResults(res.data || []);
+      } catch (err) {
+        console.error("Error fetching feedback stats:", err);
+      } finally {
+        setFeedbackLoading(false);
+      }
+    };
+
     fetchResults();
     fetchProctorStats();
+    fetchFeedbackStats();
   }, [selectedYearId, selectedSemId]);
 
   // ── CSV Upload Handler ────────────────────────────────────────────
@@ -228,6 +251,53 @@ export default function Teaching() {
     {
       value: r.passPercentage,
       display: <Box>{Number(r.passPercentage).toFixed(1)}%</Box>,
+    },
+  ]);
+
+  // ── Build Feedback DataTable rows ─────────────────────────────────────────
+  const feedbackColumns = [
+    "S.NO",
+    "COURSE NAME",
+    "COURSE ID",
+    "SECTION",
+    "PHASE",
+    "STUDENTS GIVEN",
+    "PERCENTAGE",
+    "OVERALL PERCENTAGE",
+  ];
+
+  const feedbackRows = feedbackResults.map((r, i) => [
+    {
+      value: i + 1,
+      display: <Box sx={{ fontWeight: 600 }}>{i + 1}</Box>,
+    },
+    {
+      value: r.subjectName,
+      display: <Box sx={{ fontWeight: 500 }}>{r.subjectName}</Box>,
+    },
+    {
+      value: r.subjectCode,
+      display: <Box>{r.subjectCode}</Box>,
+    },
+    {
+      value: r.section,
+      display: <Box>{r.section || "—"}</Box>,
+    },
+    {
+      value: r.phase,
+      display: <Box>{r.phase || "—"}</Box>,
+    },
+    {
+      value: r.givenStudents,
+      display: <Box>{r.givenStudents} / {r.totalStudents}</Box>,
+    },
+    {
+      value: r.percentage,
+      display: <Box sx={{ color: "green", fontWeight: 600 }}>{r.percentage}%</Box>,
+    },
+    {
+      value: r.overallPercentage,
+      display: <Box sx={{ color: "blue", fontWeight: 600 }}>{r.overallPercentage}%</Box>,
     },
   ]);
 
@@ -425,6 +495,40 @@ export default function Teaching() {
             >
             No proctoring mapped students or results available for this selection.
             </Box>
+        )}
+      </Box>
+
+      {/* ── SECTION : Feedback ────────────────────────────── */}
+      <Box sx={sectionCard}>
+        <SectionHeader title="SECTION : Feedback" />
+
+        <Typography
+          variant="h6"
+          fontWeight={600}
+          sx={{ mb: 2, color: "#0D233B", fontSize: 16 }}
+        >
+          Faculty Feedback Results
+        </Typography>
+
+        {feedbackLoading ? (
+            <Box sx={{ display: "flex", justifyContent: "center", py: 6 }}>
+              <CircularProgress />
+            </Box>
+        ) : feedbackResults.length === 0 ? (
+            <Box
+              sx={{
+                textAlign: "center",
+                py: 6,
+                color: "#aaa",
+                fontSize: 15,
+                border: "1.5px dashed #d0d9e8",
+                borderRadius: "14px",
+              }}
+            >
+              No feedback results available for this selection.
+            </Box>
+        ) : (
+            <DataTable columns={feedbackColumns} rows={feedbackRows} />
         )}
       </Box>
 

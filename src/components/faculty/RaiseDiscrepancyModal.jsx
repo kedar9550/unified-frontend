@@ -50,7 +50,7 @@ const SECTION_LABELS = {
 const ROLE_LABEL = {
   TEACHING:   "Exam Section",
   PROCTORING: "Exam Section",
-  FEEDBACK:   "Feedback Team",
+  FEEDBACK:   "Feedback Coordinator",
   OTHER:      "Admin",
 };
 
