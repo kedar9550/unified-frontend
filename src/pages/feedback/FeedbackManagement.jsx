@@ -9,21 +9,21 @@ import {
   Select,
   Avatar,
   CircularProgress,
-  IconButton,
-  Tooltip,
 } from "@mui/material";
-import { useEffect, useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import API from "../../api/axios";
 import {
   Download as DownloadIcon,
   FileUpload as UploadIcon,
 } from "@mui/icons-material";
 
-export default function FacultyFormatResults() {
+export default function FeedbackManagement() {
   const [academicYears, setAcademicYears] = useState([]);
   const [semesters, setSemesters] = useState([]);
   const [selectedYearId, setSelectedYearId] = useState("");
   const [selectedSemId, setSelectedSemId] = useState("");
+
+  const [selectedPhase, setSelectedPhase] = useState("");
 
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -38,7 +38,6 @@ export default function FacultyFormatResults() {
         const years = res.data.years || [];
         setAcademicYears(years);
         if (years.length > 0) {
-          // Find active or first
           const active = years.find((y) => y.isActive) || years[0];
           setSelectedYearId(active._id);
         }
@@ -78,8 +77,8 @@ export default function FacultyFormatResults() {
     if (!selectedYearId || !selectedSemId) return;
     setLoading(true);
     try {
-      const res = await API.get("/api/faculty-subject-results", {
-        params: { academicYear: selectedYearId, semester: selectedSemId },
+      const res = await API.get("/api/faculty-feedback-results", {
+        params: { academicYear: selectedYearId, semester: selectedSemId, phase:selectedPhase? Number(selectedPhase):"" },
       });
       setResults(res.data);
     } catch (err) {
@@ -91,7 +90,7 @@ export default function FacultyFormatResults() {
 
   useEffect(() => {
     fetchResults();
-  }, [selectedYearId, selectedSemId]);
+  }, [selectedYearId, selectedSemId,selectedPhase]);
 
   // 4. Handle Upload
   const handleUploadClick = () => {
@@ -108,7 +107,7 @@ export default function FacultyFormatResults() {
     setUploading(true);
     try {
       const res = await API.post(
-        "/api/faculty-subject-results/upload",
+        "/api/faculty-feedback-results/upload",
         formData,
         {
           headers: { "Content-Type": "multipart/form-data" },
@@ -140,7 +139,6 @@ export default function FacultyFormatResults() {
     }
   };
 
-  // 5. Download Template
   const downloadTemplate = () => {
     const headers = [
       "facultyId",
@@ -150,31 +148,31 @@ export default function FacultyFormatResults() {
       "subjectName",
       "subjectCode",
       "branch",
-      "appeared",
-      "passed",
-      "passPercentage",
+      "section",
+      "phase",
+      "totalStudents",
+      "givenStudents",
+      "percentage",
+      "overallPercentage",
     ];
-    const csvContent =
-      headers.join(",") +
-      "\n" +
-      "FAC123,John Doe,2024-2025,1,Mathematics,MA101,CSE,60,55,91.67\n";
+    const csvContent = headers.join(",") + "\n";
     const blob = new Blob([csvContent], { type: "text/csv" });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = "faculty_format_template.csv";
+    a.download = "feedback_bulk_upload_template.csv";
     a.click();
     window.URL.revokeObjectURL(url);
   };
 
   // Stats calculation
-  const stats = {
-    appeared: results.reduce((a, r) => a + (r.appeared || 0), 0),
-    passed: results.reduce((a, r) => a + (r.passed || 0), 0),
-  };
-
-  const percentage =
-    stats.appeared > 0 ? ((stats.passed / stats.appeared) * 100).toFixed(1) : 0;
+  const totalUploads = results.length;
+  // const avgOverallRating = results.length > 0 
+  //   ? (results.reduce((acc, r) => acc + (r.overallPercentage || 0), 0) / results.length).toFixed(1)
+  //   : "-";
+  // const avgPercentage = results.length > 0
+  //   ? (results.reduce((acc, r) => acc + (r.percentage || 0), 0) / results.length).toFixed(1)
+  //   : "-";
 
   return (
     <>
@@ -188,9 +186,9 @@ export default function FacultyFormatResults() {
 
       {/* 🔹 HEADER */}
       <PageHeader
-        title="Exam Section"
-        subtitle="Upload and manage results based on faculty and course"
-        breadcrumbs={["Home", "Exam Cell", "Results Upload"]}
+        title="Feedback Coordinator"
+        subtitle="Student Feedback Reports"
+        // breadcrumbs={["Home", "Feedback", "Upload"]}
         action={
           <Box sx={{ display: "flex", gap: 2 }}>
             <ActionButton
@@ -201,7 +199,13 @@ export default function FacultyFormatResults() {
             </ActionButton>
 
             <ActionButton onClick={handleUploadClick} disabled={uploading}>
-              <UploadIcon sx={{ mr: 1 }} /> Upload CSV
+              {uploading ? (
+                <CircularProgress size={20} color="inherit" />
+              ) : (
+                <>
+                  <UploadIcon sx={{ mr: 1 }} /> Upload CSV
+                </>
+              )}
             </ActionButton>
           </Box>
         }
@@ -242,13 +246,29 @@ export default function FacultyFormatResults() {
             ))}
           </Select>
         </Box>
+
+        <Box sx={filterBox}>
+          Phase
+          <Select
+            variant="standard"
+            disableUnderline
+            value={selectedPhase}
+            onChange={(e) => setSelectedPhase(e.target.value)}
+            sx={{ ml: 2, minWidth: 80 }}
+          >
+            <MenuItem value="">All</MenuItem>
+            <MenuItem value={1}>Phase 1</MenuItem>
+            <MenuItem value={2}>Phase 2</MenuItem>
+          </Select>
+        </Box>
+
       </Box>
 
       {/* 🔹 STATS */}
       <Box sx={{ display: "flex", gap: 2, mb: 3 }}>
-        <StatCard title="Appeared" score={stats.appeared} max={""} glass />
-        <StatCard title="Passed" score={stats.passed} max={""} glass />
-        <StatCard title="Pass %" score={`${percentage}%`} max={""} glass />
+        <StatCard title="Total Records" score={totalUploads} max={""} glass />
+        {/* <StatCard title="Avg Class %" score={avgPercentage !== "-" ? `${avgPercentage}%` : "-"} max={""} glass /> */}
+        {/* <StatCard title="Avg Overall %" score={avgOverallRating !== "-" ? `${avgOverallRating}%` : "-"} max={""} glass /> */}
       </Box>
 
       {/* 🔹 RESULTS TABLE */}
@@ -264,7 +284,7 @@ export default function FacultyFormatResults() {
           minHeight: 400,
         }}
       >
-        <SectionHeader title="Faculty Results" />
+        <SectionHeader title="Uploaded Feedback Records" />
 
         {loading ? (
           <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>
@@ -272,80 +292,64 @@ export default function FacultyFormatResults() {
           </Box>
         ) : (
           <DataTable
-            key={`${selectedYearId}-${selectedSemId}`}
+            key={`${selectedYearId}-${selectedSemId}-${selectedPhase}`}
             columns={[
               "Faculty ID",
               "Faculty Name",
               "Subject Name",
               "Course Code",
-              "Semester",
-              "Appeared",
-              "Passed",
+              "Section",
+              "Phase",
+              "Feedback Count",
               "%",
-              "Last Updated",
+              "Overall %",
+              "Uploaded At",
             ]}
             rows={results.map((r) => [
               {
                 value: r.facultyId,
-                display: <Box sx={{ fontWeight: 600 }}>{r.facultyId}</Box>,
+                display: <Box sx={{ fontWeight: 600 }}>{r.facultyId}</Box>
               },
-
               {
                 value: r.facultyName,
                 display: (
                   <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
                     <Avatar>{r.facultyName?.charAt(0)}</Avatar>
-                    <Box>
-                      <Box sx={{ fontWeight: 600 }}>{r.facultyName}</Box>
-                      {/* <Box sx={{ fontSize: 12, color: "#777" }}>
-                        {r.subjectName}
-                      </Box> */}
-                    </Box>
+                    <Box sx={{ fontWeight: 600 }}>{r.facultyName}</Box>
                   </Box>
                 ),
               },
-
               {
                 value: r.subjectName,
                 display: <Box>{r.subjectName}</Box>,
               },
-
               {
                 value: r.subjectCode,
                 display: <Box>{r.subjectCode}</Box>,
               },
-
               {
-                value: r.semester,
-                display: <Box>{r.semester}</Box>,
+                value: r.section,
+                display: <Box>{r.section || "-"}</Box>,
               },
-
               {
-                value: r.appeared,
-                display: <Box>{r.appeared}</Box>,
+                value: r.phase,
+                display: <Box>{r.phase || "-"}</Box>,
               },
-
               {
-                value: r.passed,
-                display: (
-                  <Box>
-                    {r.passed} / {r.appeared}
-                  </Box>
-                ),
+                value: r.givenStudents,
+                display: <Box>{r.givenStudents} / {r.totalStudents}</Box>,
               },
-
               {
-                value: r.passPercentage,
-                display: (
-                  <Box sx={{ color: "green", fontWeight: 600 }}>
-                    {r.passPercentage}%
-                  </Box>
-                ),
+                value: r.percentage,
+                display: <Box sx={{ color: "green", fontWeight: 600 }}>{r.percentage}%</Box>,
               },
-
               {
-                value: r.updatedAt,
-                display: new Date(r.updatedAt).toLocaleString(),
+                value: r.overallPercentage,
+                display: <Box sx={{ color: "blue", fontWeight: 600 }}>{r.overallPercentage}%</Box>,
+              },
+              {
+                value: r.createdAt,
+                display: new Date(r.createdAt).toLocaleString(),
               },
             ])}
           />
@@ -366,5 +370,3 @@ const filterBox = {
   boxShadow: "0 4px 15px rgba(0,0,0,0.05)",
   fontSize: 14,
 };
-
-
