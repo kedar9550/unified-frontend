@@ -416,11 +416,7 @@ export default function Teaching() {
           Course Average Pass Percentage
         </Typography>
 
-        {loading ? (
-          <Box sx={{ display: "flex", justifyContent: "center", py: 6 }}>
-            <CircularProgress />
-          </Box>
-        ) : results.length === 0 ? (
+        {results.length === 0 ? (
           <Box
             sx={{
               textAlign: "center",
@@ -452,11 +448,7 @@ export default function Teaching() {
           Proctoring Average Pass Percentage
         </Typography>
 
-        {proctorLoading ? (
-            <Box sx={{ display: "flex", justifyContent: "center", py: 6 }}>
-              <CircularProgress />
-            </Box>
-        ) : proctorStats?.totalMappedStudents > 0 ? (
+        {proctorStats?.totalMappedStudents > 0 ? (
             <Box
             sx={{
                 display: "flex",

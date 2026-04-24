@@ -286,11 +286,7 @@ export default function Discrepancies() {
       >
         <SectionHeader title="Discrepancy List" />
 
-        {loading ? (
-          <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>
-            <CircularProgress />
-          </Box>
-        ) : items.length === 0 ? (
+        {items.length === 0 ? (
           <Box sx={{ textAlign: "center", py: 8, color: "#aaa" }}>
             <Typography fontSize={40}>🎉</Typography>
             <Typography mt={1} fontWeight={600}>No discrepancies assigned to you.</Typography>
@@ -495,7 +491,8 @@ export default function Discrepancies() {
               <Typography fontWeight={600} mt={1}>Resolved Successfully!</Typography>
               <Typography fontSize={13} color="#888">Data updated and proof uploaded.</Typography>
             </Box>
-          ) : selected && (
+          ) : (
+            selected && (
             <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5, pt: 1.5 }}>
 
               {/* ── Faculty Info (read-only) ── */}
@@ -544,11 +541,7 @@ export default function Discrepancies() {
                   </span>
                 </Typography>
 
-                {resultLoading ? (
-                  <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
-                    <CircularProgress size={28} />
-                  </Box>
-                ) : resultData.length === 0 ? (
+                {resultLoading ? null : resultData.length === 0 ? (
                   <Box
                     sx={{
                       p: 3, borderRadius: "14px", background: "#fff8e1",
@@ -718,6 +711,7 @@ export default function Discrepancies() {
                 </Box>
               </Box>
             </Box>
+            )
           )}
         </DialogContent>
 
@@ -741,7 +735,7 @@ export default function Discrepancies() {
                 boxShadow: "0 4px 15px rgba(11,82,153,0.3)",
               }}
             >
-              {submitting ? <CircularProgress size={20} color="inherit" /> : "✓ Submit & Resolve"}
+              ✓ Submit & Resolve
             </Button>
           </DialogActions>
         )}

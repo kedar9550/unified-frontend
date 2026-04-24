@@ -410,13 +410,27 @@ const RoleManagement = () => {
                 subtitle="Manage system roles and assign them to users"
                 action={
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                        {uploadingBulk && <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, px: 2, py: 1, bgcolor: '#e3f2fd', borderRadius: '10px' }}><CircularProgress size={16} /><Typography variant="caption" fontWeight={700} color="primary">Uploading Users...</Typography></Box>}
+                        {uploadingBulk && <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, px: 2, py: 1, bgcolor: '#e3f2fd', borderRadius: '10px' }}><Typography variant="caption" fontWeight={700} color="primary">Uploading Users...</Typography></Box>}
                         <Button
                             variant="contained"
                             startIcon={<Add />}
                             onClick={handleCreateClick}
                             disabled={uploadingBulk}
-                            sx={{ borderRadius: "12px", textTransform: "none", px: 4, fontWeight: 700, boxShadow: "0 4px 12px rgba(11, 82, 153, 0.2)" }}
+                            sx={{ 
+                                borderRadius: "12px", 
+                                textTransform: "none", 
+                                px: 4, 
+                                fontWeight: 700, 
+                                background: "rgba(11, 82, 153, 0.6)", 
+                                backdropFilter: "blur(10px) saturate(150%)",
+                                WebkitBackdropFilter: "blur(10px) saturate(150%)",
+                                border: "1px solid rgba(255, 255, 255, 0.3)",
+                                boxShadow: "0 4px 12px rgba(0, 0, 0, 0.1)",
+                                '&:hover': {
+                                    background: "rgba(11, 82, 153, 0.8)",
+                                    boxShadow: "0 6px 16px rgba(11, 82, 153, 0.3)",
+                                }
+                            }}
                         >
                             Create
                         </Button>
@@ -431,11 +445,11 @@ const RoleManagement = () => {
                         >
                             <MenuItem onClick={handleRoleOption} sx={{ py: 1.5 }}>
                                 <ListItemIcon><Security fontSize="small" color="primary" /></ListItemIcon>
-                                <ListItemText primary="Role" slotProps={{ primary: { fontWeight: 600 } }} />
+                                <ListItemText primary="Role" primaryTypographyProps={{ fontWeight: 600 }} />
                             </MenuItem>
                             <MenuItem onClick={handleUserOption} sx={{ py: 1.5 }}>
                                 <ListItemIcon><PersonAdd fontSize="small" color="secondary" /></ListItemIcon>
-                                <ListItemText primary="User" slotProps={{ primary: { fontWeight: 600 } }} />
+                                <ListItemText primary="User" primaryTypographyProps={{ fontWeight: 600 }} />
                             </MenuItem>
                         </Menu>
                     </Box>
@@ -444,7 +458,7 @@ const RoleManagement = () => {
 
             {/* Assign Roles to User Section */}
             <Box sx={{ mt: 5 }}>
-                <Paper elevation={0} sx={{ p: 3, mb: 3, borderRadius: "20px", bgcolor: "#f4f7fe", border: "1px solid rgba(0,0,0,0.05)" }}>
+                <Paper elevation={0} sx={{ p: 3, mb: 3, borderRadius: "20px", background: "rgba(255, 255, 255, 0.35)", backdropFilter: "blur(10px) saturate(150%)", border: "1px solid rgba(255, 255, 255, 0.4)", boxShadow: "0 4px 20px rgba(0,0,0,0.02)" }}>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <Box>
                             <Typography variant="h6" fontWeight={800} color="#1a237e">Assign Roles</Typography>
@@ -454,15 +468,24 @@ const RoleManagement = () => {
                         </Box>
                     </Box>
                     <Box sx={{ mt: 3, display: "flex", gap: 1 }}>
-                        <TextField fullWidth placeholder="Search user to manage..." size="small" value={userSearchQuery} onChange={(e) => setUserSearchQuery(e.target.value)} onKeyPress={(e) => e.key === "Enter" && handleUserSearch()} sx={{ bgcolor: "white", "& .MuiOutlinedInput-root": { borderRadius: "10px" } }} slotProps={{ input: { startAdornment: (<InputAdornment position="start"><Search fontSize="small" /></InputAdornment>) } }} />
+                        <TextField 
+                            fullWidth 
+                            placeholder="Search user to manage..." 
+                            size="small" 
+                            value={userSearchQuery} 
+                            onChange={(e) => setUserSearchQuery(e.target.value)} 
+                            onKeyPress={(e) => e.key === "Enter" && handleUserSearch()} 
+                            sx={{ "& .MuiOutlinedInput-root": { borderRadius: "10px", background: "rgba(255, 255, 255, 0.5)", backdropFilter: "blur(5px)" } }} 
+                            InputProps={{ startAdornment: (<InputAdornment position="start"><Search fontSize="small" /></InputAdornment>) }} 
+                        />
                         <Button variant="contained" onClick={handleUserSearch} disabled={!userSearchQuery || searchingUsers} sx={{ px: 4, borderRadius: "10px", textTransform: "none", fontWeight: 700, bgcolor: "#448AFF" }}>
-                            {searchingUsers ? <CircularProgress size={24} color="inherit" /> : "Search"}
+                            Search
                         </Button>
                     </Box>
                 </Paper>
 
                 <Collapse in={hasTypedSearch || searchingUsers}>
-                    <Card sx={{ borderRadius: "20px", boxShadow: "0 8px 32px rgba(0,0,0,0.05)", border: "1px solid rgba(0,0,0,0.05)" }}>
+                    <Card sx={{ borderRadius: "20px", boxShadow: "0 8px 32px rgba(31, 38, 135, 0.05)", border: "1px solid rgba(255, 255, 255, 0.4)", background: "rgba(255, 255, 255, 0.25)", backdropFilter: "blur(10px) saturate(150%)" }}>
                         <CardContent sx={{ p: 0 }}>
                             <Box sx={{ display: 'flex', minHeight: 450 }}>
                                 <Box sx={{ flex: 1, borderRight: "1px solid rgba(0,0,0,0.05)", p: 2 }}>
@@ -485,7 +508,7 @@ const RoleManagement = () => {
                                                                 </Box>
                                                             </Box>
                                                         }
-                                                        slotProps={{ primary: { fontWeight: 700, fontSize: '0.95rem' } }}
+                                                        primaryTypographyProps={{ fontWeight: 700, fontSize: '0.95rem' }}
                                                     />
                                                     <ListItemSecondaryAction sx={{ right: 8 }}>
                                                         <IconButton edge="end" onClick={() => selectUser(user)} color={selectedUser?._id === user._id ? "primary" : "default"}><PersonAdd /></IconButton>
@@ -551,15 +574,15 @@ const RoleManagement = () => {
                                     </Collapse>
                                 </Box>
 
-                                <Box sx={{ flex: 1.2, p: 3, bgcolor: '#fafafa', display: 'flex', flexDirection: 'column' }}>
+                                <Box sx={{ flex: 1.2, p: 3, background: 'rgba(255, 255, 255, 0.15)', display: 'flex', flexDirection: 'column' }}>
                                     <Typography variant="subtitle2" fontWeight={700} gutterBottom color="textSecondary">{selectedUser ? `Select Roles for ${selectedUser.name}` : "Available Roles"}</Typography>
                                     <Box sx={{ flex: 1, overflowY: 'auto' }}>
-                                        {loadingRoles ? <Box sx={{ textAlign: 'center', py: 5 }}><CircularProgress size={30} /></Box> : (
+                                        {loadingRoles ? null : (
                                             <FormGroup>
                                                 {roles.length > 0 ? roles.map((role) => {
                                                     const isIdentityDefault = getSystemRoleName(selectedUser) === role.name;
                                                     return (
-                                                        <Box key={role._id} onClick={() => handleRoleToggle(role._id)} sx={{ p: 1.5, mb: 1, borderRadius: '12px', bgcolor: 'white', border: '1px solid', borderColor: assignedRoleIds.includes(role._id.toString()) ? 'primary.main' : 'rgba(0,0,0,0.05)', cursor: selectedUser ? 'pointer' : 'default', opacity: selectedUser ? 1 : 0.6, view: 'flex', alignItems: 'center', transition: '0.2s', '&:hover': selectedUser ? { bgcolor: '#fcfdff', borderColor: 'primary.main', transform: 'translateX(5px)' } : {} }}>
+                                                        <Box key={role._id} onClick={() => handleRoleToggle(role._id)} sx={{ p: 1.5, mb: 1, borderRadius: '12px', bgcolor: 'white', border: '1px solid', borderColor: assignedRoleIds.includes(role._id.toString()) ? 'primary.main' : 'rgba(0,0,0,0.05)', cursor: selectedUser ? 'pointer' : 'default', opacity: selectedUser ? 1 : 0.6, display: 'flex', alignItems: 'center', transition: '0.2s', '&:hover': selectedUser ? { bgcolor: '#fcfdff', borderColor: 'primary.main', transform: 'translateX(5px)' } : {} }}>
                                                             <Box sx={{ display: 'flex', alignItems: 'center', width: '100%' }}>
                                                                 <Checkbox checked={assignedRoleIds.includes(role._id.toString())} disabled={!selectedUser} color="primary" sx={{ p: 0, mr: 2 }} />
                                                                 <Box sx={{ flex: 1 }}>
@@ -577,8 +600,8 @@ const RoleManagement = () => {
                                         )}
                                     </Box>
                                     {selectedUser && (
-                                        <Box sx={{ mt: 3, pt: 2, borderTop: '1px solid rgba(0,0,0,0.05)', position: 'sticky', bottom: 0, bgcolor: '#fafafa', pb: 1 }}>
-                                            <Button fullWidth variant="contained" startIcon={savingRoles ? <CircularProgress size={20} color="inherit" /> : <Save />} onClick={handleSaveAssignments} disabled={savingRoles} sx={{ borderRadius: '12px', py: 1.5, textTransform: 'none', fontWeight: 800, fontSize: '1rem', bgcolor: '#2e7d32', boxShadow: '0 4px 14px 0 rgba(46, 125, 50, 0.39)' }}>Save Role Assignments</Button>
+                                        <Box sx={{ mt: 3, pt: 2, borderTop: '1px solid rgba(0,0,0,0.05)', position: 'sticky', bottom: 0, background: 'transparent', pb: 1 }}>
+                                            <Button fullWidth variant="contained" startIcon={<Save />} onClick={handleSaveAssignments} disabled={savingRoles} sx={{ borderRadius: '12px', py: 1.5, textTransform: 'none', fontWeight: 800, fontSize: '1rem', bgcolor: '#2e7d32', boxShadow: '0 4px 14px 0 rgba(46, 125, 50, 0.39)' }}>Save Role Assignments</Button>
                                         </Box>
                                     )}
                                 </Box>
@@ -601,7 +624,7 @@ const RoleManagement = () => {
                 </DialogContent>
                 <DialogActions sx={{ p: 2 }}>
                     <Button onClick={handleCloseRoleModal}>Cancel</Button>
-                    <Button variant="contained" onClick={handleSubmitRole} disabled={submitting}>{submitting ? <CircularProgress size={24} /> : "Create Role"}</Button>
+                    <Button variant="contained" onClick={handleSubmitRole} disabled={submitting}>Create Role</Button>
                 </DialogActions>
             </Dialog>
 
@@ -656,7 +679,7 @@ const RoleManagement = () => {
                                 <TextField 
                                     select label="User Type" value={signupData.role} 
                                     onChange={(e) => setSignupData({ ...signupData, role: e.target.value, id: '', fullname: '', department: '', phone: '', email: '' })} 
-                                    size="small" fullWidth slotProps={{ select: { native: true } }}
+                                    size="small" fullWidth SelectProps={{ native: true }}
                                 >
                                     <option value="Employee">Employee</option>
                                     <option value="Student">Student</option>
@@ -684,7 +707,7 @@ const RoleManagement = () => {
                                 disabled={isIndividualSubmitting || !isEcapVerified}
                                 sx={{ borderRadius: '12px', py: 1.5, textTransform: 'none', fontWeight: 700, bgcolor: '#1a237e' }}
                             >
-                                {isIndividualSubmitting ? <CircularProgress size={24} color="inherit" /> : "Register User"}
+                                Register User
                             </Button>
                         </Box>
                     </Box>

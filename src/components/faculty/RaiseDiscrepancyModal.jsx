@@ -579,7 +579,7 @@ export default function RaiseDiscrepancyModal({
               "&:hover": { background: "linear-gradient(135deg,#c62828,#e64a19)" },
             }}
           >
-            {saving ? <CircularProgress size={20} color="inherit" /> : "🚩 Submit Discrepancy"}
+            Submit Discrepancy
           </Button>
         </DialogActions>
       )}

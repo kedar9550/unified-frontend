@@ -243,13 +243,7 @@ export default function StudentFormatResults() {
              </ActionButton>
 
              <ActionButton onClick={handleUploadClick} disabled={uploading}>
-               {uploading ? (
-                 <CircularProgress size={20} color="inherit" />
-               ) : (
-                 <>
-                   <UploadIcon sx={{ mr: 1 }} /> Upload CSV
-                 </>
-               )}
+               <UploadIcon sx={{ mr: 1 }} /> Upload CSV
              </ActionButton>
            </Box>
         )}
@@ -272,84 +266,78 @@ export default function StudentFormatResults() {
       >
         <SectionHeader title="Student Results" />
 
-        {loading ? (
-          <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>
-            <CircularProgress />
-          </Box>
-        ) : (
-          <DataTable
-            key={`${selectedYearId}-${selectedProgramId}`}
-            columns={[
-              "Student ID",
-              "Student Name",
-              "Subject Code",
-              "Subject Name",
-              "Program",
-              "Branch",
-              "Semester",
-              "Exam Year",
-              "Type",
-              "Subject Type",
-              "Grade",
-              "SGPA",
-              "CGPA",
-            ]}
-            rows={results.map((r) => [
-              {
-                value: r.studentId,
-                display: <Box sx={{ fontWeight: 600 }}>{r.studentId}</Box>,
-              },
-              {
-                value: r.studentName,
-                display: <Box>{r.studentName || "—"}</Box>,
-              },
-              {
-                value: r.subjectCode,
-                display: <Box sx={{ fontWeight: 500 }}>{r.subjectCode}</Box>,
-              },
-              {
-                value: r.subjectName,
-                display: <Box>{r.subjectName || "—"}</Box>,
-              },
-              {
-                value: r.programId?.name,
-                display: <Box>{r.programId?.name || "—"}</Box>,
-              },
-              {
-                value: r.branchId?.code,
-                display: <Box>{r.branchId?.code || "—"}</Box>,
-              },
-              {
-                value: r.semester,
-                display: <Box>{r.semester || "—"}</Box>,
-              },
-              {
-                value: r.examYear,
-                display: <Box>{r.examYear}</Box>,
-              },
-              {
-                value: r.resultType,
-                display: <Box>{r.resultType}</Box>,
-              },
-              {
-                value: r.subjectType,
-                display: <Box>{r.subjectType || "—"}</Box>,
-              },
-              {
-                value: r.grade,
-                display: <Box sx={{ fontWeight: 600 }}>{r.grade}</Box>,
-              },
-              {
-                value: r.sgpa,
-                display: <Box>{r.sgpa}</Box>,
-              },
-              {
-                value: r.cgpa,
-                display: <Box>{r.cgpa}</Box>,
-              },
-            ])}
-          />
-        )}
+        <DataTable
+          key={`${selectedYearId}-${selectedProgramId}`}
+          columns={[
+            "Student ID",
+            "Student Name",
+            "Subject Code",
+            "Subject Name",
+            "Program",
+            "Branch",
+            "Semester",
+            "Exam Year",
+            "Type",
+            "Subject Type",
+            "Grade",
+            "SGPA",
+            "CGPA",
+          ]}
+          rows={results.map((r) => [
+            {
+              value: r.studentId,
+              display: <Box sx={{ fontWeight: 600 }}>{r.studentId}</Box>,
+            },
+            {
+              value: r.studentName,
+              display: <Box>{r.studentName || "—"}</Box>,
+            },
+            {
+              value: r.subjectCode,
+              display: <Box sx={{ fontWeight: 500 }}>{r.subjectCode}</Box>,
+            },
+            {
+              value: r.subjectName,
+              display: <Box>{r.subjectName || "—"}</Box>,
+            },
+            {
+              value: r.programId?.name,
+              display: <Box>{r.programId?.name || "—"}</Box>,
+            },
+            {
+              value: r.branchId?.code,
+              display: <Box>{r.branchId?.code || "—"}</Box>,
+            },
+            {
+              value: r.semester,
+              display: <Box>{r.semester || "—"}</Box>,
+            },
+            {
+              value: r.examYear,
+              display: <Box>{r.examYear}</Box>,
+            },
+            {
+              value: r.resultType,
+              display: <Box>{r.resultType}</Box>,
+            },
+            {
+              value: r.subjectType,
+              display: <Box>{r.subjectType || "—"}</Box>,
+            },
+            {
+              value: r.grade,
+              display: <Box sx={{ fontWeight: 600 }}>{r.grade}</Box>,
+            },
+            {
+              value: r.sgpa,
+              display: <Box>{r.sgpa}</Box>,
+            },
+            {
+              value: r.cgpa,
+              display: <Box>{r.cgpa}</Box>,
+            },
+          ])}
+        />
       </Box>
     </>
   );

@@ -285,7 +285,7 @@ const DeptProctorUploads = () => {
             <Button
               onClick={handleCSVUploadClick}
               disabled={uploadingCSV || !selectedYearId || !selectedSemId}
-              startIcon={uploadingCSV ? <CircularProgress size={20} /> : <CloudUploadIcon />}
+              startIcon={<CloudUploadIcon />}
               sx={{
                 width: { xs: "100%", sm: "auto" },
                 borderRadius: "20px",
@@ -307,7 +307,7 @@ const DeptProctorUploads = () => {
                 },
               }}
             >
-              {uploadingCSV ? "Uploading..." : "Upload CSV"}
+              Upload CSV
             </Button>
 
             <input
@@ -393,40 +393,34 @@ const DeptProctorUploads = () => {
               </Stack>
             </Box>
 
-            {loading ? (
-              <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>
-                <CircularProgress />
-              </Box>
-            ) : (
-              <Box sx={{ overflowX: "auto", width: "100%" }}>
-                <DataTable
-                  columns={["Proctor ID", "Proctor Name", "Student ID", "Student Name", "Actions"]}
-                  rows={mappings.map(m => [
-                    m.proctorId,
-                    m.proctorName,
-                    m.studentId,
-                    m.studentName,
-                    {
-                      value: m._id,
-                      display: (
-                        <Stack direction="row" spacing={1}>
-                          <IconButton size="small" color="primary">
-                            <EditIcon fontSize="small" />
-                          </IconButton>
-                          <IconButton
-                            size="small"
-                            color="error"
-                            onClick={() => handleDeleteMapping(m._id)}
-                          >
-                            <DeleteIcon fontSize="small" />
-                          </IconButton>
-                        </Stack>
-                      )
-                    }
-                  ])}
-                />
-              </Box>
-            )}
+            <Box sx={{ overflowX: "auto", width: "100%" }}>
+              <DataTable
+                columns={["Proctor ID", "Proctor Name", "Student ID", "Student Name", "Actions"]}
+                rows={mappings.map(m => [
+                  m.proctorId,
+                  m.proctorName,
+                  m.studentId,
+                  m.studentName,
+                  {
+                    value: m._id,
+                    display: (
+                      <Stack direction="row" spacing={1}>
+                        <IconButton size="small" color="primary">
+                          <EditIcon fontSize="small" />
+                        </IconButton>
+                        <IconButton
+                          size="small"
+                          color="error"
+                          onClick={() => handleDeleteMapping(m._id)}
+                        >
+                          <DeleteIcon fontSize="small" />
+                        </IconButton>
+                      </Stack>
+                    )
+                  }
+                ])}
+              />
+            </Box>
           </Box>
         </>
       )}

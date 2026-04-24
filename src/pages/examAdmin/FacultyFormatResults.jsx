@@ -201,13 +201,7 @@ export default function FacultyFormatResults() {
             </ActionButton>
 
             <ActionButton onClick={handleUploadClick} disabled={uploading}>
-              {uploading ? (
-                <CircularProgress size={20} color="inherit" />
-              ) : (
-                <>
-                  <UploadIcon sx={{ mr: 1 }} /> Upload CSV
-                </>
-              )}
+              <UploadIcon sx={{ mr: 1 }} /> Upload CSV
             </ActionButton>
           </Box>
         }
@@ -373,13 +367,4 @@ const filterBox = {
   fontSize: 14,
 };
 
-// const chip = {
-//   px: 2,
-//   py: 0.5,
-//   borderRadius: "10px",
-//   background: "rgba(255,255,255,0.7)",
-//   backdropFilter: "blur(10px)",
-//   textAlign: "center",
-//   minWidth: 50,
-//   fontSize: 14,
-// };
+

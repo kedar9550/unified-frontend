@@ -243,17 +243,13 @@ const AcademicStructure = () => {
                 </Box>
             )}
 
-            {loading ? (
-                <Box display="flex" justifyContent="center" py={10}><CircularProgress /></Box>
-            ) : (
-                <Fade in={!loading}>
-                    <Box>
-                        {activeTab === 0 && !selectedDepartment && renderDepartmentsView()}
-                        {activeTab === 0 && selectedDepartment && renderBranchesView()}
-                        {activeTab === 1 && renderProgramsView()}
-                    </Box>
-                </Fade>
-            )}
+            <Fade in={!loading}>
+                <Box>
+                    {activeTab === 0 && !selectedDepartment && renderDepartmentsView()}
+                    {activeTab === 0 && selectedDepartment && renderBranchesView()}
+                    {activeTab === 1 && renderProgramsView()}
+                </Box>
+            </Fade>
 
             {/* Entity Dialog */}
             <Dialog open={modal.open} onClose={() => setModal({ ...modal, open: false })} maxWidth="xs" fullWidth>
@@ -338,7 +334,7 @@ const AcademicStructure = () => {
                 <DialogActions>
                     <Button onClick={() => setModal({ ...modal, open: false })}>Cancel</Button>
                     <Button onClick={handleSave} variant="contained" disabled={submitting}>
-                        {submitting ? <CircularProgress size={20} /> : 'Save'}
+                        Save
                     </Button>
                 </DialogActions>
             </Dialog>
