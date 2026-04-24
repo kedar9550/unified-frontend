@@ -49,7 +49,7 @@ const Sidebar = ({ mobileOpen, onDrawerToggle }) => {
         const current = data.current_condition[0];
         const temp = current.temp_C;
         const code = current.weatherCode;
-        
+
         let iconUrl = "https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Travel%20and%20places/Sun.png";
         if (code >= 300) iconUrl = "https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Travel%20and%20places/Cloud%20with%20Rain.png";
         else if (code >= 200) iconUrl = "https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Travel%20and%20places/Cloud%20with%20Lightning%20and%20Rain.png";
@@ -116,8 +116,8 @@ const Sidebar = ({ mobileOpen, onDrawerToggle }) => {
         display: "flex",
         flexDirection: "column",
         background: "rgba(60, 80, 160, 0.35)",
-        backdropFilter: "blur(20px) saturate(180%)",
-        WebkitBackdropFilter: "blur(20px) saturate(180%)",
+        backdropFilter: "blur(4px) saturate(180%)",
+        WebkitBackdropFilter: "blur(8px) saturate(180%)",
         color: "#fff",
         p: 2.5,
         position: "relative",
@@ -255,10 +255,10 @@ const Sidebar = ({ mobileOpen, onDrawerToggle }) => {
           minHeight: "46px", // Force standard min-height
           flexGrow: 0,
           flexShrink: 0,
-          "&:hover": { 
-            background: "rgba(255,80,80,0.15)", 
-            transform: "translateX(4px)", 
-            borderColor: "rgba(255,100,100,0.3)" 
+          "&:hover": {
+            background: "rgba(255,80,80,0.15)",
+            transform: "translateX(4px)",
+            borderColor: "rgba(255,100,100,0.3)"
           }
         }}
       >
@@ -273,16 +273,16 @@ const Sidebar = ({ mobileOpen, onDrawerToggle }) => {
       </ListItemButton>
 
       {/* Weather Widget at Bottom */}
-      <Box 
-        sx={{ 
-          mt: 2.5, 
-          p: 1.5, 
-          borderRadius: "16px", 
-          background: "rgba(255, 255, 255, 0.08)", 
+      <Box
+        sx={{
+          mt: 2.5,
+          p: 1.5,
+          borderRadius: "16px",
+          background: "rgba(255, 255, 255, 0.08)",
           backdropFilter: "blur(12px)",
           border: "1px solid rgba(255, 255, 255, 0.12)",
-          display: "flex", 
-          alignItems: "center", 
+          display: "flex",
+          alignItems: "center",
           justifyContent: "space-between",
           transition: "all 0.3s ease",
           cursor: "pointer",
@@ -290,10 +290,10 @@ const Sidebar = ({ mobileOpen, onDrawerToggle }) => {
         }}
       >
         <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-          <Box 
-            component="img" 
-            src={weather.icon} 
-            sx={{ width: 38, height: 38, filter: "drop-shadow(0 4px 8px rgba(0,0,0,0.2))" }} 
+          <Box
+            component="img"
+            src={weather.icon}
+            sx={{ width: 38, height: 38, filter: "drop-shadow(0 4px 8px rgba(0,0,0,0.2))" }}
           />
           <Box>
             <Typography sx={{ fontSize: "1rem", fontWeight: 700, lineHeight: 1.1, color: "#fff" }}>

@@ -1,3 +1,4 @@
+import React, { useEffect } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import Login from "./pages/login/Login";
 import MainLayout from "./components/layouts/MainLayout";
@@ -12,6 +13,9 @@ import DeptProctorUploads from "./pages/hod/DeptProctorUploads";
 import AcademicStructure from "./pages/uniprime/academics/AcademicStructure";
 
 import RoleManagement from "./pages/uniprime/Roles/Rolemanagement";
+import { useLoading } from "./context/LoadingContext";
+import API from "./api/axios";
+import Loader from "./components/common/Loader";
 
 const PublicOnlyRoute = ({ children }) => {
   const { user } = useAuth();
@@ -22,8 +26,34 @@ const PublicOnlyRoute = ({ children }) => {
 };
 
 function App() {
+  const { isLoading, startLoading, stopLoading } = useLoading();
+
+  useEffect(() => {
+    const reqInterceptor = API.interceptors.request.use((config) => {
+      startLoading();
+      return config;
+    });
+
+    const resInterceptor = API.interceptors.response.use(
+      (response) => {
+        stopLoading();
+        return response;
+      },
+      (error) => {
+        stopLoading();
+        return Promise.reject(error);
+      }
+    );
+
+    return () => {
+      API.interceptors.request.eject(reqInterceptor);
+      API.interceptors.response.eject(resInterceptor);
+    };
+  }, [startLoading, stopLoading]);
+
   return (
     <>
+      {isLoading && <Loader />}
       <Routes>
         {/* Public Only routes */}
         <Route

@@ -198,13 +198,7 @@ export default function FacultyFormatResults() {
             </ActionButton>
 
             <ActionButton onClick={handleUploadClick} disabled={uploading}>
-              {uploading ? (
-                <CircularProgress size={20} color="inherit" />
-              ) : (
-                <>
-                  <UploadIcon sx={{ mr: 1 }} /> Upload CSV
-                </>
-              )}
+              <UploadIcon sx={{ mr: 1 }} /> Upload CSV
             </ActionButton>
           </Box>
         }
@@ -269,84 +263,78 @@ export default function FacultyFormatResults() {
       >
         <SectionHeader title="Faculty Results" />
 
-        {loading ? (
-          <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>
-            <CircularProgress />
-          </Box>
-        ) : (
-          <DataTable
-            key={`${selectedYearId}-${selectedSemId}`}
-            columns={[
-              "Faculty ID",
-              "Faculty Name",
-              "Subject Name",
-              "Course Code",
-              "Appeared",
-              "Passed",
-              "%",
-              "Last Updated",
-            ]}
-            rows={results.map((r) => [
-              {
-                value: r.facultyId,
-                display: <Box sx={{ fontWeight: 600 }}>{r.facultyId}</Box>,
-              },
+        <DataTable
+          key={`${selectedYearId}-${selectedSemId}`}
+          columns={[
+            "Faculty ID",
+            "Faculty Name",
+            "Subject Name",
+            "Course Code",
+            "Appeared",
+            "Passed",
+            "%",
+            "Last Updated",
+          ]}
+          rows={results.map((r) => [
+            {
+              value: r.facultyId,
+              display: <Box sx={{ fontWeight: 600 }}>{r.facultyId}</Box>,
+            },
 
-              {
-                value: r.facultyName,
-                display: (
-                  <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-                    <Avatar>{r.facultyName?.charAt(0)}</Avatar>
-                    <Box>
-                      <Box sx={{ fontWeight: 600 }}>{r.facultyName}</Box>
-                      {/* <Box sx={{ fontSize: 12, color: "#777" }}>
-                        {r.subjectName}
-                      </Box> */}
-                    </Box>
-                  </Box>
-                ),
-              },
-
-              {
-                value: r.subjectName,
-                display: <Box>{r.subjectName}</Box>,
-              },
-
-              {
-                value: r.subjectCode,
-                display: <Box>{r.subjectCode}</Box>,
-              },
-
-              {
-                value: r.appeared,
-                display: <Box>{r.appeared}</Box>,
-              },
-
-              {
-                value: r.passed,
-                display: (
+            {
+              value: r.facultyName,
+              display: (
+                <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                  <Avatar>{r.facultyName?.charAt(0)}</Avatar>
                   <Box>
-                    {r.passed} / {r.appeared}
+                    <Box sx={{ fontWeight: 600 }}>{r.facultyName}</Box>
+                    {/* <Box sx={{ fontSize: 12, color: "#777" }}>
+                      {r.subjectName}
+                    </Box> */}
                   </Box>
-                ),
-              },
+                </Box>
+              ),
+            },
 
-              {
-                value: r.passPercentage,
-                display: (
-                  <Box sx={{ color: "green", fontWeight: 600 }}>
-                    {r.passPercentage}%
-                  </Box>
-                ),
-              },
+            {
+              value: r.subjectName,
+              display: <Box>{r.subjectName}</Box>,
+            },
 
-              {
-                value: r.updatedAt,
-                display: new Date(r.updatedAt).toLocaleString(),
-              },
-            ])}
-          />
-        )}
+            {
+              value: r.subjectCode,
+              display: <Box>{r.subjectCode}</Box>,
+            },
+
+            {
+              value: r.appeared,
+              display: <Box>{r.appeared}</Box>,
+            },
+
+            {
+              value: r.passed,
+              display: (
+                <Box>
+                  {r.passed} / {r.appeared}
+                </Box>
+              ),
+            },
+
+            {
+              value: r.passPercentage,
+              display: (
+                <Box sx={{ color: "green", fontWeight: 600 }}>
+                  {r.passPercentage}%
+                </Box>
+              ),
+            },
+
+            {
+              value: r.updatedAt,
+              display: new Date(r.updatedAt).toLocaleString(),
+            },
+          ])}
+        />
       </Box>
     </>
   );

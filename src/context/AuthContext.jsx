@@ -17,7 +17,6 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const login = async (formData) => {
-    setLoading(true);
     try {
       // Append app context to login details as required by backend
       const payload = { ...formData, app: "UNIFIED_SYSTEM" };
@@ -28,15 +27,11 @@ export const AuthProvider = ({ children }) => {
       localStorage.setItem("user", JSON.stringify(userData));
       return { success: true };
     } catch (err) {
-      setLoading(false);
       throw err;
-    } finally {
-      setLoading(false);
     }
   };
 
   const signup = async (formData) => {
-    setLoading(true);
     try {
       const res = await API.post("/api/users/register", formData);
       const userData = res.data.user;
@@ -44,10 +39,7 @@ export const AuthProvider = ({ children }) => {
       localStorage.setItem("user", JSON.stringify(userData));
       return { success: true };
     } catch (err) {
-      setLoading(false);
       throw err;
-    } finally {
-      setLoading(false);
     }
   };
 

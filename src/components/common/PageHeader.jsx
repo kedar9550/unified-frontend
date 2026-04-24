@@ -11,15 +11,14 @@ export default function PageHeader({
       sx={{
         p: 3,
         borderRadius: "18px",
-        background:
-          "linear-gradient(135deg, rgba(11,82,153,0.15), rgba(190,147,55,0.1))",
-        backdropFilter: "blur(12px)",
-        boxShadow: "0 10px 30px rgba(0,0,0,0.1)",
-
+        background: "rgba(255, 255, 255, 0.25)",
+        backdropFilter: "blur(10px) saturate(150%)",
+        WebkitBackdropFilter: "blur(10px) saturate(150%)",
+        boxShadow: "0 8px 32px rgba(31, 38, 135, 0.05)",
         display: "flex",
         justifyContent: "space-between",
         alignItems: "center",
-        border: "1px solid rgba(255,255,255,0.4)",
+        border: "1px solid rgba(255, 255, 255, 0.4)",
         position: "relative",
         overflow: "hidden",
         marginBottom: "20px",
@@ -28,7 +27,7 @@ export default function PageHeader({
           position: "absolute",
           width: 200,
           height: 200,
-          background: "rgba(208,108,56)", //  orange
+          background: "rgba(208,108,56)", // solid orange
           borderRadius: "50%",
           top: -50,
           right: -50,

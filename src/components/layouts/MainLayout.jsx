@@ -53,9 +53,9 @@ const MainLayout = ({ children }) => {
             sx={{
               flex: 1,
               borderRadius: "16px",
-              background: "rgba(255, 255, 255, 0.4)",
-              backdropFilter: "blur(12px) saturate(160%)",
-              WebkitBackdropFilter: "blur(12px) saturate(160%)",
+              background: "rgba(255, 255, 255, 0.25)",
+              backdropFilter: "blur(2px) saturate(160%)",
+              WebkitBackdropFilter: "blur(2px) saturate(160%)",
               boxShadow: "0 8px 32px rgba(31, 38, 135, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.5)",
               border: "1px solid rgba(255, 255, 255, 0.3)",
               display: "flex",

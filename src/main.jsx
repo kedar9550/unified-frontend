@@ -7,13 +7,17 @@ import { ThemeProvider, CssBaseline } from "@mui/material";
 import theme from "./theme";
 import "./index.css";
 
+import { LoadingProvider } from "./context/LoadingContext";
+
 ReactDOM.createRoot(document.getElementById("root")).render(
-  <AuthProvider>
-    <ThemeProvider theme={theme}>
-      <CssBaseline />
-      <BrowserRouter>
-        <App />
-      </BrowserRouter>
-    </ThemeProvider>
-  </AuthProvider>,
+  <LoadingProvider>
+    <AuthProvider>
+      <ThemeProvider theme={theme}>
+        <CssBaseline />
+        <BrowserRouter>
+          <App />
+        </BrowserRouter>
+      </ThemeProvider>
+    </AuthProvider>
+  </LoadingProvider>,
 );
