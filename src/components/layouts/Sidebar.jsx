@@ -33,7 +33,7 @@ import universityLogo from "../../assets/Small_logo_white.png";
 const drawerWidth = 270;
 
 const Sidebar = ({ mobileOpen, onDrawerToggle }) => {
-  const { user, logout } = useAuth();
+  const { user, activeRole, logout } = useAuth();
   const [openStates, setOpenStates] = useState({});
   const [active, setActive] = useState("Dashboard");
   const navigate = useNavigate();
@@ -67,41 +67,27 @@ const Sidebar = ({ mobileOpen, onDrawerToggle }) => {
 
   React.useEffect(() => {
     let currentText = "Dashboard";
-    const roles = user?.roles?.map((r) => r.role) || ["STUDENT"];
-    roles.forEach((roleName) => {
-      const items = ROLE_ROUTES[roleName] || ROLE_ROUTES.STUDENT;
-      items.forEach((item) => {
-        if (item.path && location.pathname.startsWith(item.path))
-          currentText = item.text;
-        if (item.nested) {
-          item.nested.forEach((sub) => {
-            if (sub.path && location.pathname.startsWith(sub.path))
-              currentText = sub.text;
-          });
-        }
-      });
+    const effectiveRole = activeRole || (user?.roles && user.roles[0]?.role) || "STUDENT";
+    const items = ROLE_ROUTES[effectiveRole] || ROLE_ROUTES.STUDENT;
+    items.forEach((item) => {
+      if (item.path && location.pathname.startsWith(item.path))
+        currentText = item.text;
+      if (item.nested) {
+        item.nested.forEach((sub) => {
+          if (sub.path && location.pathname.startsWith(sub.path))
+            currentText = sub.text;
+        });
+      }
     });
     setActive(currentText);
-  }, [location.pathname, user]);
+  }, [location.pathname, activeRole, user]);
 
   const handleToggle = (text) => {
     setOpenStates((prev) => ({ ...prev, [text]: !prev[text] }));
   };
 
-  const userRoles = user?.roles?.map((r) => r.role) || ["STUDENT"];
-  const mergedMenuItems = [];
-  const seenTexts = new Set();
-  userRoles.forEach((roleName) => {
-    const itemsForRole = ROLE_ROUTES[roleName] || ROLE_ROUTES.STUDENT;
-    itemsForRole.forEach((item) => {
-      if (!seenTexts.has(item.text)) {
-        seenTexts.add(item.text);
-        mergedMenuItems.push(item);
-      }
-    });
-  });
-
-  const menuItems = mergedMenuItems.length > 0 ? mergedMenuItems : ROLE_ROUTES.STUDENT;
+  const effectiveRole = activeRole || (user?.roles && user.roles[0]?.role) || "STUDENT";
+  const menuItems = ROLE_ROUTES[effectiveRole] || ROLE_ROUTES.STUDENT;
 
   const navigateTo = (path, text) => {
     setActive(text);
@@ -167,8 +153,8 @@ const Sidebar = ({ mobileOpen, onDrawerToggle }) => {
       {/* Role Badge Section */}
       <Box sx={{ mb: 4, display: "flex", flexDirection: "column", alignItems: "center", gap: 1.5 }}>
         {(() => {
-          const highestRole = getHighestRole(userRoles);
-          const roleUpper = highestRole.toUpperCase();
+          const displayedRole = effectiveRole;
+          const roleUpper = displayedRole.toUpperCase();
           const roleIcon = {
             FACULTY: <School sx={{ fontSize: "1.2rem" }} />,
             STUDENT: <Person sx={{ fontSize: "1.2rem" }} />,
@@ -200,7 +186,7 @@ const Sidebar = ({ mobileOpen, onDrawerToggle }) => {
             >
               <Box sx={{ display: "flex", color: "#1a2a6c", opacity: 0.8 }}>{roleIcon}</Box>
               <Typography sx={{ fontSize: "0.95rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "1px" }}>
-                {highestRole}
+                {displayedRole}
               </Typography>
             </Box>
           );
