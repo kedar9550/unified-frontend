@@ -21,6 +21,8 @@ import FeedbackDiscrepancies from "./pages/feedback/FeedbackDiscrepancies";
 import Studentuploads from "./pages/uniprime/Student/Studentuploads";
 
 
+import Dashboard from "./pages/Dashboard";
+
 const PublicOnlyRoute = ({ children }) => {
   const { user } = useAuth();
   if (user) {
@@ -75,7 +77,7 @@ function App() {
           path="/dashboard"
           element={
             <MainLayout>
-              Hear we place the dashboard components based on the roles
+              <Dashboard />
             </MainLayout>
           }
         />
