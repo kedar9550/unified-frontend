@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Box, Typography, IconButton } from "@mui/material";
+import { Box, Typography, IconButton, Select, MenuItem, FormControl } from "@mui/material";
 import {
   Menu as MenuIcon,
 } from "@mui/icons-material";
@@ -7,7 +7,7 @@ import { useAuth } from "../../context/AuthContext";
 import { useLocation } from "react-router-dom";
 
 const Header = ({ onMenuClick }) => {
-  const { user } = useAuth();
+  const { user, activeRole, switchRole } = useAuth();
   const [imgError, setImgError] = useState(false);
 
   const getEcapImage = () => {
@@ -69,8 +69,44 @@ const Header = ({ onMenuClick }) => {
         </IconButton>
       </Box>
 
-      {/* RIGHT SECTION: Profile Pill */}
+      {/* RIGHT SECTION: Role Switcher & Profile Pill */}
       <Box sx={{ display: "flex", alignItems: "center", gap: 2, pointerEvents: "auto" }}>
+        
+        {/* Role Switcher */}
+        {user?.roles && user.roles.length > 1 && (
+          <FormControl variant="outlined" size="small" sx={{ minWidth: 140 }}>
+            <Select
+              value={activeRole || ""}
+              onChange={(e) => switchRole(e.target.value)}
+              sx={{
+                color: "#fff",
+                background: "rgba(255, 255, 255, 0.15)",
+                backdropFilter: "blur(10px)",
+                borderRadius: "999px",
+                height: { xs: 38, sm: 42 },
+                "& .MuiSelect-select": {
+                  paddingY: 0,
+                  display: "flex",
+                  alignItems: "center",
+                  pl: 2
+                },
+                "& .MuiSelect-icon": { color: "#fff" },
+                "& .MuiOutlinedInput-notchedOutline": { border: "1px solid rgba(255,255,255,0.2)" },
+                "&:hover .MuiOutlinedInput-notchedOutline": { border: "1px solid rgba(255,255,255,0.4)" },
+                "&.Mui-focused .MuiOutlinedInput-notchedOutline": { border: "1px solid rgba(255,255,255,0.6)" },
+                fontSize: "0.85rem",
+                fontWeight: 600,
+              }}
+            >
+              {user.roles.map((r) => (
+                <MenuItem key={r.role} value={r.role}>
+                  {r.role}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        )}
+
         <Box
           sx={{
             display: "flex",
@@ -125,6 +161,5 @@ const Header = ({ onMenuClick }) => {
     </Box>
   );
 };
-
 
 export default Header;
