@@ -17,6 +17,7 @@ const AcademicManagement = () => {
   const [expandedYear, setExpandedYear] = useState(null);
   const [semesterTypes, setSemesterTypes] = useState([]);
   const [editingYear, setEditingYear] = useState({ id: null, value: "" });
+  const [newSemesterName, setNewSemesterName] = useState("");
 
   useEffect(() => {
     fetchYears();
@@ -29,6 +30,45 @@ const AcademicManagement = () => {
       setSemesterTypes(res.data.data || []);
     } catch (err) {
       console.error(err);
+    }
+  };
+
+  const createSemesterType = async () => {
+    if (!newSemesterName) return;
+    try {
+      await API.post("/api/semester-types", { name: newSemesterName });
+      setNewSemesterName("");
+      fetchSemesterTypes();
+    } catch (err) {
+      alert(err.response?.data?.message || "Failed to create semester type");
+    }
+  };
+
+  const toggleSemesterType = async (id) => {
+    try {
+      await API.put(`/api/semester-types/${id}/toggle`);
+      fetchSemesterTypes();
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const deleteSemesterType = async (id, name) => {
+    if (!window.confirm(`Delete ${name} semester type? This might affect existing records.`)) return;
+    try {
+      await API.delete(`/api/semester-types/${id}`);
+      fetchSemesterTypes();
+    } catch (err) {
+      alert(err.response?.data?.message || "Failed to delete");
+    }
+  };
+
+  const seedDefaults = async () => {
+    try {
+      await API.post("/api/semester-types/seed");
+      fetchSemesterTypes();
+    } catch (err) {
+      alert("Failed to seed");
     }
   };
 
@@ -107,6 +147,45 @@ const AcademicManagement = () => {
 
   return (
     <Box sx={{ p: 1 }}>
+      {/* Global Semester Types Management */}
+      <Paper sx={{ p: 3, mb: 4, borderRadius: 4, bgcolor: 'rgba(255,255,255,0.7)', backdropFilter: 'blur(10px)', border: '1px solid #e0e0e0' }}>
+        <Typography variant="h6" sx={{ fontWeight: 700, mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
+          <Class color="primary" /> Global Semester Types
+        </Typography>
+        <Box sx={{ display: 'flex', gap: 2, mb: 3, flexWrap: 'wrap', alignItems: 'center' }}>
+          <TextField
+            size="small"
+            label="Semester Name (e.g. ODD)"
+            value={newSemesterName}
+            onChange={(e) => setNewSemesterName(e.target.value.toUpperCase())}
+            sx={{ width: 250 }}
+          />
+          <Button variant="contained" onClick={createSemesterType} startIcon={<Add />} sx={{ borderRadius: 8 }}>
+            Add Type
+          </Button>
+          <Button variant="outlined" onClick={seedDefaults} size="small" sx={{ borderRadius: 8 }}>
+            Seed Defaults
+          </Button>
+        </Box>
+        
+        <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+          {semesterTypes.map((st) => (
+            <Chip
+              key={st._id}
+              label={st.name}
+              onDelete={() => deleteSemesterType(st._id, st.name)}
+              onClick={() => toggleSemesterType(st._id)}
+              color={st.isActive ? "primary" : "default"}
+              variant={st.isActive ? "filled" : "outlined"}
+              sx={{ fontWeight: 600, px: 1 }}
+            />
+          ))}
+          {semesterTypes.length === 0 && (
+            <Typography variant="body2" color="textSecondary">No semester types defined. Use 'Seed Defaults' to start.</Typography>
+          )}
+        </Box>
+      </Paper>
+
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4, flexWrap: 'wrap', gap: 2 }}>
         <Typography variant="h4" sx={{ fontWeight: 700, color: "#1a237e", display: 'flex', alignItems: 'center', gap: 1 }}>
           <School fontSize="large" color="primary" />
