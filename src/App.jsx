@@ -11,13 +11,14 @@ import StudentFormatResults from "./pages/examAdmin/StudentFormatResults";
 import Discrepancies from "./pages/examAdmin/Discrepancies";
 import DeptProctorUploads from "./pages/hod/DeptProctorUploads";
 import AcademicStructure from "./pages/uniprime/academics/AcademicStructure";
-
+import Assignedstudents from "./pages/uniprime/Student/Assignedstudents";
 import RoleManagement from "./pages/uniprime/Roles/Rolemanagement";
 import { useLoading } from "./context/LoadingContext";
 import API from "./api/axios";
 import Loader from "./components/common/Loader";
 import FeedbackManagement from "./pages/feedback/FeedbackManagement";
 import FeedbackDiscrepancies from "./pages/feedback/FeedbackDiscrepancies";
+import Studentuploads from "./pages/uniprime/Student/Studentuploads";
 
 
 const PublicOnlyRoute = ({ children }) => {
@@ -172,6 +173,22 @@ function App() {
           element={
             <MainLayout>
               <FeedbackDiscrepancies />
+            </MainLayout>
+          }
+        />
+        <Route
+          path="/student/student-uploads"
+          element={
+            <MainLayout>
+              <Studentuploads />
+            </MainLayout>
+          }
+        />
+        <Route
+          path="/student/assigned-students"
+          element={
+            <MainLayout>
+              <Assignedstudents />
             </MainLayout>
           }
         />

@@ -6,8 +6,9 @@ import {
   Groups,
   School,
   Flag,
-  People,
+  People
 } from "@mui/icons-material";
+import PersonIcon from '@mui/icons-material/Person';
 import React from "react";
 
 // Configuration for which side navigation items each role should see.
@@ -59,6 +60,20 @@ export const ROLE_ROUTES = {
       text: "User & Role Management",
       path: "/role-management",
       icon: <People />
+    },
+    {
+      text: "Student Management",
+      icon: <PersonIcon />,
+      nested: [
+        {
+          text: "Student Upload",
+          path: "/student/student-uploads"
+        },
+        {
+          text: "Assigned Students",
+          path: "/student/assigned-students"
+        }
+      ]
     }
   ],
 
@@ -96,4 +111,3 @@ export const ROLE_ROUTES = {
     { text: "Discrepancies", path: "/feedback-management/discrepancies", icon: <Flag /> },
   ],
 };
- 

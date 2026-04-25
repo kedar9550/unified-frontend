@@ -15,7 +15,7 @@ import SearchIcon from "@mui/icons-material/Search";
 
 export default function DataTable({ columns, rows }) {
   const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(5);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
   const [search, setSearch] = useState("");
   const [sortIndex, setSortIndex] = useState(null);
   const [sortDirection, setSortDirection] = useState("asc");
@@ -79,7 +79,7 @@ export default function DataTable({ columns, rows }) {
             width: { xs: "100%", sm: "280px" },
             "& .MuiOutlinedInput-root": {
               borderRadius: "99px",
-              background: "rgba(255, 255, 255, 0.6)",
+              background: "rgba(255, 255, 255, 0.2)",
               backdropFilter: "blur(10px)",
               transition: "all 0.3s ease",
               "& fieldset": {
@@ -224,7 +224,7 @@ export default function DataTable({ columns, rows }) {
           setRowsPerPage(parseInt(e.target.value, 10));
           setPage(0);
         }}
-        rowsPerPageOptions={[5, 10, 25]}
+        rowsPerPageOptions={[5, 10, 25, 50, 100, 250]}
         sx={{
           color: "#475569",
           borderBottom: "none",
