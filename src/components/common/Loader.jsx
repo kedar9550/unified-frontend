@@ -2,15 +2,17 @@ import React, { useEffect, useState } from "react";
 import SunLoader from "./SunLoader.jsx";
 
 const Loader = () => {
-    const [progress, setProgress] = useState(0);
+    const [counter, setCounter] = useState(0);
 
     useEffect(() => {
         const interval = setInterval(() => {
-            setProgress((prev) => (prev >= 100 ? 0 : prev + 1));
+            setCounter((prev) => (prev >= 200 ? 0 : prev + 1));
         }, 40);
 
         return () => clearInterval(interval);
     }, []);
+
+    const progress = counter <= 100 ? counter : 200 - counter;
 
     return (
         <div
@@ -20,7 +22,7 @@ const Loader = () => {
                 left: 0,
                 width: "100vw",
                 height: "100vh",
-                backgroundColor: "rgba(255, 255, 255, 0.85)", // Semi-transparent overlay
+                backgroundColor: "rgba(255, 255, 255, 0.50)", // Semi-transparent overlay
                 backdropFilter: "blur(4px)", // Premium blur effect
                 display: "flex",
                 justifyContent: "center",
@@ -29,6 +31,7 @@ const Loader = () => {
             }}
         >
             <SunLoader progress={progress} size={130} />
+
         </div>
     );
 };
