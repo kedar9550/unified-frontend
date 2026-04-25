@@ -4,7 +4,7 @@ import {
     DialogContent, DialogActions, TextField, CircularProgress, IconButton,
     Tooltip, Divider, List, ListItem, ListItemText, ListItemSecondaryAction,
     Snackbar, Alert, Chip, MenuItem, Select, FormControl, InputLabel, Fade,
-    Tabs, Tab, Paper
+    Tabs, Tab, Paper, Switch, FormControlLabel
 } from "@mui/material";
 import {
     Add, Edit, Delete, AccountTree, Business, Code, School,
@@ -119,8 +119,13 @@ const AcademicStructure = () => {
                                     <IconButton size="small" color="error" onClick={(e) => { e.stopPropagation(); setDeleteConfirm({ open: true, type: 'department', id: dept._id, name: dept.name }); }}><Delete /></IconButton>
                                 </Box>
                             </Box>
-                            <Chip label={dept.code} color="primary" size="small" sx={{ mt: 1 }} />
-                            <Typography variant="body2" color="textSecondary" sx={{ mt: 1 }}>{dept.description || "No description"}</Typography>
+                            <Box sx={{ mt: 1, display: 'flex', gap: 1 }}>
+                                <Chip label={dept.code} color="primary" size="small" />
+                                {dept.hasStudents && (
+                                    <Chip label="Has Students" color="success" size="small" variant="outlined" />
+                                )}
+                            </Box>
+                            <Typography variant="body2" color="textSecondary" sx={{ mt: 2 }}>{dept.description || "No description"}</Typography>
                         </CardContent>
                     </Card>
                 </Grid>
@@ -299,6 +304,20 @@ const AcademicStructure = () => {
                                     {programs.map(p => <MenuItem key={p._id} value={p._id}>{p.name} ({p.type})</MenuItem>)}
                                 </Select>
                             </FormControl>
+                        )}
+
+                        {modal.type === 'department' && (
+                            <FormControlLabel
+                                control={
+                                    <Switch
+                                        checked={modal.data.hasStudents || false}
+                                        onChange={(e) => setModal({ ...modal, data: { ...modal.data, hasStudents: e.target.checked } })}
+                                        color="primary"
+                                    />
+                                }
+                                label="Has Students?"
+                                sx={{ mb: 1 }}
+                            />
                         )}
 
                         <TextField
