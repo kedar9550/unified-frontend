@@ -156,7 +156,7 @@ const RoleManagement = () => {
         formData.append("file", file);
 
         try {
-            const res = await API.post("/api/users/bulk-upload", formData, {
+            const res = await API.post("/api/employees/bulk-upload", formData, {
                 headers: { "Content-Type": "multipart/form-data" }
             });
 
@@ -192,7 +192,7 @@ const RoleManagement = () => {
         if (!signupData.id.trim()) { setDisabledFields({}); setIsEcapVerified(false); return; }
         setIsVerifying(true); setSignupError('');
         try {
-            const res = await API.post("/api/users/ecap-data", { 
+            const res = await API.post("/api/employees/ecap-data", { 
                 institutionId: signupData.id.trim(), 
                 role: signupData.role 
             });
@@ -242,7 +242,7 @@ const RoleManagement = () => {
                 password: signupData.password,
                 userType: signupData.role,
             };
-            const res = await API.post("/api/users/register", payload);
+            const res = await API.post("/api/employees/register", payload);
             if (res.data) {
                 showSnackbar("User added successfully!", "success");
                 setIsUserChoiceModalOpen(false);
@@ -301,7 +301,7 @@ const RoleManagement = () => {
         if (!userSearchQuery) return;
         setSearchingUsers(true);
         try {
-            const res = await API.get(`/api/users/search?query=${userSearchQuery}`);
+            const res = await API.get(`/api/employees/search?query=${userSearchQuery}`);
             const results = Array.isArray(res.data) ? res.data : [];
             setUserSearchResults(results);
             setHasTypedSearch(true);
