@@ -40,9 +40,9 @@ const Assignedstudents = () => {
 
     const handleApplyFilters = () => {
         const filtered = students.filter(s => 
-            s.program === filterProgram &&
-            s.branch === filterBranch &&
-            s.semester === Number(filterSemester)
+            s.academicInfo?.programName === filterProgram &&
+            s.academicInfo?.branch === filterBranch &&
+            s.academicInfo?.semester === Number(filterSemester)
         );
         setFilteredStudents(filtered);
     };
@@ -55,8 +55,8 @@ const Assignedstudents = () => {
     };
 
     // Derive unique values for filters
-    const uniquePrograms = [...new Set(students.map(s => s.program))].filter(Boolean);
-    const uniqueBranches = [...new Set(students.filter(s => !filterProgram || s.program === filterProgram).map(s => s.branch))].filter(Boolean);
+    const uniquePrograms = [...new Set(students.map(s => s.academicInfo?.programName))].filter(Boolean);
+    const uniqueBranches = [...new Set(students.filter(s => !filterProgram || s.academicInfo?.programName === filterProgram).map(s => s.academicInfo?.branch))].filter(Boolean);
 
     const columns = [
         "Roll No", "Name", "Assigned Dept", "Semester", "Program", "Branch", "Email"
@@ -65,18 +65,18 @@ const Assignedstudents = () => {
     const formattedRows = filteredStudents.map(s => [
         { value: s.rollNo, display: <Box sx={{ fontWeight: 600, color: "#0b5299" }}>{s.rollNo}</Box> },
         {
-            value: s.name,
+            value: s.personalInfo?.studentName,
             display: (
                 <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
                     <Avatar sx={{ width: 32, height: 32, fontSize: "0.875rem", bgcolor: "#84a9eb" }}>
-                        {s.name?.charAt(0)}
+                        {s.personalInfo?.studentName?.charAt(0)}
                     </Avatar>
-                    <Box sx={{ fontWeight: 500 }}>{s.name}</Box>
+                    <Box sx={{ fontWeight: 500 }}>{s.personalInfo?.studentName}</Box>
                 </Box>
             )
         },
         { 
-            value: s.assignedDept?.name, 
+            value: s.academicInfo?.department?.name, 
             display: (
                 <Box sx={{ 
                     px: 1.5, 
@@ -88,17 +88,17 @@ const Assignedstudents = () => {
                     fontSize: "0.75rem",
                     display: "inline-block"
                 }}>
-                    {s.assignedDept?.name || "N/A"}
+                    {s.academicInfo?.department?.name || "N/A"}
                 </Box>
             )
         },
         { 
-            value: s.semester, 
-            display: <Typography variant="body2" sx={{ fontWeight: 600 }}>Sem {s.semester}</Typography> 
+            value: s.academicInfo?.semester, 
+            display: <Typography variant="body2" sx={{ fontWeight: 600 }}>Sem {s.academicInfo?.semester}</Typography> 
         },
-        s.program,
-        s.branch,
-        s.email
+        s.academicInfo?.programName,
+        s.academicInfo?.branch,
+        s.contactInfo?.emailId
     ]);
 
     return (

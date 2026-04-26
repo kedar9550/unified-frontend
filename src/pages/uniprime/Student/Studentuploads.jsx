@@ -1,6 +1,6 @@
 import React, { useRef, useState, useEffect } from "react";
-import { Box, Avatar, Checkbox, MenuItem, Select, FormControl, InputLabel, Collapse, CircularProgress, Typography, Tooltip, IconButton } from "@mui/material";
-import { FileUpload as UploadIcon, CheckCircle as ConfirmIcon, Download as DownloadIcon, Delete as DeleteIcon } from "@mui/icons-material";
+import { Box, Avatar, Checkbox, MenuItem, Select, FormControl, InputLabel, Collapse, CircularProgress, Typography, Tooltip, IconButton, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Button } from "@mui/material";
+import { FileUpload as UploadIcon, CheckCircle as ConfirmIcon, Download as DownloadIcon, Delete as DeleteIcon, PersonAdd as PersonAddIcon, Sync as SyncIcon } from "@mui/icons-material";
 import PageHeader from "../../../components/common/PageHeader";
 import SectionHeader from "../../../components/common/SectionHeader";
 import ActionButton from "../../../components/common/ActionButton";
@@ -19,6 +19,11 @@ const Studentuploads = () => {
     const [loadingStudents, setLoadingStudents] = useState(false);
     const [uploading, setUploading] = useState(false);
     const [uploadResult, setUploadResult] = useState(null);
+    const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+    const [addRollNo, setAddRollNo] = useState("");
+    const [addDept, setAddDept] = useState("");
+    const [addingStudent, setAddingStudent] = useState(false);
+    const [syncing, setSyncing] = useState(false);
 
     const fetchUnassignedStudents = async () => {
         setLoadingStudents(true);
@@ -113,8 +118,50 @@ const Studentuploads = () => {
         }
     };
 
+    const handleAddStudent = async () => {
+        if (!addRollNo) return;
+        setAddingStudent(true);
+        try {
+            const res = await API.post("/api/student-data/add", {
+                rollNo: addRollNo,
+                department: addDept
+            });
+            if (res.data.success) {
+                setIsAddModalOpen(false);
+                setAddRollNo("");
+                setAddDept("");
+                fetchUnassignedStudents();
+            }
+        } catch (error) {
+            console.error("Add student failed", error);
+            alert(error.response?.data?.message || "Failed to add student");
+        } finally {
+            setAddingStudent(false);
+        }
+    };
+
+    const handleSyncStudents = async () => {
+        if (selectedIds.length === 0) return;
+        setSyncing(true);
+        try {
+            const res = await API.post("/api/student-data/sync", {
+                rollNos: selectedIds
+            });
+            if (res.data.success) {
+                setUploadResult(res.data.summary);
+                fetchUnassignedStudents();
+                setSelectedIds([]);
+            }
+        } catch (error) {
+            console.error("Sync failed", error);
+            alert(error.response?.data?.message || "Failed to sync students");
+        } finally {
+            setSyncing(false);
+        }
+    };
+
     const handleTemplateDownload = () => {
-        const headers = ["Roll No", "Name", "Dept", "Email", "Phone", "Branch", "Program", "Department", "Semester"];
+        const headers = ["Roll No", "Dept"];
         const csvContent = headers.join(",");
         const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
         const link = document.createElement("a");
@@ -131,7 +178,7 @@ const Studentuploads = () => {
         const headers = ["Roll No", "Name", "Dept", "Email", "Phone", "Branch", "Program", "Department", "Semester"];
         const csvContent = [
             headers.join(","),
-            ...students.map(s => [s.rollNo, s.name, s.dept, s.email, s.phone, s.branch, s.program, "", ""].join(","))
+            ...students.map(s => [s.rollNo, s.personalInfo?.studentName, s.academicInfo?.department?.name || s.academicInfo?.department || "", s.contactInfo?.emailId, s.contactInfo?.mobileNumber, s.academicInfo?.branch, s.academicInfo?.programName, "", ""].join(","))
         ].join("\n");
 
         const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
@@ -154,7 +201,7 @@ const Studentuploads = () => {
 
     const getMaxSemesters = () => {
         const selectedStudents = students.filter(s => selectedIds.includes(s.rollNo));
-        const isMtech = selectedStudents.some(s => s.program === "M.Tech");
+        const isMtech = selectedStudents.some(s => s.academicInfo?.programName === "M.Tech");
         return isMtech ? 4 : 8;
     };
 
@@ -191,21 +238,21 @@ const Studentuploads = () => {
         },
         { value: s.rollNo, display: <Box sx={{ fontWeight: 600, color: "#0b5299" }}>{s.rollNo}</Box> },
         {
-            value: s.name,
+            value: s.personalInfo?.studentName,
             display: (
                 <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
                     <Avatar sx={{ width: 32, height: 32, fontSize: "0.875rem", bgcolor: "#84a9eb" }}>
-                        {s.name?.charAt(0)}
+                        {s.personalInfo?.studentName?.charAt(0)}
                     </Avatar>
-                    <Box sx={{ fontWeight: 500 }}>{s.name}</Box>
+                    <Box sx={{ fontWeight: 500 }}>{s.personalInfo?.studentName}</Box>
                 </Box>
             )
         },
-        s.dept,
-        s.email,
-        s.phone,
-        s.branch,
-        s.program
+        s.academicInfo?.department?.name || s.academicInfo?.department || "N/A",
+        s.contactInfo?.emailId,
+        s.contactInfo?.mobileNumber,
+        s.academicInfo?.branch,
+        s.academicInfo?.programName
     ]);
 
     return (
@@ -231,6 +278,10 @@ const Studentuploads = () => {
                             <DownloadIcon sx={{ mr: 1 }} /> Download Template
                         </ActionButton>
 
+                        <ActionButton onClick={() => setIsAddModalOpen(true)} sx={{ background: "linear-gradient(135deg, #ff9800, #f57c00)" }}>
+                            <PersonAddIcon sx={{ mr: 1 }} /> Add Student
+                        </ActionButton>
+
                         <ActionButton onClick={handleUploadClick} disabled={uploading}>
                             {uploading ? <CircularProgress size={20} color="inherit" sx={{ mr: 1 }} /> : <UploadIcon sx={{ mr: 1 }} />}
                             Upload CSV
@@ -238,6 +289,48 @@ const Studentuploads = () => {
                     </Box>
                 }
             />
+
+            {/* ADD STUDENT MODAL */}
+            <Dialog open={isAddModalOpen} onClose={() => !addingStudent && setIsAddModalOpen(false)}>
+                <DialogTitle>Add Individual Student</DialogTitle>
+                <DialogContent sx={{ minWidth: 400 }}>
+                    <Typography variant="body2" color="textSecondary" sx={{ mb: 2 }}>
+                        Fetch student data from ECAP using their Roll No.
+                    </Typography>
+                    <TextField
+                        autoFocus
+                        margin="dense"
+                        label="Roll Number"
+                        type="text"
+                        fullWidth
+                        variant="outlined"
+                        value={addRollNo}
+                        onChange={(e) => setAddRollNo(e.target.value)}
+                        disabled={addingStudent}
+                        sx={{ mb: 2 }}
+                    />
+                    <FormControl fullWidth variant="outlined">
+                        <InputLabel>Department (Optional)</InputLabel>
+                        <Select
+                            value={addDept}
+                            onChange={(e) => setAddDept(e.target.value)}
+                            label="Department (Optional)"
+                            disabled={addingStudent}
+                        >
+                            <MenuItem value=""><em>None</em></MenuItem>
+                            {allDepartments.map((dept) => (
+                                <MenuItem key={dept._id} value={dept._id}>{dept.name}</MenuItem>
+                            ))}
+                        </Select>
+                    </FormControl>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setIsAddModalOpen(false)} disabled={addingStudent}>Cancel</Button>
+                    <Button onClick={handleAddStudent} disabled={addingStudent || !addRollNo} variant="contained" color="primary">
+                        {addingStudent ? <CircularProgress size={24} color="inherit" /> : "Add Student"}
+                    </Button>
+                </DialogActions>
+            </Dialog>
 
             {/* UPLOAD RESULT CARD */}
             {uploadResult && (
@@ -365,18 +458,33 @@ const Studentuploads = () => {
                         <Box sx={{ color: "#64748b", fontSize: "0.875rem", fontWeight: 500 }}>
                             {selectedIds.length} student{selectedIds.length > 1 ? 's' : ''} selected
                         </Box>
-                        {!isProceeding && (
+                        <Box sx={{ display: "flex", gap: 2 }}>
                             <ActionButton
-                                onClick={() => setIsProceeding(true)}
+                                onClick={handleSyncStudents}
+                                disabled={syncing}
                                 sx={{
-                                    px: 4,
-                                    background: "linear-gradient(135deg, #0b5299, #1e88e5)",
-                                    "&:hover": { background: "linear-gradient(135deg, #09437d, #1976d2)" }
+                                    px: 3,
+                                    background: "linear-gradient(135deg, #43a047, #66bb6a)",
+                                    "&:hover": { background: "linear-gradient(135deg, #388e3c, #4caf50)" }
                                 }}
                             >
-                                Proceed
+                                {syncing ? <CircularProgress size={20} color="inherit" sx={{ mr: 1 }} /> : <SyncIcon sx={{ mr: 1 }} />}
+                                Sync / Update
                             </ActionButton>
-                        )}
+
+                            {!isProceeding && (
+                                <ActionButton
+                                    onClick={() => setIsProceeding(true)}
+                                    sx={{
+                                        px: 4,
+                                        background: "linear-gradient(135deg, #0b5299, #1e88e5)",
+                                        "&:hover": { background: "linear-gradient(135deg, #09437d, #1976d2)" }
+                                    }}
+                                >
+                                    Proceed
+                                </ActionButton>
+                            )}
+                        </Box>
                     </Box>
                 )}
 
