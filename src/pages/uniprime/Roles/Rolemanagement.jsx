@@ -173,6 +173,17 @@ const RoleManagement = () => {
         }
     };
 
+    const handleDownloadTemplate = () => {
+        const csvContent = "data:text/csv;charset=utf-8,institutionId,fullname,department,designation,email,phone\n";
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", "employee_bulk_upload_template.csv");
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
     // --- INDIVIDUAL REGISTRATION LOGIC ---
 
     const validateIndividual = (data) => {
@@ -645,7 +656,7 @@ const RoleManagement = () => {
                                     <CardContent sx={{ textAlign: 'center', p: 3 }}>
                                         <Avatar sx={{ width: 60, height: 60, bgcolor: '#e8eaf6', color: '#3f51b5', mx: 'auto', mb: 2 }}><UploadFile fontSize="large" /></Avatar>
                                         <Typography variant="h6" fontWeight={700}>Bulk Upload</Typography>
-                                        <Typography variant="caption" color="textSecondary">Upload a CSV file only. Format: name, institutionId, etc.</Typography>
+                                        <Typography variant="caption" color="textSecondary">Upload a CSV file. Format: institutionId, email, etc.</Typography>
                                     </CardContent>
                                 </Card>
                                 <Card 
@@ -660,7 +671,8 @@ const RoleManagement = () => {
                                 </Card>
                             </Box>
                         </DialogContent>
-                        <DialogActions sx={{ justifyContent: 'center', pb: 2 }}>
+                        <DialogActions sx={{ justifyContent: 'center', pb: 2, display: 'flex', gap: 2 }}>
+                            <Button onClick={handleDownloadTemplate} variant="outlined" color="primary" sx={{ textTransform: 'none', borderRadius: '8px' }}>Download Template</Button>
                             <Button onClick={() => setIsUserChoiceModalOpen(false)} color="inherit" sx={{ textTransform: 'none' }}>Close</Button>
                         </DialogActions>
                     </>
@@ -676,14 +688,6 @@ const RoleManagement = () => {
                         <Box sx={{ p: 4 }}>
                             {signupError && <Alert severity="error" sx={{ mb: 3, borderRadius: '12px' }}>{signupError}</Alert>}
                             <Box component="form" sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 3 }}>
-                                <TextField 
-                                    select label="User Type" value={signupData.role} 
-                                    onChange={(e) => setSignupData({ ...signupData, role: e.target.value, id: '', fullname: '', department: '', phone: '', email: '' })} 
-                                    size="small" fullWidth SelectProps={{ native: true }}
-                                >
-                                    <option value="Employee">Employee</option>
-                                    <option value="Student">Student</option>
-                                </TextField>
                                 <TextField 
                                     label="Institution ID" value={signupData.id} 
                                     onChange={(e) => setSignupData({ ...signupData, id: e.target.value.toUpperCase() })} 
