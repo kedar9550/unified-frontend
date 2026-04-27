@@ -4,7 +4,7 @@ import {
     DialogContent, DialogActions, TextField, CircularProgress, IconButton,
     Tooltip, Divider, List, ListItem, ListItemText, ListItemSecondaryAction,
     Snackbar, Alert, Chip, MenuItem, Select, FormControl, InputLabel, Fade,
-    Tabs, Tab, Paper, Switch, FormControlLabel
+    Tabs, Tab, Paper, Switch, FormControlLabel, FormHelperText
 } from "@mui/material";
 import {
     Add, Edit, Delete, AccountTree, Business, Code, School,
@@ -105,6 +105,7 @@ const AcademicStructure = () => {
         if (type === 'branch' && selectedDepartment) {
             modalData.name = selectedDepartment.name;
         }
+
         setModal({ open: true, type, mode, data: modalData });
     };
 
@@ -173,6 +174,15 @@ const AcademicStructure = () => {
 
                         <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mb: 2 }}>
                             <Chip label={dept.code} color="primary" size="small" sx={{ fontWeight: 700, height: 22, fontSize: '0.65rem', borderRadius: '4px', bgcolor: '#1a237e' }} />
+                            {dept.programIds?.map(prog => (
+                                <Chip 
+                                    key={prog._id} 
+                                    label={prog.name} 
+                                    size="small" 
+                                    variant="outlined" 
+                                    sx={{ fontWeight: 600, height: 22, fontSize: '0.6rem', borderRadius: '4px' }} 
+                                />
+                            ))}
                             {dept.hasStudents && (
                                 <Chip label="Has Students" color="success" size="small" variant="outlined" sx={{ fontWeight: 700, height: 22, fontSize: '0.65rem', borderRadius: '4px', color: '#2e7d32', borderColor: '#2e7d32' }} />
                             )}
@@ -303,54 +313,61 @@ const AcademicStructure = () => {
                     </Button>
                 </Box>
 
+                {/* Department Header Info */}
+                <Paper sx={{ 
+                    p: 3, 
+                    mb: 4, 
+                    borderRadius: "20px",
+                    background: "rgba(255, 255, 255, 0.4)",
+                    backdropFilter: "blur(10px)",
+                    border: "1px solid rgba(255, 255, 255, 0.3)"
+                }}>
+                    <Grid container spacing={3} alignItems="center">
+                        <Grid item xs={12} md={8}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1 }}>
+                                <Typography variant="h5" fontWeight={800} color="primary">
+                                    {selectedDepartment.name}
+                                </Typography>
+                                <Chip label={selectedDepartment.code} size="small" sx={{ fontWeight: 700, bgcolor: '#1a237e', color: 'white' }} />
+                            </Box>
+                            <Typography variant="body2" color="textSecondary" sx={{ mb: 2 }}>
+                                {selectedDepartment.description || "No description provided for this department."}
+                            </Typography>
+                        </Grid>
+                        <Grid item xs={12} md={4} sx={{ textAlign: { md: 'right' } }}>
+                            <Button 
+                                variant="contained" 
+                                startIcon={<Add />} 
+                                onClick={() => openModal('branch', 'add', { departmentId: selectedDepartment._id, name: selectedDepartment.name })}
+                                sx={{ borderRadius: "12px", px: 3, py: 1.2, fontWeight: 700 }}
+                            >
+                                Add New Branch
+                            </Button>
+                        </Grid>
+                    </Grid>
+                </Paper>
+
+                <Typography variant="h6" fontWeight={700} sx={{ mb: 3, display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <AccountTree color="primary" /> Department Branches
+                </Typography>
+
                 <Box sx={{ 
                     display: 'grid', 
                     gridTemplateColumns: { xs: '1fr', sm: '1fr', md: 'repeat(2, 1fr)', lg: 'repeat(3, 1fr)', xl: 'repeat(4, 1fr)' }, 
                     gap: 3 
                 }}>
-                    <Card
-                        sx={{
-                            ...cardStyle,
-                            border: "2px dashed rgba(25, 118, 210, 0.4)",
-                            background: "rgba(25, 118, 210, 0.05)",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            cursor: "pointer",
-                            minHeight: "140px",
-                            boxShadow: 'none',
-                            "&:hover": {
-                                background: "rgba(25, 118, 210, 0.12)",
-                                transform: 'translateY(-8px)',
-                                border: "2px dashed rgba(25, 118, 210, 0.6)",
-                            }
-                        }}
-                        onClick={() => openModal('branch', 'add', { departmentId: selectedDepartment._id, name: selectedDepartment.name })}
-                    >
-                        <Box sx={{ textAlign: "center", color: "#1976d2" }}>
-                            <Box sx={{
-                                width: 54,
-                                height: 54,
-                                borderRadius: '50%',
-                                border: '2px solid #1976d2',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                margin: '0 auto 16px',
-                                background: "rgba(255, 255, 255, 0.4)",
-                                backdropFilter: "blur(4px)"
-                            }}>
-                                <Add sx={{ fontSize: 40 }} />
-                            </Box>
-                            <Typography variant="button" display="block" fontWeight={700} sx={{ letterSpacing: '0.5px' }}>
-                                Add Branch
-                            </Typography>
-                        </Box>
-                    </Card>
-
                     {deptBranches.length === 0 && (
-                        <Box sx={{ gridColumn: '1 / -1', py: 5 }}>
-                            <Typography variant="body1" color="textSecondary" align="center">No branches found.</Typography>
+                        <Box sx={{ 
+                            gridColumn: '1 / -1', 
+                            py: 8, 
+                            textAlign: 'center',
+                            background: "rgba(255, 255, 255, 0.2)",
+                            borderRadius: "20px",
+                            border: "1px dashed rgba(0,0,0,0.1)"
+                        }}>
+                            <Warning color="disabled" sx={{ fontSize: 48, mb: 2, opacity: 0.5 }} />
+                            <Typography variant="h6" color="textSecondary">No branches created yet</Typography>
+                            <Typography variant="body2" color="textSecondary">Click "Add New Branch" to get started</Typography>
                         </Box>
                     )}
 
@@ -358,9 +375,6 @@ const AcademicStructure = () => {
                         <Card key={branch._id} sx={{ ...cardStyle, width: '100%', minHeight: '100px', display: 'flex', flexDirection: 'column' }}>
                             <CardContent sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', p: '24px !important' }}>
                                 <Box sx={{ mb: 2 }}>
-                                    <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 700, textTransform: 'uppercase', fontSize: '0.65rem', letterSpacing: '0.5px', mb: 0.5, display: 'block' }}>
-                                        {selectedDepartment.name}
-                                    </Typography>
                                     <Box sx={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                                         <Typography variant="h6" fontWeight={700} sx={{
                                             lineHeight: 1.2,
@@ -370,17 +384,26 @@ const AcademicStructure = () => {
                                         }}>
                                             {branch.name}
                                         </Typography>
-                                        <IconButton size="small" onClick={(e) => { e.stopPropagation(); openModal('branch', 'edit', branch); }} sx={{ color: '#5f6368', flexShrink: 0, p: 0.5, "&:hover": { background: 'none', color: '#2196f3', transform: 'scale(1.2)' }, transition: 'all 0.2s' }}>
-                                            <Edit sx={{ fontSize: 18 }} />
-                                        </IconButton>
+                                        <Box sx={{ display: 'flex', gap: 0.5 }}>
+                                            <IconButton size="small" onClick={(e) => { e.stopPropagation(); openModal('branch', 'edit', branch); }} sx={{ color: '#5f6368', p: 0.5, "&:hover": { color: '#2196f3' } }}>
+                                                <Edit sx={{ fontSize: 18 }} />
+                                            </IconButton>
+                                            <IconButton size="small" onClick={(e) => { e.stopPropagation(); setDeleteConfirm({ open: true, type: 'branch', id: branch._id, name: branch.name }); }} sx={{ color: '#5f6368', p: 0.5, "&:hover": { color: '#f44336' } }}>
+                                                <Delete sx={{ fontSize: 18 }} />
+                                            </IconButton>
+                                        </Box>
                                     </Box>
+                                    <Typography variant="caption" color="textSecondary" sx={{ fontWeight: 700 }}>
+                                        CODE: {branch.code}
+                                    </Typography>
                                 </Box>
-                                <Box mt={1} display="flex" alignItems="center" gap={1} flexWrap="wrap">
+                                <Box mt="auto" display="flex" alignItems="center" gap={1} flexWrap="wrap">
                                     {branch.programId && (
                                         <Chip 
                                             label={branch.programId.name} 
                                             size="small" 
                                             color="primary" 
+                                            variant="outlined"
                                             sx={{ fontWeight: 700, borderRadius: '6px' }} 
                                         />
                                     )}
@@ -512,6 +535,8 @@ const AcademicStructure = () => {
                                 </Select>
                             </FormControl>
                         )}
+
+
 
                         {modal.type === 'department' && (
                             <FormControlLabel
