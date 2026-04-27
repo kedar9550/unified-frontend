@@ -22,6 +22,8 @@ function Dashboard() {
       {activeRole === "HOD" && <HODDashboard />}
       {activeRole === "EXAMSECTION" && <ExamDashboard />}
       {activeRole === "STUDENT" && <StudentDashboard />}
+      {activeRole === "RESEARCH FEEDBACK COMMITTEE" && <ResearchFeedbackDashboard />}
+      {activeRole === "FEEDBACK COORDINATOR" && <FeedbackCoordinatorDashboard />}
     </Box>
   );
 }
@@ -129,5 +131,19 @@ const StudentDashboard = () => (
   <Box sx={{ p: 4, bgcolor: 'rgba(255, 255, 255, 0.55)', backdropFilter: 'blur(10px)', borderRadius: '20px', border: '1px solid rgba(255, 255, 255, 0.4)' }}>
     <Typography variant="h5" color="#1a237e" fontWeight={800}>Student Portal</Typography>
     <Typography color="textSecondary" mt={1}>Welcome to your academic dashboard.</Typography>
+  </Box>
+);
+
+const ResearchFeedbackDashboard = () => (
+  <Box sx={{ p: 4, bgcolor: 'rgba(255, 255, 255, 0.55)', backdropFilter: 'blur(10px)', borderRadius: '20px', border: '1px solid rgba(255, 255, 255, 0.4)' }}>
+    <Typography variant="h5" color="#1a237e" fontWeight={800}>Research Feedback Overview</Typography>
+    <Typography color="textSecondary" mt={1}>Access feedback reports from the sidebar.</Typography>
+  </Box>
+);
+
+const FeedbackCoordinatorDashboard = () => (
+  <Box sx={{ p: 4, bgcolor: 'rgba(255, 255, 255, 0.55)', backdropFilter: 'blur(10px)', borderRadius: '20px', border: '1px solid rgba(255, 255, 255, 0.4)' }}>
+    <Typography variant="h5" color="#1a237e" fontWeight={800}>Feedback Coordinator Dashboard</Typography>
+    <Typography color="textSecondary" mt={1}>Manage faculty feedback and resolve discrepancies.</Typography>
   </Box>
 );

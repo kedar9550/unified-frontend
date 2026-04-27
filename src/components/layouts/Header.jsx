@@ -9,6 +9,7 @@ import { useLocation } from "react-router-dom";
 const Header = ({ onMenuClick }) => {
   const { user, activeRole, switchRole } = useAuth();
   const [imgError, setImgError] = useState(false);
+  console.log("USER ROLES:", user?.roles);
 
   const getEcapImage = () => {
     if (!user || user.profileImage) return null;
