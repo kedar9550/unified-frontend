@@ -16,7 +16,9 @@ const Assignedstudents = () => {
     // Filter State
     const [filterProgram, setFilterProgram] = useState("");
     const [filterBranch, setFilterBranch] = useState("");
+    const [filterDept, setFilterDept] = useState("");
     const [filterSemester, setFilterSemester] = useState("");
+    const [filterOptions, setFilterOptions] = useState({ programs: [], branches: [], departments: [] });
 
     const fetchAssignedStudents = async () => {
         setLoading(true);
@@ -34,14 +36,29 @@ const Assignedstudents = () => {
         }
     };
 
+    const fetchFilterOptions = async () => {
+        try {
+            console.log("Frontend: Fetching filter options...");
+            const res = await API.get("/api/student-data/filter-options");
+            console.log("Frontend: Filter options response:", res.data);
+            if (res.data.success) {
+                setFilterOptions(res.data.data);
+            }
+        } catch (error) {
+            console.error("Frontend: Failed to fetch filter options", error);
+        }
+    };
+
     useEffect(() => {
         fetchAssignedStudents();
+        fetchFilterOptions();
     }, []);
 
     const handleApplyFilters = () => {
         const filtered = students.filter(s => 
             s.academicInfo?.programName === filterProgram &&
             s.academicInfo?.branch === filterBranch &&
+            s.academicInfo?.department?.name === filterDept &&
             s.academicInfo?.semester === Number(filterSemester)
         );
         setFilteredStudents(filtered);
@@ -50,13 +67,15 @@ const Assignedstudents = () => {
     const handleClearFilters = () => {
         setFilterProgram("");
         setFilterBranch("");
+        setFilterDept("");
         setFilterSemester("");
         setFilteredStudents(students);
     };
 
-    // Derive unique values for filters
-    const uniquePrograms = [...new Set(students.map(s => s.academicInfo?.programName))].filter(Boolean);
-    const uniqueBranches = [...new Set(students.filter(s => !filterProgram || s.academicInfo?.programName === filterProgram).map(s => s.academicInfo?.branch))].filter(Boolean);
+    // Use filter options from backend
+    const uniquePrograms = filterOptions.programs;
+    const uniqueBranches = filterOptions.branches;
+    const uniqueDepts = filterOptions.departments.map(d => d.name);
 
     const columns = [
         "Roll No", "Name", "Assigned Dept", "Semester", "Program", "Branch", "Email"
@@ -156,9 +175,23 @@ const Assignedstudents = () => {
                             <Select
                                 labelId="branch-filter-label"
                                 value={filterBranch}
-                                onChange={(e) => setFilterBranch(e.target.value)}
+                                onChange={(e) => {
+                                    setFilterBranch(e.target.value);
+                                    setFilterDept(""); // Reset dept when branch changes
+                                }}
                             >
                                 {uniqueBranches.map(b => <MenuItem key={b} value={b}>{b}</MenuItem>)}
+                            </Select>
+                        </FormControl>
+
+                        <FormControl variant="standard" sx={{ minWidth: 180 }}>
+                            <InputLabel id="dept-filter-label">Department</InputLabel>
+                            <Select
+                                labelId="dept-filter-label"
+                                value={filterDept}
+                                onChange={(e) => setFilterDept(e.target.value)}
+                            >
+                                {uniqueDepts.map(d => <MenuItem key={d} value={d}>{d}</MenuItem>)}
                             </Select>
                         </FormControl>
 
@@ -175,7 +208,7 @@ const Assignedstudents = () => {
                             </Select>
                         </FormControl>
 
-                        {filterProgram && filterBranch && filterSemester && (
+                        {filterProgram && filterBranch && filterDept && filterSemester && (
                             <Box sx={{ display: "flex", gap: 1 }}>
                                 <ActionButton 
                                     onClick={handleApplyFilters}
