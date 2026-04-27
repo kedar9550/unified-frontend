@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect } from "react";
 import API from "../api/axios";
+import { getHighestRole } from "../config/rolePriority";
 
 const AuthContext = createContext();
 
@@ -10,9 +11,10 @@ export const AuthProvider = ({ children }) => {
 
   const normalizeRoles = (userData) => {
     if (userData && userData.roles) {
-      userData.roles = userData.roles.map(r =>
-        r.role === "STAFF" ? { ...r, role: "FACULTY", name: "FACULTY" } : r
-      );
+      userData.roles = userData.roles.map(r => {
+        const upperRole = r.role ? r.role.toUpperCase() : r.role;
+        return upperRole === "STAFF" ? { ...r, role: "FACULTY", name: "FACULTY" } : { ...r, role: upperRole };
+      });
     }
     return userData;
   };
@@ -26,20 +28,25 @@ export const AuthProvider = ({ children }) => {
       setUser(parsedUser);
 
       let savedRole = localStorage.getItem("activeRole");
+      if (savedRole) savedRole = savedRole.toUpperCase();
       if (savedRole === "STAFF") savedRole = "FACULTY";
 
       if (savedRole) {
         setActiveRole(savedRole);
       } else if (parsedUser.roles && parsedUser.roles.length > 0) {
-        setActiveRole(parsedUser.roles[0].role);
+        const roleStrings = parsedUser.roles.map(r => r.role);
+        const highestDefault = getHighestRole(roleStrings);
+        setActiveRole(highestDefault);
       }
     }
     setLoading(false);
   }, []);
 
   const switchRole = (newRole) => {
-    setActiveRole(newRole);
-    localStorage.setItem("activeRole", newRole);
+    
+    const upperRole = newRole ? newRole.toUpperCase() : newRole;
+    setActiveRole(upperRole);
+    localStorage.setItem("activeRole", upperRole);
   };
 
   const login = async (formData) => {
@@ -55,7 +62,8 @@ export const AuthProvider = ({ children }) => {
       localStorage.setItem("user", JSON.stringify(userData));
 
       if (userData.roles && userData.roles.length > 0) {
-        const defaultRole = userData.roles[0].role;
+        const roleStrings = userData.roles.map(r => r.role);
+        const defaultRole = getHighestRole(roleStrings);
         setActiveRole(defaultRole);
         localStorage.setItem("activeRole", defaultRole);
       }
