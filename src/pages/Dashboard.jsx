@@ -58,18 +58,16 @@ const DashboardCard = ({ title, value, icon, color }) => (
 );
 
 const FacultyDashboard = () => (
-  <Grid container spacing={3}>
-    <Grid item xs={12} sm={6} md={4}>
-      <DashboardCard title="Active Classes" value="4" icon={<School fontSize="large" />} color="#1976d2" />
-    </Grid>
-    <Grid item xs={12} sm={6} md={4}>
-      <DashboardCard title="Total Students" value="180" icon={<People fontSize="large" />} color="#2e7d32" />
-    </Grid>
-    <Grid item xs={12} sm={6} md={4}>
-      <DashboardCard title="Pending Assignments" value="12" icon={<Assessment fontSize="large" />} color="#ed6c02" />
-    </Grid>
+  <Box sx={{ 
+    display: 'grid', 
+    gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)' }, 
+    gap: 3 
+  }}>
+    <DashboardCard title="Active Classes" value="4" icon={<School fontSize="large" />} color="#1976d2" />
+    <DashboardCard title="Total Students" value="180" icon={<People fontSize="large" />} color="#2e7d32" />
+    <DashboardCard title="Pending Assignments" value="12" icon={<Assessment fontSize="large" />} color="#ed6c02" />
     
-    <Grid item xs={12} md={8}>
+    <Box sx={{ gridColumn: { xs: '1', md: 'span 2' } }}>
       <Card sx={{ mt: 2, borderRadius: '20px', p: 3, background: 'rgba(255, 255, 255, 0.55)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255, 255, 255, 0.4)' }}>
         <Typography variant="h6" fontWeight={800} color="#1a237e" mb={3}>Today's Schedule</Typography>
         <Box sx={{ p: 2, bgcolor: 'rgba(25, 118, 210, 0.08)', borderRadius: '12px', mb: 2, borderLeft: '5px solid #1976d2' }}>
@@ -81,36 +79,32 @@ const FacultyDashboard = () => (
           <Typography variant="body2" color="textSecondary" fontWeight={500}>1:00 PM - 3:00 PM | Lab 2</Typography>
         </Box>
       </Card>
-    </Grid>
-  </Grid>
+    </Box>
+  </Box>
 );
 
 const AdminDashboard = () => (
-  <Grid container spacing={3}>
-    <Grid item xs={12} sm={6} md={3}>
-      <DashboardCard title="Total Users" value="4,250" icon={<People fontSize="large" />} color="#9c27b0" />
-    </Grid>
-    <Grid item xs={12} sm={6} md={3}>
-      <DashboardCard title="Active Faculties" value="320" icon={<School fontSize="large" />} color="#1976d2" />
-    </Grid>
-    <Grid item xs={12} sm={6} md={3}>
-      <DashboardCard title="System Alerts" value="3" icon={<Notifications fontSize="large" />} color="#d32f2f" />
-    </Grid>
-    <Grid item xs={12} sm={6} md={3}>
-      <DashboardCard title="Events Today" value="5" icon={<Event fontSize="large" />} color="#2e7d32" />
-    </Grid>
+  <Box sx={{ 
+    display: 'grid', 
+    gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(4, 1fr)' }, 
+    gap: 3 
+  }}>
+    <DashboardCard title="Total Users" value="4,250" icon={<People fontSize="large" />} color="#9c27b0" />
+    <DashboardCard title="Active Faculties" value="320" icon={<School fontSize="large" />} color="#1976d2" />
+    <DashboardCard title="System Alerts" value="3" icon={<Notifications fontSize="large" />} color="#d32f2f" />
+    <DashboardCard title="Events Today" value="5" icon={<Event fontSize="large" />} color="#2e7d32" />
     
-    <Grid item xs={12} md={8}>
+    <Box sx={{ gridColumn: { xs: '1', md: 'span 3' } }}>
       <Card sx={{ mt: 2, borderRadius: '20px', p: 3, minHeight: '280px', background: 'rgba(255, 255, 255, 0.55)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255, 255, 255, 0.4)' }}>
-        <Typography variant="h6" fontWeight={800} color="#1a237e" mb={2} display="flex" alignItems="center" gap={1.5}>
+        <Typography variant="h6" fontWeight={800} color="#1a237e" mb={2} sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
           <AdminPanelSettings color="primary" /> System Overview
         </Typography>
-        <Typography color="textSecondary" fontWeight={500} lineHeight={1.6}>
+        <Typography color="textSecondary" fontWeight={500} sx={{ lineHeight: 1.6 }}>
           Welcome to the Uniprime administrative console. Here you can monitor overall system health, manage roles, and track institutional metrics. Select an option from the sidebar to begin managing the institution.
         </Typography>
       </Card>
-    </Grid>
-  </Grid>
+    </Box>
+  </Box>
 );
 
 const HODDashboard = () => (
