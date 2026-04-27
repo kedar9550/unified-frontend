@@ -6,19 +6,22 @@ import PageHeader from "../../../components/common/PageHeader";
 import SectionHeader from "../../../components/common/SectionHeader";
 import DataTable from "../../../components/data/DataTable";
 import API from "../../../api/axios";
+import AcademicHierarchyFilter from "../../../components/academics/AcademicHierarchyFilter";
 
 const Assignedstudents = () => {
     const [students, setStudents] = useState([]);
     const [filteredStudents, setFilteredStudents] = useState([]);
     const [loading, setLoading] = useState(false);
     const [isFilterOpen, setIsFilterOpen] = useState(false);
-    
-    // Filter State
-    const [filterProgram, setFilterProgram] = useState("");
-    const [filterBranch, setFilterBranch] = useState("");
-    const [filterDept, setFilterDept] = useState("");
+    const [hierarchy, setHierarchy] = useState({
+        program: "",
+        programName: "",
+        department: "",
+        departmentName: "",
+        branch: "",
+        branchName: ""
+    });
     const [filterSemester, setFilterSemester] = useState("");
-    const [filterOptions, setFilterOptions] = useState({ programs: [], branches: [], departments: [] });
 
     const fetchAssignedStudents = async () => {
         setLoading(true);
@@ -36,46 +39,34 @@ const Assignedstudents = () => {
         }
     };
 
-    const fetchFilterOptions = async () => {
-        try {
-            console.log("Frontend: Fetching filter options...");
-            const res = await API.get("/api/student-data/filter-options");
-            console.log("Frontend: Filter options response:", res.data);
-            if (res.data.success) {
-                setFilterOptions(res.data.data);
-            }
-        } catch (error) {
-            console.error("Frontend: Failed to fetch filter options", error);
-        }
-    };
-
     useEffect(() => {
         fetchAssignedStudents();
-        fetchFilterOptions();
     }, []);
 
     const handleApplyFilters = () => {
-        const filtered = students.filter(s => 
-            s.academicInfo?.programName === filterProgram &&
-            s.academicInfo?.branch === filterBranch &&
-            s.academicInfo?.department?.name === filterDept &&
-            s.academicInfo?.semester === Number(filterSemester)
-        );
+        const filtered = students.filter(s => {
+            const matchesProgram = hierarchy.programName ? s.academicInfo?.programName === hierarchy.programName : true;
+            const matchesDept = hierarchy.departmentName ? s.academicInfo?.department?.name === hierarchy.departmentName : true;
+            const matchesBranch = hierarchy.branchName ? s.academicInfo?.branch === hierarchy.branchName : true;
+            const matchesSemester = filterSemester ? s.academicInfo?.semester === Number(filterSemester) : true;
+
+            return matchesProgram && matchesDept && matchesBranch && matchesSemester;
+        });
         setFilteredStudents(filtered);
     };
 
     const handleClearFilters = () => {
-        setFilterProgram("");
-        setFilterBranch("");
-        setFilterDept("");
+        setHierarchy({
+            program: "",
+            programName: "",
+            department: "",
+            departmentName: "",
+            branch: "",
+            branchName: ""
+        });
         setFilterSemester("");
         setFilteredStudents(students);
     };
-
-    // Use filter options from backend
-    const uniquePrograms = filterOptions.programs;
-    const uniqueBranches = filterOptions.branches;
-    const uniqueDepts = filterOptions.departments.map(d => d.name);
 
     const columns = [
         "Roll No", "Name", "Assigned Dept", "Semester", "Program", "Branch", "Email"
@@ -155,45 +146,13 @@ const Assignedstudents = () => {
                         Filter Records
                     </Typography>
 
-                    <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap", alignItems: "flex-end" }}>
-                        <FormControl variant="standard" sx={{ minWidth: 180 }}>
-                            <InputLabel id="program-filter-label">Program</InputLabel>
-                            <Select
-                                labelId="program-filter-label"
-                                value={filterProgram}
-                                onChange={(e) => {
-                                    setFilterProgram(e.target.value);
-                                    setFilterBranch(""); // Reset branch when program changes
-                                }}
-                            >
-                                {uniquePrograms.map(p => <MenuItem key={p} value={p}>{p}</MenuItem>)}
-                            </Select>
-                        </FormControl>
-
-                        <FormControl variant="standard" sx={{ minWidth: 180 }}>
-                            <InputLabel id="branch-filter-label">Branch</InputLabel>
-                            <Select
-                                labelId="branch-filter-label"
-                                value={filterBranch}
-                                onChange={(e) => {
-                                    setFilterBranch(e.target.value);
-                                    setFilterDept(""); // Reset dept when branch changes
-                                }}
-                            >
-                                {uniqueBranches.map(b => <MenuItem key={b} value={b}>{b}</MenuItem>)}
-                            </Select>
-                        </FormControl>
-
-                        <FormControl variant="standard" sx={{ minWidth: 180 }}>
-                            <InputLabel id="dept-filter-label">Department</InputLabel>
-                            <Select
-                                labelId="dept-filter-label"
-                                value={filterDept}
-                                onChange={(e) => setFilterDept(e.target.value)}
-                            >
-                                {uniqueDepts.map(d => <MenuItem key={d} value={d}>{d}</MenuItem>)}
-                            </Select>
-                        </FormControl>
+                    <Box sx={{ display: "flex", gap: 3, flexWrap: "wrap", alignItems: "flex-end" }}>
+                        <Box sx={{ flex: 1, minWidth: "600px" }}>
+                            <AcademicHierarchyFilter 
+                                onChange={(val) => setHierarchy(val)}
+                                initialValues={hierarchy}
+                            />
+                        </Box>
 
                         <FormControl variant="standard" sx={{ minWidth: 180 }}>
                             <InputLabel id="sem-filter-label">Semester</InputLabel>
@@ -202,28 +161,27 @@ const Assignedstudents = () => {
                                 value={filterSemester}
                                 onChange={(e) => setFilterSemester(e.target.value)}
                             >
+                                <MenuItem value=""><em>All Semesters</em></MenuItem>
                                 {[...Array(8)].map((_, i) => (
                                     <MenuItem key={i + 1} value={i + 1}>Semester {i + 1}</MenuItem>
                                 ))}
                             </Select>
                         </FormControl>
 
-                        {filterProgram && filterBranch && filterDept && filterSemester && (
-                            <Box sx={{ display: "flex", gap: 1 }}>
-                                <ActionButton 
-                                    onClick={handleApplyFilters}
-                                    sx={{ background: "linear-gradient(135deg, #0b5299, #1e88e5)" }}
-                                >
-                                    Apply
-                                </ActionButton>
-                                <ActionButton 
-                                    onClick={handleClearFilters}
-                                    sx={{ background: "#64748b" }}
-                                >
-                                    Clear
-                                </ActionButton>
-                            </Box>
-                        )}
+                        <Box sx={{ display: "flex", gap: 1, ml: "auto" }}>
+                            <ActionButton 
+                                onClick={handleApplyFilters}
+                                sx={{ background: "linear-gradient(135deg, #0b5299, #1e88e5)" }}
+                            >
+                                Apply Filters
+                            </ActionButton>
+                            <ActionButton 
+                                onClick={handleClearFilters}
+                                sx={{ background: "#64748b" }}
+                            >
+                                Reset
+                            </ActionButton>
+                        </Box>
                     </Box>
                 </Box>
             </Collapse>
