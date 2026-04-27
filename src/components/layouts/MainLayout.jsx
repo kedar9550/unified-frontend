@@ -3,12 +3,13 @@ import { Box } from "@mui/material";
 import Sidebar from "../layouts/Sidebar";
 import Header from "../layouts/Header";
 import { useAuth } from "../../context/AuthContext";
-import { Navigate } from "react-router-dom";
+import { Navigate, useLocation } from "react-router-dom";
 import Background from "../../Background";
 import Footer from "../Footer";
 
 const MainLayout = ({ children }) => {
   const { user } = useAuth();
+  const location = useLocation();
   const [mobileOpen, setMobileOpen] = React.useState(false);
 
   if (!user) {
@@ -63,7 +64,7 @@ const MainLayout = ({ children }) => {
               overflow: "hidden", // Main panel doesn't scroll, content wrapper does
             }}
           >
-            <Box sx={{ flex: 1, p: { xs: 2, md: 4 }, overflowY: "auto" }}>
+            <Box key={location.pathname} sx={{ flex: 1, p: { xs: 2, md: 4 }, overflowY: "auto" }}>
               {children}
             </Box>
             <Footer />

@@ -148,7 +148,15 @@ const AcademicManagement = () => {
   return (
     <Box sx={{ p: 1 }}>
       {/* Global Semester Types Management */}
-      <Paper sx={{ p: 3, mb: 4, borderRadius: 1.5, bgcolor: 'rgba(255,255,255,0.7)', backdropFilter: 'blur(10px)', border: '1px solid #e0e0e0' }}>
+      <Paper elevation={0} sx={{
+        p: 3,
+        mb: 4,
+        borderRadius: '24px',
+        background: 'rgba(255, 255, 255, 0.00)',
+        backdropFilter: 'blur(20px) saturate(180%)',
+        border: '1px solid rgba(255, 255, 255, 0.4)',
+        boxShadow: '0 8px 32px rgba(31, 38, 135, 0.1)'
+      }}>
         <Typography variant="h6" sx={{ fontWeight: 700, mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
           <Class color="primary" /> Global Semester Types
         </Typography>
@@ -170,9 +178,9 @@ const AcademicManagement = () => {
           </Box>
         </Box>
 
-        <Box sx={{ 
-          display: 'flex', 
-          gap: { xs: 1, sm: 2 }, 
+        <Box sx={{
+          display: 'flex',
+          gap: { xs: 1, sm: 2 },
           flexWrap: 'wrap',
           alignItems: 'center'
         }}>
@@ -184,12 +192,20 @@ const AcademicManagement = () => {
               onClick={() => toggleSemesterType(st._id)}
               color={st.isActive ? "primary" : "default"}
               variant={st.isActive ? "filled" : "outlined"}
-              sx={{ 
-                fontWeight: 600, 
-                borderRadius: '8px',
+              sx={{
+                fontWeight: 600,
+                borderRadius: '12px',
                 flex: { xs: '1 1 calc(33.33% - 8px)', sm: '0 1 auto' },
                 minWidth: '80px',
-                px: 0.5
+                px: 1,
+                background: st.isActive ? 'rgba(11, 82, 153, 0.9)' : 'rgba(255, 255, 255, 0.15)',
+                backdropFilter: 'blur(8px)',
+                border: '1px solid rgba(255, 255, 255, 0.25)',
+                color: st.isActive ? '#fff' : '#1a237e',
+                '& .MuiChip-deleteIcon': {
+                  color: st.isActive ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.4)',
+                  '&:hover': { color: st.isActive ? '#fff' : '#d32f2f' }
+                }
               }}
             />
           ))}
@@ -200,18 +216,32 @@ const AcademicManagement = () => {
       </Paper>
 
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4, flexWrap: 'wrap', gap: 2 }}>
-        <Typography variant="h4" sx={{ fontWeight: 700, color: "#1a237e", display: 'flex', alignItems: 'center', gap: 1 }}>
-          <School fontSize="large" color="primary" />
+        <Typography variant="h4" sx={{
+          fontWeight: 800,
+          color: "#1a237e",
+          display: 'flex',
+          alignItems: 'center',
+          gap: 1.5,
+          fontSize: { xs: '1.4rem', sm: '1.75rem', md: '2.125rem' },
+          whiteSpace: 'nowrap'
+        }}>
+          <School sx={{ fontSize: { xs: 28, sm: 32, md: 40 } }} color="primary" />
           Academic Management
         </Typography>
-        <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+        <Box sx={{
+          display: 'grid',
+          gridTemplateColumns: { xs: '1fr 1fr', sm: 'auto auto auto' },
+          gap: 2,
+          alignItems: 'center',
+          width: { xs: '100%', sm: 'auto' }
+        }}>
           <TextField
             size="small"
             type="number"
             label="Start Year"
             value={newStartYear}
             onChange={handleStartYearChange}
-            sx={{ width: 120 }}
+            sx={{ width: '100%' }}
             error={newStartYear < minStartYear}
             helperText={newStartYear < minStartYear ? "Too old" : ""}
           />
@@ -221,13 +251,19 @@ const AcademicManagement = () => {
             label="End Year"
             value={newEndYear}
             onChange={(e) => setNewEndYear(parseInt(e.target.value) || "")}
-            sx={{ width: 120 }}
+            sx={{ width: '100%' }}
           />
           <Button
             variant="contained"
             startIcon={<Add />}
             onClick={createYear}
-            sx={{ borderRadius: 2, px: 3, height: 40 }}
+            sx={{
+              borderRadius: 2,
+              px: 3,
+              height: 40,
+              gridColumn: { xs: 'span 2', sm: 'span 1' },
+              width: '100%'
+            }}
             disabled={newStartYear < minStartYear || !newStartYear || !newEndYear}
           >
             Add Year
@@ -244,11 +280,17 @@ const AcademicManagement = () => {
           <Box key={y._id}>
             <Card
               sx={{
-                borderRadius: 3,
-                boxShadow: y.isActive ? '0 8px 32px rgba(46, 125, 50, 0.2)' : '0 4px 12px rgba(0,0,0,0.05)',
-                border: y.isActive ? '2px solid #0D233B' : '2px solid transparent',
-                transition: 'all 0.3s ease',
-                '&:hover': { transform: 'translateY(-4px)' }
+                borderRadius: '24px',
+                background: y.isActive ? 'rgba(255, 255, 255, 0.35)' : 'rgba(255, 255, 255, 0.2)',
+                backdropFilter: 'blur(20px) saturate(180%)',
+                border: y.isActive ? '2px solid rgba(11, 82, 153, 0.5)' : '1px solid rgba(255, 255, 255, 0.3)',
+                boxShadow: y.isActive ? '0 12px 40px rgba(11, 82, 153, 0.15)' : '0 8px 32px rgba(31, 38, 135, 0.05)',
+                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                '&:hover': {
+                  transform: 'translateY(-6px)',
+                  background: 'rgba(255, 255, 255, 0.35)',
+                  boxShadow: '0 15px 45px rgba(31, 38, 135, 0.08)'
+                }
               }}
             >
               <CardContent>

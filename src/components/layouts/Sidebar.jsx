@@ -92,6 +92,7 @@ const Sidebar = ({ mobileOpen, onDrawerToggle }) => {
   const navigateTo = (path, text) => {
     setActive(text);
     navigate(path);
+    //navigate(path.startsWith("/") ? path : `/${path}`);
     if (mobileOpen) onDrawerToggle();
   };
 
@@ -214,13 +215,13 @@ const Sidebar = ({ mobileOpen, onDrawerToggle }) => {
                 <Collapse in={!!openStates[item.text]} timeout="auto" unmountOnExit sx={{ overflow: 'hidden' }}>
                   <List component="div" disablePadding sx={{ pointerEvents: !!openStates[item.text] ? 'auto' : 'none', visibility: !!openStates[item.text] ? 'visible' : 'hidden' }}>
                     {item.nested.map((subItem) => (
-                      <Item 
-                        key={`${item.text}-${subItem.text}`} 
-                        nested 
-                        icon={subItem.icon || null} 
-                        text={subItem.text} 
-                        active={active} 
-                        onClick={() => navigateTo(subItem.path, subItem.text)} 
+                      <Item
+                        key={`${item.text}-${subItem.text}`}
+                        nested
+                        icon={subItem.icon || null}
+                        text={subItem.text}
+                        active={active}
+                        onClick={() => navigateTo(subItem.path, subItem.text)}
                       />
                     ))}
                   </List>

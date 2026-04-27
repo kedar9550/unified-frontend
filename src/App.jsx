@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import { Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import Login from "./pages/login/Login";
 import MainLayout from "./components/layouts/MainLayout";
 import { useAuth } from "./context/AuthContext";
@@ -19,8 +19,6 @@ import Loader from "./components/common/Loader";
 import FeedbackManagement from "./pages/feedback/FeedbackManagement";
 import FeedbackDiscrepancies from "./pages/feedback/FeedbackDiscrepancies";
 import Studentuploads from "./pages/uniprime/Student/Studentuploads";
-
-
 import Dashboard from "./pages/Dashboard";
 
 const PublicOnlyRoute = ({ children }) => {
@@ -29,6 +27,16 @@ const PublicOnlyRoute = ({ children }) => {
     return <Navigate to="/dashboard" replace />;
   }
   return children;
+};
+
+// Helper component to force Layout refresh on route change
+const ProtectedRoute = ({ element: Element }) => {
+  const location = useLocation();
+  return (
+    <MainLayout key={location.pathname}>
+      {Element}
+    </MainLayout>
+  );
 };
 
 function App() {
@@ -73,138 +81,35 @@ function App() {
         <Route path="/signup" element={<Navigate to="/" replace />} />
 
         {/* Protected Routes */}
-        <Route
-          path="/dashboard"
-          element={
-            <MainLayout>
-              <Dashboard />
-            </MainLayout>
-          }
-        />
-
-        <Route
-          path="/teaching"
-          element={
-            <MainLayout>
-              <Teaching />
-            </MainLayout>
-          }
-        />
-        <Route
-          path="/academics/management"
-          element={
-            <MainLayout>
-              <AcademicManagement />
-            </MainLayout>
-          }
-        />
-        <Route
-          path="exam-result/faculty-format"
-          element={
-            <MainLayout>
-              <FacultyFormatResults />
-            </MainLayout>
-          }
-        />
-        <Route
-          path="exam-result/students-format"
-          element={
-            <MainLayout>
-              <StudentFormatResults />
-            </MainLayout>
-          }
-        />
-        <Route
-          path="exam-result/discrepancies"
-          element={
-            <MainLayout>
-              <Discrepancies />
-            </MainLayout>
-          }
-        />
-        <Route
-          path="/hod/protecrdataupload"
-          element={
-            <MainLayout>
-              <DeptProctorUploads />
-            </MainLayout>
-          }
-        />
-        <Route
-          path="/academics/programs"
-          element={
-            <MainLayout>
-              <AcademicStructure />
-            </MainLayout>
-          }
-        />
-        <Route
-          path="/academics/department"
-          element={
-            <MainLayout>
-              <AcademicStructure />
-            </MainLayout>
-          }
-        />
-        <Route
-          path="/academics/roles"
-          element={
-            <MainLayout>
-              <RoleManagement />
-            </MainLayout>
-          }
-        />
-        <Route
-          path="/role-management"
-          element={
-            <MainLayout>
-              <RoleManagement />
-            </MainLayout>
-          }
-        />
-        <Route
-          path="/feedback-management"
-          element={
-            <MainLayout>
-              <FeedbackManagement />
-            </MainLayout>
-          }
-        />
-        <Route
-          path="/feedback-management/discrepancies"
-          element={
-            <MainLayout>
-              <FeedbackDiscrepancies />
-            </MainLayout>
-          }
-        />
-        <Route
-          path="/student/student-uploads"
-          element={
-            <MainLayout>
-              <Studentuploads />
-            </MainLayout>
-          }
-        />
-        <Route
-          path="/student/assigned-students"
-          element={
-            <MainLayout>
-              <Assignedstudents />
-            </MainLayout>
-          }
-        />
+        <Route path="/dashboard" element={<ProtectedRoute element={<Dashboard />} />} />
+        <Route path="/teaching" element={<ProtectedRoute element={<Teaching />} />} />
+        <Route path="/academics/management" element={<ProtectedRoute element={<AcademicManagement />} />} />
+        <Route path="exam-result/faculty-format" element={<ProtectedRoute element={<FacultyFormatResults />} />} />
+        <Route path="exam-result/students-format" element={<ProtectedRoute element={<StudentFormatResults />} />} />
+        <Route path="exam-result/discrepancies" element={<ProtectedRoute element={<Discrepancies />} />} />
+        <Route path="/hod/protecrdataupload" element={<ProtectedRoute element={<DeptProctorUploads />} />} />
+        <Route path="/academics/programs" element={<ProtectedRoute element={<AcademicStructure />} />} />
+        <Route path="/academics/department" element={<ProtectedRoute element={<AcademicStructure />} />} />
+        <Route path="/academics/roles" element={<ProtectedRoute element={<RoleManagement />} />} />
+        <Route path="/role-management" element={<ProtectedRoute element={<RoleManagement />} />} />
+        <Route path="/feedback-management" element={<ProtectedRoute element={<FeedbackManagement />} />} />
+        <Route path="/feedback-management/discrepancies" element={<ProtectedRoute element={<FeedbackDiscrepancies />} />} />
+        <Route path="/student/student-uploads" element={<ProtectedRoute element={<Studentuploads />} />} />
+        <Route path="/student/assigned-students" element={<ProtectedRoute element={<Assignedstudents />} />} />
+        
         <Route
           path="*"
           element={
-            <MainLayout>
+            <ProtectedRoute element={
               <Box p={4}>
                 <Typography variant="h4">Page Content</Typography>
               </Box>
-            </MainLayout>
+            } />
           }
         />
-      </Routes></>
+      </Routes>
+    </>
   );
 }
+
 export default App;

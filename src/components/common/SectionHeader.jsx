@@ -8,7 +8,14 @@ export default function SectionHeader({ title, action }) {
         alignItems: "center",
         justifyContent: "space-between",
         gap: 1,
-        mb: 2,
+        mb: 3,
+        background: "rgba(255, 255, 255, 0.01)", // Glass background
+        backdropFilter: "blur(0px) saturate(180%)",
+        WebkitBackdropFilter: "blur(10px) saturate(180%)",
+        border: "1px solid rgba(255, 255, 255, 0.3)",
+        borderRadius: "16px",
+        p: { xs: 1.5, sm: 2 }, // Responsive padding
+        boxShadow: "0 4px 20px rgba(0, 0, 0, 0.05)",
       }}
     >
       <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
