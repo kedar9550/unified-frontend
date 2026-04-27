@@ -4,11 +4,13 @@ import {
   Menu as MenuIcon,
 } from "@mui/icons-material";
 import { useAuth } from "../../context/AuthContext";
-import { useLocation } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 
 const Header = ({ onMenuClick }) => {
   const { user, activeRole, switchRole } = useAuth();
   const [imgError, setImgError] = useState(false);
+  const navigate = useNavigate();
+const location = useLocation();
 
   const getEcapImage = () => {
     if (!user || user.profileImage) return null;
@@ -77,7 +79,13 @@ const Header = ({ onMenuClick }) => {
           <FormControl variant="outlined" size="small" sx={{ minWidth: 140 }}>
             <Select
               value={activeRole || ""}
-              onChange={(e) => switchRole(e.target.value)}
+              onChange={(e) => {
+    const newRole = e.target.value;
+    if (newRole !== activeRole) {
+      switchRole(newRole);
+      navigate("/dashboard"); 
+    }
+  }}
               sx={{
                 color: "#fff",
                 background: "rgba(255, 255, 255, 0.15)",
