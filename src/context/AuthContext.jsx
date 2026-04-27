@@ -53,7 +53,7 @@ export const AuthProvider = ({ children }) => {
     try {
       // Append app context to login details as required by backend
       const payload = { ...formData, app: "UNIFIED_SYSTEM" };
-      const res = await API.post("/api/employees/login", payload);
+      const res = await API.post("/api/employees/login", payload); 
 
       let userData = res.data.user;
       userData = normalizeRoles(userData);
