@@ -66,7 +66,7 @@ export const ROLE_ROUTES = {
       icon: <PersonIcon />,
       nested: [
         {
-          text: "Student Upload",
+          text: "Student Data Management",
           path: "/student/student-uploads"
         },
         {
