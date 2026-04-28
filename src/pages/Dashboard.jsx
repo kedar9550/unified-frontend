@@ -1,6 +1,14 @@
+import React from 'react';
 import { useAuth } from "../context/AuthContext";
-import { Box, Typography, Card, CardContent, Grid } from "@mui/material";
-import { School, People, Assessment, AdminPanelSettings, Event, Notifications } from "@mui/icons-material";
+import { Box, Typography } from "@mui/material";
+
+import FacultyDashboard from "./faculty/FacultyDashboard";
+import UniprimeDashboard from "./uniprime/UniprimeDashboard";
+import HODDashboard from "./hod/HODDashboard";
+import ExamDashboard from "./examAdmin/ExamDashboard";
+import StudentDashboard from "./student/StudentDashboard";
+import ResearchFeedbackDashboard from "./feedback/ResearchFeedbackDashboard";
+import FeedbackCoordinatorDashboard from "./feedback/FeedbackCoordinatorDashboard";
 
 function Dashboard() {
   const { activeRole } = useAuth();
@@ -18,7 +26,7 @@ function Dashboard() {
 
       {/* 🎯 ROLE-BASED DASHBOARD */}
       {activeRole === "FACULTY" && <FacultyDashboard />}
-      {activeRole === "UNIPRIME" && <AdminDashboard />}
+      {activeRole === "UNIPRIME" && <UniprimeDashboard />}
       {activeRole === "HOD" && <HODDashboard />}
       {activeRole === "EXAMSECTION" && <ExamDashboard />}
       {activeRole === "STUDENT" && <StudentDashboard />}
