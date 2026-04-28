@@ -92,6 +92,7 @@ const Sidebar = ({ mobileOpen, onDrawerToggle }) => {
   const navigateTo = (path, text) => {
     setActive(text);
     navigate(path);
+    //navigate(path.startsWith("/") ? path : `/${path}`);
     if (mobileOpen) onDrawerToggle();
   };
 
@@ -211,10 +212,17 @@ const Sidebar = ({ mobileOpen, onDrawerToggle }) => {
                   />
                   {openStates[item.text] ? <ExpandLess sx={{ color: "rgba(180,210,255,0.7)", fontSize: 18 }} /> : <ExpandMore sx={{ color: "rgba(180,210,255,0.7)", fontSize: 18 }} />}
                 </ListItemButton>
-                <Collapse in={openStates[item.text]} timeout="auto" unmountOnExit>
-                  <List component="div" disablePadding>
+                <Collapse in={!!openStates[item.text]} timeout="auto" unmountOnExit sx={{ overflow: 'hidden' }}>
+                  <List component="div" disablePadding sx={{ pointerEvents: !!openStates[item.text] ? 'auto' : 'none', visibility: !!openStates[item.text] ? 'visible' : 'hidden' }}>
                     {item.nested.map((subItem) => (
-                      <Item key={subItem.text} nested icon={subItem.icon || null} text={subItem.text} active={active} onClick={() => navigateTo(subItem.path, subItem.text)} />
+                      <Item
+                        key={`${item.text}-${subItem.text}`}
+                        nested
+                        icon={subItem.icon || null}
+                        text={subItem.text}
+                        active={active}
+                        onClick={() => navigateTo(subItem.path, subItem.text)}
+                      />
                     ))}
                   </List>
                 </Collapse>
@@ -228,35 +236,39 @@ const Sidebar = ({ mobileOpen, onDrawerToggle }) => {
 
       <Box sx={{ height: "1px", background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.12), transparent)", my: 2, mx: -2 }} />
 
-      <ListItemButton
+      <Box
         onClick={logout}
         sx={{
-          borderRadius: "10px",
-          transition: "all 0.25s ease",
-          background: "rgba(255,80,80,0.08)",
-          border: "1px solid rgba(255,100,100,0.15)",
+          borderRadius: "12px",
+          transition: "all 0.25s cubic-bezier(0.4, 0, 0.2, 1)",
+          background: "rgba(255, 80, 80, 0.1)",
+          border: "1px solid rgba(255, 100, 100, 0.2)",
           mb: 0.5,
           mt: "auto",
-          height: "46px", // Force standard height
-          minHeight: "46px", // Force standard min-height
-          flexGrow: 0,
-          flexShrink: 0,
+          height: "48px",
+          display: "flex",
+          alignItems: "center",
+          px: 2,
+          cursor: "pointer",
+          gap: 2,
+          color: "#ff9090",
           "&:hover": {
-            background: "rgba(255,80,80,0.15)",
+            background: "rgba(255, 80, 80, 0.2)",
             transform: "translateX(4px)",
-            borderColor: "rgba(255,100,100,0.3)"
+            borderColor: "rgba(255, 100, 100, 0.4)",
+            color: "#ffb0b0",
+            boxShadow: "0 4px 12px rgba(255, 80, 80, 0.15)"
+          },
+          "&:active": {
+            transform: "translateX(2px) scale(0.98)"
           }
         }}
       >
-        <ListItemIcon sx={{ color: "#ff7070", minWidth: 40 }}><Logout fontSize="small" /></ListItemIcon>
-        <ListItemText
-          primary={
-            <Typography sx={{ fontSize: "0.85rem", fontWeight: 600, color: "#ff9090" }}>
-              Logout
-            </Typography>
-          }
-        />
-      </ListItemButton>
+        <Logout fontSize="small" sx={{ opacity: 0.9 }} />
+        <Typography sx={{ fontSize: "0.875rem", fontWeight: 600, letterSpacing: "0.3px" }}>
+          Logout
+        </Typography>
+      </Box>
 
       {/* Weather Widget at Bottom */}
       <Box

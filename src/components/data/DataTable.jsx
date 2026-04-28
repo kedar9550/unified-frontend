@@ -118,27 +118,43 @@ export default function DataTable({ columns, rows }) {
           }}
         >
           {/* HEADER */}
-          <TableHead>
-            <TableRow>
+          <TableHead
+            sx={{
+              "& th": {
+                borderBottom: "none",
+                color: "#ffffff",
+                fontWeight: 700,
+                fontSize: "0.75rem",
+                textTransform: "uppercase",
+                letterSpacing: "0.08em",
+                py: 1.8,
+                px: 3,
+                userSelect: "none",
+                transition: "all 0.3s ease",
+                background: "transparent", // Make individual cells transparent
+                cursor: "pointer",
+                "&:hover": {
+                  background: "rgba(255, 255, 255, 0.15)", // Brighter highlight on hover
+                },
+              },
+            }}
+          >
+            <TableRow 
+              sx={{ 
+                background: "linear-gradient(135deg, #1e88e5, #1565c0)", // Spans the entire row
+                borderRadius: "12px 12px 0 0",
+              }} 
+            >
               {columns.map((col, index) => (
                 <TableCell
                   key={index}
                   onClick={() => handleSort(index)}
                   sx={{
-                    cursor: "pointer",
-                    background: "rgba(132, 169, 235, 0.7)", // Matching soft blue header
-                    color: "#ffffff",
-                    fontWeight: 600,
-                    fontSize: "0.75rem",
-                    textTransform: "uppercase",
-                    letterSpacing: "0.05em",
-                    borderBottom: "none",
-                    py: 1.5,
-                    px: 3,
-                    userSelect: "none",
-                    transition: "background 0.2s ease",
-                    "&:hover": {
-                      background: "rgba(110, 150, 225, 0.8)",
+                    "&:first-of-type": {
+                      borderTopLeftRadius: "12px",
+                    },
+                    "&:last-of-type": {
+                      borderTopRightRadius: "12px",
                     },
                   }}
                 >

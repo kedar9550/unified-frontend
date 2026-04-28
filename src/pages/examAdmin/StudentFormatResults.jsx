@@ -16,9 +16,7 @@ import {
 } from "@mui/icons-material";
 
 export default function StudentFormatResults() {
-  const [academicYears, setAcademicYears] = useState([]);
   const [programs, setPrograms] = useState([]);
-  const [selectedYearId, setSelectedYearId] = useState("");
   const [selectedProgramId, setSelectedProgramId] = useState("");
 
   const [results, setResults] = useState([]);
@@ -26,22 +24,11 @@ export default function StudentFormatResults() {
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef(null);
 
-  // 1. Fetch Academic Years and Programs on Mount
+  // 1. Fetch Programs on Mount
   useEffect(() => {
     const dataFetch = async () => {
       try {
-        const [ayRes, progRes] = await Promise.all([
-          API.get("/api/academic-years"),
-          API.get("/api/academics/programs"),
-        ]);
-
-        const years = ayRes.data.years || [];
-        setAcademicYears(years);
-        if (years.length > 0) {
-          const active = years.find((y) => y.isActive) || years[0];
-          setSelectedYearId(active._id);
-        }
-
+        const progRes = await API.get("/api/academics/programs");
         const progs = progRes.data.data || [];
         setPrograms(progs);
       } catch (err) {
@@ -53,10 +40,9 @@ export default function StudentFormatResults() {
 
   // 2. Fetch Results when filters change
   const fetchResults = async () => {
-    if (!selectedYearId) return;
     setLoading(true);
     try {
-      const params = { academicYear: selectedYearId };
+      const params = {};
       if (selectedProgramId) params.programId = selectedProgramId;
 
       const res = await API.get("/api/student-results", { params });
@@ -70,7 +56,7 @@ export default function StudentFormatResults() {
 
   useEffect(() => {
     fetchResults();
-  }, [selectedYearId, selectedProgramId]);
+  }, [selectedProgramId]);
 
   // 4. Handle Upload
   const handleUploadClick = () => {
@@ -81,14 +67,8 @@ export default function StudentFormatResults() {
     const file = e.target.files[0];
     if (!file) return;
 
-    if (!selectedProgramId) {
-      alert("Please select a program first.");
-      return;
-    }
-
     const formData = new FormData();
     formData.append("file", file);
-    formData.append("programId", selectedProgramId);
 
     setUploading(true);
     try {
@@ -129,17 +109,11 @@ export default function StudentFormatResults() {
 
   // 5. Download Template
   const downloadTemplate = () => {
-    const selectedYear = academicYears.find((y) => y._id === selectedYearId);
-    const yearLabel = selectedYear ? selectedYear.year : "2024-2025";
-
     const headers = [
       "studentid",
-      "studentname",
       "subjectcode",
       "subjectname",
-      "academicyear",
       "semester",
-      "branchcode",
       "examyear",
       "resulttype",
       "grade",
@@ -151,12 +125,9 @@ export default function StudentFormatResults() {
     // Sample row
     const sampleRow = [
       "STU001",
-      "John Doe",
       "CS101",
       "Data Structures",
-      yearLabel,
       "1",
-      "CSE",
       "2025",
       "REGULAR",
       "A",
@@ -197,24 +168,7 @@ export default function StudentFormatResults() {
       {/* 🔹 FILTERS */}
       <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2, mb: 3, alignItems: "center" }}>
         <Box sx={filterBox}>
-          Academic Year
-          <Select
-            variant="standard"
-            disableUnderline
-            value={selectedYearId}
-            onChange={(e) => setSelectedYearId(e.target.value)}
-            sx={{ ml: 2, minWidth: 120 }}
-          >
-            {academicYears.map((year) => (
-              <MenuItem key={year._id} value={year._id}>
-                {year.year}
-              </MenuItem>
-            ))}
-          </Select>
-        </Box>
-
-        <Box sx={filterBox}>
-          Program
+          Filter by Program
           <Select
             variant="standard"
             disableUnderline
@@ -223,7 +177,7 @@ export default function StudentFormatResults() {
             sx={{ ml: 2, minWidth: 180 }}
             displayEmpty
           >
-            <MenuItem value="" disabled>Select Program</MenuItem>
+            <MenuItem value="">All Programs</MenuItem>
             {programs.map((p) => (
               <MenuItem key={p._id} value={p._id}>
                 {p.name}
@@ -232,21 +186,19 @@ export default function StudentFormatResults() {
           </Select>
         </Box>
 
-        {/* 🔹 Upload Specific Section (Only shown when program selected) */}
-        {selectedProgramId && (
-           <Box sx={{ display: "flex", gap: 2, ml: "auto" }}>
-             <ActionButton
-               onClick={downloadTemplate}
-               sx={{ background: "linear-gradient(135deg, #6a11cb, #2575fc)" }}
-             >
-               <DownloadIcon sx={{ mr: 1 }} /> Template
-             </ActionButton>
+        {/* 🔹 Upload Specific Section */}
+        <Box sx={{ display: "flex", gap: 2, ml: "auto" }}>
+          <ActionButton
+            onClick={downloadTemplate}
+            sx={{ background: "linear-gradient(135deg, #6a11cb, #2575fc)" }}
+          >
+            <DownloadIcon sx={{ mr: 1 }} /> Template
+          </ActionButton>
 
-             <ActionButton onClick={handleUploadClick} disabled={uploading}>
-               <UploadIcon sx={{ mr: 1 }} /> Upload CSV
-             </ActionButton>
-           </Box>
-        )}
+          <ActionButton onClick={handleUploadClick} disabled={uploading}>
+            <UploadIcon sx={{ mr: 1 }} /> Upload CSV
+          </ActionButton>
+        </Box>
       </Box>
 
 
@@ -267,7 +219,7 @@ export default function StudentFormatResults() {
         <SectionHeader title="Student Results" />
 
         <DataTable
-          key={`${selectedYearId}-${selectedProgramId}`}
+          key={selectedProgramId}
           columns={[
             "Student ID",
             "Student Name",

@@ -148,27 +148,42 @@ const AcademicManagement = () => {
   return (
     <Box sx={{ p: 1 }}>
       {/* Global Semester Types Management */}
-      <Paper sx={{ p: 3, mb: 4, borderRadius: 4, bgcolor: 'rgba(255,255,255,0.7)', backdropFilter: 'blur(10px)', border: '1px solid #e0e0e0' }}>
+      <Paper elevation={0} sx={{
+        p: 3,
+        mb: 4,
+        borderRadius: '24px',
+        background: 'rgba(255, 255, 255, 0.00)',
+        backdropFilter: 'blur(20px) saturate(180%)',
+        border: '1px solid rgba(255, 255, 255, 0.4)',
+        boxShadow: '0 8px 32px rgba(31, 38, 135, 0.1)'
+      }}>
         <Typography variant="h6" sx={{ fontWeight: 700, mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
           <Class color="primary" /> Global Semester Types
         </Typography>
-        <Box sx={{ display: 'flex', gap: 2, mb: 3, flexWrap: 'wrap', alignItems: 'center' }}>
+        <Box sx={{ display: 'flex', gap: 2, mb: 3, flexDirection: { xs: 'column', sm: 'row' }, alignItems: 'center' }}>
           <TextField
             size="small"
             label="Semester Name (e.g. ODD)"
             value={newSemesterName}
             onChange={(e) => setNewSemesterName(e.target.value.toUpperCase())}
-            sx={{ width: 250 }}
+            sx={{ width: { xs: '100%', sm: 250 } }}
           />
-          <Button variant="contained" onClick={createSemesterType} startIcon={<Add />} sx={{ borderRadius: 8 }}>
-            Add Type
-          </Button>
-          <Button variant="outlined" onClick={seedDefaults} size="small" sx={{ borderRadius: 8 }}>
-            Seed Defaults
-          </Button>
+          <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2, width: { xs: '100%', sm: 'auto' } }}>
+            <Button variant="contained" onClick={createSemesterType} startIcon={<Add />} sx={{ borderRadius: 2, whiteSpace: 'nowrap' }}>
+              Add Type
+            </Button>
+            <Button variant="outlined" onClick={seedDefaults} size="small" sx={{ borderRadius: 2, whiteSpace: 'nowrap' }}>
+              Seed Defaults
+            </Button>
+          </Box>
         </Box>
-        
-        <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+
+        <Box sx={{
+          display: 'flex',
+          gap: { xs: 1, sm: 2 },
+          flexWrap: 'wrap',
+          alignItems: 'center'
+        }}>
           {semesterTypes.map((st) => (
             <Chip
               key={st._id}
@@ -177,7 +192,21 @@ const AcademicManagement = () => {
               onClick={() => toggleSemesterType(st._id)}
               color={st.isActive ? "primary" : "default"}
               variant={st.isActive ? "filled" : "outlined"}
-              sx={{ fontWeight: 600, px: 1 }}
+              sx={{
+                fontWeight: 600,
+                borderRadius: '12px',
+                flex: { xs: '1 1 calc(33.33% - 8px)', sm: '0 1 auto' },
+                minWidth: '80px',
+                px: 1,
+                background: st.isActive ? 'rgba(11, 82, 153, 0.9)' : 'rgba(255, 255, 255, 0.15)',
+                backdropFilter: 'blur(8px)',
+                border: '1px solid rgba(255, 255, 255, 0.25)',
+                color: st.isActive ? '#fff' : '#1a237e',
+                '& .MuiChip-deleteIcon': {
+                  color: st.isActive ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.4)',
+                  '&:hover': { color: st.isActive ? '#fff' : '#d32f2f' }
+                }
+              }}
             />
           ))}
           {semesterTypes.length === 0 && (
@@ -187,18 +216,32 @@ const AcademicManagement = () => {
       </Paper>
 
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4, flexWrap: 'wrap', gap: 2 }}>
-        <Typography variant="h4" sx={{ fontWeight: 700, color: "#1a237e", display: 'flex', alignItems: 'center', gap: 1 }}>
-          <School fontSize="large" color="primary" />
+        <Typography variant="h4" sx={{
+          fontWeight: 800,
+          color: "#1a237e",
+          display: 'flex',
+          alignItems: 'center',
+          gap: 1.5,
+          fontSize: { xs: '1.4rem', sm: '1.75rem', md: '2.125rem' },
+          whiteSpace: 'nowrap'
+        }}>
+          <School sx={{ fontSize: { xs: 28, sm: 32, md: 40 } }} color="primary" />
           Academic Management
         </Typography>
-        <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+        <Box sx={{
+          display: 'grid',
+          gridTemplateColumns: { xs: '1fr 1fr', sm: 'auto auto auto' },
+          gap: 2,
+          alignItems: 'center',
+          width: { xs: '100%', sm: 'auto' }
+        }}>
           <TextField
             size="small"
             type="number"
             label="Start Year"
             value={newStartYear}
             onChange={handleStartYearChange}
-            sx={{ width: 120 }}
+            sx={{ width: '100%' }}
             error={newStartYear < minStartYear}
             helperText={newStartYear < minStartYear ? "Too old" : ""}
           />
@@ -208,13 +251,19 @@ const AcademicManagement = () => {
             label="End Year"
             value={newEndYear}
             onChange={(e) => setNewEndYear(parseInt(e.target.value) || "")}
-            sx={{ width: 120 }}
+            sx={{ width: '100%' }}
           />
           <Button
             variant="contained"
             startIcon={<Add />}
             onClick={createYear}
-            sx={{ borderRadius: 8, px: 3, height: 40 }}
+            sx={{
+              borderRadius: 2,
+              px: 3,
+              height: 40,
+              gridColumn: { xs: 'span 2', sm: 'span 1' },
+              width: '100%'
+            }}
             disabled={newStartYear < minStartYear || !newStartYear || !newEndYear}
           >
             Add Year
@@ -222,16 +271,26 @@ const AcademicManagement = () => {
         </Box>
       </Box>
 
-      <Grid container spacing={3}>
+      <Box sx={{
+        display: 'grid',
+        gridTemplateColumns: { xs: '1fr', md: 'repeat(2, 1fr)', lg: 'repeat(3, 1fr)' },
+        gap: 3
+      }}>
         {years.map((y) => (
-          <Grid item xs={12} md={6} lg={4} key={y._id}>
+          <Box key={y._id}>
             <Card
               sx={{
-                borderRadius: 1,
-                boxShadow: y.isActive ? '0 8px 32px rgba(46, 125, 50, 0.2)' : '0 4px 12px rgba(0,0,0,0.05)',
-                border: y.isActive ? '2px solid #0D233B' : '2px solid transparent',
-                transition: 'all 0.3s ease',
-                '&:hover': { transform: 'translateY(-4px)' }
+                borderRadius: '24px',
+                background: y.isActive ? 'rgba(255, 255, 255, 0.35)' : 'rgba(255, 255, 255, 0.2)',
+                backdropFilter: 'blur(20px) saturate(180%)',
+                border: y.isActive ? '2px solid rgba(11, 82, 153, 0.5)' : '1px solid rgba(255, 255, 255, 0.3)',
+                boxShadow: y.isActive ? '0 12px 40px rgba(11, 82, 153, 0.15)' : '0 8px 32px rgba(31, 38, 135, 0.05)',
+                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                '&:hover': {
+                  transform: 'translateY(-6px)',
+                  background: 'rgba(255, 255, 255, 0.35)',
+                  boxShadow: '0 15px 45px rgba(31, 38, 135, 0.08)'
+                }
               }}
             >
               <CardContent>
@@ -306,17 +365,17 @@ const AcademicManagement = () => {
                       {semesterTypes.map((st) => {
                         const isActive = y.activeSemesterTypeId?._id === st._id || y.activeSemesterTypeId === st._id;
                         return (
-                          <Paper 
-                            key={st._id} 
-                            elevation={0} 
-                            sx={{ 
-                              p: 1.5, 
-                              display: 'flex', 
-                              justifyContent: 'space-between', 
-                              alignItems: 'center', 
-                              border: '1px solid #e0e0e0', 
-                              borderRadius: 2, 
-                              bgcolor: isActive ? '#f0fdf4' : '#fff' 
+                          <Paper
+                            key={st._id}
+                            elevation={0}
+                            sx={{
+                              p: 1.5,
+                              display: 'flex',
+                              justifyContent: 'space-between',
+                              alignItems: 'center',
+                              border: '1px solid #e0e0e0',
+                              borderRadius: 2,
+                              bgcolor: isActive ? '#f0fdf4' : '#fff'
                             }}
                           >
                             <Typography variant="body1" sx={{ fontWeight: isActive ? 700 : 500, color: isActive ? '#1b5e20' : '#444' }}>
@@ -351,9 +410,9 @@ const AcademicManagement = () => {
                 </Collapse>
               </CardContent>
             </Card>
-          </Grid>
+          </Box>
         ))}
-      </Grid>
+      </Box>
     </Box>
   );
 };

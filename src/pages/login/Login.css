@@ -587,9 +587,17 @@
   overflow: hidden;
 }
 
-/* Slide overlay to LEFT in signup mode */
-.signup-mode .auth-overlay {
-  transform: translateX(-100%);
+/* Slide overlay to LEFT in signup mode (DESKTOP ONLY) */
+@media (min-width: 769px) {
+  .signup-mode .auth-overlay {
+    transform: translateX(-100%);
+  }
+}
+
+@media (max-width: 768px) {
+  .signup-mode .auth-overlay {
+    transform: none !important;
+  }
 }
 
 /* ─── OVERLAY CONTENT (two states fade in/out) ──── */
@@ -776,6 +784,7 @@
     padding: 28px 20px 24px;
     /* enough room for all elements */
     height: auto;
+    transform: none !important;
   }
 
   .overlay-right {

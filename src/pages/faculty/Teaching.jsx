@@ -81,7 +81,7 @@ export default function Teaching() {
 
   // 3. Fetch Results for this faculty when filters change
   useEffect(() => {
-    if (!selectedYearId || !selectedSemTypeId) return;
+    if (!selectedYearId || !selectedSemTypeId || !user?.institutionId) return;
     const fetchResults = async () => {
       setLoading(true);
       try {
@@ -107,7 +107,7 @@ export default function Teaching() {
           params: {
             facultyId: user?.institutionId,
             academicYear: selectedYearId,
-            semester: selectedSemTypeId,
+            semesterTypeId: selectedSemTypeId,
           },
         });
         setProctorStats(res.data);
@@ -139,7 +139,7 @@ export default function Teaching() {
     fetchResults();
     fetchProctorStats();
     fetchFeedbackStats();
-  }, [selectedYearId, selectedSemTypeId]);
+  }, [selectedYearId, selectedSemTypeId, user?.institutionId]);
 
   // ── CSV Upload Handler ────────────────────────────────────────────
   const handleCSVUploadClick = () => {
@@ -459,6 +459,10 @@ export default function Teaching() {
             <Box sx={{ textAlign: "center" }}>
                 <Typography variant="body2" color="text.secondary" fontWeight={600} mb={1}>Total Students Managed</Typography>
                 <Typography variant="h4" color="primary" fontWeight={700}>{proctorStats.totalMappedStudents}</Typography>
+            </Box>
+            <Box sx={{ textAlign: "center" }}>
+                <Typography variant="body2" color="text.secondary" fontWeight={600} mb={1}>Students Appeared</Typography>
+                <Typography variant="h4" color="#f59e0b" fontWeight={700}>{proctorStats.studentsAppeared}</Typography>
             </Box>
             <Box sx={{ textAlign: "center" }}>
                 <Typography variant="body2" color="text.secondary" fontWeight={600} mb={1}>Students Passed</Typography>
