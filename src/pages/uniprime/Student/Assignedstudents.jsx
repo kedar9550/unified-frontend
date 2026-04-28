@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from "react";
 import { Box, Avatar, CircularProgress, Typography, MenuItem, Select, FormControl, InputLabel, Collapse, Tooltip, IconButton } from "@mui/material";
 import { FilterList as FilterIcon, Delete as DeleteIcon } from "@mui/icons-material";
@@ -8,7 +7,6 @@ import SectionHeader from "../../../components/common/SectionHeader";
 import DataTable from "../../../components/data/DataTable";
 import API from "../../../api/axios";
 import AcademicHierarchyFilter from "../../../components/academics/AcademicHierarchyFilter";
-
 import { useLocation } from "react-router-dom";
 
 const Assignedstudents = () => {
@@ -25,53 +23,49 @@ const Assignedstudents = () => {
         branch: "",
         branchName: ""
     });
+    const [filterSemester, setFilterSemester] = useState("");
+
+    const fetchAssignedStudents = async (signal) => {
+        setLoading(true);
+        try {
+            const res = await API.get("/api/student-data/assigned", { signal });
+            if (res.data.success) {
+                const data = res.data.data || [];
+                setStudents(data);
+                setFilteredStudents(data); 
+            }
+        } catch (error) {
+            if (error.name !== "CanceledError" && error.code !== "ERR_CANCELED") {
+                console.error("Failed to fetch assigned students", error);
+            }
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        const controller = new AbortController();
+        fetchAssignedStudents(controller.signal);
+        return () => controller.abort();
+    }, [location.key]);
 
     const handleHierarchyChange = useCallback((val) => {
         setHierarchy(val);
     }, []);
-    const [filterSemester, setFilterSemester] = useState("");
 
+    // Auto-apply filter whenever hierarchy or semester changes
     useEffect(() => {
-        const controller = new AbortController();
-
-        const fetchAssignedStudents = async () => {
-            setLoading(true);
-            try {
-                const res = await API.get("/api/student-data/assigned", {
-                    signal: controller.signal,
-                });
-                if (res.data.success) {
-                    const data = res.data.data || [];
-                    setStudents(data);
-                    setFilteredStudents(data);
-                }
-            } catch (error) {
-                if (error.name !== "CanceledError" && error.code !== "ERR_CANCELED") {
-                    console.error("Failed to fetch assigned students", error);
-                }
-            } finally {
-                if (!controller.signal.aborted) {
-                    setLoading(false);
-                }
-            }
-        };
-
-        fetchAssignedStudents();
-
-        return () => controller.abort(); // unmount అయినప్పుడు cancel చేస్తుంది
-    }, [location.key]);
-
-    const handleApplyFilters = () => {
         const filtered = students.filter(s => {
             const matchesProgram = hierarchy.programName ? s.academicInfo?.programName === hierarchy.programName : true;
             const matchesDept = hierarchy.departmentName ? s.academicInfo?.department?.name === hierarchy.departmentName : true;
             const matchesBranch = hierarchy.branchName ? s.academicInfo?.branch === hierarchy.branchName : true;
             const matchesSemester = filterSemester ? s.academicInfo?.semester === Number(filterSemester) : true;
-
             return matchesProgram && matchesDept && matchesBranch && matchesSemester;
         });
         setFilteredStudents(filtered);
-    };
+    }, [hierarchy, filterSemester, students]);
+
+    const hasActiveFilter = hierarchy.program || filterSemester;
 
     const handleClearFilters = () => {
         setHierarchy({
@@ -83,7 +77,11 @@ const Assignedstudents = () => {
             branchName: ""
         });
         setFilterSemester("");
-        setFilteredStudents(students);
+    };
+
+    const handleApplyFilters = () => {
+        // Since filtering is automatic via useEffect, this just provides visual feedback or closes panel
+        setIsFilterOpen(false);
     };
 
     const columns = [
@@ -207,7 +205,7 @@ const Assignedstudents = () => {
             <Box
                 sx={{
                     p: 3,
-                    mt: 3,
+                    mt: 2,
                     borderRadius: "24px",
                     background: "linear-gradient(135deg, rgba(255,255,255,0.7), rgba(255,255,255,0.4))",
                     backdropFilter: "blur(20px)",
@@ -222,13 +220,59 @@ const Assignedstudents = () => {
                     title={`Assigned Student Details (${filteredStudents.length})`}
                 />
 
-                <Box sx={{ mt: 2, flex: 1 }}>
+                <Box sx={{ flex: 1 }}>
                     {loading ? (
                         <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>
                             <CircularProgress />
                         </Box>
                     ) : (
-                        <DataTable columns={columns} rows={formattedRows} />
+                        <DataTable
+                            columns={columns}
+                            rows={formattedRows}
+                            toolbarLeft={
+                                <Box sx={{ display: "flex", alignItems: "flex-end", gap: 2, flexWrap: "wrap" }}>
+                                    <AcademicHierarchyFilter
+                                        onChange={handleHierarchyChange}
+                                        initialValues={hierarchy}
+                                    />
+                                    {hierarchy.department && (
+                                        <FormControl variant="standard" sx={{ minWidth: 120 }}>
+                                            <InputLabel id="sem-filter-label" sx={{ fontSize: "0.85rem" }}>Semester</InputLabel>
+                                            <Select
+                                                labelId="sem-filter-label"
+                                                value={filterSemester}
+                                                onChange={(e) => setFilterSemester(e.target.value)}
+                                                sx={{ fontSize: "0.85rem" }}
+                                            >
+                                                <MenuItem value=""><em>All</em></MenuItem>
+                                                {[...Array(8)].map((_, i) => (
+                                                    <MenuItem key={i + 1} value={i + 1}>Sem {i + 1}</MenuItem>
+                                                ))}
+                                            </Select>
+                                        </FormControl>
+                                    )}
+                                    {hasActiveFilter && (
+                                        <Box
+                                            onClick={handleClearFilters}
+                                            sx={{
+                                                display: "flex", alignItems: "center", gap: 0.5,
+                                                px: 1.5, py: 0.5, mb: 0.3,
+                                                borderRadius: "20px",
+                                                border: "1px solid rgba(100,116,139,0.4)",
+                                                color: "#64748b",
+                                                fontSize: "0.75rem",
+                                                fontWeight: 600,
+                                                cursor: "pointer",
+                                                transition: "all 0.2s",
+                                                "&:hover": { background: "#f1f5f9", color: "#e53935" }
+                                            }}
+                                        >
+                                            ✕ Reset
+                                        </Box>
+                                    )}
+                                </Box>
+                            }
+                        />
                     )}
                 </Box>
             </Box>

@@ -323,7 +323,7 @@ const AcademicStructure = () => {
                     border: "1px solid rgba(255, 255, 255, 0.3)"
                 }}>
                     <Grid container spacing={3} alignItems="center">
-                        <Grid item xs={12} md={8}>
+                        <Grid item xs={12}>
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1 }}>
                                 <Typography variant="h5" fontWeight={800} color="primary">
                                     {selectedDepartment.name}
@@ -333,16 +333,6 @@ const AcademicStructure = () => {
                             <Typography variant="body2" color="textSecondary" sx={{ mb: 2 }}>
                                 {selectedDepartment.description || "No description provided for this department."}
                             </Typography>
-                        </Grid>
-                        <Grid item xs={12} md={4} sx={{ textAlign: { md: 'right' } }}>
-                            <Button 
-                                variant="contained" 
-                                startIcon={<Add />} 
-                                onClick={() => openModal('branch', 'add', { departmentId: selectedDepartment._id, name: selectedDepartment.name })}
-                                sx={{ borderRadius: "12px", px: 3, py: 1.2, fontWeight: 700 }}
-                            >
-                                Add New Branch
-                            </Button>
                         </Grid>
                     </Grid>
                 </Paper>
@@ -356,18 +346,49 @@ const AcademicStructure = () => {
                     gridTemplateColumns: { xs: '1fr', sm: '1fr', md: 'repeat(2, 1fr)', lg: 'repeat(3, 1fr)', xl: 'repeat(4, 1fr)' }, 
                     gap: 3 
                 }}>
+                    <Card
+                        sx={{
+                            ...cardDrillStyle,
+                            border: "2px dashed rgba(33, 150, 243, 0.4)",
+                            background: "rgba(33, 150, 243, 0.05)",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            width: '100%',
+                            minHeight: "140px",
+                            boxShadow: 'none',
+                            "&:hover": {
+                                background: "rgba(33, 150, 243, 0.12)",
+                                transform: 'translateY(-8px)',
+                                border: "2px dashed rgba(33, 150, 243, 0.6)",
+                            }
+                        }}
+                        onClick={() => openModal('branch', 'add', { departmentId: selectedDepartment._id, name: selectedDepartment.name })}
+                    >
+                        <Box sx={{ textAlign: "center" }}>
+                            <Box sx={{
+                                width: 48,
+                                height: 48,
+                                borderRadius: '50%',
+                                border: '2px solid #2196f3',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                margin: '0 auto 12px',
+                                background: "rgba(255, 255, 255, 0.4)",
+                                backdropFilter: "blur(4px)"
+                            }}>
+                                <Add sx={{ fontSize: 28, color: '#2196f3' }} />
+                            </Box>
+                            <Typography variant="body1" fontWeight={700} sx={{ color: '#1976d2', letterSpacing: '0.5px' }}>
+                                Add Branch
+                            </Typography>
+                        </Box>
+                    </Card>
+
                     {deptBranches.length === 0 && (
-                        <Box sx={{ 
-                            gridColumn: '1 / -1', 
-                            py: 8, 
-                            textAlign: 'center',
-                            background: "rgba(255, 255, 255, 0.2)",
-                            borderRadius: "20px",
-                            border: "1px dashed rgba(0,0,0,0.1)"
-                        }}>
-                            <Warning color="disabled" sx={{ fontSize: 48, mb: 2, opacity: 0.5 }} />
-                            <Typography variant="h6" color="textSecondary">No branches created yet</Typography>
-                            <Typography variant="body2" color="textSecondary">Click "Add New Branch" to get started</Typography>
+                        <Box sx={{ gridColumn: '1 / -1', py: 5 }}>
+                            <Typography variant="body1" color="textSecondary" align="center">No branches found.</Typography>
                         </Box>
                     )}
 

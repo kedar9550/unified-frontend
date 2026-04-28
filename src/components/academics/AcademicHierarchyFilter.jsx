@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { 
     Box, 
     FormControl, 
@@ -34,6 +34,13 @@ const AcademicHierarchyFilter = ({ onChange, initialValues = {}, showSearch = fa
         departments: false,
         branches: false
     });
+
+    // Store onChange in a ref so it's never a useEffect dependency (avoids infinite loop)
+    const onChangeRef = useRef(onChange);
+    useEffect(() => { onChangeRef.current = onChange; });
+
+    // Track previous program value to detect external reset
+    const prevInitialProgram = useRef(initialValues.program);
 
     // Fetch Programs on mount
     useEffect(() => {
@@ -102,14 +109,14 @@ const AcademicHierarchyFilter = ({ onChange, initialValues = {}, showSearch = fa
         fetchBranches();
     }, [selectedDept, selectedProgram]);
 
-    // Notify parent of changes
+    // Notify parent — onChange is via ref so it's NOT in deps array (no infinite loop)
     useEffect(() => {
-        if (onChange) {
-            const programObj = programs.find(p => p._id === selectedProgram);
-            const deptObj = departments.find(d => d._id === selectedDept);
-            const branchObj = branches.find(b => b._id === selectedBranch);
+        const programObj = programs.find(p => p._id === selectedProgram);
+        const deptObj = departments.find(d => d._id === selectedDept);
+        const branchObj = branches.find(b => b._id === selectedBranch);
 
-            onChange({
+        if (onChangeRef.current) {
+            onChangeRef.current({
                 program: selectedProgram,
                 programName: programObj?.name || "",
                 department: selectedDept,
@@ -118,9 +125,19 @@ const AcademicHierarchyFilter = ({ onChange, initialValues = {}, showSearch = fa
                 branchName: branchObj?.name || ""
             });
         }
-    }, [selectedProgram, selectedDept, selectedBranch, programs, departments, branches, onChange]);
+    }, [selectedProgram, selectedDept, selectedBranch, programs, departments, branches]);
 
-    const renderDropdown = (label, value, options, loading, onChangeHandler, disabled = false) => {
+    // Sync internal reset when parent clears initialValues.program (e.g., Reset button)
+    useEffect(() => {
+        if (initialValues.program === "" && prevInitialProgram.current !== "") {
+            setSelectedProgram("");
+            setSelectedDept("");
+            setSelectedBranch("");
+        }
+        prevInitialProgram.current = initialValues.program;
+    }, [initialValues.program]);
+
+    const renderDropdown = (label, value, options, isLoading, onChangeHandler, disabled = false) => {
         if (showSearch) {
             return (
                 <Autocomplete
@@ -129,7 +146,7 @@ const AcademicHierarchyFilter = ({ onChange, initialValues = {}, showSearch = fa
                     value={options.find(o => o._id === value) || null}
                     onChange={(event, newValue) => onChangeHandler(newValue ? newValue._id : "")}
                     disabled={disabled}
-                    loading={loading}
+                    loading={isLoading}
                     renderInput={(params) => (
                         <TextField
                             {...params}
@@ -139,7 +156,7 @@ const AcademicHierarchyFilter = ({ onChange, initialValues = {}, showSearch = fa
                                 ...params.InputProps,
                                 endAdornment: (
                                     <React.Fragment>
-                                        {loading ? <CircularProgress color="inherit" size={20} /> : null}
+                                        {isLoading ? <CircularProgress color="inherit" size={20} /> : null}
                                         {params.InputProps.endAdornment}
                                     </React.Fragment>
                                 ),
@@ -158,17 +175,14 @@ const AcademicHierarchyFilter = ({ onChange, initialValues = {}, showSearch = fa
                     value={value}
                     onChange={(e) => onChangeHandler(e.target.value)}
                     label={label}
-                    IconComponent={loading ? () => <CircularProgress size={16} sx={{ mr: 1.5 }} /> : undefined}
+                    IconComponent={isLoading ? () => <CircularProgress size={16} sx={{ mr: 1.5 }} /> : undefined}
                 >
                     <MenuItem value=""><em>None</em></MenuItem>
                     {options.map(opt => (
                         <MenuItem key={opt._id} value={opt._id}>{opt.name}</MenuItem>
                     ))}
                 </Select>
-                {options.length === 0 && !loading && value === "" && disabled && (
-                    <FormHelperText>Please select parent first</FormHelperText>
-                )}
-                {options.length === 0 && !loading && !disabled && (
+                {options.length === 0 && !isLoading && !disabled && (
                     <FormHelperText>No data available</FormHelperText>
                 )}
             </FormControl>
@@ -183,14 +197,14 @@ const AcademicHierarchyFilter = ({ onChange, initialValues = {}, showSearch = fa
                 setSelectedBranch("");
             })}
 
-            {renderDropdown("Department", selectedDept, departments, loading.departments, (val) => {
+            {selectedProgram && renderDropdown("Department", selectedDept, departments, loading.departments, (val) => {
                 setSelectedDept(val);
                 setSelectedBranch("");
-            }, !selectedProgram)}
+            }, false)}
 
-            {renderDropdown("Branch", selectedBranch, branches, loading.branches, (val) => {
+            {selectedDept && renderDropdown("Branch", selectedBranch, branches, loading.branches, (val) => {
                 setSelectedBranch(val);
-            }, !selectedDept)}
+            }, false)}
         </Box>
     );
 };
