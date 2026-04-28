@@ -64,7 +64,7 @@ const MainLayout = ({ children }) => {
               overflow: "hidden", // Main panel doesn't scroll, content wrapper does
             }}
           >
-            <Box key={location.pathname} sx={{ flex: 1, p: { xs: 2, md: 4 }, overflowY: "auto" }}>
+            <Box sx={{ flex: 1, p: { xs: 2, md: 4 }, overflowY: "auto" }}>
               {children}
             </Box>
             <Footer />

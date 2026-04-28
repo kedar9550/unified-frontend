@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from "react";
+
+import React, { useState, useEffect, useCallback } from "react";
 import { Box, Avatar, CircularProgress, Typography, MenuItem, Select, FormControl, InputLabel, Collapse, Tooltip, IconButton } from "@mui/material";
 import { FilterList as FilterIcon, Delete as DeleteIcon } from "@mui/icons-material";
 import ActionButton from "../../../components/common/ActionButton";
@@ -8,7 +9,10 @@ import DataTable from "../../../components/data/DataTable";
 import API from "../../../api/axios";
 import AcademicHierarchyFilter from "../../../components/academics/AcademicHierarchyFilter";
 
+import { useLocation } from "react-router-dom";
+
 const Assignedstudents = () => {
+    const location = useLocation();
     const [students, setStudents] = useState([]);
     const [filteredStudents, setFilteredStudents] = useState([]);
     const [loading, setLoading] = useState(false);
@@ -21,27 +25,41 @@ const Assignedstudents = () => {
         branch: "",
         branchName: ""
     });
+
+    const handleHierarchyChange = useCallback((val) => {
+        setHierarchy(val);
+    }, []);
     const [filterSemester, setFilterSemester] = useState("");
 
-    const fetchAssignedStudents = async () => {
-        setLoading(true);
-        try {
-            const res = await API.get("/api/student-data/assigned");
-            if (res.data.success) {
-                const data = res.data.data || [];
-                setStudents(data);
-                setFilteredStudents(data); // Initial state
-            }
-        } catch (error) {
-            console.error("Failed to fetch assigned students", error);
-        } finally {
-            setLoading(false);
-        }
-    };
-
     useEffect(() => {
+        const controller = new AbortController();
+
+        const fetchAssignedStudents = async () => {
+            setLoading(true);
+            try {
+                const res = await API.get("/api/student-data/assigned", {
+                    signal: controller.signal,
+                });
+                if (res.data.success) {
+                    const data = res.data.data || [];
+                    setStudents(data);
+                    setFilteredStudents(data);
+                }
+            } catch (error) {
+                if (error.name !== "CanceledError" && error.code !== "ERR_CANCELED") {
+                    console.error("Failed to fetch assigned students", error);
+                }
+            } finally {
+                if (!controller.signal.aborted) {
+                    setLoading(false);
+                }
+            }
+        };
+
         fetchAssignedStudents();
-    }, []);
+
+        return () => controller.abort(); // unmount అయినప్పుడు cancel చేస్తుంది
+    }, [location.key]);
 
     const handleApplyFilters = () => {
         const filtered = students.filter(s => {
@@ -85,14 +103,14 @@ const Assignedstudents = () => {
                 </Box>
             )
         },
-        { 
-            value: s.academicInfo?.department?.name, 
+        {
+            value: s.academicInfo?.department?.name,
             display: (
-                <Box sx={{ 
-                    px: 1.5, 
-                    py: 0.5, 
-                    borderRadius: "12px", 
-                    bgcolor: "rgba(11, 82, 153, 0.1)", 
+                <Box sx={{
+                    px: 1.5,
+                    py: 0.5,
+                    borderRadius: "12px",
+                    bgcolor: "rgba(11, 82, 153, 0.1)",
                     color: "#0b5299",
                     fontWeight: 500,
                     fontSize: "0.75rem",
@@ -102,9 +120,9 @@ const Assignedstudents = () => {
                 </Box>
             )
         },
-        { 
-            value: s.academicInfo?.semester, 
-            display: <Typography variant="body2" sx={{ fontWeight: 600 }}>Sem {s.academicInfo?.semester}</Typography> 
+        {
+            value: s.academicInfo?.semester,
+            display: <Typography variant="body2" sx={{ fontWeight: 600 }}>Sem {s.academicInfo?.semester}</Typography>
         },
         s.academicInfo?.programName,
         s.academicInfo?.branch,
@@ -118,7 +136,7 @@ const Assignedstudents = () => {
                 subtitle="View and manage students assigned to departments"
                 breadcrumbs={["Home", "Student Management", "Assigned Students"]}
                 action={
-                    <ActionButton 
+                    <ActionButton
                         onClick={() => setIsFilterOpen(!isFilterOpen)}
                         sx={{ background: isFilterOpen ? "linear-gradient(135deg, #1e88e5, #1565c0)" : "linear-gradient(135deg, #64748b, #475569)" }}
                     >
@@ -148,8 +166,8 @@ const Assignedstudents = () => {
 
                     <Box sx={{ display: "flex", gap: 3, flexWrap: "wrap", alignItems: "flex-end" }}>
                         <Box sx={{ flex: 1, minWidth: "600px" }}>
-                            <AcademicHierarchyFilter 
-                                onChange={(val) => setHierarchy(val)}
+                            <AcademicHierarchyFilter
+                                onChange={handleHierarchyChange}
                                 initialValues={hierarchy}
                             />
                         </Box>
@@ -169,13 +187,13 @@ const Assignedstudents = () => {
                         </FormControl>
 
                         <Box sx={{ display: "flex", gap: 1, ml: "auto" }}>
-                            <ActionButton 
+                            <ActionButton
                                 onClick={handleApplyFilters}
                                 sx={{ background: "linear-gradient(135deg, #0b5299, #1e88e5)" }}
                             >
                                 Apply Filters
                             </ActionButton>
-                            <ActionButton 
+                            <ActionButton
                                 onClick={handleClearFilters}
                                 sx={{ background: "#64748b" }}
                             >
