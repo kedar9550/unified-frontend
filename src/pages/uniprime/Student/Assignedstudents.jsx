@@ -1,7 +1,5 @@
-import React, { useState, useEffect } from "react";
-import { Box, Avatar, CircularProgress, Typography, MenuItem, Select, FormControl, InputLabel, Collapse, Tooltip, IconButton } from "@mui/material";
-import { FilterList as FilterIcon, Delete as DeleteIcon } from "@mui/icons-material";
-import ActionButton from "../../../components/common/ActionButton";
+import React, { useState, useEffect, useCallback } from "react";
+import { Box, Avatar, CircularProgress, Typography, MenuItem, Select, FormControl, InputLabel } from "@mui/material";
 import PageHeader from "../../../components/common/PageHeader";
 import SectionHeader from "../../../components/common/SectionHeader";
 import DataTable from "../../../components/data/DataTable";
@@ -12,7 +10,6 @@ const Assignedstudents = () => {
     const [students, setStudents] = useState([]);
     const [filteredStudents, setFilteredStudents] = useState([]);
     const [loading, setLoading] = useState(false);
-    const [isFilterOpen, setIsFilterOpen] = useState(false);
     const [hierarchy, setHierarchy] = useState({
         program: "",
         programName: "",
@@ -43,17 +40,23 @@ const Assignedstudents = () => {
         fetchAssignedStudents();
     }, []);
 
-    const handleApplyFilters = () => {
+    const handleHierarchyChange = useCallback((val) => {
+        setHierarchy(val);
+    }, []);
+
+    // Auto-apply filter whenever hierarchy or semester changes
+    useEffect(() => {
         const filtered = students.filter(s => {
             const matchesProgram = hierarchy.programName ? s.academicInfo?.programName === hierarchy.programName : true;
             const matchesDept = hierarchy.departmentName ? s.academicInfo?.department?.name === hierarchy.departmentName : true;
             const matchesBranch = hierarchy.branchName ? s.academicInfo?.branch === hierarchy.branchName : true;
             const matchesSemester = filterSemester ? s.academicInfo?.semester === Number(filterSemester) : true;
-
             return matchesProgram && matchesDept && matchesBranch && matchesSemester;
         });
         setFilteredStudents(filtered);
-    };
+    }, [hierarchy, filterSemester, students]);
+
+    const hasActiveFilter = hierarchy.program || filterSemester;
 
     const handleClearFilters = () => {
         setHierarchy({
@@ -65,7 +68,6 @@ const Assignedstudents = () => {
             branchName: ""
         });
         setFilterSemester("");
-        setFilteredStudents(students);
     };
 
     const columns = [
@@ -85,14 +87,14 @@ const Assignedstudents = () => {
                 </Box>
             )
         },
-        { 
-            value: s.academicInfo?.department?.name, 
+        {
+            value: s.academicInfo?.department?.name,
             display: (
-                <Box sx={{ 
-                    px: 1.5, 
-                    py: 0.5, 
-                    borderRadius: "12px", 
-                    bgcolor: "rgba(11, 82, 153, 0.1)", 
+                <Box sx={{
+                    px: 1.5,
+                    py: 0.5,
+                    borderRadius: "12px",
+                    bgcolor: "rgba(11, 82, 153, 0.1)",
                     color: "#0b5299",
                     fontWeight: 500,
                     fontSize: "0.75rem",
@@ -102,9 +104,9 @@ const Assignedstudents = () => {
                 </Box>
             )
         },
-        { 
-            value: s.academicInfo?.semester, 
-            display: <Typography variant="body2" sx={{ fontWeight: 600 }}>Sem {s.academicInfo?.semester}</Typography> 
+        {
+            value: s.academicInfo?.semester,
+            display: <Typography variant="body2" sx={{ fontWeight: 600 }}>Sem {s.academicInfo?.semester}</Typography>
         },
         s.academicInfo?.programName,
         s.academicInfo?.branch,
@@ -117,79 +119,13 @@ const Assignedstudents = () => {
                 title="Assigned Students"
                 subtitle="View and manage students assigned to departments"
                 breadcrumbs={["Home", "Student Management", "Assigned Students"]}
-                action={
-                    <ActionButton 
-                        onClick={() => setIsFilterOpen(!isFilterOpen)}
-                        sx={{ background: isFilterOpen ? "linear-gradient(135deg, #1e88e5, #1565c0)" : "linear-gradient(135deg, #64748b, #475569)" }}
-                    >
-                        <FilterIcon sx={{ mr: 1 }} /> {isFilterOpen ? "Close Filter" : "Filter"}
-                    </ActionButton>
-                }
             />
 
-            {/* FILTER PANEL */}
-            <Collapse in={isFilterOpen}>
-                <Box
-                    sx={{
-                        p: 3,
-                        mt: 2,
-                        borderRadius: "20px",
-                        background: "rgba(255, 255, 255, 0.5)",
-                        backdropFilter: "blur(10px)",
-                        border: "1px dashed rgba(11, 82, 153, 0.3)",
-                        display: "flex",
-                        flexDirection: "column",
-                        gap: 2
-                    }}
-                >
-                    <Typography variant="subtitle2" sx={{ color: "#0b5299", fontWeight: 600 }}>
-                        Filter Records
-                    </Typography>
-
-                    <Box sx={{ display: "flex", gap: 3, flexWrap: "wrap", alignItems: "flex-end" }}>
-                        <Box sx={{ flex: 1, minWidth: "600px" }}>
-                            <AcademicHierarchyFilter 
-                                onChange={(val) => setHierarchy(val)}
-                                initialValues={hierarchy}
-                            />
-                        </Box>
-
-                        <FormControl variant="standard" sx={{ minWidth: 180 }}>
-                            <InputLabel id="sem-filter-label">Semester</InputLabel>
-                            <Select
-                                labelId="sem-filter-label"
-                                value={filterSemester}
-                                onChange={(e) => setFilterSemester(e.target.value)}
-                            >
-                                <MenuItem value=""><em>All Semesters</em></MenuItem>
-                                {[...Array(8)].map((_, i) => (
-                                    <MenuItem key={i + 1} value={i + 1}>Semester {i + 1}</MenuItem>
-                                ))}
-                            </Select>
-                        </FormControl>
-
-                        <Box sx={{ display: "flex", gap: 1, ml: "auto" }}>
-                            <ActionButton 
-                                onClick={handleApplyFilters}
-                                sx={{ background: "linear-gradient(135deg, #0b5299, #1e88e5)" }}
-                            >
-                                Apply Filters
-                            </ActionButton>
-                            <ActionButton 
-                                onClick={handleClearFilters}
-                                sx={{ background: "#64748b" }}
-                            >
-                                Reset
-                            </ActionButton>
-                        </Box>
-                    </Box>
-                </Box>
-            </Collapse>
-
+            {/* TABLE CARD with inline filter toolbar */}
             <Box
                 sx={{
                     p: 3,
-                    mt: 3,
+                    mt: 2,
                     borderRadius: "24px",
                     background: "linear-gradient(135deg, rgba(255,255,255,0.7), rgba(255,255,255,0.4))",
                     backdropFilter: "blur(20px)",
@@ -204,13 +140,59 @@ const Assignedstudents = () => {
                     title={`Assigned Student Details (${filteredStudents.length})`}
                 />
 
-                <Box sx={{ mt: 2, flex: 1 }}>
+                <Box sx={{ flex: 1 }}>
                     {loading ? (
                         <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>
                             <CircularProgress />
                         </Box>
                     ) : (
-                        <DataTable columns={columns} rows={formattedRows} />
+                        <DataTable
+                            columns={columns}
+                            rows={formattedRows}
+                            toolbarLeft={
+                                <Box sx={{ display: "flex", alignItems: "flex-end", gap: 2, flexWrap: "wrap" }}>
+                                    <AcademicHierarchyFilter
+                                        onChange={handleHierarchyChange}
+                                        initialValues={hierarchy}
+                                    />
+                                    {hierarchy.department && (
+                                        <FormControl variant="standard" sx={{ minWidth: 120 }}>
+                                            <InputLabel id="sem-filter-label" sx={{ fontSize: "0.85rem" }}>Semester</InputLabel>
+                                            <Select
+                                                labelId="sem-filter-label"
+                                                value={filterSemester}
+                                                onChange={(e) => setFilterSemester(e.target.value)}
+                                                sx={{ fontSize: "0.85rem" }}
+                                            >
+                                                <MenuItem value=""><em>All</em></MenuItem>
+                                                {[...Array(8)].map((_, i) => (
+                                                    <MenuItem key={i + 1} value={i + 1}>Sem {i + 1}</MenuItem>
+                                                ))}
+                                            </Select>
+                                        </FormControl>
+                                    )}
+                                    {hasActiveFilter && (
+                                        <Box
+                                            onClick={handleClearFilters}
+                                            sx={{
+                                                display: "flex", alignItems: "center", gap: 0.5,
+                                                px: 1.5, py: 0.5, mb: 0.3,
+                                                borderRadius: "20px",
+                                                border: "1px solid rgba(100,116,139,0.4)",
+                                                color: "#64748b",
+                                                fontSize: "0.75rem",
+                                                fontWeight: 600,
+                                                cursor: "pointer",
+                                                transition: "all 0.2s",
+                                                "&:hover": { background: "#f1f5f9", color: "#e53935" }
+                                            }}
+                                        >
+                                            ✕ Reset
+                                        </Box>
+                                    )}
+                                </Box>
+                            }
+                        />
                     )}
                 </Box>
             </Box>

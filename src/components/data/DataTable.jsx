@@ -13,7 +13,7 @@ import { useState, useMemo, useEffect } from "react";
 import { InputAdornment } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 
-export default function DataTable({ columns, rows }) {
+export default function DataTable({ columns, rows, toolbarLeft }) {
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [search, setSearch] = useState("");
@@ -68,35 +68,32 @@ export default function DataTable({ columns, rows }) {
 
   return (
     <Box sx={{ width: "100%", display: "flex", flexDirection: "column", gap: 1 }}>
-      {/*  SEARCH */}
-      <Box sx={{ display: "flex", justifyContent: "flex-end", mb: 1 }}>
+      {/*  TOOLBAR: filters left, search right */}
+      <Box sx={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 2, mb: 1, flexWrap: "wrap" }}>
+        {/* Left slot: any filter content passed from parent */}
+        <Box sx={{ display: "flex", alignItems: "flex-end", gap: 2, flexWrap: "wrap", flex: 1 }}>
+          {toolbarLeft || null}
+        </Box>
+
+        {/* Right: search */}
         <TextField
           placeholder="Search"
           size="small"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           sx={{
-            width: { xs: "100%", sm: "280px" },
+            width: { xs: "100%", sm: "260px" },
+            flexShrink: 0,
             "& .MuiOutlinedInput-root": {
               borderRadius: "99px",
               background: "rgba(255, 255, 255, 0.2)",
               backdropFilter: "blur(10px)",
               transition: "all 0.3s ease",
-              "& fieldset": {
-                border: "1px solid rgba(255, 255, 255, 0.5)",
-              },
-              "&:hover fieldset": {
-                borderColor: "rgba(255, 255, 255, 0.9)",
-              },
-              "&.Mui-focused fieldset": {
-                borderColor: "#8da5d8",
-                borderWidth: "1px",
-              },
+              "& fieldset": { border: "1px solid rgba(255, 255, 255, 0.5)" },
+              "&:hover fieldset": { borderColor: "rgba(255, 255, 255, 0.9)" },
+              "&.Mui-focused fieldset": { borderColor: "#8da5d8", borderWidth: "1px" },
             },
-            "& .MuiInputBase-input": {
-              color: "#334155",
-              fontSize: "0.875rem",
-            },
+            "& .MuiInputBase-input": { color: "#334155", fontSize: "0.875rem" },
           }}
           InputProps={{
             startAdornment: (
@@ -139,11 +136,11 @@ export default function DataTable({ columns, rows }) {
               },
             }}
           >
-            <TableRow 
-              sx={{ 
+            <TableRow
+              sx={{
                 background: "linear-gradient(135deg, #1e88e5, #1565c0)", // Spans the entire row
                 borderRadius: "12px 12px 0 0",
-              }} 
+              }}
             >
               {columns.map((col, index) => (
                 <TableCell

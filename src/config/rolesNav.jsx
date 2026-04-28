@@ -57,7 +57,7 @@ export const ROLE_ROUTES = {
       ],
     },
     {
-      text: "User & Role Management",
+      text: "Employee & Role Management",
       path: "/role-management",
       icon: <People />
     },
