@@ -1,15 +1,20 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { Box, Avatar, CircularProgress, Typography, MenuItem, Select, FormControl, InputLabel } from "@mui/material";
+import { Box, Avatar, CircularProgress, Typography, MenuItem, Select, FormControl, InputLabel, Collapse, Tooltip, IconButton } from "@mui/material";
+import { FilterList as FilterIcon, Delete as DeleteIcon } from "@mui/icons-material";
+import ActionButton from "../../../components/common/ActionButton";
 import PageHeader from "../../../components/common/PageHeader";
 import SectionHeader from "../../../components/common/SectionHeader";
 import DataTable from "../../../components/data/DataTable";
 import API from "../../../api/axios";
 import AcademicHierarchyFilter from "../../../components/academics/AcademicHierarchyFilter";
+import { useLocation } from "react-router-dom";
 
 const Assignedstudents = () => {
+    const location = useLocation();
     const [students, setStudents] = useState([]);
     const [filteredStudents, setFilteredStudents] = useState([]);
     const [loading, setLoading] = useState(false);
+    const [isFilterOpen, setIsFilterOpen] = useState(false);
     const [hierarchy, setHierarchy] = useState({
         program: "",
         programName: "",
@@ -20,25 +25,29 @@ const Assignedstudents = () => {
     });
     const [filterSemester, setFilterSemester] = useState("");
 
-    const fetchAssignedStudents = async () => {
+    const fetchAssignedStudents = async (signal) => {
         setLoading(true);
         try {
-            const res = await API.get("/api/student-data/assigned");
+            const res = await API.get("/api/student-data/assigned", { signal });
             if (res.data.success) {
                 const data = res.data.data || [];
                 setStudents(data);
-                setFilteredStudents(data); // Initial state
+                setFilteredStudents(data); 
             }
         } catch (error) {
-            console.error("Failed to fetch assigned students", error);
+            if (error.name !== "CanceledError" && error.code !== "ERR_CANCELED") {
+                console.error("Failed to fetch assigned students", error);
+            }
         } finally {
             setLoading(false);
         }
     };
 
     useEffect(() => {
-        fetchAssignedStudents();
-    }, []);
+        const controller = new AbortController();
+        fetchAssignedStudents(controller.signal);
+        return () => controller.abort();
+    }, [location.key]);
 
     const handleHierarchyChange = useCallback((val) => {
         setHierarchy(val);
@@ -68,6 +77,11 @@ const Assignedstudents = () => {
             branchName: ""
         });
         setFilterSemester("");
+    };
+
+    const handleApplyFilters = () => {
+        // Since filtering is automatic via useEffect, this just provides visual feedback or closes panel
+        setIsFilterOpen(false);
     };
 
     const columns = [
@@ -119,9 +133,75 @@ const Assignedstudents = () => {
                 title="Assigned Students"
                 subtitle="View and manage students assigned to departments"
                 breadcrumbs={["Home", "Student Management", "Assigned Students"]}
+                action={
+                    <ActionButton
+                        onClick={() => setIsFilterOpen(!isFilterOpen)}
+                        sx={{ background: isFilterOpen ? "linear-gradient(135deg, #1e88e5, #1565c0)" : "linear-gradient(135deg, #64748b, #475569)" }}
+                    >
+                        <FilterIcon sx={{ mr: 1 }} /> {isFilterOpen ? "Close Filter" : "Filter"}
+                    </ActionButton>
+                }
             />
 
-            {/* TABLE CARD with inline filter toolbar */}
+            {/* FILTER PANEL */}
+            <Collapse in={isFilterOpen}>
+                <Box
+                    sx={{
+                        p: 3,
+                        mt: 2,
+                        borderRadius: "20px",
+                        background: "rgba(255, 255, 255, 0.5)",
+                        backdropFilter: "blur(10px)",
+                        border: "1px dashed rgba(11, 82, 153, 0.3)",
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: 2
+                    }}
+                >
+                    <Typography variant="subtitle2" sx={{ color: "#0b5299", fontWeight: 600 }}>
+                        Filter Records
+                    </Typography>
+
+                    <Box sx={{ display: "flex", gap: 3, flexWrap: "wrap", alignItems: "flex-end" }}>
+                        <Box sx={{ flex: 1, minWidth: "600px" }}>
+                            <AcademicHierarchyFilter
+                                onChange={handleHierarchyChange}
+                                initialValues={hierarchy}
+                            />
+                        </Box>
+
+                        <FormControl variant="standard" sx={{ minWidth: 180 }}>
+                            <InputLabel id="sem-filter-label">Semester</InputLabel>
+                            <Select
+                                labelId="sem-filter-label"
+                                value={filterSemester}
+                                onChange={(e) => setFilterSemester(e.target.value)}
+                            >
+                                <MenuItem value=""><em>All Semesters</em></MenuItem>
+                                {[...Array(8)].map((_, i) => (
+                                    <MenuItem key={i + 1} value={i + 1}>Semester {i + 1}</MenuItem>
+                                ))}
+                            </Select>
+                        </FormControl>
+
+                        <Box sx={{ display: "flex", gap: 1, ml: "auto" }}>
+                            <ActionButton
+                                onClick={handleApplyFilters}
+                                sx={{ background: "linear-gradient(135deg, #0b5299, #1e88e5)" }}
+                            >
+                                Apply Filters
+                            </ActionButton>
+                            <ActionButton
+                                onClick={handleClearFilters}
+                                sx={{ background: "#64748b" }}
+                            >
+                                Reset
+                            </ActionButton>
+                        </Box>
+                    </Box>
+                </Box>
+            </Collapse>
+
             <Box
                 sx={{
                     p: 3,

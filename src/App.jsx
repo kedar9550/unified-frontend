@@ -14,12 +14,12 @@ import AcademicStructure from "./pages/uniprime/academics/AcademicStructure";
 import Assignedstudents from "./pages/uniprime/Student/Assignedstudents";
 import RoleManagement from "./pages/uniprime/Roles/Rolemanagement";
 import { useLoading } from "./context/LoadingContext";
-import API from "./api/axios";
 import Loader from "./components/common/Loader";
 import FeedbackManagement from "./pages/feedback/FeedbackManagement";
 import FeedbackDiscrepancies from "./pages/feedback/FeedbackDiscrepancies";
 import Studentuploads from "./pages/uniprime/Student/Studentuploads";
 import Dashboard from "./pages/Dashboard";
+import { registerLoadingHandlers } from "./api/axios";
 
 const PublicOnlyRoute = ({ children }) => {
   const { user } = useAuth();
@@ -29,12 +29,11 @@ const PublicOnlyRoute = ({ children }) => {
   return children;
 };
 
-// Helper component to force Layout refresh on route change
 const ProtectedRoute = ({ element: Element }) => {
   const location = useLocation();
   return (
-    <MainLayout key={location.pathname}>
-      {Element}
+    <MainLayout>
+      {React.cloneElement(Element, { key: location.pathname })}
     </MainLayout>
   );
 };
@@ -42,45 +41,18 @@ const ProtectedRoute = ({ element: Element }) => {
 function App() {
   const { isLoading, startLoading, stopLoading } = useLoading();
 
+  // Register once — never re-registers on re-render
   useEffect(() => {
-    const reqInterceptor = API.interceptors.request.use((config) => {
-      startLoading();
-      return config;
-    });
-
-    const resInterceptor = API.interceptors.response.use(
-      (response) => {
-        stopLoading();
-        return response;
-      },
-      (error) => {
-        stopLoading();
-        return Promise.reject(error);
-      }
-    );
-
-    return () => {
-      API.interceptors.request.eject(reqInterceptor);
-      API.interceptors.response.eject(resInterceptor);
-    };
-  }, [startLoading, stopLoading]);
+    registerLoadingHandlers(startLoading, stopLoading);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <>
       {isLoading && <Loader />}
       <Routes>
-        {/* Public Only routes */}
-        <Route
-          path="/"
-          element={
-            <PublicOnlyRoute>
-              <Login />
-            </PublicOnlyRoute>
-          }
-        />
+        <Route path="/" element={<PublicOnlyRoute><Login /></PublicOnlyRoute>} />
         <Route path="/signup" element={<Navigate to="/" replace />} />
 
-        {/* Protected Routes */}
         <Route path="/dashboard" element={<ProtectedRoute element={<Dashboard />} />} />
         <Route path="/teaching" element={<ProtectedRoute element={<Teaching />} />} />
         <Route path="/academics/management" element={<ProtectedRoute element={<AcademicManagement />} />} />
@@ -96,17 +68,8 @@ function App() {
         <Route path="/feedback-management/discrepancies" element={<ProtectedRoute element={<FeedbackDiscrepancies />} />} />
         <Route path="/student/student-uploads" element={<ProtectedRoute element={<Studentuploads />} />} />
         <Route path="/student/assigned-students" element={<ProtectedRoute element={<Assignedstudents />} />} />
-        
-        <Route
-          path="*"
-          element={
-            <ProtectedRoute element={
-              <Box p={4}>
-                <Typography variant="h4">Page Content</Typography>
-              </Box>
-            } />
-          }
-        />
+
+        <Route path="*" element={<ProtectedRoute element={<Box p={4}><Typography variant="h4">Page Content</Typography></Box>} />} />
       </Routes>
     </>
   );
