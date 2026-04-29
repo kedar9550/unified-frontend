@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import {
   Box, Button, MenuItem, Select, Typography,
-  CircularProgress, Stack, IconButton, Tooltip, TextField
+  CircularProgress, Stack, IconButton, Tooltip, TextField, Grid
 } from "@mui/material";
 import {
   CloudUpload as CloudUploadIcon,
@@ -34,6 +34,8 @@ const DeptProctorUploads = () => {
   
   // For manual assignment input changes
   const [manualProctors, setManualProctors] = useState({});
+  const [fetchedProctors, setFetchedProctors] = useState({});
+  const lookupTimers = useRef({});
 
   useEffect(() => {
     const fetchDropdowns = async () => {
@@ -59,7 +61,7 @@ const DeptProctorUploads = () => {
         }
         
         setDepartments(fetchedDepts);
-        setPrograms(progRes.data.data || []);
+        // Remove global program fetching from here
         
         if (fetchedDepts.length === 1) {
             setSelectedDeptId(fetchedDepts[0]._id);
@@ -73,17 +75,28 @@ const DeptProctorUploads = () => {
 
   useEffect(() => {
     if (selectedDeptId) {
-      const fetchBranches = async () => {
+      const fetchAcademicDetails = async () => {
         try {
-          const res = await API.get(`/api/academics/branches?departmentId=${selectedDeptId}`);
-          setBranches(res.data.data || []);
+          const [branchRes, progRes] = await Promise.all([
+            API.get(`/api/academics/branches?departmentId=${selectedDeptId}`),
+            API.get(`/api/academics/programs?departmentId=${selectedDeptId}`)
+          ]);
+          setBranches(branchRes.data.data || []);
+          setPrograms(progRes.data.data || []);
         } catch (err) {
-          console.error("Error fetching branches:", err);
+          console.error("Error fetching academic details:", err);
         }
       };
-      fetchBranches();
+      fetchAcademicDetails();
+      
+      // Reset dependent selections
+      setSelectedProgramName("");
+      setSelectedBranch("");
+      setSelectedSemester("");
+      setStudents([]);
     } else {
       setBranches([]);
+      setPrograms([]);
     }
   }, [selectedDeptId]);
 
@@ -121,6 +134,35 @@ const DeptProctorUploads = () => {
 
   const handleProctorChange = (studentId, value) => {
     setManualProctors(prev => ({ ...prev, [studentId]: value }));
+
+    // Live lookup logic
+    const pId = value.trim();
+    
+    // Clear existing timer for this studentId
+    if (lookupTimers.current[studentId]) {
+      clearTimeout(lookupTimers.current[studentId]);
+    }
+
+    if (pId.length >= 3) { // Start searching after 3 chars
+      lookupTimers.current[studentId] = setTimeout(async () => {
+        try {
+          const res = await API.post("/api/employees/ecap-data", { 
+            institutionId: pId, 
+            role: "Employee" 
+          });
+          if (res.data && !res.data.error) {
+            const name = res.data.employeename || res.data.EmployeeName || "Unknown";
+            setFetchedProctors(prev => ({ ...prev, [studentId]: `${name} (${pId})` }));
+          } else {
+            setFetchedProctors(prev => ({ ...prev, [studentId]: "Not Found" }));
+          }
+        } catch (err) {
+          setFetchedProctors(prev => ({ ...prev, [studentId]: "Error" }));
+        }
+      }, 500); // 500ms debounce
+    } else {
+      setFetchedProctors(prev => ({ ...prev, [studentId]: "" }));
+    }
   };
 
   const handleSaveMapping = async (studentId, mappingId) => {
@@ -213,77 +255,99 @@ const DeptProctorUploads = () => {
         breadcrumbs={[]}
       />
 
-      <Box
-        sx={{
-          display: "flex", gap: 2, mb: 4, mt: 3, flexWrap: "wrap",
-          alignItems: "center", width: "100%",
-        }}
-      >
-        {/* Department */}
-        <Box sx={filterBox}>
-          <Typography sx={filterLabel}>Department</Typography>
-          <Select
-            variant="standard" disableUnderline value={selectedDeptId}
-            onChange={(e) => setSelectedDeptId(e.target.value)}
-            sx={{ minWidth: 120, fontSize: 14 }}
-          >
-            {departments.map((d) => (
-              <MenuItem key={d._id} value={d._id}>{d.name}</MenuItem>
-            ))}
-          </Select>
-        </Box>
+      {/* Filters */}
+      <Box sx={{ mt: 3, mb: 4 }}>
+        <Box sx={{ 
+          display: "flex", 
+          flexWrap: "wrap", 
+          gap: 2, 
+          width: "100%" 
+        }}>
+          {/* Department */}
+          <Box sx={{ width: { xs: "100%", md: "calc((100% - 32px) / 3)" } }}>
+            <Box sx={filterBox}>
+              <Typography sx={filterLabel}>Department</Typography>
+              <Select
+                variant="standard" disableUnderline value={selectedDeptId}
+                onChange={(e) => setSelectedDeptId(e.target.value)}
+                sx={{ width: "100%", fontSize: 14 }}
+              >
+                {departments.map((d) => (
+                  <MenuItem key={d._id} value={d._id}>{d.name}</MenuItem>
+                ))}
+              </Select>
+            </Box>
+          </Box>
 
-        {/* Program */}
-        <Box sx={filterBox}>
-          <Typography sx={filterLabel}>Program</Typography>
-          <Select
-            variant="standard" disableUnderline value={selectedProgramName}
-            onChange={(e) => setSelectedProgramName(e.target.value)}
-            sx={{ minWidth: 100, fontSize: 14 }}
-          >
-            {programs.map((p) => (
-              <MenuItem key={p._id} value={p.name}>{p.name}</MenuItem>
-            ))}
-          </Select>
-        </Box>
+          {/* Program */}
+          <Box sx={{ width: { xs: "100%", md: "calc((100% - 32px) / 3)" } }}>
+            <Box sx={filterBox}>
+              <Typography sx={filterLabel}>Program</Typography>
+              <Select
+                variant="standard" disableUnderline value={selectedProgramName}
+                onChange={(e) => setSelectedProgramName(e.target.value)}
+                sx={{ width: "100%", fontSize: 14 }}
+              >
+                {programs.map((p) => (
+                  <MenuItem key={p._id} value={p.name}>{p.name}</MenuItem>
+                ))}
+              </Select>
+            </Box>
+          </Box>
 
-        {/* Branch */}
-        <Box sx={filterBox}>
-          <Typography sx={filterLabel}>Branch</Typography>
-          <Select
-            variant="standard" disableUnderline value={selectedBranch}
-            onChange={(e) => setSelectedBranch(e.target.value)}
-            sx={{ minWidth: 100, fontSize: 14 }}
-          >
-            {branches.map((b) => (
-              <MenuItem key={b._id} value={b.name}>{b.name}</MenuItem>
-            ))}
-          </Select>
-        </Box>
+          {/* Branch */}
+          <Box sx={{ width: { xs: "100%", md: "calc((100% - 32px) / 3)" } }}>
+            <Box sx={filterBox}>
+              <Typography sx={filterLabel}>Branch</Typography>
+              <Select
+                variant="standard" disableUnderline value={selectedBranch}
+                onChange={(e) => setSelectedBranch(e.target.value)}
+                sx={{ width: "100%", fontSize: 14 }}
+              >
+                {branches.map((b) => (
+                  <MenuItem key={b._id} value={b.name}>{b.name}</MenuItem>
+                ))}
+              </Select>
+            </Box>
+          </Box>
 
-        {/* Semester */}
-        <Box sx={filterBox}>
-          <Typography sx={filterLabel}>Semester</Typography>
-          <Select
-            variant="standard" disableUnderline value={selectedSemester}
-            onChange={(e) => setSelectedSemester(e.target.value)}
-            sx={{ minWidth: 80, fontSize: 14 }}
-          >
-            {semesters.map((s) => (
-              <MenuItem key={s} value={s}>{s}</MenuItem>
-            ))}
-          </Select>
+          {/* Semester */}
+          <Box sx={{ width: { xs: "100%", md: "calc((100% - 32px) / 3)" } }}>
+            <Box sx={filterBox}>
+              <Typography sx={filterLabel}>Semester</Typography>
+              <Select
+                variant="standard" disableUnderline value={selectedSemester}
+                onChange={(e) => setSelectedSemester(e.target.value)}
+                sx={{ width: "100%", fontSize: 14 }}
+              >
+                {semesters.map((s) => (
+                  <MenuItem key={s} value={s}>{s}</MenuItem>
+                ))}
+              </Select>
+            </Box>
+          </Box>
         </Box>
       </Box>
 
       {/* CSV Controls */}
-      <Box sx={{ display: "flex", justifyContent: "space-between", mb: 2, alignItems: "center" }}>
+      <Box sx={{ 
+        display: "flex", 
+        flexDirection: { xs: "column", sm: "row" },
+        justifyContent: "space-between", 
+        mb: 2, 
+        alignItems: { xs: "stretch", sm: "center" },
+        gap: 2
+      }}>
         <SectionHeader title={`Students (${students.length})`} />
-        <Stack direction="row" spacing={2}>
+        <Stack 
+          direction={{ xs: "column", sm: "row" }} 
+          spacing={2}
+          sx={{ width: { xs: "100%", sm: "auto" } }}
+        >
           <Button
             variant="outlined" startIcon={<DownloadIcon />}
             onClick={downloadTemplate} disabled={students.length === 0}
-            sx={{ borderRadius: "10px", textTransform: "none" }}
+            sx={{ borderRadius: "10px", textTransform: "none", width: "100%" }}
           >
             Download Template
           </Button>
@@ -294,7 +358,8 @@ const DeptProctorUploads = () => {
             sx={{
               borderRadius: "10px", textTransform: "none", fontWeight: 600,
               background: "linear-gradient(135deg,#2e7d32,#43a047)", color: "#fff",
-              "&:hover": { background: "linear-gradient(135deg,#1b5e20,#2e7d32)" }
+              "&:hover": { background: "linear-gradient(135deg,#1b5e20,#2e7d32)" },
+              width: "100%"
             }}
           >
             Upload CSV
@@ -311,7 +376,7 @@ const DeptProctorUploads = () => {
         <Box display="flex" justifyContent="center" mt={4}><CircularProgress /></Box>
       ) : students.length > 0 ? (
         <DataTable
-          columns={["Student ID", "Student Name", "Proctor ID", "Actions"]}
+          columns={["Student ID", "Student Name", "Proctor ID", "Proctor Name", "Actions"]}
           rows={students.map(s => [
             s.studentId,
             s.studentName,
@@ -322,6 +387,9 @@ const DeptProctorUploads = () => {
               onChange={(e) => handleProctorChange(s.studentId, e.target.value)}
               sx={{ minWidth: 150 }}
             />,
+            <Typography sx={{ fontSize: 13, fontWeight: 500, color: fetchedProctors[s.studentId]?.includes("Not Found") ? "#d32f2f" : "#0b5299" }}>
+              {fetchedProctors[s.studentId] || s.proctorName || "Not Assigned"}
+            </Typography>,
             <IconButton 
               color="primary" 
               onClick={() => handleSaveMapping(s.studentId, s.mappingId)}
@@ -331,7 +399,7 @@ const DeptProctorUploads = () => {
           ])}
         />
       ) : (
-        <Box textAlign="center" mt={4} color="#666">
+        <Box sx={{ textAlign: "center", mt: 4, color: "#666" }}>
           <Typography>No students found for the selected criteria.</Typography>
         </Box>
       )}
@@ -340,11 +408,32 @@ const DeptProctorUploads = () => {
 };
 
 const filterBox = {
-  display: "flex", alignItems: "center", px: 2, py: 1, borderRadius: "14px",
-  background: "rgba(255,255,255,0.75)", backdropFilter: "blur(10px)",
-  boxShadow: "0 4px 15px rgba(0,0,0,0.06)", fontSize: 14,
+  display: "flex", 
+  flexDirection: { xs: "column", sm: "row" },
+  alignItems: { xs: "flex-start", sm: "center" },
+  px: 2, py: { xs: 1.5, sm: 1.2 }, borderRadius: "16px",
+  background: "rgba(255, 255, 255, 0.45)",
+  backdropFilter: "blur(16px)",
+  WebkitBackdropFilter: "blur(16px)",
+  border: "1px solid rgba(255, 255, 255, 0.4)",
+  boxShadow: "0 8px 32px 0 rgba(31, 38, 135, 0.08)",
+  width: "100%", minHeight: "48px",
+  transition: "all 0.3s ease",
+  "&:hover": {
+    background: "rgba(255, 255, 255, 0.6)",
+    boxShadow: "0 8px 32px 0 rgba(31, 38, 135, 0.12)",
+  }
 };
 
-const filterLabel = { fontSize: 13, fontWeight: 600, color: "#555", mr: 1 };
+const filterLabel = { 
+  fontSize: 10, 
+  fontWeight: 700, 
+  color: "#334155", 
+  mb: { xs: 0.5, sm: 0 },
+  mr: 1, 
+  textTransform: "uppercase", 
+  letterSpacing: "0.1em",
+  opacity: 0.6
+};
 
 export default DeptProctorUploads;

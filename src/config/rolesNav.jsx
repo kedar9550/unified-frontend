@@ -77,6 +77,10 @@ export const ROLE_ROUTES = {
         {
           text: "Assigned Students",
           path: "/student/assigned-students"
+        },
+        {
+          text: "FED to Dept Mapping",
+          path: "/student/department-mapping"
         }
       ]
     }
