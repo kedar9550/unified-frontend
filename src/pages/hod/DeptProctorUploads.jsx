@@ -29,9 +29,9 @@ const DeptProctorUploads = () => {
   const [loading, setLoading] = useState(false);
   const [uploadingCSV, setUploadingCSV] = useState(false);
   const fileInputRef = useRef(null);
-  
+
   const { user } = useAuth();
-  
+
   // For manual assignment input changes
   const [manualProctors, setManualProctors] = useState({});
   const [fetchedProctors, setFetchedProctors] = useState({});
@@ -44,27 +44,27 @@ const DeptProctorUploads = () => {
           API.get("/api/academics/departments"),
           API.get("/api/academics/programs")
         ]);
-        
+
         let fetchedDepts = deptRes.data.data || [];
-        
+
         // Filter departments based on HOD assigned departments
         if (user && user.roles) {
           const hodRole = user.roles.find(r => r.role === 'HOD');
           if (hodRole && hodRole.departments && hodRole.departments.length > 0) {
-             const assignedDeptIds = hodRole.departments.map(d => typeof d === 'object' ? d._id : d);
-             fetchedDepts = fetchedDepts.filter(d => assignedDeptIds.includes(d._id));
+            const assignedDeptIds = hodRole.departments.map(d => typeof d === 'object' ? d._id : d);
+            fetchedDepts = fetchedDepts.filter(d => assignedDeptIds.includes(d._id));
           } else if (user.department) {
-             // Fallback if roles array doesn't have departments but user object does
-             const userDeptId = typeof user.department === 'object' ? user.department._id : user.department;
-             fetchedDepts = fetchedDepts.filter(d => d._id === userDeptId);
+            // Fallback if roles array doesn't have departments but user object does
+            const userDeptId = typeof user.department === 'object' ? user.department._id : user.department;
+            fetchedDepts = fetchedDepts.filter(d => d._id === userDeptId);
           }
         }
-        
+
         setDepartments(fetchedDepts);
         // Remove global program fetching from here
-        
+
         if (fetchedDepts.length === 1) {
-            setSelectedDeptId(fetchedDepts[0]._id);
+          setSelectedDeptId(fetchedDepts[0]._id);
         }
       } catch (err) {
         console.error("Error fetching academics:", err);
@@ -88,7 +88,7 @@ const DeptProctorUploads = () => {
         }
       };
       fetchAcademicDetails();
-      
+
       // Reset dependent selections
       setSelectedProgramName("");
       setSelectedBranch("");
@@ -113,7 +113,7 @@ const DeptProctorUploads = () => {
         }
       });
       setStudents(res.data || []);
-      
+
       // Initialize manual proctors state
       const initialProctors = {};
       res.data.forEach(s => {
@@ -137,7 +137,7 @@ const DeptProctorUploads = () => {
 
     // Live lookup logic
     const pId = value.trim();
-    
+
     // Clear existing timer for this studentId
     if (lookupTimers.current[studentId]) {
       clearTimeout(lookupTimers.current[studentId]);
@@ -146,9 +146,9 @@ const DeptProctorUploads = () => {
     if (pId.length >= 3) { // Start searching after 3 chars
       lookupTimers.current[studentId] = setTimeout(async () => {
         try {
-          const res = await API.post("/api/employees/ecap-data", { 
-            institutionId: pId, 
-            role: "Employee" 
+          const res = await API.post("/api/employees/ecap-data", {
+            institutionId: pId,
+            role: "Employee"
           });
           if (res.data && !res.data.error) {
             const name = res.data.employeename || res.data.EmployeeName || "Unknown";
@@ -202,17 +202,17 @@ const DeptProctorUploads = () => {
       const res = await API.post("/api/dept-proctor/upload", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
-      
+
       let msg = res.data.message || "CSV uploaded successfully!";
       if (res.data.errors && res.data.errors.length > 0) {
-          // Limit to first 15 errors to avoid huge unreadable alerts
-          const displayErrors = res.data.errors.slice(0, 15);
-          msg += "\n\nIssues Found:\n" + displayErrors.join("\n");
-          if (res.data.errors.length > 15) {
-              msg += `\n...and ${res.data.errors.length - 15} more.`;
-          }
+        // Limit to first 15 errors to avoid huge unreadable alerts
+        const displayErrors = res.data.errors.slice(0, 15);
+        msg += "\n\nIssues Found:\n" + displayErrors.join("\n");
+        if (res.data.errors.length > 15) {
+          msg += `\n...and ${res.data.errors.length - 15} more.`;
+        }
       }
-      
+
       alert(msg);
       fetchStudents();
     } catch (err) {
@@ -226,16 +226,16 @@ const DeptProctorUploads = () => {
 
   const downloadTemplate = () => {
     if (students.length === 0) return alert("Please fetch students first to generate template.");
-    
+
     // Add current active academicyear for the template automatically. 
     const currentYear = new Date().getFullYear();
-    const acYearStr = `${currentYear}-${currentYear+1}`;
+    const acYearStr = `${currentYear}-${currentYear + 1}`;
 
     const headers = ["proctorid", "studentid", "academicyear", "semester"];
-    const rows = students.map(s => 
+    const rows = students.map(s =>
       `${manualProctors[s.studentId] || ""},${s.studentId},${acYearStr},${selectedSemester}`
     );
-    
+
     const csvContent = [headers.join(","), ...rows].join("\n");
 
     const blob = new Blob([csvContent], { type: "text/csv" });
@@ -248,7 +248,7 @@ const DeptProctorUploads = () => {
   };
 
   return (
-    <Box p={4}>
+    <Box sx={{ p: { xs: 1, sm: 2 }, pt: { xs: 0.5, sm: 1 } }}>
       <PageHeader
         title="Proctor Mapping Module"
         subtitle="Assign proctors to students for the current semester"
@@ -256,15 +256,15 @@ const DeptProctorUploads = () => {
       />
 
       {/* Filters */}
-      <Box sx={{ mt: 3, mb: 4 }}>
-        <Box sx={{ 
-          display: "flex", 
-          flexWrap: "wrap", 
-          gap: 2, 
-          width: "100%" 
+      <Box sx={{ mt: 1, mb: 4 }}>
+        <Box sx={{
+          display: "flex",
+          flexWrap: "wrap",
+          gap: 2,
+          width: "100%"
         }}>
           {/* Department */}
-          <Box sx={{ width: { xs: "100%", md: "calc((100% - 32px) / 3)" } }}>
+          <Box sx={{ width: { xs: "100%", md: "calc(50% - 12px)" } }}>
             <Box sx={filterBox}>
               <Typography sx={filterLabel}>Department</Typography>
               <Select
@@ -280,7 +280,7 @@ const DeptProctorUploads = () => {
           </Box>
 
           {/* Program */}
-          <Box sx={{ width: { xs: "100%", md: "calc((100% - 32px) / 3)" } }}>
+          <Box sx={{ width: { xs: "100%", md: "calc(16.66% - 12px)" } }}>
             <Box sx={filterBox}>
               <Typography sx={filterLabel}>Program</Typography>
               <Select
@@ -296,7 +296,7 @@ const DeptProctorUploads = () => {
           </Box>
 
           {/* Branch */}
-          <Box sx={{ width: { xs: "100%", md: "calc((100% - 32px) / 3)" } }}>
+          <Box sx={{ width: { xs: "100%", md: "calc(16.66% - 12px)" } }}>
             <Box sx={filterBox}>
               <Typography sx={filterLabel}>Branch</Typography>
               <Select
@@ -312,7 +312,7 @@ const DeptProctorUploads = () => {
           </Box>
 
           {/* Semester */}
-          <Box sx={{ width: { xs: "100%", md: "calc((100% - 32px) / 3)" } }}>
+          <Box sx={{ width: { xs: "100%", md: "calc(16.66% - 12px)" } }}>
             <Box sx={filterBox}>
               <Typography sx={filterLabel}>Semester</Typography>
               <Select
@@ -330,24 +330,29 @@ const DeptProctorUploads = () => {
       </Box>
 
       {/* CSV Controls */}
-      <Box sx={{ 
-        display: "flex", 
+      <Box sx={{
+        display: "flex",
         flexDirection: { xs: "column", sm: "row" },
-        justifyContent: "space-between", 
-        mb: 2, 
+        justifyContent: "space-between",
+        mb: 2,
         alignItems: { xs: "stretch", sm: "center" },
         gap: 2
       }}>
         <SectionHeader title={`Students (${students.length})`} />
-        <Stack 
-          direction={{ xs: "column", sm: "row" }} 
+        <Stack
+          direction={{ xs: "column", sm: "row" }}
           spacing={2}
           sx={{ width: { xs: "100%", sm: "auto" } }}
         >
           <Button
             variant="outlined" startIcon={<DownloadIcon />}
             onClick={downloadTemplate} disabled={students.length === 0}
-            sx={{ borderRadius: "10px", textTransform: "none", width: "100%" }}
+            sx={{
+              borderRadius: "10px",
+              textTransform: "none",
+              width: { xs: "100%", sm: "auto" },
+              whiteSpace: "nowrap"
+            }}
           >
             Download Template
           </Button>
@@ -357,9 +362,11 @@ const DeptProctorUploads = () => {
             startIcon={<CloudUploadIcon />}
             sx={{
               borderRadius: "10px", textTransform: "none", fontWeight: 600,
-              background: "linear-gradient(135deg,#2e7d32,#43a047)", color: "#fff",
-              "&:hover": { background: "linear-gradient(135deg,#1b5e20,#2e7d32)" },
-              width: "100%"
+              background: "linear-gradient(135deg,#1e88e5,#1565c0)", color: "#fff",
+              "&:hover": { background: "linear-gradient(135deg,#1565c0,#0d47a1)" },
+              width: { xs: "100%", sm: "auto" },
+              minWidth: { sm: "160px" },
+              whiteSpace: "nowrap"
             }}
           >
             Upload CSV
@@ -373,7 +380,7 @@ const DeptProctorUploads = () => {
 
       {/* Table */}
       {loading ? (
-        <Box display="flex" justifyContent="center" mt={4}><CircularProgress /></Box>
+        <Box sx={{ display: "flex", justifyContent: "center", mt: 4 }}><CircularProgress /></Box>
       ) : students.length > 0 ? (
         <DataTable
           columns={["Student ID", "Student Name", "Proctor ID", "Proctor Name", "Actions"]}
@@ -390,8 +397,8 @@ const DeptProctorUploads = () => {
             <Typography sx={{ fontSize: 13, fontWeight: 500, color: fetchedProctors[s.studentId]?.includes("Not Found") ? "#d32f2f" : "#0b5299" }}>
               {fetchedProctors[s.studentId] || s.proctorName || "Not Assigned"}
             </Typography>,
-            <IconButton 
-              color="primary" 
+            <IconButton
+              color="primary"
               onClick={() => handleSaveMapping(s.studentId, s.mappingId)}
             >
               <SaveIcon />
@@ -408,7 +415,7 @@ const DeptProctorUploads = () => {
 };
 
 const filterBox = {
-  display: "flex", 
+  display: "flex",
   flexDirection: { xs: "column", sm: "row" },
   alignItems: { xs: "flex-start", sm: "center" },
   px: 2, py: { xs: 1.5, sm: 1.2 }, borderRadius: "16px",
@@ -425,13 +432,13 @@ const filterBox = {
   }
 };
 
-const filterLabel = { 
-  fontSize: 10, 
-  fontWeight: 700, 
-  color: "#334155", 
+const filterLabel = {
+  fontSize: 10,
+  fontWeight: 700,
+  color: "#334155",
   mb: { xs: 0.5, sm: 0 },
-  mr: 1, 
-  textTransform: "uppercase", 
+  mr: 1,
+  textTransform: "uppercase",
   letterSpacing: "0.1em",
   opacity: 0.6
 };
