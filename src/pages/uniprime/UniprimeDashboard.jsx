@@ -1,306 +1,855 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import {
-  Grid, Card, Typography, Box, Button, Chip,
-  LinearProgress, List, ListItem, ListItemAvatar,
-  Avatar, ListItemText
+  Box,
+  Typography,
+  Grid,
+  Card,
+  CardContent,
+  Button,
+  Chip,
+  Avatar,
+  LinearProgress,
+  List,
+  ListItem,
+  ListItemAvatar,
+  ListItemText,
+  Divider,
+  Paper,
+  CircularProgress,
 } from "@mui/material";
-
 import {
-  School, People, Security, CalendarMonth,
-  Business, AccountTree, MenuBook,
-  Event, KeyboardArrowRight, PersonAdd
+  CalendarToday,
+  School,
+  Group,
+  Shield,
+  CalendarMonth,
+  AccountBalance,
+  ArrowForward,
+  AddBox,
+  DomainAdd,
+  AccountTree,
+  PersonAdd,
+  VpnKey,
+  AssignmentInd,
+  Update,
+  History,
+  PeopleAlt,
+  Security,
 } from "@mui/icons-material";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import MenuBook from "@mui/icons-material/MenuBook";
+import API from "../../api/axios";
+import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
 
-import DashboardCard from "../../components/DashboardCard";
+const UniprimeDashboard = () => {
+  const [loading, setLoading] = useState(true);
+  const [dashboardData, setDashboardData] = useState({
+    academicYearsCount: 0,
+    activeYear: "N/A",
+    departmentsCount: 0,
+    usersCount: 0,
+    rolesCount: 0,
+    departmentsList: [],
+    programsList: [],
+    branchesList: [],
+    recentUsers: [],
+    roleDistribution: []
+  });
 
-const glass = {
-  borderRadius: "20px",
-  p: 2.5,
-  background: "rgba(255,255,255,0.75)",
-  backdropFilter: "blur(16px)",
-  border: "1px solid rgba(255,255,255,0.5)",
-  boxShadow: "0 10px 30px rgba(0,0,0,0.06)",
-};
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      try {
+        setLoading(true);
+        const res = await API.get('/api/dashboard/uniprime');
 
-const iconBox = (color) => ({
-  p: 1.2,
-  borderRadius: "10px",
-  background: `${color}15`,
-  color,
-  display: "flex",
-});
+        if (res.data?.status === 'success') {
+          setDashboardData({
+            academicYearsCount: res.data.data.academicYearsCount || 0,
+            activeYear: res.data.data.activeYear || "N/A",
+            departmentsCount: res.data.data.departmentsCount || 0,
+            usersCount: res.data.data.usersCount || 0,
+            rolesCount: res.data.data.rolesCount || 0,
+            departmentsList: res.data.data.departmentsList || [],
+            programsList: res.data.data.programsList || [],
+            branchesList: res.data.data.branchesList || [],
+            recentUsers: (res.data.data.recentUsers || []).filter(Boolean),
+            roleDistribution: res.data.data.roleDistribution || []
+          });
+        }
+      } catch (error) {
+        console.error("Error fetching dashboard data:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-const UniprimeDashboard = () => (
-  <Box
-    sx={{
-      p: 3,
-      background: "linear-gradient(135deg, #eef2ff, #f8fafc)",
-      minHeight: "100vh",
-    }}
-  >
-    <Grid container spacing={3}>
 
-      {/* 🔷 TOP CARDS */}
-      {[
-        { title: "Academic Years", value: "6", icon: <CalendarMonth />, color: "#3b82f6", subtitle: "Total Years" },
-        { title: "Active Year", value: "2024-25", icon: <School />, color: "#10b981", subtitle: "Active" },
-        { title: "Departments", value: "12", icon: <Business />, color: "#8b5cf6", subtitle: "Total Departments" },
-        { title: "Users", value: "428", icon: <People />, color: "#f59e0b", subtitle: "Total Users" },
-        { title: "Roles", value: "15", icon: <Security />, color: "#ef4444", subtitle: "Total Roles" },
-      ].map((card, i) => (
-        <Grid item xs={12} sm={6} md={2.4} key={i}>
-          <Card sx={{ ...glass, p: 2 }}>
-            <Box display="flex" justifyContent="space-between">
-              <Box>
-                <Typography fontSize={13} color="text.secondary">
-                  {card.title}
-                </Typography>
-                <Typography fontSize={24} fontWeight={800}>
-                  {card.value}
-                </Typography>
-                <Typography fontSize={12} color="text.secondary">
+
+    fetchDashboardData();
+  }, []);
+
+  const COLORS = ["#2196f3", "#4caf50", "#ff9800", "#f44336", "#9c27b0"];
+
+  // Top Row Cards Data
+  const topCards = [
+  {
+    title: "Academic Years",
+    value: dashboardData.academicYearsCount,
+    icon: <CalendarToday />,
+    gradient: "linear-gradient(135deg, #3B82F6, #2563EB)",
+    linkText: "View Details",
+  },
+  {
+    title: "Active Year",
+    value: dashboardData.activeYear,
+    icon: <School />,
+    gradient: "linear-gradient(135deg, #10B981, #059669)",
+    subtitle: <Chip label="Active" size="small" color="success" />,
+    linkText: "Manage Years",
+  },
+  {
+    title: "Departments",
+    value: dashboardData.departmentsCount,
+    icon: <AccountBalance />,
+    gradient: "linear-gradient(135deg, #8B5CF6, #6D28D9)",
+    linkText: "View All",
+  },
+  {
+    title: "Users",
+    value: dashboardData.usersCount,
+    icon: <Group />,
+    gradient: "linear-gradient(135deg, #F59E0B, #D97706)",
+    linkText: "Manage Users",
+  },
+  {
+    title: "Roles",
+    value: dashboardData.rolesCount,
+    icon: <Shield />,
+    gradient: "linear-gradient(135deg, #EF4444, #DC2626)",
+    linkText: "Manage Roles",
+  },
+];
+
+  const quickActions = [
+    { title: "Add Academic Year", desc: "Create new year", icon: <AddBox color="primary" /> },
+    { title: "Add Department", desc: "Create new department", icon: <DomainAdd color="success" /> },
+    { title: "Add Program / Branch", desc: "Add program or branch", icon: <AccountTree color="secondary" /> },
+    { title: "Add User", desc: "Register new user", icon: <PersonAdd sx={{ color: "#00b0ff" }} /> },
+    { title: "Create Role", desc: "Define new role", icon: <VpnKey color="error" /> },
+    { title: "Assign Role", desc: "Assign role to user", icon: <AssignmentInd color="warning" /> },
+  ];
+
+  const recentUsers = dashboardData.recentUsers || [];
+
+  const recentActivity = [
+    { title: "Academic Year 2024-25 activated", by: "UniPrime", time: "10 min ago", icon: <CalendarMonth color="success" /> },
+    { title: "Department 'Computer Science' added", by: "UniPrime", time: "25 min ago", icon: <AccountBalance color="primary" /> },
+    { title: "12 new users registered", by: "UniPrime", time: "1 hour ago", icon: <PeopleAlt color="info" /> },
+    { title: "Role 'HOD' updated", by: "UniPrime", time: "2 hours ago", icon: <Security color="warning" /> },
+  ];
+
+  return (
+    <Box>
+      {loading ? (
+        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '60vh' }}>
+          <CircularProgress />
+        </Box>
+      ) : (
+        <>
+      {/* Header */}
+      <Box sx={{ mb: 4 }}>
+        <Typography variant="h4" sx={{ fontWeight: 700, color: "#1a237e", mb: 0.5 }}>
+          Welcome back, UniPrime! 👋
+        </Typography>
+        <Typography variant="body2" color="text.secondary">
+          Super Admin Dashboard • Monitor and manage the entire university ecosystem.
+        </Typography>
+      </Box>
+
+     
+
+      {/* Row 1: Summary Cards */}
+
+    <Grid container spacing={3} sx={{ mb: 4 }}>
+      {topCards.map((card, i) => (
+        <Grid
+          item
+          key={i}
+          xs={12}
+          sm={6}
+          md={4}
+          lg
+          sx={{
+            flex: "1 1 0",
+            minWidth: 0,
+          }}
+        >
+          <Card
+            sx={{
+              borderRadius: 1,
+              boxShadow: "0 6px 20px rgba(0,0,0,0.06)",
+               transition: "all 0.25s ease",
+                "&:hover": {
+                    transform: "translateY(-4px)",
+                    boxShadow: "0 12px 30px rgba(0,0,0,0.1)",
+                },
+              height: "100%",
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: "space-between",
+              p: 2.5,
+            }}
+          >
+       
+        {/* Top Content */}
+        <Box sx={{ display: "flex", alignItems: "flex-start", gap: 2 }}>
+          
+          {/* Icon */}
+          <Box
+            sx={{
+              width: 52,
+              height: 52,
+              borderRadius: 1,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              background: card.gradient,
+              boxShadow: "0 8px 18px rgba(0,0,0,0.12)",
+              color: "#fff",
+              position: "relative",
+              overflow: "hidden",
+              "&::after": {
+                content: '""',
+                position: "absolute",
+                inset: 0,
+                background: "linear-gradient(180deg, #ffffff30, transparent)",
+                borderRadius: 1,
+              },
+            }}>
+              {React.cloneElement(card.icon, { fontSize: "medium" })}
+            </Box>
+
+          {/* Text */}
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 0.3 }}>
+            <Typography
+              variant="body2"
+              sx={{ color: "#6B7280", fontWeight: 600 }}
+            >
+              {card.title}
+            </Typography>
+
+            <Typography
+              variant="h6"
+              sx={{ fontWeight: 700, color: "#111827", mt: 0.5 }}
+            >
+              {card.value}
+            </Typography>
+
+            {/* Subtitle / Badge */}
+            <Box sx={{ mt: 0.8 }}>
+              {typeof card.subtitle === "string" ? (
+                <Typography variant="caption" sx={{ color: "#9CA3AF" }}>
                   {card.subtitle}
                 </Typography>
+              ) : (
+                card.subtitle
+              )}
+            </Box>
+          </Box>
+        </Box>
+
+        {/* Bottom Link */}
+        <Box sx={{ mt: 2 }}>
+          <Button
+            size="small"
+            endIcon={<ArrowForward sx={{ fontSize: 16 }} />}
+            sx={{
+              textTransform: "none",
+              fontSize: "0.8rem",
+              fontWeight: 600,
+              color: "#2563EB",
+              p: 0,
+              "&:hover": { background: "transparent" },
+            }}
+          >
+            {card.linkText}
+          </Button>
+        </Box>
+      </Card>
+    </Grid>
+  ))}
+</Grid>
+
+      {/* Row 2: Middle Panels */}
+      <Grid container spacing={3} sx={{ mb: 3, alignItems: "stretch" }}>
+        {/* Academic Structure Overview */}
+        <Grid item xs={12} md={4} sx={{ display: "flex" }}>
+          <Card
+            sx={{
+              borderRadius: 1,
+              boxShadow: "0 6px 20px rgba(0,0,0,0.06)",
+              p: 2.5,
+              height: "100%",   
+    display: "flex",
+    flexDirection: "column",
+            }}
+          >
+            {/* Header */}
+            <Box sx={{ display: "flex", justifyContent: "space-between", mb: 3 }}>
+              <Typography sx={{ fontWeight: 700 }}>
+                Academic Structure Overview
+              </Typography>
+              <Button
+                size="small"
+                sx={{ textTransform: "none", fontSize: "0.8rem" }}
+              >
+                View Full Structure →
+              </Button>
+            </Box>
+
+            {/* 3 Column Layout */}
+            <Box sx={{ display: "flex", gap: 2 }}>
+              
+              {/* Departments */}
+              <Box sx={columnCard("#EEF2FF")}>
+                <TopBlock icon={<AccountBalance color="primary" />} title="Departments" value={dashboardData.departmentsCount} />
+                <Divider sx={{ my: 1 }} />
+                {dashboardData.departmentsList.slice(0, 5).map((dept, idx) => (
+                  <RowItem key={dept._id || idx} label={dept.departmentName || `Dept ${idx+1}`} value={dept.departmentCode || ""} />
+                ))}
               </Box>
-              <Box sx={iconBox(card.color)}>{card.icon}</Box>
+
+              {/* Programs */}
+              <Box sx={columnCard("#ECFDF5")}>
+                <TopBlock icon={<School color="success" />} title="Programs" value={dashboardData.programsList.length} />
+                <Divider sx={{ my: 1 }} />
+                {dashboardData.programsList.slice(0, 5).map((prog, idx) => (
+                  <RowItem key={prog._id || idx} label={prog.programName || `Program ${idx+1}`} value={prog.programCode || ""} />
+                ))}
+              </Box>
+
+              {/* Branches */}
+              <Box sx={columnCard("#F5F3FF")}>
+                <TopBlock icon={<AccountTree color="secondary" />} title="Branches" value={dashboardData.branchesList.length} />
+                <Divider sx={{ my: 1 }} />
+                {dashboardData.branchesList.slice(0, 5).map((branch, idx) => (
+                  <RowItem key={branch._id || idx} label={branch.branchName || `Branch ${idx+1}`} value={branch.branchCode || ""} />
+                ))}
+              </Box>
+
             </Box>
           </Card>
         </Grid>
-      ))}
 
-      {/* 🔷 ACADEMIC STRUCTURE */}
-      <Grid item xs={12} md={7}>
-        <Card sx={glass}>
-          <Box display="flex" justifyContent="space-between" mb={2}>
-            <Typography fontWeight={700}>
-              Academic Structure Overview
+        {/* Active Academic Configuration */}
+
+        <Grid item xs={12} md={4} sx={{ display: "flex" }}>
+            <Card
+              sx={{
+                borderRadius: 1,
+                boxShadow: "0 6px 20px rgba(0,0,0,0.06)",
+                p: 2.5,
+                height: "100%",
+              }}
+            >
+              {/* Header */}
+              <Box sx={{ display: "flex", justifyContent: "space-between", mb: 3 }}>
+                <Typography sx={{ fontWeight: 700 }}>
+                  Active Academic Configuration
+                </Typography>
+
+                <Chip
+                  label="All Systems Operational"
+                  size="small"
+                  sx={{
+                    bgcolor: "#E6F9F0",
+                    color: "#059669",
+                    fontWeight: 600,
+                    fontSize: "0.7rem",
+                    borderRadius: 1,
+                  }}
+                />
+              </Box>
+
+              {/* Card 1 */}
+              <Box sx={configBox}>
+                <Box>
+                  <Typography sx={labelStyle}>
+                    Active Academic Year
+                  </Typography>
+
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                    <Typography sx={valueStyle}>{dashboardData.activeYear}</Typography>
+                    <Chip label="Active" size="small" sx={activeChip} />
+                  </Box>
+                </Box>
+
+                <Box sx={iconBox("#E8F0FE")}>
+                  <CalendarMonth sx={{ color: "#2563EB" }} />
+                </Box>
+              </Box>
+
+              {/* Card 2 */}
+              <Box sx={configBox}>
+                <Box>
+                  <Typography sx={labelStyle}>
+                    Active Semester
+                  </Typography>
+
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                    <Typography sx={valueStyle}>Semester 2</Typography>
+                    <Chip label="Active" size="small" sx={activeChip} />
+                  </Box>
+                </Box>
+
+                <Box sx={iconBox("#F3E8FF")}>
+                  <MenuBook sx={{ color: "#7C3AED" }} />
+                </Box>
+              </Box>
+
+              {/* Duration */}
+              <Box sx={configBox}>
+                <Box sx={{ display: "flex", gap: 2 }}>
+                  <CalendarMonth sx={{ color: "#2563EB", mt: 0.5 }} />
+
+                  <Box sx={{ flex: 1 }}>
+                    <Typography sx={labelStyle}>
+                      Semester Duration
+                    </Typography>
+
+                    <Typography sx={{ fontWeight: 600 }}>
+                      Jan 15, 2025 - May 30, 2025
+                    </Typography>
+
+                    <LinearProgress
+                      variant="determinate"
+                      value={60}
+                      sx={{
+                        mt: 1,
+                        height: 5,
+                        borderRadius: 2,
+                        bgcolor: "#E5E7EB",
+                        "& .MuiLinearProgress-bar": {
+                          bgcolor: "#2563EB",
+                        },
+                      }}
+                    />
+
+                    <Typography
+                      sx={{
+                        fontSize: "0.75rem",
+                        color: "#2563EB",
+                        mt: 0.5,
+                        fontWeight: 500,
+                      }}
+                    >
+                      136 days remaining
+                    </Typography>
+                  </Box>
+                </Box>
+              </Box>
+            </Card>
+          </Grid>
+
+        {/* Recently Added Users */}     
+
+        {/* <Grid item xs={12} md={4} sx={{ display: "flex" }}>
+        <Card
+          sx={{
+            borderRadius: 1,
+            boxShadow: "0 6px 20px rgba(0,0,0,0.06)",
+            p: 2,
+            height: "100%",
+          }}
+        >
+       
+          <Box sx={{ display: "flex", justifyContent: "space-between", mb: 2 }}>
+            <Typography sx={{ fontWeight: 700 }}>
+              Recently Added Users
             </Typography>
-            <Button size="small" endIcon={<KeyboardArrowRight />}>
-              View Full Structure
+
+            <Button
+              size="small"
+              sx={{
+                textTransform: "none",
+                fontSize: "0.8rem",
+                color: "#2563EB",
+              }}
+            >
+              View All →
             </Button>
           </Box>
 
-          <Grid container spacing={2} mb={2}>
-            {[
-              { label: "Departments", value: 12, color: "#3b82f6" },
-              { label: "Programs", value: 24, color: "#6366f1" },
-              { label: "Branches", value: 48, color: "#10b981" },
-            ].map((item, i) => (
-              <Grid item xs={4} key={i}>
-                <Box
+        
+          <Box>
+            {recentUsers.map((user, i) => (
+              <Box
+                key={i}
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  py: 1.5,
+                  borderBottom: i !== recentUsers.length - 1 ? "1px solid #F1F5F9" : "none",
+                }}
+              >
+              
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                  
+                  <Avatar
+                  alt={user?.name || ""}
+                  src={user?.avatar}
                   sx={{
-                    p: 2,
-                    borderRadius: "14px",
-                    bgcolor: "#f9fafb",
-                    border: "1px solid #e5e7eb",
+                    width: 38,
+                    height: 38,
+                    fontSize: "0.9rem",
+                    bgcolor: "#E5E7EB",
+                    color: "#374151",
+                    fontWeight: 600,
                   }}
-                >
-                  <Typography fontSize={12} color="text.secondary">
-                    {item.label}
-                  </Typography>
-                  <Typography fontSize={20} fontWeight={800}>
-                    {item.value}
-                  </Typography>
-                </Box>
-              </Grid>
-            ))}
-          </Grid>
+                />
 
-          <Grid container spacing={2}>
-            {[
-              ["Engineering", "Management", "Sciences"],
-              ["B.Tech", "M.Tech", "MBA"],
-              ["CSE", "ECE", "MECH"],
-            ].map((col, i) => (
-              <Grid item xs={4} key={i}>
-                {col.map((item, idx) => (
-                  <Box
-                    key={idx}
-                    display="flex"
-                    justifyContent="space-between"
-                    mb={1}
-                  >
-                    <Typography fontSize={13}>{item}</Typography>
-                    <Typography fontSize={13} fontWeight={600}>
-                      {[5, 2, 2, 8, 6, 2, 12, 10, 8][i * 3 + idx]}
+                  <Box>
+                    <Typography sx={{ fontWeight: 600, fontSize: "0.9rem" }}>
+                      {user?.name || "kavi"}
+                    </Typography>
+
+                    <Typography
+                      sx={{
+                        fontSize: "0.75rem",
+                        color: "#6B7280",
+                      }}
+                    >
+                      {user?.email || ""}
                     </Typography>
                   </Box>
-                ))}
-              </Grid>
-            ))}
-          </Grid>
-        </Card>
-      </Grid>
+                </Box>
 
-      {/* 🔷 ACTIVE CONFIG */}
-      <Grid item xs={12} md={5}>
-        <Card sx={glass}>
-          <Box display="flex" justifyContent="space-between" mb={2}>
-            <Typography fontWeight={700}>
-              Active Academic Configuration
-            </Typography>
-            <Chip
-              label="All Systems Operational"
-              size="small"
-              color="success"
-            />
-          </Box>
+              
+                <Box sx={{ textAlign: "right" }}>
+                 
 
-          {[
-            { title: "Active Academic Year", value: "2024-25", icon: <CalendarMonth /> },
-            { title: "Active Semester", value: "Semester 2", icon: <MenuBook /> },
-          ].map((item, i) => (
-            <Box key={i} sx={configBox}>
-              <Box>
-                <Typography fontSize={12} color="text.secondary">
-                  {item.title}
-                </Typography>
-                <Typography fontWeight={700}>{item.value}</Typography>
-                <Chip label="Active" size="small" color="success" />
+                  <Chip
+                    label={user?.role}
+                    size="small"
+                    sx={roleChip(user?.role)}
+                  />
+
+                   <Typography
+                    sx={{
+                      fontSize: "0.7rem",
+                      color: "#9CA3AF",
+                      mb: 0.5,
+                    }}
+                  >
+                    {user?.time ? new Date(user.time).toLocaleDateString() : 'Recently'}
+                  </Typography>
+
+                </Box>
               </Box>
-              <Box sx={iconBox("#6366f1")}>{item.icon}</Box>
-            </Box>
-          ))}
-
-          <Box sx={configBox}>
-            <Box>
-              <Typography fontSize={12}>Semester Duration</Typography>
-              <Typography fontWeight={600}>
-                Jan 15 - May 30
-              </Typography>
-              <Typography fontSize={12} color="text.secondary">
-                136 days remaining
-              </Typography>
-              <LinearProgress
-                value={60}
-                variant="determinate"
-                sx={{ mt: 1, height: 6, borderRadius: 3 }}
-              />
-            </Box>
-          </Box>
-        </Card>
-      </Grid>
-
-      {/* 🔷 USER OVERVIEW */}
-      <Grid item xs={12} md={4}>
-        <Card sx={glass}>
-          <Typography fontWeight={700} mb={2}>
-            User & Role Overview
-          </Typography>
-
-          <Box display="flex" justifyContent="center" mb={2}>
-            <Box
-              sx={{
-                width: 150,
-                height: 150,
-                borderRadius: "50%",
-                border: "14px solid #4caf50",
-                borderTopColor: "#3b82f6",
-                borderRightColor: "#f59e0b",
-                borderBottomColor: "#ef4444",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              <Typography fontWeight={800}>428</Typography>
-            </Box>
-          </Box>
-
-          {[
-            { label: "Faculty", value: 42 },
-            { label: "Staff", value: 36 },
-            { label: "Students", value: 18 },
-          ].map((item, i) => (
-            <Box key={i} mb={1}>
-              <Typography fontSize={12}>{item.label}</Typography>
-              <LinearProgress
-                value={item.value}
-                variant="determinate"
-                sx={{ height: 6, borderRadius: 3 }}
-              />
-            </Box>
-          ))}
-        </Card>
-      </Grid>
-
-      {/* 🔷 RECENT USERS */}
-      <Grid item xs={12} md={4}>
-        <Card sx={glass}>
-          <Box display="flex" justifyContent="space-between" mb={1}>
-            <Typography fontWeight={700}>
-              Recently Added Users
-            </Typography>
-            <Button size="small">View All</Button>
-          </Box>
-
-          <List>
-            {["Ananya Sharma", "Rahul Verma", "Priya Singh"].map((name, i) => (
-              <ListItem key={i} sx={{ px: 0 }}>
-                <ListItemAvatar>
-                  <Avatar>{name[0]}</Avatar>
-                </ListItemAvatar>
-                <ListItemText
-                  primary={name}
-                  secondary="Faculty"
-                />
-                <Typography fontSize={12}>2h</Typography>
-              </ListItem>
             ))}
-          </List>
+          </Box>
         </Card>
+      </Grid> */}
+
       </Grid>
 
-      {/* 🔷 QUICK ACTIONS */}
-      <Grid item xs={12} md={4}>
-        <Card sx={glass}>
-          <Typography fontWeight={700} mb={2}>
-            Quick Actions
-          </Typography>
+      {/* Row 3: Bottom Panels */}
+      <Box sx={{ display: "flex", gap: 3, flexWrap: { xs: "wrap", lg: "nowrap" } }}>
+        {/* User & Role Overview */}
+        <Box sx={{ width: { xs: "100%", lg: "50%" }, display: "flex" }}>
+          <Card sx={{ borderRadius: 1, boxShadow: "0 2px 10px rgba(0,0,0,0.05)", height: "100%", width: "100%",
+                    display: "flex",
+                    flexDirection: "column" }}>
+            <CardContent sx={{ flexGrow: 1 }}>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
+                <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>User & Role Overview</Typography>
+                <Button size="small" sx={{ textTransform: "none", fontSize: "0.75rem" }}>View All Users &gt;</Button>
+              </Box>
+              
+              <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "nowrap", gap: 2 }}>
+                {/* Chart */}
+                <Box sx={{ position: "relative", width: 200, height: 200, flexShrink: 0 }}>
+                  <ResponsiveContainer>
+                    <PieChart>
+                      <Pie
+                        data={dashboardData.roleDistribution}
+                        dataKey="value"
+                        nameKey="label"
+                        innerRadius={55}
+                        outerRadius={80}
+                        paddingAngle={2}
+                        stroke="none"
+                      >
+                        {dashboardData.roleDistribution.map((entry, index) => (
+                          <Cell key={index} fill={COLORS[index % COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <Tooltip />
+                    </PieChart>
+                  </ResponsiveContainer>
 
-          <Grid container spacing={2}>
-            {[
-              { label: "Add Academic Year", icon: <CalendarMonth /> },
-              { label: "Add Department", icon: <Business /> },
-              { label: "Add Program", icon: <AccountTree /> },
-              { label: "Add User", icon: <PersonAdd /> },
-            ].map((a, i) => (
-              <Grid item xs={6} key={i}>
-                <Box
+                 <Box
+                    sx={{
+                      position: "absolute",
+                      top: "50%",
+                      left: "50%",
+                      transform: "translate(-50%, -50%)",
+                      textAlign: "center",
+                    }}
+                  >
+                    <Typography sx={{ fontSize: 28, fontWeight: 700, color: "#111827" }}>
+                      {dashboardData.usersCount}
+                    </Typography>
+
+                    <Typography sx={{ fontSize: 12, color: "#6B7280" }}>
+                      Total Users
+                    </Typography>
+                  </Box>
+                </Box>
+               <Box
                   sx={{
                     p: 2,
-                    borderRadius: "14px",
-                    border: "1px solid #e5e7eb",
-                    bgcolor: "#f9fafb",
-                    cursor: "pointer",
-                    transition: "0.2s",
-                    "&:hover": {
-                      bgcolor: "#eef2ff",
-                      transform: "translateY(-3px)",
-                    },
+                    borderRadius: 2,
+                    border: "1px solid #E5E7EB",
+                    minWidth: 150,
+                    flexGrow: 1,
                   }}
                 >
-                  {a.icon}
-                  <Typography fontSize={13}>{a.label}</Typography>
+                  {dashboardData.roleDistribution.map((role, idx) => {
+                    const percent =
+                      dashboardData.usersCount > 0
+                        ? ((role.value / dashboardData.usersCount) * 100).toFixed(1)
+                        : 0;
+
+                    return (
+                      <Box
+                        key={idx}
+                        sx={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                          mb: 1.5,
+                        }}
+                      >
+                        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                          <Box
+                            sx={{
+                              width: 8,
+                              height: 8,
+                              borderRadius: "50%",
+                              bgcolor: COLORS[idx % COLORS.length],
+                            }}
+                          />
+                          <Typography sx={{ fontSize: 13 }}>
+                            {role.label}
+                          </Typography>
+                        </Box>
+
+                        <Typography sx={{ fontSize: 13, fontWeight: 600 }}>
+                          {role.value} &nbsp;
+                          <span style={{ color: "#6B7280", fontWeight: 400 }}>
+                            {percent}%
+                          </span>
+                        </Typography>
+                      </Box>
+                    );
+                  })}
                 </Box>
+
+              </Box>
+            </CardContent>
+          </Card>
+        </Box>
+
+
+        {/* Quick Actions */}
+        <Box sx={{ width: { xs: "100%", lg: "50%" }, display: "flex" }}>
+          <Card sx={{ borderRadius: 1, boxShadow: "0 2px 10px rgba(0,0,0,0.05)", height: "100%", width: "100%",
+    display: "flex",
+    flexDirection: "column" }}>
+            <CardContent sx={{ flexGrow: 1 }}>
+              <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 2 }}>Quick Actions</Typography>
+              <Grid container spacing={1.5}>
+                {quickActions.map((action, i) => (
+                  <Grid item xs={6} key={i}>
+                    <Paper
+                      variant="outlined"
+                      sx={{
+                        p: 2.2,
+                        borderRadius: 1,
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 2,
+                        cursor: "pointer",
+                        height: "100%",
+                        border: "1px solid #E5E7EB",
+                        backgroundColor: "#fff",
+                        transition: "all 0.25s ease",
+                        
+                        "&:hover": {
+                          borderColor: "#2563EB",
+                          backgroundColor: "#F9FAFB",
+                          transform: "translateY(-2px)",
+                          boxShadow: "0 6px 16px rgba(0,0,0,0.06)",
+                        },
+                      }}
+                    >
+                      {/* Icon */}
+                      <Box
+                        sx={{
+                          width: 42,
+                          height: 42,
+                          borderRadius: 1,
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          backgroundColor: "#F1F5F9",
+                          flexShrink: 0,
+                        }}
+                      >
+                        {action.icon}
+                      </Box>
+
+                      {/* Text */}
+                      <Box>
+                        <Typography
+                          sx={{
+                            fontWeight: 600,
+                            fontSize: "0.95rem",
+                            color: "#111827",
+                          }}
+                        >
+                          {action.title}
+                        </Typography>
+
+                        <Typography
+                          sx={{
+                            fontSize: "0.75rem",
+                            color: "#6B7280",
+                            mt: 0.5,
+                          }}
+                        >
+                          {action.desc}
+                        </Typography>
+                      </Box>
+                    </Paper>
+                  </Grid>
+                ))}
               </Grid>
-            ))}
-          </Grid>
-        </Card>
-      </Grid>
+            </CardContent>
+          </Card>
+        </Box>
 
-    </Grid>
-  </Box>
-);
+        
 
-const configBox = {
-  p: 2,
-  borderRadius: "14px",
-  bgcolor: "#ffffffcc",
-  display: "flex",
-  justifyContent: "space-between",
-  alignItems: "center",
-  mb: 2,
+      </Box>
+        </>
+      )}
+    </Box>
+  );
 };
 
 export default UniprimeDashboard;
+
+const columnCard = (bg) => ({
+  flex: 1,
+  borderRadius: 1,
+  padding: "16px",
+  background: bg,
+  display: "flex",
+  flexDirection: "column",
+  minHeight: 220,
+});
+
+const TopBlock = ({ icon, title, value }) => (
+  <Box sx={{ textAlign: "center", mb: 1 }}>
+    <Box sx={{ mb: 0.5 }}>{icon}</Box>
+    <Typography variant="body2" sx={{ fontWeight: 600 }}>
+      {title}
+    </Typography>
+    <Typography sx={{ fontWeight: 700, fontSize: 22 }}>
+      {value}
+    </Typography>
+  </Box>
+);
+
+const RowItem = ({ label, value }) => (
+  <Typography
+    variant="caption"
+    sx={{
+      display: "flex",
+      justifyContent: "space-between",
+      py: 0.5,
+      borderBottom: "1px solid #e5e7eb",
+      "&:last-child": { borderBottom: "none" },
+    }}
+  >
+    {label} <b>{value}</b>
+  </Typography>
+);
+
+const configBox = {
+  display: "flex",
+  justifyContent: "space-between",
+  alignItems: "center",
+  p: 2,
+  mb: 2,
+  borderRadius: 1,
+  border: "1px solid #E5E7EB",
+  background: "#fafbff65",
+};
+
+const iconBox = (bg) => ({
+  width: 48,
+  height: 48,
+  borderRadius: 1,
+  background: bg,
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+});
+
+const labelStyle = {
+  fontSize: "0.75rem",
+  color: "#6B7280",
+  fontWeight: 500,
+};
+
+const valueStyle = {
+  fontWeight: 700,
+  fontSize: "1.1rem",
+};
+
+const activeChip = {
+  bgcolor: "#DCFCE7",
+  color: "#16A34A",
+  fontSize: "0.65rem",
+  height: 20,
+  borderRadius: 1,
+};
+
+const roleChip = (role) => {
+  const styles = {
+    Faculty: {
+      bgcolor: "#E0ECFF",
+      color: "#2563EB",
+    },
+    Staff: {
+      bgcolor: "#DCFCE7",
+      color: "#16A34A",
+    },
+    Technician: {
+      bgcolor: "#F3E8FF",
+      color: "#7C3AED",
+    },
+  };
+
+  return {
+    ...styles[role],
+    fontSize: "0.65rem",
+    height: 20,
+    borderRadius: 1,
+    fontWeight: 600,
+  };
+};

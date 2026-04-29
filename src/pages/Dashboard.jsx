@@ -20,9 +20,9 @@ function Dashboard() {
 
   return (
     <Box sx={{ p: { xs: 1, md: 2 } }}>
-      <Typography variant="h4" fontWeight={800} color="#1a237e" mb={3} sx={{ textTransform: 'capitalize' }}>
-        {activeRole.toLowerCase()} Dashboard
-      </Typography>
+      {/* <Typography variant="h4" fontWeight={800} color="#1a237e" mb={3} sx={{ textTransform: 'capitalize' }}>
+       Welcome back! {activeRole.toLowerCase()} 
+      </Typography> */}
 
       {/* 🎯 ROLE-BASED DASHBOARD */}
       {activeRole === "FACULTY" && <FacultyDashboard />}
