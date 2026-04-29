@@ -9,7 +9,8 @@ export default function PageHeader({
   return (
     <Box
       sx={{
-        p: 3,
+        px: 2,
+        py: 1.5,
         borderRadius: "18px",
         background: "rgba(255, 255, 255, 0.25)",
         backdropFilter: "blur(10px) saturate(150%)",

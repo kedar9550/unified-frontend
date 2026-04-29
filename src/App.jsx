@@ -18,6 +18,7 @@ import Loader from "./components/common/Loader";
 import FeedbackManagement from "./pages/feedback/FeedbackManagement";
 import FeedbackDiscrepancies from "./pages/feedback/FeedbackDiscrepancies";
 import Studentuploads from "./pages/uniprime/Student/Studentuploads";
+import DepartmentMapping from "./pages/uniprime/Student/DepartmentMapping";
 import Dashboard from "./pages/Dashboard";
 import { registerLoadingHandlers } from "./api/axios";
 
@@ -68,6 +69,7 @@ function App() {
         <Route path="/feedback-management/discrepancies" element={<ProtectedRoute element={<FeedbackDiscrepancies />} />} />
         <Route path="/student/student-uploads" element={<ProtectedRoute element={<Studentuploads />} />} />
         <Route path="/student/assigned-students" element={<ProtectedRoute element={<Assignedstudents />} />} />
+        <Route path="/student/department-mapping" element={<ProtectedRoute element={<DepartmentMapping />} />} />
 
         <Route path="*" element={<ProtectedRoute element={<Box p={4}><Typography variant="h4">Page Content</Typography></Box>} />} />
       </Routes>

@@ -1,6 +1,6 @@
 import React, { useRef, useState, useEffect } from "react";
-import { Box, Avatar, Checkbox, MenuItem, Select, FormControl, InputLabel, Collapse, CircularProgress, Typography, Tooltip, IconButton, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Button, Grid, Paper } from "@mui/material";
-import { FileUpload as UploadIcon, CheckCircle as ConfirmIcon, Download as DownloadIcon, Delete as DeleteIcon, PersonAdd as PersonAddIcon, Sync as SyncIcon, UploadFile, PersonAdd } from "@mui/icons-material";
+import { Box, Avatar, Checkbox, MenuItem, Select, FormControl, InputLabel, Collapse, CircularProgress, Typography, Tooltip, IconButton, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Button, Grid, Paper, Snackbar, Alert } from "@mui/material";
+import { FileUpload as UploadIcon, CheckCircle as ConfirmIcon, Download as DownloadIcon, Delete as DeleteIcon, PersonAdd as PersonAddIcon, Sync as SyncIcon, UploadFile, PersonAdd, Close as CloseIcon } from "@mui/icons-material";
 import PageHeader from "../../../components/common/PageHeader";
 import SectionHeader from "../../../components/common/SectionHeader";
 import ActionButton from "../../../components/common/ActionButton";
@@ -20,10 +20,15 @@ const Studentuploads = () => {
     const [uploading, setUploading] = useState(false);
     const [uploadResult, setUploadResult] = useState(null);
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+    const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
     const [addRollNo, setAddRollNo] = useState("");
     const [addDept, setAddDept] = useState("");
     const [addingStudent, setAddingStudent] = useState(false);
     const [syncing, setSyncing] = useState(false);
+    const [updatingBulk, setUpdatingBulk] = useState(false);
+    const [isUploadOptionsOpen, setIsUploadOptionsOpen] = useState(false);
+    const [isUpdateOptionsOpen, setIsUpdateOptionsOpen] = useState(false);
+    const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "success" });
 
     const fetchUnassignedStudents = async () => {
         setLoadingStudents(true);
@@ -61,6 +66,7 @@ const Studentuploads = () => {
         fileInputRef.current.click();
     };
 
+
     const handleFileChange = async (e) => {
         const file = e.target.files[0];
         if (!file) return;
@@ -82,6 +88,31 @@ const Studentuploads = () => {
         } finally {
             setUploading(false);
             e.target.value = null; // Reset input
+        }
+    };
+
+    const handleBulkSyncAll = async () => {
+        setUpdatingBulk(true);
+        try {
+            const res = await API.post("/api/student-data/sync", {});
+            if (res.data.success) {
+                setUploadResult(res.data.summary);
+                setSnackbar({
+                    open: true,
+                    message: res.data.message,
+                    severity: res.data.updated ? "success" : "info"
+                });
+                fetchUnassignedStudents();
+            }
+        } catch (error) {
+            console.error("Bulk sync failed", error);
+            setSnackbar({
+                open: true,
+                message: error.response?.data?.message || "Sync failed",
+                severity: "error"
+            });
+        } finally {
+            setUpdatingBulk(false);
         }
     };
 
@@ -128,8 +159,14 @@ const Studentuploads = () => {
             });
             if (res.data.success) {
                 setIsAddModalOpen(false);
+                setIsUpdateModalOpen(false);
                 setAddRollNo("");
                 setAddDept("");
+                setSnackbar({
+                    open: true,
+                    message: res.data.message,
+                    severity: res.data.updated ? "success" : "info"
+                });
                 fetchUnassignedStudents();
             }
         } catch (error) {
@@ -149,6 +186,11 @@ const Studentuploads = () => {
             });
             if (res.data.success) {
                 setUploadResult(res.data.summary);
+                setSnackbar({
+                    open: true,
+                    message: res.data.message,
+                    severity: res.data.updated ? "success" : "info"
+                });
                 fetchUnassignedStudents();
                 setSelectedIds([]);
             }
@@ -173,6 +215,7 @@ const Studentuploads = () => {
         link.click();
         document.body.removeChild(link);
     };
+
 
     const handleExportClick = () => {
         const headers = ["Roll No", "Name", "Dept", "Email", "Phone", "Branch", "Program", "Department", "Semester"];
@@ -256,7 +299,7 @@ const Studentuploads = () => {
     ]);
 
     return (
-        <Box sx={{ p: 3 }}>
+        <Box sx={{ p: { xs: 1, md: 1.5 } }}>
             <input
                 type="file"
                 ref={fileInputRef}
@@ -314,57 +357,118 @@ const Studentuploads = () => {
                 </DialogActions>
             </Dialog>
 
+            {/* UPDATE STUDENT MODAL */}
+            <Dialog open={isUpdateModalOpen} onClose={() => !addingStudent && setIsUpdateModalOpen(false)}>
+                <DialogTitle>Update Individual Student</DialogTitle>
+                <DialogContent sx={{ minWidth: 400 }}>
+                    <Typography variant="body2" color="textSecondary" sx={{ mb: 2 }}>
+                        Sync/Update student data from ECAP using their Roll No.
+                    </Typography>
+                    <TextField
+                        autoFocus
+                        margin="dense"
+                        label="Roll Number"
+                        type="text"
+                        fullWidth
+                        variant="outlined"
+                        value={addRollNo}
+                        onChange={(e) => setAddRollNo(e.target.value)}
+                        disabled={addingStudent}
+                        sx={{ mb: 2 }}
+                    />
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setIsUpdateModalOpen(false)} disabled={addingStudent}>Cancel</Button>
+                    <Button onClick={handleAddStudent} disabled={addingStudent || !addRollNo} variant="contained" color="primary">
+                        {addingStudent ? <CircularProgress size={24} color="inherit" /> : "Update Student"}
+                    </Button>
+                </DialogActions>
+            </Dialog>
+
             {/* UPLOAD RESULT CARD */}
             {uploadResult && (
                 <Collapse in={!!uploadResult}>
                     <Box sx={{
-                        mb: 3,
+                        mb: 4,
                         p: 3,
                         borderRadius: "24px",
-                        background: uploadResult.errors > 0 ? "rgba(239, 68, 68, 0.1)" : "rgba(76, 175, 80, 0.1)",
-                        border: uploadResult.errors > 0 ? "1px solid rgba(239, 68, 68, 0.3)" : "1px solid rgba(76, 175, 80, 0.3)",
-                        backdropFilter: "blur(10px)",
+                        background: uploadResult.errors > 0
+                            ? "linear-gradient(135deg, rgba(254, 242, 242, 0.9), rgba(254, 226, 226, 0.9))"
+                            : "linear-gradient(135deg, rgba(240, 253, 244, 0.9), rgba(220, 252, 231, 0.9))",
+                        border: uploadResult.errors > 0 ? "1px solid rgba(239, 68, 68, 0.2)" : "1px solid rgba(34, 197, 94, 0.2)",
+                        backdropFilter: "blur(20px)",
+                        boxShadow: "0 10px 30px rgba(0,0,0,0.05)",
                         display: "flex",
                         alignItems: "center",
-                        justifyContent: "space-between"
+                        justifyContent: "space-between",
+                        animation: "fadeIn 0.5s ease-out"
                     }}>
-                        <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-                            {uploadResult.errors > 0 ? (
-                                <ConfirmIcon sx={{ color: "#d32f2f", fontSize: 40 }} />
-                            ) : (
-                                <ConfirmIcon sx={{ color: "#2e7d32", fontSize: 40 }} />
-                            )}
+                        <Box sx={{ display: "flex", alignItems: "center", gap: 3 }}>
+                            <Box sx={{
+                                width: 56,
+                                height: 56,
+                                borderRadius: "16px",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                background: uploadResult.errors > 0 ? "rgba(239, 68, 68, 0.1)" : "rgba(34, 197, 94, 0.1)"
+                            }}>
+                                {uploadResult.errors > 0 ? (
+                                    <ConfirmIcon sx={{ color: "#d32f2f", fontSize: 32 }} />
+                                ) : (
+                                    <ConfirmIcon sx={{ color: "#2e7d32", fontSize: 32 }} />
+                                )}
+                            </Box>
                             <Box>
-                                <Typography variant="h6" sx={{ color: uploadResult.errors > 0 ? "#b91c1c" : "#1b5e20", fontWeight: 700 }}>
-                                    {uploadResult.errors > 0 ? "Upload Completed with Errors" : "Upload Successful!"}
+                                <Typography variant="h6" sx={{ color: uploadResult.errors > 0 ? "#991b1b" : "#166534", fontWeight: 800, mb: 0.5 }}>
+                                    {uploadResult.errors > 0 ? "Processed with some issues" : "Processing Complete!"}
                                 </Typography>
-                                <Typography variant="body2" sx={{ color: uploadResult.errors > 0 ? "#dc2626" : "#2e7d32" }}>
-                                    Processed {uploadResult.total} students. {uploadResult.success} records updated.
-                                    {uploadResult.skipped > 0 && ` ${uploadResult.skipped} skipped.`}
-                                    {uploadResult.errors > 0 && ` ${uploadResult.errors} invalid rows found.`}
-                                </Typography>
+                                <Box sx={{ display: "flex", gap: 3, flexWrap: "wrap" }}>
+                                    <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                                        <Typography variant="body2" sx={{ color: "#64748b", fontWeight: 600 }}>Total:</Typography>
+                                        <Typography variant="body2" sx={{ color: "#1e293b", fontWeight: 700 }}>{uploadResult.total || (uploadResult.success + uploadResult.failed)}</Typography>
+                                    </Box>
+                                    <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                                        <Typography variant="body2" sx={{ color: "#16a34a", fontWeight: 600 }}>Success:</Typography>
+                                        <Typography variant="body2" sx={{ color: "#15803d", fontWeight: 700 }}>{uploadResult.success}</Typography>
+                                    </Box>
+                                    {uploadResult.skipped > 0 && (
+                                        <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                                            <Typography variant="body2" sx={{ color: "#ca8a04", fontWeight: 600 }}>Skipped:</Typography>
+                                            <Typography variant="body2" sx={{ color: "#a16207", fontWeight: 700 }}>{uploadResult.skipped}</Typography>
+                                        </Box>
+                                    )}
+                                    {uploadResult.errors > 0 && (
+                                        <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                                            <Typography variant="body2" sx={{ color: "#dc2626", fontWeight: 600 }}>Errors:</Typography>
+                                            <Typography variant="body2" sx={{ color: "#b91c1c", fontWeight: 700 }}>{uploadResult.errors}</Typography>
+                                        </Box>
+                                    )}
+                                </Box>
                             </Box>
                         </Box>
-                        <ActionButton
+                        <Button
                             onClick={() => setUploadResult(null)}
+                            variant="text"
                             sx={{
-                                background: uploadResult.errors > 0 ? "#d32f2f" : "#2e7d32",
-                                color: "white",
-                                "&:hover": { background: uploadResult.errors > 0 ? "#b91c1c" : "#1b5e20" }
+                                color: uploadResult.errors > 0 ? "#b91c1c" : "#15803d",
+                                fontWeight: 700,
+                                textTransform: "none",
+                                "&:hover": { background: uploadResult.errors > 0 ? "rgba(239, 68, 68, 0.05)" : "rgba(34, 197, 94, 0.05)" }
                             }}
                         >
                             Dismiss
-                        </ActionButton>
+                        </Button>
                     </Box>
                 </Collapse>
             )}
 
             {/* Student Upload Section */}
-            <Box sx={{ mb: 3 }}>
+            <Box sx={{ mb: 2 }}>
                 <Paper
                     elevation={0}
                     sx={{
-                        p: 3,
+                        p: 2,
                         borderRadius: "20px",
                         background: "rgba(255, 255, 255, 0.35)",
                         backdropFilter: "blur(10px) saturate(150%)",
@@ -373,94 +477,195 @@ const Studentuploads = () => {
                         width: '100%'
                     }}
                 >
-                    <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, justifyContent: 'space-between', alignItems: { xs: 'stretch', sm: 'flex-start' }, gap: 2, mb: 3 }}>
+                    <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, justifyContent: 'space-between', alignItems: { xs: 'stretch', sm: 'flex-start' }, gap: 1, mb: 2 }}>
                         <Box>
-                            <Typography variant="h6" fontWeight={800} color="#1a237e">Student Data Upload</Typography>
+                            <Typography variant="h6" fontWeight={800} color="#311b92">Student Data Upload</Typography>
                             <Typography variant="body2" color="textSecondary" fontWeight={500}>
                                 Upload bulk or individual data
                             </Typography>
                         </Box>
                         <Button
-                            onClick={handleTemplateDownload}
                             variant="outlined"
-                            size="small"
-                            startIcon={<UploadFile />}
+                            startIcon={<DownloadIcon />}
+                            onClick={handleTemplateDownload}
                             sx={{
-                                textTransform: 'none',
-                                borderRadius: '10px',
+                                borderRadius: "12px",
+                                textTransform: "none",
                                 fontWeight: 600,
-                                borderColor: 'rgba(26, 35, 126, 0.3)',
-                                color: '#1a237e',
-                                width: { xs: '100%', sm: 'auto' },
-                                px: 2,
-                                '&:hover': {
-                                    borderColor: '#1a237e',
-                                    bgcolor: 'rgba(26, 35, 126, 0.05)'
-                                }
+                                borderColor: "rgba(11, 82, 153, 0.3)",
+                                color: "#0b5299",
+                                "&:hover": { background: "rgba(11, 82, 153, 0.05)", borderColor: "#0b5299" }
                             }}
                         >
                             Download Template
                         </Button>
                     </Box>
-                    <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 2 }}>
+
+                    <Box sx={{ display: 'flex', gap: 2 }}>
                         <Button
                             variant="contained"
-                            startIcon={uploading ? <CircularProgress size={20} color="inherit" /> : <UploadFile />}
-                            onClick={handleUploadClick}
-                            disabled={uploading}
+                            startIcon={<UploadFile />}
+                            onClick={() => { setIsUploadOptionsOpen(!isUploadOptionsOpen); setIsUpdateOptionsOpen(false); }}
                             sx={{
                                 flex: 1,
                                 borderRadius: "12px",
                                 textTransform: "none",
                                 py: 1.5,
                                 fontWeight: 700,
-                                fontSize: "0.9rem",
-                                background: "rgba(11, 82, 153, 0.6)",
-                                backdropFilter: "blur(10px) saturate(150%)",
-                                border: "1px solid rgba(255, 255, 255, 0.3)",
-                                boxShadow: "0 4px 12px rgba(0, 0, 0, 0.1)",
+                                background: "linear-gradient(135deg, #0b5299, #1e88e5)",
+                                boxShadow: "0 4px 12px rgba(11, 82, 153, 0.2)",
                                 transition: '0.3s',
                                 '&:hover': {
-                                    background: "rgba(11, 82, 153, 0.8)",
+                                    background: "linear-gradient(135deg, #09437d, #1976d2)",
                                     boxShadow: "0 6px 16px rgba(11, 82, 153, 0.3)",
                                 }
                             }}
                         >
-                            {uploading ? "Uploading..." : "Bulk Upload"}
+                            Bulk Data Options
                         </Button>
                         <Button
                             variant="contained"
-                            startIcon={<PersonAdd />}
-                            onClick={() => setIsAddModalOpen(true)}
+                            startIcon={updatingBulk ? <CircularProgress size={20} color="inherit" /> : <SyncIcon />}
+                            onClick={() => { setIsUpdateOptionsOpen(!isUpdateOptionsOpen); setIsUploadOptionsOpen(false); }}
+                            disabled={updatingBulk}
                             sx={{
                                 flex: 1,
                                 borderRadius: "12px",
                                 textTransform: "none",
                                 py: 1.5,
                                 fontWeight: 700,
-                                fontSize: "0.9rem",
-                                background: "rgba(11, 82, 153, 0.6)",
+                                background: "rgba(15, 92, 187, 0.9)",
                                 backdropFilter: "blur(10px) saturate(150%)",
-                                border: "1px solid rgba(255, 255, 255, 0.3)",
-                                boxShadow: "0 4px 12px rgba(0, 0, 0, 0.1)",
+                                border: "1px solid rgba(219, 219, 219, 0.9)",
                                 transition: '0.3s',
                                 '&:hover': {
-                                    background: "rgba(11, 82, 153, 0.8)",
-                                    boxShadow: "0 6px 16px rgba(11, 82, 153, 0.3)",
+                                    background: "rgba(54, 138, 241, 0.9)",
                                 }
                             }}
                         >
-                            Individual
+                            {updatingBulk ? "Updating..." : "Update"}
                         </Button>
                     </Box>
+
+                    <Collapse in={isUploadOptionsOpen}>
+                        <Box sx={{
+                            mt: 2,
+                            p: 2,
+                            borderRadius: "16px",
+                            background: "rgba(255, 255, 255, 0.5)",
+                            border: "1px solid rgba(11, 82, 153, 0.1)",
+                            position: "relative"
+                        }}>
+                            <IconButton
+                                size="small"
+                                onClick={() => setIsUploadOptionsOpen(false)}
+                                sx={{ position: "absolute", right: 8, top: 8 }}
+                            >
+                                <CloseIcon sx={{ fontSize: 18 }} />
+                            </IconButton>
+                            <Typography variant="caption" sx={{ color: "#64748b", fontWeight: 700, mb: 1, display: "block", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+                                Create Options
+                            </Typography>
+                            <Box sx={{ display: "flex", gap: 1.5 }}>
+                                <Button
+                                    variant="outlined"
+                                    size="small"
+                                    startIcon={<UploadIcon />}
+                                    onClick={handleUploadClick}
+                                    sx={{
+                                        borderRadius: "10px",
+                                        textTransform: "none",
+                                        fontWeight: 600,
+                                        borderColor: "rgba(11, 82, 153, 0.2)",
+                                        background: "rgba(255,255,255,0.8)",
+                                        "&:hover": { background: "#fff", borderColor: "#0b5299" }
+                                    }}
+                                >
+                                    Bulk Upload
+                                </Button>
+                                <Button
+                                    variant="outlined"
+                                    size="small"
+                                    startIcon={<PersonAddIcon />}
+                                    onClick={() => setIsAddModalOpen(true)}
+                                    sx={{
+                                        borderRadius: "10px",
+                                        textTransform: "none",
+                                        fontWeight: 600,
+                                        borderColor: "rgba(11, 82, 153, 0.2)",
+                                        background: "rgba(255,255,255,0.8)",
+                                        "&:hover": { background: "#fff", borderColor: "#0b5299" }
+                                    }}
+                                >
+                                    Create Individual
+                                </Button>
+                            </Box>
+                        </Box>
+                    </Collapse>
+                    <Collapse in={isUpdateOptionsOpen}>
+                        <Box sx={{
+                            mt: 2,
+                            p: 2,
+                            borderRadius: "16px",
+                            background: "rgba(255, 255, 255, 0.5)",
+                            border: "1px solid rgba(11, 82, 153, 0.1)",
+                            position: "relative"
+                        }}>
+                            <IconButton
+                                size="small"
+                                onClick={() => setIsUpdateOptionsOpen(false)}
+                                sx={{ position: "absolute", right: 8, top: 8 }}
+                            >
+                                <CloseIcon sx={{ fontSize: 18 }} />
+                            </IconButton>
+                            <Typography variant="caption" sx={{ color: "#64748b", fontWeight: 700, mb: 1, display: "block", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+                                Update Options
+                            </Typography>
+                            <Box sx={{ display: "flex", gap: 1.5 }}>
+                                <Button
+                                    variant="outlined"
+                                    size="small"
+                                    startIcon={<SyncIcon />}
+                                    onClick={handleBulkSyncAll}
+                                    sx={{
+                                        borderRadius: "10px",
+                                        textTransform: "none",
+                                        fontWeight: 600,
+                                        borderColor: "rgba(11, 82, 153, 0.2)",
+                                        background: "rgba(255,255,255,0.8)",
+                                        "&:hover": { background: "#fff", borderColor: "#0b5299" }
+                                    }}
+                                >
+                                    Bulk Update
+                                </Button>
+                                <Button
+                                    variant="outlined"
+                                    size="small"
+                                    startIcon={<SyncIcon />}
+                                    onClick={() => setIsUpdateModalOpen(true)}
+                                    sx={{
+                                        borderRadius: "10px",
+                                        textTransform: "none",
+                                        fontWeight: 600,
+                                        borderColor: "rgba(11, 82, 153, 0.2)",
+                                        background: "rgba(255,255,255,0.8)",
+                                        "&:hover": { background: "#fff", borderColor: "#0b5299" }
+                                    }}
+                                >
+                                    Individual Update
+                                </Button>
+                            </Box>
+                        </Box>
+                    </Collapse>
                 </Paper>
             </Box>
+
 
             {students.length > 0 && (
                 <Box
                     sx={{
-                        p: 3,
-                        mt: 3,
+                        p: 2,
+                        mt: 2,
                         borderRadius: "24px",
                         background: "linear-gradient(135deg, rgba(255,255,255,0.7), rgba(255,255,255,0.4))",
                         backdropFilter: "blur(20px)",
@@ -475,18 +680,6 @@ const Studentuploads = () => {
                         title={
                             <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                                 Student Unassigned Details ({students.length})
-                                <Tooltip title="Clear all unassigned data" arrow placement="top">
-                                    <IconButton
-                                        size="small"
-                                        onClick={handleDeleteAllUnassigned}
-                                        sx={{
-                                            color: "rgba(211, 47, 47, 0.6)",
-                                            "&:hover": { color: "#d32f2f", bgcolor: "rgba(211, 47, 47, 0.1)" }
-                                        }}
-                                    >
-                                        <DeleteIcon fontSize="small" />
-                                    </IconButton>
-                                </Tooltip>
                             </Box>
                         }
                         action={
@@ -511,7 +704,7 @@ const Studentuploads = () => {
                         }
                     />
 
-                    <Box sx={{ mt: 2, flex: 1 }}>
+                    <Box sx={{ mt: 1, flex: 1 }}>
                         {loadingStudents ? (
                             <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>
                                 <CircularProgress />
@@ -525,8 +718,8 @@ const Studentuploads = () => {
                     {selectedIds.length > 0 && (
                         <Box
                             sx={{
-                                mt: 3,
-                                pt: 2,
+                                mt: 2,
+                                pt: 1,
                                 borderTop: "1px solid rgba(0,0,0,0.05)",
                                 display: "flex",
                                 justifyContent: "space-between",
@@ -536,12 +729,12 @@ const Studentuploads = () => {
                             <Box sx={{ color: "#64748b", fontSize: "0.875rem", fontWeight: 500 }}>
                                 {selectedIds.length} student{selectedIds.length > 1 ? 's' : ''} selected
                             </Box>
-                            <Box sx={{ display: "flex", gap: 2 }}>
+                            <Box sx={{ display: "flex", gap: 1 }}>
                                 <ActionButton
                                     onClick={handleSyncStudents}
                                     disabled={syncing}
                                     sx={{
-                                        px: 3,
+                                        px: 2,
                                         background: "linear-gradient(135deg, #43a047, #66bb6a)",
                                         "&:hover": { background: "linear-gradient(135deg, #388e3c, #4caf50)" }
                                     }}
@@ -554,7 +747,7 @@ const Studentuploads = () => {
                                     <ActionButton
                                         onClick={() => setIsProceeding(true)}
                                         sx={{
-                                            px: 4,
+                                            px: 3,
                                             background: "linear-gradient(135deg, #0b5299, #1e88e5)",
                                             "&:hover": { background: "linear-gradient(135deg, #09437d, #1976d2)" }
                                         }}
@@ -644,6 +837,21 @@ const Studentuploads = () => {
                     </Collapse>
                 </Box>
             )}
+            <Snackbar
+                open={snackbar.open}
+                autoHideDuration={6000}
+                onClose={() => setSnackbar({ ...snackbar, open: false })}
+                anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+            >
+                <Alert
+                    onClose={() => setSnackbar({ ...snackbar, open: false })}
+                    severity={snackbar.severity}
+                    sx={{ width: '100%', borderRadius: '12px', fontWeight: 600 }}
+                    variant="filled"
+                >
+                    {snackbar.message}
+                </Alert>
+            </Snackbar>
         </Box>
     );
 };
