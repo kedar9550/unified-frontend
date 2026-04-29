@@ -24,12 +24,17 @@ export const ROLE_ROUTES = {
     { text: "Dashboard", path: "/dashboard", icon: <Dashboard /> },
     { text: "Teaching", path: "/teaching", icon: <MenuBook /> },
     {
-      text: "Research",
-      path: "/research",
+      text: "Publications",
+
       icon: <Science />,
       nested: [
-        { text: "Paper Publication", path: "/research/paper-publication" },
-        { text: "Guiding Ph.D Scholars", path: "/research/phd-scholars" },
+        { text: "Text Book", path: "/research/textbook-publication" },
+        { text: "Book Chapter", path: "/research/book-chapter-publication" },
+        { text: "Journal", path: "/research/journal-publication" },
+        { text: "Patent", path: "/research/patent-publication" },
+        { text: "Funded Project", path: "/research/funded-project" },
+        { text: "Consultancy", path: "/research/consultancy-publication" },
+        { text: "Conference", path: "/research/conference-publication" },
       ],
     },
     { text: "Administration", path: "/admin", icon: <AccountBalance /> },
