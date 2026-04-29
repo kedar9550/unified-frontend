@@ -22,7 +22,7 @@ const MainLayout = ({ children }) => {
 
   return (
     <>
-      <Background />
+      {/* <Background /> */}
       {/* Floating glass header */}
       <Header onMenuClick={handleDrawerToggle} />
 
@@ -30,7 +30,7 @@ const MainLayout = ({ children }) => {
         sx={{
           display: "flex",
           minHeight: "100vh",
-          backgroundColor: "transparent", // Ensure global background is visible
+          backgroundColor: "aliceblue", // Temporary background color
         }}
       >
         {/* Sidebar navigation */}
@@ -46,7 +46,7 @@ const MainLayout = ({ children }) => {
             p: { xs: 2, md: 3 },
             pt: { xs: "80px", md: "88px" }, /* Clear the fixed header */
             transition: "all 0.3s ease",
-            overflow: "hidden", // Main container doesn't scroll, inner panel does or children do
+            overflow: "hidden", 
           }}
         >
           {/* INNER GLASS PANEL */}
@@ -61,7 +61,7 @@ const MainLayout = ({ children }) => {
               border: "1px solid rgba(255, 255, 255, 0.3)",
               display: "flex",
               flexDirection: "column",
-              overflow: "hidden", // Main panel doesn't scroll, content wrapper does
+              overflow: "hidden", 
             }}
           >
             <Box sx={{ flex: 1, p: { xs: 2, md: 4 }, overflowY: "auto" }}>

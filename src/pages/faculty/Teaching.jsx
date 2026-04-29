@@ -39,7 +39,10 @@ export default function Teaching() {
   // ── Discrepancy modal state ──────────────────────────────────────
   const [discOpen, setDiscOpen] = useState(false);
 
-  // ── CSV Upload state ──────────────────────────────────────────────
+  // ── CO Attainment state ─────────────────────────────────────────
+  const [coAttainmentResults, setCoAttainmentResults] = useState([]);
+  const [coAttainmentLoading, setCoAttainmentLoading] = useState(false);
+
   const fileInputRef = useRef(null);
   const [uploadingCSV, setUploadingCSV] = useState(false);
 
@@ -136,9 +139,31 @@ export default function Teaching() {
       }
     };
 
+    const fetchCoAttainmentStats = async () => {
+      setCoAttainmentLoading(true);
+      try {
+        // Placeholder API endpoint
+        const res = await API.get("/api/co-attainment", {
+          params: {
+            facultyId: user?.institutionId,
+            academicYear: selectedYearId,
+            semester: selectedSemTypeId,
+          },
+        });
+        setCoAttainmentResults(res.data || []);
+      } catch (err) {
+        console.error("Error fetching CO attainment stats:", err);
+        // Fallback to empty for now
+        setCoAttainmentResults([]);
+      } finally {
+        setCoAttainmentLoading(false);
+      }
+    };
+
     fetchResults();
     fetchProctorStats();
     fetchFeedbackStats();
+    fetchCoAttainmentStats();
   }, [selectedYearId, selectedSemTypeId, user?.institutionId]);
 
   // ── CSV Upload Handler ────────────────────────────────────────────
@@ -293,6 +318,45 @@ export default function Teaching() {
     {
       value: r.overallPercentage,
       display: <Box sx={{ color: "blue", fontWeight: 600 }}>{r.overallPercentage}%</Box>,
+    },
+  ]);
+
+  // ── Build CO Attainment DataTable rows ─────────────────────────────────────────
+  const coAttainmentColumns = [
+    "S.NO",
+    "COURSE NAME",
+    "COURSE ID",
+    "CO1",
+    "CO2",
+    "CO3",
+    "CO4",
+    "CO5",
+    "CO6",
+    "AVERAGE",
+  ];
+
+  const coAttainmentRows = coAttainmentResults.map((r, i) => [
+    {
+      value: i + 1,
+      display: <Box sx={{ fontWeight: 600 }}>{i + 1}</Box>,
+    },
+    {
+      value: r.subjectName,
+      display: <Box sx={{ fontWeight: 500 }}>{r.subjectName}</Box>,
+    },
+    {
+      value: r.subjectCode,
+      display: <Box>{r.subjectCode}</Box>,
+    },
+    { value: r.co1, display: <Box>{r.co1 || "—"}</Box> },
+    { value: r.co2, display: <Box>{r.co2 || "—"}</Box> },
+    { value: r.co3, display: <Box>{r.co3 || "—"}</Box> },
+    { value: r.co4, display: <Box>{r.co4 || "—"}</Box> },
+    { value: r.co5, display: <Box>{r.co5 || "—"}</Box> },
+    { value: r.co6, display: <Box>{r.co6 || "—"}</Box> },
+    {
+      value: r.average,
+      display: <Box sx={{ fontWeight: 600, color: "#0b5299" }}>{r.average || "—"}</Box>,
     },
   ]);
 
@@ -520,6 +584,40 @@ export default function Teaching() {
             </Box>
         ) : (
             <DataTable columns={feedbackColumns} rows={feedbackRows} />
+        )}
+      </Box>
+
+      {/* ── SECTION : CO Attainment ────────────────────────── */}
+      <Box sx={sectionCard}>
+        <SectionHeader title="SECTION : CO Attainment" />
+
+        <Typography
+          variant="h6"
+          fontWeight={600}
+          sx={{ mb: 2, color: "#0D233B", fontSize: 16 }}
+        >
+          CO Attainment Results
+        </Typography>
+
+        {coAttainmentLoading ? (
+            <Box sx={{ display: "flex", justifyContent: "center", py: 6 }}>
+              <CircularProgress />
+            </Box>
+        ) : coAttainmentResults.length === 0 ? (
+            <Box
+              sx={{
+                textAlign: "center",
+                py: 6,
+                color: "#aaa",
+                fontSize: 15,
+                border: "1.5px dashed #d0d9e8",
+                borderRadius: "14px",
+              }}
+            >
+              No CO Attainment results available for this selection.
+            </Box>
+        ) : (
+            <DataTable columns={coAttainmentColumns} rows={coAttainmentRows} />
         )}
       </Box>
 
