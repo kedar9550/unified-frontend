@@ -22,7 +22,7 @@ const Loader = () => {
                 left: 0,
                 width: "100vw",
                 height: "100vh",
-                backgroundColor: "rgba(255, 255, 255, 0.50)", // Semi-transparent overlay
+                backgroundColor: "var(--bg-glass)", // Theme-aware overlay
                 backdropFilter: "blur(4px)", // Premium blur effect
                 display: "flex",
                 justifyContent: "center",

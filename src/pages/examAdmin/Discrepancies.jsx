@@ -34,9 +34,9 @@ import API from "../../api/axios";
 
 // ── Status config ─────────────────────────────────────────────────────
 const STATUS_CONFIG = {
-  PENDING: { label: "Pending", color: "#e65100", bg: "#fff3e0", icon: <PendingIcon fontSize="small" /> },
-  RESOLVED: { label: "Resolved", color: "#2e7d32", bg: "#e8f5e9", icon: <ResolvedIcon fontSize="small" /> },
-  REJECTED: { label: "Rejected", color: "#b71c1c", bg: "#ffebee", icon: <RejectedIcon fontSize="small" /> },
+  PENDING: { label: "Pending", color: "#F59E0B", bg: "rgba(245, 158, 11, 0.1)", icon: <PendingIcon fontSize="small" /> },
+  RESOLVED: { label: "Resolved", color: "#10B981", bg: "rgba(16, 185, 129, 0.1)", icon: <ResolvedIcon fontSize="small" /> },
+  REJECTED: { label: "Rejected", color: "#EF4444", bg: "rgba(239, 68, 68, 0.1)", icon: <RejectedIcon fontSize="small" /> },
 };
 
 const SECTION_LABEL = {
@@ -264,32 +264,35 @@ export default function Discrepancies() {
             sx={{
               px: { xs: 2.5, md: 3.5 },
               py: { xs: 2, md: 2.5 },
-              borderRadius: "14px",
-              background: cfg.bg,
-              border: `1.5px solid ${cfg.color}15`,
+              borderRadius: "20px",
+              background: "var(--bg-panel)",
+              border: `1.5px solid var(--border-color)`,
               display: "flex",
               alignItems: "center",
               gap: 2.5,
               transition: "all 0.3s ease",
-              boxShadow: `0 4px 12px ${cfg.color}08`,
+              boxShadow: `var(--shadow-premium)`,
               "&:hover": {
-                transform: "translateY(-3px)",
-                boxShadow: `0 12px 24px ${cfg.color}15`,
-                borderColor: `${cfg.color}40`,
+                transform: "translateY(-4px)",
+                boxShadow: `var(--shadow-premium)`,
+                borderColor: cfg.color,
+                "& .icon-box": { background: cfg.bg }
               }
             }}
           >
             <Box
+              className="icon-box"
               sx={{
                 color: cfg.color,
-                background: "#ffffff",
+                background: "var(--bg-glass)",
                 width: 48,
                 height: 48,
-                borderRadius: "16px",
+                borderRadius: "14px",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                boxShadow: "0 4px 10px rgba(0,0,0,0.03)"
+                border: "1px solid var(--border-color)",
+                transition: "all 0.3s ease"
               }}
             >
               {cfg.icon}
@@ -297,9 +300,9 @@ export default function Discrepancies() {
             <Box>
               <Typography
                 sx={{
-                  fontSize: { xs: 24, md: 28 },
-                  fontWeight: 800,
-                  color: cfg.color,
+                  fontSize: { xs: 26, md: 32 },
+                  fontWeight: 900,
+                  color: "var(--text-primary)",
                   lineHeight: 1
                 }}
               >
@@ -308,11 +311,11 @@ export default function Discrepancies() {
               <Typography
                 sx={{
                   fontSize: 12,
-                  fontWeight: 600,
+                  fontWeight: 700,
                   color: cfg.color,
-                  opacity: 0.8,
+                  textTransform: "uppercase",
                   mt: 0.5,
-                  letterSpacing: "0.5px"
+                  letterSpacing: "0.08em"
                 }}
               >
                 {cfg.label}
@@ -326,20 +329,20 @@ export default function Discrepancies() {
       <Box
         sx={{
           p: 3, borderRadius: "24px",
-          background: "linear-gradient(135deg,rgba(255,255,255,0.75),rgba(255,255,255,0.45))",
+          background: "var(--bg-panel)",
           backdropFilter: "blur(20px)",
-          boxShadow: "0 20px 60px rgba(0,0,0,0.1)",
-          border: "1px solid rgba(255,255,255,0.3)",
+          boxShadow: "var(--shadow-premium)",
+          border: "1px solid var(--border-color)",
           minHeight: 400,
         }}
       >
         <SectionHeader title="Discrepancy List" />
 
         {items.length === 0 ? (
-          <Box sx={{ textAlign: "center", py: 8, color: "#aaa" }}>
+          <Box sx={{ textAlign: "center", py: 10, color: "var(--text-secondary)" }}>
             <Typography fontSize={40}>🎉</Typography>
-            <Typography mt={1} fontWeight={600}>No discrepancies assigned to you.</Typography>
-            <Typography fontSize={13}>All clear!</Typography>
+            <Typography mt={1} fontWeight={700} sx={{ color: "var(--text-primary)" }}>No discrepancies assigned to you.</Typography>
+            <Typography fontSize={13} sx={{ opacity: 0.8 }}>All clear!</Typography>
           </Box>
         ) : (
           <Paper 
@@ -347,12 +350,13 @@ export default function Discrepancies() {
               borderRadius: "18px", 
               overflow: "hidden", 
               boxShadow: "none",
-              border: "1px solid #eef2f6"
+              background: "transparent",
+              border: "1px solid var(--border-color)"
             }}
           >
             <Box sx={{ width: "100%", overflowX: "auto" }}>
               <Table sx={{ minWidth: { xs: 800, md: 1000 } }}>
-                <TableHead sx={{ background: "linear-gradient(90deg, #004e92, #000428)" }}>
+                <TableHead sx={{ background: "var(--gradient-primary)" }}>
                   <TableRow>
                     {["#", "Faculty", "Year / Sem", "Section", "Note", "Raised At", "Status", "Action"].map(col => (
                       <TableCell 
@@ -376,29 +380,41 @@ export default function Discrepancies() {
                   return (
                     <TableRow
                       key={item._id}
-                      sx={{ background: i % 2 === 0 ? "#f8fbff" : "#fff", height: 70 }}
+                      sx={{ 
+                        background: i % 2 === 0 ? "var(--bg-accent-1)" : "transparent", 
+                        height: 70,
+                        "&:hover": { background: "var(--bg-accent-2)" }
+                      }}
                     >
                       <TableCell sx={{ fontWeight: 600 }}>{i + 1}</TableCell>
 
                       {/* Faculty */}
                       <TableCell>
-                        <Typography fontWeight={600} fontSize={14}>
+                        <Typography fontWeight={700} fontSize={14} sx={{ color: "var(--text-primary)" }}>
                           {item.facultyName || item.raisedBy?.name || "—"}
                         </Typography>
-                        <Typography fontSize={12} color="#888">
+                        <Typography fontSize={12} sx={{ color: "var(--text-secondary)", opacity: 0.8 }}>
                           {item.facultyInstitutionId || item.raisedBy?.institutionId}
                         </Typography>
                       </TableCell>
 
                       {/* Year / Sem */}
                       <TableCell>
-                        <Typography fontSize={13} fontWeight={500}>
+                        <Typography fontSize={13} fontWeight={700} sx={{ color: "var(--text-primary)" }}>
                           {item.academicYearId?.year || "—"}
                         </Typography>
                         <Chip
                           label={item.semesterTypeId?.name || "—"}
                           size="small"
-                          sx={{ fontSize: 11, height: 20, mt: 0.3 }}
+                          sx={{ 
+                            fontSize: 10, 
+                            height: 20, 
+                            mt: 0.5, 
+                            fontWeight: 700,
+                            background: "var(--bg-glass)",
+                            border: "1px solid var(--border-color)",
+                            color: "var(--text-primary)"
+                          }}
                         />
                       </TableCell>
 
@@ -407,7 +423,10 @@ export default function Discrepancies() {
                         <Box
                           sx={{
                             px: 1.5, py: 0.4, borderRadius: "10px",
-                            background: "#eef3f9", fontSize: 12, fontWeight: 600,
+                            background: "var(--bg-glass)", 
+                            border: "1px solid var(--border-color)",
+                            fontSize: 12, fontWeight: 700,
+                            color: "var(--text-primary)",
                             display: "inline-block",
                           }}
                         >
@@ -421,6 +440,8 @@ export default function Discrepancies() {
                           <Typography
                             fontSize={13}
                             sx={{
+                              color: "var(--text-primary)",
+                              fontWeight: 500,
                               overflow: "hidden", textOverflow: "ellipsis",
                               display: "-webkit-box", WebkitLineClamp: 2,
                               WebkitBoxOrient: "vertical",
@@ -433,10 +454,10 @@ export default function Discrepancies() {
 
                       {/* Raised At */}
                       <TableCell>
-                        <Typography fontSize={12}>
+                        <Typography fontSize={12} sx={{ color: "var(--text-primary)", fontWeight: 600 }}>
                           {new Date(item.createdAt).toLocaleDateString()}
                         </Typography>
-                        <Typography fontSize={11} color="#888">
+                        <Typography fontSize={11} sx={{ color: "var(--text-secondary)", opacity: 0.8 }}>
                           {new Date(item.createdAt).toLocaleTimeString()}
                         </Typography>
                       </TableCell>
@@ -534,8 +555,10 @@ export default function Discrepancies() {
         fullWidth
         PaperProps={{
           sx: {
-            borderRadius: "24px",
-            background: "linear-gradient(135deg,rgba(255,255,255,0.97),rgba(240,245,255,0.97))",
+            borderRadius: "28px",
+            background: "var(--bg-panel)",
+            border: "1px solid var(--border-color)",
+            boxShadow: "var(--shadow-premium)",
             backdropFilter: "blur(20px)",
           },
         }}

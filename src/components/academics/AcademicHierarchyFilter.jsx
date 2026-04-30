@@ -163,13 +163,29 @@ const AcademicHierarchyFilter = ({ onChange, initialValues = {}, showSearch = fa
                             }}
                         />
                     )}
-                    sx={{ minWidth: 200, flex: 1 }}
+                    sx={{ 
+                        minWidth: 160, 
+                        "& .MuiInput-underline:before": { borderBottomColor: "rgba(148, 163, 184, 0.5)" },
+                        "& .MuiInput-underline:hover:not(.Mui-disabled):before": { borderBottomColor: "var(--color-primary)" },
+                        "& .MuiInput-underline:after": { borderBottomColor: "var(--color-primary)" },
+                        "& .MuiInputLabel-root": { color: "var(--text-primary)", fontWeight: 600 },
+                        "& .MuiInputBase-input": { color: "var(--text-primary)" },
+                        "& .MuiSvgIcon-root": { color: "var(--text-secondary)" }
+                    }}
                 />
             );
         }
 
         return (
-            <FormControl variant="standard" sx={{ minWidth: 200, flex: 1 }} disabled={disabled}>
+            <FormControl variant="standard" sx={{ 
+                minWidth: 160, 
+                "& .MuiInput-underline:before": { borderBottomColor: "rgba(148, 163, 184, 0.5)" },
+                "& .MuiInput-underline:hover:not(.Mui-disabled):before": { borderBottomColor: "var(--color-primary)" },
+                "& .MuiInput-underline:after": { borderBottomColor: "var(--color-primary)" },
+                "& .MuiInputLabel-root": { color: "var(--text-primary)", fontWeight: 600 },
+                "& .MuiSelect-select": { color: "var(--text-primary)" },
+                "& .MuiSvgIcon-root": { color: "var(--text-secondary)" }
+            }} disabled={disabled}>
                 <InputLabel>{label}</InputLabel>
                 <Select
                     value={value}
@@ -190,7 +206,7 @@ const AcademicHierarchyFilter = ({ onChange, initialValues = {}, showSearch = fa
     };
 
     return (
-        <Box sx={{ display: "flex", gap: 3, flexWrap: "wrap", width: "100%" }}>
+        <Box sx={{ display: "flex", gap: 2, alignItems: "flex-end" }}>
             {renderDropdown("Program", selectedProgram, programs, loading.programs, (val) => {
                 setSelectedProgram(val);
                 setSelectedDept("");

@@ -51,6 +51,14 @@ function App() {
   // Register once — never re-registers on re-render
   useEffect(() => {
     registerLoadingHandlers(startLoading, stopLoading);
+    
+    // Initialize theme
+    const theme = localStorage.getItem("theme");
+    if (theme === "dark") {
+      document.body.classList.add("dark-mode");
+    } else {
+      document.body.classList.remove("dark-mode");
+    }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (

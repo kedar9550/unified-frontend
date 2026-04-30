@@ -163,6 +163,7 @@ export default function FacultyFormatResults() {
       "1",
       "Mathematics",
       "MA101",
+      "THEORY",
       "A",
       "5",
       "4",
@@ -205,74 +206,96 @@ export default function FacultyFormatResults() {
         title="Exam Section"
         subtitle="Upload and manage results based on faculty and course"
         breadcrumbs={["Home", "Exam Cell", "Results Upload"]}
-        action={
-          <Box sx={{ display: "flex", gap: 2 }}>
-            <ActionButton
-              onClick={downloadTemplate}
-              sx={{
-                background: "linear-gradient(90deg, #004e92, #000428)",
-                boxShadow: "0 4px 15px rgba(0, 78, 146, 0.2)",
-                "&:hover": {
-                  background: "linear-gradient(90deg, #003a6d, #000214)",
-                  boxShadow: "0 6px 20px rgba(0, 78, 146, 0.35)",
-                }
-              }}
-            >
-              <DownloadIcon sx={{ mr: 1 }} /> Template
-            </ActionButton>
-
-            <ActionButton
-              onClick={handleUploadClick}
-              disabled={uploading}
-              sx={{
-                background: "linear-gradient(90deg, #004e92, #000428)",
-                boxShadow: "0 4px 15px rgba(0, 78, 146, 0.2)",
-                "&:hover": {
-                  background: "linear-gradient(90deg, #003a6d, #000214)",
-                  boxShadow: "0 6px 20px rgba(0, 78, 146, 0.35)",
-                }
-              }}
-            >
-              <UploadIcon sx={{ mr: 1 }} /> Upload CSV
-            </ActionButton>
-          </Box>
-        }
       />
 
       {/* 🔹 FILTERS */}
-      <Box sx={{ display: "flex", gap: 2, mb: 3 }}>
-        <Box sx={filterBox}>
-          Academic Year
-          <Select
-            variant="standard"
-            disableUnderline
-            value={selectedYearId}
-            onChange={(e) => setSelectedYearId(e.target.value)}
-            sx={{ ml: 2, minWidth: 120 }}
-          >
-            {academicYears.map((year) => (
-              <MenuItem key={year._id} value={year._id}>
-                {year.year}
-              </MenuItem>
-            ))}
-          </Select>
+      <Box sx={{ display: "flex", gap: 2, mb: 3, alignItems: "center", justifyContent: "space-between", flexWrap: "wrap" }}>
+        <Box sx={{ display: "flex", gap: 2 }}>
+          <Box sx={filterBox}>
+            <Typography sx={{ fontSize: 13, fontWeight: 700, color: "var(--text-primary)", opacity: 0.9 }}>Academic Year</Typography>
+            <Select
+              variant="standard"
+              disableUnderline
+              value={selectedYearId}
+              onChange={(e) => setSelectedYearId(e.target.value)}
+              sx={{
+                ml: 1.5,
+                minWidth: 120,
+                color: "var(--text-primary)",
+                fontWeight: 600,
+                fontSize: 14,
+                '& .MuiSelect-icon': { color: 'var(--text-primary)', opacity: 0.7 }
+              }}
+            >
+              {academicYears.map((year) => (
+                <MenuItem key={year._id} value={year._id}>
+                  {year.year}
+                </MenuItem>
+              ))}
+            </Select>
+          </Box>
+
+          <Box sx={filterBox}>
+            <Typography sx={{ fontSize: 13, fontWeight: 700, color: "var(--text-primary)", opacity: 0.9 }}>Semester</Typography>
+            <Select
+              variant="standard"
+              disableUnderline
+              value={selectedSemId}
+              onChange={(e) => setSelectedSemId(e.target.value)}
+              sx={{
+                ml: 1.5,
+                minWidth: 80,
+                color: "var(--text-primary)",
+                fontWeight: 600,
+                fontSize: 14,
+                '& .MuiSelect-icon': { color: 'var(--text-primary)', opacity: 0.7 }
+              }}
+            >
+              {semesters.map((sem) => (
+                <MenuItem key={sem._id} value={sem._id}>
+                  {sem.name}
+                </MenuItem>
+              ))}
+            </Select>
+          </Box>
         </Box>
 
-        <Box sx={filterBox}>
-          Semester
-          <Select
-            variant="standard"
-            disableUnderline
-            value={selectedSemId}
-            onChange={(e) => setSelectedSemId(e.target.value)}
-            sx={{ ml: 2, minWidth: 80 }}
+        <Box sx={{ display: "flex", gap: 2 }}>
+          <ActionButton
+            onClick={downloadTemplate}
+            sx={{
+              background: "var(--bg-glass)",
+              color: "var(--text-primary)",
+              border: "1px solid var(--border-color)",
+              boxShadow: "var(--shadow-premium)",
+              fontWeight: 700,
+              px: 3,
+              "&:hover": {
+                background: "var(--bg-accent-1)",
+                borderColor: "var(--color-primary)",
+              }
+            }}
           >
-            {semesters.map((sem) => (
-              <MenuItem key={sem._id} value={sem._id}>
-                {sem.name}
-              </MenuItem>
-            ))}
-          </Select>
+            <DownloadIcon sx={{ mr: 1, color: "var(--color-primary)" }} /> Template
+          </ActionButton>
+
+          <ActionButton
+            onClick={handleUploadClick}
+            disabled={uploading}
+            sx={{
+              background: "var(--color-primary)",
+              color: "#fff",
+              boxShadow: "var(--shadow-premium)",
+              fontWeight: 800,
+              px: 3,
+              "&:hover": {
+                background: "var(--color-primary)",
+                opacity: 0.9,
+              }
+            }}
+          >
+            <UploadIcon sx={{ mr: 1 }} /> {uploading ? "Uploading..." : "Upload CSV"}
+          </ActionButton>
         </Box>
       </Box>
 
@@ -288,11 +311,10 @@ export default function FacultyFormatResults() {
         sx={{
           p: 3,
           borderRadius: "24px",
-          background:
-            "linear-gradient(135deg, rgba(255,255,255,0.7), rgba(255,255,255,0.4))",
+          background: "var(--bg-panel)",
           backdropFilter: "blur(20px)",
-          boxShadow: "0 20px 60px rgba(0,0,0,0.1)",
-          border: "1px solid rgba(255,255,255,0.3)",
+          boxShadow: "var(--shadow-premium)",
+          border: "1px solid var(--border-color)",
           minHeight: 400,
         }}
       >
@@ -303,9 +325,9 @@ export default function FacultyFormatResults() {
             <CircularProgress />
           </Box>
         ) : results.length === 0 ? (
-          <Box sx={{ textAlign: "center", py: 10, color: "#aaa" }}>
+          <Box sx={{ textAlign: "center", py: 10, color: "var(--text-secondary)" }}>
             <Typography fontSize={40}>📊</Typography>
-            <Typography mt={1} fontWeight={600} color="#555">
+            <Typography mt={1} fontWeight={600} sx={{ color: "var(--text-secondary)" }}>
               No results found
             </Typography>
           </Box>
@@ -317,6 +339,8 @@ export default function FacultyFormatResults() {
               "Faculty Name",
               "Subject Name",
               "Course Code",
+              "Type",
+              "Section",
               "Semester",
               "Appeared",
               "Passed",
@@ -347,7 +371,7 @@ export default function FacultyFormatResults() {
                   <Box>
                     <Box>{r.courseName}</Box>
                     {r.section && (
-                      <Box sx={{ fontSize: 11, color: "#999" }}>
+                      <Box sx={{ fontSize: 11, color: "var(--text-secondary)", opacity: 0.8 }}>
                         Sec: {r.section}
                       </Box>
                     )}
@@ -361,11 +385,25 @@ export default function FacultyFormatResults() {
               },
 
               {
+                value: r.courseType,
+                display: (
+                  <Box sx={{ fontWeight: 600, color: "#0b5299" }}>
+                    {r.courseType}
+                  </Box>
+                ),
+              },
+
+              {
+                value: r.section,
+                display: <Box>{r.section || "-"}</Box>,
+              },
+
+              {
                 value: r.semester,
                 display: (
                   <Box>
                     <Box>{r.semester}</Box>
-                    <Box sx={{ fontSize: 11, color: "#999" }}>{r.semesterType}</Box>
+                    <Box sx={{ fontSize: 11, color: "var(--text-secondary)", opacity: 0.8 }}>{r.semesterType}</Box>
                   </Box>
                 ),
               },
@@ -387,7 +425,7 @@ export default function FacultyFormatResults() {
               {
                 value: r.passPercentage,
                 display: (
-                  <Box sx={{ color: "green", fontWeight: 600 }}>
+                  <Box sx={{ color: "#10b981", fontWeight: 700 }}>
                     {r.passPercentage}%
                   </Box>
                 ),
@@ -411,9 +449,12 @@ const filterBox = {
   px: 2,
   py: 1,
   borderRadius: "14px",
-  background: "rgba(255,255,255,0.6)",
+  background: "var(--bg-glass)",
+  color: "var(--text-primary)",
+  fontWeight: 600,
   backdropFilter: "blur(10px)",
   boxShadow: "0 4px 15px rgba(0,0,0,0.05)",
+  border: "1px solid var(--border-color)",
   fontSize: 14,
 };
 

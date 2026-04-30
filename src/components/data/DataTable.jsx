@@ -68,14 +68,14 @@ export default function DataTable({ columns, rows, toolbarLeft }) {
 
   return (
     <Box sx={{ width: "100%", display: "flex", flexDirection: "column", gap: 1 }}>
-      {/*  TOOLBAR: filters left, search right */}
+      {/*  TOOLBAR: Filters on left, Search on right */}
       <Box sx={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 2, mb: 1, flexWrap: "wrap" }}>
-        {/* Left slot: any filter content passed from parent */}
+        {/* Left slot: Filters */}
         <Box sx={{ display: "flex", alignItems: "flex-end", gap: 2, flexWrap: "wrap", flex: 1 }}>
           {toolbarLeft || null}
         </Box>
 
-        {/* Right: search */}
+        {/* Right slot: Search */}
         <TextField
           placeholder="Search"
           size="small"
@@ -86,20 +86,20 @@ export default function DataTable({ columns, rows, toolbarLeft }) {
             flexShrink: 0,
             "& .MuiOutlinedInput-root": {
               borderRadius: "99px",
-              background: "rgba(255, 255, 255, 0.2)",
+              background: "var(--bg-glass)",
               backdropFilter: "blur(10px)",
               transition: "all 0.3s ease",
-              "& fieldset": { border: "1px solid rgba(255, 255, 255, 0.5)" },
-              "&:hover fieldset": { borderColor: "rgba(255, 255, 255, 0.9)" },
-              "&.Mui-focused fieldset": { borderColor: "#8da5d8", borderWidth: "1px" },
+              "& fieldset": { border: "1px solid var(--border-color)" },
+              "&:hover fieldset": { borderColor: "var(--color-primary)" },
+              "&.Mui-focused fieldset": { borderColor: "var(--color-primary)", borderWidth: "1px" },
             },
-            "& .MuiInputBase-input": { color: "#334155", fontSize: "0.875rem" },
+            "& .MuiInputBase-input": { color: "var(--text-primary)", fontSize: "0.875rem" },
           }}
           slotProps={{
             input: {
               startAdornment: (
                 <InputAdornment position="start">
-                  <SearchIcon sx={{ color: "#64748b", fontSize: "1.2rem" }} />
+                  <SearchIcon sx={{ color: "var(--text-secondary)", fontSize: "1.2rem" }} />
                 </InputAdornment>
               ),
             },
@@ -133,14 +133,14 @@ export default function DataTable({ columns, rows, toolbarLeft }) {
                 background: "transparent", // Make individual cells transparent
                 cursor: "pointer",
                 "&:hover": {
-                  background: "rgba(255, 255, 255, 0.15)", // Brighter highlight on hover
+                  background: "rgba(255, 255, 255, 0.1)", // Brighter highlight on hover
                 },
               },
             }}
           >
             <TableRow
               sx={{
-                background: "linear-gradient(90deg, #004e92, #000428)", // Premium dark blue gradient
+                background: "var(--gradient-primary)", // Premium dark blue gradient
                 borderRadius: "12px 12px 0 0",
               }}
             >
@@ -188,12 +188,12 @@ export default function DataTable({ columns, rows, toolbarLeft }) {
                   sx={{
                     background:
                       i % 2 === 0
-                        ? "rgba(255, 255, 255, 0.6)"
-                        : "rgba(255, 255, 255, 0.2)",
+                        ? "var(--bg-glass)"
+                        : "var(--bg-panel)",
                     backdropFilter: "blur(12px)",
                     transition: "all 0.2s ease",
                     "&:hover": {
-                      background: "rgba(255, 255, 255, 0.8)",
+                      background: "var(--bg-accent-1)",
                     },
                     "& td": { border: "none" },
                   }}
@@ -204,7 +204,7 @@ export default function DataTable({ columns, rows, toolbarLeft }) {
                       sx={{
                         py: 2,
                         px: 3,
-                        color: "#334155",
+                        color: "var(--text-primary)",
                         fontSize: "0.875rem",
                       }}
                     >
@@ -218,7 +218,7 @@ export default function DataTable({ columns, rows, toolbarLeft }) {
                 <TableCell
                   colSpan={columns.length}
                   align="center"
-                  sx={{ py: 6, color: "#64748b", border: "none", background: "rgba(255, 255, 255, 0.4)" }}
+                  sx={{ py: 6, color: "var(--text-secondary)", border: "none", background: "var(--bg-glass)" }}
                 >
                   No data found
                 </TableCell>
@@ -241,7 +241,7 @@ export default function DataTable({ columns, rows, toolbarLeft }) {
         }}
         rowsPerPageOptions={[5, 10, 25, 50, 100, 250]}
         sx={{
-          color: "#475569",
+          color: "var(--text-primary)",
           borderBottom: "none",
           "& .MuiTablePagination-selectLabel, & .MuiTablePagination-displayedRows": {
             fontSize: "0.875rem",
@@ -250,10 +250,12 @@ export default function DataTable({ columns, rows, toolbarLeft }) {
             fontSize: "0.875rem",
           },
           "& .MuiTablePagination-actions button": {
-            background: "rgba(255, 255, 255, 0.4)",
+            background: "var(--bg-panel)",
             margin: "0 4px",
+            color: "var(--text-primary)",
             backdropFilter: "blur(4px)",
-            "&:hover": { background: "rgba(255, 255, 255, 0.8)" }
+            "&:hover": { background: "var(--bg-accent-1)" },
+            "&.Mui-disabled": { opacity: 0.3, color: "var(--text-secondary)" }
           }
         }}
       />

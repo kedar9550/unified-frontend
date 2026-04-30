@@ -8,7 +8,7 @@ export default function ActionButton({ children, sx, ...props }) {
         borderRadius: "50px",
         px: 3,
         py: 1,
-        background: "linear-gradient(90deg, #004e92, #000428)",
+        background: "var(--gradient-primary)",
         color: "#fff",
         textTransform: "none",
         fontWeight: 700,

@@ -12,6 +12,7 @@ import {
 } from "@mui/icons-material";
 import { useAuth } from "../../context/AuthContext";
 import { useNavigate, useLocation } from "react-router-dom";
+import ThemeToggle from "../common/Themetoggle";
 
 const Header = ({ onMenuClick }) => {
   const { user, activeRole, switchRole, logout } = useAuth();
@@ -76,9 +77,9 @@ const Header = ({ onMenuClick }) => {
         px: { xs: 1.5, md: 3 },
         py: { xs: 1.2, md: 1.2 },
         transition: "all 0.3s ease",
-        background: "#ffffff",
+        background: "var(--bg-paper)",
         boxShadow: "0 2px 10px rgba(0,0,0,0.05)",
-        borderBottom: "1px solid #e2e8f0",
+        borderBottom: "1px solid var(--border-color)",
       }}
     >
       {/* LEFT SECTION: Menu Toggle (Mobile) */}
@@ -109,13 +110,13 @@ const Header = ({ onMenuClick }) => {
             pr: 0.5,
             py: 0.5,
             borderRadius: "999px",
-            background: "#f8fafc",
-            border: "1px solid #e2e8f0",
+            background: "var(--bg-panel)",
+            border: "1px solid var(--border-color)",
             cursor: "pointer",
             transition: "all 0.2s ease",
             "&:hover": {
-              background: "#f1f5f9",
-              borderColor: "#cbd5e1",
+              background: "var(--border-color)",
+              borderColor: "var(--text-secondary)",
               boxShadow: "0 2px 8px rgba(0,0,0,0.05)"
             },
             userSelect: "none"
@@ -126,7 +127,7 @@ const Header = ({ onMenuClick }) => {
               sx={{
                 fontSize: "0.85rem",
                 fontWeight: 700,
-                color: "#1e293b",
+                color: "var(--text-primary)",
                 lineHeight: 1,
                 mb: 0.2
               }}
@@ -137,7 +138,7 @@ const Header = ({ onMenuClick }) => {
               sx={{
                 fontSize: "0.7rem",
                 fontWeight: 500,
-                color: "#64748b",
+                color: "var(--text-secondary)",
                 lineHeight: 1
               }}
             >
@@ -162,7 +163,7 @@ const Header = ({ onMenuClick }) => {
               overflow: "hidden",
               border: "2px solid #fff",
               boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-              background: "linear-gradient(90deg, #004e92, #000428)",
+              background: "var(--gradient-primary)",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
@@ -226,8 +227,8 @@ const Header = ({ onMenuClick }) => {
               mb: 1,
               p: 0.8,
               borderRadius: "16px",
-              border: "1px solid #f1f5f9",
-              background: "#ffffff",
+              border: "1px solid var(--border-color)",
+              background: "var(--bg-paper)",
               boxShadow: "0 2px 8px rgba(0,0,0,0.02)"
             }}
           >
@@ -244,8 +245,8 @@ const Header = ({ onMenuClick }) => {
                     borderRadius: "12px",
                     fontSize: "0.75rem",
                     fontWeight: 700,
-                    color: isActive ? "#004e92" : "#475569",
-                    background: isActive ? "#f0f7ff !important" : "transparent",
+                    color: isActive ? "var(--color-primary)" : "var(--text-secondary)",
+                    background: isActive ? "var(--bg-accent-4) !important" : "transparent",
                     py: 1, // Reduced height
                     px: 1.5,
                     mb: 0.5,
@@ -254,7 +255,7 @@ const Header = ({ onMenuClick }) => {
                     justifyContent: "space-between",
                     transition: "all 0.2s ease",
                     "&:hover": {
-                      background: "#f8fafc",
+                      background: "var(--bg-panel)",
                     },
                     "&:last-child": { mb: 0 }
                   }}
@@ -269,8 +270,8 @@ const Header = ({ onMenuClick }) => {
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
-                        background: isActive ? "#e1effe" : "#f1f5f9",
-                        color: isActive ? "#1c64f2" : "#94a3b8"
+                        background: isActive ? "var(--bg-accent-4)" : "var(--bg-panel)",
+                        color: isActive ? "var(--color-primary)" : "var(--text-secondary)"
                       }}
                     >
                       {isUniprime ? <Domain sx={{ fontSize: 18 }} /> : <School sx={{ fontSize: 18 }} />}
@@ -280,7 +281,7 @@ const Header = ({ onMenuClick }) => {
                     </Typography>
                   </Box>
 
-                  {isActive && <Check sx={{ fontSize: 18, color: "#1c64f2" }} />}
+                  {isActive && <Check sx={{ fontSize: 18, color: "var(--color-primary)" }} />}
                 </MenuItem>
               );
             })}
@@ -288,28 +289,35 @@ const Header = ({ onMenuClick }) => {
 
           {/* Action Section */}
           <Box sx={{ px: 0.5 }}>
+            <Typography sx={{ px: 2, mt: 1, mb: 0.5, fontSize: "0.7rem", fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+              Preferences
+            </Typography>
             {/* Theme Toggle */}
             <MenuItem
-              onClick={toggleTheme}
+              disableRipple
               sx={{
                 borderRadius: "10px",
                 fontSize: "0.85rem",
                 fontWeight: 600,
-                color: "#475569",
+                color: "var(--text-secondary)",
                 py: 1.2,
                 px: 2, // Added horizontal padding
                 mb: 0.5,
                 mx: 1.5,
-                "&:hover": { background: "#f8fafc" }
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                "&:hover": { background: "transparent", cursor: "default" }
               }}
             >
-              <ListItemIcon sx={{ minWidth: 35 }}>
-                {isDarkMode ? <Brightness7 fontSize="small" sx={{ color: "#f59e0b" }} /> : <Brightness4 fontSize="small" sx={{ color: "#64748b" }} />}
-              </ListItemIcon>
-              {isDarkMode ? "Light Mode" : "Dark Mode"}
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                <Brightness4 fontSize="small" sx={{ color: "var(--text-secondary)" }} />
+                Appearance
+              </Box>
+              <ThemeToggle />
             </MenuItem>
 
-            <Box sx={{ my: 2, mx: 2, height: "1px", background: "#aaaaaaff" }} />
+            <Box sx={{ my: 2, mx: 2, height: "1px", background: "var(--border-color)" }} />
 
             {/* Logout Button */}
             <MenuItem
@@ -333,20 +341,20 @@ const Header = ({ onMenuClick }) => {
                 "& .blue-bg": {
                   position: "absolute",
                   inset: 0,
-                  background: "linear-gradient(90deg, #004e92, #000428)",
+                  background: "var(--gradient-primary)",
                   borderRadius: "50px",
                   zIndex: -3,
                   transition: "opacity 0.4s ease",
                   opacity: 1,
                 },
 
-                // Inner White Background for Hover
+                // Inner Background for Hover (Adapted for dark mode)
                 "&::before": {
                    content: '""',
                    position: "absolute",
                    inset: 0,
                    borderRadius: "50px",
-                   background: "#ffffff",
+                   background: "var(--bg-accent-1)",
                    zIndex: -2,
                    transition: "opacity 0.4s ease",
                    opacity: 0, 

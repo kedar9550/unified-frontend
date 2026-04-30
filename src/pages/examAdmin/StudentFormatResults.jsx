@@ -167,55 +167,70 @@ export default function StudentFormatResults() {
       />
 
       {/* 🔹 FILTERS */}
-      <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2, mb: 3, alignItems: "center" }}>
-        <Box sx={filterBox}>
-          Filter by Program
-          <Select
-            variant="standard"
-            disableUnderline
-            value={selectedProgramId}
-            onChange={(e) => setSelectedProgramId(e.target.value)}
-            sx={{ ml: 2, minWidth: 180 }}
-            displayEmpty
-          >
-            <MenuItem value="">All Programs</MenuItem>
-            {programs.map((p) => (
-              <MenuItem key={p._id} value={p._id}>
-                {p.name}
-              </MenuItem>
-            ))}
-          </Select>
+      <Box sx={{ display: "flex", gap: 2, mb: 3, alignItems: "center", justifyContent: "space-between", flexWrap: "wrap" }}>
+        <Box sx={{ display: "flex", gap: 2 }}>
+          <Box sx={filterBox}>
+            <Typography sx={{ fontSize: 13, fontWeight: 700, color: "var(--text-primary)", opacity: 0.9 }}>Filter by Program</Typography>
+            <Select
+              variant="standard"
+              disableUnderline
+              value={selectedProgramId}
+              onChange={(e) => setSelectedProgramId(e.target.value)}
+              sx={{ 
+                  ml: 1.5, 
+                  minWidth: 180, 
+                  color: "var(--text-primary)",
+                  fontWeight: 600,
+                  fontSize: 14,
+                  '& .MuiSelect-icon': { color: 'var(--text-primary)', opacity: 0.7 }
+              }}
+              displayEmpty
+            >
+              <MenuItem value="">All Programs</MenuItem>
+              {programs.map((p) => (
+                <MenuItem key={p._id} value={p._id}>
+                  {p.name}
+                </MenuItem>
+              ))}
+            </Select>
+          </Box>
         </Box>
 
-        {/* 🔹 Upload Specific Section */}
-        <Box sx={{ display: "flex", gap: 2, ml: "auto" }}>
+        <Box sx={{ display: "flex", gap: 2 }}>
           <ActionButton
             onClick={downloadTemplate}
             sx={{
-              background: "linear-gradient(90deg, #004e92, #000428)",
-              boxShadow: "0 4px 15px rgba(0, 78, 146, 0.2)",
+              background: "var(--bg-glass)",
+              color: "var(--text-primary)",
+              border: "1px solid var(--border-color)",
+              boxShadow: "var(--shadow-premium)",
+              fontWeight: 700,
+              px: 3,
               "&:hover": {
-                background: "linear-gradient(90deg, #003a6d, #000214)",
-                boxShadow: "0 6px 20px rgba(0, 78, 146, 0.35)",
+                background: "var(--bg-accent-1)",
+                borderColor: "var(--color-primary)",
               }
             }}
           >
-            <DownloadIcon sx={{ mr: 1 }} /> Template
+            <DownloadIcon sx={{ mr: 1, color: "var(--color-primary)" }} /> Template
           </ActionButton>
 
           <ActionButton
             onClick={handleUploadClick}
             disabled={uploading}
             sx={{
-              background: "linear-gradient(90deg, #004e92, #000428)",
-              boxShadow: "0 4px 15px rgba(0, 78, 146, 0.2)",
+              background: "var(--color-primary)",
+              color: "#fff",
+              boxShadow: "var(--shadow-premium)",
+              fontWeight: 800,
+              px: 3,
               "&:hover": {
-                background: "linear-gradient(90deg, #003a6d, #000214)",
-                boxShadow: "0 6px 20px rgba(0, 78, 146, 0.35)",
+                background: "var(--color-primary)",
+                opacity: 0.9,
               }
             }}
           >
-            <UploadIcon sx={{ mr: 1 }} /> Upload CSV
+            <UploadIcon sx={{ mr: 1 }} /> {uploading ? "Uploading..." : "Upload CSV"}
           </ActionButton>
         </Box>
       </Box>
@@ -227,11 +242,10 @@ export default function StudentFormatResults() {
         sx={{
           p: 3,
           borderRadius: "24px",
-          background:
-            "linear-gradient(135deg, rgba(255,255,255,0.7), rgba(255,255,255,0.4))",
+          background: "var(--bg-panel)",
           backdropFilter: "blur(20px)",
-          boxShadow: "0 20px 60px rgba(0,0,0,0.1)",
-          border: "1px solid rgba(255,255,255,0.3)",
+          boxShadow: "var(--shadow-premium)",
+          border: "1px solid var(--border-color)",
           minHeight: 400,
         }}
       >
@@ -242,9 +256,9 @@ export default function StudentFormatResults() {
             <CircularProgress />
           </Box>
         ) : results.length === 0 ? (
-          <Box sx={{ textAlign: "center", py: 10, color: "#aaa" }}>
+          <Box sx={{ textAlign: "center", py: 10, color: "var(--text-secondary)" }}>
             <Typography fontSize={40}>📊</Typography>
-            <Typography mt={1} fontWeight={600} color="#555">
+            <Typography mt={1} fontWeight={600} sx={{ color: "var(--text-secondary)" }}>
               No results found
             </Typography>
           </Box>
@@ -333,8 +347,11 @@ const filterBox = {
   px: 2,
   py: 1,
   borderRadius: "14px",
-  background: "rgba(255,255,255,0.6)",
+  background: "var(--bg-glass)",
+  color: "var(--text-primary)",
+  fontWeight: 600,
   backdropFilter: "blur(10px)",
   boxShadow: "0 4px 15px rgba(0,0,0,0.05)",
+  border: "1px solid var(--border-color)",
   fontSize: 14,
 };

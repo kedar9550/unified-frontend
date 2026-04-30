@@ -7,6 +7,7 @@ import {
 import {
   Add, ExpandMore, ExpandLess, School, Class, CheckCircle, RadioButtonUnchecked, Edit, Close, Delete
 } from "@mui/icons-material";
+import PageHeader from "../../../components/common/PageHeader";
 
 const AcademicManagement = () => {
   const [years, setYears] = useState([]);
@@ -147,86 +148,14 @@ const AcademicManagement = () => {
 
   return (
     <Box sx={{ p: 1 }}>
-      {/* Global Semester Types Management */}
-      <Paper elevation={0} sx={{
-        p: 3,
-        mb: 4,
-        borderRadius: '24px',
-        background: 'rgba(255, 255, 255, 0.00)',
-        backdropFilter: 'blur(20px) saturate(180%)',
-        border: '1px solid rgba(255, 255, 255, 0.4)',
-        boxShadow: '0 8px 32px rgba(31, 38, 135, 0.1)'
-      }}>
-        <Typography variant="h6" sx={{ fontWeight: 700, mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
-          <Class color="primary" /> Global Semester Types
-        </Typography>
-        <Box sx={{ display: 'flex', gap: 2, mb: 3, flexDirection: { xs: 'column', sm: 'row' }, alignItems: 'center' }}>
-          <TextField
-            size="small"
-            label="Semester Name (e.g. ODD)"
-            value={newSemesterName}
-            onChange={(e) => setNewSemesterName(e.target.value.toUpperCase())}
-            sx={{ width: { xs: '100%', sm: 250 } }}
-          />
-          <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2, width: { xs: '100%', sm: 'auto' } }}>
-            <Button variant="contained" onClick={createSemesterType} startIcon={<Add />} sx={{ borderRadius: '50px', whiteSpace: 'nowrap', background: "linear-gradient(90deg, #004e92, #000428)", boxShadow: '0 4px 12px rgba(0, 78, 146, 0.3)', transition: '0.3s', '&:hover': { background: "linear-gradient(90deg, #003a6d, #000214)", boxShadow: '0 6px 16px rgba(0, 78, 146, 0.4)' } }}>
-              Add Type
-            </Button>
-            <Button variant="outlined" onClick={seedDefaults} size="small" sx={{ borderRadius: '50px', whiteSpace: 'nowrap', border: '1.5px solid #004e92', background: 'transparent', color: '#004e92', fontWeight: 700, px: 2, '&:hover': { background: 'rgba(0, 78, 146, 0.05)' } }}>
-              Seed Defaults
-            </Button>
-          </Box>
-        </Box>
-
-        <Box sx={{
-          display: 'flex',
-          gap: { xs: 1, sm: 2 },
-          flexWrap: 'wrap',
-          alignItems: 'center'
-        }}>
-          {semesterTypes.map((st) => (
-            <Chip
-              key={st._id}
-              label={st.name}
-              onDelete={() => deleteSemesterType(st._id, st.name)}
-              onClick={() => toggleSemesterType(st._id)}
-              color={st.isActive ? "primary" : "default"}
-              variant={st.isActive ? "filled" : "outlined"}
-              sx={{
-                fontWeight: 600,
-                borderRadius: '12px',
-                flex: { xs: '1 1 calc(33.33% - 8px)', sm: '0 1 auto' },
-                minWidth: '80px',
-                px: 1,
-                background: st.isActive ? 'linear-gradient(90deg, #004e92, #000428)' : 'rgba(255, 255, 255, 0.15)',
-                backdropFilter: 'blur(8px)',
-                border: '1px solid rgba(255, 255, 255, 0.25)',
-                color: st.isActive ? '#fff' : '#004e92',
-                '& .MuiChip-deleteIcon': {
-                  color: st.isActive ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.4)',
-                  '&:hover': { color: st.isActive ? '#fff' : '#d32f2f' }
-                }
-              }}
-            />
-          ))}
-          {semesterTypes.length === 0 && (
-            <Typography variant="body2" color="textSecondary">No semester types defined. Use 'Seed Defaults' to start.</Typography>
-          )}
-        </Box>
-      </Paper>
-
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4, flexWrap: 'wrap', gap: 2 }}>
-        <Typography variant="h4" sx={{
-          fontWeight: 800,
-          color: "#1a237e",
-          display: 'flex',
-          alignItems: 'center',
-          gap: 1.5,
-          fontSize: { xs: '1.4rem', sm: '1.75rem', md: '2.125rem' },
-          whiteSpace: 'nowrap'
-        }}>
-          <School sx={{ fontSize: { xs: 28, sm: 32, md: 40 } }} color="primary" />
-          Academic Management
+      <PageHeader 
+        title="Academic Management" 
+        subtitle="Manage academic years and active semesters"
+      />
+      
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, flexWrap: 'wrap', gap: 2 }}>
+        <Typography variant="h6" sx={{ fontWeight: 700, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: 1 }}>
+          <School sx={{ color: "var(--color-primary)" }} /> Add Academic Year
         </Typography>
         <Box sx={{
           display: 'grid',
@@ -263,11 +192,11 @@ const AcademicManagement = () => {
               height: 40,
               gridColumn: { xs: 'span 2', sm: 'span 1' },
               width: '100%',
-              background: "linear-gradient(90deg, #004e92, #000428)",
+              background: "var(--gradient-primary)",
               boxShadow: '0 4px 12px rgba(0, 78, 146, 0.3)',
               transition: '0.3s',
               '&:hover': {
-                background: "linear-gradient(90deg, #003a6d, #000214)",
+                background: "var(--gradient-primary-hover)",
                 boxShadow: '0 6px 16px rgba(0, 78, 146, 0.4)',
               }
             }}
@@ -288,14 +217,14 @@ const AcademicManagement = () => {
             <Card
               sx={{
                 borderRadius: '24px',
-                background: y.isActive ? 'rgba(255, 255, 255, 0.35)' : 'rgba(255, 255, 255, 0.2)',
+                background: y.isActive ? 'var(--bg-accent-4)' : 'var(--bg-glass)',
                 backdropFilter: 'blur(20px) saturate(180%)',
-                border: y.isActive ? '2px solid rgba(11, 82, 153, 0.5)' : '1px solid rgba(255, 255, 255, 0.3)',
+                border: y.isActive ? '2px solid var(--color-primary)' : '1px solid var(--border-color)',
                 boxShadow: y.isActive ? '0 12px 40px rgba(11, 82, 153, 0.15)' : '0 8px 32px rgba(31, 38, 135, 0.05)',
                 transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                 '&:hover': {
                   transform: 'translateY(-6px)',
-                  background: 'rgba(255, 255, 255, 0.35)',
+                  background: 'var(--bg-panel)',
                   boxShadow: '0 15px 45px rgba(31, 38, 135, 0.08)'
                 }
               }}
@@ -320,11 +249,11 @@ const AcademicManagement = () => {
                       </Box>
                     ) : (
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                        <Typography variant="h5" sx={{ fontWeight: 800, color: "#333" }}>
+                        <Typography variant="h5" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>
                           {y.year}
                         </Typography>
                         <IconButton size="small" onClick={() => setEditingYear({ id: y._id, value: y.year })}>
-                          <Edit fontSize="small" color="action" />
+                          <Edit fontSize="small" sx={{ color: 'var(--text-secondary)' }} />
                         </IconButton>
                       </Box>
                     )}
@@ -340,7 +269,7 @@ const AcademicManagement = () => {
                       />
                     ) : (
                       <Chip
-                        icon={<RadioButtonUnchecked sx={{ color: '#004e92 !important' }} />}
+                        icon={<RadioButtonUnchecked sx={{ color: 'var(--color-primary) !important' }} />}
                         label="Set Active"
                         color="default"
                         size="small"
@@ -348,30 +277,30 @@ const AcademicManagement = () => {
                         sx={{ 
                           cursor: 'pointer', 
                           borderRadius: '50px', 
-                          border: '1.5px solid #004e92', 
+                          border: '1.5px solid var(--color-primary)', 
                           background: 'transparent',
-                          color: '#004e92',
+                          color: 'var(--color-primary)',
                           fontWeight: 700,
-                          '&:hover': { background: 'rgba(0, 78, 146, 0.05)' } 
+                          '&:hover': { background: 'var(--bg-accent-4)' } 
                         }}
                       />
                     )}
                   </Box>
                   <Box sx={{ display: 'flex', gap: 1 }}>
                     <Tooltip title="Delete Year">
-                      <IconButton onClick={() => deleteYear(y._id, y.year)} sx={{ background: '#fff5f5', color: '#d32f2f', '&:hover': { background: '#ffebee' } }}>
+                      <IconButton onClick={() => deleteYear(y._id, y.year)} sx={{ background: 'var(--bg-panel)', color: '#d32f2f', '&:hover': { background: 'rgba(211, 47, 47, 0.15)' } }}>
                         <Delete fontSize="small" />
                       </IconButton>
                     </Tooltip>
-                    <IconButton onClick={() => handleExpandYear(y._id)} sx={{ background: '#f5f5f5' }}>
+                    <IconButton onClick={() => handleExpandYear(y._id)} sx={{ background: 'var(--bg-panel)', color: 'var(--text-primary)' }}>
                       {expandedYear === y._id ? <ExpandLess /> : <ExpandMore />}
                     </IconButton>
                   </Box>
                 </Box>
 
                 <Collapse in={expandedYear === y._id} timeout="auto" unmountOnExit>
-                  <Box sx={{ mt: 3, p: 2, bgcolor: '#f8fafc', borderRadius: 2 }}>
-                    <Typography variant="subtitle2" sx={{ color: '#555', mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Box sx={{ mt: 3, p: 2, bgcolor: 'var(--bg-panel)', borderRadius: 2 }}>
+                    <Typography variant="subtitle2" sx={{ color: 'var(--text-secondary)', mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
                       <Class fontSize="small" /> Semesters for {y.year}
                     </Typography>
 
@@ -388,12 +317,12 @@ const AcademicManagement = () => {
                               display: 'flex',
                               justifyContent: 'space-between',
                               alignItems: 'center',
-                              border: '1px solid #e0e0e0',
+                              border: '1px solid var(--border-color)',
                               borderRadius: 2,
-                              bgcolor: isActive ? '#f0fdf4' : '#fff'
+                              bgcolor: isActive ? 'var(--bg-accent-2)' : 'var(--bg-paper)'
                             }}
                           >
-                            <Typography variant="body1" sx={{ fontWeight: isActive ? 700 : 500, color: isActive ? '#1b5e20' : '#444' }}>
+                            <Typography variant="body1" sx={{ fontWeight: isActive ? 700 : 500, color: isActive ? '#10B981' : 'var(--text-primary)' }}>
                               {st.name} Semester
                             </Typography>
                             {isActive ? (
@@ -414,10 +343,10 @@ const AcademicManagement = () => {
                                       borderRadius: '50px', 
                                       textTransform: 'none', 
                                       fontWeight: 700,
-                                      border: '1.5px solid #004e92', 
+                                      border: '1.5px solid var(--color-primary)', 
                                       background: 'transparent',
-                                      color: '#004e92',
-                                      '&:hover': { background: 'rgba(0, 78, 146, 0.05)' }
+                                      color: 'var(--color-primary)',
+                                      '&:hover': { background: 'var(--bg-accent-4)' }
                                     }}
                                   >
                                     Activate

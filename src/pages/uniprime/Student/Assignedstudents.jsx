@@ -89,12 +89,12 @@ const Assignedstudents = () => {
     ];
 
     const formattedRows = filteredStudents.map(s => [
-        { value: s.rollNo, display: <Box sx={{ fontWeight: 600, color: "#0b5299" }}>{s.rollNo}</Box> },
+        { value: s.rollNo, display: <Box sx={{ fontWeight: 600, color: "var(--color-primary)" }}>{s.rollNo}</Box> },
         {
             value: s.personalInfo?.studentName,
             display: (
                 <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-                    <Avatar sx={{ width: 32, height: 32, fontSize: "0.875rem", bgcolor: "#84a9eb" }}>
+                    <Avatar sx={{ width: 32, height: 32, fontSize: "0.875rem", bgcolor: "var(--bg-accent-1)", color: "var(--color-primary)" }}>
                         {s.personalInfo?.studentName?.charAt(0)}
                     </Avatar>
                     <Box sx={{ fontWeight: 500 }}>{s.personalInfo?.studentName}</Box>
@@ -108,8 +108,8 @@ const Assignedstudents = () => {
                     px: 1.5,
                     py: 0.5,
                     borderRadius: "12px",
-                    bgcolor: "rgba(11, 82, 153, 0.1)",
-                    color: "#0b5299",
+                    bgcolor: "var(--bg-accent-1)",
+                    color: "var(--color-primary)",
                     fontWeight: 500,
                     fontSize: "0.75rem",
                     display: "inline-block"
@@ -142,10 +142,10 @@ const Assignedstudents = () => {
                     p: 3,
                     mt: 2,
                     borderRadius: "24px",
-                    background: "linear-gradient(135deg, rgba(255,255,255,0.7), rgba(255,255,255,0.4))",
+                    background: "var(--bg-panel)",
                     backdropFilter: "blur(20px)",
-                    boxShadow: "0 20px 60px rgba(0,0,0,0.1)",
-                    border: "1px solid rgba(255,255,255,0.3)",
+                    boxShadow: "var(--shadow-premium)",
+                    border: "1px solid var(--border-color)",
                     minHeight: "400px",
                     display: "flex",
                     flexDirection: "column"
@@ -165,7 +165,7 @@ const Assignedstudents = () => {
                             columns={columns}
                             rows={formattedRows}
                             toolbarLeft={
-                                <Box sx={{ display: "flex", alignItems: "flex-end", gap: 2, flexWrap: "wrap" }}>
+                                <Box sx={{ display: "flex", alignItems: "flex-end", gap: 2, flexWrap: "nowrap" }}>
                                     <AcademicHierarchyFilter
                                         onChange={handleHierarchyChange}
                                         initialValues={hierarchy}
@@ -193,13 +193,13 @@ const Assignedstudents = () => {
                                                 display: "flex", alignItems: "center", gap: 0.5,
                                                 px: 1.5, py: 0.5, mb: 0.3,
                                                 borderRadius: "20px",
-                                                border: "1px solid rgba(100,116,139,0.4)",
-                                                color: "#64748b",
+                                                border: "1px solid var(--border-color)",
+                                                color: "var(--text-secondary)",
                                                 fontSize: "0.75rem",
                                                 fontWeight: 600,
                                                 cursor: "pointer",
                                                 transition: "all 0.2s",
-                                                "&:hover": { background: "#f1f5f9", color: "#e53935" }
+                                                "&:hover": { background: "var(--bg-accent-1)", color: "#ef4444" }
                                             }}
                                         >
                                             ✕ Reset

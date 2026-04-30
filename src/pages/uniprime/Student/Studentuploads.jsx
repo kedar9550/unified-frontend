@@ -134,7 +134,7 @@ const Studentuploads = () => {
             const res = await API.post("/api/student-data/assign", {
                 studentIds: selectedIds,
                 deptId: selectedDept,
-                semester: selectedSem
+
             });
             if (res.data.success) {
                 setIsProceeding(false);
@@ -279,12 +279,12 @@ const Studentuploads = () => {
                 />
             )
         },
-        { value: s.rollNo, display: <Box sx={{ fontWeight: 600, color: "#0b5299" }}>{s.rollNo}</Box> },
+        { value: s.rollNo, display: <Box sx={{ fontWeight: 600, color: "var(--color-primary)" }}>{s.rollNo}</Box> },
         {
             value: s.personalInfo?.studentName,
             display: (
                 <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-                    <Avatar sx={{ width: 32, height: 32, fontSize: "0.875rem", bgcolor: "#84a9eb" }}>
+                    <Avatar sx={{ width: 32, height: 32, fontSize: "0.875rem", bgcolor: "var(--bg-accent-1)", color: "var(--color-primary)" }}>
                         {s.personalInfo?.studentName?.charAt(0)}
                     </Avatar>
                     <Box sx={{ fontWeight: 500 }}>{s.personalInfo?.studentName}</Box>
@@ -316,10 +316,22 @@ const Studentuploads = () => {
             />
 
             {/* ADD STUDENT MODAL */}
-            <Dialog open={isAddModalOpen} onClose={() => !addingStudent && setIsAddModalOpen(false)}>
-                <DialogTitle>Add Individual Student</DialogTitle>
+            <Dialog 
+                open={isAddModalOpen} 
+                onClose={() => !addingStudent && setIsAddModalOpen(false)}
+                PaperProps={{
+                    sx: {
+                        background: 'var(--bg-panel)',
+                        border: '1px solid var(--border-color)',
+                        borderRadius: '20px',
+                        boxShadow: 'var(--shadow-premium)',
+                        color: 'var(--text-primary)'
+                    }
+                }}
+            >
+                <DialogTitle sx={{ fontWeight: 800 }}>Add Individual Student</DialogTitle>
                 <DialogContent sx={{ minWidth: 400 }}>
-                    <Typography variant="body2" color="textSecondary" sx={{ mb: 2 }}>
+                    <Typography variant="body2" color="var(--text-secondary)" sx={{ mb: 2 }}>
                         Fetch student data from ECAP using their Roll No.
                     </Typography>
                     <TextField
@@ -332,9 +344,30 @@ const Studentuploads = () => {
                         value={addRollNo}
                         onChange={(e) => setAddRollNo(e.target.value)}
                         disabled={addingStudent}
-                        sx={{ mb: 2 }}
+                        sx={{ 
+                            mb: 2,
+                            "& .MuiOutlinedInput-root": {
+                                borderRadius: "10px",
+                                background: "var(--bg-glass)",
+                                "& fieldset": { borderColor: "var(--border-color)" },
+                                "&:hover fieldset": { borderColor: "var(--color-primary)" },
+                                "&.Mui-focused fieldset": { borderColor: "var(--color-primary)" },
+                            },
+                            "& .MuiInputLabel-root": { color: "var(--text-secondary)" },
+                            "& .MuiInputBase-input": { color: "var(--text-primary)" }
+                        }}
                     />
-                    <FormControl fullWidth variant="outlined">
+                    <FormControl fullWidth variant="outlined" sx={{ 
+                        "& .MuiOutlinedInput-root": {
+                            borderRadius: "10px",
+                            background: "var(--bg-glass)",
+                            "& fieldset": { borderColor: "var(--border-color)" },
+                            "&:hover fieldset": { borderColor: "var(--color-primary)" },
+                            "&.Mui-focused fieldset": { borderColor: "var(--color-primary)" },
+                        },
+                        "& .MuiInputLabel-root": { color: "var(--text-secondary)" },
+                        "& .MuiSelect-select": { color: "var(--text-primary)" }
+                    }}>
                         <InputLabel>Department (Optional)</InputLabel>
                         <Select
                             value={addDept}
@@ -349,19 +382,31 @@ const Studentuploads = () => {
                         </Select>
                     </FormControl>
                 </DialogContent>
-                <DialogActions>
-                    <Button onClick={() => setIsAddModalOpen(false)} disabled={addingStudent}>Cancel</Button>
-                    <Button onClick={handleAddStudent} disabled={addingStudent || !addRollNo} variant="contained" sx={{ borderRadius: '50px', background: "linear-gradient(90deg, #004e92, #000428)", px: 4, fontWeight: 700, textTransform: 'none' }}>
+                <DialogActions sx={{ p: 2, px: 3 }}>
+                    <Button onClick={() => setIsAddModalOpen(false)} disabled={addingStudent} sx={{ color: 'var(--text-secondary)', fontWeight: 700 }}>Cancel</Button>
+                    <Button onClick={handleAddStudent} disabled={addingStudent || !addRollNo} variant="contained" sx={{ borderRadius: '50px', background: "var(--gradient-primary)", px: 4, fontWeight: 700, textTransform: 'none' }}>
                         {addingStudent ? <CircularProgress size={24} color="inherit" /> : "Add Student"}
                     </Button>
                 </DialogActions>
             </Dialog>
 
             {/* UPDATE STUDENT MODAL */}
-            <Dialog open={isUpdateModalOpen} onClose={() => !addingStudent && setIsUpdateModalOpen(false)}>
-                <DialogTitle>Update Individual Student</DialogTitle>
+            <Dialog 
+                open={isUpdateModalOpen} 
+                onClose={() => !addingStudent && setIsUpdateModalOpen(false)}
+                PaperProps={{
+                    sx: {
+                        background: 'var(--bg-panel)',
+                        border: '1px solid var(--border-color)',
+                        borderRadius: '20px',
+                        boxShadow: 'var(--shadow-premium)',
+                        color: 'var(--text-primary)'
+                    }
+                }}
+            >
+                <DialogTitle sx={{ fontWeight: 800 }}>Update Individual Student</DialogTitle>
                 <DialogContent sx={{ minWidth: 400 }}>
-                    <Typography variant="body2" color="textSecondary" sx={{ mb: 2 }}>
+                    <Typography variant="body2" color="var(--text-secondary)" sx={{ mb: 2 }}>
                         Sync/Update student data from ECAP using their Roll No.
                     </Typography>
                     <TextField
@@ -374,12 +419,23 @@ const Studentuploads = () => {
                         value={addRollNo}
                         onChange={(e) => setAddRollNo(e.target.value)}
                         disabled={addingStudent}
-                        sx={{ mb: 2 }}
+                        sx={{ 
+                            mb: 2,
+                            "& .MuiOutlinedInput-root": {
+                                borderRadius: "10px",
+                                background: "var(--bg-glass)",
+                                "& fieldset": { borderColor: "var(--border-color)" },
+                                "&:hover fieldset": { borderColor: "var(--color-primary)" },
+                                "&.Mui-focused fieldset": { borderColor: "var(--color-primary)" },
+                            },
+                            "& .MuiInputLabel-root": { color: "var(--text-secondary)" },
+                            "& .MuiInputBase-input": { color: "var(--text-primary)" }
+                        }}
                     />
                 </DialogContent>
-                <DialogActions>
-                    <Button onClick={() => setIsUpdateModalOpen(false)} disabled={addingStudent}>Cancel</Button>
-                    <Button onClick={handleAddStudent} disabled={addingStudent || !addRollNo} variant="contained" sx={{ borderRadius: '50px', background: "linear-gradient(90deg, #004e92, #000428)", px: 4, fontWeight: 700, textTransform: 'none' }}>
+                <DialogActions sx={{ p: 2, px: 3 }}>
+                    <Button onClick={() => setIsUpdateModalOpen(false)} disabled={addingStudent} sx={{ color: 'var(--text-secondary)', fontWeight: 700 }}>Cancel</Button>
+                    <Button onClick={handleAddStudent} disabled={addingStudent || !addRollNo} variant="contained" sx={{ borderRadius: '50px', background: "var(--gradient-primary)", px: 4, fontWeight: 700, textTransform: 'none' }}>
                         {addingStudent ? <CircularProgress size={24} color="inherit" /> : "Update Student"}
                     </Button>
                 </DialogActions>
@@ -393,11 +449,11 @@ const Studentuploads = () => {
                         p: 3,
                         borderRadius: "24px",
                         background: uploadResult.errors > 0
-                            ? "linear-gradient(135deg, rgba(254, 242, 242, 0.9), rgba(254, 226, 226, 0.9))"
-                            : "linear-gradient(135deg, rgba(240, 253, 244, 0.9), rgba(220, 252, 231, 0.9))",
-                        border: uploadResult.errors > 0 ? "1px solid rgba(239, 68, 68, 0.2)" : "1px solid rgba(34, 197, 94, 0.2)",
+                            ? "var(--bg-panel)"
+                            : "var(--bg-panel)",
+                        border: uploadResult.errors > 0 ? "1px solid #ef4444" : "1px solid #22c55e",
                         backdropFilter: "blur(20px)",
-                        boxShadow: "0 10px 30px rgba(0,0,0,0.05)",
+                        boxShadow: "var(--shadow-premium)",
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "space-between",
@@ -413,35 +469,31 @@ const Studentuploads = () => {
                                 justifyContent: "center",
                                 background: uploadResult.errors > 0 ? "rgba(239, 68, 68, 0.1)" : "rgba(34, 197, 94, 0.1)"
                             }}>
-                                {uploadResult.errors > 0 ? (
-                                    <ConfirmIcon sx={{ color: "#d32f2f", fontSize: 32 }} />
-                                ) : (
-                                    <ConfirmIcon sx={{ color: "#2e7d32", fontSize: 32 }} />
-                                )}
+                                <ConfirmIcon sx={{ color: uploadResult.errors > 0 ? "#ef4444" : "#22c55e", fontSize: 32 }} />
                             </Box>
                             <Box>
-                                <Typography variant="h6" sx={{ color: uploadResult.errors > 0 ? "#991b1b" : "#166534", fontWeight: 800, mb: 0.5 }}>
+                                <Typography variant="h6" sx={{ color: uploadResult.errors > 0 ? "#ef4444" : "#22c55e", fontWeight: 800, mb: 0.5 }}>
                                     {uploadResult.errors > 0 ? "Processed with some issues" : "Processing Complete!"}
                                 </Typography>
                                 <Box sx={{ display: "flex", gap: 3, flexWrap: "wrap" }}>
                                     <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-                                        <Typography variant="body2" sx={{ color: "#64748b", fontWeight: 600 }}>Total:</Typography>
-                                        <Typography variant="body2" sx={{ color: "#1e293b", fontWeight: 700 }}>{uploadResult.total || (uploadResult.success + uploadResult.failed)}</Typography>
+                                        <Typography variant="body2" sx={{ color: "var(--text-secondary)", fontWeight: 600 }}>Total:</Typography>
+                                        <Typography variant="body2" sx={{ color: "var(--text-primary)", fontWeight: 700 }}>{uploadResult.total || (uploadResult.success + uploadResult.failed)}</Typography>
                                     </Box>
                                     <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-                                        <Typography variant="body2" sx={{ color: "#16a34a", fontWeight: 600 }}>Success:</Typography>
-                                        <Typography variant="body2" sx={{ color: "#15803d", fontWeight: 700 }}>{uploadResult.success}</Typography>
+                                        <Typography variant="body2" sx={{ color: "#22c55e", fontWeight: 600 }}>Success:</Typography>
+                                        <Typography variant="body2" sx={{ color: "#22c55e", fontWeight: 700 }}>{uploadResult.success}</Typography>
                                     </Box>
                                     {uploadResult.skipped > 0 && (
                                         <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-                                            <Typography variant="body2" sx={{ color: "#ca8a04", fontWeight: 600 }}>Skipped:</Typography>
-                                            <Typography variant="body2" sx={{ color: "#a16207", fontWeight: 700 }}>{uploadResult.skipped}</Typography>
+                                            <Typography variant="body2" sx={{ color: "#f59e0b", fontWeight: 600 }}>Skipped:</Typography>
+                                            <Typography variant="body2" sx={{ color: "#f59e0b", fontWeight: 700 }}>{uploadResult.skipped}</Typography>
                                         </Box>
                                     )}
                                     {uploadResult.errors > 0 && (
                                         <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-                                            <Typography variant="body2" sx={{ color: "#dc2626", fontWeight: 600 }}>Errors:</Typography>
-                                            <Typography variant="body2" sx={{ color: "#b91c1c", fontWeight: 700 }}>{uploadResult.errors}</Typography>
+                                            <Typography variant="body2" sx={{ color: "#ef4444", fontWeight: 600 }}>Errors:</Typography>
+                                            <Typography variant="body2" sx={{ color: "#ef4444", fontWeight: 700 }}>{uploadResult.errors}</Typography>
                                         </Box>
                                     )}
                                 </Box>
@@ -451,10 +503,10 @@ const Studentuploads = () => {
                             onClick={() => setUploadResult(null)}
                             variant="text"
                             sx={{
-                                color: uploadResult.errors > 0 ? "#b91c1c" : "#15803d",
+                                color: uploadResult.errors > 0 ? "#ef4444" : "#22c55e",
                                 fontWeight: 700,
                                 textTransform: "none",
-                                "&:hover": { background: uploadResult.errors > 0 ? "rgba(239, 68, 68, 0.05)" : "rgba(34, 197, 94, 0.05)" }
+                                "&:hover": { background: uploadResult.errors > 0 ? "rgba(239, 68, 68, 0.1)" : "rgba(34, 197, 94, 0.1)" }
                             }}
                         >
                             Dismiss
@@ -470,16 +522,16 @@ const Studentuploads = () => {
                     sx={{
                         p: 2,
                         borderRadius: "20px",
-                        background: "rgba(255, 255, 255, 0.35)",
+                        background: "var(--bg-glass)",
                         backdropFilter: "blur(10px) saturate(150%)",
-                        border: "1px solid rgba(255, 255, 255, 0.4)",
-                        boxShadow: "0 4px 20px rgba(0,0,0,0.02)",
+                        border: "1px solid var(--border-color)",
+                        boxShadow: "var(--shadow-premium)",
                         width: '100%'
                     }}
                 >
                     <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, justifyContent: 'space-between', alignItems: { xs: 'stretch', sm: 'flex-start' }, gap: 1, mb: 2 }}>
                         <Box>
-                            <Typography variant="h6" fontWeight={800} color="#311b92">Student Data Upload</Typography>
+                            <Typography variant="h6" fontWeight={800} color="var(--text-primary)">Student Data Upload</Typography>
                             <Typography variant="body2" color="textSecondary" fontWeight={500}>
                                 Upload bulk or individual data
                             </Typography>
@@ -492,10 +544,10 @@ const Studentuploads = () => {
                                 borderRadius: "50px",
                                 textTransform: "none",
                                 fontWeight: 700,
-                                border: "1.5px solid #004e92",
+                                border: "1.5px solid var(--color-primary)",
                                 background: "transparent",
-                                color: "#004e92",
-                                "&:hover": { background: "rgba(0, 78, 146, 0.05)" }
+                                color: "var(--color-primary)",
+                                "&:hover": { background: "var(--bg-panel)", border: "1.5px solid var(--color-primary)" }
                             }}
                         >
                             Download Template
@@ -513,11 +565,11 @@ const Studentuploads = () => {
                                 textTransform: "none",
                                 py: 1.2,
                                 fontWeight: 700,
-                                background: "linear-gradient(90deg, #004e92, #000428)",
+                                background: "var(--gradient-primary)",
                                 boxShadow: "0 4px 12px rgba(0, 78, 146, 0.3)",
                                 transition: '0.3s',
                                 '&:hover': {
-                                    background: "linear-gradient(90deg, #003a6d, #000214)",
+                                    background: "var(--gradient-primary-hover)",
                                     boxShadow: "0 6px 16px rgba(0, 78, 146, 0.4)",
                                 }
                             }}
@@ -535,11 +587,11 @@ const Studentuploads = () => {
                                 textTransform: "none",
                                 py: 1.2,
                                 fontWeight: 700,
-                                background: "linear-gradient(90deg, #004e92, #000428)",
+                                background: "var(--gradient-primary)",
                                 boxShadow: "0 4px 12px rgba(0, 78, 146, 0.3)",
                                 transition: '0.3s',
                                 '&:hover': {
-                                    background: "linear-gradient(90deg, #003a6d, #000214)",
+                                    background: "var(--gradient-primary-hover)",
                                     boxShadow: "0 6px 16px rgba(0, 78, 146, 0.4)",
                                 }
                             }}
@@ -553,8 +605,8 @@ const Studentuploads = () => {
                             mt: 2,
                             p: 2,
                             borderRadius: "16px",
-                            background: "rgba(255, 255, 255, 0.5)",
-                            border: "1px solid rgba(11, 82, 153, 0.1)",
+                            background: "var(--bg-panel)",
+                            border: "1px solid var(--border-color)",
                             position: "relative"
                         }}>
                             <IconButton
@@ -577,10 +629,10 @@ const Studentuploads = () => {
                                         borderRadius: "50px",
                                         textTransform: "none",
                                         fontWeight: 700,
-                                        border: "1.5px solid #004e92",
+                                        border: "1.5px solid var(--color-primary)",
                                         background: "transparent",
-                                        color: "#004e92",
-                                        "&:hover": { background: "rgba(0, 78, 146, 0.05)" }
+                                        color: "var(--color-primary)",
+                                        "&:hover": { background: "var(--bg-panel)", border: "1.5px solid var(--color-primary)" }
                                     }}
                                 >
                                     Bulk Upload
@@ -594,10 +646,10 @@ const Studentuploads = () => {
                                         borderRadius: "50px",
                                         textTransform: "none",
                                         fontWeight: 700,
-                                        border: "1.5px solid #004e92",
+                                        border: "1.5px solid var(--color-primary)",
                                         background: "transparent",
-                                        color: "#004e92",
-                                        "&:hover": { background: "rgba(0, 78, 146, 0.05)" }
+                                        color: "var(--color-primary)",
+                                        "&:hover": { background: "var(--bg-panel)", border: "1.5px solid var(--color-primary)" }
                                     }}
                                 >
                                     Create Individual
@@ -610,8 +662,8 @@ const Studentuploads = () => {
                             mt: 2,
                             p: 2,
                             borderRadius: "16px",
-                            background: "rgba(255, 255, 255, 0.5)",
-                            border: "1px solid rgba(11, 82, 153, 0.1)",
+                            background: "var(--bg-panel)",
+                            border: "1px solid var(--border-color)",
                             position: "relative"
                         }}>
                             <IconButton
@@ -634,10 +686,10 @@ const Studentuploads = () => {
                                         borderRadius: "50px",
                                         textTransform: "none",
                                         fontWeight: 700,
-                                        border: "1.5px solid #004e92",
+                                        border: "1.5px solid var(--color-primary)",
                                         background: "transparent",
-                                        color: "#004e92",
-                                        "&:hover": { background: "rgba(0, 78, 146, 0.05)" }
+                                        color: "var(--color-primary)",
+                                        "&:hover": { background: "var(--bg-panel)", border: "1.5px solid var(--color-primary)" }
                                     }}
                                 >
                                     Bulk Update
@@ -651,10 +703,10 @@ const Studentuploads = () => {
                                         borderRadius: "50px",
                                         textTransform: "none",
                                         fontWeight: 700,
-                                        border: "1.5px solid #004e92",
+                                        border: "1.5px solid var(--color-primary)",
                                         background: "transparent",
-                                        color: "#004e92",
-                                        "&:hover": { background: "rgba(0, 78, 146, 0.05)" }
+                                        color: "var(--color-primary)",
+                                        "&:hover": { background: "var(--bg-panel)", border: "1.5px solid var(--color-primary)" }
                                     }}
                                 >
                                     Individual Update
@@ -672,10 +724,10 @@ const Studentuploads = () => {
                         p: 2,
                         mt: 2,
                         borderRadius: "24px",
-                        background: "linear-gradient(135deg, rgba(255,255,255,0.7), rgba(255,255,255,0.4))",
+                        background: "var(--bg-glass)",
                         backdropFilter: "blur(20px)",
-                        boxShadow: "0 20px 60px rgba(0,0,0,0.1)",
-                        border: "1px solid rgba(255,255,255,0.3)",
+                        boxShadow: "var(--shadow-premium)",
+                        border: "1px solid var(--border-color)",
                         minHeight: "400px",
                         display: "flex",
                         flexDirection: "column"
@@ -701,10 +753,10 @@ const Studentuploads = () => {
                                         minHeight: "32px",
                                         fontSize: "0.75rem",
                                         background: "transparent",
-                                        border: "1.5px solid #004e92",
-                                        color: "#004e92",
+                                        border: "1.5px solid var(--color-primary)",
+                                        color: "var(--color-primary)",
                                         borderRadius: '50px',
-                                        "&:hover": { background: "rgba(0, 78, 146, 0.05)", border: "1.5px solid #004e92" }
+                                        "&:hover": { background: "var(--bg-panel)", border: "1.5px solid var(--color-primary)" }
                                     }}
                                 >
                                     <DownloadIcon sx={{ mr: 1, fontSize: "1rem" }} /> Download
@@ -759,8 +811,8 @@ const Studentuploads = () => {
                                         sx={{
                                             px: 3,
                                             borderRadius: '50px',
-                                            background: "linear-gradient(90deg, #004e92, #000428)",
-                                            "&:hover": { background: "linear-gradient(90deg, #003a6d, #000214)" }
+                                            background: "var(--gradient-primary)",
+                                            "&:hover": { background: "var(--gradient-primary-hover)" }
                                         }}
                                     >
                                         Proceed
@@ -776,13 +828,13 @@ const Studentuploads = () => {
                             mt: 2,
                             p: 3,
                             borderRadius: "16px",
-                            background: "rgba(255,255,255,0.5)",
-                            border: "1px dashed rgba(11, 82, 153, 0.3)",
+                            background: "var(--bg-panel)",
+                            border: "1px dashed var(--border-color)",
                             display: "flex",
                             flexDirection: "column",
                             gap: 3
                         }}>
-                            <Typography variant="subtitle2" sx={{ color: "#0b5299", fontWeight: 600 }}>
+                            <Typography variant="subtitle2" sx={{ color: "var(--color-primary)", fontWeight: 600 }}>
                                 Finalize Upload Details
                             </Typography>
 
@@ -816,7 +868,7 @@ const Studentuploads = () => {
                                         )}
                                     </Select>
                                 </FormControl>
-
+                                {/* 
                                 <FormControl variant="standard" sx={{ minWidth: 200 }}>
                                     <InputLabel id="sem-select-label">Select Semester</InputLabel>
                                     <Select
@@ -829,13 +881,13 @@ const Studentuploads = () => {
                                             <MenuItem key={i + 1} value={i + 1}>Semester {i + 1}</MenuItem>
                                         ))}
                                     </Select>
-                                </FormControl>
+                                </FormControl> */}
                             </Box>
 
                             <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
                                 <ActionButton
                                     onClick={handleConfirmAssignment}
-                                    disabled={!selectedDept || !selectedSem}
+                                    disabled={!selectedDept}
                                     sx={{
                                         borderRadius: '50px',
                                         px: 4,
