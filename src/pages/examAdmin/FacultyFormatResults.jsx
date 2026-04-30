@@ -145,6 +145,7 @@ export default function FacultyFormatResults() {
       "semester",
       "courseName",
       "courseCode",
+      "courseType",
       "section",
       "noOfCos",
       "noOfCosAttained",
@@ -160,6 +161,7 @@ export default function FacultyFormatResults() {
       "1",
       "Mathematics",
       "MA101",
+      "THEORY",
       "A",
       "5",
       "4",
@@ -314,6 +316,8 @@ export default function FacultyFormatResults() {
               "Faculty Name",
               "Subject Name",
               "Course Code",
+              "Type",
+              "Section",
               "Semester",
               "Appeared",
               "Passed",
@@ -340,21 +344,26 @@ export default function FacultyFormatResults() {
 
               {
                 value: r.courseName,
-                display: (
-                  <Box>
-                    <Box>{r.courseName}</Box>
-                    {r.section && (
-                      <Box sx={{ fontSize: 11, color: "#999" }}>
-                        Sec: {r.section}
-                      </Box>
-                    )}
-                  </Box>
-                ),
+                display: <Box>{r.courseName}</Box>,
               },
 
               {
                 value: r.courseCode,
                 display: <Box>{r.courseCode}</Box>,
+              },
+
+              {
+                value: r.courseType,
+                display: (
+                  <Box sx={{ fontWeight: 600, color: "#0b5299" }}>
+                    {r.courseType}
+                  </Box>
+                ),
+              },
+
+              {
+                value: r.section,
+                display: <Box>{r.section || "-"}</Box>,
               },
 
               {
