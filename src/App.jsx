@@ -27,6 +27,7 @@ import Studentuploads from "./pages/uniprime/Student/Studentuploads";
 import DepartmentMapping from "./pages/uniprime/Student/DepartmentMapping";
 import Dashboard from "./pages/Dashboard";
 import { registerLoadingHandlers } from "./api/axios";
+import SDG from "./pages/faculty/SDG";
 
 const PublicOnlyRoute = ({ children }) => {
   const { user } = useAuth();
@@ -51,7 +52,7 @@ function App() {
   // Register once — never re-registers on re-render
   useEffect(() => {
     registerLoadingHandlers(startLoading, stopLoading);
-    
+
     // Initialize theme
     const theme = localStorage.getItem("theme");
     if (theme === "dark") {
@@ -76,6 +77,7 @@ function App() {
         <Route path="/research/patent-publication" element={<ProtectedRoute element={<PatentPublication />} />} />
         <Route path="/research/funded-project" element={<ProtectedRoute element={<FundedProject />} />} />
         <Route path="/research/consultancy-publication" element={<ProtectedRoute element={<ConsultancyPublication />} />} />
+        <Route path="/research/sdg" element={<ProtectedRoute element={<SDG />} />} />
         <Route path="/academics/management" element={<ProtectedRoute element={<AcademicManagement />} />} />
         <Route path="exam-result/faculty-format" element={<ProtectedRoute element={<FacultyFormatResults />} />} />
         <Route path="exam-result/students-format" element={<ProtectedRoute element={<StudentFormatResults />} />} />

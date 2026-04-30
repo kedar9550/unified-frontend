@@ -22,9 +22,9 @@ export const ROLE_ROUTES = {
   // Navigation items for the Faculty default role
   FACULTY: [
     { text: "Dashboard", path: "/dashboard", icon: <Dashboard /> },
-    { text: "Teaching", path: "/teaching", icon: <MenuBook /> },
+    { text: "Academics", path: "/teaching", icon: <MenuBook /> },
     {
-      text: "Publications",
+      text: "Research",
 
       icon: <Science />,
       nested: [
@@ -35,6 +35,7 @@ export const ROLE_ROUTES = {
         { text: "Funded Project", path: "/research/funded-project" },
         { text: "Consultancy", path: "/research/consultancy-publication" },
         { text: "Conference", path: "/research/conference-publication" },
+        { text: "SDG's", path: "/research/sdg" },
       ],
     },
     { text: "Administration", path: "/admin", icon: <AccountBalance /> },

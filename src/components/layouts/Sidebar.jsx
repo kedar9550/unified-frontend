@@ -284,7 +284,11 @@ const Sidebar = ({ mobileOpen, onDrawerToggle }) => {
           gap: 1.5,
           transition: "all 0.4s cubic-bezier(0.4, 0, 0.2, 1)",
           cursor: "pointer",
-          "&:hover": { background: "var(--bg-accent-1)", borderColor: "var(--color-primary)" }
+          "&:hover": { 
+            background: "linear-gradient(var(--bg-panel), var(--bg-panel)) padding-box, var(--gradient-primary) border-box",
+            borderColor: "transparent",
+            boxShadow: "var(--shadow-premium)"
+          }
         }}
       >
         <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%" }}>
