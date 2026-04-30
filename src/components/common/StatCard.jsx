@@ -9,11 +9,11 @@ export default function StatCard({ title, score, max, icon, glass = false, onCli
         width: "100%",
         boxSizing: "border-box",
         p: 3,
-        background: "rgba(255, 255, 255, 0.7)",
+        background: "var(--bg-glass)",
         backdropFilter: "blur(12px)",
         borderRadius: "20px",
-        boxShadow: "0 8px 32px rgba(31, 38, 135, 0.07)",
-        border: "1px solid rgba(255, 255, 255, 0.4)",
+        boxShadow: "var(--shadow-premium)",
+        border: "1px solid var(--border-color)",
         transition: "all 0.3s ease-in-out",
         display: "flex",
         flexDirection: "column",
@@ -23,8 +23,9 @@ export default function StatCard({ title, score, max, icon, glass = false, onCli
 
         "&:hover": {
           transform: "translateY(-4px)",
-          boxShadow: "0 12px 40px rgba(31, 38, 135, 0.12)",
-          background: "rgba(255, 255, 255, 0.85)",
+          boxShadow: "var(--shadow-premium)",
+          background: "var(--bg-panel)",
+          borderColor: "var(--color-primary)",
         },
       }}
     >
@@ -32,10 +33,11 @@ export default function StatCard({ title, score, max, icon, glass = false, onCli
         <Typography
           variant="subtitle2"
           sx={{
-            color: "#555",
-            fontWeight: 500,
+            color: "var(--text-secondary)",
+            fontWeight: 600,
             fontSize: "0.85rem",
-            letterSpacing: "0.02em"
+            textTransform: "uppercase",
+            letterSpacing: "0.05em"
           }}
         >
           {title}
@@ -44,7 +46,7 @@ export default function StatCard({ title, score, max, icon, glass = false, onCli
         {icon && (
           <Box
             sx={{
-              opacity: 0.6,
+              color: "var(--color-primary)",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
@@ -59,8 +61,8 @@ export default function StatCard({ title, score, max, icon, glass = false, onCli
         <Typography
           variant="h3"
           sx={{
-            fontWeight: 700,
-            color: "#003366", // Deep Navy Blue
+            fontWeight: 800,
+            color: "var(--text-primary)",
             fontSize: "2.5rem"
           }}
         >
@@ -70,9 +72,9 @@ export default function StatCard({ title, score, max, icon, glass = false, onCli
         {max && (
           <Typography
             variant="caption"
-            sx={{ mt: 0.5, display: "block", color: "text.secondary", opacity: 0.8 }}
+            sx={{ mt: 0.5, display: "block", color: "var(--text-secondary)", fontWeight: 500 }}
           >
-            Max: {max}
+            Max Score: {max}
           </Typography>
         )}
       </Box>

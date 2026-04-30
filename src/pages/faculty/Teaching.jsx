@@ -383,7 +383,7 @@ export default function Teaching() {
         {/* Academic Year */}
         <Box sx={filterBox}>
           <Typography
-            sx={{ fontSize: 13, fontWeight: 600, color: "#555", mr: 1 }}
+            sx={{ fontSize: 13, fontWeight: 700, color: "var(--text-secondary)", mr: 1, textTransform: "uppercase", letterSpacing: "0.05em" }}
           >
             Academic Year
           </Typography>
@@ -392,7 +392,7 @@ export default function Teaching() {
             disableUnderline
             value={selectedYearId}
             onChange={(e) => setSelectedYearId(e.target.value)}
-            sx={{ minWidth: 120, fontSize: 14 }}
+            sx={{ minWidth: 120, fontSize: 14, color: "var(--text-primary)", fontWeight: 600, "& .MuiSelect-icon": { color: "var(--text-secondary)" } }}
           >
             {academicYears.map((y) => (
               <MenuItem key={y._id} value={y._id}>
@@ -409,7 +409,7 @@ export default function Teaching() {
               px: 3,
               py: 0.8,
               borderRadius: "50px",
-              background: "linear-gradient(90deg, #004e92, #000428)", // Premium dark blue gradient
+              background: "var(--gradient-primary)", // Premium dark blue gradient
               color: "#fff",
               fontSize: 13,
               fontWeight: 700,
@@ -428,8 +428,8 @@ export default function Teaching() {
 
         <Typography
           variant="h6"
-          fontWeight={600}
-          sx={{ mb: 2, color: "#0D233B", fontSize: 16 }}
+          fontWeight={700}
+          sx={{ mb: 2, color: "var(--text-primary)", fontSize: 16 }}
         >
           Course Average Pass Percentage
         </Typography>
@@ -438,14 +438,17 @@ export default function Teaching() {
           <Box
             sx={{
               textAlign: "center",
-              py: 6,
-              color: "#aaa",
+              py: 8,
+              color: "var(--text-secondary)",
               fontSize: 15,
+              background: "var(--bg-glass)",
+              borderRadius: "16px",
+              border: "1px dashed var(--border-color)"
             }}
           >
             No results found for the selected Academic Year &amp; Semester.
             <br />
-            <span style={{ fontSize: 13 }}>
+            <span style={{ fontSize: 13, opacity: 0.8, fontWeight: 500 }}>
               Results are uploaded by the Exam Admin via the Faculty Format CSV.
             </span>
           </Box>
@@ -460,8 +463,8 @@ export default function Teaching() {
 
         <Typography
           variant="h6"
-          fontWeight={600}
-          sx={{ mb: 2, color: "#0D233B", fontSize: 16 }}
+          fontWeight={700}
+          sx={{ mb: 2, color: "var(--text-primary)", fontSize: 16 }}
         >
           Proctoring Average Pass Percentage
         </Typography>
@@ -474,26 +477,26 @@ export default function Teaching() {
                 gap: 3,
                 justifyContent: "space-around",
                 p: 3,
-                border: "1.5px solid #e2e8f0",
-                borderRadius: "14px",
-                background: "#f8fafc"
+                border: "1px solid var(--border-color)",
+                borderRadius: "16px",
+                background: "var(--bg-glass)"
             }}
             >
             <Box sx={{ textAlign: "center" }}>
-                <Typography variant="body2" color="text.secondary" fontWeight={600} mb={1}>Total Students Managed</Typography>
-                <Typography variant="h4" color="primary" fontWeight={700}>{proctorStats.totalMappedStudents}</Typography>
+                <Typography variant="body2" sx={{ color: "var(--text-secondary)", fontWeight: 700, mb: 1, fontSize: "0.7rem", textTransform: "uppercase" }}>Total Students Managed</Typography>
+                <Typography variant="h4" sx={{ color: "var(--color-primary)", fontWeight: 800 }}>{proctorStats.totalMappedStudents}</Typography>
             </Box>
             <Box sx={{ textAlign: "center" }}>
-                <Typography variant="body2" color="text.secondary" fontWeight={600} mb={1}>Students Appeared</Typography>
-                <Typography variant="h4" color="#f59e0b" fontWeight={700}>{proctorStats.studentsAppeared}</Typography>
+                <Typography variant="body2" sx={{ color: "var(--text-secondary)", fontWeight: 700, mb: 1, fontSize: "0.7rem", textTransform: "uppercase" }}>Students Appeared</Typography>
+                <Typography variant="h4" sx={{ color: "#f59e0b", fontWeight: 800 }}>{proctorStats.studentsAppeared}</Typography>
             </Box>
             <Box sx={{ textAlign: "center" }}>
-                <Typography variant="body2" color="text.secondary" fontWeight={600} mb={1}>Students Passed</Typography>
-                <Typography variant="h4" color="#10b981" fontWeight={700}>{proctorStats.studentsPassed}</Typography>
+                <Typography variant="body2" sx={{ color: "var(--text-secondary)", fontWeight: 700, mb: 1, fontSize: "0.7rem", textTransform: "uppercase" }}>Students Passed</Typography>
+                <Typography variant="h4" sx={{ color: "#10b981", fontWeight: 800 }}>{proctorStats.studentsPassed}</Typography>
             </Box>
             <Box sx={{ textAlign: "center" }}>
-                <Typography variant="body2" color="text.secondary" fontWeight={600} mb={1}>Pass Percentage</Typography>
-                <Typography variant="h4" color={proctorStats.passPercentage >= 50 ? "#10b981" : "#ef4444"} fontWeight={700}>{proctorStats.passPercentage}%</Typography>
+                <Typography variant="body2" sx={{ color: "var(--text-secondary)", fontWeight: 700, mb: 1, fontSize: "0.7rem", textTransform: "uppercase" }}>Pass Percentage</Typography>
+                <Typography variant="h4" sx={{ color: proctorStats.passPercentage >= 50 ? "#10b981" : "#ef4444", fontWeight: 800 }}>{proctorStats.passPercentage}%</Typography>
             </Box>
             </Box>
         ) : (
@@ -501,10 +504,11 @@ export default function Teaching() {
             sx={{
                 textAlign: "center",
                 py: 6,
-                color: "#aaa",
+                color: "var(--text-secondary)",
                 fontSize: 15,
-                border: "1.5px dashed #d0d9e8",
-                borderRadius: "14px",
+                border: "1px dashed var(--border-color)",
+                borderRadius: "16px",
+                background: "var(--bg-glass)"
             }}
             >
             No proctoring mapped students or results available for this selection.
@@ -518,8 +522,8 @@ export default function Teaching() {
 
         <Typography
           variant="h6"
-          fontWeight={600}
-          sx={{ mb: 2, color: "#0D233B", fontSize: 16 }}
+          fontWeight={700}
+          sx={{ mb: 2, color: "var(--text-primary)", fontSize: 16 }}
         >
           Faculty Feedback Results
         </Typography>
@@ -533,10 +537,11 @@ export default function Teaching() {
               sx={{
                 textAlign: "center",
                 py: 6,
-                color: "#aaa",
+                color: "var(--text-secondary)",
                 fontSize: 15,
-                border: "1.5px dashed #d0d9e8",
-                borderRadius: "14px",
+                border: "1px dashed var(--border-color)",
+                borderRadius: "16px",
+                background: "var(--bg-glass)"
               }}
             >
               No feedback results available for this selection.
@@ -552,8 +557,8 @@ export default function Teaching() {
 
         <Typography
           variant="h6"
-          fontWeight={600}
-          sx={{ mb: 2, color: "#0D233B", fontSize: 16 }}
+          fontWeight={700}
+          sx={{ mb: 2, color: "var(--text-primary)", fontSize: 16 }}
         >
           CO Attainment Results
         </Typography>
@@ -567,10 +572,11 @@ export default function Teaching() {
               sx={{
                 textAlign: "center",
                 py: 6,
-                color: "#aaa",
+                color: "var(--text-secondary)",
                 fontSize: 15,
-                border: "1.5px dashed #d0d9e8",
-                borderRadius: "14px",
+                border: "1px dashed var(--border-color)",
+                borderRadius: "16px",
+                background: "var(--bg-glass)"
               }}
             >
               No CO Attainment results available for this selection.
@@ -599,17 +605,19 @@ const filterBox = {
   px: 2,
   py: 1,
   borderRadius: "14px",
-  background: "rgba(255,255,255,0.75)",
+  background: "var(--bg-glass)",
   backdropFilter: "blur(10px)",
-  boxShadow: "0 4px 15px rgba(0,0,0,0.06)",
+  boxShadow: "var(--shadow-premium)",
+  border: "1px solid var(--border-color)",
   fontSize: 14,
 };
 
 const sectionCard = {
   p: 3,
   borderRadius: "20px",
-  background: "rgba(255,255,255,0.6)",
+  background: "var(--bg-panel)",
   backdropFilter: "blur(12px)",
-  boxShadow: "0 15px 40px rgba(0,0,0,0.08)",
+  boxShadow: "var(--shadow-premium)",
+  border: "1px solid var(--border-color)",
   mb: 3,
 };

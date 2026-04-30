@@ -62,19 +62,19 @@ export default function BookChapterPublication() {
   const renderList = () => (
     <Box sx={{ p: 2 }}>
       <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
-        <Typography variant="h6" color="primary" fontWeight="bold">My Book Chapter Publications</Typography>
-        <Button variant="contained" onClick={() => setViewMode("select-year")} sx={{ background: "#29b6f6", "&:hover": { background: "#0288d1" } }}>
+        <Typography variant="h6" sx={{ color: "var(--text-primary)", fontWeight: 800 }}>My Book Chapter Publications</Typography>
+        <Button variant="contained" onClick={() => setViewMode("select-year")} sx={{ background: "var(--color-primary)", borderRadius: "12px", px: 3, fontWeight: 700, textTransform: "none", "&:hover": { background: "var(--color-primary)", opacity: 0.9 } }}>
           Apply New
         </Button>
       </Box>
-      <TableContainer component={Paper} sx={{ borderRadius: 2, boxShadow: "0 4px 12px rgba(0,0,0,0.05)" }}>
+      <TableContainer component={Paper} sx={{ borderRadius: "16px", background: "var(--bg-panel)", border: "1px solid var(--border-color)", boxShadow: "var(--shadow-premium)", overflow: "hidden" }}>
         <Table>
-          <TableHead sx={{ background: "#f5f5f5" }}>
+          <TableHead sx={{ background: "var(--gradient-primary)" }}>
             <TableRow>
-              <TableCell sx={{ fontWeight: 600 }}>Text Book Name</TableCell>
-              <TableCell sx={{ fontWeight: 600 }}>Chapter Title</TableCell>
-              <TableCell sx={{ fontWeight: 600 }}>Publisher</TableCell>
-              <TableCell sx={{ fontWeight: 600 }}>Status</TableCell>
+              <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Text Book Name</TableCell>
+              <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Chapter Title</TableCell>
+              <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Publisher</TableCell>
+              <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Status</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -87,10 +87,10 @@ export default function BookChapterPublication() {
             ) : (
               publicationsList.map((pub, i) => (
                 <TableRow key={pub._id || i}>
-                  <TableCell>{pub.textBookName || "N/A"}</TableCell>
-                  <TableCell>{pub.chapterTitle || "N/A"}</TableCell>
-                  <TableCell>{pub.publisher || "N/A"}</TableCell>
-                  <TableCell><Typography variant="body2" sx={{ color: "green", fontWeight: 500 }}>Submitted</Typography></TableCell>
+                  <TableCell sx={{ color: "var(--text-primary)", fontWeight: 500, py: 2 }}>{pub.textBookName || "N/A"}</TableCell>
+                  <TableCell sx={{ color: "var(--text-secondary)", py: 2 }}>{pub.chapterTitle || "N/A"}</TableCell>
+                  <TableCell sx={{ color: "var(--text-secondary)", py: 2 }}>{pub.publisher || "N/A"}</TableCell>
+                  <TableCell sx={{ py: 2 }}><Typography variant="body2" sx={{ color: "#10b981", fontWeight: 700, background: "rgba(16, 185, 129, 0.1)", px: 1.5, py: 0.5, borderRadius: "6px", display: "inline-block" }}>Submitted</Typography></TableCell>
                 </TableRow>
               ))
             )}
@@ -103,7 +103,7 @@ export default function BookChapterPublication() {
   const renderSelectYear = () => (
     <Box sx={{ maxWidth: 500, mx: "auto", mt: 5 }}>
       <FormCard title="Select Academic Year">
-        <Typography sx={{ mb: 2, color: "#555" }}>Please select the academic year for this publication submission:</Typography>
+        <Typography sx={{ mb: 2, color: "var(--text-secondary)", fontWeight: 500 }}>Please select the academic year for this publication submission:</Typography>
         <Select 
           fullWidth 
           size="small" 
@@ -117,8 +117,8 @@ export default function BookChapterPublication() {
           ))}
         </Select>
         <Box sx={{ display: "flex", gap: 2, mt: 4, justifyContent: "flex-end" }}>
-          <Button variant="outlined" onClick={() => setViewMode("list")}>Cancel</Button>
-          <Button variant="contained" disabled={!selectedYear} onClick={() => setViewMode("form")} sx={{ background: "#29b6f6", "&:hover": { background: "#0288d1" } }}>
+          <Button variant="outlined" onClick={() => setViewMode("list")} sx={{ borderRadius: "12px", textTransform: "none", fontWeight: 600 }}>Cancel</Button>
+          <Button variant="contained" disabled={!selectedYear} onClick={() => setViewMode("form")} sx={{ background: "var(--color-primary)", borderRadius: "12px", px: 4, fontWeight: 700, textTransform: "none", "&:hover": { background: "var(--color-primary)", opacity: 0.9 } }}>
             Proceed
           </Button>
         </Box>
@@ -129,10 +129,10 @@ export default function BookChapterPublication() {
   const renderForm = () => (
     <FormCard title="Book chapter Submission">
       <Box sx={{ mb: 3, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <Typography variant="body2" sx={{ background: "#e3f2fd", color: "#1565c0", px: 2, py: 0.5, borderRadius: 1, fontWeight: 500 }}>
+        <Typography variant="body2" sx={{ background: "var(--bg-accent-1)", color: "var(--color-primary)", px: 2, py: 0.8, borderRadius: "8px", fontWeight: 700, border: "1px solid var(--border-color)" }}>
           Academic Year: {academicYears.find(y => y._id === selectedYear)?.year || "Selected"}
         </Typography>
-        <Button size="small" variant="text" onClick={() => setViewMode("select-year")}>Change Year</Button>
+        <Button size="small" variant="text" onClick={() => setViewMode("select-year")} sx={{ fontWeight: 700, textTransform: "none", color: "var(--color-primary)" }}>Change Year</Button>
       </Box>
 
       <FacultyInfoRow college={form.college} setCollege={(v) => setForm(p => ({ ...p, college: v }))} />
@@ -204,8 +204,8 @@ export default function BookChapterPublication() {
         <FileField label="Attach Index" name="index" onChange={setFile("index")} />
         <FileField label="Attach Soft Copy of Chapter" name="softCopy" onChange={setFile("softCopy")} />
         <Box>
-          <Typography sx={{ fontSize: 13, fontWeight: 700, color: "#1565c0" }}>Expected Amount:</Typography>
-          <TextField size="small" value="1500" disabled sx={{ "& .MuiInputBase-input.Mui-disabled": { WebkitTextFillColor: "#2e7d32", fontWeight: 700, background: "#e8f5e9" } }} />
+          <Typography sx={{ fontSize: 13, fontWeight: 700, color: "var(--color-primary)" }}>Expected Amount:</Typography>
+          <TextField size="small" value="1500" disabled sx={{ "& .MuiInputBase-input.Mui-disabled": { WebkitTextFillColor: "#10b981", fontWeight: 800, background: "rgba(16, 185, 129, 0.1)", borderRadius: "8px" } }} />
         </Box>
       </Grid2>
 

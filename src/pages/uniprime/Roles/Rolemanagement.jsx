@@ -644,10 +644,10 @@ const RoleManagement = () => {
             <Grid container spacing={3} sx={{ mt: 2, width: '100%', ml: 0 }}>
                 <Grid size={{ xs: 12, lg: 12 }}>
                     {/* Create Roles Section */}
-                    <Paper elevation={0} sx={{ p: 3, height: '100%', borderRadius: "20px", background: "rgba(255, 255, 255, 0.35)", backdropFilter: "blur(10px) saturate(150%)", border: "1px solid rgba(255, 255, 255, 0.4)", boxShadow: "0 4px 20px rgba(0,0,0,0.02)" }}>
+                    <Paper elevation={0} sx={{ p: 3, height: '100%', borderRadius: "20px", background: "var(--bg-glass)", backdropFilter: "blur(10px) saturate(150%)", border: "1px solid var(--border-color)", boxShadow: "0 4px 20px rgba(0,0,0,0.02)" }}>
                         <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, justifyContent: 'space-between', alignItems: { xs: 'stretch', sm: 'flex-start' }, gap: 2 }}>
                             <Box>
-                                <Typography variant="h6" fontWeight={800} color="#1a237e">Create Roles</Typography>
+                                <Typography variant="h6" fontWeight={800} color="var(--text-primary)">Create Roles</Typography>
                                 <Typography variant="body2" color="textSecondary" fontWeight={500}>
                                     Create and update data
                                 </Typography>
@@ -661,14 +661,14 @@ const RoleManagement = () => {
                                     textTransform: 'none',
                                     borderRadius: '50px',
                                     fontWeight: 700,
-                                    border: '1.5px solid #004e92',
+                                    border: '1.5px solid var(--color-primary)',
                                     background: 'transparent',
-                                    color: '#004e92',
+                                    color: 'var(--color-primary)',
                                     width: { xs: '100%', sm: 'auto' },
                                     transition: '0.3s',
                                     '&:hover': {
                                         background: 'rgba(0, 78, 146, 0.05)',
-                                        borderColor: '#004e92',
+                                        borderColor: 'var(--color-primary)',
                                         boxShadow: '0 4px 12px rgba(0, 78, 146, 0.1)'
                                     }
                                 }}
@@ -683,7 +683,7 @@ const RoleManagement = () => {
                                 onClick={handleCreateClick}
                                 sx={{
                                     flex: 1,
-                                    background: "linear-gradient(90deg, #004e92, #000428)",
+                                    background: "var(--gradient-primary)",
                                     borderRadius: "50px",
                                     textTransform: "none",
                                     px: { xs: 1, sm: 4 },
@@ -692,7 +692,7 @@ const RoleManagement = () => {
                                     boxShadow: "0 4px 12px rgba(0, 78, 146, 0.3)",
                                     transition: '0.3s',
                                     '&:hover': {
-                                        background: "linear-gradient(90deg, #003a6d, #000214)",
+                                        background: "var(--gradient-primary-hover)",
                                         boxShadow: "0 6px 16px rgba(0, 78, 146, 0.4)",
                                         transform: 'translateY(-1px)'
                                     }
@@ -709,7 +709,7 @@ const RoleManagement = () => {
                                 }}
                                 sx={{
                                     flex: 1,
-                                    background: "linear-gradient(90deg, #004e92, #000428)",
+                                    background: "var(--gradient-primary)",
                                     borderRadius: "50px",
                                     textTransform: "none",
                                     px: { xs: 1, sm: 4 },
@@ -718,7 +718,7 @@ const RoleManagement = () => {
                                     boxShadow: "0 4px 12px rgba(0, 78, 146, 0.3)",
                                     transition: '0.3s',
                                     '&:hover': {
-                                        background: "linear-gradient(90deg, #003a6d, #000214)",
+                                        background: "var(--gradient-primary-hover)",
                                         boxShadow: "0 6px 16px rgba(0, 78, 146, 0.4)",
                                         transform: 'translateY(-1px)'
                                     }
@@ -732,7 +732,7 @@ const RoleManagement = () => {
                         <Collapse in={showCreateOptions}>
                             <Box sx={{ mt: 3, p: 2, borderRadius: '15px', background: 'rgba(255, 255, 255, 0.15)', border: '1px solid rgba(255, 255, 255, 0.2)', backdropFilter: 'blur(5px)' }}>
                                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                                    <Typography variant="subtitle2" fontWeight={800} color="#1a237e">Create Options</Typography>
+                                    <Typography variant="subtitle2" fontWeight={800} color="var(--text-primary)">Create Options</Typography>
                                     <IconButton onClick={() => setShowCreateOptions(false)} size="small"><Close sx={{ fontSize: 18 }} /></IconButton>
                                 </Box>
                                 <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 2, alignItems: { xs: 'stretch', sm: 'center' }, justifyContent: 'space-between', width: '100%' }}>
@@ -743,7 +743,7 @@ const RoleManagement = () => {
                                             startIcon={uploadingBulk ? <CircularProgress size={16} color="inherit" /> : <UploadFile />}
                                             onClick={() => fileInputRef.current.click()}
                                             disabled={uploadingBulk}
-                                            sx={{ width: { xs: '100%', sm: 'auto' }, borderRadius: '50px', textTransform: 'none', fontWeight: 700, border: '1.5px solid #004e92', background: 'transparent', color: '#004e92', py: { xs: 1.2, sm: 0.5 }, transition: '0.3s', '&:hover': { background: 'rgba(0, 78, 146, 0.05)', boxShadow: '0 4px 10px rgba(0, 78, 146, 0.1)' } }}
+                                            sx={{ width: { xs: '100%', sm: 'auto' }, borderRadius: '50px', textTransform: 'none', fontWeight: 700, border: '1.5px solid var(--color-primary)', background: 'transparent', color: 'var(--color-primary)', py: { xs: 1.2, sm: 0.5 }, transition: '0.3s', '&:hover': { background: 'rgba(0, 78, 146, 0.05)', boxShadow: '0 4px 10px rgba(0, 78, 146, 0.1)' } }}
                                         >
                                             {uploadingBulk ? 'Uploading...' : 'Bulk Upload'}
                                         </Button>
@@ -757,7 +757,7 @@ const RoleManagement = () => {
                                                 }
                                                 setShowCreateIndividualSearch(!showCreateIndividualSearch);
                                             }}
-                                            sx={{ width: { xs: '100%', sm: 'auto' }, borderRadius: '50px', textTransform: 'none', fontWeight: 700, border: '1.5px solid #004e92', background: showCreateIndividualSearch ? 'rgba(0, 78, 146, 0.1)' : 'transparent', color: '#004e92', transition: '0.3s', py: { xs: 1.2, sm: 0.5 }, '&:hover': { background: 'rgba(0, 78, 146, 0.05)' } }}
+                                            sx={{ width: { xs: '100%', sm: 'auto' }, borderRadius: '50px', textTransform: 'none', fontWeight: 700, border: '1.5px solid var(--color-primary)', background: showCreateIndividualSearch ? 'rgba(0, 78, 146, 0.1)' : 'transparent', color: 'var(--color-primary)', transition: '0.3s', py: { xs: 1.2, sm: 0.5 }, '&:hover': { background: 'rgba(0, 78, 146, 0.05)' } }}
                                         >
                                             Create Individual
                                         </Button>
@@ -779,7 +779,7 @@ const RoleManagement = () => {
                                                 width: { xs: '100%', sm: '280px' },
                                                 "& .MuiOutlinedInput-root": {
                                                     borderRadius: "10px",
-                                                    background: "rgba(255, 255, 255, 0.5)",
+                                                    background: "var(--bg-glass)",
                                                     backdropFilter: "blur(5px)"
                                                 }
                                             }}
@@ -815,7 +815,7 @@ const RoleManagement = () => {
                                             elevation={0}
                                             sx={{
                                                 borderRadius: '15px',
-                                                background: 'rgba(255, 255, 255, 0.4)',
+                                                background: 'var(--border-color)',
                                                 backdropFilter: 'blur(10px)',
                                                 border: '1px solid rgba(255, 255, 255, 0.3)',
                                                 px: 3,
@@ -828,7 +828,7 @@ const RoleManagement = () => {
                                             }}
                                         >
                                             <Box>
-                                                <Typography variant="body2" fontWeight={800} sx={{ color: '#1a237e' }}>{createIndividualPreview?.name}</Typography>
+                                                <Typography variant="body2" fontWeight={800} sx={{ color: 'var(--text-primary)' }}>{createIndividualPreview?.name}</Typography>
                                                 <Typography variant="caption" sx={{ fontWeight: 700, color: 'text.secondary' }}>ID: {createIndividualPreview?.id}</Typography>
                                             </Box>
                                             <Button
@@ -838,13 +838,13 @@ const RoleManagement = () => {
                                                 sx={{
                                                     textTransform: 'none',
                                                     borderRadius: '50px',
-                                                    background: "linear-gradient(90deg, #004e92, #000428)",
+                                                    background: "var(--gradient-primary)",
                                                     boxShadow: "0 4px 12px rgba(0, 78, 146, 0.3)",
                                                     px: 4,
                                                     width: { xs: '100%', sm: 'auto' },
                                                     transition: '0.3s',
                                                     '&:hover': {
-                                                        background: "linear-gradient(90deg, #003a6d, #000214)",
+                                                        background: "var(--gradient-primary-hover)",
                                                         boxShadow: "0 6px 16px rgba(0, 78, 146, 0.4)",
                                                     }
                                                 }}
@@ -857,18 +857,18 @@ const RoleManagement = () => {
 
                                 {/* Inline Signup Form */}
                                 <Collapse in={isShowingSignupForm}>
-                                    <Box sx={{ mt: 3, p: 3, borderRadius: '20px', background: 'rgba(255, 255, 255, 0.5)', border: '1px solid rgba(255, 255, 255, 0.4)', backdropFilter: 'blur(10px)' }}>
+                                    <Box sx={{ mt: 3, p: 3, borderRadius: '20px', background: 'var(--bg-glass)', border: '1px solid var(--border-color)', backdropFilter: 'blur(10px)' }}>
                                         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-                                            <Typography variant="subtitle1" fontWeight={800} color="#1a237e">Complete Registration</Typography>
+                                            <Typography variant="subtitle1" fontWeight={800} color="var(--text-primary)">Complete Registration</Typography>
                                             <IconButton size="small" onClick={() => setIsShowingSignupForm(false)}><Close /></IconButton>
                                         </Box>
 
                                         <Grid container spacing={3}>
                                             <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-                                                <TextField label="Name" fullWidth value={signupData.fullname} slotProps={{ input: { readOnly: true } }} size="small" variant="filled" sx={{ "& .MuiInputBase-input": { fontWeight: 700, color: '#1a237e' } }} />
+                                                <TextField label="Name" fullWidth value={signupData.fullname} slotProps={{ input: { readOnly: true } }} size="small" variant="filled" sx={{ "& .MuiInputBase-input": { fontWeight: 700, color: 'var(--text-primary)' } }} />
                                             </Grid>
                                             <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-                                                <TextField label="Employee ID" fullWidth value={signupData.id} slotProps={{ input: { readOnly: true } }} size="small" variant="filled" sx={{ "& .MuiInputBase-input": { fontWeight: 700, color: '#1a237e' } }} />
+                                                <TextField label="Employee ID" fullWidth value={signupData.id} slotProps={{ input: { readOnly: true } }} size="small" variant="filled" sx={{ "& .MuiInputBase-input": { fontWeight: 700, color: 'var(--text-primary)' } }} />
                                             </Grid>
                                             <Grid size={{ xs: 12, sm: 6, md: 4 }}>
                                                 <TextField
@@ -899,11 +899,11 @@ const RoleManagement = () => {
                                                         fontWeight: 800,
                                                         px: 5,
                                                         py: 1.2,
-                                                        background: "linear-gradient(90deg, #004e92, #000428)",
+                                                        background: "var(--gradient-primary)",
                                                         boxShadow: "0 4px 15px rgba(0, 78, 146, 0.3)",
                                                         transition: '0.3s',
                                                         '&:hover': {
-                                                            background: "linear-gradient(90deg, #003a6d, #000214)",
+                                                            background: "var(--gradient-primary-hover)",
                                                             boxShadow: "0 6px 16px rgba(0, 78, 146, 0.4)",
                                                         }
                                                     }}
@@ -920,7 +920,7 @@ const RoleManagement = () => {
                         <Collapse in={showUpdateOptions}>
                             <Box sx={{ mt: 3, p: 2, borderRadius: '15px', background: 'rgba(255, 255, 255, 0.15)', border: '1px solid rgba(255, 255, 255, 0.2)', backdropFilter: 'blur(5px)' }}>
                                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                                    <Typography variant="subtitle2" fontWeight={800} color="#1a237e">Update Options</Typography>
+                                    <Typography variant="subtitle2" fontWeight={800} color="var(--text-primary)">Update Options</Typography>
                                     <IconButton onClick={() => {
                                         setShowUpdateOptions(false);
                                         setShowIndividualSearch(false);
@@ -937,7 +937,7 @@ const RoleManagement = () => {
                                                 startIcon={isSyncingBulk ? <CircularProgress size={16} color="inherit" /> : <Sync />}
                                                 onClick={handleBulkSync}
                                                 disabled={isSyncingBulk}
-                                                sx={{ width: { xs: '100%', sm: 'auto' }, borderRadius: '50px', textTransform: 'none', fontWeight: 700, border: '1.5px solid #004e92', background: 'transparent', color: '#004e92', py: { xs: 1.2, sm: 0.5 }, transition: '0.3s', '&:hover': { background: 'rgba(0, 78, 146, 0.05)', boxShadow: '0 4px 10px rgba(0, 78, 146, 0.1)' } }}
+                                                sx={{ width: { xs: '100%', sm: 'auto' }, borderRadius: '50px', textTransform: 'none', fontWeight: 700, border: '1.5px solid var(--color-primary)', background: 'transparent', color: 'var(--color-primary)', py: { xs: 1.2, sm: 0.5 }, transition: '0.3s', '&:hover': { background: 'rgba(0, 78, 146, 0.05)', boxShadow: '0 4px 10px rgba(0, 78, 146, 0.1)' } }}
                                             >
                                                 {isSyncingBulk ? 'Updating...' : 'Bulk Update'}
                                             </Button>
@@ -952,7 +952,7 @@ const RoleManagement = () => {
                                                     }
                                                     setShowIndividualSearch(!showIndividualSearch);
                                                 }}
-                                                sx={{ width: { xs: '100%', sm: 'auto' }, borderRadius: '50px', textTransform: 'none', fontWeight: 700, border: '1.5px solid #004e92', background: showIndividualSearch ? 'rgba(0, 78, 146, 0.1)' : 'transparent', color: '#004e92', transition: '0.3s', py: { xs: 1.2, sm: 0.5 }, '&:hover': { background: 'rgba(0, 78, 146, 0.05)' } }}
+                                                sx={{ width: { xs: '100%', sm: 'auto' }, borderRadius: '50px', textTransform: 'none', fontWeight: 700, border: '1.5px solid var(--color-primary)', background: showIndividualSearch ? 'rgba(0, 78, 146, 0.1)' : 'transparent', color: 'var(--color-primary)', transition: '0.3s', py: { xs: 1.2, sm: 0.5 }, '&:hover': { background: 'rgba(0, 78, 146, 0.05)' } }}
                                             >
                                                 Individual Update
                                             </Button>
@@ -976,7 +976,7 @@ const RoleManagement = () => {
                                                     width: { xs: '100%', sm: '280px' },
                                                     "& .MuiOutlinedInput-root": {
                                                         borderRadius: "10px",
-                                                        background: "rgba(255, 255, 255, 0.5)",
+                                                        background: "var(--bg-glass)",
                                                         backdropFilter: "blur(5px)"
                                                     }
                                                 }}
@@ -1006,7 +1006,7 @@ const RoleManagement = () => {
                                                     elevation={0}
                                                     sx={{
                                                         borderRadius: '15px',
-                                                        background: 'rgba(255, 255, 255, 0.4)',
+                                                        background: 'var(--border-color)',
                                                         backdropFilter: 'blur(10px)',
                                                         border: '1px solid rgba(255, 255, 255, 0.3)',
                                                         overflow: 'hidden'
@@ -1030,7 +1030,7 @@ const RoleManagement = () => {
                                                                 }}
                                                             >
                                                                 <Box sx={{ flex: 1 }}>
-                                                                    <Typography variant="body2" fontWeight={800} sx={{ color: '#1a237e', fontSize: '0.9rem' }}>{user.name}</Typography>
+                                                                    <Typography variant="body2" fontWeight={800} sx={{ color: 'var(--text-primary)', fontSize: '0.9rem' }}>{user.name}</Typography>
                                                                     <Typography variant="caption" sx={{ fontWeight: 700, color: 'text.secondary' }}>ID: {user.institutionId}</Typography>
                                                                 </Box>
                                                                 <Button
@@ -1044,13 +1044,13 @@ const RoleManagement = () => {
                                                                     sx={{
                                                                         textTransform: 'none',
                                                                         borderRadius: '50px',
-                                                                        background: "linear-gradient(90deg, #004e92, #000428)",
+                                                                        background: "var(--gradient-primary)",
                                                                         px: 4,
                                                                         width: { xs: '100%', sm: 'auto' },
                                                                         boxShadow: '0 4px 10px rgba(0, 78, 146, 0.3)',
                                                                         transition: '0.3s',
                                                                         '&:hover': {
-                                                                            background: "linear-gradient(90deg, #003a6d, #000214)",
+                                                                            background: "var(--gradient-primary-hover)",
                                                                             boxShadow: "0 6px 16px rgba(0, 78, 146, 0.4)",
                                                                         }
                                                                     }}
@@ -1074,9 +1074,9 @@ const RoleManagement = () => {
 
                                 {/* Employee Edit Form */}
                                 <Collapse in={!!editingEmployee}>
-                                    <Box sx={{ mt: 3, p: 3, borderRadius: '15px', background: 'rgba(255, 255, 255, 0.4)', border: '1px solid rgba(255, 255, 255, 0.3)' }}>
+                                    <Box sx={{ mt: 3, p: 3, borderRadius: '15px', background: 'var(--border-color)', border: '1px solid rgba(255, 255, 255, 0.3)' }}>
                                         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-                                            <Typography variant="subtitle2" fontWeight={800} color="#1a237e">Employee Details</Typography>
+                                            <Typography variant="subtitle2" fontWeight={800} color="var(--text-primary)">Employee Details</Typography>
                                             <IconButton onClick={() => setEditingEmployee(null)} size="small"><Close sx={{ fontSize: 18 }} /></IconButton>
                                         </Box>
 
@@ -1088,7 +1088,7 @@ const RoleManagement = () => {
                                                     value={editingEmployee?.name || ""}
                                                     disabled
                                                     size="small"
-                                                    sx={{ "& .MuiInputBase-input.Mui-disabled": { WebkitTextFillColor: "rgba(0, 0, 0, 0.6)", fontWeight: 600 } }}
+                                                    sx={{ "& .MuiInputBase-input.Mui-disabled": { WebkitTextFillColor: "var(--text-secondary)", fontWeight: 600 } }}
                                                 />
                                             </Grid>
                                             <Grid size={{ xs: 12, sm: 6, md: 3 }}>
@@ -1098,7 +1098,7 @@ const RoleManagement = () => {
                                                     value={editingEmployee?.institutionId || ""}
                                                     disabled
                                                     size="small"
-                                                    sx={{ "& .MuiInputBase-input.Mui-disabled": { WebkitTextFillColor: "rgba(0, 0, 0, 0.6)", fontWeight: 600 } }}
+                                                    sx={{ "& .MuiInputBase-input.Mui-disabled": { WebkitTextFillColor: "var(--text-secondary)", fontWeight: 600 } }}
                                                 />
                                             </Grid>
                                             <Grid size={{ xs: 12, sm: 6, md: 3 }}>
@@ -1108,7 +1108,7 @@ const RoleManagement = () => {
                                                     value={allDepartments.find(d => d._id === editingEmployee?.department)?.name || editingEmployee?.department || ""}
                                                     disabled
                                                     size="small"
-                                                    sx={{ "& .MuiInputBase-input.Mui-disabled": { WebkitTextFillColor: "rgba(0, 0, 0, 0.6)", fontWeight: 600 } }}
+                                                    sx={{ "& .MuiInputBase-input.Mui-disabled": { WebkitTextFillColor: "var(--text-secondary)", fontWeight: 600 } }}
                                                 />
                                             </Grid>
                                             <Grid size={{ xs: 12, sm: 6, md: 3 }}>
@@ -1118,7 +1118,7 @@ const RoleManagement = () => {
                                                     value={editingEmployee?.designation || ""}
                                                     disabled
                                                     size="small"
-                                                    sx={{ "& .MuiInputBase-input.Mui-disabled": { WebkitTextFillColor: "rgba(0, 0, 0, 0.6)", fontWeight: 600 } }}
+                                                    sx={{ "& .MuiInputBase-input.Mui-disabled": { WebkitTextFillColor: "var(--text-secondary)", fontWeight: 600 } }}
                                                 />
                                             </Grid>
                                             <Grid size={{ xs: 12 }}>
@@ -1149,14 +1149,14 @@ const RoleManagement = () => {
                                                     borderRadius: '50px',
                                                     textTransform: 'none',
                                                     fontWeight: 700,
-                                                    background: "linear-gradient(90deg, #004e92, #000428)",
+                                                    background: "var(--gradient-primary)",
                                                     px: { xs: 8, sm: 5 },
                                                     py: 1.2,
                                                     boxShadow: '0 4px 15px rgba(0, 78, 146, 0.3)',
                                                     width: { xs: '100%', sm: 'auto' },
                                                     transition: '0.3s',
                                                     '&:hover': {
-                                                        background: "linear-gradient(90deg, #003a6d, #000214)",
+                                                        background: "var(--gradient-primary-hover)",
                                                         boxShadow: "0 6px 16px rgba(0, 78, 146, 0.4)",
                                                     }
                                                 }}
@@ -1173,12 +1173,12 @@ const RoleManagement = () => {
 
                 <Grid size={{ xs: 12, lg: 12 }} id="search-results-section">
                     {/* Assign Roles to User Section */}
-                    <Paper elevation={0} sx={{ p: 3, height: '100%', borderRadius: "20px", background: "rgba(255, 255, 255, 0.35)", backdropFilter: "blur(10px) saturate(150%)", border: "1px solid rgba(255, 255, 255, 0.4)", boxShadow: "0 4px 20px rgba(0,0,0,0.02)" }}>
+                    <Paper elevation={0} sx={{ p: 3, height: '100%', borderRadius: "20px", background: "var(--bg-glass)", backdropFilter: "blur(10px) saturate(150%)", border: "1px solid var(--border-color)", boxShadow: "0 4px 20px rgba(0,0,0,0.02)" }}>
                         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                             <Box>
-                                <Typography variant="h6" fontWeight={800} color="#1a237e">Assign Roles</Typography>
+                                <Typography variant="h6" fontWeight={800} color="var(--text-primary)">Assign Roles</Typography>
                                 <Typography variant="body2" color="textSecondary" fontWeight={500}>
-                                    Managing: <span style={{ color: '#1a237e', fontWeight: 700 }}>{selectedUser ? `${selectedUser.name} (${selectedUser.institutionId})` : "Please select"}</span>
+                                    Managing: <span style={{ color: 'var(--text-primary)', fontWeight: 700 }}>{selectedUser ? `${selectedUser.name} (${selectedUser.institutionId})` : "Please select"}</span>
                                 </Typography>
                             </Box>
                         </Box>
@@ -1191,10 +1191,10 @@ const RoleManagement = () => {
                                 value={userSearchQuery}
                                 onChange={(e) => setUserSearchQuery(e.target.value)}
                                 onKeyPress={(e) => e.key === "Enter" && handleUserSearch()}
-                                sx={{ "& .MuiOutlinedInput-root": { borderRadius: "10px", background: "rgba(255, 255, 255, 0.5)", backdropFilter: "blur(5px)" } }}
+                                sx={{ "& .MuiOutlinedInput-root": { borderRadius: "10px", background: "var(--bg-glass)", backdropFilter: "blur(5px)" } }}
                                 slotProps={{
                                     input: {
-                                        startAdornment: (<InputAdornment position="start"><Search fontSize="small" /></InputAdornment>),
+                                        startAdornment: (<InputAdornment position="start"><Search fontSize="small" sx={{ color: 'var(--color-primary)' }} /></InputAdornment>),
                                         endAdornment: searchingUsers && (
                                             <InputAdornment position="end">
                                                 <CircularProgress size={16} color="inherit" />
@@ -1209,33 +1209,64 @@ const RoleManagement = () => {
             </Grid>
 
             <Collapse in={hasTypedSearch || searchingUsers}>
-                <Card sx={{ mt: 4, borderRadius: "20px", boxShadow: "0 8px 32px rgba(31, 38, 135, 0.05)", border: "1px solid rgba(255, 255, 255, 0.4)", background: "rgba(255, 255, 255, 0.25)", backdropFilter: "blur(10px) saturate(150%)" }}>
+                <Card sx={{ mt: 4, borderRadius: "20px", boxShadow: "0 8px 32px rgba(31, 38, 135, 0.05)", border: "1px solid var(--border-color)", background: "var(--bg-glass)", backdropFilter: "blur(10px) saturate(150%)" }}>
                     <CardContent sx={{ p: 0 }}>
                         <Box sx={{ display: 'flex', flexDirection: { xs: 'column', lg: 'row' }, minHeight: { xs: 'auto', lg: 450 } }}>
                             <Box sx={{ flex: 1, borderRight: { xs: 'none', lg: "1px solid rgba(0,0,0,0.05)" }, borderBottom: { xs: "1px solid rgba(0,0,0,0.05)", lg: 'none' }, p: 2 }}>
                                 <Typography variant="subtitle2" fontWeight={700} gutterBottom color="textSecondary">Search Results</Typography>
                                 <List>
                                     {userSearchResults.length > 0 ? userSearchResults.map((user) => (
-                                        <ListItem key={user._id} disablePadding sx={{ mb: 1, borderRadius: '12px', overflow: 'hidden', border: selectedUser?._id === user._id ? '1px solid #1a237e' : '1px solid transparent' }}>
+                                        <ListItem key={user._id} disablePadding sx={{ 
+                                            mb: 1, 
+                                            borderRadius: '12px', 
+                                            overflow: 'hidden', 
+                                            position: 'relative',
+                                            border: '1px solid transparent',
+                                            ...(selectedUser?._id === user._id && {
+                                                '&::before': {
+                                                    content: '""',
+                                                    position: 'absolute',
+                                                    inset: 0,
+                                                    borderRadius: 'inherit',
+                                                    padding: '1.5px',
+                                                    background: 'var(--gradient-primary)',
+                                                    WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
+                                                    WebkitMaskComposite: 'xor',
+                                                    maskComposite: 'exclude',
+                                                    pointerEvents: 'none',
+                                                    zIndex: 0
+                                                }
+                                            })
+                                        }}>
                                             <ListItemButton selected={selectedUser?._id === user._id} onClick={() => selectUser(user)} sx={{ p: 2 }}>
-                                                <Avatar sx={{ mr: 2, bgcolor: '#e3f2fd', color: '#1976d2' }}>{user.name.charAt(0)}</Avatar>
+                                                <Avatar sx={{ mr: 2, background: 'var(--bg-accent-1)', color: 'var(--color-primary)' }}>{user.name.charAt(0)}</Avatar>
                                                 <ListItemText
                                                     disableTypography
-                                                    primary={<Typography variant="body1" fontWeight={700} sx={{ fontSize: '0.95rem', color: '#1a237e' }}>{user.name}</Typography>}
+                                                    primary={<Typography variant="body1" fontWeight={700} sx={{ fontSize: '0.95rem', color: 'var(--text-primary)' }}>{user.name}</Typography>}
                                                     secondary={
                                                         <Box sx={{ mt: 0.5 }}>
                                                             <Typography variant="caption" display="block" color="textPrimary" fontWeight={600}>{user.institutionId} — {user.userType}</Typography>
                                                             <Box sx={{ mt: 1, display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
                                                                 <Typography variant="caption" color="textSecondary" sx={{ mr: 1, width: '100%' }}>Present Roles:</Typography>
                                                                 {user.roles && user.roles.length > 0 ? user.roles.map(r => (
-                                                                    <Chip key={r._id} label={r.name} size="small" deleteIcon={<Delete sx={{ fontSize: '14px !important', color: 'rgba(255,255,255,0.7) !important' }} />} onDelete={(e) => { e.stopPropagation(); setDeleteConfirm({ open: true, userId: user._id, roleId: r._id, roleName: r.name, userName: user.name }); }} sx={{ height: 22, fontSize: '10px', background: "linear-gradient(90deg, #004e92, #000428)", color: '#fff', fontWeight: 700, borderRadius: '50px' }} />
+                                                                    <Chip key={r._id} label={r.name} size="small" sx={{ height: 22, fontSize: '10px', background: "var(--gradient-primary)", color: '#fff', fontWeight: 700, borderRadius: '50px' }} />
                                                                 )) : <Typography variant="caption" fontStyle="italic">None</Typography>}
                                                             </Box>
                                                         </Box>
                                                     }
                                                 />
-                                                <ListItemSecondaryAction sx={{ right: 8 }}>
-                                                    <IconButton edge="end" onClick={() => selectUser(user)} color={selectedUser?._id === user._id ? "primary" : "default"}><PersonAdd /></IconButton>
+                                                <ListItemSecondaryAction sx={{ right: 16 }}>
+                                                    <IconButton 
+                                                        edge="end" 
+                                                        onClick={() => selectUser(user)} 
+                                                        sx={{ 
+                                                            color: selectedUser?._id === user._id ? 'var(--color-primary)' : 'var(--text-secondary)',
+                                                            transition: '0.3s',
+                                                            '&:hover': { color: 'var(--color-primary)', transform: 'scale(1.1)' }
+                                                        }}
+                                                    >
+                                                        <PersonAdd />
+                                                    </IconButton>
                                                 </ListItemSecondaryAction>
                                             </ListItemButton>
                                         </ListItem>
@@ -1244,8 +1275,8 @@ const RoleManagement = () => {
 
                                 {/* HOD Department Selection UI (Under User Card) */}
                                 <Collapse in={!!selectedUser && assignedRoleIds.some(rid => roles.find(r => r._id === rid)?.name === 'HOD')}>
-                                    <Box sx={{ mt: 2, p: 2, borderRadius: '15px', bgcolor: '#fff', border: '1px solid #e0e0e0' }}>
-                                        <Typography variant="subtitle2" fontWeight={800} color="#1a237e" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                    <Box sx={{ mt: 2, p: 2, borderRadius: '15px', background: 'var(--bg-paper)', border: '1px solid var(--border-color)' }}>
+                                        <Typography variant="subtitle2" fontWeight={800} color="var(--text-primary)" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                             <Security sx={{ fontSize: 18 }} /> HOD Department Assignment
                                         </Typography>
                                         <Typography variant="caption" color="textSecondary" display="block" sx={{ mb: 2 }}>
@@ -1259,7 +1290,7 @@ const RoleManagement = () => {
                                                     label={dept.name}
                                                     size="small"
                                                     onDelete={() => setSelectedHodDepts(prev => prev.filter(d => d._id !== dept._id))}
-                                                    sx={{ background: "linear-gradient(90deg, #004e92, #000428)", color: '#fff', fontWeight: 700, borderRadius: '50px', '& .MuiChip-deleteIcon': { color: 'rgba(255,255,255,0.7)' } }}
+                                                    sx={{ background: "var(--gradient-primary)", color: '#fff', fontWeight: 700, borderRadius: '50px', '& .MuiChip-deleteIcon': { color: 'rgba(255,255,255,0.7)' } }}
                                                 />
                                             ))}
                                         </Box>
@@ -1268,7 +1299,7 @@ const RoleManagement = () => {
                                             sx={{ width: '100%', m: 0 }}
                                             control={
                                                 <Box sx={{ width: '100%', mt: 1 }}>
-                                                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, maxHeight: 150, overflowY: 'auto', p: 1, border: '1px dashed #ccc', borderRadius: '10px' }}>
+                                                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, p: 1, border: '1px dashed var(--text-secondary)', borderRadius: '10px' }}>
                                                         {allDepartments.map(dept => {
                                                             const isSelected = selectedHodDepts.some(d => d._id === dept._id);
                                                             return (
@@ -1288,9 +1319,9 @@ const RoleManagement = () => {
                                                                         cursor: 'pointer', 
                                                                         borderRadius: '50px',
                                                                         fontWeight: 700,
-                                                                        border: isSelected ? 'none' : '1.5px solid #004e92',
-                                                                        background: isSelected ? "linear-gradient(90deg, #004e92, #000428)" : 'transparent',
-                                                                        color: isSelected ? '#fff' : '#004e92'
+                                                                        border: isSelected ? 'none' : '1.5px solid var(--color-primary)',
+                                                                        background: isSelected ? "var(--gradient-primary)" : 'transparent',
+                                                                        color: isSelected ? '#fff' : 'var(--color-primary)'
                                                                     }}
                                                                 />
                                                             );
@@ -1304,7 +1335,7 @@ const RoleManagement = () => {
                                 </Collapse>
                             </Box>
 
-                            <Box sx={{ flex: 1.2, p: 3, background: 'rgba(255, 255, 255, 0.15)', display: 'flex', flexDirection: 'column' }}>
+                            <Box sx={{ flex: 1.2, p: 3, background: 'var(--bg-accent-1)', display: 'flex', flexDirection: 'column', borderLeft: '1px solid var(--border-color)' }}>
                                 <Typography variant="subtitle2" fontWeight={700} gutterBottom color="textSecondary">{selectedUser ? `Select Roles for ${selectedUser.name}` : "Available Roles"}</Typography>
                                 <Box sx={{ flex: 1, overflowY: 'auto' }}>
                                     {loadingRoles ? null : (
@@ -1312,14 +1343,51 @@ const RoleManagement = () => {
                                             {roles.length > 0 ? roles.map((role) => {
                                                 const isIdentityDefault = getSystemRoleName(selectedUser) === role.name;
                                                 return (
-                                                    <Box key={role._id} onClick={() => handleRoleToggle(role._id)} sx={{ p: 1.5, mb: 1, borderRadius: '12px', bgcolor: 'white', border: '1px solid', borderColor: assignedRoleIds.includes(role._id.toString()) ? 'primary.main' : 'rgba(0,0,0,0.05)', cursor: selectedUser ? 'pointer' : 'default', opacity: selectedUser ? 1 : 0.6, display: 'flex', alignItems: 'center', transition: '0.2s', '&:hover': selectedUser ? { bgcolor: '#fcfdff', borderColor: 'primary.main', transform: 'translateX(5px)' } : {} }}>
+                                                    <Box key={role._id} onClick={() => handleRoleToggle(role._id)} sx={{ 
+                                                        p: 1.5, 
+                                                        mb: 1, 
+                                                        borderRadius: '12px', 
+                                                        background: 'var(--bg-glass)', 
+                                                        position: 'relative',
+                                                        border: '1px solid transparent',
+                                                        ...(assignedRoleIds.includes(role._id.toString()) && {
+                                                            '&::before': {
+                                                                content: '""',
+                                                                position: 'absolute',
+                                                                inset: 0,
+                                                                borderRadius: 'inherit',
+                                                                padding: '1.5px',
+                                                                background: 'var(--gradient-primary)',
+                                                                WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
+                                                                WebkitMaskComposite: 'xor',
+                                                                maskComposite: 'exclude',
+                                                                pointerEvents: 'none',
+                                                                zIndex: 0
+                                                            }
+                                                        }),
+                                                        cursor: selectedUser ? 'pointer' : 'default', 
+                                                        opacity: selectedUser ? 1 : 0.6, 
+                                                        display: 'flex', 
+                                                        alignItems: 'center', 
+                                                        transition: '0.2s', 
+                                                        '&:hover': selectedUser ? { background: 'var(--bg-panel)' } : {} 
+                                                    }}>
                                                         <Box sx={{ display: 'flex', alignItems: 'center', width: '100%' }}>
-                                                            <Checkbox checked={assignedRoleIds.includes(role._id.toString())} disabled={!selectedUser} color="primary" sx={{ p: 0, mr: 2 }} />
+                                                            <Checkbox 
+                                                                checked={assignedRoleIds.includes(role._id.toString())} 
+                                                                disabled={!selectedUser} 
+                                                                sx={{ 
+                                                                    p: 0, 
+                                                                    mr: 2,
+                                                                    '&.Mui-checked': { color: 'var(--color-primary)' },
+                                                                    '&.MuiCheckbox-root': { color: assignedRoleIds.includes(role._id.toString()) ? 'var(--color-primary)' : 'var(--text-secondary)' }
+                                                                }} 
+                                                            />
                                                             <Box sx={{ flex: 1 }}>
                                                                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                                                    <Typography variant="body2" fontWeight={700} color={assignedRoleIds.includes(role._id.toString()) ? 'primary.main' : 'inherit'}>{role.name}</Typography>
+                                                                    <Typography variant="body2" fontWeight={700} sx={{ color: assignedRoleIds.includes(role._id.toString()) ? 'var(--color-primary)' : 'var(--text-primary)' }}>{role.name}</Typography>
                                                                     {role.defaultRole && <Chip label="Identity Role" size="small" color="success" sx={{ height: 16, fontSize: '0.6rem', fontWeight: 800 }} />}
-                                                                    {isIdentityDefault && <Tooltip title="Recommended"><Star sx={{ fontSize: 16, color: '#fbc02d' }} /></Tooltip>}
+                                                                    {isIdentityDefault && <Tooltip title="Recommended"><Star sx={{ fontSize: 16, color: 'var(--color-primary)' }} /></Tooltip>}
                                                                 </Box>
                                                             </Box>
                                                         </Box>
@@ -1331,7 +1399,7 @@ const RoleManagement = () => {
                                 </Box>
                                 {selectedUser && (
                                     <Box sx={{ mt: 3, pt: 2, borderTop: '1px solid rgba(0,0,0,0.05)', position: 'sticky', bottom: 0, background: 'transparent', pb: 1 }}>
-                                        <Button fullWidth variant="contained" startIcon={<Save />} onClick={handleSaveAssignments} disabled={savingRoles} sx={{ borderRadius: '50px', py: 1.5, textTransform: 'none', fontWeight: 800, fontSize: '1rem', background: "linear-gradient(90deg, #004e92, #000428)", boxShadow: '0 4px 14px 0 rgba(0, 78, 146, 0.3)', transition: '0.3s', '&:hover': { background: "linear-gradient(90deg, #003a6d, #000214)", boxShadow: '0 6px 16px rgba(0, 78, 146, 0.4)' } }}>Save Role Assignments</Button>
+                                        <Button fullWidth variant="contained" startIcon={<Save />} onClick={handleSaveAssignments} disabled={savingRoles} sx={{ borderRadius: '50px', py: 1.5, textTransform: 'none', fontWeight: 800, fontSize: '1rem', background: "var(--gradient-primary)", boxShadow: '0 4px 14px 0 rgba(0, 78, 146, 0.3)', transition: '0.3s', '&:hover': { background: "var(--gradient-primary-hover)", boxShadow: '0 6px 16px rgba(0, 78, 146, 0.4)' } }}>Save Role Assignments</Button>
                                     </Box>
                                 )}
                             </Box>
@@ -1353,7 +1421,7 @@ const RoleManagement = () => {
                 </DialogContent>
                 <DialogActions sx={{ p: 2 }}>
                     <Button onClick={handleCloseRoleModal}>Cancel</Button>
-                    <Button variant="contained" onClick={handleSubmitRole} disabled={submitting} sx={{ borderRadius: '50px', textTransform: 'none', fontWeight: 700, background: "linear-gradient(90deg, #004e92, #000428)", boxShadow: '0 4px 12px rgba(0, 78, 146, 0.3)', px: 4, transition: '0.3s', '&:hover': { background: "linear-gradient(90deg, #003a6d, #000214)", boxShadow: '0 6px 16px rgba(0, 78, 146, 0.4)' } }}>Create Role</Button>
+                    <Button variant="contained" onClick={handleSubmitRole} disabled={submitting} sx={{ borderRadius: '50px', textTransform: 'none', fontWeight: 700, background: "var(--gradient-primary)", boxShadow: '0 4px 12px rgba(0, 78, 146, 0.3)', px: 4, transition: '0.3s', '&:hover': { background: "var(--gradient-primary-hover)", boxShadow: '0 6px 16px rgba(0, 78, 146, 0.4)' } }}>Create Role</Button>
                 </DialogActions>
             </Dialog>
 
@@ -1362,7 +1430,7 @@ const RoleManagement = () => {
                 {registrationView === "selection" ? (
                     <>
                         <DialogTitle component="div" sx={{ textAlign: 'center', pb: 0 }}>
-                            <Typography variant="h5" fontWeight={800} color="#1a237e">Add New Employee</Typography>
+                            <Typography variant="h5" fontWeight={800} color="var(--text-primary)">Add New Employee</Typography>
                             <Typography variant="body2" color="textSecondary">Select your preferred registration method</Typography>
                         </DialogTitle>
                         <DialogContent sx={{ mt: 3 }}>
@@ -1395,9 +1463,9 @@ const RoleManagement = () => {
                     </>
                 ) : (
                     <Box sx={{ display: 'flex', flexDirection: 'column' }}>
-                        <Box sx={{ p: 4, bgcolor: '#f8f9fa', borderBottom: '1px solid rgba(0,0,0,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <Box sx={{ p: 4, background: 'var(--bg-main)', borderBottom: '1px solid rgba(0,0,0,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                             <Box>
-                                <Typography variant="h5" fontWeight={800} color="#1a237e">Individual Registration</Typography>
+                                <Typography variant="h5" fontWeight={800} color="var(--text-primary)">Individual Registration</Typography>
                                 <Typography variant="body2" color="textSecondary">Register a new employee by providing their details manually</Typography>
                             </Box>
                             <IconButton onClick={() => setRegistrationView("selection")}><Close /></IconButton>
@@ -1421,12 +1489,12 @@ const RoleManagement = () => {
                             </Box>
                         </Box>
                         <Box sx={{ px: 4, pb: 4, display: 'flex', gap: 2 }}>
-                            <Button fullWidth variant="outlined" onClick={() => setRegistrationView("selection")} sx={{ borderRadius: '50px', py: 1.5, textTransform: 'none', fontWeight: 700, border: '1.5px solid #004e92', color: '#004e92', background: 'transparent' }}>Back</Button>
+                            <Button fullWidth variant="outlined" onClick={() => setRegistrationView("selection")} sx={{ borderRadius: '50px', py: 1.5, textTransform: 'none', fontWeight: 700, border: '1.5px solid var(--color-primary)', color: 'var(--color-primary)', background: 'transparent' }}>Back</Button>
                             <Button
                                 fullWidth variant="contained"
                                 onClick={handleIndividualSubmit}
                                 disabled={isIndividualSubmitting || !isEcapVerified}
-                                sx={{ borderRadius: '50px', py: 1.5, textTransform: 'none', fontWeight: 700, background: "linear-gradient(90deg, #004e92, #000428)", boxShadow: '0 4px 15px rgba(0, 78, 146, 0.3)', transition: '0.3s', '&:hover': { background: "linear-gradient(90deg, #003a6d, #000214)", boxShadow: '0 6px 16px rgba(0, 78, 146, 0.4)' } }}
+                                sx={{ borderRadius: '50px', py: 1.5, textTransform: 'none', fontWeight: 700, background: "var(--gradient-primary)", boxShadow: '0 4px 15px rgba(0, 78, 146, 0.3)', transition: '0.3s', '&:hover': { background: "var(--gradient-primary-hover)", boxShadow: '0 6px 16px rgba(0, 78, 146, 0.4)' } }}
                             >
                                 Register Employee
                             </Button>
@@ -1468,7 +1536,7 @@ const RoleManagement = () => {
                     )}
                 </DialogContent>
                 <DialogActions sx={{ p: 2 }}>
-                    <Button fullWidth variant="contained" onClick={() => setBulkResults(null)} sx={{ borderRadius: '50px', py: 1.2, background: "linear-gradient(90deg, #004e92, #000428)", fontWeight: 700, textTransform: 'none' }}>Done</Button>
+                    <Button fullWidth variant="contained" onClick={() => setBulkResults(null)} sx={{ borderRadius: '50px', py: 1.2, background: "var(--gradient-primary)", fontWeight: 700, textTransform: 'none' }}>Done</Button>
                 </DialogActions>
             </Dialog>
 

@@ -11,6 +11,12 @@
   border-top: 1px solid rgba(255, 255, 255, 0.3);
   position: relative;
   z-index: 10;
+  transition: background 0.3s, border-color 0.3s;
+}
+
+body.dark-mode .app-footer {
+  background: var(--bg-glass);
+  border-top: 1px solid var(--border-color);
 }
 
 /* When placed on white/light background (left panel) */
@@ -34,6 +40,11 @@
   font-weight: 600;
   color: #838383;
   font-family: 'Product Sans', sans-serif;
+  transition: color 0.3s;
+}
+
+body.dark-mode .footer-title {
+  color: var(--text-secondary);
 }
 
 .footer-developed {
@@ -41,6 +52,11 @@
   font-size: 0.72rem;
   color: #838383;
   font-family: 'Product Sans', sans-serif;
+  transition: color 0.3s;
+}
+
+body.dark-mode .footer-developed {
+  color: var(--text-secondary);
 }
 
 /* Footer on dark/blue background (default — right panel or standalone) */
