@@ -110,14 +110,14 @@ const AcademicStructure = () => {
     };
 
     const renderDepartmentsView = () => (
-        <Box sx={{ 
-            display: 'grid', 
-            gridTemplateColumns: { xs: '1fr', sm: '1fr', md: 'repeat(2, 1fr)', lg: 'repeat(3, 1fr)', xl: 'repeat(4, 1fr)' }, 
-            gap: 3 
+        <Box sx={{
+            display: 'grid',
+            gridTemplateColumns: { xs: '1fr', sm: '1fr', md: 'repeat(2, 1fr)', lg: 'repeat(3, 1fr)', xl: 'repeat(4, 1fr)' },
+            gap: 3
         }}>
-            <Card 
-                sx={{ 
-                    ...cardDrillStyle, 
+            <Card
+                sx={{
+                    ...cardDrillStyle,
                     border: "2px dashed var(--color-primary)",
                     background: "var(--bg-accent-1)",
                     display: "flex",
@@ -135,13 +135,13 @@ const AcademicStructure = () => {
                 onClick={() => openModal('department')}
             >
                 <Box sx={{ textAlign: "center" }}>
-                    <Box sx={{ 
-                        width: 54, 
-                        height: 54, 
-                        borderRadius: '50%', 
-                        border: '2px solid var(--color-primary)', 
-                        display: 'flex', 
-                        alignItems: 'center', 
+                    <Box sx={{
+                        width: 54,
+                        height: 54,
+                        borderRadius: '50%',
+                        border: '2px solid var(--color-primary)',
+                        display: 'flex',
+                        alignItems: 'center',
                         justifyContent: 'center',
                         margin: '0 auto 16px',
                         background: "var(--bg-glass)",
@@ -175,12 +175,12 @@ const AcademicStructure = () => {
                         <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mb: 2 }}>
                             <Chip label={dept.code} size="small" sx={{ fontWeight: 800, height: 22, fontSize: '0.7rem', borderRadius: '50px', background: "var(--gradient-primary)", color: '#fff' }} />
                             {dept.programIds?.map(prog => (
-                                <Chip 
-                                    key={prog._id} 
-                                    label={prog.name} 
-                                    size="small" 
-                                    variant="outlined" 
-                                    sx={{ fontWeight: 700, height: 22, fontSize: '0.65rem', borderRadius: '50px', border: '1.5px solid var(--color-primary)', color: 'var(--color-primary)' }} 
+                                <Chip
+                                    key={prog._id}
+                                    label={prog.name}
+                                    size="small"
+                                    variant="outlined"
+                                    sx={{ fontWeight: 700, height: 22, fontSize: '0.65rem', borderRadius: '50px', border: '1.5px solid var(--color-primary)', color: 'var(--color-primary)' }}
                                 />
                             ))}
                             {dept.hasStudents && (
@@ -209,10 +209,10 @@ const AcademicStructure = () => {
 
     const renderProgramsView = () => {
         return (
-            <Box sx={{ 
-                display: 'grid', 
-                gridTemplateColumns: { xs: '1fr', sm: '1fr', md: 'repeat(2, 1fr)', lg: 'repeat(3, 1fr)', xl: 'repeat(4, 1fr)' }, 
-                gap: 3 
+            <Box sx={{
+                display: 'grid',
+                gridTemplateColumns: { xs: '1fr', sm: '1fr', md: 'repeat(2, 1fr)', lg: 'repeat(3, 1fr)', xl: 'repeat(4, 1fr)' },
+                gap: 3
             }}>
                 <Card
                     sx={{
@@ -314,9 +314,9 @@ const AcademicStructure = () => {
                 </Box>
 
                 {/* Department Header Info */}
-                <Paper sx={{ 
-                    p: 3, 
-                    mb: 4, 
+                <Paper sx={{
+                    p: 3,
+                    mb: 4,
                     borderRadius: "20px",
                     background: "var(--bg-glass)",
                     backdropFilter: "blur(10px)",
@@ -341,10 +341,10 @@ const AcademicStructure = () => {
                     <AccountTree sx={{ color: 'var(--color-primary)' }} /> Department Branches
                 </Typography>
 
-                <Box sx={{ 
-                    display: 'grid', 
-                    gridTemplateColumns: { xs: '1fr', sm: '1fr', md: 'repeat(2, 1fr)', lg: 'repeat(3, 1fr)', xl: 'repeat(4, 1fr)' }, 
-                    gap: 3 
+                <Box sx={{
+                    display: 'grid',
+                    gridTemplateColumns: { xs: '1fr', sm: '1fr', md: 'repeat(2, 1fr)', lg: 'repeat(3, 1fr)', xl: 'repeat(4, 1fr)' },
+                    gap: 3
                 }}>
                     <Card
                         sx={{
@@ -420,11 +420,11 @@ const AcademicStructure = () => {
                                 </Box>
                                 <Box mt="auto" display="flex" alignItems="center" gap={1} flexWrap="wrap">
                                     {branch.programId && (
-                                        <Chip 
-                                            label={branch.programId.name} 
-                                            size="small" 
+                                        <Chip
+                                            label={branch.programId.name}
+                                            size="small"
                                             variant="outlined"
-                                            sx={{ fontWeight: 800, borderRadius: '50px', border: '1.5px solid var(--color-primary)', color: 'var(--color-primary)' }} 
+                                            sx={{ fontWeight: 800, borderRadius: '50px', border: '1.5px solid var(--color-primary)', color: 'var(--color-primary)' }}
                                         />
                                     )}
                                 </Box>
@@ -445,9 +445,9 @@ const AcademicStructure = () => {
             />
 
             {!selectedDepartment && (
-                <Paper sx={{ 
-                    mb: 4, 
-                    pt: 1, 
+                <Paper sx={{
+                    mb: 4,
+                    pt: 1,
                     px: 2,
                     background: "var(--bg-glass)",
                     backdropFilter: "blur(12px)",
@@ -455,8 +455,8 @@ const AcademicStructure = () => {
                     borderRadius: "16px",
                     boxShadow: "0 4px 20px rgba(0,0,0,0.05)"
                 }}>
-                    <Tabs 
-                        value={activeTab} 
+                    <Tabs
+                        value={activeTab}
                         onChange={(_, val) => setActiveTab(val)}
                         sx={{
                             '& .MuiTab-root': { color: 'var(--text-secondary)', fontWeight: 600 },
@@ -471,16 +471,16 @@ const AcademicStructure = () => {
             )}
 
             {selectedDepartment && (
-                <Box sx={{ 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    mb: 4, 
-                    gap: 1, 
-                    background: 'var(--bg-glass)', 
+                <Box sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    mb: 4,
+                    gap: 1,
+                    background: 'var(--bg-glass)',
                     backdropFilter: "blur(12px)",
                     WebkitBackdropFilter: "blur(12px)",
                     border: "1px solid var(--border-color)",
-                    p: 1, 
+                    p: 1,
                     borderRadius: "16px",
                     boxShadow: "0 4px 20px rgba(0,0,0,0.05)"
                 }}>
@@ -592,7 +592,7 @@ const AcademicStructure = () => {
                             fullWidth
                             value={modal.data.name || ''}
                             onChange={(e) => setModal({ ...modal, data: { ...modal.data, name: e.target.value } })}
-                            disabled={modal.type === 'branch'}
+                            //disabled={modal.type === 'branch'}
                             helperText={modal.type === 'branch' ? `Branch name is locked to Department: ${selectedDepartment?.name}` : ""}
                         />
 

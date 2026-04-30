@@ -134,7 +134,7 @@ const Studentuploads = () => {
             const res = await API.post("/api/student-data/assign", {
                 studentIds: selectedIds,
                 deptId: selectedDept,
-                semester: selectedSem
+
             });
             if (res.data.success) {
                 setIsProceeding(false);
@@ -868,7 +868,7 @@ const Studentuploads = () => {
                                         )}
                                     </Select>
                                 </FormControl>
-
+                                {/* 
                                 <FormControl variant="standard" sx={{ minWidth: 200 }}>
                                     <InputLabel id="sem-select-label">Select Semester</InputLabel>
                                     <Select
@@ -881,13 +881,13 @@ const Studentuploads = () => {
                                             <MenuItem key={i + 1} value={i + 1}>Semester {i + 1}</MenuItem>
                                         ))}
                                     </Select>
-                                </FormControl>
+                                </FormControl> */}
                             </Box>
 
                             <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
                                 <ActionButton
                                     onClick={handleConfirmAssignment}
-                                    disabled={!selectedDept || !selectedSem}
+                                    disabled={!selectedDept}
                                     sx={{
                                         borderRadius: '50px',
                                         px: 4,

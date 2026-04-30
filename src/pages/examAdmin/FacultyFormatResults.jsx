@@ -145,6 +145,7 @@ export default function FacultyFormatResults() {
       "semester",
       "courseName",
       "courseCode",
+      "courseType",
       "section",
       "noOfCos",
       "noOfCosAttained",
@@ -160,6 +161,7 @@ export default function FacultyFormatResults() {
       "1",
       "Mathematics",
       "MA101",
+      "THEORY",
       "A",
       "5",
       "4",
@@ -214,13 +216,13 @@ export default function FacultyFormatResults() {
               disableUnderline
               value={selectedYearId}
               onChange={(e) => setSelectedYearId(e.target.value)}
-              sx={{ 
-                  ml: 1.5, 
-                  minWidth: 120, 
-                  color: "var(--text-primary)",
-                  fontWeight: 600,
-                  fontSize: 14,
-                  '& .MuiSelect-icon': { color: 'var(--text-primary)', opacity: 0.7 }
+              sx={{
+                ml: 1.5,
+                minWidth: 120,
+                color: "var(--text-primary)",
+                fontWeight: 600,
+                fontSize: 14,
+                '& .MuiSelect-icon': { color: 'var(--text-primary)', opacity: 0.7 }
               }}
             >
               {academicYears.map((year) => (
@@ -238,13 +240,13 @@ export default function FacultyFormatResults() {
               disableUnderline
               value={selectedSemId}
               onChange={(e) => setSelectedSemId(e.target.value)}
-              sx={{ 
-                  ml: 1.5, 
-                  minWidth: 80, 
-                  color: "var(--text-primary)",
-                  fontWeight: 600,
-                  fontSize: 14,
-                  '& .MuiSelect-icon': { color: 'var(--text-primary)', opacity: 0.7 }
+              sx={{
+                ml: 1.5,
+                minWidth: 80,
+                color: "var(--text-primary)",
+                fontWeight: 600,
+                fontSize: 14,
+                '& .MuiSelect-icon': { color: 'var(--text-primary)', opacity: 0.7 }
               }}
             >
               {semesters.map((sem) => (
@@ -335,6 +337,8 @@ export default function FacultyFormatResults() {
               "Faculty Name",
               "Subject Name",
               "Course Code",
+              "Type",
+              "Section",
               "Semester",
               "Appeared",
               "Passed",
@@ -376,6 +380,20 @@ export default function FacultyFormatResults() {
               {
                 value: r.courseCode,
                 display: <Box>{r.courseCode}</Box>,
+              },
+
+              {
+                value: r.courseType,
+                display: (
+                  <Box sx={{ fontWeight: 600, color: "#0b5299" }}>
+                    {r.courseType}
+                  </Box>
+                ),
+              },
+
+              {
+                value: r.section,
+                display: <Box>{r.section || "-"}</Box>,
               },
 
               {
