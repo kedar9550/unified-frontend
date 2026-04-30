@@ -18,11 +18,9 @@ import { useAuth } from "../../context/AuthContext";
 export default function Teaching() {
   const { user } = useAuth();
 
-  // ── Academic Year / Semester state ──────────────────────────────
+  // ── Academic Year state ──────────────────────────────────────────
   const [academicYears, setAcademicYears] = useState([]);
-  const [semesterTypes, setSemesterTypes] = useState([]);
   const [selectedYearId, setSelectedYearId] = useState("");
-  const [selectedSemTypeId, setSelectedSemTypeId] = useState("");
 
   // ── Results state ────────────────────────────────────────────────
   const [results, setResults] = useState([]);
@@ -64,35 +62,16 @@ export default function Teaching() {
     fetchYears();
   }, []);
 
-  // 2. Fetch Semester Types on mount (or when needed)
+  // 2. Fetch Results for this faculty when filters change
   useEffect(() => {
-    const fetchSemesterTypes = async () => {
-      try {
-        const res = await API.get("/api/semester-types");
-        const sems = res.data.data || [];
-        setSemesterTypes(sems);
-        if (sems.length > 0) {
-          // Default to the first one or a specific active one if we had that logic
-          setSelectedSemTypeId(sems[0]._id);
-        }
-      } catch (err) {
-        console.error("Error fetching semester types:", err);
-      }
-    };
-    fetchSemesterTypes();
-  }, []);
-
-  // 3. Fetch Results for this faculty when filters change
-  useEffect(() => {
-    if (!selectedYearId || !selectedSemTypeId || !user?.institutionId) return;
+    if (!selectedYearId || !user?.institutionId) return;
     const fetchResults = async () => {
       setLoading(true);
       try {
         const res = await API.get("/api/faculty-subject-results", {
           params: {
-            facultyId: user?.institutionId, // institutional ID e.g. FAC2024001
+            facultyId: user?.institutionId,
             academicYear: selectedYearId,
-            semester: selectedSemTypeId,
           },
         });
         setResults(res.data || []);
@@ -110,7 +89,6 @@ export default function Teaching() {
           params: {
             facultyId: user?.institutionId,
             academicYear: selectedYearId,
-            semesterTypeId: selectedSemTypeId,
           },
         });
         setProctorStats(res.data);
@@ -128,7 +106,6 @@ export default function Teaching() {
           params: {
             facultyId: user?.institutionId,
             academicYear: selectedYearId,
-            semester: selectedSemTypeId,
           },
         });
         setFeedbackResults(res.data || []);
@@ -142,18 +119,15 @@ export default function Teaching() {
     const fetchCoAttainmentStats = async () => {
       setCoAttainmentLoading(true);
       try {
-        // Placeholder API endpoint
-        const res = await API.get("/api/co-attainment", {
+        const res = await API.get("/api/faculty-subject-results/co-attainment", {
           params: {
             facultyId: user?.institutionId,
             academicYear: selectedYearId,
-            semester: selectedSemTypeId,
           },
         });
         setCoAttainmentResults(res.data || []);
       } catch (err) {
         console.error("Error fetching CO attainment stats:", err);
-        // Fallback to empty for now
         setCoAttainmentResults([]);
       } finally {
         setCoAttainmentLoading(false);
@@ -164,7 +138,7 @@ export default function Teaching() {
     fetchProctorStats();
     fetchFeedbackStats();
     fetchCoAttainmentStats();
-  }, [selectedYearId, selectedSemTypeId, user?.institutionId]);
+  }, [selectedYearId, user?.institutionId]);
 
   // ── CSV Upload Handler ────────────────────────────────────────────
   const handleCSVUploadClick = () => {
@@ -186,7 +160,6 @@ export default function Teaching() {
       const formData = new FormData();
       formData.append("file", file);
       formData.append("academicYearId", selectedYearId);
-      formData.append("semesterTypeId", selectedSemTypeId);
 
       // TODO: Update this to your actual CSV upload endpoint
       const res = await API.post("/api/faculty-subject-results/upload-csv", formData, {
@@ -200,7 +173,6 @@ export default function Teaching() {
         params: {
           facultyId: user?.institutionId,
           academicYear: selectedYearId,
-          semester: selectedSemTypeId,
         },
       });
       setResults(refreshRes.data || []);
@@ -219,7 +191,6 @@ export default function Teaching() {
 
   // ── Derive selected labels for display ──────────────────────────
   const selectedYear = academicYears.find((y) => y._id === selectedYearId);
-  const selectedSem = semesterTypes.find((s) => s._id === selectedSemTypeId);
 
   // ── Build DataTable rows ─────────────────────────────────────────
   const columns = [
@@ -240,13 +211,13 @@ export default function Teaching() {
     },
 
     {
-      value: r.subjectName,
-      display: <Box sx={{ fontWeight: 500 }}>{r.subjectName}</Box>,
+      value: r.courseName,
+      display: <Box sx={{ fontWeight: 500 }}>{r.courseName}</Box>,
     },
 
     {
-      value: r.subjectCode,
-      display: <Box>{r.subjectCode}</Box>,
+      value: r.courseCode,
+      display: <Box>{r.courseCode}</Box>,
     },
 
     {
@@ -325,14 +296,9 @@ export default function Teaching() {
   const coAttainmentColumns = [
     "S.NO",
     "COURSE NAME",
-    "COURSE ID",
-    "CO1",
-    "CO2",
-    "CO3",
-    "CO4",
-    "CO5",
-    "CO6",
-    "AVERAGE",
+    "SEM - BRANCH - SEC",
+    "NO. OF COs",
+    "NO. OF COs ATTAINMENT TARGET REACHED",
   ];
 
   const coAttainmentRows = coAttainmentResults.map((r, i) => [
@@ -341,22 +307,35 @@ export default function Teaching() {
       display: <Box sx={{ fontWeight: 600 }}>{i + 1}</Box>,
     },
     {
-      value: r.subjectName,
-      display: <Box sx={{ fontWeight: 500 }}>{r.subjectName}</Box>,
+      value: r.courseName,
+      display: (
+        <Box>
+          <Box sx={{ fontWeight: 500 }}>{r.courseName}</Box>
+          <Box sx={{ fontSize: 11, color: "#999" }}>{r.courseCode}</Box>
+        </Box>
+      ),
     },
     {
-      value: r.subjectCode,
-      display: <Box>{r.subjectCode}</Box>,
+      value: `${r.semester}-${r.branch}-${r.section}`,
+      display: (
+        <Box>
+          {r.semester && <Box component="span">{r.semester}</Box>}
+          {r.branch && <Box component="span"> — {r.branch}</Box>}
+          {r.section && <Box component="span"> — {r.section}</Box>}
+        </Box>
+      ),
     },
-    { value: r.co1, display: <Box>{r.co1 || "—"}</Box> },
-    { value: r.co2, display: <Box>{r.co2 || "—"}</Box> },
-    { value: r.co3, display: <Box>{r.co3 || "—"}</Box> },
-    { value: r.co4, display: <Box>{r.co4 || "—"}</Box> },
-    { value: r.co5, display: <Box>{r.co5 || "—"}</Box> },
-    { value: r.co6, display: <Box>{r.co6 || "—"}</Box> },
     {
-      value: r.average,
-      display: <Box sx={{ fontWeight: 600, color: "#0b5299" }}>{r.average || "—"}</Box>,
+      value: r.noOfCos,
+      display: <Box sx={{ fontWeight: 600, textAlign: "center" }}>{r.noOfCos}</Box>,
+    },
+    {
+      value: r.noOfCosAttained,
+      display: (
+        <Box sx={{ fontWeight: 600, color: r.noOfCosAttained >= r.noOfCos ? "#10b981" : "#f59e0b", textAlign: "center" }}>
+          {r.noOfCosAttained} / {r.noOfCos}
+        </Box>
+      ),
     },
   ]);
 
@@ -423,30 +402,8 @@ export default function Teaching() {
           </Select>
         </Box>
 
-        {/* Semester */}
-        <Box sx={filterBox}>
-          <Typography
-            sx={{ fontSize: 13, fontWeight: 600, color: "#555", mr: 1 }}
-          >
-            Semester
-          </Typography>
-          <Select
-            variant="standard"
-            disableUnderline
-            value={selectedSemTypeId}
-            onChange={(e) => setSelectedSemTypeId(e.target.value)}
-            sx={{ minWidth: 80, fontSize: 14 }}
-          >
-            {semesterTypes.map((s) => (
-              <MenuItem key={s._id} value={s._id}>
-                {s.name}
-              </MenuItem>
-            ))}
-          </Select>
-        </Box>
-
-        {/* Active label pill */}
-        {selectedYear && selectedSem && (
+        {/* Active year pill */}
+        {selectedYear && (
           <Box
             sx={{
               px: 3,
@@ -460,7 +417,7 @@ export default function Teaching() {
               letterSpacing: "0.5px"
             }}
           >
-            {selectedYear.year} — {selectedSem.name}
+            {selectedYear.year} — All Semesters
           </Box>
         )}
       </Box>
@@ -628,9 +585,7 @@ export default function Teaching() {
         open={discOpen}
         onClose={(refresh) => setDiscOpen(false)}
         academicYears={academicYears}
-        semesterTypes={semesterTypes}
         defaultYearId={selectedYearId}
-        defaultSemesterTypeId={selectedSemTypeId}
       />
     </>
   );
