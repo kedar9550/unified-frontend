@@ -136,24 +136,38 @@ export default function FacultyFormatResults() {
     }
   };
 
-  // 5. Download Template
   const downloadTemplate = () => {
     const headers = [
       "facultyId",
       "facultyName",
       "academicYear",
       "semester",
-      "subjectName",
-      "subjectCode",
+      "courseName",
+      "courseCode",
+      "section",
+      "noOfCos",
+      "noOfCosAttained",
       "branch",
       "appeared",
       "passed",
       "passPercentage",
     ];
-    const csvContent =
-      headers.join(",") +
-      "\n" +
-      "FAC123,John Doe,2024-2025,1,Mathematics,MA101,CSE,60,55,91.67\n";
+    const sampleRow = [
+      "FAC123",
+      "John Doe",
+      "2024-2025",
+      "1",
+      "Mathematics",
+      "MA101",
+      "A",
+      "5",
+      "4",
+      "CSE",
+      "60",
+      "55",
+      "91.67",
+    ];
+    const csvContent = headers.join(",") + "\n" + sampleRow.join(",") + "\n";
     const blob = new Blob([csvContent], { type: "text/csv" });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -293,27 +307,38 @@ export default function FacultyFormatResults() {
                     <Avatar>{r.facultyName?.charAt(0)}</Avatar>
                     <Box>
                       <Box sx={{ fontWeight: 600 }}>{r.facultyName}</Box>
-                      {/* <Box sx={{ fontSize: 12, color: "#777" }}>
-                        {r.subjectName}
-                      </Box> */}
                     </Box>
                   </Box>
                 ),
               },
 
               {
-                value: r.subjectName,
-                display: <Box>{r.subjectName}</Box>,
+                value: r.courseName,
+                display: (
+                  <Box>
+                    <Box>{r.courseName}</Box>
+                    {r.section && (
+                      <Box sx={{ fontSize: 11, color: "#999" }}>
+                        Sec: {r.section}
+                      </Box>
+                    )}
+                  </Box>
+                ),
               },
 
               {
-                value: r.subjectCode,
-                display: <Box>{r.subjectCode}</Box>,
+                value: r.courseCode,
+                display: <Box>{r.courseCode}</Box>,
               },
 
               {
                 value: r.semester,
-                display: <Box>{r.semester}</Box>,
+                display: (
+                  <Box>
+                    <Box>{r.semester}</Box>
+                    <Box sx={{ fontSize: 11, color: "#999" }}>{r.semesterType}</Box>
+                  </Box>
+                ),
               },
 
               {
