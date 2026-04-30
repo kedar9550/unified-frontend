@@ -11,6 +11,7 @@ import {
   CircularProgress,
   IconButton,
   Tooltip,
+  Typography,
 } from "@mui/material";
 import { useEffect, useState, useRef } from "react";
 import API from "../../api/axios";
@@ -191,12 +192,30 @@ export default function FacultyFormatResults() {
           <Box sx={{ display: "flex", gap: 2 }}>
             <ActionButton
               onClick={downloadTemplate}
-              sx={{ background: "linear-gradient(135deg, #6a11cb, #2575fc)" }}
+              sx={{
+                background: "linear-gradient(90deg, #004e92, #000428)",
+                boxShadow: "0 4px 15px rgba(0, 78, 146, 0.2)",
+                "&:hover": {
+                  background: "linear-gradient(90deg, #003a6d, #000214)",
+                  boxShadow: "0 6px 20px rgba(0, 78, 146, 0.35)",
+                }
+              }}
             >
               <DownloadIcon sx={{ mr: 1 }} /> Template
             </ActionButton>
 
-            <ActionButton onClick={handleUploadClick} disabled={uploading}>
+            <ActionButton
+              onClick={handleUploadClick}
+              disabled={uploading}
+              sx={{
+                background: "linear-gradient(90deg, #004e92, #000428)",
+                boxShadow: "0 4px 15px rgba(0, 78, 146, 0.2)",
+                "&:hover": {
+                  background: "linear-gradient(90deg, #003a6d, #000214)",
+                  boxShadow: "0 6px 20px rgba(0, 78, 146, 0.35)",
+                }
+              }}
+            >
               <UploadIcon sx={{ mr: 1 }} /> Upload CSV
             </ActionButton>
           </Box>
@@ -266,6 +285,13 @@ export default function FacultyFormatResults() {
           <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>
             <CircularProgress />
           </Box>
+        ) : results.length === 0 ? (
+          <Box sx={{ textAlign: "center", py: 10, color: "#aaa" }}>
+            <Typography fontSize={40}>📊</Typography>
+            <Typography mt={1} fontWeight={600} color="#555">
+              No results found
+            </Typography>
+          </Box>
         ) : (
           <DataTable
             key={`${selectedYearId}-${selectedSemId}`}
@@ -293,9 +319,6 @@ export default function FacultyFormatResults() {
                     <Avatar>{r.facultyName?.charAt(0)}</Avatar>
                     <Box>
                       <Box sx={{ fontWeight: 600 }}>{r.facultyName}</Box>
-                      {/* <Box sx={{ fontSize: 12, color: "#777" }}>
-                        {r.subjectName}
-                      </Box> */}
                     </Box>
                   </Box>
                 ),

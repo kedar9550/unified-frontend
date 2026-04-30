@@ -237,34 +237,6 @@ const Sidebar = ({ mobileOpen, onDrawerToggle }) => {
 
       <Box sx={{ height: "1px", background: "#f1f5f9", my: 2, mx: -2 }} />
 
-      <Box
-        onClick={logout}
-        sx={{
-          borderRadius: "12px",
-          transition: "all 0.2s ease",
-          background: "#fff1f1",
-          border: "1px solid #fee2e2",
-          mb: 0.5,
-          mt: "auto",
-          height: "48px",
-          display: "flex",
-          alignItems: "center",
-          px: 2,
-          cursor: "pointer",
-          gap: 2,
-          color: "#dc2626",
-          "&:hover": {
-            background: "#fef2f2",
-            borderColor: "#fecaca",
-          }
-        }}
-      >
-        <Logout fontSize="small" sx={{ opacity: 0.9 }} />
-        <Typography sx={{ fontSize: "0.875rem", fontWeight: 600, letterSpacing: "0.3px" }}>
-          Logout
-        </Typography>
-      </Box>
-
       {/* Weather Widget */}
       <Box
         sx={{

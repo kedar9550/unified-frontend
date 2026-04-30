@@ -140,7 +140,7 @@ export default function DataTable({ columns, rows, toolbarLeft }) {
           >
             <TableRow
               sx={{
-                background: "linear-gradient(135deg, #1e88e5, #1565c0)", // Spans the entire row
+                background: "linear-gradient(90deg, #004e92, #000428)", // Premium dark blue gradient
                 borderRadius: "12px 12px 0 0",
               }}
             >

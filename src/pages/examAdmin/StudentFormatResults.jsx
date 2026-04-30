@@ -7,6 +7,7 @@ import {
   MenuItem,
   Select,
   CircularProgress,
+  Typography,
 } from "@mui/material";
 import { useEffect, useState, useRef } from "react";
 import API from "../../api/axios";
@@ -121,7 +122,7 @@ export default function StudentFormatResults() {
       "sgpa",
       "cgpa",
     ];
-    
+
     // Sample row
     const sampleRow = [
       "STU001",
@@ -190,12 +191,30 @@ export default function StudentFormatResults() {
         <Box sx={{ display: "flex", gap: 2, ml: "auto" }}>
           <ActionButton
             onClick={downloadTemplate}
-            sx={{ background: "linear-gradient(135deg, #6a11cb, #2575fc)" }}
+            sx={{
+              background: "linear-gradient(90deg, #004e92, #000428)",
+              boxShadow: "0 4px 15px rgba(0, 78, 146, 0.2)",
+              "&:hover": {
+                background: "linear-gradient(90deg, #003a6d, #000214)",
+                boxShadow: "0 6px 20px rgba(0, 78, 146, 0.35)",
+              }
+            }}
           >
             <DownloadIcon sx={{ mr: 1 }} /> Template
           </ActionButton>
 
-          <ActionButton onClick={handleUploadClick} disabled={uploading}>
+          <ActionButton
+            onClick={handleUploadClick}
+            disabled={uploading}
+            sx={{
+              background: "linear-gradient(90deg, #004e92, #000428)",
+              boxShadow: "0 4px 15px rgba(0, 78, 146, 0.2)",
+              "&:hover": {
+                background: "linear-gradient(90deg, #003a6d, #000214)",
+                boxShadow: "0 6px 20px rgba(0, 78, 146, 0.35)",
+              }
+            }}
+          >
             <UploadIcon sx={{ mr: 1 }} /> Upload CSV
           </ActionButton>
         </Box>
@@ -218,78 +237,91 @@ export default function StudentFormatResults() {
       >
         <SectionHeader title="Student Results" />
 
-        <DataTable
-          key={selectedProgramId}
-          columns={[
-            "Student ID",
-            "Student Name",
-            "Subject Code",
-            "Subject Name",
-            "Program",
-            "Branch",
-            "Semester",
-            "Exam Year",
-            "Type",
-            "Subject Type",
-            "Grade",
-            "SGPA",
-            "CGPA",
-          ]}
-          rows={results.map((r) => [
-            {
-              value: r.studentId,
-              display: <Box sx={{ fontWeight: 600 }}>{r.studentId}</Box>,
-            },
-            {
-              value: r.studentName,
-              display: <Box>{r.studentName || "—"}</Box>,
-            },
-            {
-              value: r.subjectCode,
-              display: <Box sx={{ fontWeight: 500 }}>{r.subjectCode}</Box>,
-            },
-            {
-              value: r.subjectName,
-              display: <Box>{r.subjectName || "—"}</Box>,
-            },
-            {
-              value: r.programId?.name,
-              display: <Box>{r.programId?.name || "—"}</Box>,
-            },
-            {
-              value: r.branchId?.code,
-              display: <Box>{r.branchId?.code || "—"}</Box>,
-            },
-            {
-              value: r.semester,
-              display: <Box>{r.semester || "—"}</Box>,
-            },
-            {
-              value: r.examYear,
-              display: <Box>{r.examYear}</Box>,
-            },
-            {
-              value: r.resultType,
-              display: <Box>{r.resultType}</Box>,
-            },
-            {
-              value: r.subjectType,
-              display: <Box>{r.subjectType || "—"}</Box>,
-            },
-            {
-              value: r.grade,
-              display: <Box sx={{ fontWeight: 600 }}>{r.grade}</Box>,
-            },
-            {
-              value: r.sgpa,
-              display: <Box>{r.sgpa}</Box>,
-            },
-            {
-              value: r.cgpa,
-              display: <Box>{r.cgpa}</Box>,
-            },
-          ])}
-        />
+        {loading ? (
+          <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>
+            <CircularProgress />
+          </Box>
+        ) : results.length === 0 ? (
+          <Box sx={{ textAlign: "center", py: 10, color: "#aaa" }}>
+            <Typography fontSize={40}>📊</Typography>
+            <Typography mt={1} fontWeight={600} color="#555">
+              No results found
+            </Typography>
+          </Box>
+        ) : (
+          <DataTable
+            key={selectedProgramId}
+            columns={[
+              "Student ID",
+              "Student Name",
+              "Subject Code",
+              "Subject Name",
+              "Program",
+              "Branch",
+              "Semester",
+              "Exam Year",
+              "Type",
+              "Subject Type",
+              "Grade",
+              "SGPA",
+              "CGPA",
+            ]}
+            rows={results.map((r) => [
+              {
+                value: r.studentId,
+                display: <Box sx={{ fontWeight: 600 }}>{r.studentId}</Box>,
+              },
+              {
+                value: r.studentName,
+                display: <Box>{r.studentName || "—"}</Box>,
+              },
+              {
+                value: r.subjectCode,
+                display: <Box sx={{ fontWeight: 500 }}>{r.subjectCode}</Box>,
+              },
+              {
+                value: r.subjectName,
+                display: <Box>{r.subjectName || "—"}</Box>,
+              },
+              {
+                value: r.programId?.name,
+                display: <Box>{r.programId?.name || "—"}</Box>,
+              },
+              {
+                value: r.branchId?.code,
+                display: <Box>{r.branchId?.code || "—"}</Box>,
+              },
+              {
+                value: r.semester,
+                display: <Box>{r.semester || "—"}</Box>,
+              },
+              {
+                value: r.examYear,
+                display: <Box>{r.examYear}</Box>,
+              },
+              {
+                value: r.resultType,
+                display: <Box>{r.resultType}</Box>,
+              },
+              {
+                value: r.subjectType,
+                display: <Box>{r.subjectType || "—"}</Box>,
+              },
+              {
+                value: r.grade,
+                display: <Box sx={{ fontWeight: 600 }}>{r.grade}</Box>,
+              },
+              {
+                value: r.sgpa,
+                display: <Box>{r.sgpa}</Box>,
+              },
+              {
+                value: r.cgpa,
+                display: <Box>{r.cgpa}</Box>,
+              },
+            ])}
+          />
+        )}
       </Box>
     </>
   );

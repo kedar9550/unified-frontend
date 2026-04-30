@@ -351,7 +351,7 @@ const Studentuploads = () => {
                 </DialogContent>
                 <DialogActions>
                     <Button onClick={() => setIsAddModalOpen(false)} disabled={addingStudent}>Cancel</Button>
-                    <Button onClick={handleAddStudent} disabled={addingStudent || !addRollNo} variant="contained" color="primary">
+                    <Button onClick={handleAddStudent} disabled={addingStudent || !addRollNo} variant="contained" sx={{ borderRadius: '50px', background: "linear-gradient(90deg, #004e92, #000428)", px: 4, fontWeight: 700, textTransform: 'none' }}>
                         {addingStudent ? <CircularProgress size={24} color="inherit" /> : "Add Student"}
                     </Button>
                 </DialogActions>
@@ -379,7 +379,7 @@ const Studentuploads = () => {
                 </DialogContent>
                 <DialogActions>
                     <Button onClick={() => setIsUpdateModalOpen(false)} disabled={addingStudent}>Cancel</Button>
-                    <Button onClick={handleAddStudent} disabled={addingStudent || !addRollNo} variant="contained" color="primary">
+                    <Button onClick={handleAddStudent} disabled={addingStudent || !addRollNo} variant="contained" sx={{ borderRadius: '50px', background: "linear-gradient(90deg, #004e92, #000428)", px: 4, fontWeight: 700, textTransform: 'none' }}>
                         {addingStudent ? <CircularProgress size={24} color="inherit" /> : "Update Student"}
                     </Button>
                 </DialogActions>
@@ -489,12 +489,13 @@ const Studentuploads = () => {
                             startIcon={<DownloadIcon />}
                             onClick={handleTemplateDownload}
                             sx={{
-                                borderRadius: "12px",
+                                borderRadius: "50px",
                                 textTransform: "none",
-                                fontWeight: 600,
-                                borderColor: "rgba(11, 82, 153, 0.3)",
-                                color: "#0b5299",
-                                "&:hover": { background: "rgba(11, 82, 153, 0.05)", borderColor: "#0b5299" }
+                                fontWeight: 700,
+                                border: "1.5px solid #004e92",
+                                background: "transparent",
+                                color: "#004e92",
+                                "&:hover": { background: "rgba(0, 78, 146, 0.05)" }
                             }}
                         >
                             Download Template
@@ -508,16 +509,16 @@ const Studentuploads = () => {
                             onClick={() => { setIsUploadOptionsOpen(!isUploadOptionsOpen); setIsUpdateOptionsOpen(false); }}
                             sx={{
                                 flex: 1,
-                                borderRadius: "12px",
+                                borderRadius: "50px",
                                 textTransform: "none",
-                                py: 1.5,
+                                py: 1.2,
                                 fontWeight: 700,
-                                background: "linear-gradient(135deg, #0b5299, #1e88e5)",
-                                boxShadow: "0 4px 12px rgba(11, 82, 153, 0.2)",
+                                background: "linear-gradient(90deg, #004e92, #000428)",
+                                boxShadow: "0 4px 12px rgba(0, 78, 146, 0.3)",
                                 transition: '0.3s',
                                 '&:hover': {
-                                    background: "linear-gradient(135deg, #09437d, #1976d2)",
-                                    boxShadow: "0 6px 16px rgba(11, 82, 153, 0.3)",
+                                    background: "linear-gradient(90deg, #003a6d, #000214)",
+                                    boxShadow: "0 6px 16px rgba(0, 78, 146, 0.4)",
                                 }
                             }}
                         >
@@ -530,16 +531,16 @@ const Studentuploads = () => {
                             disabled={updatingBulk}
                             sx={{
                                 flex: 1,
-                                borderRadius: "12px",
+                                borderRadius: "50px",
                                 textTransform: "none",
-                                py: 1.5,
+                                py: 1.2,
                                 fontWeight: 700,
-                                background: "rgba(15, 92, 187, 0.9)",
-                                backdropFilter: "blur(10px) saturate(150%)",
-                                border: "1px solid rgba(219, 219, 219, 0.9)",
+                                background: "linear-gradient(90deg, #004e92, #000428)",
+                                boxShadow: "0 4px 12px rgba(0, 78, 146, 0.3)",
                                 transition: '0.3s',
                                 '&:hover': {
-                                    background: "rgba(54, 138, 241, 0.9)",
+                                    background: "linear-gradient(90deg, #003a6d, #000214)",
+                                    boxShadow: "0 6px 16px rgba(0, 78, 146, 0.4)",
                                 }
                             }}
                         >
@@ -573,12 +574,13 @@ const Studentuploads = () => {
                                     startIcon={<UploadIcon />}
                                     onClick={handleUploadClick}
                                     sx={{
-                                        borderRadius: "10px",
+                                        borderRadius: "50px",
                                         textTransform: "none",
-                                        fontWeight: 600,
-                                        borderColor: "rgba(11, 82, 153, 0.2)",
-                                        background: "rgba(255,255,255,0.8)",
-                                        "&:hover": { background: "#fff", borderColor: "#0b5299" }
+                                        fontWeight: 700,
+                                        border: "1.5px solid #004e92",
+                                        background: "transparent",
+                                        color: "#004e92",
+                                        "&:hover": { background: "rgba(0, 78, 146, 0.05)" }
                                     }}
                                 >
                                     Bulk Upload
@@ -589,12 +591,13 @@ const Studentuploads = () => {
                                     startIcon={<PersonAddIcon />}
                                     onClick={() => setIsAddModalOpen(true)}
                                     sx={{
-                                        borderRadius: "10px",
+                                        borderRadius: "50px",
                                         textTransform: "none",
-                                        fontWeight: 600,
-                                        borderColor: "rgba(11, 82, 153, 0.2)",
-                                        background: "rgba(255,255,255,0.8)",
-                                        "&:hover": { background: "#fff", borderColor: "#0b5299" }
+                                        fontWeight: 700,
+                                        border: "1.5px solid #004e92",
+                                        background: "transparent",
+                                        color: "#004e92",
+                                        "&:hover": { background: "rgba(0, 78, 146, 0.05)" }
                                     }}
                                 >
                                     Create Individual
@@ -628,12 +631,13 @@ const Studentuploads = () => {
                                     startIcon={<SyncIcon />}
                                     onClick={handleBulkSyncAll}
                                     sx={{
-                                        borderRadius: "10px",
+                                        borderRadius: "50px",
                                         textTransform: "none",
-                                        fontWeight: 600,
-                                        borderColor: "rgba(11, 82, 153, 0.2)",
-                                        background: "rgba(255,255,255,0.8)",
-                                        "&:hover": { background: "#fff", borderColor: "#0b5299" }
+                                        fontWeight: 700,
+                                        border: "1.5px solid #004e92",
+                                        background: "transparent",
+                                        color: "#004e92",
+                                        "&:hover": { background: "rgba(0, 78, 146, 0.05)" }
                                     }}
                                 >
                                     Bulk Update
@@ -644,12 +648,13 @@ const Studentuploads = () => {
                                     startIcon={<SyncIcon />}
                                     onClick={() => setIsUpdateModalOpen(true)}
                                     sx={{
-                                        borderRadius: "10px",
+                                        borderRadius: "50px",
                                         textTransform: "none",
-                                        fontWeight: 600,
-                                        borderColor: "rgba(11, 82, 153, 0.2)",
-                                        background: "rgba(255,255,255,0.8)",
-                                        "&:hover": { background: "#fff", borderColor: "#0b5299" }
+                                        fontWeight: 700,
+                                        border: "1.5px solid #004e92",
+                                        background: "transparent",
+                                        color: "#004e92",
+                                        "&:hover": { background: "rgba(0, 78, 146, 0.05)" }
                                     }}
                                 >
                                     Individual Update
@@ -695,7 +700,11 @@ const Studentuploads = () => {
                                         px: 2,
                                         minHeight: "32px",
                                         fontSize: "0.75rem",
-                                        background: "linear-gradient(135deg, #6a11cb, #2575fc)"
+                                        background: "transparent",
+                                        border: "1.5px solid #004e92",
+                                        color: "#004e92",
+                                        borderRadius: '50px',
+                                        "&:hover": { background: "rgba(0, 78, 146, 0.05)", border: "1.5px solid #004e92" }
                                     }}
                                 >
                                     <DownloadIcon sx={{ mr: 1, fontSize: "1rem" }} /> Download
@@ -735,8 +744,9 @@ const Studentuploads = () => {
                                     disabled={syncing}
                                     sx={{
                                         px: 2,
-                                        background: "linear-gradient(135deg, #43a047, #66bb6a)",
-                                        "&:hover": { background: "linear-gradient(135deg, #388e3c, #4caf50)" }
+                                        borderRadius: '50px',
+                                        background: "linear-gradient(90deg, #43a047, #1b5e20)",
+                                        "&:hover": { background: "linear-gradient(90deg, #388e3c, #1b5e20)" }
                                     }}
                                 >
                                     {syncing ? <CircularProgress size={20} color="inherit" sx={{ mr: 1 }} /> : <SyncIcon sx={{ mr: 1 }} />}
@@ -748,8 +758,9 @@ const Studentuploads = () => {
                                         onClick={() => setIsProceeding(true)}
                                         sx={{
                                             px: 3,
-                                            background: "linear-gradient(135deg, #0b5299, #1e88e5)",
-                                            "&:hover": { background: "linear-gradient(135deg, #09437d, #1976d2)" }
+                                            borderRadius: '50px',
+                                            background: "linear-gradient(90deg, #004e92, #000428)",
+                                            "&:hover": { background: "linear-gradient(90deg, #003a6d, #000214)" }
                                         }}
                                     >
                                         Proceed
@@ -826,8 +837,10 @@ const Studentuploads = () => {
                                     onClick={handleConfirmAssignment}
                                     disabled={!selectedDept || !selectedSem}
                                     sx={{
-                                        background: "linear-gradient(135deg, #43a047, #66bb6a)",
-                                        "&:hover": { background: "linear-gradient(135deg, #388e3c, #4caf50)" }
+                                        borderRadius: '50px',
+                                        px: 4,
+                                        background: "linear-gradient(90deg, #43a047, #1b5e20)",
+                                        "&:hover": { background: "linear-gradient(90deg, #388e3c, #1b5e20)" }
                                     }}
                                 >
                                     <ConfirmIcon sx={{ mr: 1 }} /> Confirm Assignment

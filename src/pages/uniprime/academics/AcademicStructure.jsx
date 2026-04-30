@@ -149,7 +149,7 @@ const AcademicStructure = () => {
                     }}>
                         <Add sx={{ fontSize: 32, color: '#2196f3' }} />
                     </Box>
-                    <Typography variant="body1" fontWeight={700} sx={{ color: '#1976d2', letterSpacing: '0.5px' }}>
+                    <Typography variant="body1" fontWeight={800} sx={{ color: '#004e92', letterSpacing: '0.5px' }}>
                         Add Department
                     </Typography>
                 </Box>
@@ -173,18 +173,18 @@ const AcademicStructure = () => {
                         </Box>
 
                         <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mb: 2 }}>
-                            <Chip label={dept.code} color="primary" size="small" sx={{ fontWeight: 700, height: 22, fontSize: '0.65rem', borderRadius: '4px', bgcolor: '#1a237e' }} />
+                            <Chip label={dept.code} size="small" sx={{ fontWeight: 800, height: 22, fontSize: '0.7rem', borderRadius: '50px', background: "linear-gradient(90deg, #004e92, #000428)", color: '#fff' }} />
                             {dept.programIds?.map(prog => (
                                 <Chip 
                                     key={prog._id} 
                                     label={prog.name} 
                                     size="small" 
                                     variant="outlined" 
-                                    sx={{ fontWeight: 600, height: 22, fontSize: '0.6rem', borderRadius: '4px' }} 
+                                    sx={{ fontWeight: 700, height: 22, fontSize: '0.65rem', borderRadius: '50px', border: '1.5px solid #004e92', color: '#004e92' }} 
                                 />
                             ))}
                             {dept.hasStudents && (
-                                <Chip label="Has Students" color="success" size="small" variant="outlined" sx={{ fontWeight: 700, height: 22, fontSize: '0.65rem', borderRadius: '4px', color: '#2e7d32', borderColor: '#2e7d32' }} />
+                                <Chip label="Has Students" size="small" variant="outlined" sx={{ fontWeight: 800, height: 22, fontSize: '0.65rem', borderRadius: '50px', color: '#2e7d32', border: '1.5px solid #2e7d32' }} />
                             )}
                         </Box>
 
@@ -248,7 +248,7 @@ const AcademicStructure = () => {
                         }}>
                             <Add sx={{ fontSize: 28, color: '#2196f3' }} />
                         </Box>
-                        <Typography variant="body1" fontWeight={700} sx={{ color: '#1976d2', letterSpacing: '0.5px' }}>
+                        <Typography variant="body1" fontWeight={800} sx={{ color: '#004e92', letterSpacing: '0.5px' }}>
                             Add Program
                         </Typography>
                     </Box>
@@ -278,8 +278,8 @@ const AcademicStructure = () => {
                             </Box>
 
                             <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mb: 2 }}>
-                                <Chip label={prog.code} size="small" color="primary" sx={{ fontWeight: 700, height: 22, fontSize: '0.65rem', borderRadius: '4px', bgcolor: '#1a237e' }} />
-                                <Chip label={prog.type} size="small" variant="outlined" sx={{ fontWeight: 700, height: 22, fontSize: '0.65rem', borderRadius: '4px', color: '#2196f3', borderColor: '#2196f3' }} />
+                                <Chip label={prog.code} size="small" sx={{ fontWeight: 800, height: 22, fontSize: '0.7rem', borderRadius: '50px', background: "linear-gradient(90deg, #004e92, #000428)", color: '#fff' }} />
+                                <Chip label={prog.type} size="small" variant="outlined" sx={{ fontWeight: 700, height: 22, fontSize: '0.65rem', borderRadius: '50px', border: '1.5px solid #004e92', color: '#004e92' }} />
                             </Box>
 
                             <Divider sx={{ mb: 1.5, mt: 'auto', opacity: 0.5 }} />
@@ -328,7 +328,7 @@ const AcademicStructure = () => {
                                 <Typography variant="h5" fontWeight={800} color="primary">
                                     {selectedDepartment.name}
                                 </Typography>
-                                <Chip label={selectedDepartment.code} size="small" sx={{ fontWeight: 700, bgcolor: '#1a237e', color: 'white' }} />
+                                <Chip label={selectedDepartment.code} size="small" sx={{ fontWeight: 800, background: "linear-gradient(90deg, #004e92, #000428)", color: 'white', borderRadius: '50px' }} />
                             </Box>
                             <Typography variant="body2" color="textSecondary" sx={{ mb: 2 }}>
                                 {selectedDepartment.description || "No description provided for this department."}
@@ -380,7 +380,7 @@ const AcademicStructure = () => {
                             }}>
                                 <Add sx={{ fontSize: 28, color: '#2196f3' }} />
                             </Box>
-                            <Typography variant="body1" fontWeight={700} sx={{ color: '#1976d2', letterSpacing: '0.5px' }}>
+                            <Typography variant="body1" fontWeight={800} sx={{ color: '#004e92', letterSpacing: '0.5px' }}>
                                 Add Branch
                             </Typography>
                         </Box>
@@ -423,9 +423,8 @@ const AcademicStructure = () => {
                                         <Chip 
                                             label={branch.programId.name} 
                                             size="small" 
-                                            color="primary" 
                                             variant="outlined"
-                                            sx={{ fontWeight: 700, borderRadius: '6px' }} 
+                                            sx={{ fontWeight: 800, borderRadius: '50px', border: '1.5px solid #004e92', color: '#004e92' }} 
                                         />
                                     )}
                                 </Box>
@@ -606,7 +605,7 @@ const AcademicStructure = () => {
                 </DialogContent>
                 <DialogActions>
                     <Button onClick={() => setModal({ ...modal, open: false })}>Cancel</Button>
-                    <Button onClick={handleSave} variant="contained" disabled={submitting}>
+                    <Button onClick={handleSave} variant="contained" disabled={submitting} sx={{ borderRadius: '50px', background: "linear-gradient(90deg, #004e92, #000428)", px: 4, fontWeight: 700, textTransform: 'none' }}>
                         Save
                     </Button>
                 </DialogActions>
@@ -622,7 +621,7 @@ const AcademicStructure = () => {
                 </DialogContent>
                 <DialogActions>
                     <Button onClick={() => setDeleteConfirm({ ...deleteConfirm, open: false })}>Cancel</Button>
-                    <Button onClick={handleDelete} color="error" variant="contained" disabled={submitting}>Delete</Button>
+                    <Button onClick={handleDelete} color="error" variant="contained" disabled={submitting} sx={{ borderRadius: '50px', px: 4, fontWeight: 700, textTransform: 'none' }}>Delete</Button>
                 </DialogActions>
             </Dialog>
 

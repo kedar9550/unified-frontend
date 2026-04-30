@@ -449,13 +449,15 @@ export default function Teaching() {
         {selectedYear && selectedSem && (
           <Box
             sx={{
-              px: 2,
-              py: 0.6,
-              borderRadius: "20px",
-              background: "linear-gradient(135deg,#0b5299,#1c6ed5)",
+              px: 3,
+              py: 0.8,
+              borderRadius: "50px",
+              background: "linear-gradient(90deg, #004e92, #000428)", // Premium dark blue gradient
               color: "#fff",
               fontSize: 13,
-              fontWeight: 600,
+              fontWeight: 700,
+              boxShadow: "0 4px 12px rgba(0, 78, 146, 0.2)",
+              letterSpacing: "0.5px"
             }}
           >
             {selectedYear.year} — {selectedSem.name}

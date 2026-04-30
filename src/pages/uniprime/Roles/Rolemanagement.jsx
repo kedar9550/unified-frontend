@@ -659,14 +659,17 @@ const RoleManagement = () => {
                                 startIcon={<UploadFile />}
                                 sx={{
                                     textTransform: 'none',
-                                    borderRadius: '10px',
-                                    fontWeight: 600,
-                                    borderColor: 'rgba(26, 35, 126, 0.3)',
-                                    color: '#1a237e',
+                                    borderRadius: '50px',
+                                    fontWeight: 700,
+                                    border: '1.5px solid #004e92',
+                                    background: 'transparent',
+                                    color: '#004e92',
                                     width: { xs: '100%', sm: 'auto' },
+                                    transition: '0.3s',
                                     '&:hover': {
-                                        borderColor: '#1a237e',
-                                        bgcolor: 'rgba(26, 35, 126, 0.05)'
+                                        background: 'rgba(0, 78, 146, 0.05)',
+                                        borderColor: '#004e92',
+                                        boxShadow: '0 4px 12px rgba(0, 78, 146, 0.1)'
                                     }
                                 }}
                             >
@@ -680,19 +683,18 @@ const RoleManagement = () => {
                                 onClick={handleCreateClick}
                                 sx={{
                                     flex: 1,
-                                    borderRadius: "12px",
+                                    background: "linear-gradient(90deg, #004e92, #000428)",
+                                    borderRadius: "50px",
                                     textTransform: "none",
                                     px: { xs: 1, sm: 4 },
                                     fontWeight: 700,
                                     fontSize: { xs: '0.85rem', sm: '0.9rem' },
-                                    background: showCreateOptions ? "rgba(11, 82, 153, 0.9)" : "rgba(11, 82, 153, 0.6)",
-                                    backdropFilter: "blur(10px) saturate(150%)",
-                                    border: "1px solid rgba(255, 255, 255, 0.3)",
-                                    boxShadow: "0 4px 12px rgba(0, 0, 0, 0.1)",
+                                    boxShadow: "0 4px 12px rgba(0, 78, 146, 0.3)",
                                     transition: '0.3s',
                                     '&:hover': {
-                                        background: "rgba(11, 82, 153, 0.8)",
-                                        boxShadow: "0 6px 16px rgba(11, 82, 153, 0.3)",
+                                        background: "linear-gradient(90deg, #003a6d, #000214)",
+                                        boxShadow: "0 6px 16px rgba(0, 78, 146, 0.4)",
+                                        transform: 'translateY(-1px)'
                                     }
                                 }}
                             >
@@ -707,19 +709,18 @@ const RoleManagement = () => {
                                 }}
                                 sx={{
                                     flex: 1,
-                                    borderRadius: "12px",
+                                    background: "linear-gradient(90deg, #004e92, #000428)",
+                                    borderRadius: "50px",
                                     textTransform: "none",
                                     px: { xs: 1, sm: 4 },
                                     fontWeight: 700,
                                     fontSize: { xs: '0.85rem', sm: '0.9rem' },
-                                    background: showUpdateOptions ? "rgba(11, 82, 153, 0.9)" : "rgba(11, 82, 153, 0.6)",
-                                    backdropFilter: "blur(10px) saturate(150%)",
-                                    border: "1px solid rgba(255, 255, 255, 0.3)",
-                                    boxShadow: "0 4px 12px rgba(0, 0, 0, 0.1)",
+                                    boxShadow: "0 4px 12px rgba(0, 78, 146, 0.3)",
                                     transition: '0.3s',
                                     '&:hover': {
-                                        background: "rgba(11, 82, 153, 0.8)",
-                                        boxShadow: "0 6px 16px rgba(11, 82, 153, 0.3)",
+                                        background: "linear-gradient(90deg, #003a6d, #000214)",
+                                        boxShadow: "0 6px 16px rgba(0, 78, 146, 0.4)",
+                                        transform: 'translateY(-1px)'
                                     }
                                 }}
                             >
@@ -742,7 +743,7 @@ const RoleManagement = () => {
                                             startIcon={uploadingBulk ? <CircularProgress size={16} color="inherit" /> : <UploadFile />}
                                             onClick={() => fileInputRef.current.click()}
                                             disabled={uploadingBulk}
-                                            sx={{ width: { xs: '100%', sm: 'auto' }, borderRadius: '10px', textTransform: 'none', fontWeight: 700, color: '#1a237e', borderColor: 'rgba(26, 35, 126, 0.3)', py: { xs: 1.2, sm: 0.5 } }}
+                                            sx={{ width: { xs: '100%', sm: 'auto' }, borderRadius: '50px', textTransform: 'none', fontWeight: 700, border: '1.5px solid #004e92', background: 'transparent', color: '#004e92', py: { xs: 1.2, sm: 0.5 }, transition: '0.3s', '&:hover': { background: 'rgba(0, 78, 146, 0.05)', boxShadow: '0 4px 10px rgba(0, 78, 146, 0.1)' } }}
                                         >
                                             {uploadingBulk ? 'Uploading...' : 'Bulk Upload'}
                                         </Button>
@@ -756,7 +757,7 @@ const RoleManagement = () => {
                                                 }
                                                 setShowCreateIndividualSearch(!showCreateIndividualSearch);
                                             }}
-                                            sx={{ width: { xs: '100%', sm: 'auto' }, borderRadius: '10px', textTransform: 'none', fontWeight: 700, color: '#1a237e', borderColor: 'rgba(26, 35, 126, 0.3)', transition: '0.3s', bgcolor: showCreateIndividualSearch ? 'rgba(26, 35, 126, 0.1)' : 'transparent', py: { xs: 1.2, sm: 0.5 } }}
+                                            sx={{ width: { xs: '100%', sm: 'auto' }, borderRadius: '50px', textTransform: 'none', fontWeight: 700, border: '1.5px solid #004e92', background: showCreateIndividualSearch ? 'rgba(0, 78, 146, 0.1)' : 'transparent', color: '#004e92', transition: '0.3s', py: { xs: 1.2, sm: 0.5 }, '&:hover': { background: 'rgba(0, 78, 146, 0.05)' } }}
                                         >
                                             Create Individual
                                         </Button>
@@ -836,10 +837,16 @@ const RoleManagement = () => {
                                                 onClick={handleStartSignup}
                                                 sx={{
                                                     textTransform: 'none',
-                                                    borderRadius: '10px',
-                                                    bgcolor: '#1a237e',
-                                                    px: 3,
-                                                    width: { xs: '100%', sm: 'auto' }
+                                                    borderRadius: '50px',
+                                                    background: "linear-gradient(90deg, #004e92, #000428)",
+                                                    boxShadow: "0 4px 12px rgba(0, 78, 146, 0.3)",
+                                                    px: 4,
+                                                    width: { xs: '100%', sm: 'auto' },
+                                                    transition: '0.3s',
+                                                    '&:hover': {
+                                                        background: "linear-gradient(90deg, #003a6d, #000214)",
+                                                        boxShadow: "0 6px 16px rgba(0, 78, 146, 0.4)",
+                                                    }
                                                 }}
                                             >
                                                 Create
@@ -887,13 +894,18 @@ const RoleManagement = () => {
                                                     disabled={isIndividualSubmitting}
                                                     onClick={handleIndividualSignupSubmit}
                                                     sx={{
-                                                        borderRadius: '12px',
+                                                        borderRadius: '50px',
                                                         textTransform: 'none',
                                                         fontWeight: 800,
-                                                        px: 4,
-                                                        py: 1,
-                                                        bgcolor: '#1a237e',
-                                                        boxShadow: '0 4px 15px rgba(26, 35, 126, 0.3)'
+                                                        px: 5,
+                                                        py: 1.2,
+                                                        background: "linear-gradient(90deg, #004e92, #000428)",
+                                                        boxShadow: "0 4px 15px rgba(0, 78, 146, 0.3)",
+                                                        transition: '0.3s',
+                                                        '&:hover': {
+                                                            background: "linear-gradient(90deg, #003a6d, #000214)",
+                                                            boxShadow: "0 6px 16px rgba(0, 78, 146, 0.4)",
+                                                        }
                                                     }}
                                                 >
                                                     {isIndividualSubmitting ? <CircularProgress size={20} color="inherit" /> : 'Register'}
@@ -925,7 +937,7 @@ const RoleManagement = () => {
                                                 startIcon={isSyncingBulk ? <CircularProgress size={16} color="inherit" /> : <Sync />}
                                                 onClick={handleBulkSync}
                                                 disabled={isSyncingBulk}
-                                                sx={{ width: { xs: '100%', sm: 'auto' }, borderRadius: '10px', textTransform: 'none', fontWeight: 700, color: '#1a237e', borderColor: 'rgba(26, 35, 126, 0.3)', py: { xs: 1.2, sm: 0.5 } }}
+                                                sx={{ width: { xs: '100%', sm: 'auto' }, borderRadius: '50px', textTransform: 'none', fontWeight: 700, border: '1.5px solid #004e92', background: 'transparent', color: '#004e92', py: { xs: 1.2, sm: 0.5 }, transition: '0.3s', '&:hover': { background: 'rgba(0, 78, 146, 0.05)', boxShadow: '0 4px 10px rgba(0, 78, 146, 0.1)' } }}
                                             >
                                                 {isSyncingBulk ? 'Updating...' : 'Bulk Update'}
                                             </Button>
@@ -940,7 +952,7 @@ const RoleManagement = () => {
                                                     }
                                                     setShowIndividualSearch(!showIndividualSearch);
                                                 }}
-                                                sx={{ width: { xs: '100%', sm: 'auto' }, borderRadius: '10px', textTransform: 'none', fontWeight: 700, color: '#1a237e', borderColor: 'rgba(26, 35, 126, 0.3)', transition: '0.3s', bgcolor: showIndividualSearch ? 'rgba(26, 35, 126, 0.1)' : 'transparent', py: { xs: 1.2, sm: 0.5 } }}
+                                                sx={{ width: { xs: '100%', sm: 'auto' }, borderRadius: '50px', textTransform: 'none', fontWeight: 700, border: '1.5px solid #004e92', background: showIndividualSearch ? 'rgba(0, 78, 146, 0.1)' : 'transparent', color: '#004e92', transition: '0.3s', py: { xs: 1.2, sm: 0.5 }, '&:hover': { background: 'rgba(0, 78, 146, 0.05)' } }}
                                             >
                                                 Individual Update
                                             </Button>
@@ -1031,11 +1043,16 @@ const RoleManagement = () => {
                                                                     }}
                                                                     sx={{
                                                                         textTransform: 'none',
-                                                                        borderRadius: '10px',
-                                                                        bgcolor: '#1a237e',
-                                                                        px: 3,
+                                                                        borderRadius: '50px',
+                                                                        background: "linear-gradient(90deg, #004e92, #000428)",
+                                                                        px: 4,
                                                                         width: { xs: '100%', sm: 'auto' },
-                                                                        boxShadow: '0 4px 10px rgba(26, 35, 126, 0.2)'
+                                                                        boxShadow: '0 4px 10px rgba(0, 78, 146, 0.3)',
+                                                                        transition: '0.3s',
+                                                                        '&:hover': {
+                                                                            background: "linear-gradient(90deg, #003a6d, #000214)",
+                                                                            boxShadow: "0 6px 16px rgba(0, 78, 146, 0.4)",
+                                                                        }
                                                                     }}
                                                                 >
                                                                     Edit
@@ -1129,14 +1146,19 @@ const RoleManagement = () => {
                                                 startIcon={isUpdatingEmail ? <CircularProgress size={16} color="inherit" /> : <Save />}
                                                 fullWidth={false}
                                                 sx={{
-                                                    borderRadius: '10px',
+                                                    borderRadius: '50px',
                                                     textTransform: 'none',
                                                     fontWeight: 700,
-                                                    bgcolor: '#1a237e',
-                                                    px: { xs: 8, sm: 4 },
-                                                    py: 1,
-                                                    boxShadow: '0 4px 15px rgba(26, 35, 126, 0.3)',
-                                                    width: { xs: '100%', sm: 'auto' }
+                                                    background: "linear-gradient(90deg, #004e92, #000428)",
+                                                    px: { xs: 8, sm: 5 },
+                                                    py: 1.2,
+                                                    boxShadow: '0 4px 15px rgba(0, 78, 146, 0.3)',
+                                                    width: { xs: '100%', sm: 'auto' },
+                                                    transition: '0.3s',
+                                                    '&:hover': {
+                                                        background: "linear-gradient(90deg, #003a6d, #000214)",
+                                                        boxShadow: "0 6px 16px rgba(0, 78, 146, 0.4)",
+                                                    }
                                                 }}
                                             >
                                                 {isUpdatingEmail ? 'Updating...' : 'Update'}
@@ -1206,7 +1228,7 @@ const RoleManagement = () => {
                                                             <Box sx={{ mt: 1, display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
                                                                 <Typography variant="caption" color="textSecondary" sx={{ mr: 1, width: '100%' }}>Present Roles:</Typography>
                                                                 {user.roles && user.roles.length > 0 ? user.roles.map(r => (
-                                                                    <Chip key={r._id} label={r.name} size="small" deleteIcon={<Delete sx={{ fontSize: '14px !important' }} />} onDelete={(e) => { e.stopPropagation(); setDeleteConfirm({ open: true, userId: user._id, roleId: r._id, roleName: r.name, userName: user.name }); }} sx={{ height: 20, fontSize: '10px', bgcolor: '#E3F2FD', color: '#1976D2', fontWeight: roles.find(rl => rl.name === r.name)?.defaultRole ? 700 : 400 }} />
+                                                                    <Chip key={r._id} label={r.name} size="small" deleteIcon={<Delete sx={{ fontSize: '14px !important', color: 'rgba(255,255,255,0.7) !important' }} />} onDelete={(e) => { e.stopPropagation(); setDeleteConfirm({ open: true, userId: user._id, roleId: r._id, roleName: r.name, userName: user.name }); }} sx={{ height: 22, fontSize: '10px', background: "linear-gradient(90deg, #004e92, #000428)", color: '#fff', fontWeight: 700, borderRadius: '50px' }} />
                                                                 )) : <Typography variant="caption" fontStyle="italic">None</Typography>}
                                                             </Box>
                                                         </Box>
@@ -1237,7 +1259,7 @@ const RoleManagement = () => {
                                                     label={dept.name}
                                                     size="small"
                                                     onDelete={() => setSelectedHodDepts(prev => prev.filter(d => d._id !== dept._id))}
-                                                    sx={{ bgcolor: '#ede7f6', color: '#5e35b1', fontWeight: 600 }}
+                                                    sx={{ background: "linear-gradient(90deg, #004e92, #000428)", color: '#fff', fontWeight: 700, borderRadius: '50px', '& .MuiChip-deleteIcon': { color: 'rgba(255,255,255,0.7)' } }}
                                                 />
                                             ))}
                                         </Box>
@@ -1261,9 +1283,15 @@ const RoleManagement = () => {
                                                                         }
                                                                     }}
                                                                     variant={isSelected ? "filled" : "outlined"}
-                                                                    color={isSelected ? "primary" : "default"}
                                                                     size="small"
-                                                                    sx={{ cursor: 'pointer', borderRadius: '8px' }}
+                                                                    sx={{ 
+                                                                        cursor: 'pointer', 
+                                                                        borderRadius: '50px',
+                                                                        fontWeight: 700,
+                                                                        border: isSelected ? 'none' : '1.5px solid #004e92',
+                                                                        background: isSelected ? "linear-gradient(90deg, #004e92, #000428)" : 'transparent',
+                                                                        color: isSelected ? '#fff' : '#004e92'
+                                                                    }}
                                                                 />
                                                             );
                                                         })}
@@ -1303,7 +1331,7 @@ const RoleManagement = () => {
                                 </Box>
                                 {selectedUser && (
                                     <Box sx={{ mt: 3, pt: 2, borderTop: '1px solid rgba(0,0,0,0.05)', position: 'sticky', bottom: 0, background: 'transparent', pb: 1 }}>
-                                        <Button fullWidth variant="contained" startIcon={<Save />} onClick={handleSaveAssignments} disabled={savingRoles} sx={{ borderRadius: '12px', py: 1.5, textTransform: 'none', fontWeight: 800, fontSize: '1rem', bgcolor: '#2e7d32', boxShadow: '0 4px 14px 0 rgba(46, 125, 50, 0.39)' }}>Save Role Assignments</Button>
+                                        <Button fullWidth variant="contained" startIcon={<Save />} onClick={handleSaveAssignments} disabled={savingRoles} sx={{ borderRadius: '50px', py: 1.5, textTransform: 'none', fontWeight: 800, fontSize: '1rem', background: "linear-gradient(90deg, #004e92, #000428)", boxShadow: '0 4px 14px 0 rgba(0, 78, 146, 0.3)', transition: '0.3s', '&:hover': { background: "linear-gradient(90deg, #003a6d, #000214)", boxShadow: '0 6px 16px rgba(0, 78, 146, 0.4)' } }}>Save Role Assignments</Button>
                                     </Box>
                                 )}
                             </Box>
@@ -1325,7 +1353,7 @@ const RoleManagement = () => {
                 </DialogContent>
                 <DialogActions sx={{ p: 2 }}>
                     <Button onClick={handleCloseRoleModal}>Cancel</Button>
-                    <Button variant="contained" onClick={handleSubmitRole} disabled={submitting}>Create Role</Button>
+                    <Button variant="contained" onClick={handleSubmitRole} disabled={submitting} sx={{ borderRadius: '50px', textTransform: 'none', fontWeight: 700, background: "linear-gradient(90deg, #004e92, #000428)", boxShadow: '0 4px 12px rgba(0, 78, 146, 0.3)', px: 4, transition: '0.3s', '&:hover': { background: "linear-gradient(90deg, #003a6d, #000214)", boxShadow: '0 6px 16px rgba(0, 78, 146, 0.4)' } }}>Create Role</Button>
                 </DialogActions>
             </Dialog>
 
@@ -1393,12 +1421,12 @@ const RoleManagement = () => {
                             </Box>
                         </Box>
                         <Box sx={{ px: 4, pb: 4, display: 'flex', gap: 2 }}>
-                            <Button fullWidth variant="outlined" onClick={() => setRegistrationView("selection")} sx={{ borderRadius: '12px', py: 1.5, textTransform: 'none', fontWeight: 700 }}>Back</Button>
+                            <Button fullWidth variant="outlined" onClick={() => setRegistrationView("selection")} sx={{ borderRadius: '50px', py: 1.5, textTransform: 'none', fontWeight: 700, border: '1.5px solid #004e92', color: '#004e92', background: 'transparent' }}>Back</Button>
                             <Button
                                 fullWidth variant="contained"
                                 onClick={handleIndividualSubmit}
                                 disabled={isIndividualSubmitting || !isEcapVerified}
-                                sx={{ borderRadius: '12px', py: 1.5, textTransform: 'none', fontWeight: 700, bgcolor: '#1a237e' }}
+                                sx={{ borderRadius: '50px', py: 1.5, textTransform: 'none', fontWeight: 700, background: "linear-gradient(90deg, #004e92, #000428)", boxShadow: '0 4px 15px rgba(0, 78, 146, 0.3)', transition: '0.3s', '&:hover': { background: "linear-gradient(90deg, #003a6d, #000214)", boxShadow: '0 6px 16px rgba(0, 78, 146, 0.4)' } }}
                             >
                                 Register Employee
                             </Button>
@@ -1440,7 +1468,7 @@ const RoleManagement = () => {
                     )}
                 </DialogContent>
                 <DialogActions sx={{ p: 2 }}>
-                    <Button fullWidth variant="contained" onClick={() => setBulkResults(null)} sx={{ borderRadius: '12px', py: 1 }}>Done</Button>
+                    <Button fullWidth variant="contained" onClick={() => setBulkResults(null)} sx={{ borderRadius: '50px', py: 1.2, background: "linear-gradient(90deg, #004e92, #000428)", fontWeight: 700, textTransform: 'none' }}>Done</Button>
                 </DialogActions>
             </Dialog>
 
@@ -1450,7 +1478,7 @@ const RoleManagement = () => {
                 <DialogContent><Typography>Are you sure you want to remove <b>{deleteConfirm.roleName}</b>?</Typography></DialogContent>
                 <DialogActions sx={{ p: 2 }}>
                     <Button onClick={() => setDeleteConfirm({ ...deleteConfirm, open: false })}>Cancel</Button>
-                    <Button variant="contained" color="error" onClick={handleDeleteUserMapping} sx={{ borderRadius: '10px' }}>Remove Role</Button>
+                    <Button variant="contained" color="error" onClick={handleDeleteUserMapping} sx={{ borderRadius: '50px', textTransform: 'none', fontWeight: 700 }}>Remove Role</Button>
                 </DialogActions>
             </Dialog>
 

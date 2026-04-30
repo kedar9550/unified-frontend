@@ -169,10 +169,10 @@ const AcademicManagement = () => {
             sx={{ width: { xs: '100%', sm: 250 } }}
           />
           <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2, width: { xs: '100%', sm: 'auto' } }}>
-            <Button variant="contained" onClick={createSemesterType} startIcon={<Add />} sx={{ borderRadius: 2, whiteSpace: 'nowrap' }}>
+            <Button variant="contained" onClick={createSemesterType} startIcon={<Add />} sx={{ borderRadius: '50px', whiteSpace: 'nowrap', background: "linear-gradient(90deg, #004e92, #000428)", boxShadow: '0 4px 12px rgba(0, 78, 146, 0.3)', transition: '0.3s', '&:hover': { background: "linear-gradient(90deg, #003a6d, #000214)", boxShadow: '0 6px 16px rgba(0, 78, 146, 0.4)' } }}>
               Add Type
             </Button>
-            <Button variant="outlined" onClick={seedDefaults} size="small" sx={{ borderRadius: 2, whiteSpace: 'nowrap' }}>
+            <Button variant="outlined" onClick={seedDefaults} size="small" sx={{ borderRadius: '50px', whiteSpace: 'nowrap', border: '1.5px solid #004e92', background: 'transparent', color: '#004e92', fontWeight: 700, px: 2, '&:hover': { background: 'rgba(0, 78, 146, 0.05)' } }}>
               Seed Defaults
             </Button>
           </Box>
@@ -198,10 +198,10 @@ const AcademicManagement = () => {
                 flex: { xs: '1 1 calc(33.33% - 8px)', sm: '0 1 auto' },
                 minWidth: '80px',
                 px: 1,
-                background: st.isActive ? 'rgba(11, 82, 153, 0.9)' : 'rgba(255, 255, 255, 0.15)',
+                background: st.isActive ? 'linear-gradient(90deg, #004e92, #000428)' : 'rgba(255, 255, 255, 0.15)',
                 backdropFilter: 'blur(8px)',
                 border: '1px solid rgba(255, 255, 255, 0.25)',
-                color: st.isActive ? '#fff' : '#1a237e',
+                color: st.isActive ? '#fff' : '#004e92',
                 '& .MuiChip-deleteIcon': {
                   color: st.isActive ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.4)',
                   '&:hover': { color: st.isActive ? '#fff' : '#d32f2f' }
@@ -258,11 +258,18 @@ const AcademicManagement = () => {
             startIcon={<Add />}
             onClick={createYear}
             sx={{
-              borderRadius: 2,
+              borderRadius: '50px',
               px: 3,
               height: 40,
               gridColumn: { xs: 'span 2', sm: 'span 1' },
-              width: '100%'
+              width: '100%',
+              background: "linear-gradient(90deg, #004e92, #000428)",
+              boxShadow: '0 4px 12px rgba(0, 78, 146, 0.3)',
+              transition: '0.3s',
+              '&:hover': {
+                background: "linear-gradient(90deg, #003a6d, #000214)",
+                boxShadow: '0 6px 16px rgba(0, 78, 146, 0.4)',
+              }
             }}
             disabled={newStartYear < minStartYear || !newStartYear || !newEndYear}
           >
@@ -333,12 +340,20 @@ const AcademicManagement = () => {
                       />
                     ) : (
                       <Chip
-                        icon={<RadioButtonUnchecked />}
+                        icon={<RadioButtonUnchecked sx={{ color: '#004e92 !important' }} />}
                         label="Set Active"
                         color="default"
                         size="small"
                         onClick={() => toggleYear(y._id, false)}
-                        sx={{ cursor: 'pointer', '&:hover': { backgroundColor: '#e0e0e0' } }}
+                        sx={{ 
+                          cursor: 'pointer', 
+                          borderRadius: '50px', 
+                          border: '1.5px solid #004e92', 
+                          background: 'transparent',
+                          color: '#004e92',
+                          fontWeight: 700,
+                          '&:hover': { background: 'rgba(0, 78, 146, 0.05)' } 
+                        }}
                       />
                     )}
                   </Box>
@@ -392,10 +407,18 @@ const AcademicManagement = () => {
                                 <span>
                                   <Button
                                     size="small"
-                                    variant="text"
-                                    color="inherit"
+                                    variant="outlined"
                                     onClick={() => setYearSemester(y._id, st._id)}
                                     disabled={!y.isActive}
+                                    sx={{ 
+                                      borderRadius: '50px', 
+                                      textTransform: 'none', 
+                                      fontWeight: 700,
+                                      border: '1.5px solid #004e92', 
+                                      background: 'transparent',
+                                      color: '#004e92',
+                                      '&:hover': { background: 'rgba(0, 78, 146, 0.05)' }
+                                    }}
                                   >
                                     Activate
                                   </Button>
