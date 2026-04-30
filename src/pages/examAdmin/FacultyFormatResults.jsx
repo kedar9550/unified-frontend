@@ -141,10 +141,11 @@ export default function FacultyFormatResults() {
     const headers = [
       "facultyId",
       "facultyName",
-      "academicYear",
+      "academicYearId",
       "semester",
       "courseName",
       "courseCode",
+      "courseType",
       "section",
       "noOfCos",
       "noOfCosAttained",
@@ -152,6 +153,8 @@ export default function FacultyFormatResults() {
       "appeared",
       "passed",
       "passPercentage",
+      "semesterTypeId",
+      "uploadedBy"
     ];
     const sampleRow = [
       "FAC123",
