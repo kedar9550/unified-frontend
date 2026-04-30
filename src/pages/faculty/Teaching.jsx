@@ -197,8 +197,8 @@ export default function Teaching() {
     "S.NO",
     "COURSE NAME",
     "COURSE ID",
-    "BRANCH",
-    "SEMESTER",
+    "TYPE",
+    "SEM - BRANCH - SEC",
     "NO. OF STUDENTS APPEARED",
     "NO. OF STUDENTS PASSED",
     "PASS PERCENTAGE",
@@ -221,12 +221,23 @@ export default function Teaching() {
     },
 
     {
-      value: r.branch,
-      display: <Box>{r.branch || "—"}</Box>,
+      value: r.courseType,
+      display: (
+        <Box sx={{ fontSize: 12, fontWeight: 600, color: "var(--text-secondary)" }}>
+          {r.courseType || "—"}
+        </Box>
+      ),
     },
+
     {
-      value: r.semester,
-      display: <Box>{r.semester || "—"}</Box>,
+      value: `${r.semester}-${r.branch}-${r.section}`,
+      display: (
+        <Box sx={{ whiteSpace: "nowrap" }}>
+          {r.semester && <Box component="span" sx={{ fontWeight: 600 }}>{r.semester}</Box>}
+          {r.branch && <Box component="span" sx={{ color: "var(--text-secondary)" }}> — {r.branch}</Box>}
+          {r.section && <Box component="span" sx={{ color: "var(--color-primary)", fontWeight: 700 }}> — {r.section}</Box>}
+        </Box>
+      ),
     },
 
     {
