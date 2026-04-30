@@ -481,34 +481,85 @@ export default function Teaching() {
         </Typography>
 
         {proctorStats?.totalMappedStudents > 0 ? (
-            <Box
-            sx={{
-                display: "flex",
-                flexWrap: "wrap",
-                gap: 3,
-                justifyContent: "space-around",
-                p: 3,
-                border: "1px solid var(--border-color)",
-                borderRadius: "16px",
-                background: "var(--bg-glass)"
-            }}
-            >
-            <Box sx={{ textAlign: "center" }}>
-                <Typography variant="body2" sx={{ color: "var(--text-secondary)", fontWeight: 700, mb: 1, fontSize: "0.7rem", textTransform: "uppercase" }}>Total Students Managed</Typography>
-                <Typography variant="h4" sx={{ color: "var(--color-primary)", fontWeight: 800 }}>{proctorStats.totalMappedStudents}</Typography>
-            </Box>
-            <Box sx={{ textAlign: "center" }}>
-                <Typography variant="body2" sx={{ color: "var(--text-secondary)", fontWeight: 700, mb: 1, fontSize: "0.7rem", textTransform: "uppercase" }}>Students Appeared</Typography>
-                <Typography variant="h4" sx={{ color: "#f59e0b", fontWeight: 800 }}>{proctorStats.studentsAppeared}</Typography>
-            </Box>
-            <Box sx={{ textAlign: "center" }}>
-                <Typography variant="body2" sx={{ color: "var(--text-secondary)", fontWeight: 700, mb: 1, fontSize: "0.7rem", textTransform: "uppercase" }}>Students Passed</Typography>
-                <Typography variant="h4" sx={{ color: "#10b981", fontWeight: 800 }}>{proctorStats.studentsPassed}</Typography>
-            </Box>
-            <Box sx={{ textAlign: "center" }}>
-                <Typography variant="body2" sx={{ color: "var(--text-secondary)", fontWeight: 700, mb: 1, fontSize: "0.7rem", textTransform: "uppercase" }}>Pass Percentage</Typography>
-                <Typography variant="h4" sx={{ color: proctorStats.passPercentage >= 50 ? "#10b981" : "#ef4444", fontWeight: 800 }}>{proctorStats.passPercentage}%</Typography>
-            </Box>
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+                {/* Overall Summary if multiple semesters exist */}
+                {proctorStats.details?.length > 1 && (
+                    <Box
+                        sx={{
+                            p: 2,
+                            borderRadius: "12px",
+                            background: "linear-gradient(135deg, rgba(0, 78, 146, 0.05), rgba(0, 4, 40, 0.05))",
+                            border: "1px solid var(--border-color)",
+                            textAlign: "center"
+                        }}
+                    >
+                        <Typography variant="subtitle2" sx={{ fontWeight: 700, color: "var(--color-primary)", mb: 1 }}>
+                            OVERALL ACADEMIC YEAR SUMMARY
+                        </Typography>
+                        <Box sx={{ display: "flex", justifyContent: "space-around", flexWrap: "wrap", gap: 2 }}>
+                            <Typography variant="body2">Total: <strong>{proctorStats.totalMappedStudents}</strong></Typography>
+                            <Typography variant="body2">Appeared: <strong>{proctorStats.studentsAppeared}</strong></Typography>
+                            <Typography variant="body2">Passed: <strong>{proctorStats.studentsPassed}</strong></Typography>
+                            <Typography variant="body2">Pass %: <strong style={{ color: proctorStats.passPercentage >= 50 ? "#10b981" : "#ef4444" }}>{proctorStats.passPercentage}%</strong></Typography>
+                        </Box>
+                    </Box>
+                )}
+
+                {/* Individual Semester Summaries */}
+                <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                    {(proctorStats.details?.length > 0 ? proctorStats.details : [proctorStats]).map((sem, idx) => (
+                        <Box
+                            key={idx}
+                            sx={{
+                                display: "flex",
+                                flexWrap: "wrap",
+                                gap: 3,
+                                justifyContent: "space-around",
+                                p: 3,
+                                border: "1px solid var(--border-color)",
+                                borderRadius: "16px",
+                                background: "var(--bg-glass)",
+                                position: "relative"
+                            }}
+                        >
+                            {sem.semesterName && (
+                                <Box
+                                    sx={{
+                                        position: "absolute",
+                                        top: -10,
+                                        left: 20,
+                                        px: 1.5,
+                                        py: 0.5,
+                                        background: "var(--color-primary)",
+                                        color: "#fff",
+                                        borderRadius: "20px",
+                                        fontSize: "0.65rem",
+                                        fontWeight: 800,
+                                        letterSpacing: "0.05em"
+                                    }}
+                                >
+                                    {sem.semesterName} SEMESTER
+                                </Box>
+                            )}
+                            <Box sx={{ textAlign: "center" }}>
+                                <Typography variant="body2" sx={{ color: "var(--text-secondary)", fontWeight: 700, mb: 1, fontSize: "0.7rem", textTransform: "uppercase" }}>Total Students Managed</Typography>
+                                <Typography variant="h4" sx={{ color: "var(--color-primary)", fontWeight: 800 }}>{sem.totalMappedStudents}</Typography>
+                            </Box>
+                            <Box sx={{ textAlign: "center" }}>
+                                <Typography variant="body2" sx={{ color: "var(--text-secondary)", fontWeight: 700, mb: 1, fontSize: "0.7rem", textTransform: "uppercase" }}>Students Appeared</Typography>
+                                <Typography variant="h4" sx={{ color: "#f59e0b", fontWeight: 800 }}>{sem.studentsAppeared}</Typography>
+                            </Box>
+                            <Box sx={{ textAlign: "center" }}>
+                                <Typography variant="body2" sx={{ color: "var(--text-secondary)", fontWeight: 700, mb: 1, fontSize: "0.7rem", textTransform: "uppercase" }}>Students Passed</Typography>
+                                <Typography variant="h4" sx={{ color: "#10b981", fontWeight: 800 }}>{sem.studentsPassed}</Typography>
+                            </Box>
+                            <Box sx={{ textAlign: "center" }}>
+                                <Typography variant="body2" sx={{ color: "var(--text-secondary)", fontWeight: 700, mb: 1, fontSize: "0.7rem", textTransform: "uppercase" }}>Pass Percentage</Typography>
+                                <Typography variant="h4" sx={{ color: sem.passPercentage >= 50 ? "#10b981" : "#ef4444", fontWeight: 800 }}>{sem.passPercentage}%</Typography>
+                            </Box>
+                        </Box>
+                    ))}
+                </Box>
             </Box>
         ) : (
             <Box
