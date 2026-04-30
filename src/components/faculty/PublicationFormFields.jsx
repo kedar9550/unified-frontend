@@ -41,12 +41,12 @@ export function FacultyInfoRow({ college, setCollege }) {
 }
 
 // Styled label
-export const labelStyle = { fontSize: 12, color: "#e53935", fontWeight: 600, mb: 0.5 };
+export const labelStyle = { fontSize: 12, color: "var(--color-primary)", fontWeight: 700, mb: 0.5, textTransform: "uppercase", letterSpacing: "0.02em" };
 
 // Disabled TextField style
 export const disabledField = {
-  "& .MuiInputBase-input.Mui-disabled": { WebkitTextFillColor: "#555", background: "#f5f5f5" },
-  "& .MuiOutlinedInput-root.Mui-disabled .MuiOutlinedInput-notchedOutline": { borderColor: "#ddd" },
+  "& .MuiInputBase-input.Mui-disabled": { WebkitTextFillColor: "var(--text-secondary)", background: "var(--bg-accent-1)", opacity: 0.8 },
+  "& .MuiOutlinedInput-root.Mui-disabled .MuiOutlinedInput-notchedOutline": { borderColor: "var(--border-color)" },
 };
 
 // Month options
@@ -58,14 +58,14 @@ export const YEARS = Array.from({ length: 10 }, (_, i) => String(new Date().getF
 // NoteBox
 export function NoteBox() {
   return (
-    <Box sx={{ background: "#fff3e0", border: "1px solid #ffcc80", borderRadius: "6px", p: 1.5, fontSize: 12, color: "#e65100", my: 1.5 }}>
-      <Box component="span" sx={{ background: "#f44336", color: "#fff", px: 0.8, py: 0.2, borderRadius: "3px", mr: 1, fontSize: 11, fontWeight: 700 }}>NOTE:</Box>
+    <Box sx={{ background: "rgba(245, 158, 11, 0.1)", border: "1px solid rgba(245, 158, 11, 0.3)", borderRadius: "12px", p: 1.5, fontSize: 12, color: "#f59e0b", my: 1.5 }}>
+      <Box component="span" sx={{ background: "#f59e0b", color: "#fff", px: 1, py: 0.3, borderRadius: "6px", mr: 1, fontSize: 11, fontWeight: 800 }}>NOTE:</Box>
       1. Please Upload (PNG or JPG or JPEG or PDF) Only.{"  "}
       2. File Size Should not Exceed <strong>500KB</strong>
-      <Box sx={{ mt: 0.5 }}>
-        Optimizer Links:{" "}
-        <Box component="a" href="https://www.iloveimg.com/compress-image" target="_blank" sx={{ color: "#1976d2", mr: 1 }}>1. Image Compressor</Box>
-        <Box component="a" href="https://www.ilovepdf.com/compress_pdf" target="_blank" sx={{ color: "#1976d2" }}>2. PDF Compressor</Box>
+      <Box sx={{ mt: 1, display: "flex", gap: 2 }}>
+        <Typography sx={{ fontSize: 12, fontWeight: 600 }}>Optimizer Links:</Typography>
+        <Box component="a" href="https://www.iloveimg.com/compress-image" target="_blank" sx={{ color: "var(--color-primary)", textDecoration: "none", "&:hover": { textDecoration: "underline" } }}>1. Image Compressor</Box>
+        <Box component="a" href="https://www.ilovepdf.com/compress_pdf" target="_blank" sx={{ color: "var(--color-primary)", textDecoration: "none", "&:hover": { textDecoration: "underline" } }}>2. PDF Compressor</Box>
       </Box>
     </Box>
   );
@@ -75,9 +75,18 @@ export function NoteBox() {
 export function FileField({ label, name, onChange }) {
   return (
     <Box>
-      <Typography sx={{ fontSize: 12, color: "#555", fontWeight: 600, mb: 0.5 }}>{label}</Typography>
+      <Typography sx={{ fontSize: 12, color: "var(--text-secondary)", fontWeight: 700, mb: 0.5, textTransform: "uppercase" }}>{label}</Typography>
       <input type="file" accept=".png,.jpg,.jpeg,.pdf" name={name} onChange={onChange}
-        style={{ fontSize: 13, border: "1px solid #ccc", borderRadius: 4, padding: "5px 8px", width: "100%", background: "#fff" }} />
+        style={{ 
+            fontSize: 13, 
+            border: "1px solid var(--border-color)", 
+            borderRadius: 8, 
+            padding: "8px 12px", 
+            width: "100%", 
+            background: "var(--bg-glass)",
+            color: "var(--text-primary)",
+            outline: "none"
+        }} />
     </Box>
   );
 }
@@ -86,9 +95,23 @@ export function FileField({ label, name, onChange }) {
 export function SubmitBtn({ onClick, loading }) {
   return (
     <Box sx={{ textAlign: "center", mt: 3 }}>
-      <Button variant="contained" onClick={onClick} disabled={loading}
-        sx={{ background: "#29b6f6", borderRadius: "6px", px: 5, textTransform: "none", fontWeight: 600, fontSize: 14, "&:hover": { background: "#0288d1" } }}>
-        {loading ? "Submitting..." : "Submit"}
+      <Button 
+        variant="contained" 
+        onClick={onClick} 
+        disabled={loading}
+        sx={{ 
+            background: "var(--color-primary)", 
+            borderRadius: "12px", 
+            px: 6, 
+            py: 1.2,
+            textTransform: "none", 
+            fontWeight: 800, 
+            fontSize: 15,
+            boxShadow: "0 8px 20px rgba(232, 160, 0, 0.2)",
+            "&:hover": { background: "var(--color-primary)", opacity: 0.9, transform: "translateY(-2px)" },
+            transition: "all 0.3s ease"
+        }}>
+        {loading ? "Submitting..." : "Submit Application"}
       </Button>
     </Box>
   );
@@ -97,8 +120,8 @@ export function SubmitBtn({ onClick, loading }) {
 // Form card container
 export function FormCard({ title, children }) {
   return (
-    <Box sx={{ background: "rgba(255,255,255,0.6)", backdropFilter: "blur(12px)", borderRadius: "20px", boxShadow: "0 15px 40px rgba(0,0,0,0.08)", p: 3, mb: 3 }}>
-      <Typography variant="h6" fontWeight={700} sx={{ color: "#1a237e", borderBottom: "2px solid #e8a000", pb: 1.5, mb: 2.5 }}>{title}</Typography>
+    <Box sx={{ background: "var(--bg-panel)", border: "1px solid var(--border-color)", borderRadius: "24px", boxShadow: "var(--shadow-premium)", p: 4, mb: 3 }}>
+      <Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)", borderBottom: "2px solid var(--color-primary)", pb: 1.5, mb: 3.5 }}>{title}</Typography>
       {children}
     </Box>
   );
@@ -111,5 +134,5 @@ export function Grid2({ children, sx }) {
 
 // Section label
 export function SubLabel({ text }) {
-  return <Typography sx={{ fontSize: 13, fontWeight: 600, color: "#444", background: "#f5f5f5", px: 1.5, py: 0.8, borderRadius: "4px", my: 1.5 }}>{text}</Typography>;
+  return <Typography sx={{ fontSize: 14, fontWeight: 700, color: "var(--text-primary)", background: "var(--bg-accent-1)", px: 2, py: 1, borderRadius: "8px", my: 2, borderLeft: "4px solid var(--color-primary)" }}>{text}</Typography>;
 }

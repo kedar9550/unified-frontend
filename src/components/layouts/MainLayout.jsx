@@ -30,7 +30,7 @@ const MainLayout = ({ children }) => {
         sx={{
           display: "flex",
           minHeight: "100vh",
-          backgroundColor: "aliceblue", // Temporary background color
+          backgroundColor: "var(--bg-main)", // Uses CSS variable for dark mode
         }}
       >
         {/* Sidebar navigation */}
@@ -54,11 +54,11 @@ const MainLayout = ({ children }) => {
             sx={{
               flex: 1,
               borderRadius: "16px",
-              background: "rgba(255, 255, 255, 0.25)",
+              background: "var(--bg-glass)",
               backdropFilter: "blur(2px) saturate(160%)",
               WebkitBackdropFilter: "blur(2px) saturate(160%)",
               boxShadow: "0 8px 32px rgba(31, 38, 135, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.5)",
-              border: "1px solid rgba(255, 255, 255, 0.3)",
+              border: "1px solid var(--border-color)",
               display: "flex",
               flexDirection: "column",
               overflow: "hidden", 

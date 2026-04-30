@@ -9,13 +9,13 @@ export default function SectionHeader({ title, action }) {
         justifyContent: "space-between",
         gap: 1,
         mb: 3,
-        background: "rgba(255, 255, 255, 0.01)", // Glass background
-        backdropFilter: "blur(0px) saturate(180%)",
+        background: "var(--bg-glass)",
+        backdropFilter: "blur(10px) saturate(180%)",
         WebkitBackdropFilter: "blur(10px) saturate(180%)",
-        border: "1px solid rgba(255, 255, 255, 0.3)",
+        border: "1px solid var(--border-color)",
         borderRadius: "16px",
-        p: { xs: 1.5, sm: 2 }, // Responsive padding
-        boxShadow: "0 4px 20px rgba(0, 0, 0, 0.05)",
+        p: { xs: 1.5, sm: 2 },
+        boxShadow: "var(--shadow-premium)",
       }}
     >
       <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
@@ -24,7 +24,7 @@ export default function SectionHeader({ title, action }) {
           sx={{
             width: 4,
             height: 20,
-            background: "#0b5299",
+            background: "var(--color-primary)",
             borderRadius: "2px",
           }}
         />

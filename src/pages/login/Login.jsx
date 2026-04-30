@@ -213,7 +213,11 @@ export default function Login() {
         <div className="auth-form-wrap">
           <h1 className="auth-heading">Reset Password</h1>
           {fpMsg.text && (
-            <p className="auth-error" style={{ background: fpMsg.type === 'success' ? '#e8f5e9' : '#fdecea', color: fpMsg.type === 'success' ? '#2e7d32' : '#c62828' }}>
+            <p className="auth-error" style={{ 
+                background: fpMsg.type === 'success' ? 'rgba(34, 197, 94, 0.1)' : 'rgba(239, 68, 68, 0.1)', 
+                color: fpMsg.type === 'success' ? '#22c55e' : '#ef4444',
+                border: `1px solid ${fpMsg.type === 'success' ? 'rgba(34, 197, 94, 0.2)' : 'rgba(239, 68, 68, 0.2)'}`
+            }}>
               {fpMsg.text}
             </p>
           )}

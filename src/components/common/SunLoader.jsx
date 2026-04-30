@@ -25,8 +25,11 @@ const SunLoader = ({ progress = 0, size = 180 }) => {
         <div style={{ position: "relative", width: size, height: size, margin: "auto" }}>
             <style>
                 {`
-                @keyframes slideLeft { from { transform: translateX(0px); } to { transform: translateX(-40px); } }
-                @keyframes slideRight { from { transform: translateX(-40px); } to { transform: translateX(0px); } }
+                @keyframes rotate { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+                .rotating {
+                    animation: rotate 15s linear infinite;
+                    transform-origin: ${centerX}px ${centerY}px;
+                }
                 .wave-layer {
                     position: absolute; left: 0; width: 200%; height: 100%;
                     background-repeat: repeat-x; background-position: top left; transition: top 0.1s linear;
@@ -37,8 +40,7 @@ const SunLoader = ({ progress = 0, size = 180 }) => {
             <svg viewBox={viewBox} width="100%" height="100%" style={{ overflow: "visible" }}>
                 <defs>
                     <mask id="sun-mask">
-                        <g>
-                            <animateTransform attributeName="transform" type="rotate" from={`0 ${centerX} ${centerY}`} to={`360 ${centerX} ${centerY}`} dur="15s" repeatCount="indefinite" />
+                        <g className="rotating">
                             <path d={sunPath} fill="white" />
                         </g>
                         {/* Punch a hole for the inner circle so orange water doesn't flood the center! */}
@@ -67,8 +69,7 @@ const SunLoader = ({ progress = 0, size = 180 }) => {
                         </foreignObject>
                     </g>
                     {/* Sun Sharp Vector Outline */}
-                    <g>
-                        <animateTransform attributeName="transform" type="rotate" from={`0 ${centerX} ${centerY}`} to={`360 ${centerX} ${centerY}`} dur="15s" repeatCount="indefinite" />
+                    <g className="rotating">
                         <path d={sunPath} fill="none" stroke="#F2703A" strokeWidth="2" opacity="0.8" />
                     </g>
                 </g>

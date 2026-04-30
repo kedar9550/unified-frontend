@@ -4,8 +4,130 @@
   box-sizing: border-box;
 }
 
+:root {
+  --bg-main: aliceblue;
+  --bg-glass: rgba(255, 255, 255, 0.25);
+  --bg-paper: #ffffff;
+  --bg-panel: #f8fafc;
+  --bg-accent-1: #EEF2FF;
+  --bg-accent-2: #ECFDF5;
+  --bg-accent-3: #F5F3FF;
+  --bg-accent-4: #E8F0FE;
+  --bg-accent-5: #F3E8FF;
+  --text-primary: #1e293b;
+  --text-secondary: #475569;
+  --border-color: #e2e8f0;
+  --color-primary: #004e92;
+  --gradient-primary: linear-gradient(90deg, #004e92, #000428);
+  --gradient-primary-hover: linear-gradient(90deg, #003a6d, #000214);
+}
+
 body, html, #root {
   margin: 0;
   padding: 0;
   font-family: 'Product Sans', sans-serif;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* =========================================
+   DARK MODE OVERRIDES
+   ========================================= */
+body.dark-mode {
+  color-scheme: dark;
+  --bg-main: #020617;
+  --bg-glass: rgba(15, 23, 42, 0.7);
+  --bg-paper: #0f172a;
+  --bg-panel: #1e293b;
+  --bg-accent-1: rgba(99, 102, 241, 0.15);
+  --bg-accent-2: rgba(16, 185, 129, 0.15);
+  --bg-accent-3: rgba(139, 92, 246, 0.15);
+  --bg-accent-4: rgba(59, 130, 246, 0.15);
+  --bg-accent-5: rgba(168, 85, 247, 0.15);
+  --text-primary: #f8fafc;
+  --text-secondary: #94a3b8;
+  --border-color: #1e293b;
+  --color-primary: #BE9337;
+  --gradient-primary: linear-gradient(90deg, #BE9337, #8B6508);
+  --gradient-primary-hover: linear-gradient(90deg, #D4AF37, #996515);
+
+  background-color: var(--bg-main) !important;
+  color: var(--text-primary) !important;
+}
+
+body.dark-mode .MuiPaper-root {
+  background-color: var(--bg-paper) !important;
+  color: var(--text-primary) !important;
+}
+
+/* Catch hardcoded white glassmorphism backgrounds and convert them to dark glass */
+body.dark-mode [style*="rgba(255, 255, 255"],
+body.dark-mode [style*="rgba(255,255,255"] {
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.9), rgba(15, 23, 42, 0.7)) !important;
+  border-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+/* Typography & General Text */
+body.dark-mode .MuiTypography-root {
+  color: #e2e8f0 !important;
+}
+
+/* Specific elements like muted text should stay slightly muted */
+body.dark-mode .MuiTypography-root[style*="color: rgb(119, 119, 119)"],
+body.dark-mode .MuiTypography-root[style*="color: #777"] {
+  color: #94a3b8 !important;
+}
+
+/* Tables */
+body.dark-mode .MuiTableCell-root {
+  color: #cbd5e1 !important;
+  border-bottom-color: #1e293b !important;
+}
+
+/* Inputs & Outlines */
+body.dark-mode .MuiInputBase-root,
+body.dark-mode .MuiInputBase-input {
+  color: var(--text-primary) !important;
+}
+body.dark-mode .MuiOutlinedInput-notchedOutline {
+  border-color: var(--border-color) !important;
+}
+body.dark-mode .MuiInputLabel-root {
+  color: var(--text-secondary) !important;
+}
+body.dark-mode .MuiInputLabel-root.Mui-focused {
+  color: var(--color-primary) !important;
+}
+body.dark-mode .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline {
+  border-color: var(--text-primary) !important;
+}
+body.dark-mode .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline {
+  border-color: var(--color-primary) !important;
+}
+body.dark-mode .MuiFormHelperText-root {
+  color: var(--text-secondary) !important;
+}
+
+/* Menus & Dropdowns */
+body.dark-mode .MuiMenu-paper {
+  background-color: #0f172a !important;
+  border: 1px solid #1e293b !important;
+}
+body.dark-mode .MuiMenuItem-root:hover {
+  background-color: #1e293b !important;
+}
+
+/* Dividers */
+body.dark-mode .MuiDivider-root {
+  border-color: #1e293b !important;
+}
+
+body.dark-mode .MuiCheckbox-root.Mui-checked,
+body.dark-mode .MuiCheckbox-root.Mui-checked svg,
+body.dark-mode .MuiRadio-root.Mui-checked,
+body.dark-mode .MuiRadio-root.Mui-checked svg {
+  color: var(--color-primary) !important;
+}
+
+body.dark-mode .MuiCheckbox-root {
+  color: var(--text-secondary);
 }

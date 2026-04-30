@@ -98,12 +98,12 @@ const Sidebar = ({ mobileOpen, onDrawerToggle }) => {
         height: "100%",
         display: "flex",
         flexDirection: "column",
-        background: "#ffffff",
-        color: "#1e293b",
+        background: "var(--bg-paper)",
+        color: "var(--text-primary)",
         p: 2.5,
         position: "relative",
         overflow: "hidden",
-        borderRight: "1px solid #e2e8f0",
+        borderRight: "1px solid var(--border-color)",
       }}
     >
       <IconButton
@@ -165,15 +165,15 @@ const Sidebar = ({ mobileOpen, onDrawerToggle }) => {
                 px: 2.5,
                 py: 1,
                 borderRadius: "999px",
-                background: "#f1f5f9",
-                border: "1px solid #e2e8f0",
-                color: "#1e293b",
+                background: "var(--bg-panel)",
+                border: "1px solid var(--border-color)",
+                color: "var(--text-primary)",
                 width: "90%",
                 boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
                 mb: 1,
               }}
             >
-              <Box sx={{ display: "flex", color: "#3b82f6" }}>{roleIcon}</Box>
+              <Box sx={{ display: "flex", color: "var(--color-primary)" }}>{roleIcon}</Box>
               <Typography sx={{ fontSize: "0.85rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.5px" }}>
                 {displayedRole}
               </Typography>
@@ -182,7 +182,7 @@ const Sidebar = ({ mobileOpen, onDrawerToggle }) => {
         })()}
       </Box>
 
-      <Box sx={{ height: "1px", background: "#f1f5f9", mb: 2.5, mx: -2 }} />
+      <Box sx={{ height: "1px", background: "var(--border-color)", mb: 2.5, mx: -2 }} />
 
       <List sx={{ px: 0, overflowY: "auto", flexGrow: 1, "&::-webkit-scrollbar": { width: 4 }, "&::-webkit-scrollbar-thumb": { background: "#e2e8f0", borderRadius: 10 } }}>
         {menuItems.map((item) => (
@@ -197,16 +197,16 @@ const Sidebar = ({ mobileOpen, onDrawerToggle }) => {
                     mb: 0.5, 
                     transition: "all 0.2s ease", 
                     overflow: "hidden",
-                    background: active === item.text ? "#eff6ff" : "transparent", 
+                    background: active === item.text ? "var(--bg-accent-4)" : "transparent", 
                     "&:hover": { 
-                      background: "#f8fafc", 
+                      background: "var(--bg-panel)", 
                     } 
                   }}
                 >
-                  <ListItemIcon sx={{ color: active === item.text ? "#3b82f6" : "#64748b", minWidth: 40 }}>{item.icon}</ListItemIcon>
+                  <ListItemIcon sx={{ color: active === item.text ? "var(--color-primary)" : "var(--text-secondary)", minWidth: 40 }}>{item.icon}</ListItemIcon>
                   <ListItemText
                     primary={
-                      <Typography sx={{ fontSize: "0.875rem", fontWeight: active === item.text ? 600 : 500, color: active === item.text ? "#1e40af" : "#475569" }}>
+                      <Typography sx={{ fontSize: "0.875rem", fontWeight: active === item.text ? 600 : 500, color: active === item.text ? "var(--color-primary)" : "var(--text-secondary)" }}>
                         {item.text}
                       </Typography>
                     }
@@ -235,7 +235,7 @@ const Sidebar = ({ mobileOpen, onDrawerToggle }) => {
         ))}
       </List>
 
-      <Box sx={{ height: "1px", background: "#f1f5f9", my: 2, mx: -2 }} />
+      <Box sx={{ height: "1px", background: "var(--border-color)", my: 2, mx: -2 }} />
 
       {/* Weather Widget */}
       <Box
@@ -243,14 +243,14 @@ const Sidebar = ({ mobileOpen, onDrawerToggle }) => {
           mt: 2.5,
           p: 1.5,
           borderRadius: "16px",
-          background: "#f8fafc",
-          border: "1px solid #e2e8f0",
+          background: "var(--bg-panel)",
+          border: "1px solid var(--border-color)",
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
           transition: "all 0.3s ease",
           cursor: "pointer",
-          "&:hover": { background: "#f1f5f9" }
+          "&:hover": { background: "var(--border-color)" }
         }}
       >
         <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
@@ -260,10 +260,10 @@ const Sidebar = ({ mobileOpen, onDrawerToggle }) => {
             sx={{ width: 34, height: 34 }}
           />
           <Box>
-            <Typography sx={{ fontSize: "0.95rem", fontWeight: 700, lineHeight: 1.1, color: "#1e293b" }}>
+            <Typography sx={{ fontSize: "0.95rem", fontWeight: 700, lineHeight: 1.1, color: "var(--text-primary)" }}>
               {weather.temp}
             </Typography>
-            <Typography sx={{ fontSize: "0.7rem", color: "#64748b", fontWeight: 500, mt: 0.2, textTransform: "capitalize" }}>
+            <Typography sx={{ fontSize: "0.7rem", color: "var(--text-secondary)", fontWeight: 500, mt: 0.2, textTransform: "capitalize" }}>
               {weather.desc}
             </Typography>
           </Box>
@@ -300,7 +300,7 @@ const Sidebar = ({ mobileOpen, onDrawerToggle }) => {
             boxSizing: "border-box",
             width: drawerWidth,
             borderRight: "none",
-            background: "#fff",
+            background: "var(--bg-paper)",
           },
         }}
         open
@@ -322,10 +322,10 @@ const Item = ({ icon, text, active, onClick, nested }) => (
       mb: 0.5,
       transition: "all 0.2s ease",
       overflow: "hidden",
-      background: active === text ? "#eff6ff" : "transparent",
-      border: active === text ? "1px solid #dbeafe" : "1px solid transparent",
+      background: active === text ? "var(--bg-accent-4)" : "transparent",
+      border: active === text ? "1px solid var(--border-color)" : "1px solid transparent",
       "&:hover": {
-        background: "#f8fafc",
+        background: "var(--bg-panel)",
       },
     }}
   >
@@ -338,18 +338,18 @@ const Item = ({ icon, text, active, onClick, nested }) => (
           height: "60%",
           width: 3,
           borderRadius: "0 3px 3px 0",
-          background: "#3b82f6",
+          background: "var(--color-primary)",
         }}
       />
     )}
     {icon && (
-      <ListItemIcon sx={{ color: active === text ? "#3b82f6" : "#64748b", minWidth: 40 }}>
+      <ListItemIcon sx={{ color: active === text ? "var(--color-primary)" : "var(--text-secondary)", minWidth: 40 }}>
         {icon}
       </ListItemIcon>
     )}
     <ListItemText
       primary={
-        <Typography sx={{ fontSize: "0.875rem", fontWeight: active === text ? 600 : 500, color: active === text ? "#1e40af" : "#475569" }}>
+        <Typography sx={{ fontSize: "0.875rem", fontWeight: active === text ? 600 : 500, color: active === text ? "var(--color-primary)" : "var(--text-secondary)" }}>
           {text}
         </Typography>
       }

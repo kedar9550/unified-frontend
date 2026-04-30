@@ -118,8 +118,8 @@ const AcademicStructure = () => {
             <Card
                 sx={{
                     ...cardDrillStyle,
-                    border: "2px dashed rgba(33, 150, 243, 0.4)",
-                    background: "rgba(33, 150, 243, 0.05)",
+                    border: "2px dashed var(--color-primary)",
+                    background: "var(--bg-accent-1)",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
@@ -127,9 +127,9 @@ const AcademicStructure = () => {
                     minHeight: "140px",
                     boxShadow: 'none',
                     "&:hover": {
-                        background: "rgba(33, 150, 243, 0.12)",
+                        background: "var(--bg-accent-2)",
                         transform: 'translateY(-8px)',
-                        border: "2px dashed rgba(33, 150, 243, 0.6)",
+                        border: "2px dashed var(--color-primary)",
                     }
                 }}
                 onClick={() => openModal('department')}
@@ -139,17 +139,17 @@ const AcademicStructure = () => {
                         width: 54,
                         height: 54,
                         borderRadius: '50%',
-                        border: '2px solid #2196f3',
+                        border: '2px solid var(--color-primary)',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
                         margin: '0 auto 16px',
-                        background: "rgba(255, 255, 255, 0.4)",
+                        background: "var(--bg-glass)",
                         backdropFilter: "blur(4px)"
                     }}>
-                        <Add sx={{ fontSize: 32, color: '#2196f3' }} />
+                        <Add sx={{ fontSize: 32, color: 'var(--color-primary)' }} />
                     </Box>
-                    <Typography variant="body1" fontWeight={800} sx={{ color: '#004e92', letterSpacing: '0.5px' }}>
+                    <Typography variant="body1" fontWeight={800} sx={{ color: 'var(--color-primary)', letterSpacing: '0.5px' }}>
                         Add Department
                     </Typography>
                 </Box>
@@ -162,25 +162,25 @@ const AcademicStructure = () => {
                             <Typography variant="subtitle1" fontWeight={700} sx={{
                                 lineHeight: 1.3,
                                 wordBreak: 'break-word',
-                                color: '#2c3e50',
+                                color: 'var(--text-primary)',
                                 pr: 1
                             }}>
                                 {dept.name}
                             </Typography>
-                            <IconButton size="small" onClick={(e) => { e.stopPropagation(); openModal('department', 'edit', dept); }} sx={{ color: '#5f6368', flexShrink: 0, p: 0.5, "&:hover": { background: 'none', color: '#2196f3', transform: 'scale(1.2)' }, transition: 'all 0.2s' }}>
+                            <IconButton size="small" onClick={(e) => { e.stopPropagation(); openModal('department', 'edit', dept); }} sx={{ color: 'var(--text-secondary)', flexShrink: 0, p: 0.5, "&:hover": { background: 'none', color: 'var(--color-primary)', transform: 'scale(1.2)' }, transition: 'all 0.2s' }}>
                                 <Edit sx={{ fontSize: 18 }} />
                             </IconButton>
                         </Box>
 
                         <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mb: 2 }}>
-                            <Chip label={dept.code} size="small" sx={{ fontWeight: 800, height: 22, fontSize: '0.7rem', borderRadius: '50px', background: "linear-gradient(90deg, #004e92, #000428)", color: '#fff' }} />
+                            <Chip label={dept.code} size="small" sx={{ fontWeight: 800, height: 22, fontSize: '0.7rem', borderRadius: '50px', background: "var(--gradient-primary)", color: '#fff' }} />
                             {dept.programIds?.map(prog => (
                                 <Chip
                                     key={prog._id}
                                     label={prog.name}
                                     size="small"
                                     variant="outlined"
-                                    sx={{ fontWeight: 700, height: 22, fontSize: '0.65rem', borderRadius: '50px', border: '1.5px solid #004e92', color: '#004e92' }}
+                                    sx={{ fontWeight: 700, height: 22, fontSize: '0.65rem', borderRadius: '50px', border: '1.5px solid var(--color-primary)', color: 'var(--color-primary)' }}
                                 />
                             ))}
                             {dept.hasStudents && (
@@ -217,8 +217,8 @@ const AcademicStructure = () => {
                 <Card
                     sx={{
                         ...cardStyle,
-                        border: "2px dashed rgba(33, 150, 243, 0.4)",
-                        background: "rgba(33, 150, 243, 0.05)",
+                        border: "2px dashed var(--color-primary)",
+                        background: "var(--bg-accent-1)",
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
@@ -226,9 +226,9 @@ const AcademicStructure = () => {
                         minHeight: "140px",
                         boxShadow: 'none',
                         "&:hover": {
-                            background: "rgba(33, 150, 243, 0.12)",
+                            background: "var(--bg-accent-2)",
                             transform: 'translateY(-8px)',
-                            border: "2px dashed rgba(33, 150, 243, 0.6)",
+                            border: "2px dashed var(--color-primary)",
                         }
                     }}
                     onClick={() => openModal('program', 'add')}
@@ -238,17 +238,17 @@ const AcademicStructure = () => {
                             width: 48,
                             height: 48,
                             borderRadius: '50%',
-                            border: '2px solid #2196f3',
+                            border: '2px solid var(--color-primary)',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
                             margin: '0 auto 12px',
-                            background: "rgba(255, 255, 255, 0.4)",
+                            background: "var(--bg-glass)",
                             backdropFilter: "blur(4px)"
                         }}>
-                            <Add sx={{ fontSize: 28, color: '#2196f3' }} />
+                            <Add sx={{ fontSize: 28, color: 'var(--color-primary)' }} />
                         </Box>
-                        <Typography variant="body1" fontWeight={800} sx={{ color: '#004e92', letterSpacing: '0.5px' }}>
+                        <Typography variant="body1" fontWeight={800} sx={{ color: 'var(--color-primary)', letterSpacing: '0.5px' }}>
                             Add Program
                         </Typography>
                     </Box>
@@ -267,19 +267,19 @@ const AcademicStructure = () => {
                                 <Typography variant="subtitle1" fontWeight={700} sx={{
                                     lineHeight: 1.3,
                                     wordBreak: 'break-word',
-                                    color: '#2c3e50',
+                                    color: 'var(--text-primary)',
                                     pr: 1
                                 }}>
                                     {prog.name}
                                 </Typography>
-                                <IconButton size="small" onClick={(e) => { e.stopPropagation(); openModal('program', 'edit', prog); }} sx={{ color: '#5f6368', flexShrink: 0, p: 0.5, "&:hover": { background: 'none', color: '#2196f3', transform: 'scale(1.2)' }, transition: 'all 0.2s' }}>
+                                <IconButton size="small" onClick={(e) => { e.stopPropagation(); openModal('program', 'edit', prog); }} sx={{ color: 'var(--text-secondary)', flexShrink: 0, p: 0.5, "&:hover": { background: 'none', color: 'var(--color-primary)', transform: 'scale(1.2)' }, transition: 'all 0.2s' }}>
                                     <Edit sx={{ fontSize: 18 }} />
                                 </IconButton>
                             </Box>
 
                             <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mb: 2 }}>
-                                <Chip label={prog.code} size="small" sx={{ fontWeight: 800, height: 22, fontSize: '0.7rem', borderRadius: '50px', background: "linear-gradient(90deg, #004e92, #000428)", color: '#fff' }} />
-                                <Chip label={prog.type} size="small" variant="outlined" sx={{ fontWeight: 700, height: 22, fontSize: '0.65rem', borderRadius: '50px', border: '1.5px solid #004e92', color: '#004e92' }} />
+                                <Chip label={prog.code} size="small" sx={{ fontWeight: 800, height: 22, fontSize: '0.7rem', borderRadius: '50px', background: "var(--gradient-primary)", color: '#fff' }} />
+                                <Chip label={prog.type} size="small" variant="outlined" sx={{ fontWeight: 700, height: 22, fontSize: '0.65rem', borderRadius: '50px', border: '1.5px solid var(--color-primary)', color: 'var(--color-primary)' }} />
                             </Box>
 
                             <Divider sx={{ mb: 1.5, mt: 'auto', opacity: 0.5 }} />
@@ -308,7 +308,7 @@ const AcademicStructure = () => {
         return (
             <Box>
                 <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
-                    <Button startIcon={<ArrowBack />} onClick={() => setSelectedDepartment(null)}>
+                    <Button startIcon={<ArrowBack />} onClick={() => setSelectedDepartment(null)} sx={{ color: 'var(--color-primary)', fontWeight: 700 }}>
                         Back to Departments
                     </Button>
                 </Box>
@@ -318,17 +318,17 @@ const AcademicStructure = () => {
                     p: 3,
                     mb: 4,
                     borderRadius: "20px",
-                    background: "rgba(255, 255, 255, 0.4)",
+                    background: "var(--bg-glass)",
                     backdropFilter: "blur(10px)",
-                    border: "1px solid rgba(255, 255, 255, 0.3)"
+                    border: "1px solid var(--border-color)"
                 }}>
                     <Grid container spacing={3} alignItems="center">
                         <Grid item xs={12}>
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1 }}>
-                                <Typography variant="h5" fontWeight={800} color="primary">
+                                <Typography variant="h5" fontWeight={800} sx={{ color: 'var(--text-primary)' }}>
                                     {selectedDepartment.name}
                                 </Typography>
-                                <Chip label={selectedDepartment.code} size="small" sx={{ fontWeight: 800, background: "linear-gradient(90deg, #004e92, #000428)", color: 'white', borderRadius: '50px' }} />
+                                <Chip label={selectedDepartment.code} size="small" sx={{ fontWeight: 800, background: "var(--gradient-primary)", color: 'white', borderRadius: '50px' }} />
                             </Box>
                             <Typography variant="body2" color="textSecondary" sx={{ mb: 2 }}>
                                 {selectedDepartment.description || "No description provided for this department."}
@@ -338,7 +338,7 @@ const AcademicStructure = () => {
                 </Paper>
 
                 <Typography variant="h6" fontWeight={700} sx={{ mb: 3, display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <AccountTree color="primary" /> Department Branches
+                    <AccountTree sx={{ color: 'var(--color-primary)' }} /> Department Branches
                 </Typography>
 
                 <Box sx={{
@@ -349,8 +349,8 @@ const AcademicStructure = () => {
                     <Card
                         sx={{
                             ...cardDrillStyle,
-                            border: "2px dashed rgba(33, 150, 243, 0.4)",
-                            background: "rgba(33, 150, 243, 0.05)",
+                            border: "2px dashed var(--color-primary)",
+                            background: "var(--bg-accent-1)",
                             display: "flex",
                             alignItems: "center",
                             justifyContent: "center",
@@ -358,9 +358,9 @@ const AcademicStructure = () => {
                             minHeight: "140px",
                             boxShadow: 'none',
                             "&:hover": {
-                                background: "rgba(33, 150, 243, 0.12)",
+                                background: "var(--bg-accent-2)",
                                 transform: 'translateY(-8px)',
-                                border: "2px dashed rgba(33, 150, 243, 0.6)",
+                                border: "2px dashed var(--color-primary)",
                             }
                         }}
                         onClick={() => openModal('branch', 'add', { departmentId: selectedDepartment._id, name: selectedDepartment.name })}
@@ -370,17 +370,17 @@ const AcademicStructure = () => {
                                 width: 48,
                                 height: 48,
                                 borderRadius: '50%',
-                                border: '2px solid #2196f3',
+                                border: '2px solid var(--color-primary)',
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
                                 margin: '0 auto 12px',
-                                background: "rgba(255, 255, 255, 0.4)",
+                                background: "var(--bg-glass)",
                                 backdropFilter: "blur(4px)"
                             }}>
-                                <Add sx={{ fontSize: 28, color: '#2196f3' }} />
+                                <Add sx={{ fontSize: 28, color: 'var(--color-primary)' }} />
                             </Box>
-                            <Typography variant="body1" fontWeight={800} sx={{ color: '#004e92', letterSpacing: '0.5px' }}>
+                            <Typography variant="body1" fontWeight={800} sx={{ color: 'var(--color-primary)', letterSpacing: '0.5px' }}>
                                 Add Branch
                             </Typography>
                         </Box>
@@ -400,16 +400,16 @@ const AcademicStructure = () => {
                                         <Typography variant="h6" fontWeight={700} sx={{
                                             lineHeight: 1.2,
                                             wordBreak: 'break-word',
-                                            color: '#2c3e50',
+                                            color: 'var(--text-primary)',
                                             pr: 1
                                         }}>
                                             {branch.name}
                                         </Typography>
                                         <Box sx={{ display: 'flex', gap: 0.5 }}>
-                                            <IconButton size="small" onClick={(e) => { e.stopPropagation(); openModal('branch', 'edit', branch); }} sx={{ color: '#5f6368', p: 0.5, "&:hover": { color: '#2196f3' } }}>
+                                            <IconButton size="small" onClick={(e) => { e.stopPropagation(); openModal('branch', 'edit', branch); }} sx={{ color: 'var(--text-secondary)', p: 0.5, "&:hover": { color: 'var(--color-primary)' } }}>
                                                 <Edit sx={{ fontSize: 18 }} />
                                             </IconButton>
-                                            <IconButton size="small" onClick={(e) => { e.stopPropagation(); setDeleteConfirm({ open: true, type: 'branch', id: branch._id, name: branch.name }); }} sx={{ color: '#5f6368', p: 0.5, "&:hover": { color: '#f44336' } }}>
+                                            <IconButton size="small" onClick={(e) => { e.stopPropagation(); setDeleteConfirm({ open: true, type: 'branch', id: branch._id, name: branch.name }); }} sx={{ color: 'var(--text-secondary)', p: 0.5, "&:hover": { color: '#f44336' } }}>
                                                 <Delete sx={{ fontSize: 18 }} />
                                             </IconButton>
                                         </Box>
@@ -424,7 +424,7 @@ const AcademicStructure = () => {
                                             label={branch.programId.name}
                                             size="small"
                                             variant="outlined"
-                                            sx={{ fontWeight: 800, borderRadius: '50px', border: '1.5px solid #004e92', color: '#004e92' }}
+                                            sx={{ fontWeight: 800, borderRadius: '50px', border: '1.5px solid var(--color-primary)', color: 'var(--color-primary)' }}
                                         />
                                     )}
                                 </Box>
@@ -449,13 +449,21 @@ const AcademicStructure = () => {
                     mb: 4,
                     pt: 1,
                     px: 2,
-                    background: "rgba(255, 255, 255, 0.2)",
+                    background: "var(--bg-glass)",
                     backdropFilter: "blur(12px)",
-                    border: "1px solid rgba(255, 255, 255, 0.3)",
+                    border: "1px solid var(--border-color)",
                     borderRadius: "16px",
                     boxShadow: "0 4px 20px rgba(0,0,0,0.05)"
                 }}>
-                    <Tabs value={activeTab} onChange={(_, val) => setActiveTab(val)}>
+                    <Tabs
+                        value={activeTab}
+                        onChange={(_, val) => setActiveTab(val)}
+                        sx={{
+                            '& .MuiTab-root': { color: 'var(--text-secondary)', fontWeight: 600 },
+                            '& .Mui-selected': { color: 'var(--color-primary) !important' },
+                            '& .MuiTabs-indicator': { backgroundColor: 'var(--color-primary)' }
+                        }}
+                    >
                         <Tab icon={<Business />} iconPosition="start" label="Departments & Branches" />
                         <Tab icon={<School />} iconPosition="start" label="Programs" />
                     </Tabs>
@@ -468,10 +476,10 @@ const AcademicStructure = () => {
                     alignItems: 'center',
                     mb: 4,
                     gap: 1,
-                    background: 'rgba(255, 255, 255, 0.25)',
+                    background: 'var(--bg-glass)',
                     backdropFilter: "blur(12px)",
                     WebkitBackdropFilter: "blur(12px)",
-                    border: "1px solid rgba(255, 255, 255, 0.3)",
+                    border: "1px solid var(--border-color)",
                     p: 1,
                     borderRadius: "16px",
                     boxShadow: "0 4px 20px rgba(0,0,0,0.05)"
@@ -480,7 +488,7 @@ const AcademicStructure = () => {
                         variant="text"
                         onClick={() => setSelectedDepartment(null)}
                         startIcon={<Business />}
-                        sx={{ borderRadius: "10px" }}
+                        sx={{ borderRadius: "10px", color: 'var(--color-primary)', fontWeight: 700 }}
                     >
                         Departments
                     </Button>
@@ -489,7 +497,7 @@ const AcademicStructure = () => {
                         variant="contained"
                         startIcon={<AccountTree />}
                         disableElevation
-                        sx={{ borderRadius: "10px", px: 2 }}
+                        sx={{ borderRadius: "10px", px: 2, background: 'var(--gradient-primary)', fontWeight: 700 }}
                     >
                         {selectedDepartment.name} Branches
                     </Button>
@@ -564,7 +572,14 @@ const AcademicStructure = () => {
                                     <Switch
                                         checked={modal.data.hasStudents || false}
                                         onChange={(e) => setModal({ ...modal, data: { ...modal.data, hasStudents: e.target.checked } })}
-                                        color="primary"
+                                        sx={{
+                                            '& .MuiSwitch-switchBase.Mui-checked': {
+                                                color: 'var(--color-primary)',
+                                            },
+                                            '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': {
+                                                backgroundColor: 'var(--color-primary)',
+                                            },
+                                        }}
                                     />
                                 }
                                 label="Has Students?"
@@ -604,8 +619,8 @@ const AcademicStructure = () => {
                     </Box>
                 </DialogContent>
                 <DialogActions>
-                    <Button onClick={() => setModal({ ...modal, open: false })}>Cancel</Button>
-                    <Button onClick={handleSave} variant="contained" disabled={submitting} sx={{ borderRadius: '50px', background: "linear-gradient(90deg, #004e92, #000428)", px: 4, fontWeight: 700, textTransform: 'none' }}>
+                    <Button onClick={() => setModal({ ...modal, open: false })} sx={{ color: 'var(--text-secondary)' }}>Cancel</Button>
+                    <Button onClick={handleSave} variant="contained" disabled={submitting} sx={{ borderRadius: '50px', background: "var(--gradient-primary)", px: 4, fontWeight: 700, textTransform: 'none' }}>
                         Save
                     </Button>
                 </DialogActions>
@@ -620,7 +635,7 @@ const AcademicStructure = () => {
                     This will fail if there are dependent entities.
                 </DialogContent>
                 <DialogActions>
-                    <Button onClick={() => setDeleteConfirm({ ...deleteConfirm, open: false })}>Cancel</Button>
+                    <Button onClick={() => setDeleteConfirm({ ...deleteConfirm, open: false })} sx={{ color: 'var(--text-secondary)' }}>Cancel</Button>
                     <Button onClick={handleDelete} color="error" variant="contained" disabled={submitting} sx={{ borderRadius: '50px', px: 4, fontWeight: 700, textTransform: 'none' }}>Delete</Button>
                 </DialogActions>
             </Dialog>
@@ -633,18 +648,36 @@ const AcademicStructure = () => {
 };
 
 const cardStyle = {
+    position: "relative",
     borderRadius: "24px",
-    background: "rgba(255, 255, 255, 0.25)",
+    background: "var(--bg-glass)",
     backdropFilter: "blur(18px) saturate(160%)",
     WebkitBackdropFilter: "blur(18px) saturate(160%)",
-    border: "1px solid rgba(255, 255, 255, 0.4)",
-    boxShadow: "0 8px 32px 0 rgba(31, 38, 135, 0.08)",
+    border: "1px solid var(--border-color)",
+    boxShadow: "0 8px 32px 0 rgba(0, 0, 0, 0.08)",
     transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+    "&::after": {
+        content: '""',
+        position: "absolute",
+        inset: "-1px",
+        borderRadius: "24px",
+        padding: "2px",
+        background: "var(--gradient-primary)",
+        WebkitMask: "linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)",
+        WebkitMaskComposite: "xor",
+        maskComposite: "exclude",
+        opacity: 0,
+        transition: "opacity 0.3s ease",
+        pointerEvents: "none"
+    },
     "&:hover": {
         transform: "translateY(-8px)",
-        background: "rgba(255, 255, 255, 0.4)",
-        boxShadow: "0 12px 40px 0 rgba(31, 38, 135, 0.15)",
-        border: "1px solid rgba(255, 255, 255, 0.6)",
+        background: "var(--bg-panel)",
+        boxShadow: "0 12px 40px 0 rgba(0, 0, 0, 0.15)",
+        borderColor: "transparent",
+    },
+    "&:hover::after": {
+        opacity: 1
     }
 };
 

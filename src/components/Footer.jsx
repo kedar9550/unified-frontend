@@ -8,7 +8,7 @@ export default function Footer() {
     <footer className="app-footer">
       <div className="footer-inner">
         <p className="footer-title">Unified Portal</p>
-        <p className="footer-developed">Developed by <span style={{ color: '#0b5096' }}>IT Applications</span></p>
+        <p className="footer-developed">Developed by <span style={{ color: 'var(--color-primary)', fontWeight: 700 }}>IT Applications</span></p>
       </div>
     </footer>
   );

@@ -97,6 +97,8 @@ const UniprimeDashboard = () => {
     value: dashboardData.academicYearsCount,
     icon: <CalendarToday />,
     gradient: "linear-gradient(135deg, #3B82F6, #2563EB)",
+    color: "#3B82F6",
+    bgDark: "rgba(59, 130, 246, 0.15)",
     linkText: "View Details",
   },
   {
@@ -104,6 +106,8 @@ const UniprimeDashboard = () => {
     value: dashboardData.activeYear,
     icon: <School />,
     gradient: "linear-gradient(135deg, #10B981, #059669)",
+    color: "#10B981",
+    bgDark: "rgba(16, 185, 129, 0.15)",
     subtitle: <Chip label="Active" size="small" color="success" />,
     linkText: "Manage Years",
   },
@@ -112,6 +116,8 @@ const UniprimeDashboard = () => {
     value: dashboardData.departmentsCount,
     icon: <AccountBalance />,
     gradient: "linear-gradient(135deg, #8B5CF6, #6D28D9)",
+    color: "#8B5CF6",
+    bgDark: "rgba(139, 92, 246, 0.15)",
     linkText: "View All",
   },
   {
@@ -119,6 +125,8 @@ const UniprimeDashboard = () => {
     value: dashboardData.usersCount,
     icon: <Group />,
     gradient: "linear-gradient(135deg, #F59E0B, #D97706)",
+    color: "#F59E0B",
+    bgDark: "rgba(245, 158, 11, 0.15)",
     linkText: "Manage Users",
   },
   {
@@ -126,6 +134,8 @@ const UniprimeDashboard = () => {
     value: dashboardData.rolesCount,
     icon: <Shield />,
     gradient: "linear-gradient(135deg, #EF4444, #DC2626)",
+    color: "#EF4444",
+    bgDark: "rgba(239, 68, 68, 0.15)",
     linkText: "Manage Roles",
   },
 ];
@@ -225,6 +235,15 @@ const UniprimeDashboard = () => {
                 background: "linear-gradient(180deg, #ffffff30, transparent)",
                 borderRadius: 1,
               },
+              transition: "all 0.3s ease",
+              ".dark-mode &": {
+                background: card.bgDark,
+                color: card.color,
+                boxShadow: "none",
+              },
+              ".dark-mode &::after": {
+                display: "none",
+              }
             }}>
               {React.cloneElement(card.icon, { fontSize: "medium" })}
             </Box>
@@ -267,9 +286,9 @@ const UniprimeDashboard = () => {
               textTransform: "none",
               fontSize: "0.8rem",
               fontWeight: 600,
-              color: "#2563EB",
+              color: "var(--color-primary)",
               p: 0,
-              "&:hover": { background: "transparent" },
+              "&:hover": { background: "transparent", opacity: 0.8 },
             }}
           >
             {card.linkText}
@@ -301,7 +320,7 @@ const UniprimeDashboard = () => {
               </Typography>
               <Button
                 size="small"
-                sx={{ textTransform: "none", fontSize: "0.8rem" }}
+                sx={{ textTransform: "none", fontSize: "0.8rem", color: "var(--color-primary)" }}
               >
                 View Full Structure →
               </Button>
@@ -311,7 +330,7 @@ const UniprimeDashboard = () => {
             <Box sx={{ display: "flex", gap: 2 }}>
               
               {/* Departments */}
-              <Box sx={columnCard("#EEF2FF")}>
+              <Box sx={columnCard("var(--bg-accent-1)")}>
                 <TopBlock icon={<AccountBalance color="primary" />} title="Departments" value={dashboardData.departmentsCount} />
                 <Divider sx={{ my: 1 }} />
                 {dashboardData.departmentsList.slice(0, 5).map((dept, idx) => (
@@ -320,7 +339,7 @@ const UniprimeDashboard = () => {
               </Box>
 
               {/* Programs */}
-              <Box sx={columnCard("#ECFDF5")}>
+              <Box sx={columnCard("var(--bg-accent-2)")}>
                 <TopBlock icon={<School color="success" />} title="Programs" value={dashboardData.programsList.length} />
                 <Divider sx={{ my: 1 }} />
                 {dashboardData.programsList.slice(0, 5).map((prog, idx) => (
@@ -329,7 +348,7 @@ const UniprimeDashboard = () => {
               </Box>
 
               {/* Branches */}
-              <Box sx={columnCard("#F5F3FF")}>
+              <Box sx={columnCard("var(--bg-accent-3)")}>
                 <TopBlock icon={<AccountTree color="secondary" />} title="Branches" value={dashboardData.branchesList.length} />
                 <Divider sx={{ my: 1 }} />
                 {dashboardData.branchesList.slice(0, 5).map((branch, idx) => (
@@ -384,7 +403,7 @@ const UniprimeDashboard = () => {
                   </Box>
                 </Box>
 
-                <Box sx={iconBox("#E8F0FE")}>
+                <Box sx={iconBox("var(--bg-accent-4)")}>
                   <CalendarMonth sx={{ color: "#2563EB" }} />
                 </Box>
               </Box>
@@ -402,7 +421,7 @@ const UniprimeDashboard = () => {
                   </Box>
                 </Box>
 
-                <Box sx={iconBox("#F3E8FF")}>
+                <Box sx={iconBox("var(--bg-accent-5)")}>
                   <MenuBook sx={{ color: "#7C3AED" }} />
                 </Box>
               </Box>
@@ -473,7 +492,7 @@ const UniprimeDashboard = () => {
               sx={{
                 textTransform: "none",
                 fontSize: "0.8rem",
-                color: "#2563EB",
+                color: "var(--color-primary)",
               }}
             >
               View All →
@@ -564,7 +583,7 @@ const UniprimeDashboard = () => {
             <CardContent sx={{ flexGrow: 1 }}>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
                 <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>User & Role Overview</Typography>
-                <Button size="small" sx={{ textTransform: "none", fontSize: "0.75rem" }}>View All Users &gt;</Button>
+                <Button size="small" sx={{ textTransform: "none", fontSize: "0.75rem", color: "var(--color-primary)" }}>View All Users &gt;</Button>
               </Box>
               
               <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "nowrap", gap: 2 }}>
@@ -683,13 +702,13 @@ const UniprimeDashboard = () => {
                         gap: 2,
                         cursor: "pointer",
                         height: "100%",
-                        border: "1px solid #E5E7EB",
-                        backgroundColor: "#fff",
+                        border: "1px solid var(--border-color)",
+                        backgroundColor: "var(--bg-paper)",
                         transition: "all 0.25s ease",
                         
                         "&:hover": {
-                          borderColor: "#2563EB",
-                          backgroundColor: "#F9FAFB",
+                          borderColor: "var(--color-primary)",
+                          backgroundColor: "var(--bg-panel)",
                           transform: "translateY(-2px)",
                           boxShadow: "0 6px 16px rgba(0,0,0,0.06)",
                         },
@@ -704,7 +723,7 @@ const UniprimeDashboard = () => {
                           display: "flex",
                           alignItems: "center",
                           justifyContent: "center",
-                          backgroundColor: "#F1F5F9",
+                          backgroundColor: "var(--bg-panel)",
                           flexShrink: 0,
                         }}
                       >
@@ -717,7 +736,7 @@ const UniprimeDashboard = () => {
                           sx={{
                             fontWeight: 600,
                             fontSize: "0.95rem",
-                            color: "#111827",
+                            color: "var(--text-primary)",
                           }}
                         >
                           {action.title}
@@ -726,7 +745,7 @@ const UniprimeDashboard = () => {
                         <Typography
                           sx={{
                             fontSize: "0.75rem",
-                            color: "#6B7280",
+                            color: "var(--text-secondary)",
                             mt: 0.5,
                           }}
                         >
@@ -796,8 +815,8 @@ const configBox = {
   p: 2,
   mb: 2,
   borderRadius: 1,
-  border: "1px solid #E5E7EB",
-  background: "#fafbff65",
+  border: "1px solid var(--border-color)",
+  background: "var(--bg-panel)",
 };
 
 const iconBox = (bg) => ({
