@@ -92,6 +92,21 @@ export default function RaiseDiscrepancyModal({
   const [discrepancies, setDiscrepancies] = useState([]);
   const [loadingDisc, setLoadingDisc]     = useState(false);
 
+  // ── Semester types state ──────────────────────────────────────────
+  const [localSemesterTypes, setLocalSemesterTypes] = useState(semesterTypes);
+
+  useEffect(() => {
+    if (open && (!semesterTypes || semesterTypes.length === 0)) {
+      if (localSemesterTypes.length === 0) {
+        API.get("/api/semester-types")
+          .then((res) => setLocalSemesterTypes(res.data.data || []))
+          .catch((err) => console.error("Error fetching semester types:", err));
+      }
+    } else {
+      setLocalSemesterTypes(semesterTypes);
+    }
+  }, [open, semesterTypes?.length]);
+
   // ── Raise form state ──────────────────────────────────────────────
   const [yearId,   setYearId]   = useState(defaultYearId);
   const [semTypeId, setSemTypeId] = useState(defaultSemesterTypeId);
@@ -100,16 +115,46 @@ export default function RaiseDiscrepancyModal({
   const [saving,   setSaving]   = useState(false);
   const [success,  setSuccess]  = useState(false);
 
+  // ── Available Semester Numbers state ──────────────────────────────
+  const [semesterNumbers, setSemesterNumbers] = useState([]);
+  const [semesterNo,      setSemesterNo]      = useState("");
+  const [loadingSems,    setLoadingSems]     = useState(false);
+
   // Sync defaults when modal opens
   useEffect(() => {
     if (open) {
       setYearId(defaultYearId);
       setSemTypeId(defaultSemesterTypeId);
+      setSemesterNo("");
       setActiveTab(0);
       setSuccess(false);
       setNote("");
     }
   }, [open, defaultYearId, defaultSemesterTypeId]);
+
+  // Fetch available semester numbers when yearId changes
+  useEffect(() => {
+    if (open && yearId && user?.institutionId) {
+      fetchAvailableSemesters();
+    }
+  }, [open, yearId, user?.institutionId]);
+
+  const fetchAvailableSemesters = async () => {
+    setLoadingSems(true);
+    try {
+      const res = await API.get("/api/faculty-subject-results/available-semesters", {
+        params: {
+          facultyId: user?.institutionId,
+          academicYear: yearId
+        }
+      });
+      setSemesterNumbers(res.data || []);
+    } catch (err) {
+      console.error("Error fetching available semesters:", err);
+    } finally {
+      setLoadingSems(false);
+    }
+  };
 
   // Fetch previous discrepancies when modal opens or tab 0 is active
   useEffect(() => {
@@ -131,12 +176,13 @@ export default function RaiseDiscrepancyModal({
   };
 
   const handleSubmit = async () => {
-    if (!yearId || !semId || !note.trim()) return;
+    if (!yearId || !semTypeId || !note.trim()) return;
     setSaving(true);
     try {
       await API.post("/api/discrepancies", {
         academicYearId:       yearId,
         semesterTypeId:       semTypeId,
+        semester:             semesterNo,
         section,
         note:                 note.trim(),
         facultyInstitutionId: user?.institutionId || "",
@@ -349,8 +395,8 @@ export default function RaiseDiscrepancyModal({
                               <Box>
                                 {d.academicYearId?.year || "—"}
                               </Box>
-                              <Box sx={{ fontSize: 11, color: "#999" }}>
-                                {d.semesterTypeId?.name || "—"}
+                              <Box sx={{ fontSize: 11, color: "#555", fontWeight: 600 }}>
+                                {d.semester ? `Sem ${d.semester}` : d.semesterTypeId?.name || "—"}
                               </Box>
                             </TableCell>
 
@@ -479,20 +525,36 @@ export default function RaiseDiscrepancyModal({
                   </Select>
                 </Box>
 
-                {/* ── Semester ── */}
+                {/* ── Semester Number ── */}
                 <Box>
                   <Typography sx={label}>Semester</Typography>
                   <Select
                     fullWidth
                     size="small"
-                    value={semTypeId}
-                    onChange={e => setSemTypeId(e.target.value)}
+                    value={semesterNo}
+                    onChange={e => {
+                      const val = e.target.value;
+                      setSemesterNo(val);
+                      // Auto-select ODD/EVEN type based on number
+                      if (val) {
+                        const typeName = Number(val) % 2 === 0 ? "EVEN" : "ODD";
+                        const type = localSemesterTypes.find(t => t.name === typeName);
+                        if (type) setSemTypeId(type._id);
+                      }
+                    }}
+                    displayEmpty
                     sx={selectSx}
+                    disabled={loadingSems}
                   >
-                    {semesterTypes.map(s => (
-                      <MenuItem key={s._id} value={s._id}>{s.name}</MenuItem>
+                    <MenuItem value="" disabled>Select Semester</MenuItem>
+                    {semesterNumbers.map(n => (
+                      <MenuItem key={n} value={n}>Semester {n}</MenuItem>
                     ))}
+                    {semesterNumbers.length === 0 && !loadingSems && (
+                      <MenuItem value="" disabled>No semesters found in data</MenuItem>
+                    )}
                   </Select>
+                  {loadingSems && <CircularProgress size={16} sx={{ mt: 1 }} />}
                 </Box>
 
                 {/* ── Section ── */}
@@ -568,7 +630,7 @@ export default function RaiseDiscrepancyModal({
           <Button
             variant="contained"
             onClick={handleSubmit}
-            disabled={saving || !note.trim() || !yearId || !semTypeId}
+            disabled={saving || !note.trim() || !yearId || !semesterNo}
             sx={{
               borderRadius: "20px",
               px: 4,
