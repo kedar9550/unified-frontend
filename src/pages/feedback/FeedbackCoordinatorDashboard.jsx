@@ -72,10 +72,10 @@ const FeedbackCoordinatorDashboard = () => {
           </Typography>
         </Box>
         <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
-           <Button variant="outlined" sx={{ borderRadius: 2, borderColor: '#e0e0e0', color: '#424242', textTransform: 'none' }} startIcon={<CalendarMonth />}>
+           <Button variant="outlined" sx={{ borderRadius: 1, borderColor: '#e0e0e0', color: '#424242', textTransform: 'none' }} startIcon={<CalendarMonth />}>
              2026-2027
            </Button>
-           <Button variant="outlined" sx={{ borderRadius: 2, borderColor: '#e0e0e0', color: '#424242', textTransform: 'none' }}>
+           <Button variant="outlined" sx={{ borderRadius: 1, borderColor: '#e0e0e0', color: '#424242', textTransform: 'none' }}>
              ODD Semester
            </Button>
         </Box>
@@ -85,8 +85,8 @@ const FeedbackCoordinatorDashboard = () => {
       <Grid container spacing={2} sx={{ mb: 4 }}>
         {topCards.map((card, i) => (
           <Grid item key={i} xs={12} sm={6} md={4} lg sx={{ flex: "1 1 0", minWidth: 0 }}>
-            <Card sx={{ borderRadius: 2, boxShadow: "0 2px 10px rgba(0,0,0,0.04)", p: 2, height: "100%", display: "flex", alignItems: "center", gap: 2}}>
-              <Box sx={{ width: 48, height: 48, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", backgroundColor: card.bgColor, color: card.color, flexShrink: 0 }}>
+            <Card sx={{ borderRadius: 1, boxShadow: "0 2px 10px rgba(0,0,0,0.04)", p: 2, height: "100%", display: "flex", alignItems: "center", gap: 2}}>
+              <Box sx={{ width: 48, height: 48, borderRadius: 1, display: "flex", alignItems: "center", justifyContent: "center", backgroundColor: card.bgColor, color: card.color, flexShrink: 0 }}>
                 {card.icon}
               </Box>
               <Box>
@@ -103,7 +103,7 @@ const FeedbackCoordinatorDashboard = () => {
       <Box sx={{ display: "flex", gap: 3, flexWrap: { xs: "wrap", lg: "nowrap" }, mb: 4, alignItems: "flex-start" }}>
         {/* Feedback Overview */}
         <Box sx={{ width: { xs: "100%", lg: "40%" }}}>
-          <Card sx={{ borderRadius: 2, boxShadow: "0 2px 10px rgba(0,0,0,0.04)", p: 3, width: "100%", display: "flex", flexDirection: "column" }}>
+          <Card sx={{ borderRadius: 1, boxShadow: "0 2px 10px rgba(0,0,0,0.04)", p: 3, width: "100%", display: "flex", flexDirection: "column" }}>
             <Typography sx={{ fontWeight: 700, fontSize: "1.05rem", mb: 3 }}>Feedback Overview</Typography>
             
             <Box sx={{ display: "flex", alignItems: "center", gap: 3, mb: 4 }}>
@@ -128,7 +128,7 @@ const FeedbackCoordinatorDashboard = () => {
                 {feedbackData.map((item, idx) => (
                   <Box key={idx} sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1.5 }}>
                     <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                      <Box sx={{ width: 8, height: 8, borderRadius: "50%", bgcolor: item.color }} />
+                      <Box sx={{ width: 8, height: 8, borderRadius: 1, bgcolor: item.color }} />
                       <Typography sx={{ fontSize: 13, color: "#4B5563" }}>{item.name}</Typography>
                     </Box>
                     <Typography sx={{ fontSize: 13, fontWeight: 600 }}>{item.value} <span style={{color: "#9CA3AF", fontWeight: 400}}>({item.value === 48 ? '80%' : item.value === 12 ? '20%' : '5%'})</span></Typography>
@@ -138,13 +138,13 @@ const FeedbackCoordinatorDashboard = () => {
             </Box>
 
             <Typography variant="body2" sx={{ color: "#4B5563", mb: 1 }}>48 of 60 faculties have been evaluated</Typography>
-            <LinearProgress variant="determinate" value={80} sx={{ height: 8, borderRadius: 4, bgcolor: "#E5E7EB", "& .MuiLinearProgress-bar": { bgcolor: "#2563EB" } }} />
+            <LinearProgress variant="determinate" value={80} sx={{ height: 8, borderRadius: 1, bgcolor: "#E5E7EB", "& .MuiLinearProgress-bar": { bgcolor: "#2563EB" } }} />
           </Card>
         </Box>
 
         {/* Recent Feedbacks */}
         <Box sx={{ width: { xs: "100%", lg: "60%" }}}>
-          <Card sx={{ borderRadius: 2, boxShadow: "0 2px 10px rgba(0,0,0,0.04)", p: 3, width: "100%", display: "flex", flexDirection: "column" }}>
+          <Card sx={{ borderRadius: 1, boxShadow: "0 2px 10px rgba(0,0,0,0.04)", p: 3, width: "100%", display: "flex", flexDirection: "column" }}>
             <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
               <Typography sx={{ fontWeight: 700, fontSize: "1.05rem" }}>Recent Evaluations</Typography>
               <Button size="small" sx={{ textTransform: "none", fontSize: "0.8rem", color: "#2563EB" }}>View All</Button>
@@ -203,7 +203,7 @@ const FeedbackCoordinatorDashboard = () => {
       {/* Row 3: Discrepancies */}
       <Box sx={{ display: "flex", gap: 3, flexWrap: "wrap", mb: 4 }}>
         <Box sx={{ width: { xs: "100%", lg: "50%" }, display: "flex" }}>
-          <Card sx={{ borderRadius: 2, boxShadow: "0 2px 10px rgba(0,0,0,0.04)", p: 3, width: "100%", bgcolor: "#FAFAFA" }}>
+          <Card sx={{ borderRadius: 1, boxShadow: "0 2px 10px rgba(0,0,0,0.04)", p: 3, width: "100%", bgcolor: "#FAFAFA" }}>
             <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
               <Typography sx={{ fontWeight: 700, fontSize: "1.05rem", color: "#111827" }}>Feedback Alerts Requiring Attention</Typography>
               <Button size="small" sx={{ textTransform: "none", fontSize: "0.8rem", color: "#2563EB" }}>View All</Button>
@@ -211,7 +211,7 @@ const FeedbackCoordinatorDashboard = () => {
 
             <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
               {discrepancies.map((disc, i) => (
-                <Paper key={i} elevation={0} sx={{ p: 2, borderRadius: 2, border: "1px solid #FCA5A5", bgcolor: "#FEF2F2" }}>
+                <Paper key={i} elevation={0} sx={{ p: 2, borderRadius: 1, border: "1px solid #FCA5A5", bgcolor: "#FEF2F2" }}>
                   <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 2 }}>
                     <Box sx={{ flex: 1 }}>
                       <Typography sx={{ fontSize: "0.85rem", fontWeight: 600, color: "#111827" }}>{disc.name}</Typography>
@@ -224,7 +224,7 @@ const FeedbackCoordinatorDashboard = () => {
                     </Box>
                     <Box sx={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 1 }}>
                       <Typography sx={{ fontSize: "0.7rem", color: "#9CA3AF" }}>{disc.time}</Typography>
-                      <Button variant="outlined" color="error" size="small" sx={{ textTransform: "none", fontSize: "0.75rem", px: 2, borderRadius: 4 }}>
+                      <Button variant="outlined" color="error" size="small" sx={{ textTransform: "none", fontSize: "0.75rem", px: 2, borderRadius: 1 }}>
                         Review
                       </Button>
                     </Box>
