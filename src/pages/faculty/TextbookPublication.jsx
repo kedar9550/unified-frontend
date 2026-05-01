@@ -73,6 +73,7 @@ export default function TextbookPublication() {
       if (files.authorAffiliation) fd.append("authorAffiliation", files.authorAffiliation);
       if (files.index) fd.append("index", files.index);
       fd.append("academicYear", selectedYear);
+      if (form.applyIncentive === "Yes") fd.append("expectedAmount", "10,000");
       
       await API.post("/api/research/textbook", fd, { headers: { "Content-Type": "multipart/form-data" } });
       setSnack({ open: true, msg: "Textbook submitted successfully!", severity: "success" });
@@ -102,13 +103,14 @@ export default function TextbookPublication() {
               <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Title</TableCell>
               <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Publisher</TableCell>
               <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>ISBN</TableCell>
+              <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Academic Year</TableCell>
               <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Status</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
             {(!publicationsList || publicationsList.length === 0) ? (
               <TableRow>
-                <TableCell colSpan={4} align="center" sx={{ py: 4, color: "text.secondary" }}>
+                <TableCell colSpan={5} align="center" sx={{ py: 4, color: "text.secondary" }}>
                   No previous publications found. Click "Apply New" to submit one.
                 </TableCell>
               </TableRow>
@@ -118,7 +120,23 @@ export default function TextbookPublication() {
                   <TableCell sx={{ color: "var(--text-primary)", fontWeight: 500, py: 2 }}>{pub.title || "N/A"}</TableCell>
                   <TableCell sx={{ color: "var(--text-secondary)", py: 2 }}>{pub.publisher || "N/A"}</TableCell>
                   <TableCell sx={{ color: "var(--text-secondary)", py: 2 }}>{pub.isbn || "N/A"}</TableCell>
-                  <TableCell sx={{ py: 2 }}><Typography variant="body2" sx={{ color: "#10b981", fontWeight: 700, background: "rgba(16, 185, 129, 0.1)", px: 1.5, py: 0.5, borderRadius: "6px", display: "inline-block" }}>Submitted</Typography></TableCell>
+                  <TableCell sx={{ color: "var(--text-secondary)", py: 2 }}>{pub.academicYear?.year || "N/A"}</TableCell>
+                  <TableCell sx={{ py: 2 }}>
+                    <Typography 
+                      variant="body2" 
+                      sx={{ 
+                        color: pub.status?.includes('Rejected') ? "#ef4444" : pub.status === 'Approved' ? "#10b981" : "#e8a000", 
+                        fontWeight: 700, 
+                        background: pub.status?.includes('Rejected') ? "rgba(239, 68, 68, 0.1)" : pub.status === 'Approved' ? "rgba(16, 185, 129, 0.1)" : "rgba(232, 160, 0, 0.1)", 
+                        px: 1.5, 
+                        py: 0.5, 
+                        borderRadius: "6px", 
+                        display: "inline-block" 
+                      }}
+                    >
+                      {pub.status || "Pending"}
+                    </Typography>
+                  </TableCell>
                 </TableRow>
               ))
             )}
