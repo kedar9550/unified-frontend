@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { Box, TextField, MenuItem, Select, Typography, Alert, Snackbar, Button, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper } from "@mui/material";
+import { Box, TextField, MenuItem, Select, Typography, Alert, Snackbar, Button, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, IconButton } from "@mui/material";
+import { AddCircle, Delete } from "@mui/icons-material";
 import PageHeader from "../../components/common/PageHeader";
 import {
   FacultyInfoRow, FormCard, Grid2, SubLabel, NoteBox, FileField, SubmitBtn,
@@ -16,8 +17,9 @@ export default function TextbookPublication() {
   const [publicationsList, setPublicationsList] = useState([]);
 
   const [form, setForm] = useState({
-    college: "", title: "", publisher: "", isbn: "", yearOfPublication: "", firstAuthor: "",
-    chaptersContributed: "", edition: "", cost: "", coAuthors: "", month: "", year: "",
+    college: "", title: "", publisher: "", isbn: "", yearOfPublication: "", firstAuthor: "", authorPosition: "",
+    chaptersContributed: "", edition: "", cost: "", coAuthors: [{ name: "", affiliation: "" }], month: "", year: "",
+    applyIncentive: "",
   });
   const [files, setFiles] = useState({ coverPage: null, authorAffiliation: null, index: null });
   const [loading, setLoading] = useState(false);
@@ -36,6 +38,22 @@ export default function TextbookPublication() {
   const set = (k) => (e) => setForm((p) => ({ ...p, [k]: e.target.value }));
   const setFile = (k) => (e) => setFiles((p) => ({ ...p, [k]: e.target.files[0] }));
 
+  const handleCoAuthorChange = (index, field, value) => {
+    const updated = [...form.coAuthors];
+    updated[index][field] = value;
+    setForm(p => ({ ...p, coAuthors: updated }));
+  };
+
+  const addCoAuthor = () => setForm(p => ({ ...p, coAuthors: [...p.coAuthors, { name: "", affiliation: "" }] }));
+  const removeCoAuthor = (index) => {
+    if (form.coAuthors.length > 1) {
+      const updated = form.coAuthors.filter((_, i) => i !== index);
+      setForm(p => ({ ...p, coAuthors: updated }));
+    } else {
+      setForm(p => ({ ...p, coAuthors: [{ name: "", affiliation: "" }] }));
+    }
+  };
+
   const handleSubmit = async () => {
     if (!form.title || !form.publisher || !form.isbn) {
       setSnack({ open: true, msg: "Please fill all required fields", severity: "error" });
@@ -44,7 +62,13 @@ export default function TextbookPublication() {
     setLoading(true);
     try {
       const fd = new FormData();
-      Object.entries(form).forEach(([k, v]) => fd.append(k, v));
+      Object.entries(form).forEach(([k, v]) => {
+        if (k === "coAuthors") {
+          fd.append(k, JSON.stringify(v));
+        } else {
+          fd.append(k, v);
+        }
+      });
       if (files.coverPage) fd.append("coverPage", files.coverPage);
       if (files.authorAffiliation) fd.append("authorAffiliation", files.authorAffiliation);
       if (files.index) fd.append("index", files.index);
@@ -52,7 +76,7 @@ export default function TextbookPublication() {
       
       await API.post("/api/research/textbook", fd, { headers: { "Content-Type": "multipart/form-data" } });
       setSnack({ open: true, msg: "Textbook submitted successfully!", severity: "success" });
-      setForm({ college: "", title: "", publisher: "", isbn: "", yearOfPublication: "", firstAuthor: "", chaptersContributed: "", edition: "", cost: "", coAuthors: "", month: "", year: "" });
+      setForm({ college: "", title: "", publisher: "", isbn: "", yearOfPublication: "", firstAuthor: "", authorPosition: "", chaptersContributed: "", edition: "", cost: "", coAuthors: [{ name: "", affiliation: "" }], month: "", year: "", applyIncentive: "" });
       setFiles({ coverPage: null, authorAffiliation: null, index: null });
       setSelectedYear("");
       setViewMode("list");
@@ -171,6 +195,19 @@ export default function TextbookPublication() {
             <MenuItem value="No">No</MenuItem>
           </Select>
         </Box>
+        {form.firstAuthor === "No" && (
+          <Box>
+            <Typography sx={labelStyle}>Author Position :</Typography>
+            <TextField 
+              size="small" 
+              fullWidth 
+              type="number" 
+              value={form.authorPosition} 
+              onChange={set("authorPosition")} 
+              onKeyPress={(e) => { if (!/[0-9]/.test(e.key)) e.preventDefault(); }}
+            />
+          </Box>
+        )}
         <Box>
           <Typography sx={labelStyle}>Number of Chapters Contributed by the Author :</Typography>
           <TextField size="small" fullWidth type="number" value={form.chaptersContributed} onChange={set("chaptersContributed")} />
@@ -187,8 +224,28 @@ export default function TextbookPublication() {
           <TextField size="small" fullWidth value={form.cost} onChange={set("cost")} placeholder="Rs. /-" />
         </Box>
         <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
-          <Typography sx={labelStyle}>Name & affiliation of Co-Author(s) :</Typography>
-          <TextField size="small" fullWidth multiline rows={3} value={form.coAuthors} onChange={set("coAuthors")} />
+          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1.5 }}>
+            <Typography sx={{ ...labelStyle, mb: 0 }}>Name & affiliation of Co-Author(s) :</Typography>
+            <Button size="small" startIcon={<AddCircle />} onClick={addCoAuthor} sx={{ textTransform: "none", fontWeight: 700, color: "var(--color-primary)" }}>Add Co-Author</Button>
+          </Box>
+          
+          {form.coAuthors.map((ca, index) => (
+            <Box key={index} sx={{ display: "flex", gap: 2, mb: 2, p: 2, borderRadius: "12px", border: "1px solid var(--border-color)", background: "var(--bg-accent-1)", position: "relative" }}>
+              <Box sx={{ flex: 1 }}>
+                <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>CO-AUTHOR NAME</Typography>
+                <TextField size="small" fullWidth value={ca.name} onChange={(e) => handleCoAuthorChange(index, "name", e.target.value)} placeholder="Name" />
+              </Box>
+              <Box sx={{ flex: 2 }}>
+                <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>AFFILIATION</Typography>
+                <TextField size="small" fullWidth value={ca.affiliation} onChange={(e) => handleCoAuthorChange(index, "affiliation", e.target.value)} placeholder="College / Organization" />
+              </Box>
+              <Box sx={{ display: "flex", alignItems: "flex-end", pb: 0.5 }}>
+                <IconButton size="small" color="error" onClick={() => removeCoAuthor(index)} disabled={form.coAuthors.length === 1 && !ca.name && !ca.affiliation}>
+                  <Delete fontSize="small" />
+                </IconButton>
+              </Box>
+            </Box>
+          ))}
         </Box>
       </Grid2>
 
@@ -214,9 +271,19 @@ export default function TextbookPublication() {
         <FileField label="Attach Page displaying author affiliation" name="authorAffiliation" onChange={setFile("authorAffiliation")} />
         <FileField label="Attach Index" name="index" onChange={setFile("index")} />
         <Box>
-          <Typography sx={{ fontSize: 13, fontWeight: 700, color: "var(--color-primary)" }}>Expected Amount:</Typography>
-          <TextField size="small" value="10,000" disabled sx={{ "& .MuiInputBase-input.Mui-disabled": { WebkitTextFillColor: "#10b981", fontWeight: 800, background: "rgba(16, 185, 129, 0.1)", borderRadius: "8px" } }} />
+          <Typography sx={labelStyle}>Whether you want to apply for incentive?</Typography>
+          <Select size="small" fullWidth displayEmpty value={form.applyIncentive} onChange={set("applyIncentive")}>
+            <MenuItem value="">Select</MenuItem>
+            <MenuItem value="Yes">Yes</MenuItem>
+            <MenuItem value="No">No</MenuItem>
+          </Select>
         </Box>
+        {form.applyIncentive === "Yes" && (
+          <Box>
+            <Typography sx={{ fontSize: 13, fontWeight: 700, color: "var(--color-primary)" }}>Expected Amount:</Typography>
+            <TextField size="small" value="10,000" disabled sx={{ "& .MuiInputBase-input.Mui-disabled": { WebkitTextFillColor: "#10b981", fontWeight: 800, background: "rgba(16, 185, 129, 0.1)", borderRadius: "8px" } }} />
+          </Box>
+        )}
       </Grid2>
 
       <Box sx={{ display: "flex", gap: 2, justifyContent: "center", mt: 4 }}>

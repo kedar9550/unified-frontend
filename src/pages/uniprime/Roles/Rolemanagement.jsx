@@ -49,6 +49,7 @@ const RoleManagement = () => {
     const [inlineSearchResults, setInlineSearchResults] = useState([]);
     const [editingEmployee, setEditingEmployee] = useState(null);
     const [editableEmail, setEditableEmail] = useState("");
+    const [editableCoreDept, setEditableCoreDept] = useState("");
     const [isUpdatingEmail, setIsUpdatingEmail] = useState(false);
     const [showCreateIndividualSearch, setShowCreateIndividualSearch] = useState(false);
     const [createIndividualQuery, setCreateIndividualQuery] = useState("");
@@ -206,30 +207,43 @@ const RoleManagement = () => {
         }
     };
 
-    const handleUpdateEmail = async () => {
-        if (!editingEmployee || !editableEmail) return;
-        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(editableEmail)) {
-            showSnackbar("Please enter a valid email address", "warning");
+    const handleUpdateEmployeeAdmin = async () => {
+        if (!editingEmployee) return;
+        
+        const updates = {};
+        if (editableEmail && editableEmail !== editingEmployee.email) {
+            if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(editableEmail)) {
+                showSnackbar("Please enter a valid email address", "warning");
+                return;
+            }
+            updates.email = editableEmail;
+        }
+
+        if (editableCoreDept && editableCoreDept !== editingEmployee.coreDepartment) {
+            updates.coreDepartment = editableCoreDept;
+        }
+
+        if (Object.keys(updates).length === 0) {
+            showSnackbar("No changes to update", "info");
+            setEditingEmployee(null);
             return;
         }
 
         setIsUpdatingEmail(true);
         try {
-            const res = await API.put(`/api/employees/${editingEmployee._id}/admin-update`, {
-                email: editableEmail
-            });
+            const res = await API.put(`/api/employees/${editingEmployee._id}/admin-update`, updates);
             if (res.data.success) {
-                showSnackbar("Email updated successfully!");
+                showSnackbar("Employee updated successfully!");
                 // Update local states if needed
                 if (selectedUser?._id === editingEmployee._id) {
-                    setSelectedUser({ ...selectedUser, email: editableEmail });
+                    setSelectedUser({ ...selectedUser, ...updates });
                 }
                 setEditingEmployee(null);
                 setInlineSearchResults([]);
                 setInlineSearchQuery("");
             }
         } catch (error) {
-            showSnackbar(error.response?.data?.message || "Failed to update email", "error");
+            showSnackbar(error.response?.data?.message || "Failed to update employee", "error");
         } finally {
             setIsUpdatingEmail(false);
         }
@@ -647,7 +661,7 @@ const RoleManagement = () => {
                     <Paper elevation={0} sx={{ p: 3, height: '100%', borderRadius: "20px", background: "var(--bg-glass)", backdropFilter: "blur(10px) saturate(150%)", border: "1px solid var(--border-color)", boxShadow: "0 4px 20px rgba(0,0,0,0.02)" }}>
                         <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, justifyContent: 'space-between', alignItems: { xs: 'stretch', sm: 'flex-start' }, gap: 2 }}>
                             <Box>
-                                <Typography variant="h6" fontWeight={800} color="var(--text-primary)">Create Roles</Typography>
+                                <Typography variant="h6" fontWeight={800} color="var(--text-primary)">Add Employee</Typography>
                                 <Typography variant="body2" color="textSecondary" fontWeight={500}>
                                     Create and update data
                                 </Typography>
@@ -1040,6 +1054,7 @@ const RoleManagement = () => {
                                                                     onClick={() => {
                                                                         setEditingEmployee(user);
                                                                         setEditableEmail(user.email || "");
+                                                                        setEditableCoreDept(user.coreDepartment || user.department || "");
                                                                     }}
                                                                     sx={{
                                                                         textTransform: 'none',
@@ -1121,7 +1136,7 @@ const RoleManagement = () => {
                                                     sx={{ "& .MuiInputBase-input.Mui-disabled": { WebkitTextFillColor: "var(--text-secondary)", fontWeight: 600 } }}
                                                 />
                                             </Grid>
-                                            <Grid size={{ xs: 12 }}>
+                                            <Grid size={{ xs: 12, sm: 6 }}>
                                                 <TextField
                                                     fullWidth
                                                     label="Email (Editable)"
@@ -1136,13 +1151,34 @@ const RoleManagement = () => {
                                                     }}
                                                 />
                                             </Grid>
+                                            <Grid size={{ xs: 12, sm: 6 }}>
+                                                <TextField
+                                                    fullWidth
+                                                    select
+                                                    label="Core Department"
+                                                    value={editableCoreDept}
+                                                    onChange={(e) => setEditableCoreDept(e.target.value)}
+                                                    size="small"
+                                                    SelectProps={{ native: false }}
+                                                    sx={{
+                                                        bgcolor: 'rgba(255, 255, 255, 0.6)',
+                                                        borderRadius: '10px',
+                                                        "& .MuiOutlinedInput-root": { borderRadius: '10px' }
+                                                    }}
+                                                >
+                                                    <MenuItem value="" disabled>Select Department</MenuItem>
+                                                    {allDepartments.map(d => (
+                                                        <MenuItem key={d._id} value={d._id}>{d.name}</MenuItem>
+                                                    ))}
+                                                </TextField>
+                                            </Grid>
                                         </Grid>
 
                                         <Box sx={{ display: 'flex', justifyContent: { xs: 'center', sm: 'flex-end' }, mt: 3 }}>
                                             <Button
                                                 variant="contained"
-                                                onClick={handleUpdateEmail}
-                                                disabled={isUpdatingEmail || !editableEmail}
+                                                onClick={handleUpdateEmployeeAdmin}
+                                                disabled={isUpdatingEmail || (!editableEmail && !editableCoreDept)}
                                                 startIcon={isUpdatingEmail ? <CircularProgress size={16} color="inherit" /> : <Save />}
                                                 fullWidth={false}
                                                 sx={{
@@ -1181,6 +1217,15 @@ const RoleManagement = () => {
                                     Managing: <span style={{ color: 'var(--text-primary)', fontWeight: 700 }}>{selectedUser ? `${selectedUser.name} (${selectedUser.institutionId})` : "Please select"}</span>
                                 </Typography>
                             </Box>
+                            <Button 
+                                variant="outlined" 
+                                size="small" 
+                                startIcon={<Add />} 
+                                onClick={() => setIsRoleModalOpen(true)}
+                                sx={{ borderRadius: '50px', textTransform: 'none', fontWeight: 700, border: '1.5px solid var(--color-primary)', color: 'var(--color-primary)', '&:hover': { border: '1.5px solid var(--color-primary)', background: 'var(--bg-accent-1)' } }}
+                            >
+                                New Role
+                            </Button>
                         </Box>
                         <Box sx={{ mt: 3, display: "flex", gap: 1 }}>
                             <TextField
@@ -1216,10 +1261,10 @@ const RoleManagement = () => {
                                 <Typography variant="subtitle2" fontWeight={700} gutterBottom color="textSecondary">Search Results</Typography>
                                 <List>
                                     {userSearchResults.length > 0 ? userSearchResults.map((user) => (
-                                        <ListItem key={user._id} disablePadding sx={{ 
-                                            mb: 1, 
-                                            borderRadius: '12px', 
-                                            overflow: 'hidden', 
+                                        <ListItem key={user._id} disablePadding sx={{
+                                            mb: 1,
+                                            borderRadius: '12px',
+                                            overflow: 'hidden',
                                             position: 'relative',
                                             border: '1px solid transparent',
                                             ...(selectedUser?._id === user._id && {
@@ -1256,10 +1301,10 @@ const RoleManagement = () => {
                                                     }
                                                 />
                                                 <ListItemSecondaryAction sx={{ right: 16 }}>
-                                                    <IconButton 
-                                                        edge="end" 
-                                                        onClick={() => selectUser(user)} 
-                                                        sx={{ 
+                                                    <IconButton
+                                                        edge="end"
+                                                        onClick={() => selectUser(user)}
+                                                        sx={{
                                                             color: selectedUser?._id === user._id ? 'var(--color-primary)' : 'var(--text-secondary)',
                                                             transition: '0.3s',
                                                             '&:hover': { color: 'var(--color-primary)', transform: 'scale(1.1)' }
@@ -1315,8 +1360,8 @@ const RoleManagement = () => {
                                                                     }}
                                                                     variant={isSelected ? "filled" : "outlined"}
                                                                     size="small"
-                                                                    sx={{ 
-                                                                        cursor: 'pointer', 
+                                                                    sx={{
+                                                                        cursor: 'pointer',
                                                                         borderRadius: '50px',
                                                                         fontWeight: 700,
                                                                         border: isSelected ? 'none' : '1.5px solid var(--color-primary)',
@@ -1343,11 +1388,11 @@ const RoleManagement = () => {
                                             {roles.length > 0 ? roles.map((role) => {
                                                 const isIdentityDefault = getSystemRoleName(selectedUser) === role.name;
                                                 return (
-                                                    <Box key={role._id} onClick={() => handleRoleToggle(role._id)} sx={{ 
-                                                        p: 1.5, 
-                                                        mb: 1, 
-                                                        borderRadius: '12px', 
-                                                        background: 'var(--bg-glass)', 
+                                                    <Box key={role._id} onClick={() => handleRoleToggle(role._id)} sx={{
+                                                        p: 1.5,
+                                                        mb: 1,
+                                                        borderRadius: '12px',
+                                                        background: 'var(--bg-glass)',
                                                         position: 'relative',
                                                         border: '1px solid transparent',
                                                         ...(assignedRoleIds.includes(role._id.toString()) && {
@@ -1365,23 +1410,23 @@ const RoleManagement = () => {
                                                                 zIndex: 0
                                                             }
                                                         }),
-                                                        cursor: selectedUser ? 'pointer' : 'default', 
-                                                        opacity: selectedUser ? 1 : 0.6, 
-                                                        display: 'flex', 
-                                                        alignItems: 'center', 
-                                                        transition: '0.2s', 
-                                                        '&:hover': selectedUser ? { background: 'var(--bg-panel)' } : {} 
+                                                        cursor: selectedUser ? 'pointer' : 'default',
+                                                        opacity: selectedUser ? 1 : 0.6,
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        transition: '0.2s',
+                                                        '&:hover': selectedUser ? { background: 'var(--bg-panel)' } : {}
                                                     }}>
                                                         <Box sx={{ display: 'flex', alignItems: 'center', width: '100%' }}>
-                                                            <Checkbox 
-                                                                checked={assignedRoleIds.includes(role._id.toString())} 
-                                                                disabled={!selectedUser} 
-                                                                sx={{ 
-                                                                    p: 0, 
+                                                            <Checkbox
+                                                                checked={assignedRoleIds.includes(role._id.toString())}
+                                                                disabled={!selectedUser}
+                                                                sx={{
+                                                                    p: 0,
                                                                     mr: 2,
                                                                     '&.Mui-checked': { color: 'var(--color-primary)' },
                                                                     '&.MuiCheckbox-root': { color: assignedRoleIds.includes(role._id.toString()) ? 'var(--color-primary)' : 'var(--text-secondary)' }
-                                                                }} 
+                                                                }}
                                                             />
                                                             <Box sx={{ flex: 1 }}>
                                                                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
