@@ -139,7 +139,7 @@ const FacultyDashboard = () => {
           <Grid item key={i} xs={12} sm={6} md={4} lg sx={{ flex: "1 1 0", minWidth: 0 }}>
             <Card
               sx={{
-                borderRadius: "16px",
+                borderRadius: 1,
                 background: "var(--bg-panel)",
                 border: "1px solid var(--border-color)",
                 boxShadow: "var(--shadow-premium)",
@@ -151,10 +151,10 @@ const FacultyDashboard = () => {
               <Box sx={{ display: "flex", alignItems: "flex-start", gap: 2 }}>
                 <Box
                   sx={{
-                    width: 52, height: 52, borderRadius: "12px", display: "flex", alignItems: "center", justifyContent: "center",
+                    width: 52, height: 52, borderRadius: 1, display: "flex", alignItems: "center", justifyContent: "center",
                     background: card.gradient, color: "#fff", position: "relative", overflow: "hidden", flexShrink: 0,
                     boxShadow: "0 8px 16px rgba(0,0,0,0.1)",
-                    "&::after": { content: '""', position: "absolute", inset: 0, background: "linear-gradient(180deg, #ffffff30, transparent)", borderRadius: 2 },
+                    "&::after": { content: '""', position: "absolute", inset: 0, background: "linear-gradient(180deg, #ffffff30, transparent)", borderRadius: 1 },
                   }}>
                   {React.cloneElement(card.icon, { fontSize: "medium" })}
                 </Box>
@@ -178,7 +178,7 @@ const FacultyDashboard = () => {
       <Box sx={{ display: "flex", gap: 3, flexWrap: { xs: "wrap", lg: "nowrap" }, mb: 4 }}>
         {/* Teaching Overview */}
         <Box sx={{ width: { xs: "100%", lg: "50%" }, display: "flex" }}>
-          <Card sx={{ borderRadius: "16px", background: "var(--bg-panel)", border: "1px solid var(--border-color)", boxShadow: "var(--shadow-premium)", p: 3, height: "100%", width: "100%", display: "flex", flexDirection: "column" }}>
+          <Card sx={{ borderRadius: 1, background: "var(--bg-panel)", border: "1px solid var(--border-color)", boxShadow: "var(--shadow-premium)", p: 3, height: "100%", width: "100%", display: "flex", flexDirection: "column" }}>
             <Box sx={{ display: "flex", justifyContent: "space-between", mb: 3 }}>
               <Typography sx={{ fontWeight: 800, fontSize: "1.2rem", color: "var(--text-primary)" }}>Teaching Overview</Typography>
               <Button size="small" endIcon={<ArrowForward sx={{ fontSize: 16 }} />} sx={{ textTransform: "none", fontSize: "0.8rem", color: "var(--color-primary)", fontWeight: 600 }}>
@@ -210,7 +210,7 @@ const FacultyDashboard = () => {
                   {courseLoadData.map((item, idx) => (
                     <Box key={idx} sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1 }}>
                       <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                        <Box sx={{ width: 8, height: 8, borderRadius: "50%", bgcolor: CHART_COLORS[idx % CHART_COLORS.length] }} />
+                        <Box sx={{ width: 8, height: 8, borderRadius: 1, bgcolor: CHART_COLORS[idx % CHART_COLORS.length] }} />
                         <Typography sx={{ fontSize: 13, color: "var(--text-secondary)", fontWeight: 500 }}>{item.name}</Typography>
                       </Box>
                       <Typography sx={{ fontSize: 13, fontWeight: 700, color: "var(--text-primary)" }}>{item.value}</Typography>
@@ -239,7 +239,7 @@ const FacultyDashboard = () => {
                   </Box>
                   <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                     <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                      <Box sx={{ width: 20, height: 20, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", border: "1px solid var(--color-primary)", color: "var(--color-primary)", fontSize: 12, fontWeight: 800 }}>%</Box>
+                      <Box sx={{ width: 20, height: 20, borderRadius: 1, display: "flex", alignItems: "center", justifyContent: "center", border: "1px solid var(--color-primary)", color: "var(--color-primary)", fontSize: 12, fontWeight: 800 }}>%</Box>
                       <Typography sx={{ fontSize: 14, color: "var(--text-secondary)", fontWeight: 500 }}>Attendance Avg.</Typography>
                     </Box>
                     <Typography sx={{ fontWeight: 800, color: "var(--text-primary)" }}>87%</Typography>
@@ -259,7 +259,7 @@ const FacultyDashboard = () => {
 
         {/* Quick Actions */}
         <Box sx={{ width: { xs: "100%", lg: "50%" }, display: "flex" }}>
-          <Card sx={{ borderRadius: "16px", background: "var(--bg-panel)", border: "1px solid var(--border-color)", boxShadow: "var(--shadow-premium)", p: 3, height: "100%", width: "100%", display: "flex", flexDirection: "column" }}>
+          <Card sx={{ borderRadius: 1, background: "var(--bg-panel)", border: "1px solid var(--border-color)", boxShadow: "var(--shadow-premium)", p: 3, height: "100%", width: "100%", display: "flex", flexDirection: "column" }}>
             <Typography sx={{ fontWeight: 800, fontSize: "1.2rem", mb: 3, color: "var(--text-primary)" }}>Quick Actions</Typography>
             <Grid container spacing={2}>
               {quickActions.map((action, i) => (
@@ -267,12 +267,12 @@ const FacultyDashboard = () => {
                   <Paper
                     variant="outlined"
                     sx={{
-                      p: 2, borderRadius: "12px", display: "flex", alignItems: "center", gap: 2, cursor: "pointer", height: "100%",
+                      p: 2, borderRadius: 1, display: "flex", alignItems: "center", gap: 2, cursor: "pointer", height: "100%",
                       borderColor: "var(--border-color)", backgroundColor: "var(--bg-glass)", transition: "all 0.3s ease",
                       "&:hover": { borderColor: "var(--color-primary)", backgroundColor: "var(--bg-accent-1)", transform: "translateY(-4px)", boxShadow: "0 8px 24px rgba(0,0,0,0.12)" },
                     }}
                   >
-                    <Box sx={{ width: 44, height: 44, borderRadius: "10px", display: "flex", alignItems: "center", justifyContent: "center", backgroundColor: "var(--bg-accent-1)", flexShrink: 0 }}>
+                    <Box sx={{ width: 44, height: 44, borderRadius: 1, display: "flex", alignItems: "center", justifyContent: "center", backgroundColor: "var(--bg-accent-1)", flexShrink: 0 }}>
                       {action.icon}
                     </Box>
                     <Box>
@@ -288,7 +288,7 @@ const FacultyDashboard = () => {
       </Box>
 
       {/* Row 3: My Courses */}
-      <Card sx={{ borderRadius: "16px", background: "var(--bg-panel)", border: "1px solid var(--border-color)", boxShadow: "var(--shadow-premium)", p: 3, mb: 4 }}>
+      <Card sx={{ borderRadius: 1, background: "var(--bg-panel)", border: "1px solid var(--border-color)", boxShadow: "var(--shadow-premium)", p: 3, mb: 4 }}>
         <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
           <Typography sx={{ fontWeight: 800, fontSize: "1.2rem", color: "var(--text-primary)" }}>My Courses</Typography>
           <Button size="small" endIcon={<ArrowForward sx={{ fontSize: 16 }} />} sx={{ textTransform: "none", fontSize: "0.8rem", color: "var(--color-primary)", fontWeight: 600 }}>
