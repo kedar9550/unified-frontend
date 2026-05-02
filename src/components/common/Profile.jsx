@@ -194,6 +194,7 @@ const Profile = () => {
 
   // Use fresh DB data where available, fall back to localStorage
   const profile = profileData || user;
+  const isStudent = user?.userType === "Student" || activeRole === "Student";
 
   const handleSave = async () => {
     setLoading(true);
@@ -317,21 +318,25 @@ const Profile = () => {
               {profile?.name}
             </Typography>
 
-            <Chip
-              label={profile?.designation || activeRole}
-              size="small"
-              sx={{
-                bgcolor: "var(--bg-accent-1)",
-                color: "var(--color-primary)",
-                fontWeight: 700,
-                px: 1,
-                mb: 1
-              }}
-            />
+            {!isStudent && (
+              <>
+                <Chip
+                  label={profile?.designation || activeRole}
+                  size="small"
+                  sx={{
+                    bgcolor: "var(--bg-accent-1)",
+                    color: "var(--color-primary)",
+                    fontWeight: 700,
+                    px: 1,
+                    mb: 1
+                  }}
+                />
 
-            <Typography sx={{ fontSize: "0.8rem", color: "var(--text-secondary)", fontWeight: 500, mb: 3 }}>
-              {profile?.department || "N/A"}
-            </Typography>
+                <Typography sx={{ fontSize: "0.8rem", color: "var(--text-secondary)", fontWeight: 500, mb: 3 }}>
+                  {profile?.department || "N/A"}
+                </Typography>
+              </>
+            )}
 
             {/* <Box sx={{ textAlign: "left", mb: 4, display: "flex", flexDirection: "column", gap: 1.5 }}>
               <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
@@ -417,51 +422,55 @@ const Profile = () => {
                 isEditing={isEditing} fieldValue={form.phone} fieldError={errors.phone}
                 onFieldChange={handleChange("phone")}
               />
-              <EditableField icon={AccountBalance} label="College Name" fieldKey="college" value={profile?.college} isEditing={isEditing}>
-                {isEditing ? (
-                  <Select
-                    size="small"
-                    fullWidth
-                    value={form.college}
-                    onChange={handleChange("college")}
-                    sx={{ borderRadius: "8px", height: "35px", fontSize: "0.85rem", background: "var(--bg-accent-1)" }}
-                  >
-                    <MenuItem value="">Select College</MenuItem>
-                    <MenuItem value="Aditya University">Aditya University</MenuItem>
-                    <MenuItem value="Aditya college of engineering and technology">Aditya college of engineering and technology</MenuItem>
-                    <MenuItem value="Aditya College of Pharmacy">Aditya College of Pharmacy</MenuItem>
-                  </Select>
-                ) : (
-                  <Typography sx={{ fontSize: "0.85rem", fontWeight: 700, color: "var(--text-primary)" }}>{profile?.college || "N/A"}</Typography>
-                )}
-              </EditableField>
-              <EditableField
-                icon={CreditCard} label="PAN Number" fieldKey="panNumber" value={profile?.panNumber}
-                isEditing={isEditing} fieldValue={form.panNumber} fieldError={errors.panNumber}
-                onFieldChange={handleChange("panNumber")} maxLength={validationRules.panNumber.maxLength}
-              />
+              {!isStudent && (
+                <>
+                  <EditableField icon={AccountBalance} label="College Name" fieldKey="college" value={profile?.college} isEditing={isEditing}>
+                    {isEditing ? (
+                      <Select
+                        size="small"
+                        fullWidth
+                        value={form.college}
+                        onChange={handleChange("college")}
+                        sx={{ borderRadius: "8px", height: "35px", fontSize: "0.85rem", background: "var(--bg-accent-1)" }}
+                      >
+                        <MenuItem value="">Select College</MenuItem>
+                        <MenuItem value="Aditya University">Aditya University</MenuItem>
+                        <MenuItem value="Aditya college of engineering and technology">Aditya college of engineering and technology</MenuItem>
+                        <MenuItem value="Aditya College of Pharmacy">Aditya College of Pharmacy</MenuItem>
+                      </Select>
+                    ) : (
+                      <Typography sx={{ fontSize: "0.85rem", fontWeight: 700, color: "var(--text-primary)" }}>{profile?.college || "N/A"}</Typography>
+                    )}
+                  </EditableField>
+                  <EditableField
+                    icon={CreditCard} label="PAN Number" fieldKey="panNumber" value={profile?.panNumber}
+                    isEditing={isEditing} fieldValue={form.panNumber} fieldError={errors.panNumber}
+                    onFieldChange={handleChange("panNumber")} maxLength={validationRules.panNumber.maxLength}
+                  />
 
-              <EditableField
-                icon={Science} label="Scopus ID" fieldKey="scopusId" value={profile?.scopusId}
-                isEditing={isEditing} fieldValue={form.scopusId} fieldError={errors.scopusId}
-                onFieldChange={handleChange("scopusId")} maxLength={validationRules.scopusId.maxLength}
-              />
-              <EditableField
-                icon={Public} label="Web of Science ID" fieldKey="wosId" value={profile?.wosId}
-                isEditing={isEditing} fieldValue={form.wosId} fieldError={errors.wosId}
-                onFieldChange={handleChange("wosId")} maxLength={validationRules.wosId.maxLength}
-              />
-              <EditableField
-                icon={Fingerprint} label="ORC ID" fieldKey="orcidId" value={profile?.orcidId}
-                isEditing={isEditing} fieldValue={form.orcidId} fieldError={errors.orcidId}
-                onFieldChange={handleOrcidChange} maxLength={validationRules.orcidId.maxLength}
-              />
+                  <EditableField
+                    icon={Science} label="Scopus ID" fieldKey="scopusId" value={profile?.scopusId}
+                    isEditing={isEditing} fieldValue={form.scopusId} fieldError={errors.scopusId}
+                    onFieldChange={handleChange("scopusId")} maxLength={validationRules.scopusId.maxLength}
+                  />
+                  <EditableField
+                    icon={Public} label="Web of Science ID" fieldKey="wosId" value={profile?.wosId}
+                    isEditing={isEditing} fieldValue={form.wosId} fieldError={errors.wosId}
+                    onFieldChange={handleChange("wosId")} maxLength={validationRules.wosId.maxLength}
+                  />
+                  <EditableField
+                    icon={Fingerprint} label="ORC ID" fieldKey="orcidId" value={profile?.orcidId}
+                    isEditing={isEditing} fieldValue={form.orcidId} fieldError={errors.orcidId}
+                    onFieldChange={handleOrcidChange} maxLength={validationRules.orcidId.maxLength}
+                  />
 
-              <EditableField
-                icon={School} label="Google Scholar ID" fieldKey="googleScholarId" value={profile?.googleScholarId}
-                isEditing={isEditing} fieldValue={form.googleScholarId} fieldError={errors.googleScholarId}
-                onFieldChange={handleChange("googleScholarId")} maxLength={validationRules.googleScholarId.maxLength}
-              />
+                  <EditableField
+                    icon={School} label="Google Scholar ID" fieldKey="googleScholarId" value={profile?.googleScholarId}
+                    isEditing={isEditing} fieldValue={form.googleScholarId} fieldError={errors.googleScholarId}
+                    onFieldChange={handleChange("googleScholarId")} maxLength={validationRules.googleScholarId.maxLength}
+                  />
+                </>
+              )}
             </Box>
           </Paper>
         </Box>
@@ -477,7 +486,7 @@ const Profile = () => {
         mt: 3,
         width: "100%"
       }}>
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: showPwdForm ? 3 : 0 }}>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: showPwdForm ? 3 : 0 }}>
           <Security sx={{ color: "var(--color-primary)" }} />
           <Typography sx={{ fontSize: "1rem", fontWeight: 800, color: "var(--text-primary)", flex: 1 }}>
             Account & Security
@@ -510,11 +519,11 @@ const Profile = () => {
               borderRadius: "50px", px: 3, py: 0.8, textTransform: "none",
               fontWeight: 700, fontSize: "0.85rem",
               transition: "all 0.3s ease",
-              border: "1.5px solid var(--color-primary)", 
+              border: "1.5px solid var(--color-primary)",
               color: showPwdForm ? "#fff" : "var(--color-primary)",
               bgcolor: showPwdForm ? "var(--color-primary)" : "transparent",
-              "&:hover": { 
-                bgcolor: showPwdForm ? "var(--color-primary-dark, #0369a1)" : "rgba(2, 132, 199, 0.08)", 
+              "&:hover": {
+                bgcolor: showPwdForm ? "var(--color-primary-dark, #0369a1)" : "rgba(2, 132, 199, 0.08)",
                 borderColor: "var(--color-primary)",
                 transform: "translateY(-1.5px)",
                 boxShadow: showPwdForm ? "0 6px 20px rgba(2, 132, 199, 0.25)" : "0 4px 12px rgba(0,0,0,0.05)"
@@ -690,11 +699,11 @@ const Profile = () => {
               }}
               sx={{
                 borderRadius: "12px", px: 4, py: 0.8, textTransform: "none",
-                fontWeight: 700, fontSize: "0.85rem", 
+                fontWeight: 700, fontSize: "0.85rem",
                 bgcolor: "var(--color-primary)",
-                color: "#fff", 
+                color: "#fff",
                 transition: "all 0.2s ease",
-                "&:hover": { 
+                "&:hover": {
                   bgcolor: "var(--color-primary-dark, #0369a1)",
                   boxShadow: "0 4px 12px rgba(2, 132, 199, 0.3)",
                   transform: "translateY(-1px)"
@@ -717,16 +726,16 @@ const Profile = () => {
         autoHideDuration={3000}
         onClose={() => setSnack({ ...snack, open: false })}
         anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
-        sx={{ 
+        sx={{
           zIndex: 9999,
           top: "20px !important"
         }}
       >
-        <Alert 
-          severity={snack.severity} 
+        <Alert
+          severity={snack.severity}
           variant="filled"
-          sx={{ 
-            width: '100%', 
+          sx={{
+            width: '100%',
             borderRadius: "12px",
             boxShadow: "0 8px 32px rgba(0,0,0,0.15)",
             fontWeight: 600

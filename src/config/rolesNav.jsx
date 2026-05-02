@@ -7,8 +7,9 @@ import {
   School,
   Flag,
   People,
+  Verified,
   SupervisorAccount,
-  ManageAccounts
+  ManageAccounts,
 } from "@mui/icons-material";
 import PersonIcon from '@mui/icons-material/Person';
 import React from "react";
@@ -87,7 +88,7 @@ export const ROLE_ROUTES = {
         }
       ]
     },
-    
+
   ],
 
   // Example for a future "Department HOD" role
@@ -95,6 +96,16 @@ export const ROLE_ROUTES = {
     { text: "Dashboard", path: "/dashboard", icon: <Dashboard /> },
     { text: "Proctordata", path: "/hod/protecrdataupload", icon: <People /> },
     { text: "Discrepancies", path: "/hod/discrepancies", icon: <Flag /> },
+    {
+      text: "Approvals",
+      icon: <Verified />,
+      nested: [
+        {
+          text: "Research",
+          path: "/hod/research-approvals"
+        },
+      ]
+    }
   ],
 
   // Example for "Exam Section" role

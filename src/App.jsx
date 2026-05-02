@@ -30,6 +30,8 @@ import Dashboard from "./pages/Dashboard";
 import { registerLoadingHandlers } from "./api/axios";
 import SDG from "./pages/faculty/SDG";
 import Profile from "./components/common/Profile";
+import DeptResearchApprovals from "./pages/hod/DeptResearchApprovals";
+
 
 const PublicOnlyRoute = ({ children }) => {
   const { user } = useAuth();
@@ -96,6 +98,8 @@ function App() {
         <Route path="/student/assigned-students" element={<ProtectedRoute element={<Assignedstudents />} />} />
         <Route path="/student/department-mapping" element={<ProtectedRoute element={<DepartmentMapping />} />} />
         <Route path="/profile" element={<ProtectedRoute element={<Profile />} />} />
+        <Route path="/hod/research-approvals" element={<ProtectedRoute element={<DeptResearchApprovals />} />} />
+
 
         <Route path="*" element={<ProtectedRoute element={<Box p={4}><Typography variant="h4">Page Content</Typography></Box>} />} />
       </Routes>

@@ -26,19 +26,23 @@ export default function PageHeader({
         "&::after": {
           content: '""',
           position: "absolute",
-          width: 200,
-          height: 200,
-          background: "rgba(208,108,56)", // solid orange
-          borderRadius: "50%",
-          top: -50,
-          right: -50,
+          width: "400px",
+          height: "100%",
+          backgroundImage: "var(--header-svg)",
+          backgroundSize: "auto 140%", // Perfectly fit the sun graphic height to the header height
+          backgroundRepeat: "no-repeat",
+          backgroundPosition: "center", // Center the sun within the pseudo-element
+          top: 0,
+          right: "-200px", // Position the center of the sun at the right edge
+          zIndex: 0,
+          pointerEvents: "none",
         },
       }}
     >
       {/* LEFT */}
       <Box sx={{ position: "relative", zIndex: 1, pr: { xs: 2, md: 0 } }}>
         {/* Title */}
-        <Typography variant="h4" fontWeight={700} sx={{ color: "#0D233B" }}>
+        <Typography variant="h4" fontWeight={700} sx={{ color: "var(--text-primary)" }}>
           {title}
         </Typography>
 

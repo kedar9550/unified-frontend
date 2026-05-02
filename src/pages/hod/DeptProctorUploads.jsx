@@ -254,7 +254,7 @@ const DeptProctorUploads = () => {
   return (
     <Box sx={{ p: { xs: 1, sm: 2 }, pt: { xs: 0.5, sm: 1 } }}>
       <PageHeader
-        title="Proctor Mapping Module"
+        title="Proctee-Proctor Mapping"
         subtitle="Assign proctors to students for the current semester"
         breadcrumbs={[]}
       />
