@@ -16,6 +16,7 @@ import FacultyFormatResults from "./pages/examAdmin/FacultyFormatResults";
 import StudentFormatResults from "./pages/examAdmin/StudentFormatResults";
 import Discrepancies from "./pages/examAdmin/Discrepancies";
 import DeptProctorUploads from "./pages/hod/DeptProctorUploads";
+import HODDiscrepancies from "./pages/hod/HODDiscrepancies";
 import AcademicStructure from "./pages/uniprime/academics/AcademicStructure";
 import Assignedstudents from "./pages/uniprime/Student/Assignedstudents";
 import RoleManagement from "./pages/uniprime/Roles/Rolemanagement";
@@ -83,6 +84,7 @@ function App() {
         <Route path="exam-result/students-format" element={<ProtectedRoute element={<StudentFormatResults />} />} />
         <Route path="exam-result/discrepancies" element={<ProtectedRoute element={<Discrepancies />} />} />
         <Route path="/hod/protecrdataupload" element={<ProtectedRoute element={<DeptProctorUploads />} />} />
+        <Route path="/hod/discrepancies" element={<ProtectedRoute element={<HODDiscrepancies />} />} />
         <Route path="/academics/programs" element={<ProtectedRoute element={<AcademicStructure />} />} />
         <Route path="/academics/department" element={<ProtectedRoute element={<AcademicStructure />} />} />
         <Route path="/academics/roles" element={<ProtectedRoute element={<RoleManagement />} />} />
