@@ -26,6 +26,7 @@ const DeptProctorUploads = () => {
   const [selectedSemester, setSelectedSemester] = useState("");
 
   const [students, setStudents] = useState([]);
+  const [activeYear, setActiveYear] = useState("");
   const [loading, setLoading] = useState(false);
   const [uploadingCSV, setUploadingCSV] = useState(false);
   const fileInputRef = useRef(null);
@@ -40,10 +41,14 @@ const DeptProctorUploads = () => {
   useEffect(() => {
     const fetchDropdowns = async () => {
       try {
-        const [deptRes, progRes] = await Promise.all([
+        const [deptRes, yearRes] = await Promise.all([
           API.get("/api/academics/departments"),
-          API.get("/api/academics/programs")
+          API.get("/api/academic-years")
         ]);
+
+        const years = yearRes.data?.years || yearRes.data?.data || [];
+        const active = years.find(y => y.isActive);
+        if (active) setActiveYear(active.year);
 
         let fetchedDepts = deptRes.data.data || [];
 
@@ -228,8 +233,7 @@ const DeptProctorUploads = () => {
     if (students.length === 0) return alert("Please fetch students first to generate template.");
 
     // Add current active academicyear for the template automatically. 
-    const currentYear = new Date().getFullYear();
-    const acYearStr = `${currentYear}-${currentYear + 1}`;
+    const acYearStr = activeYear || `${new Date().getFullYear()}-${new Date().getFullYear() + 1}`;
 
     const headers = ["proctorid", "studentid", "academicyear", "semester"];
     const rows = students.map(s =>
