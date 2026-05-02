@@ -22,7 +22,9 @@
   --gradient-primary-hover: linear-gradient(90deg, #003a6d, #000214);
 }
 
-body, html, #root {
+body,
+html,
+#root {
   margin: 0;
   padding: 0;
   font-family: 'Product Sans', sans-serif;
@@ -88,21 +90,27 @@ body.dark-mode .MuiInputBase-root,
 body.dark-mode .MuiInputBase-input {
   color: var(--text-primary) !important;
 }
+
 body.dark-mode .MuiOutlinedInput-notchedOutline {
   border-color: var(--border-color) !important;
 }
+
 body.dark-mode .MuiInputLabel-root {
   color: var(--text-secondary) !important;
 }
+
 body.dark-mode .MuiInputLabel-root.Mui-focused {
   color: var(--color-primary) !important;
 }
+
 body.dark-mode .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline {
   border-color: var(--text-primary) !important;
 }
+
 body.dark-mode .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline {
   border-color: var(--color-primary) !important;
 }
+
 body.dark-mode .MuiFormHelperText-root {
   color: var(--text-secondary) !important;
 }
@@ -112,6 +120,7 @@ body.dark-mode .MuiMenu-paper {
   background-color: #0f172a !important;
   border: 1px solid #1e293b !important;
 }
+
 body.dark-mode .MuiMenuItem-root:hover {
   background-color: #1e293b !important;
 }
