@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { Box, TextField, MenuItem, Select, Typography, Alert, Snackbar, Button, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper } from "@mui/material";
+import { Box, TextField, MenuItem, Select, Typography, Alert, Snackbar, Button, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, IconButton } from "@mui/material";
+import { AddCircle, Delete } from "@mui/icons-material";
 import PageHeader from "../../components/common/PageHeader";
 import {
   FacultyInfoRow, FormCard, Grid2, SubLabel, NoteBox, FileField, SubmitBtn,
@@ -17,10 +18,11 @@ export default function JournalPublication() {
   const [publicationsList, setPublicationsList] = useState([]);
 
   const [form, setForm] = useState({
-    college: "", panCard: "", incentiveApplied: "", firstAuthor: "", categoryOfJournal: "",
-    papersCited: "", paperTitle: "", coAuthors: "",
+    college: "", panCard: "", incentiveApplied: "", firstAuthor: "", authorPosition: "", categoryOfJournal: "",
+    papersCited: "", paperTitle: "", coAuthors: [],
     journalName: "", vol: "", issue: "", pageNos: "", month: "", year: "",
     hIndex: "", impactFactor: "", referencingNos: "", sdgs: "",
+    applyIncentive: ""
   });
   const [files, setFiles] = useState({ publishedPaper: null, referencePages: null });
   const [loading, setLoading] = useState(false);
@@ -41,6 +43,20 @@ export default function JournalPublication() {
   const set = (k) => (e) => setForm((p) => ({ ...p, [k]: e.target.value }));
   const setFile = (k) => (e) => setFiles((p) => ({ ...p, [k]: e.target.files[0] }));
 
+  const handleAddCoAuthor = () => {
+    setForm(p => ({ ...p, coAuthors: [...p.coAuthors, { name: "", affiliation: "" }] }));
+  };
+
+  const handleRemoveCoAuthor = (index) => {
+    setForm(p => ({ ...p, coAuthors: p.coAuthors.filter((_, i) => i !== index) }));
+  };
+
+  const handleUpdateCoAuthor = (index, field, value) => {
+    const updated = [...form.coAuthors];
+    updated[index][field] = value;
+    setForm(p => ({ ...p, coAuthors: updated }));
+  };
+
   const handleSubmit = async () => {
     if (!form.paperTitle || !form.journalName) {
       setSnack({ open: true, msg: "Please fill all required fields", severity: "error" });
@@ -49,7 +65,13 @@ export default function JournalPublication() {
     setLoading(true);
     try {
       const fd = new FormData();
-      Object.entries(form).forEach(([k, v]) => fd.append(k, v));
+      Object.entries(form).forEach(([k, v]) => {
+        if (k === "coAuthors") {
+          fd.append(k, JSON.stringify(v));
+        } else {
+          fd.append(k, v);
+        }
+      });
       Object.entries(files).forEach(([k, v]) => { if (v) fd.append(k, v); });
       fd.append("academicYear", selectedYear);
 
@@ -57,7 +79,7 @@ export default function JournalPublication() {
       setSnack({ open: true, msg: "Journal submitted successfully!", severity: "success" });
       
       // Reset form and go back to list
-      setForm({ college: "", panCard: "", incentiveApplied: "", firstAuthor: "", categoryOfJournal: "", papersCited: "", paperTitle: "", coAuthors: "", journalName: "", vol: "", issue: "", pageNos: "", month: "", year: "", hIndex: "", impactFactor: "", referencingNos: "", sdgs: "" });
+      setForm({ college: "", panCard: "", incentiveApplied: "", firstAuthor: "", authorPosition: "", categoryOfJournal: "", papersCited: "", paperTitle: "", coAuthors: [], journalName: "", vol: "", issue: "", pageNos: "", month: "", year: "", hIndex: "", impactFactor: "", referencingNos: "", sdgs: "", applyIncentive: "" });
       setFiles({ publishedPaper: null, referencePages: null });
       setSelectedYear("");
       setViewMode("list");
@@ -147,6 +169,10 @@ export default function JournalPublication() {
       <FacultyInfoRow college={form.college} setCollege={(v) => setForm(p => ({ ...p, college: v }))} />
 
       <Grid2 sx={{ mt: 1 }}>
+        <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
+          <Typography sx={labelStyle}>Title of the Research Paper:</Typography>
+          <TextField size="small" fullWidth multiline rows={2} value={form.paperTitle} onChange={set("paperTitle")} />
+        </Box>
         <Box>
           <Typography sx={labelStyle}>Pan card Number:</Typography>
           <TextField size="small" fullWidth value={form.panCard} onChange={set("panCard")} />
@@ -159,13 +185,12 @@ export default function JournalPublication() {
             <MenuItem value="No">No</MenuItem>
           </Select>
         </Box>
-        <Box>
-          <Typography sx={labelStyle}>Research Incentive applied for:</Typography>
-          <Select size="small" fullWidth displayEmpty value={form.incentiveApplied} onChange={set("incentiveApplied")}>
-            <MenuItem value="">Select</MenuItem>
-            {INCENTIVE_OPTIONS.map((o) => <MenuItem key={o} value={o}>{o}</MenuItem>)}
-          </Select>
-        </Box>
+        {form.firstAuthor === "No" && (
+          <Box>
+            <Typography sx={labelStyle}>Author Position :</Typography>
+            <TextField size="small" fullWidth type="number" value={form.authorPosition} onChange={set("authorPosition")} placeholder="e.g. 2" />
+          </Box>
+        )}
         <Box>
           <Typography sx={labelStyle}>Category of Journal</Typography>
           <Select size="small" fullWidth displayEmpty value={form.categoryOfJournal} onChange={set("categoryOfJournal")}>
@@ -173,18 +198,39 @@ export default function JournalPublication() {
             {JOURNAL_CATEGORIES.map((c) => <MenuItem key={c} value={c}>{c}</MenuItem>)}
           </Select>
         </Box>
+        <Box>
+          <Typography sx={labelStyle}>Research Incentive applied for:</Typography>
+          <Select size="small" fullWidth displayEmpty value={form.incentiveApplied} onChange={set("incentiveApplied")}>
+            <MenuItem value="">Select</MenuItem>
+            {INCENTIVE_OPTIONS.map((o) => <MenuItem key={o} value={o}>{o}</MenuItem>)}
+          </Select>
+        </Box>
         <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
           <Typography sx={labelStyle}>No of papers Cited belonging to Aditya Group:</Typography>
           <TextField size="small" type="number" value={form.papersCited} onChange={set("papersCited")} sx={{ width: 200 }} />
         </Box>
-        <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
-          <Typography sx={labelStyle}>Title of the Research Paper:</Typography>
-          <TextField size="small" fullWidth multiline rows={3} value={form.paperTitle} onChange={set("paperTitle")} />
-        </Box>
-        <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
-          <Typography sx={labelStyle}>Name & affiliation of Co-Author(s):</Typography>
-          <TextField size="small" fullWidth multiline rows={3} value={form.coAuthors} onChange={set("coAuthors")} />
-        </Box>
+
+        {form.firstAuthor === "No" && (
+          <Box sx={{ gridColumn: { sm: "1 / -1" }, mt: 2 }}>
+            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1 }}>
+              <Typography sx={labelStyle}>Name & affiliation of Co-Author(s):</Typography>
+              <Button startIcon={<AddCircle />} onClick={handleAddCoAuthor} sx={{ textTransform: "none", fontWeight: 700, color: "var(--color-primary)" }}>Add Co-Author</Button>
+            </Box>
+            {form.coAuthors.map((co, idx) => (
+              <Box key={idx} sx={{ display: "flex", gap: 2, mb: 2, p: 2, background: "var(--bg-accent-1)", borderRadius: "12px", alignItems: "center" }}>
+                <Box sx={{ flex: 1 }}>
+                  <Typography sx={{ fontSize: 11, fontWeight: 700, color: "var(--text-secondary)", mb: 0.5 }}>CO-AUTHOR NAME</Typography>
+                  <TextField size="small" fullWidth placeholder="Name" value={co.name} onChange={(e) => handleUpdateCoAuthor(idx, "name", e.target.value)} />
+                </Box>
+                <Box sx={{ flex: 2 }}>
+                  <Typography sx={{ fontSize: 11, fontWeight: 700, color: "var(--text-secondary)", mb: 0.5 }}>AFFILIATION</Typography>
+                  <TextField size="small" fullWidth placeholder="College / Organization" value={co.affiliation} onChange={(e) => handleUpdateCoAuthor(idx, "affiliation", e.target.value)} />
+                </Box>
+                <IconButton onClick={() => handleRemoveCoAuthor(idx)} sx={{ mt: 2, color: "var(--text-secondary)" }}><Delete /></IconButton>
+              </Box>
+            ))}
+          </Box>
+        )}
       </Grid2>
 
       <NoteBox />
@@ -246,6 +292,20 @@ export default function JournalPublication() {
           <Typography sx={labelStyle}>SDGS</Typography>
           <TextField size="small" fullWidth value={form.sdgs} onChange={set("sdgs")} />
         </Box>
+        <Box sx={{ mt: 1 }}>
+          <Typography sx={labelStyle}>Whether you want to apply for incentive?</Typography>
+          <Select size="small" fullWidth displayEmpty value={form.applyIncentive} onChange={set("applyIncentive")}>
+            <MenuItem value="">Select</MenuItem>
+            <MenuItem value="Yes">Yes</MenuItem>
+            <MenuItem value="No">No</MenuItem>
+          </Select>
+        </Box>
+        {form.applyIncentive === "Yes" && (
+          <Box sx={{ mt: 1 }}>
+            <Typography sx={{ fontSize: 13, fontWeight: 700, color: "var(--color-primary)" }}>Expected Amount:</Typography>
+            <TextField size="small" value="1500" disabled sx={{ "& .MuiInputBase-input.Mui-disabled": { WebkitTextFillColor: "#10b981", fontWeight: 800, background: "rgba(16, 185, 129, 0.1)", borderRadius: "8px" } }} />
+          </Box>
+        )}
       </Grid2>
 
       <Box sx={{ display: "flex", gap: 2, justifyContent: "center", mt: 4 }}>
