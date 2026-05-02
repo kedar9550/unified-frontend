@@ -10,7 +10,10 @@ import {
   Button,
   LinearProgress,
   Snackbar,
-  Alert
+  Alert,
+  Collapse,
+  IconButton,
+  InputAdornment
 } from "@mui/material";
 import { useAuth } from "../../context/AuthContext";
 import {
@@ -37,7 +40,9 @@ import {
   AutoStories,
   VerifiedUser,
   Link as LinkIcon,
-  AccountBalance
+  AccountBalance,
+  Visibility,
+  VisibilityOff
 } from "@mui/icons-material";
 import { MenuItem, Select, TextField } from "@mui/material";
 import API from "../../api/axios";
@@ -97,15 +102,15 @@ const EditableField = ({
       {children || (
         isEditing
           ? <TextField
-              size="small"
-              fullWidth
-              value={fieldValue ?? ""}
-              onChange={onFieldChange}
-              error={!!fieldError}
-              helperText={fieldError || ""}
-              inputProps={{ maxLength }}
-              sx={{ background: "var(--bg-accent-1)", borderRadius: "8px" }}
-            />
+            size="small"
+            fullWidth
+            value={fieldValue ?? ""}
+            onChange={onFieldChange}
+            error={!!fieldError}
+            helperText={fieldError || ""}
+            inputProps={{ maxLength }}
+            sx={{ background: "var(--bg-accent-1)", borderRadius: "8px" }}
+          />
           : <Typography sx={{ fontSize: "0.85rem", fontWeight: 700, color: "var(--text-primary)" }}>{value || "N/A"}</Typography>
       )}
     </Box>
@@ -130,14 +135,18 @@ const Profile = () => {
   const [loading, setLoading] = React.useState(false);
   const [errors, setErrors] = React.useState({});
   const [snack, setSnack] = React.useState({ open: false, msg: "", severity: "success" });
+  const [showPwdForm, setShowPwdForm] = React.useState(false);
+  const [pwdForm, setPwdForm] = React.useState({ oldPassword: "", newPassword: "", confirmPassword: "" });
+  const [showPwd, setShowPwd] = React.useState({ old: false, new: false, confirm: false });
+  const [pwdLoading, setPwdLoading] = React.useState(false);
 
   // Validation rules for each field (pattern + maxLength)
   const validationRules = {
-    orcidId:        { pattern: /^\d{4}-\d{4}-\d{4}-\d{4}$/,   maxLength: 19, msg: "Format: 0000-0002-1825-0097 (19 chars)" },
-    scopusId:       { pattern: /^\d{8,11}$/,                  maxLength: 11, msg: "8 to 11 digits only" },
-    wosId:          { pattern: /^[A-Za-z0-9-]{8,15}$/,        maxLength: 15, msg: "Alphanumeric + hyphens, 8–15 chars (e.g. A-1234-2019)" },
-    googleScholarId:{ pattern: /^[A-Za-z0-9]{10,12}$/,        maxLength: 12, msg: "Alphanumeric only, 10–12 chars" },
-    panNumber:      { pattern: /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/, maxLength: 10, msg: "Format: ABCDE1234F (10 chars, uppercase)" },
+    orcidId: { pattern: /^\d{4}-\d{4}-\d{4}-\d{4}$/, maxLength: 19, msg: "Format: 0000-0002-1825-0097 (19 chars)" },
+    scopusId: { pattern: /^\d{8,11}$/, maxLength: 11, msg: "8 to 11 digits only" },
+    wosId: { pattern: /^[A-Za-z0-9-]{8,15}$/, maxLength: 15, msg: "Alphanumeric + hyphens, 8–15 chars (e.g. A-1234-2019)" },
+    googleScholarId: { pattern: /^[A-Za-z0-9]{10,12}$/, maxLength: 12, msg: "Alphanumeric only, 10–12 chars" },
+    panNumber: { pattern: /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/, maxLength: 10, msg: "Format: ABCDE1234F (10 chars, uppercase)" },
   };
 
   const validateField = (fieldKey, value) => {
@@ -253,13 +262,14 @@ const Profile = () => {
         display: "flex",
         flexDirection: { xs: "column", md: "row" },
         gap: 3,
-        alignItems: "flex-start",
+        alignItems: "stretch",
         width: "100%"
       }}>
         {/* LEFT COLUMN: Profile Card */}
         <Box sx={{
           width: { xs: "100%", md: "320px", lg: "350px" },
-          flexShrink: 0
+          flexShrink: 0,
+          display: "flex"
         }}>
           <Paper sx={{
             p: 4,
@@ -267,7 +277,12 @@ const Profile = () => {
             background: "var(--bg-paper)",
             border: "1px solid var(--border-color)",
             boxShadow: "var(--shadow-lg)",
-            textAlign: "center"
+            textAlign: "center",
+            width: "100%",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center"
           }}>
             <Box sx={{ position: "relative", display: "inline-block", mb: 3 }}>
               <Avatar
@@ -449,78 +464,274 @@ const Profile = () => {
               />
             </Box>
           </Paper>
-
-          {/* Account & Security */}
-          <Paper sx={{
-            p: 3,
-            borderRadius: "24px",
-            background: "var(--bg-paper)",
-            border: "1px solid var(--border-color)",
-            boxShadow: "var(--shadow-lg)"
-          }}>
-            <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 3 }}>
-              <Security sx={{ color: "var(--color-primary)" }} />
-              <Typography sx={{ fontSize: "1rem", fontWeight: 800, color: "var(--text-primary)" }}>
-                Account & Security
-              </Typography>
-            </Box>
-
-            <Box sx={{
-              p: 2,
-              borderRadius: "16px",
-              border: "1px solid var(--border-color)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              flexWrap: { xs: "wrap", sm: "nowrap" },
-              gap: 2
-            }}>
-              <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-                <Box sx={{
-                  p: 1.2,
-                  borderRadius: "12px",
-                  background: "var(--bg-accent-1)",
-                  color: "var(--color-primary)",
-                  display: "flex"
-                }}>
-                  <Lock />
-                </Box>
-                <Box>
-                  <Typography sx={{ fontSize: "0.9rem", fontWeight: 700, color: "var(--text-primary)" }}>
-                    Change Password
-                  </Typography>
-                  <Typography sx={{ fontSize: "0.75rem", color: "var(--text-secondary)", fontWeight: 500 }}>
-                    Update your account password
-                  </Typography>
-                </Box>
-              </Box>
-              <Button
-                variant="outlined"
-                sx={{
-                  borderRadius: "12px",
-                  px: 3,
-                  py: 0.8,
-                  textTransform: "none",
-                  fontWeight: 700,
-                  fontSize: "0.85rem",
-                  borderColor: "var(--color-primary)",
-                  color: "var(--color-primary)",
-                  "&:hover": { bgcolor: "var(--bg-accent-1)", borderColor: "var(--color-primary)" }
-                }}
-              >
-                Change
-              </Button>
-            </Box>
-          </Paper>
         </Box>
       </Box>
+
+      {/* Account & Security — full width below both columns */}
+      <Paper sx={{
+        p: 3,
+        borderRadius: "24px",
+        background: "var(--bg-paper)",
+        border: "1px solid var(--border-color)",
+        boxShadow: "var(--shadow-lg)",
+        mt: 3,
+        width: "100%"
+      }}>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: showPwdForm ? 3 : 0 }}>
+          <Security sx={{ color: "var(--color-primary)" }} />
+          <Typography sx={{ fontSize: "1rem", fontWeight: 800, color: "var(--text-primary)", flex: 1 }}>
+            Account & Security
+          </Typography>
+        </Box>
+
+        <Box sx={{
+          p: 2,
+          borderRadius: "16px",
+          border: "1px solid var(--border-color)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          flexWrap: { xs: "wrap", sm: "nowrap" },
+          gap: 2
+        }}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+            <Box sx={{ p: 1.2, borderRadius: "12px", background: "var(--bg-accent-1)", color: "var(--color-primary)", display: "flex" }}>
+              <Lock />
+            </Box>
+            <Box>
+              <Typography sx={{ fontSize: "0.9rem", fontWeight: 700, color: "var(--text-primary)" }}>Change Password</Typography>
+              <Typography sx={{ fontSize: "0.75rem", color: "var(--text-secondary)", fontWeight: 500 }}>Update your account password</Typography>
+            </Box>
+          </Box>
+          <Button
+            variant={showPwdForm ? "contained" : "outlined"}
+            onClick={() => { setShowPwdForm(!showPwdForm); setPwdForm({ oldPassword: "", newPassword: "", confirmPassword: "" }); }}
+            sx={{
+              borderRadius: "50px", px: 3, py: 0.8, textTransform: "none",
+              fontWeight: 700, fontSize: "0.85rem",
+              transition: "all 0.3s ease",
+              border: "1.5px solid var(--color-primary)", 
+              color: showPwdForm ? "#fff" : "var(--color-primary)",
+              bgcolor: showPwdForm ? "var(--color-primary)" : "transparent",
+              "&:hover": { 
+                bgcolor: showPwdForm ? "var(--color-primary-dark, #0369a1)" : "rgba(2, 132, 199, 0.08)", 
+                borderColor: "var(--color-primary)",
+                transform: "translateY(-1.5px)",
+                boxShadow: showPwdForm ? "0 6px 20px rgba(2, 132, 199, 0.25)" : "0 4px 12px rgba(0,0,0,0.05)"
+              }
+            }}
+          >
+            {showPwdForm ? "Cancel" : "Change"}
+          </Button>
+        </Box>
+
+        {/* Expandable password fields */}
+        <Collapse in={showPwdForm} timeout={300}>
+          <Box sx={{
+            display: "grid",
+            gridTemplateColumns: { xs: "1fr", sm: "repeat(3, 1fr)" },
+            gap: 2,
+            mt: 3
+          }}>
+            {/* Old Password */}
+            <Box>
+              <Typography sx={{ fontSize: "0.7rem", color: "var(--text-secondary)", fontWeight: 500, mb: 0.5, textTransform: "uppercase" }}>Old Password</Typography>
+              <Box sx={{ position: "relative", display: "flex", alignItems: "center" }}>
+                <TextField
+                  size="small" fullWidth placeholder="Enter old password"
+                  type={showPwd.old ? "text" : "password"}
+                  value={pwdForm.oldPassword}
+                  onChange={e => setPwdForm({ ...pwdForm, oldPassword: e.target.value })}
+                  InputProps={{
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <IconButton
+                          size="small"
+                          onClick={() => setShowPwd(p => ({ ...p, old: !p.old }))}
+                          sx={{ color: "var(--color-primary)" }}
+                        >
+                          {showPwd.old ? <VisibilityOff fontSize="small" /> : <Visibility fontSize="small" />}
+                        </IconButton>
+                      </InputAdornment>
+                    )
+                  }}
+                  // Also try slotProps for MUI v6 compatibility
+                  slotProps={{
+                    input: {
+                      endAdornment: (
+                        <InputAdornment position="end">
+                          <IconButton
+                            size="small"
+                            onClick={() => setShowPwd(p => ({ ...p, old: !p.old }))}
+                            sx={{ color: "var(--color-primary)" }}
+                          >
+                            {showPwd.old ? <VisibilityOff fontSize="small" /> : <Visibility fontSize="small" />}
+                          </IconButton>
+                        </InputAdornment>
+                      )
+                    }
+                  }}
+                  sx={{
+                    "& .MuiOutlinedInput-root": {
+                      background: "var(--bg-accent-1)",
+                      borderRadius: "12px",
+                      "& fieldset": { borderColor: "transparent" },
+                      "&:hover fieldset": { borderColor: "var(--border-color)" },
+                      "&.Mui-focused fieldset": { borderColor: "var(--color-primary)" }
+                    }
+                  }}
+                />
+              </Box>
+            </Box>
+            {/* New Password */}
+            <Box>
+              <Typography sx={{ fontSize: "0.7rem", color: "var(--text-secondary)", fontWeight: 500, mb: 0.5, textTransform: "uppercase" }}>New Password</Typography>
+              <Box sx={{ position: "relative", display: "flex", alignItems: "center" }}>
+                <TextField
+                  size="small" fullWidth placeholder="Enter new password"
+                  variant="outlined"
+                  type={showPwd.new ? "text" : "password"}
+                  value={pwdForm.newPassword}
+                  onChange={e => setPwdForm({ ...pwdForm, newPassword: e.target.value })}
+                  InputProps={{
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <IconButton size="small" onClick={() => setShowPwd(p => ({ ...p, new: !p.new }))} sx={{ color: "var(--color-primary)" }}>
+                          {showPwd.new ? <VisibilityOff fontSize="small" /> : <Visibility fontSize="small" />}
+                        </IconButton>
+                      </InputAdornment>
+                    )
+                  }}
+                  slotProps={{
+                    input: {
+                      endAdornment: (
+                        <InputAdornment position="end">
+                          <IconButton size="small" onClick={() => setShowPwd(p => ({ ...p, new: !p.new }))} sx={{ color: "var(--color-primary)" }}>
+                            {showPwd.new ? <VisibilityOff fontSize="small" /> : <Visibility fontSize="small" />}
+                          </IconButton>
+                        </InputAdornment>
+                      )
+                    }
+                  }}
+                  sx={{
+                    "& .MuiOutlinedInput-root": {
+                      background: "var(--bg-accent-1)", borderRadius: "12px",
+                      "& fieldset": { borderColor: "transparent" },
+                      "&:hover fieldset": { borderColor: "var(--border-color)" },
+                      "&.Mui-focused fieldset": { borderColor: "var(--color-primary)" }
+                    }
+                  }}
+                />
+              </Box>
+            </Box>
+            {/* Confirm Password */}
+            <Box>
+              <Typography sx={{ fontSize: "0.7rem", color: "var(--text-secondary)", fontWeight: 500, mb: 0.5, textTransform: "uppercase" }}>Re-enter Password</Typography>
+              <Box sx={{ position: "relative", display: "flex", alignItems: "center" }}>
+                <TextField
+                  size="small" fullWidth placeholder="Confirm new password"
+                  variant="outlined"
+                  type={showPwd.confirm ? "text" : "password"}
+                  value={pwdForm.confirmPassword}
+                  error={!!pwdForm.confirmPassword && pwdForm.confirmPassword !== pwdForm.newPassword}
+                  helperText={pwdForm.confirmPassword && pwdForm.confirmPassword !== pwdForm.newPassword ? "Passwords do not match" : ""}
+                  onChange={e => setPwdForm({ ...pwdForm, confirmPassword: e.target.value })}
+                  InputProps={{
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <IconButton size="small" onClick={() => setShowPwd(p => ({ ...p, confirm: !p.confirm }))} sx={{ color: "var(--color-primary)" }}>
+                          {showPwd.confirm ? <VisibilityOff fontSize="small" /> : <Visibility fontSize="small" />}
+                        </IconButton>
+                      </InputAdornment>
+                    )
+                  }}
+                  slotProps={{
+                    input: {
+                      endAdornment: (
+                        <InputAdornment position="end">
+                          <IconButton size="small" onClick={() => setShowPwd(p => ({ ...p, confirm: !p.confirm }))} sx={{ color: "var(--color-primary)" }}>
+                            {showPwd.confirm ? <VisibilityOff fontSize="small" /> : <Visibility fontSize="small" />}
+                          </IconButton>
+                        </InputAdornment>
+                      )
+                    }
+                  }}
+                  sx={{
+                    "& .MuiOutlinedInput-root": {
+                      background: "var(--bg-accent-1)", borderRadius: "12px",
+                      "& fieldset": { borderColor: "transparent" },
+                      "&:hover fieldset": { borderColor: "var(--border-color)" },
+                      "&.Mui-focused fieldset": { borderColor: "var(--color-primary)" }
+                    }
+                  }}
+                />
+              </Box>
+            </Box>
+          </Box>
+          <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 2 }}>
+            <Button
+              variant="contained"
+              disabled={pwdLoading || !pwdForm.oldPassword || !pwdForm.newPassword || pwdForm.newPassword !== pwdForm.confirmPassword}
+              onClick={async () => {
+                setPwdLoading(true);
+                try {
+                  await API.put("/api/employees/me/change-password", {
+                    oldPassword: pwdForm.oldPassword,
+                    newPassword: pwdForm.newPassword
+                  });
+                  setSnack({ open: true, msg: "Password updated successfully!", severity: "success" });
+                  setShowPwdForm(false);
+                  setPwdForm({ oldPassword: "", newPassword: "", confirmPassword: "" });
+                } catch (err) {
+                  setSnack({ open: true, msg: err.response?.data?.message || "Failed to update password", severity: "error" });
+                } finally {
+                  setPwdLoading(false);
+                }
+              }}
+              sx={{
+                borderRadius: "12px", px: 4, py: 0.8, textTransform: "none",
+                fontWeight: 700, fontSize: "0.85rem", 
+                bgcolor: "var(--color-primary)",
+                color: "#fff", 
+                transition: "all 0.2s ease",
+                "&:hover": { 
+                  bgcolor: "var(--color-primary-dark, #0369a1)",
+                  boxShadow: "0 4px 12px rgba(2, 132, 199, 0.3)",
+                  transform: "translateY(-1px)"
+                },
+                "&.Mui-disabled": {
+                  bgcolor: "var(--bg-accent-1)",
+                  color: "var(--text-secondary)",
+                  border: "1px solid var(--border-color)",
+                  opacity: 0.5
+                }
+              }}
+            >
+              {pwdLoading ? "Updating..." : "Update Password"}
+            </Button>
+          </Box>
+        </Collapse>
+      </Paper>
       <Snackbar
         open={snack.open}
         autoHideDuration={3000}
         onClose={() => setSnack({ ...snack, open: false })}
         anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+        sx={{ 
+          zIndex: 9999,
+          top: "20px !important"
+        }}
       >
-        <Alert severity={snack.severity} sx={{ width: '100%' }}>
+        <Alert 
+          severity={snack.severity} 
+          variant="filled"
+          sx={{ 
+            width: '100%', 
+            borderRadius: "12px",
+            boxShadow: "0 8px 32px rgba(0,0,0,0.15)",
+            fontWeight: 600
+          }}
+        >
           {snack.msg}
         </Alert>
       </Snackbar>
