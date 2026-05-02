@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { Box, TextField, MenuItem, Select, Typography, Alert, Snackbar, Button, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper } from "@mui/material";
+import { Box, TextField, MenuItem, Select, Typography, Alert, Snackbar, Button, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, IconButton } from "@mui/material";
+import { AddCircle, Delete } from "@mui/icons-material";
 import PageHeader from "../../components/common/PageHeader";
 import {
   FacultyInfoRow, FormCard, Grid2, SubLabel, NoteBox, FileField, SubmitBtn,
@@ -19,7 +20,8 @@ export default function PatentPublication() {
 
   const [form, setForm] = useState({
     college: "", title: "", applicantName: "", area: "", filingNo: "", dateOfFiling: "",
-    status: "", coInventors: "", month: "", year: "",
+    status: "", coInventors: [], month: "", year: "",
+    applyIncentive: ""
   });
   const [files, setFiles] = useState({ eFilingReceipt: null, form1: null });
   const [loading, setLoading] = useState(false);
@@ -38,6 +40,20 @@ export default function PatentPublication() {
   const set = (k) => (e) => setForm((p) => ({ ...p, [k]: e.target.value }));
   const setFile = (k) => (e) => setFiles((p) => ({ ...p, [k]: e.target.files[0] }));
 
+  const handleAddCoInventor = () => {
+    setForm(p => ({ ...p, coInventors: [...p.coInventors, { name: "", affiliation: "" }] }));
+  };
+
+  const handleRemoveCoInventor = (index) => {
+    setForm(p => ({ ...p, coInventors: p.coInventors.filter((_, i) => i !== index) }));
+  };
+
+  const handleUpdateCoInventor = (index, field, value) => {
+    const updated = [...form.coInventors];
+    updated[index][field] = value;
+    setForm(p => ({ ...p, coInventors: updated }));
+  };
+
   const handleSubmit = async () => {
     if (!form.title || !form.filingNo) {
       setSnack({ open: true, msg: "Please fill all required fields", severity: "error" });
@@ -46,13 +62,19 @@ export default function PatentPublication() {
     setLoading(true);
     try {
       const fd = new FormData();
-      Object.entries(form).forEach(([k, v]) => fd.append(k, v));
+      Object.entries(form).forEach(([k, v]) => {
+        if (k === "coInventors") {
+          fd.append(k, JSON.stringify(v));
+        } else {
+          fd.append(k, v);
+        }
+      });
       Object.entries(files).forEach(([k, v]) => { if (v) fd.append(k, v); });
       fd.append("academicYear", selectedYear);
 
       await API.post("/api/research/patent", fd, { headers: { "Content-Type": "multipart/form-data" } });
       setSnack({ open: true, msg: "Patent submitted successfully!", severity: "success" });
-      setForm({ college: "", title: "", applicantName: "", area: "", filingNo: "", dateOfFiling: "", status: "", coInventors: "", month: "", year: "" });
+      setForm({ college: "", title: "", applicantName: "", area: "", filingNo: "", dateOfFiling: "", status: "", coInventors: [], month: "", year: "", applyIncentive: "" });
       setFiles({ eFilingReceipt: null, form1: null });
       setSelectedYear("");
       setViewMode("list");
@@ -173,9 +195,24 @@ export default function PatentPublication() {
             {PATENT_STATUSES.map((s) => <MenuItem key={s} value={s}>{s}</MenuItem>)}
           </Select>
         </Box>
-        <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
-          <Typography sx={labelStyle}>Name & affiliation of Co-Inventors :</Typography>
-          <TextField size="small" fullWidth multiline rows={3} value={form.coInventors} onChange={set("coInventors")} />
+        <Box sx={{ gridColumn: { sm: "1 / -1" }, mt: 2 }}>
+          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1 }}>
+            <Typography sx={labelStyle}>Name & affiliation of Co-Inventors :</Typography>
+            <Button startIcon={<AddCircle />} onClick={handleAddCoInventor} sx={{ textTransform: "none", fontWeight: 700, color: "var(--color-primary)" }}>Add Co-Inventor</Button>
+          </Box>
+          {form.coInventors.map((co, idx) => (
+            <Box key={idx} sx={{ display: "flex", gap: 2, mb: 2, p: 2, background: "var(--bg-accent-1)", borderRadius: "12px", alignItems: "center" }}>
+              <Box sx={{ flex: 1 }}>
+                <Typography sx={{ fontSize: 11, fontWeight: 700, color: "var(--text-secondary)", mb: 0.5 }}>CO-INVENTOR NAME</Typography>
+                <TextField size="small" fullWidth placeholder="Name" value={co.name} onChange={(e) => handleUpdateCoInventor(idx, "name", e.target.value)} />
+              </Box>
+              <Box sx={{ flex: 2 }}>
+                <Typography sx={{ fontSize: 11, fontWeight: 700, color: "var(--text-secondary)", mb: 0.5 }}>AFFILIATION</Typography>
+                <TextField size="small" fullWidth placeholder="College / Organization" value={co.affiliation} onChange={(e) => handleUpdateCoInventor(idx, "affiliation", e.target.value)} />
+              </Box>
+              <IconButton onClick={() => handleRemoveCoInventor(idx)} sx={{ mt: 2, color: "var(--text-secondary)" }}><Delete /></IconButton>
+            </Box>
+          ))}
         </Box>
       </Grid2>
 
@@ -198,6 +235,20 @@ export default function PatentPublication() {
       <Grid2 sx={{ mt: 1 }}>
         <FileField label="e-Filing Receipt:" name="eFilingReceipt" onChange={setFile("eFilingReceipt")} />
         <FileField label="Form -1" name="form1" onChange={setFile("form1")} />
+        <Box sx={{ mt: 1 }}>
+          <Typography sx={labelStyle}>Whether you want to apply for incentive?</Typography>
+          <Select size="small" fullWidth displayEmpty value={form.applyIncentive} onChange={set("applyIncentive")}>
+            <MenuItem value="">Select</MenuItem>
+            <MenuItem value="Yes">Yes</MenuItem>
+            <MenuItem value="No">No</MenuItem>
+          </Select>
+        </Box>
+        {form.applyIncentive === "Yes" && (
+          <Box sx={{ mt: 1 }}>
+            <Typography sx={{ fontSize: 13, fontWeight: 700, color: "var(--color-primary)" }}>Expected Amount:</Typography>
+            <TextField size="small" value="1500" disabled sx={{ "& .MuiInputBase-input.Mui-disabled": { WebkitTextFillColor: "#10b981", fontWeight: 800, background: "rgba(16, 185, 129, 0.1)", borderRadius: "8px" } }} />
+          </Box>
+        )}
       </Grid2>
 
       <Box sx={{ display: "flex", gap: 2, justifyContent: "center", mt: 4 }}>

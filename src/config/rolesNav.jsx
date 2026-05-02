@@ -6,7 +6,9 @@ import {
   Groups,
   School,
   Flag,
-  People
+  People,
+  SupervisorAccount,
+  ManageAccounts
 } from "@mui/icons-material";
 import PersonIcon from '@mui/icons-material/Person';
 import React from "react";
@@ -84,13 +86,15 @@ export const ROLE_ROUTES = {
           path: "/student/department-mapping"
         }
       ]
-    }
+    },
+    
   ],
 
   // Example for a future "Department HOD" role
   "HOD": [
     { text: "Dashboard", path: "/dashboard", icon: <Dashboard /> },
-    { text: "Protectrdata", path: "/hod/protecrdataupload" }
+    { text: "Proctordata", path: "/hod/protecrdataupload", icon: <People /> },
+    { text: "Discrepancies", path: "/hod/discrepancies", icon: <Flag /> },
   ],
 
   // Example for "Exam Section" role
