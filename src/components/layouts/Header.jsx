@@ -8,7 +8,8 @@ import {
   Brightness7,
   Check,
   Domain,
-  School
+  School,
+  Person
 } from "@mui/icons-material";
 import { useAuth } from "../../context/AuthContext";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -292,6 +293,34 @@ const Header = ({ onMenuClick }) => {
             <Typography sx={{ px: 2, mt: 1, mb: 0.5, fontSize: "0.7rem", fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.5px" }}>
               Preferences
             </Typography>
+
+            {/* Profile Link */}
+            <MenuItem
+              onClick={() => { handleClose(); navigate("/profile"); }}
+              sx={{
+                borderRadius: "10px",
+                fontSize: "0.85rem",
+                fontWeight: 600,
+                color: "var(--text-secondary)",
+                py: 1.2,
+                px: 2,
+                mb: 0.5,
+                mx: 1.5,
+                display: "flex",
+                alignItems: "center",
+                gap: 1.5,
+                transition: "all 0.2s ease",
+                "&:hover": { 
+                  background: "var(--bg-panel)",
+                  color: "var(--color-primary)",
+                  "& .MuiSvgIcon-root": { color: "var(--color-primary)" }
+                }
+              }}
+            >
+              <Person fontSize="small" sx={{ color: "var(--text-secondary)", transition: "color 0.2s ease" }} />
+              My Profile
+            </MenuItem>
+
             {/* Theme Toggle */}
             <MenuItem
               disableRipple
