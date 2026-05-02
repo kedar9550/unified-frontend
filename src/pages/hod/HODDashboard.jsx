@@ -168,14 +168,29 @@ const HODDashboard = () => {
         </Card>
 
         {/* Quick Actions Card */}
-        <Card sx={{ borderRadius: "20px", boxShadow: "0 4px 25px rgba(0,0,0,0.05)", p: 3, minWidth: { lg: 350 }, background: "linear-gradient(135deg, #1a237e 0%, #0d47a1 100%)", color: "#fff" }}>
+        <Card sx={{ 
+          borderRadius: "20px", 
+          boxShadow: "var(--shadow-premium)", 
+          p: 3, 
+          minWidth: { lg: 350 }, 
+          background: "var(--gradient-primary)", 
+          color: "#fff" 
+        }}>
           <Typography variant="h6" sx={{ fontWeight: 700, mb: 3 }}>Quick Actions</Typography>
           <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
             <Button 
               fullWidth 
               variant="contained" 
               onClick={() => navigate("/hod/discrepancies")}
-              sx={{ bgcolor: "rgba(255,255,255,0.1)", backdropFilter: "blur(10px)", textTransform: "none", py: 1.5, borderRadius: "12px", "&:hover": { bgcolor: "rgba(255,255,255,0.2)" } }}
+              sx={{ 
+                bgcolor: "rgba(255,255,255,0.12)", 
+                backdropFilter: "blur(12px)", 
+                textTransform: "none", 
+                py: 1.5, 
+                borderRadius: "12px", 
+                fontWeight: 600,
+                "&:hover": { bgcolor: "rgba(255,255,255,0.2)" } 
+              }}
             >
               Resolve Discrepancies
             </Button>
@@ -183,7 +198,15 @@ const HODDashboard = () => {
               fullWidth 
               variant="contained" 
               onClick={() => navigate("/hod/protecrdataupload")}
-              sx={{ bgcolor: "rgba(255,255,255,0.1)", backdropFilter: "blur(10px)", textTransform: "none", py: 1.5, borderRadius: "12px", "&:hover": { bgcolor: "rgba(255,255,255,0.2)" } }}
+              sx={{ 
+                bgcolor: "rgba(255,255,255,0.12)", 
+                backdropFilter: "blur(12px)", 
+                textTransform: "none", 
+                py: 1.5, 
+                borderRadius: "12px", 
+                fontWeight: 600,
+                "&:hover": { bgcolor: "rgba(255,255,255,0.2)" } 
+              }}
             >
               Upload Proctor Data
             </Button>

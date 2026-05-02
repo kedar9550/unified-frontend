@@ -486,7 +486,7 @@ const Profile = () => {
         mt: 3,
         width: "100%"
       }}>
-        <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: showPwdForm ? 3 : 0 }}>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 2.5 }}>
           <Security sx={{ color: "var(--color-primary)" }} />
           <Typography sx={{ fontSize: "1rem", fontWeight: 800, color: "var(--text-primary)", flex: 1 }}>
             Account & Security
