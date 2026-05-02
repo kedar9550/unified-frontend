@@ -70,7 +70,14 @@ export default function Discrepancies() {
     setLoading(true);
     try {
       const res = await API.get("/api/discrepancies");
-      setItems(res.data || []);
+      
+      // Filter for Exam Section: TEACHING, PROCTORING (PASS_COUNT only), and OTHER
+      const filtered = (res.data || []).filter(item => 
+        item.section === "TEACHING" || 
+        (item.section === "PROCTORING" && item.proctoringType === "PASS_COUNT") ||
+        item.section === "OTHER"
+      );
+      setItems(filtered);
     } catch (err) {
       console.error("Failed to fetch discrepancies:", err);
     } finally {
