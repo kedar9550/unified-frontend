@@ -28,6 +28,7 @@ import DepartmentMapping from "./pages/uniprime/Student/DepartmentMapping";
 import Dashboard from "./pages/Dashboard";
 import { registerLoadingHandlers } from "./api/axios";
 import SDG from "./pages/faculty/SDG";
+import Profile from "./components/common/Profile";
 
 const PublicOnlyRoute = ({ children }) => {
   const { user } = useAuth();
@@ -92,6 +93,7 @@ function App() {
         <Route path="/student/student-uploads" element={<ProtectedRoute element={<Studentuploads />} />} />
         <Route path="/student/assigned-students" element={<ProtectedRoute element={<Assignedstudents />} />} />
         <Route path="/student/department-mapping" element={<ProtectedRoute element={<DepartmentMapping />} />} />
+        <Route path="/profile" element={<ProtectedRoute element={<Profile />} />} />
 
         <Route path="*" element={<ProtectedRoute element={<Box p={4}><Typography variant="h4">Page Content</Typography></Box>} />} />
       </Routes>
