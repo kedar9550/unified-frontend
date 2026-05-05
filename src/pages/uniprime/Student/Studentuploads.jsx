@@ -28,6 +28,9 @@ const Studentuploads = () => {
     const [updatingBulk, setUpdatingBulk] = useState(false);
     const [isUploadOptionsOpen, setIsUploadOptionsOpen] = useState(false);
     const [isUpdateOptionsOpen, setIsUpdateOptionsOpen] = useState(false);
+    const [isBulkUpdateModalOpen, setIsBulkUpdateModalOpen] = useState(false);
+    const [selectedBulkProgram, setSelectedBulkProgram] = useState("");
+    const [allPrograms, setAllPrograms] = useState([]);
     const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "success" });
 
     const fetchUnassignedStudents = async () => {
@@ -58,7 +61,20 @@ const Studentuploads = () => {
                 setLoadingDepts(false);
             }
         };
+
+        const fetchPrograms = async () => {
+            try {
+                const res = await API.get("/api/student-data/filter-options");
+                if (res.data.success) {
+                    setAllPrograms(res.data.data?.programs || []);
+                }
+            } catch (error) {
+                console.error("Failed to fetch programs", error);
+            }
+        };
+
         fetchDepartments();
+        fetchPrograms();
         fetchUnassignedStudents();
     }, []);
 
@@ -91,10 +107,10 @@ const Studentuploads = () => {
         }
     };
 
-    const handleBulkSyncAll = async () => {
+    const handleBulkSyncAll = async (program = "") => {
         setUpdatingBulk(true);
         try {
-            const res = await API.post("/api/student-data/sync", {});
+            const res = await API.post("/api/student-data/sync", { program });
             if (res.data.success) {
                 setUploadResult(res.data.summary);
                 setSnackbar({
@@ -103,6 +119,8 @@ const Studentuploads = () => {
                     severity: res.data.updated ? "success" : "info"
                 });
                 fetchUnassignedStudents();
+                setIsBulkUpdateModalOpen(false);
+                setSelectedBulkProgram("");
             }
         } catch (error) {
             console.error("Bulk sync failed", error);
@@ -440,7 +458,6 @@ const Studentuploads = () => {
                     </Button>
                 </DialogActions>
             </Dialog>
-
             {/* UPLOAD RESULT CARD */}
             {uploadResult && (
                 <Collapse in={!!uploadResult}>
@@ -681,7 +698,7 @@ const Studentuploads = () => {
                                     variant="outlined"
                                     size="small"
                                     startIcon={<SyncIcon />}
-                                    onClick={handleBulkSyncAll}
+                                    onClick={() => setIsBulkUpdateModalOpen(true)}
                                     sx={{
                                         borderRadius: "50px",
                                         textTransform: "none",
@@ -917,6 +934,64 @@ const Studentuploads = () => {
                     {snackbar.message}
                 </Alert>
             </Snackbar>
+
+            {/* BULK UPDATE PROGRAM MODAL */}
+            <Dialog 
+                open={isBulkUpdateModalOpen} 
+                onClose={() => !updatingBulk && setIsBulkUpdateModalOpen(false)}
+                PaperProps={{
+                    sx: {
+                        background: 'var(--bg-panel)',
+                        border: '1px solid var(--border-color)',
+                        borderRadius: '20px',
+                        boxShadow: 'var(--shadow-premium)',
+                        color: 'var(--text-primary)'
+                    }
+                }}
+            >
+                <DialogTitle sx={{ fontWeight: 800 }}>Bulk Update Students</DialogTitle>
+                <DialogContent sx={{ minWidth: 400 }}>
+                    <Typography variant="body2" color="var(--text-secondary)" sx={{ mb: 2 }}>
+                        Select a program to sync students from ECAP.
+                    </Typography>
+                    <FormControl fullWidth variant="outlined" sx={{ 
+                        mt: 1,
+                        "& .MuiOutlinedInput-root": {
+                            borderRadius: "10px",
+                            background: "var(--bg-glass)",
+                            "& fieldset": { borderColor: "var(--border-color)" },
+                            "&:hover fieldset": { borderColor: "var(--color-primary)" },
+                            "&.Mui-focused fieldset": { borderColor: "var(--color-primary)" },
+                        },
+                        "& .MuiInputLabel-root": { color: "var(--text-secondary)" },
+                        "& .MuiSelect-select": { color: "var(--text-primary)" }
+                    }}>
+                        <InputLabel>Select Program</InputLabel>
+                        <Select
+                            value={selectedBulkProgram}
+                            onChange={(e) => setSelectedBulkProgram(e.target.value)}
+                            label="Select Program"
+                            disabled={updatingBulk}
+                        >
+                            <MenuItem value=""><em>All Programs</em></MenuItem>
+                            {allPrograms.map((program, idx) => (
+                                <MenuItem key={idx} value={program}>{program}</MenuItem>
+                            ))}
+                        </Select>
+                    </FormControl>
+                </DialogContent>
+                <DialogActions sx={{ p: 2, px: 3 }}>
+                    <Button onClick={() => setIsBulkUpdateModalOpen(false)} disabled={updatingBulk} sx={{ color: 'var(--text-secondary)', fontWeight: 700 }}>Cancel</Button>
+                    <Button 
+                        onClick={() => handleBulkSyncAll(selectedBulkProgram)} 
+                        disabled={updatingBulk} 
+                        variant="contained" 
+                        sx={{ borderRadius: '50px', background: "var(--gradient-primary)", px: 4, fontWeight: 700, textTransform: 'none' }}
+                    >
+                        {updatingBulk ? <CircularProgress size={24} color="inherit" /> : "Update"}
+                    </Button>
+                </DialogActions>
+            </Dialog>
         </Box>
     );
 };

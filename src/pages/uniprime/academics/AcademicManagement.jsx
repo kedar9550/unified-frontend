@@ -2,10 +2,11 @@ import React, { useEffect, useState } from "react";
 import API from "../../../api/axios";
 import {
   Box, Typography, Button, Card, CardContent, Chip, TextField,
-  IconButton, Select, MenuItem, Paper, Tooltip, Menu, InputAdornment, Grid
+  IconButton, Select, MenuItem, Paper, Tooltip, Menu, InputAdornment, Grid, Collapse
 } from "@mui/material";
 import {
-  Add, School, CheckCircle, RadioButtonUnchecked, Edit, Delete, Search, Check, Close
+  Add, School, CheckCircle, RadioButtonUnchecked, Edit, Delete, Search, Check, Close,
+  ExpandMore, ExpandLess
 } from "@mui/icons-material";
 import PageHeader from "../../../components/common/PageHeader";
 
@@ -27,6 +28,11 @@ const AcademicManagement = () => {
   const [anchorEl, setAnchorEl] = useState(null);
   const [activeYearForMenu, setActiveYearForMenu] = useState(null);
   const [programSearch, setProgramSearch] = useState("");
+  const [expandedCards, setExpandedCards] = useState({});
+  const [expandedYears, setExpandedYears] = useState({});
+
+  const toggleCard = (id) => setExpandedCards(prev => ({ ...prev, [id]: !prev[id] }));
+  const toggleYearExpand = (yearStr) => setExpandedYears(prev => ({ ...prev, [yearStr]: !prev[yearStr] }));
 
   useEffect(() => {
     fetchYears();
@@ -68,19 +74,17 @@ const AcademicManagement = () => {
   };
 
   const createGlobalYear = async () => {
-    if (!newStartYear || !newEndYear || !newProgramId) {
-      alert("Please select Start Year, End Year, and a Program");
+    if (!newStartYear || !newEndYear) {
+      alert("Please select Start Year and End Year");
       return;
     }
     try {
       await API.post("/api/academic-years", {
         startYear: newStartYear,
-        endYear: newEndYear,
-        programId: newProgramId
+        endYear: newEndYear
       });
       setNewStartYear(currentYear);
       setNewEndYear(currentYear + 1);
-      setNewProgramId("");
       fetchYears();
     } catch (err) {
       alert(err.response?.data?.message || "Failed to create academic year");
@@ -162,33 +166,39 @@ const AcademicManagement = () => {
     if (programPattern === 'YEAR') {
       return (
         <Box>
-          <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600 }}>Manage Years</Typography>
+          <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600, color: 'var(--text-primary)' }}>Manage Years</Typography>
           <Grid container spacing={2}>
             {Array.from({ length: durationYears || 1 }).map((_, idx) => {
-              // For Year pattern, we don't have multiple year semester types in DB right now, 
-              // we only have 'YEAR'. So all activate the same YEAR semester type. 
-              // Wait, the mockup says "Year 1", "Year 2", etc. 
-              // In the backend, we only have one activeSemesterTypeId.
-              // To support activating specific years, the semesterType needs to represent "Year 1", "Year 2".
-              // But for now we just use the global YEAR type, and let's assume they activate the program year as a whole.
               const st = availableSemesters[0];
               if (!st) return null;
               const isActive = y.activeSemesterTypeId?._id === st._id || y.activeSemesterTypeId === st._id;
 
-              // This is a UI approximation since the DB only has "YEAR" as a single type.
               return (
                 <Grid item xs={6} sm={4} md={2} key={idx}>
                   <Paper variant="outlined" sx={{
                     p: 1.5, textAlign: 'center',
+                    background: isActive && y.isActive ? 'rgba(16,185,129,0.12)' : 'var(--bg-glass)',
                     borderColor: isActive && y.isActive ? '#10B981' : 'var(--border-color)',
-                    bgcolor: isActive && y.isActive ? '#f0fdf4' : 'transparent',
                     opacity: y.isActive ? 1 : 0.6
                   }}>
-                    <Typography variant="body2" sx={{ fontWeight: 600, mb: 1 }}>Year {idx + 1}</Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 600, mb: 1, color: 'var(--text-primary)' }}>Year {idx + 1}</Typography>
                     {isActive ? (
-                      <Chip size="small" icon={<CheckCircle />} label="Active" sx={{ bgcolor: y.isActive ? '#10B981' : '#cbd5e1', color: y.isActive ? '#fff' : '#475569' }} />
+                      <Chip size="small" icon={<CheckCircle />} label="Active" color="success" sx={{ fontWeight: 700 }} />
                     ) : (
-                      <Button size="small" variant="text" disabled={!y.isActive} onClick={() => setYearSemester(y._id, st._id)}>Activate</Button>
+                      <Button
+                        size="small"
+                        variant="text"
+                        disabled={!y.isActive}
+                        onClick={() => setYearSemester(y._id, st._id)}
+                        sx={{
+                          textTransform: 'none',
+                          fontWeight: 700,
+                          fontSize: '0.7rem',
+                          color: 'var(--color-primary)',
+                          '&:hover': { background: 'transparent', opacity: 0.8 },
+                          '&.Mui-disabled': { color: 'var(--text-secondary)' }
+                        }}
+                      >Activate</Button>
                     )}
                   </Paper>
                 </Grid>
@@ -203,33 +213,56 @@ const AcademicManagement = () => {
     return (
       <Box>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
-          <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>Manage Semesters</Typography>
+          <Typography variant="subtitle2" sx={{ fontWeight: 600, color: 'var(--text-primary)' }}>Manage Semesters</Typography>
         </Box>
         <Grid container spacing={2}>
           {availableSemesters.map(st => {
             const isActive = y.activeSemesterTypeId?._id === st._id || y.activeSemesterTypeId === st._id;
+            const totalSems = (durationYears || 4) * 2;
+            const oddSems = Array.from({ length: totalSems / 2 }, (_, i) => i * 2 + 1).join(',');
+            const evenSems = Array.from({ length: totalSems / 2 }, (_, i) => i * 2 + 2).join(',');
+
             let title = st.name;
             let subtitle = "";
-            if (st.name === 'ODD') { title = "Odd Semester"; subtitle = "(1,3,5,7)"; }
-            if (st.name === 'EVEN') { title = "Even Semester"; subtitle = "(2,4,6,8)"; }
+            if (st.name === 'ODD') { title = "Odd Semester"; subtitle = `(${oddSems})`; }
+            if (st.name === 'EVEN') { title = "Even Semester"; subtitle = `(${evenSems})`; }
             if (st.name === 'SUMMER') { title = "Summer Semester"; subtitle = "-"; }
 
             return (
               <Grid item xs={12} sm={4} key={st._id}>
                 <Paper variant="outlined" sx={{
                   p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                  background: isActive && y.isActive ? 'rgba(16,185,129,0.12)' : 'var(--bg-glass)',
                   borderColor: isActive && y.isActive ? '#10B981' : 'var(--border-color)',
-                  bgcolor: isActive && y.isActive ? '#f0fdf4' : 'transparent',
                   opacity: y.isActive ? 1 : 0.6
                 }}>
                   <Box>
-                    <Typography variant="body2" sx={{ fontWeight: 600 }}>{title}</Typography>
-                    <Typography variant="caption" color="text.secondary">{subtitle}</Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 600, color: 'var(--text-primary)' }}>{title}</Typography>
+                    <Typography variant="caption" sx={{ color: 'var(--text-secondary)' }}>{subtitle}</Typography>
                   </Box>
                   {isActive ? (
-                    <Chip size="small" icon={<CheckCircle />} label="Active" sx={{ bgcolor: y.isActive ? '#10B981' : '#cbd5e1', color: y.isActive ? '#fff' : '#475569' }} />
+                    <Chip
+                      size="small"
+                      icon={<CheckCircle />}
+                      label="Active"
+                      color="success"
+                      sx={{ fontWeight: 700 }}
+                    />
                   ) : (
-                    <Button size="small" variant="text" disabled={!y.isActive} onClick={() => setYearSemester(y._id, st._id)}>Activate</Button>
+                    <Button
+                      size="small"
+                      variant="text"
+                      disabled={!y.isActive}
+                      onClick={() => setYearSemester(y._id, st._id)}
+                      sx={{
+                        textTransform: 'none',
+                        fontWeight: 700,
+                        fontSize: '0.75rem',
+                        color: 'var(--color-primary)',
+                        '&:hover': { background: 'transparent', opacity: 0.8 },
+                        '&.Mui-disabled': { color: 'var(--text-secondary)' }
+                      }}
+                    >Activate</Button>
                   )}
                 </Paper>
               </Grid>
@@ -247,105 +280,150 @@ const AcademicManagement = () => {
         subtitle="Manage academic years, programs and active semesters / years"
       />
 
-      <Paper sx={{ p: 3, mb: 4, borderRadius: 2, display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 3 }}>
-        <Typography variant="h6" sx={{ fontWeight: 600 }}>Create Academic Year</Typography>
+      <Paper sx={{ p: 3, mb: 4, borderRadius: 2, display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 3, background: 'var(--bg-panel)', border: '1px solid var(--border-color)' }}>
+        <Typography variant="h6" sx={{ fontWeight: 600, color: 'var(--text-primary)' }}>Create Academic Year</Typography>
         <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
-          <TextField size="small" type="number" label="Start Year" value={newStartYear} onChange={handleStartYearChange} sx={{ width: 120 }} />
-          <TextField size="small" type="number" label="End Year" value={newEndYear} onChange={e => setNewEndYear(parseInt(e.target.value) || "")} sx={{ width: 120 }} />
-          <TextField
-            select
-            size="small"
-            label="Select Program"
-            value={newProgramId}
-            onChange={e => setNewProgramId(e.target.value)}
-            sx={{ width: 200 }}
-          >
-            {allPrograms.map(p => (
-              <MenuItem key={p._id} value={p._id}>{p.code} - {p.name}</MenuItem>
-            ))}
-          </TextField>
-          <Button variant="contained" startIcon={<Add />} onClick={createGlobalYear} sx={{ borderRadius: '50px', px: 3, bgcolor: '#0f172a' }}>
+          <TextField size="small" type="number" label="Start Year" value={newStartYear} onChange={handleStartYearChange} sx={{ width: 120,
+            '& .MuiOutlinedInput-root': { background: 'var(--bg-glass)', '& fieldset': { borderColor: 'var(--border-color)' }, '&:hover fieldset': { borderColor: 'var(--color-primary)' } },
+            '& .MuiInputLabel-root': { color: 'var(--text-secondary)' },
+            '& .MuiInputBase-input': { color: 'var(--text-primary)' }
+          }} />
+          <TextField size="small" type="number" label="End Year" value={newEndYear} onChange={e => setNewEndYear(parseInt(e.target.value) || "")} sx={{ width: 120,
+            '& .MuiOutlinedInput-root': { background: 'var(--bg-glass)', '& fieldset': { borderColor: 'var(--border-color)' }, '&:hover fieldset': { borderColor: 'var(--color-primary)' } },
+            '& .MuiInputLabel-root': { color: 'var(--text-secondary)' },
+            '& .MuiInputBase-input': { color: 'var(--text-primary)' }
+          }} />
+
+          <Button variant="contained" startIcon={<Add />} onClick={createGlobalYear} sx={{ borderRadius: '50px', px: 3, background: 'var(--gradient-primary)', textTransform: 'none', fontWeight: 700 }}>
             CREATE ACADEMIC YEAR
           </Button>
         </Box>
       </Paper>
 
-      {Object.entries(groupedYears).sort((a, b) => b[0].localeCompare(a[0])).map(([yearStr, yearData]) => (
-        <Paper key={yearStr} sx={{ p: 3, mb: 4, borderRadius: 2 }}>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+      {Object.entries(groupedYears).sort((a, b) => b[0].localeCompare(a[0])).map(([yearStr, yearData]) => {
+        const isYearExpanded = !!expandedYears[yearStr];
+        return (
+        <Paper key={yearStr} sx={{ mb: 3, borderRadius: 2, background: 'var(--bg-panel)', border: '1px solid var(--border-color)', overflow: 'hidden' }}>
+          {/* Year Header — always visible, clickable */}
+          <Box
+            onClick={() => toggleYearExpand(yearStr)}
+            sx={{
+              p: 2.5, display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+              cursor: 'pointer',
+              borderBottom: isYearExpanded ? '1px solid var(--border-color)' : 'none',
+              transition: 'background 0.2s',
+              '&:hover': { background: 'var(--bg-glass)' }
+            }}
+          >
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-              <Typography variant="h6" sx={{ fontWeight: 700 }}>
-                Programs in Academic Year {yearStr}
+              <Typography variant="h6" sx={{ fontWeight: 700, color: 'var(--text-primary)' }}>
+                Academic Year {yearStr}
               </Typography>
-              <Chip size="small" label={`${yearData.programs.length} Programs`} color="primary" sx={{ bgcolor: '#eff6ff', color: '#3b82f6', fontWeight: 600 }} />
+              <Chip size="small" label={`${yearData.programs.length} Programs`} sx={{ bgcolor: 'var(--bg-accent-1)', color: 'var(--color-primary)', fontWeight: 600 }} />
             </Box>
-            <Button variant="outlined" startIcon={<Add />} onClick={(e) => handleOpenMenu(e, yearStr)} sx={{ borderRadius: '50px', textTransform: 'none', borderColor: '#8b5cf6', color: '#8b5cf6' }}>
-              ADD PROGRAM
-            </Button>
+            <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+              <Button
+                variant="outlined"
+                startIcon={<Add />}
+                onClick={(e) => { e.stopPropagation(); handleOpenMenu(e, yearStr); }}
+                sx={{ borderRadius: '50px', textTransform: 'none', fontWeight: 700, borderColor: 'var(--color-primary)', color: 'var(--color-primary)', '&:hover': { background: 'var(--bg-glass)' } }}
+              >
+                ADD PROGRAM
+              </Button>
+              <IconButton size="small" sx={{ color: 'var(--text-secondary)' }}>
+                {isYearExpanded ? <ExpandLess fontSize="small" /> : <ExpandMore fontSize="small" />}
+              </IconButton>
+            </Box>
           </Box>
 
-          <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+          {/* Collapsible program list */}
+          <Collapse in={isYearExpanded}>
+            <Box sx={{ p: 2.5, display: "flex", flexDirection: "column", gap: 2 }}>
             {yearData.programs.map((y) => {
               const prog = y.programId;
               const pattern = prog?.programPattern || 'SEMESTER';
+              const isExpanded = !!expandedCards[y._id];
               return (
-                <Card key={y._id} variant="outlined" sx={{ borderRadius: 2, borderColor: 'var(--border-color)' }}>
-                  <Box sx={{ p: 2, borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', bgcolor: '#f8fafc' }}>
+                <Card key={y._id} variant="outlined" sx={{ borderRadius: 2, borderColor: 'var(--border-color)', background: 'var(--bg-glass)' }}>
+                  <Box
+                    onClick={() => toggleCard(y._id)}
+                    sx={{
+                      p: 2,
+                      display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                      background: 'var(--bg-panel)',
+                      cursor: 'pointer',
+                      borderBottom: isExpanded ? '1px solid var(--border-color)' : 'none',
+                      borderRadius: isExpanded ? '8px 8px 0 0' : '8px',
+                      transition: 'background 0.2s',
+                      '&:hover': { background: 'var(--bg-glass)' }
+                    }}
+                  >
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                      <School sx={{ color: '#3b82f6' }} />
-                      <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
-                        {prog?.code} - {prog?.name}
+                      <School sx={{ color: 'var(--color-primary)' }} />
+                      <Typography variant="subtitle1" sx={{ fontWeight: 700, color: 'var(--text-primary)' }}>
+                        {prog?.name}
                       </Typography>
-                      <Chip size="small" label={`${pattern} WISE`} sx={{ bgcolor: pattern === 'SEMESTER' ? '#dcfce7' : '#f3e8ff', color: pattern === 'SEMESTER' ? '#166534' : '#6b21a8', fontWeight: 600, fontSize: '0.7rem' }} />
+                      <Chip size="small" label={`${pattern} WISE`} sx={{ bgcolor: pattern === 'SEMESTER' ? 'rgba(34,197,94,0.15)' : 'rgba(139,92,246,0.15)', color: pattern === 'SEMESTER' ? '#22c55e' : '#a78bfa', fontWeight: 600, fontSize: '0.7rem' }} />
                     </Box>
-                    <Box sx={{ display: 'flex', gap: 1 }}>
+                    <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
                       {/* <Button size="small" variant="outlined" startIcon={<Edit />} sx={{ textTransform: 'none', borderRadius: '50px' }}>
                         Edit Program
                       </Button> */}
-                      <Button size="small" variant="outlined" color="error" startIcon={<Delete />} onClick={() => deleteYear(y._id, prog?.code)} sx={{ textTransform: 'none', borderRadius: '50px' }}>
+                      <Button
+                        size="small" variant="outlined" color="error" startIcon={<Delete />}
+                        onClick={(e) => { e.stopPropagation(); deleteYear(y._id, prog?.code); }}
+                        sx={{ textTransform: 'none', borderRadius: '50px' }}
+                      >
                         Remove
                       </Button>
+                      <IconButton size="small" sx={{ color: 'var(--text-secondary)' }}>
+                        {isExpanded ? <ExpandLess fontSize="small" /> : <ExpandMore fontSize="small" />}
+                      </IconButton>
                     </Box>
                   </Box>
-                  <CardContent sx={{ p: 3 }}>
-                    <Box sx={{ display: 'flex', gap: 6, mb: 3 }}>
-                      <Box>
-                        <Typography variant="caption" color="text.secondary">Program Type</Typography>
-                        <Typography variant="body2" sx={{ fontWeight: 600 }}>{pattern === 'SEMESTER' ? 'Semester Wise' : 'Year Wise'}</Typography>
+                  <Collapse in={isExpanded}>
+                    <CardContent sx={{ p: 3 }}>
+                      <Box sx={{ display: 'flex', gap: 6, mb: 3 }}>
+                        <Box>
+                          <Typography variant="caption" sx={{ color: 'var(--text-secondary)' }}>Program Type</Typography>
+                          <Typography variant="body2" sx={{ fontWeight: 600, color: 'var(--text-primary)' }}>{pattern === 'SEMESTER' ? 'Semester Wise' : 'Year Wise'}</Typography>
+                        </Box>
+                        <Box>
+                          <Typography variant="caption" sx={{ color: 'var(--text-secondary)' }}>Duration</Typography>
+                          <Typography variant="body2" sx={{ fontWeight: 600, color: 'var(--text-primary)' }}>{prog?.durationYears || 4} Years</Typography>
+                        </Box>
+                        <Box>
+                          <Tooltip title="This toggle activates/deactivates the entire program for this academic year">
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                              <Typography variant="caption" sx={{ color: 'var(--text-secondary)' }}>Program Status</Typography>
+                              {y.isActive ? (
+                                <Chip size="small" icon={<CheckCircle />} label="Active" color="success" onClick={(e) => { e.stopPropagation(); toggleYear(y._id, true); }} sx={{ cursor: 'pointer', height: 24 }} />
+                              ) : (
+                                <Chip size="small" icon={<RadioButtonUnchecked />} label="Set Active" variant="outlined" onClick={(e) => { e.stopPropagation(); toggleYear(y._id, false); }} sx={{ cursor: 'pointer', height: 24 }} />
+                              )}
+                            </Box>
+                          </Tooltip>
+                        </Box>
                       </Box>
-                      <Box>
-                        <Typography variant="caption" color="text.secondary">Duration</Typography>
-                        <Typography variant="body2" sx={{ fontWeight: 600 }}>{prog?.durationYears || 4} Years</Typography>
-                      </Box>
-                      <Box>
-                        <Tooltip title="This toggle activates/deactivates the entire program for this academic year">
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                            <Typography variant="caption" color="text.secondary">Program Status</Typography>
-                            {y.isActive ? (
-                              <Chip size="small" icon={<CheckCircle />} label="Active" color="success" onClick={() => toggleYear(y._id, true)} sx={{ cursor: 'pointer', height: 24 }} />
-                            ) : (
-                              <Chip size="small" icon={<RadioButtonUnchecked />} label="Set Active" variant="outlined" onClick={() => toggleYear(y._id, false)} sx={{ cursor: 'pointer', height: 24 }} />
-                            )}
-                          </Box>
-                        </Tooltip>
-                      </Box>
-                    </Box>
 
-                    {renderSemesters(y, pattern, prog?.durationYears)}
+                      {renderSemesters(y, pattern, prog?.durationYears)}
 
-                  </CardContent>
+                    </CardContent>
+                  </Collapse>
                 </Card>
               )
             })}
 
             {yearData.programs.length === 0 && (
-              <Box sx={{ textAlign: 'center', p: 4, bgcolor: '#f8fafc', borderRadius: 2 }}>
-                <Typography color="text.secondary">No programs added to this academic year yet.</Typography>
+              <Box sx={{ textAlign: 'center', p: 4, background: 'var(--bg-glass)', borderRadius: 2, border: '1px dashed var(--border-color)' }}>
+                <Typography sx={{ color: 'var(--text-secondary)' }}>No programs added to this academic year yet.</Typography>
               </Box>
             )}
-          </Box>
+            </Box>
+          </Collapse>
         </Paper>
-      ))}
+        );
+      })}
 
       {years.length === 0 && (
         <Typography sx={{ textAlign: "center", color: "text.secondary", mt: 6 }}>
@@ -358,10 +436,10 @@ const AcademicManagement = () => {
         anchorEl={anchorEl}
         open={Boolean(anchorEl)}
         onClose={handleCloseMenu}
-        PaperProps={{ sx: { width: 320, mt: 1, borderRadius: 2 } }}
+        PaperProps={{ sx: { width: 320, mt: 1, borderRadius: 2, background: 'var(--bg-panel)', border: '1px solid var(--border-color)' } }}
       >
         <Box sx={{ p: 2, pb: 1 }}>
-          <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600 }}>Select Program</Typography>
+          <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600, color: 'var(--text-primary)' }}>Select Program</Typography>
           <TextField
             fullWidth
             size="small"
@@ -369,7 +447,12 @@ const AcademicManagement = () => {
             value={programSearch}
             onChange={e => setProgramSearch(e.target.value)}
             InputProps={{
-              startAdornment: <InputAdornment position="start"><Search fontSize="small" /></InputAdornment>
+              startAdornment: <InputAdornment position="start"><Search fontSize="small" sx={{ color: 'var(--text-secondary)' }} /></InputAdornment>
+            }}
+            sx={{
+              '& .MuiOutlinedInput-root': { background: 'var(--bg-glass)', '& fieldset': { borderColor: 'var(--border-color)' }, '&:hover fieldset': { borderColor: 'var(--color-primary)' } },
+              '& .MuiInputBase-input': { color: 'var(--text-primary)' },
+              '& .MuiInputBase-input::placeholder': { color: 'var(--text-secondary)' }
             }}
           />
         </Box>
@@ -377,13 +460,13 @@ const AcademicManagement = () => {
           {allPrograms
             .filter(p => (p.name.toLowerCase().includes(programSearch.toLowerCase()) || p.code.toLowerCase().includes(programSearch.toLowerCase())))
             .map(p => (
-              <MenuItem key={p._id} onClick={() => addProgramToYear(p._id)} sx={{ py: 1.5, borderBottom: '1px solid #f1f5f9' }}>
-                <Typography variant="body2">{p.code} - {p.name}</Typography>
+              <MenuItem key={p._id} onClick={() => addProgramToYear(p._id)} sx={{ py: 1.5, borderBottom: '1px solid var(--border-color)', color: 'var(--text-primary)', '&:hover': { background: 'var(--bg-glass)' } }}>
+                <Typography variant="body2">{p.name}</Typography>
               </MenuItem>
             ))}
         </Box>
         <Box sx={{ p: 1 }}>
-          <Button fullWidth variant="text" startIcon={<Add />} sx={{ textTransform: 'none', justifyContent: 'flex-start' }}>
+          <Button fullWidth variant="text" startIcon={<Add />} sx={{ textTransform: 'none', justifyContent: 'flex-start', color: 'var(--color-primary)' }}>
             Create New Program
           </Button>
         </Box>
