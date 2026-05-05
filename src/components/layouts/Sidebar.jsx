@@ -136,6 +136,25 @@ const Sidebar = ({ mobileOpen, onDrawerToggle }) => {
   }, [coords]);
 
   React.useEffect(() => {
+    // Persistent Sub-menu: On refresh, keep the active category expanded
+    const effectiveRole = activeRole || (user?.roles && user.roles[0]?.role) || "STUDENT";
+    const items = ROLE_ROUTES[effectiveRole] || ROLE_ROUTES.STUDENT;
+    
+    let initialOpenStates = {};
+    items.forEach((item) => {
+      if (item.nested) {
+        const isSubActive = item.nested.some(sub => 
+          sub.path && location.pathname.startsWith(sub.path)
+        );
+        if (isSubActive) {
+          initialOpenStates[item.text] = true;
+        }
+      }
+    });
+    setOpenStates(initialOpenStates);
+  }, []); // Run only on mount
+
+  React.useEffect(() => {
     let currentText = "Dashboard";
     const effectiveRole = activeRole || (user?.roles && user.roles[0]?.role) || "STUDENT";
     const items = ROLE_ROUTES[effectiveRole] || ROLE_ROUTES.STUDENT;

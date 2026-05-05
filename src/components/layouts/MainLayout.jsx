@@ -35,7 +35,8 @@ const MainLayout = ({ children }) => {
             minHeight: "100vh",
             display: "flex",
             flexDirection: "column",
-            p: { xs: 1.5, md: 3 },
+            px: { xs: 0, md: 3 },
+            py: { xs: 1.5, md: 3 },
             pt: { xs: "70px", md: "88px" },
             pb: { xs: "80px", md: 0 }, /* Space for bottom navbar */
             transition: "all 0.3s ease",
@@ -45,18 +46,18 @@ const MainLayout = ({ children }) => {
           <Box
             sx={{
               flex: 1,
-              borderRadius: "16px",
+              borderRadius: { xs: 0, md: "16px" },
               background: "var(--bg-glass)",
               backdropFilter: "blur(2px) saturate(160%)",
               WebkitBackdropFilter: "blur(2px) saturate(160%)",
-              boxShadow: "0 8px 32px rgba(31, 38, 135, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.5)",
-              border: "1px solid var(--border-color)",
+              boxShadow: { xs: "none", md: "0 8px 32px rgba(31, 38, 135, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.5)" },
+              border: { xs: "none", md: "1px solid var(--border-color)" },
               display: "flex",
               flexDirection: "column",
               overflow: "hidden", 
             }}
           >
-            <Box sx={{ flex: 1, p: { xs: 1.5, md: 4 }, overflowY: "auto" }}>
+            <Box sx={{ flex: 1, px: { xs: 0.5, md: 4 }, py: { xs: 1.5, md: 4 }, overflowY: "auto" }}>
               {children}
             </Box>
             <Footer />
