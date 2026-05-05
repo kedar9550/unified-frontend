@@ -202,15 +202,18 @@ const DeptProctorUploads = () => {
     const proctorId = manualProctors[studentId]?.trim();
     if (!proctorId) return alert("Please enter a Proctor ID");
     try {
+      const payload = {
+        studentId,
+        proctorId,
+        semester: isYearBased ? null : selectedSemester,
+        yearName: isYearBased ? selectedYearName : null,
+        academicYear: activeYear
+      };
+
       if (mappingId) {
-        await API.put(`/api/dept-proctor/${mappingId}`, { proctorId });
+        await API.put(`/api/dept-proctor/${mappingId}`, payload);
       } else {
-        await API.post(`/api/dept-proctor`, {
-          studentId,
-          proctorId,
-          semester: isYearBased ? null : selectedSemester,
-          yearName: isYearBased ? selectedYearName : null
-        });
+        await API.post(`/api/dept-proctor`, payload);
       }
       alert("Proctor assigned successfully!");
       fetchStudents();
