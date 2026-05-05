@@ -15,12 +15,14 @@ import API from "../../../api/axios";
 
 const AcademicStructure = () => {
     const [activeTab, setActiveTab] = useState(0);
+    const [selectedSchool, setSelectedSchool] = useState(null);
     const [selectedDepartment, setSelectedDepartment] = useState(null);
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
     const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "success" });
 
     // Data State
+    const [schools, setSchools] = useState([]);
     const [departments, setDepartments] = useState([]);
     const [programs, setPrograms] = useState([]);
     const [branches, setBranches] = useState([]);
@@ -36,12 +38,14 @@ const AcademicStructure = () => {
     const fetchData = async () => {
         setLoading(true);
         try {
-            const [deptRes, progRes, branchRes] = await Promise.all([
+            const [schoolRes, deptRes, progRes, branchRes] = await Promise.all([
+                API.get("/api/academics/schools"),
                 API.get("/api/academics/departments"),
                 API.get("/api/academics/programs"),
                 API.get("/api/academics/branches")
             ]);
 
+            setSchools(schoolRes.data.data || []);
             setDepartments(deptRes.data.data || []);
             setPrograms(progRes.data.data || []);
             setBranches(branchRes.data.data || []);
@@ -109,103 +113,167 @@ const AcademicStructure = () => {
         setModal({ open: true, type, mode, data: modalData });
     };
 
-    const renderDepartmentsView = () => (
-        <Box sx={{
-            display: 'grid',
-            gridTemplateColumns: { xs: '1fr', sm: '1fr', md: 'repeat(2, 1fr)', lg: 'repeat(3, 1fr)', xl: 'repeat(4, 1fr)' },
-            gap: 3
-        }}>
-            <Card
-                sx={{
-                    ...cardDrillStyle,
-                    border: "2px dashed var(--color-primary)",
-                    background: "var(--bg-accent-1)",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    width: '100%',
-                    minHeight: "140px",
-                    boxShadow: 'none',
-                    "&:hover": {
-                        background: "var(--bg-accent-2)",
-                        transform: 'translateY(-8px)',
-                        border: "2px dashed var(--color-primary)",
-                    }
-                }}
-                onClick={() => openModal('department')}
-            >
-                <Box sx={{ textAlign: "center" }}>
-                    <Box sx={{
-                        width: 54,
-                        height: 54,
-                        borderRadius: '50%',
-                        border: '2px solid var(--color-primary)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        margin: '0 auto 16px',
-                        background: "var(--bg-glass)",
-                        backdropFilter: "blur(4px)"
-                    }}>
-                        <Add sx={{ fontSize: 32, color: 'var(--color-primary)' }} />
-                    </Box>
-                    <Typography variant="body1" fontWeight={800} sx={{ color: 'var(--color-primary)', letterSpacing: '0.5px' }}>
-                        Add Department
-                    </Typography>
-                </Box>
-            </Card>
+    const renderSchoolsAndCentralView = () => {
+        const centralDepts = departments.filter(d => d.type === 'Central');
 
-            {departments.map(dept => (
-                <Card key={dept._id} sx={{ ...cardDrillStyle, width: '100%', minHeight: '120px', display: 'flex', flexDirection: 'column' }} onClick={() => setSelectedDepartment(dept)}>
-                    <CardContent sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', p: '24px !important' }}>
-                        <Box sx={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1.5 }}>
-                            <Typography variant="subtitle1" fontWeight={700} sx={{
-                                lineHeight: 1.3,
-                                wordBreak: 'break-word',
-                                color: 'var(--text-primary)',
-                                pr: 1
-                            }}>
-                                {dept.name}
-                            </Typography>
-                            <IconButton size="small" onClick={(e) => { e.stopPropagation(); openModal('department', 'edit', dept); }} sx={{ color: 'var(--text-secondary)', flexShrink: 0, p: 0.5, "&:hover": { background: 'none', color: 'var(--color-primary)', transform: 'scale(1.2)' }, transition: 'all 0.2s' }}>
-                                <Edit sx={{ fontSize: 18 }} />
-                            </IconButton>
-                        </Box>
-
-                        <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mb: 2 }}>
-                            <Chip label={dept.code} size="small" sx={{ fontWeight: 800, height: 22, fontSize: '0.7rem', borderRadius: '50px', background: "var(--gradient-primary)", color: '#fff' }} />
-                            {dept.programIds?.map(prog => (
-                                <Chip
-                                    key={prog._id}
-                                    label={prog.name}
-                                    size="small"
-                                    variant="outlined"
-                                    sx={{ fontWeight: 700, height: 22, fontSize: '0.65rem', borderRadius: '50px', border: '1.5px solid var(--color-primary)', color: 'var(--color-primary)' }}
-                                />
-                            ))}
-                            {dept.hasStudents && (
-                                <Chip label="Has Students" size="small" variant="outlined" sx={{ fontWeight: 800, height: 22, fontSize: '0.65rem', borderRadius: '50px', color: '#2e7d32', border: '1.5px solid #2e7d32' }} />
-                            )}
-                        </Box>
-
-                        <Divider sx={{ mb: 1.5, mt: 'auto', opacity: 0.5 }} />
-
-                        <Typography variant="caption" color="textSecondary" sx={{
-                            fontWeight: 500,
-                            opacity: 0.8,
-                            display: '-webkit-box',
-                            WebkitLineClamp: 1,
-                            WebkitBoxOrient: 'vertical',
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis'
-                        }}>
-                            {dept.description || "No description"}
+        return (
+            <Box>
+                {/* SCHOOLS SECTION */}
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                    <Box>
+                        <Typography variant="h6" fontWeight={700} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <Business sx={{ color: 'var(--color-primary)' }} /> Schools
                         </Typography>
-                    </CardContent>
-                </Card>
-            ))}
-        </Box>
-    );
+                        <Typography variant="body2" color="textSecondary">
+                            Schools are the major academic divisions in the university.
+                        </Typography>
+                    </Box>
+                    <Button variant="contained" startIcon={<Add />} onClick={() => openModal('school', 'add')} sx={{ borderRadius: '50px', background: "var(--color-primary)", textTransform: 'none', fontWeight: 600 }}>
+                        Create School
+                    </Button>
+                </Box>
+
+                <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr', md: 'repeat(2, 1fr)', lg: 'repeat(3, 1fr)', xl: 'repeat(4, 1fr)' }, gap: 3, mb: 5 }}>
+                    {schools.map(school => {
+                        const schoolDepts = departments.filter(d => d.schoolId?._id === school._id || d.schoolId === school._id);
+                        const schoolBranches = branches.filter(b => schoolDepts.some(d => d._id === b.departmentId?._id || d._id === b.departmentId));
+                        
+                        return (
+                            <Card key={school._id} sx={{ ...cardDrillStyle, minHeight: '140px', display: 'flex', flexDirection: 'column' }} onClick={() => setSelectedSchool(school)}>
+                                <CardContent sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', p: '24px !important' }}>
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
+                                        <Box sx={{ width: 48, height: 48, borderRadius: '50%', background: 'var(--bg-accent-1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                            <School sx={{ color: 'var(--color-primary)' }} />
+                                        </Box>
+                                        <Box>
+                                            <Typography variant="subtitle1" fontWeight={700} sx={{ lineHeight: 1.2, color: 'var(--color-primary)' }}>
+                                                {school.name}
+                                            </Typography>
+                                            <Typography variant="caption" fontWeight={700} color="textSecondary">
+                                                ({school.code})
+                                            </Typography>
+                                        </Box>
+                                    </Box>
+                                    
+                                    <Typography variant="caption" color="textSecondary" sx={{ mb: 'auto', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                                        {school.description || "Academic division"}
+                                    </Typography>
+
+                                    <Divider sx={{ my: 2, opacity: 0.5 }} />
+                                    
+                                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                        <Box>
+                                            <Typography variant="caption" color="textSecondary">Branches</Typography>
+                                            <Typography variant="h6" fontWeight={800} color="var(--color-primary)">{schoolBranches.length}</Typography>
+                                        </Box>
+                                        <IconButton size="small" sx={{ border: '1px solid var(--border-color)', color: 'var(--color-primary)' }} onClick={(e) => { e.stopPropagation(); openModal('school', 'edit', school); }}>
+                                            <Edit fontSize="small" />
+                                        </IconButton>
+                                    </Box>
+                                </CardContent>
+                            </Card>
+                        );
+                    })}
+                </Box>
+
+                {/* CENTRAL DEPARTMENTS SECTION */}
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                    <Box>
+                        <Typography variant="h6" fontWeight={700} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <Business sx={{ color: 'var(--color-primary)' }} /> Central Level Departments
+                        </Typography>
+                        <Typography variant="body2" color="textSecondary">
+                            Departments that operate at the central level and are not under any school.
+                        </Typography>
+                    </Box>
+                    <Button variant="contained" startIcon={<Add />} onClick={() => openModal('department', 'add', { type: 'Central' })} sx={{ borderRadius: '50px', background: "var(--color-primary)", textTransform: 'none', fontWeight: 600 }}>
+                        Add Central Department
+                    </Button>
+                </Box>
+
+                <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr', md: 'repeat(2, 1fr)' }, gap: 3 }}>
+                    {centralDepts.map(dept => {
+                        const deptBranches = branches.filter(b => b.departmentId?._id === dept._id || b.departmentId === dept._id);
+                        return (
+                            <Card key={dept._id} sx={{ ...cardDrillStyle, minHeight: '80px', display: 'flex', alignItems: 'center' }} onClick={() => setSelectedDepartment(dept)}>
+                                <CardContent sx={{ flexGrow: 1, p: '16px 24px !important', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                                        <Box sx={{ width: 40, height: 40, borderRadius: '50%', background: 'var(--bg-accent-1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                            <Typography variant="body2" fontWeight={800} color="var(--color-primary)">{dept.code}</Typography>
+                                        </Box>
+                                        <Box>
+                                            <Typography variant="subtitle2" fontWeight={700} sx={{ color: 'var(--text-primary)' }}>{dept.name}</Typography>
+                                            <Typography variant="caption" color="textSecondary">Branches: {deptBranches.length}</Typography>
+                                        </Box>
+                                    </Box>
+                                    <Box>
+                                        <IconButton size="small" onClick={(e) => { e.stopPropagation(); openModal('department', 'edit', dept); }} sx={{ color: 'var(--text-secondary)' }}><Edit fontSize="small" /></IconButton>
+                                        <IconButton size="small" onClick={(e) => { e.stopPropagation(); setDeleteConfirm({ open: true, type: 'department', id: dept._id, name: dept.name }); }} sx={{ color: 'var(--text-secondary)' }}><Delete fontSize="small" /></IconButton>
+                                    </Box>
+                                </CardContent>
+                            </Card>
+                        );
+                    })}
+                </Box>
+            </Box>
+        );
+    };
+
+    const renderSchoolDepartmentsView = () => {
+        const schoolDepts = departments.filter(d => d.schoolId?._id === selectedSchool._id || d.schoolId === selectedSchool._id);
+
+        return (
+            <Box>
+                <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
+                    <Button startIcon={<ArrowBack />} onClick={() => setSelectedSchool(null)} sx={{ color: 'var(--color-primary)', fontWeight: 700 }}>
+                        Back to Schools
+                    </Button>
+                </Box>
+
+                <Paper sx={{ p: 3, mb: 4, borderRadius: "20px", background: "var(--bg-glass)", border: "1px solid var(--border-color)" }}>
+                    <Typography variant="h5" fontWeight={800} sx={{ color: 'var(--text-primary)', mb: 1 }}>
+                        {selectedSchool.name} <Chip label={selectedSchool.code} size="small" sx={{ ml: 1, fontWeight: 800, background: "var(--gradient-primary)", color: 'white' }} />
+                    </Typography>
+                    <Typography variant="body2" color="textSecondary">
+                        {selectedSchool.description || "Manage academic departments for this school."}
+                    </Typography>
+                </Paper>
+
+                <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr', md: 'repeat(2, 1fr)', lg: 'repeat(3, 1fr)', xl: 'repeat(4, 1fr)' }, gap: 3 }}>
+                    <Card
+                        sx={{ ...cardDrillStyle, border: "2px dashed var(--color-primary)", background: "var(--bg-accent-1)", display: "flex", alignItems: "center", justifyContent: "center", minHeight: "140px", boxShadow: 'none' }}
+                        onClick={() => openModal('department', 'add', { type: 'Academic', schoolId: selectedSchool._id })}
+                    >
+                        <Box sx={{ textAlign: "center" }}>
+                            <Box sx={{ width: 54, height: 54, borderRadius: '50%', border: '2px solid var(--color-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', background: "var(--bg-glass)" }}>
+                                <Add sx={{ fontSize: 32, color: 'var(--color-primary)' }} />
+                            </Box>
+                            <Typography variant="body1" fontWeight={800} sx={{ color: 'var(--color-primary)' }}>Add Department</Typography>
+                        </Box>
+                    </Card>
+
+                    {schoolDepts.map(dept => (
+                        <Card key={dept._id} sx={{ ...cardDrillStyle, width: '100%', minHeight: '120px', display: 'flex', flexDirection: 'column' }} onClick={() => setSelectedDepartment(dept)}>
+                            <CardContent sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', p: '24px !important' }}>
+                                <Box sx={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1.5 }}>
+                                    <Typography variant="subtitle1" fontWeight={700} sx={{ lineHeight: 1.3, color: 'var(--text-primary)' }}>{dept.name}</Typography>
+                                    <IconButton size="small" onClick={(e) => { e.stopPropagation(); openModal('department', 'edit', dept); }} sx={{ color: 'var(--text-secondary)' }}><Edit sx={{ fontSize: 18 }} /></IconButton>
+                                </Box>
+                                <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mb: 2 }}>
+                                    <Chip label={dept.code} size="small" sx={{ fontWeight: 800, height: 22, fontSize: '0.7rem', background: "var(--gradient-primary)", color: '#fff' }} />
+                                    <Chip label="Academic" size="small" variant="outlined" sx={{ fontWeight: 800, height: 22, fontSize: '0.65rem', color: '#2e7d32', border: '1.5px solid #2e7d32' }} />
+                                </Box>
+                                <Divider sx={{ mb: 1.5, mt: 'auto', opacity: 0.5 }} />
+                                <Typography variant="caption" color="textSecondary" sx={{ display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                                    {dept.description || "No description"}
+                                </Typography>
+                            </CardContent>
+                        </Card>
+                    ))}
+                </Box>
+            </Box>
+        );
+    };
 
     const renderProgramsView = () => {
         return (
@@ -280,6 +348,8 @@ const AcademicStructure = () => {
                             <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mb: 2 }}>
                                 <Chip label={prog.code} size="small" sx={{ fontWeight: 800, height: 22, fontSize: '0.7rem', borderRadius: '50px', background: "var(--gradient-primary)", color: '#fff' }} />
                                 <Chip label={prog.type} size="small" variant="outlined" sx={{ fontWeight: 700, height: 22, fontSize: '0.65rem', borderRadius: '50px', border: '1.5px solid var(--color-primary)', color: 'var(--color-primary)' }} />
+                                <Chip label={`${prog.durationYears || 4} Years`} size="small" variant="outlined" sx={{ fontWeight: 700, height: 22, fontSize: '0.65rem', borderRadius: '50px', border: '1px solid #10b981', color: '#10b981' }} />
+                                <Chip label={prog.programPattern === 'YEAR' ? 'YEAR WISE' : 'SEMESTER WISE'} size="small" variant="outlined" sx={{ fontWeight: 700, height: 22, fontSize: '0.65rem', borderRadius: '50px', border: '1px solid #8b5cf6', color: '#8b5cf6' }} />
                             </Box>
 
                             <Divider sx={{ mb: 1.5, mt: 'auto', opacity: 0.5 }} />
@@ -506,7 +576,8 @@ const AcademicStructure = () => {
 
             <Fade in={!loading}>
                 <Box>
-                    {activeTab === 0 && !selectedDepartment && renderDepartmentsView()}
+                    {activeTab === 0 && !selectedSchool && !selectedDepartment && renderSchoolsAndCentralView()}
+                    {activeTab === 0 && selectedSchool && !selectedDepartment && renderSchoolDepartmentsView()}
                     {activeTab === 0 && selectedDepartment && renderBranchesView()}
                     {activeTab === 1 && renderProgramsView()}
                 </Box>
@@ -520,35 +591,43 @@ const AcademicStructure = () => {
                 <DialogContent sx={{ py: 2 }}>
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, mt: 1 }}>
                         {modal.type === 'program' && (
-                            <FormControl fullWidth>
-                                <InputLabel>Type (Level)</InputLabel>
-                                <Select
-                                    value={modal.data.type || ''}
-                                    onChange={(e) => setModal({ ...modal, data: { ...modal.data, type: e.target.value } })}
-                                    label="Type (Level)"
-                                >
-                                    <MenuItem value="UG">UG (Undergraduate)</MenuItem>
-                                    <MenuItem value="PG">PG (Postgraduate)</MenuItem>
-                                    <MenuItem value="PHD">PHD (Doctoral)</MenuItem>
-                                    <MenuItem value="DIPLOMA">Diploma</MenuItem>
-                                    <MenuItem value="CERTIFICATE">Certificate</MenuItem>
-                                </Select>
-                            </FormControl>
-                        )}
-
-                        {modal.type === 'program' && (
-                            <FormControl fullWidth>
-                                <InputLabel>Type</InputLabel>
-                                <Select
-                                    value={modal.data.type || ''}
-                                    onChange={(e) => setModal({ ...modal, data: { ...modal.data, type: e.target.value } })}
-                                    label="Type"
-                                >
-                                    <MenuItem value="UG">UG (Undergraduate)</MenuItem>
-                                    <MenuItem value="PG">PG (Postgraduate)</MenuItem>
-                                    <MenuItem value="PHD">PHD (Doctoral)</MenuItem>
-                                </Select>
-                            </FormControl>
+                            <>
+                                <FormControl fullWidth>
+                                    <InputLabel>Type (Level)</InputLabel>
+                                    <Select
+                                        value={modal.data.type || ''}
+                                        onChange={(e) => setModal({ ...modal, data: { ...modal.data, type: e.target.value } })}
+                                        label="Type (Level)"
+                                    >
+                                        <MenuItem value="UG">UG (Undergraduate)</MenuItem>
+                                        <MenuItem value="PG">PG (Postgraduate)</MenuItem>
+                                        <MenuItem value="PHD">PHD (Doctoral)</MenuItem>
+                                        <MenuItem value="DIPLOMA">Diploma</MenuItem>
+                                        <MenuItem value="CERTIFICATE">Certificate</MenuItem>
+                                    </Select>
+                                </FormControl>
+                                
+                                <TextField
+                                    label="Duration (Years)"
+                                    fullWidth
+                                    type="number"
+                                    value={modal.data.durationYears || ''}
+                                    onChange={(e) => setModal({ ...modal, data: { ...modal.data, durationYears: parseInt(e.target.value) || '' } })}
+                                    InputProps={{ inputProps: { min: 1, max: 10 } }}
+                                />
+                                
+                                <FormControl fullWidth>
+                                    <InputLabel>Program Pattern</InputLabel>
+                                    <Select
+                                        value={modal.data.programPattern || 'SEMESTER'}
+                                        onChange={(e) => setModal({ ...modal, data: { ...modal.data, programPattern: e.target.value } })}
+                                        label="Program Pattern"
+                                    >
+                                        <MenuItem value="SEMESTER">Semester Wise</MenuItem>
+                                        <MenuItem value="YEAR">Year Wise</MenuItem>
+                                    </Select>
+                                </FormControl>
+                            </>
                         )}
 
                         {modal.type === 'branch' && (
@@ -567,24 +646,32 @@ const AcademicStructure = () => {
 
 
                         {modal.type === 'department' && (
-                            <FormControlLabel
-                                control={
-                                    <Switch
-                                        checked={modal.data.hasStudents || false}
-                                        onChange={(e) => setModal({ ...modal, data: { ...modal.data, hasStudents: e.target.checked } })}
-                                        sx={{
-                                            '& .MuiSwitch-switchBase.Mui-checked': {
-                                                color: 'var(--color-primary)',
-                                            },
-                                            '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': {
-                                                backgroundColor: 'var(--color-primary)',
-                                            },
-                                        }}
-                                    />
-                                }
-                                label="Has Students?"
-                                sx={{ mb: 1 }}
-                            />
+                            <>
+                                <FormControl fullWidth>
+                                    <InputLabel>Department Type</InputLabel>
+                                    <Select
+                                        value={modal.data.type || 'Academic'}
+                                        onChange={(e) => setModal({ ...modal, data: { ...modal.data, type: e.target.value, schoolId: e.target.value === 'Central' ? null : modal.data.schoolId } })}
+                                        label="Department Type"
+                                    >
+                                        <MenuItem value="Academic">Academic (Under a School)</MenuItem>
+                                        <MenuItem value="Central">Central Level</MenuItem>
+                                    </Select>
+                                </FormControl>
+                                
+                                {(!modal.data.type || modal.data.type === 'Academic') && (
+                                    <FormControl fullWidth>
+                                        <InputLabel>School</InputLabel>
+                                        <Select
+                                            value={modal.data.schoolId?._id || modal.data.schoolId || ''}
+                                            onChange={(e) => setModal({ ...modal, data: { ...modal.data, schoolId: e.target.value } })}
+                                            label="School"
+                                        >
+                                            {schools.map(s => <MenuItem key={s._id} value={s._id}>{s.name} ({s.code})</MenuItem>)}
+                                        </Select>
+                                    </FormControl>
+                                )}
+                            </>
                         )}
 
                         <TextField
@@ -596,13 +683,13 @@ const AcademicStructure = () => {
                             helperText={modal.type === 'branch' ? `Branch name is locked to Department: ${selectedDepartment?.name}` : ""}
                         />
 
-                        {(modal.type === 'department' || modal.type === 'branch' || modal.type === 'program') && (
+                        {(modal.type === 'school' || modal.type === 'department' || modal.type === 'branch' || modal.type === 'program') && (
                             <TextField
                                 label="Code"
                                 fullWidth
                                 value={modal.data.code || ''}
                                 onChange={(e) => setModal({ ...modal, data: { ...modal.data, code: e.target.value.toUpperCase() } })}
-                                helperText={modal.type === 'department' ? "e.g., CSE" : modal.type === 'program' ? "e.g., BTECH" : "e.g., CSE-VLSI"}
+                                helperText={modal.type === 'school' ? "e.g., SOE" : modal.type === 'department' ? "e.g., CSE" : modal.type === 'program' ? "e.g., BTECH" : "e.g., CSE-VLSI"}
                             />
                         )}
 

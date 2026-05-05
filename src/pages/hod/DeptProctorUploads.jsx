@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import {
   Box, Button, MenuItem, Select, Typography,
-  CircularProgress, Stack, IconButton, Tooltip, TextField, Grid
+  CircularProgress, Stack, IconButton, Tooltip, TextField, Chip
 } from "@mui/material";
 import {
   CloudUpload as CloudUploadIcon,
@@ -14,16 +14,30 @@ import SectionHeader from "../../components/common/SectionHeader";
 import API from "../../api/axios";
 import { useAuth } from "../../context/AuthContext";
 
+// Pharma.D year names (from eCap semestername field)
+const PHARMAD_YEARS = ["I Year", "II Year", "III Year", "IV Year", "V Year", "VI Year"];
+
+// Regular program semesters
+const REGULAR_SEMESTERS = [1, 2, 3, 4, 5, 6, 7, 8];
+
+// Programs that use year-based system instead of semesters
+const YEAR_BASED_PROGRAMS = ["Pharma.D"];
+
 const DeptProctorUploads = () => {
   const [departments, setDepartments] = useState([]);
   const [programs, setPrograms] = useState([]);
   const [branches, setBranches] = useState([]);
-  const semesters = [1, 2, 3, 4, 5, 6, 7, 8];
 
   const [selectedDeptId, setSelectedDeptId] = useState("");
   const [selectedProgramName, setSelectedProgramName] = useState("");
   const [selectedBranch, setSelectedBranch] = useState("");
+
+  // For regular programs: numeric semester (1-8)
+  // For Pharma.D: null (yearName used instead)
   const [selectedSemester, setSelectedSemester] = useState("");
+
+  // For Pharma.D: "I Year", "II Year" etc.
+  const [selectedYearName, setSelectedYearName] = useState("");
 
   const [students, setStudents] = useState([]);
   const [activeYear, setActiveYear] = useState("");
@@ -33,10 +47,12 @@ const DeptProctorUploads = () => {
 
   const { user } = useAuth();
 
-  // For manual assignment input changes
   const [manualProctors, setManualProctors] = useState({});
   const [fetchedProctors, setFetchedProctors] = useState({});
   const lookupTimers = useRef({});
+
+  // Is current selected program year-based (Pharma.D)?
+  const isYearBased = YEAR_BASED_PROGRAMS.includes(selectedProgramName);
 
   useEffect(() => {
     const fetchDropdowns = async () => {
@@ -47,30 +63,25 @@ const DeptProctorUploads = () => {
         ]);
 
         const years = yearRes.data?.years || yearRes.data?.data || [];
-        const active = years.find(y => y.isActive);
+        // Try to find program-specific active year later (when program is selected)
+        // For now just store all years
+        const active = years.find(y => y.isActive && !y.program);
         if (active) setActiveYear(active.year);
 
         let fetchedDepts = deptRes.data.data || [];
-
-        // Filter departments based on HOD assigned departments
         if (user && user.roles) {
-          const hodRole = user.roles.find(r => r.role === 'HOD');
-          if (hodRole && hodRole.departments && hodRole.departments.length > 0) {
-            const assignedDeptIds = hodRole.departments.map(d => typeof d === 'object' ? d._id : d);
+          const hodRole = user.roles.find(r => r.role === "HOD");
+          if (hodRole?.departments?.length > 0) {
+            const assignedDeptIds = hodRole.departments.map(d => typeof d === "object" ? d._id : d);
             fetchedDepts = fetchedDepts.filter(d => assignedDeptIds.includes(d._id));
           } else if (user.department) {
-            // Fallback if roles array doesn't have departments but user object does
-            const userDeptId = typeof user.department === 'object' ? user.department._id : user.department;
+            const userDeptId = typeof user.department === "object" ? user.department._id : user.department;
             fetchedDepts = fetchedDepts.filter(d => d._id === userDeptId);
           }
         }
 
         setDepartments(fetchedDepts);
-        // Remove global program fetching from here
-
-        if (fetchedDepts.length === 1) {
-          setSelectedDeptId(fetchedDepts[0]._id);
-        }
+        if (fetchedDepts.length === 1) setSelectedDeptId(fetchedDepts[0]._id);
       } catch (err) {
         console.error("Error fetching academics:", err);
       }
@@ -78,6 +89,7 @@ const DeptProctorUploads = () => {
     fetchDropdowns();
   }, []);
 
+  // When department changes: fetch programs and branches
   useEffect(() => {
     if (selectedDeptId) {
       const fetchAcademicDetails = async () => {
@@ -93,11 +105,10 @@ const DeptProctorUploads = () => {
         }
       };
       fetchAcademicDetails();
-
-      // Reset dependent selections
       setSelectedProgramName("");
       setSelectedBranch("");
       setSelectedSemester("");
+      setSelectedYearName("");
       setStudents([]);
     } else {
       setBranches([]);
@@ -105,25 +116,51 @@ const DeptProctorUploads = () => {
     }
   }, [selectedDeptId]);
 
+  // When program changes: reset semester/year selection
+  useEffect(() => {
+    setSelectedSemester("");
+    setSelectedYearName("");
+    setStudents([]);
+
+    // Fetch program-specific active year
+    if (selectedProgramName) {
+      API.get(`/api/academic-years/active?program=${encodeURIComponent(selectedProgramName)}`)
+        .then(res => {
+          if (res.data?.data?.year) setActiveYear(res.data.data.year);
+        })
+        .catch(() => {
+          // fallback: keep global active year
+        });
+    }
+  }, [selectedProgramName]);
+
+  const canFetchStudents = () => {
+    if (!selectedDeptId || !selectedProgramName || !selectedBranch) return false;
+    if (isYearBased) return !!selectedYearName;
+    return !!selectedSemester;
+  };
+
   const fetchStudents = async () => {
-    if (!selectedDeptId || !selectedProgramName || !selectedBranch || !selectedSemester) return;
+    if (!canFetchStudents()) return;
     setLoading(true);
     try {
-      const res = await API.get("/api/dept-proctor/students", {
-        params: {
-          department: selectedDeptId,
-          program: selectedProgramName,
-          branch: selectedBranch,
-          semester: selectedSemester
-        }
-      });
+      const params = {
+        department: selectedDeptId,
+        program: selectedProgramName,
+        branch: selectedBranch,
+      };
+
+      if (isYearBased) {
+        params.yearName = selectedYearName;
+      } else {
+        params.semester = selectedSemester;
+      }
+
+      const res = await API.get("/api/dept-proctor/students", { params });
       setStudents(res.data || []);
 
-      // Initialize manual proctors state
       const initialProctors = {};
-      res.data.forEach(s => {
-        initialProctors[s.studentId] = s.proctorId || "";
-      });
+      res.data.forEach(s => { initialProctors[s.studentId] = s.proctorId || ""; });
       setManualProctors(initialProctors);
     } catch (err) {
       console.error("Error fetching students:", err);
@@ -134,37 +171,28 @@ const DeptProctorUploads = () => {
   };
 
   useEffect(() => {
-    fetchStudents();
-  }, [selectedDeptId, selectedProgramName, selectedBranch, selectedSemester]);
+    if (canFetchStudents()) fetchStudents();
+    else setStudents([]);
+  }, [selectedDeptId, selectedProgramName, selectedBranch, selectedSemester, selectedYearName]);
 
   const handleProctorChange = (studentId, value) => {
     setManualProctors(prev => ({ ...prev, [studentId]: value }));
-
-    // Live lookup logic
     const pId = value.trim();
-
-    // Clear existing timer for this studentId
-    if (lookupTimers.current[studentId]) {
-      clearTimeout(lookupTimers.current[studentId]);
-    }
-
-    if (pId.length >= 3) { // Start searching after 3 chars
+    if (lookupTimers.current[studentId]) clearTimeout(lookupTimers.current[studentId]);
+    if (pId.length >= 3) {
       lookupTimers.current[studentId] = setTimeout(async () => {
         try {
-          const res = await API.post("/api/employees/ecap-data", {
-            institutionId: pId,
-            role: "Employee"
-          });
+          const res = await API.post("/api/employees/ecap-data", { institutionId: pId, role: "Employee" });
           if (res.data && !res.data.error) {
             const name = res.data.employeename || res.data.EmployeeName || "Unknown";
             setFetchedProctors(prev => ({ ...prev, [studentId]: `${name} (${pId})` }));
           } else {
             setFetchedProctors(prev => ({ ...prev, [studentId]: "Not Found" }));
           }
-        } catch (err) {
+        } catch {
           setFetchedProctors(prev => ({ ...prev, [studentId]: "Error" }));
         }
-      }, 500); // 500ms debounce
+      }, 500);
     } else {
       setFetchedProctors(prev => ({ ...prev, [studentId]: "" }));
     }
@@ -173,18 +201,15 @@ const DeptProctorUploads = () => {
   const handleSaveMapping = async (studentId, mappingId) => {
     const proctorId = manualProctors[studentId]?.trim();
     if (!proctorId) return alert("Please enter a Proctor ID");
-
     try {
       if (mappingId) {
         await API.put(`/api/dept-proctor/${mappingId}`, { proctorId });
       } else {
-        // Find academicYear and semesterType for active to create
-        // Our backend resolveActiveIds handles it if not provided, 
-        // wait, we need semester
         await API.post(`/api/dept-proctor`, {
           studentId,
           proctorId,
-          semester: selectedSemester
+          semester: isYearBased ? null : selectedSemester,
+          yearName: isYearBased ? selectedYearName : null
         });
       }
       alert("Proctor assigned successfully!");
@@ -199,7 +224,6 @@ const DeptProctorUploads = () => {
   const handleCSVFileSelect = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
     setUploadingCSV(true);
     try {
       const formData = new FormData();
@@ -209,19 +233,14 @@ const DeptProctorUploads = () => {
       });
 
       let msg = res.data.message || "CSV uploaded successfully!";
-      if (res.data.errors && res.data.errors.length > 0) {
-        // Limit to first 15 errors to avoid huge unreadable alerts
+      if (res.data.errors?.length > 0) {
         const displayErrors = res.data.errors.slice(0, 15);
         msg += "\n\nIssues Found:\n" + displayErrors.join("\n");
-        if (res.data.errors.length > 15) {
-          msg += `\n...and ${res.data.errors.length - 15} more.`;
-        }
+        if (res.data.errors.length > 15) msg += `\n...and ${res.data.errors.length - 15} more.`;
       }
-
       alert(msg);
       fetchStudents();
     } catch (err) {
-      console.error("Error uploading CSV:", err);
       alert(err.response?.data?.message || "Error uploading CSV file");
     } finally {
       setUploadingCSV(false);
@@ -230,23 +249,34 @@ const DeptProctorUploads = () => {
   };
 
   const downloadTemplate = () => {
-    if (students.length === 0) return alert("Please fetch students first to generate template.");
-
-    // Add current active academicyear for the template automatically. 
+    if (students.length === 0) return alert("Please fetch students first.");
     const acYearStr = activeYear || `${new Date().getFullYear()}-${new Date().getFullYear() + 1}`;
 
-    const headers = ["proctorid", "studentid", "academicyear", "semester"];
-    const rows = students.map(s =>
-      `${manualProctors[s.studentId] || ""},${s.studentId},${acYearStr},${selectedSemester}`
-    );
+    if (isYearBased) {
+      // Pharma.D CSV template: no semester column, has yearname column
+      const headers = ["proctorid", "studentid", "academicyear", "semester", "yearname"];
+      const rows = students.map(s =>
+        `,${s.studentId},${acYearStr},,${selectedYearName}`
+      );
+      const csvContent = [headers.join(","), ...rows].join("\n");
+      triggerDownload(csvContent, `proctor_template_pharmad_${selectedYearName.replace(" ", "_")}.csv`);
+    } else {
+      // Regular: has semester number
+      const headers = ["proctorid", "studentid", "academicyear", "semester", "yearname"];
+      const rows = students.map(s =>
+        `${manualProctors[s.studentId] || ""},${s.studentId},${acYearStr},${selectedSemester},`
+      );
+      const csvContent = [headers.join(","), ...rows].join("\n");
+      triggerDownload(csvContent, `proctor_template_sem${selectedSemester}.csv`);
+    }
+  };
 
-    const csvContent = [headers.join(","), ...rows].join("\n");
-
-    const blob = new Blob([csvContent], { type: "text/csv" });
+  const triggerDownload = (content, filename) => {
+    const blob = new Blob([content], { type: "text/csv" });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `proctor_template_sem_${selectedSemester}.csv`;
+    a.download = filename;
     a.click();
     window.URL.revokeObjectURL(url);
   };
@@ -256,84 +286,82 @@ const DeptProctorUploads = () => {
       <PageHeader
         title="Proctee-Proctor Mapping"
         subtitle="Assign proctors to students for the current semester"
-        breadcrumbs={[]}
       />
 
-      {/* Filters */}
-      <Box sx={{ mt: 1, mb: 4 }}>
-        <Box sx={{
-          display: "flex",
-          flexWrap: "wrap",
-          gap: 2,
-          width: "100%"
-        }}>
-          {/* Department */}
-          <Box sx={{ width: { xs: "100%", md: "calc(50% - 12px)" } }}>
-            <Box sx={filterBox}>
-              <Typography sx={filterLabel}>Department</Typography>
-              <Select
-                variant="standard" disableUnderline value={selectedDeptId}
-                onChange={(e) => setSelectedDeptId(e.target.value)}
-                sx={{ width: "100%", fontSize: 14 }}
-              >
-                {departments.map((d) => (
-                  <MenuItem key={d._id} value={d._id}>{d.name}</MenuItem>
-                ))}
-              </Select>
-            </Box>
-          </Box>
+      {/* ── Filters ──────────────────────────────────────── */}
+      <Box sx={{ mt: 1, mb: 4, display: "flex", flexWrap: "wrap", gap: 2 }}>
 
-          {/* Program */}
-          <Box sx={{ width: { xs: "100%", md: "calc(16.66% - 12px)" } }}>
-            <Box sx={filterBox}>
-              <Typography sx={filterLabel}>Program</Typography>
-              <Select
-                variant="standard" disableUnderline value={selectedProgramName}
-                onChange={(e) => setSelectedProgramName(e.target.value)}
-                sx={{ width: "100%", fontSize: 14 }}
-              >
-                {programs.map((p) => (
-                  <MenuItem key={p._id} value={p.name}>{p.name}</MenuItem>
-                ))}
-              </Select>
-            </Box>
-          </Box>
-
-          {/* Branch */}
-          <Box sx={{ width: { xs: "100%", md: "calc(16.66% - 12px)" } }}>
-            <Box sx={filterBox}>
-              <Typography sx={filterLabel}>Branch</Typography>
-              <Select
-                variant="standard" disableUnderline value={selectedBranch}
-                onChange={(e) => setSelectedBranch(e.target.value)}
-                sx={{ width: "100%", fontSize: 14 }}
-              >
-                {branches.map((b) => (
-                  <MenuItem key={b._id} value={b.name}>{b.name}</MenuItem>
-                ))}
-              </Select>
-            </Box>
-          </Box>
-
-          {/* Semester */}
-          <Box sx={{ width: { xs: "100%", md: "calc(16.66% - 12px)" } }}>
-            <Box sx={filterBox}>
-              <Typography sx={filterLabel}>Semester</Typography>
-              <Select
-                variant="standard" disableUnderline value={selectedSemester}
-                onChange={(e) => setSelectedSemester(e.target.value)}
-                sx={{ width: "100%", fontSize: 14 }}
-              >
-                {semesters.map((s) => (
-                  <MenuItem key={s} value={s}>{s}</MenuItem>
-                ))}
-              </Select>
-            </Box>
+        {/* Department */}
+        <Box sx={{ width: { xs: "100%", md: "calc(25% - 12px)" } }}>
+          <Box sx={filterBox}>
+            <Typography sx={filterLabel}>Department</Typography>
+            <Select variant="standard" disableUnderline value={selectedDeptId}
+              onChange={(e) => setSelectedDeptId(e.target.value)} sx={{ width: "100%", fontSize: 14 }}>
+              {departments.map(d => <MenuItem key={d._id} value={d._id}>{d.name}</MenuItem>)}
+            </Select>
           </Box>
         </Box>
+
+        {/* Program */}
+        <Box sx={{ width: { xs: "100%", md: "calc(20% - 12px)" } }}>
+          <Box sx={filterBox}>
+            <Typography sx={filterLabel}>Program</Typography>
+            <Select variant="standard" disableUnderline value={selectedProgramName}
+              onChange={(e) => setSelectedProgramName(e.target.value)} sx={{ width: "100%", fontSize: 14 }}>
+              {programs.map(p => <MenuItem key={p._id} value={p.name}>{p.name}</MenuItem>)}
+            </Select>
+          </Box>
+        </Box>
+
+        {/* Branch */}
+        <Box sx={{ width: { xs: "100%", md: "calc(20% - 12px)" } }}>
+          <Box sx={filterBox}>
+            <Typography sx={filterLabel}>Branch</Typography>
+            <Select variant="standard" disableUnderline value={selectedBranch}
+              onChange={(e) => setSelectedBranch(e.target.value)} sx={{ width: "100%", fontSize: 14 }}>
+              {branches.map(b => <MenuItem key={b._id} value={b.name}>{b.name}</MenuItem>)}
+            </Select>
+          </Box>
+        </Box>
+
+        {/* Semester OR Year — depends on program */}
+        <Box sx={{ width: { xs: "100%", md: "calc(20% - 12px)" } }}>
+          <Box sx={filterBox}>
+            <Typography sx={filterLabel}>
+              {isYearBased ? "Year" : "Semester"}
+            </Typography>
+
+            {isYearBased ? (
+              // Pharma.D: Year dropdown
+              <Select variant="standard" disableUnderline value={selectedYearName}
+                onChange={(e) => setSelectedYearName(e.target.value)} sx={{ width: "100%", fontSize: 14 }}>
+                {PHARMAD_YEARS.map(y => <MenuItem key={y} value={y}>{y}</MenuItem>)}
+              </Select>
+            ) : (
+              // Regular: Semester number dropdown
+              <Select variant="standard" disableUnderline value={selectedSemester}
+                onChange={(e) => setSelectedSemester(e.target.value)} sx={{ width: "100%", fontSize: 14 }}>
+                {REGULAR_SEMESTERS.map(s => <MenuItem key={s} value={s}>Semester {s}</MenuItem>)}
+              </Select>
+            )}
+          </Box>
+        </Box>
+
+        {/* Info chip — shows what's active */}
+        {activeYear && selectedProgramName && (
+          <Box sx={{ display: "flex", alignItems: "center" }}>
+            <Chip
+              label={`${selectedProgramName}: ${activeYear}`}
+              color="primary"
+              variant="outlined"
+              size="small"
+              sx={{ fontWeight: 700 }}
+            />
+          </Box>
+        )}
       </Box>
 
-      {/* CSV Controls */}
+      {/* ── CSV Controls ──────────────────────────────────── */}
       <Box sx={{
         display: "flex",
         flexDirection: { xs: "column", sm: "row" },
@@ -343,20 +371,11 @@ const DeptProctorUploads = () => {
         gap: 2
       }}>
         <SectionHeader title={`Students (${students.length})`} />
-        <Stack
-          direction={{ xs: "column", sm: "row" }}
-          spacing={2}
-          sx={{ width: { xs: "100%", sm: "auto" } }}
-        >
+        <Stack direction={{ xs: "column", sm: "row" }} spacing={2} sx={{ width: { xs: "100%", sm: "auto" } }}>
           <Button
             variant="outlined" startIcon={<DownloadIcon />}
             onClick={downloadTemplate} disabled={students.length === 0}
-            sx={{
-              borderRadius: "10px",
-              textTransform: "none",
-              width: { xs: "100%", sm: "auto" },
-              whiteSpace: "nowrap"
-            }}
+            sx={{ borderRadius: "10px", textTransform: "none", whiteSpace: "nowrap" }}
           >
             Download Template
           </Button>
@@ -368,21 +387,16 @@ const DeptProctorUploads = () => {
               borderRadius: "10px", textTransform: "none", fontWeight: 600,
               background: "linear-gradient(135deg,#1e88e5,#1565c0)", color: "#fff",
               "&:hover": { background: "linear-gradient(135deg,#1565c0,#0d47a1)" },
-              width: { xs: "100%", sm: "auto" },
-              minWidth: { sm: "160px" },
               whiteSpace: "nowrap"
             }}
           >
             Upload CSV
           </Button>
-          <input
-            ref={fileInputRef} type="file" accept=".csv"
-            onChange={handleCSVFileSelect} style={{ display: "none" }}
-          />
+          <input ref={fileInputRef} type="file" accept=".csv" onChange={handleCSVFileSelect} style={{ display: "none" }} />
         </Stack>
       </Box>
 
-      {/* Table */}
+      {/* ── Table ─────────────────────────────────────────── */}
       {loading ? (
         <Box sx={{ display: "flex", justifyContent: "center", mt: 4 }}><CircularProgress /></Box>
       ) : students.length > 0 ? (
@@ -398,20 +412,25 @@ const DeptProctorUploads = () => {
               onChange={(e) => handleProctorChange(s.studentId, e.target.value)}
               sx={{ minWidth: 150 }}
             />,
-            <Typography sx={{ fontSize: 13, fontWeight: 500, color: fetchedProctors[s.studentId]?.includes("Not Found") ? "#d32f2f" : "#0b5299" }}>
+            <Typography sx={{
+              fontSize: 13, fontWeight: 500,
+              color: fetchedProctors[s.studentId]?.includes("Not Found") ? "#d32f2f" : "#0b5299"
+            }}>
               {fetchedProctors[s.studentId] || s.proctorName || "Not Assigned"}
             </Typography>,
-            <IconButton
-              color="primary"
-              onClick={() => handleSaveMapping(s.studentId, s.mappingId)}
-            >
+            <IconButton color="primary" onClick={() => handleSaveMapping(s.studentId, s.mappingId)}>
               <SaveIcon />
             </IconButton>
           ])}
         />
       ) : (
         <Box sx={{ textAlign: "center", mt: 4, color: "#666" }}>
-          <Typography>No students found for the selected criteria.</Typography>
+          <Typography>
+            {canFetchStudents()
+              ? "No students found for the selected criteria."
+              : `Please select ${isYearBased ? "Department, Program, Branch and Year" : "Department, Program, Branch and Semester"} to load students.`
+            }
+          </Typography>
         </Box>
       )}
     </Box>
@@ -423,28 +442,23 @@ const filterBox = {
   flexDirection: { xs: "column", sm: "row" },
   alignItems: { xs: "flex-start", sm: "center" },
   px: 2, py: { xs: 1.5, sm: 1.2 }, borderRadius: "16px",
-  background: "rgba(255, 255, 255, 0.45)",
+  background: "rgba(255,255,255,0.45)",
   backdropFilter: "blur(16px)",
   WebkitBackdropFilter: "blur(16px)",
-  border: "1px solid rgba(255, 255, 255, 0.4)",
-  boxShadow: "0 8px 32px 0 rgba(31, 38, 135, 0.08)",
+  border: "1px solid rgba(255,255,255,0.4)",
+  boxShadow: "0 8px 32px 0 rgba(31,38,135,0.08)",
   width: "100%", minHeight: "48px",
   transition: "all 0.3s ease",
   "&:hover": {
-    background: "rgba(255, 255, 255, 0.6)",
-    boxShadow: "0 8px 32px 0 rgba(31, 38, 135, 0.12)",
+    background: "rgba(255,255,255,0.6)",
+    boxShadow: "0 8px 32px 0 rgba(31,38,135,0.12)"
   }
 };
 
 const filterLabel = {
-  fontSize: 10,
-  fontWeight: 700,
-  color: "#334155",
-  mb: { xs: 0.5, sm: 0 },
-  mr: 1,
-  textTransform: "uppercase",
-  letterSpacing: "0.1em",
-  opacity: 0.6
+  fontSize: 10, fontWeight: 700, color: "#334155",
+  mb: { xs: 0.5, sm: 0 }, mr: 1,
+  textTransform: "uppercase", letterSpacing: "0.1em", opacity: 0.6
 };
 
 export default DeptProctorUploads;

@@ -37,10 +37,14 @@ export default function FacultyFormatResults() {
       try {
         const res = await API.get("/api/academic-years");
         const years = res.data.years || [];
-        setAcademicYears(years);
-        if (years.length > 0) {
+        // Remove duplicates if any
+        const uniqueYears = Array.from(new Set(years.map(y => y.year)))
+          .map(yearName => years.find(y => y.year === yearName));
+          
+        setAcademicYears(uniqueYears);
+        if (uniqueYears.length > 0) {
           // Find active or first
-          const active = years.find((y) => y.isActive) || years[0];
+          const active = uniqueYears.find((y) => y.isActive) || uniqueYears[0];
           setSelectedYearId(active._id);
         }
       } catch (err) {
@@ -50,33 +54,15 @@ export default function FacultyFormatResults() {
     fetchYears();
   }, []);
 
-  // 2. Fetch Global Semesters on Mount
-  useEffect(() => {
-    const fetchSemesters = async () => {
-      try {
-        const res = await API.get('/api/semester-types');
-        const sems = res.data.data || [];
-        setSemesters(sems);
-        if (sems.length > 0) {
-          const active = sems.find((s) => s.isActive) || sems[0];
-          setSelectedSemId(active._id);
-        } else {
-          setSelectedSemId("");
-        }
-      } catch (err) {
-        console.error("Error fetching semesters:", err);
-      }
-    };
-    fetchSemesters();
-  }, []);
+  // 2. Removed Global Semesters fetch as per user request
 
   // 3. Fetch Results when filters change
   const fetchResults = async () => {
-    if (!selectedYearId || !selectedSemId) return;
+    if (!selectedYearId) return;
     setLoading(true);
     try {
       const res = await API.get("/api/faculty-subject-results", {
-        params: { academicYear: selectedYearId, semester: selectedSemId },
+        params: { academicYear: selectedYearId },
       });
       setResults(res.data);
     } catch (err) {
@@ -88,7 +74,7 @@ export default function FacultyFormatResults() {
 
   useEffect(() => {
     fetchResults();
-  }, [selectedYearId, selectedSemId]);
+  }, [selectedYearId]);
 
   // 4. Handle Upload
   const handleUploadClick = () => {
@@ -105,20 +91,20 @@ export default function FacultyFormatResults() {
     setUploading(true);
     try {
       const res = await API.post(
-        "/api/faculty-subject-results/upload",
+        "/api/faculty-subject-results/upload-results",
         formData,
         {
           headers: { "Content-Type": "multipart/form-data" },
-        },
+        }
       );
 
-      const { message, errors } = res.data;
-      if (errors && errors.length > 0) {
-        alert(`${message}\n\nDetails:\n${errors.join("\n")}`);
+      if (res.data.failedCount > 0) {
+        alert(`Uploaded ${res.data.successCount} rows. ${res.data.failedCount} rows failed. Check console for errors.`);
+        console.error("Upload errors:", res.data.errors);
       } else {
-        alert(message || "Upload successful!");
+        alert("Upload successful!");
       }
-      fetchResults(); // Refresh table
+      fetchResults();
     } catch (err) {
       console.error("Upload failed:", err);
       const backendError = err.response?.data?.message;
@@ -142,36 +128,22 @@ export default function FacultyFormatResults() {
       "facultyId",
       "facultyName",
       "academicYear",
-      "semester",
+      "program",
+      "branch",
       "courseName",
       "courseCode",
       "courseType",
-      "section",
-      "noOfCos",
-      "noOfCosAttained",
-      "branch",
+      "semester_or_year",
       "appeared",
       "passed",
-      "passPercentage",
-
+      "noOfCos",
+      "noOfCosAttained",
+      "section",
     ];
-    const sampleRow = [
-      "FAC123",
-      "John Doe",
-      "2024-2025",
-      "1",
-      "Mathematics",
-      "MA101",
-      "THEORY",
-      "A",
-      "5",
-      "4",
-      "CSE",
-      "60",
-      "55",
-      "91.67",
+    const sampleRows = [
+      ["FAC123", "John Doe", "2024-2025", "B.Tech", "CSE", "Mathematics", "MA101", "THEORY", "3", "60", "55", "5", "4", "A"],
     ];
-    const csvContent = headers.join(",") + "\n" + sampleRow.join(",") + "\n";
+    const csvContent = headers.join(",") + "\n" + sampleRows.map(row => row.join(",")).join("\n") + "\n";
     const blob = new Blob([csvContent], { type: "text/csv" });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -200,17 +172,23 @@ export default function FacultyFormatResults() {
         onChange={handleFileChange}
       />
 
-      {/* 🔹 HEADER */}
       <PageHeader
         title="Exam Section"
         subtitle="Upload and manage results based on faculty and course"
         breadcrumbs={["Home", "Exam Cell", "Results Upload"]}
       />
 
-      {/* 🔹 FILTERS */}
-      <Box sx={{ display: "flex", gap: 2, mb: 3, alignItems: "center", justifyContent: "space-between", flexWrap: "wrap" }}>
+      <Box sx={{ display: "flex", gap: 3, mb: 3, alignItems: "center", justifyContent: "space-between", flexWrap: "wrap" }}>
         <Box sx={{ display: "flex", gap: 2 }}>
-          <Box sx={filterBox}>
+          <Box sx={{
+            display: "flex",
+            alignItems: "center",
+            px: 2,
+            py: 1,
+            borderRadius: "12px",
+            background: "var(--bg-glass)",
+            border: "1px solid var(--border-color)",
+          }}>
             <Typography sx={{ fontSize: 13, fontWeight: 700, color: "var(--text-primary)", opacity: 0.9 }}>Academic Year</Typography>
             <Select
               variant="standard"
@@ -229,30 +207,6 @@ export default function FacultyFormatResults() {
               {academicYears.map((year) => (
                 <MenuItem key={year._id} value={year._id}>
                   {year.year}
-                </MenuItem>
-              ))}
-            </Select>
-          </Box>
-
-          <Box sx={filterBox}>
-            <Typography sx={{ fontSize: 13, fontWeight: 700, color: "var(--text-primary)", opacity: 0.9 }}>Semester</Typography>
-            <Select
-              variant="standard"
-              disableUnderline
-              value={selectedSemId}
-              onChange={(e) => setSelectedSemId(e.target.value)}
-              sx={{
-                ml: 1.5,
-                minWidth: 80,
-                color: "var(--text-primary)",
-                fontWeight: 600,
-                fontSize: 14,
-                '& .MuiSelect-icon': { color: 'var(--text-primary)', opacity: 0.7 }
-              }}
-            >
-              {semesters.map((sem) => (
-                <MenuItem key={sem._id} value={sem._id}>
-                  {sem.name}
                 </MenuItem>
               ))}
             </Select>
