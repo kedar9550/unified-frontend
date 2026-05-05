@@ -20,7 +20,7 @@ export default function Teaching() {
 
   // ── Academic Year state ──────────────────────────────────────────
   const [academicYears, setAcademicYears] = useState([]);
-  const [selectedYearId, setSelectedYearId] = useState("");
+  const [selectedYearLabel, setSelectedYearLabel] = useState("");
 
   // ── Results state ────────────────────────────────────────────────
   const [results, setResults] = useState([]);
@@ -53,7 +53,7 @@ export default function Teaching() {
         setAcademicYears(years);
         if (years.length > 0) {
           const active = years.find((y) => y.isActive) || years[0];
-          setSelectedYearId(active._id);
+          setSelectedYearLabel(active.year);
         }
       } catch (err) {
         console.error("Error fetching academic years:", err);
@@ -64,14 +64,14 @@ export default function Teaching() {
 
   // 2. Fetch Results for this faculty when filters change
   useEffect(() => {
-    if (!selectedYearId || !user?.institutionId) return;
+    if (!selectedYearLabel || !user?.institutionId) return;
     const fetchResults = async () => {
       setLoading(true);
       try {
         const res = await API.get("/api/faculty-subject-results", {
           params: {
             facultyId: user?.institutionId,
-            academicYear: selectedYearId,
+            academicYear: selectedYearLabel,
           },
         });
         setResults(res.data || []);
@@ -88,7 +88,7 @@ export default function Teaching() {
         const res = await API.get("/api/student-results/proctor-results", {
           params: {
             facultyId: user?.institutionId,
-            academicYear: selectedYearId,
+            academicYear: selectedYearLabel,
           },
         });
         setProctorStats(res.data);
@@ -105,7 +105,7 @@ export default function Teaching() {
         const res = await API.get("/api/faculty-feedback-results", {
           params: {
             facultyId: user?.institutionId,
-            academicYear: selectedYearId,
+            academicYear: selectedYearLabel,
           },
         });
         setFeedbackResults(res.data || []);
@@ -122,7 +122,7 @@ export default function Teaching() {
         const res = await API.get("/api/faculty-subject-results/co-attainment", {
           params: {
             facultyId: user?.institutionId,
-            academicYear: selectedYearId,
+            academicYear: selectedYearLabel,
           },
         });
         setCoAttainmentResults(res.data || []);
@@ -138,7 +138,7 @@ export default function Teaching() {
     fetchProctorStats();
     fetchFeedbackStats();
     fetchCoAttainmentStats();
-  }, [selectedYearId, user?.institutionId]);
+  }, [selectedYearLabel, user?.institutionId]);
 
   // ── CSV Upload Handler ────────────────────────────────────────────
   const handleCSVUploadClick = () => {
@@ -159,7 +159,7 @@ export default function Teaching() {
     try {
       const formData = new FormData();
       formData.append("file", file);
-      formData.append("academicYearId", selectedYearId);
+      formData.append("academicYear", selectedYearLabel);
 
       // TODO: Update this to your actual CSV upload endpoint
       const res = await API.post("/api/faculty-subject-results/upload-csv", formData, {
@@ -172,7 +172,7 @@ export default function Teaching() {
       const refreshRes = await API.get("/api/faculty-subject-results", {
         params: {
           facultyId: user?.institutionId,
-          academicYear: selectedYearId,
+          academicYear: selectedYearLabel,
         },
       });
       setResults(refreshRes.data || []);
@@ -190,7 +190,7 @@ export default function Teaching() {
   };
 
   // ── Derive selected labels for display ──────────────────────────
-  const selectedYear = academicYears.find((y) => y._id === selectedYearId);
+  const selectedYear = academicYears.find((y) => y.year === selectedYearLabel);
 
   // ── Build DataTable rows ─────────────────────────────────────────
   const columns = [
@@ -401,13 +401,13 @@ export default function Teaching() {
           <Select
             variant="standard"
             disableUnderline
-            value={selectedYearId}
-            onChange={(e) => setSelectedYearId(e.target.value)}
+            value={selectedYearLabel}
+            onChange={(e) => setSelectedYearLabel(e.target.value)}
             sx={{ minWidth: 120, fontSize: 14, color: "var(--text-primary)", fontWeight: 600, "& .MuiSelect-icon": { color: "var(--text-secondary)" } }}
           >
-            {academicYears.map((y) => (
-              <MenuItem key={y._id} value={y._id}>
-                {y.year}
+            {[...new Set(academicYears.map(y => y.year))].map((year) => (
+              <MenuItem key={year} value={year}>
+                {year}
               </MenuItem>
             ))}
           </Select>
@@ -653,7 +653,7 @@ export default function Teaching() {
         open={discOpen}
         onClose={(refresh) => setDiscOpen(false)}
         academicYears={academicYears}
-        defaultYearId={selectedYearId}
+        defaultYearId={selectedYear?._id}
       />
     </>
   );
