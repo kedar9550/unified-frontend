@@ -13,7 +13,6 @@ import FundedProject from "./pages/faculty/FundedProject";
 import ConsultancyPublication from "./pages/faculty/ConsultancyPublication";
 import AcademicManagement from "./pages/uniprime/academics/AcademicManagement";
 import FacultyFormatResults from "./pages/examAdmin/FacultyFormatResults";
-import UnifiedFacultyUpload from "./pages/examAdmin/UnifiedFacultyUpload";
 import StudentFormatResults from "./pages/examAdmin/StudentFormatResults";
 import Discrepancies from "./pages/examAdmin/Discrepancies";
 import DeptProctorUploads from "./pages/hod/DeptProctorUploads";
@@ -85,7 +84,6 @@ function App() {
         <Route path="/research/sdg" element={<ProtectedRoute element={<SDG />} />} />
         <Route path="/academics/management" element={<ProtectedRoute element={<AcademicManagement />} />} />
         <Route path="exam-result/faculty-format" element={<ProtectedRoute element={<FacultyFormatResults />} />} />
-        <Route path="exam-result/unified-upload" element={<ProtectedRoute element={<UnifiedFacultyUpload />} />} />
         <Route path="exam-result/students-format" element={<ProtectedRoute element={<StudentFormatResults />} />} />
         <Route path="exam-result/discrepancies" element={<ProtectedRoute element={<Discrepancies />} />} />
         <Route path="/hod/protecrdataupload" element={<ProtectedRoute element={<DeptProctorUploads />} />} />
