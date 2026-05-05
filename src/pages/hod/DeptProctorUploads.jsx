@@ -29,11 +29,10 @@ const DeptProctorUploads = () => {
   const [branches, setBranches] = useState([]);
 
   const [selectedDeptId, setSelectedDeptId] = useState("");
-  const [selectedProgramName, setSelectedProgramName] = useState("");
+  const [selectedProgramId, setSelectedProgramId] = useState("");
   const [selectedBranch, setSelectedBranch] = useState("");
 
   // For regular programs: numeric semester (1-8)
-  // For Pharma.D: null (yearName used instead)
   const [selectedSemester, setSelectedSemester] = useState("");
 
   // For Pharma.D: "I Year", "II Year" etc.
@@ -51,8 +50,17 @@ const DeptProctorUploads = () => {
   const [fetchedProctors, setFetchedProctors] = useState({});
   const lookupTimers = useRef({});
 
+  // Selected Program Object
+  const selectedProgram = programs.find(p => p._id === selectedProgramId);
+  const selectedProgramName = selectedProgram?.name || "";
+
   // Is current selected program year-based (Pharma.D)?
-  const isYearBased = YEAR_BASED_PROGRAMS.includes(selectedProgramName);
+  const isYearBased = selectedProgram?.programPattern === 'YEAR' || YEAR_BASED_PROGRAMS.includes(selectedProgramName);
+
+  // Dynamic Semester/Year List
+  const duration = selectedProgram?.durationYears || 4;
+  const dynamicSemesters = Array.from({ length: duration * 2 }, (_, i) => i + 1);
+  const dynamicYears = PHARMAD_YEARS.slice(0, duration);
 
   useEffect(() => {
     const fetchDropdowns = async () => {
@@ -89,26 +97,23 @@ const DeptProctorUploads = () => {
     fetchDropdowns();
   }, []);
 
-  // When department changes: fetch programs and branches
+  // When department changes: fetch programs
   useEffect(() => {
     if (selectedDeptId) {
       const fetchAcademicDetails = async () => {
         try {
-          const [branchRes, progRes] = await Promise.all([
-            API.get(`/api/academics/branches?departmentId=${selectedDeptId}`),
-            API.get(`/api/academics/programs?departmentId=${selectedDeptId}`)
-          ]);
-          setBranches(branchRes.data.data || []);
-          setPrograms(progRes.data.data || []);
+          const res = await API.get(`/api/academics/programs?departmentId=${selectedDeptId}`);
+          setPrograms(res.data.data || []);
         } catch (err) {
-          console.error("Error fetching academic details:", err);
+          console.error("Error fetching programs:", err);
         }
       };
       fetchAcademicDetails();
-      setSelectedProgramName("");
+      setSelectedProgramId("");
       setSelectedBranch("");
       setSelectedSemester("");
       setSelectedYearName("");
+      setBranches([]); // Reset branches when dept changes
       setStudents([]);
     } else {
       setBranches([]);
@@ -116,15 +121,30 @@ const DeptProctorUploads = () => {
     }
   }, [selectedDeptId]);
 
-  // When program changes: reset semester/year selection
+  // When program changes: reset selections and FETCH BRANCHES
   useEffect(() => {
+    setSelectedBranch("");
     setSelectedSemester("");
     setSelectedYearName("");
     setStudents([]);
 
+    if (selectedProgramId && selectedDeptId) {
+      const fetchBranches = async () => {
+        try {
+          const res = await API.get(`/api/academics/branches?departmentId=${selectedDeptId}&programId=${selectedProgramId}`);
+          setBranches(res.data.data || []);
+        } catch (err) {
+          console.error("Error fetching branches:", err);
+        }
+      };
+      fetchBranches();
+    } else {
+      setBranches([]);
+    }
+
     // Fetch program-specific active year
-    if (selectedProgramName) {
-      API.get(`/api/academic-years/active?program=${encodeURIComponent(selectedProgramName)}`)
+    if (selectedProgramId) {
+      API.get(`/api/academic-years/active?programId=${selectedProgramId}`)
         .then(res => {
           if (res.data?.data?.year) setActiveYear(res.data.data.year);
         })
@@ -132,7 +152,7 @@ const DeptProctorUploads = () => {
           // fallback: keep global active year
         });
     }
-  }, [selectedProgramName]);
+  }, [selectedProgramId]);
 
   const canFetchStudents = () => {
     if (!selectedDeptId || !selectedProgramName || !selectedBranch) return false;
@@ -292,56 +312,53 @@ const DeptProctorUploads = () => {
       <Box sx={{ mt: 1, mb: 4, display: "flex", flexWrap: "wrap", gap: 2 }}>
 
         {/* Department */}
-        <Box sx={{ width: { xs: "100%", md: "calc(25% - 12px)" } }}>
+        <Box sx={{ flex: { xs: "1 1 100%", sm: "1 1 calc(30% - 16px)", md: "1 1 250px" } }}>
           <Box sx={filterBox}>
             <Typography sx={filterLabel}>Department</Typography>
             <Select variant="standard" disableUnderline value={selectedDeptId}
-              onChange={(e) => setSelectedDeptId(e.target.value)} sx={{ width: "100%", fontSize: 14 }}>
-              {departments.map(d => <MenuItem key={d._id} value={d._id}>{d.name}</MenuItem>)}
+              onChange={(e) => setSelectedDeptId(e.target.value)} sx={{ width: "100%", fontSize: 13, color: 'var(--text-primary)', '& .MuiSelect-icon': { color: 'var(--text-secondary)' } }}>
+              {departments.map(d => <MenuItem key={d._id} value={d._id} sx={{ fontSize: 13 }}>{d.name}</MenuItem>)}
             </Select>
           </Box>
         </Box>
 
         {/* Program */}
-        <Box sx={{ width: { xs: "100%", md: "calc(20% - 12px)" } }}>
+        <Box sx={{ flex: { xs: "1 1 100%", sm: "1 1 calc(20% - 16px)", md: "1 1 180px" } }}>
           <Box sx={filterBox}>
             <Typography sx={filterLabel}>Program</Typography>
-            <Select variant="standard" disableUnderline value={selectedProgramName}
-              onChange={(e) => setSelectedProgramName(e.target.value)} sx={{ width: "100%", fontSize: 14 }}>
-              {programs.map(p => <MenuItem key={p._id} value={p.name}>{p.name}</MenuItem>)}
+            <Select variant="standard" disableUnderline value={selectedProgramId}
+              onChange={(e) => setSelectedProgramId(e.target.value)} sx={{ width: "100%", fontSize: 13, color: 'var(--text-primary)', '& .MuiSelect-icon': { color: 'var(--text-secondary)' } }}>
+              {programs.map(p => <MenuItem key={p._id} value={p._id} sx={{ fontSize: 13 }}>{p.name}</MenuItem>)}
             </Select>
           </Box>
         </Box>
 
         {/* Branch */}
-        <Box sx={{ width: { xs: "100%", md: "calc(20% - 12px)" } }}>
-          <Box sx={filterBox}>
+        <Box sx={{ flex: { xs: "1 1 100%", sm: "1 1 calc(20% - 16px)", md: "1 1 180px" } }}>
+          <Box sx={{ ...filterBox, opacity: !selectedProgramId ? 0.6 : 1, pointerEvents: !selectedProgramId ? 'none' : 'auto' }}>
             <Typography sx={filterLabel}>Branch</Typography>
             <Select variant="standard" disableUnderline value={selectedBranch}
-              onChange={(e) => setSelectedBranch(e.target.value)} sx={{ width: "100%", fontSize: 14 }}>
-              {branches.map(b => <MenuItem key={b._id} value={b.name}>{b.name}</MenuItem>)}
+              onChange={(e) => setSelectedBranch(e.target.value)} sx={{ width: "100%", fontSize: 13, color: 'var(--text-primary)', '& .MuiSelect-icon': { color: 'var(--text-secondary)' } }}>
+              {branches.map(b => <MenuItem key={b._id} value={b.name} sx={{ fontSize: 13 }}>{b.name}</MenuItem>)}
             </Select>
           </Box>
         </Box>
 
         {/* Semester OR Year — depends on program */}
-        <Box sx={{ width: { xs: "100%", md: "calc(20% - 12px)" } }}>
-          <Box sx={filterBox}>
+        <Box sx={{ flex: { xs: "1 1 100%", sm: "1 1 calc(20% - 16px)", md: "1 1 150px" } }}>
+          <Box sx={{ ...filterBox, opacity: !selectedBranch ? 0.6 : 1, pointerEvents: !selectedBranch ? 'none' : 'auto' }}>
             <Typography sx={filterLabel}>
               {isYearBased ? "Year" : "Semester"}
             </Typography>
-
             {isYearBased ? (
-              // Pharma.D: Year dropdown
               <Select variant="standard" disableUnderline value={selectedYearName}
-                onChange={(e) => setSelectedYearName(e.target.value)} sx={{ width: "100%", fontSize: 14 }}>
-                {PHARMAD_YEARS.map(y => <MenuItem key={y} value={y}>{y}</MenuItem>)}
+                onChange={(e) => setSelectedYearName(e.target.value)} sx={{ width: "100%", fontSize: 13, color: 'var(--text-primary)', '& .MuiSelect-icon': { color: 'var(--text-secondary)' } }}>
+                {dynamicYears.map(y => <MenuItem key={y} value={y} sx={{ fontSize: 13 }}>{y}</MenuItem>)}
               </Select>
             ) : (
-              // Regular: Semester number dropdown
               <Select variant="standard" disableUnderline value={selectedSemester}
-                onChange={(e) => setSelectedSemester(e.target.value)} sx={{ width: "100%", fontSize: 14 }}>
-                {REGULAR_SEMESTERS.map(s => <MenuItem key={s} value={s}>Semester {s}</MenuItem>)}
+                onChange={(e) => setSelectedSemester(e.target.value)} sx={{ width: "100%", fontSize: 13, color: 'var(--text-primary)', '& .MuiSelect-icon': { color: 'var(--text-secondary)' } }}>
+                {dynamicSemesters.map(s => <MenuItem key={s} value={s} sx={{ fontSize: 13 }}>Semester {s}</MenuItem>)}
               </Select>
             )}
           </Box>
@@ -352,10 +369,15 @@ const DeptProctorUploads = () => {
           <Box sx={{ display: "flex", alignItems: "center" }}>
             <Chip
               label={`${selectedProgramName}: ${activeYear}`}
-              color="primary"
               variant="outlined"
               size="small"
-              sx={{ fontWeight: 700 }}
+              sx={{
+                fontWeight: 700,
+                color: 'var(--color-primary)',
+                borderColor: 'var(--color-primary)',
+                background: 'var(--bg-accent-1, rgba(201, 164, 87, 0.1))',
+                borderRadius: '50px'
+              }}
             />
           </Box>
         )}
@@ -375,7 +397,12 @@ const DeptProctorUploads = () => {
           <Button
             variant="outlined" startIcon={<DownloadIcon />}
             onClick={downloadTemplate} disabled={students.length === 0}
-            sx={{ borderRadius: "10px", textTransform: "none", whiteSpace: "nowrap" }}
+            sx={{
+              borderRadius: "10px", textTransform: "none", whiteSpace: "nowrap",
+              borderColor: 'var(--border-color)', color: 'var(--text-primary)',
+              '&.Mui-disabled': { color: 'var(--text-secondary)', borderColor: 'var(--border-color)', opacity: 0.5 },
+              '&:hover': { borderColor: 'var(--color-primary)', background: 'var(--bg-glass)' }
+            }}
           >
             Download Template
           </Button>
@@ -384,9 +411,10 @@ const DeptProctorUploads = () => {
             disabled={uploadingCSV || students.length === 0}
             startIcon={<CloudUploadIcon />}
             sx={{
-              borderRadius: "10px", textTransform: "none", fontWeight: 600,
-              background: "linear-gradient(135deg,#1e88e5,#1565c0)", color: "#fff",
-              "&:hover": { background: "linear-gradient(135deg,#1565c0,#0d47a1)" },
+              borderRadius: "10px", textTransform: "none", fontWeight: 700,
+              background: 'var(--gradient-primary)', color: "#fff",
+              '&.Mui-disabled': { background: 'var(--bg-glass)', color: 'var(--text-secondary)', opacity: 0.5 },
+              "&:hover": { boxShadow: '0 4px 15px rgba(0,0,0,0.2)' },
               whiteSpace: "nowrap"
             }}
           >
@@ -410,21 +438,25 @@ const DeptProctorUploads = () => {
               placeholder="Employee ID"
               value={manualProctors[s.studentId] || ""}
               onChange={(e) => handleProctorChange(s.studentId, e.target.value)}
-              sx={{ minWidth: 150 }}
+              sx={{
+                minWidth: 150,
+                '& .MuiOutlinedInput-root': { background: 'var(--bg-glass)', '& fieldset': { borderColor: 'var(--border-color)' } },
+                '& .MuiInputBase-input': { color: 'var(--text-primary)', fontSize: 14 }
+              }}
             />,
             <Typography sx={{
               fontSize: 13, fontWeight: 500,
-              color: fetchedProctors[s.studentId]?.includes("Not Found") ? "#d32f2f" : "#0b5299"
+              color: fetchedProctors[s.studentId]?.includes("Not Found") ? "#d32f2f" : 'var(--color-primary)'
             }}>
               {fetchedProctors[s.studentId] || s.proctorName || "Not Assigned"}
             </Typography>,
-            <IconButton color="primary" onClick={() => handleSaveMapping(s.studentId, s.mappingId)}>
+            <IconButton sx={{ color: 'var(--color-primary)' }} onClick={() => handleSaveMapping(s.studentId, s.mappingId)}>
               <SaveIcon />
             </IconButton>
           ])}
         />
       ) : (
-        <Box sx={{ textAlign: "center", mt: 4, color: "#666" }}>
+        <Box sx={{ textAlign: "center", mt: 4, color: "var(--text-secondary)" }}>
           <Typography>
             {canFetchStudents()
               ? "No students found for the selected criteria."
@@ -439,26 +471,27 @@ const DeptProctorUploads = () => {
 
 const filterBox = {
   display: "flex",
-  flexDirection: { xs: "column", sm: "row" },
-  alignItems: { xs: "flex-start", sm: "center" },
-  px: 2, py: { xs: 1.5, sm: 1.2 }, borderRadius: "16px",
-  background: "rgba(255,255,255,0.45)",
+  flexDirection: "column", // Label above value for better space management
+  alignItems: "flex-start",
+  px: 2, py: 1.2, borderRadius: "16px",
+  background: "var(--bg-glass)",
   backdropFilter: "blur(16px)",
   WebkitBackdropFilter: "blur(16px)",
-  border: "1px solid rgba(255,255,255,0.4)",
-  boxShadow: "0 8px 32px 0 rgba(31,38,135,0.08)",
-  width: "100%", minHeight: "48px",
+  border: "1px solid var(--border-color)",
+  boxShadow: "0 8px 32px 0 rgba(0,0,0,0.08)",
+  width: "100%", minHeight: "64px",
   transition: "all 0.3s ease",
   "&:hover": {
-    background: "rgba(255,255,255,0.6)",
-    boxShadow: "0 8px 32px 0 rgba(31,38,135,0.12)"
+    background: "var(--bg-panel)",
+    borderColor: "var(--color-primary)",
+    boxShadow: "0 8px 32px 0 rgba(0,0,0,0.12)"
   }
 };
 
 const filterLabel = {
-  fontSize: 10, fontWeight: 700, color: "#334155",
-  mb: { xs: 0.5, sm: 0 }, mr: 1,
-  textTransform: "uppercase", letterSpacing: "0.1em", opacity: 0.6
+  fontSize: 9, fontWeight: 700, color: "var(--text-secondary)",
+  mb: 0.5,
+  textTransform: "uppercase", letterSpacing: "0.1em", opacity: 0.8
 };
 
 export default DeptProctorUploads;

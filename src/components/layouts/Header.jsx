@@ -73,7 +73,7 @@ const Header = ({ onMenuClick }) => {
         zIndex: 1100,
         display: "flex",
         alignItems: "center",
-        justifyContent: "space-between",
+        justifyContent: "flex-end",
         gap: 2,
         px: { xs: 1.5, md: 3 },
         py: { xs: 1.2, md: 1.2 },
@@ -83,21 +83,6 @@ const Header = ({ onMenuClick }) => {
         borderBottom: "1px solid var(--border-color)",
       }}
     >
-      {/* LEFT SECTION: Menu Toggle (Mobile) */}
-      <Box sx={{ display: "flex", alignItems: "center", gap: { xs: 1, md: 2 } }}>
-        <IconButton
-          onClick={onMenuClick}
-          sx={{
-            display: { md: "none" },
-            background: "rgba(11, 82, 153, 0.05)",
-            color: "#0b5299",
-            "&:hover": { background: "rgba(11, 82, 153, 0.1)" },
-          }}
-        >
-          <MenuIcon />
-        </IconButton>
-      </Box>
-
       {/* RIGHT SECTION: Unified Profile & Role Pill */}
       <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
 
@@ -111,13 +96,18 @@ const Header = ({ onMenuClick }) => {
             pr: 0.5,
             py: 0.5,
             borderRadius: "999px",
-            background: "var(--bg-panel)",
-            border: "1px solid var(--border-color)",
+            background: open 
+              ? "linear-gradient(var(--bg-panel), var(--bg-panel)) padding-box, var(--gradient-primary) border-box"
+              : "var(--bg-panel)",
+            border: open ? "2px solid transparent" : "1px solid var(--border-color)",
             cursor: "pointer",
-            transition: "all 0.2s ease",
+            transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+            boxShadow: open ? "var(--shadow-premium)" : "none",
             "&:hover": {
-              background: "var(--border-color)",
-              borderColor: "var(--text-secondary)",
+              background: open 
+                ? "linear-gradient(var(--bg-panel), var(--bg-panel)) padding-box, var(--gradient-primary) border-box"
+                : "var(--border-color)",
+              borderColor: open ? "transparent" : "var(--text-secondary)",
               boxShadow: "0 2px 8px rgba(0,0,0,0.05)"
             },
             userSelect: "none"
@@ -310,7 +300,7 @@ const Header = ({ onMenuClick }) => {
                 alignItems: "center",
                 gap: 1.5,
                 transition: "all 0.2s ease",
-                "&:hover": { 
+                "&:hover": {
                   background: "var(--bg-panel)",
                   color: "var(--color-primary)",
                   "& .MuiSvgIcon-root": { color: "var(--color-primary)" }
@@ -379,14 +369,14 @@ const Header = ({ onMenuClick }) => {
 
                 // Inner Background for Hover (Adapted for dark mode)
                 "&::before": {
-                   content: '""',
-                   position: "absolute",
-                   inset: 0,
-                   borderRadius: "50px",
-                   background: "var(--bg-accent-1)",
-                   zIndex: -2,
-                   transition: "opacity 0.4s ease",
-                   opacity: 0, 
+                  content: '""',
+                  position: "absolute",
+                  inset: 0,
+                  borderRadius: "50px",
+                  background: "var(--bg-accent-1)",
+                  zIndex: -2,
+                  transition: "opacity 0.4s ease",
+                  opacity: 0,
                 },
 
                 // Sharp Masked Gradient Border for Hover
@@ -395,14 +385,14 @@ const Header = ({ onMenuClick }) => {
                   position: "absolute",
                   inset: 0,
                   borderRadius: "50px",
-                  padding: "2px", 
+                  padding: "2px",
                   background: "linear-gradient(90deg, #cb2d3e, #ef473a)",
                   WebkitMask: "linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)",
                   WebkitMaskComposite: "xor",
                   maskComposite: "exclude",
                   zIndex: -1,
                   transition: "clip-path 0.5s cubic-bezier(0.4, 0, 0.2, 1)",
-                  clipPath: "inset(0 100% 0 0)", 
+                  clipPath: "inset(0 100% 0 0)",
                 },
 
                 "&:hover": {

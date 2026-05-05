@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import {
   Box,
   Typography,
-  Grid,
   Card,
   Button,
   Paper,
@@ -32,7 +31,7 @@ const HODDashboard = () => {
       setLoading(true);
       try {
         const res = await API.get("/api/discrepancies");
-        
+
         // Get HOD's assigned departments
         const hodRole = user?.roles?.find(r => r.role === 'HOD');
         const assignedDeptIds = hodRole?.departments?.map(d => typeof d === 'object' ? d._id : d) || [];
@@ -40,13 +39,13 @@ const HODDashboard = () => {
           assignedDeptIds.push(typeof user.department === 'object' ? user.department._id : user.department);
         }
 
-        const filtered = (res.data || []).filter(item => 
-          item.section === "PROCTORING" && 
+        const filtered = (res.data || []).filter(item =>
+          item.section === "PROCTORING" &&
           item.proctoringType === "ASSIGNED_COUNT" &&
           assignedDeptIds.includes(item.studentDepartmentId)
         );
         setDiscrepancies(filtered.slice(0, 5)); // Show only top 5
-        
+
         const pending = filtered.filter(i => i.status === "PENDING").length;
         const resolved = filtered.filter(i => i.status === "RESOLVED").length;
         setCounts({ total: filtered.length, pending, resolved });
@@ -57,7 +56,7 @@ const HODDashboard = () => {
       }
     };
     fetchDashboardData();
-  }, []);
+  }, [user]);
 
   const topCards = [
     { title: "Department Faculty", value: "45", subtitle: "Total Active", icon: <People />, color: "#3B82F6", bgColor: "#EFF6FF" },
@@ -75,46 +74,108 @@ const HODDashboard = () => {
   }
 
   return (
-    <Box>
+    <Box sx={{ p: { xs: 1, sm: 0 } }}>
       {/* Header */}
       <Box sx={{ mb: 4 }}>
-        <Typography variant="h4" sx={{ fontWeight: 700, color: "#1a237e", mb: 0.5 }}>
+        <Typography variant="h4" sx={{ fontWeight: 800, color: "var(--text-primary)", mb: 0.5 }}>
           HOD Dashboard 👋
         </Typography>
-        <Typography variant="body2" color="text.secondary">
+        <Typography variant="body1" sx={{ color: "var(--text-secondary)", opacity: 0.8 }}>
           Monitor department performance and resolve faculty discrepancies.
         </Typography>
       </Box>
 
-      {/* Summary Cards */}
-      <Grid container spacing={3} sx={{ mb: 4 }}>
+      {/* Summary Cards Row */}
+      <Box sx={{ 
+        display: "grid", 
+        gridTemplateColumns: { 
+          xs: "1fr", 
+          sm: "repeat(2, 1fr)", 
+          md: "repeat(4, 1fr)" 
+        }, 
+        gap: 2.5, 
+        mb: 4 
+      }}>
         {topCards.map((card, i) => (
-          <Grid item key={i} xs={12} sm={6} md={3}>
-            <Card sx={{ borderRadius: "16px", boxShadow: "0 4px 20px rgba(0,0,0,0.05)", p: 2.5, display: "flex", alignItems: "center", gap: 2 }}>
-              <Box sx={{ width: 56, height: 56, borderRadius: "12px", display: "flex", alignItems: "center", justifyContent: "center", backgroundColor: card.bgColor, color: card.color }}>
-                {card.icon}
-              </Box>
-              <Box>
-                <Typography variant="caption" sx={{ color: "#6B7280", fontWeight: 600 }}>{card.title}</Typography>
-                <Typography variant="h4" sx={{ fontWeight: 800, color: "#111827", my: 0.2 }}>{card.value}</Typography>
-                <Typography variant="caption" sx={{ color: "#9CA3AF" }}>{card.subtitle}</Typography>
-              </Box>
-            </Card>
-          </Grid>
+          <Card key={i} sx={{
+            borderRadius: "24px",
+            background: 'var(--bg-panel)',
+            border: '1px solid var(--border-color)',
+            p: { xs: 2, sm: 2.5 },
+            display: "flex",
+            flexDirection: "row",
+            alignItems: "center",
+            gap: 2,
+            transition: 'all 0.3s ease',
+            '&:hover': { 
+              transform: 'translateY(-4px)', 
+              boxShadow: 'var(--shadow-premium)',
+              borderColor: 'var(--color-primary)',
+              background: 'var(--bg-glass)'
+            }
+          }}>
+            <Box sx={{
+              width: { xs: 44, sm: 56 },
+              height: { xs: 44, sm: 56 },
+              borderRadius: "14px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              backgroundColor: card.bgColor,
+              color: card.color,
+              flexShrink: 0
+            }}>
+              {card.icon}
+            </Box>
+            <Box sx={{ textAlign: "left" }}>
+              <Typography variant="caption" sx={{ color: "var(--text-secondary)", fontWeight: 700, fontSize: { xs: 10, sm: 12 }, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                {card.title}
+              </Typography>
+              <Typography variant="h4" sx={{ fontWeight: 800, color: "var(--text-primary)", my: 0.1, fontSize: { xs: '1.2rem', sm: '1.8rem' } }}>
+                {card.value}
+              </Typography>
+              <Typography variant="caption" sx={{ color: "var(--text-secondary)", opacity: 0.8, fontSize: { xs: 9, sm: 11 } }}>
+                {card.subtitle}
+              </Typography>
+            </Box>
+          </Card>
         ))}
-      </Grid>
+      </Box>
 
-      {/* Discrepancies Section */}
-      <Box sx={{ display: "flex", gap: 3, flexWrap: { xs: "wrap", lg: "nowrap" } }}>
-        <Card sx={{ borderRadius: "20px", boxShadow: "0 4px 25px rgba(0,0,0,0.05)", p: 3, flexGrow: 1, width: "100%" }}>
+      {/* Discrepancies & Actions Section Row */}
+      <Box sx={{ 
+        display: "grid", 
+        gridTemplateColumns: { 
+          xs: "1fr", 
+          md: "9fr 3fr" 
+        }, 
+        gap: 3, 
+        alignItems: 'stretch' 
+      }}>
+        <Card sx={{
+          borderRadius: "24px",
+          background: 'var(--bg-panel)',
+          border: '1px solid var(--border-color)',
+          p: { xs: 2, sm: 3 },
+          display: 'flex',
+          flexDirection: 'column'
+        }}>
           <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
-            <Typography variant="h6" sx={{ fontWeight: 700, color: "#111827" }}>Recent Discrepancies</Typography>
-            <Button 
+            <Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>Recent Discrepancies</Typography>
+            <Button
               onClick={() => navigate("/hod/discrepancies")}
-              endIcon={<ArrowForward />} 
-              sx={{ textTransform: "none", fontWeight: 600 }}
+              endIcon={<ArrowForward />}
+              sx={{ 
+                textTransform: "none", 
+                fontWeight: 700,
+                color: 'var(--color-primary)',
+                minWidth: { xs: 'auto', sm: '64px' },
+                '& .MuiButton-endIcon': { m: 0 }
+              }}
             >
-              View All
+              <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' }, mr: 1 }}>
+                View All
+              </Box>
             </Button>
           </Box>
 
@@ -125,14 +186,14 @@ const HODDashboard = () => {
           ) : (
             <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
               {discrepancies.map((disc, i) => (
-                <Paper 
-                  key={i} 
-                  variant="outlined" 
-                  sx={{ 
-                    p: 2, 
-                    borderRadius: "12px", 
-                    display: "flex", 
-                    justifyContent: "space-between", 
+                <Paper
+                  key={i}
+                  variant="outlined"
+                  sx={{
+                    p: 2,
+                    borderRadius: "12px",
+                    display: "flex",
+                    justifyContent: "space-between",
                     alignItems: "center",
                     borderColor: disc.status === "PENDING" ? "#FCA5A5" : "#E5E7EB",
                     background: disc.status === "PENDING" ? "#FEF2F2" : "transparent"
@@ -146,17 +207,26 @@ const HODDashboard = () => {
                     <Typography variant="body2" sx={{ mt: 0.5, color: "#4B5563" }}>{disc.note}</Typography>
                   </Box>
                   <Box sx={{ textAlign: "right" }}>
-                    <Chip 
-                      label={disc.status} 
-                      size="small" 
+                    <Chip
+                      label={disc.status}
+                      size="small"
                       color={disc.status === "PENDING" ? "warning" : "success"}
                       sx={{ fontWeight: 700, fontSize: "0.7rem", mb: 1 }}
                     />
-                    <Button 
-                      size="small" 
-                      variant="contained" 
+                    <Button
+                      size="small"
+                      variant="contained"
                       onClick={() => navigate("/hod/discrepancies")}
-                      sx={{ display: "block", textTransform: "none", borderRadius: "8px", fontSize: "0.75rem" }}
+                      sx={{ 
+                        display: "block", 
+                        textTransform: "none", 
+                        borderRadius: "10px", 
+                        fontSize: "0.75rem",
+                        background: 'var(--gradient-primary)',
+                        fontWeight: 700,
+                        boxShadow: 'var(--shadow-premium)',
+                        '&:hover': { background: 'var(--gradient-primary)', opacity: 0.9 }
+                      }}
                     >
                       Handle
                     </Button>
@@ -167,45 +237,54 @@ const HODDashboard = () => {
           )}
         </Card>
 
-        {/* Quick Actions Card */}
-        <Card sx={{ 
-          borderRadius: "20px", 
-          boxShadow: "var(--shadow-premium)", 
-          p: 3, 
-          minWidth: { lg: 350 }, 
-          background: "var(--gradient-primary)", 
-          color: "#fff" 
+        <Card sx={{
+          borderRadius: "24px",
+          boxShadow: "var(--shadow-premium)",
+          p: 3,
+          background: "var(--gradient-primary)",
+          color: "#fff",
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'center'
         }}>
           <Typography variant="h6" sx={{ fontWeight: 700, mb: 3 }}>Quick Actions</Typography>
           <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-            <Button 
-              fullWidth 
-              variant="contained" 
+            <Button
+              fullWidth
+              variant="contained"
               onClick={() => navigate("/hod/discrepancies")}
-              sx={{ 
-                bgcolor: "rgba(255,255,255,0.12)", 
-                backdropFilter: "blur(12px)", 
-                textTransform: "none", 
-                py: 1.5, 
-                borderRadius: "12px", 
-                fontWeight: 600,
-                "&:hover": { bgcolor: "rgba(255,255,255,0.2)" } 
+              sx={{
+                background: "rgba(255,255,255,0.15)",
+                backdropFilter: "blur(12px)",
+                textTransform: "none",
+                py: 1.8,
+                borderRadius: "14px",
+                fontWeight: 700,
+                border: '1px solid rgba(255,255,255,0.2)',
+                "&:hover": { 
+                  background: "rgba(255,255,255,0.25)",
+                  transform: 'scale(1.02)'
+                }
               }}
             >
               Resolve Discrepancies
             </Button>
-            <Button 
-              fullWidth 
-              variant="contained" 
+            <Button
+              fullWidth
+              variant="contained"
               onClick={() => navigate("/hod/protecrdataupload")}
-              sx={{ 
-                bgcolor: "rgba(255,255,255,0.12)", 
-                backdropFilter: "blur(12px)", 
-                textTransform: "none", 
-                py: 1.5, 
-                borderRadius: "12px", 
-                fontWeight: 600,
-                "&:hover": { bgcolor: "rgba(255,255,255,0.2)" } 
+              sx={{
+                background: "rgba(255,255,255,0.15)",
+                backdropFilter: "blur(12px)",
+                textTransform: "none",
+                py: 1.8,
+                borderRadius: "14px",
+                fontWeight: 700,
+                border: '1px solid rgba(255,255,255,0.2)',
+                "&:hover": { 
+                  background: "rgba(255,255,255,0.25)",
+                  transform: 'scale(1.02)'
+                }
               }}
             >
               Upload Proctor Data

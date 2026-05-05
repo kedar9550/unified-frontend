@@ -15,18 +15,58 @@ import {
   ExpandMore,
   Logout,
   School,
-  Person,
+  Person as PersonIcon,
   AdminPanelSettings,
   Assignment,
   Groups,
   Science,
   AccountCircle,
-  KeyboardArrowDown
+  KeyboardArrowDown,
+  Dashboard,
+  People,
+  Verified,
+  Flag,
+  MenuBook,
+  AccountBalance
 } from "@mui/icons-material";
 import { useAuth } from "../../context/AuthContext";
 import { ROLE_ROUTES } from "../../config/rolesNav";
 import { useNavigate, useLocation } from "react-router-dom";
 import universityLogoGold from "../../assets/Aditya University Gold Logo.png";
+import {
+  AutoStories,
+  AccountTree,
+  AssignmentInd,
+  Analytics,
+  Description as DescriptionIcon,
+  ManageAccounts
+} from "@mui/icons-material";
+
+// Mapping for item metadata (Icons & Colors with theme-aware RGBA)
+const ITEM_METADATA = {
+  "Dashboard": { color: "rgba(30, 64, 175, 0.12)", iconColor: "#3b82f6", icon: <Dashboard /> },
+  "Academics": { color: "rgba(22, 101, 52, 0.12)", iconColor: "#22c55e", icon: <School /> },
+  "Academic Management": { color: "rgba(30, 64, 175, 0.12)", iconColor: "#3b82f6", icon: <School /> },
+  "Department Management": { color: "rgba(22, 101, 52, 0.12)", iconColor: "#22c55e", icon: <AccountTree /> },
+  "Users & Roles": { color: "rgba(154, 52, 18, 0.12)", iconColor: "#f97316", icon: <People /> },
+  "Students": { color: "rgba(91, 33, 182, 0.12)", iconColor: "#a855f7", icon: <PersonIcon /> },
+  "Student Data Management": { color: "rgba(154, 52, 18, 0.12)", iconColor: "#f97316", icon: <ManageAccounts /> },
+  "Assigned Students": { color: "rgba(91, 33, 182, 0.12)", iconColor: "#a855f7", icon: <AssignmentInd /> },
+  "FED to Dept Mapping": { color: "rgba(153, 27, 27, 0.12)", iconColor: "#ef4444", icon: <AccountTree /> },
+  "Research": { color: "rgba(30, 64, 175, 0.12)", iconColor: "#3b82f6", icon: <Analytics /> },
+  "Text Book": { color: "rgba(30, 64, 175, 0.12)", iconColor: "#3b82f6", icon: <AutoStories /> },
+  "Book Chapter": { color: "rgba(22, 101, 52, 0.12)", iconColor: "#22c55e", icon: <AutoStories /> },
+  "Journal": { color: "rgba(154, 52, 18, 0.12)", iconColor: "#f97316", icon: <DescriptionIcon /> },
+  "Patent": { color: "rgba(91, 33, 182, 0.12)", iconColor: "#a855f7", icon: <Analytics /> },
+  "Approvals": { color: "rgba(22, 101, 52, 0.12)", iconColor: "#22c55e", icon: <Verified /> },
+  "Proctordata": { color: "rgba(154, 52, 18, 0.12)", iconColor: "#f97316", icon: <People /> },
+  "Discrepancies": { color: "rgba(153, 27, 27, 0.12)", iconColor: "#ef4444", icon: <Flag /> },
+  "Results Upload": { color: "rgba(30, 64, 175, 0.12)", iconColor: "#3b82f6", icon: <MenuBook /> },
+  "Administration": { color: "rgba(91, 33, 182, 0.12)", iconColor: "#a855f7", icon: <AccountBalance /> },
+  "Interpersonal": { color: "rgba(22, 101, 52, 0.12)", iconColor: "#22c55e", icon: <Groups /> },
+  "Feedback Reports": { color: "rgba(30, 64, 175, 0.12)", iconColor: "#3b82f6", icon: <Analytics /> },
+  "Feedback Management": { color: "rgba(22, 101, 52, 0.12)", iconColor: "#22c55e", icon: <MenuBook /> }
+};
 
 const drawerWidth = 270;
 
@@ -81,7 +121,7 @@ const Sidebar = ({ mobileOpen, onDrawerToggle }) => {
           iconUrl = "https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Travel%20and%20places/Cloud.png";
           desc = "Overcast";
         } else if (code >= 1) {
-          iconUrl = "https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Travel%20and%20places/Sun%20behind%20cloud.png";
+          iconUrl = "https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Travel%20and%20places/Sun%20Behind%20Cloud.png";
           desc = "Partly Cloudy";
         }
 
@@ -181,7 +221,7 @@ const Sidebar = ({ mobileOpen, onDrawerToggle }) => {
           const roleUpper = displayedRole.toUpperCase();
           const roleIcon = {
             FACULTY: <School sx={{ fontSize: "1.2rem" }} />,
-            STUDENT: <Person sx={{ fontSize: "1.2rem" }} />,
+            STUDENT: <PersonIcon sx={{ fontSize: "1.2rem" }} />,
             "EXAM SECTION": <Assignment sx={{ fontSize: "1.2rem" }} />,
             "DEPARTMENT HOD": <Groups sx={{ fontSize: "1.2rem" }} />,
             "UNIPRIME": <AdminPanelSettings sx={{ fontSize: "2rem" }} />,
@@ -222,37 +262,79 @@ const Sidebar = ({ mobileOpen, onDrawerToggle }) => {
           <React.Fragment key={item.text}>
             {item.nested ? (
               <>
-                <ListItemButton
-                  onClick={() => handleToggle(item.text)}
-                  disableRipple
-                  sx={{
-                    borderRadius: "10px",
-                    mb: 0.5,
-                    transition: "all 0.2s ease",
-                    overflow: "hidden",
-                    background: active === item.text ? "var(--bg-accent-4)" : "transparent",
-                    "&:hover": {
-                      background: "var(--bg-panel)",
-                    }
-                  }}
-                >
-                  <ListItemIcon sx={{ color: active === item.text ? "var(--color-primary)" : "var(--text-secondary)", minWidth: 40 }}>{item.icon}</ListItemIcon>
-                  <ListItemText
-                    primary={
-                      <Typography sx={{ fontSize: "0.875rem", fontWeight: active === item.text ? 600 : 500, color: active === item.text ? "var(--color-primary)" : "var(--text-secondary)" }}>
-                        {item.text}
-                      </Typography>
-                    }
-                  />
-                  {openStates[item.text] ? <ExpandLess sx={{ color: "#94a3b8", fontSize: 18 }} /> : <ExpandMore sx={{ color: "#94a3b8", fontSize: 18 }} />}
-                </ListItemButton>
+                {(() => {
+                  const isParentActive = item.nested.some(sub => active === sub.text);
+                  return (
+                    <ListItemButton
+                      onClick={() => handleToggle(item.text)}
+                      disableRipple
+                      sx={{
+                        borderRadius: "12px",
+                        mb: 0.8,
+                        mx: 0,
+                        pl: 1.2,
+                        position: 'relative',
+                        transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+                        overflow: "hidden",
+                        background: (active === item.text || isParentActive) ? "var(--bg-accent-4)" : "transparent",
+                        border: (active === item.text || isParentActive) ? "1px solid var(--border-color)" : "1px solid transparent",
+                        "&:hover": {
+                          background: "var(--bg-panel)",
+                        }
+                      }}
+                    >
+                      {active === item.text && (
+                        <Box
+                          sx={{
+                            position: "absolute",
+                            left: 0,
+                            top: "25%",
+                            height: "50%",
+                            width: 4,
+                            borderRadius: "0 4px 4px 0",
+                            background: "var(--color-primary)",
+                            boxShadow: '0 0 8px var(--color-primary-alpha)'
+                          }}
+                        />
+                      )}
+                      <ListItemIcon sx={{ minWidth: 42 }}>
+                        <Box sx={{
+                          width: 32,
+                          height: 32,
+                          borderRadius: '8px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          background: ITEM_METADATA[item.text]?.color || 'var(--bg-accent-4)',
+                          color: ITEM_METADATA[item.text]?.iconColor || 'var(--color-primary)',
+                          transition: 'all 0.3s ease',
+                          opacity: (active === item.text || isParentActive) ? 1 : 0.8
+                        }}>
+                          {React.cloneElement(item.icon, { sx: { fontSize: 18 } })}
+                        </Box>
+                      </ListItemIcon>
+                      <ListItemText
+                        primary={
+                          <Typography sx={{
+                            fontSize: "0.875rem",
+                            fontWeight: (active === item.text || isParentActive) ? 700 : 500,
+                            color: (active === item.text || isParentActive) ? "var(--color-primary)" : "var(--text-secondary)"
+                          }}>
+                            {item.text}
+                          </Typography>
+                        }
+                      />
+                      {openStates[item.text] ? <ExpandLess sx={{ color: "var(--color-primary)", fontSize: 18 }} /> : <ExpandMore sx={{ color: "#94a3b8", fontSize: 18 }} />}
+                    </ListItemButton>
+                  );
+                })()}
                 <Collapse in={!!openStates[item.text]} timeout="auto" unmountOnExit sx={{ overflow: 'hidden' }}>
                   <List component="div" disablePadding>
                     {item.nested.map((subItem) => (
                       <Item
                         key={`${item.text}-${subItem.text}`}
                         nested
-                        icon={subItem.icon || null}
+                        icon={subItem.icon || ITEM_METADATA[subItem.text]?.icon || null}
                         text={subItem.text}
                         active={active}
                         onClick={() => navigateTo(subItem.path, subItem.text)}
@@ -284,7 +366,7 @@ const Sidebar = ({ mobileOpen, onDrawerToggle }) => {
           gap: 1.5,
           transition: "all 0.4s cubic-bezier(0.4, 0, 0.2, 1)",
           cursor: "pointer",
-          "&:hover": { 
+          "&:hover": {
             background: "linear-gradient(var(--bg-panel), var(--bg-panel)) padding-box, var(--gradient-primary) border-box",
             borderColor: "transparent",
             boxShadow: "var(--shadow-premium)"
@@ -296,7 +378,8 @@ const Sidebar = ({ mobileOpen, onDrawerToggle }) => {
             <Box
               component="img"
               src={weather.icon}
-              sx={{ width: 34, height: 34 }}
+              onError={(e) => { e.target.src = "https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Travel%20and%20places/Sun.png"; }}
+              sx={{ width: 34, height: 34, objectFit: 'contain' }}
             />
             <Box>
               <Typography sx={{ fontSize: "0.95rem", fontWeight: 700, lineHeight: 1.1, color: "var(--text-primary)" }}>
@@ -337,28 +420,10 @@ const Sidebar = ({ mobileOpen, onDrawerToggle }) => {
   );
 
   return (
-    <Box component="nav" sx={{ width: { md: drawerWidth }, flexShrink: { md: 0 } }}>
-      <Drawer
-        variant="temporary"
-        open={mobileOpen}
-        onClose={onDrawerToggle}
-        ModalProps={{ keepMounted: true }}
-        sx={{
-          display: { xs: "block", md: "none" },
-          "& .MuiDrawer-paper": {
-            boxSizing: "border-box",
-            width: drawerWidth,
-            borderRight: "none",
-            background: "#fff",
-          },
-        }}
-      >
-        {drawerContent}
-      </Drawer>
+    <Box component="nav" sx={{ width: { md: drawerWidth }, flexShrink: { md: 0 }, display: { xs: "none", md: "block" } }}>
       <Drawer
         variant="permanent"
         sx={{
-          display: { xs: "none", md: "block" },
           "& .MuiDrawer-paper": {
             boxSizing: "border-box",
             width: drawerWidth,
@@ -379,11 +444,12 @@ const Item = ({ icon, text, active, onClick, nested }) => (
     onClick={onClick}
     disableRipple
     sx={{
-      pl: nested ? 4 : 2,
+      pl: nested ? 5 : 1.2,
       position: "relative",
-      borderRadius: "10px",
-      mb: 0.5,
-      transition: "all 0.2s ease",
+      borderRadius: "12px",
+      mb: 0.8,
+      mx: 0,
+      transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
       overflow: "hidden",
       background: active === text ? "var(--bg-accent-4)" : "transparent",
       border: active === text ? "1px solid var(--border-color)" : "1px solid transparent",
@@ -397,22 +463,40 @@ const Item = ({ icon, text, active, onClick, nested }) => (
         sx={{
           position: "absolute",
           left: 0,
-          top: "20%",
-          height: "60%",
-          width: 3,
-          borderRadius: "0 3px 3px 0",
+          top: "25%",
+          height: "50%",
+          width: 4,
+          borderRadius: "0 4px 4px 0",
           background: "var(--color-primary)",
+          boxShadow: '0 0 8px var(--color-primary-alpha)'
         }}
       />
     )}
     {icon && (
-      <ListItemIcon sx={{ color: active === text ? "var(--color-primary)" : "var(--text-secondary)", minWidth: 40 }}>
-        {icon}
+      <ListItemIcon sx={{ minWidth: 42 }}>
+        <Box sx={{
+          width: 32,
+          height: 32,
+          borderRadius: '8px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          background: ITEM_METADATA[text]?.color || 'rgba(148, 163, 184, 0.1)',
+          color: ITEM_METADATA[text]?.iconColor || 'var(--text-secondary)',
+          transition: 'all 0.3s ease'
+        }}>
+          {React.cloneElement(icon, { sx: { fontSize: 18 } })}
+        </Box>
       </ListItemIcon>
     )}
     <ListItemText
       primary={
-        <Typography sx={{ fontSize: "0.875rem", fontWeight: active === text ? 600 : 500, color: active === text ? "var(--color-primary)" : "var(--text-secondary)" }}>
+        <Typography sx={{
+          fontSize: "0.875rem",
+          fontWeight: active === text ? 700 : 500,
+          color: active === text ? "var(--color-primary)" : "var(--text-secondary)",
+          transition: 'all 0.2s ease'
+        }}>
           {text}
         </Typography>
       }

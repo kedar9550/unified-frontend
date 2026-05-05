@@ -6,50 +6,42 @@ import { useAuth } from "../../context/AuthContext";
 import { Navigate, useLocation } from "react-router-dom";
 import Background from "../../Background";
 import Footer from "../Footer";
+import MobileNavbar from "../layouts/MobileNavbar";
 
 const MainLayout = ({ children }) => {
   const { user } = useAuth();
   const location = useLocation();
-  const [mobileOpen, setMobileOpen] = React.useState(false);
 
   if (!user) {
     return <Navigate to="/" replace />;
   }
 
-  const handleDrawerToggle = () => {
-    setMobileOpen(!mobileOpen);
-  };
-
   return (
     <>
-      {/* <Background /> */}
-      {/* Floating glass header */}
-      <Header onMenuClick={handleDrawerToggle} />
+      <Header />
 
       <Box
         sx={{
           display: "flex",
           minHeight: "100vh",
-          backgroundColor: "var(--bg-main)", // Uses CSS variable for dark mode
+          backgroundColor: "var(--bg-main)",
         }}
       >
-        {/* Sidebar navigation */}
-        <Sidebar mobileOpen={mobileOpen} onDrawerToggle={handleDrawerToggle} />
+        <Sidebar />
 
-        {/* Main Content Area */}
         <Box
           sx={{
             flexGrow: 1,
             minHeight: "100vh",
             display: "flex",
             flexDirection: "column",
-            p: { xs: 2, md: 3 },
-            pt: { xs: "80px", md: "88px" }, /* Clear the fixed header */
+            p: { xs: 1.5, md: 3 },
+            pt: { xs: "70px", md: "88px" },
+            pb: { xs: "80px", md: 0 }, /* Space for bottom navbar */
             transition: "all 0.3s ease",
             overflow: "hidden", 
           }}
         >
-          {/* INNER GLASS PANEL */}
           <Box
             sx={{
               flex: 1,
@@ -64,13 +56,16 @@ const MainLayout = ({ children }) => {
               overflow: "hidden", 
             }}
           >
-            <Box sx={{ flex: 1, p: { xs: 2, md: 4 }, overflowY: "auto" }}>
+            <Box sx={{ flex: 1, p: { xs: 1.5, md: 4 }, overflowY: "auto" }}>
               {children}
             </Box>
             <Footer />
           </Box>
         </Box>
       </Box>
+
+      {/* Bottom Navigation for Mobile */}
+      <MobileNavbar />
     </>
   );
 };

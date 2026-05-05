@@ -177,8 +177,8 @@ const AcademicManagement = () => {
                 <Grid item xs={6} sm={4} md={2} key={idx}>
                   <Paper variant="outlined" sx={{
                     p: 1.5, textAlign: 'center',
-                    background: isActive && y.isActive ? 'rgba(16,185,129,0.12)' : 'var(--bg-glass)',
-                    borderColor: isActive && y.isActive ? '#10B981' : 'var(--border-color)',
+                    background: isActive && y.isActive ? 'rgba(16,185,129,0.15)' : 'var(--bg-glass)',
+                    borderColor: isActive && y.isActive ? 'var(--color-success, #10B981)' : 'var(--border-color)',
                     opacity: y.isActive ? 1 : 0.6
                   }}>
                     <Typography variant="body2" sx={{ fontWeight: 600, mb: 1, color: 'var(--text-primary)' }}>Year {idx + 1}</Typography>
@@ -232,8 +232,8 @@ const AcademicManagement = () => {
               <Grid item xs={12} sm={4} key={st._id}>
                 <Paper variant="outlined" sx={{
                   p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                  background: isActive && y.isActive ? 'rgba(16,185,129,0.12)' : 'var(--bg-glass)',
-                  borderColor: isActive && y.isActive ? '#10B981' : 'var(--border-color)',
+                    background: isActive && y.isActive ? 'rgba(16,185,129,0.15)' : 'var(--bg-glass)',
+                    borderColor: isActive && y.isActive ? 'var(--color-success, #10B981)' : 'var(--border-color)',
                   opacity: y.isActive ? 1 : 0.6
                 }}>
                   <Box>
@@ -426,7 +426,7 @@ const AcademicManagement = () => {
       })}
 
       {years.length === 0 && (
-        <Typography sx={{ textAlign: "center", color: "text.secondary", mt: 6 }}>
+        <Typography sx={{ textAlign: "center", color: "var(--text-secondary)", mt: 6 }}>
           No academic years found. Create one above.
         </Typography>
       )}

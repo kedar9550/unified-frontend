@@ -66,12 +66,12 @@ export const ROLE_ROUTES = {
       ],
     },
     {
-      text: "Employee & Role Management",
+      text: "Users & Roles",
       path: "/role-management",
       icon: <People />
     },
     {
-      text: "Student Management",
+      text: "Students",
       icon: <PersonIcon />,
       nested: [
         {
