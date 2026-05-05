@@ -20,12 +20,12 @@ export default function Teaching() {
 
   // ── Academic Year state ──────────────────────────────────────────
   const [academicYears, setAcademicYears] = useState([]);
-  const [selectedYearId, setSelectedYearId] = useState("");
+  const [selectedYearLabel, setSelectedYearLabel] = useState("");
 
   // ── Results state ────────────────────────────────────────────────
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
-  
+
   // ── Proctor state ────────────────────────────────────────────────
   const [proctorStats, setProctorStats] = useState(null);
   const [proctorLoading, setProctorLoading] = useState(false);
@@ -53,7 +53,7 @@ export default function Teaching() {
         setAcademicYears(years);
         if (years.length > 0) {
           const active = years.find((y) => y.isActive) || years[0];
-          setSelectedYearId(active._id);
+          setSelectedYearLabel(active.year);
         }
       } catch (err) {
         console.error("Error fetching academic years:", err);
@@ -64,14 +64,14 @@ export default function Teaching() {
 
   // 2. Fetch Results for this faculty when filters change
   useEffect(() => {
-    if (!selectedYearId || !user?.institutionId) return;
+    if (!selectedYearLabel || !user?.institutionId) return;
     const fetchResults = async () => {
       setLoading(true);
       try {
         const res = await API.get("/api/faculty-subject-results", {
           params: {
             facultyId: user?.institutionId,
-            academicYear: selectedYearId,
+            academicYear: selectedYearLabel,
           },
         });
         setResults(res.data || []);
@@ -81,14 +81,14 @@ export default function Teaching() {
         setLoading(false);
       }
     };
-    
+
     const fetchProctorStats = async () => {
       setProctorLoading(true);
       try {
         const res = await API.get("/api/student-results/proctor-results", {
           params: {
             facultyId: user?.institutionId,
-            academicYear: selectedYearId,
+            academicYear: selectedYearLabel,
           },
         });
         setProctorStats(res.data);
@@ -105,7 +105,7 @@ export default function Teaching() {
         const res = await API.get("/api/faculty-feedback-results", {
           params: {
             facultyId: user?.institutionId,
-            academicYear: selectedYearId,
+            academicYear: selectedYearLabel,
           },
         });
         setFeedbackResults(res.data || []);
@@ -122,7 +122,7 @@ export default function Teaching() {
         const res = await API.get("/api/faculty-subject-results/co-attainment", {
           params: {
             facultyId: user?.institutionId,
-            academicYear: selectedYearId,
+            academicYear: selectedYearLabel,
           },
         });
         setCoAttainmentResults(res.data || []);
@@ -138,7 +138,7 @@ export default function Teaching() {
     fetchProctorStats();
     fetchFeedbackStats();
     fetchCoAttainmentStats();
-  }, [selectedYearId, user?.institutionId]);
+  }, [selectedYearLabel, user?.institutionId]);
 
   // ── CSV Upload Handler ────────────────────────────────────────────
   const handleCSVUploadClick = () => {
@@ -159,7 +159,7 @@ export default function Teaching() {
     try {
       const formData = new FormData();
       formData.append("file", file);
-      formData.append("academicYearId", selectedYearId);
+      formData.append("academicYear", selectedYearLabel);
 
       // TODO: Update this to your actual CSV upload endpoint
       const res = await API.post("/api/faculty-subject-results/upload-csv", formData, {
@@ -172,7 +172,7 @@ export default function Teaching() {
       const refreshRes = await API.get("/api/faculty-subject-results", {
         params: {
           facultyId: user?.institutionId,
-          academicYear: selectedYearId,
+          academicYear: selectedYearLabel,
         },
       });
       setResults(refreshRes.data || []);
@@ -190,7 +190,7 @@ export default function Teaching() {
   };
 
   // ── Derive selected labels for display ──────────────────────────
-  const selectedYear = academicYears.find((y) => y._id === selectedYearId);
+  const selectedYear = academicYears.find((y) => y.year === selectedYearLabel);
 
   // ── Build DataTable rows ─────────────────────────────────────────
   const columns = [
@@ -199,9 +199,9 @@ export default function Teaching() {
     "COURSE ID",
     "TYPE",
     "SEM - BRANCH - SEC",
-    "NO. OF STUDENTS APPEARED",
-    "NO. OF STUDENTS PASSED",
-    "PASS PERCENTAGE",
+    "APPEARED",
+    "PASSED",
+    "PASS %",
   ];
 
   const rows = results.map((r, i) => [
@@ -230,10 +230,10 @@ export default function Teaching() {
     },
 
     {
-      value: `${r.semester}-${r.branch}-${r.section}`,
+      value: `${r.semesterDisplay || r.semester || "—"} - ${r.branch} - ${r.section}`,
       display: (
         <Box sx={{ whiteSpace: "nowrap" }}>
-          {r.semester && <Box component="span" sx={{ fontWeight: 600 }}>{r.semester}</Box>}
+          <Box component="span" sx={{ fontWeight: 600 }}>{r.semesterDisplay || r.semester || "—"}</Box>
           {r.branch && <Box component="span" sx={{ color: "var(--text-secondary)" }}> — {r.branch}</Box>}
           {r.section && <Box component="span" sx={{ color: "var(--color-primary)", fontWeight: 700 }}> — {r.section}</Box>}
         </Box>
@@ -309,7 +309,7 @@ export default function Teaching() {
     "COURSE NAME",
     "SEM - BRANCH - SEC",
     "NO. OF COs",
-    "NO. OF COs ATTAINMENT TARGET REACHED",
+    "COs ATTAINMENT",
   ];
 
   const coAttainmentRows = coAttainmentResults.map((r, i) => [
@@ -327,12 +327,12 @@ export default function Teaching() {
       ),
     },
     {
-      value: `${r.semester}-${r.branch}-${r.section}`,
+      value: `${r.semesterDisplay || r.semester || "—"} - ${r.branch} - ${r.section}`,
       display: (
         <Box>
-          {r.semester && <Box component="span">{r.semester}</Box>}
+          <Box component="span" sx={{ fontWeight: 600 }}>{r.semesterDisplay || r.semester || "—"}</Box>
           {r.branch && <Box component="span"> — {r.branch}</Box>}
-          {r.section && <Box component="span"> — {r.section}</Box>}
+          {r.section && <Box component="span" sx={{ color: "var(--color-primary)", fontWeight: 700 }}> — {r.section}</Box>}
         </Box>
       ),
     },
@@ -401,13 +401,13 @@ export default function Teaching() {
           <Select
             variant="standard"
             disableUnderline
-            value={selectedYearId}
-            onChange={(e) => setSelectedYearId(e.target.value)}
+            value={selectedYearLabel}
+            onChange={(e) => setSelectedYearLabel(e.target.value)}
             sx={{ minWidth: 120, fontSize: 14, color: "var(--text-primary)", fontWeight: 600, "& .MuiSelect-icon": { color: "var(--text-secondary)" } }}
           >
-            {academicYears.map((y) => (
-              <MenuItem key={y._id} value={y._id}>
-                {y.year}
+            {[...new Set(academicYears.map(y => y.year))].map((year) => (
+              <MenuItem key={year} value={year}>
+                {year}
               </MenuItem>
             ))}
           </Select>
@@ -481,100 +481,100 @@ export default function Teaching() {
         </Typography>
 
         {proctorStats?.totalMappedStudents > 0 ? (
-            <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
-                {/* Overall Summary if multiple semesters exist */}
-                {proctorStats.details?.length > 1 && (
-                    <Box
-                        sx={{
-                            p: 2,
-                            borderRadius: "12px",
-                            background: "linear-gradient(135deg, rgba(0, 78, 146, 0.05), rgba(0, 4, 40, 0.05))",
-                            border: "1px solid var(--border-color)",
-                            textAlign: "center"
-                        }}
-                    >
-                        <Typography variant="subtitle2" sx={{ fontWeight: 700, color: "var(--color-primary)", mb: 1 }}>
-                            OVERALL ACADEMIC YEAR SUMMARY
-                        </Typography>
-                        <Box sx={{ display: "flex", justifyContent: "space-around", flexWrap: "wrap", gap: 2 }}>
-                            <Typography variant="body2">Total: <strong>{proctorStats.totalMappedStudents}</strong></Typography>
-                            <Typography variant="body2">Appeared: <strong>{proctorStats.studentsAppeared}</strong></Typography>
-                            <Typography variant="body2">Passed: <strong>{proctorStats.studentsPassed}</strong></Typography>
-                            <Typography variant="body2">Pass %: <strong style={{ color: proctorStats.passPercentage >= 50 ? "#10b981" : "#ef4444" }}>{proctorStats.passPercentage}%</strong></Typography>
-                        </Box>
-                    </Box>
-                )}
-
-                {/* Individual Semester Summaries */}
-                <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                    {(proctorStats.details?.length > 0 ? proctorStats.details : [proctorStats]).map((sem, idx) => (
-                        <Box
-                            key={idx}
-                            sx={{
-                                display: "flex",
-                                flexWrap: "wrap",
-                                gap: 3,
-                                justifyContent: "space-around",
-                                p: 3,
-                                border: "1px solid var(--border-color)",
-                                borderRadius: "16px",
-                                background: "var(--bg-glass)",
-                                position: "relative"
-                            }}
-                        >
-                            {sem.semesterName && (
-                                <Box
-                                    sx={{
-                                        position: "absolute",
-                                        top: -10,
-                                        left: 20,
-                                        px: 1.5,
-                                        py: 0.5,
-                                        background: "var(--color-primary)",
-                                        color: "#fff",
-                                        borderRadius: "20px",
-                                        fontSize: "0.65rem",
-                                        fontWeight: 800,
-                                        letterSpacing: "0.05em"
-                                    }}
-                                >
-                                    {sem.semesterName} SEMESTER
-                                </Box>
-                            )}
-                            <Box sx={{ textAlign: "center" }}>
-                                <Typography variant="body2" sx={{ color: "var(--text-secondary)", fontWeight: 700, mb: 1, fontSize: "0.7rem", textTransform: "uppercase" }}>Total Students Managed</Typography>
-                                <Typography variant="h4" sx={{ color: "var(--color-primary)", fontWeight: 800 }}>{sem.totalMappedStudents}</Typography>
-                            </Box>
-                            <Box sx={{ textAlign: "center" }}>
-                                <Typography variant="body2" sx={{ color: "var(--text-secondary)", fontWeight: 700, mb: 1, fontSize: "0.7rem", textTransform: "uppercase" }}>Students Appeared</Typography>
-                                <Typography variant="h4" sx={{ color: "#f59e0b", fontWeight: 800 }}>{sem.studentsAppeared}</Typography>
-                            </Box>
-                            <Box sx={{ textAlign: "center" }}>
-                                <Typography variant="body2" sx={{ color: "var(--text-secondary)", fontWeight: 700, mb: 1, fontSize: "0.7rem", textTransform: "uppercase" }}>Students Passed</Typography>
-                                <Typography variant="h4" sx={{ color: "#10b981", fontWeight: 800 }}>{sem.studentsPassed}</Typography>
-                            </Box>
-                            <Box sx={{ textAlign: "center" }}>
-                                <Typography variant="body2" sx={{ color: "var(--text-secondary)", fontWeight: 700, mb: 1, fontSize: "0.7rem", textTransform: "uppercase" }}>Pass Percentage</Typography>
-                                <Typography variant="h4" sx={{ color: sem.passPercentage >= 50 ? "#10b981" : "#ef4444", fontWeight: 800 }}>{sem.passPercentage}%</Typography>
-                            </Box>
-                        </Box>
-                    ))}
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+            {/* Overall Summary if multiple semesters exist */}
+            {proctorStats.details?.length > 1 && (
+              <Box
+                sx={{
+                  p: 2,
+                  borderRadius: "12px",
+                  background: "linear-gradient(135deg, rgba(0, 78, 146, 0.05), rgba(0, 4, 40, 0.05))",
+                  border: "1px solid var(--border-color)",
+                  textAlign: "center"
+                }}
+              >
+                <Typography variant="subtitle2" sx={{ fontWeight: 700, color: "var(--color-primary)", mb: 1 }}>
+                  OVERALL ACADEMIC YEAR SUMMARY
+                </Typography>
+                <Box sx={{ display: "flex", justifyContent: "space-around", flexWrap: "wrap", gap: 2 }}>
+                  <Typography variant="body2">Total: <strong>{proctorStats.totalMappedStudents}</strong></Typography>
+                  <Typography variant="body2">Appeared: <strong>{proctorStats.studentsAppeared}</strong></Typography>
+                  <Typography variant="body2">Passed: <strong>{proctorStats.studentsPassed}</strong></Typography>
+                  <Typography variant="body2">Pass %: <strong style={{ color: proctorStats.passPercentage >= 50 ? "#10b981" : "#ef4444" }}>{proctorStats.passPercentage}%</strong></Typography>
                 </Box>
+              </Box>
+            )}
+
+            {/* Individual Semester Summaries */}
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+              {(proctorStats.details?.length > 0 ? proctorStats.details : [proctorStats]).map((sem, idx) => (
+                <Box
+                  key={idx}
+                  sx={{
+                    display: "flex",
+                    flexWrap: "wrap",
+                    gap: 3,
+                    justifyContent: "space-around",
+                    p: 3,
+                    border: "1px solid var(--border-color)",
+                    borderRadius: "16px",
+                    background: "var(--bg-glass)",
+                    position: "relative"
+                  }}
+                >
+                  {sem.semesterName && (
+                    <Box
+                      sx={{
+                        position: "absolute",
+                        top: -10,
+                        left: 20,
+                        px: 1.5,
+                        py: 0.5,
+                        background: "var(--color-primary)",
+                        color: "#fff",
+                        borderRadius: "20px",
+                        fontSize: "0.65rem",
+                        fontWeight: 800,
+                        letterSpacing: "0.05em"
+                      }}
+                    >
+                      {sem.semesterName} SEMESTER
+                    </Box>
+                  )}
+                  <Box sx={{ textAlign: "center" }}>
+                    <Typography variant="body2" sx={{ color: "var(--text-secondary)", fontWeight: 700, mb: 1, fontSize: "0.7rem", textTransform: "uppercase" }}>Total Students Managed</Typography>
+                    <Typography variant="h4" sx={{ color: "var(--color-primary)", fontWeight: 800 }}>{sem.totalMappedStudents}</Typography>
+                  </Box>
+                  <Box sx={{ textAlign: "center" }}>
+                    <Typography variant="body2" sx={{ color: "var(--text-secondary)", fontWeight: 700, mb: 1, fontSize: "0.7rem", textTransform: "uppercase" }}>Students Appeared</Typography>
+                    <Typography variant="h4" sx={{ color: "#f59e0b", fontWeight: 800 }}>{sem.studentsAppeared}</Typography>
+                  </Box>
+                  <Box sx={{ textAlign: "center" }}>
+                    <Typography variant="body2" sx={{ color: "var(--text-secondary)", fontWeight: 700, mb: 1, fontSize: "0.7rem", textTransform: "uppercase" }}>Students Passed</Typography>
+                    <Typography variant="h4" sx={{ color: "#10b981", fontWeight: 800 }}>{sem.studentsPassed}</Typography>
+                  </Box>
+                  <Box sx={{ textAlign: "center" }}>
+                    <Typography variant="body2" sx={{ color: "var(--text-secondary)", fontWeight: 700, mb: 1, fontSize: "0.7rem", textTransform: "uppercase" }}>Pass Percentage</Typography>
+                    <Typography variant="h4" sx={{ color: sem.passPercentage >= 50 ? "#10b981" : "#ef4444", fontWeight: 800 }}>{sem.passPercentage}%</Typography>
+                  </Box>
+                </Box>
+              ))}
             </Box>
+          </Box>
         ) : (
-            <Box
+          <Box
             sx={{
-                textAlign: "center",
-                py: 6,
-                color: "var(--text-secondary)",
-                fontSize: 15,
-                border: "1px dashed var(--border-color)",
-                borderRadius: "16px",
-                background: "var(--bg-glass)"
+              textAlign: "center",
+              py: 6,
+              color: "var(--text-secondary)",
+              fontSize: 15,
+              border: "1px dashed var(--border-color)",
+              borderRadius: "16px",
+              background: "var(--bg-glass)"
             }}
-            >
+          >
             No proctoring mapped students or results available for this selection.
-            </Box>
+          </Box>
         )}
       </Box>
 
@@ -591,25 +591,25 @@ export default function Teaching() {
         </Typography>
 
         {feedbackLoading ? (
-            <Box sx={{ display: "flex", justifyContent: "center", py: 6 }}>
-              <CircularProgress />
-            </Box>
+          <Box sx={{ display: "flex", justifyContent: "center", py: 6 }}>
+            <CircularProgress />
+          </Box>
         ) : feedbackResults.length === 0 ? (
-            <Box
-              sx={{
-                textAlign: "center",
-                py: 6,
-                color: "var(--text-secondary)",
-                fontSize: 15,
-                border: "1px dashed var(--border-color)",
-                borderRadius: "16px",
-                background: "var(--bg-glass)"
-              }}
-            >
-              No feedback results available for this selection.
-            </Box>
+          <Box
+            sx={{
+              textAlign: "center",
+              py: 6,
+              color: "var(--text-secondary)",
+              fontSize: 15,
+              border: "1px dashed var(--border-color)",
+              borderRadius: "16px",
+              background: "var(--bg-glass)"
+            }}
+          >
+            No feedback results available for this selection.
+          </Box>
         ) : (
-            <DataTable columns={feedbackColumns} rows={feedbackRows} />
+          <DataTable columns={feedbackColumns} rows={feedbackRows} />
         )}
       </Box>
 
@@ -626,25 +626,25 @@ export default function Teaching() {
         </Typography>
 
         {coAttainmentLoading ? (
-            <Box sx={{ display: "flex", justifyContent: "center", py: 6 }}>
-              <CircularProgress />
-            </Box>
+          <Box sx={{ display: "flex", justifyContent: "center", py: 6 }}>
+            <CircularProgress />
+          </Box>
         ) : coAttainmentResults.length === 0 ? (
-            <Box
-              sx={{
-                textAlign: "center",
-                py: 6,
-                color: "var(--text-secondary)",
-                fontSize: 15,
-                border: "1px dashed var(--border-color)",
-                borderRadius: "16px",
-                background: "var(--bg-glass)"
-              }}
-            >
-              No CO Attainment results available for this selection.
-            </Box>
+          <Box
+            sx={{
+              textAlign: "center",
+              py: 6,
+              color: "var(--text-secondary)",
+              fontSize: 15,
+              border: "1px dashed var(--border-color)",
+              borderRadius: "16px",
+              background: "var(--bg-glass)"
+            }}
+          >
+            No CO Attainment results available for this selection.
+          </Box>
         ) : (
-            <DataTable columns={coAttainmentColumns} rows={coAttainmentRows} />
+          <DataTable columns={coAttainmentColumns} rows={coAttainmentRows} />
         )}
       </Box>
 
@@ -653,7 +653,7 @@ export default function Teaching() {
         open={discOpen}
         onClose={(refresh) => setDiscOpen(false)}
         academicYears={academicYears}
-        defaultYearId={selectedYearId}
+        defaultYearId={selectedYear?._id}
       />
     </>
   );

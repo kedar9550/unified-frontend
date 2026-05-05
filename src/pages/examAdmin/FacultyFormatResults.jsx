@@ -99,8 +99,12 @@ export default function FacultyFormatResults() {
       );
 
       if (res.data.failedCount > 0) {
-        alert(`Uploaded ${res.data.successCount} rows. ${res.data.failedCount} rows failed. Check console for errors.`);
-        console.error("Upload errors:", res.data.errors);
+        const errorDetails = res.data.errors
+          .map((e) => `• Row ${e.row}: ${e.message}`)
+          .join("\n");
+        alert(
+          `Uploaded ${res.data.successCount} rows.\n${res.data.failedCount} rows failed to upload.\n\nErrors:\n${errorDetails}`
+        );
       } else {
         alert("Upload successful!");
       }
@@ -110,10 +114,11 @@ export default function FacultyFormatResults() {
       const backendError = err.response?.data?.message;
       const backendDetails = err.response?.data?.errors;
 
-      if (backendDetails && Array.isArray(backendDetails)) {
-        alert(
-          `${backendError || "Upload failed"}\n\nErrors:\n${backendDetails.join("\n")}`,
-        );
+      if (Array.isArray(backendDetails)) {
+        const errorDetails = backendDetails
+          .map((e) => (typeof e === 'object' ? `• Row ${e.row || '?'}: ${e.message}` : `• ${e}`))
+          .join("\n");
+        alert(`${backendError || "Upload failed"}\n\nErrors:\n${errorDetails}`);
       } else {
         alert(backendError || "Upload failed. Please check CSV format.");
       }
@@ -126,7 +131,6 @@ export default function FacultyFormatResults() {
   const downloadTemplate = () => {
     const headers = [
       "facultyId",
-      "facultyName",
       "academicYear",
       "program",
       "branch",
@@ -141,7 +145,7 @@ export default function FacultyFormatResults() {
       "section",
     ];
     const sampleRows = [
-      ["FAC123", "John Doe", "2024-2025", "B.Tech", "CSE", "Mathematics", "MA101", "THEORY", "3", "60", "55", "5", "4", "A"],
+      ["FAC123", "2024-2025", "B.Tech", "CSE", "Mathematics", "MA101", "THEORY", "3", "60", "55", "5", "4", "A"],
     ];
     const csvContent = headers.join(",") + "\n" + sampleRows.map(row => row.join(",")).join("\n") + "\n";
     const blob = new Blob([csvContent], { type: "text/csv" });
@@ -294,7 +298,7 @@ export default function FacultyFormatResults() {
               "Course Code",
               "Type",
               "Section",
-              "Semester",
+              "Sem / Year",
               "Appeared",
               "Passed",
               "%",
@@ -352,10 +356,10 @@ export default function FacultyFormatResults() {
               },
 
               {
-                value: r.semester,
+                value: r.semesterDisplay,
                 display: (
                   <Box>
-                    <Box>{r.semester}</Box>
+                    <Box sx={{ fontWeight: 600 }}>{r.semesterDisplay}</Box>
                     <Box sx={{ fontSize: 11, color: "var(--text-secondary)", opacity: 0.8 }}>{r.semesterType}</Box>
                   </Box>
                 ),

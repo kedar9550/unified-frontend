@@ -84,8 +84,14 @@ const Assignedstudents = () => {
         setFilterSemester("");
     };
 
+    const getSemYearHeader = () => {
+        if (hierarchy.programName === "Pharma.D") return "Year";
+        if (hierarchy.programName && hierarchy.programName !== "Pharma.D") return "Semester";
+        return "Sem / Year";
+    };
+
     const columns = [
-        "Roll No", "Name", "Assigned Dept", "Semester", "Program", "Branch", "Email"
+        "Roll No", "Name", "Assigned Dept", getSemYearHeader(), "Program", "Branch", "Email"
     ];
 
     const formattedRows = filteredStudents.map(s => [
@@ -119,8 +125,14 @@ const Assignedstudents = () => {
             )
         },
         {
-            value: s.academicInfo?.semester,
-            display: <Typography variant="body2" sx={{ fontWeight: 600 }}>Sem {s.academicInfo?.semester}</Typography>
+            value: s.academicInfo?.semester || s.academicInfo?.yearName,
+            display: (
+                <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                    {s.academicInfo?.programName === "Pharma.D" 
+                        ? (s.academicInfo?.yearName || "Year —") 
+                        : (s.academicInfo?.semester ? `Sem ${s.academicInfo?.semester}` : "Sem —")}
+                </Typography>
+            )
         },
         s.academicInfo?.programName,
         s.academicInfo?.branch,

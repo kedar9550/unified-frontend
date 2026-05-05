@@ -117,7 +117,7 @@ export const ROLE_ROUTES = {
       icon: <MenuBook />,
       nested: [
         { text: "Faculty Format", path: "/exam-result/faculty-format" },
-        { text: "Unified Upload", path: "/exam-result/unified-upload" },
+
         { text: "Students Format", path: "/exam-result/students-format" },
       ],
     },
