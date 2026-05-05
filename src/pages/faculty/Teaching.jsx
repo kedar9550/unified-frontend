@@ -309,7 +309,7 @@ export default function Teaching() {
     "COURSE NAME",
     "SEM - BRANCH - SEC",
     "NO. OF COs",
-    "NO. OF COs ATTAINMENT TARGET REACHED",
+    "COs ATTAINMENT",
   ];
 
   const coAttainmentRows = coAttainmentResults.map((r, i) => [
