@@ -557,7 +557,7 @@ const UniprimeDashboard = () => {
                       mb: 0.5,
                     }}
                   >
-                    {user?.time ? new Date(user.time).toLocaleDateString() : 'Recently'}
+                    {user?.time ? new Date(user.time).toLocaleDateString("en-IN", { day: '2-digit', month: 'short', year: 'numeric' }) : 'Recently'}
                   </Typography>
 
                 </Box>

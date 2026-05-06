@@ -390,7 +390,7 @@ export default function FacultyFormatResults() {
 
               {
                 value: r.updatedAt,
-                display: new Date(r.updatedAt).toLocaleString(),
+                display: new Date(r.updatedAt).toLocaleString("en-IN"),
               },
             ])}
           />
