@@ -103,7 +103,7 @@ const ExamDashboard = () => {
       {/* Row 1: Summary Cards */}
       <Grid container spacing={2} sx={{ mb: 4 }}>
         {topCards.map((card, i) => (
-          <Grid key={i} xs={12} sm={6} md={4} lg sx={{ flex: "1 1 0", minWidth: 0 }}>
+          <Grid key={i} item xs={12} sm={6} md={4} lg sx={{ flex: "1 1 0", minWidth: 0 }}>
             <Card sx={{ borderRadius: "16px", border: "1px solid var(--border-color)", background: "var(--bg-panel)", boxShadow: "var(--shadow-premium)", p: 2, height: "100%", display: "flex", alignItems: "center", gap: 2}}>
               <Box sx={{ width: 48, height: 48, borderRadius: "14px", display: "flex", alignItems: "center", justifyContent: "center", backgroundColor: card.bgColor, color: card.color, flexShrink: 0 }}>
                 {card.icon}

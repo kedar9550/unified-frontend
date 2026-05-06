@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import {
   Box,
   Button,
@@ -31,6 +31,7 @@ export default function Teaching() {
   // ── Academic Year state ──────────────────────────────────────────
   const [academicYears, setAcademicYears] = useState([]);
   const [selectedYearLabel, setSelectedYearLabel] = useState("");
+  const [selectedSemester, setSelectedSemester] = useState("ALL");
 
   // ── Results state ────────────────────────────────────────────────
   const [results, setResults] = useState([]);
@@ -58,21 +59,29 @@ export default function Teaching() {
   useEffect(() => {
     const fetchYears = async () => {
       try {
+        // Fetch all years for the dropdown
         const res = await API.get("/api/academic-years");
-        
         let years = [];
-        if (Array.isArray(res.data)) {
-          years = res.data;
-        } else if (Array.isArray(res.data.data)) {
-          years = res.data.data;
-        } else if (Array.isArray(res.data.years)) {
-          years = res.data.years;
-        }
-
+        if (Array.isArray(res.data)) years = res.data;
+        else if (Array.isArray(res.data.years)) years = res.data.years;
+        else if (Array.isArray(res.data.data)) years = res.data.data;
         setAcademicYears(years);
-        if (years.length > 0) {
-          const active = years.find((y) => y.isActive) || years[0];
-          setSelectedYearLabel(active.year);
+
+        // Fetch the ACTIVE year specifically to set the default
+        try {
+          const activeRes = await API.get("/api/academic-years/active");
+          if (activeRes.data?.data?.year) {
+            setSelectedYearLabel(activeRes.data.data.year);
+          } else if (years.length > 0) {
+            const active = years.find((y) => y.isActive) || years[0];
+            setSelectedYearLabel(active.year);
+          }
+        } catch (activeErr) {
+          // Fallback if active endpoint fails
+          if (years.length > 0) {
+            const active = years.find((y) => y.isActive) || years[0];
+            setSelectedYearLabel(active.year);
+          }
         }
       } catch (err) {
         console.error("Error fetching academic years:", err);
@@ -80,6 +89,7 @@ export default function Teaching() {
     };
     fetchYears();
   }, []);
+
 
   // 2. Fetch Results for this faculty when filters change
   useEffect(() => {
@@ -91,6 +101,7 @@ export default function Teaching() {
           params: {
             facultyId: user?.institutionId,
             academicYear: selectedYearLabel,
+            semester: selectedSemester === "ALL" ? undefined : selectedSemester,
           },
         });
         setResults(res.data || []);
@@ -128,6 +139,7 @@ export default function Teaching() {
           params: {
             facultyId: user?.institutionId,
             academicYear: selectedYearLabel,
+            semester: selectedSemester === "ALL" ? undefined : selectedSemester,
           },
         });
         setFeedbackResults(res.data || []);
@@ -145,6 +157,7 @@ export default function Teaching() {
           params: {
             facultyId: user?.institutionId,
             academicYear: selectedYearLabel,
+            semester: selectedSemester === "ALL" ? undefined : selectedSemester,
           },
         });
         setCoAttainmentResults(res.data || []);
@@ -160,7 +173,7 @@ export default function Teaching() {
     fetchProctorStats();
     fetchFeedbackStats();
     fetchCoAttainmentStats();
-  }, [selectedYearLabel, user?.institutionId]);
+  }, [selectedYearLabel, user?.institutionId, selectedSemester]);
 
   // ── CSV Upload Handler ────────────────────────────────────────────
   const handleCSVUploadClick = () => {
@@ -254,57 +267,96 @@ export default function Teaching() {
     "PASS %",
   ];
 
-  const rows = results.map((r, i) => [
-    {
-      value: i + 1,
-      display: <Box sx={{ fontWeight: 600 }}>{i + 1}</Box>,
-    },
-
-    {
-      value: r.courseName,
-      display: <Box sx={{ fontWeight: 500 }}>{r.courseName}</Box>,
-    },
-
-    {
-      value: r.courseCode,
-      display: <Box>{r.courseCode}</Box>,
-    },
-
-    {
-      value: r.courseType,
-      display: (
-        <Box sx={{ fontSize: 12, fontWeight: 600, color: "var(--text-secondary)" }}>
-          {r.courseType || "—"}
-        </Box>
-      ),
-    },
-
-    {
-      value: `${r.semesterDisplay || r.semester || "—"} - ${r.branch} - ${r.section}`,
-      display: (
-        <Box sx={{ whiteSpace: "nowrap" }}>
-          <Box component="span" sx={{ fontWeight: 600 }}>{r.semesterDisplay || r.semester || "—"}</Box>
-          {r.branch && <Box component="span" sx={{ color: "var(--text-secondary)" }}> — {r.branch}</Box>}
-          {r.section && <Box component="span" sx={{ color: "var(--color-primary)", fontWeight: 700 }}> — {r.section}</Box>}
-        </Box>
-      ),
-    },
-
-    {
-      value: r.appeared,
-      display: <Box>{r.appeared}</Box>,
-    },
-
-    {
-      value: r.passed,
-      display: <Box>{r.passed}</Box>,
-    },
-
-    {
-      value: r.passPercentage,
-      display: <Box>{Number(r.passPercentage).toFixed(1)}%</Box>,
-    },
-  ]);
+  const rows = results.map((r, i) => {
+    const passPercent = Number(r.passPercentage);
+    const color = passPercent >= 80 ? "#10B981" : passPercent >= 60 ? "#F59E0B" : "#EF4444";
+    const gradient = passPercent >= 80 
+      ? "linear-gradient(90deg, #10B981 0%, #059669 100%)" 
+      : passPercent >= 60 
+        ? "linear-gradient(90deg, #F59E0B 0%, #D97706 100%)" 
+        : "linear-gradient(90deg, #EF4444 0%, #B91C1C 100%)";
+    const textGradient = passPercent >= 80 
+      ? "linear-gradient(135deg, #10B981 0%, #059669 100%)" 
+      : passPercent >= 60 
+        ? "linear-gradient(135deg, #F59E0B 0%, #D97706 100%)" 
+        : "linear-gradient(135deg, #EF4444 0%, #B91C1C 100%)";
+    
+    return [
+      {
+        value: i + 1,
+        display: <Box sx={{ fontWeight: 600 }}>{i + 1}</Box>,
+      },
+      {
+        value: r.courseName,
+        display: (
+          <Box>
+            <Typography sx={{ fontWeight: 700, fontSize: 14, color: "var(--text-primary)" }}>{r.courseName}</Typography>
+            <Typography sx={{ fontSize: 11, color: "var(--text-secondary)", fontWeight: 500 }}>{r.courseCode}</Typography>
+          </Box>
+        ),
+      },
+      {
+        value: r.courseCode,
+        display: <Box sx={{ fontWeight: 600, color: "var(--text-secondary)" }}>{r.courseCode}</Box>,
+      },
+      {
+        value: r.courseType,
+        display: (
+          <Box sx={{ px: 1.2, py: 0.5, borderRadius: '8px', bgcolor: 'var(--bg-glass)', border: '1px solid var(--border-color)', fontSize: 10, fontWeight: 800, color: "var(--text-primary)", display: 'inline-block' }}>
+            {r.courseType?.toUpperCase() || "—"}
+          </Box>
+        ),
+      },
+      {
+        value: `${r.semesterDisplay || r.semester || "—"} - ${r.branch} - ${r.section}`,
+        display: (
+          <Box sx={{ whiteSpace: "nowrap" }}>
+            <Typography sx={{ fontWeight: 700, fontSize: 13, color: "var(--text-primary)" }}>{r.semesterDisplay || r.semester || "—"}</Typography>
+            <Box sx={{ display: 'flex', gap: 1, mt: 0.5 }}>
+              <Typography sx={{ fontSize: 11, color: "var(--text-secondary)", fontWeight: 600 }}>{r.branch}</Typography>
+              <Typography sx={{ fontSize: 11, color: "var(--color-primary)", fontWeight: 800 }}>• SEC {r.section}</Typography>
+            </Box>
+          </Box>
+        ),
+      },
+      {
+        value: r.appeared,
+        display: (
+          <Box sx={{ textAlign: 'center' }}>
+            <Typography sx={{ fontSize: 16, fontWeight: 800, color: "var(--text-primary)" }}>{r.appeared}</Typography>
+          </Box>
+        ),
+      },
+      {
+        value: r.passed,
+        display: (
+          <Box sx={{ textAlign: 'center' }}>
+            <Typography sx={{ fontSize: 16, fontWeight: 800, color: "#10B981" }}>{r.passed}</Typography>
+          </Box>
+        ),
+      },
+      {
+        value: passPercent,
+        display: (
+          <Box sx={{ textAlign: 'center', minWidth: 100 }}>
+            <Typography sx={{ 
+                fontSize: 18, fontWeight: 900, 
+                background: textGradient,
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: "transparent",
+                lineHeight: 1 
+            }}>
+              {passPercent.toFixed(1)}%
+            </Typography>
+            <Box sx={{ mt: 1, height: 8, bgcolor: 'var(--border-color)', borderRadius: 4, overflow: 'hidden', border: '1px solid var(--border-color)', position: 'relative' }}>
+              <Box sx={{ width: `${passPercent}%`, height: '100%', background: gradient, borderRadius: 4, transition: 'width 1s ease-in-out' }} />
+              <Box sx={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '50%', background: 'linear-gradient(180deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0) 100%)' }} />
+            </Box>
+          </Box>
+        ),
+      },
+    ];
+  });
 
   // ── Build Feedback DataTable rows ─────────────────────────────────────────
   const feedbackColumns = [
@@ -317,71 +369,102 @@ export default function Teaching() {
     "OVERALL %",
   ];
 
-  const feedbackRows = feedbackResults.map((r, i) => [
-    {
-      value: i + 1,
-      display: <Box sx={{ fontWeight: 600 }}>{i + 1}</Box>,
-    },
-    {
-      value: r.subjectName,
-      display: (
-        <Box>
-            <Box sx={{ fontWeight: 700, fontSize: 14 }}>{r.subjectName}</Box>
-            <Box sx={{ fontSize: 11, color: "var(--text-secondary)", fontWeight: 500 }}>{r.subjectCode}</Box>
-        </Box>
-      ),
-    },
-    {
-      value: `${r.semesterDisplay || "—"} - ${r.branch || "—"} - ${r.section || "—"}`,
-      display: (
-        <Box sx={{ whiteSpace: "nowrap" }}>
-          <Box component="span" sx={{ fontWeight: 700, color: "var(--text-primary)" }}>{r.semesterDisplay || "—"}</Box>
-          {r.branch && <Box component="span" sx={{ color: "var(--text-secondary)", fontSize: 12 }}> — {r.branch}</Box>}
-          {r.section && <Box component="span" sx={{ color: "var(--color-primary)", fontWeight: 800 }}> — {r.section}</Box>}
-        </Box>
-      ),
-    },
-    {
-      value: r.phase,
-      display: (
-        <Box sx={{ 
-            px: 1.5, py: 0.3, borderRadius: "20px", 
-            background: r.phase === 1 ? "rgba(245, 158, 11, 0.1)" : "rgba(139, 92, 246, 0.1)",
-            color: r.phase === 1 ? "#d97706" : "#7c3aed",
-            fontSize: 10, fontWeight: 900, textAlign: "center", display: "inline-block"
-        }}>
-            PH {r.phase || "—"}
-        </Box>
-      ),
-    },
-    {
-      value: `${r.givenStudents} / ${r.totalStudents}`,
-      display: (
-        <Box sx={{ fontWeight: 700 }}>
-          {r.givenStudents} <span style={{ color: "#999", fontWeight: 400 }}>/</span> {r.totalStudents}
-        </Box>
-      ),
-    },
-    {
-      value: r.percentage,
-      display: (
-        <Box sx={{ fontWeight: 800, color: "var(--color-primary)", fontSize: 15 }}>
-          {Number(r.percentage).toFixed(1)}%
-        </Box>
-      ),
-    },
-    {
-      value: r.overallPercentage,
-      display: (
-        <Box sx={{ 
-            fontWeight: 800, color: "#10b981", fontSize: 15,
-            display: "flex", alignItems: "center", gap: 0.5
-        }}>
-          {Number(r.overallPercentage).toFixed(1)}%
-        </Box>
-      ),
-    },
-  ]);
+  const feedbackRows = feedbackResults.map((r, i) => {
+    const feedbackPercent = Number(r.overallPercentage);
+    const color = feedbackPercent >= 90 ? "#10B981" : feedbackPercent >= 75 ? "#3B82F6" : feedbackPercent >= 60 ? "#F59E0B" : "#EF4444";
+    const gradient = feedbackPercent >= 90 
+      ? "linear-gradient(90deg, #10B981 0%, #059669 100%)"
+      : feedbackPercent >= 75
+        ? "linear-gradient(90deg, #3B82F6 0%, #2563EB 100%)"
+        : feedbackPercent >= 60
+          ? "linear-gradient(90deg, #F59E0B 0%, #D97706 100%)"
+          : "linear-gradient(90deg, #EF4444 0%, #B91C1C 100%)";
+    const textGradient = feedbackPercent >= 90
+      ? "linear-gradient(135deg, #10B981 0%, #059669 100%)"
+      : feedbackPercent >= 75
+        ? "linear-gradient(135deg, #3B82F6 0%, #2563EB 100%)"
+        : feedbackPercent >= 60
+          ? "linear-gradient(135deg, #F59E0B 0%, #D97706 100%)"
+          : "linear-gradient(135deg, #EF4444 0%, #B91C1C 100%)";
+    
+    return [
+      {
+        value: i + 1,
+        display: <Box sx={{ fontWeight: 600 }}>{i + 1}</Box>,
+      },
+      {
+        value: r.subjectName,
+        display: (
+          <Box>
+            <Typography sx={{ fontWeight: 700, fontSize: 14, color: "var(--text-primary)" }}>{r.subjectName}</Typography>
+            <Typography sx={{ fontSize: 11, color: "var(--text-secondary)", fontWeight: 500 }}>{r.subjectCode}</Typography>
+          </Box>
+        ),
+      },
+      {
+        value: `${r.semesterDisplay || "—"} - ${r.branch || "—"} - ${r.section || "—"}`,
+        display: (
+          <Box sx={{ whiteSpace: "nowrap" }}>
+            <Typography sx={{ fontWeight: 700, fontSize: 13, color: "var(--text-primary)" }}>{r.semesterDisplay || "—"}</Typography>
+            <Box sx={{ display: 'flex', gap: 1, mt: 0.5 }}>
+              <Typography sx={{ fontSize: 11, color: "var(--text-secondary)", fontWeight: 600 }}>{r.branch}</Typography>
+              <Typography sx={{ fontSize: 11, color: "var(--color-primary)", fontWeight: 800 }}>• SEC {r.section}</Typography>
+            </Box>
+          </Box>
+        ),
+      },
+      {
+        value: r.phase,
+        display: (
+          <Box sx={{ 
+              px: 1.5, py: 0.3, borderRadius: "20px", 
+              background: r.phase === 1 ? "rgba(245, 158, 11, 0.1)" : "rgba(139, 92, 246, 0.1)",
+              color: r.phase === 1 ? "#d97706" : "#7c3aed",
+              fontSize: 10, fontWeight: 900, textAlign: "center", display: "inline-block"
+          }}>
+              PH {r.phase || "—"}
+          </Box>
+        ),
+      },
+      {
+        value: r.givenStudents,
+        display: (
+          <Box sx={{ textAlign: 'center' }}>
+            <Typography sx={{ fontSize: 16, fontWeight: 800, color: "var(--text-primary)" }}>{r.givenStudents}</Typography>
+            <Typography sx={{ fontSize: 10, color: "var(--text-secondary)", fontWeight: 700 }}>OF {r.totalStudents}</Typography>
+          </Box>
+        ),
+      },
+      {
+        value: r.percentage,
+        display: (
+          <Box sx={{ textAlign: 'center' }}>
+            <Typography sx={{ fontSize: 16, fontWeight: 800, color: "var(--text-secondary)" }}>{Number(r.percentage).toFixed(1)}%</Typography>
+          </Box>
+        ),
+      },
+      {
+        value: feedbackPercent,
+        display: (
+          <Box sx={{ textAlign: 'center', minWidth: 100 }}>
+            <Typography sx={{ 
+                fontSize: 20, fontWeight: 900, 
+                background: textGradient,
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: "transparent",
+                lineHeight: 1 
+            }}>
+              {feedbackPercent.toFixed(1)}%
+            </Typography>
+            <Box sx={{ mt: 1, height: 8, bgcolor: 'var(--border-color)', borderRadius: 4, overflow: 'hidden', border: '1px solid var(--border-color)', position: 'relative' }}>
+              <Box sx={{ width: `${feedbackPercent}%`, height: '100%', background: gradient, borderRadius: 4, transition: 'width 1s ease-in-out' }} />
+              <Box sx={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '50%', background: 'linear-gradient(180deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 100%)' }} />
+            </Box>
+          </Box>
+        ),
+      },
+    ];
+  });
 
   // ── Build CO Attainment DataTable rows ─────────────────────────────────────────
   const coAttainmentColumns = [
@@ -390,45 +473,202 @@ export default function Teaching() {
     "SEM - BRANCH - SEC",
     "NO. OF COs",
     "COs ATTAINMENT",
+    "ATTAINMENT %",
   ];
 
-  const coAttainmentRows = coAttainmentResults.map((r, i) => [
-    {
-      value: i + 1,
-      display: <Box sx={{ fontWeight: 600 }}>{i + 1}</Box>,
-    },
-    {
-      value: r.courseName,
-      display: (
-        <Box>
-          <Box sx={{ fontWeight: 500 }}>{r.courseName}</Box>
-          <Box sx={{ fontSize: 11, color: "#999" }}>{r.courseCode}</Box>
-        </Box>
-      ),
-    },
-    {
-      value: `${r.semesterDisplay || r.semester || "—"} - ${r.branch} - ${r.section}`,
-      display: (
-        <Box>
-          <Box component="span" sx={{ fontWeight: 600 }}>{r.semesterDisplay || r.semester || "—"}</Box>
-          {r.branch && <Box component="span"> — {r.branch}</Box>}
-          {r.section && <Box component="span" sx={{ color: "var(--color-primary)", fontWeight: 700 }}> — {r.section}</Box>}
-        </Box>
-      ),
-    },
-    {
-      value: r.noOfCos,
-      display: <Box sx={{ fontWeight: 600, textAlign: "center" }}>{r.noOfCos}</Box>,
-    },
-    {
-      value: r.noOfCosAttained,
-      display: (
-        <Box sx={{ fontWeight: 600, color: r.noOfCosAttained >= r.noOfCos ? "#10b981" : "#f59e0b", textAlign: "center" }}>
-          {r.noOfCosAttained} / {r.noOfCos}
-        </Box>
-      ),
-    },
-  ]);
+  const coAttainmentRows = coAttainmentResults.map((r, i) => {
+    const attainmentPercent = r.noOfCos > 0 ? (r.noOfCosAttained / r.noOfCos) * 100 : 0;
+    const color = attainmentPercent >= 80 ? "#10B981" : attainmentPercent >= 60 ? "#F59E0B" : "#EF4444";
+    const gradient = attainmentPercent >= 80 
+      ? "linear-gradient(90deg, #10B981 0%, #059669 100%)" 
+      : attainmentPercent >= 60 
+        ? "linear-gradient(90deg, #F59E0B 0%, #D97706 100%)" 
+        : "linear-gradient(90deg, #EF4444 0%, #B91C1C 100%)";
+    const textGradient = attainmentPercent >= 80 
+      ? "linear-gradient(135deg, #10B981 0%, #059669 100%)" 
+      : attainmentPercent >= 60 
+        ? "linear-gradient(135deg, #F59E0B 0%, #D97706 100%)" 
+        : "linear-gradient(135deg, #EF4444 0%, #B91C1C 100%)";
+    
+    return [
+      {
+        value: i + 1,
+        display: <Box sx={{ fontWeight: 600 }}>{i + 1}</Box>,
+      },
+      {
+        value: r.courseName,
+        display: (
+          <Box>
+            <Typography sx={{ fontWeight: 700, fontSize: 14, color: "var(--text-primary)" }}>{r.courseName}</Typography>
+            <Typography sx={{ fontSize: 11, color: "var(--text-secondary)", fontWeight: 500 }}>{r.courseCode}</Typography>
+          </Box>
+        ),
+      },
+      {
+        value: `${r.semesterDisplay || r.semester || "—"} - ${r.branch} - ${r.section}`,
+        display: (
+          <Box sx={{ whiteSpace: "nowrap" }}>
+            <Typography sx={{ fontWeight: 700, fontSize: 13, color: "var(--text-primary)" }}>{r.semesterDisplay || r.semester || "—"}</Typography>
+            <Box sx={{ display: 'flex', gap: 1, mt: 0.5 }}>
+              <Typography sx={{ fontSize: 11, color: "var(--text-secondary)", fontWeight: 600 }}>{r.branch}</Typography>
+              <Typography sx={{ fontSize: 11, color: "var(--color-primary)", fontWeight: 800 }}>• SEC {r.section}</Typography>
+            </Box>
+          </Box>
+        ),
+      },
+      {
+        value: r.noOfCos,
+        display: (
+          <Box sx={{ textAlign: 'center' }}>
+            <Typography sx={{ fontSize: 18, fontWeight: 800, color: "var(--text-primary)" }}>{r.noOfCos}</Typography>
+          </Box>
+        ),
+      },
+      {
+        value: r.noOfCosAttained,
+        display: (
+          <Box sx={{ textAlign: 'center' }}>
+            <Typography sx={{ fontSize: 18, fontWeight: 800, color: "#10B981" }}>{r.noOfCosAttained}</Typography>
+          </Box>
+        ),
+      },
+      {
+        value: attainmentPercent,
+        display: (
+          <Box sx={{ textAlign: 'center', minWidth: 100 }}>
+            <Typography sx={{ 
+                fontSize: 20, fontWeight: 900, 
+                background: textGradient,
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: "transparent",
+                lineHeight: 1 
+            }}>
+              {attainmentPercent.toFixed(1)}%
+            </Typography>
+            <Box sx={{ mt: 1, height: 8, bgcolor: 'var(--border-color)', borderRadius: 4, overflow: 'hidden', border: '1px solid var(--border-color)', position: 'relative' }}>
+              <Box sx={{ width: `${attainmentPercent}%`, height: '100%', background: gradient, borderRadius: 4, transition: 'width 1s ease-in-out' }} />
+              <Box sx={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '50%', background: 'linear-gradient(180deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 100%)' }} />
+            </Box>
+          </Box>
+        ),
+      },
+    ];
+  });
+
+  // ── Build Proctoring DataTable rows ─────────────────────────────────────────
+  const proctorColumns = [
+    "S.NO",
+    "SEMESTER PERIOD",
+    "TOTAL",
+    "APPEARED",
+    "PASSED",
+    "FAILED",
+    "PASS %",
+  ];
+
+  const proctorRows = (() => {
+    if (!proctorStats?.details) return [];
+    const aggregated = proctorStats.details
+      .filter(d => selectedSemester === "ALL" || d.semesterType === selectedSemester)
+      .reduce((acc, curr) => {
+      const type = curr.semesterType === "ODD" ? "ODD SEMESTER" : curr.semesterType === "EVEN" ? "EVEN SEMESTER" : "OTHER";
+      if (!acc[type]) {
+        acc[type] = { label: type, totalMapped: 0, appeared: 0, passed: 0, failed: 0 };
+      }
+      acc[type].totalMapped += (curr.totalMappedStudents || 0);
+      acc[type].appeared += (curr.studentsAppeared || 0);
+      acc[type].passed += (curr.studentsPassed || 0);
+      acc[type].failed += (curr.studentsAppeared || 0) - (curr.studentsPassed || 0);
+      return acc;
+    }, {});
+
+    return Object.values(aggregated).map((row, i) => {
+      const passPercent = row.appeared > 0 ? Math.round((row.passed / row.appeared) * 100) : 0;
+      const color = passPercent >= 80 ? "#10B981" : passPercent >= 60 ? "#F59E0B" : "#EF4444";
+      const gradient = passPercent >= 80 
+        ? "linear-gradient(90deg, #10B981 0%, #059669 100%)" 
+        : passPercent >= 60 
+          ? "linear-gradient(90deg, #F59E0B 0%, #D97706 100%)" 
+          : "linear-gradient(90deg, #EF4444 0%, #B91C1C 100%)";
+      const textGradient = passPercent >= 80 
+        ? "linear-gradient(135deg, #10B981 0%, #059669 100%)" 
+        : passPercent >= 60 
+          ? "linear-gradient(135deg, #F59E0B 0%, #D97706 100%)" 
+          : "linear-gradient(135deg, #EF4444 0%, #B91C1C 100%)";
+      
+      return [
+        {
+          value: i + 1,
+          display: <Box sx={{ fontWeight: 600 }}>{i + 1}</Box>,
+        },
+        {
+          value: row.label,
+          display: <Typography sx={{ fontWeight: 800, fontSize: 15, color: "var(--text-primary)" }}>{row.label}</Typography>,
+        },
+        {
+          value: row.totalMapped,
+          display: (
+            <Box sx={{ textAlign: 'center' }}>
+              <Typography sx={{ fontSize: 22, fontWeight: 800, color: "#3B82F6", lineHeight: 1 }}>{row.totalMapped}</Typography>
+              <Typography sx={{ fontSize: 10, color: "var(--text-secondary)", fontWeight: 700, mt: 0.5 }}>STUDENTS</Typography>
+            </Box>
+          ),
+        },
+        {
+          value: row.appeared,
+          display: (
+            <Box sx={{ textAlign: 'center' }}>
+              <Typography sx={{ fontSize: 22, fontWeight: 800, color: "#8B5CF6", lineHeight: 1 }}>{row.appeared}</Typography>
+              <Typography sx={{ fontSize: 10, color: "var(--text-secondary)", fontWeight: 700, mt: 0.5 }}>STUDENTS</Typography>
+            </Box>
+          ),
+        },
+        {
+          value: row.passed,
+          display: (
+            <Box sx={{ textAlign: 'center' }}>
+              <Typography sx={{ fontSize: 22, fontWeight: 800, color: "#10B981", lineHeight: 1 }}>{row.passed}</Typography>
+              <Box sx={{ mt: 0.5, px: 1, py: 0.2, borderRadius: '10px', bgcolor: 'rgba(16, 185, 129, 0.1)', color: '#10B981', fontWeight: 800, fontSize: 10 }}>
+                PASSED
+              </Box>
+            </Box>
+          ),
+        },
+        {
+          value: row.failed,
+          display: (
+            <Box sx={{ textAlign: 'center' }}>
+              <Typography sx={{ fontSize: 22, fontWeight: 800, color: "#EF4444", lineHeight: 1 }}>{row.failed}</Typography>
+              <Box sx={{ mt: 0.5, px: 1, py: 0.2, borderRadius: '10px', bgcolor: 'rgba(239, 68, 68, 0.1)', color: '#EF4444', fontWeight: 800, fontSize: 10 }}>
+                FAILED
+              </Box>
+            </Box>
+          ),
+        },
+        {
+          value: passPercent,
+          display: (
+            <Box sx={{ textAlign: 'center', minWidth: 120 }}>
+              <Typography sx={{ 
+                  fontSize: 22, fontWeight: 900, 
+                  background: textGradient,
+                  WebkitBackgroundClip: "text",
+                  WebkitTextFillColor: "transparent",
+                  lineHeight: 1 
+              }}>
+                {passPercent}%
+              </Typography>
+              <Box sx={{ mt: 1, height: 8, bgcolor: 'var(--border-color)', borderRadius: 4, overflow: 'hidden', border: '1px solid var(--border-color)', position: 'relative' }}>
+                <Box sx={{ width: `${passPercent}%`, height: '100%', background: gradient, borderRadius: 4, transition: 'width 1s ease-in-out' }} />
+                <Box sx={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '50%', background: 'linear-gradient(180deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0) 100%)' }} />
+              </Box>
+              <Typography sx={{ fontSize: 10, color: "var(--text-secondary)", fontWeight: 700, mt: 0.5 }}>({row.passed}/{row.appeared})</Typography>
+            </Box>
+          ),
+        },
+      ];
+    });
+  })();
 
   return (
     <>
@@ -445,6 +685,7 @@ export default function Teaching() {
               borderRadius: "20px",
               px: 3,
               py: 1,
+              mr: 8,
               textTransform: "none",
               fontWeight: 600,
               fontSize: 14,
@@ -493,6 +734,7 @@ export default function Teaching() {
           </Select>
         </Box>
 
+
         {/* Active year pill */}
         {selectedYear && (
           <Box
@@ -500,7 +742,7 @@ export default function Teaching() {
               px: 3,
               py: 0.8,
               borderRadius: "50px",
-              background: "var(--gradient-primary)", // Premium dark blue gradient
+              background: "var(--gradient-primary)", 
               color: "#fff",
               fontSize: 13,
               fontWeight: 700,
@@ -508,7 +750,7 @@ export default function Teaching() {
               letterSpacing: "0.5px"
             }}
           >
-            {selectedYear.year} — All Semesters
+            {selectedYear.year} — {selectedSemester === "ALL" ? "All Semesters" : `${selectedSemester} Semester`}
           </Box>
         )}
       </Box>
@@ -552,19 +794,11 @@ export default function Teaching() {
       <Box sx={sectionCard}>
         <SectionHeader title="SECTION : Proctoring" />
 
-        <Typography
-          variant="h6"
-          fontWeight={700}
-          sx={{ mb: 2, color: "var(--text-primary)", fontSize: 16 }}
-        >
-          Proctoring Average Pass Percentage
-        </Typography>
-
         {proctorLoading ? (
           <Box sx={{ display: "flex", justifyContent: "center", py: 5 }}>
             <CircularProgress size={32} />
           </Box>
-        ) : !proctorStats ? (
+        ) : proctorRows.length === 0 ? (
           <Box
             sx={{
               textAlign: "center",
@@ -580,152 +814,10 @@ export default function Teaching() {
             No proctoring data available for this selection.
           </Box>
         ) : (
-          <Box>
-            {/* Main stat grid */}
-            <Grid container spacing={2} sx={{ mb: 3 }}>
-              {proctorStatItems.map((stat, i) => (
-                <Grid item xs={6} sm={3} key={i}>
-                  <Box
-                    sx={{
-                      p: 2,
-                      borderRadius: "14px",
-                      background: "var(--bg-glass)",
-                      border: "1px solid var(--border-color)",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 1.5,
-                    }}
-                  >
-                    <Box
-                      sx={{
-                        width: 38,
-                        height: 38,
-                        borderRadius: "10px",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        background: "var(--bg-accent-1)",
-                        flexShrink: 0,
-                      }}
-                    >
-                      {stat.icon}
-                    </Box>
-                    <Box>
-                      <Typography
-                        sx={{
-                          fontSize: 22,
-                          fontWeight: 800,
-                          color: "var(--text-primary)",
-                          lineHeight: 1.1,
-                        }}
-                      >
-                        {stat.value}
-                      </Typography>
-                      <Typography
-                        sx={{
-                          fontSize: 12,
-                          color: "var(--text-secondary)",
-                          fontWeight: 500,
-                        }}
-                      >
-                        {stat.label}
-                      </Typography>
-                    </Box>
-                  </Box>
-                </Grid>
-              ))}
-            </Grid>
-
-            {/* Pass percentage bar */}
-            <Box
-              sx={{
-                p: 2.5,
-                borderRadius: "14px",
-                background: "var(--bg-glass)",
-                border: "1px solid var(--border-color)",
-              }}
-            >
-              <Box
-                sx={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  mb: 1.5,
-                }}
-              >
-                <Typography
-                  sx={{
-                    fontWeight: 700,
-                    fontSize: 14,
-                    color: "var(--text-primary)",
-                  }}
-                >
-                  Overall Pass Percentage
-                </Typography>
-                <Typography
-                  sx={{ fontWeight: 800, fontSize: 22, color: passColor }}
-                >
-                  {passPercent}%
-                </Typography>
-              </Box>
-
-              {/* Progress bar */}
-              <Box
-                sx={{
-                  height: 10,
-                  borderRadius: 5,
-                  background: "var(--border-color)",
-                  overflow: "hidden",
-                }}
-              >
-                <Box
-                  sx={{
-                    height: "100%",
-                    width: `${Math.min(passPercent, 100)}%`,
-                    borderRadius: 5,
-                    background: passColor,
-                    transition: "width 0.8s ease",
-                  }}
-                />
-              </Box>
-
-              {/* Per-period breakdown (if multiple periods) */}
-              {proctorStats.details && proctorStats.details.length > 1 && (
-                <Box sx={{ mt: 2.5 }}>
-                  <Typography
-                    sx={{
-                      fontSize: 12,
-                      fontWeight: 700,
-                      color: "var(--text-secondary)",
-                      textTransform: "uppercase",
-                      letterSpacing: "0.05em",
-                      mb: 1.5,
-                    }}
-                  >
-                    By Semester Period
-                  </Typography>
-                  <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
-                    {proctorStats.details.map((d, i) => (
-                      <Chip
-                        key={i}
-                        label={`${d.periodLabel || d.semesterName}: ${d.passPercentage}% (${d.studentsPassed}/${d.studentsAppeared})`}
-                        size="small"
-                        sx={{
-                          fontWeight: 600,
-                          fontSize: 12,
-                          bgcolor: "var(--bg-accent-1)",
-                          color: "var(--text-primary)",
-                          border: "1px solid var(--border-color)",
-                        }}
-                      />
-                    ))}
-                  </Box>
-                </Box>
-              )}
-            </Box>
-          </Box>
+          <DataTable columns={proctorColumns} rows={proctorRows} />
         )}
       </Box>
+
 
       {/* ── SECTION : Feedback ────────────────────────────── */}
       <Box sx={sectionCard}>
@@ -832,3 +924,12 @@ const sectionCard = {
   border: "1px solid var(--border-color)",
   mb: 3,
 };
+
+const tableHeaderStyle = {
+  fontSize: 12,
+  fontWeight: 800,
+  color: "var(--text-secondary)",
+  letterSpacing: "0.08em",
+  textTransform: "uppercase",
+};
+

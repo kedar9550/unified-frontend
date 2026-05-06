@@ -126,21 +126,24 @@ export default function DataTable({ columns, rows, toolbarLeft }) {
                 fontSize: "0.75rem",
                 textTransform: "uppercase",
                 letterSpacing: "0.08em",
-                py: 1.8,
+                py: 2,
                 px: 3,
                 userSelect: "none",
                 transition: "all 0.3s ease",
-                background: "transparent", // Make individual cells transparent
                 cursor: "pointer",
+                borderRight: "1px solid rgba(255, 255, 255, 0.1)",
+                "&:last-of-type": {
+                  borderRight: "none",
+                },
                 "&:hover": {
-                  background: "rgba(255, 255, 255, 0.1)", // Brighter highlight on hover
+                  background: "rgba(255, 255, 255, 0.05)",
                 },
               },
             }}
           >
             <TableRow
               sx={{
-                background: "var(--gradient-primary)", // Premium dark blue gradient
+                background: "var(--gradient-primary)",
                 borderRadius: "12px 12px 0 0",
               }}
             >
@@ -151,6 +154,7 @@ export default function DataTable({ columns, rows, toolbarLeft }) {
                   sx={{
                     "&:first-of-type": {
                       borderTopLeftRadius: "12px",
+                      bgcolor: "rgba(0,0,0,0.1)", // Slightly darker first column header
                     },
                     "&:last-of-type": {
                       borderTopRightRadius: "12px",
@@ -178,6 +182,7 @@ export default function DataTable({ columns, rows, toolbarLeft }) {
               ))}
             </TableRow>
           </TableHead>
+
 
           {/* BODY */}
           <TableBody>
