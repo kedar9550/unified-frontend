@@ -44,10 +44,7 @@ const STATUS_CONFIG = {
 };
 
 const SECTION_LABEL = {
-  TEACHING:   "📚 Teaching",
-  PROCTORING: "👁️ Proctoring",
   FEEDBACK:   "💬 Feedback",
-  OTHER:      "📎 Other",
 };
 
 export default function FeedbackDiscrepancies() {
@@ -242,6 +239,12 @@ export default function FeedbackDiscrepancies() {
       formData.append("status", "RESOLVED");
       formData.append("resolutionNote", `Edited ${editedRows.length} feedback record(s), added ${newRows.length} new record(s).`);
 
+      // Ensure academic identifiers are passed to satisfy backend validation
+      const yearId = selected.academicYearId?._id || selected.academicYearId;
+      const semId = selected.semesterTypeId?._id || selected.semesterTypeId;
+      if (yearId) formData.append("academicYearId", yearId);
+      if (semId) formData.append("semesterTypeId", semId);
+
       await API.put(`/api/discrepancies/${selected._id}`, formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
@@ -271,9 +274,14 @@ export default function FeedbackDiscrepancies() {
 
     setRejecting(true);
     try {
+      const yearId = rejectItem.academicYearId?._id || rejectItem.academicYearId;
+      const semId = rejectItem.semesterTypeId?._id || rejectItem.semesterTypeId;
+      
       await API.put(`/api/discrepancies/${rejectItem._id}`, {
         status: "REJECTED",
         rejectionNote: rejectNote.trim(),
+        academicYearId: yearId,
+        semesterTypeId: semId,
       });
       setRejectDone(true);
       setTimeout(() => {
@@ -357,7 +365,7 @@ export default function FeedbackDiscrepancies() {
             <Table sx={{ minWidth: 900 }}>
               <TableHead sx={{ background: "var(--gradient-primary)" }}>
                 <TableRow>
-                  {["#", "Faculty", "Year / Period", "Section", "Note", "Raised At", "Status", "Action"].map(col => (
+                  {["#", "Faculty", "Year / Period", "Note", "Raised At", "Status", "Action"].map(col => (
                     <TableCell key={col} sx={{ color: "#fff", fontWeight: 700, fontSize: 13, py: 2 }}>
                       {col}
                     </TableCell>
@@ -399,20 +407,7 @@ export default function FeedbackDiscrepancies() {
                         />
                       </TableCell>
 
-                      <TableCell>
-                        <Box
-                          sx={{
-                            px: 1.5, py: 0.4, borderRadius: "10px",
-                            background: "var(--bg-glass)", border: "1px solid var(--border-color)",
-                            fontSize: 12, fontWeight: 700, color: "var(--text-primary)",
-                            display: "inline-block",
-                          }}
-                        >
-                          {SECTION_LABEL[item.section] || item.section}
-                        </Box>
-                      </TableCell>
-
-                      <TableCell sx={{ maxWidth: 220 }}>
+                      <TableCell sx={{ maxWidth: 300 }}>
                         <Tooltip title={item.note} placement="top">
                           <Typography
                             fontSize={13}
@@ -501,7 +496,7 @@ export default function FeedbackDiscrepancies() {
                             <Tooltip title="Download Proof">
                               <IconButton
                                 size="small"
-                                href={`${import.meta.env.VITE_API_URL || "http://localhost:3000"}/uploads/discrepancies/${item.proofDocument}`}
+                                href={`${import.meta.env.VITE_BACKEND_URL}/uploads/discrepancies/${item.proofDocument}`}
                                 target="_blank"
                                 sx={{ background: "var(--bg-glass)", border: "1px solid var(--border-color)" }}
                               >
@@ -580,7 +575,7 @@ export default function FeedbackDiscrepancies() {
                       {selected.academicYearId?.year} — {selected.semester ? `Sem/Year ${selected.semester}` : selected.semesterTypeId?.name}
                     </Typography>
                     <Box sx={{ mt: 1, px: 2, py: 0.5, borderRadius: "10px", background: "var(--bg-panel)", border: "1px solid var(--border-color)", fontSize: 12, fontWeight: 700, display: "inline-block", color: "var(--text-primary)" }}>
-                      {SECTION_LABEL[selected.section]}
+                      💬 Feedback
                     </Box>
                   </Box>
                 </Box>
