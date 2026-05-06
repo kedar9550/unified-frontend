@@ -30,12 +30,7 @@ import {
   PersonOff,
   CalendarMonth,
   Visibility,
-  SupervisorAccount,
-  PeopleAlt,
 } from "@mui/icons-material";
-import CheckCircleOutlinedIcon from "@mui/icons-material/CheckCircleOutlined";
-import CancelOutlinedIcon from "@mui/icons-material/CancelOutlined";
-import CancelIcon from "@mui/icons-material/Cancel";
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
 import API from "../../api/axios";
 import { useAuth } from "../../context/AuthContext";
@@ -43,9 +38,6 @@ import { useAuth } from "../../context/AuthContext";
 const FacultyDashboard = () => {
   const { user } = useAuth();
 
-  // ── Proctor Stats State ──────────────────────────────────────────────────
-  const [proctorStats, setProctorStats] = useState(null);
-  const [proctorLoading, setProctorLoading] = useState(false);
   const [academicYears, setAcademicYears] = useState([]);
   const [selectedYear, setSelectedYear] = useState("");
 
@@ -89,28 +81,7 @@ const FacultyDashboard = () => {
     fetchYears();
   }, []);
 
-  // Fetch proctor pass percentage whenever faculty or year changes
-  useEffect(() => {
-    const fetchProctorStats = async () => {
-      if (!user?.institutionId || !selectedYear) return;
-      setProctorLoading(true);
-      try {
-        const res = await API.get("/api/student-results/proctor-results", {
-          params: {
-            facultyId: user.institutionId,
-            academicYear: selectedYear,
-          },
-        });
-        setProctorStats(res.data);
-      } catch (err) {
-        console.error("Failed to fetch proctor stats:", err);
-        setProctorStats(null);
-      } finally {
-        setProctorLoading(false);
-      }
-    };
-    fetchProctorStats();
-  }, [user, selectedYear]);
+
 
   // ── Static Data (to be wired up later) ───────────────────────────────────
   const topCards = [
@@ -172,36 +143,7 @@ const FacultyDashboard = () => {
     { code: "MA502", name: "Operations Research", branch: "CSE", sem: "9", students: 40 },
   ];
 
-  // ── Proctor Summary Card UI ───────────────────────────────────────────────
-  const proctorStatItems = proctorStats
-    ? [
-      {
-        label: "Total Mapped",
-        value: proctorStats.totalMappedStudents,
-        icon: <PeopleAlt sx={{ fontSize: 20, color: "#3B82F6" }} />,
-      },
-      {
-        label: "Appeared",
-        value: proctorStats.studentsAppeared,
-        icon: <SupervisorAccount sx={{ fontSize: 20, color: "#8B5CF6" }} />,
-      },
-      {
-        label: "Passed",
-        value: proctorStats.studentsPassed,
-        icon: <CheckCircleOutlinedIcon sx={{ fontSize: 20, color: "#10B981" }} />,
-      },
-      {
-        label: "Failed",
-        value:
-          proctorStats.studentsAppeared - proctorStats.studentsPassed,
-        icon: <CancelOutlinedIcon sx={{ fontSize: 20, color: "#EF4444" }} />,
-      },
-    ]
-    : [];
 
-  const passPercent = proctorStats?.passPercentage ?? 0;
-  const passColor =
-    passPercent >= 80 ? "#10B981" : passPercent >= 60 ? "#F59E0B" : "#EF4444";
 
   return (
     <Box>
@@ -371,257 +313,7 @@ const FacultyDashboard = () => {
         ))}
       </Grid>
 
-      {/* ── Proctor Summary Card ─────────────────────────────────────────── */}
-      <Card
-        sx={{
-          borderRadius: 1,
-          background: "var(--bg-panel)",
-          border: "1px solid var(--border-color)",
-          boxShadow: "var(--shadow-premium)",
-          p: 3,
-          mb: 4,
-        }}
-      >
-        {/* Card Header */}
-        <Box
-          sx={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            mb: 3,
-            flexWrap: "wrap",
-            gap: 2,
-          }}
-        >
-          <Box>
-            <Typography
-              sx={{
-                fontWeight: 800,
-                fontSize: "1.2rem",
-                color: "var(--text-primary)",
-              }}
-            >
-              My Proctored Students
-            </Typography>
-            <Typography
-              sx={{
-                fontSize: 13,
-                color: "var(--text-secondary)",
-                mt: 0.5,
-              }}
-            >
-              Pass percentage for students under your proctoring — REGULAR
-              results only
-            </Typography>
-          </Box>
 
-          {/* Year Selector */}
-          <Box sx={filterBox}>
-            <Typography
-              sx={{
-                fontSize: 13,
-                fontWeight: 700,
-                color: "var(--text-primary)",
-                opacity: 0.9,
-              }}
-            >
-              Academic Year
-            </Typography>
-            <Select
-              variant="standard"
-              disableUnderline
-              value={selectedYear}
-              onChange={(e) => setSelectedYear(e.target.value)}
-              sx={{
-                ml: 1.5,
-                minWidth: 140,
-                color: "var(--text-primary)",
-                fontWeight: 600,
-                fontSize: 14,
-                "& .MuiSelect-icon": {
-                  color: "var(--text-primary)",
-                  opacity: 0.7,
-                },
-              }}
-              displayEmpty
-            >
-              {academicYears.map((y) => (
-                <MenuItem key={y.year} value={y.year}>
-                  {y.year}
-                </MenuItem>
-              ))}
-            </Select>
-          </Box>
-        </Box>
-
-        {proctorLoading ? (
-          <Box sx={{ display: "flex", justifyContent: "center", py: 5 }}>
-            <CircularProgress size={32} />
-          </Box>
-        ) : !proctorStats || proctorStats.totalMappedStudents === 0 ? (
-          <Box
-            sx={{
-              textAlign: "center",
-              py: 6,
-              color: "var(--text-secondary)",
-            }}
-          >
-            <Typography fontSize={36}>👨‍🏫</Typography>
-            <Typography mt={1} fontWeight={600}>
-              No proctor data for {selectedYear || "this year"}
-            </Typography>
-            <Typography fontSize={13} mt={0.5} sx={{ opacity: 0.7 }}>
-              Data will appear once exam results are uploaded for your mapped
-              students
-            </Typography>
-          </Box>
-        ) : (
-          <Box>
-            {/* Main stat grid */}
-            <Grid container spacing={2} sx={{ mb: 3 }}>
-              {proctorStatItems.map((stat, i) => (
-                <Grid item xs={6} sm={3} key={i}>
-                  <Box
-                    sx={{
-                      p: 2,
-                      borderRadius: "14px",
-                      background: "var(--bg-glass)",
-                      border: "1px solid var(--border-color)",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 1.5,
-                    }}
-                  >
-                    <Box
-                      sx={{
-                        width: 38,
-                        height: 38,
-                        borderRadius: "10px",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        background: "var(--bg-accent-1)",
-                        flexShrink: 0,
-                      }}
-                    >
-                      {stat.icon}
-                    </Box>
-                    <Box>
-                      <Typography
-                        sx={{
-                          fontSize: 22,
-                          fontWeight: 800,
-                          color: "var(--text-primary)",
-                          lineHeight: 1.1,
-                        }}
-                      >
-                        {stat.value}
-                      </Typography>
-                      <Typography
-                        sx={{
-                          fontSize: 12,
-                          color: "var(--text-secondary)",
-                          fontWeight: 500,
-                        }}
-                      >
-                        {stat.label}
-                      </Typography>
-                    </Box>
-                  </Box>
-                </Grid>
-              ))}
-            </Grid>
-
-            {/* Pass percentage bar */}
-            <Box
-              sx={{
-                p: 2.5,
-                borderRadius: "14px",
-                background: "var(--bg-glass)",
-                border: "1px solid var(--border-color)",
-              }}
-            >
-              <Box
-                sx={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  mb: 1.5,
-                }}
-              >
-                <Typography
-                  sx={{
-                    fontWeight: 700,
-                    fontSize: 14,
-                    color: "var(--text-primary)",
-                  }}
-                >
-                  Overall Pass Percentage
-                </Typography>
-                <Typography
-                  sx={{ fontWeight: 800, fontSize: 22, color: passColor }}
-                >
-                  {passPercent}%
-                </Typography>
-              </Box>
-
-              {/* Progress bar */}
-              <Box
-                sx={{
-                  height: 10,
-                  borderRadius: 5,
-                  background: "var(--border-color)",
-                  overflow: "hidden",
-                }}
-              >
-                <Box
-                  sx={{
-                    height: "100%",
-                    width: `${Math.min(passPercent, 100)}%`,
-                    borderRadius: 5,
-                    background: passColor,
-                    transition: "width 0.8s ease",
-                  }}
-                />
-              </Box>
-
-              {/* Per-period breakdown (if multiple periods) */}
-              {proctorStats.details && proctorStats.details.length > 1 && (
-                <Box sx={{ mt: 2.5 }}>
-                  <Typography
-                    sx={{
-                      fontSize: 12,
-                      fontWeight: 700,
-                      color: "var(--text-secondary)",
-                      textTransform: "uppercase",
-                      letterSpacing: "0.05em",
-                      mb: 1.5,
-                    }}
-                  >
-                    By Period
-                  </Typography>
-                  <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
-                    {proctorStats.details.map((d, i) => (
-                      <Chip
-                        key={i}
-                        label={`${d.periodLabel}: ${d.passPercentage}% (${d.studentsPassed}/${d.studentsAppeared})`}
-                        size="small"
-                        sx={{
-                          fontWeight: 600,
-                          fontSize: 12,
-                          bgcolor: "var(--bg-accent-1)",
-                          color: "var(--text-primary)",
-                          border: "1px solid var(--border-color)",
-                        }}
-                      />
-                    ))}
-                  </Box>
-                </Box>
-              )}
-            </Box>
-          </Box>
-        )}
-      </Card>
 
       {/* Row 2: Teaching Overview and Quick Actions */}
       <Box

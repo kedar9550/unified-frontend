@@ -6,8 +6,18 @@ import {
   Select,
   Typography,
   CircularProgress,
+  Grid,
+  Card,
+  Chip,
 } from "@mui/material";
-import { Flag as FlagIcon, CloudUpload as CloudUploadIcon } from "@mui/icons-material";
+import { 
+  Flag as FlagIcon, 
+  CloudUpload as CloudUploadIcon,
+  SupervisorAccount,
+  PeopleAlt
+} from "@mui/icons-material";
+import CheckCircleOutlinedIcon from "@mui/icons-material/CheckCircleOutlined";
+import CancelOutlinedIcon from "@mui/icons-material/CancelOutlined";
 import PageHeader from "../../components/common/PageHeader";
 import SectionHeader from "../../components/common/SectionHeader";
 import DataTable from "../../components/data/DataTable";
@@ -49,7 +59,16 @@ export default function Teaching() {
     const fetchYears = async () => {
       try {
         const res = await API.get("/api/academic-years");
-        const years = res.data.years || [];
+        
+        let years = [];
+        if (Array.isArray(res.data)) {
+          years = res.data;
+        } else if (Array.isArray(res.data.data)) {
+          years = res.data.data;
+        } else if (Array.isArray(res.data.years)) {
+          years = res.data.years;
+        }
+
         setAcademicYears(years);
         if (years.length > 0) {
           const active = years.find((y) => y.isActive) || years[0];
@@ -83,12 +102,15 @@ export default function Teaching() {
     };
 
     const fetchProctorStats = async () => {
+      const yearDoc = academicYears.find(y => y.year === selectedYearLabel);
+      if (!yearDoc?._id) return;
+      
       setProctorLoading(true);
       try {
         const res = await API.get("/api/student-results/proctor-results", {
           params: {
             facultyId: user?.institutionId,
-            academicYear: selectedYearLabel,
+            academicYearId: yearDoc._id,
           },
         });
         setProctorStats(res.data);
@@ -191,6 +213,34 @@ export default function Teaching() {
 
   // ── Derive selected labels for display ──────────────────────────
   const selectedYear = academicYears.find((y) => y.year === selectedYearLabel);
+
+  const passPercent = proctorStats?.passPercentage ?? 0;
+  const passColor = passPercent >= 80 ? "#10B981" : passPercent >= 60 ? "#F59E0B" : "#EF4444";
+
+  const proctorStatItems = proctorStats
+    ? [
+        {
+          label: "Total Mapped",
+          value: proctorStats.totalMappedStudents,
+          icon: <PeopleAlt sx={{ fontSize: 20, color: "#3B82F6" }} />,
+        },
+        {
+          label: "Appeared",
+          value: proctorStats.studentsAppeared,
+          icon: <SupervisorAccount sx={{ fontSize: 20, color: "#8B5CF6" }} />,
+        },
+        {
+          label: "Passed",
+          value: proctorStats.studentsPassed,
+          icon: <CheckCircleOutlinedIcon sx={{ fontSize: 20, color: "#10B981" }} />,
+        },
+        {
+          label: "Failed",
+          value: proctorStats.studentsAppeared - proctorStats.studentsPassed,
+          icon: <CancelOutlinedIcon sx={{ fontSize: 20, color: "#EF4444" }} />,
+        },
+      ]
+    : [];
 
   // ── Build DataTable rows ─────────────────────────────────────────
   const columns = [
@@ -480,88 +530,11 @@ export default function Teaching() {
           Proctoring Average Pass Percentage
         </Typography>
 
-        {proctorStats?.totalMappedStudents > 0 ? (
-          <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
-            {/* Overall Summary if multiple semesters exist */}
-            {proctorStats.details?.length > 1 && (
-              <Box
-                sx={{
-                  p: 2,
-                  borderRadius: "12px",
-                  background: "linear-gradient(135deg, rgba(0, 78, 146, 0.05), rgba(0, 4, 40, 0.05))",
-                  border: "1px solid var(--border-color)",
-                  textAlign: "center"
-                }}
-              >
-                <Typography variant="subtitle2" sx={{ fontWeight: 700, color: "var(--color-primary)", mb: 1 }}>
-                  OVERALL ACADEMIC YEAR SUMMARY
-                </Typography>
-                <Box sx={{ display: "flex", justifyContent: "space-around", flexWrap: "wrap", gap: 2 }}>
-                  <Typography variant="body2">Total: <strong>{proctorStats.totalMappedStudents}</strong></Typography>
-                  <Typography variant="body2">Appeared: <strong>{proctorStats.studentsAppeared}</strong></Typography>
-                  <Typography variant="body2">Passed: <strong>{proctorStats.studentsPassed}</strong></Typography>
-                  <Typography variant="body2">Pass %: <strong style={{ color: proctorStats.passPercentage >= 50 ? "#10b981" : "#ef4444" }}>{proctorStats.passPercentage}%</strong></Typography>
-                </Box>
-              </Box>
-            )}
-
-            {/* Individual Semester Summaries */}
-            <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-              {(proctorStats.details?.length > 0 ? proctorStats.details : [proctorStats]).map((sem, idx) => (
-                <Box
-                  key={idx}
-                  sx={{
-                    display: "flex",
-                    flexWrap: "wrap",
-                    gap: 3,
-                    justifyContent: "space-around",
-                    p: 3,
-                    border: "1px solid var(--border-color)",
-                    borderRadius: "16px",
-                    background: "var(--bg-glass)",
-                    position: "relative"
-                  }}
-                >
-                  {sem.semesterName && (
-                    <Box
-                      sx={{
-                        position: "absolute",
-                        top: -10,
-                        left: 20,
-                        px: 1.5,
-                        py: 0.5,
-                        background: "var(--color-primary)",
-                        color: "#fff",
-                        borderRadius: "20px",
-                        fontSize: "0.65rem",
-                        fontWeight: 800,
-                        letterSpacing: "0.05em"
-                      }}
-                    >
-                      {sem.semesterName} SEMESTER
-                    </Box>
-                  )}
-                  <Box sx={{ textAlign: "center" }}>
-                    <Typography variant="body2" sx={{ color: "var(--text-secondary)", fontWeight: 700, mb: 1, fontSize: "0.7rem", textTransform: "uppercase" }}>Total Students Managed</Typography>
-                    <Typography variant="h4" sx={{ color: "var(--color-primary)", fontWeight: 800 }}>{sem.totalMappedStudents}</Typography>
-                  </Box>
-                  <Box sx={{ textAlign: "center" }}>
-                    <Typography variant="body2" sx={{ color: "var(--text-secondary)", fontWeight: 700, mb: 1, fontSize: "0.7rem", textTransform: "uppercase" }}>Students Appeared</Typography>
-                    <Typography variant="h4" sx={{ color: "#f59e0b", fontWeight: 800 }}>{sem.studentsAppeared}</Typography>
-                  </Box>
-                  <Box sx={{ textAlign: "center" }}>
-                    <Typography variant="body2" sx={{ color: "var(--text-secondary)", fontWeight: 700, mb: 1, fontSize: "0.7rem", textTransform: "uppercase" }}>Students Passed</Typography>
-                    <Typography variant="h4" sx={{ color: "#10b981", fontWeight: 800 }}>{sem.studentsPassed}</Typography>
-                  </Box>
-                  <Box sx={{ textAlign: "center" }}>
-                    <Typography variant="body2" sx={{ color: "var(--text-secondary)", fontWeight: 700, mb: 1, fontSize: "0.7rem", textTransform: "uppercase" }}>Pass Percentage</Typography>
-                    <Typography variant="h4" sx={{ color: sem.passPercentage >= 50 ? "#10b981" : "#ef4444", fontWeight: 800 }}>{sem.passPercentage}%</Typography>
-                  </Box>
-                </Box>
-              ))}
-            </Box>
+        {proctorLoading ? (
+          <Box sx={{ display: "flex", justifyContent: "center", py: 5 }}>
+            <CircularProgress size={32} />
           </Box>
-        ) : (
+        ) : !proctorStats ? (
           <Box
             sx={{
               textAlign: "center",
@@ -570,10 +543,156 @@ export default function Teaching() {
               fontSize: 15,
               border: "1px dashed var(--border-color)",
               borderRadius: "16px",
-              background: "var(--bg-glass)"
+              background: "var(--bg-glass)",
             }}
           >
-            No proctoring mapped students or results available for this selection.
+            <Typography fontSize={36} sx={{ mb: 1 }}>👨‍🏫</Typography>
+            No proctoring data available for this selection.
+          </Box>
+        ) : (
+          <Box>
+            {/* Main stat grid */}
+            <Grid container spacing={2} sx={{ mb: 3 }}>
+              {proctorStatItems.map((stat, i) => (
+                <Grid item xs={6} sm={3} key={i}>
+                  <Box
+                    sx={{
+                      p: 2,
+                      borderRadius: "14px",
+                      background: "var(--bg-glass)",
+                      border: "1px solid var(--border-color)",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 1.5,
+                    }}
+                  >
+                    <Box
+                      sx={{
+                        width: 38,
+                        height: 38,
+                        borderRadius: "10px",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        background: "var(--bg-accent-1)",
+                        flexShrink: 0,
+                      }}
+                    >
+                      {stat.icon}
+                    </Box>
+                    <Box>
+                      <Typography
+                        sx={{
+                          fontSize: 22,
+                          fontWeight: 800,
+                          color: "var(--text-primary)",
+                          lineHeight: 1.1,
+                        }}
+                      >
+                        {stat.value}
+                      </Typography>
+                      <Typography
+                        sx={{
+                          fontSize: 12,
+                          color: "var(--text-secondary)",
+                          fontWeight: 500,
+                        }}
+                      >
+                        {stat.label}
+                      </Typography>
+                    </Box>
+                  </Box>
+                </Grid>
+              ))}
+            </Grid>
+
+            {/* Pass percentage bar */}
+            <Box
+              sx={{
+                p: 2.5,
+                borderRadius: "14px",
+                background: "var(--bg-glass)",
+                border: "1px solid var(--border-color)",
+              }}
+            >
+              <Box
+                sx={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  mb: 1.5,
+                }}
+              >
+                <Typography
+                  sx={{
+                    fontWeight: 700,
+                    fontSize: 14,
+                    color: "var(--text-primary)",
+                  }}
+                >
+                  Overall Pass Percentage
+                </Typography>
+                <Typography
+                  sx={{ fontWeight: 800, fontSize: 22, color: passColor }}
+                >
+                  {passPercent}%
+                </Typography>
+              </Box>
+
+              {/* Progress bar */}
+              <Box
+                sx={{
+                  height: 10,
+                  borderRadius: 5,
+                  background: "var(--border-color)",
+                  overflow: "hidden",
+                }}
+              >
+                <Box
+                  sx={{
+                    height: "100%",
+                    width: `${Math.min(passPercent, 100)}%`,
+                    borderRadius: 5,
+                    background: passColor,
+                    transition: "width 0.8s ease",
+                  }}
+                />
+              </Box>
+
+              {/* Per-period breakdown (if multiple periods) */}
+              {proctorStats.details && proctorStats.details.length > 1 && (
+                <Box sx={{ mt: 2.5 }}>
+                  <Typography
+                    sx={{
+                      fontSize: 12,
+                      fontWeight: 700,
+                      color: "var(--text-secondary)",
+                      textTransform: "uppercase",
+                      letterSpacing: "0.05em",
+                      mb: 1.5,
+                    }}
+                  >
+                    By Semester Period
+                  </Typography>
+                  <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
+                    {proctorStats.details.map((d, i) => (
+                      <Chip
+                        key={i}
+                        label={`${d.periodLabel || d.semesterName}: ${d.passPercentage}% (${d.studentsPassed}/${d.studentsAppeared})`}
+                        size="small"
+                        sx={{
+                          fontWeight: 600,
+                          fontSize: 12,
+                          bgcolor: "var(--bg-accent-1)",
+                          color: "var(--text-primary)",
+                          border: "1px solid var(--border-color)",
+                        }}
+                      />
+                    ))}
+                  </Box>
+                </Box>
+              )}
+            </Box>
           </Box>
         )}
       </Box>
