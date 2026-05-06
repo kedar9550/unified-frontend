@@ -570,9 +570,13 @@ export default function RaiseDiscrepancyModal({
                   </Select>
                 </Box>
 
-                {/* ── Semester Number ── */}
+                {/* ── Semester / Year Number ── */}
                 <Box>
-                  <Typography sx={label}>Semester</Typography>
+                  <Typography sx={label}>
+                    {semesterNo && (String(semesterNo).includes('Year') || Number(semesterNo) < 6 && section === "PROCTORING" && !semesterNumbers.includes(String(semesterNo))) 
+                      ? "Academic Period (Year/Sem)" 
+                      : "Semester / Year"}
+                  </Typography>
                   <Select
                     fullWidth
                     size="small"
@@ -580,31 +584,41 @@ export default function RaiseDiscrepancyModal({
                     onChange={e => {
                       const val = e.target.value;
                       setSemesterNo(val);
-                      // Auto-select ODD/EVEN type based on number
-                      if (val) {
+                      // Auto-select ODD/EVEN type based on number for SEMESTER programs
+                      if (val && !isNaN(Number(val))) {
                         const typeName = Number(val) % 2 === 0 ? "EVEN" : "ODD";
                         const type = localSemesterTypes.find(t => t.name === typeName);
                         if (type) setSemTypeId(type._id);
+                      } else if (val && String(val).includes('S')) {
+                        const summer = localSemesterTypes.find(t => t.name === "SUMMER");
+                        if (summer) setSemTypeId(summer._id);
                       }
                     }}
                     displayEmpty
                     sx={selectSx}
                     disabled={loadingSems}
                   >
-                    <MenuItem value="" disabled>Select Semester</MenuItem>
+                    <MenuItem value="" disabled>Select Period</MenuItem>
                     {semesterNumbers.map(n => (
-                      <MenuItem key={n} value={n}>Semester {n}</MenuItem>
+                      <MenuItem key={n} value={n}>
+                        {isNaN(Number(n)) ? n : `Period / Semester ${n}`}
+                      </MenuItem>
                     ))}
                     {semesterNumbers.length === 0 && !loadingSems && (
-                      <MenuItem value="" disabled>No semesters found in data</MenuItem>
+                      <MenuItem value="" disabled>No data found for this year</MenuItem>
                     )}
                   </Select>
-                  {loadingSems && <CircularProgress size={16} sx={{ mt: 1 }} />}
+                  {loadingSems && (
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1, mt: 1 }}>
+                        <CircularProgress size={12} />
+                        <Typography fontSize={11} color="text.secondary">Fetching available periods...</Typography>
+                    </Box>
+                  )}
                 </Box>
 
                 {/* ── Section ── */}
                 <Box>
-                  <Typography sx={label}>Section</Typography>
+                  <Typography sx={label}>Section / Category</Typography>
                   <Select
                     fullWidth
                     size="small"
@@ -670,9 +684,9 @@ export default function RaiseDiscrepancyModal({
                     </Box>
                   )}
 
-                  <Box sx={{ mt: 1 }}>
-                    <Typography fontSize={12} color="#888">
-                      Will be routed to:{" "}
+                  <Box sx={{ mt: 1.5 }}>
+                    <Typography fontSize={12} color="#888" sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                      Issue will be routed to:{" "}
                       <Chip
                         label={
                           section === "PROCTORING" 
@@ -685,11 +699,12 @@ export default function RaiseDiscrepancyModal({
                         }
                         size="small"
                         sx={{
-                          fontSize: 11,
-                          height: 20,
-                          background: "linear-gradient(135deg,#0b5299,#1c6ed5)",
+                          fontSize: 10,
+                          height: 22,
+                          background: "var(--gradient-primary)",
                           color: "#fff",
-                          fontWeight: 600,
+                          fontWeight: 700,
+                          px: 1
                         }}
                       />
                     </Typography>
@@ -698,24 +713,27 @@ export default function RaiseDiscrepancyModal({
 
                 {/* ── Note ── */}
                 <Box>
-                  <Typography sx={label}>Describe the Issue</Typography>
+                  <Typography sx={label}>Describe the Discrepancy</Typography>
                   <TextField
                     fullWidth
                     multiline
                     rows={4}
                     size="small"
-                    placeholder="Explain what is incorrect and what it should be..."
+                    placeholder="Provide details about what data is missing or incorrect..."
                     value={note}
                     onChange={e => setNote(e.target.value)}
                     sx={{
                       "& .MuiOutlinedInput-root": {
-                        borderRadius: "14px",
-                        background: "#f4f7fc",
+                        borderRadius: "16px",
+                        background: "#f8faff",
                         fontSize: 14,
+                        border: "1px solid #e0e6ed",
+                        "&:hover": { borderColor: "var(--color-primary)" },
+                        "&.Mui-focused": { background: "#fff", borderColor: "var(--color-primary)" }
                       },
                     }}
                   />
-                  <Typography fontSize={11} color="#aaa" mt={0.5} textAlign="right">
+                  <Typography fontSize={11} color="#aaa" mt={0.5} textAlign="right" fontWeight={500}>
                     {note.length} characters
                   </Typography>
                 </Box>
@@ -725,12 +743,12 @@ export default function RaiseDiscrepancyModal({
         )}
       </DialogContent>
 
-      {/* ── ACTIONS (only for Raise New tab, when not in success state) ── */}
+      {/* ── ACTIONS ── */}
       {activeTab === 1 && !success && (
-        <DialogActions sx={{ px: 3, pb: 3, pt: 0 }}>
+        <DialogActions sx={{ px: 4, pb: 4, pt: 0 }}>
           <Button
             onClick={() => onClose(false)}
-            sx={{ borderRadius: "20px", textTransform: "none", color: "#666" }}
+            sx={{ borderRadius: "12px", textTransform: "none", color: "#888", fontWeight: 600 }}
           >
             Cancel
           </Button>
@@ -739,16 +757,18 @@ export default function RaiseDiscrepancyModal({
             onClick={handleSubmit}
             disabled={saving || !note.trim() || !yearId || !semesterNo || (section === "PROCTORING" && proctoringType === "ASSIGNED_COUNT" && !studentDeptId)}
             sx={{
-              borderRadius: "20px",
+              borderRadius: "14px",
               px: 4,
+              py: 1,
               textTransform: "none",
-              fontWeight: 600,
-              background: "linear-gradient(135deg,#e53935,#ff7043)",
-              boxShadow: "0 4px 15px rgba(229,57,53,0.3)",
-              "&:hover": { background: "linear-gradient(135deg,#c62828,#e64a19)" },
+              fontWeight: 800,
+              background: "var(--gradient-primary)",
+              boxShadow: "0 8px 20px rgba(11, 82, 153, 0.2)",
+              "&:hover": { background: "var(--gradient-primary)", opacity: 0.9 },
+              "&.Mui-disabled": { background: "#eee", color: "#aaa" }
             }}
           >
-            Submit Discrepancy
+            {saving ? <CircularProgress size={20} color="inherit" /> : "Submit Discrepancy"}
           </Button>
         </DialogActions>
       )}
@@ -757,19 +777,21 @@ export default function RaiseDiscrepancyModal({
 }
 
 // ── Styles helpers ──────────────────────────────────────────────────
-const label = { fontSize: 13, fontWeight: 600, color: "#444", mb: 0.5 };
+const label = { fontSize: 12, fontWeight: 800, color: "var(--text-secondary)", mb: 0.8, textTransform: "uppercase", letterSpacing: "0.05em" };
 
 const selectSx = {
   borderRadius: "14px",
-  background: "#f4f7fc",
+  background: "#f8faff",
   fontSize: 14,
-  "& .MuiOutlinedInput-notchedOutline": { borderColor: "#dde3ef" },
+  fontWeight: 600,
+  "& .MuiOutlinedInput-notchedOutline": { borderColor: "#e0e6ed" },
+  "&:hover .MuiOutlinedInput-notchedOutline": { borderColor: "var(--color-primary)" },
 };
 
 const tabSx = {
   textTransform: "none",
-  fontWeight: 600,
+  fontWeight: 700,
   fontSize: 14,
-  minHeight: 44,
-  gap: 0.5,
+  minHeight: 48,
+  gap: 1,
 };

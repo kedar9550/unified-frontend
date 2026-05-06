@@ -41,10 +41,7 @@ const STATUS_CONFIG = {
 };
 
 const SECTION_LABEL = {
-  TEACHING: "📚 Teaching",
   PROCTORING: "👁️ Proctoring",
-  FEEDBACK: "💬 Feedback",
-  OTHER: "📎 Other",
 };
 
 export default function HODDiscrepancies() {
@@ -88,7 +85,7 @@ export default function HODDiscrepancies() {
 
   useEffect(() => { fetchItems(); }, [fetchItems]);
 
-  // ── Open resolve dialog & fetch relevant data ────────────────
+  // ── Open resolve dialog & fetch proctor mapping data ────────────────
   const openResolve = async (item) => {
     setSelected(item);
     setProofFile(null);
@@ -97,72 +94,20 @@ export default function HODDiscrepancies() {
     setResultLoading(true);
 
     try {
-      if (item.section === "PROCTORING") {
-        // Fetch proctor mappings for this proctor + year + sem
-        const res = await API.get("/api/procter-maping", {
-          params: {
-            proctorId: item.facultyInstitutionId,
-            academicYearId: item.academicYearId?._id,
-            semesterTypeId: item.semesterTypeId?._id,
-          },
-        });
-        setResultData(res.data || []);
-      } else {
-        // Fetch faculty subject results (Teaching)
-        const res = await API.get("/api/faculty-subject-results", {
-          params: {
-            facultyId: item.facultyInstitutionId,
-            academicYear: item.academicYearId?._id,
-            semester: item.semesterTypeId?._id,
-          },
-        });
-        const rows = (res.data || []).map(r => ({ ...r, _edited: false }));
-        setResultData(rows);
-      }
+      // Fetch proctor mappings for this proctor + year + sem
+      const res = await API.get("/api/procter-maping", {
+        params: {
+          proctorId: item.facultyInstitutionId,
+          academicYearId: item.academicYearId?._id,
+          semesterTypeId: item.semesterTypeId?._id,
+        },
+      });
+      setResultData(res.data || []);
     } catch (err) {
       console.error("Failed to fetch resolution data:", err);
     } finally {
       setResultLoading(false);
     }
-  };
-
-  // ── Handle inline edit of a result row ─────────────────────────────
-  const handleResultEdit = (index, field, value) => {
-    setResultData(prev => {
-      const updated = [...prev];
-      updated[index] = { ...updated[index], [field]: value, _edited: true };
-
-      // Auto-recalculate pass %
-      if (field === "appeared" || field === "passed") {
-        const app = Number(field === "appeared" ? value : updated[index].appeared) || 0;
-        const pas = Number(field === "passed" ? value : updated[index].passed) || 0;
-        updated[index].passPercentage = app > 0 ? ((pas / app) * 100).toFixed(2) : "0.00";
-      }
-      return updated;
-    });
-  };
-
-  // ── Add a new empty row ─────────────────────────────────────────────
-  const handleAddRow = () => {
-    setResultData(prev => [
-      ...prev,
-      {
-        _tempId: `new-${Date.now()}`,
-        _isNew: true,
-        _edited: true,
-        subjectName: "",
-        subjectCode: "",
-        branch: "",
-        appeared: 0,
-        passed: 0,
-        passPercentage: "0.00",
-      },
-    ]);
-  };
-
-  // ── Remove a new (unsaved) row ─────────────────────────────────────
-  const handleRemoveRow = (index) => {
-    setResultData(prev => prev.filter((_, i) => i !== index));
   };
 
   // ── Handle resolve submit ──────────────────────────────────────────
@@ -171,42 +116,17 @@ export default function HODDiscrepancies() {
 
     setSubmitting(true);
     try {
-      if (selected.section === "TEACHING") {
-        // 1. Update existing edited rows
-        const editedRows = resultData.filter(r => r._edited && !r._isNew);
-        for (const row of editedRows) {
-          await API.put(`/api/faculty-subject-results/${row._id}`, {
-            appeared: Number(row.appeared),
-            passed: Number(row.passed),
-            passPercentage: Number(row.passPercentage),
-            subjectName: row.subjectName,
-            subjectCode: row.subjectCode,
-            branch: row.branch,
-          });
-        }
-
-        // 2. Create new rows
-        const newRows = resultData.filter(r => r._isNew && r.subjectName?.trim());
-        for (const row of newRows) {
-          await API.post("/api/faculty-subject-results", {
-            facultyId: selected.facultyInstitutionId,
-            facultyName: selected.facultyName,
-            subjectName: row.subjectName,
-            subjectCode: row.subjectCode,
-            branch: row.branch,
-            academicYearId: selected.academicYearId?._id,
-            semesterTypeId: selected.semesterTypeId?._id,
-            appeared: Number(row.appeared),
-            passed: Number(row.passed),
-          });
-        }
-      }
-
-      // 3. Resolve the discrepancy with proof document
+      // Resolve the discrepancy with proof document
       const formData = new FormData();
       formData.append("proof", proofFile);
       formData.append("status", "RESOLVED");
-      formData.append("resolutionNote", `Edited ${editedRows.length} record(s), added ${newRows.length} new record(s).`);
+      formData.append("resolutionNote", "Proctoring assigned count verified by HOD.");
+
+      // Ensure academic identifiers are passed to satisfy backend validation
+      const yearId = selected.academicYearId?._id || selected.academicYearId;
+      const semId = selected.semesterTypeId?._id || selected.semesterTypeId;
+      if (yearId) formData.append("academicYearId", yearId);
+      if (semId) formData.append("semesterTypeId", semId);
 
       await API.put(`/api/discrepancies/${selected._id}`, formData, {
         headers: { "Content-Type": "multipart/form-data" },
@@ -237,9 +157,14 @@ export default function HODDiscrepancies() {
 
     setRejecting(true);
     try {
+      const yearId = rejectItem.academicYearId?._id || rejectItem.academicYearId;
+      const semId = rejectItem.semesterTypeId?._id || rejectItem.semesterTypeId;
+      
       await API.put(`/api/discrepancies/${rejectItem._id}`, {
         status: "REJECTED",
         rejectionNote: rejectNote.trim(),
+        academicYearId: yearId,
+        semesterTypeId: semId,
       });
       setRejectDone(true);
       setTimeout(() => {
@@ -263,7 +188,7 @@ export default function HODDiscrepancies() {
     <>
       <PageHeader
         title="Department Discrepancies"
-        subtitle="Review and resolve teaching & proctoring discrepancies"
+        subtitle="Review and resolve proctoring discrepancies"
         breadcrumbs={["Home", "HOD", "Discrepancies"]}
       />
 
@@ -333,7 +258,7 @@ export default function HODDiscrepancies() {
             <Table>
               <TableHead sx={{ background: "var(--gradient-primary)" }}>
                 <TableRow>
-                  {["#", "Faculty", "Department", "Year / Sem", "Section", "Note", "Status", "Action"].map(col => (
+                  {["#", "Faculty", "Department", "Year / Sem", "Note", "Status", "Action"].map(col => (
                     <TableCell key={col} sx={{ color: "#fff", fontWeight: 700 }}>{col}</TableCell>
                   ))}
                 </TableRow>
@@ -357,10 +282,7 @@ export default function HODDiscrepancies() {
                         <Typography fontSize={13}>{item.academicYearId?.year}</Typography>
                         <Chip label={item.semesterTypeId?.name} size="small" sx={{ fontSize: 10, height: 20 }} />
                       </TableCell>
-                      <TableCell>
-                        <Chip label={SECTION_LABEL[item.section] || item.section} size="small" />
-                      </TableCell>
-                      <TableCell sx={{ maxWidth: 300 }}>
+                      <TableCell sx={{ maxWidth: 350 }}>
                         <Typography fontSize={13} noWrap>{item.note}</Typography>
                       </TableCell>
                       <TableCell>
@@ -374,7 +296,7 @@ export default function HODDiscrepancies() {
                           </Box>
                         ) : (
                           item.proofDocument && (
-                            <IconButton href={`${import.meta.env.VITE_API_URL || "http://localhost:3000"}/uploads/discrepancies/${item.proofDocument}`} target="_blank">
+                            <IconButton href={`${import.meta.env.VITE_BACKEND_URL}/uploads/discrepancies/${item.proofDocument}`} target="_blank">
                               <DownloadIcon />
                             </IconButton>
                           )
@@ -407,50 +329,29 @@ export default function HODDiscrepancies() {
 
               <Box>
                 <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 700 }}>
-                  {selected.section === "PROCTORING" ? "Assigned Student List:" : "Faculty Teaching Data:"}
+                  Assigned Student List:
                 </Typography>
                 <Paper variant="outlined" sx={{ borderRadius: "12px", overflow: "hidden" }}>
                   <Table size="small">
                     <TableHead sx={{ background: "#f0f2f5" }}>
                       <TableRow>
-                        {selected.section === "PROCTORING" ? (
-                          ["#", "Roll No", "Student Name", "Semester"].map(h => (
-                            <TableCell key={h} sx={{ fontWeight: 700, fontSize: 12 }}>{h}</TableCell>
-                          ))
-                        ) : (
-                          ["Subject", "Code", "Appeared", "Passed", "Pass %"].map(h => (
-                            <TableCell key={h} sx={{ fontWeight: 700, fontSize: 12 }}>{h}</TableCell>
-                          ))
-                        )}
+                        {["#", "Roll No", "Student Name", "Semester"].map(h => (
+                          <TableCell key={h} sx={{ fontWeight: 700, fontSize: 12 }}>{h}</TableCell>
+                        ))}
                       </TableRow>
                     </TableHead>
                     <TableBody>
-                      {selected.section === "PROCTORING" ? (
-                        resultData.map((row, idx) => (
-                          <TableRow key={row._id}>
-                            <TableCell>{idx + 1}</TableCell>
-                            <TableCell>{row.studentId}</TableCell>
-                            <TableCell>{row.studentName}</TableCell>
-                            <TableCell>{row.semester}</TableCell>
-                          </TableRow>
-                        ))
-                      ) : (
-                        resultData.map((row, idx) => (
-                          <TableRow key={row._id || row._tempId} sx={{ background: row._edited ? "#e3f2fd" : "none" }}>
-                            <TableCell><TextField variant="standard" fullWidth value={row.subjectName} onChange={e => handleResultEdit(idx, "subjectName", e.target.value)} /></TableCell>
-                            <TableCell><TextField variant="standard" value={row.subjectCode} onChange={e => handleResultEdit(idx, "subjectCode", e.target.value)} sx={{ width: 80 }} /></TableCell>
-                            <TableCell><TextField variant="standard" type="number" value={row.appeared} onChange={e => handleResultEdit(idx, "appeared", e.target.value)} sx={{ width: 60 }} /></TableCell>
-                            <TableCell><TextField variant="standard" type="number" value={row.passed} onChange={e => handleResultEdit(idx, "passed", e.target.value)} sx={{ width: 60 }} /></TableCell>
-                            <TableCell><Typography fontWeight={700}>{row.passPercentage}%</Typography></TableCell>
-                          </TableRow>
-                        ))
-                      )}
+                      {resultData.map((row, idx) => (
+                        <TableRow key={row._id}>
+                          <TableCell>{idx + 1}</TableCell>
+                          <TableCell>{row.studentId}</TableCell>
+                          <TableCell>{row.studentName}</TableCell>
+                          <TableCell>{row.semester}</TableCell>
+                        </TableRow>
+                      ))}
                     </TableBody>
                   </Table>
                 </Paper>
-                {selected.section === "TEACHING" && (
-                  <Button size="small" sx={{ mt: 1 }} onClick={handleAddRow}>+ Add Row</Button>
-                )}
               </Box>
 
               <Box>

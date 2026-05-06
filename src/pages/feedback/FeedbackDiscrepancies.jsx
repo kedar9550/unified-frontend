@@ -38,16 +38,13 @@ import API from "../../api/axios";
 
 // ── Status config ─────────────────────────────────────────────────────
 const STATUS_CONFIG = {
-  PENDING:  { label: "Pending",  color: "#e65100", bg: "rgba(230, 81, 0, 0.1)", icon: <PendingIcon fontSize="small" /> },
-  RESOLVED: { label: "Resolved", color: "#2e7d32", bg: "rgba(46, 125, 50, 0.1)", icon: <ResolvedIcon fontSize="small" /> },
-  REJECTED: { label: "Rejected", color: "#b71c1c", bg: "rgba(183, 28, 28, 0.1)", icon: <RejectedIcon fontSize="small" /> },
+  PENDING:  { label: "Pending",  color: "#F59E0B", bg: "rgba(245, 158, 11, 0.1)", icon: <PendingIcon fontSize="small" /> },
+  RESOLVED: { label: "Resolved", color: "#10B981", bg: "rgba(16, 185, 129, 0.1)", icon: <ResolvedIcon fontSize="small" /> },
+  REJECTED: { label: "Rejected", color: "#EF4444", bg: "rgba(239, 68, 68, 0.1)", icon: <RejectedIcon fontSize="small" /> },
 };
 
 const SECTION_LABEL = {
-  TEACHING:   "📚 Teaching",
-  PROCTORING: "👁️ Proctoring",
   FEEDBACK:   "💬 Feedback",
-  OTHER:      "📎 Other",
 };
 
 export default function FeedbackDiscrepancies() {
@@ -86,16 +83,27 @@ export default function FeedbackDiscrepancies() {
 
   const fetchPrograms = async () => {
     try {
-        const res = await API.get("/api/programs");
+        const res = await API.get("/api/academics/programs");
         setPrograms(res.data.data || []);
     } catch (err) {
         console.error("Error fetching programs:", err);
     }
   };
 
+  const [branches, setBranches] = useState([]);
+
   useEffect(() => { 
     fetchItems();
     fetchPrograms();
+    const fetchBranches = async () => {
+        try {
+            const res = await API.get("/api/academics/branches");
+            setBranches(res.data.data || []);
+        } catch (err) {
+            console.error("Error fetching branches:", err);
+        }
+    };
+    fetchBranches();
   }, [fetchItems]);
 
   // ── Open resolve dialog & fetch faculty result data ────────────────
@@ -132,7 +140,17 @@ export default function FeedbackDiscrepancies() {
   const handleResultEdit = (index, field, value) => {
     setResultData(prev => {
       const updated = [...prev];
-      updated[index] = { ...updated[index], [field]: value, _edited: true };
+      let newRow = { ...updated[index], [field]: value, _edited: true };
+      
+      // If branchId changed, also sync the legacy 'branch' string
+      if (field === "branchId") {
+        const branchObj = branches.find(b => b._id === value);
+        if (branchObj) {
+          newRow.branch = branchObj.name;
+        }
+      }
+      
+      updated[index] = newRow;
       return updated;
     });
   };
@@ -194,6 +212,7 @@ export default function FeedbackDiscrepancies() {
 
       const newRows = resultData.filter(r => r._isNew && r.subjectName?.trim());
       for (const row of newRows) {
+        const branchName = branches.find(b => b._id === row.branchId)?.name || "";
         await API.post("/api/faculty-feedback-results", {
           facultyId:         selected.facultyInstitutionId,
           facultyName:       selected.facultyName || selected.raisedBy?.name,
@@ -201,7 +220,7 @@ export default function FeedbackDiscrepancies() {
           subjectCode:       row.subjectCode,
           programId:         row.programId,
           branchId:          row.branchId,
-          branch:            row.branch,
+          branch:            branchName,
           semesterNumber:    row.semesterNumber,
           yearNumber:        row.yearNumber,
           section:           row.section,
@@ -219,6 +238,12 @@ export default function FeedbackDiscrepancies() {
       formData.append("proof", proofFile);
       formData.append("status", "RESOLVED");
       formData.append("resolutionNote", `Edited ${editedRows.length} feedback record(s), added ${newRows.length} new record(s).`);
+
+      // Ensure academic identifiers are passed to satisfy backend validation
+      const yearId = selected.academicYearId?._id || selected.academicYearId;
+      const semId = selected.semesterTypeId?._id || selected.semesterTypeId;
+      if (yearId) formData.append("academicYearId", yearId);
+      if (semId) formData.append("semesterTypeId", semId);
 
       await API.put(`/api/discrepancies/${selected._id}`, formData, {
         headers: { "Content-Type": "multipart/form-data" },
@@ -249,9 +274,14 @@ export default function FeedbackDiscrepancies() {
 
     setRejecting(true);
     try {
+      const yearId = rejectItem.academicYearId?._id || rejectItem.academicYearId;
+      const semId = rejectItem.semesterTypeId?._id || rejectItem.semesterTypeId;
+      
       await API.put(`/api/discrepancies/${rejectItem._id}`, {
         status: "REJECTED",
         rejectionNote: rejectNote.trim(),
+        academicYearId: yearId,
+        semesterTypeId: semId,
       });
       setRejectDone(true);
       setTimeout(() => {
@@ -290,13 +320,13 @@ export default function FeedbackDiscrepancies() {
               border: `1.5px solid var(--border-color)`,
               display: "flex", alignItems: "center", gap: 2,
               boxShadow: "var(--shadow-premium)",
-              transition: "transform 0.2s",
+              transition: "all 0.3s ease",
               "&:hover": { transform: "translateY(-4px)", borderColor: cfg.color }
             }}
           >
-            <Box sx={{ color: cfg.color, background: cfg.bg, p: 1.5, borderRadius: "12px", display: "flex" }}>{cfg.icon}</Box>
+            <Box sx={{ color: cfg.color, background: cfg.bg, p: 1.5, borderRadius: "12px", display: "flex", alignItems: "center", justifyContent: "center" }}>{cfg.icon}</Box>
             <Box>
-              <Typography sx={{ fontSize: 24, fontWeight: 900, color: "var(--text-primary)", lineHeight: 1 }}>
+              <Typography sx={{ fontSize: 28, fontWeight: 900, color: "var(--text-primary)", lineHeight: 1 }}>
                 {counts[key] || 0}
               </Typography>
               <Typography sx={{ fontSize: 11, fontWeight: 700, color: cfg.color, textTransform: "uppercase", letterSpacing: "0.05em", mt: 0.5 }}>
@@ -335,7 +365,7 @@ export default function FeedbackDiscrepancies() {
             <Table sx={{ minWidth: 900 }}>
               <TableHead sx={{ background: "var(--gradient-primary)" }}>
                 <TableRow>
-                  {["#", "Faculty", "Year / Period", "Section", "Note", "Raised At", "Status", "Action"].map(col => (
+                  {["#", "Faculty", "Year / Period", "Note", "Raised At", "Status", "Action"].map(col => (
                     <TableCell key={col} sx={{ color: "#fff", fontWeight: 700, fontSize: 13, py: 2 }}>
                       {col}
                     </TableCell>
@@ -377,20 +407,7 @@ export default function FeedbackDiscrepancies() {
                         />
                       </TableCell>
 
-                      <TableCell>
-                        <Box
-                          sx={{
-                            px: 1.5, py: 0.4, borderRadius: "10px",
-                            background: "var(--bg-glass)", border: "1px solid var(--border-color)",
-                            fontSize: 12, fontWeight: 700, color: "var(--text-primary)",
-                            display: "inline-block",
-                          }}
-                        >
-                          {SECTION_LABEL[item.section] || item.section}
-                        </Box>
-                      </TableCell>
-
-                      <TableCell sx={{ maxWidth: 220 }}>
+                      <TableCell sx={{ maxWidth: 300 }}>
                         <Tooltip title={item.note} placement="top">
                           <Typography
                             fontSize={13}
@@ -409,7 +426,7 @@ export default function FeedbackDiscrepancies() {
 
                       <TableCell>
                         <Typography fontSize={12} fontWeight={600} color="var(--text-primary)">
-                          {new Date(item.createdAt).toLocaleDateString()}
+                          {new Date(item.createdAt).toLocaleDateString("en-IN", { day: '2-digit', month: 'short', year: 'numeric' })}
                         </Typography>
                         <Typography fontSize={11} color="var(--text-secondary)" sx={{ opacity: 0.7 }}>
                           {new Date(item.createdAt).toLocaleTimeString()}
@@ -467,8 +484,8 @@ export default function FeedbackDiscrepancies() {
                               sx={{
                                 borderRadius: "10px", textTransform: "none",
                                 fontSize: 11, px: 1.5, py: 0.4, minWidth: 0,
-                                color: "#b71c1c", borderColor: "#b71c1c",
-                                "&:hover": { background: "rgba(183, 28, 28, 0.05)", borderColor: "#b71c1c" },
+                                color: "#EF4444", borderColor: "#EF444433",
+                                "&:hover": { background: "rgba(239, 68, 68, 0.05)", borderColor: "#EF4444" },
                               }}
                             >
                               ✕ Reject
@@ -479,7 +496,7 @@ export default function FeedbackDiscrepancies() {
                             <Tooltip title="Download Proof">
                               <IconButton
                                 size="small"
-                                href={`${import.meta.env.VITE_API_URL || "http://localhost:3000"}/uploads/discrepancies/${item.proofDocument}`}
+                                href={`${import.meta.env.VITE_BACKEND_URL}/uploads/discrepancies/${item.proofDocument}`}
                                 target="_blank"
                                 sx={{ background: "var(--bg-glass)", border: "1px solid var(--border-color)" }}
                               >
@@ -558,7 +575,7 @@ export default function FeedbackDiscrepancies() {
                       {selected.academicYearId?.year} — {selected.semester ? `Sem/Year ${selected.semester}` : selected.semesterTypeId?.name}
                     </Typography>
                     <Box sx={{ mt: 1, px: 2, py: 0.5, borderRadius: "10px", background: "var(--bg-panel)", border: "1px solid var(--border-color)", fontSize: 12, fontWeight: 700, display: "inline-block", color: "var(--text-primary)" }}>
-                      {SECTION_LABEL[selected.section]}
+                      💬 Feedback
                     </Box>
                   </Box>
                 </Box>
@@ -618,7 +635,18 @@ export default function FeedbackDiscrepancies() {
                                     {programs.map(p => <MenuItem key={p._id} value={p._id}>{p.name}</MenuItem>)}
                                 </Select>
                             </TableCell>
-                            <TableCell><TextField variant="standard" value={row.branch} onChange={e => handleResultEdit(idx, "branch", e.target.value)} InputProps={{ disableUnderline: !row._edited, sx: { fontSize: 13, fontWeight: 600 } }} sx={{ width: 80 }} /></TableCell>
+                            <TableCell>
+                                <Select 
+                                    variant="standard" 
+                                    value={row.branchId} 
+                                    onChange={e => handleResultEdit(idx, "branchId", e.target.value)}
+                                    sx={{ fontSize: 12, fontWeight: 600, minWidth: 80 }}
+                                    disableUnderline={!row._edited}
+                                >
+                                    <MenuItem value="">—</MenuItem>
+                                    {branches.filter(b => !row.programId || b.programId?._id === row.programId || b.programId === row.programId).map(b => <MenuItem key={b._id} value={b._id}>{b.name}</MenuItem>)}
+                                </Select>
+                            </TableCell>
                             <TableCell><TextField variant="standard" value={row.section} onChange={e => handleResultEdit(idx, "section", e.target.value)} InputProps={{ disableUnderline: !row._edited, sx: { fontSize: 13, fontWeight: 600 } }} sx={{ width: 40 }} /></TableCell>
                             <TableCell><TextField variant="standard" type="number" value={row.phase} onChange={e => handleResultEdit(idx, "phase", e.target.value)} InputProps={{ disableUnderline: !row._edited, sx: { fontSize: 13, fontWeight: 600 } }} sx={{ width: 35 }} /></TableCell>
                             <TableCell>
@@ -790,9 +818,9 @@ export default function FeedbackDiscrepancies() {
               disabled={rejecting || !rejectNote.trim()}
               sx={{
                 borderRadius: "14px", px: 4, py: 1.2, textTransform: "none",
-                fontWeight: 800, background: "#ef4444",
+                fontWeight: 800, background: "#EF4444",
                 boxShadow: "0 8px 20px rgba(239, 68, 68, 0.25)",
-                "&:hover": { background: "#dc2626" }
+                "&:hover": { background: "#DC2626" }
               }}
             >
               {rejecting ? <CircularProgress size={20} color="inherit" /> : "✕ Confirm Reject"}
