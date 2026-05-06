@@ -49,7 +49,7 @@ const Header = ({ onMenuClick }) => {
   };
 
   const getEcapImage = () => {
-    if (!user || user.profileImage) return null;
+    if (!user || user.profileImage || !user.institutionId || user.institutionId === "Prime") return null;
     if (user.userType === "Employee") {
       return `https://info.aec.edu.in/aus/employeephotos/${user.institutionId}.jpg`;
     } else if (user.userType === "Student") {

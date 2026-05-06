@@ -207,7 +207,7 @@ const DeptResearchApprovals = () => {
 
             <Grid container spacing={3}>
                 {/* Main Content Area */}
-                <Grid item xs={12} lg={8.5}>
+                <Grid xs={12} lg={8.5}>
                     <SectionHeader title="Research Requests" />
                     <DataTable
                         columns={columns}
@@ -217,7 +217,7 @@ const DeptResearchApprovals = () => {
                 </Grid>
 
                 {/* Sidebar Area */}
-                <Grid item xs={12} lg={3.5}>
+                <Grid xs={12} lg={3.5}>
                     <Card
                         sx={{
                             borderRadius: "24px",

@@ -310,12 +310,11 @@ export default function Teaching() {
   const feedbackColumns = [
     "S.NO",
     "COURSE NAME",
-    "COURSE ID",
-    "SECTION",
+    "SEM - BRANCH - SEC",
     "PHASE",
-    "STUDENTS GIVEN",
+    "GIVEN / TOTAL",
     "PERCENTAGE",
-    "OVERALL PERCENTAGE",
+    "OVERALL %",
   ];
 
   const feedbackRows = feedbackResults.map((r, i) => [
@@ -325,31 +324,62 @@ export default function Teaching() {
     },
     {
       value: r.subjectName,
-      display: <Box sx={{ fontWeight: 500 }}>{r.subjectName}</Box>,
+      display: (
+        <Box>
+            <Box sx={{ fontWeight: 700, fontSize: 14 }}>{r.subjectName}</Box>
+            <Box sx={{ fontSize: 11, color: "var(--text-secondary)", fontWeight: 500 }}>{r.subjectCode}</Box>
+        </Box>
+      ),
     },
     {
-      value: r.subjectCode,
-      display: <Box>{r.subjectCode}</Box>,
-    },
-    {
-      value: r.section,
-      display: <Box>{r.section || "—"}</Box>,
+      value: `${r.semesterDisplay || "—"} - ${r.branch || "—"} - ${r.section || "—"}`,
+      display: (
+        <Box sx={{ whiteSpace: "nowrap" }}>
+          <Box component="span" sx={{ fontWeight: 700, color: "var(--text-primary)" }}>{r.semesterDisplay || "—"}</Box>
+          {r.branch && <Box component="span" sx={{ color: "var(--text-secondary)", fontSize: 12 }}> — {r.branch}</Box>}
+          {r.section && <Box component="span" sx={{ color: "var(--color-primary)", fontWeight: 800 }}> — {r.section}</Box>}
+        </Box>
+      ),
     },
     {
       value: r.phase,
-      display: <Box>{r.phase || "—"}</Box>,
+      display: (
+        <Box sx={{ 
+            px: 1.5, py: 0.3, borderRadius: "20px", 
+            background: r.phase === 1 ? "rgba(245, 158, 11, 0.1)" : "rgba(139, 92, 246, 0.1)",
+            color: r.phase === 1 ? "#d97706" : "#7c3aed",
+            fontSize: 10, fontWeight: 900, textAlign: "center", display: "inline-block"
+        }}>
+            PH {r.phase || "—"}
+        </Box>
+      ),
     },
     {
-      value: r.givenStudents,
-      display: <Box>{r.givenStudents} / {r.totalStudents}</Box>,
+      value: `${r.givenStudents} / ${r.totalStudents}`,
+      display: (
+        <Box sx={{ fontWeight: 700 }}>
+          {r.givenStudents} <span style={{ color: "#999", fontWeight: 400 }}>/</span> {r.totalStudents}
+        </Box>
+      ),
     },
     {
       value: r.percentage,
-      display: <Box sx={{ color: "green", fontWeight: 600 }}>{r.percentage}%</Box>,
+      display: (
+        <Box sx={{ fontWeight: 800, color: "var(--color-primary)", fontSize: 15 }}>
+          {Number(r.percentage).toFixed(1)}%
+        </Box>
+      ),
     },
     {
       value: r.overallPercentage,
-      display: <Box sx={{ color: "blue", fontWeight: 600 }}>{r.overallPercentage}%</Box>,
+      display: (
+        <Box sx={{ 
+            fontWeight: 800, color: "#10b981", fontSize: 15,
+            display: "flex", alignItems: "center", gap: 0.5
+        }}>
+          {Number(r.overallPercentage).toFixed(1)}%
+        </Box>
+      ),
     },
   ]);
 

@@ -103,7 +103,7 @@ const ExamDashboard = () => {
       {/* Row 1: Summary Cards */}
       <Grid container spacing={2} sx={{ mb: 4 }}>
         {topCards.map((card, i) => (
-          <Grid item key={i} xs={12} sm={6} md={4} lg sx={{ flex: "1 1 0", minWidth: 0 }}>
+          <Grid key={i} xs={12} sm={6} md={4} lg sx={{ flex: "1 1 0", minWidth: 0 }}>
             <Card sx={{ borderRadius: "16px", border: "1px solid var(--border-color)", background: "var(--bg-panel)", boxShadow: "var(--shadow-premium)", p: 2, height: "100%", display: "flex", alignItems: "center", gap: 2}}>
               <Box sx={{ width: 48, height: 48, borderRadius: "14px", display: "flex", alignItems: "center", justifyContent: "center", backgroundColor: card.bgColor, color: card.color, flexShrink: 0 }}>
                 {card.icon}
@@ -127,7 +127,7 @@ const ExamDashboard = () => {
             
             <Box sx={{ display: "flex", alignItems: "center", gap: 3, mb: 4 }}>
               <Box sx={{ position: "relative", width: 140, height: 140 }}>
-                <ResponsiveContainer>
+                <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0} debounce={50}>
                   <PieChart>
                     <Pie data={submissionData} dataKey="value" innerRadius={50} outerRadius={70} stroke="none">
                       {submissionData.map((entry, index) => (
@@ -171,25 +171,25 @@ const ExamDashboard = () => {
 
             <Box sx={{ overflowX: "auto" }}>
               <Grid container sx={{ borderBottom: "1px solid var(--border-color)", pb: 1.5, mb: 1 }}>
-                <Grid item xs={3.5}><Typography variant="caption" sx={{ color: "var(--text-secondary)", fontWeight: 700, textTransform: "uppercase", fontSize: "0.65rem" }}>Faculty</Typography></Grid>
-                <Grid item xs={3.5}><Typography variant="caption" sx={{ color: "var(--text-secondary)", fontWeight: 700, textTransform: "uppercase", fontSize: "0.65rem" }}>Subject / Course</Typography></Grid>
-                <Grid item xs={2.5}><Typography variant="caption" sx={{ color: "var(--text-secondary)", fontWeight: 700, textTransform: "uppercase", fontSize: "0.65rem" }}>Status</Typography></Grid>
-                <Grid item xs={2.5}><Typography variant="caption" sx={{ color: "var(--text-secondary)", fontWeight: 700, textTransform: "uppercase", fontSize: "0.65rem" }}>Submitted At</Typography></Grid>
+                <Grid xs={3.5}><Typography variant="caption" sx={{ color: "var(--text-secondary)", fontWeight: 700, textTransform: "uppercase", fontSize: "0.65rem" }}>Faculty</Typography></Grid>
+                <Grid xs={3.5}><Typography variant="caption" sx={{ color: "var(--text-secondary)", fontWeight: 700, textTransform: "uppercase", fontSize: "0.65rem" }}>Subject / Course</Typography></Grid>
+                <Grid xs={2.5}><Typography variant="caption" sx={{ color: "var(--text-secondary)", fontWeight: 700, textTransform: "uppercase", fontSize: "0.65rem" }}>Status</Typography></Grid>
+                <Grid xs={2.5}><Typography variant="caption" sx={{ color: "var(--text-secondary)", fontWeight: 700, textTransform: "uppercase", fontSize: "0.65rem" }}>Submitted At</Typography></Grid>
               </Grid>
 
               {recentSubmissions.map((sub, i) => (
                 <Grid container key={i} alignItems="center" sx={{ py: 1.5, borderBottom: i < recentSubmissions.length - 1 ? "1px solid var(--bg-accent-1)" : "none" }}>
-                  <Grid item xs={3.5} sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                  <Grid xs={3.5} sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
                     <Avatar src={sub.avatar} sx={{ width: 32, height: 32, border: "1px solid var(--border-color)" }} />
                     <Box>
                       <Typography sx={{ fontSize: "0.85rem", fontWeight: 700, color: "var(--text-primary)" }}>{sub.name}</Typography>
                       <Typography sx={{ fontSize: "0.75rem", color: "var(--text-secondary)", opacity: 0.8 }}>{sub.dept}</Typography>
                     </Box>
                   </Grid>
-                  <Grid item xs={3.5}>
+                  <Grid xs={3.5}>
                     <Typography sx={{ fontSize: "0.85rem", color: "var(--text-primary)", fontWeight: 500 }}>{sub.subject}</Typography>
                   </Grid>
-                  <Grid item xs={2.5}>
+                  <Grid xs={2.5}>
                     <Chip 
                         label={sub.status} 
                         size="small" 
@@ -203,7 +203,7 @@ const ExamDashboard = () => {
                         }} 
                     />
                   </Grid>
-                  <Grid item xs={2.5}>
+                  <Grid xs={2.5}>
                     <Typography sx={{ fontSize: "0.8rem", color: "var(--text-secondary)", fontWeight: 500 }}>{sub.time}</Typography>
                   </Grid>
                 </Grid>

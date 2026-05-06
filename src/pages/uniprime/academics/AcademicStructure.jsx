@@ -393,7 +393,7 @@ const AcademicStructure = () => {
                     border: "1px solid var(--border-color)"
                 }}>
                     <Grid container spacing={3} alignItems="center">
-                        <Grid item xs={12}>
+                        <Grid xs={12}>
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1 }}>
                                 <Typography variant="h5" fontWeight={800} sx={{ color: 'var(--text-primary)' }}>
                                     {selectedDepartment.name}

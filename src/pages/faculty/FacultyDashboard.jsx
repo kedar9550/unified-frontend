@@ -64,7 +64,7 @@ const FacultyDashboard = () => {
             uniqueYearsMap.set(y.year, y);
           }
         });
-        
+
         const sortedUniqueYears = Array.from(uniqueYearsMap.values())
           .sort((a, b) => b.year.localeCompare(a.year));
 
@@ -204,7 +204,6 @@ const FacultyDashboard = () => {
       <Grid container spacing={3} sx={{ mb: 4 }}>
         {topCards.map((card, i) => (
           <Grid
-            item
             key={i}
             xs={12}
             sm={6}
@@ -396,7 +395,7 @@ const FacultyDashboard = () => {
                   Course Load
                 </Typography>
                 <Box sx={{ position: "relative", width: 160, height: 160 }}>
-                  <ResponsiveContainer>
+                  <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0} debounce={50}>
                     <PieChart>
                       <Pie
                         data={courseLoadData}
