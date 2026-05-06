@@ -27,14 +27,16 @@ import {
   UploadFile as UploadIcon,
   Download as DownloadIcon,
   Cancel as RejectedIcon,
+  Add as AddIcon,
 } from "@mui/icons-material";
+import { Avatar, MenuItem, Select, FormControl, InputLabel } from "@mui/material";
 import PageHeader from "../../components/common/PageHeader";
 import SectionHeader from "../../components/common/SectionHeader";
 import API from "../../api/axios";
 
 // ── Status config ─────────────────────────────────────────────────────
 const STATUS_CONFIG = {
-  PENDING: { label: "Pending", color: "#F59E0B", bg: "rgba(245, 158, 11, 0.1)", icon: <PendingIcon fontSize="small" /> },
+  PENDING:  { label: "Pending",  color: "#F59E0B", bg: "rgba(245, 158, 11, 0.1)", icon: <PendingIcon fontSize="small" /> },
   RESOLVED: { label: "Resolved", color: "#10B981", bg: "rgba(16, 185, 129, 0.1)", icon: <ResolvedIcon fontSize="small" /> },
   REJECTED: { label: "Rejected", color: "#EF4444", bg: "rgba(239, 68, 68, 0.1)", icon: <RejectedIcon fontSize="small" /> },
 };
@@ -54,6 +56,8 @@ export default function Discrepancies() {
   const [selected, setSelected] = useState(null);   // the discrepancy item
   const [resultData, setResultData] = useState([]);     // faculty result rows
   const [resultLoading, setResultLoading] = useState(false);
+  const [programs, setPrograms] = useState([]);
+  const [branches, setBranches] = useState([]);
   const [proofFile, setProofFile] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -85,7 +89,29 @@ export default function Discrepancies() {
     }
   }, []);
 
-  useEffect(() => { fetchItems(); }, [fetchItems]);
+  const fetchPrograms = async () => {
+    try {
+      const res = await API.get("/api/programs");
+      setPrograms(res.data.data || []);
+    } catch (err) {
+      console.error("Error fetching programs:", err);
+    }
+  };
+
+  const fetchBranches = async () => {
+    try {
+      const res = await API.get("/api/branches");
+      setBranches(res.data || []);
+    } catch (err) {
+      console.error("Error fetching branches:", err);
+    }
+  };
+
+  useEffect(() => { 
+    fetchItems(); 
+    fetchPrograms();
+    fetchBranches();
+  }, [fetchItems]);
 
   // ── Open resolve dialog & fetch faculty result data ────────────────
   const openResolve = async (item) => {
@@ -104,8 +130,15 @@ export default function Discrepancies() {
           semester: item.semesterTypeId?._id,
         },
       });
-      // Make each row editable — clone the data
-      const rows = (res.data || []).map(r => ({ ...r, _edited: false }));
+      // Make each row editable — clone the data and align field names
+      const rows = (res.data || []).map(r => ({ 
+        ...r, 
+        _edited: false,
+        subjectName: r.courseName || r.subjectName,
+        subjectCode: r.courseCode || r.subjectCode,
+        programId: r.programId?._id || r.programId || "",
+        branchId: r.branchId?._id || r.branchId || "",
+      }));
       setResultData(rows);
     } catch (err) {
       console.error("Failed to fetch faculty results:", err);
@@ -140,7 +173,10 @@ export default function Discrepancies() {
         _edited: true,
         subjectName: "",
         subjectCode: "",
-        branch: "",
+        programId: "",
+        branchId: "",
+        courseType: "THEORY",
+        section: "A",
         appeared: 0,
         passed: 0,
         passPercentage: "0.00",
@@ -175,14 +211,20 @@ export default function Discrepancies() {
       // 2. Create new rows
       const newRows = resultData.filter(r => r._isNew && r.subjectName?.trim());
       for (const row of newRows) {
+        const branchName = branches.find(b => b._id === row.branchId)?.name || "";
         await API.post("/api/faculty-subject-results", {
           facultyId: selected.facultyInstitutionId,
           facultyName: selected.facultyName,
-          subjectName: row.subjectName,
-          subjectCode: row.subjectCode,
-          branch: row.branch,
+          courseName: row.subjectName,
+          courseCode: row.subjectCode,
+          programId: row.programId,
+          branchId: row.branchId,
+          branch: branchName,
+          courseType: row.courseType,
+          section: row.section,
           academicYearId: selected.academicYearId?._id,
           semesterTypeId: selected.semesterTypeId?._id,
+          semester: selected.semester,
           appeared: Number(row.appeared),
           passed: Number(row.passed),
         });
@@ -254,77 +296,27 @@ export default function Discrepancies() {
       />
 
       {/* ── STAT PILLS (Responsive Grid) ────────────────────── */}
-      <Box
-        sx={{
-          display: "grid",
-          gridTemplateColumns: {
-            xs: "1fr",
-            sm: "repeat(3, 1fr)"
-          },
-          gap: 2,
-          mb: 4
-        }}
-      >
+      <Box sx={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 2, mb: 4 }}>
         {Object.entries(STATUS_CONFIG).map(([key, cfg]) => (
           <Box
             key={key}
             sx={{
-              px: { xs: 2.5, md: 3.5 },
-              py: { xs: 2, md: 2.5 },
+              px: 3, py: 2.5,
               borderRadius: "20px",
               background: "var(--bg-panel)",
               border: `1.5px solid var(--border-color)`,
-              display: "flex",
-              alignItems: "center",
-              gap: 2.5,
+              display: "flex", alignItems: "center", gap: 2,
+              boxShadow: "var(--shadow-premium)",
               transition: "all 0.3s ease",
-              boxShadow: `var(--shadow-premium)`,
-              "&:hover": {
-                transform: "translateY(-4px)",
-                boxShadow: `var(--shadow-premium)`,
-                borderColor: cfg.color,
-                "& .icon-box": { background: cfg.bg }
-              }
+              "&:hover": { transform: "translateY(-4px)", borderColor: cfg.color }
             }}
           >
-            <Box
-              className="icon-box"
-              sx={{
-                color: cfg.color,
-                background: "var(--bg-glass)",
-                width: 48,
-                height: 48,
-                borderRadius: "14px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                border: "1px solid var(--border-color)",
-                transition: "all 0.3s ease"
-              }}
-            >
-              {cfg.icon}
-            </Box>
+            <Box sx={{ color: cfg.color, background: cfg.bg, p: 1.5, borderRadius: "12px", display: "flex", alignItems: "center", justifyContent: "center" }}>{cfg.icon}</Box>
             <Box>
-              <Typography
-                sx={{
-                  fontSize: { xs: 26, md: 32 },
-                  fontWeight: 900,
-                  color: "var(--text-primary)",
-                  lineHeight: 1
-                }}
-              >
+              <Typography sx={{ fontSize: 28, fontWeight: 900, color: "var(--text-primary)", lineHeight: 1 }}>
                 {counts[key] || 0}
               </Typography>
-              <Typography
-                sx={{
-                  fontSize: 12,
-                  fontWeight: 700,
-                  color: cfg.color,
-                  textTransform: "uppercase",
-                  mt: 0.5,
-                  letterSpacing: "0.08em"
-                }}
-              >
+              <Typography sx={{ fontSize: 11, fontWeight: 700, color: cfg.color, textTransform: "uppercase", letterSpacing: "0.05em", mt: 0.5 }}>
                 {cfg.label}
               </Typography>
             </Box>
@@ -397,12 +389,17 @@ export default function Discrepancies() {
 
                       {/* Faculty */}
                       <TableCell>
-                        <Typography fontWeight={700} fontSize={14} sx={{ color: "var(--text-primary)" }}>
-                          {item.facultyName || item.raisedBy?.name || "—"}
-                        </Typography>
-                        <Typography fontSize={12} sx={{ color: "var(--text-secondary)", opacity: 0.8 }}>
-                          {item.facultyInstitutionId || item.raisedBy?.institutionId}
-                        </Typography>
+                        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                          <Avatar sx={{ width: 32, height: 32 }}>{(item.facultyName || item.raisedBy?.name)?.charAt(0)}</Avatar>
+                          <Box>
+                            <Typography fontWeight={700} fontSize={14} sx={{ color: "var(--text-primary)" }}>
+                              {item.facultyName || item.raisedBy?.name || "—"}
+                            </Typography>
+                            <Typography fontSize={11} sx={{ color: "var(--text-secondary)", opacity: 0.8 }}>
+                              {item.facultyInstitutionId || item.raisedBy?.institutionId}
+                            </Typography>
+                          </Box>
+                        </Box>
                       </TableCell>
 
                       {/* Year / Sem */}
@@ -411,7 +408,7 @@ export default function Discrepancies() {
                           {item.academicYearId?.year || "—"}
                         </Typography>
                         <Chip
-                          label={item.semesterTypeId?.name || "—"}
+                          label={item.semester ? `Sem/Year ${item.semester}` : item.semesterTypeId?.name || "—"}
                           size="small"
                           sx={{ 
                             fontSize: 10, 
@@ -508,8 +505,9 @@ export default function Discrepancies() {
                               onClick={() => openResolve(item)}
                               sx={{
                                 borderRadius: "10px", textTransform: "none",
-                                fontSize: 11, px: 1.5, py: 0.4, minWidth: 0,
-                                background: "linear-gradient(135deg,#0b5299,#1c6ed5)",
+                                fontSize: 11, px: 1.5, py: 0.5, minWidth: 0,
+                                background: "var(--gradient-primary)",
+                                boxShadow: "var(--shadow-premium)",
                               }}
                             >
                               ✓ Resolve
@@ -520,9 +518,9 @@ export default function Discrepancies() {
                               onClick={() => openReject(item)}
                               sx={{
                                 borderRadius: "10px", textTransform: "none",
-                                fontSize: 11, px: 1.5, py: 0.3, minWidth: 0,
-                                color: "#b71c1c", borderColor: "#b71c1c",
-                                "&:hover": { background: "#ffebee", borderColor: "#b71c1c" },
+                                fontSize: 11, px: 1.5, py: 0.4, minWidth: 0,
+                                color: "#EF4444", borderColor: "#EF444433",
+                                "&:hover": { background: "rgba(239, 68, 68, 0.05)", borderColor: "#EF4444" },
                               }}
                             >
                               ✕ Reject
@@ -572,7 +570,7 @@ export default function Discrepancies() {
       >
         <DialogTitle sx={{ pb: 0 }}>
           <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <Typography fontWeight={700} fontSize={17}>
+            <Typography fontWeight={900} fontSize={20} color="var(--text-primary)">
               ✏️ Review &amp; Resolve Discrepancy
             </Typography>
             <IconButton size="small" onClick={() => setSelected(null)} disabled={submitting}>
@@ -599,24 +597,28 @@ export default function Discrepancies() {
                     background: "#f0f4fb", border: "1px solid #dde7f5",
                   }}
                 >
-                  <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <Box>
-                      <Typography fontSize={12} color="#888">Raised by</Typography>
-                      <Typography fontWeight={700} fontSize={16}>{selected.facultyName}</Typography>
-                      <Typography fontSize={13} color="#666">
-                        EMP ID: {selected.facultyInstitutionId}
-                      </Typography>
+                  <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                    <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
+                      <Avatar sx={{ width: 48, height: 48 }}>{(selected.facultyName || selected.raisedBy?.name)?.charAt(0)}</Avatar>
+                      <Box>
+                        <Typography fontSize={12} color="var(--text-secondary)" fontWeight={600}>RAISED BY</Typography>
+                        <Typography fontWeight={800} fontSize={18} color="var(--text-primary)">{selected.facultyName || selected.raisedBy?.name}</Typography>
+                        <Typography fontSize={13} color="var(--text-secondary)">
+                          ID: {selected.facultyInstitutionId || selected.raisedBy?.institutionId}
+                        </Typography>
+                      </Box>
                     </Box>
                     <Box sx={{ textAlign: "right" }}>
-                      <Typography fontSize={12} color="#888">Period</Typography>
-                      <Typography fontWeight={600} fontSize={14}>
-                        {selected.academicYearId?.year} — {selected.semesterTypeId?.name}
+                      <Typography fontSize={12} color="var(--text-secondary)" fontWeight={600}>ACADEMIC PERIOD</Typography>
+                      <Typography fontWeight={700} fontSize={15} color="var(--text-primary)">
+                        {selected.academicYearId?.year} — {selected.semester ? `Sem/Year ${selected.semester}` : selected.semesterTypeId?.name}
                       </Typography>
                       <Box
                         sx={{
-                          mt: 0.5, px: 1.5, py: 0.3, borderRadius: "8px",
-                          background: "#eef3f9", fontSize: 12, fontWeight: 600,
-                          display: "inline-block",
+                          mt: 1, px: 2, py: 0.5, borderRadius: "10px",
+                          background: "var(--bg-panel)", border: "1px solid var(--border-color)",
+                          fontSize: 12, fontWeight: 700,
+                          display: "inline-block", color: "var(--text-primary)"
                         }}
                       >
                         {SECTION_LABEL[selected.section]}
@@ -630,13 +632,23 @@ export default function Discrepancies() {
                 </Box>
 
                 {/* ── Faculty Result Data (editable table) ── */}
-                <Box>
-                  <Typography sx={{ fontSize: 14, fontWeight: 700, color: "#333", mb: 1 }}>
-                    📊 Faculty Result Data
-                    <span style={{ fontSize: 12, fontWeight: 400, color: "#888", marginLeft: 8 }}>
-                      (Edit values below, then upload proof and submit)
-                    </span>
+                <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1.5 }}>
+                  <Typography sx={{ fontSize: 15, fontWeight: 800, color: "var(--text-primary)" }}>
+                    📊 Faculty Result Records
                   </Typography>
+                  <Button
+                    size="small"
+                    startIcon={<AddIcon />}
+                    onClick={handleAddRow}
+                    sx={{
+                      borderRadius: "10px", textTransform: "none", fontWeight: 700,
+                      background: "var(--bg-glass)", border: "1px solid var(--border-color)",
+                      color: "var(--text-primary)"
+                    }}
+                  >
+                    Add Record
+                  </Button>
+                </Box>
 
                   {resultLoading ? null : resultData.length === 0 ? (
                     <Box
@@ -650,12 +662,12 @@ export default function Discrepancies() {
                       </Typography>
                     </Box>
                   ) : (
-                    <Paper sx={{ borderRadius: "14px", overflow: "hidden", boxShadow: "0 2px 10px rgba(0,0,0,0.06)" }}>
-                      <Table size="small">
+                    <Paper sx={{ borderRadius: "14px", overflow: "hidden", boxShadow: "0 2px 10px rgba(0,0,0,0.06)", overflowX: "auto" }}>
+                      <Table size="small" sx={{ minWidth: 1000 }}>
                         <TableHead sx={{ background: "#f0f4fb" }}>
                           <TableRow>
-                            {["#", "Subject", "Code", "Branch", "Appeared", "Passed", "Pass %"].map(h => (
-                              <TableCell key={h} sx={{ fontWeight: 600, fontSize: 12, color: "#444" }}>
+                            {["#", "Subject", "Code", "Prog", "Branch", "Type", "Sec", "App", "Pas", "%", ""].map(h => (
+                              <TableCell key={h} sx={{ fontWeight: 700, fontSize: 12, color: "#444", py: 1.5 }}>
                                 {h}
                               </TableCell>
                             ))}
@@ -670,11 +682,8 @@ export default function Discrepancies() {
                                 transition: "background 0.2s",
                               }}
                             >
-                              <TableCell sx={{ fontWeight: 600, fontSize: 12, width: 30 }}>
+                              <TableCell sx={{ fontWeight: 700, fontSize: 12, width: 30 }}>
                                 {idx + 1}
-                                {row._isNew && (
-                                  <Typography fontSize={9} color="#e65100" fontWeight={700}>NEW</Typography>
-                                )}
                               </TableCell>
 
                               <TableCell>
@@ -682,8 +691,7 @@ export default function Discrepancies() {
                                   variant="standard"
                                   value={row.subjectName || ""}
                                   onChange={e => handleResultEdit(idx, "subjectName", e.target.value)}
-                                  InputProps={{ disableUnderline: !row._edited, sx: { fontSize: 13 } }}
-                                  placeholder={row._isNew ? "Subject Name" : ""}
+                                  InputProps={{ disableUnderline: !row._edited, sx: { fontSize: 13, fontWeight: 600 } }}
                                   fullWidth
                                 />
                               </TableCell>
@@ -693,20 +701,58 @@ export default function Discrepancies() {
                                   variant="standard"
                                   value={row.subjectCode || ""}
                                   onChange={e => handleResultEdit(idx, "subjectCode", e.target.value)}
-                                  InputProps={{ disableUnderline: !row._edited, sx: { fontSize: 13 } }}
-                                  placeholder={row._isNew ? "Code" : ""}
-                                  sx={{ width: 80 }}
+                                  InputProps={{ disableUnderline: !row._edited, sx: { fontSize: 13, fontWeight: 600 } }}
+                                  sx={{ width: 70 }}
                                 />
+                              </TableCell>
+
+                              <TableCell>
+                                <Select 
+                                    variant="standard" 
+                                    value={row.programId} 
+                                    onChange={e => handleResultEdit(idx, "programId", e.target.value)}
+                                    sx={{ fontSize: 12, fontWeight: 600, minWidth: 80 }}
+                                    disableUnderline={!row._edited}
+                                >
+                                    <MenuItem value="">—</MenuItem>
+                                    {programs.map(p => <MenuItem key={p._id} value={p._id}>{p.name}</MenuItem>)}
+                                </Select>
+                              </TableCell>
+
+                              <TableCell>
+                                <Select 
+                                    variant="standard" 
+                                    value={row.branchId} 
+                                    onChange={e => handleResultEdit(idx, "branchId", e.target.value)}
+                                    sx={{ fontSize: 12, fontWeight: 600, minWidth: 80 }}
+                                    disableUnderline={!row._edited}
+                                >
+                                    <MenuItem value="">—</MenuItem>
+                                    {branches.filter(b => !row.programId || b.programId?._id === row.programId || b.programId === row.programId).map(b => <MenuItem key={b._id} value={b._id}>{b.name}</MenuItem>)}
+                                </Select>
+                              </TableCell>
+
+                              <TableCell>
+                                <Select
+                                    variant="standard"
+                                    value={row.courseType || "THEORY"}
+                                    onChange={e => handleResultEdit(idx, "courseType", e.target.value)}
+                                    sx={{ fontSize: 12, fontWeight: 600, minWidth: 70 }}
+                                    disableUnderline={!row._edited}
+                                >
+                                    <MenuItem value="THEORY">Theory</MenuItem>
+                                    <MenuItem value="PRACTICAL">Practical</MenuItem>
+                                    <MenuItem value="INTEGRATED">Integrated</MenuItem>
+                                </Select>
                               </TableCell>
 
                               <TableCell>
                                 <TextField
                                   variant="standard"
-                                  value={row.branch || ""}
-                                  onChange={e => handleResultEdit(idx, "branch", e.target.value)}
-                                  InputProps={{ disableUnderline: !row._edited, sx: { fontSize: 13 } }}
-                                  placeholder={row._isNew ? "Branch" : ""}
-                                  sx={{ width: 80 }}
+                                  value={row.section || ""}
+                                  onChange={e => handleResultEdit(idx, "section", e.target.value)}
+                                  InputProps={{ disableUnderline: !row._edited, sx: { fontSize: 13, fontWeight: 600 } }}
+                                  sx={{ width: 40 }}
                                 />
                               </TableCell>
 
@@ -716,8 +762,8 @@ export default function Discrepancies() {
                                   type="number"
                                   value={row.appeared ?? ""}
                                   onChange={e => handleResultEdit(idx, "appeared", e.target.value)}
-                                  InputProps={{ sx: { fontSize: 13, fontWeight: 600 } }}
-                                  sx={{ width: 70 }}
+                                  InputProps={{ disableUnderline: !row._edited, sx: { fontSize: 13, fontWeight: 700 } }}
+                                  sx={{ width: 45 }}
                                 />
                               </TableCell>
 
@@ -727,30 +773,31 @@ export default function Discrepancies() {
                                   type="number"
                                   value={row.passed ?? ""}
                                   onChange={e => handleResultEdit(idx, "passed", e.target.value)}
-                                  InputProps={{ sx: { fontSize: 13, fontWeight: 600 } }}
-                                  sx={{ width: 70 }}
+                                  InputProps={{ disableUnderline: !row._edited, sx: { fontSize: 13, fontWeight: 700 } }}
+                                  sx={{ width: 45 }}
                                 />
                               </TableCell>
 
                               <TableCell>
-                                <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-                                  <Typography
-                                    fontSize={13}
-                                    fontWeight={700}
-                                    color={Number(row.passPercentage) >= 50 ? "#2e7d32" : "#e65100"}
+                                <Typography
+                                  fontSize={13}
+                                  fontWeight={800}
+                                  color={Number(row.passPercentage) >= 50 ? "#2e7d32" : "#e65100"}
+                                >
+                                  {row.passPercentage}%
+                                </Typography>
+                              </TableCell>
+
+                              <TableCell>
+                                {row._isNew && (
+                                  <IconButton
+                                    size="small"
+                                    onClick={() => handleRemoveRow(idx)}
+                                    sx={{ color: "#ef4444", p: 0.3 }}
                                   >
-                                    {row.passPercentage}%
-                                  </Typography>
-                                  {row._isNew && (
-                                    <IconButton
-                                      size="small"
-                                      onClick={() => handleRemoveRow(idx)}
-                                      sx={{ color: "#b71c1c", ml: 0.5, p: 0.3 }}
-                                    >
-                                      <CloseIcon sx={{ fontSize: 16 }} />
-                                    </IconButton>
-                                  )}
-                                </Box>
+                                    <CloseIcon sx={{ fontSize: 16 }} />
+                                  </IconButton>
+                                )}
                               </TableCell>
                             </TableRow>
                           ))}
