@@ -9,6 +9,7 @@ import {
   Select,
   Avatar,
   CircularProgress,
+  Typography,
 } from "@mui/material";
 import { useState, useRef, useEffect } from "react";
 import API from "../../api/axios";
@@ -19,10 +20,7 @@ import {
 
 export default function FeedbackManagement() {
   const [academicYears, setAcademicYears] = useState([]);
-  const [semesters, setSemesters] = useState([]);
   const [selectedYearId, setSelectedYearId] = useState("");
-  const [selectedSemId, setSelectedSemId] = useState("");
-
   const [selectedPhase, setSelectedPhase] = useState("");
 
   const [results, setResults] = useState([]);
@@ -36,9 +34,13 @@ export default function FeedbackManagement() {
       try {
         const res = await API.get("/api/academic-years");
         const years = res.data.years || [];
-        setAcademicYears(years);
-        if (years.length > 0) {
-          const active = years.find((y) => y.isActive) || years[0];
+        // Remove duplicates if any
+        const uniqueYears = Array.from(new Set(years.map(y => y.year)))
+          .map(yearName => years.find(y => y.year === yearName));
+
+        setAcademicYears(uniqueYears);
+        if (uniqueYears.length > 0) {
+          const active = uniqueYears.find((y) => y.isActive) || uniqueYears[0];
           setSelectedYearId(active._id);
         }
       } catch (err) {
@@ -48,33 +50,16 @@ export default function FeedbackManagement() {
     fetchYears();
   }, []);
 
-  // 2. Fetch Global Semesters on Mount
-  useEffect(() => {
-    const fetchSemesters = async () => {
-      try {
-        const res = await API.get('/api/semester-types');
-        const sems = res.data.data || [];
-        setSemesters(sems);
-        if (sems.length > 0) {
-          const active = sems.find((s) => s.isActive) || sems[0];
-          setSelectedSemId(active._id);
-        } else {
-          setSelectedSemId("");
-        }
-      } catch (err) {
-        console.error("Error fetching semesters:", err);
-      }
-    };
-    fetchSemesters();
-  }, []);
-
-  // 3. Fetch Results when filters change
+  // 2. Fetch Results when filters change
   const fetchResults = async () => {
-    if (!selectedYearId || !selectedSemId) return;
+    if (!selectedYearId) return;
     setLoading(true);
     try {
       const res = await API.get("/api/faculty-feedback-results", {
-        params: { academicYear: selectedYearId, semester: selectedSemId, phase:selectedPhase? Number(selectedPhase):"" },
+        params: { 
+            academicYear: selectedYearId, 
+            phase: selectedPhase ? Number(selectedPhase) : "" 
+        },
       });
       setResults(res.data);
     } catch (err) {
@@ -86,9 +71,9 @@ export default function FeedbackManagement() {
 
   useEffect(() => {
     fetchResults();
-  }, [selectedYearId, selectedSemId,selectedPhase]);
+  }, [selectedYearId, selectedPhase]);
 
-  // 4. Handle Upload
+  // 3. Handle Upload
   const handleUploadClick = () => {
     fileInputRef.current.click();
   };
@@ -110,22 +95,28 @@ export default function FeedbackManagement() {
         },
       );
 
-      const { message, errors } = res.data;
+      const { message, errors, successCount, failedCount } = res.data;
       if (errors && errors.length > 0) {
-        alert(`${message}\n\nDetails:\n${errors.join("\n")}`);
+        const errorDetails = errors
+          .map((e) => (typeof e === 'object' ? `• Row ${e.row || '?'}: ${e.message}` : `• ${e}`))
+          .join("\n");
+        alert(
+          `Uploaded ${successCount || 0} rows.\n${failedCount || 0} rows failed to upload.\n\nErrors:\n${errorDetails}`
+        );
       } else {
         alert(message || "Upload successful!");
       }
-      fetchResults(); // Refresh table
+      fetchResults();
     } catch (err) {
       console.error("Upload failed:", err);
       const backendError = err.response?.data?.message;
       const backendDetails = err.response?.data?.errors;
 
-      if (backendDetails && Array.isArray(backendDetails)) {
-        alert(
-          `${backendError || "Upload failed"}\n\nErrors:\n${backendDetails.join("\n")}`,
-        );
+      if (Array.isArray(backendDetails)) {
+        const errorDetails = backendDetails
+          .map((e) => (typeof e === 'object' ? `• Row ${e.row || '?'}: ${e.message}` : `• ${e}`))
+          .join("\n");
+        alert(`${backendError || "Upload failed"}\n\nErrors:\n${errorDetails}`);
       } else {
         alert(backendError || "Upload failed. Please check CSV format.");
       }
@@ -138,20 +129,23 @@ export default function FeedbackManagement() {
   const downloadTemplate = () => {
     const headers = [
       "facultyId",
-      "facultyName",
       "academicYear",
-      "semester",
+      "program",
+      "branch",
       "subjectName",
       "subjectCode",
-      "branch",
       "section",
       "phase",
+      "semester_or_year",
       "totalStudents",
       "givenStudents",
       "percentage",
       "overallPercentage",
     ];
-    const csvContent = headers.join(",") + "\n";
+    const sampleRows = [
+        ["FAC123", "2024-2025", "B.Tech", "CSE", "Mathematics", "MA101", "A", "1", "3", "60", "55", "91.6", "88.5"],
+    ];
+    const csvContent = headers.join(",") + "\n" + sampleRows.map(row => row.join(",")).join("\n") + "\n";
     const blob = new Blob([csvContent], { type: "text/csv" });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -163,12 +157,6 @@ export default function FeedbackManagement() {
 
   // Stats calculation
   const totalUploads = results.length;
-  // const avgOverallRating = results.length > 0 
-  //   ? (results.reduce((acc, r) => acc + (r.overallPercentage || 0), 0) / results.length).toFixed(1)
-  //   : "-";
-  // const avgPercentage = results.length > 0
-  //   ? (results.reduce((acc, r) => acc + (r.percentage || 0), 0) / results.length).toFixed(1)
-  //   : "-";
 
   return (
     <>
@@ -180,91 +168,103 @@ export default function FeedbackManagement() {
         onChange={handleFileChange}
       />
 
-      {/* 🔹 HEADER */}
       <PageHeader
         title="Feedback Coordinator"
-        subtitle="Student Feedback Reports"
-        // breadcrumbs={["Home", "Feedback", "Upload"]}
-        action={
-          <Box sx={{ display: "flex", gap: 2 }}>
-            <ActionButton
-              onClick={downloadTemplate}
-              sx={{ background: "linear-gradient(135deg, #6a11cb, #2575fc)" }}
-            >
-              <DownloadIcon sx={{ mr: 1 }} /> Template
-            </ActionButton>
-
-            <ActionButton onClick={handleUploadClick} disabled={uploading}>
-              {uploading ? (
-                <CircularProgress size={20} color="inherit" />
-              ) : (
-                <>
-                  <UploadIcon sx={{ mr: 1 }} /> Upload CSV
-                </>
-              )}
-            </ActionButton>
-          </Box>
-        }
+        subtitle="Manage and upload student feedback reports"
+        breadcrumbs={["Home", "Feedback", "Management"]}
       />
 
-      {/* 🔹 FILTERS */}
-      <Box sx={{ display: "flex", gap: 2, mb: 3 }}>
-        <Box sx={filterBox}>
-          Academic Year
-          <Select
-            variant="standard"
-            disableUnderline
-            value={selectedYearId}
-            onChange={(e) => setSelectedYearId(e.target.value)}
-            sx={{ ml: 2, minWidth: 120 }}
-          >
-            {academicYears.map((year) => (
-              <MenuItem key={year._id} value={year._id}>
-                {year.year}
-              </MenuItem>
-            ))}
-          </Select>
+      <Box sx={{ display: "flex", gap: 3, mb: 3, alignItems: "center", justifyContent: "space-between", flexWrap: "wrap" }}>
+        <Box sx={{ display: "flex", gap: 2 }}>
+          <Box sx={filterBox}>
+            <Typography sx={{ fontSize: 13, fontWeight: 700, color: "var(--text-primary)", opacity: 0.9 }}>Academic Year</Typography>
+            <Select
+              variant="standard"
+              disableUnderline
+              value={selectedYearId}
+              onChange={(e) => setSelectedYearId(e.target.value)}
+              sx={{
+                ml: 1.5,
+                minWidth: 120,
+                color: "var(--text-primary)",
+                fontWeight: 600,
+                fontSize: 14,
+                '& .MuiSelect-icon': { color: 'var(--text-primary)', opacity: 0.7 }
+              }}
+            >
+              {academicYears.map((year) => (
+                <MenuItem key={year._id} value={year._id}>
+                  {year.year}
+                </MenuItem>
+              ))}
+            </Select>
+          </Box>
+
+          <Box sx={filterBox}>
+            <Typography sx={{ fontSize: 13, fontWeight: 700, color: "var(--text-primary)", opacity: 0.9 }}>Phase</Typography>
+            <Select
+              variant="standard"
+              disableUnderline
+              value={selectedPhase}
+              onChange={(e) => setSelectedPhase(e.target.value)}
+              sx={{
+                ml: 1.5,
+                minWidth: 80,
+                color: "var(--text-primary)",
+                fontWeight: 600,
+                fontSize: 14,
+                '& .MuiSelect-icon': { color: 'var(--text-primary)', opacity: 0.7 }
+              }}
+            >
+              <MenuItem value="">All Phases</MenuItem>
+              <MenuItem value={1}>Phase 1</MenuItem>
+              <MenuItem value={2}>Phase 2</MenuItem>
+            </Select>
+          </Box>
         </Box>
 
-        <Box sx={filterBox}>
-          Semester
-          <Select
-            variant="standard"
-            disableUnderline
-            value={selectedSemId}
-            onChange={(e) => setSelectedSemId(e.target.value)}
-            sx={{ ml: 2, minWidth: 80 }}
+        <Box sx={{ display: "flex", gap: 2 }}>
+          <ActionButton
+            onClick={downloadTemplate}
+            sx={{
+              background: "var(--bg-glass)",
+              color: "var(--text-primary)",
+              border: "1px solid var(--border-color)",
+              boxShadow: "var(--shadow-premium)",
+              fontWeight: 700,
+              px: 3,
+              "&:hover": {
+                background: "var(--bg-accent-1)",
+                borderColor: "var(--color-primary)",
+              }
+            }}
           >
-            {semesters.map((sem) => (
-              <MenuItem key={sem._id} value={sem._id}>
-                {sem.name}
-              </MenuItem>
-            ))}
-          </Select>
-        </Box>
+            <DownloadIcon sx={{ mr: 1, color: "var(--color-primary)" }} /> Template
+          </ActionButton>
 
-        <Box sx={filterBox}>
-          Phase
-          <Select
-            variant="standard"
-            disableUnderline
-            value={selectedPhase}
-            onChange={(e) => setSelectedPhase(e.target.value)}
-            sx={{ ml: 2, minWidth: 80 }}
+          <ActionButton
+            onClick={handleUploadClick}
+            disabled={uploading}
+            sx={{
+              background: "var(--color-primary)",
+              color: "#fff",
+              boxShadow: "var(--shadow-premium)",
+              fontWeight: 800,
+              px: 3,
+              "&:hover": {
+                background: "var(--color-primary)",
+                opacity: 0.9,
+              }
+            }}
           >
-            <MenuItem value="">All</MenuItem>
-            <MenuItem value={1}>Phase 1</MenuItem>
-            <MenuItem value={2}>Phase 2</MenuItem>
-          </Select>
+            <UploadIcon sx={{ mr: 1 }} /> {uploading ? "Uploading..." : "Upload CSV"}
+          </ActionButton>
         </Box>
-
       </Box>
 
       {/* 🔹 STATS */}
       <Box sx={{ display: "flex", gap: 2, mb: 3 }}>
         <StatCard title="Total Records" score={totalUploads} max={""} glass />
-        {/* <StatCard title="Avg Class %" score={avgPercentage !== "-" ? `${avgPercentage}%` : "-"} max={""} glass /> */}
-        {/* <StatCard title="Avg Overall %" score={avgOverallRating !== "-" ? `${avgOverallRating}%` : "-"} max={""} glass /> */}
       </Box>
 
       {/* 🔹 RESULTS TABLE */}
@@ -272,11 +272,10 @@ export default function FeedbackManagement() {
         sx={{
           p: 3,
           borderRadius: "24px",
-          background:
-            "linear-gradient(135deg, rgba(255,255,255,0.7), rgba(255,255,255,0.4))",
+          background: "var(--bg-panel)",
           backdropFilter: "blur(20px)",
-          boxShadow: "0 20px 60px rgba(0,0,0,0.1)",
-          border: "1px solid rgba(255,255,255,0.3)",
+          boxShadow: "var(--shadow-premium)",
+          border: "1px solid var(--border-color)",
           minHeight: 400,
         }}
       >
@@ -286,17 +285,25 @@ export default function FeedbackManagement() {
           <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>
             <CircularProgress />
           </Box>
+        ) : results.length === 0 ? (
+          <Box sx={{ textAlign: "center", py: 10, color: "var(--text-secondary)" }}>
+            <Typography fontSize={40}>📊</Typography>
+            <Typography mt={1} fontWeight={600} sx={{ color: "var(--text-secondary)" }}>
+              No feedback records found
+            </Typography>
+          </Box>
         ) : (
           <DataTable
-            key={`${selectedYearId}-${selectedSemId}-${selectedPhase}`}
+            key={`${selectedYearId}-${selectedPhase}`}
             columns={[
               "Faculty ID",
               "Faculty Name",
               "Subject Name",
               "Course Code",
               "Section",
+              "Sem / Year",
               "Phase",
-              "Feedback Count",
+              "Count",
               "%",
               "Overall %",
               "Uploaded At",
@@ -328,8 +335,17 @@ export default function FeedbackManagement() {
                 display: <Box>{r.section || "-"}</Box>,
               },
               {
+                value: r.semesterDisplay,
+                display: (
+                  <Box>
+                    <Box sx={{ fontWeight: 600 }}>{r.semesterDisplay}</Box>
+                    <Box sx={{ fontSize: 11, color: "var(--text-secondary)", opacity: 0.8 }}>{r.semesterType}</Box>
+                  </Box>
+                ),
+              },
+              {
                 value: r.phase,
-                display: <Box>{r.phase || "-"}</Box>,
+                display: <Box sx={{ fontWeight: 600 }}>{r.phase || "-"}</Box>,
               },
               {
                 value: r.givenStudents,
@@ -337,11 +353,11 @@ export default function FeedbackManagement() {
               },
               {
                 value: r.percentage,
-                display: <Box sx={{ color: "green", fontWeight: 600 }}>{r.percentage}%</Box>,
+                display: <Box sx={{ color: "var(--color-primary)", fontWeight: 700 }}>{r.percentage}%</Box>,
               },
               {
                 value: r.overallPercentage,
-                display: <Box sx={{ color: "blue", fontWeight: 600 }}>{r.overallPercentage}%</Box>,
+                display: <Box sx={{ color: "#10b981", fontWeight: 700 }}>{r.overallPercentage}%</Box>,
               },
               {
                 value: r.createdAt,
@@ -360,9 +376,7 @@ const filterBox = {
   alignItems: "center",
   px: 2,
   py: 1,
-  borderRadius: "14px",
-  background: "rgba(255,255,255,0.6)",
-  backdropFilter: "blur(10px)",
-  boxShadow: "0 4px 15px rgba(0,0,0,0.05)",
-  fontSize: 14,
+  borderRadius: "12px",
+  background: "var(--bg-glass)",
+  border: "1px solid var(--border-color)",
 };
