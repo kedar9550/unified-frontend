@@ -19,6 +19,9 @@ import {
   TableCell,
   TableBody,
   Tooltip,
+  Avatar,
+  MenuItem,
+  Select,
 } from "@mui/material";
 import {
   Close as CloseIcon,
@@ -27,6 +30,7 @@ import {
   UploadFile as UploadIcon,
   Download as DownloadIcon,
   Cancel as RejectedIcon,
+  Add as AddIcon,
 } from "@mui/icons-material";
 import PageHeader from "../../components/common/PageHeader";
 import SectionHeader from "../../components/common/SectionHeader";
@@ -34,9 +38,9 @@ import API from "../../api/axios";
 
 // ── Status config ─────────────────────────────────────────────────────
 const STATUS_CONFIG = {
-  PENDING:  { label: "Pending",  color: "#e65100", bg: "#fff3e0", icon: <PendingIcon fontSize="small" /> },
-  RESOLVED: { label: "Resolved", color: "#2e7d32", bg: "#e8f5e9", icon: <ResolvedIcon fontSize="small" /> },
-  REJECTED: { label: "Rejected", color: "#b71c1c", bg: "#ffebee", icon: <RejectedIcon fontSize="small" /> },
+  PENDING:  { label: "Pending",  color: "#e65100", bg: "rgba(230, 81, 0, 0.1)", icon: <PendingIcon fontSize="small" /> },
+  RESOLVED: { label: "Resolved", color: "#2e7d32", bg: "rgba(46, 125, 50, 0.1)", icon: <ResolvedIcon fontSize="small" /> },
+  REJECTED: { label: "Rejected", color: "#b71c1c", bg: "rgba(183, 28, 28, 0.1)", icon: <RejectedIcon fontSize="small" /> },
 };
 
 const SECTION_LABEL = {
@@ -49,6 +53,7 @@ const SECTION_LABEL = {
 export default function FeedbackDiscrepancies() {
   const [items,   setItems]   = useState([]);
   const [loading, setLoading] = useState(false);
+  const [programs, setPrograms] = useState([]);
 
   // ── Resolve dialog state ───────────────────────────────────────────
   const [selected,      setSelected]      = useState(null);   // the discrepancy item
@@ -70,7 +75,6 @@ export default function FeedbackDiscrepancies() {
     setLoading(true);
     try {
       const res = await API.get("/api/discrepancies");
-      // Filter discrepancies specific to Feedback section
       const feedbackDiscrepancies = (res.data || []).filter(item => item.section === "FEEDBACK");
       setItems(feedbackDiscrepancies);
     } catch (err) {
@@ -80,7 +84,19 @@ export default function FeedbackDiscrepancies() {
     }
   }, []);
 
-  useEffect(() => { fetchItems(); }, [fetchItems]);
+  const fetchPrograms = async () => {
+    try {
+        const res = await API.get("/api/programs");
+        setPrograms(res.data.data || []);
+    } catch (err) {
+        console.error("Error fetching programs:", err);
+    }
+  };
+
+  useEffect(() => { 
+    fetchItems();
+    fetchPrograms();
+  }, [fetchItems]);
 
   // ── Open resolve dialog & fetch faculty result data ────────────────
   const openResolve = async (item) => {
@@ -91,16 +107,19 @@ export default function FeedbackDiscrepancies() {
     setResultLoading(true);
 
     try {
-      // Fetch faculty feedback results for this emp + year + sem
       const res = await API.get("/api/faculty-feedback-results", {
         params: {
           facultyId:    item.facultyInstitutionId,
-          academicYear: item.academicYearId?.year,
-          semester:     item.semesterTypeId?.name,
+          academicYear: item.academicYearId?._id,
+          semester:     item.semesterTypeId?._id,
         },
       });
-      // Make each row editable — clone the data
-      const rows = (res.data || []).map(r => ({ ...r, _edited: false }));
+      const rows = (res.data || []).map(r => ({ 
+        ...r, 
+        _edited: false,
+        programId: r.programId?._id || r.programId || "",
+        branchId: r.branchId?._id || r.branchId || ""
+      }));
       setResultData(rows);
     } catch (err) {
       console.error("Failed to fetch faculty feedback results:", err);
@@ -128,6 +147,8 @@ export default function FeedbackDiscrepancies() {
         _edited:        true,
         subjectName:    "",
         subjectCode:    "",
+        programId:      "",
+        branchId:       "",
         branch:         "",
         section:        "",
         phase:          1,
@@ -135,6 +156,8 @@ export default function FeedbackDiscrepancies() {
         givenStudents:  0,
         percentage:     0,
         overallPercentage: 0,
+        semesterNumber: selected.semester || "",
+        yearNumber:     selected.semester || "", 
       },
     ]);
   };
@@ -150,13 +173,16 @@ export default function FeedbackDiscrepancies() {
 
     setSubmitting(true);
     try {
-      // 1. Update existing edited rows
       const editedRows = resultData.filter(r => r._edited && !r._isNew);
       for (const row of editedRows) {
         await API.put(`/api/faculty-feedback-results/${row._id}`, {
           subjectName:       row.subjectName,
           subjectCode:       row.subjectCode,
           branch:            row.branch,
+          programId:         row.programId,
+          branchId:          row.branchId,
+          semesterNumber:    row.semesterNumber,
+          yearNumber:        row.yearNumber,
           section:           row.section,
           phase:             Number(row.phase),
           totalStudents:     Number(row.totalStudents),
@@ -166,7 +192,6 @@ export default function FeedbackDiscrepancies() {
         });
       }
 
-      // 2. Create new rows
       const newRows = resultData.filter(r => r._isNew && r.subjectName?.trim());
       for (const row of newRows) {
         await API.post("/api/faculty-feedback-results", {
@@ -174,7 +199,11 @@ export default function FeedbackDiscrepancies() {
           facultyName:       selected.facultyName || selected.raisedBy?.name,
           subjectName:       row.subjectName,
           subjectCode:       row.subjectCode,
+          programId:         row.programId,
+          branchId:          row.branchId,
           branch:            row.branch,
+          semesterNumber:    row.semesterNumber,
+          yearNumber:        row.yearNumber,
           section:           row.section,
           phase:             Number(row.phase),
           academicYearId:    selected.academicYearId?._id,
@@ -186,7 +215,6 @@ export default function FeedbackDiscrepancies() {
         });
       }
 
-      // 3. Resolve the discrepancy with proof document
       const formData = new FormData();
       formData.append("proof", proofFile);
       formData.append("status", "RESOLVED");
@@ -237,7 +265,6 @@ export default function FeedbackDiscrepancies() {
     }
   };
 
-  // ── Stat counts ────────────────────────────────────────────────────
   const counts = items.reduce((acc, i) => {
     acc[i.status] = (acc[i.status] || 0) + 1;
     return acc;
@@ -252,25 +279,27 @@ export default function FeedbackDiscrepancies() {
       />
 
       {/* ── STAT PILLS ────────────────────────────────────── */}
-      <Box sx={{ display: "flex", gap: 2, mb: 3, flexWrap: "wrap" }}>
+      <Box sx={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 2, mb: 4 }}>
         {Object.entries(STATUS_CONFIG).map(([key, cfg]) => (
           <Box
             key={key}
             sx={{
-              px: 3, py: 1.5,
-              borderRadius: "16px",
-              background: cfg.bg,
-              border: `1.5px solid ${cfg.color}22`,
-              display: "flex", alignItems: "center", gap: 1,
-              minWidth: 130,
+              px: 3, py: 2.5,
+              borderRadius: "20px",
+              background: "var(--bg-panel)",
+              border: `1.5px solid var(--border-color)`,
+              display: "flex", alignItems: "center", gap: 2,
+              boxShadow: "var(--shadow-premium)",
+              transition: "transform 0.2s",
+              "&:hover": { transform: "translateY(-4px)", borderColor: cfg.color }
             }}
           >
-            <Box sx={{ color: cfg.color }}>{cfg.icon}</Box>
+            <Box sx={{ color: cfg.color, background: cfg.bg, p: 1.5, borderRadius: "12px", display: "flex" }}>{cfg.icon}</Box>
             <Box>
-              <Typography sx={{ fontSize: 20, fontWeight: 700, color: cfg.color, lineHeight: 1 }}>
+              <Typography sx={{ fontSize: 24, fontWeight: 900, color: "var(--text-primary)", lineHeight: 1 }}>
                 {counts[key] || 0}
               </Typography>
-              <Typography sx={{ fontSize: 11, color: cfg.color, opacity: 0.8 }}>
+              <Typography sx={{ fontSize: 11, fontWeight: 700, color: cfg.color, textTransform: "uppercase", letterSpacing: "0.05em", mt: 0.5 }}>
                 {cfg.label}
               </Typography>
             </Box>
@@ -282,10 +311,10 @@ export default function FeedbackDiscrepancies() {
       <Box
         sx={{
           p: 3, borderRadius: "24px",
-          background: "linear-gradient(135deg,rgba(255,255,255,0.75),rgba(255,255,255,0.45))",
+          background: "var(--bg-panel)",
           backdropFilter: "blur(20px)",
-          boxShadow: "0 20px 60px rgba(0,0,0,0.1)",
-          border: "1px solid rgba(255,255,255,0.3)",
+          boxShadow: "var(--shadow-premium)",
+          border: "1px solid var(--border-color)",
           minHeight: 400,
         }}
       >
@@ -296,18 +325,18 @@ export default function FeedbackDiscrepancies() {
             <CircularProgress />
           </Box>
         ) : items.length === 0 ? (
-          <Box sx={{ textAlign: "center", py: 8, color: "#aaa" }}>
+          <Box sx={{ textAlign: "center", py: 8, color: "var(--text-secondary)" }}>
             <Typography fontSize={40}>🎉</Typography>
-            <Typography mt={1} fontWeight={600}>No feedback discrepancies assigned to you.</Typography>
+            <Typography mt={1} fontWeight={700} color="var(--text-primary)">No feedback discrepancies assigned to you.</Typography>
             <Typography fontSize={13}>All clear!</Typography>
           </Box>
         ) : (
-          <Paper sx={{ borderRadius: "18px", overflow: "hidden", boxShadow: "none" }}>
+          <Paper sx={{ borderRadius: "18px", overflow: "hidden", boxShadow: "none", background: "transparent" }}>
             <Table sx={{ minWidth: 900 }}>
-              <TableHead sx={{ background: "linear-gradient(135deg,#0b5299,#1c6ed5)" }}>
+              <TableHead sx={{ background: "var(--gradient-primary)" }}>
                 <TableRow>
-                  {["#", "Faculty", "Year / Sem", "Section", "Note", "Raised At", "Status", "Action"].map(col => (
-                    <TableCell key={col} sx={{ color: "#fff", fontWeight: 600, fontSize: 13 }}>
+                  {["#", "Faculty", "Year / Period", "Section", "Note", "Raised At", "Status", "Action"].map(col => (
+                    <TableCell key={col} sx={{ color: "#fff", fontWeight: 700, fontSize: 13, py: 2 }}>
                       {col}
                     </TableCell>
                   ))}
@@ -319,38 +348,41 @@ export default function FeedbackDiscrepancies() {
                   return (
                     <TableRow
                       key={item._id}
-                      sx={{ background: i % 2 === 0 ? "#f8fbff" : "#fff", height: 70 }}
+                      sx={{ background: i % 2 === 0 ? "var(--bg-accent-1)" : "transparent", height: 75 }}
                     >
                       <TableCell sx={{ fontWeight: 600 }}>{i + 1}</TableCell>
 
-                      {/* Faculty */}
                       <TableCell>
-                        <Typography fontWeight={600} fontSize={14}>
-                          {item.facultyName || item.raisedBy?.name || "—"}
-                        </Typography>
-                        <Typography fontSize={12} color="#888">
-                          {item.facultyInstitutionId || item.raisedBy?.institutionId}
-                        </Typography>
+                        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                            <Avatar sx={{ width: 32, height: 32 }}>{(item.facultyName || item.raisedBy?.name)?.charAt(0)}</Avatar>
+                            <Box>
+                                <Typography fontWeight={700} fontSize={14} color="var(--text-primary)">
+                                {item.facultyName || item.raisedBy?.name || "—"}
+                                </Typography>
+                                <Typography fontSize={11} color="var(--text-secondary)" sx={{ opacity: 0.8 }}>
+                                {item.facultyInstitutionId || item.raisedBy?.institutionId}
+                                </Typography>
+                            </Box>
+                        </Box>
                       </TableCell>
 
-                      {/* Year / Sem */}
                       <TableCell>
-                        <Typography fontSize={13} fontWeight={500}>
+                        <Typography fontSize={13} fontWeight={700} color="var(--text-primary)">
                           {item.academicYearId?.year || "—"}
                         </Typography>
                         <Chip
-                          label={item.semesterTypeId?.name || "—"}
+                          label={item.semester ? `Sem/Year ${item.semester}` : item.semesterTypeId?.name || "—"}
                           size="small"
-                          sx={{ fontSize: 11, height: 20, mt: 0.3 }}
+                          sx={{ fontSize: 10, fontWeight: 700, height: 20, mt: 0.5, background: "var(--bg-glass)", border: "1px solid var(--border-color)" }}
                         />
                       </TableCell>
 
-                      {/* Section */}
                       <TableCell>
                         <Box
                           sx={{
                             px: 1.5, py: 0.4, borderRadius: "10px",
-                            background: "#eef3f9", fontSize: 12, fontWeight: 600,
+                            background: "var(--bg-glass)", border: "1px solid var(--border-color)",
+                            fontSize: 12, fontWeight: 700, color: "var(--text-primary)",
                             display: "inline-block",
                           }}
                         >
@@ -358,7 +390,6 @@ export default function FeedbackDiscrepancies() {
                         </Box>
                       </TableCell>
 
-                      {/* Note */}
                       <TableCell sx={{ maxWidth: 220 }}>
                         <Tooltip title={item.note} placement="top">
                           <Typography
@@ -367,6 +398,8 @@ export default function FeedbackDiscrepancies() {
                               overflow: "hidden", textOverflow: "ellipsis",
                               display: "-webkit-box", WebkitLineClamp: 2,
                               WebkitBoxOrient: "vertical",
+                              color: "var(--text-primary)",
+                              fontWeight: 500
                             }}
                           >
                             {item.note}
@@ -374,17 +407,15 @@ export default function FeedbackDiscrepancies() {
                         </Tooltip>
                       </TableCell>
 
-                      {/* Raised At */}
                       <TableCell>
-                        <Typography fontSize={12}>
+                        <Typography fontSize={12} fontWeight={600} color="var(--text-primary)">
                           {new Date(item.createdAt).toLocaleDateString()}
                         </Typography>
-                        <Typography fontSize={11} color="#888">
+                        <Typography fontSize={11} color="var(--text-secondary)" sx={{ opacity: 0.7 }}>
                           {new Date(item.createdAt).toLocaleTimeString()}
                         </Typography>
                       </TableCell>
 
-                      {/* Status */}
                       <TableCell>
                         <Chip
                           icon={cfg.icon}
@@ -392,7 +423,7 @@ export default function FeedbackDiscrepancies() {
                           size="small"
                           sx={{
                             background: cfg.bg, color: cfg.color,
-                            fontWeight: 600, fontSize: 12,
+                            fontWeight: 700, fontSize: 11,
                             border: `1px solid ${cfg.color}33`,
                             "& .MuiChip-icon": { color: cfg.color },
                           }}
@@ -413,7 +444,6 @@ export default function FeedbackDiscrepancies() {
                         )}
                       </TableCell>
 
-                      {/* Action */}
                       <TableCell>
                         {item.status === "PENDING" ? (
                           <Box sx={{ display: "flex", gap: 1, flexDirection: "column" }}>
@@ -423,8 +453,9 @@ export default function FeedbackDiscrepancies() {
                               onClick={() => openResolve(item)}
                               sx={{
                                 borderRadius: "10px", textTransform: "none",
-                                fontSize: 11, px: 1.5, py: 0.4, minWidth: 0,
-                                background: "linear-gradient(135deg,#0b5299,#1c6ed5)",
+                                fontSize: 11, px: 1.5, py: 0.5, minWidth: 0,
+                                background: "var(--gradient-primary)",
+                                boxShadow: "var(--shadow-premium)",
                               }}
                             >
                               ✓ Resolve
@@ -435,9 +466,9 @@ export default function FeedbackDiscrepancies() {
                               onClick={() => openReject(item)}
                               sx={{
                                 borderRadius: "10px", textTransform: "none",
-                                fontSize: 11, px: 1.5, py: 0.3, minWidth: 0,
+                                fontSize: 11, px: 1.5, py: 0.4, minWidth: 0,
                                 color: "#b71c1c", borderColor: "#b71c1c",
-                                "&:hover": { background: "#ffebee", borderColor: "#b71c1c" },
+                                "&:hover": { background: "rgba(183, 28, 28, 0.05)", borderColor: "#b71c1c" },
                               }}
                             >
                               ✕ Reject
@@ -450,8 +481,9 @@ export default function FeedbackDiscrepancies() {
                                 size="small"
                                 href={`${import.meta.env.VITE_API_URL || "http://localhost:3000"}/uploads/discrepancies/${item.proofDocument}`}
                                 target="_blank"
+                                sx={{ background: "var(--bg-glass)", border: "1px solid var(--border-color)" }}
                               >
-                                <DownloadIcon fontSize="small" sx={{ color: "#2e7d32" }} />
+                                <DownloadIcon fontSize="small" sx={{ color: "var(--color-primary)" }} />
                               </IconButton>
                             </Tooltip>
                           )
@@ -467,7 +499,7 @@ export default function FeedbackDiscrepancies() {
       </Box>
 
       {/* ═══════════════════════════════════════════════════════════════
-          RESOLVE DIALOG — shows editable feedback result data
+          RESOLVE DIALOG
          ═══════════════════════════════════════════════════════════════ */}
       <Dialog
         open={Boolean(selected)}
@@ -476,16 +508,18 @@ export default function FeedbackDiscrepancies() {
         fullWidth
         PaperProps={{
           sx: {
-            borderRadius: "24px",
-            background: "linear-gradient(135deg,rgba(255,255,255,0.97),rgba(240,245,255,0.97))",
+            borderRadius: "28px",
+            background: "var(--bg-panel)",
             backdropFilter: "blur(20px)",
+            border: "1px solid var(--border-color)",
+            boxShadow: "var(--shadow-premium)",
           },
         }}
       >
         <DialogTitle sx={{ pb: 0 }}>
           <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <Typography fontWeight={700} fontSize={17}>
-              ✏️ Review &amp; Resolve Feedback Discrepancy
+            <Typography fontWeight={900} fontSize={20} color="var(--text-primary)">
+              ✏️ Review &amp; Resolve Feedback
             </Typography>
             <IconButton size="small" onClick={() => setSelected(null)} disabled={submitting}>
               <CloseIcon fontSize="small" />
@@ -495,267 +529,139 @@ export default function FeedbackDiscrepancies() {
 
         <DialogContent>
           {success ? (
-            <Box sx={{ textAlign: "center", py: 5 }}>
+            <Box sx={{ textAlign: "center", py: 6 }}>
               <Typography fontSize={44}>✅</Typography>
-              <Typography fontWeight={600} mt={1}>Resolved Successfully!</Typography>
-              <Typography fontSize={13} color="#888">Data updated and proof uploaded.</Typography>
+              <Typography fontWeight={800} fontSize={20} mt={1} color="var(--text-primary)">Resolved Successfully!</Typography>
+              <Typography fontSize={14} color="var(--text-secondary)">Data updated and proof uploaded.</Typography>
             </Box>
           ) : selected && (
-            <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5, pt: 1.5 }}>
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 3, pt: 2 }}>
 
-              {/* ── Faculty Info (read-only) ── */}
               <Box
                 sx={{
-                  p: 2, borderRadius: "14px",
-                  background: "#f0f4fb", border: "1px solid #dde7f5",
+                  p: 2.5, borderRadius: "18px",
+                  background: "var(--bg-glass)", border: "1px solid var(--border-color)",
                 }}
               >
-                <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <Box>
-                    <Typography fontSize={12} color="#888">Raised by</Typography>
-                    <Typography fontWeight={700} fontSize={16}>{selected.facultyName || selected.raisedBy?.name}</Typography>
-                    <Typography fontSize={13} color="#666">
-                      EMP ID: {selected.facultyInstitutionId || selected.raisedBy?.institutionId}
-                    </Typography>
+                <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                  <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
+                    <Avatar sx={{ width: 48, height: 48 }}>{(selected.facultyName || selected.raisedBy?.name)?.charAt(0)}</Avatar>
+                    <Box>
+                        <Typography fontSize={12} color="var(--text-secondary)" fontWeight={600}>RAISED BY</Typography>
+                        <Typography fontWeight={800} fontSize={18} color="var(--text-primary)">{selected.facultyName || selected.raisedBy?.name}</Typography>
+                        <Typography fontSize={13} color="var(--text-secondary)">ID: {selected.facultyInstitutionId || selected.raisedBy?.institutionId}</Typography>
+                    </Box>
                   </Box>
                   <Box sx={{ textAlign: "right" }}>
-                    <Typography fontSize={12} color="#888">Period</Typography>
-                    <Typography fontWeight={600} fontSize={14}>
-                      {selected.academicYearId?.year} — {selected.semesterTypeId?.name}
+                    <Typography fontSize={12} color="var(--text-secondary)" fontWeight={600}>ACADEMIC PERIOD</Typography>
+                    <Typography fontWeight={700} fontSize={15} color="var(--text-primary)">
+                      {selected.academicYearId?.year} — {selected.semester ? `Sem/Year ${selected.semester}` : selected.semesterTypeId?.name}
                     </Typography>
-                    <Box
-                      sx={{
-                        mt: 0.5, px: 1.5, py: 0.3, borderRadius: "8px",
-                        background: "#eef3f9", fontSize: 12, fontWeight: 600,
-                        display: "inline-block",
-                      }}
-                    >
-                      {SECTION_LABEL[selected.section] || selected.section}
+                    <Box sx={{ mt: 1, px: 2, py: 0.5, borderRadius: "10px", background: "var(--bg-panel)", border: "1px solid var(--border-color)", fontSize: 12, fontWeight: 700, display: "inline-block", color: "var(--text-primary)" }}>
+                      {SECTION_LABEL[selected.section]}
                     </Box>
                   </Box>
                 </Box>
-                <Divider sx={{ my: 1.5 }} />
-                <Typography fontSize={13} color="#d32f2f" fontWeight={500}>
-                  📝 Issue: <span style={{ fontStyle: "italic", color: "#333" }}>"{selected.note}"</span>
-                </Typography>
+                <Divider sx={{ my: 2, opacity: 0.5 }} />
+                <Box sx={{ display: "flex", gap: 1.5 }}>
+                    <Typography fontSize={14} color="#ef4444" fontWeight={800}>ISSUE:</Typography>
+                    <Typography fontSize={14} color="var(--text-primary)" fontWeight={500} sx={{ fontStyle: "italic" }}>"{selected.note}"</Typography>
+                </Box>
               </Box>
 
-              {/* ── Faculty Result Data (editable table) ── */}
               <Box>
-                <Typography sx={{ fontSize: 14, fontWeight: 700, color: "#333", mb: 1 }}>
-                  📊 Faculty Feedback Data
-                  <span style={{ fontSize: 12, fontWeight: 400, color: "#888", marginLeft: 8 }}>
-                    (Edit values below, then upload proof and submit)
-                  </span>
-                </Typography>
+                <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1.5 }}>
+                    <Typography sx={{ fontSize: 15, fontWeight: 800, color: "var(--text-primary)" }}>
+                    📊 Faculty Feedback Records
+                    </Typography>
+                    <Button
+                        size="small"
+                        startIcon={<AddIcon />}
+                        onClick={handleAddRow}
+                        sx={{ borderRadius: "10px", textTransform: "none", fontWeight: 700, background: "var(--bg-glass)", border: "1px solid var(--border-color)" }}
+                    >
+                        Add Record
+                    </Button>
+                </Box>
 
                 {resultLoading ? (
-                  <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
-                    <CircularProgress size={28} />
-                  </Box>
+                  <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}><CircularProgress size={28} /></Box>
                 ) : resultData.length === 0 ? (
-                  <Box
-                    sx={{
-                      p: 3, borderRadius: "14px", background: "#fff8e1",
-                      border: "1px solid #ffe082", textAlign: "center",
-                    }}
-                  >
-                    <Typography fontSize={13} color="#f57f17">
-                      ⚠️ No feedback records found for this faculty / year / semester combination.
-                    </Typography>
+                  <Box sx={{ p: 4, borderRadius: "18px", background: "var(--bg-glass)", border: "1px dashed var(--border-color)", textAlign: "center" }}>
+                    <Typography fontSize={14} color="var(--text-secondary)" fontWeight={600}>No feedback records found for this period.</Typography>
                   </Box>
                 ) : (
-                  <Paper sx={{ borderRadius: "14px", overflow: "hidden", boxShadow: "0 2px 10px rgba(0,0,0,0.06)", overflowX: "auto" }}>
-                    <Table size="small" sx={{ minWidth: 900 }}>
-                      <TableHead sx={{ background: "#f0f4fb" }}>
+                  <Paper sx={{ borderRadius: "18px", overflow: "hidden", border: "1px solid var(--border-color)", background: "transparent", overflowX: "auto" }}>
+                    <Table size="small" sx={{ minWidth: 1000 }}>
+                      <TableHead sx={{ background: "var(--bg-accent-1)" }}>
                         <TableRow>
-                          {["#", "Subject", "Code", "Branch", "Sec", "Phase", "Given/Total", "Percent", "Overall %"].map(h => (
-                            <TableCell key={h} sx={{ fontWeight: 600, fontSize: 12, color: "#444" }}>
-                              {h}
-                            </TableCell>
+                          {["#", "Subject", "Code", "Prog", "Branch", "Sec", "Ph", "G/T", "%", "Ovr %", ""].map(h => (
+                            <TableCell key={h} sx={{ fontWeight: 800, fontSize: 12, color: "var(--text-primary)", py: 1.5 }}>{h}</TableCell>
                           ))}
                         </TableRow>
                       </TableHead>
                       <TableBody>
                         {resultData.map((row, idx) => (
-                          <TableRow
-                            key={row._id || row._tempId}
-                            sx={{
-                              background: row._isNew ? "#fff8e1" : row._edited ? "#e3f2fd" : (idx % 2 === 0 ? "#fafcff" : "#fff"),
-                              transition: "background 0.2s",
-                            }}
-                          >
-                            <TableCell sx={{ fontWeight: 600, fontSize: 12, width: 30 }}>
-                              {idx + 1}
-                              {row._isNew && (
-                                <Typography fontSize={9} color="#e65100" fontWeight={700}>NEW</Typography>
-                              )}
-                            </TableCell>
-
+                          <TableRow key={row._id || row._tempId} sx={{ background: row._isNew ? "rgba(245, 158, 11, 0.05)" : row._edited ? "rgba(16, 185, 129, 0.05)" : "transparent" }}>
+                            <TableCell sx={{ fontWeight: 700, fontSize: 12 }}>{idx + 1}</TableCell>
+                            <TableCell><TextField variant="standard" value={row.subjectName} onChange={e => handleResultEdit(idx, "subjectName", e.target.value)} InputProps={{ disableUnderline: !row._edited, sx: { fontSize: 13, fontWeight: 600 } }} fullWidth /></TableCell>
+                            <TableCell><TextField variant="standard" value={row.subjectCode} onChange={e => handleResultEdit(idx, "subjectCode", e.target.value)} InputProps={{ disableUnderline: !row._edited, sx: { fontSize: 13, fontWeight: 600 } }} sx={{ width: 70 }} /></TableCell>
                             <TableCell>
-                              <TextField
-                                variant="standard"
-                                value={row.subjectName || ""}
-                                onChange={e => handleResultEdit(idx, "subjectName", e.target.value)}
-                                InputProps={{ disableUnderline: !row._edited, sx: { fontSize: 13 } }}
-                                placeholder={row._isNew ? "Subject" : ""}
-                                fullWidth
-                              />
+                                <Select 
+                                    variant="standard" 
+                                    value={row.programId} 
+                                    onChange={e => handleResultEdit(idx, "programId", e.target.value)}
+                                    sx={{ fontSize: 12, fontWeight: 600, minWidth: 80 }}
+                                    disableUnderline={!row._edited}
+                                >
+                                    <MenuItem value="">—</MenuItem>
+                                    {programs.map(p => <MenuItem key={p._id} value={p._id}>{p.name}</MenuItem>)}
+                                </Select>
                             </TableCell>
-
+                            <TableCell><TextField variant="standard" value={row.branch} onChange={e => handleResultEdit(idx, "branch", e.target.value)} InputProps={{ disableUnderline: !row._edited, sx: { fontSize: 13, fontWeight: 600 } }} sx={{ width: 80 }} /></TableCell>
+                            <TableCell><TextField variant="standard" value={row.section} onChange={e => handleResultEdit(idx, "section", e.target.value)} InputProps={{ disableUnderline: !row._edited, sx: { fontSize: 13, fontWeight: 600 } }} sx={{ width: 40 }} /></TableCell>
+                            <TableCell><TextField variant="standard" type="number" value={row.phase} onChange={e => handleResultEdit(idx, "phase", e.target.value)} InputProps={{ disableUnderline: !row._edited, sx: { fontSize: 13, fontWeight: 600 } }} sx={{ width: 35 }} /></TableCell>
                             <TableCell>
-                              <TextField
-                                variant="standard"
-                                value={row.subjectCode || ""}
-                                onChange={e => handleResultEdit(idx, "subjectCode", e.target.value)}
-                                InputProps={{ disableUnderline: !row._edited, sx: { fontSize: 13 } }}
-                                placeholder={row._isNew ? "Code" : ""}
-                                sx={{ width: 60 }}
-                              />
+                                <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                                    <TextField variant="standard" type="number" value={row.givenStudents} onChange={e => handleResultEdit(idx, "givenStudents", e.target.value)} sx={{ width: 35 }} InputProps={{ sx: { fontSize: 12, fontWeight: 700 } }} />
+                                    <Typography>/</Typography>
+                                    <TextField variant="standard" type="number" value={row.totalStudents} onChange={e => handleResultEdit(idx, "totalStudents", e.target.value)} sx={{ width: 35 }} InputProps={{ sx: { fontSize: 12, fontWeight: 700 } }} />
+                                </Box>
                             </TableCell>
-
+                            <TableCell><TextField variant="standard" type="number" value={row.percentage} onChange={e => handleResultEdit(idx, "percentage", e.target.value)} sx={{ width: 45 }} InputProps={{ sx: { fontSize: 13, fontWeight: 800, color: "var(--color-primary)" } }} /></TableCell>
+                            <TableCell><TextField variant="standard" type="number" value={row.overallPercentage} onChange={e => handleResultEdit(idx, "overallPercentage", e.target.value)} sx={{ width: 45 }} InputProps={{ sx: { fontSize: 13, fontWeight: 800, color: "#10b981" } }} /></TableCell>
                             <TableCell>
-                              <TextField
-                                variant="standard"
-                                value={row.branch || ""}
-                                onChange={e => handleResultEdit(idx, "branch", e.target.value)}
-                                InputProps={{ disableUnderline: !row._edited, sx: { fontSize: 13 } }}
-                                placeholder={row._isNew ? "Branch" : ""}
-                                sx={{ width: 60 }}
-                              />
+                                {row._isNew && <IconButton size="small" onClick={() => handleRemoveRow(idx)} sx={{ color: "#ef4444" }}><CloseIcon fontSize="small" /></IconButton>}
                             </TableCell>
-
-                            <TableCell>
-                              <TextField
-                                variant="standard"
-                                value={row.section || ""}
-                                onChange={e => handleResultEdit(idx, "section", e.target.value)}
-                                InputProps={{ disableUnderline: !row._edited, sx: { fontSize: 13 } }}
-                                placeholder={row._isNew ? "Sec" : ""}
-                                sx={{ width: 40 }}
-                              />
-                            </TableCell>
-
-                            <TableCell>
-                              <TextField
-                                variant="standard"
-                                type="number"
-                                value={row.phase ?? ""}
-                                onChange={e => handleResultEdit(idx, "phase", e.target.value)}
-                                InputProps={{ disableUnderline: !row._edited, sx: { fontSize: 13 } }}
-                                sx={{ width: 40 }}
-                              />
-                            </TableCell>
-
-                            <TableCell>
-                              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                                <TextField
-                                  variant="standard"
-                                  type="number"
-                                  value={row.givenStudents ?? ""}
-                                  onChange={e => handleResultEdit(idx, "givenStudents", e.target.value)}
-                                  InputProps={{ disableUnderline: !row._edited, sx: { fontSize: 13 } }}
-                                  sx={{ width: 40 }}
-                                />
-                                <Typography>/</Typography>
-                                <TextField
-                                  variant="standard"
-                                  type="number"
-                                  value={row.totalStudents ?? ""}
-                                  onChange={e => handleResultEdit(idx, "totalStudents", e.target.value)}
-                                  InputProps={{ disableUnderline: !row._edited, sx: { fontSize: 13 } }}
-                                  sx={{ width: 40 }}
-                                />
-                              </Box>
-                            </TableCell>
-
-                            <TableCell>
-                              <TextField
-                                variant="standard"
-                                type="number"
-                                value={row.percentage ?? ""}
-                                onChange={e => handleResultEdit(idx, "percentage", e.target.value)}
-                                InputProps={{ disableUnderline: !row._edited, sx: { fontSize: 13 } }}
-                                sx={{ width: 50 }}
-                              />
-                            </TableCell>
-
-                            <TableCell>
-                              <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-                                <TextField
-                                  variant="standard"
-                                  type="number"
-                                  value={row.overallPercentage ?? ""}
-                                  onChange={e => handleResultEdit(idx, "overallPercentage", e.target.value)}
-                                  InputProps={{ disableUnderline: !row._edited, sx: { fontSize: 13 } }}
-                                  sx={{ width: 50 }}
-                                />
-                                %
-                                {row._isNew && (
-                                  <IconButton
-                                    size="small"
-                                    onClick={() => handleRemoveRow(idx)}
-                                    sx={{ color: "#b71c1c", ml: 0.5, p: 0.3 }}
-                                  >
-                                    <CloseIcon sx={{ fontSize: 16 }} />
-                                  </IconButton>
-                                )}
-                              </Box>
-                            </TableCell>
-
                           </TableRow>
                         ))}
                       </TableBody>
                     </Table>
                   </Paper>
                 )}
-
-                {/* ── Add Row Button ── */}
-                {!resultLoading && (
-                  <Button
-                    size="small"
-                    variant="outlined"
-                    onClick={handleAddRow}
-                    sx={{
-                      mt: 1.5, borderRadius: "10px", textTransform: "none",
-                      fontSize: 12, borderStyle: "dashed",
-                      color: "#1565c0", borderColor: "#90caf9",
-                      "&:hover": { background: "#e3f2fd", borderColor: "#1565c0" },
-                    }}
-                  >
-                    + Add New Row
-                  </Button>
-                )}
               </Box>
 
-              {/* ── Proof Upload (required) ── */}
               <Box>
-                <Typography sx={{ fontSize: 13, fontWeight: 600, color: "#444", mb: 0.5 }}>
-                  Upload Proof Document <span style={{ color: "#e53935" }}>*</span>
+                <Typography sx={{ fontSize: 14, fontWeight: 800, color: "var(--text-primary)", mb: 1 }}>
+                  Upload Proof Document <span style={{ color: "#ef4444" }}>*</span>
                 </Typography>
-                <input
-                  type="file"
-                  ref={fileRef}
-                  style={{ display: "none" }}
-                  accept=".pdf,.jpg,.jpeg,.png,.webp"
-                  onChange={e => setProofFile(e.target.files[0])}
-                />
+                <input type="file" ref={fileRef} style={{ display: "none" }} accept=".pdf,.jpg,.jpeg,.png,.webp" onChange={e => setProofFile(e.target.files[0])} />
                 <Box
                   onClick={() => fileRef.current?.click()}
                   sx={{
-                    p: 2, borderRadius: "14px",
-                    border: `2px dashed ${proofFile ? "#2e7d32" : "#b0bec5"}`,
-                    background: proofFile ? "#e8f5e9" : "#f8fafd",
+                    p: 3, borderRadius: "18px",
+                    border: `2px dashed ${proofFile ? "#10b981" : "var(--border-color)"}`,
+                    background: proofFile ? "rgba(16, 185, 129, 0.05)" : "var(--bg-glass)",
                     cursor: "pointer", textAlign: "center",
                     transition: "all 0.2s",
-                    "&:hover": { borderColor: "#1c6ed5", background: "#f0f4fc" },
+                    "&:hover": { borderColor: "var(--color-primary)", background: "var(--bg-accent-1)" },
                   }}
                 >
-                  <UploadIcon sx={{ color: proofFile ? "#2e7d32" : "#90a4ae", fontSize: 32 }} />
-                  <Typography fontSize={13} mt={0.5} color={proofFile ? "#2e7d32" : "#888"}>
-                    {proofFile ? `✅ ${proofFile.name}` : "Click to upload PDF or image (required)"}
+                  <UploadIcon sx={{ color: proofFile ? "#10b981" : "var(--text-secondary)", fontSize: 32 }} />
+                  <Typography fontSize={14} mt={1} fontWeight={700} color={proofFile ? "#10b981" : "var(--text-primary)"}>
+                    {proofFile ? `✅ ${proofFile.name}` : "Click to upload PDF or image proof"}
                   </Typography>
-                  <Typography fontSize={11} color="#aaa">Max 10MB</Typography>
+                  <Typography fontSize={12} color="var(--text-secondary)" sx={{ opacity: 0.6 }}>Mandatory for resolution • Max 10MB</Typography>
                 </Box>
               </Box>
             </Box>
@@ -763,11 +669,11 @@ export default function FeedbackDiscrepancies() {
         </DialogContent>
 
         {!success && selected && (
-          <DialogActions sx={{ px: 3, pb: 3 }}>
-            <Button
-              onClick={() => setSelected(null)}
-              disabled={submitting}
-              sx={{ borderRadius: "20px", textTransform: "none", color: "#666" }}
+          <DialogActions sx={{ px: 4, pb: 4, pt: 1 }}>
+            <Button 
+              onClick={() => setSelected(null)} 
+              disabled={submitting} 
+              sx={{ borderRadius: "12px", textTransform: "none", fontWeight: 700, color: "var(--text-secondary)", px: 3 }}
             >
               Cancel
             </Button>
@@ -776,10 +682,9 @@ export default function FeedbackDiscrepancies() {
               onClick={handleResolve}
               disabled={submitting || !proofFile}
               sx={{
-                borderRadius: "20px", px: 4, textTransform: "none",
-                fontWeight: 600,
-                background: "linear-gradient(135deg,#0b5299,#1c6ed5)",
-                boxShadow: "0 4px 15px rgba(11,82,153,0.3)",
+                borderRadius: "14px", px: 4, py: 1.2, textTransform: "none",
+                fontWeight: 800, background: "var(--gradient-primary)",
+                boxShadow: "var(--shadow-premium)",
               }}
             >
               {submitting ? <CircularProgress size={20} color="inherit" /> : "✓ Submit & Resolve"}
@@ -798,15 +703,17 @@ export default function FeedbackDiscrepancies() {
         fullWidth
         PaperProps={{
           sx: {
-            borderRadius: "24px",
-            background: "linear-gradient(135deg,rgba(255,255,255,0.97),rgba(255,240,240,0.97))",
+            borderRadius: "28px",
+            background: "var(--bg-panel)",
             backdropFilter: "blur(20px)",
+            border: "1px solid var(--border-color)",
+            boxShadow: "var(--shadow-premium)",
           },
         }}
       >
         <DialogTitle sx={{ pb: 0 }}>
           <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <Typography fontWeight={700} fontSize={17} color="#b71c1c">
+            <Typography fontWeight={900} fontSize={20} color="#ef4444">
               ✕ Reject Discrepancy
             </Typography>
             <IconButton size="small" onClick={() => setRejectItem(null)} disabled={rejecting}>
@@ -817,45 +724,50 @@ export default function FeedbackDiscrepancies() {
 
         <DialogContent>
           {rejectDone ? (
-            <Box sx={{ textAlign: "center", py: 5 }}>
+            <Box sx={{ textAlign: "center", py: 6 }}>
               <Typography fontSize={44}>❌</Typography>
-              <Typography fontWeight={600} mt={1}>Discrepancy Rejected</Typography>
+              <Typography fontWeight={800} fontSize={20} mt={1} color="var(--text-primary)">Discrepancy Rejected</Typography>
             </Box>
           ) : rejectItem && (
-            <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5, pt: 1.5 }}>
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 3, pt: 2 }}>
 
               {/* Summary */}
               <Box
                 sx={{
-                  p: 2, borderRadius: "14px",
-                  background: "#fff5f5", border: "1px solid #fcdede",
+                  p: 2.5, borderRadius: "18px",
+                  background: "var(--bg-glass)", border: "1px solid var(--border-color)",
                 }}
               >
-                <Typography fontSize={13} fontWeight={600} color="#444" mb={0.5}>
-                  Raised by
+                <Typography fontSize={12} color="var(--text-secondary)" fontWeight={600} mb={0.5}>RAISED BY</Typography>
+                <Typography fontWeight={800} fontSize={16} color="var(--text-primary)">{rejectItem.facultyName}</Typography>
+                <Typography fontSize={13} color="var(--text-secondary)">
+                  {rejectItem.facultyInstitutionId} · {rejectItem.academicYearId?.year}
                 </Typography>
-                <Typography fontWeight={700}>{rejectItem.facultyName}</Typography>
-                <Typography fontSize={13} color="#666">
-                  {rejectItem.facultyInstitutionId} · {rejectItem.academicYearId?.year} – {rejectItem.semesterTypeId?.name}
-                </Typography>
-                <Divider sx={{ my: 1 }} />
-                <Typography fontSize={13} color="#b71c1c" mt={1}>
-                  Issue: <i>"{rejectItem.note}"</i>
+                <Divider sx={{ my: 1.5, opacity: 0.5 }} />
+                <Typography fontSize={13} color="#ef4444" mt={1} fontWeight={600}>
+                  Issue: <i style={{ fontWeight: 500, color: "var(--text-primary)" }}>"{rejectItem.note}"</i>
                 </Typography>
               </Box>
 
               <Box>
-                <Typography sx={{ fontSize: 13, fontWeight: 600, color: "#444", mb: 0.5 }}>
-                  Reason for Rejection <span style={{ color: "#e53935" }}>*</span>
+                <Typography sx={{ fontSize: 14, fontWeight: 800, color: "var(--text-primary)", mb: 1 }}>
+                  Reason for Rejection <span style={{ color: "#ef4444" }}>*</span>
                 </Typography>
                 <TextField
                   fullWidth
                   multiline
-                  rows={3}
+                  rows={4}
                   placeholder="Explain why this discrepancy cannot be resolved..."
                   value={rejectNote}
                   onChange={e => setRejectNote(e.target.value)}
-                  InputProps={{ sx: { borderRadius: "12px", fontSize: 14 } }}
+                  sx={{ 
+                    "& .MuiOutlinedInput-root": { 
+                        borderRadius: "18px", 
+                        background: "var(--bg-glass)",
+                        fontSize: 14,
+                        fontWeight: 500
+                    } 
+                  }}
                 />
               </Box>
             </Box>
@@ -863,11 +775,11 @@ export default function FeedbackDiscrepancies() {
         </DialogContent>
 
         {!rejectDone && rejectItem && (
-          <DialogActions sx={{ px: 3, pb: 3 }}>
+          <DialogActions sx={{ px: 4, pb: 4, pt: 1 }}>
             <Button
               onClick={() => setRejectItem(null)}
               disabled={rejecting}
-              sx={{ borderRadius: "20px", textTransform: "none", color: "#666" }}
+              sx={{ borderRadius: "12px", textTransform: "none", fontWeight: 700, color: "var(--text-secondary)", px: 3 }}
             >
               Cancel
             </Button>
@@ -877,8 +789,10 @@ export default function FeedbackDiscrepancies() {
               onClick={handleReject}
               disabled={rejecting || !rejectNote.trim()}
               sx={{
-                borderRadius: "20px", px: 4, textTransform: "none", fontWeight: 600,
-                boxShadow: "0 4px 15px rgba(211,47,47,0.3)",
+                borderRadius: "14px", px: 4, py: 1.2, textTransform: "none",
+                fontWeight: 800, background: "#ef4444",
+                boxShadow: "0 8px 20px rgba(239, 68, 68, 0.25)",
+                "&:hover": { background: "#dc2626" }
               }}
             >
               {rejecting ? <CircularProgress size={20} color="inherit" /> : "✕ Confirm Reject"}

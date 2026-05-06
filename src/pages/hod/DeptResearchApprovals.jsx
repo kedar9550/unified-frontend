@@ -217,7 +217,7 @@ const DeptResearchApprovals = () => {
                 </Grid>
 
                 {/* Sidebar Area */}
-                <Grid item xs={12} lg={3.5}>
+                {/* <Grid item xs={12} lg={3.5}>
                     <Card
                         sx={{
                             borderRadius: "24px",
@@ -277,7 +277,7 @@ const DeptResearchApprovals = () => {
                             </Button>
                         </Stack>
                     </Card>
-                </Grid>
+                </Grid> */}
             </Grid>
         </Box>
     );
