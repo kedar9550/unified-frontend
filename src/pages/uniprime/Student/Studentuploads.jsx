@@ -246,7 +246,7 @@ const Studentuploads = () => {
         const link = document.createElement("a");
         const url = URL.createObjectURL(blob);
         link.setAttribute("href", url);
-        link.setAttribute("download", `unassigned_students_${new Date().toLocaleDateString()}.csv`);
+        link.setAttribute("download", `unassigned_students_${new Date().toLocaleDateString("en-IN").replace(/\//g, "-")}.csv`);
         link.style.visibility = "hidden";
         document.body.appendChild(link);
         link.click();

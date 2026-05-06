@@ -86,7 +86,7 @@ export default function FeedbackDiscrepancies() {
 
   const fetchPrograms = async () => {
     try {
-        const res = await API.get("/api/programs");
+        const res = await API.get("/api/academics/programs");
         setPrograms(res.data.data || []);
     } catch (err) {
         console.error("Error fetching programs:", err);
@@ -100,8 +100,8 @@ export default function FeedbackDiscrepancies() {
     fetchPrograms();
     const fetchBranches = async () => {
         try {
-            const res = await API.get("/api/branches");
-            setBranches(res.data || []);
+            const res = await API.get("/api/academics/branches");
+            setBranches(res.data.data || []);
         } catch (err) {
             console.error("Error fetching branches:", err);
         }
@@ -143,7 +143,17 @@ export default function FeedbackDiscrepancies() {
   const handleResultEdit = (index, field, value) => {
     setResultData(prev => {
       const updated = [...prev];
-      updated[index] = { ...updated[index], [field]: value, _edited: true };
+      let newRow = { ...updated[index], [field]: value, _edited: true };
+      
+      // If branchId changed, also sync the legacy 'branch' string
+      if (field === "branchId") {
+        const branchObj = branches.find(b => b._id === value);
+        if (branchObj) {
+          newRow.branch = branchObj.name;
+        }
+      }
+      
+      updated[index] = newRow;
       return updated;
     });
   };
@@ -421,7 +431,7 @@ export default function FeedbackDiscrepancies() {
 
                       <TableCell>
                         <Typography fontSize={12} fontWeight={600} color="var(--text-primary)">
-                          {new Date(item.createdAt).toLocaleDateString()}
+                          {new Date(item.createdAt).toLocaleDateString("en-IN", { day: '2-digit', month: 'short', year: 'numeric' })}
                         </Typography>
                         <Typography fontSize={11} color="var(--text-secondary)" sx={{ opacity: 0.7 }}>
                           {new Date(item.createdAt).toLocaleTimeString()}
