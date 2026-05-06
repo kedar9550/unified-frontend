@@ -10,12 +10,16 @@ import {
   Avatar,
   CircularProgress,
   Typography,
+  Tooltip,
 } from "@mui/material";
 import { useState, useRef, useEffect } from "react";
 import API from "../../api/axios";
 import {
   Download as DownloadIcon,
   FileUpload as UploadIcon,
+  PieChart as PieChartIcon,
+  AssignmentTurnedIn as AssignmentIcon,
+  Groups as GroupsIcon
 } from "@mui/icons-material";
 
 export default function FeedbackManagement() {
@@ -95,16 +99,17 @@ export default function FeedbackManagement() {
         },
       );
 
-      const { message, errors, successCount, failedCount } = res.data;
+      const { successCount, failedCount, errors } = res.data;
+      
       if (errors && errors.length > 0) {
         const errorDetails = errors
-          .map((e) => (typeof e === 'object' ? `• Row ${e.row || '?'}: ${e.message}` : `• ${e}`))
+          .map((e) => `• Row ${e.row}: ${e.message}`)
           .join("\n");
         alert(
           `Uploaded ${successCount || 0} rows.\n${failedCount || 0} rows failed to upload.\n\nErrors:\n${errorDetails}`
         );
       } else {
-        alert(message || "Upload successful!");
+        alert(`Successfully uploaded ${successCount} records!`);
       }
       fetchResults();
     } catch (err) {
@@ -155,8 +160,13 @@ export default function FeedbackManagement() {
     window.URL.revokeObjectURL(url);
   };
 
-  // Stats calculation
-  const totalUploads = results.length;
+  // Derive stats
+  const totalRecords = results.length;
+  const avgPercentage = totalRecords > 0 
+    ? (results.reduce((acc, r) => acc + (r.percentage || 0), 0) / totalRecords).toFixed(1) 
+    : 0;
+  const phase1Count = results.filter(r => r.phase === 1).length;
+  const phase2Count = results.filter(r => r.phase === 2).length;
 
   return (
     <>
@@ -169,199 +179,202 @@ export default function FeedbackManagement() {
       />
 
       <PageHeader
-        title="Feedback Coordinator"
-        subtitle="Manage and upload student feedback reports"
+        title="Feedback Admin"
+        subtitle="Coordinate student feedback data and institutional reports"
         breadcrumbs={["Home", "Feedback", "Management"]}
+        action={
+          <Box sx={{ display: "flex", gap: 2 }}>
+            <ActionButton
+              onClick={downloadTemplate}
+              sx={{
+                background: "var(--bg-glass)",
+                color: "var(--text-primary)",
+                border: "1px solid var(--border-color)",
+                px: 2.5,
+              }}
+            >
+              <DownloadIcon sx={{ mr: 1, fontSize: 18 }} /> Template
+            </ActionButton>
+
+            <ActionButton
+              onClick={handleUploadClick}
+              disabled={uploading}
+              sx={{
+                background: "var(--gradient-primary)",
+                color: "#fff",
+                px: 3,
+                boxShadow: "0 4px 15px rgba(0,0,0,0.2)",
+              }}
+            >
+              {uploading ? (
+                <CircularProgress size={18} color="inherit" />
+              ) : (
+                <UploadIcon sx={{ mr: 1, fontSize: 18 }} />
+              )}
+              {uploading ? "Uploading..." : "Upload CSV"}
+            </ActionButton>
+          </Box>
+        }
       />
 
-      <Box sx={{ display: "flex", gap: 3, mb: 3, alignItems: "center", justifyContent: "space-between", flexWrap: "wrap" }}>
-        <Box sx={{ display: "flex", gap: 2 }}>
-          <Box sx={filterBox}>
-            <Typography sx={{ fontSize: 13, fontWeight: 700, color: "var(--text-primary)", opacity: 0.9 }}>Academic Year</Typography>
-            <Select
-              variant="standard"
-              disableUnderline
-              value={selectedYearId}
-              onChange={(e) => setSelectedYearId(e.target.value)}
-              sx={{
-                ml: 1.5,
-                minWidth: 120,
-                color: "var(--text-primary)",
-                fontWeight: 600,
-                fontSize: 14,
-                '& .MuiSelect-icon': { color: 'var(--text-primary)', opacity: 0.7 }
-              }}
-            >
-              {academicYears.map((year) => (
-                <MenuItem key={year._id} value={year._id}>
-                  {year.year}
-                </MenuItem>
-              ))}
-            </Select>
-          </Box>
-
-          <Box sx={filterBox}>
-            <Typography sx={{ fontSize: 13, fontWeight: 700, color: "var(--text-primary)", opacity: 0.9 }}>Phase</Typography>
-            <Select
-              variant="standard"
-              disableUnderline
-              value={selectedPhase}
-              onChange={(e) => setSelectedPhase(e.target.value)}
-              sx={{
-                ml: 1.5,
-                minWidth: 80,
-                color: "var(--text-primary)",
-                fontWeight: 600,
-                fontSize: 14,
-                '& .MuiSelect-icon': { color: 'var(--text-primary)', opacity: 0.7 }
-              }}
-            >
-              <MenuItem value="">All Phases</MenuItem>
-              <MenuItem value={1}>Phase 1</MenuItem>
-              <MenuItem value={2}>Phase 2</MenuItem>
-            </Select>
-          </Box>
-        </Box>
-
-        <Box sx={{ display: "flex", gap: 2 }}>
-          <ActionButton
-            onClick={downloadTemplate}
-            sx={{
-              background: "var(--bg-glass)",
-              color: "var(--text-primary)",
-              border: "1px solid var(--border-color)",
-              boxShadow: "var(--shadow-premium)",
-              fontWeight: 700,
-              px: 3,
-              "&:hover": {
-                background: "var(--bg-accent-1)",
-                borderColor: "var(--color-primary)",
-              }
-            }}
-          >
-            <DownloadIcon sx={{ mr: 1, color: "var(--color-primary)" }} /> Template
-          </ActionButton>
-
-          <ActionButton
-            onClick={handleUploadClick}
-            disabled={uploading}
-            sx={{
-              background: "var(--color-primary)",
-              color: "#fff",
-              boxShadow: "var(--shadow-premium)",
-              fontWeight: 800,
-              px: 3,
-              "&:hover": {
-                background: "var(--color-primary)",
-                opacity: 0.9,
-              }
-            }}
-          >
-            <UploadIcon sx={{ mr: 1 }} /> {uploading ? "Uploading..." : "Upload CSV"}
-          </ActionButton>
-        </Box>
+      {/* Stats Section */}
+      <Box sx={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 2.5, mb: 4 }}>
+        <StatCard 
+            title="Total Records" 
+            score={totalRecords} 
+            max={""} 
+            icon={<AssignmentIcon sx={{ color: "#3b82f6" }}/>}
+            glass 
+        />
+        <StatCard 
+            title="Avg Feedback %" 
+            score={`${avgPercentage}%`} 
+            max={""} 
+            icon={<PieChartIcon sx={{ color: "#10b981" }}/>}
+            glass 
+        />
+        <StatCard 
+            title="Phase 1 Data" 
+            score={phase1Count} 
+            max={""} 
+            icon={<GroupsIcon sx={{ color: "#f59e0b" }}/>}
+            glass 
+        />
+        <StatCard 
+            title="Phase 2 Data" 
+            score={phase2Count} 
+            max={""} 
+            icon={<GroupsIcon sx={{ color: "#8b5cf6" }}/>}
+            glass 
+        />
       </Box>
 
-      {/* 🔹 STATS */}
-      <Box sx={{ display: "flex", gap: 2, mb: 3 }}>
-        <StatCard title="Total Records" score={totalUploads} max={""} glass />
-      </Box>
+      {/* Filters & Table */}
+      <Box sx={sectionCard}>
+        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3, flexWrap: "wrap", gap: 2 }}>
+            <SectionHeader title="Feedback Data Repository" />
+            
+            <Box sx={{ display: "flex", gap: 2 }}>
+                <Box sx={filterBox}>
+                    <Typography sx={{ fontSize: 12, fontWeight: 700, color: "var(--text-secondary)", mr: 1.5, textTransform: "uppercase" }}>Academic Year</Typography>
+                    <Select
+                        variant="standard"
+                        disableUnderline
+                        value={selectedYearId}
+                        onChange={(e) => setSelectedYearId(e.target.value)}
+                        sx={{ minWidth: 120, fontSize: 14, fontWeight: 700, color: "var(--text-primary)" }}
+                    >
+                        {academicYears.map((year) => (
+                        <MenuItem key={year._id} value={year._id}>{year.year}</MenuItem>
+                        ))}
+                    </Select>
+                </Box>
 
-      {/* 🔹 RESULTS TABLE */}
-      <Box
-        sx={{
-          p: 3,
-          borderRadius: "24px",
-          background: "var(--bg-panel)",
-          backdropFilter: "blur(20px)",
-          boxShadow: "var(--shadow-premium)",
-          border: "1px solid var(--border-color)",
-          minHeight: 400,
-        }}
-      >
-        <SectionHeader title="Uploaded Feedback Records" />
+                <Box sx={filterBox}>
+                    <Typography sx={{ fontSize: 12, fontWeight: 700, color: "var(--text-secondary)", mr: 1.5, textTransform: "uppercase" }}>Phase</Typography>
+                    <Select
+                        variant="standard"
+                        disableUnderline
+                        value={selectedPhase}
+                        onChange={(e) => setSelectedPhase(e.target.value)}
+                        sx={{ minWidth: 100, fontSize: 14, fontWeight: 700, color: "var(--text-primary)" }}
+                    >
+                        <MenuItem value="">All Phases</MenuItem>
+                        <MenuItem value={1}>Phase 1</MenuItem>
+                        <MenuItem value={2}>Phase 2</MenuItem>
+                    </Select>
+                </Box>
+            </Box>
+        </Box>
 
         {loading ? (
-          <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>
+          <Box sx={{ display: "flex", justifyContent: "center", py: 10 }}>
             <CircularProgress />
           </Box>
         ) : results.length === 0 ? (
-          <Box sx={{ textAlign: "center", py: 10, color: "var(--text-secondary)" }}>
-            <Typography fontSize={40}>📊</Typography>
-            <Typography mt={1} fontWeight={600} sx={{ color: "var(--text-secondary)" }}>
-              No feedback records found
-            </Typography>
+          <Box sx={{ textAlign: "center", py: 10, background: "rgba(0,0,0,0.02)", borderRadius: "16px", border: "1px dashed var(--border-color)" }}>
+            <Typography variant="h5" sx={{ opacity: 0.3, mb: 1 }}>📊</Typography>
+            <Typography fontWeight={600} color="var(--text-secondary)">No feedback records found for this selection</Typography>
+            <Typography variant="caption" color="var(--text-secondary)">Try changing filters or upload a new CSV file.</Typography>
           </Box>
         ) : (
           <DataTable
-            key={`${selectedYearId}-${selectedPhase}`}
             columns={[
-              "Faculty ID",
-              "Faculty Name",
-              "Subject Name",
-              "Course Code",
-              "Section",
-              "Sem / Year",
-              "Phase",
-              "Count",
-              "%",
-              "Overall %",
-              "Uploaded At",
+              "FACULTY",
+              "COURSE DETAILS",
+              "SEM / YEAR",
+              "PHASE",
+              "COUNT (G/T)",
+              "PERCENTAGE",
+              "OVERALL %",
             ]}
             rows={results.map((r) => [
               {
-                value: r.facultyId,
-                display: <Box sx={{ fontWeight: 600 }}>{r.facultyId}</Box>
-              },
-              {
                 value: r.facultyName,
                 display: (
-                  <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-                    <Avatar>{r.facultyName?.charAt(0)}</Avatar>
-                    <Box sx={{ fontWeight: 600 }}>{r.facultyName}</Box>
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                    <Avatar sx={{ width: 32, height: 32, bgcolor: "var(--color-primary)", fontSize: 14 }}>{r.facultyName?.charAt(0)}</Avatar>
+                    <Box>
+                        <Typography sx={{ fontWeight: 700, fontSize: 14 }}>{r.facultyName}</Typography>
+                        <Typography sx={{ fontSize: 11, color: "var(--text-secondary)" }}>{r.facultyId}</Typography>
+                    </Box>
                   </Box>
                 ),
               },
               {
                 value: r.subjectName,
-                display: <Box>{r.subjectName}</Box>,
-              },
-              {
-                value: r.subjectCode,
-                display: <Box>{r.subjectCode}</Box>,
-              },
-              {
-                value: r.section,
-                display: <Box>{r.section || "-"}</Box>,
+                display: (
+                    <Box>
+                        <Typography sx={{ fontWeight: 600, fontSize: 13 }}>{r.subjectName}</Typography>
+                        <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
+                            <Typography sx={{ fontSize: 11, color: "var(--text-secondary)" }}>{r.subjectCode}</Typography>
+                            <Box sx={{ width: 4, height: 4, borderRadius: "50%", bgcolor: "var(--border-color)" }} />
+                            <Typography sx={{ fontSize: 11, color: "var(--color-primary)", fontWeight: 700 }}>Sec {r.section || "-"}</Typography>
+                        </Box>
+                    </Box>
+                ),
               },
               {
                 value: r.semesterDisplay,
                 display: (
                   <Box>
-                    <Box sx={{ fontWeight: 600 }}>{r.semesterDisplay}</Box>
-                    <Box sx={{ fontSize: 11, color: "var(--text-secondary)", opacity: 0.8 }}>{r.semesterType}</Box>
+                    <Typography sx={{ fontWeight: 700, fontSize: 13 }}>{r.semesterDisplay}</Typography>
+                    <Typography sx={{ fontSize: 10, color: "var(--text-secondary)", fontWeight: 600, textTransform: "uppercase" }}>{r.semesterType}</Typography>
                   </Box>
                 ),
               },
               {
                 value: r.phase,
-                display: <Box sx={{ fontWeight: 600 }}>{r.phase || "-"}</Box>,
+                display: (
+                    <Box sx={{ 
+                        px: 1.5, py: 0.5, borderRadius: "20px", 
+                        background: r.phase === 1 ? "rgba(245, 158, 11, 0.1)" : "rgba(139, 92, 246, 0.1)",
+                        color: r.phase === 1 ? "#d97706" : "#7c3aed",
+                        fontSize: 11, fontWeight: 800, textAlign: "center", display: "inline-block"
+                    }}>
+                        PH {r.phase}
+                    </Box>
+                ),
               },
               {
                 value: r.givenStudents,
-                display: <Box>{r.givenStudents} / {r.totalStudents}</Box>,
+                display: (
+                    <Box sx={{ fontWeight: 700 }}>
+                        {r.givenStudents} <span style={{ color: "var(--text-secondary)", fontWeight: 400 }}>/</span> {r.totalStudents}
+                    </Box>
+                )
               },
               {
                 value: r.percentage,
-                display: <Box sx={{ color: "var(--color-primary)", fontWeight: 700 }}>{r.percentage}%</Box>,
+                display: (
+                    <Box sx={{ position: "relative", display: "inline-flex", alignItems: "center" }}>
+                         <Typography sx={{ color: "var(--color-primary)", fontWeight: 800, fontSize: 15 }}>{r.percentage}%</Typography>
+                    </Box>
+                ),
               },
               {
                 value: r.overallPercentage,
-                display: <Box sx={{ color: "#10b981", fontWeight: 700 }}>{r.overallPercentage}%</Box>,
-              },
-              {
-                value: r.createdAt,
-                display: new Date(r.createdAt).toLocaleString(),
+                display: <Typography sx={{ color: "#10b981", fontWeight: 800, fontSize: 15 }}>{r.overallPercentage}%</Typography>,
               },
             ])}
           />
@@ -371,12 +384,21 @@ export default function FeedbackManagement() {
   );
 }
 
+const sectionCard = {
+  p: 3.5,
+  borderRadius: "24px",
+  background: "var(--bg-panel)",
+  backdropFilter: "blur(20px)",
+  boxShadow: "var(--shadow-premium)",
+  border: "1px solid var(--border-color)",
+};
+
 const filterBox = {
   display: "flex",
   alignItems: "center",
   px: 2,
   py: 1,
-  borderRadius: "12px",
+  borderRadius: "14px",
   background: "var(--bg-glass)",
   border: "1px solid var(--border-color)",
 };
