@@ -42,7 +42,6 @@ const STATUS_CONFIG = {
 const SECTION_LABEL = {
   TEACHING: "📚 Teaching",
   PROCTORING: "👁️ Proctoring",
-  FEEDBACK: "💬 Feedback",
   OTHER: "📎 Other",
 };
 
@@ -193,6 +192,12 @@ export default function Discrepancies() {
       formData.append("proof", proofFile);
       formData.append("status", "RESOLVED");
       formData.append("resolutionNote", `Edited ${editedRows.length} record(s), added ${newRows.length} new record(s).`);
+      
+      // Ensure academic identifiers are passed to satisfy backend validation
+      const yearId = selected.academicYearId?._id || selected.academicYearId;
+      const semId = selected.semesterTypeId?._id || selected.semesterTypeId;
+      if (yearId) formData.append("academicYearId", yearId);
+      if (semId) formData.append("semesterTypeId", semId);
 
       await API.put(`/api/discrepancies/${selected._id}`, formData, {
         headers: { "Content-Type": "multipart/form-data" },
@@ -223,9 +228,14 @@ export default function Discrepancies() {
 
     setRejecting(true);
     try {
+      const yearId = rejectItem.academicYearId?._id || rejectItem.academicYearId;
+      const semId = rejectItem.semesterTypeId?._id || rejectItem.semesterTypeId;
+      
       await API.put(`/api/discrepancies/${rejectItem._id}`, {
         status: "REJECTED",
         rejectionNote: rejectNote.trim(),
+        academicYearId: yearId,
+        semesterTypeId: semId,
       });
       setRejectDone(true);
       setTimeout(() => {
@@ -533,7 +543,7 @@ export default function Discrepancies() {
                             <Tooltip title="Download Proof">
                               <IconButton
                                 size="small"
-                                href={`${import.meta.env.VITE_API_URL || "http://localhost:3000"}/uploads/discrepancies/${item.proofDocument}`}
+                                href={`${import.meta.env.VITE_BACKEND_URL}/uploads/discrepancies/${item.proofDocument}`}
                                 target="_blank"
                               >
                                 <DownloadIcon fontSize="small" sx={{ color: "#2e7d32" }} />
