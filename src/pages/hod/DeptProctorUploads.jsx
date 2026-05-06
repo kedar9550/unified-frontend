@@ -40,6 +40,7 @@ const DeptProctorUploads = () => {
 
   const [students, setStudents] = useState([]);
   const [activeYear, setActiveYear] = useState("");
+  const [activeSemesterType, setActiveSemesterType] = useState("");
   const [loading, setLoading] = useState(false);
   const [uploadingCSV, setUploadingCSV] = useState(false);
   const fileInputRef = useRef(null);
@@ -59,7 +60,12 @@ const DeptProctorUploads = () => {
 
   // Dynamic Semester/Year List
   const duration = selectedProgram?.durationYears || 4;
-  const dynamicSemesters = Array.from({ length: duration * 2 }, (_, i) => i + 1);
+  const dynamicSemesters = Array.from({ length: duration * 2 }, (_, i) => i + 1).filter(sem => {
+    if (!activeSemesterType) return true;
+    if (activeSemesterType.toUpperCase() === "ODD") return sem % 2 !== 0;
+    if (activeSemesterType.toUpperCase() === "EVEN") return sem % 2 === 0;
+    return true;
+  });
   const dynamicYears = PHARMAD_YEARS.slice(0, duration);
 
   useEffect(() => {
@@ -74,7 +80,10 @@ const DeptProctorUploads = () => {
         // Try to find program-specific active year later (when program is selected)
         // For now just store all years
         const active = years.find(y => y.isActive && !y.program);
-        if (active) setActiveYear(active.year);
+        if (active) {
+          setActiveYear(active.year);
+          setActiveSemesterType(active.activeSemesterTypeId?.name || "");
+        }
 
         let fetchedDepts = deptRes.data.data || [];
         if (user && user.roles) {
@@ -146,7 +155,10 @@ const DeptProctorUploads = () => {
     if (selectedProgramId) {
       API.get(`/api/academic-years/active?programId=${selectedProgramId}`)
         .then(res => {
-          if (res.data?.data?.year) setActiveYear(res.data.data.year);
+          if (res.data?.data?.year) {
+            setActiveYear(res.data.data.year);
+            setActiveSemesterType(res.data.data.activeSemesterTypeId?.name || "");
+          }
         })
         .catch(() => {
           // fallback: keep global active year

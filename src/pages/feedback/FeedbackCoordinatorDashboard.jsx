@@ -84,7 +84,7 @@ const FeedbackCoordinatorDashboard = () => {
       {/* Row 1: Summary Cards */}
       <Grid container spacing={2} sx={{ mb: 4 }}>
         {topCards.map((card, i) => (
-          <Grid item key={i} xs={12} sm={6} md={4} lg sx={{ flex: "1 1 0", minWidth: 0 }}>
+          <Grid key={i} xs={12} sm={6} md={4} lg sx={{ flex: "1 1 0", minWidth: 0 }}>
             <Card sx={{ borderRadius: 1, boxShadow: "0 2px 10px rgba(0,0,0,0.04)", p: 2, height: "100%", display: "flex", alignItems: "center", gap: 2}}>
               <Box sx={{ width: 48, height: 48, borderRadius: 1, display: "flex", alignItems: "center", justifyContent: "center", backgroundColor: card.bgColor, color: card.color, flexShrink: 0 }}>
                 {card.icon}
@@ -108,7 +108,7 @@ const FeedbackCoordinatorDashboard = () => {
             
             <Box sx={{ display: "flex", alignItems: "center", gap: 3, mb: 4 }}>
               <Box sx={{ position: "relative", width: 140, height: 140 }}>
-                <ResponsiveContainer>
+                <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0} debounce={50}>
                   <PieChart>
                     <Pie data={feedbackData} dataKey="value" innerRadius={50} outerRadius={70} stroke="none">
                       {feedbackData.map((entry, index) => (

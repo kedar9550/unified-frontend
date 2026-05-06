@@ -167,22 +167,22 @@ const ResearchDetailedView = ({ onBack }) => {
                 <Paper sx={{ p: 3, borderRadius: "24px", border: "1px solid var(--border-color)", boxShadow: "var(--shadow-premium)" }}>
                     <SectionHeader icon={Person} title="Faculty Information" />
                     <Grid container spacing={4}>
-                        <Grid item xs={12} sm={6} md={4}>
+                        <Grid xs={12} sm={6} md={4}>
                             <DetailItem label="Name of the Faculty" value={data.faculty.name} />
                         </Grid>
-                        <Grid item xs={12} sm={6} md={4}>
+                        <Grid xs={12} sm={6} md={4}>
                             <DetailItem label="Designation" value={data.faculty.designation} />
                         </Grid>
-                        <Grid item xs={12} sm={6} md={4}>
+                        <Grid xs={12} sm={6} md={4}>
                             <DetailItem label="Department" value={data.faculty.department} />
                         </Grid>
-                        <Grid item xs={12} sm={6} md={4}>
+                        <Grid xs={12} sm={6} md={4}>
                             <DetailItem label="Employee ID" value={data.faculty.employeeId} />
                         </Grid>
-                        <Grid item xs={12} sm={6} md={4}>
+                        <Grid xs={12} sm={6} md={4}>
                             <DetailItem label="Contact Number" value={data.faculty.contact} />
                         </Grid>
-                        <Grid item xs={12} sm={6} md={4}>
+                        <Grid xs={12} sm={6} md={4}>
                             <DetailItem label="College" value={data.faculty.college} />
                         </Grid>
                     </Grid>
@@ -192,25 +192,25 @@ const ResearchDetailedView = ({ onBack }) => {
                 <Paper sx={{ p: 3, borderRadius: "24px", border: "1px solid var(--border-color)", boxShadow: "var(--shadow-premium)" }}>
                     <SectionHeader icon={Article} title="Journal & Publication Details" />
                     <Grid container spacing={4}>
-                        <Grid item xs={12} sm={6} md={4}>
+                        <Grid xs={12} sm={6} md={4}>
                             <DetailItem label="Journal Title" value={data.research.journalTitle} />
                         </Grid>
-                        <Grid item xs={12} sm={6} md={4}>
+                        <Grid xs={12} sm={6} md={4}>
                             <DetailItem label="ISSN Number" value={data.research.issn} />
                         </Grid>
-                        <Grid item xs={12} sm={6} md={4}>
+                        <Grid xs={12} sm={6} md={4}>
                             <DetailItem label="Journal Type" value={data.research.journalType} />
                         </Grid>
-                        <Grid item xs={12} sm={6} md={4}>
+                        <Grid xs={12} sm={6} md={4}>
                             <DetailItem label="Category" value={data.research.category} />
                         </Grid>
-                        <Grid item xs={12} sm={6} md={4}>
+                        <Grid xs={12} sm={6} md={4}>
                             <DetailItem label="Journal Indexed" value={data.research.indexed} />
                         </Grid>
-                        <Grid item xs={12} sm={6} md={4}>
+                        <Grid xs={12} sm={6} md={4}>
                             <DetailItem label="Publisher" value={data.research.publisher} />
                         </Grid>
-                        <Grid item xs={12} sm={6} md={4}>
+                        <Grid xs={12} sm={6} md={4}>
                             <DetailItem label="Impact Factor" value={data.research.impactFactor} />
                         </Grid>
                     </Grid>
@@ -220,22 +220,22 @@ const ResearchDetailedView = ({ onBack }) => {
                 <Paper sx={{ p: 3, borderRadius: "24px", border: "1px solid var(--border-color)", boxShadow: "var(--shadow-premium)" }}>
                     <SectionHeader icon={Description} title="Issue & Page Details" />
                     <Grid container spacing={4}>
-                        <Grid item xs={12} sm={6} md={4}>
+                        <Grid xs={12} sm={6} md={4}>
                             <DetailItem label="Issue" value={data.research.issue} />
                         </Grid>
-                        <Grid item xs={12} sm={6} md={4}>
+                        <Grid xs={12} sm={6} md={4}>
                             <DetailItem label="Vol" value={data.research.vol} />
                         </Grid>
-                        <Grid item xs={12} sm={6} md={4}>
+                        <Grid xs={12} sm={6} md={4}>
                             <DetailItem label="Month & Year" value={data.research.monthYear} />
                         </Grid>
-                        <Grid item xs={12} sm={6} md={4}>
+                        <Grid xs={12} sm={6} md={4}>
                             <DetailItem label="Page No" value={data.research.pageNo} />
                         </Grid>
-                        <Grid item xs={12} sm={6} md={4}>
+                        <Grid xs={12} sm={6} md={4}>
                             <DetailItem label="DOI" value={data.research.doi} />
                         </Grid>
-                        <Grid item xs={12} sm={6} md={4}>
+                        <Grid xs={12} sm={6} md={4}>
                             <DetailItem label="Link" value={
                                 <Typography component="a" href={data.research.link} target="_blank" sx={{ color: "var(--color-primary)", textDecoration: "none", fontWeight: 600, "&:hover": { textDecoration: "underline" } }}>
                                     Visit Journal Link
@@ -251,19 +251,19 @@ const ResearchDetailedView = ({ onBack }) => {
                     <Box sx={{ overflowX: "auto" }}>
                         <Box sx={{ minWidth: 600 }}>
                             <Grid container sx={{ py: 1.5, borderBottom: "1px solid var(--border-color)" }}>
-                                <Grid item xs={3}><Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--text-secondary)" }}>Date & Time</Typography></Grid>
-                                <Grid item xs={2}><Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--text-secondary)" }}>Action</Typography></Grid>
-                                <Grid item xs={3}><Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--text-secondary)" }}>Performed By</Typography></Grid>
-                                <Grid item xs={4}><Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--text-secondary)" }}>Remarks</Typography></Grid>
+                                <Grid xs={3}><Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--text-secondary)" }}>Date & Time</Typography></Grid>
+                                <Grid xs={2}><Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--text-secondary)" }}>Action</Typography></Grid>
+                                <Grid xs={3}><Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--text-secondary)" }}>Performed By</Typography></Grid>
+                                <Grid xs={4}><Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--text-secondary)" }}>Remarks</Typography></Grid>
                             </Grid>
                             {data.history.map((h, i) => (
                                 <Grid container key={i} sx={{ py: 2 }}>
-                                    <Grid item xs={3}><Typography sx={{ fontSize: "0.85rem", fontWeight: 500 }}>{h.dateTime}</Typography></Grid>
-                                    <Grid item xs={2}>
+                                    <Grid xs={3}><Typography sx={{ fontSize: "0.85rem", fontWeight: 500 }}>{h.dateTime}</Typography></Grid>
+                                    <Grid xs={2}>
                                         <Chip label={h.action} size="small" sx={{ bgcolor: "#dcfce7", color: "#166534", fontWeight: 700, height: 20, fontSize: "0.7rem" }} />
                                     </Grid>
-                                    <Grid item xs={3}><Typography sx={{ fontSize: "0.85rem", fontWeight: 500 }}>{h.performedBy}</Typography></Grid>
-                                    <Grid item xs={4}><Typography sx={{ fontSize: "0.85rem", color: "var(--text-secondary)" }}>{h.remarks}</Typography></Grid>
+                                    <Grid xs={3}><Typography sx={{ fontSize: "0.85rem", fontWeight: 500 }}>{h.performedBy}</Typography></Grid>
+                                    <Grid xs={4}><Typography sx={{ fontSize: "0.85rem", color: "var(--text-secondary)" }}>{h.remarks}</Typography></Grid>
                                 </Grid>
                             ))}
                         </Box>

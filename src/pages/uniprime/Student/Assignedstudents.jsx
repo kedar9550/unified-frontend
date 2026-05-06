@@ -22,6 +22,7 @@ const Assignedstudents = () => {
         branch: "",
         branchName: ""
     });
+    const [activeSemesterType, setActiveSemesterType] = useState(""); // "ODD" or "EVEN"
 
     const handleHierarchyChange = useCallback((val) => {
         setHierarchy(val);
@@ -53,7 +54,19 @@ const Assignedstudents = () => {
             }
         };
 
+        const fetchActiveYear = async () => {
+            try {
+                const res = await API.get("/api/academic-years/active");
+                if (res.data?.success && res.data?.data) {
+                    setActiveSemesterType(res.data.data.activeSemesterTypeId?.name || "");
+                }
+            } catch (err) {
+                console.error("Failed to fetch active year", err);
+            }
+        };
+
         fetchAssignedStudents();
+        fetchActiveYear();
 
         return () => controller.abort(); // unmount అయినప్పుడు cancel చేస్తుంది
     }, [location.key]);
@@ -192,8 +205,13 @@ const Assignedstudents = () => {
                                                 sx={{ fontSize: "0.85rem" }}
                                             >
                                                 <MenuItem value=""><em>All</em></MenuItem>
-                                                {[...Array(8)].map((_, i) => (
-                                                    <MenuItem key={i + 1} value={i + 1}>Sem {i + 1}</MenuItem>
+                                                {[...Array(8)].map((_, i) => i + 1).filter(sem => {
+                                                    if (!activeSemesterType) return true;
+                                                    if (activeSemesterType.toUpperCase() === "ODD") return sem % 2 !== 0;
+                                                    if (activeSemesterType.toUpperCase() === "EVEN") return sem % 2 === 0;
+                                                    return true;
+                                                }).map((sem) => (
+                                                    <MenuItem key={sem} value={sem}>Sem {sem}</MenuItem>
                                                 ))}
                                             </Select>
                                         </FormControl>

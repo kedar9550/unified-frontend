@@ -174,7 +174,7 @@ const AcademicManagement = () => {
               const isActive = y.activeSemesterTypeId?._id === st._id || y.activeSemesterTypeId === st._id;
 
               return (
-                <Grid item xs={6} sm={4} md={2} key={idx}>
+                <Grid xs={6} sm={4} md={2} key={idx}>
                   <Paper variant="outlined" sx={{
                     p: 1.5, textAlign: 'center',
                     background: isActive && y.isActive ? 'rgba(16,185,129,0.15)' : 'var(--bg-glass)',
@@ -229,7 +229,7 @@ const AcademicManagement = () => {
             if (st.name === 'SUMMER') { title = "Summer Semester"; subtitle = "-"; }
 
             return (
-              <Grid item xs={12} sm={4} key={st._id}>
+              <Grid xs={12} sm={4} key={st._id}>
                 <Paper variant="outlined" sx={{
                   p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center',
                     background: isActive && y.isActive ? 'rgba(16,185,129,0.15)' : 'var(--bg-glass)',

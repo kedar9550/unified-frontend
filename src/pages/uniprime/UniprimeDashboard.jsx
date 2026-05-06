@@ -46,6 +46,7 @@ const UniprimeDashboard = () => {
   const [dashboardData, setDashboardData] = useState({
     academicYearsCount: 0,
     activeYear: "N/A",
+    activeSemester: "N/A",
     departmentsCount: 0,
     usersCount: 0,
     rolesCount: 0,
@@ -66,6 +67,7 @@ const UniprimeDashboard = () => {
           setDashboardData({
             academicYearsCount: res.data.data.academicYearsCount || 0,
             activeYear: res.data.data.activeYear || "N/A",
+            activeSemester: res.data.data.activeSemester || "N/A",
             departmentsCount: res.data.data.departmentsCount || 0,
             usersCount: res.data.data.usersCount || 0,
             rolesCount: res.data.data.rolesCount || 0,
@@ -178,126 +180,110 @@ const UniprimeDashboard = () => {
 
 
 
-          {/* Row 1: Summary Cards */}
-
-          <Grid 
-            container 
-            spacing={{ xs: 0, sm: 2, md: 3 }} 
-            sx={{ 
-              mb: 4, 
-              width: '100%', 
-              margin: 0,
-              '& > .MuiGrid-item': {
-                px: { xs: 1, sm: 1, md: 1.5 },
-                py: { xs: 1, sm: 1, md: 1.5 }
-              }
+          <Grid
+            container
+            spacing={3}
+            sx={{
+              mb: 4,
+              width: 'auto',
+              mx: -1,
+              '& .MuiGrid-item': { pt: 1.5 } // Keep top spacing but allow horizontal stretch
             }}
           >
             {topCards.map((card, i) => (
               <Grid
-                item
                 key={i}
                 xs={12}
-                sm={6}
-                md={6}
+                md={4}
                 lg={3}
-                sx={{ display: 'flex', flexDirection: 'column' }}
+                sx={{ display: 'flex' }}
               >
                 <Card
                   sx={{
+                    position: "relative",
                     borderRadius: 2,
-                    boxShadow: "0 6px 20px rgba(0,0,0,0.06)",
-                    transition: "all 0.25s ease",
+                    boxShadow: "0 4px 20px rgba(0,0,0,0.04)",
+                    transition: "all 0.3s ease",
                     "&:hover": {
                       transform: "translateY(-4px)",
-                      boxShadow: "0 12px 30px rgba(0,0,0,0.1)",
+                      boxShadow: "0 12px 30px rgba(0,0,0,0.08)",
                     },
-                    height: "180px", // Fixed height for absolute uniformity
-                    width: '100%',
+                    height: "180px",
+                    minWidth: '217px',
+                    width: { xs: '370px', md: '100%' },
                     display: "flex",
                     flexDirection: "column",
                     justifyContent: "space-between",
                     p: 2.5,
+                    mb: 1,
+                    border: "1px solid var(--border-color)",
+                    background: "var(--bg-panel)",
                   }}
                 >
+                  {/* Status Badge: Top Right */}
+                  {card.subtitle && (
+                    <Box sx={{ position: "absolute", top: 12, right: 12 }}>
+                      {card.subtitle}
+                    </Box>
+                  )}
 
-                  {/* Top Content */}
-                  <Box sx={{ display: "flex", alignItems: "flex-start", gap: 2 }}>
-
+                  {/* Top Content: Left Aligned */}
+                  <Box sx={{
+                    display: "flex",
+                    flexDirection: "row",
+                    alignItems: "flex-start",
+                    gap: 2,
+                    textAlign: "left"
+                  }}>
                     {/* Icon */}
                     <Box
                       sx={{
-                        width: 52,
-                        height: 52,
-                        borderRadius: 1,
+                        width: 54,
+                        height: 54,
+                        borderRadius: 2,
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
                         background: card.gradient,
-                        boxShadow: "0 8px 18px rgba(0,0,0,0.12)",
+                        boxShadow: "0 8px 18px rgba(0,0,0,0.1)",
                         color: "#fff",
-                        position: "relative",
-                        overflow: "hidden",
-                        "&::after": {
-                          content: '""',
-                          position: "absolute",
-                          inset: 0,
-                          background: "linear-gradient(180deg, #ffffff30, transparent)",
-                          borderRadius: 1,
-                        },
-                        transition: "all 0.3s ease",
-                        ".dark-mode &": {
-                          background: card.bgDark,
-                          color: card.color,
-                          boxShadow: "none",
-                        },
-                        ".dark-mode &::after": {
-                          display: "none",
-                        }
+                        flexShrink: 0
                       }}>
                       {React.cloneElement(card.icon, { fontSize: "medium" })}
                     </Box>
 
                     {/* Text */}
-                    <Box sx={{ display: "flex", flexDirection: "column", gap: 0.3 }}>
+                    <Box sx={{ display: "flex", flexDirection: "column", gap: 0.2 }}>
                       <Typography
                         variant="body2"
-                        sx={{ color: "#6B7280", fontWeight: 600 }}
+                        sx={{ color: "var(--text-secondary)", fontWeight: 600, fontSize: "0.85rem" }}
                       >
                         {card.title}
                       </Typography>
 
                       <Typography
-                        variant="h6"
-                        sx={{ fontWeight: 700, color: "#111827", mt: 0.5 }}
+                        sx={{
+                          fontWeight: 700,
+                          color: "var(--text-primary)",
+                          mt: 0.5,
+                          fontSize: card.value.toString().length > 6 ? "1.1rem" : "1.5rem"
+                        }}
                       >
                         {card.value}
                       </Typography>
-
-                      {/* Subtitle / Badge */}
-                      <Box sx={{ mt: 0.8 }}>
-                        {typeof card.subtitle === "string" ? (
-                          <Typography variant="caption" sx={{ color: "#9CA3AF" }}>
-                            {card.subtitle}
-                          </Typography>
-                        ) : (
-                          card.subtitle
-                        )}
-                      </Box>
                     </Box>
                   </Box>
 
-                  {/* Bottom Link */}
-                  <Box sx={{ mt: 2 }}>
+                  {/* Bottom Link: Right Aligned */}
+                  <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
                     <Button
                       size="small"
                       endIcon={<ArrowForward sx={{ fontSize: 16 }} />}
                       sx={{
                         textTransform: "none",
-                        fontSize: "0.8rem",
-                        fontWeight: 600,
+                        fontSize: "0.85rem",
+                        fontWeight: 700,
                         color: "var(--color-primary)",
-                        p: 0,
                         "&:hover": { background: "transparent", opacity: 0.8 },
                       }}
                     >
@@ -310,9 +296,9 @@ const UniprimeDashboard = () => {
           </Grid>
 
           {/* Row 2: Middle Panels */}
-          <Grid container spacing={3} sx={{ mb: 3, alignItems: "stretch" }}>
+          <Grid container spacing={3} sx={{ mb: 3, alignItems: "stretch", width: '100%', margin: 0 }}>
             {/* Academic Structure Overview */}
-            <Grid item xs={12} md={4} sx={{ display: "flex" }}>
+            <Grid xs={12} md={6} sx={{ display: "flex" }}>
               <Card
                 sx={{
                   borderRadius: 1,
@@ -372,7 +358,7 @@ const UniprimeDashboard = () => {
 
             {/* Active Academic Configuration */}
 
-            <Grid item xs={12} md={4} sx={{ display: "flex" }}>
+            <Grid xs={12} md={6} sx={{ display: "flex" }}>
               <Card
                 sx={{
                   borderRadius: 1,
@@ -426,7 +412,7 @@ const UniprimeDashboard = () => {
                     </Typography>
 
                     <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                      <Typography sx={valueStyle}>Semester 2</Typography>
+                      <Typography sx={valueStyle}>{dashboardData.activeSemester}</Typography>
                       <Chip label="Active" size="small" sx={activeChip} />
                     </Box>
                   </Box>
@@ -598,16 +584,16 @@ const UniprimeDashboard = () => {
                     <Button size="small" sx={{ textTransform: "none", fontSize: "0.75rem", color: "var(--color-primary)" }}>View All Users &gt;</Button>
                   </Box>
 
-                  <Box sx={{ 
-                    display: "flex", 
-                    flexDirection: { xs: 'column', md: 'row' }, 
-                    alignItems: "center", 
-                    justifyContent: "space-between", 
-                    gap: 3 
+                  <Box sx={{
+                    display: "flex",
+                    flexDirection: { xs: 'column', md: 'row' },
+                    alignItems: { xs: 'stretch', md: 'center' },
+                    justifyContent: "space-between",
+                    gap: 3
                   }}>
                     {/* Chart */}
-                    <Box sx={{ position: "relative", width: 200, height: 200, flexShrink: 0 }}>
-                      <ResponsiveContainer>
+                    <Box sx={{ position: "relative", width: 200, height: 200, flexShrink: 0, mx: "auto" }}>
+                      <ResponsiveContainer width="100%" height={200} debounce={50}>
                         <PieChart>
                           <Pie
                             data={dashboardData.roleDistribution}
@@ -649,7 +635,8 @@ const UniprimeDashboard = () => {
                         p: 2,
                         borderRadius: 2,
                         border: "1px solid #E5E7EB",
-                        minWidth: 150,
+                        width: { xs: '100%', md: 'auto' },
+                        minWidth: { md: 150 },
                         flexGrow: 1,
                       }}
                     >
@@ -683,12 +670,14 @@ const UniprimeDashboard = () => {
                               </Typography>
                             </Box>
 
-                            <Typography sx={{ fontSize: 13, fontWeight: 600 }}>
-                              {role.value} &nbsp;
-                              <span style={{ color: "#6B7280", fontWeight: 400 }}>
+                            <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                              <Typography sx={{ fontSize: 13, fontWeight: 700, minWidth: 25, textAlign: "right", color: "var(--text-primary)" }}>
+                                {role.value}
+                              </Typography>
+                              <Typography sx={{ fontSize: 12, color: "var(--text-secondary)", fontWeight: 500, minWidth: 45, textAlign: "right" }}>
                                 {percent}%
-                              </span>
-                            </Typography>
+                              </Typography>
+                            </Box>
                           </Box>
                         );
                       })}
@@ -711,7 +700,7 @@ const UniprimeDashboard = () => {
                   <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 2 }}>Quick Actions</Typography>
                   <Grid container spacing={1.5}>
                     {quickActions.map((action, i) => (
-                      <Grid item xs={12} sm={6} key={i}>
+                      <Grid xs={12} sm={6} key={i} sx={{ display: 'flex' }}>
                         <Paper
                           variant="outlined"
                           sx={{
@@ -722,6 +711,7 @@ const UniprimeDashboard = () => {
                             gap: 2,
                             cursor: "pointer",
                             height: "100%",
+                            width: "100%",
                             border: "1px solid var(--border-color)",
                             backgroundColor: "var(--bg-paper)",
                             transition: "all 0.25s ease",
@@ -785,7 +775,7 @@ const UniprimeDashboard = () => {
           </Box>
         </>
       )}
-    </Box>
+    </Box >
   );
 };
 
