@@ -24,9 +24,11 @@ import DataTable from "../../components/data/DataTable";
 import RaiseDiscrepancyModal from "../../components/faculty/RaiseDiscrepancyModal";
 import API from "../../api/axios";
 import { useAuth } from "../../context/AuthContext";
+import { useSnackbar } from "../../context/SnackbarContext";
 
 export default function Teaching() {
   const { user } = useAuth();
+  const showSnackbar = useSnackbar();
 
   // ── Academic Year state ──────────────────────────────────────────
   const [academicYears, setAcademicYears] = useState([]);
@@ -202,7 +204,8 @@ export default function Teaching() {
       });
 
       console.log("CSV uploaded successfully:", res.data);
-      // TODO: Add success notification/toast
+      showSnackbar("CSV uploaded successfully!", "success");
+      
       // Refresh results
       const refreshRes = await API.get("/api/faculty-subject-results", {
         params: {
@@ -213,8 +216,7 @@ export default function Teaching() {
       setResults(refreshRes.data || []);
     } catch (err) {
       console.error("Error uploading CSV:", err);
-      // TODO: Add error notification/toast
-      alert("Error uploading CSV file");
+      showSnackbar(err.response?.data?.message || "Error uploading CSV file", "error");
     } finally {
       setUploadingCSV(false);
       // Reset file input
