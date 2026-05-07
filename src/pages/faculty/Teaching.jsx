@@ -673,7 +673,7 @@ export default function Teaching() {
   })();
 
   return (
-    <>
+    <Box sx={{ p: { xs: 2, md: 4 } }}>
       {/* ── PAGE HEADER ────────────────────────────────────── */}
       <PageHeader
         title="Teaching Dashboard"
@@ -687,7 +687,6 @@ export default function Teaching() {
               borderRadius: "20px",
               px: 3,
               py: 1,
-              mr: 8,
               textTransform: "none",
               fontWeight: 600,
               fontSize: 14,
@@ -711,11 +710,12 @@ export default function Teaching() {
           gap: 2,
           mb: 3,
           alignItems: "center",
+          justifyContent: { xs: "center", sm: "flex-start" },
           flexWrap: "wrap",
         }}
       >
         {/* Academic Year */}
-        <Box sx={filterBox}>
+        <Box sx={{ ...filterBox, width: { xs: "100%", sm: "auto" }, justifyContent: { xs: "space-between", sm: "flex-start" } }}>
           <Typography
             sx={{ fontSize: 13, fontWeight: 700, color: "var(--text-secondary)", mr: 1, textTransform: "uppercase", letterSpacing: "0.05em" }}
           >
@@ -898,7 +898,7 @@ export default function Teaching() {
         academicYears={academicYears}
         defaultYearId={selectedYear?._id}
       />
-    </>
+    </Box>
   );
 }
 
@@ -918,7 +918,7 @@ const filterBox = {
 };
 
 const sectionCard = {
-  p: 3,
+  p: { xs: 3, md: 4 },
   borderRadius: "20px",
   background: "var(--bg-panel)",
   backdropFilter: "blur(12px)",

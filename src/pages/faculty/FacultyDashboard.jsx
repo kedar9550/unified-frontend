@@ -34,6 +34,7 @@ import {
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
 import API from "../../api/axios";
 import { useAuth } from "../../context/AuthContext";
+import DataTable from "../../components/data/DataTable";
 
 const FacultyDashboard = () => {
   const { user } = useAuth();
@@ -146,16 +147,16 @@ const FacultyDashboard = () => {
 
 
   return (
-    <Box>
+    <Box sx={{ p: { xs: 2.5, md: 4 } }}>
       {/* Header */}
       <Box
         sx={{
-          mb: 4,
           display: "flex",
+          flexDirection: { xs: "column", sm: "row" },
           justifyContent: "space-between",
-          alignItems: "center",
-          flexWrap: "wrap",
+          alignItems: { xs: "flex-start", sm: "center" },
           gap: 2,
+          mb: 4,
         }}
       >
         <Box>
@@ -163,9 +164,10 @@ const FacultyDashboard = () => {
             variant="h4"
             sx={{
               fontWeight: 800,
-              color: "var(--text-primary)",
-              mb: 0.5,
+              color: "var(--color-primary)",
               letterSpacing: "-0.02em",
+              mb: 0.5,
+              fontSize: { xs: "1.75rem", sm: "2.125rem" }
             }}
           >
             Welcome back, {user?.name || "Faculty"}!
@@ -178,7 +180,7 @@ const FacultyDashboard = () => {
             activities
           </Typography>
         </Box>
-        <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
+        <Box sx={{ display: "flex", gap: 2, alignItems: "center", alignSelf: { xs: "flex-end", sm: "center" } }}>
           <Button
             variant="outlined"
             sx={{
@@ -201,19 +203,30 @@ const FacultyDashboard = () => {
       </Box>
 
       {/* Row 1: Summary Cards */}
-      <Grid container spacing={3} sx={{ mb: 4 }}>
+      <Box
+        sx={{
+          display: "flex",
+          flexWrap: "wrap",
+          gap: 2.5,
+          mb: 4,
+          width: "100%",
+        }}
+      >
         {topCards.map((card, i) => (
-          <Grid
+          <Box
             key={i}
-            xs={12}
-            sm={6}
-            md={4}
-            lg
-            sx={{ flex: "1 1 0", minWidth: 0 }}
+            sx={{
+              flex: {
+                xs: "1 1 100%",
+                sm: "1 1 calc(50% - 10px)",
+                md: "1 1 calc(25% - 19px)",
+              },
+              minWidth: 0,
+            }}
           >
             <Card
               sx={{
-                borderRadius: 1,
+                borderRadius: 2,
                 background: "var(--bg-panel)",
                 border: "1px solid var(--border-color)",
                 boxShadow: "var(--shadow-premium)",
@@ -288,16 +301,22 @@ const FacultyDashboard = () => {
                   </Typography>
                 </Box>
               </Box>
-              <Box sx={{ mt: 2 }}>
+              <Box
+                sx={{
+                  mt: 3,
+                  pt: 2,
+                  borderTop: "1px solid var(--border-color)",
+                  display: "flex",
+                  justifyContent: "flex-end",
+                }}
+              >
                 <Button
                   size="small"
                   endIcon={<ArrowForward sx={{ fontSize: 16 }} />}
                   sx={{
                     textTransform: "none",
-                    fontSize: "0.8rem",
                     fontWeight: 700,
                     color: "var(--color-primary)",
-                    p: 0,
                     "&:hover": {
                       background: "transparent",
                       textDecoration: "underline",
@@ -308,11 +327,9 @@ const FacultyDashboard = () => {
                 </Button>
               </Box>
             </Card>
-          </Grid>
+          </Box>
         ))}
-      </Grid>
-
-
+      </Box>
 
       {/* Row 2: Teaching Overview and Quick Actions */}
       <Box
@@ -327,7 +344,7 @@ const FacultyDashboard = () => {
         <Box sx={{ width: { xs: "100%", lg: "50%" }, display: "flex" }}>
           <Card
             sx={{
-              borderRadius: 1,
+              borderRadius: 2,
               background: "var(--bg-panel)",
               border: "1px solid var(--border-color)",
               boxShadow: "var(--shadow-premium)",
@@ -538,7 +555,7 @@ const FacultyDashboard = () => {
         <Box sx={{ width: { xs: "100%", lg: "50%" }, display: "flex" }}>
           <Card
             sx={{
-              borderRadius: 1,
+              borderRadius: 2,
               background: "var(--bg-panel)",
               border: "1px solid var(--border-color)",
               boxShadow: "var(--shadow-premium)",
@@ -559,9 +576,22 @@ const FacultyDashboard = () => {
             >
               Quick Actions
             </Typography>
-            <Grid container spacing={2}>
+            <Box
+              sx={{
+                display: "flex",
+                flexWrap: "wrap",
+                gap: 2,
+                width: "100%",
+              }}
+            >
               {quickActions.map((action, i) => (
-                <Grid item xs={12} sm={6} key={i}>
+                <Box
+                  key={i}
+                  sx={{
+                    flex: { xs: "1 1 100%", sm: "1 1 calc(50% - 8px)" },
+                    minWidth: 0,
+                  }}
+                >
                   <Paper
                     variant="outlined"
                     sx={{
@@ -618,22 +648,23 @@ const FacultyDashboard = () => {
                       </Typography>
                     </Box>
                   </Paper>
-                </Grid>
+                </Box>
               ))}
-            </Grid>
+            </Box>
           </Card>
         </Box>
       </Box>
 
-      {/* Row 3: My Courses */}
+      {/* Row 3: Courses Table */}
       <Card
         sx={{
-          borderRadius: 1,
+          borderRadius: 2,
           background: "var(--bg-panel)",
           border: "1px solid var(--border-color)",
           boxShadow: "var(--shadow-premium)",
           p: 3,
           mb: 4,
+          overflow: "hidden"
         }}
       >
         <Box
@@ -642,6 +673,8 @@ const FacultyDashboard = () => {
             justifyContent: "space-between",
             alignItems: "center",
             mb: 3,
+            flexWrap: "wrap",
+            gap: 2
           }}
         >
           <Typography
@@ -666,79 +699,31 @@ const FacultyDashboard = () => {
             View All Courses
           </Button>
         </Box>
-        <TableContainer>
-          <Table sx={{ minWidth: 650 }}>
-            <TableHead sx={{ background: "var(--gradient-primary)" }}>
-              <TableRow>
-                {["COURSE CODE", "COURSE NAME", "BRANCH", "SEMESTER", "STUDENTS", "ACTIONS"].map(
-                  (col, i) => (
-                    <TableCell
-                      key={i}
-                      align={col === "ACTIONS" ? "right" : "left"}
-                      sx={{
-                        fontWeight: 700,
-                        color: "#fff",
-                        py: 2,
-                        borderBottom: "none",
-                        fontSize: "0.75rem",
-                        letterSpacing: "0.05em",
-                      }}
-                    >
-                      {col}
-                    </TableCell>
-                  )
-                )}
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {myCourses.map((course, index) => (
-                <TableRow
-                  key={index}
-                  sx={{
-                    "&:last-child td, &:last-child th": { border: 0 },
-                    "&:hover": { background: "var(--bg-accent-1)" },
+
+        <DataTable
+          columns={["COURSE CODE", "COURSE NAME", "BRANCH", "SEMESTER", "STUDENTS", "ACTIONS"]}
+          rows={myCourses.map(course => [
+            course.code,
+            course.name,
+            course.branch,
+            course.sem,
+            course.students,
+            {
+              display: (
+                <IconButton 
+                  size="small" 
+                  sx={{ 
+                    color: "var(--color-primary)",
+                    "&:hover": { background: "var(--bg-accent-1)" }
                   }}
                 >
-                  <TableCell
-                    component="th"
-                    scope="row"
-                    sx={{
-                      fontWeight: 700,
-                      color: "var(--text-primary)",
-                      py: 2,
-                      borderBottom: "1px solid var(--border-color)",
-                    }}
-                  >
-                    {course.code}
-                  </TableCell>
-                  <TableCell sx={{ color: "var(--text-secondary)", py: 2, borderBottom: "1px solid var(--border-color)", fontWeight: 500 }}>
-                    {course.name}
-                  </TableCell>
-                  <TableCell sx={{ color: "var(--text-secondary)", py: 2, borderBottom: "1px solid var(--border-color)", fontWeight: 500 }}>
-                    {course.branch}
-                  </TableCell>
-                  <TableCell sx={{ color: "var(--text-secondary)", py: 2, borderBottom: "1px solid var(--border-color)", fontWeight: 500 }}>
-                    {course.sem}
-                  </TableCell>
-                  <TableCell sx={{ color: "var(--text-secondary)", py: 2, borderBottom: "1px solid var(--border-color)", fontWeight: 500 }}>
-                    {course.students}
-                  </TableCell>
-                  <TableCell align="right" sx={{ py: 2, borderBottom: "1px solid var(--border-color)" }}>
-                    <IconButton
-                      size="small"
-                      sx={{
-                        color: "var(--color-primary)",
-                        "&:hover": { backgroundColor: "var(--bg-accent-1)" },
-                      }}
-                    >
-                      <Visibility fontSize="small" />
-                    </IconButton>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
+                  <Visibility fontSize="small" />
+                </IconButton>
+              ),
+              value: "View"
+            }
+          ])}
+        />
       </Card>
     </Box>
   );

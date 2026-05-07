@@ -19,7 +19,25 @@ export default function ThemeToggle() {
   }, [isDark]);
 
   const handleToggle = () => {
-    setIsDark(!isDark);
+    const nextDark = !isDark;
+    
+    // Fallback for browsers that don't support View Transition API
+    if (!document.startViewTransition) {
+      setIsDark(nextDark);
+      return;
+    }
+
+    // Prepare transition classes
+    const transitionClass = nextDark ? 'theme-transition-expand' : 'theme-transition-collapse';
+    document.documentElement.classList.add(transitionClass);
+
+    const transition = document.startViewTransition(() => {
+      setIsDark(nextDark);
+    });
+
+    transition.finished.finally(() => {
+      document.documentElement.classList.remove(transitionClass);
+    });
   };
 
   return (

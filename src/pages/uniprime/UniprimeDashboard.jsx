@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Box,
   Typography,
@@ -42,6 +43,7 @@ import API from "../../api/axios";
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
 
 const UniprimeDashboard = () => {
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [dashboardData, setDashboardData] = useState({
     academicYearsCount: 0,
@@ -102,16 +104,18 @@ const UniprimeDashboard = () => {
       color: "#3B82F6",
       bgDark: "rgba(59, 130, 246, 0.15)",
       linkText: "View Details",
+      path: "/academics/management",
     },
     {
-      title: "Active Year",
+      title: "Active Academic Year",
       value: dashboardData.activeYear,
-      icon: <School />,
+      icon: <CalendarMonth />,
       gradient: "linear-gradient(135deg, #10B981, #059669)",
       color: "#10B981",
       bgDark: "rgba(16, 185, 129, 0.15)",
-      subtitle: <Chip label="Active" size="small" color="success" />,
+      subtitle: null,
       linkText: "Manage Years",
+      path: "/academics/management",
     },
     {
       title: "Departments",
@@ -121,6 +125,7 @@ const UniprimeDashboard = () => {
       color: "#8B5CF6",
       bgDark: "rgba(139, 92, 246, 0.15)",
       linkText: "View All",
+      path: "/academics/department",
     },
     {
       title: "Users",
@@ -130,6 +135,7 @@ const UniprimeDashboard = () => {
       color: "#F59E0B",
       bgDark: "rgba(245, 158, 11, 0.15)",
       linkText: "Manage Users",
+      path: "/student/student-uploads",
     },
     {
       title: "Roles",
@@ -139,16 +145,17 @@ const UniprimeDashboard = () => {
       color: "#EF4444",
       bgDark: "rgba(239, 68, 68, 0.15)",
       linkText: "Manage Roles",
+      path: "/academics/roles",
     },
   ];
 
   const quickActions = [
-    { title: "Add Academic Year", desc: "Create new year", icon: <AddBox color="primary" /> },
-    { title: "Add Department", desc: "Create new department", icon: <DomainAdd color="success" /> },
-    { title: "Add Program / Branch", desc: "Add program or branch", icon: <AccountTree color="secondary" /> },
-    { title: "Add User", desc: "Register new user", icon: <PersonAdd sx={{ color: "#00b0ff" }} /> },
-    { title: "Create Role", desc: "Define new role", icon: <VpnKey color="error" /> },
-    { title: "Assign Role", desc: "Assign role to user", icon: <AssignmentInd color="warning" /> },
+    { title: "Add Academic Year", desc: "Create new year", icon: <AddBox color="primary" />, path: "/academics/management" },
+    { title: "Add Department", desc: "Create new department", icon: <DomainAdd color="success" />, path: "/academics/department" },
+    { title: "Add Program / Branch", desc: "Add program or branch", icon: <AccountTree color="secondary" />, path: "/academics/programs" },
+    { title: "Add User", desc: "Register new user", icon: <PersonAdd sx={{ color: "#00b0ff" }} />, path: "/student/student-uploads" },
+    { title: "Create Role", desc: "Define new role", icon: <VpnKey color="error" />, path: "/academics/roles" },
+    { title: "Assign Role", desc: "Assign role to user", icon: <AssignmentInd color="warning" />, path: "/academics/roles" },
   ];
 
   const recentUsers = dashboardData.recentUsers || [];
@@ -180,110 +187,126 @@ const UniprimeDashboard = () => {
 
 
 
-          <Grid
-            container
-            spacing={3}
+          <Box
             sx={{
+              display: "flex",
+              flexWrap: "wrap",
+              gap: { xs: 2, md: 3 },
               mb: 4,
-              width: 'auto',
-              mx: -1,
-              '& .MuiGrid-item': { pt: 1.5 } // Keep top spacing but allow horizontal stretch
+              width: "100%",
             }}
           >
             {topCards.map((card, i) => (
-              <Grid
+              <Box
                 key={i}
-                xs={12}
-                md={4}
-                lg={3}
-                sx={{ display: 'flex' }}
+                sx={{
+                  flex: { xs: "1 1 100%", sm: "1 1 calc(50% - 24px)", md: "1 1 calc(33.33% - 24px)", lg: "1 1 calc(20% - 24px)" },
+                  display: 'flex',
+                  minWidth: "200px"
+                }}
               >
                 <Card
                   sx={{
                     position: "relative",
-                    borderRadius: 2,
-                    boxShadow: "0 4px 20px rgba(0,0,0,0.04)",
-                    transition: "all 0.3s ease",
+                    borderRadius: 1,
+                    boxShadow: "var(--shadow-premium)",
+                    transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
                     "&:hover": {
-                      transform: "translateY(-4px)",
-                      boxShadow: "0 12px 30px rgba(0,0,0,0.08)",
+                      transform: "translateY(-5px)",
+                      boxShadow: "0 12px 40px rgba(0,0,0,0.12)",
                     },
-                    height: "180px",
-                    minWidth: '217px',
-                    width: { xs: '370px', md: '100%' },
+                    height: "160px",
+                    width: "100%",
                     display: "flex",
                     flexDirection: "column",
                     justifyContent: "space-between",
                     p: 2.5,
-                    mb: 1,
                     border: "1px solid var(--border-color)",
                     background: "var(--bg-panel)",
+                    overflow: "hidden",
+                    "&::after": {
+                      content: '""',
+                      position: "absolute",
+                      top: 0,
+                      right: 0,
+                      width: "100px",
+                      height: "100px",
+                      background: `radial-gradient(circle at top right, ${card.color}20, transparent)`,
+                      zIndex: 0
+                    }
                   }}
                 >
-                  {/* Status Badge: Top Right */}
-                  {card.subtitle && (
-                    <Box sx={{ position: "absolute", top: 12, right: 12 }}>
-                      {card.subtitle}
-                    </Box>
-                  )}
-
                   {/* Top Content: Left Aligned */}
                   <Box sx={{
                     display: "flex",
                     flexDirection: "row",
                     alignItems: "flex-start",
                     gap: 2,
-                    textAlign: "left"
+                    textAlign: "left",
+                    position: "relative",
+                    zIndex: 1
                   }}>
                     {/* Icon */}
                     <Box
                       sx={{
-                        width: 54,
-                        height: 54,
-                        borderRadius: 2,
+                        width: 50,
+                        height: 50,
+                        borderRadius: "14px",
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
                         background: card.gradient,
-                        boxShadow: "0 8px 18px rgba(0,0,0,0.1)",
+                        boxShadow: `0 8px 20px ${card.color}40`,
                         color: "#fff",
-                        flexShrink: 0
+                        flexShrink: 0,
+                        mt: 0.5 // Align with first line of text
                       }}>
                       {React.cloneElement(card.icon, { fontSize: "medium" })}
                     </Box>
 
                     {/* Text */}
-                    <Box sx={{ display: "flex", flexDirection: "column", gap: 0.2 }}>
+                    <Box sx={{ display: "flex", flexDirection: "column", alignItems: "flex-start" }}>
                       <Typography
                         variant="body2"
-                        sx={{ color: "var(--text-secondary)", fontWeight: 600, fontSize: "0.85rem" }}
+                        sx={{ color: "var(--text-secondary)", fontWeight: 600, fontSize: "0.8rem", textTransform: "capitalize", letterSpacing: "0.5px" }}
                       >
                         {card.title}
                       </Typography>
 
-                      <Typography
-                        sx={{
-                          fontWeight: 700,
-                          color: "var(--text-primary)",
-                          mt: 0.5,
-                          fontSize: card.value.toString().length > 6 ? "1.1rem" : "1.5rem"
-                        }}
-                      >
-                        {card.value}
-                      </Typography>
+                      <Box sx={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 0.5 }}>
+                        <Typography
+                          sx={{
+                            fontWeight: 800,
+                            color: "var(--text-primary)",
+                            mt: 0.5,
+                            fontSize: card.value.toString().length > 6 ? "1.2rem" : "1.6rem",
+                            lineHeight: 1
+                          }}
+                        >
+                          {card.value}
+                        </Typography>
+
+                        {card.subtitle && (
+                          <Box sx={{ mt: 0.5 }}>
+                            {card.subtitle}
+                          </Box>
+                        )}
+                      </Box>
                     </Box>
                   </Box>
 
                   {/* Bottom Link: Right Aligned */}
-                  <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+                  <Box sx={{ display: 'flex', justifyContent: 'flex-end', position: "relative", zIndex: 1 }}>
                     <Button
                       size="small"
-                      endIcon={<ArrowForward sx={{ fontSize: 16 }} />}
+                      endIcon={<ArrowForward sx={{ fontSize: 14 }} />}
+                      onClick={() => navigate(card.path)}
                       sx={{
                         textTransform: "none",
-                        fontSize: "0.85rem",
+                        fontSize: "0.8rem",
                         fontWeight: 700,
                         color: "var(--color-primary)",
+                        p: 0,
                         "&:hover": { background: "transparent", opacity: 0.8 },
                       }}
                     >
@@ -291,14 +314,14 @@ const UniprimeDashboard = () => {
                     </Button>
                   </Box>
                 </Card>
-              </Grid>
+              </Box>
             ))}
-          </Grid>
+          </Box>
 
           {/* Row 2: Middle Panels */}
-          <Grid container spacing={3} sx={{ mb: 3, alignItems: "stretch", width: '100%', margin: 0 }}>
+          <Box sx={{ display: "flex", gap: { xs: 2, md: 3 }, mb: 3, flexWrap: { xs: "wrap", lg: "nowrap" }, width: "100%" }}>
             {/* Academic Structure Overview */}
-            <Grid xs={12} md={6} sx={{ display: "flex" }}>
+            <Box sx={{ width: { xs: "100%", lg: "50%" }, display: "flex" }}>
               <Card
                 sx={{
                   borderRadius: 1,
@@ -307,6 +330,7 @@ const UniprimeDashboard = () => {
                   height: "100%",
                   display: "flex",
                   flexDirection: "column",
+                  width: "100%"
                 }}
               >
                 {/* Header */}
@@ -354,17 +378,19 @@ const UniprimeDashboard = () => {
 
                 </Box>
               </Card>
-            </Grid>
+            </Box>
 
             {/* Active Academic Configuration */}
+            <Box sx={{ width: { xs: "100%", lg: "50%" }, display: "flex" }}>
 
-            <Grid xs={12} md={6} sx={{ display: "flex" }}>
+
               <Card
                 sx={{
                   borderRadius: 1,
                   boxShadow: "0 6px 20px rgba(0,0,0,0.06)",
                   p: 2.5,
                   height: "100%",
+                  width: "100%"
                 }}
               >
                 {/* Header */}
@@ -464,113 +490,12 @@ const UniprimeDashboard = () => {
                   </Box>
                 </Box>
               </Card>
-            </Grid>
+            </Box>
 
-            {/* Recently Added Users */}
-
-            {/* <Grid item xs={12} md={4} sx={{ display: "flex" }}>
-        <Card
-          sx={{
-            borderRadius: 1,
-            boxShadow: "0 6px 20px rgba(0,0,0,0.06)",
-            p: 2,
-            height: "100%",
-          }}
-        >
-       
-          <Box sx={{ display: "flex", justifyContent: "space-between", mb: 2 }}>
-            <Typography sx={{ fontWeight: 700 }}>
-              Recently Added Users
-            </Typography>
-
-            <Button
-              size="small"
-              sx={{
-                textTransform: "none",
-                fontSize: "0.8rem",
-                color: "var(--color-primary)",
-              }}
-            >
-              View All →
-            </Button>
           </Box>
-
-        
-          <Box>
-            {recentUsers.map((user, i) => (
-              <Box
-                key={i}
-                sx={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  py: 1.5,
-                  borderBottom: i !== recentUsers.length - 1 ? "1px solid #F1F5F9" : "none",
-                }}
-              >
-              
-                <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-                  
-                  <Avatar
-                  alt={user?.name || ""}
-                  src={user?.avatar}
-                  sx={{
-                    width: 38,
-                    height: 38,
-                    fontSize: "0.9rem",
-                    bgcolor: "#E5E7EB",
-                    color: "#374151",
-                    fontWeight: 600,
-                  }}
-                />
-
-                  <Box>
-                    <Typography sx={{ fontWeight: 600, fontSize: "0.9rem" }}>
-                      {user?.name || "kavi"}
-                    </Typography>
-
-                    <Typography
-                      sx={{
-                        fontSize: "0.75rem",
-                        color: "#6B7280",
-                      }}
-                    >
-                      {user?.email || ""}
-                    </Typography>
-                  </Box>
-                </Box>
-
-              
-                <Box sx={{ textAlign: "right" }}>
-                 
-
-                  <Chip
-                    label={user?.role}
-                    size="small"
-                    sx={roleChip(user?.role)}
-                  />
-
-                   <Typography
-                    sx={{
-                      fontSize: "0.7rem",
-                      color: "#9CA3AF",
-                      mb: 0.5,
-                    }}
-                  >
-                    {user?.time ? new Date(user.time).toLocaleDateString("en-IN", { day: '2-digit', month: 'short', year: 'numeric' }) : 'Recently'}
-                  </Typography>
-
-                </Box>
-              </Box>
-            ))}
-          </Box>
-        </Card>
-      </Grid> */}
-
-          </Grid>
 
           {/* Row 3: Bottom Panels */}
-          <Box sx={{ display: "flex", gap: 3, flexWrap: { xs: "wrap", lg: "nowrap" } }}>
+          <Box sx={{ display: "flex", gap: { xs: 2, md: 3 }, flexWrap: { xs: "wrap", lg: "nowrap" } }}>
             {/* User & Role Overview */}
             <Box sx={{ width: { xs: "100%", lg: "50%" }, display: "flex" }}>
               <Card sx={{
@@ -698,11 +623,12 @@ const UniprimeDashboard = () => {
               }}>
                 <CardContent sx={{ flexGrow: 1 }}>
                   <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 2 }}>Quick Actions</Typography>
-                  <Grid container spacing={1.5}>
+                  <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2 }}>
                     {quickActions.map((action, i) => (
-                      <Grid xs={12} sm={6} key={i} sx={{ display: 'flex' }}>
+                      <Box key={i} sx={{ flex: { xs: "1 1 100%", sm: "1 1 calc(50% - 8px)" }, display: 'flex' }}>
                         <Paper
                           variant="outlined"
+                          onClick={() => navigate(action.path)}
                           sx={{
                             p: 2.2,
                             borderRadius: 1,
@@ -763,9 +689,9 @@ const UniprimeDashboard = () => {
                             </Typography>
                           </Box>
                         </Paper>
-                      </Grid>
+                      </Box>
                     ))}
-                  </Grid>
+                  </Box>
                 </CardContent>
               </Card>
             </Box>

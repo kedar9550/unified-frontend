@@ -91,14 +91,14 @@ export default function JournalPublication() {
   };
 
   const renderList = () => (
-    <Box sx={{ p: 2 }}>
+    <Box>
       <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
         <Typography variant="h6" sx={{ color: "var(--text-primary)", fontWeight: 800 }}>My Journal Publications</Typography>
         <Button variant="contained" onClick={() => setViewMode("select-year")} sx={{ background: "var(--color-primary)", borderRadius: "12px", px: 3, fontWeight: 700, textTransform: "none", "&:hover": { background: "var(--color-primary)", opacity: 0.9 } }}>
           Apply New
         </Button>
       </Box>
-      <TableContainer component={Paper} sx={{ borderRadius: "16px", background: "var(--bg-panel)", border: "1px solid var(--border-color)", boxShadow: "var(--shadow-premium)", overflow: "hidden" }}>
+      <TableContainer component={Paper} sx={{ borderRadius: "16px", background: "var(--bg-panel)", border: "1px solid var(--border-color)", boxShadow: "var(--shadow-premium)", overflowX: "auto" }}>
         <Table>
           <TableHead sx={{ background: "var(--gradient-primary)" }}>
             <TableRow>
@@ -316,7 +316,7 @@ export default function JournalPublication() {
   );
 
   return (
-    <>
+    <Box sx={{ p: { xs: 2.5, md: 4 } }}>
       <PageHeader title="Journal" subtitle="Manage and submit your journal publications" breadcrumbs={["Home", "Publications", "Journal"]} />
       
       {viewMode === "list" && renderList()}
@@ -326,6 +326,6 @@ export default function JournalPublication() {
       <Snackbar open={snack.open} autoHideDuration={4000} onClose={() => setSnack((p) => ({ ...p, open: false }))} anchorOrigin={{ vertical: "top", horizontal: "center" }}>
         <Alert severity={snack.severity} onClose={() => setSnack((p) => ({ ...p, open: false }))}>{snack.msg}</Alert>
       </Snackbar>
-    </>
+    </Box>
   );
 }

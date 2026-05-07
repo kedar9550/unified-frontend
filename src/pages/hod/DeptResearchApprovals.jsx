@@ -199,86 +199,81 @@ const DeptResearchApprovals = () => {
     }
 
     return (
-        <Box sx={{ p: 3, mb: 3 }}>
-            <PageHeader
-                title="Department Research Approvals"
-                subtitle="Approve, reject, and track department research submissions"
-            />
+        <Box sx={{ width: "100%", p: { xs: 1.5, sm: 2, md: 3 }, mb: 3 }}>
+            <Stack spacing={3} sx={{ width: "100%" }}>
+                <PageHeader
+                    title="Department Research Approvals"
+                    subtitle="Approve, reject, and track department research submissions"
+                />
 
-            <Grid container spacing={3}>
-                {/* Main Content Area */}
-                <Grid xs={12} lg={8.5}>
+                <Box sx={{ width: "100%" }}>
                     <SectionHeader title="Research Requests" />
                     <DataTable
                         columns={columns}
                         rows={rows}
                         toolbarLeft={toolbarLeft}
                     />
-                </Grid>
+                </Box>
 
-                {/* Sidebar Area */}
-                <Grid xs={12} lg={3.5}>
-                    <Card
-                        sx={{
-                            borderRadius: "24px",
-                            p: 3,
-                            background: "var(--gradient-primary)",
-                            color: "#fff",
-                            boxShadow: "var(--shadow-premium)",
-                            position: "sticky",
-                            top: 24
-                        }}
-                    >
-                        <Typography variant="h6" sx={{ fontWeight: 800, mb: 3, fontSize: "1.25rem" }}>
-                            Quick Actions
-                        </Typography>
-                        <Stack spacing={2}>
-                            <Button
-                                fullWidth
-                                variant="contained"
-                                onClick={() => navigate("/hod/discrepancies")}
-                                sx={{
-                                    bgcolor: "rgba(255,255,255,0.12)",
-                                    backdropFilter: "blur(12px)",
-                                    textTransform: "none",
-                                    py: 1.8,
-                                    borderRadius: "16px",
-                                    fontWeight: 600,
-                                    border: "1px solid rgba(255,255,255,0.1)",
-                                    "&:hover": {
-                                        bgcolor: "rgba(255,255,255,0.2)",
-                                        transform: "translateY(-2px)"
-                                    },
-                                    transition: "all 0.3s ease"
-                                }}
-                            >
-                                Resolve Discrepancies
-                            </Button>
-                            <Button
-                                fullWidth
-                                variant="contained"
-                                onClick={() => navigate("/hod/protecrdataupload")}
-                                sx={{
-                                    bgcolor: "rgba(255,255,255,0.12)",
-                                    backdropFilter: "blur(12px)",
-                                    textTransform: "none",
-                                    py: 1.8,
-                                    borderRadius: "16px",
-                                    fontWeight: 600,
-                                    border: "1px solid rgba(255,255,255,0.1)",
-                                    "&:hover": {
-                                        bgcolor: "rgba(255,255,255,0.2)",
-                                        transform: "translateY(-2px)"
-                                    },
-                                    transition: "all 0.3s ease"
-                                }}
-                            >
-                                Upload Proctor Data
-                            </Button>
-                        </Stack>
-                    </Card>
-                </Grid>
-            </Grid>
+                {/* Sidebar Area - Moved below and made full width for better alignment */}
+                <Card
+                    sx={{
+                        borderRadius: "24px",
+                        p: 3,
+                        background: "var(--gradient-primary)",
+                        color: "#fff",
+                        boxShadow: "var(--shadow-premium)",
+                    }}
+                >
+                    <Typography variant="h6" sx={{ fontWeight: 800, mb: 3, fontSize: "1.25rem" }}>
+                        Quick Actions
+                    </Typography>
+                    <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
+                        <Button
+                            fullWidth
+                            variant="contained"
+                            onClick={() => navigate("/hod/discrepancies")}
+                            sx={{
+                                bgcolor: "rgba(255,255,255,0.12)",
+                                backdropFilter: "blur(12px)",
+                                textTransform: "none",
+                                py: 1,
+                                borderRadius: "16px",
+                                fontWeight: 600,
+                                border: "1px solid rgba(255,255,255,0.1)",
+                                "&:hover": {
+                                    bgcolor: "rgba(255,255,255,0.2)",
+                                    transform: "translateY(-2px)"
+                                },
+                                transition: "all 0.3s ease"
+                            }}
+                        >
+                            Resolve Discrepancies
+                        </Button>
+                        <Button
+                            fullWidth
+                            variant="contained"
+                            onClick={() => navigate("/hod/protecrdataupload")}
+                            sx={{
+                                bgcolor: "rgba(255,255,255,0.12)",
+                                backdropFilter: "blur(12px)",
+                                textTransform: "none",
+                                py: 1,
+                                borderRadius: "16px",
+                                fontWeight: 600,
+                                border: "1px solid rgba(255,255,255,0.1)",
+                                "&:hover": {
+                                    bgcolor: "rgba(255,255,255,0.2)",
+                                    transform: "translateY(-2px)"
+                                },
+                                transition: "all 0.3s ease"
+                            }}
+                        >
+                            Upload Proctor Data
+                        </Button>
+                    </Stack>
+                </Card>
+            </Stack>
         </Box>
     );
 };

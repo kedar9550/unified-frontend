@@ -119,16 +119,30 @@ const AcademicStructure = () => {
         return (
             <Box>
                 {/* SCHOOLS SECTION */}
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                <Box sx={{ 
+                    display: 'flex', 
+                    flexDirection: { xs: 'column', sm: 'row' },
+                    justifyContent: 'space-between', 
+                    alignItems: { xs: 'flex-start', sm: 'center' }, 
+                    gap: { xs: 2, sm: 0 },
+                    mb: 3 
+                }}>
                     <Box>
-                        <Typography variant="h6" fontWeight={700} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Typography variant="h6" fontWeight={700} sx={{ display: 'flex', alignItems: 'center', gap: 1, color: 'var(--text-primary)' }}>
                             <Business sx={{ color: 'var(--color-primary)' }} /> Schools
                         </Typography>
                         <Typography variant="body2" color="textSecondary">
                             Schools are the major academic divisions in the university.
                         </Typography>
                     </Box>
-                    <Button variant="contained" startIcon={<Add />} onClick={() => openModal('school', 'add')} sx={{ borderRadius: '50px', background: "var(--color-primary)", textTransform: 'none', fontWeight: 600 }}>
+                    <Button variant="contained" startIcon={<Add />} onClick={() => openModal('school', 'add')} 
+                        sx={{ 
+                            borderRadius: '50px', 
+                            background: "var(--gradient-primary)", 
+                            textTransform: 'none', 
+                            fontWeight: 700,
+                            width: { xs: '100%', sm: 'auto' }
+                        }}>
                         Create School
                     </Button>
                 </Box>
@@ -177,16 +191,30 @@ const AcademicStructure = () => {
                 </Box>
 
                 {/* CENTRAL DEPARTMENTS SECTION */}
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                <Box sx={{ 
+                    display: 'flex', 
+                    flexDirection: { xs: 'column', sm: 'row' },
+                    justifyContent: 'space-between', 
+                    alignItems: { xs: 'flex-start', sm: 'center' }, 
+                    gap: { xs: 2, sm: 0 },
+                    mb: 3 
+                }}>
                     <Box>
-                        <Typography variant="h6" fontWeight={700} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Typography variant="h6" fontWeight={700} sx={{ display: 'flex', alignItems: 'center', gap: 1, color: 'var(--text-primary)' }}>
                             <Business sx={{ color: 'var(--color-primary)' }} /> Central Level Departments
                         </Typography>
                         <Typography variant="body2" color="textSecondary">
                             Departments that operate at the central level and are not under any school.
                         </Typography>
                     </Box>
-                    <Button variant="contained" startIcon={<Add />} onClick={() => openModal('department', 'add', { type: 'Central' })} sx={{ borderRadius: '50px', background: "var(--color-primary)", textTransform: 'none', fontWeight: 600 }}>
+                    <Button variant="contained" startIcon={<Add />} onClick={() => openModal('department', 'add', { type: 'Central' })} 
+                        sx={{ 
+                            borderRadius: '50px', 
+                            background: "var(--gradient-primary)", 
+                            textTransform: 'none', 
+                            fontWeight: 700,
+                            width: { xs: '100%', sm: 'auto' }
+                        }}>
                         Add Central Department
                     </Button>
                 </Box>
@@ -206,9 +234,41 @@ const AcademicStructure = () => {
                                             <Typography variant="caption" color="textSecondary">Branches: {deptBranches.length}</Typography>
                                         </Box>
                                     </Box>
-                                    <Box>
-                                        <IconButton size="small" onClick={(e) => { e.stopPropagation(); openModal('department', 'edit', dept); }} sx={{ color: 'var(--text-secondary)' }}><Edit fontSize="small" /></IconButton>
-                                        <IconButton size="small" onClick={(e) => { e.stopPropagation(); setDeleteConfirm({ open: true, type: 'department', id: dept._id, name: dept.name }); }} sx={{ color: 'var(--text-secondary)' }}><Delete fontSize="small" /></IconButton>
+                                    <Box sx={{ display: 'flex', gap: 1 }}>
+                                        <IconButton size="small" onClick={(e) => { e.stopPropagation(); openModal('department', 'edit', dept); }} 
+                                            sx={{ 
+                                                color: 'var(--text-secondary)', 
+                                                p: 0.8,
+                                                borderRadius: '10px',
+                                                border: '1px solid var(--border-color)',
+                                                transition: 'all 0.3s ease',
+                                                "&:hover": { 
+                                                    color: '#fff', 
+                                                    background: 'var(--gradient-primary)',
+                                                    borderColor: 'transparent',
+                                                    transform: 'scale(1.1)',
+                                                    boxShadow: '0 4px 12px rgba(0,0,0,0.2)'
+                                                } 
+                                            }}>
+                                            <Edit fontSize="small" />
+                                        </IconButton>
+                                        <IconButton size="small" onClick={(e) => { e.stopPropagation(); setDeleteConfirm({ open: true, type: 'department', id: dept._id, name: dept.name }); }} 
+                                            sx={{ 
+                                                color: 'var(--text-secondary)', 
+                                                p: 0.8,
+                                                borderRadius: '10px',
+                                                border: '1px solid var(--border-color)',
+                                                transition: 'all 0.3s ease',
+                                                "&:hover": { 
+                                                    color: '#fff', 
+                                                    background: 'linear-gradient(135deg, #ff416c, #ff4b2b)',
+                                                    borderColor: 'transparent',
+                                                    transform: 'scale(1.1)',
+                                                    boxShadow: '0 4px 12px rgba(255,75,43,0.3)'
+                                                } 
+                                            }}>
+                                            <Delete fontSize="small" />
+                                        </IconButton>
                                     </Box>
                                 </CardContent>
                             </Card>
@@ -475,12 +535,40 @@ const AcademicStructure = () => {
                                         }}>
                                             {branch.name}
                                         </Typography>
-                                        <Box sx={{ display: 'flex', gap: 0.5 }}>
-                                            <IconButton size="small" onClick={(e) => { e.stopPropagation(); openModal('branch', 'edit', branch); }} sx={{ color: 'var(--text-secondary)', p: 0.5, "&:hover": { color: 'var(--color-primary)' } }}>
-                                                <Edit sx={{ fontSize: 18 }} />
+                                        <Box sx={{ display: 'flex', gap: 1 }}>
+                                            <IconButton size="small" onClick={(e) => { e.stopPropagation(); openModal('branch', 'edit', branch); }} 
+                                                sx={{ 
+                                                    color: 'var(--text-secondary)', 
+                                                    p: 0.8,
+                                                    borderRadius: '10px',
+                                                    border: '1px solid var(--border-color)',
+                                                    transition: 'all 0.3s ease',
+                                                    "&:hover": { 
+                                                        color: '#fff', 
+                                                        background: 'var(--gradient-primary)',
+                                                        borderColor: 'transparent',
+                                                        transform: 'scale(1.1)',
+                                                        boxShadow: '0 4px 12px rgba(0,0,0,0.2)'
+                                                    } 
+                                                }}>
+                                                <Edit fontSize="small" />
                                             </IconButton>
-                                            <IconButton size="small" onClick={(e) => { e.stopPropagation(); setDeleteConfirm({ open: true, type: 'branch', id: branch._id, name: branch.name }); }} sx={{ color: 'var(--text-secondary)', p: 0.5, "&:hover": { color: '#f44336' } }}>
-                                                <Delete sx={{ fontSize: 18 }} />
+                                            <IconButton size="small" onClick={(e) => { e.stopPropagation(); setDeleteConfirm({ open: true, type: 'branch', id: branch._id, name: branch.name }); }} 
+                                                sx={{ 
+                                                    color: 'var(--text-secondary)', 
+                                                    p: 0.8,
+                                                    borderRadius: '10px',
+                                                    border: '1px solid var(--border-color)',
+                                                    transition: 'all 0.3s ease',
+                                                    "&:hover": { 
+                                                        color: '#fff', 
+                                                        background: 'linear-gradient(135deg, #ff416c, #ff4b2b)',
+                                                        borderColor: 'transparent',
+                                                        transform: 'scale(1.1)',
+                                                        boxShadow: '0 4px 12px rgba(255,75,43,0.3)'
+                                                    } 
+                                                }}>
+                                                <Delete fontSize="small" />
                                             </IconButton>
                                         </Box>
                                     </Box>
@@ -507,7 +595,7 @@ const AcademicStructure = () => {
     };
 
     return (
-        <Box sx={{ pb: 4 }}>
+        <Box sx={{ p: { xs: 2, md: 4 }, pb: 8 }}>
             <PageHeader
                 title="Academic Structure"
                 subtitle="Configure Departments, Programs, and Branches for the University"
@@ -517,8 +605,7 @@ const AcademicStructure = () => {
             {!selectedDepartment && (
                 <Paper sx={{
                     mb: 4,
-                    pt: 1,
-                    px: 2,
+                    p: 2,
                     background: "var(--bg-glass)",
                     backdropFilter: "blur(12px)",
                     border: "1px solid var(--border-color)",
@@ -528,10 +615,30 @@ const AcademicStructure = () => {
                     <Tabs
                         value={activeTab}
                         onChange={(_, val) => setActiveTab(val)}
+                        variant={window.innerWidth < 600 ? "fullWidth" : "standard"}
+                        scrollButtons="auto"
+                        allowScrollButtonsMobile
                         sx={{
-                            '& .MuiTab-root': { color: 'var(--text-secondary)', fontWeight: 600 },
-                            '& .Mui-selected': { color: 'var(--color-primary) !important' },
-                            '& .MuiTabs-indicator': { backgroundColor: 'var(--color-primary)' }
+                            '& .MuiTabs-flexContainer': { gap: { xs: 0, sm: 1 } },
+                            '& .MuiTab-root': { 
+                                color: 'var(--text-secondary)', 
+                                fontWeight: 700, 
+                                minHeight: '48px',
+                                borderRadius: '12px',
+                                transition: 'all 0.3s ease',
+                                textTransform: 'none',
+                                px: { xs: 1, sm: 3 },
+                                fontSize: { xs: '0.85rem', sm: '1rem' }
+                            },
+                            '& .Mui-selected': { 
+                                color: 'var(--color-primary) !important',
+                                background: 'rgba(0, 78, 146, 0.08) !important',
+                            },
+                            '& .MuiTabs-indicator': { 
+                                backgroundColor: 'var(--color-primary)',
+                                height: '3px',
+                                borderRadius: '3px 3px 0 0'
+                            }
                         }}
                     >
                         <Tab icon={<Business />} iconPosition="start" label="Departments & Branches" />
