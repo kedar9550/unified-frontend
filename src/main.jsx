@@ -8,16 +8,20 @@ import theme from "./theme";
 import "./index.css";
 
 import { LoadingProvider } from "./context/LoadingContext";
+import { SnackbarProvider } from "./context/SnackbarContext";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <LoadingProvider>
-    <AuthProvider>
-      <ThemeProvider theme={theme}>
-        <CssBaseline />
-        <BrowserRouter>
-          <App />
-        </BrowserRouter>
-      </ThemeProvider>
-    </AuthProvider>
+    <SnackbarProvider>
+      <AuthProvider>
+        <ThemeProvider theme={theme}>
+          <CssBaseline />
+          <BrowserRouter>
+            <App />
+          </BrowserRouter>
+        </ThemeProvider>
+      </AuthProvider>
+    </SnackbarProvider>
   </LoadingProvider>,
 );
+
