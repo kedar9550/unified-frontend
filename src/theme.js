@@ -22,6 +22,25 @@ const theme = createTheme({
 
   typography: {
     fontFamily: "'Product Sans', sans-serif",
+    button: {
+      textTransform: "none", // Disable default all-caps on buttons
+    },
+  },
+  components: {
+    MuiButton: {
+      styleOverrides: {
+        root: {
+          textTransform: "none", // Ensure buttons don't use all-caps
+        },
+      },
+    },
+    MuiTypography: {
+      styleOverrides: {
+        overline: {
+          textTransform: "capitalize",
+        },
+      },
+    },
   },
 });
 

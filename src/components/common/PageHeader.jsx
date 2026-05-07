@@ -23,6 +23,7 @@ export default function PageHeader({
         position: "relative",
         overflow: "hidden",
         marginBottom: "20px",
+        width: "100%",
         "&::after": {
           content: '""',
           position: "absolute",

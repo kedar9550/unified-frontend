@@ -134,21 +134,22 @@ const AcademicManagement = () => {
       return (
         <Box>
           <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600, color: "var(--text-primary)" }}>Manage Years</Typography>
-          <Grid container spacing={2}>
+          <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2 }}>
             {Array.from({ length: durationYears || 1 }).map((_, idx) => {
               const st = availableSemesters[0];
               if (!st) return null;
               const activeStId = programEntry.activeSemesterTypeId?._id || programEntry.activeSemesterTypeId;
               const isActive = activeStId?.toString() === st._id?.toString();
               return (
-                <Grid xs={6} sm={4} md={2} key={idx}>
+                <Box key={idx} sx={{ width: { xs: "100%", sm: "calc(50% - 8px)", md: "calc(20% - 13px)" } }}>
                   <Paper variant="outlined" sx={{
-                    p: 1.5, textAlign: "center",
+                    p: 1.2, textAlign: "left",
+                    display: "flex", justifyContent: "space-between", alignItems: "center",
                     background: isActive && programEntry.isActive ? "rgba(16,185,129,0.15)" : "var(--bg-glass)",
                     borderColor: isActive && programEntry.isActive ? "var(--color-success, #10B981)" : "var(--border-color)",
                     opacity: programEntry.isActive ? 1 : 0.6
                   }}>
-                    <Typography variant="body2" sx={{ fontWeight: 600, mb: 1, color: "var(--text-primary)" }}>Year {idx + 1}</Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 600, color: "var(--text-primary)" }}>Year {idx + 1}</Typography>
                     {isActive ? (
                       <Chip size="small" icon={<CheckCircle />} label="Active" color="success" sx={{ fontWeight: 700 }} />
                     ) : (
@@ -160,10 +161,10 @@ const AcademicManagement = () => {
                         }}>Activate</Button>
                     )}
                   </Paper>
-                </Grid>
+                </Box>
               );
             })}
-          </Grid>
+          </Box>
         </Box>
       );
     }
@@ -173,7 +174,7 @@ const AcademicManagement = () => {
         <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1 }}>
           <Typography variant="subtitle2" sx={{ fontWeight: 600, color: "var(--text-primary)" }}>Manage Semesters</Typography>
         </Box>
-        <Grid container spacing={2}>
+        <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2 }}>
           {availableSemesters.map(st => {
             const activeStId = programEntry.activeSemesterTypeId?._id || programEntry.activeSemesterTypeId;
             const isActive = activeStId?.toString() === st._id?.toString();
@@ -185,9 +186,13 @@ const AcademicManagement = () => {
             if (st.name === "EVEN") { title = "Even Semester"; subtitle = `(${evenSems})`; }
             if (st.name === "SUMMER") { title = "Summer Semester"; subtitle = "-"; }
             return (
-              <Grid xs={12} sm={4} key={st._id}>
+              <Box key={st._id} sx={{ width: { xs: "100%", md: "calc(33.33% - 11px)" } }}>
                 <Paper variant="outlined" sx={{
-                  p: 2, display: "flex", justifyContent: "space-between", alignItems: "center",
+                  p: 1.8, display: "flex", 
+                  flexDirection: { xs: "column", lg: "row" },
+                  justifyContent: "space-between", 
+                  alignItems: { xs: "flex-start", lg: "center" },
+                  gap: { xs: 1.5, lg: 0 },
                   background: isActive && programEntry.isActive ? "rgba(16,185,129,0.15)" : "var(--bg-glass)",
                   borderColor: isActive && programEntry.isActive ? "var(--color-success, #10B981)" : "var(--border-color)",
                   opacity: programEntry.isActive ? 1 : 0.6
@@ -196,43 +201,63 @@ const AcademicManagement = () => {
                     <Typography variant="body2" sx={{ fontWeight: 600, color: "var(--text-primary)" }}>{title}</Typography>
                     <Typography variant="caption" sx={{ color: "var(--text-secondary)" }}>{subtitle}</Typography>
                   </Box>
-                  {isActive ? (
-                    <Chip size="small" icon={<CheckCircle />} label="Active" color="success" sx={{ fontWeight: 700 }} />
-                  ) : (
-                    <Button size="small" variant="text" disabled={!programEntry.isActive}
-                      onClick={() => setProgramSemester(yearId, programId, st._id)}
-                      sx={{ textTransform: "none", fontWeight: 700, fontSize: "0.75rem", color: "var(--color-primary)",
-                        "&:hover": { background: "transparent", opacity: 0.8 },
-                        "&.Mui-disabled": { color: "var(--text-secondary)" }
-                      }}>Activate</Button>
-                  )}
+                  <Box sx={{ width: { xs: "100%", lg: "auto" }, display: "flex", justifyContent: "flex-end" }}>
+                    {isActive ? (
+                      <Chip size="small" icon={<CheckCircle />} label="Active" color="success" sx={{ fontWeight: 700 }} />
+                    ) : (
+                      <Button size="small" variant="text" disabled={!programEntry.isActive}
+                        onClick={() => setProgramSemester(yearId, programId, st._id)}
+                        sx={{ 
+                          textTransform: "none", fontWeight: 700, fontSize: "0.8rem", 
+                          color: "var(--color-primary)",
+                          "&:hover": { background: "transparent", opacity: 0.8 },
+                          "&.Mui-disabled": { color: "var(--text-secondary)" }
+                        }}>Activate</Button>
+                    )}
+                  </Box>
                 </Paper>
-              </Grid>
+              </Box>
             );
           })}
-        </Grid>
+        </Box>
       </Box>
     );
   };
 
   return (
-    <Box sx={{ p: 1 }}>
+    <Box sx={{ p: { xs: 2, md: 3 } }}>
       <PageHeader title="Academic Management" subtitle="Manage academic years, programs and active semesters / years" />
 
       {/* Create Year Panel */}
-      <Paper sx={{ p: 3, mb: 4, borderRadius: 2, display: "flex", alignItems: "center", flexWrap: "wrap", gap: 3, background: "var(--bg-panel)", border: "1px solid var(--border-color)" }}>
-        <Typography variant="h6" sx={{ fontWeight: 600, color: "var(--text-primary)" }}>Create Academic Year</Typography>
-        <Box sx={{ display: "flex", gap: 2, alignItems: "center", flexWrap: "wrap" }}>
-          <TextField size="small" type="number" label="Start Year" value={newStartYear} onChange={handleStartYearChange} sx={{ width: 120,
-            "& .MuiOutlinedInput-root": { background: "var(--bg-glass)", "& fieldset": { borderColor: "var(--border-color)" }, "&:hover fieldset": { borderColor: "var(--color-primary)" } },
-            "& .MuiInputLabel-root": { color: "var(--text-secondary)" }, "& .MuiInputBase-input": { color: "var(--text-primary)" }
-          }} />
-          <TextField size="small" type="number" label="End Year" value={newEndYear} onChange={e => setNewEndYear(parseInt(e.target.value) || "")} sx={{ width: 120,
-            "& .MuiOutlinedInput-root": { background: "var(--bg-glass)", "& fieldset": { borderColor: "var(--border-color)" }, "&:hover fieldset": { borderColor: "var(--color-primary)" } },
-            "& .MuiInputLabel-root": { color: "var(--text-secondary)" }, "& .MuiInputBase-input": { color: "var(--text-primary)" }
-          }} />
+      <Paper sx={{ p: 3, mb: 4, borderRadius: 2, display: "flex", flexDirection: { xs: "column", md: "row" }, alignItems: { xs: "flex-start", md: "center" }, flexWrap: "wrap", gap: 3, background: "var(--bg-panel)", border: "1px solid var(--border-color)" }}>
+        <Typography variant="h6" sx={{ fontWeight: 600, color: "var(--text-primary)", whiteSpace: "nowrap" }}>Create Academic Year</Typography>
+        <Box sx={{ display: "flex", gap: 2, alignItems: "center", flexWrap: "wrap", width: { xs: "100%", md: "auto" } }}>
+          <Box sx={{ display: "flex", gap: 2, width: { xs: "100%", sm: "auto" } }}>
+            <TextField size="small" type="number" label="Start Year" value={newStartYear} onChange={handleStartYearChange} 
+              sx={{ 
+                flex: { xs: 1, sm: "none" },
+                width: { sm: 120 },
+                "& .MuiOutlinedInput-root": { background: "var(--bg-glass)", "& fieldset": { borderColor: "var(--border-color)" }, "&:hover fieldset": { borderColor: "var(--color-primary)" } },
+                "& .MuiInputLabel-root": { color: "var(--text-secondary)" }, "& .MuiInputBase-input": { color: "var(--text-primary)" }
+              }} 
+            />
+            <TextField size="small" type="number" label="End Year" value={newEndYear} onChange={e => setNewEndYear(parseInt(e.target.value) || "")} 
+              sx={{ 
+                flex: { xs: 1, sm: "none" },
+                width: { sm: 120 },
+                "& .MuiOutlinedInput-root": { background: "var(--bg-glass)", "& fieldset": { borderColor: "var(--border-color)" }, "&:hover fieldset": { borderColor: "var(--color-primary)" } },
+                "& .MuiInputLabel-root": { color: "var(--text-secondary)" }, "& .MuiInputBase-input": { color: "var(--text-primary)" }
+              }} 
+            />
+          </Box>
           <Button variant="contained" startIcon={<Add />} onClick={createGlobalYear}
-            sx={{ borderRadius: "50px", px: 3, background: "var(--gradient-primary)", textTransform: "none", fontWeight: 700 }}>
+            sx={{ 
+              borderRadius: "50px", px: 3, 
+              background: "var(--gradient-primary)", 
+              textTransform: "none", fontWeight: 700,
+              width: { xs: "100%", sm: "auto" },
+              mt: { xs: 1, sm: 0 }
+            }}>
             CREATE ACADEMIC YEAR
           </Button>
         </Box>
@@ -245,21 +270,30 @@ const AcademicManagement = () => {
           <Paper key={yearDoc._id} sx={{ mb: 3, borderRadius: 2, background: "var(--bg-panel)", border: "1px solid var(--border-color)", overflow: "hidden" }}>
             {/* Year Header */}
             <Box onClick={() => toggleYearExpand(yearDoc._id)} sx={{
-              p: 2.5, display: "flex", justifyContent: "space-between", alignItems: "center",
+              p: 2.5, display: "flex", 
+              flexDirection: { xs: "column", sm: "row" },
+              justifyContent: "space-between", 
+              alignItems: { xs: "flex-start", sm: "center" },
+              gap: { xs: 2, sm: 0 },
               cursor: "pointer", borderBottom: isYearExpanded ? "1px solid var(--border-color)" : "none",
               transition: "background 0.2s", "&:hover": { background: "var(--bg-glass)" }
             }}>
-              <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-                <Typography variant="h6" sx={{ fontWeight: 700, color: "var(--text-primary)" }}>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 2, width: { xs: "100%", sm: "auto" }, justifyContent: "space-between" }}>
+                <Typography variant="h6" sx={{ fontWeight: 700, color: "var(--text-primary)", fontSize: { xs: "1.1rem", sm: "1.25rem" } }}>
                   Academic Year {yearDoc.year}
                 </Typography>
                 <Chip size="small" label={`${yearDoc.programs.length} Programs`}
                   sx={{ bgcolor: "var(--bg-accent-1)", color: "var(--color-primary)", fontWeight: 600 }} />
               </Box>
-              <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
+              <Box sx={{ display: "flex", gap: 1, alignItems: "center", width: { xs: "100%", sm: "auto" }, justifyContent: { xs: "flex-end", sm: "flex-end" } }}>
                 <Button variant="outlined" startIcon={<Add />}
                   onClick={(e) => { e.stopPropagation(); handleOpenMenu(e, yearDoc); }}
-                  sx={{ borderRadius: "50px", textTransform: "none", fontWeight: 700, borderColor: "var(--color-primary)", color: "var(--color-primary)", "&:hover": { background: "var(--bg-glass)" } }}>
+                  sx={{ 
+                    borderRadius: "50px", textTransform: "none", fontWeight: 700, 
+                    borderColor: "var(--color-primary)", color: "var(--color-primary)", 
+                    "&:hover": { background: "var(--bg-glass)" },
+                    width: { xs: "100%", sm: "auto" }
+                  }}>
                   ADD PROGRAM
                 </Button>
                 <IconButton size="small" sx={{ color: "var(--text-secondary)" }}>
@@ -296,11 +330,6 @@ const AcademicManagement = () => {
                               color: pattern === "SEMESTER" ? "#22c55e" : "#a78bfa", fontWeight: 600, fontSize: "0.7rem" }} />
                         </Box>
                         <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
-                          <Button size="small" variant="outlined" color="error" startIcon={<Delete />}
-                            onClick={(e) => { e.stopPropagation(); removeProgram(yearDoc._id, progId, prog?.code); }}
-                            sx={{ textTransform: "none", borderRadius: "50px" }}>
-                            Remove
-                          </Button>
                           <IconButton size="small" sx={{ color: "var(--text-secondary)" }}>
                             {isExpanded ? <ExpandLess fontSize="small" /> : <ExpandMore fontSize="small" />}
                           </IconButton>
@@ -309,31 +338,47 @@ const AcademicManagement = () => {
 
                       <Collapse in={isExpanded}>
                         <CardContent sx={{ p: 3 }}>
-                          <Box sx={{ display: "flex", gap: 6, mb: 3 }}>
-                            <Box>
-                              <Typography variant="caption" sx={{ color: "var(--text-secondary)" }}>Program Type</Typography>
-                              <Typography variant="body2" sx={{ fontWeight: 600, color: "var(--text-primary)" }}>
-                                {pattern === "SEMESTER" ? "Semester Wise" : "Year Wise"}
-                              </Typography>
+                          <Box sx={{ display: "flex", flexDirection: { xs: "column", sm: "row" }, gap: { xs: 2, sm: 6 }, mb: 3 }}>
+                            <Box sx={{ display: "flex", gap: { xs: 2, sm: 6 }, width: { xs: "100%", sm: "auto" }, justifyContent: { xs: "space-between", sm: "flex-start" } }}>
+                              <Box>
+                                <Typography variant="caption" sx={{ color: "var(--text-secondary)" }}>Program Type</Typography>
+                                <Typography variant="body2" sx={{ fontWeight: 600, color: "var(--text-primary)" }}>
+                                  {pattern === "SEMESTER" ? "Semester Wise" : "Year Wise"}
+                                </Typography>
+                              </Box>
+                              <Box>
+                                <Typography variant="caption" sx={{ color: "var(--text-secondary)" }}>Duration</Typography>
+                                <Typography variant="body2" sx={{ fontWeight: 600, color: "var(--text-primary)" }}>
+                                  {prog?.durationYears || 4} Years
+                                </Typography>
+                              </Box>
                             </Box>
-                            <Box>
-                              <Typography variant="caption" sx={{ color: "var(--text-secondary)" }}>Duration</Typography>
-                              <Typography variant="body2" sx={{ fontWeight: 600, color: "var(--text-primary)" }}>
-                                {prog?.durationYears || 4} Years
-                              </Typography>
-                            </Box>
-                            <Box>
+                            <Box sx={{ width: { xs: "100%", sm: "auto" } }}>
                               <Tooltip title="Activates/deactivates this program for this academic year">
-                                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                                <Box sx={{ display: "flex", alignItems: "center", gap: 1, justifyContent: { xs: "space-between", sm: "flex-start" }, width: "100%" }}>
                                   <Typography variant="caption" sx={{ color: "var(--text-secondary)" }}>Program Status</Typography>
                                   {entry.isActive ? (
-                                    <Chip size="small" icon={<CheckCircle />} label="Active" color="success"
+                                    <Chip size="small" icon={<CheckCircle sx={{ color: "white !important" }} />} label="Active" 
                                       onClick={(e) => { e.stopPropagation(); toggleProgramStatus(yearDoc._id, progId, true); }}
-                                      sx={{ cursor: "pointer", height: 24 }} />
+                                      sx={{ 
+                                        cursor: "pointer", height: 26, 
+                                        background: "var(--gradient-primary)", 
+                                        color: "white", fontWeight: 700,
+                                        border: "none",
+                                        boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+                                        "& .MuiChip-label": { px: 1.5 }
+                                      }} />
                                   ) : (
                                     <Chip size="small" icon={<RadioButtonUnchecked />} label="Set Active" variant="outlined"
                                       onClick={(e) => { e.stopPropagation(); toggleProgramStatus(yearDoc._id, progId, false); }}
-                                      sx={{ cursor: "pointer", height: 24 }} />
+                                      sx={{ 
+                                        cursor: "pointer", height: 26, 
+                                        borderColor: "var(--color-primary)",
+                                        color: "var(--color-primary)", 
+                                        fontWeight: 700,
+                                        "&:hover": { background: "rgba(0,0,0,0.05)" },
+                                        "& .MuiChip-label": { px: 1.5 }
+                                      }} />
                                   )}
                                 </Box>
                               </Tooltip>

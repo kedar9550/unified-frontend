@@ -151,7 +151,9 @@ export default function DataTable({ columns, rows, toolbarLeft }) {
                 <TableCell
                   key={index}
                   onClick={() => handleSort(index)}
+                  align="center"
                   sx={{
+                    textAlign: "center",
                     "&:first-of-type": {
                       borderTopLeftRadius: "12px",
                       bgcolor: "rgba(0,0,0,0.1)", // Slightly darker first column header
@@ -161,7 +163,7 @@ export default function DataTable({ columns, rows, toolbarLeft }) {
                     },
                   }}
                 >
-                  <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                  <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 0.5 }}>
                     {col}
                     <Box
                       component="span"

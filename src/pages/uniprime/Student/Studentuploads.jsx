@@ -348,7 +348,7 @@ const Studentuploads = () => {
                 }}
             >
                 <DialogTitle sx={{ fontWeight: 800 }}>Add Individual Student</DialogTitle>
-                <DialogContent sx={{ minWidth: 400 }}>
+                <DialogContent sx={{ minWidth: { xs: "auto", sm: 400 } }}>
                     <Typography variant="body2" color="var(--text-secondary)" sx={{ mb: 2 }}>
                         Fetch student data from ECAP using their Roll No.
                     </Typography>
@@ -423,7 +423,7 @@ const Studentuploads = () => {
                 }}
             >
                 <DialogTitle sx={{ fontWeight: 800 }}>Update Individual Student</DialogTitle>
-                <DialogContent sx={{ minWidth: 400 }}>
+                <DialogContent sx={{ minWidth: { xs: "auto", sm: 400 } }}>
                     <Typography variant="body2" color="var(--text-secondary)" sx={{ mb: 2 }}>
                         Sync/Update student data from ECAP using their Roll No.
                     </Typography>
@@ -591,7 +591,7 @@ const Studentuploads = () => {
                                 }
                             }}
                         >
-                            Bulk Data Options
+                            Bulk Data
                         </Button>
                         <Button
                             variant="contained"
@@ -950,7 +950,7 @@ const Studentuploads = () => {
                 }}
             >
                 <DialogTitle sx={{ fontWeight: 800 }}>Bulk Update Students</DialogTitle>
-                <DialogContent sx={{ minWidth: 400 }}>
+                <DialogContent sx={{ minWidth: { xs: "auto", sm: 400 } }}>
                     <Typography variant="body2" color="var(--text-secondary)" sx={{ mb: 2 }}>
                         Select a program to sync students from ECAP.
                     </Typography>

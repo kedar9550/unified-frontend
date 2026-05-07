@@ -16,6 +16,7 @@ export default function SectionHeader({ title, action }) {
         borderRadius: "16px",
         p: { xs: 1.5, sm: 2 },
         boxShadow: "var(--shadow-premium)",
+        width: "100%",
       }}
     >
       <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
