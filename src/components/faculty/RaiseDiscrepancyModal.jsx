@@ -14,24 +14,31 @@ import {
   Chip,
   Tabs,
   Tab,
+  Paper,
+  Tooltip,
   Table,
   TableHead,
   TableBody,
   TableRow,
   TableCell,
-  Paper,
-  Tooltip,
   Skeleton,
 } from "@mui/material";
+
+
+
 import {
   Close as CloseIcon,
   Flag as FlagIcon,
   History as HistoryIcon,
   Add as AddIcon,
+  Delete as DeleteIcon,
+  Refresh as RefreshIcon,
 } from "@mui/icons-material";
+
 import { useState, useEffect } from "react";
 import API from "../../api/axios";
 import { useAuth } from "../../context/AuthContext";
+import { useSnackbar } from "../../context/SnackbarContext";
 
 const SECTIONS = [
   { value: "TEACHING",   label: "📚 Teaching" },
@@ -123,6 +130,11 @@ export default function RaiseDiscrepancyModal({
   const [loadingDepts, setLoadingDepts] = useState(false);
   const [saving,   setSaving]   = useState(false);
   const [success,  setSuccess]  = useState(false);
+  
+  // ── Global Snackbar ──────────────────────────────────────────────
+  const showSnackbar = useSnackbar();
+
+
 
   // ── Available Semester Numbers state ──────────────────────────────
   const [semesterNumbers, setSemesterNumbers] = useState([]);
@@ -218,6 +230,17 @@ export default function RaiseDiscrepancyModal({
     }
   };
 
+  const handleDelete = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this pending discrepancy?")) return;
+    try {
+      await API.delete(`/api/discrepancies/${id}`);
+      setDiscrepancies(prev => prev.filter(d => d._id !== id));
+      showSnackbar("Discrepancy deleted successfully.", "success");
+    } catch (err) {
+      showSnackbar(err.response?.data?.message || "Failed to delete discrepancy.", "error");
+    }
+  };
+
   const handleSubmit = async () => {
     if (!yearId || !semTypeId || !note.trim()) return;
     setSaving(true);
@@ -234,6 +257,7 @@ export default function RaiseDiscrepancyModal({
         facultyName:          user?.name           || "",
       });
       setSuccess(true);
+      showSnackbar("Discrepancy raised successfully!", "success");
       setTimeout(() => {
         setSuccess(false);
         setNote("");
@@ -241,7 +265,7 @@ export default function RaiseDiscrepancyModal({
         fetchDiscrepancies();
       }, 1500);
     } catch (err) {
-      alert(err.response?.data?.message || "Failed to raise discrepancy.");
+      showSnackbar(err.response?.data?.message || "Failed to raise discrepancy.", "error");
     } finally {
       setSaving(false);
     }
@@ -327,6 +351,25 @@ export default function RaiseDiscrepancyModal({
             sx={tabSx}
           />
         </Tabs>
+        
+        {activeTab === 0 && (
+          <Box sx={{ position: "absolute", right: 24, bottom: 16 }}>
+             <Tooltip title="Refresh History">
+               <IconButton 
+                 size="small" 
+                 onClick={fetchDiscrepancies} 
+                 disabled={loadingDisc}
+                 sx={{ 
+                   color: "var(--color-primary)",
+                   bgcolor: "rgba(11, 82, 153, 0.05)",
+                   "&:hover": { bgcolor: "rgba(11, 82, 153, 0.1)" }
+                 }}
+               >
+                 <RefreshIcon fontSize="small" sx={{ animation: loadingDisc ? "spin 1s linear infinite" : "none" }} />
+               </IconButton>
+             </Tooltip>
+          </Box>
+        )}
       </DialogTitle>
 
       <DialogContent sx={{ pt: 2, pb: 1 }}>
@@ -389,6 +432,7 @@ export default function RaiseDiscrepancyModal({
                           "Status",
                           "Raised On",
                           "Response",
+                          "Action",
                         ].map((col) => (
                           <TableCell
                             key={col}
@@ -500,7 +544,23 @@ export default function RaiseDiscrepancyModal({
                                   —
                                 </Typography>
                               )}
-                            </TableCell>
+                            <TableCell>
+                              {d.status === "PENDING" && (
+                                <Tooltip title="Delete Discrepancy" arrow>
+                                  <IconButton 
+                                    size="small" 
+                                    onClick={() => handleDelete(d._id)}
+                                    sx={{ 
+                                      color: "#ef5350", 
+                                      background: "rgba(239, 83, 80, 0.08)",
+                                      "&:hover": { background: "rgba(239, 83, 80, 0.15)" }
+                                    }}
+                                  >
+                                    <DeleteIcon fontSize="small" />
+                                  </IconButton>
+                                </Tooltip>
+                              )}
+                            </TableCell></TableCell>
                           </TableRow>
                         );
                       })}
@@ -772,6 +832,15 @@ export default function RaiseDiscrepancyModal({
           </Button>
         </DialogActions>
       )}
+
+      <style>
+        {`
+          @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+          }
+        `}
+      </style>
     </Dialog>
   );
 }
