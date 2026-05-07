@@ -52,7 +52,7 @@ export const ROLE_ROUTES = {
       icon: <Dashboard />,
     },
     {
-      text: "Academics",
+      text: "Academics", 
       icon: <School />,
       nested: [
         {

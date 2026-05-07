@@ -45,7 +45,7 @@ const SECTION_LABEL = {
 };
 
 export default function HODDiscrepancies() {
-  const { user } = useAuth();
+  const { user, activeRole } = useAuth();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(false);
 
@@ -68,7 +68,9 @@ export default function HODDiscrepancies() {
   const fetchItems = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await API.get("/api/discrepancies");
+      const res = await API.get("/api/discrepancies", {
+        params: { role: activeRole }
+      });
       
       // Filter discrepancies for HOD: only PROCTORING where subtype is ASSIGNED_COUNT
       const filtered = (res.data || []).filter(item => 
