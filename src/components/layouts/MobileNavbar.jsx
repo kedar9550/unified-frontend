@@ -25,7 +25,11 @@ import {
     ManageAccounts,
     Analytics,
     Description,
-    KeyboardArrowDown
+    KeyboardArrowDown,
+    MonetizationOn,
+    BusinessCenter,
+    Campaign,
+    Public
 } from "@mui/icons-material";
 import { useAuth } from "../../context/AuthContext";
 import { ROLE_ROUTES } from "../../config/rolesNav";
@@ -67,7 +71,11 @@ const SUB_ITEM_METADATA = {
     "Book Chapter": { desc: "Manage book chapter contributions", icon: <AutoStories />, color: "#F0FDF4", iconColor: "#166534" },
     "Journal": { desc: "Track research journal submissions", icon: <Description />, color: "#FFF7ED", iconColor: "#9A3412" },
     "Patent": { desc: "Manage intellectual property and patents", icon: <Analytics />, color: "#F5F3FF", iconColor: "#5B21B6" },
-    "Research": { desc: "Review and approve research submissions", icon: <Analytics />, color: "#EBF5FF", iconColor: "#1E40AF" }
+    "Research": { desc: "Review and approve research submissions", icon: <Analytics />, color: "#EBF5FF", iconColor: "#1E40AF" },
+    "Funded Project": { desc: "Track funded projects and grants", icon: <MonetizationOn />, color: "#FFFBEB", iconColor: "#B45309" },
+    "Consultancy": { desc: "Manage consultancy and corporate work", icon: <BusinessCenter />, color: "#F0FDFA", iconColor: "#0F766E" },
+    "Conference": { desc: "Record conference presentations", icon: <Campaign />, color: "#FDF2F8", iconColor: "#BE185D" },
+    "SDG's": { desc: "Track Sustainable Development Goals", icon: <Public />, color: "#ECFDF5", iconColor: "#047857" }
 };
 
 const MobileNavbar = () => {
@@ -157,29 +165,31 @@ const MobileNavbar = () => {
 
     return (
         <>
-            {/* Hourly Weather Callout */}
+            {/* Hourly Weather Callout - Paper Roll Animation */}
             <Box
                 sx={{
                     position: 'fixed',
-                    bottom: weatherExpanded ? 85 : 0,
-                    left: 15,
+                    bottom: 85,
                     right: 15,
                     zIndex: 1090,
+                    width: weatherExpanded ? 'calc(100% - 30px)' : '0px',
+                    height: weatherExpanded ? 90 : 0,
                     visibility: weatherExpanded ? 'visible' : 'hidden',
                     opacity: weatherExpanded ? 1 : 0,
-                    transform: weatherExpanded ? 'translateY(0)' : 'translateY(20px)',
-                    transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+                    transition: 'all 0.6s cubic-bezier(0.4, 0, 0.2, 1)',
                     background: 'var(--bg-glass)',
-                    backdropFilter: 'blur(20px) saturate(180%)',
+                    backdropFilter: 'blur(25px) saturate(180%)',
                     borderRadius: '24px',
-                    p: 2,
-                    border: '1px solid rgba(255, 255, 255, 0.1)',
-                    boxShadow: '0 8px 32px rgba(0,0,0,0.2)',
                     display: 'flex',
+                    alignItems: 'center',
                     justifyContent: 'space-between',
-                    gap: 1.5,
-                    overflowX: 'auto',
-                    '&::-webkit-scrollbar': { display: 'none' },
+                    gap: 2,
+                    overflow: 'hidden',
+                    whiteSpace: 'nowrap',
+                    px: weatherExpanded ? 3 : 0,
+                    border: weatherExpanded ? '1px solid rgba(255, 255, 255, 0.15)' : 'none',
+                    boxShadow: '0 12px 40px rgba(0,0,0,0.3)',
+                    transformOrigin: 'right center',
                 }}
             >
                 {weather.hourly.map((h, i) => (
@@ -189,7 +199,10 @@ const MobileNavbar = () => {
                         display: 'flex',
                         flexDirection: 'column',
                         alignItems: 'center',
-                        justifyContent: 'center'
+                        justifyContent: 'center',
+                        opacity: weatherExpanded ? 1 : 0,
+                        transition: 'opacity 0.3s ease',
+                        transitionDelay: weatherExpanded ? `${i * 0.1 + 0.3}s` : '0s'
                     }}>
                         <Typography sx={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>
                             {h.time.split(' ')[0]}
@@ -197,9 +210,9 @@ const MobileNavbar = () => {
                         <Box
                             component="img"
                             src={getWeatherIcon(h.code)}
-                            sx={{ width: 28, height: 28, objectFit: 'contain', my: 0.5 }}
+                            sx={{ width: 30, height: 30, objectFit: 'contain', my: 0.5 }}
                         />
-                        <Typography sx={{ fontSize: '0.9rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+                        <Typography sx={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--text-primary)' }}>
                             {h.temp}°
                         </Typography>
                     </Box>

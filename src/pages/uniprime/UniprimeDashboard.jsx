@@ -517,7 +517,7 @@ const UniprimeDashboard = () => {
                     gap: 3
                   }}>
                     {/* Chart */}
-                    <Box sx={{ position: "relative", width: 200, height: 200, flexShrink: 0, mx: "auto" }}>
+                    <Box sx={{ position: "relative", width: 200, height: 200, flexShrink: 0, mx: "auto", minWidth: 0 }}>
                       <ResponsiveContainer width="100%" height={200} debounce={50}>
                         <PieChart>
                           <Pie

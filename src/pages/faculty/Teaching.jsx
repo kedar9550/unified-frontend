@@ -59,29 +59,19 @@ export default function Teaching() {
   useEffect(() => {
     const fetchYears = async () => {
       try {
-        // Fetch all years for the dropdown
+        // Fetch all academic years
         const res = await API.get("/api/academic-years");
         let years = [];
         if (Array.isArray(res.data)) years = res.data;
-        else if (Array.isArray(res.data.years)) years = res.data.years;
-        else if (Array.isArray(res.data.data)) years = res.data.data;
+        else if (res.data.years) years = res.data.years;
+        else if (res.data.data) years = res.data.data;
+        
         setAcademicYears(years);
 
-        // Fetch the ACTIVE year specifically to set the default
-        try {
-          const activeRes = await API.get("/api/academic-years/active");
-          if (activeRes.data?.data?.year) {
-            setSelectedYearLabel(activeRes.data.data.year);
-          } else if (years.length > 0) {
-            const active = years.find((y) => y.isActive) || years[0];
-            setSelectedYearLabel(active.year);
-          }
-        } catch (activeErr) {
-          // Fallback if active endpoint fails
-          if (years.length > 0) {
-            const active = years.find((y) => y.isActive) || years[0];
-            setSelectedYearLabel(active.year);
-          }
+        // Find the active year from the list or fallback to the first one
+        const active = years.find((y) => y.isActive) || years[0];
+        if (active) {
+          setSelectedYearLabel(active.year);
         }
       } catch (err) {
         console.error("Error fetching academic years:", err);

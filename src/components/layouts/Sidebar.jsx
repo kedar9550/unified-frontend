@@ -39,7 +39,11 @@ import {
   AssignmentInd,
   Analytics,
   Description as DescriptionIcon,
-  ManageAccounts
+  ManageAccounts,
+  MonetizationOn,
+  BusinessCenter,
+  Campaign,
+  Public
 } from "@mui/icons-material";
 
 // Mapping for item metadata (Icons & Colors with theme-aware RGBA)
@@ -58,6 +62,10 @@ const ITEM_METADATA = {
   "Book Chapter": { color: "rgba(22, 101, 52, 0.12)", iconColor: "#22c55e", icon: <AutoStories /> },
   "Journal": { color: "rgba(154, 52, 18, 0.12)", iconColor: "#f97316", icon: <DescriptionIcon /> },
   "Patent": { color: "rgba(91, 33, 182, 0.12)", iconColor: "#a855f7", icon: <Analytics /> },
+  "Funded Project": { color: "rgba(180, 83, 9, 0.12)", iconColor: "#B45309", icon: <MonetizationOn /> },
+  "Consultancy": { color: "rgba(15, 118, 110, 0.12)", iconColor: "#0F766E", icon: <BusinessCenter /> },
+  "Conference": { color: "rgba(190, 24, 93, 0.12)", iconColor: "#BE185D", icon: <Campaign /> },
+  "SDG's": { color: "rgba(4, 120, 87, 0.12)", iconColor: "#047857", icon: <Public /> },
   "Approvals": { color: "rgba(22, 101, 52, 0.12)", iconColor: "#22c55e", icon: <Verified /> },
   "Proctordata": { color: "rgba(154, 52, 18, 0.12)", iconColor: "#f97316", icon: <People /> },
   "Discrepancies": { color: "rgba(153, 27, 27, 0.12)", iconColor: "#ef4444", icon: <Flag /> },
@@ -139,11 +147,11 @@ const Sidebar = ({ mobileOpen, onDrawerToggle }) => {
     // Persistent Sub-menu: On refresh, keep the active category expanded
     const effectiveRole = activeRole || (user?.roles && user.roles[0]?.role) || "STUDENT";
     const items = ROLE_ROUTES[effectiveRole] || ROLE_ROUTES.STUDENT;
-    
+
     let initialOpenStates = {};
     items.forEach((item) => {
       if (item.nested) {
-        const isSubActive = item.nested.some(sub => 
+        const isSubActive = item.nested.some(sub =>
           sub.path && location.pathname.startsWith(sub.path)
         );
         if (isSubActive) {

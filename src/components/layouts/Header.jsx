@@ -174,7 +174,6 @@ const Header = ({ onMenuClick }) => {
           anchorEl={anchorEl}
           open={open}
           onClose={handleClose}
-          TransitionComponent={Fade}
           anchorOrigin={{
             vertical: 'bottom',
             horizontal: 'right',
