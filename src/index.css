@@ -147,3 +147,34 @@ body.dark-mode .MuiRadio-root.Mui-checked svg {
 body.dark-mode .MuiCheckbox-root {
   color: var(--text-secondary);
 }
+
+/* =========================================
+   THEME TRANSITION ANIMATIONS
+   ========================================= */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+/* Expanding (Light -> Dark) */
+.theme-transition-expand::view-transition-new(root) {
+  animation: theme-expand 800ms ease-in-out forwards;
+  z-index: 9999;
+}
+
+/* Collapsing (Dark -> Light) */
+.theme-transition-collapse::view-transition-old(root) {
+  animation: theme-collapse 800ms ease-in-out forwards;
+  z-index: 9999;
+}
+
+@keyframes theme-expand {
+  from { clip-path: circle(0% at 50% 50%); }
+  to { clip-path: circle(150% at 50% 50%); }
+}
+
+@keyframes theme-collapse {
+  from { clip-path: circle(150% at 50% 50%); }
+  to { clip-path: circle(0% at 50% 50%); }
+}
