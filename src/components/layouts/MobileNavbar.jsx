@@ -147,8 +147,65 @@ const MobileNavbar = () => {
         setExpandedItem(null);
     }, [location.pathname]);
 
+    const getWeatherIcon = (code) => {
+        if (code >= 95) return "https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Travel%20and%20places/Cloud%20with%20Lightning%20and%20Rain.png";
+        if (code >= 51) return "https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Travel%20and%20places/Cloud%20with%20Rain.png";
+        if (code >= 3) return "https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Travel%20and%20places/Cloud.png";
+        if (code >= 1) return "https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Travel%20and%20places/Sun%20Behind%20Cloud.png";
+        return "https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Travel%20and%20places/Sun.png";
+    };
+
     return (
         <>
+            {/* Hourly Weather Callout */}
+            <Box
+                sx={{
+                    position: 'fixed',
+                    bottom: weatherExpanded ? 85 : 0,
+                    left: 15,
+                    right: 15,
+                    zIndex: 1090,
+                    visibility: weatherExpanded ? 'visible' : 'hidden',
+                    opacity: weatherExpanded ? 1 : 0,
+                    transform: weatherExpanded ? 'translateY(0)' : 'translateY(20px)',
+                    transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+                    background: 'var(--bg-glass)',
+                    backdropFilter: 'blur(20px) saturate(180%)',
+                    borderRadius: '24px',
+                    p: 2,
+                    border: '1px solid rgba(255, 255, 255, 0.1)',
+                    boxShadow: '0 8px 32px rgba(0,0,0,0.2)',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    gap: 1.5,
+                    overflowX: 'auto',
+                    '&::-webkit-scrollbar': { display: 'none' },
+                }}
+            >
+                {weather.hourly.map((h, i) => (
+                    <Box key={i} sx={{ 
+                        textAlign: 'center', 
+                        minWidth: 65,
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                    }}>
+                        <Typography sx={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>
+                            {h.time.split(' ')[0]}
+                        </Typography>
+                        <Box
+                            component="img"
+                            src={getWeatherIcon(h.code)}
+                            sx={{ width: 28, height: 28, objectFit: 'contain', my: 0.5 }}
+                        />
+                        <Typography sx={{ fontSize: '0.9rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+                            {h.temp}°
+                        </Typography>
+                    </Box>
+                ))}
+            </Box>
+
             <Drawer
                 anchor="bottom"
                 open={Boolean(expandedItem)}

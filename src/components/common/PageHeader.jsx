@@ -9,20 +9,22 @@ export default function PageHeader({
   return (
     <Box
       sx={{
-        px: 2,
-        py: 1.5,
+        px: { xs: 2.5, sm: 4 },
+        py: { xs: 2.5, sm: 3 },
         borderRadius: "18px",
         background: "rgba(255, 255, 255, 0.25)",
         backdropFilter: "blur(10px) saturate(150%)",
         WebkitBackdropFilter: "blur(10px) saturate(150%)",
         boxShadow: "0 8px 32px rgba(31, 38, 135, 0.05)",
         display: "flex",
+        flexDirection: { xs: "column", sm: "row" },
         justifyContent: "space-between",
         alignItems: "center",
+        gap: 2.5,
         border: "1px solid rgba(255, 255, 255, 0.4)",
         position: "relative",
         overflow: "hidden",
-        marginBottom: "20px",
+        marginBottom: "24px",
         width: "100%",
         "&::after": {
           content: '""',
@@ -56,7 +58,14 @@ export default function PageHeader({
       </Box>
 
       {/* RIGHT */}
-      <Box sx={{ position: "relative", zIndex: 1 }}>{action}</Box>
+      <Box sx={{ 
+        position: "relative", 
+        zIndex: 1, 
+        width: { xs: "100%", sm: "auto" },
+        "& > button": { width: "100%" } 
+      }}>
+        {action}
+      </Box>
     </Box>
   );
 }
