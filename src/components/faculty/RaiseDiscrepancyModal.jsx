@@ -644,16 +644,26 @@ export default function RaiseDiscrepancyModal({
                     onChange={e => {
                       const val = e.target.value;
                       setSemesterNo(val);
-                      // Auto-select ODD/EVEN type based on number for SEMESTER programs
-                      if (val && !isNaN(Number(val))) {
-                        const typeName = Number(val) % 2 === 0 ? "EVEN" : "ODD";
+                      
+                      // Extract number and type
+                      const isSem = val.startsWith("Sem-");
+                      const isYear = val.startsWith("Year-") || val.includes("Year");
+                      const numPart = val.replace("Sem-", "").replace("Year-", "");
+                      const num = parseInt(numPart);
+
+                      if (isSem && !isNaN(num)) {
+                        const typeName = num % 2 === 0 ? "EVEN" : "ODD";
                         const type = localSemesterTypes.find(t => t.name === typeName);
                         if (type) setSemTypeId(type._id);
-                      } else if (val && String(val).includes('S')) {
+                      } else if (isYear) {
+                        const yearType = localSemesterTypes.find(t => t.name === "YEAR");
+                        if (yearType) setSemTypeId(yearType._id);
+                      } else if (val && val.includes('-S')) {
                         const summer = localSemesterTypes.find(t => t.name === "SUMMER");
                         if (summer) setSemTypeId(summer._id);
                       }
                     }}
+
                     displayEmpty
                     sx={selectSx}
                     disabled={loadingSems}
@@ -661,7 +671,7 @@ export default function RaiseDiscrepancyModal({
                     <MenuItem value="" disabled>Select Period</MenuItem>
                     {semesterNumbers.map(n => (
                       <MenuItem key={n} value={n}>
-                        {isNaN(Number(n)) ? n : `Period / Semester ${n}`}
+                        {n}
                       </MenuItem>
                     ))}
                     {semesterNumbers.length === 0 && !loadingSems && (
