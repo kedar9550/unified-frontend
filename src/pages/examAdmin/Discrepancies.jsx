@@ -31,6 +31,7 @@ import {
 import PageHeader from "../../components/common/PageHeader";
 import SectionHeader from "../../components/common/SectionHeader";
 import API from "../../api/axios";
+import { useAuth } from "../../context/AuthContext";
 
 // ── Status config ─────────────────────────────────────────────────────
 const STATUS_CONFIG = {
@@ -46,6 +47,7 @@ const SECTION_LABEL = {
 };
 
 export default function Discrepancies() {
+  const { activeRole } = useAuth();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(false);
 
@@ -68,7 +70,9 @@ export default function Discrepancies() {
   const fetchItems = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await API.get("/api/discrepancies");
+      const res = await API.get("/api/discrepancies", {
+        params: { role: activeRole }
+      });
       
       // Filter for Exam Section: TEACHING, PROCTORING (PASS_COUNT only), and OTHER
       const filtered = (res.data || []).filter(item => 

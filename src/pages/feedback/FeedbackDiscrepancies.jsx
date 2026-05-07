@@ -35,6 +35,7 @@ import {
 import PageHeader from "../../components/common/PageHeader";
 import SectionHeader from "../../components/common/SectionHeader";
 import API from "../../api/axios";
+import { useAuth } from "../../context/AuthContext";
 
 // ── Status config ─────────────────────────────────────────────────────
 const STATUS_CONFIG = {
@@ -48,6 +49,7 @@ const SECTION_LABEL = {
 };
 
 export default function FeedbackDiscrepancies() {
+  const { activeRole } = useAuth();
   const [items,   setItems]   = useState([]);
   const [loading, setLoading] = useState(false);
   const [programs, setPrograms] = useState([]);
@@ -71,7 +73,9 @@ export default function FeedbackDiscrepancies() {
   const fetchItems = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await API.get("/api/discrepancies");
+      const res = await API.get("/api/discrepancies", {
+        params: { role: activeRole }
+      });
       const feedbackDiscrepancies = (res.data || []).filter(item => item.section === "FEEDBACK");
       setItems(feedbackDiscrepancies);
     } catch (err) {
