@@ -82,7 +82,7 @@ const SDGCard = ({ id, sdg, imageUrl, isExpanded, toggleExpand }) => {
             sx={{
                 display: 'flex',
                 flexDirection: 'column',
-                background: 'rgba(255, 255, 255, 0.02)',
+                background: 'var(--bg-glass)',
                 borderRadius: '16px',
                 border: '1px solid var(--border-color)',
                 overflow: 'hidden',
@@ -537,7 +537,7 @@ const SDG = () => {
     );
 
     return (
-        <Box sx={{ p: { xs: 1.5, md: 2 }, minHeight: '100vh', background: 'var(--bg-main)' }}>
+        <Box sx={{ minHeight: '100vh' }}>
             <DeveloperPopup open={showDevPopup} onClose={() => setShowDevPopup(false)} />
             <input
                 type="file"

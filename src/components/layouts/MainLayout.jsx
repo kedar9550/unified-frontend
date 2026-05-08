@@ -40,7 +40,7 @@ const MainLayout = ({ children }) => {
             pt: { xs: "70px", md: "88px" },
             pb: { xs: "80px", md: 0 }, /* Space for bottom navbar */
             transition: "all 0.3s ease",
-            overflow: "hidden", 
+            overflow: "hidden",
           }}
         >
           <Box
@@ -54,7 +54,7 @@ const MainLayout = ({ children }) => {
               border: { xs: "none", md: "1px solid var(--border-color)" },
               display: "flex",
               flexDirection: "column",
-              overflow: "hidden", 
+              overflow: "hidden",
             }}
           >
             <Box sx={{ flex: 1, px: { xs: 0.5, md: 4 }, py: { xs: 1.5, md: 4 }, overflowY: "auto" }}>

@@ -15,6 +15,11 @@ import { useAuth } from "../../context/AuthContext";
 import { useNavigate, useLocation } from "react-router-dom";
 import ThemeToggle from "../common/Themetoggle";
 
+const capitalizeRole = (role) => {
+  if (!role) return "";
+  return role.toLowerCase().split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+};
+
 const Header = ({ onMenuClick }) => {
   const { user, activeRole, switchRole, logout } = useAuth();
   const [imgError, setImgError] = useState(false);
@@ -123,7 +128,7 @@ const Header = ({ onMenuClick }) => {
                 mb: 0.2
               }}
             >
-              {activeRole || "User"}
+              {capitalizeRole(activeRole) || "User"}
             </Typography>
             <Typography
               sx={{
@@ -267,7 +272,7 @@ const Header = ({ onMenuClick }) => {
                       {isUniprime ? <Domain sx={{ fontSize: 18 }} /> : <School sx={{ fontSize: 18 }} />}
                     </Box>
                     <Typography sx={{ fontWeight: 800, fontSize: "0.85rem", letterSpacing: "0.3px" }}>
-                      {r.role}
+                      {capitalizeRole(r.role)}
                     </Typography>
                   </Box>
 

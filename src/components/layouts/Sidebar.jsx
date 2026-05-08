@@ -46,6 +46,11 @@ import {
   Public
 } from "@mui/icons-material";
 
+const capitalizeRole = (role) => {
+  if (!role) return "";
+  return role.toLowerCase().split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+};
+
 // Mapping for item metadata (Icons & Colors with theme-aware RGBA)
 const ITEM_METADATA = {
   "Dashboard": { color: "rgba(30, 64, 175, 0.12)", iconColor: "#3b82f6", icon: <Dashboard /> },
@@ -69,7 +74,9 @@ const ITEM_METADATA = {
   "Approvals": { color: "rgba(22, 101, 52, 0.12)", iconColor: "#22c55e", icon: <Verified /> },
   "Proctordata": { color: "rgba(154, 52, 18, 0.12)", iconColor: "#f97316", icon: <People /> },
   "Discrepancies": { color: "rgba(153, 27, 27, 0.12)", iconColor: "#ef4444", icon: <Flag /> },
-  "Results Upload": { color: "rgba(30, 64, 175, 0.12)", iconColor: "#3b82f6", icon: <MenuBook /> },
+  "Results Upload": { color: "rgba(79, 70, 229, 0.12)", iconColor: "#4f46e5", icon: <MenuBook /> },
+  "Faculty Format": { color: "rgba(124, 58, 237, 0.12)", iconColor: "#7c3aed", icon: <Assignment /> },
+  "Students Format": { color: "rgba(16, 185, 129, 0.12)", iconColor: "#10b981", icon: <AssignmentInd /> },
   "Administration": { color: "rgba(91, 33, 182, 0.12)", iconColor: "#a855f7", icon: <AccountBalance /> },
   "Interpersonal": { color: "rgba(22, 101, 52, 0.12)", iconColor: "#22c55e", icon: <Groups /> },
   "Feedback Reports": { color: "rgba(30, 64, 175, 0.12)", iconColor: "#3b82f6", icon: <Analytics /> },
@@ -274,8 +281,8 @@ const Sidebar = ({ mobileOpen, onDrawerToggle }) => {
               }}
             >
               <Box sx={{ display: "flex", color: "var(--color-primary)" }}>{roleIcon}</Box>
-              <Typography sx={{ fontSize: "0.85rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.5px" }}>
-                {displayedRole}
+              <Typography sx={{ fontSize: "0.85rem", fontWeight: 700, letterSpacing: "0.5px" }}>
+                {capitalizeRole(displayedRole)}
               </Typography>
             </Box>
           );

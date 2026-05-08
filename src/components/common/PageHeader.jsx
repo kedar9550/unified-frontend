@@ -5,6 +5,7 @@ export default function PageHeader({
   subtitle,
   breadcrumbs = [],
   action,
+  showLogo = true,
 }) {
   return (
     <Box
@@ -12,57 +13,59 @@ export default function PageHeader({
         px: { xs: 2.5, sm: 4 },
         py: { xs: 2.5, sm: 3 },
         borderRadius: "18px",
-        background: "rgba(255, 255, 255, 0.25)",
+        background: "var(--bg-glass)",
         backdropFilter: "blur(10px) saturate(150%)",
         WebkitBackdropFilter: "blur(10px) saturate(150%)",
-        boxShadow: "0 8px 32px rgba(31, 38, 135, 0.05)",
+        boxShadow: "var(--shadow-premium)",
         display: "flex",
         flexDirection: { xs: "column", sm: "row" },
         justifyContent: "space-between",
         alignItems: "center",
         gap: 2.5,
-        border: "1px solid rgba(255, 255, 255, 0.4)",
+        border: "1px solid var(--border-color)",
         position: "relative",
-        overflow: "hidden",
+        overflow: showLogo ? "hidden" : "visible",
         marginBottom: "24px",
         width: "100%",
-        "&::after": {
-          content: '""',
-          position: "absolute",
-          width: "400px",
-          height: "100%",
-          backgroundImage: "var(--header-svg)",
-          backgroundSize: "auto 140%", // Perfectly fit the sun graphic height to the header height
-          backgroundRepeat: "no-repeat",
-          backgroundPosition: "center", // Center the sun within the pseudo-element
-          top: 0,
-          right: "-200px", // Position the center of the sun at the right edge
-          zIndex: 0,
-          pointerEvents: "none",
-        },
+        ...(showLogo && {
+          "&::after": {
+            content: '""',
+            position: "absolute",
+            width: "400px",
+            height: "100%",
+            backgroundImage: "var(--header-svg)",
+            backgroundSize: "auto 140%", // Scale dynamically with header height
+            backgroundRepeat: "no-repeat",
+            backgroundPosition: "center",
+            top: 0,
+            right: "-200px", // Half visible on the right
+            zIndex: 0,
+            opacity: 1, // Show actual SVG color
+            pointerEvents: "none",
+          },
+        }),
       }}
     >
       {/* LEFT */}
-      <Box sx={{ position: "relative", zIndex: 1, pr: { xs: 2, md: 0 } }}>
+      <Box sx={{ position: "relative", zIndex: 1, pr: { xs: 2, md: 0 }, textAlign: "left" }}>
         {/* Title */}
-        <Typography variant="h4" fontWeight={700} sx={{ color: "var(--text-primary)" }}>
+        <Typography variant="h4" fontWeight={800} sx={{ color: "var(--text-primary)", fontSize: { xs: "1.5rem", sm: "2rem" }, letterSpacing: "-0.5px" }}>
           {title}
         </Typography>
-
         {/* Subtitle */}
         {subtitle && (
-          <Typography variant="body2" color="text.secondary">
+          <Typography variant="body2" sx={{ color: "var(--text-secondary)", fontWeight: 500, mt: 0.5, opacity: 0.8 }}>
             {subtitle}
           </Typography>
         )}
       </Box>
 
       {/* RIGHT */}
-      <Box sx={{ 
-        position: "relative", 
-        zIndex: 1, 
+      <Box sx={{
+        position: "relative",
+        zIndex: 1,
         width: { xs: "100%", sm: "auto" },
-        "& > button": { width: "100%" } 
+        "& > button": { width: "100%" }
       }}>
         {action}
       </Box>
