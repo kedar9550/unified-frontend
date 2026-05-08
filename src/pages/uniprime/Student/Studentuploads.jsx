@@ -1,11 +1,49 @@
 import React, { useRef, useState, useEffect } from "react";
-import { Box, Avatar, Checkbox, MenuItem, Select, FormControl, InputLabel, Collapse, CircularProgress, Typography, Tooltip, IconButton, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Button, Grid, Paper, Snackbar, Alert } from "@mui/material";
-import { FileUpload as UploadIcon, CheckCircle as ConfirmIcon, Download as DownloadIcon, Delete as DeleteIcon, PersonAdd as PersonAddIcon, Sync as SyncIcon, UploadFile, PersonAdd, Close as CloseIcon } from "@mui/icons-material";
+import { 
+    Box, 
+    Avatar, 
+    Checkbox, 
+    MenuItem, 
+    Select, 
+    FormControl, 
+    InputLabel, 
+    Collapse, 
+    CircularProgress, 
+    Typography, 
+    Tooltip, 
+    IconButton, 
+    Dialog, 
+    DialogTitle, 
+    DialogContent, 
+    DialogActions, 
+    TextField, 
+    Button, 
+    Grid, 
+    Paper, 
+    Snackbar, 
+    Alert 
+} from "@mui/material";
+import { 
+    FileUpload as UploadIcon, 
+    CheckCircle as ConfirmIcon, 
+    Download as DownloadIcon, 
+    Delete as DeleteIcon, 
+    PersonAdd as PersonAddIcon, 
+    Sync as SyncIcon, 
+    UploadFile, 
+    PersonAdd, 
+    Close as CloseIcon,
+    Description as ExcelIcon,
+    CloudUpload as CloudUploadIcon,
+    InfoOutlined as InfoIcon,
+    ArrowForward as ArrowForwardIcon
+} from "@mui/icons-material";
 import PageHeader from "../../../components/common/PageHeader";
 import SectionHeader from "../../../components/common/SectionHeader";
 import ActionButton from "../../../components/common/ActionButton";
 import DataTable from "../../../components/data/DataTable";
 import API from "../../../api/axios";
+import HelpOutlinedIcon from "@mui/icons-material/HelpOutlined";
 
 const Studentuploads = () => {
     const fileInputRef = useRef(null);
@@ -13,11 +51,11 @@ const Studentuploads = () => {
     const [isProceeding, setIsProceeding] = useState(false);
     const [allDepartments, setAllDepartments] = useState([]);
     const [selectedDept, setSelectedDept] = useState("");
-    const [selectedSem, setSelectedSem] = useState("");
     const [loadingDepts, setLoadingDepts] = useState(false);
     const [students, setStudents] = useState([]);
     const [loadingStudents, setLoadingStudents] = useState(false);
     const [uploading, setUploading] = useState(false);
+    const [updatingBulk, setUpdatingBulk] = useState(false);
     const [uploadResult, setUploadResult] = useState(null);
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
@@ -25,12 +63,9 @@ const Studentuploads = () => {
     const [addDept, setAddDept] = useState("");
     const [addingStudent, setAddingStudent] = useState(false);
     const [syncing, setSyncing] = useState(false);
-    const [updatingBulk, setUpdatingBulk] = useState(false);
-    const [isUploadOptionsOpen, setIsUploadOptionsOpen] = useState(false);
-    const [isUpdateOptionsOpen, setIsUpdateOptionsOpen] = useState(false);
-    const [isBulkUpdateModalOpen, setIsBulkUpdateModalOpen] = useState(false);
-    const [selectedBulkProgram, setSelectedBulkProgram] = useState("");
     const [allPrograms, setAllPrograms] = useState([]);
+    const [selectedBulkProgram, setSelectedBulkProgram] = useState("");
+    const [isBulkUpdateModalOpen, setIsBulkUpdateModalOpen] = useState(false);
     const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "success" });
 
     const fetchUnassignedStudents = async () => {
@@ -82,7 +117,6 @@ const Studentuploads = () => {
         fileInputRef.current.click();
     };
 
-
     const handleFileChange = async (e) => {
         const file = e.target.files[0];
         if (!file) return;
@@ -91,16 +125,28 @@ const Studentuploads = () => {
         formData.append("file", file);
 
         setUploading(true);
+
         try {
-            const res = await API.post("/api/student-data/upload", formData, {
+            const endpoint = "/api/student-data/upload";
+            const res = await API.post(endpoint, formData, {
                 headers: { "Content-Type": "multipart/form-data" }
             });
             if (res.data.success) {
                 setUploadResult(res.data.summary);
+                setSnackbar({
+                    open: true,
+                    message: res.data.message || "Data uploaded successfully",
+                    severity: "success"
+                });
                 fetchUnassignedStudents();
             }
         } catch (error) {
-            console.error("Upload failed", error);
+            console.error("Operation failed", error);
+            setSnackbar({
+                open: true,
+                message: error.response?.data?.message || "Operation failed",
+                severity: "error"
+            });
         } finally {
             setUploading(false);
             e.target.value = null; // Reset input
@@ -120,7 +166,6 @@ const Studentuploads = () => {
                 });
                 fetchUnassignedStudents();
                 setIsBulkUpdateModalOpen(false);
-                setSelectedBulkProgram("");
             }
         } catch (error) {
             console.error("Bulk sync failed", error);
@@ -134,36 +179,32 @@ const Studentuploads = () => {
         }
     };
 
-    const handleDeleteAllUnassigned = async () => {
-        if (!window.confirm("Are you sure you want to clear ALL unassigned student records? This action cannot be undone.")) return;
+    const handleSyncStudents = async () => {
+        if (selectedIds.length === 0) return;
+        setSyncing(true);
         try {
-            const res = await API.delete("/api/student-data/all/unassigned");
-            if (res.data.success) {
-                fetchUnassignedStudents();
-                setSelectedIds([]);
-            }
-        } catch (error) {
-            console.error("Bulk delete failed", error);
-        }
-    };
-
-    const handleConfirmAssignment = async () => {
-        try {
-            const res = await API.post("/api/student-data/assign", {
-                studentIds: selectedIds,
-                deptId: selectedDept,
-
+            const res = await API.post("/api/student-data/sync", {
+                rollNos: selectedIds
             });
             if (res.data.success) {
-                setIsProceeding(false);
-                setSelectedIds([]);
-                setSelectedDept("");
-                setSelectedSem("");
+                setUploadResult(res.data.summary);
+                setSnackbar({
+                    open: true,
+                    message: res.data.message,
+                    severity: res.data.updated ? "success" : "info"
+                });
                 fetchUnassignedStudents();
-                // Optional: show success message
+                setSelectedIds([]);
             }
         } catch (error) {
-            console.error("Assignment failed", error);
+            console.error("Sync failed", error);
+            setSnackbar({
+                open: true,
+                message: error.response?.data?.message || "Sync failed",
+                severity: "error"
+            });
+        } finally {
+            setSyncing(false);
         }
     };
 
@@ -189,39 +230,46 @@ const Studentuploads = () => {
             }
         } catch (error) {
             console.error("Add student failed", error);
-            alert(error.response?.data?.message || "Failed to add student");
+            setSnackbar({
+                open: true,
+                message: error.response?.data?.message || "Failed to add student",
+                severity: "error"
+            });
         } finally {
             setAddingStudent(false);
         }
     };
 
-    const handleSyncStudents = async () => {
-        if (selectedIds.length === 0) return;
-        setSyncing(true);
+    const handleConfirmAssignment = async () => {
+        if (!selectedDept || selectedIds.length === 0) return;
         try {
-            const res = await API.post("/api/student-data/sync", {
-                rollNos: selectedIds
+            const res = await API.post("/api/student-data/assign", {
+                studentIds: selectedIds,
+                deptId: selectedDept,
             });
             if (res.data.success) {
-                setUploadResult(res.data.summary);
+                setIsProceeding(false);
+                setSelectedIds([]);
+                setSelectedDept("");
+                fetchUnassignedStudents();
                 setSnackbar({
                     open: true,
-                    message: res.data.message,
-                    severity: res.data.updated ? "success" : "info"
+                    message: "Students assigned successfully",
+                    severity: "success"
                 });
-                fetchUnassignedStudents();
-                setSelectedIds([]);
             }
         } catch (error) {
-            console.error("Sync failed", error);
-            alert(error.response?.data?.message || "Failed to sync students");
-        } finally {
-            setSyncing(false);
+            console.error("Assignment failed", error);
+            setSnackbar({
+                open: true,
+                message: "Assignment failed",
+                severity: "error"
+            });
         }
     };
 
     const handleTemplateDownload = () => {
-        const headers = ["Roll No", "Dept"];
+        const headers = ["Roll Number", "Department"];
         const csvContent = headers.join(",");
         const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
         const link = document.createElement("a");
@@ -233,7 +281,6 @@ const Studentuploads = () => {
         link.click();
         document.body.removeChild(link);
     };
-
 
     const handleExportClick = () => {
         const headers = ["Roll No", "Name", "Dept", "Email", "Phone", "Branch", "Program", "Department", "Semester"];
@@ -259,14 +306,6 @@ const Studentuploads = () => {
         );
         setIsProceeding(false);
     };
-
-    const getMaxSemesters = () => {
-        const selectedStudents = students.filter(s => selectedIds.includes(s.rollNo));
-        const isMtech = selectedStudents.some(s => s.academicInfo?.programName === "M.Tech");
-        return isMtech ? 4 : 8;
-    };
-
-    const maxSem = getMaxSemesters();
 
     const columns = [
         <Checkbox
@@ -317,14 +356,8 @@ const Studentuploads = () => {
     ]);
 
     return (
-        <Box sx={{ p: { xs: 1, md: 1.5 } }}>
-            <input
-                type="file"
-                ref={fileInputRef}
-                style={{ display: "none" }}
-                accept=".csv"
-                onChange={handleFileChange}
-            />
+        <Box sx={{ p: { xs: 2, md: 4 }, background: "#f8fafc", minHeight: "100vh" }}>
+            <input type="file" ref={fileInputRef} style={{ display: "none" }} accept=".csv,.xlsx" onChange={handleFileChange} />
 
             <PageHeader
                 title="Student Management"
@@ -333,665 +366,386 @@ const Studentuploads = () => {
                 action={null}
             />
 
-            {/* ADD STUDENT MODAL */}
-            <Dialog 
-                open={isAddModalOpen} 
-                onClose={() => !addingStudent && setIsAddModalOpen(false)}
-                PaperProps={{
-                    sx: {
-                        background: 'var(--bg-panel)',
-                        border: '1px solid var(--border-color)',
-                        borderRadius: '20px',
-                        boxShadow: 'var(--shadow-premium)',
-                        color: 'var(--text-primary)'
-                    }
-                }}
-            >
-                <DialogTitle sx={{ fontWeight: 800 }}>Add Individual Student</DialogTitle>
-                <DialogContent sx={{ minWidth: { xs: "auto", sm: 400 } }}>
-                    <Typography variant="body2" color="var(--text-secondary)" sx={{ mb: 2 }}>
-                        Fetch student data from ECAP using their Roll No.
-                    </Typography>
-                    <TextField
-                        autoFocus
-                        margin="dense"
-                        label="Roll Number"
-                        type="text"
-                        fullWidth
-                        variant="outlined"
-                        value={addRollNo}
-                        onChange={(e) => setAddRollNo(e.target.value)}
-                        disabled={addingStudent}
-                        sx={{ 
-                            mb: 2,
-                            "& .MuiOutlinedInput-root": {
-                                borderRadius: "10px",
-                                background: "var(--bg-glass)",
-                                "& fieldset": { borderColor: "var(--border-color)" },
-                                "&:hover fieldset": { borderColor: "var(--color-primary)" },
-                                "&.Mui-focused fieldset": { borderColor: "var(--color-primary)" },
-                            },
-                            "& .MuiInputLabel-root": { color: "var(--text-secondary)" },
-                            "& .MuiInputBase-input": { color: "var(--text-primary)" }
-                        }}
-                    />
-                    <FormControl fullWidth variant="outlined" sx={{ 
-                        "& .MuiOutlinedInput-root": {
-                            borderRadius: "10px",
-                            background: "var(--bg-glass)",
-                            "& fieldset": { borderColor: "var(--border-color)" },
-                            "&:hover fieldset": { borderColor: "var(--color-primary)" },
-                            "&.Mui-focused fieldset": { borderColor: "var(--color-primary)" },
-                        },
-                        "& .MuiInputLabel-root": { color: "var(--text-secondary)" },
-                        "& .MuiSelect-select": { color: "var(--text-primary)" }
-                    }}>
-                        <InputLabel>Department (Optional)</InputLabel>
-                        <Select
-                            value={addDept}
-                            onChange={(e) => setAddDept(e.target.value)}
-                            label="Department (Optional)"
-                            disabled={addingStudent}
-                        >
-                            <MenuItem value=""><em>None</em></MenuItem>
-                            {allDepartments.map((dept) => (
-                                <MenuItem key={dept._id} value={dept._id}>{dept.name}</MenuItem>
-                            ))}
-                        </Select>
-                    </FormControl>
-                </DialogContent>
-                <DialogActions sx={{ p: 2, px: 3 }}>
-                    <Button onClick={() => setIsAddModalOpen(false)} disabled={addingStudent} sx={{ color: 'var(--text-secondary)', fontWeight: 700 }}>Cancel</Button>
-                    <Button onClick={handleAddStudent} disabled={addingStudent || !addRollNo} variant="contained" sx={{ borderRadius: '50px', background: "var(--gradient-primary)", px: 4, fontWeight: 700, textTransform: 'none' }}>
-                        {addingStudent ? <CircularProgress size={24} color="inherit" /> : "Add Student"}
-                    </Button>
-                </DialogActions>
-            </Dialog>
+            {/* Quick Action Cards */}
+            <Grid container spacing={3} sx={{ mb: 4, mt: 2 }}>
+                <Grid item xs={4}>
+                    <Paper elevation={0} sx={{ p: 3, borderRadius: "24px", border: "1px solid #e2e8f0", display: "flex", alignItems: "center", gap: 3, height: "100%", transition: "0.3s", "&:hover": { boxShadow: "0 10px 30px rgba(0,0,0,0.05)" } }}>
+                        <Box sx={{ p: 2, borderRadius: "20px", background: "#f0fdf4" }}>
+                            <ExcelIcon sx={{ color: "#22c55e", fontSize: 32 }} />
+                        </Box>
+                        <Box>
+                            <Typography variant="subtitle1" sx={{ fontWeight: 700, color: "#1e293b", fontSize: { xs: "0.8rem", md: "1rem" } }}>Excel Template</Typography>
+                            <Typography variant="body2" sx={{ color: "#64748b", mb: 1, display: { xs: "none", md: "block" } }}>Download template and fill student data.</Typography>
+                            <Button 
+                                startIcon={<DownloadIcon />} 
+                                onClick={handleTemplateDownload}
+                                sx={{ textTransform: "none", fontWeight: 700, color: "var(--color-primary)", p: 0, minWidth: 0, fontSize: { xs: "0.7rem", md: "0.875rem" }, "&:hover": { background: "transparent", opacity: 0.8 } }}
+                            >
+                                Download
+                            </Button>
+                        </Box>
+                    </Paper>
+                </Grid>
+                <Grid item xs={4}>
+                    <Paper 
+                        elevation={0} 
+                        onClick={handleUploadClick}
+                        sx={{ p: 3, borderRadius: "24px", border: "1px solid #e2e8f0", display: "flex", alignItems: "center", gap: 3, height: "100%", transition: "0.3s", cursor: "pointer", "&:hover": { boxShadow: "0 10px 30px rgba(0,0,0,0.05)", borderColor: "#3b82f6" } }}
+                    >
+                        <Box sx={{ p: 2, borderRadius: "20px", background: "#eff6ff" }}>
+                            <UploadIcon sx={{ color: "#3b82f6", fontSize: 32 }} />
+                        </Box>
+                        <Box>
+                            <Typography variant="subtitle1" sx={{ fontWeight: 700, color: "#1e293b", fontSize: { xs: "0.8rem", md: "1rem" } }}>Bulk Upload</Typography>
+                            <Typography variant="body2" sx={{ color: "#64748b", display: { xs: "none", md: "block" } }}>Click to upload and add students.</Typography>
+                        </Box>
+                    </Paper>
+                </Grid>
+                <Grid item xs={4}>
+                    <Paper 
+                        elevation={0} 
+                        onClick={() => setIsBulkUpdateModalOpen(true)}
+                        sx={{ p: 3, borderRadius: "24px", border: "1px solid #e2e8f0", display: "flex", alignItems: "center", gap: 3, height: "100%", transition: "0.3s", cursor: "pointer", "&:hover": { boxShadow: "0 10px 30px rgba(0,0,0,0.05)", borderColor: "#8b5cf6" } }}
+                    >
+                        <Box sx={{ p: 2, borderRadius: "20px", background: "#f5f3ff" }}>
+                            <SyncIcon sx={{ color: "#8b5cf6", fontSize: 32 }} />
+                        </Box>
+                        <Box>
+                            <Typography variant="subtitle1" sx={{ fontWeight: 700, color: "#1e293b", fontSize: { xs: "0.8rem", md: "1rem" } }}>Update Data</Typography>
+                            <Typography variant="body2" sx={{ color: "#64748b", display: { xs: "none", md: "block" } }}>Click to sync existing records.</Typography>
+                        </Box>
+                    </Paper>
+                </Grid>
+            </Grid>
 
-            {/* UPDATE STUDENT MODAL */}
-            <Dialog 
-                open={isUpdateModalOpen} 
-                onClose={() => !addingStudent && setIsUpdateModalOpen(false)}
-                PaperProps={{
-                    sx: {
-                        background: 'var(--bg-panel)',
-                        border: '1px solid var(--border-color)',
-                        borderRadius: '20px',
-                        boxShadow: 'var(--shadow-premium)',
-                        color: 'var(--text-primary)'
-                    }
-                }}
-            >
-                <DialogTitle sx={{ fontWeight: 800 }}>Update Individual Student</DialogTitle>
-                <DialogContent sx={{ minWidth: { xs: "auto", sm: 400 } }}>
-                    <Typography variant="body2" color="var(--text-secondary)" sx={{ mb: 2 }}>
-                        Sync/Update student data from ECAP using their Roll No.
-                    </Typography>
-                    <TextField
-                        autoFocus
-                        margin="dense"
-                        label="Roll Number"
-                        type="text"
-                        fullWidth
-                        variant="outlined"
-                        value={addRollNo}
-                        onChange={(e) => setAddRollNo(e.target.value)}
-                        disabled={addingStudent}
-                        sx={{ 
-                            mb: 2,
-                            "& .MuiOutlinedInput-root": {
-                                borderRadius: "10px",
-                                background: "var(--bg-glass)",
-                                "& fieldset": { borderColor: "var(--border-color)" },
-                                "&:hover fieldset": { borderColor: "var(--color-primary)" },
-                                "&.Mui-focused fieldset": { borderColor: "var(--color-primary)" },
-                            },
-                            "& .MuiInputLabel-root": { color: "var(--text-secondary)" },
-                            "& .MuiInputBase-input": { color: "var(--text-primary)" }
-                        }}
-                    />
-                </DialogContent>
-                <DialogActions sx={{ p: 2, px: 3 }}>
-                    <Button onClick={() => setIsUpdateModalOpen(false)} disabled={addingStudent} sx={{ color: 'var(--text-secondary)', fontWeight: 700 }}>Cancel</Button>
-                    <Button onClick={handleAddStudent} disabled={addingStudent || !addRollNo} variant="contained" sx={{ borderRadius: '50px', background: "var(--gradient-primary)", px: 4, fontWeight: 700, textTransform: 'none' }}>
-                        {addingStudent ? <CircularProgress size={24} color="inherit" /> : "Update Student"}
-                    </Button>
-                </DialogActions>
-            </Dialog>
-            {/* UPLOAD RESULT CARD */}
-            {uploadResult && (
-                <Collapse in={!!uploadResult}>
-                    <Box sx={{
-                        mb: 4,
-                        p: 3,
-                        borderRadius: "24px",
-                        background: uploadResult.errors > 0
-                            ? "var(--bg-panel)"
-                            : "var(--bg-panel)",
-                        border: uploadResult.errors > 0 ? "1px solid #ef4444" : "1px solid #22c55e",
-                        backdropFilter: "blur(20px)",
-                        boxShadow: "var(--shadow-premium)",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "space-between",
-                        animation: "fadeIn 0.5s ease-out"
-                    }}>
-                        <Box sx={{ display: "flex", alignItems: "center", gap: 3 }}>
-                            <Box sx={{
-                                width: 56,
-                                height: 56,
-                                borderRadius: "16px",
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                background: uploadResult.errors > 0 ? "rgba(239, 68, 68, 0.1)" : "rgba(34, 197, 94, 0.1)"
-                            }}>
-                                <ConfirmIcon sx={{ color: uploadResult.errors > 0 ? "#ef4444" : "#22c55e", fontSize: 32 }} />
+            {/* Main Upload Panels */}
+            <Box sx={{ display: "flex", gap: 4, mb: 4, flexDirection: { xs: "column", md: "row" } }}>
+                <Box sx={{ flex: 1, display: "flex" }}>
+                    <Paper elevation={0} sx={{ flex: 1, p: 4, borderRadius: "24px", border: "1px solid #e2e8f0", display: "flex", flexDirection: "column", position: "relative", overflow: "hidden", minHeight: "500px" }}>
+                        <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 3 }}>
+                            <Box sx={{ p: 1, borderRadius: "12px", background: "#f0fdf4", color: "#22c55e" }}>
+                                <UploadFile />
                             </Box>
                             <Box>
-                                <Typography variant="h6" sx={{ color: uploadResult.errors > 0 ? "#ef4444" : "#22c55e", fontWeight: 800, mb: 0.5 }}>
-                                    {uploadResult.errors > 0 ? "Processed with some issues" : "Processing Complete!"}
-                                </Typography>
-                                <Box sx={{ display: "flex", gap: 3, flexWrap: "wrap" }}>
-                                    <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-                                        <Typography variant="body2" sx={{ color: "var(--text-secondary)", fontWeight: 600 }}>Total:</Typography>
-                                        <Typography variant="body2" sx={{ color: "var(--text-primary)", fontWeight: 700 }}>{uploadResult.total || (uploadResult.success + uploadResult.failed)}</Typography>
-                                    </Box>
-                                    <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-                                        <Typography variant="body2" sx={{ color: "#22c55e", fontWeight: 600 }}>Success:</Typography>
-                                        <Typography variant="body2" sx={{ color: "#22c55e", fontWeight: 700 }}>{uploadResult.success}</Typography>
-                                    </Box>
-                                    {uploadResult.skipped > 0 && (
-                                        <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-                                            <Typography variant="body2" sx={{ color: "#f59e0b", fontWeight: 600 }}>Skipped:</Typography>
-                                            <Typography variant="body2" sx={{ color: "#f59e0b", fontWeight: 700 }}>{uploadResult.skipped}</Typography>
-                                        </Box>
-                                    )}
-                                    {uploadResult.errors > 0 && (
-                                        <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-                                            <Typography variant="body2" sx={{ color: "#ef4444", fontWeight: 600 }}>Errors:</Typography>
-                                            <Typography variant="body2" sx={{ color: "#ef4444", fontWeight: 700 }}>{uploadResult.errors}</Typography>
-                                        </Box>
-                                    )}
-                                </Box>
+                                <Typography variant="h6" sx={{ fontWeight: 800, color: "#22c55e" }}>Add New Students</Typography>
+                                <Typography variant="body2" sx={{ color: "#64748b" }}>Bulk upload new student records.</Typography>
                             </Box>
                         </Box>
-                        <Button
-                            onClick={() => setUploadResult(null)}
-                            variant="text"
-                            sx={{
-                                color: uploadResult.errors > 0 ? "#ef4444" : "#22c55e",
-                                fontWeight: 700,
-                                textTransform: "none",
-                                "&:hover": { background: uploadResult.errors > 0 ? "rgba(239, 68, 68, 0.1)" : "rgba(34, 197, 94, 0.1)" }
-                            }}
-                        >
-                            Dismiss
-                        </Button>
-                    </Box>
-                </Collapse>
+
+                        <Box sx={{ mb: 4 }}>
+                            <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 2, color: "#1e293b" }}>Steps:</Typography>
+                            {[
+                                "Download the template",
+                                "Fill in Roll Number and Department",
+                                "Upload the file and we'll fetch student data"
+                            ].map((step, idx) => (
+                                <Box key={idx} sx={{ display: "flex", alignItems: "center", gap: 2, mb: 1.5 }}>
+                                    <Box sx={{ width: 24, height: 24, borderRadius: "50%", background: "#22c55e", color: "white", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "0.75rem", fontWeight: 800 }}>
+                                        {idx + 1}
+                                    </Box>
+                                    <Typography variant="body2" sx={{ color: "#475569", fontWeight: 500 }}>{step}</Typography>
+                                </Box>
+                            ))}
+                        </Box>
+
+                        <Box sx={{ flex: 1, display: "flex", flexDirection: "column" }}>
+                            <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 2, color: "#1e293b" }}>Upload Excel File</Typography>
+                            <Box 
+                                onClick={handleUploadClick}
+                                sx={{ 
+                                    flex: 1,
+                                    border: "2px dashed #22c55e", 
+                                    borderRadius: "20px", 
+                                    p: 4, 
+                                    display: "flex",
+                                    flexDirection: "column",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    textAlign: "center", 
+                                    cursor: "pointer",
+                                    transition: "0.3s",
+                                    background: uploading ? "rgba(34, 197, 94, 0.05)" : "transparent",
+                                    "&:hover": { background: "rgba(34, 197, 94, 0.05)" }
+                                }}
+                            >
+                                <CloudUploadIcon sx={{ color: "#22c55e", fontSize: 48, mb: 1 }} />
+                                <Typography variant="body2" sx={{ color: "#64748b" }}>Drop your file here to upload</Typography>
+                            </Box>
+                            <Typography variant="caption" sx={{ color: "#94a3b8", mt: 1, display: "flex", alignItems: "center", gap: 0.5 }}>
+                                Only .xlsx and .csv files are allowed <InfoIcon sx={{ fontSize: 14 }} />
+                            </Typography>
+                        </Box>
+
+                        <Box sx={{ mt: 4, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                            <Button 
+                                onClick={() => setIsAddModalOpen(true)}
+                                startIcon={<PersonAddIcon />}
+                                sx={{ textTransform: "none", fontWeight: 700, color: "#22c55e", borderRadius: "10px", "&:hover": { background: "rgba(34, 197, 94, 0.05)" } }}
+                            >
+                                Individual Add
+                            </Button>
+                            {uploading && <CircularProgress size={24} sx={{ color: "#22c55e" }} />}
+                        </Box>
+                    </Paper>
+                </Box>
+
+                <Box sx={{ flex: 1, display: "flex" }}>
+                    <Paper elevation={0} sx={{ flex: 1, p: 4, borderRadius: "24px", border: "1px solid #e2e8f0", display: "flex", flexDirection: "column", position: "relative", overflow: "hidden", minHeight: "500px" }}>
+                        <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 3 }}>
+                            <Box sx={{ p: 1, borderRadius: "12px", background: "#f5f3ff", color: "#8b5cf6" }}>
+                                <SyncIcon />
+                            </Box>
+                            <Box>
+                                <Typography variant="h6" sx={{ fontWeight: 800, color: "#8b5cf6" }}>Update Existing Students</Typography>
+                                <Typography variant="body2" sx={{ color: "#64748b" }}>Sync and update student records.</Typography>
+                            </Box>
+                        </Box>
+
+                        <Box sx={{ mb: 4 }}>
+                            <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 2, color: "#1e293b" }}>Steps:</Typography>
+                            {[
+                                "Select the program to update (optional)",
+                                "The system will fetch latest data",
+                                "Sync to refresh student information"
+                            ].map((step, idx) => (
+                                <Box key={idx} sx={{ display: "flex", alignItems: "center", gap: 2, mb: 1.5 }}>
+                                    <Box sx={{ width: 24, height: 24, borderRadius: "50%", background: "#8b5cf6", color: "white", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "0.75rem", fontWeight: 800 }}>
+                                        {idx + 1}
+                                    </Box>
+                                    <Typography variant="body2" sx={{ color: "#475569", fontWeight: 500 }}>{step}</Typography>
+                                </Box>
+                            ))}
+                        </Box>
+
+                        <Box sx={{ flex: 1, display: "flex", flexDirection: "column" }}>
+                            <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 2, color: "#1e293b" }}>Select Program to Sync</Typography>
+                            <FormControl fullWidth variant="outlined" sx={{ mb: 3 }}>
+                                <InputLabel>Select Program</InputLabel>
+                                <Select
+                                    value={selectedBulkProgram}
+                                    onChange={(e) => setSelectedBulkProgram(e.target.value)}
+                                    label="Select Program"
+                                    disabled={updatingBulk}
+                                    sx={{ borderRadius: "15px" }}
+                                >
+                                    <MenuItem value=""><em>All Programs</em></MenuItem>
+                                    {allPrograms.map((p, i) => (
+                                        <MenuItem key={i} value={p}>{p}</MenuItem>
+                                    ))}
+                                </Select>
+                            </FormControl>
+                            
+                            <Box 
+                                onClick={() => !updatingBulk && handleBulkSyncAll(selectedBulkProgram)}
+                                sx={{ 
+                                    flex: 1,
+                                    border: "2px dashed #8b5cf6", 
+                                    borderRadius: "20px", 
+                                    p: 4, 
+                                    display: "flex",
+                                    flexDirection: "column",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    textAlign: "center", 
+                                    cursor: updatingBulk ? "default" : "pointer",
+                                    transition: "0.3s",
+                                    background: updatingBulk ? "rgba(139, 92, 246, 0.05)" : "transparent",
+                                    "&:hover": { background: "rgba(139, 92, 246, 0.05)" }
+                                }}
+                            >
+                                <SyncIcon sx={{ color: "#8b5cf6", fontSize: 48, mb: 1, animation: updatingBulk ? "spin 2s linear infinite" : "none" }} />
+                                <Typography variant="body2" sx={{ color: "#64748b" }}>Click here to start bulk sync</Typography>
+                            </Box>
+                        </Box>
+
+                        <style>{`
+                            @keyframes spin {
+                                from { transform: rotate(0deg); }
+                                to { transform: rotate(360deg); }
+                            }
+                        `}</style>
+
+                        <Box sx={{ mt: 4, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                            <Button 
+                                onClick={() => setIsUpdateModalOpen(true)}
+                                startIcon={<SyncIcon />}
+                                sx={{ textTransform: "none", fontWeight: 700, color: "#8b5cf6", borderRadius: "10px", "&:hover": { background: "rgba(139, 92, 246, 0.05)" } }}
+                            >
+                                Individual Update
+                            </Button>
+                            {updatingBulk && <CircularProgress size={24} sx={{ color: "#8b5cf6" }} />}
+                        </Box>
+                    </Paper>
+                </Box>
+            </Box>
+            
+
+            {/* Results Display */}
+            {uploadResult && (
+                <Box sx={{ mt: 4, mb: 4 }}>
+                    <Alert 
+                        severity={uploadResult.errors > 0 ? "warning" : "success"} 
+                        sx={{ borderRadius: "16px", fontWeight: 600 }}
+                        action={
+                            <IconButton size="small" onClick={() => setUploadResult(null)}>
+                                <CloseIcon fontSize="small" />
+                            </IconButton>
+                        }
+                    >
+                        {uploadResult.errors > 0 ? `Processed with ${uploadResult.errors} errors.` : "All records processed successfully!"}
+                        <Box sx={{ display: "flex", gap: 3, mt: 1 }}>
+                            <Typography variant="caption" sx={{ fontWeight: 700 }}>Total: {uploadResult.total || (uploadResult.success + uploadResult.failed)}</Typography>
+                            <Typography variant="caption" sx={{ fontWeight: 700, color: "green" }}>Success: {uploadResult.success}</Typography>
+                            <Typography variant="caption" sx={{ fontWeight: 700, color: "red" }}>Errors: {uploadResult.errors}</Typography>
+                        </Box>
+                    </Alert>
+                </Box>
             )}
 
-            {/* Student Upload Section */}
-            <Box sx={{ mb: 2 }}>
-                <Paper
-                    elevation={0}
-                    sx={{
-                        p: 2,
-                        borderRadius: "20px",
-                        background: "var(--bg-glass)",
-                        backdropFilter: "blur(10px) saturate(150%)",
-                        border: "1px solid var(--border-color)",
-                        boxShadow: "var(--shadow-premium)",
-                        width: '100%'
-                    }}
-                >
-                    <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, justifyContent: 'space-between', alignItems: { xs: 'stretch', sm: 'flex-start' }, gap: 1, mb: 2 }}>
-                        <Box>
-                            <Typography variant="h6" fontWeight={800} color="var(--text-primary)">Student Data Upload</Typography>
-                            <Typography variant="body2" color="textSecondary" fontWeight={500}>
-                                Upload bulk or individual data
-                            </Typography>
-                        </Box>
-                        <Button
-                            variant="outlined"
-                            startIcon={<DownloadIcon />}
-                            onClick={handleTemplateDownload}
-                            sx={{
-                                borderRadius: "50px",
-                                textTransform: "none",
-                                fontWeight: 700,
-                                border: "1.5px solid var(--color-primary)",
-                                background: "transparent",
-                                color: "var(--color-primary)",
-                                "&:hover": { background: "var(--bg-panel)", border: "1.5px solid var(--color-primary)" }
-                            }}
-                        >
-                            Download Template
-                        </Button>
-                    </Box>
-
-                    <Box sx={{ display: 'flex', gap: 2 }}>
-                        <Button
-                            variant="contained"
-                            startIcon={<UploadFile />}
-                            onClick={() => { setIsUploadOptionsOpen(!isUploadOptionsOpen); setIsUpdateOptionsOpen(false); }}
-                            sx={{
-                                flex: 1,
-                                borderRadius: "50px",
-                                textTransform: "none",
-                                py: 1.2,
-                                fontWeight: 700,
-                                background: "var(--gradient-primary)",
-                                boxShadow: "0 4px 12px rgba(0, 78, 146, 0.3)",
-                                transition: '0.3s',
-                                '&:hover': {
-                                    background: "var(--gradient-primary-hover)",
-                                    boxShadow: "0 6px 16px rgba(0, 78, 146, 0.4)",
-                                }
-                            }}
-                        >
-                            Bulk Data
-                        </Button>
-                        <Button
-                            variant="contained"
-                            startIcon={updatingBulk ? <CircularProgress size={20} color="inherit" /> : <SyncIcon />}
-                            onClick={() => { setIsUpdateOptionsOpen(!isUpdateOptionsOpen); setIsUploadOptionsOpen(false); }}
-                            disabled={updatingBulk}
-                            sx={{
-                                flex: 1,
-                                borderRadius: "50px",
-                                textTransform: "none",
-                                py: 1.2,
-                                fontWeight: 700,
-                                background: "var(--gradient-primary)",
-                                boxShadow: "0 4px 12px rgba(0, 78, 146, 0.3)",
-                                transition: '0.3s',
-                                '&:hover': {
-                                    background: "var(--gradient-primary-hover)",
-                                    boxShadow: "0 6px 16px rgba(0, 78, 146, 0.4)",
-                                }
-                            }}
-                        >
-                            {updatingBulk ? "Updating..." : "Update"}
-                        </Button>
-                    </Box>
-
-                    <Collapse in={isUploadOptionsOpen}>
-                        <Box sx={{
-                            mt: 2,
-                            p: 2,
-                            borderRadius: "16px",
-                            background: "var(--bg-panel)",
-                            border: "1px solid var(--border-color)",
-                            position: "relative"
-                        }}>
-                            <IconButton
-                                size="small"
-                                onClick={() => setIsUploadOptionsOpen(false)}
-                                sx={{ position: "absolute", right: 8, top: 8 }}
-                            >
-                                <CloseIcon sx={{ fontSize: 18 }} />
-                            </IconButton>
-                            <Typography variant="caption" sx={{ color: "#64748b", fontWeight: 700, mb: 1, display: "block", textTransform: "uppercase", letterSpacing: "0.5px" }}>
-                                Create Options
-                            </Typography>
-                            <Box sx={{ display: "flex", gap: 1.5 }}>
-                                <Button
-                                    variant="outlined"
-                                    size="small"
-                                    startIcon={<UploadIcon />}
-                                    onClick={handleUploadClick}
-                                    sx={{
-                                        borderRadius: "50px",
-                                        textTransform: "none",
-                                        fontWeight: 700,
-                                        border: "1.5px solid var(--color-primary)",
-                                        background: "transparent",
-                                        color: "var(--color-primary)",
-                                        "&:hover": { background: "var(--bg-panel)", border: "1.5px solid var(--color-primary)" }
-                                    }}
-                                >
-                                    Bulk Upload
-                                </Button>
-                                <Button
-                                    variant="outlined"
-                                    size="small"
-                                    startIcon={<PersonAddIcon />}
-                                    onClick={() => setIsAddModalOpen(true)}
-                                    sx={{
-                                        borderRadius: "50px",
-                                        textTransform: "none",
-                                        fontWeight: 700,
-                                        border: "1.5px solid var(--color-primary)",
-                                        background: "transparent",
-                                        color: "var(--color-primary)",
-                                        "&:hover": { background: "var(--bg-panel)", border: "1.5px solid var(--color-primary)" }
-                                    }}
-                                >
-                                    Create Individual
-                                </Button>
-                            </Box>
-                        </Box>
-                    </Collapse>
-                    <Collapse in={isUpdateOptionsOpen}>
-                        <Box sx={{
-                            mt: 2,
-                            p: 2,
-                            borderRadius: "16px",
-                            background: "var(--bg-panel)",
-                            border: "1px solid var(--border-color)",
-                            position: "relative"
-                        }}>
-                            <IconButton
-                                size="small"
-                                onClick={() => setIsUpdateOptionsOpen(false)}
-                                sx={{ position: "absolute", right: 8, top: 8 }}
-                            >
-                                <CloseIcon sx={{ fontSize: 18 }} />
-                            </IconButton>
-                            <Typography variant="caption" sx={{ color: "#64748b", fontWeight: 700, mb: 1, display: "block", textTransform: "uppercase", letterSpacing: "0.5px" }}>
-                                Update Options
-                            </Typography>
-                            <Box sx={{ display: "flex", gap: 1.5 }}>
-                                <Button
-                                    variant="outlined"
-                                    size="small"
-                                    startIcon={<SyncIcon />}
-                                    onClick={() => setIsBulkUpdateModalOpen(true)}
-                                    sx={{
-                                        borderRadius: "50px",
-                                        textTransform: "none",
-                                        fontWeight: 700,
-                                        border: "1.5px solid var(--color-primary)",
-                                        background: "transparent",
-                                        color: "var(--color-primary)",
-                                        "&:hover": { background: "var(--bg-panel)", border: "1.5px solid var(--color-primary)" }
-                                    }}
-                                >
-                                    Bulk Update
-                                </Button>
-                                <Button
-                                    variant="outlined"
-                                    size="small"
-                                    startIcon={<SyncIcon />}
-                                    onClick={() => setIsUpdateModalOpen(true)}
-                                    sx={{
-                                        borderRadius: "50px",
-                                        textTransform: "none",
-                                        fontWeight: 700,
-                                        border: "1.5px solid var(--color-primary)",
-                                        background: "transparent",
-                                        color: "var(--color-primary)",
-                                        "&:hover": { background: "var(--bg-panel)", border: "1.5px solid var(--color-primary)" }
-                                    }}
-                                >
-                                    Individual Update
-                                </Button>
-                            </Box>
-                        </Box>
-                    </Collapse>
-                </Paper>
-            </Box>
-
-
+            {/* Table Section */}
             {students.length > 0 && (
-                <Box
-                    sx={{
-                        p: 2,
-                        mt: 2,
-                        borderRadius: "24px",
-                        background: "var(--bg-glass)",
-                        backdropFilter: "blur(20px)",
-                        boxShadow: "var(--shadow-premium)",
-                        border: "1px solid var(--border-color)",
-                        minHeight: "400px",
-                        display: "flex",
-                        flexDirection: "column"
-                    }}
-                >
-                    <SectionHeader
+                <Box sx={{ mt: 6 }}>
+                    <SectionHeader 
                         title={
-                            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                                Student Unassigned Details ({students.length})
+                            <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                                <Typography variant="h5" sx={{ fontWeight: 800 }}>Unassigned Students ({students.length})</Typography>
+                                {selectedIds.length > 0 && (
+                                    <Box sx={{ px: 2, py: 0.5, borderRadius: "50px", background: "var(--bg-accent-1)", color: "var(--color-primary)", fontSize: "0.875rem", fontWeight: 700 }}>
+                                        {selectedIds.length} Selected
+                                    </Box>
+                                )}
                             </Box>
                         }
                         action={
-                            <Tooltip
-                                title="Download the unassigned data, add the department and semester, then upload it — it will be automatically assigned to the selected department."
-                                arrow
-                                placement="top"
-                            >
-                                <ActionButton
-                                    onClick={handleExportClick}
-                                    sx={{
-                                        py: 0.5,
-                                        px: 2,
-                                        minHeight: "32px",
-                                        fontSize: "0.75rem",
-                                        background: "transparent",
-                                        border: "1.5px solid var(--color-primary)",
-                                        color: "var(--color-primary)",
-                                        borderRadius: '50px',
-                                        "&:hover": { background: "var(--bg-panel)", border: "1.5px solid var(--color-primary)" }
-                                    }}
+                            <Box sx={{ display: "flex", gap: 2 }}>
+                                <Button startIcon={<DownloadIcon />} onClick={handleExportClick} variant="outlined" sx={{ borderRadius: "50px", textTransform: "none", fontWeight: 700 }}>
+                                    Export List
+                                </Button>
+                                <Button 
+                                    startIcon={<PersonAddIcon />} 
+                                    onClick={() => setIsAddModalOpen(true)} 
+                                    variant="contained" 
+                                    sx={{ borderRadius: "50px", textTransform: "none", fontWeight: 700, background: "var(--gradient-primary)" }}
                                 >
-                                    <DownloadIcon sx={{ mr: 1, fontSize: "1rem" }} /> Download
-                                </ActionButton>
-                            </Tooltip>
+                                    Add Individual
+                                </Button>
+                                <Button 
+                                    startIcon={<SyncIcon />} 
+                                    onClick={() => setIsBulkUpdateModalOpen(true)} 
+                                    variant="outlined" 
+                                    sx={{ borderRadius: "50px", textTransform: "none", fontWeight: 700 }}
+                                >
+                                    Bulk Sync
+                                </Button>
+                            </Box>
                         }
                     />
-
-                    <Box sx={{ mt: 1, flex: 1 }}>
+                    <Paper elevation={0} sx={{ mt: 3, borderRadius: "24px", border: "1px solid #e2e8f0", overflow: "hidden", position: "relative" }}>
                         {loadingStudents ? (
-                            <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>
-                                <CircularProgress />
-                            </Box>
+                            <Box sx={{ display: "flex", justifyContent: "center", p: 8 }}><CircularProgress /></Box>
                         ) : (
                             <DataTable columns={columns} rows={formattedRows} />
                         )}
-                    </Box>
-
-                    {/* PROCEED ACTION BAR */}
-                    {selectedIds.length > 0 && (
-                        <Box
-                            sx={{
-                                mt: 2,
-                                pt: 1,
-                                borderTop: "1px solid rgba(0,0,0,0.05)",
-                                display: "flex",
-                                justifyContent: "space-between",
-                                alignItems: "center"
-                            }}
-                        >
-                            <Box sx={{ color: "#64748b", fontSize: "0.875rem", fontWeight: 500 }}>
-                                {selectedIds.length} student{selectedIds.length > 1 ? 's' : ''} selected
-                            </Box>
-                            <Box sx={{ display: "flex", gap: 1 }}>
-                                <ActionButton
-                                    onClick={handleSyncStudents}
-                                    disabled={syncing}
-                                    sx={{
-                                        px: 2,
-                                        borderRadius: '50px',
-                                        background: "linear-gradient(90deg, #43a047, #1b5e20)",
-                                        "&:hover": { background: "linear-gradient(90deg, #388e3c, #1b5e20)" }
-                                    }}
-                                >
-                                    {syncing ? <CircularProgress size={20} color="inherit" sx={{ mr: 1 }} /> : <SyncIcon sx={{ mr: 1 }} />}
-                                    Sync / Update
-                                </ActionButton>
-
-                                {!isProceeding && (
-                                    <ActionButton
-                                        onClick={() => setIsProceeding(true)}
-                                        sx={{
-                                            px: 3,
-                                            borderRadius: '50px',
-                                            background: "var(--gradient-primary)",
-                                            "&:hover": { background: "var(--gradient-primary-hover)" }
-                                        }}
+                        
+                        {selectedIds.length > 0 && (
+                            <Box sx={{ p: 3, borderTop: "1px solid #e2e8f0", display: "flex", justifyContent: "space-between", alignItems: "center", background: "#f8fafc" }}>
+                                <Box sx={{ display: "flex", gap: 2 }}>
+                                    <Typography variant="body2" sx={{ color: "#64748b", fontWeight: 600 }}>
+                                        {selectedIds.length} students selected.
+                                    </Typography>
+                                    <Button size="small" startIcon={<SyncIcon />} onClick={handleSyncStudents} disabled={syncing} sx={{ textTransform: "none", fontWeight: 700 }}>
+                                        {syncing ? "Syncing..." : "Sync Selected"}
+                                    </Button>
+                                </Box>
+                                <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
+                                    <FormControl size="small" sx={{ minWidth: 200 }}>
+                                        <InputLabel>Select Department</InputLabel>
+                                        <Select
+                                            value={selectedDept}
+                                            onChange={(e) => setSelectedDept(e.target.value)}
+                                            label="Select Department"
+                                        >
+                                            {allDepartments.map((dept) => (
+                                                <MenuItem key={dept._id} value={dept._id}>{dept.name}</MenuItem>
+                                            ))}
+                                        </Select>
+                                    </FormControl>
+                                    <Button 
+                                        variant="contained" 
+                                        disabled={!selectedDept}
+                                        onClick={handleConfirmAssignment}
+                                        sx={{ borderRadius: "50px", textTransform: "none", fontWeight: 700, background: "#22c55e", "&:hover": { background: "#16a34a" } }}
                                     >
-                                        Proceed
-                                    </ActionButton>
-                                )}
+                                        Assign Students
+                                    </Button>
+                                </Box>
                             </Box>
-                        </Box>
-                    )}
-
-                    {/* SELECTION FLOW */}
-                    <Collapse in={isProceeding && selectedIds.length > 0}>
-                        <Box sx={{
-                            mt: 2,
-                            p: 3,
-                            borderRadius: "16px",
-                            background: "var(--bg-panel)",
-                            border: "1px dashed var(--border-color)",
-                            display: "flex",
-                            flexDirection: "column",
-                            gap: 3
-                        }}>
-                            <Typography variant="subtitle2" sx={{ color: "var(--color-primary)", fontWeight: 600 }}>
-                                Finalize Upload Details
-                            </Typography>
-
-                            <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
-                                <FormControl variant="standard" sx={{ minWidth: 200 }}>
-                                    <InputLabel id="dept-select-label">Select Department</InputLabel>
-                                    <Select
-                                        labelId="dept-select-label"
-                                        value={selectedDept}
-                                        onChange={(e) => setSelectedDept(e.target.value)}
-                                        label="Select Department"
-                                    >
-                                        {loadingDepts ? (
-                                            <MenuItem disabled><CircularProgress size={20} sx={{ mr: 1 }} /> Loading...</MenuItem>
-                                        ) : (
-                                            allDepartments
-                                                .filter(dept => ![
-                                                    "Examination Center",
-                                                    "Extension Activites",
-                                                    "Knowledge Resource Center",
-                                                    "OFFICE ADMIN",
-                                                    "Physical Education",
-                                                    "Placements",
-                                                    "T-HUB",
-                                                    "Training",
-                                                    "IT Applications"
-                                                ].includes(dept.name))
-                                                .map((dept) => (
-                                                    <MenuItem key={dept._id} value={dept._id}>{dept.name}</MenuItem>
-                                                ))
-                                        )}
-                                    </Select>
-                                </FormControl>
-                                {/* 
-                                <FormControl variant="standard" sx={{ minWidth: 200 }}>
-                                    <InputLabel id="sem-select-label">Select Semester</InputLabel>
-                                    <Select
-                                        labelId="sem-select-label"
-                                        value={selectedSem}
-                                        onChange={(e) => setSelectedSem(e.target.value)}
-                                        label="Select Semester"
-                                    >
-                                        {[...Array(maxSem)].map((_, i) => (
-                                            <MenuItem key={i + 1} value={i + 1}>Semester {i + 1}</MenuItem>
-                                        ))}
-                                    </Select>
-                                </FormControl> */}
-                            </Box>
-
-                            <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
-                                <ActionButton
-                                    onClick={handleConfirmAssignment}
-                                    disabled={!selectedDept}
-                                    sx={{
-                                        borderRadius: '50px',
-                                        px: 4,
-                                        background: "linear-gradient(90deg, #43a047, #1b5e20)",
-                                        "&:hover": { background: "linear-gradient(90deg, #388e3c, #1b5e20)" }
-                                    }}
-                                >
-                                    <ConfirmIcon sx={{ mr: 1 }} /> Confirm Assignment
-                                </ActionButton>
-                            </Box>
-                        </Box>
-                    </Collapse>
+                        )}
+                    </Paper>
                 </Box>
             )}
-            <Snackbar
-                open={snackbar.open}
-                autoHideDuration={6000}
-                onClose={() => setSnackbar({ ...snackbar, open: false })}
-                anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-            >
-                <Alert
-                    onClose={() => setSnackbar({ ...snackbar, open: false })}
-                    severity={snackbar.severity}
-                    sx={{ width: '100%', borderRadius: '12px', fontWeight: 600 }}
-                    variant="filled"
-                >
-                    {snackbar.message}
-                </Alert>
-            </Snackbar>
 
-            {/* BULK UPDATE PROGRAM MODAL */}
+            {/* Individual Add/Update Modal */}
             <Dialog 
-                open={isBulkUpdateModalOpen} 
-                onClose={() => !updatingBulk && setIsBulkUpdateModalOpen(false)}
-                PaperProps={{
-                    sx: {
-                        background: 'var(--bg-panel)',
-                        border: '1px solid var(--border-color)',
-                        borderRadius: '20px',
-                        boxShadow: 'var(--shadow-premium)',
-                        color: 'var(--text-primary)'
-                    }
-                }}
+                open={isAddModalOpen || isUpdateModalOpen} 
+                onClose={() => !addingStudent && (setIsAddModalOpen(false), setIsUpdateModalOpen(false))}
+                PaperProps={{ sx: { borderRadius: "24px", p: 1 } }}
             >
-                <DialogTitle sx={{ fontWeight: 800 }}>Bulk Update Students</DialogTitle>
-                <DialogContent sx={{ minWidth: { xs: "auto", sm: 400 } }}>
-                    <Typography variant="body2" color="var(--text-secondary)" sx={{ mb: 2 }}>
-                        Select a program to sync students from ECAP.
+                <DialogTitle sx={{ fontWeight: 800 }}>{isUpdateModalOpen ? "Update Individual Student" : "Add Individual Student"}</DialogTitle>
+                <DialogContent>
+                    <Typography variant="body2" sx={{ color: "#64748b", mb: 3 }}>
+                        Enter the Roll Number to fetch/update details from ECAP.
                     </Typography>
-                    <FormControl fullWidth variant="outlined" sx={{ 
-                        mt: 1,
-                        "& .MuiOutlinedInput-root": {
-                            borderRadius: "10px",
-                            background: "var(--bg-glass)",
-                            "& fieldset": { borderColor: "var(--border-color)" },
-                            "&:hover fieldset": { borderColor: "var(--color-primary)" },
-                            "&.Mui-focused fieldset": { borderColor: "var(--color-primary)" },
-                        },
-                        "& .MuiInputLabel-root": { color: "var(--text-secondary)" },
-                        "& .MuiSelect-select": { color: "var(--text-primary)" }
-                    }}>
-                        <InputLabel>Select Program</InputLabel>
-                        <Select
-                            value={selectedBulkProgram}
-                            onChange={(e) => setSelectedBulkProgram(e.target.value)}
-                            label="Select Program"
-                            disabled={updatingBulk}
-                        >
-                            <MenuItem value=""><em>All Programs</em></MenuItem>
-                            {allPrograms.map((program, idx) => (
-                                <MenuItem key={idx} value={program}>{program}</MenuItem>
-                            ))}
-                        </Select>
-                    </FormControl>
+                    <TextField 
+                        autoFocus 
+                        margin="dense" 
+                        label="Roll Number" 
+                        fullWidth 
+                        value={addRollNo} 
+                        onChange={(e) => setAddRollNo(e.target.value)}
+                        variant="outlined"
+                        sx={{ "& .MuiOutlinedInput-root": { borderRadius: "12px" } }}
+                    />
+                    {!isUpdateModalOpen && (
+                        <FormControl fullWidth sx={{ mt: 2 }}>
+                            <InputLabel>Department (Optional)</InputLabel>
+                            <Select
+                                value={addDept}
+                                onChange={(e) => setAddDept(e.target.value)}
+                                label="Department (Optional)"
+                                sx={{ borderRadius: "12px" }}
+                            >
+                                <MenuItem value=""><em>None</em></MenuItem>
+                                {allDepartments.map((dept) => (
+                                    <MenuItem key={dept._id} value={dept._id}>{dept.name}</MenuItem>
+                                ))}
+                            </Select>
+                        </FormControl>
+                    )}
                 </DialogContent>
-                <DialogActions sx={{ p: 2, px: 3 }}>
-                    <Button onClick={() => setIsBulkUpdateModalOpen(false)} disabled={updatingBulk} sx={{ color: 'var(--text-secondary)', fontWeight: 700 }}>Cancel</Button>
+                <DialogActions sx={{ px: 3, pb: 3 }}>
+                    <Button onClick={() => (setIsAddModalOpen(false), setIsUpdateModalOpen(false))} sx={{ fontWeight: 700, textTransform: "none" }}>Cancel</Button>
                     <Button 
-                        onClick={() => handleBulkSyncAll(selectedBulkProgram)} 
-                        disabled={updatingBulk} 
+                        onClick={handleAddStudent} 
                         variant="contained" 
-                        sx={{ borderRadius: '50px', background: "var(--gradient-primary)", px: 4, fontWeight: 700, textTransform: 'none' }}
+                        disabled={addingStudent || !addRollNo}
+                        sx={{ borderRadius: "50px", px: 4, fontWeight: 700, textTransform: "none", background: isUpdateModalOpen ? "#8b5cf6" : "#22c55e" }}
                     >
-                        {updatingBulk ? <CircularProgress size={24} color="inherit" /> : "Update"}
+                        {addingStudent ? <CircularProgress size={20} color="inherit" /> : (isUpdateModalOpen ? "Update Student" : "Add Student")}
                     </Button>
                 </DialogActions>
             </Dialog>
+
+            <Snackbar 
+                open={snackbar.open} 
+                autoHideDuration={6000} 
+                onClose={() => setSnackbar({ ...snackbar, open: false })}
+                anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+            >
+                <Alert onClose={() => setSnackbar({ ...snackbar, open: false })} severity={snackbar.severity} sx={{ width: "100%", borderRadius: "16px", fontWeight: 600 }} variant="filled">
+                    {snackbar.message}
+                </Alert>
+            </Snackbar>
         </Box>
     );
 };
