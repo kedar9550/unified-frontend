@@ -11,13 +11,23 @@ import {
     IconButton,
     Collapse,
     Grid,
-    CircularProgress
+    CircularProgress,
+    Dialog
 } from '@mui/material';
 import { sdgData } from '../../sdgData.js';
-import { CloudUpload, ExpandMore } from '@mui/icons-material';
+import {
+    CloudUpload,
+    ExpandMore,
+    Close,
+    Person,
+    Badge,
+    School,
+    Code
+} from '@mui/icons-material';
 import mammoth from "mammoth";
 import * as pdfjsLib from "pdfjs-dist";
 import pdfWorker from "pdfjs-dist/build/pdf.worker.min.mjs?url";
+import devProfileImg from "../../assets/K.Sudheer.jpeg";
 
 // Configure PDF.js worker
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorker;
@@ -223,11 +233,157 @@ const SDGCard = ({ id, sdg, imageUrl, isExpanded, toggleExpand }) => {
     );
 };
 
+const InfoTableRow = ({ value, isLast }) => (
+    <Box sx={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        px: 3,
+        py: 1.2,
+        borderBottom: isLast ? 'none' : '1px solid var(--border-color)',
+        transition: 'all 0.2s ease',
+        '&:hover': {
+            background: 'var(--bg-accent-4)'
+        }
+    }}>
+        {/* Value Column */}
+        <Typography sx={{
+            fontWeight: 400,
+            background: 'var(--gradient-primary)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            textAlign: 'center',
+            fontSize: '1.05rem',
+            letterSpacing: '0.01em'
+        }}>
+            {value}
+        </Typography>
+    </Box>
+);
+
+const DeveloperPopup = ({ open, onClose }) => {
+    return (
+        <Dialog
+            open={open}
+            onClose={onClose}
+            maxWidth="xs"
+            fullWidth
+            slotProps={{
+                paper: {
+                    sx: {
+                        borderRadius: '28px',
+                        position: 'relative',
+                        background: 'var(--bg-panel)',
+                        border: '1px solid var(--border-color)',
+                        boxShadow: 'var(--shadow-premium)',
+                        overflow: 'visible'
+                    }
+                }
+            }}
+        >
+            <IconButton
+                onClick={onClose}
+                sx={{
+                    position: 'absolute',
+                    right: 20,
+                    top: 20,
+                    color: 'var(--text-secondary)',
+                    background: 'var(--bg-accent-4)',
+                    border: '1px solid var(--border-color)',
+                    '&:hover': {
+                        background: '#ef4444',
+                        color: '#fff',
+                        borderColor: '#ef4444',
+                        transform: 'rotate(90deg)'
+                    },
+                    transition: 'all 0.3s ease'
+                }}
+            >
+                <Close />
+            </IconButton>
+
+            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
+                <Typography variant="h4" sx={{
+                    fontWeight: 600,
+                    color: 'var(--text-primary)',
+                    mt: 5,
+                    mb: 1.5,
+                    letterSpacing: '-0.03em',
+                    fontSize: '1.2rem'
+                }}>
+                    SDG Module Developed by
+                </Typography>
+
+                <Box sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 2,
+                    width: '100%',
+                    mb: 4
+                }}>
+                    <Box sx={{ height: '2px', width: '50px', background: 'var(--gradient-primary)', borderRadius: '1px', opacity: 0.5 }} />
+                    <Box sx={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--color-primary)', boxShadow: '0 0 10px var(--color-primary-alpha)' }} />
+                    <Box sx={{ height: '2px', width: '50px', background: 'var(--gradient-primary)', borderRadius: '1px', opacity: 0.5 }} />
+                </Box>
+
+                <Box sx={{
+                    width: 170,
+                    height: 170,
+                    borderRadius: '50%',
+                    padding: '4px',
+                    background: 'var(--gradient-primary)',
+                    boxShadow: 'var(--shadow-premium)',
+                    position: 'relative',
+                    mb: 2,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                }}>
+                    <Box sx={{
+                        width: '100%',
+                        height: '100%',
+                        borderRadius: '50%',
+                        overflow: 'hidden',
+                        background: 'var(--bg-panel)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                    }}>
+                        <img
+                            src={devProfileImg}
+                            alt="Developer"
+                            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                        />
+                    </Box>
+                </Box>
+
+                {/* Unified Table Container */}
+                <Box sx={{
+                    width: '92%',
+                    background: 'var(--bg-panel)',
+                    borderRadius: '24px',
+                    border: '1px solid var(--border-color)',
+                    overflow: 'hidden',
+                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)',
+                    my: 2,
+                    mx: 'auto'
+                }}>
+                    <InfoTableRow value="Kosireddi Sudheer" isLast={false} />
+                    <InfoTableRow value="22P31A0424" isLast={false} />
+                    <InfoTableRow value="Electronics and Communication Engineering" isLast={true} />
+                </Box>
+            </Box>
+        </Dialog>
+    );
+};
+
 const SDG = () => {
     const [tabValue, setTabValue] = useState(0);
     const [expandedId, setExpandedId] = useState(null);
     const [isProcessing, setIsProcessing] = useState(false);
     const [matchedResults, setMatchedResults] = useState(null);
+    const [showDevPopup, setShowDevPopup] = useState(true);
     const fileInputRef = React.useRef(null);
 
     const handleTabChange = (event, newValue) => {
@@ -311,7 +467,7 @@ const SDG = () => {
             setTimeout(() => {
                 setMatchedResults(results);
                 setIsProcessing(false);
-                
+
                 // Auto-scroll to results
                 window.scrollTo({
                     top: document.body.scrollHeight,
@@ -334,39 +490,39 @@ const SDG = () => {
                     Matched SDGs
                 </Typography>
             </Box>
-            
-            <Box sx={{ 
-                display: 'grid', 
+
+            <Box sx={{
+                display: 'grid',
                 gridTemplateColumns: {
                     xs: 'repeat(2, 1fr)',
                     sm: 'repeat(3, 1fr)',
                     md: 'repeat(5, 1fr)'
                 },
-                gap: 2 
+                gap: 2
             }}>
                 {Object.entries(sdgData)
                     .filter(([id]) => results[id] > 0)
                     .map(([id, data]) => (
-                    <Paper key={id} sx={{
-                        p: 0,
-                        borderRadius: '12px',
-                        background: 'var(--bg-accent-4)',
-                        border: '1px solid var(--border-color)',
-                        overflow: 'hidden',
-                        textAlign: 'center',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                        '&:hover': { 
-                            transform: 'translateY(-5px)',
-                            boxShadow: '0 8px 25px rgba(0,0,0,0.1)',
-                            borderColor: 'var(--color-primary)'
-                        }
-                    }}>
-                            <Box 
-                                component="img" 
-                                src={SDG_IMAGE_MAP[id]} 
-                                sx={{ width: '100%', height: 'auto', display: 'block' }} 
+                        <Paper key={id} sx={{
+                            p: 0,
+                            borderRadius: '12px',
+                            background: 'var(--bg-accent-4)',
+                            border: '1px solid var(--border-color)',
+                            overflow: 'hidden',
+                            textAlign: 'center',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                            '&:hover': {
+                                transform: 'translateY(-5px)',
+                                boxShadow: '0 8px 25px rgba(0,0,0,0.1)',
+                                borderColor: 'var(--color-primary)'
+                            }
+                        }}>
+                            <Box
+                                component="img"
+                                src={SDG_IMAGE_MAP[id]}
+                                sx={{ width: '100%', height: 'auto', display: 'block' }}
                             />
                             <Box sx={{ p: 1 }}>
                                 <Typography sx={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-primary)', mb: 0.5, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
@@ -377,13 +533,14 @@ const SDG = () => {
                                 </Typography>
                             </Box>
                         </Paper>
-                ))}
+                    ))}
             </Box>
         </Box>
     );
 
     return (
         <Box sx={{ p: { xs: 1.5, md: 2 }, minHeight: '100vh', background: 'var(--bg-main)' }}>
+            <DeveloperPopup open={showDevPopup} onClose={() => setShowDevPopup(false)} />
             <input
                 type="file"
                 ref={fileInputRef}
@@ -500,7 +657,7 @@ const SDG = () => {
                                         }}>
                                             Drop your file here
                                         </Typography>
-                                        
+
                                         <Box sx={{ mt: 2, width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                                             <Button
                                                 variant="contained"
