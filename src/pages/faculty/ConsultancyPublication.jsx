@@ -1,4 +1,6 @@
 import { useState, useEffect } from "react";
+import { useAuth } from "../../context/AuthContext";
+
 import { Box, TextField, MenuItem, Select, Typography, Alert, Snackbar, Button, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper } from "@mui/material";
 import PageHeader from "../../components/common/PageHeader";
 import {
@@ -8,13 +10,14 @@ import {
 import API from "../../api/axios";
 
 export default function ConsultancyPublication() {
+  const { user } = useAuth();
   const [viewMode, setViewMode] = useState("list"); // 'list', 'select-year', 'form'
   const [academicYears, setAcademicYears] = useState([]);
   const [selectedYear, setSelectedYear] = useState("");
   const [publicationsList, setPublicationsList] = useState([]);
 
   const [form, setForm] = useState({
-    college: "", title: "", organization: "", amount: "", duration: "", month: "", year: "",
+    title: "", organization: "", amount: "", duration: "", month: "", year: "",
   });
   const [loading, setLoading] = useState(false);
   const [snack, setSnack] = useState({ open: false, msg: "", severity: "success" });
@@ -38,10 +41,10 @@ export default function ConsultancyPublication() {
     }
     setLoading(true);
     try {
-      const payload = { ...form, academicYear: selectedYear };
+      const payload = { ...form, academicYear: selectedYear, college: user?.college || "", panNumber: user?.panNumber || "" };
       await API.post("/api/research/consultancy", payload);
       setSnack({ open: true, msg: "Consultancy submitted successfully!", severity: "success" });
-      setForm({ college: "", title: "", organization: "", amount: "", duration: "", month: "", year: "" });
+      setForm({ title: "", organization: "", amount: "", duration: "", month: "", year: "" });
       setSelectedYear("");
       setViewMode("list");
     } catch (err) {
@@ -127,7 +130,7 @@ export default function ConsultancyPublication() {
         <Button size="small" variant="text" onClick={() => setViewMode("select-year")} sx={{ fontWeight: 700, textTransform: "none", color: "var(--color-primary)" }}>Change Year</Button>
       </Box>
 
-      <FacultyInfoRow college={form.college} setCollege={(v) => setForm(p => ({ ...p, college: v }))} />
+      <FacultyInfoRow />
 
       <SubLabel text="Details of the Consultancy:" />
       <Grid2>

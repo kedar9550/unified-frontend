@@ -1,40 +1,38 @@
 import { useState, useEffect } from "react";
-import { Box, Typography, TextField, MenuItem, Select, FormControl, InputLabel, Button } from "@mui/material";
+import { Box, Typography, TextField, MenuItem, Select, FormControl, InputLabel, Button, Alert } from "@mui/material";
 import { useAuth } from "../../context/AuthContext";
 
 // Reusable read-only faculty info row
-export function FacultyInfoRow({ college, setCollege }) {
+export function FacultyInfoRow() {
   const { user } = useAuth();
-  
-  // Use local state if props are not provided
-  const [localCollege, setLocalCollege] = useState(user?.college || "");
-  const currentCollege = college !== undefined ? college : localCollege;
-  const updateCollege = setCollege || setLocalCollege;
 
   const fields = [
     { label: "Name of the Faculty", value: user?.name || "" },
     { label: "Designation", value: user?.designation || "" },
     { label: "Department", value: user?.department || "" },
+    { label: "Core Department", value: user?.coreDepartment || "" },
     { label: "Employee ID", value: user?.institutionId || "" },
-    { label: "Contact Number", value: user?.contactNumber || user?.phone || "" },
+    { label: "Contact Number", value: user?.phone || user?.contactNumber || "" },
+    { label: "PAN Number", value: user?.panNumber || "" },
+    { label: "College", value: user?.college || "" },
   ];
+
+  const emptyFields = fields.filter(f => !f.value).map(f => f.label);
+
   return (
-    <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, gap: 2, mb: 2 }}>
-      {fields.map((f) => (
-        <Box key={f.label}>
-          <Typography sx={labelStyle}>{f.label}:</Typography>
-          <TextField size="small" fullWidth value={f.value} disabled sx={disabledField} />
-        </Box>
-      ))}
-      <Box>
-        <Typography sx={labelStyle}>College:</Typography>
-        <TextField 
-          size="small" 
-          fullWidth 
-          value={currentCollege} 
-          onChange={(e) => updateCollege(e.target.value)} 
-          placeholder="Enter College Name"
-        />
+    <Box sx={{ mb: 2 }}>
+      {emptyFields.length > 0 && (
+        <Alert severity="warning" sx={{ mb: 2, borderRadius: "12px", fontWeight: 600 }}>
+          Missing Profile Details: {emptyFields.join(", ")}. Please update your profile to fill these details.
+        </Alert>
+      )}
+      <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, gap: 2 }}>
+        {fields.map((f) => (
+          <Box key={f.label}>
+            <Typography sx={labelStyle}>{f.label}:</Typography>
+            <TextField size="small" fullWidth value={f.value || "Not Set"} disabled sx={disabledField} />
+          </Box>
+        ))}
       </Box>
     </Box>
   );

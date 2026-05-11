@@ -19,7 +19,7 @@ export default function PatentPublication() {
   const [publicationsList, setPublicationsList] = useState([]);
 
   const [form, setForm] = useState({
-    college: "", title: "", applicantName: "", area: "", filingNo: "", dateOfFiling: "",
+    title: "", applicantName: "", area: "", filingNo: "", dateOfFiling: "",
     status: "", coInventors: [], month: "", year: "",
     applyIncentive: ""
   });
@@ -71,10 +71,12 @@ export default function PatentPublication() {
       });
       Object.entries(files).forEach(([k, v]) => { if (v) fd.append(k, v); });
       fd.append("academicYear", selectedYear);
+      fd.append("college", user?.college || "");
+      fd.append("panNumber", user?.panNumber || "");
 
       await API.post("/api/research/patent", fd, { headers: { "Content-Type": "multipart/form-data" } });
       setSnack({ open: true, msg: "Patent submitted successfully!", severity: "success" });
-      setForm({ college: "", title: "", applicantName: "", area: "", filingNo: "", dateOfFiling: "", status: "", coInventors: [], month: "", year: "", applyIncentive: "" });
+      setForm({ title: "", applicantName: "", area: "", filingNo: "", dateOfFiling: "", status: "", coInventors: [], month: "", year: "", applyIncentive: "" });
       setFiles({ eFilingReceipt: null, form1: null });
       setSelectedYear("");
       setViewMode("list");
@@ -161,7 +163,7 @@ export default function PatentPublication() {
         <Button size="small" variant="text" onClick={() => setViewMode("select-year")} sx={{ fontWeight: 700, textTransform: "none", color: "var(--color-primary)" }}>Change Year</Button>
       </Box>
 
-      <FacultyInfoRow college={form.college} setCollege={(v) => setForm(p => ({ ...p, college: v }))} />
+      <FacultyInfoRow />
 
       <SubLabel text="Details of the Patent:" />
       <Grid2>

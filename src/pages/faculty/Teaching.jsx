@@ -70,10 +70,9 @@ export default function Teaching() {
         
         setAcademicYears(years);
 
-        // Find the active year from the list or fallback to the first one
-        const active = years.find((y) => y.isActive) || years[0];
-        if (active) {
-          setSelectedYearLabel(active.year);
+        // Set first year as default if selectedYearLabel is empty
+        if (years.length > 0 && !selectedYearLabel) {
+          setSelectedYearLabel(years[0].year);
         }
       } catch (err) {
         console.error("Error fetching academic years:", err);

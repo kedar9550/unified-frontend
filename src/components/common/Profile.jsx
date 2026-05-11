@@ -332,8 +332,11 @@ const Profile = () => {
                   }}
                 />
 
-                <Typography sx={{ fontSize: "0.8rem", color: "var(--text-secondary)", fontWeight: 500, mb: 3 }}>
+                <Typography sx={{ fontSize: "0.8rem", color: "var(--text-secondary)", fontWeight: 600, mb: 0.5 }}>
                   {profile?.department || "N/A"}
+                </Typography>
+                <Typography sx={{ fontSize: "0.75rem", color: "var(--color-primary)", fontWeight: 700, mb: 3 }}>
+                  Core: {profile?.coreDepartment || "N/A"}
                 </Typography>
               </>
             )}
@@ -411,6 +414,8 @@ const Profile = () => {
               {/* Read-only */}
               <InfoCard icon={BadgeIcon} label="Institution ID" value={profile?.institutionId} />
               <InfoCard icon={Person} label="Full Name" value={profile?.name} />
+              <InfoCard icon={Business} label="Department" value={profile?.department} />
+              <InfoCard icon={VerifiedUser} label="Core Department" value={profile?.coreDepartment} />
               <EditableField
                 icon={ContactMail} label="Email Address" fieldKey="email" value={profile?.email}
                 isEditing={isEditing} fieldValue={form.email} fieldError={errors.email}
