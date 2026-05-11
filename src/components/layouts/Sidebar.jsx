@@ -187,14 +187,17 @@ const Sidebar = ({ mobileOpen, onDrawerToggle }) => {
   }, [location.pathname, activeRole, user]);
 
   const handleToggle = (text) => {
-    setOpenStates((prev) => ({ ...prev, [text]: !prev[text] }));
+    setOpenStates((prev) => ({ [text]: !prev[text] }));
   };
 
   const effectiveRole = activeRole || (user?.roles && user.roles[0]?.role) || "STUDENT";
   const menuItems = ROLE_ROUTES[effectiveRole] || ROLE_ROUTES.STUDENT;
 
-  const navigateTo = (path, text) => {
+  const navigateTo = (path, text, isNested = false) => {
     setActive(text);
+    if (!isNested) {
+      setOpenStates({});
+    }
     navigate(path);
     if (mobileOpen) onDrawerToggle();
   };
@@ -371,7 +374,7 @@ const Sidebar = ({ mobileOpen, onDrawerToggle }) => {
                         icon={subItem.icon || ITEM_METADATA[subItem.text]?.icon || null}
                         text={subItem.text}
                         active={active}
-                        onClick={() => navigateTo(subItem.path, subItem.text)}
+                        onClick={() => navigateTo(subItem.path, subItem.text, true)}
                       />
                     ))}
                   </List>

@@ -177,7 +177,7 @@ const UniprimeDashboard = () => {
         <>
           {/* Header */}
           <Box sx={{ mb: 4 }}>
-            <Typography variant="h4" sx={{ fontWeight: 700, color: "#1a237e", mb: 0.5 }}>
+            <Typography variant="h4" sx={{ fontWeight: 800, color: "var(--text-primary)", mb: 0.5, letterSpacing: "-0.02em" }}>
               Welcome back, UniPrime!
             </Typography>
             <Typography variant="body2" color="text.secondary">
@@ -256,10 +256,10 @@ const UniprimeDashboard = () => {
                         alignItems: "center",
                         justifyContent: "center",
                         background: card.gradient,
-                        boxShadow: `0 8px 20px ${card.color}40`,
                         color: "#fff",
                         flexShrink: 0,
-                        mt: 0.5 // Align with first line of text
+                        mt: 0.5,
+                        boxShadow: `0 8px 25px ${card.color}35`,
                       }}>
                       {React.cloneElement(card.icon, { fontSize: "medium" })}
                     </Box>
@@ -403,9 +403,9 @@ const UniprimeDashboard = () => {
                     label="All Systems Operational"
                     size="small"
                     sx={{
-                      bgcolor: "#E6F9F0",
-                      color: "#059669",
-                      fontWeight: 600,
+                      bgcolor: "var(--bg-accent-2)",
+                      color: "#10B981",
+                      fontWeight: 700,
                       fontSize: "0.7rem",
                       borderRadius: 1,
                     }}
@@ -426,7 +426,7 @@ const UniprimeDashboard = () => {
                   </Box>
 
                   <Box sx={iconBox("var(--bg-accent-4)")}>
-                    <CalendarMonth sx={{ color: "#2563EB" }} />
+                    <CalendarMonth sx={{ color: "var(--color-primary)" }} />
                   </Box>
                 </Box>
 
@@ -444,7 +444,7 @@ const UniprimeDashboard = () => {
                   </Box>
 
                   <Box sx={iconBox("var(--bg-accent-5)")}>
-                    <MenuBook sx={{ color: "#7C3AED" }} />
+                    <MenuBook sx={{ color: "#8B5CF6" }} />
                   </Box>
                 </Box>
 
@@ -479,9 +479,9 @@ const UniprimeDashboard = () => {
                       <Typography
                         sx={{
                           fontSize: "0.75rem",
-                          color: "#2563EB",
+                          color: "var(--color-primary)",
                           mt: 0.5,
-                          fontWeight: 500,
+                          fontWeight: 600,
                         }}
                       >
                         136 days remaining
@@ -546,11 +546,11 @@ const UniprimeDashboard = () => {
                           textAlign: "center",
                         }}
                       >
-                        <Typography sx={{ fontSize: 28, fontWeight: 700, color: "#111827" }}>
+                        <Typography sx={{ fontSize: 28, fontWeight: 800, color: "var(--text-primary)" }}>
                           {dashboardData.usersCount}
                         </Typography>
 
-                        <Typography sx={{ fontSize: 12, color: "#6B7280" }}>
+                        <Typography sx={{ fontSize: 12, color: "var(--text-secondary)", fontWeight: 600 }}>
                           Total Users
                         </Typography>
                       </Box>
@@ -737,7 +737,7 @@ const RowItem = ({ label, value }) => (
       display: "flex",
       justifyContent: "space-between",
       py: 0.5,
-      borderBottom: "1px solid #e5e7eb",
+      borderBottom: "1px solid var(--border-color)",
       "&:last-child": { borderBottom: "none" },
     }}
   >
@@ -768,8 +768,8 @@ const iconBox = (bg) => ({
 
 const labelStyle = {
   fontSize: "0.75rem",
-  color: "#6B7280",
-  fontWeight: 500,
+  color: "var(--text-secondary)",
+  fontWeight: 600,
 };
 
 const valueStyle = {
