@@ -12,24 +12,35 @@ import {
   IconButton,
   Tooltip,
   Typography,
+  Menu,
 } from "@mui/material";
 import { useEffect, useState, useRef } from "react";
 import API from "../../api/axios";
 import {
   Download as DownloadIcon,
   FileUpload as UploadIcon,
+  Delete as DeleteIcon,
+  DeleteSweep as ClearIcon,
+  Search as SearchIcon,
+  FilterList as FilterIcon,
+  InfoOutlined as InfoIcon,
+  CleaningServices as CleanIcon
 } from "@mui/icons-material";
+import { Divider } from "@mui/material";
 
 export default function FacultyFormatResults() {
   const [academicYears, setAcademicYears] = useState([]);
-  const [semesters, setSemesters] = useState([]);
+  const [programs, setPrograms] = useState([]);
   const [selectedYearId, setSelectedYearId] = useState("");
-  const [selectedSemId, setSelectedSemId] = useState("");
+  const [selectedProgramId, setSelectedProgramId] = useState("");
+  const [searchFacultyId, setSearchFacultyId] = useState("");
 
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef(null);
+
+  const [deleteMenuAnchor, setDeleteMenuAnchor] = useState(null);
 
   // 1. Fetch Academic Years on Mount
   useEffect(() => {
@@ -52,6 +63,16 @@ export default function FacultyFormatResults() {
       }
     };
     fetchYears();
+
+    const fetchPrograms = async () => {
+      try {
+        const res = await API.get("/api/academics/programs");
+        setPrograms(res.data.data || []);
+      } catch (err) {
+        console.error("Error fetching programs:", err);
+      }
+    };
+    fetchPrograms();
   }, []);
 
   // 2. Removed Global Semesters fetch as per user request
@@ -62,7 +83,11 @@ export default function FacultyFormatResults() {
     setLoading(true);
     try {
       const res = await API.get("/api/faculty-subject-results", {
-        params: { academicYear: selectedYearId },
+        params: { 
+          academicYearId: selectedYearId,
+          programId: selectedProgramId,
+          facultyId: searchFacultyId
+        },
       });
       setResults(res.data);
     } catch (err) {
@@ -74,7 +99,7 @@ export default function FacultyFormatResults() {
 
   useEffect(() => {
     fetchResults();
-  }, [selectedYearId]);
+  }, [selectedYearId, selectedProgramId, searchFacultyId]);
 
   // 4. Handle Upload
   const handleUploadClick = () => {
@@ -128,6 +153,56 @@ export default function FacultyFormatResults() {
     }
   };
 
+  const handleDelete = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this record?")) return;
+    try {
+      await API.delete(`/api/faculty-subject-results/${id}`);
+      setResults((prev) => prev.filter((r) => r._id !== id));
+    } catch (err) {
+      console.error("Delete failed:", err);
+      alert("Failed to delete record.");
+    }
+  };
+
+  const handleClear = async (mode) => {
+    if (!selectedYearId) return;
+    
+    let confirmMsg = "";
+    const params = { academicYearId: selectedYearId };
+
+    if (mode === "ALL") {
+      confirmMsg = "CRITICAL: This will PERMANENTLY DELETE ALL records for the selected academic year. Continue?";
+    } else if (mode === "PROGRAM") {
+      if (!selectedProgramId) return alert("Please select a program first.");
+      const progName = programs.find(p => p._id === selectedProgramId)?.name;
+      confirmMsg = `This will delete ALL records for ${progName} in the selected year. Continue?`;
+      params.programId = selectedProgramId;
+    } else if (mode === "FACULTY") {
+      if (!searchFacultyId) return alert("Please enter a Faculty ID in the filter first.");
+      confirmMsg = `This will delete ALL records for Faculty ID: ${searchFacultyId} in the selected year. Continue?`;
+      params.facultyId = searchFacultyId;
+    }
+
+    if (!window.confirm(confirmMsg)) return;
+    
+    setLoading(true);
+    try {
+      await API.delete("/api/faculty-subject-results/semester", { params });
+      alert("Records cleared successfully.");
+      setDeleteMenuAnchor(null);
+      fetchResults();
+    } catch (err) {
+      console.error("Clear failed:", err);
+      alert("Failed to clear records.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleClearAll = async () => {
+    handleClear("ALL");
+  };
+
   const downloadTemplate = () => {
     const headers = [
       "facultyId",
@@ -157,14 +232,6 @@ export default function FacultyFormatResults() {
     window.URL.revokeObjectURL(url);
   };
 
-  // Stats calculation
-  const stats = {
-    appeared: results.reduce((a, r) => a + (r.appeared || 0), 0),
-    passed: results.reduce((a, r) => a + (r.passed || 0), 0),
-  };
-
-  const percentage =
-    stats.appeared > 0 ? ((stats.passed / stats.appeared) * 100).toFixed(1) : 0;
 
   return (
     <>
@@ -182,86 +249,192 @@ export default function FacultyFormatResults() {
         breadcrumbs={["Home", "Exam Cell", "Results Upload"]}
       />
 
-      <Box sx={{ display: "flex", gap: 3, mb: 3, alignItems: "center", justifyContent: "space-between", flexWrap: "wrap" }}>
-        <Box sx={{ display: "flex", gap: 2 }}>
-          <Box sx={{
-            display: "flex",
-            alignItems: "center",
-            px: 2,
-            py: 1,
-            borderRadius: "12px",
-            background: "var(--bg-glass)",
-            border: "1px solid var(--border-color)",
-          }}>
-            <Typography sx={{ fontSize: 13, fontWeight: 700, color: "var(--text-primary)", opacity: 0.9 }}>Academic Year</Typography>
-            <Select
-              variant="standard"
-              disableUnderline
-              value={selectedYearId}
-              onChange={(e) => setSelectedYearId(e.target.value)}
+      <Box sx={{ 
+        mt: 3, 
+        mb: 4, 
+        p: 3, 
+        background: "var(--bg-panel)", 
+        borderRadius: "24px", 
+        border: "1px solid var(--border-color)", 
+        boxShadow: "var(--shadow-premium)",
+        display: "flex",
+        flexDirection: "column",
+        gap: 3
+      }}>
+        {/* Header Row */}
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+            <Box sx={{ 
+              p: 1, 
+              borderRadius: "10px", 
+              background: "rgba(59, 130, 246, 0.1)", 
+              color: "var(--color-primary)",
+              display: 'flex'
+            }}>
+              <FilterIcon fontSize="small" />
+            </Box>
+            <Typography sx={{ fontWeight: 800, fontSize: 18, color: "var(--text-primary)" }}>
+              Faculty Format Results Management
+            </Typography>
+          </Box>
+          
+          <Box sx={{ display: 'flex', gap: 1.5 }}>
+            <ActionButton
+              onClick={downloadTemplate}
               sx={{
-                ml: 1.5,
-                minWidth: 120,
-                color: "var(--text-primary)",
-                fontWeight: 600,
-                fontSize: 14,
-                '& .MuiSelect-icon': { color: 'var(--text-primary)', opacity: 0.7 }
+                background: "transparent",
+                color: "var(--text-secondary)",
+                border: "1px solid var(--border-color)",
+                fontWeight: 700,
+                px: 2.5,
+                height: 40,
+                borderRadius: "10px",
+                fontSize: 13,
+                "&:hover": { borderColor: "var(--color-primary)", color: "var(--color-primary)" }
               }}
             >
-              {academicYears.map((year) => (
-                <MenuItem key={year._id} value={year._id}>
-                  {year.year}
-                </MenuItem>
-              ))}
-            </Select>
+              <DownloadIcon sx={{ mr: 1, fontSize: 18 }} /> Template
+            </ActionButton>
+            
+            <ActionButton
+              onClick={handleUploadClick}
+              disabled={uploading}
+              sx={{
+                background: "var(--color-primary)",
+                color: "#fff",
+                fontWeight: 800,
+                px: 3,
+                height: 40,
+                borderRadius: "10px",
+                fontSize: 13,
+                boxShadow: "0 4px 12px rgba(59, 130, 246, 0.3)",
+                "&:hover": { transform: "translateY(-1px)", boxShadow: "0 6px 16px rgba(59, 130, 246, 0.4)" }
+              }}
+            >
+              <UploadIcon sx={{ mr: 1, fontSize: 18 }} /> {uploading ? "Uploading..." : "Upload CSV"}
+            </ActionButton>
           </Box>
         </Box>
 
-        <Box sx={{ display: "flex", gap: 2 }}>
-          <ActionButton
-            onClick={downloadTemplate}
-            sx={{
-              background: "var(--bg-glass)",
-              color: "var(--text-primary)",
-              border: "1px solid var(--border-color)",
-              boxShadow: "var(--shadow-premium)",
-              fontWeight: 700,
-              px: 3,
-              "&:hover": {
-                background: "var(--bg-accent-1)",
-                borderColor: "var(--color-primary)",
-              }
-            }}
-          >
-            <DownloadIcon sx={{ mr: 1, color: "var(--color-primary)" }} /> Template
-          </ActionButton>
+        <Divider sx={{ borderStyle: 'dashed' }} />
 
-          <ActionButton
-            onClick={handleUploadClick}
-            disabled={uploading}
-            sx={{
-              background: "var(--color-primary)",
-              color: "#fff",
-              boxShadow: "var(--shadow-premium)",
-              fontWeight: 800,
-              px: 3,
-              "&:hover": {
-                background: "var(--color-primary)",
-                opacity: 0.9,
-              }
-            }}
-          >
-            <UploadIcon sx={{ mr: 1 }} /> {uploading ? "Uploading..." : "Upload CSV"}
-          </ActionButton>
+        {/* Controls Row */}
+        <Box sx={{ 
+          display: "flex", 
+          gap: 2, 
+          alignItems: "center", 
+          justifyContent: "space-between",
+          flexWrap: "wrap"
+        }}>
+          <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', flex: 1 }}>
+            <Box sx={controlItemStyle}>
+              <Typography sx={controlLabelStyle}>Academic Year</Typography>
+              <Select
+                variant="standard"
+                disableUnderline
+                value={selectedYearId}
+                onChange={(e) => setSelectedYearId(e.target.value)}
+                sx={controlSelectStyle}
+              >
+                {academicYears.map((year) => (
+                  <MenuItem key={year._id} value={year._id}>
+                    {year.year}
+                  </MenuItem>
+                ))}
+              </Select>
+            </Box>
+
+            <Box sx={controlItemStyle}>
+              <Typography sx={controlLabelStyle}>Program</Typography>
+              <Select
+                variant="standard"
+                disableUnderline
+                value={selectedProgramId}
+                onChange={(e) => setSelectedProgramId(e.target.value)}
+                sx={{ ...controlSelectStyle, minWidth: 160 }}
+              >
+                <MenuItem value="">All Programs</MenuItem>
+                {programs.map((p) => (
+                  <MenuItem key={p._id} value={p._id}>
+                    {p.name}
+                  </MenuItem>
+                ))}
+              </Select>
+            </Box>
+
+            <Box sx={{ ...controlItemStyle, flex: { xs: "1 1 100%", sm: "1 1 200px" }, maxWidth: 300 }}>
+              <SearchIcon sx={{ color: "var(--text-secondary)", fontSize: 18, mr: 1.5 }} />
+              <input
+                placeholder="Search Faculty ID..."
+                value={searchFacultyId}
+                onChange={(e) => setSearchFacultyId(e.target.value)}
+                style={controlInputStyle}
+              />
+            </Box>
+          </Box>
+
+          {results.length > 0 && (
+            <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+              <ActionButton
+                onClick={(e) => setDeleteMenuAnchor(e.currentTarget)}
+                sx={{
+                  background: "rgba(239, 68, 68, 0.05)",
+                  color: "#EF4444",
+                  border: "1px solid rgba(239, 68, 68, 0.2)",
+                  fontWeight: 700,
+                  px: 2.5,
+                  height: 40,
+                  borderRadius: "10px",
+                  fontSize: 13,
+                  "&:hover": { background: "rgba(239, 68, 68, 0.1)", borderColor: "#EF4444" }
+                }}
+              >
+                <CleanIcon sx={{ mr: 1, fontSize: 18 }} /> Bulk Actions
+              </ActionButton>
+              
+              <Menu
+                anchorEl={deleteMenuAnchor}
+                open={Boolean(deleteMenuAnchor)}
+                onClose={() => setDeleteMenuAnchor(null)}
+                anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+                transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+                PaperProps={{
+                  sx: {
+                    borderRadius: "12px",
+                    mt: 1,
+                    minWidth: 200,
+                    boxShadow: "var(--shadow-premium)",
+                    border: "1px solid var(--border-color)",
+                    background: "var(--bg-panel)",
+                    p: 0.5,
+                    "& .MuiMenuItem-root": {
+                      fontSize: 13,
+                      fontWeight: 600,
+                      gap: 1.5,
+                      py: 1.2,
+                      borderRadius: "8px",
+                      color: "var(--text-primary)",
+                      "&:hover": { background: "var(--bg-accent-1)" }
+                    }
+                  }
+                }}
+              >
+                <MenuItem onClick={() => handleClear("PROGRAM")} disabled={!selectedProgramId}>
+                  <FilterIcon fontSize="small" sx={{ opacity: 0.6 }} /> Delete by Program
+                </MenuItem>
+                <MenuItem onClick={() => handleClear("FACULTY")} disabled={!searchFacultyId}>
+                  <SearchIcon fontSize="small" sx={{ opacity: 0.6 }} /> Delete by Faculty
+                </MenuItem>
+                <Divider sx={{ my: 0.5, borderStyle: 'dashed' }} />
+                <MenuItem onClick={() => handleClear("ALL")} sx={{ color: "#EF4444 !important" }}>
+                  <ClearIcon fontSize="small" /> Clear All (Yearly)
+                </MenuItem>
+              </Menu>
+            </Box>
+          )}
         </Box>
       </Box>
 
-      {/* 🔹 STATS */}
-      <Box sx={{ display: "flex", gap: 2, mb: 3 }}>
-        <StatCard title="Appeared" score={stats.appeared} max={""} glass />
-        <StatCard title="Passed" score={stats.passed} max={""} glass />
-        <StatCard title="Pass %" score={`${percentage}%`} max={""} glass />
-      </Box>
 
       {/* 🔹 RESULTS TABLE */}
       <Box
@@ -285,12 +458,12 @@ export default function FacultyFormatResults() {
           <Box sx={{ textAlign: "center", py: 10, color: "var(--text-secondary)" }}>
             <Typography fontSize={40}>📊</Typography>
             <Typography mt={1} fontWeight={600} sx={{ color: "var(--text-secondary)" }}>
-              No results found
+              No results found for the selected filters
             </Typography>
           </Box>
         ) : (
           <DataTable
-            key={`${selectedYearId}-${selectedSemId}`}
+            key={`${selectedYearId}-${selectedProgramId}-${searchFacultyId}`}
             columns={[
               "Faculty ID",
               "Faculty Name",
@@ -303,6 +476,7 @@ export default function FacultyFormatResults() {
               "Passed",
               "%",
               "Last Updated",
+              "Action",
             ]}
             rows={results.map((r) => [
               {
@@ -390,7 +564,17 @@ export default function FacultyFormatResults() {
 
               {
                 value: r.updatedAt,
-                display: new Date(r.updatedAt).toLocaleString("en-IN"),
+                display: <Box sx={{ fontSize: 12 }}>{new Date(r.updatedAt).toLocaleDateString()}</Box>,
+              },
+              {
+                value: "action",
+                display: (
+                  <Tooltip title="Delete">
+                    <IconButton size="small" onClick={() => handleDelete(r._id)} sx={{ color: "#EF4444" }}>
+                      <DeleteIcon fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                ),
               },
             ])}
           />
@@ -399,6 +583,52 @@ export default function FacultyFormatResults() {
     </>
   );
 }
+
+// ── Styled Components Logic ─────────────────────────────────────────
+
+const controlItemStyle = {
+  display: "flex",
+  alignItems: "center",
+  px: 2,
+  py: 1,
+  borderRadius: "12px",
+  background: "var(--bg-glass)",
+  border: "1px solid var(--border-color)",
+  transition: "all 0.2s ease",
+  "&:focus-within": {
+    borderColor: "var(--color-primary)",
+    boxShadow: "0 0 0 3px rgba(59, 130, 246, 0.08)"
+  }
+};
+
+const controlLabelStyle = {
+  fontSize: 10,
+  fontWeight: 800,
+  color: "var(--text-secondary)",
+  textTransform: "uppercase",
+  letterSpacing: "0.05em",
+  mr: 1.5,
+  opacity: 0.7
+};
+
+const controlSelectStyle = {
+  minWidth: 100,
+  color: "var(--text-primary)",
+  fontWeight: 700,
+  fontSize: 13,
+  '& .MuiSelect-icon': { color: 'var(--text-primary)', opacity: 0.4 }
+};
+
+const controlInputStyle = {
+  background: "transparent",
+  border: "none",
+  outline: "none",
+  color: "var(--text-primary)",
+  fontWeight: 700,
+  fontSize: 13,
+  width: "100%",
+  padding: "4px 0"
+};
 
 const filterBox = {
   display: "flex",

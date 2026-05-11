@@ -9,12 +9,23 @@ import {
   CircularProgress,
   Typography,
   Chip,
+  IconButton,
+  Tooltip,
+  Menu,
+  Divider,
+  TextField,
+  InputAdornment,
 } from "@mui/material";
 import { useEffect, useState, useRef } from "react";
 import API from "../../api/axios";
 import {
   Download as DownloadIcon,
   FileUpload as UploadIcon,
+  Delete as DeleteIcon,
+  DeleteSweep as ClearIcon,
+  FilterList as FilterIcon,
+  Search as SearchIcon,
+  CleaningServices as CleanIcon,
 } from "@mui/icons-material";
 
 // Programs that use marks-based year system (not grade-based semester)
@@ -27,6 +38,8 @@ export default function StudentFormatResults() {
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [deleteMenuAnchor, setDeleteMenuAnchor] = useState(null);
+  const [bulkStudentId, setBulkStudentId] = useState("");
   const fileInputRef = useRef(null);
 
   // Derive whether the selected program is year-based (marks) or sem-based (grades)
@@ -68,7 +81,52 @@ export default function StudentFormatResults() {
     fetchResults();
   }, [selectedProgramId]);
 
-  // 3. Upload — chooses the correct endpoint based on program type
+  // 3. Deletion Logic
+  const handleDelete = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this specific entry?")) return;
+    try {
+      await API.delete(`/api/student-results/${id}`);
+      fetchResults();
+    } catch (err) {
+      console.error("Delete failed:", err);
+      alert("Failed to delete record.");
+    }
+  };
+
+  const handleBulkDelete = async (type) => {
+    let confirmMsg = "";
+    const params = {};
+
+    if (type === "PROGRAM") {
+      if (!selectedProgramId) {
+        alert("Please select a program first.");
+        return;
+      }
+      confirmMsg = `Are you sure you want to delete ALL results for ${selectedProgram?.name}?`;
+      params.programId = selectedProgramId;
+    } else if (type === "STUDENT") {
+      if (!bulkStudentId.trim()) {
+        alert("Please enter a Student ID.");
+        return;
+      }
+      confirmMsg = `Are you sure you want to delete ALL results for Student ID: ${bulkStudentId}?`;
+      params.studentId = bulkStudentId.trim();
+    }
+
+    if (!window.confirm(confirmMsg)) return;
+
+    try {
+      await API.delete("/api/student-results/bulk", { params });
+      setDeleteMenuAnchor(null);
+      if (type === "STUDENT") setBulkStudentId("");
+      fetchResults();
+    } catch (err) {
+      console.error("Bulk delete failed:", err);
+      alert(err.response?.data?.message || "Failed to perform bulk deletion.");
+    }
+  };
+
+  // 4. Upload — chooses the correct endpoint based on program type
   const handleUploadClick = () => {
     fileInputRef.current.click();
   };
@@ -212,6 +270,7 @@ export default function StudentFormatResults() {
     "Result",
     "SGPA",
     "CGPA",
+    "Actions"
   ];
 
   const yearColumns = [
@@ -230,12 +289,13 @@ export default function StudentFormatResults() {
     "Total",
     "Max",
     "Result",
+    "Actions"
   ];
 
   const buildRows = (results) => {
     return results.map((r) => {
       if (r.yearName) {
-        // YEAR program row
+        // YEAR program row (Pharma.D etc)
         return [
           { value: r.studentId, display: <Box sx={{ fontWeight: 600 }}>{r.studentId}</Box> },
           { value: r.studentName, display: <Box>{r.studentName || "—"}</Box> },
@@ -258,17 +318,26 @@ export default function StudentFormatResults() {
                 label={r.result}
                 size="small"
                 sx={{
-                  fontWeight: 700,
-                  fontSize: 11,
-                  bgcolor: r.result === "PASS" ? "#DCFCE7" : "#FEE2E2",
+                  fontWeight: 800,
+                  fontSize: 10,
+                  bgcolor: r.result === "PASS" ? "#F0FDF4" : "#FEF2F2",
                   color: r.result === "PASS" ? "#166534" : "#991B1B",
+                  border: r.result === "PASS" ? "1px solid #BBF7D0" : "1px solid #FECACA",
                 }}
               />
             ),
           },
+          {
+            value: "actions",
+            display: (
+              <IconButton size="small" onClick={() => handleDelete(r._id)} sx={{ color: "#EF4444" }}>
+                <DeleteIcon fontSize="small" />
+              </IconButton>
+            ),
+          },
         ];
       } else {
-        // SEM program row
+        // SEM program row (B.Tech, M.Tech etc)
         return [
           { value: r.studentId, display: <Box sx={{ fontWeight: 600 }}>{r.studentId}</Box> },
           { value: r.studentName, display: <Box>{r.studentName || "—"}</Box> },
@@ -276,11 +345,11 @@ export default function StudentFormatResults() {
           { value: r.subjectName, display: <Box>{r.subjectName || "—"}</Box> },
           { value: r.programId?.name, display: <Box>{r.programId?.name || "—"}</Box> },
           { value: r.branchId?.code, display: <Box>{r.branchId?.code || "—"}</Box> },
-          { value: r.semester, display: <Box>{r.semester || "—"}</Box> },
+          { value: r.semester, display: <Box sx={{ fontWeight: 500 }}>{r.semester}</Box> },
           { value: r.examYear, display: <Box>{r.examYear}</Box> },
           { value: r.resultType, display: <Box>{r.resultType}</Box> },
           { value: r.subjectType, display: <Box>{r.subjectType || "—"}</Box> },
-          { value: r.grade, display: <Box sx={{ fontWeight: 600 }}>{r.grade || "—"}</Box> },
+          { value: r.grade, display: <Box sx={{ fontWeight: 700 }}>{r.grade}</Box> },
           {
             value: r.result,
             display: (
@@ -288,16 +357,25 @@ export default function StudentFormatResults() {
                 label={r.result}
                 size="small"
                 sx={{
-                  fontWeight: 700,
-                  fontSize: 11,
-                  bgcolor: r.result === "PASS" ? "#DCFCE7" : "#FEE2E2",
+                  fontWeight: 800,
+                  fontSize: 10,
+                  bgcolor: r.result === "PASS" ? "#F0FDF4" : "#FEF2F2",
                   color: r.result === "PASS" ? "#166534" : "#991B1B",
+                  border: r.result === "PASS" ? "1px solid #BBF7D0" : "1px solid #FECACA",
                 }}
               />
             ),
           },
           { value: r.sgpa, display: <Box>{r.sgpa}</Box> },
           { value: r.cgpa, display: <Box>{r.cgpa}</Box> },
+          {
+            value: "actions",
+            display: (
+              <IconButton size="small" onClick={() => handleDelete(r._id)} sx={{ color: "#EF4444" }}>
+                <DeleteIcon fontSize="small" />
+              </IconButton>
+            ),
+          },
         ];
       }
     });
@@ -324,111 +402,183 @@ export default function StudentFormatResults() {
         breadcrumbs={["Home", "Exam Cell", "Results Upload", "Student Format"]}
       />
 
-      {/* FILTERS + ACTIONS */}
-      <Box
-        sx={{
-          display: "flex",
-          gap: 2,
-          mb: 3,
-          alignItems: "center",
-          justifyContent: "space-between",
-          flexWrap: "wrap",
-        }}
-      >
-        <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
-          <Box sx={filterBox}>
-            <Typography
-              sx={{
-                fontSize: 13,
-                fontWeight: 700,
-                color: "var(--text-primary)",
-                opacity: 0.9,
-              }}
-            >
-              Filter by Program
+      {/* DATA MANAGEMENT CONTROL CENTER */}
+      <Box sx={{ 
+        mt: 3, 
+        mb: 4, 
+        p: 3, 
+        background: "var(--bg-panel)", 
+        borderRadius: "24px", 
+        border: "1px solid var(--border-color)", 
+        boxShadow: "var(--shadow-premium)",
+        display: "flex",
+        flexDirection: "column",
+        gap: 3
+      }}>
+        {/* Row 1: Actions & Upload */}
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+            <Box sx={{ p: 1, borderRadius: "10px", background: "rgba(59, 130, 246, 0.1)", color: "var(--color-primary)", display: 'flex' }}>
+              <FilterIcon fontSize="small" />
+            </Box>
+            <Typography sx={{ fontWeight: 800, fontSize: 18, color: "var(--text-primary)" }}>
+              Result Management
             </Typography>
-            <Select
-              variant="standard"
-              disableUnderline
-              value={selectedProgramId}
-              onChange={(e) => setSelectedProgramId(e.target.value)}
-              sx={{
-                ml: 1.5,
-                minWidth: 180,
-                color: "var(--text-primary)",
-                fontWeight: 600,
-                fontSize: 14,
-                "& .MuiSelect-icon": {
-                  color: "var(--text-primary)",
-                  opacity: 0.7,
-                },
-              }}
-              displayEmpty
-            >
-              <MenuItem value="">All Programs</MenuItem>
-              {programs.map((p) => (
-                <MenuItem key={p._id} value={p._id}>
-                  {p.name}
-                </MenuItem>
-              ))}
-            </Select>
           </Box>
-
-          {/* Show the format badge when a program is selected */}
-          {selectedProgram && (
-            <Chip
-              label={isYearBased ? "Marks-based (Year)" : "Grade-based (Semester)"}
-              size="small"
+          
+          <Box sx={{ display: 'flex', gap: 1.5 }}>
+            <ActionButton
+              onClick={downloadTemplate}
               sx={{
+                background: "transparent",
+                color: "var(--text-secondary)",
+                border: "1px solid var(--border-color)",
                 fontWeight: 700,
-                fontSize: 11,
-                bgcolor: isYearBased ? "#EEF2FF" : "#F0FDF4",
-                color: isYearBased ? "#3730A3" : "#166534",
-                border: isYearBased ? "1px solid #C7D2FE" : "1px solid #BBF7D0",
+                px: 2.5,
+                height: 40,
+                borderRadius: "10px",
+                "&:hover": { borderColor: "var(--color-primary)", color: "var(--color-primary)" }
               }}
-            />
-          )}
+            >
+              <DownloadIcon sx={{ mr: 1, fontSize: 18 }} /> Template
+            </ActionButton>
+            
+            <ActionButton
+              onClick={handleUploadClick}
+              disabled={uploading}
+              sx={{
+                background: "var(--color-primary)",
+                color: "#fff",
+                fontWeight: 800,
+                px: 3,
+                height: 40,
+                borderRadius: "10px",
+                boxShadow: "0 4px 12px rgba(59, 130, 246, 0.3)",
+              }}
+            >
+              <UploadIcon sx={{ mr: 1, fontSize: 18 }} /> {uploading ? "Uploading..." : "Upload CSV"}
+            </ActionButton>
+          </Box>
         </Box>
 
-        <Box sx={{ display: "flex", gap: 2 }}>
-          <ActionButton
-            onClick={downloadTemplate}
-            sx={{
-              background: "var(--bg-glass)",
-              color: "var(--text-primary)",
-              border: "1px solid var(--border-color)",
-              boxShadow: "var(--shadow-premium)",
-              fontWeight: 700,
-              px: 3,
-              "&:hover": {
-                background: "var(--bg-accent-1)",
-                borderColor: "var(--color-primary)",
-              },
-            }}
-          >
-            <DownloadIcon sx={{ mr: 1, color: "var(--color-primary)" }} />
-            {selectedProgram
-              ? isYearBased
-                ? "Marks Template"
-                : "Grade Template"
-              : "Template"}
-          </ActionButton>
+        <Divider sx={{ borderStyle: 'dashed' }} />
 
-          <ActionButton
-            onClick={handleUploadClick}
-            disabled={uploading}
-            sx={{
-              background: "var(--color-primary)",
-              color: "#fff",
-              boxShadow: "var(--shadow-premium)",
-              fontWeight: 800,
-              px: 3,
-              "&:hover": { background: "var(--color-primary)", opacity: 0.9 },
-            }}
-          >
-            <UploadIcon sx={{ mr: 1 }} />
-            {uploading ? "Uploading..." : "Upload CSV"}
-          </ActionButton>
+        {/* Row 2: Filtering & Bulk Deletion */}
+        <Box sx={{ display: "flex", gap: 3, alignItems: "center", justifyContent: "space-between", flexWrap: "wrap" }}>
+          <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+            <Box sx={filterBox}>
+              <Typography sx={{ fontSize: 12, fontWeight: 700, color: "var(--text-secondary)", mr: 1.5 }}>PROGRAM</Typography>
+              <Select
+                variant="standard"
+                disableUnderline
+                value={selectedProgramId}
+                onChange={(e) => setSelectedProgramId(e.target.value)}
+                sx={{ minWidth: 180, fontWeight: 700, fontSize: 14, color: "var(--text-primary)" }}
+                displayEmpty
+              >
+                <MenuItem value="">All Programs</MenuItem>
+                {programs.map((p) => (
+                  <MenuItem key={p._id} value={p._id}>{p.name}</MenuItem>
+                ))}
+              </Select>
+            </Box>
+
+            {selectedProgram && (
+              <Chip
+                label={isYearBased ? "Year-based" : "Sem-based"}
+                size="small"
+                sx={{ fontWeight: 700, fontSize: 11, bgcolor: "rgba(59, 130, 246, 0.1)", color: "var(--color-primary)" }}
+              />
+            )}
+          </Box>
+
+          {/* Bulk Deletion Section */}
+          <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+            <TextField
+              placeholder="Search Student ID..."
+              size="small"
+              value={bulkStudentId}
+              onChange={(e) => setBulkStudentId(e.target.value)}
+              sx={{
+                width: 220,
+                "& .MuiOutlinedInput-root": {
+                  borderRadius: "10px",
+                  fontSize: 13,
+                  fontWeight: 600,
+                  background: "var(--bg-glass)",
+                  "& fieldset": { borderColor: "var(--border-color)" },
+                  "&:hover fieldset": { borderColor: "var(--color-primary)" },
+                }
+              }}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchIcon sx={{ fontSize: 18, opacity: 0.5 }} />
+                  </InputAdornment>
+                ),
+                endAdornment: bulkStudentId && (
+                  <InputAdornment position="end">
+                    <Tooltip title="Delete all records for this student">
+                      <IconButton size="small" onClick={() => handleBulkDelete("STUDENT")} sx={{ color: "#EF4444" }}>
+                        <DeleteIcon fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
+                  </InputAdornment>
+                )
+              }}
+            />
+
+            <ActionButton
+              onClick={(e) => setDeleteMenuAnchor(e.currentTarget)}
+              sx={{
+                background: "rgba(239, 68, 68, 0.05)",
+                color: "#EF4444",
+                border: "1px solid rgba(239, 68, 68, 0.2)",
+                fontWeight: 700,
+                px: 2.5,
+                height: 40,
+                borderRadius: "10px",
+                fontSize: 13,
+                "&:hover": { background: "rgba(239, 68, 68, 0.1)", borderColor: "#EF4444" }
+              }}
+            >
+              <CleanIcon sx={{ mr: 1, fontSize: 18 }} /> Bulk Actions
+            </ActionButton>
+
+            <Menu
+              anchorEl={deleteMenuAnchor}
+              open={Boolean(deleteMenuAnchor)}
+              onClose={() => setDeleteMenuAnchor(null)}
+              anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+              transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+              PaperProps={{
+                sx: {
+                  borderRadius: "12px",
+                  mt: 1,
+                  minWidth: 220,
+                  boxShadow: "var(--shadow-premium)",
+                  border: "1px solid var(--border-color)",
+                  p: 0.5,
+                  "& .MuiMenuItem-root": {
+                    fontSize: 13,
+                    fontWeight: 600,
+                    gap: 1.5,
+                    py: 1.2,
+                    borderRadius: "8px",
+                    "&:hover": { background: "var(--bg-accent-1)" }
+                  }
+                }
+              }}
+            >
+              <MenuItem onClick={() => handleBulkDelete("PROGRAM")} disabled={!selectedProgramId}>
+                <ClearIcon fontSize="small" sx={{ color: "#EF4444" }} /> Clear Selected Program
+              </MenuItem>
+              <Divider sx={{ my: 0.5, borderStyle: 'dashed' }} />
+              <Typography sx={{ px: 2, py: 1, fontSize: 11, fontWeight: 700, color: "var(--text-secondary)", opacity: 0.6 }}>
+                Wipe all records associated with the current program filter.
+              </Typography>
+            </Menu>
+          </Box>
         </Box>
       </Box>
 
