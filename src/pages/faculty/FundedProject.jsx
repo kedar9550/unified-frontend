@@ -1,4 +1,6 @@
 import { useState, useEffect } from "react";
+import { useAuth } from "../../context/AuthContext";
+
 import { Box, TextField, MenuItem, Select, Typography, Alert, Snackbar, Button, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper } from "@mui/material";
 import PageHeader from "../../components/common/PageHeader";
 import {
@@ -8,13 +10,14 @@ import {
 import API from "../../api/axios";
 
 export default function FundedProject() {
+  const { user } = useAuth();
   const [viewMode, setViewMode] = useState("list"); // 'list', 'select-year', 'form'
   const [academicYears, setAcademicYears] = useState([]);
   const [selectedYear, setSelectedYear] = useState("");
   const [publicationsList, setPublicationsList] = useState([]);
 
   const [form, setForm] = useState({
-    college: "", title: "", duration: "", fundingAgency: "", scheme: "",
+    title: "", duration: "", fundingAgency: "", scheme: "",
     otherInvestigators: "", principalInvestigator: "",
     recurring: "", nonRecurring: "", sanctionedAmount: "", sanctionDate: "",
   });
@@ -46,10 +49,12 @@ export default function FundedProject() {
       Object.entries(form).forEach(([k, v]) => fd.append(k, v));
       if (files.sanctionOrder) fd.append("sanctionOrder", files.sanctionOrder);
       fd.append("academicYear", selectedYear);
+      fd.append("college", user?.college || "");
+      fd.append("panNumber", user?.panNumber || "");
 
       await API.post("/api/research/funded-project", fd, { headers: { "Content-Type": "multipart/form-data" } });
       setSnack({ open: true, msg: "Funded Project submitted successfully!", severity: "success" });
-      setForm({ college: "", title: "", duration: "", fundingAgency: "", scheme: "", otherInvestigators: "", principalInvestigator: "", recurring: "", nonRecurring: "", sanctionedAmount: "", sanctionDate: "" });
+      setForm({ title: "", duration: "", fundingAgency: "", scheme: "", otherInvestigators: "", principalInvestigator: "", recurring: "", nonRecurring: "", sanctionedAmount: "", sanctionDate: "" });
       setFiles({ sanctionOrder: null });
       setSelectedYear("");
       setViewMode("list");
@@ -113,7 +118,7 @@ export default function FundedProject() {
           onChange={(e) => setSelectedYear(e.target.value)}
         >
           <MenuItem value="" disabled>Select Academic Year</MenuItem>
-          {academicYears.filter(y => y.isActive).slice(0,3).map(y => (
+          {academicYears.map(y => (
             <MenuItem key={y._id} value={y._id}>{y.year}</MenuItem>
           ))}
         </Select>
@@ -136,7 +141,7 @@ export default function FundedProject() {
         <Button size="small" variant="text" onClick={() => setViewMode("select-year")} sx={{ fontWeight: 700, textTransform: "none", color: "var(--color-primary)" }}>Change Year</Button>
       </Box>
 
-      <FacultyInfoRow college={form.college} setCollege={(v) => setForm(p => ({ ...p, college: v }))} />
+      <FacultyInfoRow />
 
       <SubLabel text="Details of the Funded Projects:" />
       <Grid2>

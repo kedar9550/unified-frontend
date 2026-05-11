@@ -27,6 +27,18 @@ export const AuthProvider = ({ children }) => {
       parsedUser = normalizeRoles(parsedUser);
       setUser(parsedUser);
 
+      // Refresh user data from server to get latest populated fields
+      API.get("/api/employees/me").then(res => {
+        if (res.data.user) {
+          let updatedUser = normalizeRoles(res.data.user);
+          setUser(updatedUser);
+          localStorage.setItem("user", JSON.stringify(updatedUser));
+        }
+      }).catch(err => {
+        console.error("Session sync failed:", err);
+        // If 401, maybe logout? But for now let's be safe.
+      });
+
       let savedRole = localStorage.getItem("activeRole");
       if (savedRole) savedRole = savedRole.toUpperCase();
       if (savedRole === "STAFF") savedRole = "FACULTY";

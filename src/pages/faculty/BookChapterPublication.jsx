@@ -1,4 +1,6 @@
 import { useState, useEffect } from "react";
+import { useAuth } from "../../context/AuthContext";
+
 import { Box, TextField, MenuItem, Select, Typography, Alert, Snackbar, Button, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, IconButton } from "@mui/material";
 import { AddCircle, Delete } from "@mui/icons-material";
 import PageHeader from "../../components/common/PageHeader";
@@ -9,13 +11,14 @@ import {
 import API from "../../api/axios";
 
 export default function BookChapterPublication() {
+  const { user } = useAuth();
   const [viewMode, setViewMode] = useState("list"); // 'list', 'select-year', 'form'
   const [academicYears, setAcademicYears] = useState([]);
   const [selectedYear, setSelectedYear] = useState("");
   const [publicationsList, setPublicationsList] = useState([]);
 
   const [form, setForm] = useState({
-    college: "", textBookName: "", chapterTitle: "", isbn: "", yearOfPublication: "",
+    textBookName: "", chapterTitle: "", isbn: "", yearOfPublication: "",
     firstAuthor: "", authorPosition: "", chaptersContributed: "", publisher: "", coAuthors: [], month: "", year: "",
     applyIncentive: ""
   });
@@ -67,10 +70,12 @@ export default function BookChapterPublication() {
       });
       Object.entries(files).forEach(([k, v]) => { if (v) fd.append(k, v); });
       fd.append("academicYear", selectedYear);
+      fd.append("college", user?.college || "");
+      fd.append("panNumber", user?.panNumber || "");
 
       await API.post("/api/research/book-chapter", fd, { headers: { "Content-Type": "multipart/form-data" } });
       setSnack({ open: true, msg: "Book Chapter submitted successfully!", severity: "success" });
-      setForm({ college: "", textBookName: "", chapterTitle: "", isbn: "", yearOfPublication: "", firstAuthor: "", authorPosition: "", chaptersContributed: "", publisher: "", coAuthors: [], month: "", year: "", applyIncentive: "" });
+      setForm({ textBookName: "", chapterTitle: "", isbn: "", yearOfPublication: "", firstAuthor: "", authorPosition: "", chaptersContributed: "", publisher: "", coAuthors: [], month: "", year: "", applyIncentive: "" });
       setFiles({ coverPage: null, authorAffiliation: null, index: null, softCopy: null });
       setSelectedYear("");
       setViewMode("list");
@@ -157,7 +162,7 @@ export default function BookChapterPublication() {
         <Button size="small" variant="text" onClick={() => setViewMode("select-year")} sx={{ fontWeight: 700, textTransform: "none", color: "var(--color-primary)" }}>Change Year</Button>
       </Box>
 
-      <FacultyInfoRow college={form.college} setCollege={(v) => setForm(p => ({ ...p, college: v }))} />
+      <FacultyInfoRow />
 
       <Grid2 sx={{ mt: 1 }}>
 

@@ -1,4 +1,6 @@
 import { useState, useEffect } from "react";
+import { useAuth } from "../../context/AuthContext";
+
 import { Box, TextField, MenuItem, Select, Typography, Alert, Snackbar, Button, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, IconButton } from "@mui/material";
 import { AddCircle, Delete } from "@mui/icons-material";
 import PageHeader from "../../components/common/PageHeader";
@@ -12,13 +14,14 @@ const JOURNAL_CATEGORIES = ["Q1", "Q2", "Q3", "Q4", "WOS", "SCOPUS", "NAAS", "AS
 const INCENTIVE_OPTIONS = ["National", "International"];
 
 export default function JournalPublication() {
+  const { user } = useAuth();
   const [viewMode, setViewMode] = useState("list"); // 'list', 'select-year', 'form'
   const [academicYears, setAcademicYears] = useState([]);
   const [selectedYear, setSelectedYear] = useState("");
   const [publicationsList, setPublicationsList] = useState([]);
 
   const [form, setForm] = useState({
-    college: "", panCard: "", incentiveApplied: "", firstAuthor: "", authorPosition: "", categoryOfJournal: "",
+    incentiveApplied: "", firstAuthor: "", authorPosition: "", categoryOfJournal: "",
     papersCited: "", paperTitle: "", coAuthors: [],
     journalName: "", vol: "", issue: "", pageNos: "", month: "", year: "",
     hIndex: "", impactFactor: "", referencingNos: "", sdgs: "",
@@ -74,12 +77,14 @@ export default function JournalPublication() {
       });
       Object.entries(files).forEach(([k, v]) => { if (v) fd.append(k, v); });
       fd.append("academicYear", selectedYear);
+      fd.append("college", user?.college || "");
+      fd.append("panNumber", user?.panNumber || "");
 
       await API.post("/api/research/journal", fd, { headers: { "Content-Type": "multipart/form-data" } });
       setSnack({ open: true, msg: "Journal submitted successfully!", severity: "success" });
       
       // Reset form and go back to list
-      setForm({ college: "", panCard: "", incentiveApplied: "", firstAuthor: "", authorPosition: "", categoryOfJournal: "", papersCited: "", paperTitle: "", coAuthors: [], journalName: "", vol: "", issue: "", pageNos: "", month: "", year: "", hIndex: "", impactFactor: "", referencingNos: "", sdgs: "", applyIncentive: "" });
+      setForm({ incentiveApplied: "", firstAuthor: "", authorPosition: "", categoryOfJournal: "", papersCited: "", paperTitle: "", coAuthors: [], journalName: "", vol: "", issue: "", pageNos: "", month: "", year: "", hIndex: "", impactFactor: "", referencingNos: "", sdgs: "", applyIncentive: "" });
       setFiles({ publishedPaper: null, referencePages: null });
       setSelectedYear("");
       setViewMode("list");
@@ -166,16 +171,11 @@ export default function JournalPublication() {
         <Button size="small" variant="text" onClick={() => setViewMode("select-year")} sx={{ fontWeight: 700, textTransform: "none", color: "var(--color-primary)" }}>Change Year</Button>
       </Box>
 
-      <FacultyInfoRow college={form.college} setCollege={(v) => setForm(p => ({ ...p, college: v }))} />
+      <FacultyInfoRow />
 
       <Grid2 sx={{ mt: 1 }}>
         <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
-          <Typography sx={labelStyle}>Title of the Research Paper:</Typography>
           <TextField size="small" fullWidth multiline rows={2} value={form.paperTitle} onChange={set("paperTitle")} />
-        </Box>
-        <Box>
-          <Typography sx={labelStyle}>Pan card Number:</Typography>
-          <TextField size="small" fullWidth value={form.panCard} onChange={set("panCard")} />
         </Box>
         <Box>
           <Typography sx={labelStyle}>Whether you are the first author :</Typography>
