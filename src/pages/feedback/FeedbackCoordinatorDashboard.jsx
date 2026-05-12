@@ -86,7 +86,7 @@ const FeedbackCoordinatorDashboard = () => {
           <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
             <Box>
               <Typography variant="h4" sx={{ fontWeight: 800, color: "var(--text-primary)", mb: 0.5, letterSpacing: "-0.02em" }}>
-                Welcome back, {user?.name?.split(' ')[0] || "Feedback Admin"}! 👋
+                Welcome back, {user?.name || "Feedback Admin"}! 👋
               </Typography>
               <Typography variant="body2" sx={{ color: "var(--text-secondary)", fontWeight: 500 }}>
                 University Faculty Feedback Analysis • {dashboardData.activeYear}
