@@ -562,7 +562,7 @@ export default function StudentFormatResults() {
 
             <Box sx={filterBox}>
               <Box sx={{ display: 'flex', alignItems: 'center', mr: 2, opacity: 0.7 }}>
-                <Typography sx={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.05em' }}>YEAR</Typography>
+                <Typography sx={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.05em' }}>EXAM YEAR</Typography>
               </Box>
               <Select
                 variant="standard"
