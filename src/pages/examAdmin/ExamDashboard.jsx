@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Typography,
@@ -9,6 +9,7 @@ import {
   Chip,
   LinearProgress,
   Paper,
+  CircularProgress,Snackbar, Alert
 } from "@mui/material";
 import {
   People,
@@ -21,37 +22,95 @@ import {
   CalendarMonth
 } from "@mui/icons-material";
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
+import { useNavigate } from "react-router-dom";
+import API from "../../api/axios";
+import { useAuth } from "../../context/AuthContext";
 
 const ExamDashboard = () => {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const [loading, setLoading] = useState(true);
+  const [data, setData] = useState({
+    totalFaculties: 0,
+    submittedFaculties: 0,
+    pendingSubmissions: 0,
+    submittedResults: 0,
+    discrepanciesCount: 0,
+    overallPassRate: "0.0%",
+    activeYear: "N/A",
+    activeSemester: "N/A",
+    recentSubmissions: [],
+    discrepancies: [],
+    submissionChart: []
+  });
+
+  const [error, setError] = useState(null);
+  const backendUrl = import.meta.env.VITE_BACKEND_URL || "";
+
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const res = await API.get("/api/dashboard/exam");
+        if (res.data.status === 'success') {
+          setData(res.data.data);
+        } else {
+          setError("Failed to fetch dashboard metrics");
+        }
+      } catch (err) {
+        console.error("Error fetching exam dashboard data:", err);
+        setError("Unable to connect to the server. Please try again later.");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchDashboardData();
+  }, []);
+
+  const getFullAvatarUrl = (avatar, institutionId) => {
+    if (avatar) {
+      return avatar.startsWith('http') ? avatar : `${backendUrl}${avatar}`;
+    }
+    if (institutionId) {
+      return `https://info.aec.edu.in/aus/employeephotos/${institutionId}.jpg`;
+    }
+    return "";
+  };
+
+  const formatDate = (dateStr) => {
+    if (!dateStr) return "N/A";
+    const date = new Date(dateStr);
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    return `${day}/${month}/${year}`;
+  };
+
+  if (loading) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '60vh' }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
+
   // Top Cards Data
   const topCards = [
-    { title: "Total Faculties", value: "60", subtitle: "100% of 60", icon: <People />, color: "#3B82F6", bgColor: "rgba(59, 130, 246, 0.1)" },
-    { title: "Pending Submissions", value: "15", subtitle: "25% of 60", icon: <AccessTime />, color: "#F59E0B", bgColor: "rgba(245, 158, 11, 0.1)" },
-    { title: "Submitted Results", value: "42", subtitle: "70% of 60", icon: <CheckCircleOutlined />, color: "#10B981", bgColor: "rgba(16, 185, 129, 0.1)" },
-    { title: "Discrepancies", value: "3", subtitle: "Require Action", icon: <WarningAmber />, color: "#EF4444", bgColor: "rgba(239, 68, 68, 0.1)" },
-    { title: "Overall Pass %", value: "78.6%", subtitle: "This Semester", icon: <BarChart />, color: "#F59E0B", bgColor: "rgba(245, 158, 11, 0.1)" },
+    { title: "Total Faculties", value: data.totalFaculties, subtitle: `100% of ${data.totalFaculties}`, icon: <People />, color: "#3B82F6", bgColor: "rgba(59, 130, 246, 0.1)" },
+    { title: "Pending Submissions", value: data.pendingSubmissions, subtitle: `${data.totalFaculties > 0 ? Math.round((data.pendingSubmissions / data.totalFaculties) * 100) : 0}% of ${data.totalFaculties}`, icon: <AccessTime />, color: "#F59E0B", bgColor: "rgba(245, 158, 11, 0.1)" },
+    { title: "Submitted Faculties", value: data.submittedFaculties, subtitle: `${data.totalFaculties > 0 ? Math.round((data.submittedFaculties / data.totalFaculties) * 100) : 0}% of ${data.totalFaculties}`, icon: <CheckCircleOutlined />, color: "#10B981", bgColor: "rgba(16, 185, 129, 0.1)" },
+    { title: "Discrepancies", value: data.discrepanciesCount, subtitle: "Require Action", icon: <WarningAmber />, color: "#EF4444", bgColor: "rgba(239, 68, 68, 0.1)", path: "/exam-result/discrepancies" },
+    { title: "Overall Pass %", value: data.overallPassRate, subtitle: "This Semester", icon: <BarChart />, color: "#F59E0B", bgColor: "rgba(245, 158, 11, 0.1)" },
   ];
 
   // Submission Chart Data
-  const submissionData = [
-    { name: "Submitted", value: 42, color: "#2563EB" },
-    { name: "Pending", value: 15, color: "#F59E0B" },
-    { name: "Not Submitted", value: 3, color: "#f87070ff" },
+  const submissionData = data.submissionChart.length > 0 ? data.submissionChart : [
+    { name: "Submitted", value: 0, color: "#2563EB" },
+    { name: "Pending", value: 0, color: "#F59E0B" },
   ];
 
-  const recentSubmissions = [
-    { name: "Dr. Zoya Tiwari", dept: "CSE Department", subject: "Data Structures (CSE-A)", status: "Submitted", time: "10 mins ago", avatar: "" },
-    { name: "Dr. Mahesh Reddy", dept: "CSE Department", subject: "Operating Systems (CSE-B)", status: "Submitted", time: "30 mins ago", avatar: "" },
-    { name: "Dr. Priya Sharma", dept: "ECE Department", subject: "Digital Electronics (ECE-A)", status: "Submitted", time: "1 hour ago", avatar: "" },
-    { name: "Dr. Arjun Verma", dept: "ME Department", subject: "Thermodynamics (ME-A)", status: "Pending", time: "2 hours ago", avatar: "" },
-    { name: "Dr. Neha Gupta", dept: "AI & DS Department", subject: "Database Systems (AI-DS-A)", status: "Pending", time: "2 hours ago", avatar: "" },
-  ];
-
-  const discrepancies = [
-    { name: "Dr. Priya Sharma", subject: "Operating Systems (CSE-A)", issue: "Incorrect pass percentage", file: "proof_os_cse_a.pdf", time: "10 mins ago" },
-    { name: "Dr. Arjun Verma", subject: "Data Structures (CSE-B)", issue: "Mismatch in student count", file: "proof_ds_cse_b.pdf", time: "25 mins ago" },
-    { name: "Dr. Neha Gupta", subject: "Database Management (CSE-A)", issue: "Incorrect number of passes", file: "proof_dbms_cse_a.pdf", time: "35 mins ago" },
-  ];
+  const donePercentage = data.totalFaculties > 0 ? Math.round((data.submittedFaculties / data.totalFaculties) * 100) : 0;
 
   return (
     <Box>
@@ -59,7 +118,7 @@ const ExamDashboard = () => {
       <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
         <Box>
           <Typography variant="h4" sx={{ fontWeight: 800, color: "var(--text-primary)", mb: 0.5 }}>
-            Welcome back, Exam Admin! 👋
+            Welcome back, {user?.name || "Exam Admin"}! 👋
           </Typography>
           <Typography variant="body2" sx={{ color: "var(--text-secondary)" }}>
             Overview of exam results submission and verification.
@@ -80,7 +139,7 @@ const ExamDashboard = () => {
             }} 
             startIcon={<CalendarMonth sx={{ color: "var(--color-primary)" }} />}
            >
-             2026-2027
+             {data.activeYear}
            </Button>
            <Button 
             variant="outlined" 
@@ -95,7 +154,7 @@ const ExamDashboard = () => {
                 "&:hover": { borderColor: "var(--color-primary)", background: "var(--bg-accent-1)" }
             }}
            >
-             ODD Semester
+             {data.activeSemester}
            </Button>
         </Box>
       </Box>
@@ -104,14 +163,32 @@ const ExamDashboard = () => {
       <Box sx={{ display: "flex", gap: 2, mb: 4, flexWrap: "wrap" }}>
         {topCards.map((card, i) => (
           <Box key={i} sx={{ flex: { xs: "1 1 100%", sm: "1 1 calc(50% - 16px)", lg: 1 }, minWidth: 0 }}>
-            <Card sx={{ borderRadius: "16px", border: "1px solid var(--border-color)", background: "var(--bg-panel)", boxShadow: "var(--shadow-premium)", p: 2, height: "100%", display: "flex", alignItems: "center", gap: 2, transition: "all 0.3s ease", "&:hover": { transform: "translateY(-4px)", borderColor: card.color } }}>
+            <Card 
+              onClick={() => card.path && navigate(card.path)}
+              sx={{ 
+                borderRadius: "16px", 
+                border: "1px solid var(--border-color)", 
+                background: "var(--bg-panel)", 
+                boxShadow: "var(--shadow-premium)", 
+                p: 2, 
+                height: "100%", 
+                display: "flex", 
+                alignItems: "center", 
+                gap: 2, 
+                transition: "all 0.3s ease", 
+                cursor: card.path ? "pointer" : "default",
+                "&:hover": { 
+                  transform: card.path ? "translateY(-4px)" : "none", 
+                  borderColor: card.color 
+                } 
+              }}
+            >
               <Box sx={{ width: 48, height: 48, borderRadius: "14px", display: "flex", alignItems: "center", justifyContent: "center", backgroundColor: card.bgColor, color: card.color, flexShrink: 0 }}>
                 {card.icon}
               </Box>
               <Box>
                 <Typography variant="caption" sx={{ color: "var(--text-secondary)", fontWeight: 700, textTransform: "uppercase", fontSize: "0.65rem", letterSpacing: "0.02em" }}>{card.title}</Typography>
                 <Typography variant="h5" sx={{ fontWeight: 800, color: "var(--text-primary)", my: 0.1 }}>{card.value}</Typography>
-                <Typography variant="caption" sx={{ color: "var(--text-secondary)", opacity: 0.8 }}>{card.subtitle}</Typography>
               </Box>
             </Card>
           </Box>
@@ -143,7 +220,7 @@ const ExamDashboard = () => {
                   </PieChart>
                 </ResponsiveContainer>
                 <Box sx={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", textAlign: "center" }}>
-                  <Typography sx={{ fontSize: 22, fontWeight: 900, color: "var(--text-primary)", lineHeight: 1 }}>70%</Typography>
+                  <Typography sx={{ fontSize: 22, fontWeight: 900, color: "var(--text-primary)", lineHeight: 1 }}>{donePercentage}%</Typography>
                   <Typography sx={{ fontSize: 8, color: "var(--text-secondary)", fontWeight: 700, textTransform: "uppercase" }}>Done</Typography>
                 </Box>
               </Box>
@@ -164,11 +241,11 @@ const ExamDashboard = () => {
             <Box>
                 <Box sx={{ display: "flex", justifyContent: "space-between", mb: 1 }}>
                     <Typography variant="body2" sx={{ color: "var(--text-secondary)", fontSize: "0.75rem", fontWeight: 600 }}>Progress</Typography>
-                    <Typography variant="body2" sx={{ color: "var(--color-primary)", fontSize: "0.75rem", fontWeight: 800 }}>42 / 60</Typography>
+                    <Typography variant="body2" sx={{ color: "var(--color-primary)", fontSize: "0.75rem", fontWeight: 800 }}>{data.submittedFaculties} / {data.totalFaculties}</Typography>
                 </Box>
                 <LinearProgress 
                     variant="determinate" 
-                    value={70} 
+                    value={donePercentage} 
                     sx={{ 
                         height: 7, 
                         borderRadius: 4, 
@@ -183,11 +260,19 @@ const ExamDashboard = () => {
           <Card sx={{ borderRadius: "24px", background: "var(--bg-panel)", border: "1px solid var(--border-color)", boxShadow: "var(--shadow-premium)", p: 2.5 }}>
             <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
               <Typography sx={{ fontWeight: 800, fontSize: "1.1rem", color: "var(--text-primary)" }}>Discrepancies</Typography>
-              <Button size="small" sx={{ textTransform: "none", fontSize: "0.8rem", color: "#EF4444", fontWeight: 700 }}>View All</Button>
+              <Button 
+                onClick={() => navigate("/exam-result/discrepancies")}
+                size="small" 
+                sx={{ textTransform: "none", fontSize: "0.8rem", color: "#EF4444", fontWeight: 700 }}
+              >
+                View All
+              </Button>
             </Box>
 
             <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-              {discrepancies.map((disc, i) => (
+              {data.discrepancies.length === 0 ? (
+                <Typography sx={{ fontSize: "0.85rem", color: "var(--text-secondary)", textAlign: "center", py: 2 }}>No pending discrepancies</Typography>
+              ) : data.discrepancies.map((disc, i) => (
                 <Paper key={i} elevation={0} sx={{ p: 1.8, borderRadius: "16px", border: "1px solid var(--border-color)", background: "var(--bg-glass)", transition: "all 0.2s ease", "&:hover": { borderColor: "#EF4444", transform: "translateY(-2px)" } }}>
                   <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 2 }}>
                     <Box sx={{ flex: 1, minWidth: 0 }}>
@@ -195,7 +280,9 @@ const ExamDashboard = () => {
                       <Typography noWrap sx={{ fontSize: "0.75rem", color: "var(--text-secondary)", mb: 1 }}>{disc.subject}</Typography>
                       <Typography sx={{ fontSize: "0.8rem", color: "#EF4444", fontWeight: 600 }}>{disc.issue}</Typography>
                     </Box>
-                    <Typography sx={{ fontSize: "0.65rem", color: "var(--text-secondary)", fontWeight: 700, flexShrink: 0 }}>{disc.time}</Typography>
+                    <Typography sx={{ fontSize: "0.65rem", color: "var(--text-secondary)", fontWeight: 700, flexShrink: 0 }}>
+                      {formatDate(disc.time)}
+                    </Typography>
                   </Box>
                 </Paper>
               ))}
@@ -208,13 +295,22 @@ const ExamDashboard = () => {
           <Card sx={{ borderRadius: "24px", background: "var(--bg-panel)", border: "1px solid var(--border-color)", boxShadow: "var(--shadow-premium)", p: 3, height: "100%", display: "flex", flexDirection: "column" }}>
             <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
               <Typography sx={{ fontWeight: 800, fontSize: "1.1rem", color: "var(--text-primary)" }}>Recent Submissions</Typography>
-              <Button size="small" sx={{ textTransform: "none", fontSize: "0.85rem", color: "var(--color-primary)", fontWeight: 700 }}>View All</Button>
+              <Button 
+                onClick={() => navigate("/exam-result/faculty-format")}
+                size="small" 
+                sx={{ textTransform: "none", fontSize: "0.85rem", color: "var(--color-primary)", fontWeight: 700 }}
+              >
+                View All
+              </Button>
             </Box>
 
             <Box sx={{ display: "flex", flexDirection: "column", gap: 2, flex: 1 }}>
-              {recentSubmissions.map((sub, i) => (
+              {data.recentSubmissions.length === 0 ? (
+                <Typography sx={{ fontSize: "0.9rem", color: "var(--text-secondary)", textAlign: "center", py: 4 }}>No recent submissions</Typography>
+              ) : data.recentSubmissions.map((sub, i) => (
                 <Box 
                   key={i} 
+                  onClick={() => navigate("/exam-result/faculty-format")}
                   sx={{ 
                     p: 2, 
                     borderRadius: "18px", 
@@ -233,7 +329,7 @@ const ExamDashboard = () => {
                   }}
                 >
                   <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, flex: 1.5 }}>
-                    <Avatar src={sub.avatar} sx={{ width: 40, height: 40, border: "2px solid var(--bg-panel)", boxShadow: "0 0 0 1px var(--border-color)" }} />
+                    <Avatar src={getFullAvatarUrl(sub.avatar, sub.institutionId)} sx={{ width: 40, height: 40, border: "2px solid var(--bg-panel)", boxShadow: "0 0 0 1px var(--border-color)" }} />
                     <Box sx={{ minWidth: 0 }}>
                       <Typography noWrap sx={{ fontSize: "0.9rem", fontWeight: 700, color: "var(--text-primary)" }}>{sub.name}</Typography>
                       <Typography noWrap sx={{ fontSize: "0.75rem", color: "var(--text-secondary)", opacity: 0.8 }}>{sub.dept}</Typography>
@@ -256,24 +352,37 @@ const ExamDashboard = () => {
                             border: "1px solid currentColor"
                         }} 
                     />
-                    <Typography sx={{ fontSize: "0.75rem", color: "var(--text-secondary)", display: { xs: "block", sm: "none" } }}>{sub.time}</Typography>
+                    <Typography sx={{ fontSize: "0.75rem", color: "var(--text-secondary)", display: { xs: "block", sm: "none" } }}>
+                      {new Date(sub.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </Typography>
                   </Box>
 
                   <Box sx={{ flex: 0.8, textAlign: "right", display: { xs: "none", sm: "block" } }}>
-                    <Typography sx={{ fontSize: "0.8rem", color: "var(--text-secondary)", fontWeight: 600 }}>{sub.time}</Typography>
+                    <Typography sx={{ fontSize: "0.8rem", color: "var(--text-secondary)", fontWeight: 600 }}>
+                      {formatDate(sub.time)}
+                    </Typography>
                   </Box>
                 </Box>
               ))}
             </Box>
 
             <Box sx={{ mt: 3, pt: 2, borderTop: "1px solid var(--border-color)", textAlign: "center" }}>
-              <Button endIcon={<ArrowForward sx={{ fontSize: 16 }} />} sx={{ textTransform: "none", fontSize: "0.9rem", color: "var(--color-primary)", fontWeight: 700 }}>
+              <Button 
+                onClick={() => navigate("/exam-result/faculty-format")}
+                endIcon={<ArrowForward sx={{ fontSize: 16 }} />} 
+                sx={{ textTransform: "none", fontSize: "0.9rem", color: "var(--color-primary)", fontWeight: 700 }}
+              >
                 Explore All Submissions
               </Button>
             </Box>
           </Card>
         </Box>
       </Box>
+      <Snackbar open={!!error} autoHideDuration={6000} onClose={() => setError(null)}>
+        <Alert onClose={() => setError(null)} severity="error" sx={{ width: '100%' }}>
+          {error}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 };
