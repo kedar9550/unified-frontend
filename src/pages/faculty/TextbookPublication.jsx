@@ -7,7 +7,7 @@ import { Delete, Search } from "@mui/icons-material";
 import PageHeader from "../../components/common/PageHeader";
 import {
   FacultyInfoRow, FormCard, Grid2, SubLabel, NoteBox, FileField, SubmitBtn,
-  labelStyle, MONTHS, YEARS
+  labelStyle, disabledField, MONTHS, YEARS
 } from "../../components/faculty/PublicationFormFields";
 import API from "../../api/axios";
 
@@ -19,6 +19,7 @@ export default function TextbookPublication() {
   const [publicationsList, setPublicationsList] = useState([]);
   const [editions, setEditions] = useState([]);
   const [isbnFetching, setIsbnFetching] = useState(false);
+  const [isbnFetched, setIsbnFetched] = useState(false);
 
   const [form, setForm] = useState({
     title: "", publisher: "", isbn: "", yearOfPublication: "", 
@@ -78,7 +79,10 @@ export default function TextbookPublication() {
     setForm(p => ({ ...p, otherAuthors: newOtherAuthors }));
   }, [form.totalAuthors, form.userAuthorPosition]);
 
-  const set = (k) => (e) => setForm((p) => ({ ...p, [k]: e.target.value }));
+  const set = (k) => (e) => {
+    setForm((p) => ({ ...p, [k]: e.target.value }));
+    if (k === "isbn") setIsbnFetched(false);
+  };
   
   const validateFile = (file) => {
     if (!file) return true;
@@ -113,11 +117,32 @@ export default function TextbookPublication() {
         const res = await API.get(`/api/research/textbook/isbn/${form.isbn}`);
         if (res.data?.success) {
             const data = res.data.data;
+            let newMonth = form.month;
+            let newYear = form.year;
+            
+            if (data.yearOfPublication) {
+                const str = String(data.yearOfPublication);
+                const yearMatch = str.match(/\b(19|20)\d{2}\b/);
+                if (yearMatch) newYear = yearMatch[0];
+                
+                const months = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+                const shortMonths = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+                for (let i = 0; i < 12; i++) {
+                    if (str.toLowerCase().includes(months[i].toLowerCase()) || str.toLowerCase().includes(shortMonths[i].toLowerCase())) {
+                        newMonth = months[i];
+                        break;
+                    }
+                }
+            }
+
             setForm(p => ({ 
                 ...p, 
                 title: data.title || p.title, 
-                publisher: data.publisher || p.publisher
+                publisher: data.publisher || p.publisher,
+                month: newMonth,
+                year: newYear
             }));
+            setIsbnFetched(true);
             setSnack({ open: true, msg: "Book details fetched successfully!", severity: "success" });
         }
     } catch (err) {
@@ -206,6 +231,12 @@ export default function TextbookPublication() {
       }
     }
 
+    // Check mandatory file uploads
+    if (!files.coverPage || !files.authorAffiliation || !files.index) {
+      setSnack({ open: true, msg: "Please attach all the required documents (Cover Page, Author Affiliation, Index).", severity: "error" });
+      return;
+    }
+
     setLoading(true);
     try {
       const fd = new FormData();
@@ -276,6 +307,7 @@ export default function TextbookPublication() {
               <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Title</TableCell>
               <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>ISBN</TableCell>
               <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Applicant</TableCell>
+              <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Author / Co-Author</TableCell>
               <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Academic Year</TableCell>
               <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Role</TableCell>
               <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Status</TableCell>
@@ -284,7 +316,7 @@ export default function TextbookPublication() {
           <TableBody>
             {(!publicationsList || publicationsList.length === 0) ? (
               <TableRow>
-                <TableCell colSpan={5} align="center" sx={{ py: 4, color: "text.secondary" }}>
+                <TableCell colSpan={7} align="center" sx={{ py: 4, color: "text.secondary" }}>
                   No previous publications found. Click "Apply New" to submit one.
                 </TableCell>
               </TableRow>
@@ -294,6 +326,9 @@ export default function TextbookPublication() {
                   <TableCell sx={{ color: "var(--text-primary)", fontWeight: 500, py: 2 }}>{pub.title || "N/A"}</TableCell>
                   <TableCell sx={{ color: "var(--text-secondary)", py: 2 }}>{pub.isbn || "N/A"}</TableCell>
                   <TableCell sx={{ color: "var(--text-secondary)", py: 2 }}>{pub.facultyId?.name || "N/A"}</TableCell>
+                  <TableCell sx={{ color: "var(--text-secondary)", py: 2 }}>
+                    {pub.authors && pub.authors.length > 0 ? pub.authors.map(a => a.authorName).join(", ") : "N/A"}
+                  </TableCell>
                   <TableCell sx={{ color: "var(--text-secondary)", py: 2 }}>{pub.academicYear?.year || "N/A"}</TableCell>
                   <TableCell sx={{ py: 2 }}>
                     <Typography variant="body2" sx={{ fontWeight: 600, color: pub.visibilityRole === "Applicant" ? "var(--color-primary)" : "text.secondary" }}>
@@ -386,11 +421,11 @@ export default function TextbookPublication() {
         </Box>
         <Box>
           <Typography sx={labelStyle}>Title of the Text Book :</Typography>
-          <TextField size="small" fullWidth value={form.title} onChange={set("title")} inputProps={{ maxLength: 200 }} />
+          <TextField size="small" fullWidth value={form.title} onChange={set("title")} inputProps={{ maxLength: 200 }} disabled={isbnFetched && !!form.title} sx={isbnFetched && !!form.title ? disabledField : {}} />
         </Box>
         <Box>
           <Typography sx={labelStyle}>Name of the Publisher :</Typography>
-          <TextField size="small" fullWidth value={form.publisher} onChange={set("publisher")} />
+          <TextField size="small" fullWidth value={form.publisher} onChange={set("publisher")} disabled={isbnFetched && !!form.publisher} sx={isbnFetched && !!form.publisher ? disabledField : {}} />
         </Box>
         <Box>
           <Typography sx={labelStyle}>Edition :</Typography>
@@ -426,7 +461,7 @@ export default function TextbookPublication() {
                 </Box>
                 {parseInt(form.totalAuthors) > 1 && (
                     <Box>
-                        <Typography sx={labelStyle}>Your Author Position :</Typography>
+                        <Typography sx={labelStyle}>Applicant Author Position :</Typography>
                         <Select size="small" fullWidth value={form.userAuthorPosition} onChange={set("userAuthorPosition")}>
                             {Array.from({ length: parseInt(form.totalAuthors) || 1 }, (_, i) => (
                                 <MenuItem key={i+1} value={i+1}>{i+1}</MenuItem>
@@ -520,29 +555,23 @@ export default function TextbookPublication() {
       <Grid2>
         <Box>
           <Typography sx={labelStyle}>Month:</Typography>
-          <Select size="small" fullWidth displayEmpty value={form.month} onChange={set("month")}>
+          <Select size="small" fullWidth displayEmpty value={form.month} onChange={set("month")} disabled={isbnFetched && !!form.month} sx={isbnFetched && !!form.month ? disabledField : {}}>
             <MenuItem value="">Select</MenuItem>
             {MONTHS.map((m) => <MenuItem key={m} value={m}>{m}</MenuItem>)}
           </Select>
         </Box>
         <Box>
           <Typography sx={labelStyle}>Year:</Typography>
-          <TextField size="small" fullWidth value={form.year} onChange={set("year")} placeholder="YYYY" inputProps={{ maxLength: 4 }} />
+          <TextField size="small" fullWidth value={form.year} onChange={set("year")} placeholder="YYYY" inputProps={{ maxLength: 4 }} disabled={isbnFetched && !!form.year} sx={isbnFetched && !!form.year ? disabledField : {}} />
         </Box>
       </Grid2>
 
-      <Box sx={{ background: "rgba(232, 160, 0, 0.05)", border: "1px solid rgba(232, 160, 0, 0.2)", borderRadius: "12px", p: 2, mt: 3, display: "flex", gap: 1.5, alignItems: "flex-start" }}>
-        <Typography sx={{ fontSize: 12, fontWeight: 800, color: "#e8a000", background: "rgba(232, 160, 0, 0.15)", px: 1, py: 0.2, borderRadius: "4px" }}>NOTE</Typography>
-        <Typography sx={{ fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.5 }}>
-          1. Please Upload (PNG or JPG or JPEG or PDF) Only.<br/>
-          2. File Size Should not Exceed <strong>500KB</strong>.<br/>
-        </Typography>
-      </Box>
+      <NoteBox />
 
       <Grid2 sx={{ mt: 3 }}>
-        <FileField label="Attach CoverPage" name="coverPage" onChange={setFile("coverPage")} />
-        <FileField label="Attach Page displaying author affiliation" name="authorAffiliation" onChange={setFile("authorAffiliation")} />
-        <FileField label="Attach Index" name="index" onChange={setFile("index")} />
+        <FileField label="Attach CoverPage *" name="coverPage" onChange={setFile("coverPage")} />
+        <FileField label="Attach Page displaying author affiliation *" name="authorAffiliation" onChange={setFile("authorAffiliation")} />
+        <FileField label="Attach Index *" name="index" onChange={setFile("index")} />
         <Box>
           <Typography sx={labelStyle}>Whether you want to apply for incentive?</Typography>
           <Select size="small" fullWidth displayEmpty value={form.applyIncentive} onChange={set("applyIncentive")}>

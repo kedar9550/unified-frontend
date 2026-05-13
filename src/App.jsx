@@ -31,6 +31,7 @@ import { registerLoadingHandlers } from "./api/axios";
 import SDG from "./pages/faculty/SDG";
 import Profile from "./components/common/Profile";
 import DeptResearchApprovals from "./pages/hod/DeptResearchApprovals";
+import HODResearchDetailWrapper from "./pages/hod/HODResearchDetailWrapper";
 
 
 
@@ -100,6 +101,7 @@ function App() {
         <Route path="/student/department-mapping" element={<ProtectedRoute element={<DepartmentMapping />} />} />
         <Route path="/profile" element={<ProtectedRoute element={<Profile />} />} />
         <Route path="/hod/research-approvals" element={<ProtectedRoute element={<DeptResearchApprovals />} />} />
+        <Route path="/hod/research-request/:type/:id" element={<ProtectedRoute element={<HODResearchDetailWrapper />} />} />
 
 
         <Route path="*" element={<ProtectedRoute element={<Box p={4}><Typography variant="h4">Page Content</Typography></Box>} />} />
