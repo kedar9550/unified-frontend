@@ -159,18 +159,20 @@ export default function RaiseDiscrepancyModal({
   // Fetch available semester numbers when yearId changes
   useEffect(() => {
     if (open && yearId && user?.institutionId) {
-      fetchAvailableSemesters();
+      const yearLabel = academicYears.find(y => y._id === yearId)?.year;
+      if (yearLabel) fetchAvailableSemesters(yearLabel);
     }
   }, [open, yearId, user?.institutionId]);
 
   // Fetch specific departments for proctoring routing
   useEffect(() => {
-    if (open && section === "PROCTORING" && proctoringType === "ASSIGNED_COUNT" && yearId && user?.institutionId) {
+    const yearLabel = academicYears.find(y => y._id === yearId)?.year;
+    if (open && section === "PROCTORING" && proctoringType === "ASSIGNED_COUNT" && yearLabel && user?.institutionId) {
       setLoadingDepts(true);
       API.get("/api/student-results/proctor-departments", {
         params: {
           facultyId: user?.institutionId,
-          academicYear: yearId,
+          academicYear: yearLabel,
           semester: semesterNo
         }
       })
@@ -194,13 +196,13 @@ export default function RaiseDiscrepancyModal({
     }
   }, [open, section, proctoringType, yearId, semesterNo, user?.institutionId]);
 
-  const fetchAvailableSemesters = async () => {
+  const fetchAvailableSemesters = async (yearLabel) => {
     setLoadingSems(true);
     try {
       const res = await API.get("/api/faculty-subject-results/available-semesters", {
         params: {
           facultyId: user?.institutionId,
-          academicYear: yearId
+          academicYear: yearLabel
         }
       });
       setSemesterNumbers(res.data || []);
@@ -276,11 +278,17 @@ export default function RaiseDiscrepancyModal({
   const formatDate = (dateStr) => {
     if (!dateStr) return "—";
     const d = new Date(dateStr);
-    return d.toLocaleDateString("en-IN", {
+    const date = d.toLocaleDateString("en-IN", {
       day: "2-digit",
       month: "short",
       year: "numeric",
     });
+    const time = d.toLocaleTimeString("en-IN", {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+    });
+    return `${date} ${time}`;
   };
 
   return (

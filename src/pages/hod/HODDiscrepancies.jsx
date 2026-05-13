@@ -186,6 +186,22 @@ export default function HODDiscrepancies() {
     return acc;
   }, {});
 
+  const formatDateTime = (dateStr) => {
+    if (!dateStr) return { date: "—", time: "" };
+    const d = new Date(dateStr);
+    const date = d.toLocaleDateString("en-IN", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    });
+    const time = d.toLocaleTimeString("en-IN", {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+    });
+    return { date, time };
+  };
+
   return (
     <>
       <PageHeader
@@ -260,7 +276,7 @@ export default function HODDiscrepancies() {
             <Table>
               <TableHead sx={{ background: "var(--gradient-primary)" }}>
                 <TableRow>
-                  {["#", "Faculty", "Department", "Year / Sem", "Note", "Status", "Action"].map(col => (
+                  {["#", "Faculty", "Department", "Year / Sem", "Raised On", "Note", "Status", "Action"].map(col => (
                     <TableCell key={col} sx={{ color: "#fff", fontWeight: 700 }}>{col}</TableCell>
                   ))}
                 </TableRow>
@@ -284,7 +300,15 @@ export default function HODDiscrepancies() {
                         <Typography fontSize={13}>{item.academicYearId?.year}</Typography>
                         <Chip label={item.semesterTypeId?.name} size="small" sx={{ fontSize: 10, height: 20 }} />
                       </TableCell>
-                      <TableCell sx={{ maxWidth: 350 }}>
+                      <TableCell>
+                        <Typography fontSize={13} fontWeight={700}>
+                          {formatDateTime(item.createdAt).date}
+                        </Typography>
+                        <Typography fontSize={11} color="text.secondary">
+                          {formatDateTime(item.createdAt).time}
+                        </Typography>
+                      </TableCell>
+                      <TableCell sx={{ maxWidth: 250 }}>
                         <Typography fontSize={13} noWrap>{item.note}</Typography>
                       </TableCell>
                       <TableCell>

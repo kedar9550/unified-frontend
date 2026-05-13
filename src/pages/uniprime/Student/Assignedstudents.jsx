@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { Box, Avatar, CircularProgress, Typography, MenuItem, Select, FormControl, InputLabel, Paper, Button, Grid } from "@mui/material";
-import { UploadFile, PersonAdd } from "@mui/icons-material";
+import { UploadFile, PersonAdd, Download } from "@mui/icons-material";
 import PageHeader from "../../../components/common/PageHeader";
 import SectionHeader from "../../../components/common/SectionHeader";
 import DataTable from "../../../components/data/DataTable";
@@ -103,6 +103,36 @@ const Assignedstudents = () => {
         return "Sem / Year";
     };
 
+    const handleDownload = () => {
+        if (filteredStudents.length === 0) return;
+
+        const headers = ["Roll No", "Student Name", "Department", "Semester/Year", "Program", "Branch", "Email"];
+        const rows = filteredStudents.map(s => [
+            s.rollNo,
+            s.personalInfo?.studentName,
+            s.academicInfo?.department?.name,
+            s.academicInfo?.programName === "Pharma.D" ? s.academicInfo?.yearName : s.academicInfo?.semester,
+            s.academicInfo?.programName,
+            s.academicInfo?.branch,
+            s.contactInfo?.emailId
+        ]);
+
+        const csvContent = [
+            headers.join(","),
+            ...rows.map(row => row.map(cell => `"${cell || ""}"`).join(","))
+        ].join("\n");
+
+        const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.setAttribute("href", url);
+        link.setAttribute("download", `assigned_students_${new Date().toLocaleDateString("en-IN").replace(/\//g, "-")}.csv`);
+        link.style.visibility = "hidden";
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
     const columns = [
         "Roll No", "Name", "Assigned Dept", getSemYearHeader(), "Program", "Branch", "Email"
     ];
@@ -178,6 +208,27 @@ const Assignedstudents = () => {
             >
                 <SectionHeader
                     title={`Assigned Student Details (${filteredStudents.length})`}
+                    action={
+                        <Button
+                            variant="outlined"
+                            startIcon={<Download />}
+                            onClick={handleDownload}
+                            disabled={filteredStudents.length === 0}
+                            sx={{
+                                borderRadius: "12px",
+                                textTransform: "none",
+                                fontWeight: 600,
+                                borderColor: "var(--border-color)",
+                                color: "var(--text-primary)",
+                                "&:hover": {
+                                    borderColor: "var(--color-primary)",
+                                    background: "var(--bg-accent-1)"
+                                }
+                            }}
+                        >
+                            Download CSV
+                        </Button>
+                    }
                 />
 
                 <Box sx={{ flex: 1 }}>

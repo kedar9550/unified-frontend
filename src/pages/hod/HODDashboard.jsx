@@ -58,6 +58,22 @@ const HODDashboard = () => {
     fetchDashboardData();
   }, [user]);
 
+  const formatDateTime = (dateStr) => {
+    if (!dateStr) return "—";
+    const d = new Date(dateStr);
+    const date = d.toLocaleDateString("en-IN", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    });
+    const time = d.toLocaleTimeString("en-IN", {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+    });
+    return `${date} • ${time}`;
+  };
+
   const topCards = [
     { title: "Department Faculty", value: "45", subtitle: "Total Active", icon: <People />, color: "#3B82F6", bgColor: "#EFF6FF" },
     { title: "Pending Discrepancies", value: counts.pending, subtitle: "Require Action", icon: <WarningAmber />, color: "#F59E0B", bgColor: "#FEF3C7" },
@@ -202,7 +218,7 @@ const HODDashboard = () => {
                   <Box>
                     <Typography sx={{ fontWeight: 700, fontSize: "0.95rem" }}>{disc.facultyName}</Typography>
                     <Typography variant="caption" color="text.secondary" sx={{ display: "block" }}>
-                      {disc.section} • {disc.academicYearId?.year} • {disc.semesterTypeId?.name}
+                      {disc.section} • {disc.academicYearId?.year} • {disc.semesterTypeId?.name} • {formatDateTime(disc.createdAt)}
                     </Typography>
                     <Typography variant="body2" sx={{ mt: 0.5, color: "#4B5563" }}>{disc.note}</Typography>
                   </Box>
