@@ -9,12 +9,9 @@ import {
   Chip,
   LinearProgress,
   Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
+  CircularProgress,
+  Snackbar,
+  Alert
 } from "@mui/material";
 import {
   People,
@@ -30,7 +27,6 @@ import {
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
 import { useAuth } from "../../context/AuthContext";
 import API from "../../api/axios";
-import { CircularProgress } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 
 const FeedbackCoordinatorDashboard = () => {
@@ -49,6 +45,17 @@ const FeedbackCoordinatorDashboard = () => {
     discrepancies: [],
     chartData: []
   });
+
+  const [error, setError] = React.useState(null);
+
+  const formatDate = (dateStr) => {
+    if (!dateStr) return "N/A";
+    const date = new Date(dateStr);
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    return `${day}/${month}/${year}`;
+  };
 
   React.useEffect(() => {
     const fetchDashboard = async () => {
@@ -86,246 +93,262 @@ const FeedbackCoordinatorDashboard = () => {
           <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
             <Box>
               <Typography variant="h4" sx={{ fontWeight: 800, color: "var(--text-primary)", mb: 0.5, letterSpacing: "-0.02em" }}>
-                Welcome back, {user?.name?.split(' ')[0] || "Feedback Admin"}! 👋
+                Welcome back, {user?.name || "Feedback Admin"}! 👋
               </Typography>
               <Typography variant="body2" sx={{ color: "var(--text-secondary)", fontWeight: 500 }}>
-                University Faculty Feedback Analysis • {dashboardData.activeYear}
+                University Faculty Feedback Analysis 
               </Typography>
             </Box>
             <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
-              <Button variant="outlined" sx={{ borderRadius: "12px", borderColor: 'var(--border-color)', color: 'var(--text-primary)', textTransform: 'none', px: 2, py: 1, background: "var(--bg-panel)" }} startIcon={<CalendarMonth sx={{ color: "var(--color-primary)" }} />}>
+              <Button 
+                variant="outlined" 
+                sx={{ 
+                    borderRadius: "12px", 
+                    borderColor: 'var(--border-color)', 
+                    color: 'var(--text-primary)', 
+                    textTransform: 'none', 
+                    px: 2, py: 1, 
+                    background: "var(--bg-glass)",
+                    backdropFilter: "blur(10px)",
+                    fontWeight: 600,
+                    "&:hover": { borderColor: "var(--color-primary)", background: "var(--bg-accent-1)" }
+                }} 
+                startIcon={<CalendarMonth sx={{ color: "var(--color-primary)" }} />}
+              >
                 {dashboardData.activeYear}
               </Button>
-              <Chip label={dashboardData.activeSemester} variant="outlined" sx={{ fontWeight: 700, borderRadius: "12px", border: "1px solid var(--border-color)", color: "var(--color-primary)", px: 1 }} />
+              <Chip label={dashboardData.activeSemester} variant="outlined" sx={{ fontWeight: 700, borderRadius: "12px", border: "1px solid var(--border-color)", color: "var(--color-primary)", px: 1, height: 40 }} />
             </Box>
           </Box>
 
-          <Grid container spacing={2} sx={{ mb: 4 }}>
+          <Box sx={{ display: "flex", gap: 2, mb: 4, flexWrap: "wrap" }}>
             {topCards.map((card, i) => (
-              <Grid key={i} sx={{ flex: { xs: "1 1 100%", sm: "1 1 45%", md: "1 1 30%", lg: "1 1 0" }, minWidth: 0 }}>
+              <Box key={i} sx={{ flex: { xs: "1 1 100%", sm: "1 1 calc(50% - 16px)", lg: 1 }, minWidth: 0 }}>
                 <Card 
                   onClick={() => navigate(card.path)}
                   sx={{
-                  borderRadius: 1,
+                  borderRadius: "16px",
                   boxShadow: "var(--shadow-premium)",
                   border: "1px solid var(--border-color)",
-                  p: 2.5,
+                  p: 2,
                   height: "100%",
                   display: "flex",
                   alignItems: "center",
                   gap: 2,
                   background: "var(--bg-panel)",
-                  transition: "transform 0.2s",
+                  transition: "all 0.3s ease",
                   cursor: "pointer",
-                  "&:hover": { transform: "translateY(-4px)" }
+                  "&:hover": { transform: "translateY(-4px)", borderColor: card.color }
                 }}>
-                  <Box sx={{ width: 52, height: 52, borderRadius: "12px", display: "flex", alignItems: "center", justifyContent: "center", backgroundColor: card.bgColor, color: card.color, flexShrink: 0 }}>
+                  <Box sx={{ width: 48, height: 48, borderRadius: "14px", display: "flex", alignItems: "center", justifyContent: "center", backgroundColor: card.bgColor, color: card.color, flexShrink: 0 }}>
                     {card.icon}
                   </Box>
                   <Box>
-                    <Typography variant="caption" sx={{ color: "var(--text-secondary)", fontWeight: 700, textTransform: "uppercase", fontSize: "0.7rem", letterSpacing: "0.5px" }}>{card.title}</Typography>
-                    <Typography variant="h5" sx={{ fontWeight: 800, color: "var(--text-primary)", my: 0.2 }}>{card.value}</Typography>
-                    <Typography variant="caption" sx={{ color: "var(--text-secondary)", opacity: 0.8 }}>{card.subtitle}</Typography>
+                    <Typography variant="caption" sx={{ color: "var(--text-secondary)", fontWeight: 700, textTransform: "uppercase", fontSize: "0.65rem", letterSpacing: "0.02em" }}>{card.title}</Typography>
+                    <Typography variant="h5" sx={{ fontWeight: 800, color: "var(--text-primary)", my: 0.1 }}>{card.value}</Typography>
                   </Box>
                 </Card>
-              </Grid>
+              </Box>
             ))}
-          </Grid>
+          </Box>
 
-      {/* Row 2: Overview & Recent Feedbacks */}
-      <Box sx={{ display: "flex", gap: 3, flexWrap: { xs: "wrap", lg: "nowrap" }, mb: 4, alignItems: "flex-start" }}>
-            {/* Feedback Overview */}
-            <Box sx={{ width: { xs: "100%", lg: "40%" } }}>
-              <Card 
-                onClick={() => navigate("/feedback-management")}
-                sx={{ borderRadius: 1, boxShadow: "var(--shadow-premium)", border: "1px solid var(--border-color)", p: 3, width: "100%", display: "flex", flexDirection: "column", background: "var(--bg-panel)", cursor: "pointer", transition: "transform 0.2s", "&:hover": { transform: "translateY(-4px)" } }}
-              >
-                <Typography sx={{ fontWeight: 700, fontSize: "1.1rem", mb: 3, color: "var(--text-primary)" }}>Performance Overview</Typography>
-
-                <Box sx={{ display: "flex", alignItems: "center", gap: 3, mb: 4, flexDirection: { xs: "column", sm: "row" } }}>
-                  <Box sx={{ position: "relative", width: 150, height: 150, flexShrink: 0 }}>
-                    <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0} debounce={50}>
+          {/* Main Content Layout */}
+          <Box sx={{ display: "flex", gap: 3, mb: 4, flexWrap: { xs: "wrap", lg: "nowrap" }, alignItems: "stretch" }}>
+            
+            {/* Left Column: Overview & Discrepancies */}
+            <Box sx={{ flex: { xs: "1 1 100%", lg: "0 0 320px" }, display: 'flex', flexDirection: 'column', gap: 3 }}>
+              {/* Performance Overview */}
+              <Card sx={{ borderRadius: "24px", background: "var(--bg-panel)", border: "1px solid var(--border-color)", boxShadow: "var(--shadow-premium)", p: 2.5, display: "flex", flexDirection: "column" }}>
+                <Typography sx={{ fontWeight: 800, fontSize: "1.1rem", mb: 3, color: "var(--text-primary)" }}>Performance Overview</Typography>
+                
+                <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 4, flexWrap: "wrap", justifyContent: "center" }}>
+                  <Box sx={{ position: "relative", width: 130, height: 130, flexShrink: 0 }}>
+                    <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
                       <PieChart>
-                        <Pie data={dashboardData.chartData} dataKey="value" innerRadius={55} outerRadius={75} stroke="none">
+                        <Pie data={dashboardData.chartData} dataKey="value" innerRadius={45} outerRadius={60} stroke="none" paddingAngle={5}>
                           {dashboardData.chartData.map((entry, index) => (
                             <Cell key={`cell-${index}`} fill={entry.color} />
                           ))}
                         </Pie>
-                        <Tooltip />
+                        <Tooltip 
+                          contentStyle={{ background: 'var(--bg-panel)', border: '1px solid var(--border-color)', borderRadius: '12px' }}
+                          itemStyle={{ color: 'var(--text-primary)' }}
+                        />
                       </PieChart>
                     </ResponsiveContainer>
                     <Box sx={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", textAlign: "center" }}>
-                      <Typography sx={{ fontSize: 24, fontWeight: 800, color: "var(--text-primary)", lineHeight: 1 }}>
+                      <Typography sx={{ fontSize: 22, fontWeight: 900, color: "var(--text-primary)", lineHeight: 1 }}>
                         {dashboardData.totalFaculties > 0 ? Math.round((dashboardData.processedFeedbacks / dashboardData.totalFaculties) * 100) : 0}%
                       </Typography>
-                      <Typography sx={{ fontSize: 10, color: "var(--text-secondary)", fontWeight: 700 }}>DONE</Typography>
+                      <Typography sx={{ fontSize: 8, color: "var(--text-secondary)", fontWeight: 700, textTransform: "uppercase" }}>DONE</Typography>
                     </Box>
                   </Box>
-
-                  <Box sx={{ flex: 1, width: "100%" }}>
+                  
+                  <Box sx={{ flex: 1, display: "flex", flexDirection: "column", gap: 1, minWidth: "120px" }}>
                     {dashboardData.chartData.map((item, idx) => (
-                      <Box key={idx} sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1.5 }}>
-                        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                          <Box sx={{ width: 10, height: 10, borderRadius: "50%", bgcolor: item.color }} />
-                          <Typography sx={{ fontSize: 13, color: "var(--text-secondary)", fontWeight: 500 }}>{item.name}</Typography>
+                      <Box key={idx} sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                        <Box sx={{ display: "flex", alignItems: "center", gap: 0.8 }}>
+                          <Box sx={{ width: 7, height: 7, borderRadius: "50%", bgcolor: item.color }} />
+                          <Typography sx={{ fontSize: "0.75rem", color: "var(--text-secondary)", fontWeight: 600 }}>{item.name}</Typography>
                         </Box>
-                        <Typography sx={{ fontSize: 13, fontWeight: 700, color: "var(--text-primary)" }}>{item.value}</Typography>
+                        <Typography sx={{ fontSize: "0.8rem", fontWeight: 800, color: "var(--text-primary)" }}>{item.value}</Typography>
                       </Box>
                     ))}
                   </Box>
                 </Box>
 
-                <Typography variant="body2" sx={{ color: "var(--text-secondary)", mb: 1, fontWeight: 500 }}>
-                  {dashboardData.processedFeedbacks} of {dashboardData.totalFaculties} evaluations processed
-                </Typography>
-                <LinearProgress
-                  variant="determinate"
-                  value={dashboardData.totalFaculties > 0 ? (dashboardData.processedFeedbacks / dashboardData.totalFaculties) * 100 : 0}
-                  sx={{ height: 10, borderRadius: 5, bgcolor: "var(--bg-accent-1)", "& .MuiLinearProgress-bar": { bgcolor: "var(--color-primary)", borderRadius: 5 } }}
-                />
-              </Card>
-            </Box>
-
-            {/* Recent Feedbacks */}
-            <Box sx={{ width: { xs: "100%", lg: "60%" } }}>
-              <Card sx={{ borderRadius: 1, boxShadow: "var(--shadow-premium)", border: "1px solid var(--border-color)", p: 3, width: "100%", display: "flex", flexDirection: "column", background: "var(--bg-panel)" }}>
-                <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
-                  <Typography sx={{ fontWeight: 700, fontSize: "1.1rem", color: "var(--text-primary)" }}>Recent Evaluations</Typography>
-                  <Button 
-                    onClick={() => navigate("/feedback-management")}
-                    size="small" 
-                    endIcon={<ArrowForward />} 
-                    sx={{ textTransform: "none", fontSize: "0.85rem", color: "var(--color-primary)", fontWeight: 700 }}
-                  >
-                    View All Results
-                  </Button>
+                <Box>
+                    <Box sx={{ display: "flex", justifyContent: "space-between", mb: 1 }}>
+                        <Typography variant="body2" sx={{ color: "var(--text-secondary)", fontSize: "0.75rem", fontWeight: 600 }}>Progress</Typography>
+                        <Typography variant="body2" sx={{ color: "var(--color-primary)", fontSize: "0.75rem", fontWeight: 800 }}>{dashboardData.processedFeedbacks} / {dashboardData.totalFaculties}</Typography>
+                    </Box>
+                    <LinearProgress 
+                        variant="determinate" 
+                        value={dashboardData.totalFaculties > 0 ? (dashboardData.processedFeedbacks / dashboardData.totalFaculties) * 100 : 0} 
+                        sx={{ 
+                            height: 7, 
+                            borderRadius: 4, 
+                            bgcolor: "var(--bg-accent-1)", 
+                            "& .MuiLinearProgress-bar": { background: "var(--gradient-primary)", borderRadius: 4 } 
+                        }} 
+                    />
                 </Box>
-
-                <TableContainer>
-                  <Table sx={{ minWidth: 500 }}>
-                    <TableHead>
-                      <TableRow>
-                        <TableCell sx={{ color: "var(--text-secondary)", fontWeight: 700, borderBottom: "1px solid var(--border-color)", fontSize: "0.75rem" }}>FACULTY</TableCell>
-                        <TableCell sx={{ color: "var(--text-secondary)", fontWeight: 700, borderBottom: "1px solid var(--border-color)", fontSize: "0.75rem" }}>SUBJECT / COURSE</TableCell>
-                        <TableCell sx={{ color: "var(--text-secondary)", fontWeight: 700, borderBottom: "1px solid var(--border-color)", fontSize: "0.75rem" }}>RATING</TableCell>
-                        <TableCell sx={{ color: "var(--text-secondary)", fontWeight: 700, borderBottom: "1px solid var(--border-color)", fontSize: "0.75rem" }}>STATUS</TableCell>
-                      </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      {dashboardData.recentFeedbacks.map((fb, i) => (
-                        <TableRow 
-                          key={i} 
-                          hover 
-                          onClick={() => navigate("/feedback-management")}
-                          sx={{ cursor: "pointer", "&:last-child td": { borderBottom: 0 } }}
-                        >
-                          <TableCell sx={{ py: 2, borderBottom: "1px solid var(--border-color)" }}>
-                            <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-                              <Avatar src={fb.avatar} sx={{ width: 36, height: 36, bgcolor: "var(--bg-accent-1)", color: "var(--color-primary)", fontWeight: 700 }}>{fb.name.charAt(0)}</Avatar>
-                              <Box>
-                                <Typography sx={{ fontSize: "0.9rem", fontWeight: 700, color: "var(--text-primary)" }}>{fb.name}</Typography>
-                                <Typography sx={{ fontSize: "0.75rem", color: "var(--text-secondary)" }}>{fb.dept}</Typography>
-                              </Box>
-                            </Box>
-                          </TableCell>
-                          <TableCell sx={{ py: 2, borderBottom: "1px solid var(--border-color)" }}>
-                            <Typography sx={{ fontSize: "0.85rem", color: "var(--text-secondary)", fontWeight: 500 }}>{fb.subject}</Typography>
-                          </TableCell>
-                          <TableCell sx={{ py: 2, borderBottom: "1px solid var(--border-color)" }}>
-                            <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-                              <StarBorder sx={{ fontSize: 18, color: "#F59E0B" }} />
-                              <Typography sx={{ fontSize: "0.9rem", fontWeight: 800, color: "var(--text-primary)" }}>{fb.rating}</Typography>
-                            </Box>
-                          </TableCell>
-                          <TableCell sx={{ py: 2, borderBottom: "1px solid var(--border-color)" }}>
-                            <Chip
-                              label={fb.status}
-                              size="small"
-                              sx={{
-                                fontWeight: 700,
-                                fontSize: "0.7rem",
-                                borderRadius: "6px",
-                                bgcolor: fb.status === "Processed" ? "var(--bg-accent-2)" : "var(--bg-accent-3)",
-                                color: fb.status === "Processed" ? "#10B981" : "#F59E0B",
-                                height: 24
-                              }}
-                            />
-                            <Typography sx={{ fontSize: "0.7rem", color: "var(--text-secondary)", mt: 0.5, fontWeight: 500 }}>
-                              {new Date(fb.time).toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                            </Typography>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </TableContainer>
               </Card>
-            </Box>
-      </Box>
 
-          {/* Row 3: Discrepancies */}
-          <Box sx={{ display: "flex", gap: 3, flexWrap: "wrap", mb: 4 }}>
-            <Box sx={{ width: "100%", display: "flex" }}>
-              <Card sx={{ borderRadius: 1, boxShadow: "var(--shadow-premium)", border: "1px solid var(--border-color)", p: 3, width: "100%", background: "var(--bg-panel)" }}>
+              {/* Discrepancies */}
+              <Card sx={{ borderRadius: "24px", background: "var(--bg-panel)", border: "1px solid var(--border-color)", boxShadow: "var(--shadow-premium)", p: 2.5 }}>
                 <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
-                  <Typography sx={{ fontWeight: 800, fontSize: "1.1rem", color: "var(--text-primary)" }}>Recent Feedback Discrepancies</Typography>
+                  <Typography sx={{ fontWeight: 800, fontSize: "1.1rem", color: "var(--text-primary)" }}>Discrepancies</Typography>
                   <Button 
                     onClick={() => navigate("/feedback-management/discrepancies")}
                     size="small" 
-                    endIcon={<ArrowForward />} 
-                    sx={{ textTransform: "none", fontSize: "0.85rem", color: "var(--color-primary)", fontWeight: 700 }}
+                    sx={{ textTransform: "none", fontSize: "0.8rem", color: "#EF4444", fontWeight: 700 }}
                   >
-                    View All Discrepancies
+                    View All
                   </Button>
                 </Box>
 
-                <Grid container spacing={3}>
-                  {dashboardData.discrepancies.length > 0 ? (
-                    dashboardData.discrepancies.map((disc, i) => (
-                      <Grid item xs={12} md={6} key={i}>
-                        <Paper 
-                          variant="outlined" 
-                          onClick={() => navigate("/feedback-management/discrepancies")}
-                          sx={{ p: 2.5, borderRadius: "12px", border: "1px solid var(--border-color)", background: "var(--bg-paper)", transition: "all 0.2s", cursor: "pointer", "&:hover": { borderColor: "#EF4444", transform: "scale(1.01)" } }}
-                        >
-                          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 2 }}>
-                            <Box sx={{ flex: 1 }}>
-                              <Typography sx={{ fontSize: "0.95rem", fontWeight: 800, color: "var(--text-primary)" }}>{disc.name}</Typography>
-                              <Typography sx={{ fontSize: "0.8rem", color: "var(--text-secondary)", fontWeight: 600, mb: 1.5 }}>{disc.subject}</Typography>
-                              <Typography sx={{ fontSize: "0.85rem", color: "var(--text-primary)", fontWeight: 500, lineHeight: 1.4 }}>{disc.issue}</Typography>
-                              <Box sx={{ display: "flex", alignItems: "center", gap: 1, mt: 1.5 }}>
-                                <FeedbackIcon sx={{ fontSize: 16, color: "#EF4444" }} />
-                                <Typography sx={{ fontSize: "0.75rem", color: "var(--text-secondary)", fontWeight: 500 }}>{disc.detail}</Typography>
-                              </Box>
-                            </Box>
-                            <Box sx={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 2 }}>
-                              <Typography sx={{ fontSize: "0.7rem", color: "var(--text-secondary)", fontWeight: 600 }}>{new Date(disc.time).toLocaleDateString()}</Typography>
-                              <Button 
-                                onClick={() => navigate("/feedback-management/discrepancies")}
-                                variant="contained" 
-                                color="error" 
-                                size="small" 
-                                sx={{ textTransform: "none", fontSize: "0.75rem", borderRadius: "8px", fontWeight: 700, boxShadow: "none" }}
-                              >
-                                Resolve
-                              </Button>
-                            </Box>
-                          </Box>
-                        </Paper>
-                      </Grid>
-                    ))
-                  ) : (
-                    <Grid item xs={12}>
-                      <Box sx={{ textAlign: 'center', py: 4, bgcolor: 'var(--bg-paper)', borderRadius: 1, border: '1px dashed var(--border-color)' }}>
-                        <ThumbUpAlt sx={{ fontSize: 40, color: '#10B981', mb: 1, opacity: 0.5 }} />
-                        <Typography sx={{ color: 'var(--text-secondary)', fontWeight: 600 }}>No pending feedback discrepancies found.</Typography>
+                <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                  {dashboardData.discrepancies.length === 0 ? (
+                    <Typography sx={{ fontSize: "0.85rem", color: "var(--text-secondary)", textAlign: "center", py: 2 }}>No pending discrepancies</Typography>
+                  ) : dashboardData.discrepancies.slice(0, 3).map((disc, i) => (
+                    <Paper 
+                      key={i} 
+                      elevation={0} 
+                      onClick={() => navigate("/feedback-management/discrepancies")}
+                      sx={{ p: 1.8, borderRadius: "16px", border: "1px solid var(--border-color)", background: "var(--bg-glass)", transition: "all 0.2s ease", cursor: "pointer", "&:hover": { borderColor: "#EF4444", transform: "translateY(-2px)" } }}
+                    >
+                      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 2 }}>
+                        <Box sx={{ flex: 1, minWidth: 0 }}>
+                          <Typography noWrap sx={{ fontSize: "0.85rem", fontWeight: 700, color: "var(--text-primary)" }}>{disc.name}</Typography>
+                          <Typography noWrap sx={{ fontSize: "0.75rem", color: "var(--text-secondary)", mb: 1 }}>{disc.subject}</Typography>
+                          <Typography sx={{ fontSize: "0.8rem", color: "#EF4444", fontWeight: 600 }}>{disc.issue}</Typography>
+                        </Box>
+                        <Typography sx={{ fontSize: "0.65rem", color: "var(--text-secondary)", fontWeight: 700, flexShrink: 0 }}>
+                          {formatDate(disc.time)}
+                        </Typography>
                       </Box>
-                    </Grid>
-                  )}
-                </Grid>
+                    </Paper>
+                  ))}
+                </Box>
+              </Card>
+            </Box>
+
+            {/* Right Column: Recent Evaluations */}
+            <Box sx={{ flex: 1, minWidth: 0 }}>
+              <Card sx={{ borderRadius: "24px", background: "var(--bg-panel)", border: "1px solid var(--border-color)", boxShadow: "var(--shadow-premium)", p: 3, height: "100%", display: "flex", flexDirection: "column" }}>
+                <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
+                  <Typography sx={{ fontWeight: 800, fontSize: "1.1rem", color: "var(--text-primary)" }}>Recent Evaluations</Typography>
+                  <Button 
+                    onClick={() => navigate("/feedback-management")}
+                    size="small" 
+                    sx={{ textTransform: "none", fontSize: "0.85rem", color: "var(--color-primary)", fontWeight: 700 }}
+                  >
+                    View All
+                  </Button>
+                </Box>
+
+                <Box sx={{ display: "flex", flexDirection: "column", gap: 2, flex: 1 }}>
+                  {dashboardData.recentFeedbacks.length === 0 ? (
+                    <Typography sx={{ fontSize: "0.9rem", color: "var(--text-secondary)", textAlign: "center", py: 4 }}>No recent evaluations</Typography>
+                  ) : dashboardData.recentFeedbacks.map((fb, i) => (
+                    <Box 
+                      key={i} 
+                      onClick={() => navigate("/feedback-management")}
+                      sx={{ 
+                        p: 2, 
+                        borderRadius: "18px", 
+                        background: "var(--bg-glass)", 
+                        border: "1px solid var(--border-color)",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 2,
+                        transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+                        cursor: "pointer",
+                        "&:hover": {
+                          transform: "translateX(8px)",
+                          borderColor: "var(--color-primary)",
+                          background: "var(--bg-accent-1)"
+                        }
+                      }}
+                    >
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, flex: 1.5 }}>
+                        <Avatar sx={{ width: 40, height: 40, border: "2px solid var(--bg-panel)", boxShadow: "0 0 0 1px var(--border-color)", bgcolor: "var(--bg-accent-1)", color: "var(--color-primary)", fontWeight: 700 }}>{fb.name.charAt(0)}</Avatar>
+                        <Box sx={{ minWidth: 0 }}>
+                          <Typography noWrap sx={{ fontSize: "0.9rem", fontWeight: 700, color: "var(--text-primary)" }}>{fb.name}</Typography>
+                          <Typography noWrap sx={{ fontSize: "0.75rem", color: "var(--text-secondary)", opacity: 0.8 }}>{fb.dept}</Typography>
+                        </Box>
+                      </Box>
+
+                      <Box sx={{ flex: 1.5, display: { xs: "none", sm: "block" }, minWidth: 0 }}>
+                        <Typography variant="caption" sx={{ color: "var(--text-secondary)", fontWeight: 700, textTransform: "uppercase", fontSize: "0.6rem", mb: 0.5, display: "block" }}>Subject / Course</Typography>
+                        <Typography noWrap sx={{ fontSize: "0.85rem", color: "var(--text-primary)", fontWeight: 600 }}>{fb.subject}</Typography>
+                      </Box>
+
+                      <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 0.5, flex: 0.8 }}>
+                        <Chip 
+                            label={fb.status} 
+                            size="small" 
+                            sx={{ 
+                                height: 22, fontSize: "0.65rem", fontWeight: 800, 
+                                bgcolor: fb.status === "Processed" ? "rgba(16, 185, 129, 0.1)" : "rgba(245, 158, 11, 0.1)", 
+                                color: fb.status === "Processed" ? "#10B981" : "#F59E0B",
+                                border: "1px solid currentColor"
+                            }} 
+                        />
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                            <StarBorder sx={{ fontSize: 14, color: "#F59E0B" }} />
+                            <Typography sx={{ fontSize: "0.85rem", fontWeight: 800, color: "var(--text-primary)" }}>{fb.rating}</Typography>
+                        </Box>
+                      </Box>
+
+                      <Box sx={{ flex: 0.8, textAlign: "right", display: { xs: "none", sm: "block" } }}>
+                        <Typography sx={{ fontSize: "0.8rem", color: "var(--text-secondary)", fontWeight: 600 }}>
+                          {formatDate(fb.time)}
+                        </Typography>
+                      </Box>
+                    </Box>
+                  ))}
+                </Box>
+
+                <Box sx={{ mt: 3, pt: 2, borderTop: "1px solid var(--border-color)", textAlign: "center" }}>
+                  <Button 
+                    onClick={() => navigate("/feedback-management")}
+                    endIcon={<ArrowForward sx={{ fontSize: 16 }} />} 
+                    sx={{ textTransform: "none", fontSize: "0.9rem", color: "var(--color-primary)", fontWeight: 700 }}
+                  >
+                    Explore All Evaluations
+                  </Button>
+                </Box>
               </Card>
             </Box>
           </Box>
+          
+          <Snackbar open={!!error} autoHideDuration={6000} onClose={() => setError(null)}>
+            <Alert onClose={() => setError(null)} severity="error" sx={{ width: '100%' }}>
+              {error}
+            </Alert>
+          </Snackbar>
         </>
       )}
     </Box>

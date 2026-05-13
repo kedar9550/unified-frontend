@@ -221,7 +221,9 @@ export default function RaiseDiscrepancyModal({
   const fetchDiscrepancies = async () => {
     setLoadingDisc(true);
     try {
-      const res = await API.get("/api/discrepancies");
+      const res = await API.get("/api/discrepancies", {
+        params: { role: "FACULTY" }
+      });
       setDiscrepancies(res.data || []);
     } catch (err) {
       console.error("Error fetching discrepancies:", err);

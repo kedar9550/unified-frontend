@@ -22,35 +22,35 @@ export const loginUser = async (loginFn, credentials) => {
 };
 
 // ---------------- FORGOT PASSWORD LOGIC ----------------
-const sendOtpCode = async (institutionId) => {
-  if (!institutionId?.trim()) return { success: false, message: "ID is required" };
+const sendOtpCode = async (employeeCode, email) => {
+  if (!email?.trim()) return { success: false, message: "Email is required" };
   try {
-    const res = await API.post("/api/auth/forgot-password", { institutionId });
+    const res = await API.post("/api/auth/send-otp", { employeeCode, email });
     return { success: true, message: res.data?.message || "OTP sent successfully" };
   } catch (err) {
-    return { success: false, message: err.response?.data?.message || "ID not found" };
+    return { success: false, message: err.response?.data?.message || "Failed to send OTP" };
   }
 };
 
-const verifyOtpCode = async (institutionId, otp) => {
+const verifyOtpCode = async (employeeCode, otp) => {
   if (!otp) return { success: false, message: "OTP is required" };
   try {
-    const res = await API.post("/api/auth/verify-otp", { institutionId, otp });
+    const res = await API.post("/api/auth/verify-otp", { employeeCode, otp });
     return { success: true, message: res.data?.message || "OTP verified successfully" };
   } catch (err) {
     return { success: false, message: err.response?.data?.message || "Invalid or expired OTP" };
   }
 };
 
-const resetPasswordCode = async (institutionId, otp, newPassword, confirmPassword) => {
+const resetPasswordCode = async (employeeCode, otp, newPassword, confirmPassword) => {
   if (!newPassword || !confirmPassword) return { success: false, message: "Please fill all fields" };
-  if (newPassword.length < 6) return { success: false, message: "Too short" };
-  if (newPassword !== confirmPassword) return { success: false, message: "Mismatch" };
+  if (newPassword.length < 6) return { success: false, message: "Password too short" };
+  if (newPassword !== confirmPassword) return { success: false, message: "Passwords do not match" };
   try {
-    const res = await API.post("/api/auth/reset-password", { institutionId, otp, newPassword });
-    return { success: true, message: res.data?.message || "Password changed" };
+    const res = await API.post("/api/auth/reset-password", { employeeCode, otp, newPassword });
+    return { success: true, message: res.data?.message || "Password changed successfully" };
   } catch (err) {
-    return { success: false, message: err.response?.data?.message || "Error resetting" };
+    return { success: false, message: err.response?.data?.message || "Error resetting password" };
   }
 };
 
@@ -88,7 +88,14 @@ export default function Login() {
 
   // ── forgot password state ──
   const [fpStep, setFpStep] = useState(1);
-  const [fpData, setFpData] = useState({ id: '', otp: '', newPass: 'Aditya@123', confirmPass: 'Aditya@123' });
+  const [isIdValid, setIsIdValid] = useState(false);
+  const [fpData, setFpData] = useState({
+    id: '',
+    email: '',
+    otp: '',
+    newPass: '',
+    confirmPass: ''
+  });
   const [fpMsg, setFpMsg] = useState({ text: '', type: '' }); // type: error or success
   const [forgotAnimClass, setForgotAnimClass] = useState('');
   const [isClosing, setIsClosing] = useState(false);
@@ -127,13 +134,46 @@ export default function Login() {
 
   const toggleForgot = () => {
     setIsSignUp(false);
-    setFpData({ id: '', otp: '', newPass: 'Aditya@123', confirmPass: 'Aditya@123' });
+    setFpData({ id: '', otp: '', newPass: '', confirmPass: '' });
     setFpMsg({ text: '', type: '' });
   };
+  const checkEmployeeId = async (employeeCode) => {
+    try {
+      const res = await API.post(
+        "/api/auth/check-employee",
+        { employeeCode }
+      );
+      return {
+        success: true,
+        message: res.data.message,
+        email: res.data.email
+      };
+    } catch (err) {
+      return {
+        success: false,
+        message: err.response?.data?.message || "Error checking employee"
+      };
+    }
+  };
+  const handleCheckEmployeeId = async (e) => {
+    e.preventDefault();
+    const res = await checkEmployeeId(fpData.id);
 
+    setFpMsg({
+      text: res.message,
+      type: res.success ? "success" : "error"
+    });
+
+    if (res.success) {
+      setIsIdValid(true);
+      if (res.email) {
+        setFpData(prev => ({ ...prev, email: res.email }));
+      }
+    }
+  };
   const handleSendOtp = async (e) => {
     e.preventDefault();
-    const res = await sendOtpCode(fpData.id);
+    const res = await sendOtpCode(fpData.id, fpData.email);
     setFpMsg({ text: res.message, type: res.success ? 'success' : 'error' });
     if (res.success) setFpStep(2);
   };
@@ -171,8 +211,8 @@ export default function Login() {
     }
   };
 
-  const goSignIn = () => { 
-    setIsSignUp(false); 
+  const goSignIn = () => {
+    setIsSignUp(false);
     setFpStep(1);
     setFpMsg({ text: '', type: '' });
   };
@@ -213,26 +253,126 @@ export default function Login() {
         <div className="auth-form-wrap">
           <h1 className="auth-heading">Reset Password</h1>
           {fpMsg.text && (
-            <p className="auth-error" style={{ 
-                background: fpMsg.type === 'success' ? 'rgba(34, 197, 94, 0.1)' : 'rgba(239, 68, 68, 0.1)', 
-                color: fpMsg.type === 'success' ? '#22c55e' : '#ef4444',
-                border: `1px solid ${fpMsg.type === 'success' ? 'rgba(34, 197, 94, 0.2)' : 'rgba(239, 68, 68, 0.2)'}`
+            <p className="auth-error" style={{
+              background: fpMsg.type === 'success' ? 'rgba(34, 197, 94, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+              color: fpMsg.type === 'success' ? '#22c55e' : '#ef4444',
+              border: `1px solid ${fpMsg.type === 'success' ? 'rgba(34, 197, 94, 0.2)' : 'rgba(239, 68, 68, 0.2)'}`
             }}>
               {fpMsg.text}
             </p>
           )}
 
-          {fpStep === 1 && (
+          {/* {fpStep === 1 && (
             <form className="auth-form" onSubmit={handleSendOtp}>
               <div className="auth-field">
                 <input id="fp-id" type="text" placeholder=" " value={fpData.id} onChange={e => setFpData({ ...fpData, id: e.target.value })} />
                 <label className="auth-label" htmlFor="fp-id">Employee / Student ID</label>
+              </div>
+              <div className="auth-field">
+                <input id="fp-id" type="text" placeholder=" " value={fpData.id} onChange={e => setFpData({ ...fpData, id: e.target.value })} />
+                <label className="auth-label" htmlFor="fp-id">Email Id</label>
               </div>
               <div className="btn-wrapper-center">
                 <button type="submit" className="btn-auth-primary">SEND OTP</button>
               </div>
               <button type="button" className="auth-forgot auth-forgot-center" onClick={toggleForgot}>Back to Sign In</button>
             </form>
+          )} */}
+          {fpStep === 1 && (
+
+            <form
+              className="auth-form"
+              onSubmit={
+                isIdValid
+                  ? handleSendOtp
+                  : handleCheckEmployeeId
+              }
+            >
+
+              {/* Employee ID */}
+
+              <div className="auth-field">
+
+                <input
+                  id="fp-id"
+                  type="text"
+                  placeholder=" "
+                  value={fpData.id}
+                  onChange={e =>
+                    setFpData({
+                      ...fpData,
+                      id: e.target.value
+                    })
+                  }
+                />
+
+                <label
+                  className="auth-label"
+                  htmlFor="fp-id"
+                >
+                  Employee / Student ID
+                </label>
+
+              </div>
+
+
+              {/* Show Email Only After Valid ID */}
+
+              {isIdValid && (
+
+                <div className="auth-field">
+
+                  <input
+                    id="fp-email"
+                    type="email"
+                    placeholder=" "
+                    value={fpData.email}
+                    onChange={e =>
+                      setFpData({
+                        ...fpData,
+                        email: e.target.value
+                      })
+                    }
+                  />
+
+                  <label
+                    className="auth-label"
+                    htmlFor="fp-email"
+                  >
+                    Email ID
+                  </label>
+
+                </div>
+
+              )}
+
+
+              <div className="btn-wrapper-center">
+
+                <button
+                  type="submit"
+                  className="btn-auth-primary"
+                >
+
+                  {isIdValid
+                    ? "SEND OTP"
+                    : "CHECK ID"}
+
+                </button>
+
+              </div>
+
+
+              <button
+                type="button"
+                className="auth-forgot auth-forgot-center"
+                onClick={toggleForgot}
+              >
+                Back to Sign In
+              </button>
+
+            </form>
+
           )}
 
           {fpStep === 2 && (
