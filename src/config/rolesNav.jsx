@@ -95,7 +95,6 @@ export const ROLE_ROUTES = {
   "HOD": [
     { text: "Dashboard", path: "/dashboard", icon: <Dashboard /> },
     { text: "Proctordata", path: "/hod/protecrdataupload", icon: <People /> },
-    { text: "Discrepancies", path: "/hod/discrepancies", icon: <Flag /> },
     {
       text: "Approvals",
       icon: <Verified />,

@@ -35,12 +35,14 @@ import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
 import API from "../../api/axios";
 import { useAuth } from "../../context/AuthContext";
 import DataTable from "../../components/data/DataTable";
+import ProctorStudentsModal from "../../components/faculty/ProctorStudentsModal";
 
 const FacultyDashboard = () => {
   const { user } = useAuth();
 
   const [academicYears, setAcademicYears] = useState([]);
   const [selectedYear, setSelectedYear] = useState("");
+  const [isProctorModalOpen, setIsProctorModalOpen] = useState(false);
 
   // Fetch academic years for the year dropdown
   useEffect(() => {
@@ -132,6 +134,7 @@ const FacultyDashboard = () => {
     { title: "Upload Materials", desc: "Share study materials", icon: <CloudUpload sx={{ color: "#10B981" }} /> },
     { title: "Mark Attendance", desc: "Take attendance", icon: <Group sx={{ color: "#3B82F6" }} /> },
     { title: "Student Feedback", desc: "View feedback", icon: <Feedback sx={{ color: "#10B981" }} /> },
+    { title: "Proctoring", desc: "Assigned students", icon: <Group sx={{ color: "#8B5CF6" }} />, onClick: () => setIsProctorModalOpen(true) },
     { title: "Academic Calendar", desc: "Important dates", icon: <CalendarMonth sx={{ color: "#8B5CF6" }} /> },
     { title: "Leave Request", desc: "Apply for leave", icon: <PersonOff sx={{ color: "#3B82F6" }} /> },
   ];
@@ -612,6 +615,7 @@ const FacultyDashboard = () => {
                         boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
                       },
                     }}
+                    onClick={action.onClick}
                   >
                     <Box
                       sx={{
@@ -725,6 +729,13 @@ const FacultyDashboard = () => {
           ])}
         />
       </Card>
+
+      {/* Proctoring Students Modal */}
+      <ProctorStudentsModal 
+        open={isProctorModalOpen} 
+        onClose={() => setIsProctorModalOpen(false)} 
+        proctorId={user?.institutionId || user?.username} 
+      />
     </Box>
   );
 };
