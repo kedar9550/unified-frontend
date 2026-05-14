@@ -58,7 +58,23 @@ export default function ConsultancyPublication() {
     <Box sx={{ p: 2 }}>
       <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
         <Typography variant="h6" sx={{ color: "var(--text-primary)", fontWeight: 800 }}>My Consultancy Work</Typography>
-        <Button variant="contained" onClick={() => setViewMode("select-year")} sx={{ background: "var(--color-primary)", borderRadius: "12px", px: 3, fontWeight: 700, textTransform: "none", "&:hover": { background: "var(--color-primary)", opacity: 0.9 } }}>
+        <Button
+          variant="contained"
+          onClick={() => setViewMode("select-year")}
+          sx={{
+            background: "var(--gradient-primary)",
+            borderRadius: "12px",
+            px: 3,
+            fontWeight: 700,
+            textTransform: "none",
+            "&:hover": {
+              opacity: 0.9,
+              transform: "translateY(-1px)",
+              boxShadow: "0 4px 12px rgba(0,0,0,0.1)"
+            },
+            transition: "all 0.2s ease"
+          }}
+        >
           Apply New
         </Button>
       </Box>
@@ -99,11 +115,11 @@ export default function ConsultancyPublication() {
     <Box sx={{ maxWidth: 500, mx: "auto", mt: 5 }}>
       <FormCard title="Select Academic Year">
         <Typography sx={{ mb: 2, color: "var(--text-secondary)", fontWeight: 500 }}>Please select the academic year for this consultancy submission:</Typography>
-        <Select 
-          fullWidth 
-          size="small" 
-          displayEmpty 
-          value={selectedYear} 
+        <Select
+          fullWidth
+          size="small"
+          displayEmpty
+          value={selectedYear}
           onChange={(e) => setSelectedYear(e.target.value)}
         >
           <MenuItem value="" disabled>Select Academic Year</MenuItem>
@@ -113,7 +129,29 @@ export default function ConsultancyPublication() {
         </Select>
         <Box sx={{ display: "flex", gap: 2, mt: 4, justifyContent: "flex-end" }}>
           <Button variant="outlined" onClick={() => setViewMode("list")} sx={{ borderRadius: "12px", textTransform: "none", fontWeight: 600 }}>Cancel</Button>
-          <Button variant="contained" disabled={!selectedYear} onClick={() => setViewMode("form")} sx={{ background: "var(--color-primary)", borderRadius: "12px", px: 4, fontWeight: 700, textTransform: "none", "&:hover": { background: "var(--color-primary)", opacity: 0.9 } }}>
+          <Button
+            variant="contained"
+            disabled={!selectedYear}
+            onClick={() => setViewMode("form")}
+            sx={{
+              background: "var(--gradient-primary)",
+              borderRadius: "12px",
+              px: 4,
+              fontWeight: 700,
+              textTransform: "none",
+              "&:hover": {
+                opacity: 0.9,
+                transform: "translateY(-1px)",
+                boxShadow: "0 4px 12px rgba(0,0,0,0.1)"
+              },
+              "&.Mui-disabled": {
+                background: "var(--bg-panel)",
+                color: "var(--text-secondary)",
+                opacity: 0.5
+              },
+              transition: "all 0.2s ease"
+            }}
+          >
             Proceed
           </Button>
         </Box>
@@ -169,7 +207,27 @@ export default function ConsultancyPublication() {
       </Grid2>
 
       <Box sx={{ display: "flex", gap: 2, justifyContent: "center", mt: 4 }}>
-        <Button variant="outlined" onClick={() => setViewMode("list")} sx={{ px: 4, borderRadius: 2 }}>Cancel</Button>
+        <Button
+          variant="outlined"
+          onClick={() => setViewMode("list")}
+          sx={{
+            px: 4,
+            height: "44px",
+            borderRadius: "12px",
+            textTransform: "none",
+            fontWeight: 600,
+            color: "var(--text-primary)",
+            borderColor: "var(--border-color)",
+            "&:hover": {
+              borderColor: "#ef4444",
+              color: "#ef4444",
+              background: "rgba(239, 68, 68, 0.05)"
+            },
+            transition: "all 0.3s ease"
+          }}
+        >
+          Cancel
+        </Button>
         <SubmitBtn onClick={handleSubmit} loading={loading} />
       </Box>
     </FormCard>

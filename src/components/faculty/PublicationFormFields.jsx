@@ -1,5 +1,6 @@
-import { useState, useEffect } from "react";
-import { Box, Typography, TextField, MenuItem, Select, FormControl, InputLabel, Button, Alert } from "@mui/material";
+import { useState, useEffect, useRef } from "react";
+import { Box, Typography, TextField, MenuItem, Select, FormControl, InputLabel, Button, Alert, IconButton, Dialog, DialogContent, DialogTitle } from "@mui/material";
+import { CloudUpload, Delete, Visibility, Close } from "@mui/icons-material";
 import { useAuth } from "../../context/AuthContext";
 
 // Reusable read-only faculty info row
@@ -48,7 +49,7 @@ export const disabledField = {
 };
 
 // Month options
-export const MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+export const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
 // Year options (last 10 years)
 export const YEARS = Array.from({ length: 10 }, (_, i) => String(new Date().getFullYear() - i));
@@ -71,20 +72,140 @@ export function NoteBox() {
 
 // File upload field
 export function FileField({ label, name, onChange }) {
+  const [fileName, setFileName] = useState("");
+  const [preview, setPreview] = useState(null);
+  const [openModal, setOpenModal] = useState(false);
+  const fileInputRef = useRef(null);
+
+  useEffect(() => {
+    return () => {
+      if (preview) URL.revokeObjectURL(preview);
+    };
+  }, [preview]);
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setFileName(file.name);
+      if (file.type.startsWith("image/")) {
+        setPreview(URL.createObjectURL(file));
+      } else {
+        setPreview(null);
+      }
+    } else {
+      setFileName("");
+      setPreview(null);
+    }
+    onChange(e);
+  };
+
+  const handleRemove = () => {
+    setFileName("");
+    setPreview(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+    onChange({ target: { name, files: [] } });
+  };
+
   return (
     <Box>
-      <Typography sx={{ fontSize: 12, color: "var(--text-secondary)", fontWeight: 700, mb: 0.5, textTransform: "uppercase" }}>{label}</Typography>
-      <input type="file" accept=".png,.jpg,.jpeg,.pdf" name={name} onChange={onChange}
-        style={{ 
-            fontSize: 13, 
-            border: "1px solid var(--border-color)", 
-            borderRadius: 8, 
-            padding: "8px 12px", 
-            width: "100%", 
-            background: "var(--bg-glass)",
-            color: "var(--text-primary)",
-            outline: "none"
-        }} />
+      <Typography sx={labelStyle}>{label}</Typography>
+      <Box sx={{
+        display: "flex",
+        alignItems: "center",
+        gap: 2.5,
+        px: 2,
+        minHeight: "48px",
+        py: 0.5,
+        border: "1px solid var(--border-color)",
+        borderRadius: "12px",
+        background: "var(--bg-glass)",
+        "&:hover": { borderColor: "var(--color-primary)" },
+        transition: "all 0.3s ease",
+        position: "relative"
+      }}>
+        <Button
+          component="label"
+          variant="contained"
+          sx={{
+            background: "var(--gradient-primary)",
+            borderRadius: "30px",
+            textTransform: "none",
+            fontWeight: 700,
+            fontSize: 11,
+            px: 2.5,
+            height: "32px",
+            boxShadow: "none",
+            whiteSpace: "nowrap",
+            flexShrink: 0,
+            "&:hover": { opacity: 0.9, transform: "translateY(-1px)" },
+            transition: "all 0.2s ease"
+          }}
+        >
+          Choose file
+          <input type="file" hidden accept=".png,.jpg,.jpeg,.pdf" name={name} onChange={handleFileChange} ref={fileInputRef} />
+        </Button>
+
+        <Typography sx={{ fontSize: 14, color: "var(--text-secondary)", fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", flexGrow: 1 }}>
+          {fileName || "No file chosen"}
+        </Typography>
+
+        {fileName && (
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            {preview && (
+              <Button
+                startIcon={<Visibility />}
+                onClick={() => setOpenModal(true)}
+                sx={{
+                  textTransform: "none",
+                  fontWeight: 700,
+                  color: "var(--color-primary)",
+                  fontSize: "0.8rem",
+                  "&:hover": { background: "rgba(232, 160, 0, 0.1)" }
+                }}
+              >
+                Preview
+              </Button>
+            )}
+            <IconButton
+              onClick={handleRemove}
+              sx={{
+                color: "#ef4444",
+                background: "rgba(239, 68, 68, 0.05)",
+                "&:hover": { background: "rgba(239, 68, 68, 0.15)", transform: "scale(1.1)" },
+                transition: "all 0.2s ease"
+              }}
+            >
+              <Delete fontSize="small" />
+            </IconButton>
+          </Box>
+        )}
+      </Box>
+
+      {/* Preview Modal */}
+      <Dialog open={openModal} onClose={() => setOpenModal(false)} maxWidth="md" fullWidth sx={{ "& .MuiPaper-root": { borderRadius: "16px" } }}>
+        <DialogTitle sx={{ m: 0, p: 2, display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid var(--border-color)" }}>
+          <Typography sx={{ fontWeight: 800, color: "var(--color-primary)", fontSize: 18 }}>File Preview</Typography>
+          <IconButton onClick={() => setOpenModal(false)} sx={{ color: "var(--text-secondary)" }}><Close /></IconButton>
+        </DialogTitle>
+        <DialogContent sx={{ p: 3, display: "flex", justifyContent: "center", alignItems: "center", background: "#f8fafc", minHeight: "300px" }}>
+          {preview ? (
+            <Box
+              component="img"
+              src={preview}
+              alt="Preview"
+              sx={{
+                maxWidth: "100%",
+                maxHeight: "70vh",
+                borderRadius: "12px",
+                boxShadow: "0 20px 50px rgba(0,0,0,0.15)",
+                border: "4px solid #fff"
+              }}
+            />
+          ) : (
+            <Typography sx={{ color: "var(--text-secondary)", fontWeight: 600 }}>Preview not available for this file type.</Typography>
+          )}
+        </DialogContent>
+      </Dialog>
     </Box>
   );
 }
@@ -92,26 +213,29 @@ export function FileField({ label, name, onChange }) {
 // Submit button
 export function SubmitBtn({ onClick, loading }) {
   return (
-    <Box sx={{ textAlign: "center", mt: 3 }}>
-      <Button 
-        variant="contained" 
-        onClick={onClick} 
-        disabled={loading}
-        sx={{ 
-            background: "var(--color-primary)", 
-            borderRadius: "12px", 
-            px: 6, 
-            py: 1.2,
-            textTransform: "none", 
-            fontWeight: 800, 
-            fontSize: 15,
-            boxShadow: "0 8px 20px rgba(232, 160, 0, 0.2)",
-            "&:hover": { background: "var(--color-primary)", opacity: 0.9, transform: "translateY(-2px)" },
-            transition: "all 0.3s ease"
-        }}>
-        {loading ? "Submitting..." : "Submit Application"}
-      </Button>
-    </Box>
+    <Button
+      variant="contained"
+      onClick={onClick}
+      disabled={loading}
+      sx={{
+        background: "var(--gradient-primary)",
+        borderRadius: "12px",
+        px: 6,
+        height: "44px", // Fixed height for alignment
+        textTransform: "none",
+        fontWeight: 800,
+        fontSize: 15,
+        boxShadow: "0 8px 20px rgba(0, 0, 0, 0.1)",
+        "&:hover": {
+          background: "var(--gradient-primary)",
+          opacity: 0.9,
+          transform: "translateY(-2px)",
+          boxShadow: "0 10px 25px rgba(0, 0, 0, 0.15)"
+        },
+        transition: "all 0.3s ease"
+      }}>
+      {loading ? "Submitting..." : "Submit"}
+    </Button>
   );
 }
 
