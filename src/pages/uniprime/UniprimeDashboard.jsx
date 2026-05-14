@@ -36,6 +36,7 @@ import {
   History,
   PeopleAlt,
   Security,
+  AutoFixHigh as AutoFixHighIcon,
 } from "@mui/icons-material";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import MenuBook from "@mui/icons-material/MenuBook";
@@ -156,6 +157,7 @@ const UniprimeDashboard = () => {
     { title: "Add User", desc: "Register new user", icon: <PersonAdd sx={{ color: "#00b0ff" }} />, path: "/student/student-uploads" },
     { title: "Create Role", desc: "Define new role", icon: <VpnKey color="error" />, path: "/academics/roles" },
     { title: "Assign Role", desc: "Assign role to user", icon: <AssignmentInd color="warning" />, path: "/academics/roles" },
+    { title: "Manage SDGs", desc: "Manage SDG keywords", icon: <AutoFixHighIcon sx={{ color: "#9c27b0" }} />, path: "/academics/sdg-management" },
   ];
 
   const recentUsers = dashboardData.recentUsers || [];
