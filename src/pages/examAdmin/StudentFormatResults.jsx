@@ -113,7 +113,8 @@ export default function StudentFormatResults() {
       fetchResults();
     } catch (err) {
       console.error("Delete failed:", err);
-      alert("Failed to delete record.");
+      const msg = err.response?.data?.message || "Failed to delete record.";
+      alert(msg);
     }
   };
 
