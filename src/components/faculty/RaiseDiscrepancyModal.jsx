@@ -47,11 +47,6 @@ const SECTIONS = [
   { value: "OTHER",      label: "📎 Other" },
 ];
 
-const PROCTORING_TYPES = [
-  { value: "PASS_COUNT",     label: "Pass Count" },
-  { value: "ASSIGNED_COUNT", label: "Assigned Count" },
-];
-
 const SECTION_LABELS = {
   TEACHING:   "📚 Teaching",
   PROCTORING: "👁️ Proctoring",
@@ -159,48 +154,19 @@ export default function RaiseDiscrepancyModal({
   // Fetch available semester numbers when yearId changes
   useEffect(() => {
     if (open && yearId && user?.institutionId) {
-      fetchAvailableSemesters();
+      const yearLabel = academicYears.find(y => y._id === yearId)?.year;
+      if (yearLabel) fetchAvailableSemesters(yearLabel);
     }
   }, [open, yearId, user?.institutionId]);
 
-  // Fetch specific departments for proctoring routing
-  useEffect(() => {
-    if (open && section === "PROCTORING" && proctoringType === "ASSIGNED_COUNT" && yearId && user?.institutionId) {
-      setLoadingDepts(true);
-      API.get("/api/student-results/proctor-departments", {
-        params: {
-          facultyId: user?.institutionId,
-          academicYear: yearId,
-          semester: semesterNo
-        }
-      })
-        .then(res => {
-          const depts = res.data || [];
-          setDepartments(depts);
-          if (depts.length === 1) {
-            setStudentDeptId(depts[0]._id);
-          } else {
-            setStudentDeptId("");
-          }
-        })
-        .catch(err => {
-          console.error("Error fetching proctor departments:", err);
-          // Fallback to all departments if specific endpoint fails
-          API.get("/api/academics/departments")
-            .then(res => setDepartments(res.data.data || []))
-            .catch(e => console.error("Fallback departments fetch failed:", e));
-        })
-        .finally(() => setLoadingDepts(false));
-    }
-  }, [open, section, proctoringType, yearId, semesterNo, user?.institutionId]);
 
-  const fetchAvailableSemesters = async () => {
+  const fetchAvailableSemesters = async (yearLabel) => {
     setLoadingSems(true);
     try {
       const res = await API.get("/api/faculty-subject-results/available-semesters", {
         params: {
           facultyId: user?.institutionId,
-          academicYear: yearId
+          academicYear: yearLabel
         }
       });
       setSemesterNumbers(res.data || []);
@@ -253,7 +219,6 @@ export default function RaiseDiscrepancyModal({
         semester:             semesterNo,
         section,
         proctoringType:       section === "PROCTORING" ? proctoringType : undefined,
-        studentDepartmentId:  (section === "PROCTORING" && proctoringType === "ASSIGNED_COUNT") ? studentDeptId : undefined,
         note:                 note.trim(),
         facultyInstitutionId: user?.institutionId || "",
         facultyName:          user?.name           || "",
@@ -276,11 +241,17 @@ export default function RaiseDiscrepancyModal({
   const formatDate = (dateStr) => {
     if (!dateStr) return "—";
     const d = new Date(dateStr);
-    return d.toLocaleDateString("en-IN", {
+    const date = d.toLocaleDateString("en-IN", {
       day: "2-digit",
       month: "short",
       year: "numeric",
     });
+    const time = d.toLocaleTimeString("en-IN", {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+    });
+    return `${date} ${time}`;
   };
 
   return (
@@ -289,14 +260,16 @@ export default function RaiseDiscrepancyModal({
       onClose={() => onClose(false)}
       maxWidth="md"
       fullWidth
-      PaperProps={{
-        sx: {
-          borderRadius: "24px",
-          background: "linear-gradient(135deg,rgba(255,255,255,0.97),rgba(240,245,255,0.97))",
-          backdropFilter: "blur(20px)",
-          boxShadow: "0 30px 80px rgba(0,0,0,0.15)",
-          minHeight: 500,
-        },
+      slotProps={{
+        paper: {
+          sx: {
+            borderRadius: "24px",
+            background: "linear-gradient(135deg,rgba(255,255,255,0.97),rgba(240,245,255,0.97))",
+            backdropFilter: "blur(20px)",
+            boxShadow: "0 30px 80px rgba(0,0,0,0.15)",
+            minHeight: 500,
+          }
+        }
       }}
     >
       {/* ── HEADER ─────────────────────────────────────── */}
@@ -703,58 +676,7 @@ export default function RaiseDiscrepancyModal({
                     ))}
                   </Select>
                   
-                  {section === "PROCTORING" && (
-                    <Box sx={{ mt: 2, display: "flex", flexDirection: "column", gap: 2 }}>
-                      <Box>
-                        <Typography sx={label}>Proctoring Issue Type</Typography>
-                        <Select
-                          fullWidth
-                          size="small"
-                          value={proctoringType}
-                          onChange={e => setProctoringType(e.target.value)}
-                          sx={selectSx}
-                        >
-                          {PROCTORING_TYPES.map(pt => (
-                            <MenuItem key={pt.value} value={pt.value}>{pt.label}</MenuItem>
-                          ))}
-                        </Select>
-                      </Box>
 
-                      {proctoringType === "ASSIGNED_COUNT" && departments.length > 1 && (
-                        <Box>
-                          <Typography sx={label}>Students' Department</Typography>
-                          <Select
-                            fullWidth
-                            size="small"
-                            value={studentDeptId}
-                            onChange={e => setStudentDeptId(e.target.value)}
-                            sx={selectSx}
-                            displayEmpty
-                          >
-                            <MenuItem value="" disabled>Select Department</MenuItem>
-                            {departments.map(d => (
-                              <MenuItem key={d._id} value={d._id}>{d.name}</MenuItem>
-                            ))}
-                          </Select>
-                        </Box>
-                      )}
-                      
-                      {proctoringType === "ASSIGNED_COUNT" && departments.length === 1 && (
-                        <Box sx={{ p: 1.5, background: "rgba(11, 82, 153, 0.05)", borderRadius: "12px", border: "1px solid rgba(11, 82, 153, 0.1)" }}>
-                          <Typography fontSize={12} color="var(--color-primary)" fontWeight={600}>
-                            Target Department: <strong>{departments[0].name}</strong>
-                          </Typography>
-                        </Box>
-                      )}
-
-                      {proctoringType === "ASSIGNED_COUNT" && loadingDepts && (
-                        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                          <CircularProgress size={14} />
-                          <Typography fontSize={12} color="text.secondary">Fetching relevant departments...</Typography>
-                        </Box>
-                      )}
-                    </Box>
-                  )}
 
                   <Box sx={{ mt: 1.5 }}>
                     <Typography fontSize={12} color="#888" sx={{ display: "flex", alignItems: "center", gap: 1 }}>
@@ -762,11 +684,7 @@ export default function RaiseDiscrepancyModal({
                       <Chip
                         label={
                           section === "PROCTORING" 
-                            ? (proctoringType === "ASSIGNED_COUNT" 
-                                ? (studentDeptId 
-                                    ? `HOD of ${departments.find(d => d._id === studentDeptId)?.name || "Selected Dept"}`
-                                    : "Department HOD")
-                                : "Exam Section")
+                            ? "Exam Section"
                             : ROLE_LABEL[section]
                         }
                         size="small"

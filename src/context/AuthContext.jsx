@@ -36,7 +36,10 @@ export const AuthProvider = ({ children }) => {
         }
       }).catch(err => {
         console.error("Session sync failed:", err);
-        // If 401, maybe logout? But for now let's be safe.
+        // If the session is invalid (401) or the user no longer exists (404), logout
+        if (err.response?.status === 401 || err.response?.status === 404) {
+          logout();
+        }
       });
 
       let savedRole = localStorage.getItem("activeRole");

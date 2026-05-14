@@ -95,7 +95,6 @@ export const ROLE_ROUTES = {
   "HOD": [
     { text: "Dashboard", path: "/dashboard", icon: <Dashboard /> },
     { text: "Proctordata", path: "/hod/protecrdataupload", icon: <People /> },
-    { text: "Discrepancies", path: "/hod/discrepancies", icon: <Flag /> },
     {
       text: "Approvals",
       icon: <Verified />,
@@ -135,5 +134,33 @@ export const ROLE_ROUTES = {
     { text: "Dashboard", path: "/dashboard", icon: <Dashboard /> },
     { text: "Feedback Management", path: "/feedback-management", icon: <MenuBook /> },
     { text: "Discrepancies", path: "/feedback-management/discrepancies", icon: <Flag /> },
+  ],
+
+  "RESEARCH_DEAN": [
+    { text: "Dashboard", path: "/dashboard", icon: <Dashboard /> },
+    {
+      text: "Approvals",
+      icon: <Verified />,
+      nested: [
+        {
+          text: "Research",
+          path: "/research-dean/approvals"
+        },
+      ]
+    }
+  ],
+
+  "RESEARCH_COORDINATOR": [
+    { text: "Dashboard", path: "/dashboard", icon: <Dashboard /> },
+    {
+      text: "Approvals",
+      icon: <Verified />,
+      nested: [
+        {
+          text: "Research",
+          path: "/research-coordinator/approvals"
+        },
+      ]
+    }
   ],
 };

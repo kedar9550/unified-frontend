@@ -13,6 +13,8 @@ import {
   Tooltip,
   Typography,
   Menu,
+  TextField,
+  InputAdornment,
 } from "@mui/material";
 import { useEffect, useState, useRef } from "react";
 import API from "../../api/axios";
@@ -24,7 +26,8 @@ import {
   Search as SearchIcon,
   FilterList as FilterIcon,
   InfoOutlined as InfoIcon,
-  CleaningServices as CleanIcon
+  CleaningServices as CleanIcon,
+  Close as CloseIcon,
 } from "@mui/icons-material";
 import { Divider } from "@mui/material";
 
@@ -160,7 +163,8 @@ export default function FacultyFormatResults() {
       setResults((prev) => prev.filter((r) => r._id !== id));
     } catch (err) {
       console.error("Delete failed:", err);
-      alert("Failed to delete record.");
+      const msg = err.response?.data?.message || "Failed to delete record.";
+      alert(msg);
     }
   };
 
@@ -193,7 +197,8 @@ export default function FacultyFormatResults() {
       fetchResults();
     } catch (err) {
       console.error("Clear failed:", err);
-      alert("Failed to clear records.");
+      const msg = err.response?.data?.message || "Failed to clear records.";
+      alert(msg);
     } finally {
       setLoading(false);
     }
@@ -261,21 +266,27 @@ export default function FacultyFormatResults() {
         flexDirection: "column",
         gap: 3
       }}>
-        {/* Header Row */}
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+        {/* Row 1: Header and Primary Actions */}
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
             <Box sx={{ 
-              p: 1, 
-              borderRadius: "10px", 
-              background: "rgba(59, 130, 246, 0.1)", 
-              color: "var(--color-primary)",
-              display: 'flex'
+              p: 1.5, 
+              borderRadius: "14px", 
+              background: "linear-gradient(135deg, var(--color-primary) 0%, #1e40af 100%)", 
+              color: "#fff", 
+              display: 'flex',
+              boxShadow: "0 8px 20px rgba(59, 130, 246, 0.2)"
             }}>
-              <FilterIcon fontSize="small" />
+              <FilterIcon />
             </Box>
-            <Typography sx={{ fontWeight: 800, fontSize: 18, color: "var(--text-primary)" }}>
-              Faculty Format Results Management
-            </Typography>
+            <Box>
+              <Typography sx={{ fontWeight: 800, fontSize: 20, color: "var(--text-primary)", lineHeight: 1.2 }}>
+                Faculty Results Management
+              </Typography>
+              <Typography sx={{ fontSize: 13, color: "var(--text-secondary)", fontWeight: 500, mt: 0.5 }}>
+                {results.length} subject records currently displayed
+              </Typography>
+            </Box>
           </Box>
           
           <Box sx={{ display: 'flex', gap: 1.5 }}>
@@ -287,10 +298,9 @@ export default function FacultyFormatResults() {
                 border: "1px solid var(--border-color)",
                 fontWeight: 700,
                 px: 2.5,
-                height: 40,
-                borderRadius: "10px",
-                fontSize: 13,
-                "&:hover": { borderColor: "var(--color-primary)", color: "var(--color-primary)" }
+                height: 44,
+                borderRadius: "12px",
+                "&:hover": { borderColor: "var(--color-primary)", color: "var(--color-primary)", background: "rgba(59, 130, 246, 0.05)" }
               }}
             >
               <DownloadIcon sx={{ mr: 1, fontSize: 18 }} /> Template
@@ -304,11 +314,11 @@ export default function FacultyFormatResults() {
                 color: "#fff",
                 fontWeight: 800,
                 px: 3,
-                height: 40,
-                borderRadius: "10px",
-                fontSize: 13,
-                boxShadow: "0 4px 12px rgba(59, 130, 246, 0.3)",
-                "&:hover": { transform: "translateY(-1px)", boxShadow: "0 6px 16px rgba(59, 130, 246, 0.4)" }
+                height: 44,
+                borderRadius: "12px",
+                boxShadow: "0 8px 20px rgba(59, 130, 246, 0.3)",
+                transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+                "&:hover": { transform: "translateY(-2px)", boxShadow: "0 12px 25px rgba(59, 130, 246, 0.4)" }
               }}
             >
               <UploadIcon sx={{ mr: 1, fontSize: 18 }} /> {uploading ? "Uploading..." : "Upload CSV"}
@@ -316,25 +326,21 @@ export default function FacultyFormatResults() {
           </Box>
         </Box>
 
-        <Divider sx={{ borderStyle: 'dashed' }} />
+        <Divider sx={{ borderStyle: 'dashed', opacity: 0.5 }} />
 
-        {/* Controls Row */}
-        <Box sx={{ 
-          display: "flex", 
-          gap: 2, 
-          alignItems: "center", 
-          justifyContent: "space-between",
-          flexWrap: "wrap"
-        }}>
-          <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', flex: 1 }}>
-            <Box sx={controlItemStyle}>
-              <Typography sx={controlLabelStyle}>Academic Year</Typography>
+        {/* Row 2: Filtering and Search */}
+        <Box sx={{ display: "flex", gap: 3, alignItems: "center", justifyContent: "space-between", flexWrap: "wrap" }}>
+          <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
+            <Box sx={filterBox}>
+              <Box sx={{ display: 'flex', alignItems: 'center', mr: 2, opacity: 0.7 }}>
+                <Typography sx={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.05em' }}>YEAR</Typography>
+              </Box>
               <Select
                 variant="standard"
                 disableUnderline
                 value={selectedYearId}
                 onChange={(e) => setSelectedYearId(e.target.value)}
-                sx={controlSelectStyle}
+                sx={{ minWidth: 100, fontWeight: 700, fontSize: 14, color: "var(--text-primary)" }}
               >
                 {academicYears.map((year) => (
                   <MenuItem key={year._id} value={year._id}>
@@ -344,14 +350,17 @@ export default function FacultyFormatResults() {
               </Select>
             </Box>
 
-            <Box sx={controlItemStyle}>
-              <Typography sx={controlLabelStyle}>Program</Typography>
+            <Box sx={filterBox}>
+              <Box sx={{ display: 'flex', alignItems: 'center', mr: 2, opacity: 0.7 }}>
+                <Typography sx={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.05em' }}>PROGRAM</Typography>
+              </Box>
               <Select
                 variant="standard"
                 disableUnderline
                 value={selectedProgramId}
                 onChange={(e) => setSelectedProgramId(e.target.value)}
-                sx={{ ...controlSelectStyle, minWidth: 160 }}
+                sx={{ minWidth: 160, fontWeight: 700, fontSize: 14, color: "var(--text-primary)" }}
+                displayEmpty
               >
                 <MenuItem value="">All Programs</MenuItem>
                 {programs.map((p) => (
@@ -361,77 +370,98 @@ export default function FacultyFormatResults() {
                 ))}
               </Select>
             </Box>
-
-            <Box sx={{ ...controlItemStyle, flex: { xs: "1 1 100%", sm: "1 1 200px" }, maxWidth: 300 }}>
-              <SearchIcon sx={{ color: "var(--text-secondary)", fontSize: 18, mr: 1.5 }} />
-              <input
-                placeholder="Search Faculty ID..."
-                value={searchFacultyId}
-                onChange={(e) => setSearchFacultyId(e.target.value)}
-                style={controlInputStyle}
-              />
-            </Box>
           </Box>
 
-          {results.length > 0 && (
-            <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
-              <ActionButton
-                onClick={(e) => setDeleteMenuAnchor(e.currentTarget)}
-                sx={{
-                  background: "rgba(239, 68, 68, 0.05)",
-                  color: "#EF4444",
-                  border: "1px solid rgba(239, 68, 68, 0.2)",
-                  fontWeight: 700,
-                  px: 2.5,
-                  height: 40,
-                  borderRadius: "10px",
-                  fontSize: 13,
-                  "&:hover": { background: "rgba(239, 68, 68, 0.1)", borderColor: "#EF4444" }
-                }}
-              >
-                <CleanIcon sx={{ mr: 1, fontSize: 18 }} /> Bulk Actions
-              </ActionButton>
-              
-              <Menu
-                anchorEl={deleteMenuAnchor}
-                open={Boolean(deleteMenuAnchor)}
-                onClose={() => setDeleteMenuAnchor(null)}
-                anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-                transformOrigin={{ vertical: 'top', horizontal: 'right' }}
-                PaperProps={{
-                  sx: {
-                    borderRadius: "12px",
-                    mt: 1,
-                    minWidth: 200,
-                    boxShadow: "var(--shadow-premium)",
-                    border: "1px solid var(--border-color)",
-                    background: "var(--bg-panel)",
-                    p: 0.5,
-                    "& .MuiMenuItem-root": {
-                      fontSize: 13,
-                      fontWeight: 600,
-                      gap: 1.5,
-                      py: 1.2,
-                      borderRadius: "8px",
-                      color: "var(--text-primary)",
-                      "&:hover": { background: "var(--bg-accent-1)" }
-                    }
+          <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+            <TextField
+              placeholder="Search Faculty ID..."
+              size="small"
+              value={searchFacultyId}
+              onChange={(e) => setSearchFacultyId(e.target.value)}
+              sx={{
+                width: 240,
+                "& .MuiOutlinedInput-root": {
+                  borderRadius: "12px",
+                  fontSize: 14,
+                  height: 44,
+                  fontWeight: 600,
+                  background: "var(--bg-glass)",
+                  "& fieldset": { borderColor: "var(--border-color)" },
+                  "&:hover fieldset": { borderColor: "var(--color-primary)" },
+                  "&.Mui-focused fieldset": { borderColor: "var(--color-primary)" },
+                }
+              }}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchIcon sx={{ fontSize: 20, color: "var(--color-primary)", opacity: 0.8 }} />
+                  </InputAdornment>
+                ),
+                endAdornment: searchFacultyId && (
+                  <InputAdornment position="end">
+                    <IconButton size="small" onClick={() => setSearchFacultyId("")} sx={{ mr: 0.5, opacity: 0.6 }}>
+                      <CloseIcon sx={{ fontSize: 16 }} />
+                    </IconButton>
+                  </InputAdornment>
+                )
+              }}
+            />
+
+            <ActionButton
+              onClick={(e) => setDeleteMenuAnchor(e.currentTarget)}
+              sx={{
+                background: "rgba(239, 68, 68, 0.05)",
+                color: "#EF4444",
+                border: "1px solid rgba(239, 68, 68, 0.2)",
+                fontWeight: 800,
+                px: 2.5,
+                height: 44,
+                borderRadius: "12px",
+                fontSize: 13,
+                letterSpacing: '0.01em',
+                "&:hover": { background: "rgba(239, 68, 68, 0.1)", borderColor: "#EF4444", transform: "translateY(-1px)" }
+              }}
+            >
+              <CleanIcon sx={{ mr: 1, fontSize: 18 }} /> Bulk Actions
+            </ActionButton>
+            
+            <Menu
+              anchorEl={deleteMenuAnchor}
+              open={Boolean(deleteMenuAnchor)}
+              onClose={() => setDeleteMenuAnchor(null)}
+              anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+              transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+              PaperProps={{
+                sx: {
+                  borderRadius: "12px",
+                  mt: 1,
+                  minWidth: 220,
+                  boxShadow: "var(--shadow-premium)",
+                  border: "1px solid var(--border-color)",
+                  p: 0.5,
+                  "& .MuiMenuItem-root": {
+                    fontSize: 13,
+                    fontWeight: 600,
+                    gap: 1.5,
+                    py: 1.2,
+                    borderRadius: "8px",
+                    "&:hover": { background: "var(--bg-accent-1)" }
                   }
-                }}
-              >
-                <MenuItem onClick={() => handleClear("PROGRAM")} disabled={!selectedProgramId}>
-                  <FilterIcon fontSize="small" sx={{ opacity: 0.6 }} /> Delete by Program
-                </MenuItem>
-                <MenuItem onClick={() => handleClear("FACULTY")} disabled={!searchFacultyId}>
-                  <SearchIcon fontSize="small" sx={{ opacity: 0.6 }} /> Delete by Faculty
-                </MenuItem>
-                <Divider sx={{ my: 0.5, borderStyle: 'dashed' }} />
-                <MenuItem onClick={() => handleClear("ALL")} sx={{ color: "#EF4444 !important" }}>
-                  <ClearIcon fontSize="small" /> Clear All (Yearly)
-                </MenuItem>
-              </Menu>
-            </Box>
-          )}
+                }
+              }}
+            >
+              <MenuItem onClick={() => handleClear("PROGRAM")} disabled={!selectedProgramId}>
+                <FilterIcon fontSize="small" sx={{ opacity: 0.6 }} /> Delete by Program
+              </MenuItem>
+              <MenuItem onClick={() => handleClear("FACULTY")} disabled={!searchFacultyId}>
+                <SearchIcon fontSize="small" sx={{ opacity: 0.6 }} /> Delete by Faculty
+              </MenuItem>
+              <Divider sx={{ my: 0.5, borderStyle: 'dashed' }} />
+              <MenuItem onClick={() => handleClear("ALL")} sx={{ color: "#EF4444 !important" }}>
+                <ClearIcon fontSize="small" /> Clear All (Yearly)
+              </MenuItem>
+            </Menu>
+          </Box>
         </Box>
       </Box>
 
@@ -455,11 +485,54 @@ export default function FacultyFormatResults() {
             <CircularProgress />
           </Box>
         ) : results.length === 0 ? (
-          <Box sx={{ textAlign: "center", py: 10, color: "var(--text-secondary)" }}>
-            <Typography fontSize={40}>📊</Typography>
-            <Typography mt={1} fontWeight={600} sx={{ color: "var(--text-secondary)" }}>
-              No results found for the selected filters
+          <Box
+            sx={{ 
+              textAlign: "center", 
+              py: 12, 
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: "var(--text-secondary)",
+              background: "rgba(255,255,255,0.02)",
+              borderRadius: "20px",
+              border: "1px dashed var(--border-color)"
+            }}
+          >
+            <Box sx={{ 
+              fontSize: 60, 
+              mb: 2, 
+              filter: "drop-shadow(0 10px 15px rgba(0,0,0,0.1))",
+              animation: "float 3s ease-in-out infinite"
+            }}>
+              📊
+            </Box>
+            <Typography
+              variant="h6"
+              fontWeight={800}
+              sx={{ color: "var(--text-primary)", mb: 1 }}
+            >
+              No Faculty Results Found
             </Typography>
+            <Typography
+              sx={{ color: "var(--text-secondary)", maxWidth: 350, fontSize: 14, opacity: 0.8, lineHeight: 1.6 }}
+            >
+              We couldn't find any results matching your filters. Try selecting a different academic year, program, or faculty ID.
+            </Typography>
+            <ActionButton
+              onClick={handleUploadClick}
+              sx={{ 
+                mt: 4, 
+                background: "rgba(59, 130, 246, 0.1)", 
+                color: "var(--color-primary)",
+                fontWeight: 700,
+                borderRadius: "10px",
+                px: 3,
+                "&:hover": { background: "rgba(59, 130, 246, 0.2)" }
+              }}
+            >
+              Upload Faculty Results
+            </ActionButton>
           </Box>
         ) : (
           <DataTable
@@ -643,6 +716,7 @@ const filterBox = {
   boxShadow: "0 4px 15px rgba(0,0,0,0.05)",
   border: "1px solid var(--border-color)",
   fontSize: 14,
+  height: 44,
 };
 
 

@@ -34,6 +34,11 @@ import DeptResearchApprovals from "./pages/hod/DeptResearchApprovals";
 import SDGManagement from "./pages/uniprime/SDGManagement";
 
 
+// Research Approval System (Consolidated)
+import ResearchApprovalList from './pages/researchApproval/ResearchApprovalList';
+import ResearchApprovalDetailWrapper from './pages/researchApproval/ResearchApprovalDetailWrapper';
+
+
 
 const PublicOnlyRoute = ({ children }) => {
   const { user } = useAuth();
@@ -102,6 +107,16 @@ function App() {
         <Route path="/profile" element={<ProtectedRoute element={<Profile />} />} />
         <Route path="/hod/research-approvals" element={<ProtectedRoute element={<DeptResearchApprovals />} />} />
         <Route path="/academics/sdg-management" element={<ProtectedRoute element={<SDGManagement />} />} />
+
+        {/* Research Approval System */}
+        <Route path="/hod/research-approvals" element={<ProtectedRoute element={<ResearchApprovalList role="HOD" />} />} />
+        <Route path="/hod/research-request/:type/:id" element={<ProtectedRoute element={<ResearchApprovalDetailWrapper role="HOD" />} />} />
+
+        <Route path="/research-dean/approvals" element={<ProtectedRoute element={<ResearchApprovalList role="RESEARCH_DEAN" />} />} />
+        <Route path="/research-dean/request/:type/:id" element={<ProtectedRoute element={<ResearchApprovalDetailWrapper role="RESEARCH_DEAN" />} />} />
+
+        <Route path="/research-coordinator/approvals" element={<ProtectedRoute element={<ResearchApprovalList role="RESEARCH_COORDINATOR" />} />} />
+        <Route path="/research-coordinator/request/:type/:id" element={<ProtectedRoute element={<ResearchApprovalDetailWrapper role="RESEARCH_COORDINATOR" />} />} />
 
 
         <Route path="*" element={<ProtectedRoute element={<Box p={4}><Typography variant="h4">Page Content</Typography></Box>} />} />

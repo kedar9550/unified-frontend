@@ -187,15 +187,17 @@ const Header = ({ onMenuClick }) => {
             vertical: 'top',
             horizontal: 'right',
           }}
-          PaperProps={{
-            sx: {
-              mt: 1.5,
-              minWidth: 240, // Increased width for better proportions
-              borderRadius: "20px", // Smoother corners
-              boxShadow: "0 15px 50px rgba(0, 0, 0, 0.15)",
-              border: "1px solid rgba(255, 255, 255, 0.8)",
-              px: 2, // Generous horizontal padding
-              py: 2.2,   // Balanced vertical padding
+          slotProps={{
+            paper: {
+              sx: {
+                mt: 1.5,
+                minWidth: 240, // Increased width for better proportions
+                borderRadius: "20px", // Smoother corners
+                boxShadow: "0 15px 50px rgba(0, 0, 0, 0.15)",
+                border: "1px solid rgba(255, 255, 255, 0.8)",
+                px: 2, // Generous horizontal padding
+                py: 2.2,   // Balanced vertical padding
+              }
             }
           }}
         >

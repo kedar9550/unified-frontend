@@ -15,6 +15,7 @@ import {
   Divider,
   TextField,
   InputAdornment,
+  Checkbox,
 } from "@mui/material";
 import { useEffect, useState, useRef } from "react";
 import API from "../../api/axios";
@@ -26,6 +27,7 @@ import {
   FilterList as FilterIcon,
   Search as SearchIcon,
   CleaningServices as CleanIcon,
+  Close as CloseIcon,
 } from "@mui/icons-material";
 
 // Programs that use marks-based year system (not grade-based semester)
@@ -40,6 +42,8 @@ export default function StudentFormatResults() {
   const [uploading, setUploading] = useState(false);
   const [deleteMenuAnchor, setDeleteMenuAnchor] = useState(null);
   const [bulkStudentId, setBulkStudentId] = useState("");
+  const [selectedExamYear, setSelectedExamYear] = useState("");
+  const [selectedIds, setSelectedIds] = useState([]);
   const fileInputRef = useRef(null);
 
   // Derive whether the selected program is year-based (marks) or sem-based (grades)
@@ -68,6 +72,8 @@ export default function StudentFormatResults() {
     try {
       const params = {};
       if (selectedProgramId) params.programId = selectedProgramId;
+      if (selectedExamYear) params.examYear = selectedExamYear;
+      if (bulkStudentId.trim()) params.studentId = bulkStudentId.trim();
       const res = await API.get("/api/student-results", { params });
       setResults(res.data);
     } catch (err) {
@@ -79,9 +85,27 @@ export default function StudentFormatResults() {
 
   useEffect(() => {
     fetchResults();
-  }, [selectedProgramId]);
+    setSelectedIds([]); // Clear selection when filters change
+  }, [selectedProgramId, bulkStudentId, selectedExamYear]);
 
   // 3. Deletion Logic
+  const toggleSelection = (id) => {
+    setSelectedIds(prev => 
+      prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
+    );
+  };
+
+  const toggleSelectAll = (resultsToSelect) => {
+    const allIds = resultsToSelect.map(r => r._id);
+    const areAllSelected = allIds.every(id => selectedIds.includes(id));
+    
+    if (areAllSelected) {
+      setSelectedIds(prev => prev.filter(id => !allIds.includes(id)));
+    } else {
+      setSelectedIds(prev => [...new Set([...prev, ...allIds])]);
+    }
+  };
+
   const handleDelete = async (id) => {
     if (!window.confirm("Are you sure you want to delete this specific entry?")) return;
     try {
@@ -89,7 +113,8 @@ export default function StudentFormatResults() {
       fetchResults();
     } catch (err) {
       console.error("Delete failed:", err);
-      alert("Failed to delete record.");
+      const msg = err.response?.data?.message || "Failed to delete record.";
+      alert(msg);
     }
   };
 
@@ -111,14 +136,30 @@ export default function StudentFormatResults() {
       }
       confirmMsg = `Are you sure you want to delete ALL results for Student ID: ${bulkStudentId}?`;
       params.studentId = bulkStudentId.trim();
+    } else if (type === "SELECTED") {
+      if (selectedIds.length === 0) {
+        alert("Please select at least one record.");
+        return;
+      }
+      confirmMsg = `Are you sure you want to delete ${selectedIds.length} selected record(s)?`;
+      params.ids = selectedIds;
+    } else if (type === "YEAR") {
+      if (!selectedExamYear) {
+        alert("Please select an Exam Year first.");
+        return;
+      }
+      confirmMsg = `Are you sure you want to delete ALL results for Exam Year: ${selectedExamYear}?`;
+      params.examYear = selectedExamYear;
     }
 
     if (!window.confirm(confirmMsg)) return;
 
     try {
-      await API.delete("/api/student-results/bulk", { params });
+      await API.delete("/api/student-results/bulk", { data: params });
       setDeleteMenuAnchor(null);
       if (type === "STUDENT") setBulkStudentId("");
+      if (type === "SELECTED") setSelectedIds([]);
+      if (type === "YEAR") setSelectedExamYear("");
       fetchResults();
     } catch (err) {
       console.error("Bulk delete failed:", err);
@@ -297,6 +338,16 @@ export default function StudentFormatResults() {
       if (r.yearName) {
         // YEAR program row (Pharma.D etc)
         return [
+          { 
+            value: "", 
+            display: (
+              <Checkbox 
+                size="small" 
+                checked={selectedIds.includes(r._id)} 
+                onChange={() => toggleSelection(r._id)} 
+              />
+            ) 
+          },
           { value: r.studentId, display: <Box sx={{ fontWeight: 600 }}>{r.studentId}</Box> },
           { value: r.studentName, display: <Box>{r.studentName || "—"}</Box> },
           { value: r.subjectCode, display: <Box sx={{ fontWeight: 500 }}>{r.subjectCode}</Box> },
@@ -339,6 +390,16 @@ export default function StudentFormatResults() {
       } else {
         // SEM program row (B.Tech, M.Tech etc)
         return [
+          { 
+            value: "", 
+            display: (
+              <Checkbox 
+                size="small" 
+                checked={selectedIds.includes(r._id)} 
+                onChange={() => toggleSelection(r._id)} 
+              />
+            ) 
+          },
           { value: r.studentId, display: <Box sx={{ fontWeight: 600 }}>{r.studentId}</Box> },
           { value: r.studentName, display: <Box>{r.studentName || "—"}</Box> },
           { value: r.subjectCode, display: <Box sx={{ fontWeight: 500 }}>{r.subjectCode}</Box> },
@@ -397,7 +458,7 @@ export default function StudentFormatResults() {
 
       {/* HEADER */}
       <PageHeader
-        title="Student Results"
+        title="Exam Section"
         subtitle="Manage and upload student performance results"
         breadcrumbs={["Home", "Exam Cell", "Results Upload", "Student Format"]}
       />
@@ -415,15 +476,27 @@ export default function StudentFormatResults() {
         flexDirection: "column",
         gap: 3
       }}>
-        {/* Row 1: Actions & Upload */}
+        {/* Row 1: Header and Primary Actions */}
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-            <Box sx={{ p: 1, borderRadius: "10px", background: "rgba(59, 130, 246, 0.1)", color: "var(--color-primary)", display: 'flex' }}>
-              <FilterIcon fontSize="small" />
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <Box sx={{ 
+              p: 1.5, 
+              borderRadius: "14px", 
+              background: "linear-gradient(135deg, var(--color-primary) 0%, #1e40af 100%)", 
+              color: "#fff", 
+              display: 'flex',
+              boxShadow: "0 8px 20px rgba(59, 130, 246, 0.2)"
+            }}>
+              <FilterIcon />
             </Box>
-            <Typography sx={{ fontWeight: 800, fontSize: 18, color: "var(--text-primary)" }}>
-              Result Management
-            </Typography>
+            <Box>
+              <Typography sx={{ fontWeight: 800, fontSize: 20, color: "var(--text-primary)", lineHeight: 1.2 }}>
+                Student Results Management
+              </Typography>
+              <Typography sx={{ fontSize: 13, color: "var(--text-secondary)", fontWeight: 500, mt: 0.5 }}>
+                {results.length} total records found in the database
+              </Typography>
+            </Box>
           </Box>
           
           <Box sx={{ display: 'flex', gap: 1.5 }}>
@@ -435,9 +508,9 @@ export default function StudentFormatResults() {
                 border: "1px solid var(--border-color)",
                 fontWeight: 700,
                 px: 2.5,
-                height: 40,
-                borderRadius: "10px",
-                "&:hover": { borderColor: "var(--color-primary)", color: "var(--color-primary)" }
+                height: 44,
+                borderRadius: "12px",
+                "&:hover": { borderColor: "var(--color-primary)", color: "var(--color-primary)", background: "rgba(59, 130, 246, 0.05)" }
               }}
             >
               <DownloadIcon sx={{ mr: 1, fontSize: 18 }} /> Template
@@ -451,9 +524,11 @@ export default function StudentFormatResults() {
                 color: "#fff",
                 fontWeight: 800,
                 px: 3,
-                height: 40,
-                borderRadius: "10px",
-                boxShadow: "0 4px 12px rgba(59, 130, 246, 0.3)",
+                height: 44,
+                borderRadius: "12px",
+                boxShadow: "0 8px 20px rgba(59, 130, 246, 0.3)",
+                transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+                "&:hover": { transform: "translateY(-2px)", boxShadow: "0 12px 25px rgba(59, 130, 246, 0.4)" }
               }}
             >
               <UploadIcon sx={{ mr: 1, fontSize: 18 }} /> {uploading ? "Uploading..." : "Upload CSV"}
@@ -461,19 +536,22 @@ export default function StudentFormatResults() {
           </Box>
         </Box>
 
-        <Divider sx={{ borderStyle: 'dashed' }} />
+        <Divider sx={{ borderStyle: 'dashed', opacity: 0.5 }} />
 
-        {/* Row 2: Filtering & Bulk Deletion */}
+        {/* Row 2: Filtering and Search */}
         <Box sx={{ display: "flex", gap: 3, alignItems: "center", justifyContent: "space-between", flexWrap: "wrap" }}>
-          <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+          {/* Filters Group */}
+          <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
             <Box sx={filterBox}>
-              <Typography sx={{ fontSize: 12, fontWeight: 700, color: "var(--text-secondary)", mr: 1.5 }}>PROGRAM</Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', mr: 2, opacity: 0.7 }}>
+                <Typography sx={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.05em' }}>PROGRAM</Typography>
+              </Box>
               <Select
                 variant="standard"
                 disableUnderline
                 value={selectedProgramId}
                 onChange={(e) => setSelectedProgramId(e.target.value)}
-                sx={{ minWidth: 180, fontWeight: 700, fontSize: 14, color: "var(--text-primary)" }}
+                sx={{ minWidth: 160, fontWeight: 700, fontSize: 14, color: "var(--text-primary)" }}
                 displayEmpty
               >
                 <MenuItem value="">All Programs</MenuItem>
@@ -483,16 +561,43 @@ export default function StudentFormatResults() {
               </Select>
             </Box>
 
+            <Box sx={filterBox}>
+              <Box sx={{ display: 'flex', alignItems: 'center', mr: 2, opacity: 0.7 }}>
+                <Typography sx={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.05em' }}>EXAM YEAR</Typography>
+              </Box>
+              <Select
+                variant="standard"
+                disableUnderline
+                value={selectedExamYear}
+                onChange={(e) => setSelectedExamYear(e.target.value)}
+                sx={{ minWidth: 80, fontWeight: 700, fontSize: 14, color: "var(--text-primary)" }}
+                displayEmpty
+              >
+                <MenuItem value="">All Years</MenuItem>
+                {["2024", "2025", "2026", "2027"].map((y) => (
+                  <MenuItem key={y} value={y}>{y}</MenuItem>
+                ))}
+              </Select>
+            </Box>
+
             {selectedProgram && (
               <Chip
                 label={isYearBased ? "Year-based" : "Sem-based"}
                 size="small"
-                sx={{ fontWeight: 700, fontSize: 11, bgcolor: "rgba(59, 130, 246, 0.1)", color: "var(--color-primary)" }}
+                sx={{ 
+                  fontWeight: 800, 
+                  fontSize: 10, 
+                  letterSpacing: '0.02em',
+                  bgcolor: "rgba(59, 130, 246, 0.1)", 
+                  color: "var(--color-primary)",
+                  borderRadius: "8px",
+                  height: 24
+                }}
               />
             )}
           </Box>
 
-          {/* Bulk Deletion Section */}
+          {/* Search and Bulk Actions Group */}
           <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
             <TextField
               placeholder="Search Student ID..."
@@ -500,26 +605,31 @@ export default function StudentFormatResults() {
               value={bulkStudentId}
               onChange={(e) => setBulkStudentId(e.target.value)}
               sx={{
-                width: 220,
+                width: 240,
                 "& .MuiOutlinedInput-root": {
-                  borderRadius: "10px",
-                  fontSize: 13,
+                  borderRadius: "12px",
+                  fontSize: 14,
+                  height: 44,
                   fontWeight: 600,
                   background: "var(--bg-glass)",
                   "& fieldset": { borderColor: "var(--border-color)" },
                   "&:hover fieldset": { borderColor: "var(--color-primary)" },
+                  "&.Mui-focused fieldset": { borderColor: "var(--color-primary)" },
                 }
               }}
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
-                    <SearchIcon sx={{ fontSize: 18, opacity: 0.5 }} />
+                    <SearchIcon sx={{ fontSize: 20, color: "var(--color-primary)", opacity: 0.8 }} />
                   </InputAdornment>
                 ),
                 endAdornment: bulkStudentId && (
                   <InputAdornment position="end">
-                    <Tooltip title="Delete all records for this student">
-                      <IconButton size="small" onClick={() => handleBulkDelete("STUDENT")} sx={{ color: "#EF4444" }}>
+                    <IconButton size="small" onClick={() => setBulkStudentId("")} sx={{ mr: 0.5, opacity: 0.6 }}>
+                      <CloseIcon sx={{ fontSize: 16 }} />
+                    </IconButton>
+                    <Tooltip title="Wipe ALL records for this student">
+                      <IconButton size="small" onClick={() => handleBulkDelete("STUDENT")} sx={{ color: "#EF4444", background: "rgba(239, 68, 68, 0.1)", "&:hover": { background: "rgba(239, 68, 68, 0.2)" } }}>
                         <DeleteIcon fontSize="small" />
                       </IconButton>
                     </Tooltip>
@@ -534,12 +644,13 @@ export default function StudentFormatResults() {
                 background: "rgba(239, 68, 68, 0.05)",
                 color: "#EF4444",
                 border: "1px solid rgba(239, 68, 68, 0.2)",
-                fontWeight: 700,
+                fontWeight: 800,
                 px: 2.5,
-                height: 40,
-                borderRadius: "10px",
+                height: 44,
+                borderRadius: "12px",
                 fontSize: 13,
-                "&:hover": { background: "rgba(239, 68, 68, 0.1)", borderColor: "#EF4444" }
+                letterSpacing: '0.01em',
+                "&:hover": { background: "rgba(239, 68, 68, 0.1)", borderColor: "#EF4444", transform: "translateY(-1px)" }
               }}
             >
               <CleanIcon sx={{ mr: 1, fontSize: 18 }} /> Bulk Actions
@@ -573,9 +684,15 @@ export default function StudentFormatResults() {
               <MenuItem onClick={() => handleBulkDelete("PROGRAM")} disabled={!selectedProgramId}>
                 <ClearIcon fontSize="small" sx={{ color: "#EF4444" }} /> Clear Selected Program
               </MenuItem>
+              <MenuItem onClick={() => handleBulkDelete("YEAR")} disabled={!selectedExamYear}>
+                <DeleteIcon fontSize="small" sx={{ color: "#EF4444" }} /> Clear Selected Exam Year
+              </MenuItem>
+              <MenuItem onClick={() => handleBulkDelete("SELECTED")} disabled={selectedIds.length === 0}>
+                <DeleteIcon fontSize="small" sx={{ color: "#EF4444" }} /> Delete Selected ({selectedIds.length})
+              </MenuItem>
               <Divider sx={{ my: 0.5, borderStyle: 'dashed' }} />
               <Typography sx={{ px: 2, py: 1, fontSize: 11, fontWeight: 700, color: "var(--text-secondary)", opacity: 0.6 }}>
-                Wipe all records associated with the current program filter.
+                Wipe all records associated with the current program filter or selected items.
               </Typography>
             </Menu>
           </Box>
@@ -600,23 +717,53 @@ export default function StudentFormatResults() {
           </Box>
         ) : results.length === 0 ? (
           <Box
-            sx={{ textAlign: "center", py: 10, color: "var(--text-secondary)" }}
+            sx={{ 
+              textAlign: "center", 
+              py: 12, 
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: "var(--text-secondary)",
+              background: "rgba(255,255,255,0.02)",
+              borderRadius: "20px",
+              border: "1px dashed var(--border-color)"
+            }}
           >
-            <Typography fontSize={40}>📊</Typography>
+            <Box sx={{ 
+              fontSize: 60, 
+              mb: 2, 
+              filter: "drop-shadow(0 10px 15px rgba(0,0,0,0.1))",
+              animation: "float 3s ease-in-out infinite"
+            }}>
+              📊
+            </Box>
             <Typography
-              mt={1}
-              fontWeight={600}
-              sx={{ color: "var(--text-secondary)" }}
+              variant="h6"
+              fontWeight={800}
+              sx={{ color: "var(--text-primary)", mb: 1 }}
             >
-              No results found
+              No Results Found
             </Typography>
             <Typography
-              mt={0.5}
-              fontSize={13}
-              sx={{ color: "var(--text-secondary)", opacity: 0.7 }}
+              sx={{ color: "var(--text-secondary)", maxWidth: 300, fontSize: 14, opacity: 0.8, lineHeight: 1.6 }}
             >
-              Upload a CSV to get started
+              We couldn't find any student records matching your current filters. Try adjusting your selection or uploading a new CSV.
             </Typography>
+            <ActionButton
+              onClick={handleUploadClick}
+              sx={{ 
+                mt: 4, 
+                background: "rgba(59, 130, 246, 0.1)", 
+                color: "var(--color-primary)",
+                fontWeight: 700,
+                borderRadius: "10px",
+                px: 3,
+                "&:hover": { background: "rgba(59, 130, 246, 0.2)" }
+              }}
+            >
+              Upload New Results
+            </ActionButton>
           </Box>
         ) : !selectedProgramId ? (
           // No filter — show two separate tables
@@ -625,7 +772,16 @@ export default function StudentFormatResults() {
               <>
                 <SectionHeader title="Semester-based Results (Grade)" />
                 <DataTable
-                  columns={semColumns}
+                  columns={[
+                    <Checkbox
+                      size="small"
+                      sx={{ color: '#fff', '&.Mui-checked': { color: '#fff' } }}
+                      indeterminate={semResults.some(r => selectedIds.includes(r._id)) && !semResults.every(r => selectedIds.includes(r._id))}
+                      checked={semResults.length > 0 && semResults.every(r => selectedIds.includes(r._id))}
+                      onChange={() => toggleSelectAll(semResults)}
+                    />,
+                    ...semColumns
+                  ]}
                   rows={buildRows(semResults)}
                 />
               </>
@@ -634,7 +790,16 @@ export default function StudentFormatResults() {
               <Box sx={{ mt: semResults.length > 0 ? 4 : 0 }}>
                 <SectionHeader title="Year-based Results (Marks)" />
                 <DataTable
-                  columns={yearColumns}
+                  columns={[
+                    <Checkbox
+                      size="small"
+                      sx={{ color: '#fff', '&.Mui-checked': { color: '#fff' } }}
+                      indeterminate={yearResults.some(r => selectedIds.includes(r._id)) && !yearResults.every(r => selectedIds.includes(r._id))}
+                      checked={yearResults.length > 0 && yearResults.every(r => selectedIds.includes(r._id))}
+                      onChange={() => toggleSelectAll(yearResults)}
+                    />,
+                    ...yearColumns
+                  ]}
                   rows={buildRows(yearResults)}
                 />
               </Box>
@@ -652,7 +817,16 @@ export default function StudentFormatResults() {
             />
             <DataTable
               key={selectedProgramId}
-              columns={isYearBased ? yearColumns : semColumns}
+              columns={[
+                <Checkbox
+                  size="small"
+                  sx={{ color: '#fff', '&.Mui-checked': { color: '#fff' } }}
+                  indeterminate={results.some(r => selectedIds.includes(r._id)) && !results.every(r => selectedIds.includes(r._id))}
+                  checked={results.length > 0 && results.every(r => selectedIds.includes(r._id))}
+                  onChange={() => toggleSelectAll(results)}
+                />,
+                ...(isYearBased ? yearColumns : semColumns)
+              ]}
               rows={buildRows(results)}
             />
           </>

@@ -19,8 +19,11 @@ import {
   FileUpload as UploadIcon,
   PieChart as PieChartIcon,
   AssignmentTurnedIn as AssignmentIcon,
-  Groups as GroupsIcon
+  Groups as GroupsIcon,
+  Delete as DeleteIcon,
+  CleaningServices as CleanIcon
 } from "@mui/icons-material";
+import { IconButton } from "@mui/material";
 
 export default function FeedbackManagement() {
   const [academicYears, setAcademicYears] = useState([]);
@@ -160,6 +163,43 @@ export default function FeedbackManagement() {
     window.URL.revokeObjectURL(url);
   };
 
+  const handleDelete = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this record?")) return;
+    try {
+      await API.delete(`/api/faculty-feedback-results/${id}`);
+      setResults(results.filter(r => r._id !== id));
+    } catch (err) {
+      console.error("Delete failed:", err);
+      alert(err.response?.data?.message || "Delete failed");
+    }
+  };
+
+  const handleClearData = async () => {
+    if (!selectedYearId) return;
+    const yearText = academicYears.find(y => y._id === selectedYearId)?.year || "selected year";
+    const phaseText = selectedPhase ? ` (Phase ${selectedPhase})` : "";
+    
+    if (!window.confirm(`Are you sure you want to CLEAR ALL feedback data for ${yearText}${phaseText}? This action cannot be undone.`)) return;
+    
+    const ids = results.map(r => r._id);
+    if (ids.length === 0) {
+        alert("No records to delete.");
+        return;
+    }
+
+    setLoading(true);
+    try {
+      await API.post("/api/faculty-feedback-results/bulk-delete", { ids });
+      alert(`Successfully deleted ${ids.length} records.`);
+      fetchResults();
+    } catch (err) {
+      console.error("Clear data failed:", err);
+      alert(err.response?.data?.message || "Clear data failed");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Derive stats
   const totalRecords = results.length;
   const avgPercentage = totalRecords > 0 
@@ -184,6 +224,21 @@ export default function FeedbackManagement() {
         breadcrumbs={["Home", "Feedback", "Management"]}
         action={
           <Box sx={{ display: "flex", gap: 2 }}>
+            {results.length > 0 && (
+              <ActionButton
+                onClick={handleClearData}
+                disabled={loading || uploading}
+                sx={{
+                  background: "var(--bg-glass)",
+                  color: "#ef4444",
+                  border: "1px solid #ef4444",
+                  px: 2.5,
+                  "&:hover": { background: "rgba(239, 68, 68, 0.1)", borderColor: "#ef4444" }
+                }}
+              >
+                <CleanIcon sx={{ mr: 1, fontSize: 18 }} /> Clear Selection
+              </ActionButton>
+            )}
             <ActionButton
               onClick={downloadTemplate}
               sx={{
@@ -307,6 +362,7 @@ export default function FeedbackManagement() {
               "COUNT (G/T)",
               "PERCENTAGE",
               "OVERALL %",
+              "ACTIONS"
             ]}
             rows={results.map((r) => [
               {
@@ -376,6 +432,20 @@ export default function FeedbackManagement() {
                 value: r.overallPercentage,
                 display: <Typography sx={{ color: "#10b981", fontWeight: 800, fontSize: 15 }}>{r.overallPercentage}%</Typography>,
               },
+              {
+                value: "delete",
+                display: (
+                  <Tooltip title="Delete Record">
+                    <IconButton 
+                      onClick={() => handleDelete(r._id)} 
+                      size="small" 
+                      sx={{ color: "#ef4444" }}
+                    >
+                      <DeleteIcon fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                )
+              }
             ])}
           />
         )}
