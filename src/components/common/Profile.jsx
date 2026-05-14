@@ -139,6 +139,7 @@ const Profile = () => {
   const [pwdForm, setPwdForm] = React.useState({ oldPassword: "", newPassword: "", confirmPassword: "" });
   const [showPwd, setShowPwd] = React.useState({ old: false, new: false, confirm: false });
   const [pwdLoading, setPwdLoading] = React.useState(false);
+  const [doj, setDoj] = React.useState(null);
 
   // Validation rules for each field (pattern + maxLength)
   const validationRules = {
@@ -173,6 +174,19 @@ const Profile = () => {
           panNumber: fresh.panNumber || "",
           college: fresh.college || ""
         });
+
+        // Fetch DOJ from ECAP
+        try {
+          const ecapRes = await API.post("/api/employees/ecap-data", {
+            institutionId: fresh.institutionId,
+            role: fresh.userType || "Employee"
+          });
+          if (ecapRes.data) {
+            setDoj(ecapRes.data.dateofjoin || ecapRes.data.dateofjoining || ecapRes.data.DateOfJoining);
+          }
+        } catch (ecapErr) {
+          console.error("Failed to fetch ECAP data for DOJ", ecapErr);
+        }
       } catch (err) {
         console.error("Failed to load profile", err);
         // Fallback to localStorage user
@@ -335,9 +349,14 @@ const Profile = () => {
                 <Typography sx={{ fontSize: "0.8rem", color: "var(--text-secondary)", fontWeight: 600, mb: 0.5 }}>
                   {profile?.department || "N/A"}
                 </Typography>
-                <Typography sx={{ fontSize: "0.75rem", color: "var(--color-primary)", fontWeight: 700, mb: 3 }}>
+                <Typography sx={{ fontSize: "0.75rem", color: "var(--color-primary)", fontWeight: 700, mb: doj ? 1 : 2 }}>
                   Core: {profile?.coreDepartment || "N/A"}
                 </Typography>
+                {doj && (
+                  <Typography sx={{ fontSize: "0.85rem", color: "var(--gradient-primary)", fontWeight: 400 }}>
+                    Date of Joining: {doj}
+                  </Typography>
+                )}
               </>
             )}
 

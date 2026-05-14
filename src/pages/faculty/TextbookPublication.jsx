@@ -2,8 +2,8 @@ import { useState, useEffect } from "react";
 import axios from "axios";
 import { useAuth } from "../../context/AuthContext";
 
-import { Box, TextField, MenuItem, Select, Typography, Alert, Snackbar, Button, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, IconButton, CircularProgress, Autocomplete } from "@mui/material";
-import { Delete, Search } from "@mui/icons-material";
+import { Box, TextField, MenuItem, Select, Typography, Alert, Snackbar, Button, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, IconButton, CircularProgress, Autocomplete, InputAdornment } from "@mui/material";
+import { Delete, Search, CurrencyRupee } from "@mui/icons-material";
 import PageHeader from "../../components/common/PageHeader";
 import {
   FacultyInfoRow, FormCard, Grid2, SubLabel, NoteBox, FileField, SubmitBtn,
@@ -23,11 +23,13 @@ export default function TextbookPublication() {
   const [isbnFetched, setIsbnFetched] = useState(false);
 
   const [form, setForm] = useState({
-    title: "", publisher: "", isbn: "", yearOfPublication: "", 
-    totalAuthors: 1, userAuthorPosition: 1, 
+    title: "", publisher: "", isbn: "", yearOfPublication: "",
+    totalAuthors: 1, userAuthorPosition: 1,
     edition: "", cost: "", month: "", year: "",
     applyIncentive: "", expectedAmount: "10,000",
-    otherAuthors: []
+    otherAuthors: [],
+    publicationType: "National",
+    currencySymbol: "₹"
   });
   const [files, setFiles] = useState({ coverPage: null, authorAffiliation: null, index: null });
   const [loading, setLoading] = useState(false);
@@ -41,7 +43,7 @@ export default function TextbookPublication() {
     API.get("/api/academic-years").then(res => {
       setAcademicYears(res.data?.years || res.data?.data || []);
     }).catch(err => console.log("Failed to fetch academic years", err));
-    
+
     API.get("/api/research/textbook/editions").then(res => {
       setEditions(res.data?.data || []);
     }).catch(err => console.log("Failed to fetch editions", err));
@@ -55,7 +57,7 @@ export default function TextbookPublication() {
   useEffect(() => {
     const total = parseInt(form.totalAuthors) || 1;
     const pos = parseInt(form.userAuthorPosition) || 1;
-    
+
     // Auto-adjust if position is greater than total
     if (pos > total) {
       setForm(p => ({ ...p, userAuthorPosition: total }));
@@ -69,17 +71,17 @@ export default function TextbookPublication() {
 
     let newOtherAuthors = [];
     for (let i = 1; i <= total; i++) {
-        if (i !== pos) {
-            // Keep existing data if available
-            const existing = form.otherAuthors.find(a => a.authorPosition === i);
-            newOtherAuthors.push(existing || {
-                authorPosition: i,
-                affiliationType: "",
-                empId: "",
-                authorName: "",
-                affiliationName: ""
-            });
-        }
+      if (i !== pos) {
+        // Keep existing data if available
+        const existing = form.otherAuthors.find(a => a.authorPosition === i);
+        newOtherAuthors.push(existing || {
+          authorPosition: i,
+          affiliationType: "",
+          empId: "",
+          authorName: "",
+          affiliationName: ""
+        });
+      }
     }
     setForm(p => ({ ...p, otherAuthors: newOtherAuthors }));
   }, [form.totalAuthors, form.userAuthorPosition]);
@@ -88,7 +90,7 @@ export default function TextbookPublication() {
     setForm((p) => ({ ...p, [k]: e.target.value }));
     if (k === "isbn") setIsbnFetched(false);
   };
-  
+
   const validateFile = (file) => {
     if (!file) return true;
     const allowed = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png'];
@@ -114,46 +116,46 @@ export default function TextbookPublication() {
 
   const fetchISBNData = async () => {
     if (!form.isbn) {
-        setSnack({ open: true, msg: "Please enter an ISBN first.", severity: "warning" });
-        return;
+      setSnack({ open: true, msg: "Please enter an ISBN first.", severity: "warning" });
+      return;
     }
     setIsbnFetching(true);
     try {
-        const res = await API.get(`/api/research/textbook/isbn/${form.isbn}`);
-        if (res.data?.success) {
-            const data = res.data.data;
-            let newMonth = form.month;
-            let newYear = form.year;
-            
-            if (data.yearOfPublication) {
-                const str = String(data.yearOfPublication);
-                const yearMatch = str.match(/\b(19|20)\d{2}\b/);
-                if (yearMatch) newYear = yearMatch[0];
-                
-                const months = ["January","February","March","April","May","June","July","August","September","October","November","December"];
-                const shortMonths = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-                for (let i = 0; i < 12; i++) {
-                    if (str.toLowerCase().includes(months[i].toLowerCase()) || str.toLowerCase().includes(shortMonths[i].toLowerCase())) {
-                        newMonth = months[i];
-                        break;
-                    }
-                }
-            }
+      const res = await API.get(`/api/research/textbook/isbn/${form.isbn}`);
+      if (res.data?.success) {
+        const data = res.data.data;
+        let newMonth = form.month;
+        let newYear = form.year;
 
-            setForm(p => ({ 
-                ...p, 
-                title: data.title || p.title, 
-                publisher: data.publisher || p.publisher,
-                month: newMonth,
-                year: newYear
-            }));
-            setIsbnFetched(true);
-            setSnack({ open: true, msg: "Book details fetched successfully!", severity: "success" });
+        if (data.yearOfPublication) {
+          const str = String(data.yearOfPublication);
+          const yearMatch = str.match(/\b(19|20)\d{2}\b/);
+          if (yearMatch) newYear = yearMatch[0];
+
+          const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+          const shortMonths = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+          for (let i = 0; i < 12; i++) {
+            if (str.toLowerCase().includes(months[i].toLowerCase()) || str.toLowerCase().includes(shortMonths[i].toLowerCase())) {
+              newMonth = months[i];
+              break;
+            }
+          }
         }
+
+        setForm(p => ({
+          ...p,
+          title: data.title || p.title,
+          publisher: data.publisher || p.publisher,
+          month: newMonth,
+          year: newYear
+        }));
+        setIsbnFetched(true);
+        setSnack({ open: true, msg: "Book details fetched successfully!", severity: "success" });
+      }
     } catch (err) {
-        setSnack({ open: true, msg: err?.response?.data?.message || "Failed to fetch ISBN details.", severity: "error" });
+      setSnack({ open: true, msg: err?.response?.data?.message || "Failed to fetch ISBN details.", severity: "error" });
     } finally {
-        setIsbnFetching(false);
+      setIsbnFetching(false);
     }
   };
 
@@ -163,7 +165,7 @@ export default function TextbookPublication() {
       if (res.data && res.data.success) {
         const staff = res.data.data;
         const name = staff.employeename || staff.EmployeeName || "";
-        
+
         setForm(prev => {
           const updated = prev.otherAuthors.map(a => {
             if (a.authorPosition === pos) {
@@ -181,21 +183,21 @@ export default function TextbookPublication() {
 
   const handleCoAuthorChange = (pos, field, value) => {
     const updated = form.otherAuthors.map(a => {
-        if (a.authorPosition === pos) {
-            const newA = { ...a, [field]: value };
-            if (field === "affiliationType") {
-                if (value === "Aditya University") {
-                    newA.affiliationName = "Aditya University";
-                    newA.authorName = ""; // clear name so it can be fetched
-                } else {
-                    newA.affiliationName = "";
-                    newA.empId = "";
-                    newA.authorName = "";
-                }
-            }
-            return newA;
+      if (a.authorPosition === pos) {
+        const newA = { ...a, [field]: value };
+        if (field === "affiliationType") {
+          if (value === "Aditya University") {
+            newA.affiliationName = "Aditya University";
+            newA.authorName = ""; // clear name so it can be fetched
+          } else {
+            newA.affiliationName = "";
+            newA.empId = "";
+            newA.authorName = "";
+          }
         }
-        return a;
+        return newA;
+      }
+      return a;
     });
 
     setForm(p => ({ ...p, otherAuthors: updated }));
@@ -219,12 +221,12 @@ export default function TextbookPublication() {
       setSnack({ open: true, msg: "Please fill all required fields", severity: "error" });
       return;
     }
-    
+
     if (!form.applyIncentive) {
       setSnack({ open: true, msg: "Please select whether you want to apply for an incentive", severity: "error" });
       return;
     }
-    
+
     // Check if total authors is correctly filled
     const total = parseInt(form.totalAuthors);
     if (total > 1) {
@@ -252,12 +254,12 @@ export default function TextbookPublication() {
       const allAuthors = [];
       const userPos = parseInt(form.userAuthorPosition);
       for (let i = 1; i <= total; i++) {
-         if (i === userPos) {
-             allAuthors.push({ authorPosition: i }); // Backend will fill user details
-         } else {
-             const coAuth = form.otherAuthors.find(a => a.authorPosition === i);
-             if (coAuth) allAuthors.push(coAuth);
-         }
+        if (i === userPos) {
+          allAuthors.push({ authorPosition: i }); // Backend will fill user details
+        } else {
+          const coAuth = form.otherAuthors.find(a => a.authorPosition === i);
+          if (coAuth) allAuthors.push(coAuth);
+        }
       }
 
       // Append standard fields
@@ -271,9 +273,10 @@ export default function TextbookPublication() {
       fd.append("cost", submissionForm.cost);
       fd.append("month", submissionForm.month);
       fd.append("year", submissionForm.year);
+      fd.append("publicationType", submissionForm.publicationType);
       fd.append("applyIncentive", submissionForm.applyIncentive);
       fd.append("authors", JSON.stringify(allAuthors));
-      
+
       fd.append("academicYear", selectedYear);
       fd.append("college", user?.college || "");
       if (form.applyIncentive === "Yes") fd.append("expectedAmount", "10,000");
@@ -284,9 +287,9 @@ export default function TextbookPublication() {
 
       await API.post("/api/research/textbook", fd, { headers: { "Content-Type": "multipart/form-data" } });
       setSnack({ open: true, msg: "Textbook submitted successfully!", severity: "success" });
-      
+
       // Reset form
-      setForm({ title: "", publisher: "", isbn: "", yearOfPublication: "", totalAuthors: 1, userAuthorPosition: 1, edition: "", cost: "", month: "", year: "", applyIncentive: "", expectedAmount: "10,000", otherAuthors: [] });
+      setForm({ title: "", publisher: "", isbn: "", yearOfPublication: "", totalAuthors: 1, userAuthorPosition: 1, edition: "", cost: "", month: "", year: "", applyIncentive: "", expectedAmount: "10,000", otherAuthors: [], publicationType: "National", currencySymbol: "₹" });
       setFiles({ coverPage: null, authorAffiliation: null, index: null });
       setSelectedYear("");
       setViewMode("list");
@@ -301,7 +304,23 @@ export default function TextbookPublication() {
     <Box>
       <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
         <Typography variant="h6" sx={{ color: "var(--text-primary)", fontWeight: 800 }}>My Textbook Publications</Typography>
-        <Button variant="contained" onClick={() => setViewMode("select-year")} sx={{ background: "var(--color-primary)", borderRadius: "12px", px: 3, fontWeight: 700, textTransform: "none", "&:hover": { background: "var(--color-primary)", opacity: 0.9 } }}>
+        <Button
+          variant="contained"
+          onClick={() => setViewMode("select-year")}
+          sx={{
+            background: "var(--gradient-primary)",
+            borderRadius: "12px",
+            px: 3,
+            fontWeight: 700,
+            textTransform: "none",
+            "&:hover": {
+              opacity: 0.9,
+              transform: "translateY(-1px)",
+              boxShadow: "0 4px 12px rgba(0,0,0,0.1)"
+            },
+            transition: "all 0.2s ease"
+          }}
+        >
           Apply New
         </Button>
       </Box>
@@ -382,8 +401,46 @@ export default function TextbookPublication() {
           ))}
         </Select>
         <Box sx={{ display: "flex", gap: 2, mt: 4, justifyContent: "flex-end" }}>
-          <Button variant="outlined" onClick={() => setViewMode("list")} sx={{ borderRadius: "12px", textTransform: "none", fontWeight: 600 }}>Cancel</Button>
-          <Button variant="contained" disabled={!selectedYear} onClick={() => setViewMode("form")} sx={{ background: "var(--color-primary)", borderRadius: "12px", px: 4, fontWeight: 700, textTransform: "none", "&:hover": { background: "var(--color-primary)", opacity: 0.9 } }}>
+          <Button
+            variant="outlined"
+            onClick={() => setViewMode("list")}
+            sx={{
+              borderRadius: "12px",
+              textTransform: "none",
+              fontWeight: 600,
+              color: "var(--text-primary)",
+              borderColor: "var(--border-color)",
+              "&:hover": {
+                borderColor: "var(--color-primary)",
+                background: "rgba(0,0,0,0.02)"
+              }
+            }}
+          >
+            Cancel
+          </Button>
+          <Button
+            variant="contained"
+            disabled={!selectedYear}
+            onClick={() => setViewMode("form")}
+            sx={{
+              background: "var(--gradient-primary)",
+              borderRadius: "12px",
+              px: 4,
+              fontWeight: 700,
+              textTransform: "none",
+              "&:hover": {
+                opacity: 0.9,
+                transform: "translateY(-1px)",
+                boxShadow: "0 4px 12px rgba(0,0,0,0.1)"
+              },
+              "&.Mui-disabled": {
+                background: "var(--bg-panel)",
+                color: "var(--text-secondary)",
+                opacity: 0.5
+              },
+              transition: "all 0.2s ease"
+            }}
+          >
             Proceed
           </Button>
         </Box>
@@ -405,22 +462,38 @@ export default function TextbookPublication() {
       <SubLabel text="Details of the Text Book:" />
       <Grid2>
         <Box>
+          <Typography sx={labelStyle}>Publication Type :</Typography>
+          <Select
+            fullWidth
+            size="small"
+            value={form.publicationType}
+            onChange={(e) => setForm(p => ({ 
+              ...p, 
+              publicationType: e.target.value,
+              currencySymbol: e.target.value === "International" ? "$" : "₹" 
+            }))}
+          >
+            <MenuItem value="National">National</MenuItem>
+            <MenuItem value="International">International</MenuItem>
+          </Select>
+        </Box>
+        <Box>
           <Typography sx={labelStyle}>ISBN NO :</Typography>
           <Box sx={{ display: "flex", gap: 1 }}>
-            <TextField 
-                size="small" 
-                fullWidth 
-                value={form.isbn} 
-                onChange={set("isbn")} 
-                placeholder="Enter ISBN to auto-fetch"
+            <TextField
+              size="small"
+              fullWidth
+              value={form.isbn}
+              onChange={set("isbn")}
+              placeholder="Enter ISBN to auto-fetch"
             />
-            <Button 
-                variant="contained" 
-                onClick={fetchISBNData} 
-                disabled={!form.isbn || isbnFetching}
-                sx={{ minWidth: "100px", textTransform: "none", borderRadius: "8px", background: "var(--color-primary)" }}
+            <Button
+              variant="contained"
+              onClick={fetchISBNData}
+              disabled={!form.isbn || isbnFetching}
+              sx={{ minWidth: "100px", textTransform: "none", borderRadius: "8px", background: "var(--color-primary)" }}
             >
-                {isbnFetching ? <CircularProgress size={20} color="inherit" /> : "Fetch"}
+              {isbnFetching ? <CircularProgress size={20} color="inherit" /> : "Fetch"}
             </Button>
           </Box>
         </Box>
@@ -460,121 +533,192 @@ export default function TextbookPublication() {
             freeSolo
             options={editions.map(e => e.name)}
             value={form.edition}
-            onChange={(e, newValue) => setForm(p => ({...p, edition: newValue || ""}))}
-            onInputChange={(e, newInputValue) => setForm(p => ({...p, edition: newInputValue}))}
+            onChange={(e, newValue) => setForm(p => ({ ...p, edition: newValue || "" }))}
+            onInputChange={(e, newInputValue) => setForm(p => ({ ...p, edition: newInputValue }))}
             renderInput={(params) => <TextField {...params} size="small" placeholder="Select or type Edition (e.g. 1st Edition)" />}
           />
         </Box>
         <Box>
           <Typography sx={labelStyle}>Cost:</Typography>
-          <TextField size="small" fullWidth value={form.cost} onChange={set("cost")} placeholder="Rs. /-" />
+          <Box sx={{
+            display: "flex",
+            alignItems: "center",
+            border: "1px solid var(--border-color)",
+            borderRadius: "8px",
+            height: "40px",
+            background: "var(--bg-glass)",
+            transition: "all 0.2s ease",
+            "&:focus-within": { borderColor: "var(--color-primary)", boxShadow: "0 0 0 1px var(--color-primary)" }
+          }}>
+            {/* Left Side: Currency Indicator */}
+            <Box sx={{
+              display: "flex",
+              alignItems: "center",
+              px: 2,
+              borderRight: "1px solid var(--border-color)",
+              height: "100%",
+              background: "var(--bg-accent-1)",
+              borderTopLeftRadius: "8px",
+              borderBottomLeftRadius: "8px"
+            }}>
+              <Typography sx={{ color: "var(--color-primary)", fontWeight: 500, fontSize: 16 }}>
+                {form.currencySymbol}
+              </Typography>
+            </Box>
+
+            {/* Center: Input Field */}
+            <input
+              value={form.cost}
+              onChange={set("cost")}
+              placeholder="0.00"
+              style={{
+                flex: 1,
+                border: "none",
+                outline: "none",
+                padding: "0 16px",
+                background: "transparent",
+                fontSize: "14px",
+                color: "var(--text-primary)",
+                fontWeight: 500,
+                width: "100%"
+              }}
+            />
+
+            {/* Right Side: Toggle Switch */}
+            <Box sx={{ display: "flex", alignItems: "center", pr: 0.5 }}>
+              <Box sx={{ display: "flex", border: "1px solid var(--border-color)", borderRadius: "6px", overflow: "hidden", background: "var(--bg-panel)" }}>
+                <Box
+                  onClick={() => setForm(p => ({ ...p, currencySymbol: "₹" }))}
+                  sx={{
+                    px: 1.5, py: 0.5, cursor: "pointer",
+                    background: form.currencySymbol === "₹" ? "var(--color-primary)" : "transparent",
+                    color: form.currencySymbol === "₹" ? "#fff" : "var(--text-secondary)",
+                    fontWeight: 500, fontSize: 16, transition: "all 0.2s ease",
+                    display: "flex", alignItems: "center", justifyContent: "center"
+                  }}>
+                  ₹
+                </Box>
+                <Box
+                  onClick={() => setForm(p => ({ ...p, currencySymbol: "$" }))}
+                  sx={{
+                    px: 1.5, py: 0.5, cursor: "pointer",
+                    background: form.currencySymbol === "$" ? "var(--color-primary)" : "transparent",
+                    color: form.currencySymbol === "$" ? "#fff" : "var(--text-secondary)",
+                    fontWeight: 500, fontSize: 16, transition: "all 0.2s ease",
+                    display: "flex", alignItems: "center", justifyContent: "center"
+                  }}>
+                  $
+                </Box>
+              </Box>
+            </Box>
+          </Box>
         </Box>
         <Box></Box>
 
         {/* Authors Section */}
         <Box sx={{ gridColumn: { sm: "1 / -1" }, background: "var(--bg-panel)", p: 2, borderRadius: "12px", border: "1px solid var(--border-color)", mt: 2 }}>
-            <Typography sx={{ fontWeight: 700, color: "var(--text-primary)", mb: 2 }}>Author Details</Typography>
-            <Grid2>
-                <Box>
-                    <Typography sx={labelStyle}>Total Number of Authors :</Typography>
-                    <TextField 
-                        size="small" 
-                        fullWidth 
-                        type="number" 
-                        value={form.totalAuthors} 
-                        onChange={set("totalAuthors")}
-                        inputProps={{ min: 1 }}
-                    />
-                </Box>
-                {parseInt(form.totalAuthors) > 1 && (
-                    <Box>
-                        <Typography sx={labelStyle}>Applicant Author Position :</Typography>
-                        <Select size="small" fullWidth value={form.userAuthorPosition} onChange={set("userAuthorPosition")}>
-                            {Array.from({ length: parseInt(form.totalAuthors) || 1 }, (_, i) => (
-                                <MenuItem key={i+1} value={i+1}>{i+1}</MenuItem>
-                            ))}
-                        </Select>
-                    </Box>
-                )}
-            </Grid2>
-
+          <Typography sx={{ fontWeight: 700, color: "var(--text-primary)", mb: 2 }}>Author Details</Typography>
+          <Grid2>
+            <Box>
+              <Typography sx={labelStyle}>Total Number of Authors :</Typography>
+              <TextField
+                size="small"
+                fullWidth
+                type="number"
+                value={form.totalAuthors}
+                onChange={set("totalAuthors")}
+                inputProps={{ min: 1 }}
+              />
+            </Box>
             {parseInt(form.totalAuthors) > 1 && (
-                <Box sx={{ mt: 3 }}>
-                    <Typography sx={{ ...labelStyle, mb: 1 }}>Name & affiliation of Co-Author(s) :</Typography>
-                    {form.otherAuthors.map((ca, index) => (
-                        <Box key={ca.authorPosition} sx={{ display: "flex", flexDirection: "column", gap: 2, mb: 2, p: 2, borderRadius: "12px", border: "1px dashed var(--border-color)", background: "var(--bg-accent-1)", position: "relative" }}>
-                            <Box sx={{ display: "flex", gap: 2, flexWrap: { xs: "wrap", sm: "nowrap" }, alignItems: "center" }}>
-                                <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", width: "30px", height: "30px", background: "var(--color-primary)", color: "#fff", borderRadius: "50%", fontWeight: 700 }}>
-                                    {ca.authorPosition}
-                                </Box>
-                                <Box sx={{ flex: 1, minWidth: "150px" }}>
-                                    <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>AFFILIATION TYPE</Typography>
-                                    <Select
-                                        size="small"
-                                        fullWidth
-                                        value={ca.affiliationType}
-                                        onChange={(e) => handleCoAuthorChange(ca.authorPosition, "affiliationType", e.target.value)}
-                                        displayEmpty
-                                    >
-                                        <MenuItem value="" disabled>Select Affiliation</MenuItem>
-                                        <MenuItem value="Aditya University">Aditya University</MenuItem>
-                                        <MenuItem value="Others">Others</MenuItem>
-                                    </Select>
-                                </Box>
-
-                                {ca.affiliationType === "Aditya University" ? (
-                                    <>
-                                        <Box sx={{ flex: 1, minWidth: "120px" }}>
-                                            <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>EMPLOYEE ID</Typography>
-                                            <TextField
-                                                size="small"
-                                                fullWidth
-                                                value={ca.empId}
-                                                onChange={(e) => handleCoAuthorChange(ca.authorPosition, "empId", e.target.value)}
-                                                placeholder="e.g. 5741"
-                                            />
-                                        </Box>
-                                        <Box sx={{ flex: 2, minWidth: "200px" }}>
-                                            <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>CO-AUTHOR NAME</Typography>
-                                            <TextField
-                                                size="small"
-                                                fullWidth
-                                                value={ca.authorName}
-                                                disabled
-                                                placeholder="Fetched from API"
-                                                sx={{ background: "rgba(0,0,0,0.02)" }}
-                                            />
-                                        </Box>
-                                    </>
-                                ) : (
-                                    <>
-                                        <Box sx={{ flex: 1, minWidth: "180px" }}>
-                                            <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>CO-AUTHOR NAME</Typography>
-                                            <TextField
-                                                size="small"
-                                                fullWidth
-                                                value={ca.authorName}
-                                                onChange={(e) => handleCoAuthorChange(ca.authorPosition, "authorName", e.target.value)}
-                                                placeholder="Full Name"
-                                            />
-                                        </Box>
-                                        <Box sx={{ flex: 2, minWidth: "200px" }}>
-                                            <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>AFFILIATION</Typography>
-                                            <TextField
-                                                size="small"
-                                                fullWidth
-                                                value={ca.affiliationName}
-                                                onChange={(e) => handleCoAuthorChange(ca.authorPosition, "affiliationName", e.target.value)}
-                                                placeholder="College / Organization"
-                                            />
-                                        </Box>
-                                    </>
-                                )}
-                            </Box>
-                        </Box>
-                    ))}
-                </Box>
+              <Box>
+                <Typography sx={labelStyle}>Applicant Author Position :</Typography>
+                <Select size="small" fullWidth value={form.userAuthorPosition} onChange={set("userAuthorPosition")}>
+                  {Array.from({ length: parseInt(form.totalAuthors) || 1 }, (_, i) => (
+                    <MenuItem key={i + 1} value={i + 1}>{i + 1}</MenuItem>
+                  ))}
+                </Select>
+              </Box>
             )}
+          </Grid2>
+
+          {parseInt(form.totalAuthors) > 1 && (
+            <Box sx={{ mt: 3 }}>
+              <Typography sx={{ ...labelStyle, mb: 1 }}>Name & affiliation of Co-Author(s) :</Typography>
+              {form.otherAuthors.map((ca, index) => (
+                <Box key={ca.authorPosition} sx={{ display: "flex", flexDirection: "column", gap: 2, mb: 2, p: 2, borderRadius: "12px", border: "1px dashed var(--border-color)", background: "var(--bg-accent-1)", position: "relative" }}>
+                  <Box sx={{ display: "flex", gap: 2, flexWrap: { xs: "wrap", sm: "nowrap" }, alignItems: "center" }}>
+                    <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", width: "30px", height: "30px", background: "var(--color-primary)", color: "#fff", borderRadius: "50%", fontWeight: 700 }}>
+                      {ca.authorPosition}
+                    </Box>
+                    <Box sx={{ flex: 1, minWidth: "150px" }}>
+                      <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>AFFILIATION TYPE</Typography>
+                      <Select
+                        size="small"
+                        fullWidth
+                        value={ca.affiliationType}
+                        onChange={(e) => handleCoAuthorChange(ca.authorPosition, "affiliationType", e.target.value)}
+                        displayEmpty
+                      >
+                        <MenuItem value="" disabled>Select Affiliation</MenuItem>
+                        <MenuItem value="Aditya University">Aditya University</MenuItem>
+                        <MenuItem value="Others">Others</MenuItem>
+                      </Select>
+                    </Box>
+
+                    {ca.affiliationType === "Aditya University" ? (
+                      <>
+                        <Box sx={{ flex: 1, minWidth: "120px" }}>
+                          <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>EMPLOYEE ID</Typography>
+                          <TextField
+                            size="small"
+                            fullWidth
+                            value={ca.empId}
+                            onChange={(e) => handleCoAuthorChange(ca.authorPosition, "empId", e.target.value)}
+                            placeholder="e.g. 5741"
+                          />
+                        </Box>
+                        <Box sx={{ flex: 2, minWidth: "200px" }}>
+                          <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>CO-AUTHOR NAME</Typography>
+                          <TextField
+                            size="small"
+                            fullWidth
+                            value={ca.authorName}
+                            disabled
+                            placeholder="Fetched from API"
+                            sx={{ background: "rgba(0,0,0,0.02)" }}
+                          />
+                        </Box>
+                      </>
+                    ) : (
+                      <>
+                        <Box sx={{ flex: 1, minWidth: "180px" }}>
+                          <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>CO-AUTHOR NAME</Typography>
+                          <TextField
+                            size="small"
+                            fullWidth
+                            value={ca.authorName}
+                            onChange={(e) => handleCoAuthorChange(ca.authorPosition, "authorName", e.target.value)}
+                            placeholder="Full Name"
+                          />
+                        </Box>
+                        <Box sx={{ flex: 2, minWidth: "200px" }}>
+                          <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>AFFILIATION</Typography>
+                          <TextField
+                            size="small"
+                            fullWidth
+                            value={ca.affiliationName}
+                            onChange={(e) => handleCoAuthorChange(ca.authorPosition, "affiliationName", e.target.value)}
+                            placeholder="College / Organization"
+                          />
+                        </Box>
+                      </>
+                    )}
+                  </Box>
+                </Box>
+              ))}
+            </Box>
+          )}
         </Box>
       </Grid2>
 
@@ -616,7 +760,27 @@ export default function TextbookPublication() {
       </Grid2>
 
       <Box sx={{ display: "flex", gap: 2, justifyContent: "center", mt: 4 }}>
-        <Button variant="outlined" onClick={() => setViewMode("list")} sx={{ px: 4, borderRadius: 2 }}>Cancel</Button>
+        <Button
+          variant="outlined"
+          onClick={() => setViewMode("list")}
+          sx={{
+            px: 4,
+            height: "44px",
+            borderRadius: "12px",
+            textTransform: "none",
+            fontWeight: 600,
+            color: "var(--text-primary)",
+            borderColor: "var(--border-color)",
+            "&:hover": {
+              borderColor: "#ef4444",
+              color: "#ef4444",
+              background: "rgba(239, 68, 68, 0.05)"
+            },
+            transition: "all 0.3s ease"
+          }}
+        >
+          Cancel
+        </Button>
         <SubmitBtn onClick={handleSubmit} loading={loading} />
       </Box>
     </FormCard>
