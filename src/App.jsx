@@ -30,8 +30,7 @@ import Dashboard from "./pages/Dashboard";
 import { registerLoadingHandlers } from "./api/axios";
 import SDG from "./pages/faculty/SDG";
 import Profile from "./components/common/Profile";
-import DeptResearchApprovals from './pages/hod/DeptResearchApprovals';
-import HODResearchDetailWrapper from './pages/hod/HODResearchDetailWrapper';
+
 
 // Research Approval System (Consolidated)
 import ResearchApprovalList from './pages/researchApproval/ResearchApprovalList';
@@ -104,14 +103,14 @@ function App() {
         <Route path="/student/assigned-students" element={<ProtectedRoute element={<Assignedstudents />} />} />
         <Route path="/student/department-mapping" element={<ProtectedRoute element={<DepartmentMapping />} />} />
         <Route path="/profile" element={<ProtectedRoute element={<Profile />} />} />
-        
+
         {/* Research Approval System */}
         <Route path="/hod/research-approvals" element={<ProtectedRoute element={<ResearchApprovalList role="HOD" />} />} />
         <Route path="/hod/research-request/:type/:id" element={<ProtectedRoute element={<ResearchApprovalDetailWrapper role="HOD" />} />} />
-        
+
         <Route path="/research-dean/approvals" element={<ProtectedRoute element={<ResearchApprovalList role="RESEARCH_DEAN" />} />} />
         <Route path="/research-dean/request/:type/:id" element={<ProtectedRoute element={<ResearchApprovalDetailWrapper role="RESEARCH_DEAN" />} />} />
-        
+
         <Route path="/research-coordinator/approvals" element={<ProtectedRoute element={<ResearchApprovalList role="RESEARCH_COORDINATOR" />} />} />
         <Route path="/research-coordinator/request/:type/:id" element={<ProtectedRoute element={<ResearchApprovalDetailWrapper role="RESEARCH_COORDINATOR" />} />} />
 
