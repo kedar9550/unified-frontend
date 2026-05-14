@@ -1159,7 +1159,7 @@ const RoleManagement = () => {
                                                     value={editableCoreDept}
                                                     onChange={(e) => setEditableCoreDept(e.target.value)}
                                                     size="small"
-                                                    SelectProps={{ native: false }}
+                                                    slotProps={{ select: { native: false } }}
                                                     sx={{
                                                         bgcolor: 'rgba(255, 255, 255, 0.6)',
                                                         borderRadius: '10px',
