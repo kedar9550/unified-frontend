@@ -33,7 +33,7 @@ export const sdgData = {
       "Resilient Agriculture", "Rural infrastructure", "Small-scale food producers",
       "Stunted growth", "Stunting", "Sufficient food", "Sustainable",
       "Sustainable agriculture", "Sustainable food production", "Trade diversity",
-      "Trade restrictions", "Under nourished", "Wasting", "World%u2019s hungry",
+      "Trade restrictions", "Under nourished", "Wasting", "World’s hungry",
       "Undernourished", "biological control", "domestication", "organic systems",
       "agroforestry", "biocontrol", "agricultural", "undernutrition",
       "smallholder", "organic", "natural enemies", "precision agriculture",
