@@ -135,4 +135,32 @@ export const ROLE_ROUTES = {
     { text: "Feedback Management", path: "/feedback-management", icon: <MenuBook /> },
     { text: "Discrepancies", path: "/feedback-management/discrepancies", icon: <Flag /> },
   ],
+
+  "RESEARCH_DEAN": [
+    { text: "Dashboard", path: "/dashboard", icon: <Dashboard /> },
+    {
+      text: "Approvals",
+      icon: <Verified />,
+      nested: [
+        {
+          text: "Research",
+          path: "/research-dean/approvals"
+        },
+      ]
+    }
+  ],
+
+  "RESEARCH_COORDINATOR": [
+    { text: "Dashboard", path: "/dashboard", icon: <Dashboard /> },
+    {
+      text: "Approvals",
+      icon: <Verified />,
+      nested: [
+        {
+          text: "Research",
+          path: "/research-coordinator/approvals"
+        },
+      ]
+    }
+  ],
 };

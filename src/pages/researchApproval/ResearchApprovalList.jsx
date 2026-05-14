@@ -21,11 +21,10 @@ import {
 } from "@mui/material";
 import {
     Visibility as ViewIcon,
-    FilterAlt as FilterIcon,
     Search as SearchIcon
 } from "@mui/icons-material";
 
-const DeptResearchApprovals = ({ role }) => {
+const ResearchApprovalList = ({ role }) => {
     const navigate = useNavigate();
     
     // Determine context
@@ -50,7 +49,10 @@ const DeptResearchApprovals = ({ role }) => {
         try {
             const params = {};
             if (typeFilter !== "All") params.type = typeFilter;
-            if (statusFilter !== "All") params.status = statusFilter;
+            
+            // Send status filter (including "All")
+            if (statusFilter) params.status = statusFilter;
+            
             if (durationFilter !== "All" && durationFilter !== "Custom") params.duration = durationFilter;
             if (durationFilter === "Custom" && fromDate && toDate) {
                 params.fromDate = fromDate;
@@ -272,4 +274,4 @@ const DeptResearchApprovals = ({ role }) => {
     );
 };
 
-export default DeptResearchApprovals;
+export default ResearchApprovalList;

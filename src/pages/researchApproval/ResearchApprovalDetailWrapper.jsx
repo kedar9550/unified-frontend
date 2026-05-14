@@ -1,14 +1,11 @@
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Box, Typography, Button } from '@mui/material';
-import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import { Box, Typography } from '@mui/material';
 
 // Detail Components
-import TextBookDetailPage from './TextBookDetailPage';
-// import JournalDetailPage from './JournalDetailPage';
-// ... other detail components
+import TextBookApprovalDetail from './TextBookApprovalDetail';
 
-const HODResearchDetailWrapper = ({ role }) => {
+const ResearchApprovalDetailWrapper = ({ role }) => {
     const { type, id } = useParams();
     const navigate = useNavigate();
 
@@ -26,7 +23,7 @@ const HODResearchDetailWrapper = ({ role }) => {
     const renderDetailComponent = () => {
         switch (type.toLowerCase()) {
             case 'textbook':
-                return <TextBookDetailPage id={id} onBack={goBack} role={role} />;
+                return <TextBookApprovalDetail id={id} onBack={goBack} role={role} />;
             case 'journal':
                 return (
                     <Box sx={{ p: 4, textAlign: 'center' }}>
@@ -50,4 +47,4 @@ const HODResearchDetailWrapper = ({ role }) => {
     );
 };
 
-export default HODResearchDetailWrapper;
+export default ResearchApprovalDetailWrapper;
