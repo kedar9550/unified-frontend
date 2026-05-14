@@ -268,14 +268,16 @@ const DeveloperPopup = ({ open, onClose }) => {
             onClose={onClose}
             maxWidth="xs"
             fullWidth
-            PaperProps={{
-                sx: {
-                    borderRadius: '28px',
-                    position: 'relative',
-                    background: 'var(--bg-panel)',
-                    border: '1px solid var(--border-color)',
-                    boxShadow: 'var(--shadow-premium)',
-                    overflow: 'visible'
+            slotProps={{
+                paper: {
+                    sx: {
+                        borderRadius: '28px',
+                        position: 'relative',
+                        background: 'var(--bg-panel)',
+                        border: '1px solid var(--border-color)',
+                        boxShadow: 'var(--shadow-premium)',
+                        overflow: 'visible'
+                    }
                 }
             }}
         >

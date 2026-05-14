@@ -260,14 +260,16 @@ export default function RaiseDiscrepancyModal({
       onClose={() => onClose(false)}
       maxWidth="md"
       fullWidth
-      PaperProps={{
-        sx: {
-          borderRadius: "24px",
-          background: "linear-gradient(135deg,rgba(255,255,255,0.97),rgba(240,245,255,0.97))",
-          backdropFilter: "blur(20px)",
-          boxShadow: "0 30px 80px rgba(0,0,0,0.15)",
-          minHeight: 500,
-        },
+      slotProps={{
+        paper: {
+          sx: {
+            borderRadius: "24px",
+            background: "linear-gradient(135deg,rgba(255,255,255,0.97),rgba(240,245,255,0.97))",
+            backdropFilter: "blur(20px)",
+            boxShadow: "0 30px 80px rgba(0,0,0,0.15)",
+            minHeight: 500,
+          }
+        }
       }}
     >
       {/* ── HEADER ─────────────────────────────────────── */}

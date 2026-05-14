@@ -34,7 +34,8 @@ html,
   font-family: 'Product Sans', sans-serif;
   transition: background-color 0.3s ease, color 0.3s ease;
   font-optical-sizing: auto;
-  letter-spacing: -0.01em; /* Slight tightening helps with high-contrast bleed */
+  letter-spacing: -0.01em;
+  /* Slight tightening helps with high-contrast bleed */
 }
 
 /* =========================================
@@ -170,11 +171,21 @@ body.dark-mode .MuiCheckbox-root {
 }
 
 @keyframes theme-expand {
-  from { clip-path: circle(0% at 50% 50%); }
-  to { clip-path: circle(150% at 50% 50%); }
+  from {
+    clip-path: circle(0% at 50% 50%);
+  }
+
+  to {
+    clip-path: circle(150% at 50% 50%);
+  }
 }
 
 @keyframes theme-collapse {
-  from { clip-path: circle(150% at 50% 50%); }
-  to { clip-path: circle(0% at 50% 50%); }
+  from {
+    clip-path: circle(150% at 50% 50%);
+  }
+
+  to {
+    clip-path: circle(0% at 50% 50%);
+  }
 }

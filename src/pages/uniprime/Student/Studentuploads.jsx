@@ -757,14 +757,16 @@ const Studentuploads = () => {
             <Dialog
                 open={isAddModalOpen || isUpdateModalOpen}
                 onClose={() => !addingStudent && (setIsAddModalOpen(false), setIsUpdateModalOpen(false))}
-                PaperProps={{
-                    sx: {
-                        borderRadius: "24px",
-                        p: 1,
-                        background: "var(--bg-panel)",
-                        backgroundImage: "none",
-                        border: "1px solid var(--border-color)",
-                        boxShadow: "var(--shadow-premium)"
+                slotProps={{
+                    paper: {
+                        sx: {
+                            borderRadius: "24px",
+                            p: 1,
+                            background: "var(--bg-panel)",
+                            backgroundImage: "none",
+                            border: "1px solid var(--border-color)",
+                            boxShadow: "var(--shadow-premium)"
+                        }
                     }
                 }}
             >

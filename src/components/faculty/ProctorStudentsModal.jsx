@@ -75,14 +75,16 @@ const ProctorStudentsModal = ({ open, onClose, proctorId }) => {
       onClose={onClose}
       maxWidth="md"
       fullWidth
-      PaperProps={{
-        sx: {
-          borderRadius: "16px",
-          background: "var(--bg-panel)",
-          backgroundImage: "linear-gradient(rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.05))",
-          boxShadow: "var(--shadow-premium)",
-          border: "1px solid var(--border-color)",
-        },
+      slotProps={{
+        paper: {
+          sx: {
+            borderRadius: "16px",
+            background: "var(--bg-panel)",
+            backgroundImage: "linear-gradient(rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.05))",
+            boxShadow: "var(--shadow-premium)",
+            border: "1px solid var(--border-color)",
+          }
+        }
       }}
     >
       <DialogTitle

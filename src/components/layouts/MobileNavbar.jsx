@@ -89,6 +89,13 @@ const MobileNavbar = () => {
     const [weather, setWeather] = useState({ temp: "--", icon: null, desc: "Loading...", hourly: [] });
     const [weatherExpanded, setWeatherExpanded] = useState(false);
     const [coords, setCoords] = useState({ lat: 17.089845, lon: 82.067751 }); // Default: Aditya University Coords
+    const [windowWidth, setWindowWidth] = useState(window.innerWidth);
+
+    useEffect(() => {
+        const handleResize = () => setWindowWidth(window.innerWidth);
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
 
     useEffect(() => {
         if (navigator.geolocation) {
@@ -108,7 +115,7 @@ const MobileNavbar = () => {
                 const temp = Math.round(current.temperature_2m);
                 const code = current.weather_code;
                 const nowIdx = data.hourly.time.findIndex(t => new Date(t) > new Date()) || 0;
-                const hourlyData = data.hourly.time.slice(nowIdx, nowIdx + 4).map((time, idx) => ({
+                const hourlyData = data.hourly.time.slice(nowIdx, nowIdx + 24).map((time, idx) => ({
                     time: new Date(time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
                     temp: Math.round(data.hourly.temperature_2m[nowIdx + idx]),
                     code: data.hourly.weather_code[nowIdx + idx]
@@ -182,10 +189,10 @@ const MobileNavbar = () => {
                     transition: 'all 0.6s cubic-bezier(0.4, 0, 0.2, 1)',
                     background: 'var(--bg-glass)',
                     backdropFilter: 'blur(25px) saturate(180%)',
-                    borderRadius: '24px',
+                    borderRadius: '12px',
                     display: 'flex',
                     alignItems: 'center',
-                    justifyContent: 'space-between',
+                    justifyContent: 'center',
                     gap: 2,
                     overflow: 'hidden',
                     whiteSpace: 'nowrap',
@@ -195,9 +202,9 @@ const MobileNavbar = () => {
                     transformOrigin: 'right center',
                 }}
             >
-                {weather.hourly.map((h, i) => (
-                    <Box key={i} sx={{ 
-                        textAlign: 'center', 
+                {weather.hourly.slice(0, Math.max(4, Math.floor((windowWidth - 60) / 85))).map((h, i) => (
+                    <Box key={i} sx={{
+                        textAlign: 'center',
                         minWidth: 65,
                         display: 'flex',
                         flexDirection: 'column',
@@ -226,13 +233,15 @@ const MobileNavbar = () => {
                 anchor="bottom"
                 open={Boolean(expandedItem)}
                 onClose={() => setExpandedItem(null)}
-                PaperProps={{
-                    sx: {
-                        borderRadius: '24px 24px 0 0',
-                        background: 'var(--bg-main)', // Use main background to match screenshot feel
-                        maxHeight: '85vh',
-                        pb: 4,
-                        overflow: 'hidden'
+                slotProps={{
+                    paper: {
+                        sx: {
+                            borderRadius: '24px 24px 0 0',
+                            background: 'var(--bg-main)', // Use main background to match screenshot feel
+                            maxHeight: '85vh',
+                            pb: 4,
+                            overflow: 'hidden'
+                        }
                     }
                 }}
             >

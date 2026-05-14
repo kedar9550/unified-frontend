@@ -78,7 +78,11 @@
   padding: 40px 8%;
 }
 
-/* ─── FOOTER — aliceblue bar ───────────────────── */
+.footer-aliceblue {
+  margin-top: auto;
+  width: 100%;
+}
+
 .footer-aliceblue .app-footer {
   background: transparent;
   border-top: 1px solid var(--border-color);
@@ -740,7 +744,9 @@
     position: static;
     width: 100%;
     min-height: unset;
-    height: auto;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
   }
 
   .signup-panel {
