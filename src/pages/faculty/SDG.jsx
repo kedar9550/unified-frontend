@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import PageHeader from '../../components/common/PageHeader';
 import {
     Box,
@@ -12,9 +12,11 @@ import {
     Collapse,
     Grid,
     CircularProgress,
-    Dialog
+    Dialog,
+    TextField,
+    Tooltip
 } from '@mui/material';
-import { sdgData } from '../../sdgData.js';
+import API from "../../api/axios";
 import {
     CloudUpload,
     ExpandMore,
@@ -22,7 +24,10 @@ import {
     Person,
     Badge,
     School,
-    Code
+    Code,
+    Add,
+    Delete,
+    Sync
 } from '@mui/icons-material';
 import mammoth from "mammoth";
 import * as pdfjsLib from "pdfjs-dist";
@@ -143,7 +148,7 @@ const SDGCard = ({ id, sdg, imageUrl, isExpanded, toggleExpand }) => {
                                 pb: 0.5
                             }}
                         >
-                            {sdg.keywords.slice(0, 40).map((kw, i) => (
+                            {sdg.keywords.slice(0, 25).map((kw, i) => (
                                 <Chip
                                     key={i}
                                     label={kw}
@@ -384,6 +389,33 @@ const SDG = () => {
     const [isProcessing, setIsProcessing] = useState(false);
     const [matchedResults, setMatchedResults] = useState(null);
     const [showDevPopup, setShowDevPopup] = useState(true);
+    const [sdgData, setSdgData] = useState({});
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchSdgData = async () => {
+            try {
+                setLoading(true);
+                const res = await API.get("/api/sdgs");
+                if (res.data && res.data.success) {
+                    const dataObj = {};
+                    res.data.data.forEach(item => {
+                        dataObj[item.sdgNumber] = {
+                            title: item.sdgTitle,
+                            keywords: item.keywords
+                        };
+                    });
+                    setSdgData(dataObj);
+                }
+            } catch (err) {
+                console.error("Error fetching SDG data:", err);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchSdgData();
+    }, []);
+
     const fileInputRef = React.useRef(null);
 
     const handleTabChange = (event, newValue) => {
@@ -402,321 +434,522 @@ const SDG = () => {
         const file = event.target.files[0];
         if (!file) return;
 
-        // Validation
-        const allowedExtensions = ['.pdf', '.doc', '.docx'];
+        const currentSdgData = sdgData;
+        if (Object.keys(currentSdgData).length === 0) {
+            alert('SDG keywords are still loading. Please try again in a moment.');
+            return;
+        }
+
+        // File validation
+        const allowedExtensions = ['.pdf', '.docx'];
         const fileName = file.name.toLowerCase();
         const isValidExtension = allowedExtensions.some(ext => fileName.endsWith(ext));
-        const maxSize = 10 * 1024 * 1024; // 10MB
+        const maxSize = 10 * 1024 * 1024;
 
         if (!isValidExtension) {
-            alert('Please upload only PDF or Word documents (.pdf, .doc, .docx)');
+            alert('Please upload only PDF or DOCX files');
             event.target.value = '';
             return;
         }
 
         if (file.size > maxSize) {
-            alert('File size exceeds 10MB limit.');
+            alert('File size exceeds 10MB');
             event.target.value = '';
             return;
         }
 
-        // Real Analysis
         setIsProcessing(true);
         setMatchedResults(null);
 
         try {
             let text = "";
-            const fileReader = new FileReader();
 
+            // =========================
+            // READ PDF / DOCX
+            // =========================
             if (fileName.endsWith('.pdf')) {
+
                 const arrayBuffer = await file.arrayBuffer();
-                const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+
+                const pdf = await pdfjsLib.getDocument({
+                    data: arrayBuffer
+                }).promise;
+
                 let fullText = "";
+
                 for (let i = 1; i <= pdf.numPages; i++) {
+
                     const page = await pdf.getPage(i);
+
                     const content = await page.getTextContent();
-                    fullText += content.items.map(item => item.str).join(" ") + " ";
+
+                    fullText += content.items
+                        .map(item => item.str)
+                        .join(" ")
+                        .replace(/([a-zA-Z])\s+([a-zA-Z])/g, '$1$2') + " ";
                 }
-                text = fullText.toLowerCase();
+
+                text = fullText;
             } else {
-                // Word document
                 const arrayBuffer = await file.arrayBuffer();
-                const result = await mammoth.extractRawText({ arrayBuffer });
-                text = result.value.toLowerCase();
+
+                const result = await mammoth.extractRawText({
+                    arrayBuffer
+                });
+
+                text = result.value;
             }
 
-            // Keyword Matching Logic
+            // =========================
+            // TEXT NORMALIZATION
+            // =========================
+            const normalizeText = (t) => {
+                return t
+                    .toLowerCase()
+                    .replace(/[\u2018\u2019]/g, "'")
+                    .replace(/[\u201C\u201D]/g, '"')
+                    .replace(/[^a-z0-9'\s]/g, ' ')
+                    .replace(/\s+/g, ' ')
+                    .trim();
+            };
+
+            text = normalizeText(text);
+
+            // =========================
+            // MATCHING LOGIC
+            // =========================
             const results = {};
-            Object.entries(sdgData).forEach(([id, data]) => {
+            let totalMatches = 0;
+            let matchedKeywordsSet = new Set();
+
+            const escapeRegExp = (string) => {
+                return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            };
+
+            Object.entries(currentSdgData).forEach(([id, data]) => {
+
                 let matchCount = 0;
-                data.keywords.forEach(keyword => {
-                    const kw = keyword.toLowerCase();
-                    if (kw.length > 2) { // Skip very short keywords for accuracy
-                        // Using regex to find whole word matches
-                        const regex = new RegExp(`\\b${kw}\\b`, 'g');
-                        const matches = text.match(regex);
-                        if (matches) {
-                            matchCount += matches.length;
+
+                data.keywords.forEach((keyword) => {
+
+                    const kw = normalizeText(keyword);
+
+                    if (kw.length > 2) {
+
+                        const escapedKw = escapeRegExp(kw);
+
+                        // Using standard word boundaries for better accuracy
+                        const regex = new RegExp(`\\b${escapedKw}\\b`, "gi");
+
+                        if (regex.test(text)) {
+                            matchCount++;
+                            totalMatches++;
+                            matchedKeywordsSet.add(kw);
                         }
                     }
                 });
+
                 results[id] = matchCount;
             });
 
-            // Delay slightly for UX/Progress feel
-            setTimeout(() => {
-                setMatchedResults(results);
-                setIsProcessing(false);
+            // =========================
+            // FINAL STATS
+            // =========================
+            const sdgsMatched = Object.values(results)
+                .filter(count => count > 0)
+                .length;
 
-                // Auto-scroll to results
+            const calculatedScore = Math.min(
+                100,
+                (totalMatches * 2) + (sdgsMatched * 5)
+            );
+
+            // =========================
+            // SAVE RESULTS
+            // =========================
+            setMatchedResults({
+                counts: results,
+                stats: {
+                    fileName: file.name,
+                    totalMatches,
+                    sdgsMatched,
+                    uniqueKeywords: matchedKeywordsSet.size,
+                    score: calculatedScore
+                }
+            });
+
+            setIsProcessing(false);
+
+            // Auto scroll
+            setTimeout(() => {
                 window.scrollTo({
                     top: document.body.scrollHeight,
                     behavior: 'smooth'
                 });
-            }, 1000);
+            }, 200);
 
         } catch (error) {
             console.error("Error processing file:", error);
-            alert("Error reading file content. Please try again.");
+
+            alert("Error reading file");
+
             setIsProcessing(false);
         }
     };
 
-    // Sub-component for the Results Grid
-    const MatchedResults = ({ results }) => (
-        <Box sx={{ mt: 6, mb: 4 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2, borderBottom: '2px solid var(--border-color)', pb: 1 }}>
-                <Typography variant="h5" sx={{ fontWeight: 800, color: 'var(--text-primary)' }}>
-                    Matched SDGs
+    // Sub-component for Stats Cards
+    const StatCard = ({ label, value, subtext, icon: Icon, color }) => (
+        <Paper sx={{
+            p: 2.5,
+            borderRadius: '20px',
+            background: 'var(--bg-glass)',
+            border: '1px solid var(--border-color)',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 1,
+            flex: 1,
+            minWidth: '200px',
+            transition: 'all 0.3s ease',
+            '&:hover': {
+                transform: 'translateY(-4px)',
+                borderColor: color,
+                boxShadow: `0 10px 30px ${color}15`
+            }
+        }}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Typography sx={{ color: 'var(--text-secondary)', fontSize: '0.85rem', fontWeight: 600 }}>
+                    {label}
                 </Typography>
+                <Box sx={{ p: 1, borderRadius: '12px', background: `${color}15`, color: color }}>
+                    <Icon sx={{ fontSize: 20 }} />
+                </Box>
             </Box>
-
-            <Box sx={{
-                display: 'grid',
-                gridTemplateColumns: {
-                    xs: 'repeat(2, 1fr)',
-                    sm: 'repeat(3, 1fr)',
-                    md: 'repeat(5, 1fr)'
-                },
-                gap: 2
-            }}>
-                {Object.entries(sdgData)
-                    .filter(([id]) => results[id] > 0)
-                    .map(([id, data]) => (
-                        <Paper key={id} sx={{
-                            p: 0,
-                            borderRadius: '12px',
-                            background: 'var(--bg-accent-4)',
-                            border: '1px solid var(--border-color)',
-                            overflow: 'hidden',
-                            textAlign: 'center',
-                            display: 'flex',
-                            flexDirection: 'column',
-                            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                            '&:hover': {
-                                transform: 'translateY(-5px)',
-                                boxShadow: '0 8px 25px rgba(0,0,0,0.1)',
-                                borderColor: 'var(--color-primary)'
-                            }
-                        }}>
-                            <Box
-                                component="img"
-                                src={SDG_IMAGE_MAP[id]}
-                                sx={{ width: '100%', height: 'auto', display: 'block' }}
-                            />
-                            <Box sx={{ p: 1 }}>
-                                <Typography sx={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-primary)', mb: 0.5, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                    {data.title}
-                                </Typography>
-                                <Typography sx={{ fontSize: '0.7rem', color: 'var(--text-secondary)', fontWeight: 600 }}>
-                                    Total Matched: {results[id]}
-                                </Typography>
-                            </Box>
-                        </Paper>
-                    ))}
-            </Box>
-        </Box>
+            <Typography sx={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+                {value}
+            </Typography>
+            <Typography sx={{ color: 'var(--text-secondary)', fontSize: '0.75rem' }}>
+                {subtext}
+            </Typography>
+        </Paper>
     );
+
+    // Sub-component for the Results Grid
+    const MatchedResults = ({ results }) => {
+        const currentSdgData = sdgData;
+
+        return (
+            <Box sx={{ mt: 6, mb: 6 }}>
+                <Box sx={{ mb: 4 }}>
+                    <Typography variant="h5" sx={{ fontWeight: 800, color: 'var(--text-primary)', mb: 1 }}>
+                        Analysis Report
+                    </Typography>
+                    <Typography sx={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+                        Detailed breakdown of SDG contributions found in <Box component="span" sx={{ color: 'var(--color-primary)', fontWeight: 700 }}>{results.stats.fileName}</Box>
+                    </Typography>
+                </Box>
+
+                {/* Stats Dashboard */}
+                <Box sx={{ display: 'flex', gap: 2, mb: 4, flexWrap: 'wrap' }}>
+                    <StatCard
+                        label="Total Keywords"
+                        value={results.stats.totalMatches}
+                        subtext={`${results.stats.uniqueKeywords} unique keywords found`}
+                        icon={Code}
+                        color="#3b82f6"
+                    />
+                    <StatCard
+                        label="SDGs Matched"
+                        value={results.stats.sdgsMatched}
+                        subtext="Out of 17 global goals"
+                        icon={School}
+                        color="#10b981"
+                    />
+                    <StatCard
+                        label="Relevance Score"
+                        value={`${results.stats.score}%`}
+                        subtext="Overall sustainability impact"
+                        icon={Badge}
+                        color="#f59e0b"
+                    />
+                </Box>
+
+                <Box sx={{
+                    display: 'grid',
+                    gridTemplateColumns: {
+                        xs: '1fr',
+                        sm: 'repeat(2, 1fr)',
+                        md: 'repeat(3, 1fr)',
+                        lg: 'repeat(4, 1fr)'
+                    },
+                    gap: 2.5
+                }}>
+                    {Object.entries(currentSdgData)
+                        .filter(([id]) => results.counts[id] > 0)
+                        .sort((a, b) => results.counts[b[0]] - results.counts[a[0]])
+                        .map(([id, data]) => {
+                            const count = results.counts[id];
+                            const percentage = Math.min(100, (count / results.stats.totalMatches) * 100);
+                            return (
+                                <Paper key={id} sx={{
+                                    p: 2,
+                                    borderRadius: '20px',
+                                    background: 'var(--bg-glass)',
+                                    border: '1px solid var(--border-color)',
+                                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                                    position: 'relative',
+                                    overflow: 'hidden',
+                                    '&:hover': {
+                                        transform: 'translateY(-5px)',
+                                        borderColor: SDG_COLOR_MAP[id],
+                                        background: 'rgba(255, 255, 255, 0.05)'
+                                    }
+                                }}>
+                                    <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', mb: 2 }}>
+                                        <Box
+                                            component="img"
+                                            src={SDG_IMAGE_MAP[id]}
+                                            sx={{ width: 50, height: 50, borderRadius: '8px', objectFit: 'contain' }}
+                                        />
+                                        <Box sx={{ overflow: 'hidden' }}>
+                                            <Typography sx={{
+                                                fontSize: '0.85rem',
+                                                fontWeight: 800,
+                                                color: 'var(--text-primary)',
+                                                whiteSpace: 'nowrap',
+                                                overflow: 'hidden',
+                                                textOverflow: 'ellipsis'
+                                            }}>
+                                                {data.title}
+                                            </Typography>
+                                            <Typography sx={{ fontSize: '0.7rem', color: 'var(--text-secondary)', fontWeight: 600 }}>
+                                                {id}
+                                            </Typography>
+                                        </Box>
+                                    </Box>
+
+                                    <Box sx={{ mb: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+                                        <Typography sx={{ fontSize: '1.2rem', fontWeight: 800, color: SDG_COLOR_MAP[id] }}>
+                                            {count}
+                                        </Typography>
+                                        <Typography sx={{ fontSize: '0.7rem', color: 'var(--text-secondary)', fontWeight: 500 }}>
+                                            Matches
+                                        </Typography>
+                                    </Box>
+
+                                    {/* Progress Bar */}
+                                    <Box sx={{
+                                        height: '6px',
+                                        width: '100%',
+                                        background: 'var(--bg-accent-4)',
+                                        borderRadius: '3px',
+                                        overflow: 'hidden'
+                                    }}>
+                                        <Box sx={{
+                                            height: '100%',
+                                            width: `${Math.max(10, percentage)}%`,
+                                            background: SDG_COLOR_MAP[id],
+                                            borderRadius: '3px'
+                                        }} />
+                                    </Box>
+                                </Paper>
+                            );
+                        })}
+                </Box>
+            </Box>
+        );
+    };
+
+    const currentSdgList = Object.entries(sdgData).map(([id, data]) => ({ id, title: data.title, keywords: data.keywords }));
 
     return (
         <Box sx={{ minHeight: '100vh' }}>
             <DeveloperPopup open={showDevPopup} onClose={() => setShowDevPopup(false)} />
-            <input
-                type="file"
-                ref={fileInputRef}
-                style={{ display: 'none' }}
-                accept=".pdf,.doc,.docx"
-                onChange={handleFileChange}
-            />
-            <PageHeader
-                title="Sustainable Development Goals"
-                subtitle="Track and manage contributions towards global sustainability targets"
-                breadcrumbs={["Home", "Research", "SDG's"]}
-            />
 
-            <Paper
-                elevation={0}
-                sx={{
-                    borderRadius: '24px',
-                    background: 'var(--bg-panel)',
-                    border: '1px solid var(--border-color)',
-                    overflow: 'hidden',
-                    mt: 1.5,
-                    boxShadow: 'var(--shadow-premium)',
-                }}
-            >
-                {/* Custom Tabs */}
-                <Box sx={{ borderBottom: '1px solid var(--border-color)', px: 3, pt: 1 }}>
-                    <Tabs
-                        value={tabValue}
-                        onChange={handleTabChange}
+            {loading ? (
+                <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '60vh' }}>
+                    <Box sx={{ textAlign: 'center' }}>
+                        <CircularProgress size={50} sx={{ mb: 2 }} />
+                        <Typography color="text.secondary">Loading SDG Keywords...</Typography>
+                    </Box>
+                </Box>
+            ) : (
+                <>
+                    <input
+                        type="file"
+                        ref={fileInputRef}
+                        style={{ display: 'none' }}
+                        accept=".pdf,.docx"
+                        onChange={handleFileChange}
+                    />
+                    <PageHeader
+                        title="Sustainable Development Goals"
+                        subtitle="Track and manage contributions towards global sustainability targets"
+                        breadcrumbs={["Home", "Research", "SDG's"]}
+                    />
+
+                    <Paper
+                        elevation={0}
                         sx={{
-                            '& .MuiTabs-indicator': {
-                                background: 'var(--gradient-primary)',
-                                height: 3,
-                                borderRadius: '3px 3px 0 0'
-                            },
-                            '& .MuiTab-root': {
-                                textTransform: 'none',
-                                fontWeight: 700,
-                                fontSize: '0.95rem',
-                                minWidth: 'auto',
-                                mr: 4,
-                                py: 2,
-                                color: 'var(--text-secondary)',
-                                '&.Mui-selected': {
-                                    color: 'var(--color-primary)'
-                                }
-                            }
+                            borderRadius: '24px',
+                            background: 'var(--bg-panel)',
+                            border: '1px solid var(--border-color)',
+                            overflow: 'hidden',
+                            mt: 1.5,
+                            boxShadow: 'var(--shadow-premium)',
                         }}
                     >
-                        <Tab label="SDG Keyword Search" />
-                        <Tab label="Full Keywords List" />
-                    </Tabs>
-                </Box>
-
-                <Box sx={{ p: { xs: 1.5, md: 2 } }}>
-                    {tabValue === 0 ? (
-                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                            <Box
+                        {/* Custom Tabs */}
+                        <Box sx={{ borderBottom: '1px solid var(--border-color)', px: 3, pt: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <Tabs
+                                value={tabValue}
+                                onChange={handleTabChange}
                                 sx={{
-                                    border: '2px dashed var(--border-color)',
-                                    borderRadius: '24px',
-                                    p: { xs: 2, md: 6 },
-                                    textAlign: 'center',
-                                    background: 'var(--bg-panel)',
-                                    position: 'relative',
-                                    transition: 'all 0.3s ease',
-                                    minHeight: '350px',
-                                    display: 'flex',
-                                    flexDirection: 'column',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    '&:hover': {
-                                        borderColor: 'var(--color-primary)',
-                                        background: 'var(--bg-accent-1)',
-                                        transform: 'translateY(-2px)'
+                                    '& .MuiTabs-indicator': {
+                                        background: 'var(--gradient-primary)',
+                                        height: 3,
+                                        borderRadius: '3px 3px 0 0'
+                                    },
+                                    '& .MuiTab-root': {
+                                        textTransform: 'none',
+                                        fontWeight: 700,
+                                        fontSize: '0.95rem',
+                                        minWidth: 'auto',
+                                        mr: 4,
+                                        py: 2,
+                                        color: 'var(--text-secondary)',
+                                        '&.Mui-selected': {
+                                            color: 'var(--color-primary)'
+                                        }
                                     }
                                 }}
                             >
-                                {isProcessing ? (
-                                    <Box sx={{ textAlign: 'center' }}>
-                                        <CircularProgress size={60} sx={{ color: 'var(--color-primary)', mb: 3 }} />
-                                        <Typography variant="h6" sx={{ fontWeight: 800, color: 'var(--text-primary)' }}>
-                                            Scanning Document...
-                                        </Typography>
-                                        <Typography sx={{ color: 'var(--text-secondary)', mt: 1 }}>
-                                            Matching keywords with SDG goals
-                                        </Typography>
-                                    </Box>
-                                ) : (
-                                    <>
-                                        {/* Upload Icon Circle */}
-                                        <Box
-                                            sx={{
-                                                width: 50,
-                                                height: 50,
-                                                borderRadius: '50%',
-                                                background: 'var(--bg-accent-4)',
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                justifyContent: 'center',
-                                                margin: '0 auto 24px',
-                                                border: '1px solid var(--border-color)',
-                                                boxShadow: '0 8px 20px rgba(0,0,0,0.05)'
-                                            }}
-                                        >
-                                            <CloudUpload sx={{ fontSize: 25, color: 'var(--color-primary)' }} />
-                                        </Box>
+                                <Tab label="SDG Keyword Search" />
+                                <Tab label="Full Keywords List" />
+                            </Tabs>
+                        </Box>
 
-                                        <Typography sx={{
-                                            fontSize: '1.5rem',
-                                            fontWeight: 800,
-                                            color: 'var(--text-primary)',
-                                            mb: 1
-                                        }}>
-                                            Drop your file here
-                                        </Typography>
-
-                                        <Box sx={{ mt: 2, width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                                            <Button
-                                                variant="contained"
-                                                startIcon={<CloudUpload />}
-                                                onClick={handleUploadClick}
-                                                sx={{
-                                                    background: 'var(--gradient-primary)',
-                                                    color: '#fff',
-                                                    px: 6,
-                                                    py: 1,
-                                                    borderRadius: '100px',
-                                                    fontSize: '1rem',
-                                                    fontWeight: 700,
-                                                    textTransform: 'none',
-                                                    boxShadow: '0 10px 30px var(--color-primary-alpha)',
-                                                    transition: 'all 0.3s ease',
-                                                    '&:hover': {
-                                                        transform: 'translateY(-2px)',
-                                                        boxShadow: '0 15px 40px var(--color-primary-alpha)',
-                                                    }
-                                                }}
-                                            >
-                                                Upload File
-                                            </Button>
-
-                                            {/* Info Text Row */}
-                                            <Box sx={{ mt: 4, display: 'flex', alignItems: 'center', gap: 3, flexWrap: 'wrap', justifyContent: 'center' }}>
-                                                <Typography sx={{ fontSize: '0.85rem', color: 'var(--text-secondary)', fontWeight: 500 }}>
-                                                    Supported formats: <Box component="span" sx={{ color: 'var(--text-primary)', fontWeight: 700 }}>PDF, DOCX</Box>
+                        <Box sx={{ p: { xs: 1.5, md: 2 } }}>
+                            {tabValue === 0 && (
+                                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                                    <Box
+                                        sx={{
+                                            border: '2px dashed var(--border-color)',
+                                            borderRadius: '24px',
+                                            p: { xs: 2, md: 6 },
+                                            textAlign: 'center',
+                                            background: 'var(--bg-panel)',
+                                            position: 'relative',
+                                            transition: 'all 0.3s ease',
+                                            minHeight: '350px',
+                                            display: 'flex',
+                                            flexDirection: 'column',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            '&:hover': {
+                                                borderColor: 'var(--color-primary)',
+                                                background: 'var(--bg-accent-1)',
+                                                transform: 'translateY(-2px)'
+                                            }
+                                        }}
+                                    >
+                                        {isProcessing ? (
+                                            <Box sx={{ textAlign: 'center' }}>
+                                                <CircularProgress size={60} sx={{ color: 'var(--color-primary)', mb: 3 }} />
+                                                <Typography variant="h6" sx={{ fontWeight: 800, color: 'var(--text-primary)' }}>
+                                                    Scanning Document...
                                                 </Typography>
-                                                <Box sx={{ width: 4, height: 4, borderRadius: '50%', background: 'var(--text-secondary)', opacity: 0.5 }} />
-                                                <Typography sx={{ fontSize: '0.85rem', color: 'var(--text-secondary)', fontWeight: 500 }}>
-                                                    Max file size: <Box component="span" sx={{ color: 'var(--text-primary)', fontWeight: 700 }}>10MB</Box>
+                                                <Typography sx={{ color: 'var(--text-secondary)', mt: 1 }}>
+                                                    Matching keywords with SDG goals
                                                 </Typography>
                                             </Box>
-                                        </Box>
-                                    </>
-                                )}
-                            </Box>
+                                        ) : (
+                                            <>
+                                                <Box
+                                                    sx={{
+                                                        width: 50,
+                                                        height: 50,
+                                                        borderRadius: '50%',
+                                                        background: 'var(--bg-accent-4)',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center',
+                                                        margin: '0 auto 24px',
+                                                        border: '1px solid var(--border-color)',
+                                                        boxShadow: '0 8px 20px rgba(0,0,0,0.05)'
+                                                    }}
+                                                >
+                                                    <CloudUpload sx={{ fontSize: 25, color: 'var(--color-primary)' }} />
+                                                </Box>
 
-                            {/* Analysis Results Grid */}
-                            {matchedResults && <MatchedResults results={matchedResults} />}
+                                                <Typography sx={{
+                                                    fontSize: '1.5rem',
+                                                    fontWeight: 800,
+                                                    color: 'var(--text-primary)',
+                                                    mb: 1
+                                                }}>
+                                                    Drop your file here
+                                                </Typography>
+
+                                                <Box sx={{ mt: 2, width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                                                    <Button
+                                                        variant="contained"
+                                                        startIcon={<CloudUpload />}
+                                                        onClick={handleUploadClick}
+                                                        sx={{
+                                                            background: 'var(--gradient-primary)',
+                                                            color: '#fff',
+                                                            px: 6,
+                                                            py: 1,
+                                                            borderRadius: '100px',
+                                                            fontSize: '1rem',
+                                                            fontWeight: 700,
+                                                            textTransform: 'none',
+                                                            boxShadow: '0 10px 30px var(--color-primary-alpha)',
+                                                            transition: 'all 0.3s ease',
+                                                            '&:hover': {
+                                                                transform: 'translateY(-2px)',
+                                                                boxShadow: '0 15px 40px var(--color-primary-alpha)',
+                                                            }
+                                                        }}
+                                                    >
+                                                        Upload File
+                                                    </Button>
+
+                                                    <Box sx={{ mt: 4, display: 'flex', alignItems: 'center', gap: 3, flexWrap: 'wrap', justifyContent: 'center' }}>
+                                                        <Typography sx={{ fontSize: '0.85rem', color: 'var(--text-secondary)', fontWeight: 500 }}>
+                                                            Supported formats: <Box component="span" sx={{ color: 'var(--text-primary)', fontWeight: 700 }}>PDF, DOCX</Box>
+                                                        </Typography>
+                                                        <Box sx={{ width: 4, height: 4, borderRadius: '50%', background: 'var(--text-secondary)', opacity: 0.5 }} />
+                                                        <Typography sx={{ fontSize: '0.85rem', color: 'var(--text-secondary)', fontWeight: 500 }}>
+                                                            Max file size: <Box component="span" sx={{ color: 'var(--text-primary)', fontWeight: 700 }}>10MB</Box>
+                                                        </Typography>
+                                                    </Box>
+                                                </Box>
+                                            </>
+                                        )}
+                                    </Box>
+                                    {matchedResults && <MatchedResults results={matchedResults} />}
+                                </Box>
+                            )}
+
+                            {tabValue === 1 && (
+                                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                                    {currentSdgList.map((sdg) => (
+                                        <SDGCard
+                                            key={sdg.id}
+                                            id={sdg.id}
+                                            sdg={sdg}
+                                            imageUrl={SDG_IMAGE_MAP[sdg.id]}
+                                            isExpanded={expandedId === sdg.id}
+                                            toggleExpand={toggleExpand}
+                                        />
+                                    ))}
+                                </Box>
+                            )}
                         </Box>
-                    ) : (
-                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-                            {Object.entries(sdgData).map(([id, sdg]) => (
-                                <SDGCard
-                                    key={id}
-                                    id={id}
-                                    sdg={sdg}
-                                    imageUrl={SDG_IMAGE_MAP[id]}
-                                    isExpanded={expandedId === id}
-                                    toggleExpand={toggleExpand}
-                                />
-                            ))}
-                        </Box>
-                    )}
-                </Box>
-            </Paper>
+                    </Paper>
+                </>
+            )}
         </Box>
     );
 };

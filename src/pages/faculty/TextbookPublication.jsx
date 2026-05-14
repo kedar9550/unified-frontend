@@ -18,6 +18,7 @@ export default function TextbookPublication() {
   const [selectedYear, setSelectedYear] = useState("");
   const [publicationsList, setPublicationsList] = useState([]);
   const [editions, setEditions] = useState([]);
+  const [publishers, setPublishers] = useState([]);
   const [isbnFetching, setIsbnFetching] = useState(false);
   const [isbnFetched, setIsbnFetched] = useState(false);
 
@@ -46,6 +47,10 @@ export default function TextbookPublication() {
     API.get("/api/research/textbook/editions").then(res => {
       setEditions(res.data?.data || []);
     }).catch(err => console.log("Failed to fetch editions", err));
+
+    API.get("/api/publishers").then(res => {
+      setPublishers(res.data?.data || []);
+    }).catch(err => console.log("Failed to fetch publishers", err));
   }, [viewMode]);
 
   // Handle dynamic author generation based on total authors and user position
@@ -498,7 +503,29 @@ export default function TextbookPublication() {
         </Box>
         <Box>
           <Typography sx={labelStyle}>Name of the Publisher :</Typography>
-          <TextField size="small" fullWidth value={form.publisher} onChange={set("publisher")} disabled={isbnFetched && !!form.publisher} sx={isbnFetched && !!form.publisher ? disabledField : {}} />
+          <Autocomplete
+            options={publishers}
+            groupBy={(option) => option.type}
+            getOptionLabel={(option) => option.name || ""}
+            value={publishers.find(p => p.name === form.publisher) || (form.publisher ? { name: form.publisher, type: "Unknown" } : null)}
+            isOptionEqualToValue={(option, value) => option.name === value.name}
+            onChange={(e, newValue) => setForm(p => ({ ...p, publisher: newValue ? newValue.name : "" }))}
+            freeSolo
+            onInputChange={(e, newInputValue) => {
+                if (e?.type === "change") {
+                    setForm(p => ({ ...p, publisher: newInputValue }));
+                }
+            }}
+            renderInput={(params) => (
+              <TextField 
+                {...params} 
+                size="small" 
+                placeholder="Select or search publisher" 
+                disabled={isbnFetched && !!form.publisher} 
+                sx={isbnFetched && !!form.publisher ? disabledField : {}} 
+              />
+            )}
+          />
         </Box>
         <Box>
           <Typography sx={labelStyle}>Edition :</Typography>

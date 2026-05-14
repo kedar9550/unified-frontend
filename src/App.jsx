@@ -30,6 +30,8 @@ import Dashboard from "./pages/Dashboard";
 import { registerLoadingHandlers } from "./api/axios";
 import SDG from "./pages/faculty/SDG";
 import Profile from "./components/common/Profile";
+import DeptResearchApprovals from "./pages/hod/DeptResearchApprovals";
+import SDGManagement from "./pages/uniprime/SDGManagement";
 
 
 // Research Approval System (Consolidated)
@@ -103,6 +105,8 @@ function App() {
         <Route path="/student/assigned-students" element={<ProtectedRoute element={<Assignedstudents />} />} />
         <Route path="/student/department-mapping" element={<ProtectedRoute element={<DepartmentMapping />} />} />
         <Route path="/profile" element={<ProtectedRoute element={<Profile />} />} />
+        <Route path="/hod/research-approvals" element={<ProtectedRoute element={<DeptResearchApprovals />} />} />
+        <Route path="/academics/sdg-management" element={<ProtectedRoute element={<SDGManagement />} />} />
 
         {/* Research Approval System */}
         <Route path="/hod/research-approvals" element={<ProtectedRoute element={<ResearchApprovalList role="HOD" />} />} />

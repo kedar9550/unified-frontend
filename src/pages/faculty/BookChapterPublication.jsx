@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../../context/AuthContext";
 
-import { Box, TextField, MenuItem, Select, Typography, Alert, Snackbar, Button, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, IconButton } from "@mui/material";
+import { Box, TextField, MenuItem, Select, Typography, Alert, Snackbar, Button, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, IconButton, Autocomplete } from "@mui/material";
 import { AddCircle, Delete } from "@mui/icons-material";
 import PageHeader from "../../components/common/PageHeader";
 import {
@@ -16,6 +16,7 @@ export default function BookChapterPublication() {
   const [academicYears, setAcademicYears] = useState([]);
   const [selectedYear, setSelectedYear] = useState("");
   const [publicationsList, setPublicationsList] = useState([]);
+  const [publishers, setPublishers] = useState([]);
 
   const [form, setForm] = useState({
     textBookName: "", chapterTitle: "", isbn: "", yearOfPublication: "",
@@ -34,6 +35,10 @@ export default function BookChapterPublication() {
     API.get("/api/academic-years").then(res => {
       setAcademicYears(res.data?.years || res.data?.data || []);
     }).catch(err => console.log("Failed to fetch academic years", err));
+
+    API.get("/api/publishers").then(res => {
+      setPublishers(res.data?.data || []);
+    }).catch(err => console.log("Failed to fetch publishers", err));
   }, [viewMode]);
 
   const set = (k) => (e) => setForm((p) => ({ ...p, [k]: e.target.value }));
@@ -252,7 +257,23 @@ export default function BookChapterPublication() {
         )}
         <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
           <Typography sx={labelStyle}>Name of the Publisher :</Typography>
-          <TextField size="small" fullWidth value={form.publisher} onChange={set("publisher")} />
+          <Autocomplete
+            options={publishers}
+            groupBy={(option) => option.type}
+            getOptionLabel={(option) => option.name || ""}
+            value={publishers.find(p => p.name === form.publisher) || (form.publisher ? { name: form.publisher, type: "Unknown" } : null)}
+            isOptionEqualToValue={(option, value) => option.name === value.name}
+            onChange={(e, newValue) => setForm(p => ({ ...p, publisher: newValue ? newValue.name : "" }))}
+            freeSolo
+            onInputChange={(e, newInputValue) => {
+              if (e?.type === "change") {
+                setForm(p => ({ ...p, publisher: newInputValue }));
+              }
+            }}
+            renderInput={(params) => (
+              <TextField {...params} size="small" fullWidth placeholder="Select or search publisher" />
+            )}
+          />
         </Box>
 
         {form.firstAuthor === "No" && (
