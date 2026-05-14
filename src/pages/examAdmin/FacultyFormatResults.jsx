@@ -163,7 +163,8 @@ export default function FacultyFormatResults() {
       setResults((prev) => prev.filter((r) => r._id !== id));
     } catch (err) {
       console.error("Delete failed:", err);
-      alert("Failed to delete record.");
+      const msg = err.response?.data?.message || "Failed to delete record.";
+      alert(msg);
     }
   };
 
@@ -196,7 +197,8 @@ export default function FacultyFormatResults() {
       fetchResults();
     } catch (err) {
       console.error("Clear failed:", err);
-      alert("Failed to clear records.");
+      const msg = err.response?.data?.message || "Failed to clear records.";
+      alert(msg);
     } finally {
       setLoading(false);
     }
