@@ -358,7 +358,7 @@ const SDG = () => {
         const file = event.target.files[0];
         if (!file) return;
 
-        if (Object.keys(currentSdgData).length === 0) {
+        if (Object.keys(sdgData).length === 0) {
             toast.info('SDG keywords are still loading. Please try again in a moment.');
             return;
         }
@@ -449,7 +449,7 @@ const SDG = () => {
                 return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
             };
 
-            Object.entries(currentSdgData).forEach(([id, data]) => {
+            Object.entries(sdgData).forEach(([id, data]) => {
 
                 let matchCount = 0;
 
@@ -608,7 +608,11 @@ const SDG = () => {
                 }}>
                     {Object.entries(currentSdgData)
                         .filter(([id]) => results.counts[id] > 0)
-                        .sort((a, b) => results.counts[b[0]] - results.counts[a[0]])
+                        .sort((a, b) => {
+                            const numA = parseInt(a[0].replace('SDG-', ''));
+                            const numB = parseInt(b[0].replace('SDG-', ''));
+                            return numA - numB;
+                        })
                         .map(([id, data]) => {
                             const count = results.counts[id];
                             const percentage = Math.min(100, (count / results.stats.totalMatches) * 100);

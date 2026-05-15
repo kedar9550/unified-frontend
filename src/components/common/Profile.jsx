@@ -107,7 +107,7 @@ const EditableField = ({
             onChange={onFieldChange}
             error={!!fieldError}
             helperText={fieldError || ""}
-            inputProps={{ maxLength }}
+            slotProps={{ htmlInput: { maxLength } }}
             sx={{ background: "var(--bg-accent-1)", borderRadius: "8px" }}
           />
           : <Typography sx={{ fontSize: "0.85rem", fontWeight: 700, color: "var(--text-primary)" }}>{value || "N/A"}</Typography>
@@ -585,20 +585,6 @@ const Profile = () => {
                   type={showPwd.old ? "text" : "password"}
                   value={pwdForm.oldPassword}
                   onChange={e => setPwdForm({ ...pwdForm, oldPassword: e.target.value })}
-                  InputProps={{
-                    endAdornment: (
-                      <InputAdornment position="end">
-                        <IconButton
-                          size="small"
-                          onClick={() => setShowPwd(p => ({ ...p, old: !p.old }))}
-                          sx={{ color: "var(--color-primary)" }}
-                        >
-                          {showPwd.old ? <VisibilityOff fontSize="small" /> : <Visibility fontSize="small" />}
-                        </IconButton>
-                      </InputAdornment>
-                    )
-                  }}
-                  // Also try slotProps for MUI v6 compatibility
                   slotProps={{
                     input: {
                       endAdornment: (
@@ -636,15 +622,6 @@ const Profile = () => {
                   type={showPwd.new ? "text" : "password"}
                   value={pwdForm.newPassword}
                   onChange={e => setPwdForm({ ...pwdForm, newPassword: e.target.value })}
-                  InputProps={{
-                    endAdornment: (
-                      <InputAdornment position="end">
-                        <IconButton size="small" onClick={() => setShowPwd(p => ({ ...p, new: !p.new }))} sx={{ color: "var(--color-primary)" }}>
-                          {showPwd.new ? <VisibilityOff fontSize="small" /> : <Visibility fontSize="small" />}
-                        </IconButton>
-                      </InputAdornment>
-                    )
-                  }}
                   slotProps={{
                     input: {
                       endAdornment: (
@@ -679,15 +656,6 @@ const Profile = () => {
                   error={!!pwdForm.confirmPassword && pwdForm.confirmPassword !== pwdForm.newPassword}
                   helperText={pwdForm.confirmPassword && pwdForm.confirmPassword !== pwdForm.newPassword ? "Passwords do not match" : ""}
                   onChange={e => setPwdForm({ ...pwdForm, confirmPassword: e.target.value })}
-                  InputProps={{
-                    endAdornment: (
-                      <InputAdornment position="end">
-                        <IconButton size="small" onClick={() => setShowPwd(p => ({ ...p, confirm: !p.confirm }))} sx={{ color: "var(--color-primary)" }}>
-                          {showPwd.confirm ? <VisibilityOff fontSize="small" /> : <Visibility fontSize="small" />}
-                        </IconButton>
-                      </InputAdornment>
-                    )
-                  }}
                   slotProps={{
                     input: {
                       endAdornment: (

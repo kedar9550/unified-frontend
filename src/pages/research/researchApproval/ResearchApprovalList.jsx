@@ -250,7 +250,6 @@ const ResearchApprovalList = ({ role }) => {
                                     <InputLabel shrink sx={{ color: "var(--text-secondary)" }}>From</InputLabel>
                                     <OutlinedInput 
                                         type="date"
-                                        label="From"
                                         notched
                                         value={fromDate}
                                         onChange={(e) => setFromDate(e.target.value)}
@@ -280,7 +279,6 @@ const ResearchApprovalList = ({ role }) => {
                                     <InputLabel shrink sx={{ color: "var(--text-secondary)" }}>To</InputLabel>
                                     <OutlinedInput 
                                         type="date"
-                                        label="To"
                                         notched
                                         value={toDate}
                                         onChange={(e) => setToDate(e.target.value)}
