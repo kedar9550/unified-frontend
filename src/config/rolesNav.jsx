@@ -151,6 +151,10 @@ export const ROLE_ROUTES = {
           text: "Research",
           path: "/research-dean/approvals"
         },
+        {
+          text: "Reports",
+          path: "/research-dean/reports"
+        }
       ]
     }
   ],
@@ -165,6 +169,10 @@ export const ROLE_ROUTES = {
           text: "Research",
           path: "/research-coordinator/approvals"
         },
+        {
+          text: "Reports",
+          path: "/research-coordinator/reports"
+        }
       ]
     }
   ],
