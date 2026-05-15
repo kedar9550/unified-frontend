@@ -124,7 +124,19 @@ const RnDDeanDashboard = () => {
             justifyContent: 'center',
             height: '100%',
             gap: 1.5,
-            '&:hover': { transform: 'translateY(-5px)', boxShadow: 'var(--shadow-premium)', borderColor: card.color }
+            position: 'relative',
+            overflow: 'hidden',
+            '&:hover': { transform: 'translateY(-5px)', boxShadow: 'var(--shadow-premium)', borderColor: card.color },
+            '&::after': {
+              content: '""',
+              position: 'absolute',
+              top: 0,
+              right: 0,
+              width: '120px',
+              height: '120px',
+              background: `radial-gradient(circle at top right, ${card.color}25, transparent 70%)`,
+              zIndex: 0
+            }
           }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
               <Box sx={{ 

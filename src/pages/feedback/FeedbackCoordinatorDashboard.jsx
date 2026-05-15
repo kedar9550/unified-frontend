@@ -137,7 +137,19 @@ const FeedbackCoordinatorDashboard = () => {
                   background: "var(--bg-panel)",
                   transition: "all 0.3s ease",
                   cursor: "pointer",
-                  "&:hover": { transform: "translateY(-4px)", borderColor: card.color }
+                  position: "relative",
+                  overflow: "hidden",
+                  "&:hover": { transform: "translateY(-4px)", borderColor: card.color },
+                  "&::after": {
+                    content: '""',
+                    position: "absolute",
+                    top: 0,
+                    right: 0,
+                    width: "120px",
+                    height: "120px",
+                    background: `radial-gradient(circle at top right, ${card.color}25, transparent 70%)`,
+                    zIndex: 0
+                  }
                 }}>
                   <Box sx={{ width: 48, height: 48, borderRadius: "14px", display: "flex", alignItems: "center", justifyContent: "center", backgroundColor: card.bgColor, color: card.color, flexShrink: 0 }}>
                     {card.icon}
@@ -157,7 +169,15 @@ const FeedbackCoordinatorDashboard = () => {
             {/* Left Column: Overview & Discrepancies */}
             <Box sx={{ flex: { xs: "1 1 100%", lg: "0 0 320px" }, display: 'flex', flexDirection: 'column', gap: 3 }}>
               {/* Performance Overview */}
-              <Card sx={{ borderRadius: "24px", background: "var(--bg-panel)", border: "1px solid var(--border-color)", boxShadow: "var(--shadow-premium)", p: 2.5, display: "flex", flexDirection: "column" }}>
+              <Card sx={{ 
+                borderRadius: "24px", 
+                background: "var(--bg-panel)", 
+                border: "1px solid var(--border-color)", 
+                boxShadow: "var(--shadow-premium)", 
+                p: 2.5, 
+                display: "flex", 
+                flexDirection: "column"
+              }}>
                 <Typography sx={{ fontWeight: 800, fontSize: "1.1rem", mb: 3, color: "var(--text-primary)" }}>Performance Overview</Typography>
                 
                 <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 4, flexWrap: "wrap", justifyContent: "center" }}>
@@ -215,7 +235,13 @@ const FeedbackCoordinatorDashboard = () => {
               </Card>
 
               {/* Discrepancies */}
-              <Card sx={{ borderRadius: "24px", background: "var(--bg-panel)", border: "1px solid var(--border-color)", boxShadow: "var(--shadow-premium)", p: 2.5 }}>
+              <Card sx={{ 
+                borderRadius: "24px", 
+                background: "var(--bg-panel)", 
+                border: "1px solid var(--border-color)", 
+                boxShadow: "var(--shadow-premium)", 
+                p: 2.5
+              }}>
                 <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
                   <Typography sx={{ fontWeight: 800, fontSize: "1.1rem", color: "var(--text-primary)" }}>Discrepancies</Typography>
                   <Button 
@@ -255,7 +281,16 @@ const FeedbackCoordinatorDashboard = () => {
 
             {/* Right Column: Recent Evaluations */}
             <Box sx={{ flex: 1, minWidth: 0 }}>
-              <Card sx={{ borderRadius: "24px", background: "var(--bg-panel)", border: "1px solid var(--border-color)", boxShadow: "var(--shadow-premium)", p: 3, height: "100%", display: "flex", flexDirection: "column" }}>
+              <Card sx={{ 
+                borderRadius: "24px", 
+                background: "var(--bg-panel)", 
+                border: "1px solid var(--border-color)", 
+                boxShadow: "var(--shadow-premium)", 
+                p: 3, 
+                height: "100%", 
+                display: "flex", 
+                flexDirection: "column"
+              }}>
                 <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
                   <Typography sx={{ fontWeight: 800, fontSize: "1.1rem", color: "var(--text-primary)" }}>Recent Evaluations</Typography>
                   <Button 
@@ -291,25 +326,25 @@ const FeedbackCoordinatorDashboard = () => {
                         }
                       }}
                     >
-                      <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, flex: 1.5 }}>
-                        <Avatar sx={{ width: 40, height: 40, border: "2px solid var(--bg-panel)", boxShadow: "0 0 0 1px var(--border-color)", bgcolor: "var(--bg-accent-1)", color: "var(--color-primary)", fontWeight: 700 }}>{fb.name.charAt(0)}</Avatar>
-                        <Box sx={{ minWidth: 0 }}>
-                          <Typography noWrap sx={{ fontSize: "0.9rem", fontWeight: 700, color: "var(--text-primary)" }}>{fb.name}</Typography>
-                          <Typography noWrap sx={{ fontSize: "0.75rem", color: "var(--text-secondary)", opacity: 0.8 }}>{fb.dept}</Typography>
+                      <Box sx={{ display: "flex", alignItems: "center", gap: { xs: 1, sm: 1.5 }, flex: 1, minWidth: 0 }}>
+                        <Avatar sx={{ width: { xs: 32, sm: 40 }, height: { xs: 32, sm: 40 }, border: "2px solid var(--bg-panel)", boxShadow: "0 0 0 1px var(--border-color)", bgcolor: "var(--bg-accent-1)", color: "var(--color-primary)", fontWeight: 700, fontSize: { xs: "0.8rem", sm: "1rem" } }}>{fb.name.charAt(0)}</Avatar>
+                        <Box sx={{ minWidth: 0, flex: 1 }}>
+                          <Typography noWrap sx={{ fontSize: { xs: "0.8rem", sm: "0.9rem" }, fontWeight: 700, color: "var(--text-primary)" }}>{fb.name}</Typography>
+                          <Typography noWrap sx={{ fontSize: "0.7rem", color: "var(--text-secondary)", opacity: 0.8 }}>{fb.dept}</Typography>
                         </Box>
                       </Box>
 
-                      <Box sx={{ flex: 1.5, display: { xs: "none", sm: "block" }, minWidth: 0 }}>
+                      <Box sx={{ flex: 1, display: { xs: "none", md: "block" }, minWidth: 0 }}>
                         <Typography variant="caption" sx={{ color: "var(--text-secondary)", fontWeight: 700, textTransform: "uppercase", fontSize: "0.6rem", mb: 0.5, display: "block" }}>Subject / Course</Typography>
                         <Typography noWrap sx={{ fontSize: "0.85rem", color: "var(--text-primary)", fontWeight: 600 }}>{fb.subject}</Typography>
                       </Box>
 
-                      <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 0.5, flex: 0.8 }}>
+                      <Box sx={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 0.5, flexShrink: 0 }}>
                         <Chip 
                             label={fb.status} 
                             size="small" 
                             sx={{ 
-                                height: 22, fontSize: "0.65rem", fontWeight: 800, 
+                                height: 20, fontSize: "0.6rem", fontWeight: 800, 
                                 bgcolor: fb.status === "Processed" ? "rgba(16, 185, 129, 0.1)" : "rgba(245, 158, 11, 0.1)", 
                                 color: fb.status === "Processed" ? "#10B981" : "#F59E0B",
                                 border: "1px solid currentColor"

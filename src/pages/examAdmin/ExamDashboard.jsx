@@ -117,44 +117,44 @@ const ExamDashboard = () => {
       <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
         <Box>
           <Typography variant="h4" sx={{ fontWeight: 800, color: "var(--text-primary)", mb: 0.5 }}>
-            Welcome back, {user?.name || "Exam Admin"}! 👋
+            Welcome back, {user?.name || "Exam Admin"}!
           </Typography>
           <Typography variant="body2" sx={{ color: "var(--text-secondary)" }}>
             Overview of exam results submission and verification.
           </Typography>
         </Box>
         <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
-           <Button 
-            variant="outlined" 
-            sx={{ 
-                borderRadius: "12px", 
-                borderColor: 'var(--border-color)', 
-                color: 'var(--text-primary)', 
-                textTransform: 'none', 
-                background: "var(--bg-glass)",
-                backdropFilter: "blur(10px)",
-                fontWeight: 600,
-                "&:hover": { borderColor: "var(--color-primary)", background: "var(--bg-accent-1)" }
-            }} 
-            startIcon={<CalendarMonth sx={{ color: "var(--color-primary)" }} />}
-           >
-             {data.activeYear}
-           </Button>
-           <Button 
-            variant="outlined" 
-            sx={{ 
-                borderRadius: "12px", 
-                borderColor: 'var(--border-color)', 
-                color: 'var(--text-primary)', 
-                textTransform: 'none', 
-                background: "var(--bg-glass)",
-                backdropFilter: "blur(10px)",
-                fontWeight: 600,
-                "&:hover": { borderColor: "var(--color-primary)", background: "var(--bg-accent-1)" }
+          <Button
+            variant="outlined"
+            sx={{
+              borderRadius: "12px",
+              borderColor: 'var(--border-color)',
+              color: 'var(--text-primary)',
+              textTransform: 'none',
+              background: "var(--bg-glass)",
+              backdropFilter: "blur(10px)",
+              fontWeight: 600,
+              "&:hover": { borderColor: "var(--color-primary)", background: "var(--bg-accent-1)" }
             }}
-           >
-             {data.activeSemester}
-           </Button>
+            startIcon={<CalendarMonth sx={{ color: "var(--color-primary)" }} />}
+          >
+            {data.activeYear}
+          </Button>
+          <Button
+            variant="outlined"
+            sx={{
+              borderRadius: "12px",
+              borderColor: 'var(--border-color)',
+              color: 'var(--text-primary)',
+              textTransform: 'none',
+              background: "var(--bg-glass)",
+              backdropFilter: "blur(10px)",
+              fontWeight: 600,
+              "&:hover": { borderColor: "var(--color-primary)", background: "var(--bg-accent-1)" }
+            }}
+          >
+            {data.activeSemester}
+          </Button>
         </Box>
       </Box>
 
@@ -162,24 +162,36 @@ const ExamDashboard = () => {
       <Box sx={{ display: "flex", gap: 2, mb: 4, flexWrap: "wrap" }}>
         {topCards.map((card, i) => (
           <Box key={i} sx={{ flex: { xs: "1 1 100%", sm: "1 1 calc(50% - 16px)", lg: 1 }, minWidth: 0 }}>
-            <Card 
+            <Card
               onClick={() => card.path && navigate(card.path)}
-              sx={{ 
-                borderRadius: "16px", 
-                border: "1px solid var(--border-color)", 
-                background: "var(--bg-panel)", 
-                boxShadow: "var(--shadow-premium)", 
-                p: 2, 
-                height: "100%", 
-                display: "flex", 
-                alignItems: "center", 
-                gap: 2, 
-                transition: "all 0.3s ease", 
+              sx={{
+                borderRadius: "16px",
+                border: "1px solid var(--border-color)",
+                background: "var(--bg-panel)",
+                boxShadow: "var(--shadow-premium)",
+                p: 2,
+                height: "100%",
+                display: "flex",
+                alignItems: "center",
+                gap: 2,
+                transition: "all 0.3s ease",
                 cursor: card.path ? "pointer" : "default",
-                "&:hover": { 
-                  transform: card.path ? "translateY(-4px)" : "none", 
-                  borderColor: card.color 
-                } 
+                position: "relative",
+                overflow: "hidden",
+                "&:hover": {
+                  transform: card.path ? "translateY(-4px)" : "none",
+                  borderColor: card.color
+                },
+                "&::after": {
+                  content: '""',
+                  position: "absolute",
+                  top: 0,
+                  right: 0,
+                  width: "120px",
+                  height: "120px",
+                  background: `radial-gradient(circle at top right, ${card.color}25, transparent 70%)`,
+                  zIndex: 0
+                }
               }}
             >
               <Box sx={{ width: 48, height: 48, borderRadius: "14px", display: "flex", alignItems: "center", justifyContent: "center", backgroundColor: card.bgColor, color: card.color, flexShrink: 0 }}>
@@ -196,13 +208,21 @@ const ExamDashboard = () => {
 
       {/* Main Content Layout (Box System) */}
       <Box sx={{ display: "flex", gap: 3, mb: 4, flexWrap: { xs: "wrap", lg: "nowrap" }, alignItems: "stretch" }}>
-        
+
         {/* Left Column: Overview & Discrepancies */}
         <Box sx={{ flex: { xs: "1 1 100%", lg: "0 0 320px" }, display: 'flex', flexDirection: 'column', gap: 3 }}>
           {/* Submission Overview */}
-          <Card sx={{ borderRadius: "24px", background: "var(--bg-panel)", border: "1px solid var(--border-color)", boxShadow: "var(--shadow-premium)", p: 2.5, display: "flex", flexDirection: "column" }}>
+          <Card sx={{
+            borderRadius: "24px",
+            background: "var(--bg-panel)",
+            border: "1px solid var(--border-color)",
+            boxShadow: "var(--shadow-premium)",
+            p: 2.5,
+            display: "flex",
+            flexDirection: "column"
+          }}>
             <Typography sx={{ fontWeight: 800, fontSize: "1.1rem", mb: 3, color: "var(--text-primary)" }}>Submission Overview</Typography>
-            
+
             <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 4, flexWrap: "wrap", justifyContent: "center" }}>
               <Box sx={{ position: "relative", width: 130, height: 130, flexShrink: 0 }}>
                 <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
@@ -212,7 +232,7 @@ const ExamDashboard = () => {
                         <Cell key={`cell-${index}`} fill={entry.color} />
                       ))}
                     </Pie>
-                    <Tooltip 
+                    <Tooltip
                       contentStyle={{ background: 'var(--bg-panel)', border: '1px solid var(--border-color)', borderRadius: '12px' }}
                       itemStyle={{ color: 'var(--text-primary)' }}
                     />
@@ -223,7 +243,7 @@ const ExamDashboard = () => {
                   <Typography sx={{ fontSize: 8, color: "var(--text-secondary)", fontWeight: 700, textTransform: "uppercase" }}>Done</Typography>
                 </Box>
               </Box>
-              
+
               <Box sx={{ flex: 1, display: "flex", flexDirection: "column", gap: 1, minWidth: "120px" }}>
                 {submissionData.map((item, idx) => (
                   <Box key={idx} sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -238,30 +258,36 @@ const ExamDashboard = () => {
             </Box>
 
             <Box>
-                <Box sx={{ display: "flex", justifyContent: "space-between", mb: 1 }}>
-                    <Typography variant="body2" sx={{ color: "var(--text-secondary)", fontSize: "0.75rem", fontWeight: 600 }}>Progress</Typography>
-                    <Typography variant="body2" sx={{ color: "var(--color-primary)", fontSize: "0.75rem", fontWeight: 800 }}>{data.submittedFaculties} / {data.totalFaculties}</Typography>
-                </Box>
-                <LinearProgress 
-                    variant="determinate" 
-                    value={donePercentage} 
-                    sx={{ 
-                        height: 7, 
-                        borderRadius: 4, 
-                        bgcolor: "var(--bg-accent-1)", 
-                        "& .MuiLinearProgress-bar": { background: "var(--gradient-primary)", borderRadius: 4 } 
-                    }} 
-                />
+              <Box sx={{ display: "flex", justifyContent: "space-between", mb: 1 }}>
+                <Typography variant="body2" sx={{ color: "var(--text-secondary)", fontSize: "0.75rem", fontWeight: 600 }}>Progress</Typography>
+                <Typography variant="body2" sx={{ color: "var(--color-primary)", fontSize: "0.75rem", fontWeight: 800 }}>{data.submittedFaculties} / {data.totalFaculties}</Typography>
+              </Box>
+              <LinearProgress
+                variant="determinate"
+                value={donePercentage}
+                sx={{
+                  height: 7,
+                  borderRadius: 4,
+                  bgcolor: "var(--bg-accent-1)",
+                  "& .MuiLinearProgress-bar": { background: "var(--gradient-primary)", borderRadius: 4 }
+                }}
+              />
             </Box>
           </Card>
 
           {/* Discrepancies */}
-          <Card sx={{ borderRadius: "24px", background: "var(--bg-panel)", border: "1px solid var(--border-color)", boxShadow: "var(--shadow-premium)", p: 2.5 }}>
+          <Card sx={{
+            borderRadius: "24px",
+            background: "var(--bg-panel)",
+            border: "1px solid var(--border-color)",
+            boxShadow: "var(--shadow-premium)",
+            p: 2.5
+          }}>
             <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
               <Typography sx={{ fontWeight: 800, fontSize: "1.1rem", color: "var(--text-primary)" }}>Discrepancies</Typography>
-              <Button 
+              <Button
                 onClick={() => navigate("/exam-result/discrepancies")}
-                size="small" 
+                size="small"
                 sx={{ textTransform: "none", fontSize: "0.8rem", color: "#EF4444", fontWeight: 700 }}
               >
                 View All
@@ -291,12 +317,21 @@ const ExamDashboard = () => {
 
         {/* Right Column: Recent Submissions */}
         <Box sx={{ flex: 1, minWidth: 0 }}>
-          <Card sx={{ borderRadius: "24px", background: "var(--bg-panel)", border: "1px solid var(--border-color)", boxShadow: "var(--shadow-premium)", p: 3, height: "100%", display: "flex", flexDirection: "column" }}>
+          <Card sx={{
+            borderRadius: "24px",
+            background: "var(--bg-panel)",
+            border: "1px solid var(--border-color)",
+            boxShadow: "var(--shadow-premium)",
+            p: 3,
+            height: "100%",
+            display: "flex",
+            flexDirection: "column"
+          }}>
             <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
               <Typography sx={{ fontWeight: 800, fontSize: "1.1rem", color: "var(--text-primary)" }}>Recent Submissions</Typography>
-              <Button 
+              <Button
                 onClick={() => navigate("/exam-result/faculty-format")}
-                size="small" 
+                size="small"
                 sx={{ textTransform: "none", fontSize: "0.85rem", color: "var(--color-primary)", fontWeight: 700 }}
               >
                 View All
@@ -307,13 +342,13 @@ const ExamDashboard = () => {
               {data.recentSubmissions.length === 0 ? (
                 <Typography sx={{ fontSize: "0.9rem", color: "var(--text-secondary)", textAlign: "center", py: 4 }}>No recent submissions</Typography>
               ) : data.recentSubmissions.map((sub, i) => (
-                <Box 
-                  key={i} 
+                <Box
+                  key={i}
                   onClick={() => navigate("/exam-result/faculty-format")}
-                  sx={{ 
-                    p: 2, 
-                    borderRadius: "18px", 
-                    background: "var(--bg-glass)", 
+                  sx={{
+                    p: 2,
+                    borderRadius: "18px",
+                    background: "var(--bg-glass)",
                     border: "1px solid var(--border-color)",
                     display: "flex",
                     alignItems: "center",
@@ -327,31 +362,31 @@ const ExamDashboard = () => {
                     }
                   }}
                 >
-                  <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, flex: 1.5 }}>
-                    <Avatar src={getFullAvatarUrl(sub.avatar, sub.institutionId)} sx={{ width: 40, height: 40, border: "2px solid var(--bg-panel)", boxShadow: "0 0 0 1px var(--border-color)" }} />
-                    <Box sx={{ minWidth: 0 }}>
-                      <Typography noWrap sx={{ fontSize: "0.9rem", fontWeight: 700, color: "var(--text-primary)" }}>{sub.name}</Typography>
-                      <Typography noWrap sx={{ fontSize: "0.75rem", color: "var(--text-secondary)", opacity: 0.8 }}>{sub.dept}</Typography>
+                  <Box sx={{ display: "flex", alignItems: "center", gap: { xs: 1, sm: 1.5 }, flex: 1, minWidth: 0 }}>
+                    <Avatar src={getFullAvatarUrl(sub.avatar, sub.institutionId)} sx={{ width: { xs: 32, sm: 40 }, height: { xs: 32, sm: 40 }, border: "2px solid var(--bg-panel)", boxShadow: "0 0 0 1px var(--border-color)" }} />
+                    <Box sx={{ minWidth: 0, flex: 1 }}>
+                      <Typography noWrap sx={{ fontSize: { xs: "0.8rem", sm: "0.9rem" }, fontWeight: 700, color: "var(--text-primary)" }}>{sub.name}</Typography>
+                      <Typography noWrap sx={{ fontSize: "0.7rem", color: "var(--text-secondary)", opacity: 0.8 }}>{sub.dept}</Typography>
                     </Box>
                   </Box>
 
-                  <Box sx={{ flex: 1.5, display: { xs: "none", sm: "block" }, minWidth: 0 }}>
+                  <Box sx={{ flex: 1, display: { xs: "none", md: "block" }, minWidth: 0 }}>
                     <Typography variant="caption" sx={{ color: "var(--text-secondary)", fontWeight: 700, textTransform: "uppercase", fontSize: "0.6rem", mb: 0.5, display: "block" }}>Subject / Course</Typography>
                     <Typography noWrap sx={{ fontSize: "0.85rem", color: "var(--text-primary)", fontWeight: 600 }}>{sub.subject}</Typography>
                   </Box>
 
-                  <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 0.5, flex: 0.8 }}>
-                    <Chip 
-                        label={sub.status} 
-                        size="small" 
-                        sx={{ 
-                            height: 22, fontSize: "0.65rem", fontWeight: 800, 
-                            bgcolor: sub.status === "Submitted" ? "rgba(16, 185, 129, 0.1)" : "rgba(245, 158, 11, 0.1)", 
-                            color: sub.status === "Submitted" ? "#10B981" : "#F59E0B",
-                            border: "1px solid currentColor"
-                        }} 
+                  <Box sx={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 0.5, flexShrink: 0 }}>
+                    <Chip
+                      label={sub.status}
+                      size="small"
+                      sx={{
+                        height: 20, fontSize: "0.6rem", fontWeight: 800,
+                        bgcolor: sub.status === "Submitted" ? "rgba(16, 185, 129, 0.1)" : "rgba(245, 158, 11, 0.1)",
+                        color: sub.status === "Submitted" ? "#10B981" : "#F59E0B",
+                        border: "1px solid currentColor"
+                      }}
                     />
-                    <Typography sx={{ fontSize: "0.75rem", color: "var(--text-secondary)", display: { xs: "block", sm: "none" } }}>
+                    <Typography sx={{ fontSize: "0.65rem", color: "var(--text-secondary)", fontWeight: 600, display: { xs: "block", sm: "none" } }}>
                       {new Date(sub.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </Typography>
                   </Box>
@@ -366,9 +401,9 @@ const ExamDashboard = () => {
             </Box>
 
             <Box sx={{ mt: 3, pt: 2, borderTop: "1px solid var(--border-color)", textAlign: "center" }}>
-              <Button 
+              <Button
                 onClick={() => navigate("/exam-result/faculty-format")}
-                endIcon={<ArrowForward sx={{ fontSize: 16 }} />} 
+                endIcon={<ArrowForward sx={{ fontSize: 16 }} />}
                 sx={{ textTransform: "none", fontSize: "0.9rem", color: "var(--color-primary)", fontWeight: 700 }}
               >
                 Explore All Submissions

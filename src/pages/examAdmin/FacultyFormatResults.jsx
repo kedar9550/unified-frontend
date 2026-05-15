@@ -298,10 +298,11 @@ export default function FacultyFormatResults() {
             </Box>
           </Box>
           
-          <Box sx={{ display: 'flex', gap: 1.5 }}>
+          <Box sx={{ display: 'flex', gap: 1.5, width: { xs: '100%', sm: 'auto' } }}>
             <ActionButton
               onClick={downloadTemplate}
               sx={{
+                flex: 1,
                 background: "transparent",
                 color: "var(--text-secondary)",
                 border: "1px solid var(--border-color)",
@@ -319,6 +320,7 @@ export default function FacultyFormatResults() {
               onClick={handleUploadClick}
               disabled={uploading}
               sx={{
+                flex: 1,
                 background: "var(--color-primary)",
                 color: "#fff",
                 fontWeight: 800,
@@ -339,7 +341,7 @@ export default function FacultyFormatResults() {
 
         {/* Row 2: Filtering and Search */}
         <Box sx={{ display: "flex", gap: 3, alignItems: "center", justifyContent: "space-between", flexWrap: "wrap" }}>
-          <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
+          <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap', width: { xs: '100%', sm: 'auto' } }}>
             <Box sx={filterBox}>
               <Box sx={{ display: 'flex', alignItems: 'center', mr: 2, opacity: 0.7 }}>
                 <Typography sx={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.05em' }}>YEAR</Typography>
@@ -349,7 +351,7 @@ export default function FacultyFormatResults() {
                 disableUnderline
                 value={selectedYearId}
                 onChange={(e) => setSelectedYearId(e.target.value)}
-                sx={{ minWidth: 100, fontWeight: 700, fontSize: 14, color: "var(--text-primary)" }}
+                sx={{ flex: 1, minWidth: 100, fontWeight: 700, fontSize: 14, color: "var(--text-primary)" }}
               >
                 {academicYears.map((year) => (
                   <MenuItem key={year._id} value={year._id}>
@@ -368,7 +370,7 @@ export default function FacultyFormatResults() {
                 disableUnderline
                 value={selectedProgramId}
                 onChange={(e) => setSelectedProgramId(e.target.value)}
-                sx={{ minWidth: 160, fontWeight: 700, fontSize: 14, color: "var(--text-primary)" }}
+                sx={{ flex: 1, minWidth: 160, fontWeight: 700, fontSize: 14, color: "var(--text-primary)" }}
                 displayEmpty
               >
                 <MenuItem value="">All Programs</MenuItem>
@@ -381,14 +383,20 @@ export default function FacultyFormatResults() {
             </Box>
           </Box>
 
-          <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+          <Box sx={{ 
+            display: 'flex', 
+            gap: 2, 
+            alignItems: 'center',
+            width: { xs: '100%', sm: 'auto' },
+            flexDirection: { xs: 'column', sm: 'row' }
+          }}>
             <TextField
               placeholder="Search Faculty ID..."
               size="small"
               value={searchFacultyId}
               onChange={(e) => setSearchFacultyId(e.target.value)}
               sx={{
-                width: 240,
+                width: { xs: "100%", sm: 240 },
                 "& .MuiOutlinedInput-root": {
                   borderRadius: "12px",
                   fontSize: 14,
@@ -428,6 +436,8 @@ export default function FacultyFormatResults() {
                 borderRadius: "12px",
                 fontSize: 13,
                 letterSpacing: '0.01em',
+                width: { xs: "100%", sm: "auto" },
+                justifyContent: "center",
                 "&:hover": { background: "rgba(239, 68, 68, 0.1)", borderColor: "#EF4444", transform: "translateY(-1px)" }
               }}
             >
@@ -726,6 +736,7 @@ const filterBox = {
   border: "1px solid var(--border-color)",
   fontSize: 14,
   height: 44,
+  width: { xs: "100%", sm: "auto" }
 };
 
 

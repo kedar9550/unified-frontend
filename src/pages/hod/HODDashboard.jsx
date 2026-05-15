@@ -92,12 +92,24 @@ const HODDashboard = () => {
             flexDirection: "row",
             alignItems: "center",
             gap: 2,
+            position: "relative",
+            overflow: "hidden",
             transition: 'all 0.3s ease',
             '&:hover': { 
               transform: 'translateY(-4px)', 
               boxShadow: 'var(--shadow-premium)',
               borderColor: 'var(--color-primary)',
-              background: 'var(--bg-glass)'
+              background: 'var(--bg-glass)',
+            },
+            '&::after': {
+              content: '""',
+              position: 'absolute',
+              top: 0,
+              right: 0,
+              width: '120px',
+              height: '120px',
+              background: `radial-gradient(circle at top right, ${card.color}25, transparent 70%)`,
+              zIndex: 0
             }
           }}>
             <Box sx={{
