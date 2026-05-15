@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import PageHeader from "../../components/common/PageHeader";
-import SectionHeader from "../../components/common/SectionHeader";
-import DataTable from "../../components/data/DataTable";
-import API from "../../api/axios";
+import PageHeader from "../../../components/common/PageHeader";
+import SectionHeader from "../../../components/common/SectionHeader";
+import DataTable from "../../../components/data/DataTable";
+import API from "../../../api/axios";
 import {
     Box,
     FormControl,
