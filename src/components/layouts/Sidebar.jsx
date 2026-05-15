@@ -80,7 +80,8 @@ const ITEM_METADATA = {
   "Administration": { color: "rgba(91, 33, 182, 0.12)", iconColor: "#a855f7", icon: <AccountBalance /> },
   "Interpersonal": { color: "rgba(22, 101, 52, 0.12)", iconColor: "#22c55e", icon: <Groups /> },
   "Feedback Reports": { color: "rgba(30, 64, 175, 0.12)", iconColor: "#3b82f6", icon: <Analytics /> },
-  "Feedback Management": { color: "rgba(22, 101, 52, 0.12)", iconColor: "#22c55e", icon: <MenuBook /> }
+  "Feedback Management": { color: "rgba(22, 101, 52, 0.12)", iconColor: "#22c55e", icon: <MenuBook /> },
+  "SDG Management": { color: "rgba(4, 120, 87, 0.12)", iconColor: "#047857", icon: <Public /> }
 };
 
 const drawerWidth = 270;

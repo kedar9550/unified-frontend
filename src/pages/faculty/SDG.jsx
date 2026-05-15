@@ -71,16 +71,8 @@ const SDG_COLOR_MAP = {
     "SDG-17": "#2D3B66"
 };
 
-const SDGCard = ({ id, sdg, imageUrl, isExpanded, toggleExpand }) => {
-    const containerRef = React.useRef(null);
-    const [hasOverflow, setHasOverflow] = React.useState(false);
+const SDGCard = ({ id, sdg, imageUrl }) => {
     const brandColor = SDG_COLOR_MAP[id];
-
-    React.useEffect(() => {
-        if (containerRef.current) {
-            setHasOverflow(containerRef.current.scrollHeight > containerRef.current.clientHeight);
-        }
-    }, [sdg.keywords, isExpanded]);
 
     return (
         <Box
@@ -99,7 +91,7 @@ const SDGCard = ({ id, sdg, imageUrl, isExpanded, toggleExpand }) => {
             }}
         >
             <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' } }}>
-                {/* Left Section / Header Image on Mobile */}
+                {/* Left Section */}
                 <Box sx={{
                     width: { xs: '100%', md: 160 },
                     height: { xs: 140, md: 'auto' },
@@ -109,11 +101,8 @@ const SDGCard = ({ id, sdg, imageUrl, isExpanded, toggleExpand }) => {
                     flexShrink: 0,
                     p: 0,
                     position: 'relative',
-                    background: {
-                        xs: brandColor,
-                        md: isExpanded ? brandColor : 'transparent'
-                    },
-                    transition: 'background 0.4s ease'
+                    background: brandColor,
+                    transition: 'all 0.4s ease'
                 }}>
                     <Box
                         component="img"
@@ -134,21 +123,18 @@ const SDGCard = ({ id, sdg, imageUrl, isExpanded, toggleExpand }) => {
                 {/* Main Content Area */}
                 <Box sx={{ flexGrow: 1, p: { xs: 1.5, md: 1.5 }, display: 'flex', flexDirection: 'column', width: '100%' }}>
                     <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', width: '100%' }}>
-                        {/* Keyword Preview Container (Fixed height when collapsed) */}
+                        {/* Keyword Container (Shows all keywords) */}
                         <Box
-                            ref={containerRef}
                             sx={{
                                 display: 'flex',
                                 flexWrap: 'wrap',
                                 gap: 1,
                                 flexGrow: 1,
-                                maxHeight: isExpanded ? 'none' : { xs: '100px', md: '120px' },
-                                overflow: 'hidden',
                                 position: 'relative',
                                 pb: 0.5
                             }}
                         >
-                            {sdg.keywords.slice(0, 25).map((kw, i) => (
+                            {sdg.keywords.map((kw, i) => (
                                 <Chip
                                     key={i}
                                     label={kw}
@@ -167,71 +153,8 @@ const SDGCard = ({ id, sdg, imageUrl, isExpanded, toggleExpand }) => {
                                     }}
                                 />
                             ))}
-                            {!isExpanded && hasOverflow && (
-                                <Typography sx={{
-                                    fontSize: '0.85rem',
-                                    fontWeight: 800,
-                                    background: 'var(--gradient-primary)',
-                                    WebkitBackgroundClip: 'text',
-                                    WebkitTextFillColor: 'transparent',
-                                    ml: 1,
-                                    mt: 0.2,
-                                    whiteSpace: 'nowrap',
-                                    alignSelf: 'center'
-                                }}>
-                                    +{sdg.keywords.length - 25} more...
-                                </Typography>
-                            )}
                         </Box>
-
-                        {(hasOverflow || isExpanded) && (
-                            <Box sx={{ display: 'flex', alignItems: 'center', ml: 1, flexShrink: 0 }}>
-                                <IconButton
-                                    onClick={() => toggleExpand(id)}
-                                    sx={{
-                                        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                                        transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
-                                        color: isExpanded ? 'var(--color-primary)' : 'var(--text-secondary)',
-                                        background: isExpanded ? 'rgba(255, 215, 0, 0.1)' : 'transparent',
-                                        '&:hover': {
-                                            color: 'var(--color-primary)',
-                                            background: 'rgba(255, 215, 0, 0.15)',
-                                            transform: isExpanded ? 'rotate(180deg) scale(1.1)' : 'scale(1.1)'
-                                        }
-                                    }}
-                                >
-                                    <ExpandMore />
-                                </IconButton>
-                            </Box>
-                        )}
                     </Box>
-
-                    {/* Additional Content (Appears below the main row) */}
-                    <Collapse in={isExpanded} timeout="auto" unmountOnExit>
-                        <Box sx={{ mt: 1 }}>
-                            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                                {sdg.keywords.slice(25).map((kw, i) => (
-                                    <Chip
-                                        key={i + 25}
-                                        label={kw}
-                                        size="small"
-                                        sx={{
-                                            background: 'var(--bg-accent-4)',
-                                            color: 'var(--text-secondary)',
-                                            border: '1px solid var(--border-color)',
-                                            fontSize: '0.7rem',
-                                            fontWeight: 600,
-                                            height: '24px',
-                                            '&:hover': {
-                                                background: 'var(--bg-accent-1)',
-                                                color: 'var(--text-primary)',
-                                            }
-                                        }}
-                                    />
-                                ))}
-                            </Box>
-                        </Box>
-                    </Collapse>
                 </Box>
             </Box>
         </Box>
@@ -759,7 +682,13 @@ const SDG = () => {
         );
     };
 
-    const currentSdgList = Object.entries(sdgData).map(([id, data]) => ({ id, title: data.title, keywords: data.keywords }));
+    const currentSdgList = Object.entries(sdgData)
+        .map(([id, data]) => ({ id, title: data.title, keywords: data.keywords }))
+        .sort((a, b) => {
+            const numA = parseInt(a.id.replace('SDG-', ''));
+            const numB = parseInt(b.id.replace('SDG-', ''));
+            return numA - numB;
+        });
 
     return (
         <Box sx={{ minHeight: '100vh' }}>

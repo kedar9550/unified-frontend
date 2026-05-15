@@ -18,9 +18,9 @@ export default function PageHeader({
         WebkitBackdropFilter: "blur(10px) saturate(150%)",
         boxShadow: "var(--shadow-premium)",
         display: "flex",
-        flexDirection: { xs: "column", sm: "row" },
+        flexDirection: { xs: "column", md: "row" },
         justifyContent: "space-between",
-        alignItems: "center",
+        alignItems: { xs: "flex-start", md: "center" },
         gap: 2.5,
         border: "1px solid var(--border-color)",
         position: "relative",
@@ -64,7 +64,7 @@ export default function PageHeader({
       <Box sx={{
         position: "relative",
         zIndex: 1,
-        width: { xs: "100%", sm: "auto" },
+        width: { xs: "100%", md: "auto" },
         "& > button": { width: "100%" }
       }}>
         {action}

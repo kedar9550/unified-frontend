@@ -2,6 +2,7 @@ import {
   Dashboard,
   MenuBook,
   Science,
+  Public,
   AccountBalance,
   Groups,
   School,
@@ -52,7 +53,7 @@ export const ROLE_ROUTES = {
       icon: <Dashboard />,
     },
     {
-      text: "Academics", 
+      text: "Academics",
       icon: <School />,
       nested: [
         {
@@ -88,7 +89,11 @@ export const ROLE_ROUTES = {
         }
       ]
     },
-
+    {
+      text: "SDG Management",
+      path: "/uniprime/sdg-management",
+      icon: <Public />
+    },
   ],
 
   // Example for a future "Department HOD" role
