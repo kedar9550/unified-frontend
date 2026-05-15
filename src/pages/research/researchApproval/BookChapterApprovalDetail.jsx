@@ -16,7 +16,7 @@ import DownloadIcon from '@mui/icons-material/Download';
 import CheckIcon from '@mui/icons-material/Check';
 import CloseIcon from '@mui/icons-material/Close';
 import { toast } from "sonner";
-import API from "../../api/axios";
+import API from "../../../api/axios";
 
 const BookChapterApprovalDetail = ({ id, onBack, role }) => {
     const [data, setData] = useState(null);
