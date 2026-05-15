@@ -418,8 +418,18 @@ const MobileNavbar = () => {
                                         color: 'var(--color-primary)',
                                         '& .MuiBottomNavigationAction-label': {
                                             fontSize: '0.75rem',
-                                            fontWeight: 700,
-                                            mt: 0.5
+                                            fontWeight: 800,
+                                            mt: 0.5,
+                                            background: 'var(--gradient-primary)',
+                                            WebkitBackgroundClip: 'text',
+                                            WebkitTextFillColor: 'transparent',
+                                        },
+                                        '& .MuiSvgIcon-root': {
+                                            fontSize: '1.6rem',
+                                            transition: 'all 0.3s ease',
+                                            // Simple trick to apply gradient to SVG icon
+                                            color: 'var(--color-primary)',
+                                            filter: 'drop-shadow(0 0 2px var(--color-primary-alpha))'
                                         }
                                     }
                                 }

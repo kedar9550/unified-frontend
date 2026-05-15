@@ -104,8 +104,7 @@ function App() {
         <Route path="/student/assigned-students" element={<ProtectedRoute element={<Assignedstudents />} />} />
         <Route path="/student/department-mapping" element={<ProtectedRoute element={<DepartmentMapping />} />} />
         <Route path="/profile" element={<ProtectedRoute element={<Profile />} />} />
-        <Route path="/academics/sdg-management" element={<ProtectedRoute element={<SDGManagement />} />} />
-
+        <Route path="/uniprime/sdg-management" element={<ProtectedRoute element={<SDGManagement />} />} />
         {/* Research Approval System */}
         <Route path="/hod/research-approvals" element={<ProtectedRoute element={<ResearchApprovalList role="HOD" />} />} />
         <Route path="/hod/research-request/:type/:id" element={<ProtectedRoute element={<ResearchApprovalDetailWrapper role="HOD" />} />} />

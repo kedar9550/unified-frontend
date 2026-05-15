@@ -46,11 +46,11 @@ const Header = ({ onMenuClick }) => {
   };
 
   const handleRoleSwitch = (newRole) => {
+    handleClose();
     if (newRole !== activeRole) {
       switchRole(newRole);
-      navigate("/dashboard");
+      setTimeout(() => navigate("/dashboard"), 0);
     }
-    handleClose();
   };
 
   const getEcapImage = () => {
