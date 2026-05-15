@@ -36,6 +36,7 @@ import SDGManagement from "./pages/uniprime/SDGManagement";
 // Research Approval System (Consolidated)
 import ResearchApprovalList from './pages/research/researchApproval/ResearchApprovalList';
 import ResearchApprovalDetailWrapper from './pages/research/researchApproval/ResearchApprovalDetailWrapper';
+import ResearchReports from './pages/research/ResearchReports';
 
 
 
@@ -126,6 +127,10 @@ function App() {
 
         <Route path="/research-coordinator/approvals" element={<ProtectedRoute element={<ResearchApprovalList role="RESEARCH_COORDINATOR" />} />} />
         <Route path="/research-coordinator/request/:type/:id" element={<ProtectedRoute element={<ResearchApprovalDetailWrapper role="RESEARCH_COORDINATOR" />} />} />
+
+        {/* Reports */}
+        <Route path="/research-dean/reports" element={<ProtectedRoute element={<ResearchReports />} />} />
+        <Route path="/research-coordinator/reports" element={<ProtectedRoute element={<ResearchReports />} />} />
 
 
         <Route path="*" element={<ProtectedRoute element={<Box p={4}><Typography variant="h4">Page Content</Typography></Box>} />} />
