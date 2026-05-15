@@ -278,7 +278,7 @@ const Profile = () => {
 
 
   return (
-    <Box sx={{ p: { xs: 1, md: 2 }, maxWidth: "1500px", margin: "0 auto", width: "100%" }}>
+    <Box sx={{ width: "100%" }}>
       <Typography variant="h4" sx={{ fontWeight: 800, mb: 4, color: "var(--text-primary)" }}>
         Account Profile
       </Typography>

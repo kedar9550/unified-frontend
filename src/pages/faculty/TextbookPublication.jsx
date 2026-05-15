@@ -831,7 +831,7 @@ export default function TextbookPublication() {
   );
 
   return (
-    <Box sx={{ p: { xs: 2.5, md: 4 } }}>
+    <Box>
       <PageHeader title="Text Book" subtitle="Manage and submit your textbook publication details" breadcrumbs={["Home", "Publications", "Text Book"]} />
 
       {viewMode === "list" && renderList()}

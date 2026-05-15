@@ -179,7 +179,7 @@ const SDGManagement = () => {
   };
 
   return (
-    <Box sx={{ p: 3 }}>
+    <Box>
       <PageHeader
         title="SDG Keywords Management"
         subtitle="Manage Sustainable Development Goals and their associated keywords for document analysis."

@@ -592,7 +592,7 @@ const AcademicStructure = () => {
     };
 
     return (
-        <Box sx={{ p: { xs: 2, md: 4 }, pb: 8 }}>
+        <Box>
             <PageHeader
                 title="Academic Structure"
                 subtitle="Configure Departments, Programs, and Branches for the University"

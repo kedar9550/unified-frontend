@@ -311,7 +311,7 @@ const ResearchApprovalList = ({ role }) => {
     );
 
     return (
-        <Box sx={{ width: "100%", p: { xs: 1.5, sm: 2, md: 3 }, mb: 3 }}>
+        <Box sx={{ width: "100%", mb: 3 }}>
             <svg width="0" height="0" style={{ position: 'absolute' }}>
                 <defs>
                     <linearGradient id="themeGradient" x1="0%" y1="0%" x2="100%" y2="100%">

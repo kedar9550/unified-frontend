@@ -226,7 +226,7 @@ const AcademicManagement = () => {
   };
 
   return (
-    <Box sx={{ p: { xs: 2, md: 3 } }}>
+    <Box>
       <PageHeader title="Academic Management" subtitle="Manage academic years, programs and active semesters / years" />
 
       {/* Create Year Panel */}

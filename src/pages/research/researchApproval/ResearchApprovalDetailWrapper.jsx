@@ -50,7 +50,7 @@ const ResearchApprovalDetailWrapper = ({ role }) => {
     };
 
     return (
-        <Box sx={{ width: '100%', p: { xs: 1.5, sm: 2, md: 3 } }}>
+        <Box sx={{ width: '100%' }}>
             {renderDetailComponent()}
         </Box>
     );

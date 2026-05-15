@@ -661,7 +661,7 @@ export default function Teaching() {
   })();
 
   return (
-    <Box sx={{ p: { xs: 2, md: 4 } }}>
+    <Box>
       {/* ── PAGE HEADER ────────────────────────────────────── */}
       <PageHeader
         title="Teaching Dashboard"

@@ -335,7 +335,7 @@ export default function PatentPublication() {
   );
 
   return (
-    <Box sx={{ p: { xs: 2.5, md: 4 } }}>
+    <Box>
       <PageHeader title="Patent" subtitle="Manage and submit your patent application details" breadcrumbs={["Home", "Publications", "Patent"]} />
 
       {viewMode === "list" && renderList()}

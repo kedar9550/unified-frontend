@@ -391,7 +391,7 @@ export default function JournalPublication() {
   );
 
   return (
-    <Box sx={{ p: { xs: 2.5, md: 4 } }}>
+    <Box>
       <PageHeader title="Journal" subtitle="Manage and submit your journal publications" breadcrumbs={["Home", "Publications", "Journal"]} />
 
       {viewMode === "list" && renderList()}

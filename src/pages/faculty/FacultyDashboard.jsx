@@ -150,7 +150,7 @@ const FacultyDashboard = () => {
 
 
   return (
-    <Box sx={{ p: { xs: 2.5, md: 4 } }}>
+    <Box>
       {/* Header */}
       <Box
         sx={{

@@ -426,7 +426,7 @@ export default function BookChapterPublication() {
   );
 
   return (
-    <Box sx={{ p: { xs: 2.5, md: 4 } }}>
+    <Box>
       <PageHeader title="Book Chapter" subtitle="Manage and submit your book chapter publication details" breadcrumbs={["Home", "Publications", "Book Chapter"]} />
 
       {viewMode === "list" && renderList()}
