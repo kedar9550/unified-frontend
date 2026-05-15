@@ -22,6 +22,7 @@ export default function TextbookPublication() {
   const [publishers, setPublishers] = useState([]);
   const [isbnFetching, setIsbnFetching] = useState(false);
   const [isbnFetched, setIsbnFetched] = useState(false);
+  const [isbnFetchedFields, setIsbnFetchedFields] = useState({ title: false, publisher: false });
 
   const [form, setForm] = useState({
     title: "", publisher: "", isbn: "", yearOfPublication: "",
@@ -30,6 +31,8 @@ export default function TextbookPublication() {
     applyIncentive: "", expectedAmount: "10,000",
     otherAuthors: [],
     publicationType: "National",
+    expectedAmount: "10,000",
+    customPublisher: "",
     currencySymbol: "₹"
   });
   const [files, setFiles] = useState({ coverPage: null, authorAffiliation: null, index: null });
@@ -88,7 +91,10 @@ export default function TextbookPublication() {
 
   const set = (k) => (e) => {
     setForm((p) => ({ ...p, [k]: e.target.value }));
-    if (k === "isbn") setIsbnFetched(false);
+    if (k === "isbn") {
+      setIsbnFetched(false);
+      setIsbnFetchedFields({ title: false, publisher: false });
+    }
   };
 
   const validateFile = (file) => {
@@ -150,6 +156,10 @@ export default function TextbookPublication() {
           year: newYear
         }));
         setIsbnFetched(true);
+        setIsbnFetchedFields({
+          title: !!data.title,
+          publisher: !!data.publisher
+        });
         toast.success("Book details fetched successfully!");
       }
     } catch (err) {
@@ -157,6 +167,16 @@ export default function TextbookPublication() {
     } finally {
       setIsbnFetching(false);
     }
+  };
+
+  const updateExpectedAmount = (type, publisherValue) => {
+    let amount = "5,000";
+    if (type === "International") {
+      amount = (publisherValue !== "Others" && !!publisherValue) ? "20,000" : "5,000";
+    } else {
+      amount = (publisherValue !== "Others" && !!publisherValue) ? "10,000" : "5,000";
+    }
+    setForm(p => ({ ...p, publicationType: type, publisher: publisherValue, expectedAmount: amount }));
   };
 
   const fetchCoAuthorName = async (pos, empId) => {
@@ -264,7 +284,6 @@ export default function TextbookPublication() {
 
       // Append standard fields
       fd.append("title", submissionForm.title);
-      fd.append("publisher", submissionForm.publisher);
       fd.append("isbn", submissionForm.isbn);
       fd.append("yearOfPublication", submissionForm.yearOfPublication);
       fd.append("totalAuthors", submissionForm.totalAuthors);
@@ -274,12 +293,13 @@ export default function TextbookPublication() {
       fd.append("month", submissionForm.month);
       fd.append("year", submissionForm.year);
       fd.append("publicationType", submissionForm.publicationType);
+      fd.append("publisher", submissionForm.publisher === "Others" ? submissionForm.customPublisher : submissionForm.publisher);
+      fd.append("expectedAmount", submissionForm.expectedAmount);
       fd.append("applyIncentive", submissionForm.applyIncentive);
       fd.append("authors", JSON.stringify(allAuthors));
 
       fd.append("academicYear", selectedYear);
       fd.append("college", user?.college || "");
-      if (form.applyIncentive === "Yes") fd.append("expectedAmount", "10,000");
 
       if (files.coverPage) fd.append("coverPage", files.coverPage);
       if (files.authorAffiliation) fd.append("authorAffiliation", files.authorAffiliation);
@@ -467,11 +487,15 @@ export default function TextbookPublication() {
             fullWidth
             size="small"
             value={form.publicationType}
-            onChange={(e) => setForm(p => ({ 
-              ...p, 
-              publicationType: e.target.value,
-              currencySymbol: e.target.value === "International" ? "$" : "₹" 
-            }))}
+            onChange={(e) => {
+                const val = e.target.value;
+                setForm(p => ({ 
+                    ...p, 
+                    publicationType: val,
+                    currencySymbol: val === "International" ? "$" : "₹"
+                }));
+                updateExpectedAmount(val, form.publisher);
+            }}
           >
             <MenuItem value="National">National</MenuItem>
             <MenuItem value="International">International</MenuItem>
@@ -499,17 +523,21 @@ export default function TextbookPublication() {
         </Box>
         <Box>
           <Typography sx={labelStyle}>Title of the Text Book :</Typography>
-          <TextField size="small" fullWidth value={form.title} onChange={set("title")} inputProps={{ maxLength: 200 }} disabled={isbnFetched && !!form.title} sx={isbnFetched && !!form.title ? disabledField : {}} />
+          <TextField size="small" fullWidth value={form.title} onChange={set("title")} inputProps={{ maxLength: 200 }} disabled={isbnFetchedFields.title} sx={isbnFetchedFields.title ? disabledField : {}} />
         </Box>
         <Box>
           <Typography sx={labelStyle}>Name of the Publisher :</Typography>
           <Autocomplete
-            options={publishers}
+            options={[...publishers.filter(p => p.type === form.publicationType), { name: "Others", type: form.publicationType }]}
             groupBy={(option) => option.type}
             getOptionLabel={(option) => option.name || ""}
-            value={publishers.find(p => p.name === form.publisher) || (form.publisher ? { name: form.publisher, type: "Unknown" } : null)}
+            value={publishers.find(p => p.name === form.publisher) || (form.publisher === "Others" ? { name: "Others", type: form.publicationType } : (form.publisher ? { name: form.publisher, type: form.publicationType || "Unknown" } : null))}
             isOptionEqualToValue={(option, value) => option.name === value.name}
-            onChange={(e, newValue) => setForm(p => ({ ...p, publisher: newValue ? newValue.name : "" }))}
+            onChange={(e, newValue) => {
+                const val = newValue ? newValue.name : "";
+                setForm(p => ({ ...p, publisher: val }));
+                updateExpectedAmount(form.publicationType, val);
+            }}
             freeSolo
             onInputChange={(e, newInputValue) => {
                 if (e?.type === "change") {
@@ -521,11 +549,21 @@ export default function TextbookPublication() {
                 {...params} 
                 size="small" 
                 placeholder="Select or search publisher" 
-                disabled={isbnFetched && !!form.publisher} 
-                sx={isbnFetched && !!form.publisher ? disabledField : {}} 
+                disabled={isbnFetchedFields.publisher} 
+                sx={isbnFetchedFields.publisher ? disabledField : {}} 
               />
             )}
           />
+          {form.publisher === "Others" && (
+            <TextField
+              size="small"
+              fullWidth
+              sx={{ mt: 1.5 }}
+              placeholder="Enter Publisher Name"
+              value={form.customPublisher}
+              onChange={(e) => setForm(p => ({ ...p, customPublisher: e.target.value }))}
+            />
+          )}
         </Box>
         <Box>
           <Typography sx={labelStyle}>Edition :</Typography>
@@ -753,8 +791,14 @@ export default function TextbookPublication() {
         </Box>
         {form.applyIncentive === "Yes" && (
           <Box>
-            <Typography sx={{ fontSize: 13, fontWeight: 700, color: "var(--color-primary)" }}>Expected Amount:</Typography>
-            <TextField size="small" value="10,000" disabled sx={{ "& .MuiInputBase-input.Mui-disabled": { WebkitTextFillColor: "#10b981", fontWeight: 800, background: "rgba(16, 185, 129, 0.1)", borderRadius: "8px" } }} />
+            <Typography sx={{ fontSize: 13, fontWeight: 700, color: "var(--color-primary)" }}>Maximum Incentive/Claimable Amount:</Typography>
+            <TextField 
+                size="small" 
+                value={form.expectedAmount} 
+                disabled 
+                sx={{ "& .MuiInputBase-input.Mui-disabled": { WebkitTextFillColor: "#10b981", fontWeight: 800, background: "rgba(16, 185, 129, 0.1)", borderRadius: "8px" } }} 
+                helperText={form.publisher === "Others" || !form.publisher ? "Committee Approval Required" : `Reputed ${form.publicationType} Publisher`}
+            />
           </Box>
         )}
       </Grid2>

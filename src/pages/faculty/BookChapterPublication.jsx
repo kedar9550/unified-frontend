@@ -22,7 +22,7 @@ export default function BookChapterPublication() {
   const [form, setForm] = useState({
     textBookName: "", chapterTitle: "", isbn: "", yearOfPublication: "",
     firstAuthor: "", authorPosition: "", chaptersContributed: "", publisher: "", coAuthors: [], month: "", year: "",
-    applyIncentive: ""
+    applyIncentive: "", publicationType: "National", customPublisher: "", expectedAmount: "7,500"
   });
   const [files, setFiles] = useState({ coverPage: null, authorAffiliation: null, index: null, softCopy: null });
   const [loading, setLoading] = useState(false);
@@ -89,6 +89,14 @@ export default function BookChapterPublication() {
       Object.entries(form).forEach(([k, v]) => {
         if (k === "coAuthors") {
           fd.append(k, JSON.stringify(v));
+        } else if (k === "publicationType") {
+          fd.append(k, form.publicationType);
+        } else if (k === "publisher") {
+          fd.append(k, form.publisher === "Others" ? form.customPublisher : form.publisher);
+        } else if (k === "expectedAmount") {
+          fd.append(k, form.expectedAmount);
+        } else if (k === "customPublisher") {
+          // ignore
         } else {
           fd.append(k, v);
         }
@@ -100,7 +108,7 @@ export default function BookChapterPublication() {
 
       await API.post("/api/research/book-chapter", fd, { headers: { "Content-Type": "multipart/form-data" } });
       toast.success("Book Chapter submitted successfully!");
-      setForm({ textBookName: "", chapterTitle: "", isbn: "", yearOfPublication: "", firstAuthor: "", authorPosition: "", chaptersContributed: "", publisher: "", coAuthors: [], month: "", year: "", applyIncentive: "" });
+      setForm({ textBookName: "", chapterTitle: "", isbn: "", yearOfPublication: "", firstAuthor: "", authorPosition: "", chaptersContributed: "", publisher: "", coAuthors: [], month: "", year: "", applyIncentive: "", publicationType: "National", customPublisher: "" });
       setFiles({ coverPage: null, authorAffiliation: null, index: null, softCopy: null });
       setErrors({});
       setSelectedYear("");
@@ -267,6 +275,18 @@ export default function BookChapterPublication() {
           </Select>
         </Box>
         <Box>
+          <Typography sx={labelStyle}>Publication Type:</Typography>
+          <Select
+            fullWidth
+            size="small"
+            value={form.publicationType}
+            onChange={(e) => setForm(p => ({ ...p, publicationType: e.target.value }))}
+          >
+            <MenuItem value="National">National</MenuItem>
+            <MenuItem value="International">International</MenuItem>
+          </Select>
+        </Box>
+        <Box>
           <Typography sx={labelStyle}>Whether you are the first author :</Typography>
           <Select size="small" fullWidth displayEmpty value={form.firstAuthor} onChange={set("firstAuthor")} error={!!errors.firstAuthor}>
             <MenuItem value="">Select</MenuItem>
@@ -283,10 +303,10 @@ export default function BookChapterPublication() {
         <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
           <Typography sx={labelStyle}>Name of the Publisher :</Typography>
           <Autocomplete
-            options={publishers}
+            options={[...publishers.filter(p => p.type === form.publicationType), { name: "Others", type: form.publicationType }]}
             groupBy={(option) => option.type}
             getOptionLabel={(option) => option.name || ""}
-            value={publishers.find(p => p.name === form.publisher) || (form.publisher ? { name: form.publisher, type: "Unknown" } : null)}
+            value={publishers.find(p => p.name === form.publisher) || (form.publisher === "Others" ? { name: "Others", type: form.publicationType } : (form.publisher ? { name: form.publisher, type: form.publicationType || "Unknown" } : null))}
             isOptionEqualToValue={(option, value) => option.name === value.name}
             onChange={(e, newValue) => setForm(p => ({ ...p, publisher: newValue ? newValue.name : "" }))}
             freeSolo
@@ -299,6 +319,16 @@ export default function BookChapterPublication() {
               <TextField {...params} size="small" fullWidth placeholder="Select or search publisher" error={!!errors.publisher} />
             )}
           />
+          {form.publisher === "Others" && (
+            <TextField
+              size="small"
+              fullWidth
+              sx={{ mt: 1.5 }}
+              placeholder="Enter Publisher Name"
+              value={form.customPublisher}
+              onChange={(e) => setForm(p => ({ ...p, customPublisher: e.target.value }))}
+            />
+          )}
         </Box>
 
         {form.firstAuthor === "No" && (
@@ -356,8 +386,14 @@ export default function BookChapterPublication() {
         </Box>
         {form.applyIncentive === "Yes" && (
           <Box>
-            <Typography sx={{ fontSize: 13, fontWeight: 700, color: "var(--color-primary)" }}>Expected Amount:</Typography>
-            <TextField size="small" value="1500" disabled sx={{ "& .MuiInputBase-root": { background: "rgba(16, 185, 129, 0.05)" }, "& .MuiInputBase-input.Mui-disabled": { WebkitTextFillColor: "#10b981", fontWeight: 800, px: 2, borderRadius: "8px" } }} />
+            <Typography sx={{ fontSize: 13, fontWeight: 700, color: "var(--color-primary)" }}>Maximum Incentive/Claimable Amount:</Typography>
+            <TextField 
+                size="small" 
+                value={form.expectedAmount} 
+                disabled 
+                sx={{ "& .MuiInputBase-root": { background: "rgba(16, 185, 129, 0.05)" }, "& .MuiInputBase-input.Mui-disabled": { WebkitTextFillColor: "#10b981", fontWeight: 800, px: 2, borderRadius: "8px" } }} 
+                helperText="For Book Chapter indexed in Scopus"
+            />
           </Box>
         )}
       </Grid2>
