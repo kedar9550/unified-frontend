@@ -20,9 +20,8 @@ import {
     Button,
     Grid,
     Paper,
-    Snackbar,
-    Alert
 } from "@mui/material";
+import { toast } from "sonner";
 import {
     FileUpload as UploadIcon,
     CheckCircle as ConfirmIcon,
@@ -66,7 +65,6 @@ const Studentuploads = () => {
     const [allPrograms, setAllPrograms] = useState([]);
     const [selectedBulkProgram, setSelectedBulkProgram] = useState("");
     const [isBulkUpdateModalOpen, setIsBulkUpdateModalOpen] = useState(false);
-    const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "success" });
 
     const fetchUnassignedStudents = async () => {
         setLoadingStudents(true);
@@ -133,20 +131,12 @@ const Studentuploads = () => {
             });
             if (res.data.success) {
                 setUploadResult(res.data.summary);
-                setSnackbar({
-                    open: true,
-                    message: res.data.message || "Data uploaded successfully",
-                    severity: "success"
-                });
+                toast.success(res.data.message || "Data uploaded successfully");
                 fetchUnassignedStudents();
             }
         } catch (error) {
             console.error("Operation failed", error);
-            setSnackbar({
-                open: true,
-                message: error.response?.data?.message || "Operation failed",
-                severity: "error"
-            });
+            toast.error(error.response?.data?.message || "Operation failed");
         } finally {
             setUploading(false);
             e.target.value = null; // Reset input
@@ -177,21 +167,13 @@ const Studentuploads = () => {
                     severity = "success";
                 }
 
-                setSnackbar({
-                    open: true,
-                    message: toastMsg,
-                    severity: severity
-                });
+                toast[severity](toastMsg);
                 fetchUnassignedStudents();
                 setIsBulkUpdateModalOpen(false);
             }
         } catch (error) {
             console.error("Bulk sync failed", error);
-            setSnackbar({
-                open: true,
-                message: error.response?.data?.message || "Sync failed",
-                severity: "error"
-            });
+            toast.error(error.response?.data?.message || "Sync failed");
         } finally {
             setUpdatingBulk(false);
         }
@@ -206,21 +188,13 @@ const Studentuploads = () => {
             });
             if (res.data.success) {
                 setUploadResult(res.data.summary);
-                setSnackbar({
-                    open: true,
-                    message: res.data.message,
-                    severity: res.data.updated ? "success" : "info"
-                });
+                toast[res.data.updated ? "success" : "info"](res.data.message);
                 fetchUnassignedStudents();
                 setSelectedIds([]);
             }
         } catch (error) {
             console.error("Sync failed", error);
-            setSnackbar({
-                open: true,
-                message: error.response?.data?.message || "Sync failed",
-                severity: "error"
-            });
+            toast.error(error.response?.data?.message || "Sync failed");
         } finally {
             setSyncing(false);
         }
@@ -239,20 +213,12 @@ const Studentuploads = () => {
                 setIsUpdateModalOpen(false);
                 setAddRollNo("");
                 setAddDept("");
-                setSnackbar({
-                    open: true,
-                    message: res.data.message,
-                    severity: res.data.updated ? "success" : "info"
-                });
+                toast[res.data.updated ? "success" : "info"](res.data.message);
                 fetchUnassignedStudents();
             }
         } catch (error) {
             console.error("Add student failed", error);
-            setSnackbar({
-                open: true,
-                message: error.response?.data?.message || "Failed to add student",
-                severity: "error"
-            });
+            toast.error(error.response?.data?.message || "Failed to add student");
         } finally {
             setAddingStudent(false);
         }
@@ -270,19 +236,11 @@ const Studentuploads = () => {
                 setSelectedIds([]);
                 setSelectedDept("");
                 fetchUnassignedStudents();
-                setSnackbar({
-                    open: true,
-                    message: "Students assigned successfully",
-                    severity: "success"
-                });
+                toast.success("Students assigned successfully");
             }
         } catch (error) {
             console.error("Assignment failed", error);
-            setSnackbar({
-                open: true,
-                message: "Assignment failed",
-                severity: "error"
-            });
+            toast.error("Assignment failed");
         }
     };
 
@@ -595,11 +553,7 @@ const Studentuploads = () => {
                                 onClick={() => {
                                     if (updatingBulk) return;
                                     if (!selectedBulkProgram) {
-                                        setSnackbar({
-                                            open: true,
-                                            message: "Please select a program",
-                                            severity: "warning"
-                                        });
+                                        toast.warning("Please select a program");
                                         return;
                                     }
                                     handleBulkSyncAll(selectedBulkProgram);
@@ -866,16 +820,6 @@ const Studentuploads = () => {
                 </DialogActions>
             </Dialog>
 
-            <Snackbar
-                open={snackbar.open}
-                autoHideDuration={6000}
-                onClose={() => setSnackbar({ ...snackbar, open: false })}
-                anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
-            >
-                <Alert onClose={() => setSnackbar({ ...snackbar, open: false })} severity={snackbar.severity} sx={{ width: "100%", borderRadius: "16px", fontWeight: 600 }} variant="filled">
-                    {snackbar.message}
-                </Alert>
-            </Snackbar>
         </Box>
     );
 };

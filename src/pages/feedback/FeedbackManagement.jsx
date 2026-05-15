@@ -24,6 +24,7 @@ import {
   CleaningServices as CleanIcon
 } from "@mui/icons-material";
 import { IconButton } from "@mui/material";
+import { toast } from "sonner";
 
 export default function FeedbackManagement() {
   const [academicYears, setAcademicYears] = useState([]);
@@ -106,13 +107,13 @@ export default function FeedbackManagement() {
       
       if (errors && errors.length > 0) {
         const errorDetails = errors
-          .map((e) => `• Row ${e.row}: ${e.message}`)
-          .join("\n");
-        alert(
-          `Uploaded ${successCount || 0} rows.\n${failedCount || 0} rows failed to upload.\n\nErrors:\n${errorDetails}`
-        );
+          .map((e) => `Row ${e.row}: ${e.message}`)
+          .join(", ");
+        toast.error(`Uploaded ${successCount || 0} rows. ${failedCount || 0} rows failed.`, {
+            description: errorDetails
+        });
       } else {
-        alert(`Successfully uploaded ${successCount} records!`);
+        toast.success(`Successfully uploaded ${successCount} records!`);
       }
       fetchResults();
     } catch (err) {
@@ -122,11 +123,13 @@ export default function FeedbackManagement() {
 
       if (Array.isArray(backendDetails)) {
         const errorDetails = backendDetails
-          .map((e) => (typeof e === 'object' ? `• Row ${e.row || '?'}: ${e.message}` : `• ${e}`))
-          .join("\n");
-        alert(`${backendError || "Upload failed"}\n\nErrors:\n${errorDetails}`);
+          .map((e) => (typeof e === 'object' ? `Row ${e.row || '?'}: ${e.message}` : e))
+          .join(", ");
+        toast.error(backendError || "Upload failed", {
+            description: errorDetails
+        });
       } else {
-        alert(backendError || "Upload failed. Please check CSV format.");
+        toast.error(backendError || "Upload failed. Please check CSV format.");
       }
     } finally {
       setUploading(false);
@@ -170,7 +173,7 @@ export default function FeedbackManagement() {
       setResults(results.filter(r => r._id !== id));
     } catch (err) {
       console.error("Delete failed:", err);
-      alert(err.response?.data?.message || "Delete failed");
+      toast.error(err.response?.data?.message || "Delete failed");
     }
   };
 
@@ -183,18 +186,18 @@ export default function FeedbackManagement() {
     
     const ids = results.map(r => r._id);
     if (ids.length === 0) {
-        alert("No records to delete.");
+        toast.info("No records to delete.");
         return;
     }
 
     setLoading(true);
     try {
       await API.post("/api/faculty-feedback-results/bulk-delete", { ids });
-      alert(`Successfully deleted ${ids.length} records.`);
+      toast.success(`Successfully deleted ${ids.length} records.`);
       fetchResults();
     } catch (err) {
       console.error("Clear data failed:", err);
-      alert(err.response?.data?.message || "Clear data failed");
+      toast.error(err.response?.data?.message || "Clear data failed");
     } finally {
       setLoading(false);
     }

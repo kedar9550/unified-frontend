@@ -13,6 +13,7 @@ import DataTable from "../../components/data/DataTable";
 import SectionHeader from "../../components/common/SectionHeader";
 import API from "../../api/axios";
 import { useAuth } from "../../context/AuthContext";
+import { toast } from "sonner";
 
 // Pharma.D year names (from eCap semestername field)
 const PHARMAD_YEARS = ["I Year", "II Year", "III Year", "IV Year", "V Year", "VI Year"];
@@ -196,7 +197,7 @@ const DeptProctorUploads = () => {
       setManualProctors(initialProctors);
     } catch (err) {
       console.error("Error fetching students:", err);
-      alert(err.response?.data?.message || "Failed to fetch students");
+      toast.error(err.response?.data?.message || "Failed to fetch students");
     } finally {
       setLoading(false);
     }
@@ -232,7 +233,7 @@ const DeptProctorUploads = () => {
 
   const handleSaveMapping = async (studentId, mappingId) => {
     const proctorId = manualProctors[studentId]?.trim();
-    if (!proctorId) return alert("Please enter a Proctor ID");
+    if (!proctorId) return toast.warning("Please enter a Proctor ID");
     try {
       const payload = {
         studentId,
@@ -247,10 +248,10 @@ const DeptProctorUploads = () => {
       } else {
         await API.post(`/api/dept-proctor`, payload);
       }
-      alert("Proctor assigned successfully!");
+      toast.success("Proctor assigned successfully!");
       fetchStudents();
     } catch (err) {
-      alert(err.response?.data?.message || "Failed to save proctor mapping");
+      toast.error(err.response?.data?.message || "Failed to save proctor mapping");
     }
   };
 
@@ -267,16 +268,17 @@ const DeptProctorUploads = () => {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
-      let msg = res.data.message || "CSV uploaded successfully!";
       if (res.data.errors?.length > 0) {
-        const displayErrors = res.data.errors.slice(0, 15);
-        msg += "\n\nIssues Found:\n" + displayErrors.join("\n");
-        if (res.data.errors.length > 15) msg += `\n...and ${res.data.errors.length - 15} more.`;
+        const displayErrors = res.data.errors.slice(0, 15).join(", ");
+        toast.info(res.data.message || "CSV uploaded with issues", {
+            description: `Issues Found: ${displayErrors}${res.data.errors.length > 15 ? `...and ${res.data.errors.length - 15} more.` : ""}`
+        });
+      } else {
+        toast.success(res.data.message || "CSV uploaded successfully!");
       }
-      alert(msg);
       fetchStudents();
     } catch (err) {
-      alert(err.response?.data?.message || "Error uploading CSV file");
+      toast.error(err.response?.data?.message || "Error uploading CSV file");
     } finally {
       setUploadingCSV(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
@@ -284,7 +286,7 @@ const DeptProctorUploads = () => {
   };
 
   const downloadTemplate = () => {
-    if (students.length === 0) return alert("Please fetch students first.");
+    if (students.length === 0) return toast.info("Please fetch students first.");
     const acYearStr = activeYear || `${new Date().getFullYear()}-${new Date().getFullYear() + 1}`;
 
     if (isYearBased) {

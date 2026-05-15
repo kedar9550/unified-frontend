@@ -32,6 +32,7 @@ import {
 import PageHeader from "../../components/common/PageHeader";
 import SectionHeader from "../../components/common/SectionHeader";
 import API from "../../api/axios";
+import { toast } from "sonner";
 
 // ── Status config ─────────────────────────────────────────────────────
 const STATUS_CONFIG = {
@@ -114,7 +115,7 @@ export default function HODDiscrepancies() {
 
   // ── Handle resolve submit ──────────────────────────────────────────
   const handleResolve = async () => {
-    if (!proofFile) return alert("Please upload a proof document before submitting.");
+    if (!proofFile) return toast.warning("Please upload a proof document before submitting.");
 
     setSubmitting(true);
     try {
@@ -140,7 +141,7 @@ export default function HODDiscrepancies() {
         fetchItems();
       }, 1500);
     } catch (err) {
-      alert(err.response?.data?.message || "Failed to resolve.");
+      toast.error(err.response?.data?.message || "Failed to resolve.");
     } finally {
       setSubmitting(false);
     }
@@ -155,7 +156,7 @@ export default function HODDiscrepancies() {
 
   // ── Handle reject submit ───────────────────────────────────────────
   const handleReject = async () => {
-    if (!rejectNote.trim()) return alert("Please provide a rejection note.");
+    if (!rejectNote.trim()) return toast.warning("Please provide a rejection note.");
 
     setRejecting(true);
     try {
@@ -174,7 +175,7 @@ export default function HODDiscrepancies() {
         fetchItems();
       }, 1500);
     } catch (err) {
-      alert(err.response?.data?.message || "Failed to reject.");
+      toast.error(err.response?.data?.message || "Failed to reject.");
     } finally {
       setRejecting(false);
     }

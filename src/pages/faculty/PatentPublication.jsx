@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { Box, TextField, MenuItem, Select, Typography, Alert, Snackbar, Button, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, IconButton } from "@mui/material";
+import { Box, TextField, MenuItem, Select, Typography, Button, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, IconButton } from "@mui/material";
+import { toast } from "sonner";
 import { AddCircle, Delete } from "@mui/icons-material";
 import PageHeader from "../../components/common/PageHeader";
 import {
@@ -25,7 +26,6 @@ export default function PatentPublication() {
   });
   const [files, setFiles] = useState({ eFilingReceipt: null, form1: null });
   const [loading, setLoading] = useState(false);
-  const [snack, setSnack] = useState({ open: false, msg: "", severity: "success" });
 
   useEffect(() => {
     API.get("/api/research/patent").then(res => {
@@ -56,7 +56,7 @@ export default function PatentPublication() {
 
   const handleSubmit = async () => {
     if (!form.title || !form.filingNo) {
-      setSnack({ open: true, msg: "Please fill all required fields", severity: "error" });
+      toast.error("Please fill all required fields");
       return;
     }
     setLoading(true);
@@ -75,13 +75,13 @@ export default function PatentPublication() {
       fd.append("panNumber", user?.panNumber || "");
 
       await API.post("/api/research/patent", fd, { headers: { "Content-Type": "multipart/form-data" } });
-      setSnack({ open: true, msg: "Patent submitted successfully!", severity: "success" });
+      toast.success("Patent submitted successfully!");
       setForm({ title: "", applicantName: "", area: "", filingNo: "", dateOfFiling: "", status: "", coInventors: [], month: "", year: "", applyIncentive: "" });
       setFiles({ eFilingReceipt: null, form1: null });
       setSelectedYear("");
       setViewMode("list");
     } catch (err) {
-      setSnack({ open: true, msg: err?.response?.data?.message || "Submission failed", severity: "error" });
+      toast.error(err?.response?.data?.message || "Submission failed");
     } finally {
       setLoading(false);
     }
@@ -342,9 +342,6 @@ export default function PatentPublication() {
       {viewMode === "select-year" && renderSelectYear()}
       {viewMode === "form" && renderForm()}
 
-      <Snackbar open={snack.open} autoHideDuration={4000} onClose={() => setSnack((p) => ({ ...p, open: false }))} anchorOrigin={{ vertical: "top", horizontal: "center" }}>
-        <Alert severity={snack.severity} onClose={() => setSnack((p) => ({ ...p, open: false }))}>{snack.msg}</Alert>
-      </Snackbar>
     </Box>
   );
 }

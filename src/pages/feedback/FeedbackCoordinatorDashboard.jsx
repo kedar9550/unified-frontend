@@ -10,9 +10,8 @@ import {
   LinearProgress,
   Paper,
   CircularProgress,
-  Snackbar,
-  Alert
 } from "@mui/material";
+import { toast } from "sonner";
 import {
   People,
   AccessTime,
@@ -46,7 +45,6 @@ const FeedbackCoordinatorDashboard = () => {
     chartData: []
   });
 
-  const [error, setError] = React.useState(null);
 
   const formatDate = (dateStr) => {
     if (!dateStr) return "N/A";
@@ -66,6 +64,7 @@ const FeedbackCoordinatorDashboard = () => {
         }
       } catch (err) {
         console.error("Failed to fetch feedback dashboard:", err);
+        toast.error("Failed to fetch dashboard data");
       } finally {
         setLoading(false);
       }
@@ -344,11 +343,6 @@ const FeedbackCoordinatorDashboard = () => {
             </Box>
           </Box>
           
-          <Snackbar open={!!error} autoHideDuration={6000} onClose={() => setError(null)}>
-            <Alert onClose={() => setError(null)} severity="error" sx={{ width: '100%' }}>
-              {error}
-            </Alert>
-          </Snackbar>
         </>
       )}
     </Box>

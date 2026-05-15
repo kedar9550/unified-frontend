@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../../context/AuthContext";
 
-import { Box, TextField, MenuItem, Select, Typography, Alert, Snackbar, Button, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, IconButton } from "@mui/material";
+import { Box, TextField, MenuItem, Select, Typography, Button, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, IconButton } from "@mui/material";
+import { toast } from "sonner";
 import { AddCircle, Delete } from "@mui/icons-material";
 import PageHeader from "../../components/common/PageHeader";
 import {
@@ -29,7 +30,6 @@ export default function JournalPublication() {
   });
   const [files, setFiles] = useState({ publishedPaper: null, referencePages: null });
   const [loading, setLoading] = useState(false);
-  const [snack, setSnack] = useState({ open: false, msg: "", severity: "success" });
 
   useEffect(() => {
     // Fetch previously submitted journals (adjust API path if needed)
@@ -62,7 +62,7 @@ export default function JournalPublication() {
 
   const handleSubmit = async () => {
     if (!form.paperTitle || !form.journalName) {
-      setSnack({ open: true, msg: "Please fill all required fields", severity: "error" });
+      toast.error("Please fill all required fields");
       return;
     }
     setLoading(true);
@@ -81,7 +81,7 @@ export default function JournalPublication() {
       fd.append("panNumber", user?.panNumber || "");
 
       await API.post("/api/research/journal", fd, { headers: { "Content-Type": "multipart/form-data" } });
-      setSnack({ open: true, msg: "Journal submitted successfully!", severity: "success" });
+      toast.success("Journal submitted successfully!");
       
       // Reset form and go back to list
       setForm({ incentiveApplied: "", firstAuthor: "", authorPosition: "", categoryOfJournal: "", papersCited: "", paperTitle: "", coAuthors: [], journalName: "", vol: "", issue: "", pageNos: "", month: "", year: "", hIndex: "", impactFactor: "", referencingNos: "", sdgs: "", applyIncentive: "" });
@@ -89,7 +89,7 @@ export default function JournalPublication() {
       setSelectedYear("");
       setViewMode("list");
     } catch (err) {
-      setSnack({ open: true, msg: err?.response?.data?.message || "Submission failed", severity: "error" });
+      toast.error(err?.response?.data?.message || "Submission failed");
     } finally {
       setLoading(false);
     }
@@ -397,9 +397,6 @@ export default function JournalPublication() {
       {viewMode === "select-year" && renderSelectYear()}
       {viewMode === "form" && renderForm()}
 
-      <Snackbar open={snack.open} autoHideDuration={4000} onClose={() => setSnack((p) => ({ ...p, open: false }))} anchorOrigin={{ vertical: "top", horizontal: "center" }}>
-        <Alert severity={snack.severity} onClose={() => setSnack((p) => ({ ...p, open: false }))}>{snack.msg}</Alert>
-      </Snackbar>
     </Box>
   );
 }

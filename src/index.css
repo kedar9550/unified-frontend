@@ -105,6 +105,10 @@ body.dark-mode .MuiOutlinedInput-notchedOutline {
   border-color: var(--border-color) !important;
 }
 
+body.dark-mode .MuiInputBase-root {
+  background-color: rgba(2, 6, 23, 0.3) !important;
+}
+
 body.dark-mode .MuiInputLabel-root {
   color: var(--text-secondary) !important;
 }
@@ -115,6 +119,11 @@ body.dark-mode .MuiInputLabel-root.Mui-focused {
 
 body.dark-mode .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline {
   border-color: var(--text-primary) !important;
+}
+
+body.dark-mode .MuiInputAdornment-root .MuiSvgIcon-root,
+body.dark-mode .MuiIconButton-root .MuiSvgIcon-root {
+  color: var(--text-secondary);
 }
 
 body.dark-mode .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline {
@@ -135,6 +144,18 @@ body.dark-mode .MuiMenuItem-root:hover {
   background-color: #1e293b !important;
 }
 
+/* Fix dropdown arrow visibility in dark mode */
+body.dark-mode .MuiSelect-icon,
+body.dark-mode .MuiAutocomplete-popupIndicator,
+body.dark-mode .MuiAutocomplete-clearIndicator {
+  color: var(--text-secondary) !important;
+}
+
+body.dark-mode .MuiSelect-icon:hover,
+body.dark-mode .MuiAutocomplete-popupIndicator:hover {
+  color: var(--text-primary) !important;
+}
+
 /* Dividers */
 body.dark-mode .MuiDivider-root {
   border-color: #1e293b !important;
@@ -149,6 +170,43 @@ body.dark-mode .MuiRadio-root.Mui-checked svg {
 
 body.dark-mode .MuiCheckbox-root {
   color: var(--text-secondary);
+}
+
+/* Scrollbar */
+body.dark-mode ::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+body.dark-mode ::-webkit-scrollbar-track {
+  background: var(--bg-main);
+}
+
+body.dark-mode ::-webkit-scrollbar-thumb {
+  background: var(--bg-panel);
+  border-radius: 10px;
+}
+
+body.dark-mode ::-webkit-scrollbar-thumb:hover {
+  background: var(--text-secondary);
+}
+
+/* Tooltips */
+body.dark-mode .MuiTooltip-tooltip {
+  background-color: var(--bg-panel) !important;
+  color: var(--text-primary) !important;
+  border: 1px solid var(--border-color) !important;
+  backdrop-filter: blur(8px);
+}
+
+/* Chips */
+body.dark-mode .MuiChip-root {
+  background-color: var(--bg-accent-1) !important;
+  color: var(--text-primary) !important;
+}
+
+body.dark-mode .MuiChip-outlined {
+  border-color: var(--border-color) !important;
 }
 
 /* =========================================
@@ -189,5 +247,79 @@ body.dark-mode .MuiCheckbox-root {
 
   to {
     clip-path: circle(0% at 50% 50%);
+  }
+}
+
+/* =========================================
+   SONNER TOAST CUSTOM POSITIONS & THEME
+   ========================================= */
+[data-sonner-toaster][data-position='top-right'] {
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  right: 20px !important;
+}
+
+[data-sonner-toaster] [data-sonner-toast] {
+  font-family: 'Product Sans', sans-serif !important;
+  border-radius: 16px !important;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.1) !important;
+  border: 1px solid var(--border-color) !important;
+}
+
+/* Light Mode Pastel Colors */
+[data-sonner-toast][data-type="success"] {
+  background-color: #ECFDF5 !important;
+  color: #065f46 !important;
+  border-color: #10b98133 !important;
+}
+
+[data-sonner-toast][data-type="error"] {
+  background-color: #FEF2F2 !important;
+  color: #991b1b !important;
+  border-color: #ef444433 !important;
+}
+
+[data-sonner-toast][data-type="warning"] {
+  background-color: #FFFBEB !important;
+  color: #92400e !important;
+  border-color: #f59e0b33 !important;
+}
+
+[data-sonner-toast][data-type="info"] {
+  background-color: #EFF6FF !important;
+  color: #1e40af !important;
+  border-color: #3b82f633 !important;
+}
+
+/* Dark Mode Subtle Colors */
+body.dark-mode [data-sonner-toast] {
+  background-color: var(--bg-paper) !important;
+  border-color: var(--border-color) !important;
+}
+
+body.dark-mode [data-sonner-toast][data-type="success"] {
+  background-color: #064e3b4d !important;
+  color: #34d399 !important;
+}
+
+body.dark-mode [data-sonner-toast][data-type="error"] {
+  background-color: #7f1d1d4d !important;
+  color: #f87171 !important;
+}
+
+body.dark-mode [data-sonner-toast][data-type="warning"] {
+  background-color: #78350f4d !important;
+  color: #fbbf24 !important;
+}
+
+body.dark-mode [data-sonner-toast][data-type="info"] {
+  background-color: #1e3a8a4d !important;
+  color: #60a5fa !important;
+}
+
+/* Mobile Overrides for Sonner Top-Center */
+@media (max-width: 768px) {
+  [data-sonner-toaster][data-position='top-center'] {
+    top: 20px !important;
   }
 }

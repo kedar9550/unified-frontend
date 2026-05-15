@@ -1,4 +1,4 @@
-import { Box, Typography, Breadcrumbs, Link } from "@mui/material";
+import { Box, Typography } from "@mui/material";
 
 export default function PageHeader({
   title,
@@ -48,6 +48,7 @@ export default function PageHeader({
     >
       {/* LEFT */}
       <Box sx={{ position: "relative", zIndex: 1, pr: { xs: 2, md: 0 }, textAlign: "left" }}>
+        {/* Breadcrumbs removed as per request */}
         {/* Title */}
         <Typography variant="h4" fontWeight={800} sx={{ color: "var(--text-primary)", fontSize: { xs: "1.5rem", sm: "2rem" }, letterSpacing: "-0.5px" }}>
           {title}

@@ -9,8 +9,9 @@ import {
   Chip,
   LinearProgress,
   Paper,
-  CircularProgress,Snackbar, Alert
+  CircularProgress
 } from "@mui/material";
+import { toast } from "sonner";
 import {
   People,
   AccessTime,
@@ -44,23 +45,21 @@ const ExamDashboard = () => {
     submissionChart: []
   });
 
-  const [error, setError] = useState(null);
   const backendUrl = import.meta.env.VITE_BACKEND_URL || "";
 
   useEffect(() => {
     const fetchDashboardData = async () => {
       setLoading(true);
-      setError(null);
       try {
         const res = await API.get("/api/dashboard/exam");
         if (res.data.status === 'success') {
           setData(res.data.data);
         } else {
-          setError("Failed to fetch dashboard metrics");
+          toast.error("Failed to fetch dashboard metrics");
         }
       } catch (err) {
         console.error("Error fetching exam dashboard data:", err);
-        setError("Unable to connect to the server. Please try again later.");
+        toast.error("Unable to connect to the server. Please try again later.");
       } finally {
         setLoading(false);
       }
@@ -378,11 +377,6 @@ const ExamDashboard = () => {
           </Card>
         </Box>
       </Box>
-      <Snackbar open={!!error} autoHideDuration={6000} onClose={() => setError(null)}>
-        <Alert onClose={() => setError(null)} severity="error" sx={{ width: '100%' }}>
-          {error}
-        </Alert>
-      </Snackbar>
     </Box>
   );
 };

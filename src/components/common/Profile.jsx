@@ -9,8 +9,6 @@ import {
   Chip,
   Button,
   LinearProgress,
-  Snackbar,
-  Alert,
   Collapse,
   IconButton,
   InputAdornment
@@ -46,6 +44,7 @@ import {
 } from "@mui/icons-material";
 import { MenuItem, Select, TextField } from "@mui/material";
 import API from "../../api/axios";
+import { toast } from "sonner";
 
 // ─── Stable sub-components defined OUTSIDE Profile ───────────────────────────
 // (Defining them inside Profile causes re-mount on every keystroke → focus loss)
@@ -134,7 +133,6 @@ const Profile = () => {
   });
   const [loading, setLoading] = React.useState(false);
   const [errors, setErrors] = React.useState({});
-  const [snack, setSnack] = React.useState({ open: false, msg: "", severity: "success" });
   const [showPwdForm, setShowPwdForm] = React.useState(false);
   const [pwdForm, setPwdForm] = React.useState({ oldPassword: "", newPassword: "", confirmPassword: "" });
   const [showPwd, setShowPwd] = React.useState({ old: false, new: false, confirm: false });
@@ -220,7 +218,7 @@ const Profile = () => {
     });
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
-      setSnack({ open: true, msg: "Please fix validation errors before saving", severity: "error" });
+      toast.error("Please fix validation errors before saving");
       setLoading(false);
       return;
     }
@@ -229,18 +227,30 @@ const Profile = () => {
       // Re-fetch latest data from backend
       const res = await API.get("/api/employees/me");
       setProfileData(res.data.user);
-      setSnack({ open: true, msg: "Profile updated successfully!", severity: "success" });
+      toast.success("Profile updated successfully!");
       setIsEditing(false);
     } catch (err) {
       console.error("Update failed", err);
-      setSnack({ open: true, msg: "Failed to update profile", severity: "error" });
+      toast.error("Failed to update profile");
     } finally {
       setLoading(false);
     }
   };
 
   const handleChange = (field) => (e) => {
-    const value = e.target.value;
+    let value = e.target.value;
+    const rule = validationRules[field];
+
+    // Auto-uppercase for PAN
+    if (field === 'panNumber') {
+      value = value.toUpperCase();
+    }
+
+    // Strictly enforce max length in state to prevent over-typing
+    if (rule && rule.maxLength && value.length > rule.maxLength) {
+      value = value.slice(0, rule.maxLength);
+    }
+
     setForm({ ...form, [field]: value });
     setErrors({ ...errors, [field]: validateField(field, value) });
   };
@@ -712,11 +722,11 @@ const Profile = () => {
                     oldPassword: pwdForm.oldPassword,
                     newPassword: pwdForm.newPassword
                   });
-                  setSnack({ open: true, msg: "Password updated successfully!", severity: "success" });
+                  toast.success("Password updated successfully!");
                   setShowPwdForm(false);
                   setPwdForm({ oldPassword: "", newPassword: "", confirmPassword: "" });
                 } catch (err) {
-                  setSnack({ open: true, msg: err.response?.data?.message || "Failed to update password", severity: "error" });
+                  toast.error(err.response?.data?.message || "Failed to update password");
                 } finally {
                   setPwdLoading(false);
                 }
@@ -745,29 +755,6 @@ const Profile = () => {
           </Box>
         </Collapse>
       </Paper>
-      <Snackbar
-        open={snack.open}
-        autoHideDuration={3000}
-        onClose={() => setSnack({ ...snack, open: false })}
-        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
-        sx={{
-          zIndex: 9999,
-          top: "20px !important"
-        }}
-      >
-        <Alert
-          severity={snack.severity}
-          variant="filled"
-          sx={{
-            width: '100%',
-            borderRadius: "12px",
-            boxShadow: "0 8px 32px rgba(0,0,0,0.15)",
-            fontWeight: 600
-          }}
-        >
-          {snack.msg}
-        </Alert>
-      </Snackbar>
     </Box>
   );
 };

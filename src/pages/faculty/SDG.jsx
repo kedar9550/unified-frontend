@@ -16,6 +16,7 @@ import {
     TextField,
     Tooltip
 } from '@mui/material';
+import { toast } from "sonner";
 import API from "../../api/axios";
 import {
     CloudUpload,
@@ -357,9 +358,8 @@ const SDG = () => {
         const file = event.target.files[0];
         if (!file) return;
 
-        const currentSdgData = sdgData;
         if (Object.keys(currentSdgData).length === 0) {
-            alert('SDG keywords are still loading. Please try again in a moment.');
+            toast.info('SDG keywords are still loading. Please try again in a moment.');
             return;
         }
 
@@ -370,13 +370,13 @@ const SDG = () => {
         const maxSize = 10 * 1024 * 1024;
 
         if (!isValidExtension) {
-            alert('Please upload only PDF or DOCX files');
+            toast.warning('Please upload only PDF or DOCX files');
             event.target.value = '';
             return;
         }
 
         if (file.size > maxSize) {
-            alert('File size exceeds 10MB');
+            toast.warning('File size exceeds 10MB');
             event.target.value = '';
             return;
         }
@@ -514,7 +514,7 @@ const SDG = () => {
         } catch (error) {
             console.error("Error processing file:", error);
 
-            alert("Error reading file");
+            toast.error("Error reading file");
 
             setIsProcessing(false);
         }

@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../../context/AuthContext";
 
-import { Box, TextField, MenuItem, Select, Typography, Alert, Snackbar, Button, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper } from "@mui/material";
+import { Box, TextField, MenuItem, Select, Typography, Button, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper } from "@mui/material";
+import { toast } from "sonner";
 import PageHeader from "../../components/common/PageHeader";
 import {
   FacultyInfoRow, FormCard, Grid2, SubLabel, NoteBox, FileField, SubmitBtn,
@@ -23,7 +24,6 @@ export default function FundedProject() {
   });
   const [files, setFiles] = useState({ sanctionOrder: null });
   const [loading, setLoading] = useState(false);
-  const [snack, setSnack] = useState({ open: false, msg: "", severity: "success" });
 
   useEffect(() => {
     API.get("/api/research/funded-project").then(res => {
@@ -40,7 +40,7 @@ export default function FundedProject() {
 
   const handleSubmit = async () => {
     if (!form.title || !form.fundingAgency) {
-      setSnack({ open: true, msg: "Please fill all required fields", severity: "error" });
+      toast.error("Please fill all required fields");
       return;
     }
     setLoading(true);
@@ -53,13 +53,13 @@ export default function FundedProject() {
       fd.append("panNumber", user?.panNumber || "");
 
       await API.post("/api/research/funded-project", fd, { headers: { "Content-Type": "multipart/form-data" } });
-      setSnack({ open: true, msg: "Funded Project submitted successfully!", severity: "success" });
+      toast.success("Funded Project submitted successfully!");
       setForm({ title: "", duration: "", fundingAgency: "", scheme: "", otherInvestigators: "", principalInvestigator: "", recurring: "", nonRecurring: "", sanctionedAmount: "", sanctionDate: "" });
       setFiles({ sanctionOrder: null });
       setSelectedYear("");
       setViewMode("list");
     } catch (err) {
-      setSnack({ open: true, msg: err?.response?.data?.message || "Submission failed", severity: "error" });
+      toast.error(err?.response?.data?.message || "Submission failed");
     } finally {
       setLoading(false);
     }
@@ -287,9 +287,6 @@ export default function FundedProject() {
       {viewMode === "select-year" && renderSelectYear()}
       {viewMode === "form" && renderForm()}
 
-      <Snackbar open={snack.open} autoHideDuration={4000} onClose={() => setSnack((p) => ({ ...p, open: false }))} anchorOrigin={{ vertical: "top", horizontal: "center" }}>
-        <Alert severity={snack.severity} onClose={() => setSnack((p) => ({ ...p, open: false }))}>{snack.msg}</Alert>
-      </Snackbar>
     </>
   );
 }

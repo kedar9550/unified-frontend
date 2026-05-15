@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { Box, Typography, TextField, MenuItem, Select, FormControl, InputLabel, Button, Alert, IconButton, Dialog, DialogContent, DialogTitle } from "@mui/material";
 import { CloudUpload, Delete, Visibility, Close } from "@mui/icons-material";
 import { useAuth } from "../../context/AuthContext";
+import { toast } from "sonner";
 
 // Reusable read-only faculty info row
 export function FacultyInfoRow() {
@@ -23,7 +24,18 @@ export function FacultyInfoRow() {
   return (
     <Box sx={{ mb: 2 }}>
       {emptyFields.length > 0 && (
-        <Alert severity="warning" sx={{ mb: 2, borderRadius: "12px", fontWeight: 600 }}>
+        <Alert 
+          severity="warning" 
+          sx={{ 
+            mb: 2, 
+            borderRadius: "16px", 
+            fontWeight: 600,
+            background: "rgba(245, 158, 11, 0.1)",
+            color: "#f59e0b",
+            border: "1px solid rgba(245, 158, 11, 0.2)",
+            "& .MuiAlert-icon": { color: "#f59e0b" }
+          }}
+        >
           Missing Profile Details: {emptyFields.join(", ")}. Please update your profile to fill these details.
         </Alert>
       )}
@@ -40,12 +52,34 @@ export function FacultyInfoRow() {
 }
 
 // Styled label
-export const labelStyle = { fontSize: 12, color: "var(--color-primary)", fontWeight: 700, mb: 0.5, textTransform: "uppercase", letterSpacing: "0.02em" };
+export const labelStyle = { 
+  fontSize: 11, 
+  color: "var(--color-primary)", 
+  fontWeight: 800, 
+  mb: 0.8, 
+  textTransform: "uppercase", 
+  letterSpacing: "0.05em",
+  opacity: 0.9
+};
 
 // Disabled TextField style
 export const disabledField = {
-  "& .MuiInputBase-input.Mui-disabled": { WebkitTextFillColor: "var(--text-secondary)", background: "var(--bg-accent-1)", opacity: 0.8 },
-  "& .MuiOutlinedInput-root.Mui-disabled .MuiOutlinedInput-notchedOutline": { borderColor: "var(--border-color)" },
+  "& .MuiInputBase-root": {
+    background: "rgba(0,0,0,0.02)",
+  },
+  "& .MuiInputBase-input.Mui-disabled": { 
+    WebkitTextFillColor: "var(--text-secondary)", 
+    background: "transparent", 
+    opacity: 0.8,
+    fontWeight: 600
+  },
+  "& .MuiOutlinedInput-root.Mui-disabled .MuiOutlinedInput-notchedOutline": { 
+    borderColor: "var(--border-color)",
+    opacity: 0.5
+  },
+  "body.dark-mode & .MuiInputBase-root": {
+    background: "rgba(255,255,255,0.03)",
+  }
 };
 
 // Month options
@@ -57,21 +91,39 @@ export const YEARS = Array.from({ length: 10 }, (_, i) => String(new Date().getF
 // NoteBox
 export function NoteBox() {
   return (
-    <Box sx={{ background: "rgba(245, 158, 11, 0.1)", border: "1px solid rgba(245, 158, 11, 0.3)", borderRadius: "12px", p: 1.5, fontSize: 12, color: "#f59e0b", my: 1.5 }}>
-      <Box component="span" sx={{ background: "#f59e0b", color: "#fff", px: 1, py: 0.3, borderRadius: "6px", mr: 1, fontSize: 11, fontWeight: 800 }}>NOTE:</Box>
-      1. Please Upload (PNG or JPG or JPEG or PDF) Only.{"  "}
-      2. File Size Should not Exceed <strong>500KB</strong>
-      <Box sx={{ mt: 1, display: "flex", gap: 2 }}>
-        <Typography sx={{ fontSize: 12, fontWeight: 600 }}>Optimizer Links:</Typography>
-        <Box component="a" href="https://www.iloveimg.com/compress-image" target="_blank" sx={{ color: "var(--color-primary)", textDecoration: "none", "&:hover": { textDecoration: "underline" } }}>1. Image Compressor</Box>
-        <Box component="a" href="https://www.ilovepdf.com/compress_pdf" target="_blank" sx={{ color: "var(--color-primary)", textDecoration: "none", "&:hover": { textDecoration: "underline" } }}>2. PDF Compressor</Box>
+    <Box sx={{ 
+      background: "rgba(245, 158, 11, 0.05)", 
+      border: "1px dashed rgba(245, 158, 11, 0.4)", 
+      borderRadius: "16px", 
+      p: 2, 
+      fontSize: 12, 
+      color: "var(--text-secondary)", 
+      my: 3,
+      display: "flex",
+      flexDirection: "column",
+      gap: 1
+    }}>
+      <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 0.5 }}>
+        <Box component="span" sx={{ background: "#f59e0b", color: "#fff", px: 1.2, py: 0.4, borderRadius: "6px", fontSize: 10, fontWeight: 900 }}>NOTE</Box>
+        <Typography sx={{ fontSize: 13, fontWeight: 700, color: "#f59e0b" }}>Important Upload Guidelines</Typography>
+      </Box>
+      <Typography variant="caption" sx={{ color: "var(--text-primary)", fontWeight: 500, fontSize: "0.8rem" }}>
+        1. Please Upload (PNG or JPG or JPEG or PDF) Only.
+      </Typography>
+      <Typography variant="caption" sx={{ color: "var(--text-primary)", fontWeight: 500, fontSize: "0.8rem" }}>
+        2. File Size Should not Exceed <strong style={{ color: "#f59e0b" }}>500KB</strong>
+      </Typography>
+      <Box sx={{ mt: 1, pt: 1, borderTop: "1px solid rgba(245, 158, 11, 0.1)", display: "flex", flexWrap: "wrap", gap: 2 }}>
+        <Typography sx={{ fontSize: 11, fontWeight: 700, color: "var(--text-secondary)", textTransform: "uppercase" }}>Optimizer Links:</Typography>
+        <Box component="a" href="https://www.iloveimg.com/compress-image" target="_blank" sx={{ fontSize: 11, fontWeight: 700, color: "var(--color-primary)", textDecoration: "none", "&:hover": { textDecoration: "underline" } }}>1. Image Compressor</Box>
+        <Box component="a" href="https://www.ilovepdf.com/compress_pdf" target="_blank" sx={{ fontSize: 11, fontWeight: 700, color: "var(--color-primary)", textDecoration: "none", "&:hover": { textDecoration: "underline" } }}>2. PDF Compressor</Box>
       </Box>
     </Box>
   );
 }
 
 // File upload field
-export function FileField({ label, name, onChange }) {
+export function FileField({ label, name, onChange, error, onError }) {
   const [fileName, setFileName] = useState("");
   const [preview, setPreview] = useState(null);
   const [openModal, setOpenModal] = useState(false);
@@ -86,6 +138,17 @@ export function FileField({ label, name, onChange }) {
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file) {
+      if (file.size > 500 * 1024) {
+        const msg = `${label} is too large (${(file.size / 1024).toFixed(1)}KB). Max size is 500KB.`;
+        if (onError) onError(msg);
+        else toast.error(msg);
+        
+        e.target.value = ""; // Reset input
+        setFileName("");
+        setPreview(null);
+        onChange({ target: { name, files: [] } });
+        return;
+      }
       setFileName(file.name);
       if (file.type.startsWith("image/")) {
         setPreview(URL.createObjectURL(file));
@@ -108,7 +171,7 @@ export function FileField({ label, name, onChange }) {
 
   return (
     <Box>
-      <Typography sx={labelStyle}>{label}</Typography>
+      <Typography sx={{ ...labelStyle, color: error ? "#ef4444" : "var(--color-primary)" }}>{label}</Typography>
       <Box sx={{
         display: "flex",
         alignItems: "center",
@@ -116,10 +179,11 @@ export function FileField({ label, name, onChange }) {
         px: 2,
         minHeight: "48px",
         py: 0.5,
-        border: "1px solid var(--border-color)",
+        border: "1px solid",
+        borderColor: error ? "#ef4444" : "var(--border-color)",
         borderRadius: "12px",
         background: "var(--bg-glass)",
-        "&:hover": { borderColor: "var(--color-primary)" },
+        "&:hover": { borderColor: error ? "#ef4444" : "var(--color-primary)" },
         transition: "all 0.3s ease",
         position: "relative"
       }}>
@@ -256,5 +320,17 @@ export function Grid2({ children, sx }) {
 
 // Section label
 export function SubLabel({ text }) {
-  return <Typography sx={{ fontSize: 14, fontWeight: 700, color: "var(--text-primary)", background: "var(--bg-accent-1)", px: 2, py: 1, borderRadius: "8px", my: 2, borderLeft: "4px solid var(--color-primary)" }}>{text}</Typography>;
+  return <Typography sx={{ 
+    fontSize: 13, 
+    fontWeight: 800, 
+    color: "var(--text-primary)", 
+    background: "var(--bg-accent-1)", 
+    px: 2, 
+    py: 1.2, 
+    borderRadius: "12px", 
+    my: 3, 
+    borderLeft: "5px solid var(--color-primary)",
+    textTransform: "uppercase",
+    letterSpacing: "0.03em"
+  }}>{text}</Typography>;
 }

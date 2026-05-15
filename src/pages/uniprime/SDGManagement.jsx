@@ -17,7 +17,6 @@ import {
   DialogActions,
   TextField,
   Chip,
-  Alert,
   CircularProgress,
   Tooltip,
   Grid,
@@ -25,6 +24,7 @@ import {
   useTheme,
   useMediaQuery
 } from "@mui/material";
+import { toast } from "sonner";
 import {
   Add as AddIcon,
   Edit as EditIcon,
@@ -75,8 +75,6 @@ const SDG_COLOR_MAP = {
 const SDGManagement = () => {
   const [sdgs, setSdgs] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [success, setSuccess] = useState(null);
   const [expandedId, setExpandedId] = useState(null);
 
   const theme = useTheme();
@@ -111,7 +109,7 @@ const SDGManagement = () => {
         setSdgs(res.data.data);
       }
     } catch (err) {
-      setError("Failed to fetch SDGs");
+      toast.error("Failed to fetch SDGs");
       console.error(err);
     } finally {
       setLoading(false);
@@ -156,15 +154,15 @@ const SDGManagement = () => {
 
       if (isEdit) {
         await API.put(`/api/sdgs/${currentSdg._id}`, payload);
-        setSuccess("SDG updated successfully");
+        toast.success("SDG updated successfully");
       } else {
         await API.post("/api/sdgs", payload);
-        setSuccess("SDG created successfully");
+        toast.success("SDG created successfully");
       }
       fetchSdgs();
       handleCloseDialog();
     } catch (err) {
-      setError(err.response?.data?.message || "Failed to save SDG");
+      toast.error(err.response?.data?.message || "Failed to save SDG");
     }
   };
 
@@ -172,10 +170,10 @@ const SDGManagement = () => {
     if (window.confirm("Are you sure you want to delete this SDG?")) {
       try {
         await API.delete(`/api/sdgs/${id}`);
-        setSuccess("SDG deleted successfully");
+        toast.success("SDG deleted successfully");
         fetchSdgs();
       } catch (err) {
-        setError("Failed to delete SDG");
+        toast.error("Failed to delete SDG");
       }
     }
   };
@@ -213,16 +211,6 @@ const SDGManagement = () => {
         }
       />
 
-      {error && (
-        <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError(null)}>
-          {error}
-        </Alert>
-      )}
-      {success && (
-        <Alert severity="success" sx={{ mb: 3 }} onClose={() => setSuccess(null)}>
-          {success}
-        </Alert>
-      )}
 
       {loading ? (
         <Box sx={{ display: "flex", justifyContent: "center", py: 10 }}>

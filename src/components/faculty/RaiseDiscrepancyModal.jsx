@@ -38,7 +38,7 @@ import {
 import { useState, useEffect } from "react";
 import API from "../../api/axios";
 import { useAuth } from "../../context/AuthContext";
-import { useSnackbar } from "../../context/SnackbarContext";
+import { toast } from "sonner";
 
 const SECTIONS = [
   { value: "TEACHING",   label: "📚 Teaching" },
@@ -127,7 +127,6 @@ export default function RaiseDiscrepancyModal({
   const [success,  setSuccess]  = useState(false);
   
   // ── Global Snackbar ──────────────────────────────────────────────
-  const showSnackbar = useSnackbar();
 
 
 
@@ -203,9 +202,9 @@ export default function RaiseDiscrepancyModal({
     try {
       await API.delete(`/api/discrepancies/${id}`);
       setDiscrepancies(prev => prev.filter(d => d._id !== id));
-      showSnackbar("Discrepancy deleted successfully.", "success");
+      toast.success("Discrepancy deleted successfully.");
     } catch (err) {
-      showSnackbar(err.response?.data?.message || "Failed to delete discrepancy.", "error");
+      toast.error(err.response?.data?.message || "Failed to delete discrepancy.");
     }
   };
 
@@ -224,7 +223,7 @@ export default function RaiseDiscrepancyModal({
         facultyName:          user?.name           || "",
       });
       setSuccess(true);
-      showSnackbar("Discrepancy raised successfully!", "success");
+      toast.success("Discrepancy raised successfully!");
       setTimeout(() => {
         setSuccess(false);
         setNote("");
@@ -232,7 +231,7 @@ export default function RaiseDiscrepancyModal({
         fetchDiscrepancies();
       }, 1500);
     } catch (err) {
-      showSnackbar(err.response?.data?.message || "Failed to raise discrepancy.", "error");
+      toast.error(err.response?.data?.message || "Failed to raise discrepancy.");
     } finally {
       setSaving(false);
     }

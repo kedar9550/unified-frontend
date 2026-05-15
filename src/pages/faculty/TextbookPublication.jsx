@@ -2,7 +2,8 @@ import { useState, useEffect } from "react";
 import axios from "axios";
 import { useAuth } from "../../context/AuthContext";
 
-import { Box, TextField, MenuItem, Select, Typography, Alert, Snackbar, Button, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, IconButton, CircularProgress, Autocomplete, InputAdornment } from "@mui/material";
+import { Box, TextField, MenuItem, Select, Typography, Button, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, IconButton, CircularProgress, Autocomplete, InputAdornment } from "@mui/material";
+import { toast } from "sonner";
 import { Delete, Search, CurrencyRupee } from "@mui/icons-material";
 import PageHeader from "../../components/common/PageHeader";
 import {
@@ -33,7 +34,6 @@ export default function TextbookPublication() {
   });
   const [files, setFiles] = useState({ coverPage: null, authorAffiliation: null, index: null });
   const [loading, setLoading] = useState(false);
-  const [snack, setSnack] = useState({ open: false, msg: "", severity: "success" });
 
   useEffect(() => {
     API.get("/api/research/textbook").then(res => {
@@ -95,11 +95,11 @@ export default function TextbookPublication() {
     if (!file) return true;
     const allowed = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png'];
     if (!allowed.includes(file.type)) {
-      setSnack({ open: true, msg: "Only PDF, JPG, and PNG files are allowed.", severity: "error" });
+      toast.error("Only PDF, JPG, and PNG files are allowed.");
       return false;
     }
     if (file.size > 500 * 1024) {
-      setSnack({ open: true, msg: "File size exceeds 500KB limit.", severity: "error" });
+      toast.error("File size exceeds 500KB limit.");
       return false;
     }
     return true;
@@ -116,7 +116,7 @@ export default function TextbookPublication() {
 
   const fetchISBNData = async () => {
     if (!form.isbn) {
-      setSnack({ open: true, msg: "Please enter an ISBN first.", severity: "warning" });
+      toast.warning("Please enter an ISBN first.");
       return;
     }
     setIsbnFetching(true);
@@ -150,10 +150,10 @@ export default function TextbookPublication() {
           year: newYear
         }));
         setIsbnFetched(true);
-        setSnack({ open: true, msg: "Book details fetched successfully!", severity: "success" });
+        toast.success("Book details fetched successfully!");
       }
     } catch (err) {
-      setSnack({ open: true, msg: err?.response?.data?.message || "Failed to fetch ISBN details.", severity: "error" });
+      toast.error(err?.response?.data?.message || "Failed to fetch ISBN details.");
     } finally {
       setIsbnFetching(false);
     }
@@ -213,17 +213,17 @@ export default function TextbookPublication() {
 
   const handleSubmit = async () => {
     if (!user?.panNumber || user?.panNumber === "Not Set" || !user?.college || user?.college === "Not Set") {
-      setSnack({ open: true, msg: "Please update your profile with PAN Number and College before submitting.", severity: "error" });
+      toast.error("Please update your profile with PAN Number and College before submitting.");
       return;
     }
 
     if (!form.title || !form.publisher || !form.isbn) {
-      setSnack({ open: true, msg: "Please fill all required fields", severity: "error" });
+      toast.error("Please fill all required fields");
       return;
     }
 
     if (!form.applyIncentive) {
-      setSnack({ open: true, msg: "Please select whether you want to apply for an incentive", severity: "error" });
+      toast.error("Please select whether you want to apply for an incentive");
       return;
     }
 
@@ -232,7 +232,7 @@ export default function TextbookPublication() {
     if (total > 1) {
       for (const a of form.otherAuthors) {
         if (!a.affiliationType || (a.affiliationType === 'Others' && (!a.authorName || !a.affiliationName)) || (a.affiliationType === 'Aditya University' && (!a.empId || !a.authorName))) {
-          setSnack({ open: true, msg: `Please complete details for Author Position ${a.authorPosition}`, severity: "error" });
+          toast.error(`Please complete details for Author Position ${a.authorPosition}`);
           return;
         }
       }
@@ -240,7 +240,7 @@ export default function TextbookPublication() {
 
     // Check mandatory file uploads
     if (!files.coverPage || !files.authorAffiliation || !files.index) {
-      setSnack({ open: true, msg: "Please attach all the required documents (Cover Page, Author Affiliation, Index).", severity: "error" });
+      toast.error("Please attach all the required documents (Cover Page, Author Affiliation, Index).");
       return;
     }
 
@@ -286,7 +286,7 @@ export default function TextbookPublication() {
       if (files.index) fd.append("index", files.index);
 
       await API.post("/api/research/textbook", fd, { headers: { "Content-Type": "multipart/form-data" } });
-      setSnack({ open: true, msg: "Textbook submitted successfully!", severity: "success" });
+      toast.success("Textbook submitted successfully!");
 
       // Reset form
       setForm({ title: "", publisher: "", isbn: "", yearOfPublication: "", totalAuthors: 1, userAuthorPosition: 1, edition: "", cost: "", month: "", year: "", applyIncentive: "", expectedAmount: "10,000", otherAuthors: [], publicationType: "National", currencySymbol: "₹" });
@@ -294,7 +294,7 @@ export default function TextbookPublication() {
       setSelectedYear("");
       setViewMode("list");
     } catch (err) {
-      setSnack({ open: true, msg: err?.response?.data?.message || "Submission failed", severity: "error" });
+      toast.error(err?.response?.data?.message || "Submission failed");
     } finally {
       setLoading(false);
     }
@@ -794,9 +794,6 @@ export default function TextbookPublication() {
       {viewMode === "select-year" && renderSelectYear()}
       {viewMode === "form" && renderForm()}
 
-      <Snackbar open={snack.open} autoHideDuration={4000} onClose={() => setSnack((p) => ({ ...p, open: false }))} anchorOrigin={{ vertical: "bottom", horizontal: "center" }}>
-        <Alert severity={snack.severity} onClose={() => setSnack((p) => ({ ...p, open: false }))} sx={{ boxShadow: "var(--shadow-premium)" }}>{snack.msg}</Alert>
-      </Snackbar>
     </Box>
   );
 }

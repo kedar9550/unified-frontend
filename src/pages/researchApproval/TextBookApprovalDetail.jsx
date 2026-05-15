@@ -15,6 +15,7 @@ import GavelIcon from '@mui/icons-material/Gavel';
 import DownloadIcon from '@mui/icons-material/Download';
 import CheckIcon from '@mui/icons-material/Check';
 import CloseIcon from '@mui/icons-material/Close';
+import { toast } from "sonner";
 import API from "../../api/axios";
 
 const TextBookApprovalDetail = ({ id, onBack, role }) => {
@@ -48,20 +49,20 @@ const TextBookApprovalDetail = ({ id, onBack, role }) => {
 
     const handleAction = async (action) => {
         if (!remarks && action === 'Reject') {
-            alert('Remarks are required for rejection.');
+            toast.error('Remarks are required for rejection.');
             return;
         }
 
         // Incentive validation for Dean
         if (action === 'Approve' && isResearchAdmin && data.applyIncentive === 'Yes') {
             if (!approvedAmount) {
-                alert('Please enter the approved incentive amount.');
+                toast.error('Please enter the approved incentive amount.');
                 return;
             }
             const expected = parseFloat(data.expectedAmount?.replace(/,/g, '') || 0);
             const approved = parseFloat(approvedAmount);
             if (approved > expected) {
-                alert(`Approved amount (₹${approved}) cannot exceed expected amount (₹${expected}).`);
+                toast.error(`Approved amount (₹${approved}) cannot exceed expected amount (₹${expected}).`);
                 return;
             }
         }
@@ -79,7 +80,7 @@ const TextBookApprovalDetail = ({ id, onBack, role }) => {
             }
         } catch (error) {
             console.error("Action failed", error);
-            alert("Action failed. Please try again.");
+            toast.error("Action failed. Please try again.");
         } finally {
             setActionLoading(false);
         }
@@ -171,43 +172,45 @@ const TextBookApprovalDetail = ({ id, onBack, role }) => {
 
     const LabelValue = ({ label, value, chip, horizontal = false }) => (
         <Box sx={{
-            p: horizontal ? "10px 16px" : 2,
-            pt: horizontal ? 1 : 2,
-            borderRadius: "12px",
-            background: "transparent",
+            p: horizontal ? "12px 16px" : 2,
+            borderRadius: "14px",
+            background: horizontal ? "transparent" : "rgba(255,255,255,0.02)",
             height: "100%",
             display: "flex",
             flexDirection: horizontal ? "row" : "column",
             alignItems: horizontal ? "center" : "flex-start",
             justifyContent: horizontal ? "flex-start" : "center",
             gap: horizontal ? 2 : 0.5,
-            transition: "all 0.3s ease",
-            borderBottom: horizontal ? "1px solid var(--border-color)" : "none",
+            transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+            borderBottom: horizontal ? "1px solid var(--border-color)" : "1px solid transparent",
             "&:last-child": { borderBottom: "none" },
             "&:hover": {
-                borderColor: horizontal ? "transparent" : "var(--color-primary)",
-                bgcolor: horizontal ? "rgba(0,0,0,0.02)" : "transparent",
-                boxShadow: horizontal ? "none" : "0 4px 12px rgba(0,0,0,0.05)",
-                transform: horizontal ? "none" : "translateY(-2px)"
+                borderColor: "var(--color-primary)",
+                bgcolor: "rgba(190, 147, 55, 0.05)",
+                transform: "translateY(-2px)",
+                boxShadow: "0 8px 20px rgba(0,0,0,0.1)"
+            },
+            "body.dark-mode &:hover": {
+                bgcolor: "rgba(190, 147, 55, 0.08)",
+                boxShadow: "0 8px 24px rgba(0,0,0,0.2)"
             }
         }}>
             <Typography variant="caption" sx={{
-                flex: horizontal ? { xs: "0 0 120px", sm: "0 0 160px" } : "none",
-                background: "var(--gradient-primary)",
-                WebkitBackgroundClip: "text",
-                WebkitTextFillColor: "transparent",
-                color: "transparent",
+                flex: horizontal ? { xs: "0 0 130px", sm: "0 0 170px" } : "none",
+                color: "var(--color-primary)",
                 textTransform: "uppercase",
-                letterSpacing: "0.5px",
-                fontWeight: 600,
+                letterSpacing: "0.08em",
+                fontWeight: 800,
+                fontSize: "0.7rem",
                 display: "inline-block",
-                mb: horizontal ? 0 : 0.5
+                mb: horizontal ? 0 : 0.5,
+                opacity: 0.9
             }}>
                 {label}
             </Typography>
             <Box sx={{ flex: horizontal ? 1 : "none" }}>
                 {chip ? chip : (
-                    <Typography variant="body2" sx={{ fontWeight: 400, color: "var(--text-primary)", fontSize: "0.95rem", wordBreak: "break-word" }}>
+                    <Typography variant="body2" sx={{ fontWeight: 600, color: "var(--text-primary)", fontSize: "0.92rem", wordBreak: "break-word" }}>
                         {value || "-"}
                     </Typography>
                 )}

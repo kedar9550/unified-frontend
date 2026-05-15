@@ -17,6 +17,7 @@ import {
   InputAdornment,
   Checkbox,
 } from "@mui/material";
+import { toast } from "sonner";
 import { useEffect, useState, useRef } from "react";
 import API from "../../api/axios";
 import {
@@ -114,7 +115,7 @@ export default function StudentFormatResults() {
     } catch (err) {
       console.error("Delete failed:", err);
       const msg = err.response?.data?.message || "Failed to delete record.";
-      alert(msg);
+      toast.error(msg);
     }
   };
 
@@ -124,28 +125,28 @@ export default function StudentFormatResults() {
 
     if (type === "PROGRAM") {
       if (!selectedProgramId) {
-        alert("Please select a program first.");
+        toast.warning("Please select a program first.");
         return;
       }
       confirmMsg = `Are you sure you want to delete ALL results for ${selectedProgram?.name}?`;
       params.programId = selectedProgramId;
     } else if (type === "STUDENT") {
       if (!bulkStudentId.trim()) {
-        alert("Please enter a Student ID.");
+        toast.warning("Please enter a Student ID.");
         return;
       }
       confirmMsg = `Are you sure you want to delete ALL results for Student ID: ${bulkStudentId}?`;
       params.studentId = bulkStudentId.trim();
     } else if (type === "SELECTED") {
       if (selectedIds.length === 0) {
-        alert("Please select at least one record.");
+        toast.warning("Please select at least one record.");
         return;
       }
       confirmMsg = `Are you sure you want to delete ${selectedIds.length} selected record(s)?`;
       params.ids = selectedIds;
     } else if (type === "YEAR") {
       if (!selectedExamYear) {
-        alert("Please select an Exam Year first.");
+        toast.warning("Please select an Exam Year first.");
         return;
       }
       confirmMsg = `Are you sure you want to delete ALL results for Exam Year: ${selectedExamYear}?`;
@@ -163,7 +164,7 @@ export default function StudentFormatResults() {
       fetchResults();
     } catch (err) {
       console.error("Bulk delete failed:", err);
-      alert(err.response?.data?.message || "Failed to perform bulk deletion.");
+      toast.error(err.response?.data?.message || "Failed to perform bulk deletion.");
     }
   };
 
@@ -192,9 +193,11 @@ export default function StudentFormatResults() {
 
       const { message, errors } = res.data;
       if (errors && errors.length > 0) {
-        alert(`${message}\n\nDetails:\n${errors.join("\n")}`);
+        toast.error(message, {
+          description: errors.join("\n")
+        });
       } else {
-        alert(message || "Upload successful!");
+        toast.success(message || "Upload successful!");
       }
       fetchResults();
     } catch (err) {
@@ -203,13 +206,13 @@ export default function StudentFormatResults() {
       const backendDetails = err.response?.data?.errors;
 
       if (backendDetails && Array.isArray(backendDetails)) {
-        alert(
-          `${backendError || "Upload failed"}\n\nErrors:\n${backendDetails.join("\n")}`
-        );
+        toast.error(backendError || "Upload failed", {
+          description: backendDetails.join("\n")
+        });
       } else if (backendError) {
-        alert(`Upload Failed: ${backendError}`);
+        toast.error(`Upload Failed: ${backendError}`);
       } else {
-        alert(
+        toast.error(
           "Upload failed. Please check your network connection and CSV format."
         );
       }

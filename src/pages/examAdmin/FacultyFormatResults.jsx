@@ -16,6 +16,7 @@ import {
   TextField,
   InputAdornment,
 } from "@mui/material";
+import { toast } from "sonner";
 import { useEffect, useState, useRef } from "react";
 import API from "../../api/axios";
 import {
@@ -128,13 +129,13 @@ export default function FacultyFormatResults() {
 
       if (res.data.failedCount > 0) {
         const errorDetails = res.data.errors
-          .map((e) => `• Row ${e.row}: ${e.message}`)
+          .map((e) => `Row ${e.row}: ${e.message}`)
           .join("\n");
-        alert(
-          `Uploaded ${res.data.successCount} rows.\n${res.data.failedCount} rows failed to upload.\n\nErrors:\n${errorDetails}`
-        );
+        toast.error(`Uploaded ${res.data.successCount} rows. ${res.data.failedCount} rows failed.`, {
+          description: errorDetails
+        });
       } else {
-        alert("Upload successful!");
+        toast.success("Upload successful!");
       }
       fetchResults();
     } catch (err) {
@@ -144,11 +145,13 @@ export default function FacultyFormatResults() {
 
       if (Array.isArray(backendDetails)) {
         const errorDetails = backendDetails
-          .map((e) => (typeof e === 'object' ? `• Row ${e.row || '?'}: ${e.message}` : `• ${e}`))
+          .map((e) => (typeof e === 'object' ? `Row ${e.row || '?'}: ${e.message}` : e))
           .join("\n");
-        alert(`${backendError || "Upload failed"}\n\nErrors:\n${errorDetails}`);
+        toast.error(backendError || "Upload failed", {
+          description: errorDetails
+        });
       } else {
-        alert(backendError || "Upload failed. Please check CSV format.");
+        toast.error(backendError || "Upload failed. Please check CSV format.");
       }
     } finally {
       setUploading(false);
@@ -164,7 +167,7 @@ export default function FacultyFormatResults() {
     } catch (err) {
       console.error("Delete failed:", err);
       const msg = err.response?.data?.message || "Failed to delete record.";
-      alert(msg);
+      toast.error(msg);
     }
   };
 
@@ -177,12 +180,18 @@ export default function FacultyFormatResults() {
     if (mode === "ALL") {
       confirmMsg = "CRITICAL: This will PERMANENTLY DELETE ALL records for the selected academic year. Continue?";
     } else if (mode === "PROGRAM") {
-      if (!selectedProgramId) return alert("Please select a program first.");
+      if (!selectedProgramId) {
+        toast.warning("Please select a program first.");
+        return;
+      }
       const progName = programs.find(p => p._id === selectedProgramId)?.name;
       confirmMsg = `This will delete ALL records for ${progName} in the selected year. Continue?`;
       params.programId = selectedProgramId;
     } else if (mode === "FACULTY") {
-      if (!searchFacultyId) return alert("Please enter a Faculty ID in the filter first.");
+      if (!searchFacultyId) {
+        toast.warning("Please enter a Faculty ID in the filter first.");
+        return;
+      }
       confirmMsg = `This will delete ALL records for Faculty ID: ${searchFacultyId} in the selected year. Continue?`;
       params.facultyId = searchFacultyId;
     }
@@ -192,13 +201,13 @@ export default function FacultyFormatResults() {
     setLoading(true);
     try {
       await API.delete("/api/faculty-subject-results/semester", { params });
-      alert("Records cleared successfully.");
+      toast.success("Records cleared successfully.");
       setDeleteMenuAnchor(null);
       fetchResults();
     } catch (err) {
       console.error("Clear failed:", err);
       const msg = err.response?.data?.message || "Failed to clear records.";
-      alert(msg);
+      toast.error(msg);
     } finally {
       setLoading(false);
     }

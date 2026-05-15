@@ -4,6 +4,7 @@ import { Box, Typography } from '@mui/material';
 
 // Detail Components
 import TextBookApprovalDetail from './TextBookApprovalDetail';
+import BookChapterApprovalDetail from './BookChapterApprovalDetail';
 
 const ResearchApprovalDetailWrapper = ({ role }) => {
     const { type, id } = useParams();
@@ -24,6 +25,8 @@ const ResearchApprovalDetailWrapper = ({ role }) => {
         switch (type.toLowerCase()) {
             case 'textbook':
                 return <TextBookApprovalDetail id={id} onBack={goBack} role={role} />;
+            case 'bookchapter':
+                return <BookChapterApprovalDetail id={id} onBack={goBack} role={role} />;
             case 'journal':
                 return (
                     <Box sx={{ p: 4, textAlign: 'center' }}>

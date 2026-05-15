@@ -3,9 +3,10 @@ import {
     Box, Typography, Button, Grid, Card, CardContent, Dialog, DialogTitle,
     DialogContent, DialogActions, TextField, CircularProgress, IconButton,
     Tooltip, Divider, List, ListItem, ListItemText, ListItemSecondaryAction,
-    Snackbar, Alert, Chip, MenuItem, Select, FormControl, InputLabel, Fade,
+    Fade, Chip, MenuItem, Select, FormControl, InputLabel,
     Tabs, Tab, Paper, Switch, FormControlLabel, FormHelperText
 } from "@mui/material";
+import { toast } from "sonner";
 import {
     Add, Edit, Delete, AccountTree, Business, Code, School,
     CheckCircle, Cancel, Warning, ArrowBack
@@ -19,7 +20,6 @@ const AcademicStructure = () => {
     const [selectedDepartment, setSelectedDepartment] = useState(null);
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
-    const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "success" });
 
     // Data State
     const [schools, setSchools] = useState([]);
@@ -31,9 +31,6 @@ const AcademicStructure = () => {
     const [modal, setModal] = useState({ open: false, type: '', mode: 'add', data: {} });
     const [deleteConfirm, setDeleteConfirm] = useState({ open: false, type: '', id: null, name: "" });
 
-    const showSnackbar = (message, severity = "success") => {
-        setSnackbar({ open: true, message, severity });
-    };
 
     const fetchData = async () => {
         setLoading(true);
@@ -50,7 +47,7 @@ const AcademicStructure = () => {
             setPrograms(progRes.data.data || []);
             setBranches(branchRes.data.data || []);
         } catch (error) {
-            showSnackbar("Failed to load academic data.", "error");
+            toast.error("Failed to load academic data.");
         } finally {
             setLoading(false);
         }
@@ -75,12 +72,12 @@ const AcademicStructure = () => {
             }
 
             if (res.data.success) {
-                showSnackbar(`${type.charAt(0).toUpperCase() + type.slice(1)} ${mode === 'add' ? 'added' : 'updated'} successfully!`);
+                toast.success(`${type.charAt(0).toUpperCase() + type.slice(1)} ${mode === 'add' ? 'added' : 'updated'} successfully!`);
                 setModal({ open: false, type: '', mode: 'add', data: {} });
                 fetchData();
             }
         } catch (error) {
-            showSnackbar(error.response?.data?.message || `Error saving ${type}.`, "error");
+            toast.error(error.response?.data?.message || `Error saving ${type}.`);
         } finally {
             setSubmitting(false);
         }
@@ -92,12 +89,12 @@ const AcademicStructure = () => {
             const pluralType = deleteConfirm.type === 'branch' ? 'branches' : `${deleteConfirm.type}s`;
             const res = await API.delete(`/api/academics/${pluralType}/${deleteConfirm.id}`);
             if (res.data.success) {
-                showSnackbar(`${deleteConfirm.type.charAt(0).toUpperCase() + deleteConfirm.type.slice(1)} deleted successfully.`);
+                toast.success(`${deleteConfirm.type.charAt(0).toUpperCase() + deleteConfirm.type.slice(1)} deleted successfully.`);
                 setDeleteConfirm({ open: false, type: '', id: null, name: "" });
                 fetchData();
             }
         } catch (error) {
-            showSnackbar(error.response?.data?.message || "Error deleting item.", "error");
+            toast.error(error.response?.data?.message || "Error deleting item.");
         } finally {
             setSubmitting(false);
         }
@@ -834,9 +831,6 @@ const AcademicStructure = () => {
                 </DialogActions>
             </Dialog>
 
-            <Snackbar open={snackbar.open} autoHideDuration={6000} onClose={() => setSnackbar({ ...snackbar, open: false })}>
-                <Alert severity={snackbar.severity} variant="filled">{snackbar.message}</Alert>
-            </Snackbar>
         </Box>
     );
 };

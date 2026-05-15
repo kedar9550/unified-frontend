@@ -10,6 +10,7 @@ import {
   Card,
   Chip,
 } from "@mui/material";
+import { toast } from "sonner";
 import { 
   Flag as FlagIcon, 
   CloudUpload as CloudUploadIcon,
@@ -24,11 +25,9 @@ import DataTable from "../../components/data/DataTable";
 import RaiseDiscrepancyModal from "../../components/faculty/RaiseDiscrepancyModal";
 import API from "../../api/axios";
 import { useAuth } from "../../context/AuthContext";
-import { useSnackbar } from "../../context/SnackbarContext";
 
 export default function Teaching() {
   const { user } = useAuth();
-  const showSnackbar = useSnackbar();
 
   // ── Academic Year state ──────────────────────────────────────────
   const [academicYears, setAcademicYears] = useState([]);
@@ -177,7 +176,7 @@ export default function Teaching() {
 
     // Validate file type
     if (file.type !== "text/csv" && !file.name.endsWith(".csv")) {
-      alert("Please select a CSV file");
+      toast.warning("Please select a CSV file");
       return;
     }
 
@@ -193,7 +192,7 @@ export default function Teaching() {
       });
 
       console.log("CSV uploaded successfully:", res.data);
-      showSnackbar("CSV uploaded successfully!", "success");
+      toast.success("CSV uploaded successfully!");
       
       // Refresh results
       const refreshRes = await API.get("/api/faculty-subject-results", {
@@ -205,7 +204,7 @@ export default function Teaching() {
       setResults(refreshRes.data || []);
     } catch (err) {
       console.error("Error uploading CSV:", err);
-      showSnackbar(err.response?.data?.message || "Error uploading CSV file", "error");
+      toast.error(err.response?.data?.message || "Error uploading CSV file");
     } finally {
       setUploadingCSV(false);
       // Reset file input

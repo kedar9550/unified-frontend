@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../../context/AuthContext";
 
-import { Box, TextField, MenuItem, Select, Typography, Alert, Snackbar, Button, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, IconButton, Autocomplete } from "@mui/material";
+import { Box, TextField, MenuItem, Select, Typography, Button, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, IconButton, Autocomplete } from "@mui/material";
+import { toast } from "sonner";
 import { AddCircle, Delete } from "@mui/icons-material";
 import PageHeader from "../../components/common/PageHeader";
 import {
@@ -25,6 +26,7 @@ export default function BookChapterPublication() {
   });
   const [files, setFiles] = useState({ coverPage: null, authorAffiliation: null, index: null, softCopy: null });
   const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState({});
   const [snack, setSnack] = useState({ open: false, msg: "", severity: "success" });
 
   useEffect(() => {
@@ -59,8 +61,26 @@ export default function BookChapterPublication() {
   };
 
   const handleSubmit = async () => {
-    if (!form.textBookName || !form.chapterTitle) {
-      setSnack({ open: true, msg: "Please fill all required fields", severity: "error" });
+    const newErrors = {};
+    if (!form.textBookName) newErrors.textBookName = true;
+    if (!form.chapterTitle) newErrors.chapterTitle = true;
+    if (!form.isbn) newErrors.isbn = true;
+    if (!form.yearOfPublication) newErrors.yearOfPublication = true;
+    if (!form.firstAuthor) newErrors.firstAuthor = true;
+    if (!form.publisher) newErrors.publisher = true;
+    if (!form.month) newErrors.month = true;
+    if (!form.year) newErrors.year = true;
+    if (!form.applyIncentive) newErrors.applyIncentive = true;
+
+    if (!files.coverPage) newErrors.coverPage = true;
+    if (!files.authorAffiliation) newErrors.authorAffiliation = true;
+    if (!files.index) newErrors.index = true;
+    if (!files.softCopy) newErrors.softCopy = true;
+
+    setErrors(newErrors);
+
+    if (Object.keys(newErrors).length > 0) {
+      toast.error("Please fill all mandatory fields and upload required documents");
       return;
     }
     setLoading(true);
@@ -79,13 +99,14 @@ export default function BookChapterPublication() {
       fd.append("panNumber", user?.panNumber || "");
 
       await API.post("/api/research/book-chapter", fd, { headers: { "Content-Type": "multipart/form-data" } });
-      setSnack({ open: true, msg: "Book Chapter submitted successfully!", severity: "success" });
+      toast.success("Book Chapter submitted successfully!");
       setForm({ textBookName: "", chapterTitle: "", isbn: "", yearOfPublication: "", firstAuthor: "", authorPosition: "", chaptersContributed: "", publisher: "", coAuthors: [], month: "", year: "", applyIncentive: "" });
       setFiles({ coverPage: null, authorAffiliation: null, index: null, softCopy: null });
+      setErrors({});
       setSelectedYear("");
       setViewMode("list");
     } catch (err) {
-      setSnack({ open: true, msg: err?.response?.data?.message || "Submission failed", severity: "error" });
+      toast.error(err?.response?.data?.message || "Submission failed");
     } finally {
       setLoading(false);
     }
@@ -224,26 +245,30 @@ export default function BookChapterPublication() {
       <FacultyInfoRow />
 
       <Grid2 sx={{ mt: 1 }}>
-
+        <Box>
+          <Typography sx={labelStyle}>Title of the Book:</Typography>
+          <TextField size="small" fullWidth value={form.textBookName} onChange={set("textBookName")} error={!!errors.textBookName} />
+        </Box>
         <Box>
           <Typography sx={labelStyle}>Title of the Chapter:</Typography>
           <TextField size="small" fullWidth value={form.chapterTitle} onChange={set("chapterTitle")} inputProps={{ maxLength: 100 }}
-            helperText={`${100 - form.chapterTitle.length} Character(s) Remaining`} />
+            error={!!errors.chapterTitle}
+            helperText={errors.chapterTitle ? "Title is required" : `${100 - form.chapterTitle.length} Character(s) Remaining`} />
         </Box>
         <Box>
           <Typography sx={labelStyle}>ISBN NO :</Typography>
-          <TextField size="small" fullWidth value={form.isbn} onChange={set("isbn")} />
+          <TextField size="small" fullWidth value={form.isbn} onChange={set("isbn")} error={!!errors.isbn} />
         </Box>
         <Box>
           <Typography sx={labelStyle}>Year of Publication:</Typography>
-          <Select size="small" fullWidth displayEmpty value={form.yearOfPublication} onChange={set("yearOfPublication")}>
+          <Select size="small" fullWidth displayEmpty value={form.yearOfPublication} onChange={set("yearOfPublication")} error={!!errors.yearOfPublication}>
             <MenuItem value="">Select</MenuItem>
             {YEARS.map((y) => <MenuItem key={y} value={y}>{y}</MenuItem>)}
           </Select>
         </Box>
         <Box>
           <Typography sx={labelStyle}>Whether you are the first author :</Typography>
-          <Select size="small" fullWidth displayEmpty value={form.firstAuthor} onChange={set("firstAuthor")}>
+          <Select size="small" fullWidth displayEmpty value={form.firstAuthor} onChange={set("firstAuthor")} error={!!errors.firstAuthor}>
             <MenuItem value="">Select</MenuItem>
             <MenuItem value="Yes">Yes</MenuItem>
             <MenuItem value="No">No</MenuItem>
@@ -271,7 +296,7 @@ export default function BookChapterPublication() {
               }
             }}
             renderInput={(params) => (
-              <TextField {...params} size="small" fullWidth placeholder="Select or search publisher" />
+              <TextField {...params} size="small" fullWidth placeholder="Select or search publisher" error={!!errors.publisher} />
             )}
           />
         </Box>
@@ -283,7 +308,7 @@ export default function BookChapterPublication() {
               <Button startIcon={<AddCircle />} onClick={handleAddCoAuthor} sx={{ textTransform: "none", fontWeight: 700, color: "var(--color-primary)" }}>Add Co-Author</Button>
             </Box>
             {form.coAuthors.map((co, idx) => (
-              <Box key={idx} sx={{ display: "flex", gap: 2, mb: 2, p: 2, background: "var(--bg-accent-1)", borderRadius: "12px", alignItems: "center" }}>
+              <Box key={idx} sx={{ display: "flex", gap: 2, mb: 2, p: 2, background: "var(--bg-accent-1)", borderRadius: "16px", alignItems: "center", border: "1px solid var(--border-color)" }}>
                 <Box sx={{ flex: 1 }}>
                   <Typography sx={{ fontSize: 11, fontWeight: 700, color: "var(--text-secondary)", mb: 0.5 }}>CO-AUTHOR NAME</Typography>
                   <TextField size="small" fullWidth placeholder="Name" value={co.name} onChange={(e) => handleUpdateCoAuthor(idx, "name", e.target.value)} />
@@ -303,27 +328,27 @@ export default function BookChapterPublication() {
       <Grid2>
         <Box>
           <Typography sx={labelStyle}>Month:</Typography>
-          <Select size="small" fullWidth displayEmpty value={form.month} onChange={set("month")}>
+          <Select size="small" fullWidth displayEmpty value={form.month} onChange={set("month")} error={!!errors.month}>
             <MenuItem value="">Select</MenuItem>
             {MONTHS.map((m) => <MenuItem key={m} value={m}>{m}</MenuItem>)}
           </Select>
         </Box>
         <Box>
           <Typography sx={labelStyle}>Year:</Typography>
-          <TextField size="small" fullWidth value={form.year} onChange={set("year")} placeholder="YYYY" inputProps={{ maxLength: 4 }} />
+          <TextField size="small" fullWidth value={form.year} onChange={set("year")} placeholder="YYYY" inputProps={{ maxLength: 4 }} error={!!errors.year} />
         </Box>
       </Grid2>
 
       <NoteBox />
 
       <Grid2 sx={{ mt: 1 }}>
-        <FileField label="Attach CoverPage" name="coverPage" onChange={setFile("coverPage")} />
-        <FileField label="Attach Page displaying author affiliation" name="authorAffiliation" onChange={setFile("authorAffiliation")} />
-        <FileField label="Attach Index" name="index" onChange={setFile("index")} />
-        <FileField label="Attach Soft Copy of Chapter" name="softCopy" onChange={setFile("softCopy")} />
+        <FileField label="Attach CoverPage" name="coverPage" onChange={setFile("coverPage")} error={!!errors.coverPage} onError={(m) => toast.error(m)} />
+        <FileField label="Attach Page displaying author affiliation" name="authorAffiliation" onChange={setFile("authorAffiliation")} error={!!errors.authorAffiliation} onError={(m) => toast.error(m)} />
+        <FileField label="Attach Index" name="index" onChange={setFile("index")} error={!!errors.index} onError={(m) => toast.error(m)} />
+        <FileField label="Attach Soft Copy of Chapter" name="softCopy" onChange={setFile("softCopy")} error={!!errors.softCopy} onError={(m) => toast.error(m)} />
         <Box>
           <Typography sx={labelStyle}>Whether you want to apply for incentive?</Typography>
-          <Select size="small" fullWidth displayEmpty value={form.applyIncentive} onChange={set("applyIncentive")}>
+          <Select size="small" fullWidth displayEmpty value={form.applyIncentive} onChange={set("applyIncentive")} error={!!errors.applyIncentive}>
             <MenuItem value="">Select</MenuItem>
             <MenuItem value="Yes">Yes</MenuItem>
             <MenuItem value="No">No</MenuItem>
@@ -332,7 +357,7 @@ export default function BookChapterPublication() {
         {form.applyIncentive === "Yes" && (
           <Box>
             <Typography sx={{ fontSize: 13, fontWeight: 700, color: "var(--color-primary)" }}>Expected Amount:</Typography>
-            <TextField size="small" value="1500" disabled sx={{ "& .MuiInputBase-input.Mui-disabled": { WebkitTextFillColor: "#10b981", fontWeight: 800, background: "rgba(16, 185, 129, 0.1)", borderRadius: "8px" } }} />
+            <TextField size="small" value="1500" disabled sx={{ "& .MuiInputBase-root": { background: "rgba(16, 185, 129, 0.05)" }, "& .MuiInputBase-input.Mui-disabled": { WebkitTextFillColor: "#10b981", fontWeight: 800, px: 2, borderRadius: "8px" } }} />
           </Box>
         )}
       </Grid2>
@@ -372,9 +397,6 @@ export default function BookChapterPublication() {
       {viewMode === "select-year" && renderSelectYear()}
       {viewMode === "form" && renderForm()}
 
-      <Snackbar open={snack.open} autoHideDuration={4000} onClose={() => setSnack((p) => ({ ...p, open: false }))} anchorOrigin={{ vertical: "top", horizontal: "center" }}>
-        <Alert severity={snack.severity} onClose={() => setSnack((p) => ({ ...p, open: false }))}>{snack.msg}</Alert>
-      </Snackbar>
     </Box>
   );
 }

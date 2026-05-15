@@ -56,12 +56,18 @@ const ProtectedRoute = ({ element: Element }) => {
   );
 };
 
+import { Toaster } from "sonner";
+
 function App() {
   const { isLoading, startLoading, stopLoading } = useLoading();
+  const [isMobile, setIsMobile] = React.useState(window.innerWidth < 768);
 
   // Register once — never re-registers on re-render
   useEffect(() => {
     registerLoadingHandlers(startLoading, stopLoading);
+
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener("resize", handleResize);
 
     // Initialize theme
     const theme = localStorage.getItem("theme");
@@ -70,10 +76,16 @@ function App() {
     } else {
       document.body.classList.remove("dark-mode");
     }
+
+    return () => window.removeEventListener("resize", handleResize);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <>
+      <Toaster 
+        position={isMobile ? "top-center" : "top-right"} 
+        theme={document.body.classList.contains("dark-mode") ? "dark" : "light"}
+      />
       {isLoading && <Loader />}
       <Routes>
         <Route path="/" element={<PublicOnlyRoute><Login /></PublicOnlyRoute>} />

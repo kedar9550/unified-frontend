@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import API from "../../../api/axios";
+import { toast } from "sonner";
 import {
   Box, Typography, Button, Card, CardContent, Chip, TextField,
   IconButton, Select, MenuItem, Paper, Tooltip, Menu, InputAdornment, Grid, Collapse
@@ -63,13 +64,13 @@ const AcademicManagement = () => {
   };
 
   const createGlobalYear = async () => {
-    if (!newStartYear || !newEndYear) { alert("Please select Start Year and End Year"); return; }
+    if (!newStartYear || !newEndYear) { toast.warning("Please select Start Year and End Year"); return; }
     try {
       await API.post("/api/academic-years", { startYear: newStartYear, endYear: newEndYear });
       setNewStartYear(currentYear);
       setNewEndYear(currentYear + 1);
       fetchYears();
-    } catch (err) { alert(err.response?.data?.message || "Failed to create academic year"); }
+    } catch (err) { toast.error(err.response?.data?.message || "Failed to create academic year"); }
   };
 
   const addProgramToYear = async (programId) => {
@@ -79,7 +80,7 @@ const AcademicManagement = () => {
       await API.post("/api/academic-years", { startYear: start, endYear: end, programId });
       fetchYears();
       handleCloseMenu();
-    } catch (err) { alert(err.response?.data?.message || "Failed to add program"); }
+    } catch (err) { toast.error(err.response?.data?.message || "Failed to add program"); }
   };
 
   // Toggle isActive for one program inside a year doc
@@ -98,7 +99,7 @@ const AcademicManagement = () => {
     try {
       await API.put(`/api/academic-years/${yearId}/semester-type`, { semesterTypeId, programId });
       fetchYears();
-    } catch (err) { alert(err.response?.data?.message || "Failed to update semester"); }
+    } catch (err) { toast.error(err.response?.data?.message || "Failed to update semester"); }
   };
 
   // Remove a program from a year
@@ -107,7 +108,7 @@ const AcademicManagement = () => {
     try {
       await API.delete(`/api/academic-years/${yearId}/program/${programId}`);
       fetchYears();
-    } catch (err) { alert(err.response?.data?.message || "Failed to remove"); }
+    } catch (err) { toast.error(err.response?.data?.message || "Failed to remove"); }
   };
 
   const handleOpenMenu = (event, yearDoc) => {

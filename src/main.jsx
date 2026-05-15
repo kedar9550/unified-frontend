@@ -8,11 +8,9 @@ import theme from "./theme";
 import "./index.css";
 
 import { LoadingProvider } from "./context/LoadingContext";
-import { SnackbarProvider } from "./context/SnackbarContext";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <LoadingProvider>
-    <SnackbarProvider>
       <AuthProvider>
         <ThemeProvider theme={theme}>
           <CssBaseline />
@@ -21,7 +19,6 @@ ReactDOM.createRoot(document.getElementById("root")).render(
           </BrowserRouter>
         </ThemeProvider>
       </AuthProvider>
-    </SnackbarProvider>
   </LoadingProvider>,
 );
 

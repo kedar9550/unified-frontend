@@ -5,11 +5,12 @@ import {
     TableHead, TableRow, Paper, Chip, IconButton,
     Tooltip, TextField, InputAdornment, Dialog,
     DialogTitle, DialogContent, DialogActions,
-    CircularProgress, Snackbar, Alert, Collapse,
+    CircularProgress, Collapse,
     List, ListItem, ListItemText, ListItemSecondaryAction,
     Divider, Avatar, Checkbox, FormControlLabel, FormGroup,
     ListItemButton, Menu, MenuItem, ListItemIcon, Grid
 } from "@mui/material";
+import { toast } from "sonner";
 import {
     Add, Edit, Delete, Security, People,
     Search, FilterList, MoreVert, Close, ExpandMore,
@@ -43,7 +44,6 @@ const RoleManagement = () => {
     const [showUpdateOptions, setShowUpdateOptions] = useState(false);
     const [showCreateOptions, setShowCreateOptions] = useState(false);
     const [isSyncingBulk, setIsSyncingBulk] = useState(false);
-    const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
     const [showIndividualSearch, setShowIndividualSearch] = useState(false);
     const [inlineSearchQuery, setInlineSearchQuery] = useState("");
     const [inlineSearchResults, setInlineSearchResults] = useState([]);
@@ -119,7 +119,7 @@ const RoleManagement = () => {
                 setRoles(res.data.data);
             }
         } catch (error) {
-            showSnackbar("Failed to fetch roles", "error");
+            toast.error("Failed to fetch roles");
         } finally {
             setLoadingRoles(false);
         }
@@ -141,9 +141,6 @@ const RoleManagement = () => {
         fetchDepartments();
     }, []);
 
-    const showSnackbar = (message, severity = "success") => {
-        setSnackbar({ open: true, message, severity });
-    };
 
     // Create Menu Handlers
     const handleCreateClose = () => setCreateAnchorEl(null);
@@ -169,17 +166,17 @@ const RoleManagement = () => {
             const response = await API.put('/api/employees/bulk-sync');
             if (response.data.success) {
                 if (response.data.successCount > 0) {
-                    showSnackbar(`Updated successfully! ${response.data.successCount} records changed.`, "success");
+                    toast.success(`Updated successfully! ${response.data.successCount} records changed.`);
                 } else {
-                    showSnackbar("Data is up-to-date. No changes needed.", "info");
+                    toast.info("Data is up-to-date. No changes needed.");
                 }
                 if (userSearchQuery) handleUserSearch();
             } else {
-                showSnackbar(response.data.message || 'Sync completed with some errors.', "warning");
+                toast.warning(response.data.message || 'Sync completed with some errors.');
             }
         } catch (error) {
             console.error("Bulk Sync Error:", error);
-            showSnackbar(error.response?.data?.message || 'Bulk sync failed. Please try again.', "error");
+            toast.error(error.response?.data?.message || 'Bulk sync failed. Please try again.');
         } finally {
             setIsSyncingBulk(false);
         }
@@ -213,7 +210,7 @@ const RoleManagement = () => {
         const updates = {};
         if (editableEmail && editableEmail !== editingEmployee.email) {
             if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(editableEmail)) {
-                showSnackbar("Please enter a valid email address", "warning");
+                toast.warning("Please enter a valid email address");
                 return;
             }
             updates.email = editableEmail;
@@ -224,7 +221,7 @@ const RoleManagement = () => {
         }
 
         if (Object.keys(updates).length === 0) {
-            showSnackbar("No changes to update", "info");
+            toast.info("No changes to update");
             setEditingEmployee(null);
             return;
         }
@@ -233,7 +230,7 @@ const RoleManagement = () => {
         try {
             const res = await API.put(`/api/employees/${editingEmployee._id}/admin-update`, updates);
             if (res.data.success) {
-                showSnackbar("Employee updated successfully!");
+                toast.success("Employee updated successfully!");
                 // Update local states if needed
                 if (selectedUser?._id === editingEmployee._id) {
                     setSelectedUser({ ...selectedUser, ...updates });
@@ -243,7 +240,7 @@ const RoleManagement = () => {
                 setInlineSearchQuery("");
             }
         } catch (error) {
-            showSnackbar(error.response?.data?.message || "Failed to update employee", "error");
+            toast.error(error.response?.data?.message || "Failed to update employee");
         } finally {
             setIsUpdatingEmail(false);
         }
@@ -264,7 +261,7 @@ const RoleManagement = () => {
 
         // Restriction: Only CSV
         if (file.type !== "text/csv" && !file.name.endsWith(".csv")) {
-            showSnackbar("Please select a valid CSV file", "error");
+            toast.error("Please select a valid CSV file");
             return;
         }
 
@@ -281,11 +278,11 @@ const RoleManagement = () => {
 
             if (res.data.success) {
                 setBulkResults(res.data);
-                showSnackbar(`Bulk registration complete! ${res.data.successCount} users added.`, "success");
+                toast.success(`Bulk registration complete! ${res.data.successCount} users added.`);
                 fetchRoles(); // Refresh to ensure roles are synced
             }
         } catch (error) {
-            showSnackbar(error.response?.data?.message || "Bulk upload failed", "error");
+            toast.error(error.response?.data?.message || "Bulk upload failed");
         } finally {
             setUploadingBulk(false);
             e.target.value = ""; // Reset input
@@ -364,7 +361,7 @@ const RoleManagement = () => {
             const dbCheck = await API.get(`/api/employees/search?query=${createIndividualQuery.trim()}`);
             const existing = Array.isArray(dbCheck.data) ? dbCheck.data.find(u => u.institutionId === createIndividualQuery.trim()) : null;
             if (existing) {
-                showSnackbar(`Employee "${existing.name}" (ID: ${existing.institutionId}) already exists in the system.`, "info");
+                toast.info(`Employee "${existing.name}" (ID: ${existing.institutionId}) already exists in the system.`);
                 setIsVerifyingCreate(false);
                 return;
             }
@@ -381,10 +378,10 @@ const RoleManagement = () => {
                     ecapData: res.data
                 });
             } else {
-                showSnackbar(res.data?.error || "Employee not found in ECAP", "error");
+                toast.error(res.data?.error || "Employee not found in ECAP");
             }
         } catch (error) {
-            showSnackbar("Verification failed", "error");
+            toast.error("Verification failed");
         } finally {
             setIsVerifyingCreate(false);
         }
@@ -414,7 +411,7 @@ const RoleManagement = () => {
 
         const error = validateIndividual(sanitizedData);
         if (error) {
-            showSnackbar(error, "error");
+            toast.error(error);
             return;
         }
 
@@ -422,25 +419,25 @@ const RoleManagement = () => {
         try {
             const res = await API.post("/api/employees/register", sanitizedData);
             if (res.data.success) {
-                showSnackbar("Employee registered successfully!", "success");
+                toast.success("Employee registered successfully!");
                 setIsShowingSignupForm(false);
                 setCreateIndividualPreview(null);
                 setCreateIndividualQuery("");
                 setShowCreateIndividualSearch(false);
                 if (userSearchQuery) handleUserSearch();
             } else {
-                showSnackbar(res.data.message || "Registration failed", "error");
+                toast.error(res.data.message || "Registration failed");
             }
         } catch (error) {
             console.error("Signup Error:", error.response?.data);
             if (error.response?.status === 409) {
-                showSnackbar(error.response.data.message || "This employee is already registered in the system.", "info");
+                toast.info(error.response.data.message || "This employee is already registered in the system.");
                 // Optionally close the form since they exist
                 setIsShowingSignupForm(false);
                 setCreateIndividualPreview(null);
                 setCreateIndividualQuery("");
             } else {
-                showSnackbar(error.response?.data?.message || "Registration failed. Please check all fields.", "error");
+                toast.error(error.response?.data?.message || "Registration failed. Please check all fields.");
             }
         } finally {
             setIsIndividualSubmitting(false);
@@ -466,7 +463,7 @@ const RoleManagement = () => {
             };
             const res = await API.post("/api/employees/register", payload);
             if (res.data) {
-                showSnackbar("User added successfully!", "success");
+                toast.success("User added successfully!");
                 setIsUserChoiceModalOpen(false);
                 setRegistrationView("selection");
                 setSignupData({
@@ -488,12 +485,12 @@ const RoleManagement = () => {
         try {
             const res = await API.post("/api/roles", formData);
             if (res.data.success) {
-                showSnackbar("Role created successfully!");
+                toast.success("Role created successfully!");
                 handleCloseRoleModal();
                 fetchRoles();
             }
         } catch (error) {
-            showSnackbar(error.response?.data?.message || "Failed to create role", "error");
+            toast.error(error.response?.data?.message || "Failed to create role");
         } finally {
             setSubmitting(false);
         }
@@ -502,19 +499,19 @@ const RoleManagement = () => {
     const handleDeleteRole = async (id) => {
         const role = roles.find(r => r._id === id);
         if (role?.defaultRole) {
-            showSnackbar("System Default roles cannot be deleted from here.", "warning");
+            toast.warning("System Default roles cannot be deleted from here.");
             return;
         }
         if (!window.confirm("Are you sure? This will remove the role from ALL users.")) return;
         try {
             const res = await API.delete(`/api/roles/${id}`);
             if (res.data.success) {
-                showSnackbar("Role deleted successfully!");
+                toast.success("Role deleted successfully!");
                 fetchRoles();
                 if (selectedUser) handleUserSearch();
             }
         } catch (error) {
-            showSnackbar("Failed to delete role", "error");
+            toast.error("Failed to delete role");
         }
     };
 
@@ -533,7 +530,7 @@ const RoleManagement = () => {
                 if (updated) setSelectedUser(updated);
             }
         } catch (error) {
-            showSnackbar("User search failed", "error");
+            toast.error("User search failed");
             setUserSearchResults([]);
         } finally {
             setSearchingUsers(false);
@@ -565,7 +562,7 @@ const RoleManagement = () => {
             if (isCurrentlySelected && role?.defaultRole) {
                 const otherSelectedDefaultRoles = roles.filter(r => r.defaultRole && r._id !== id && prev.includes(r._id));
                 if (otherSelectedDefaultRoles.length === 0) {
-                    showSnackbar("Users must have at least one default role based on their identity.", "info");
+                    toast.info("Users must have at least one default role based on their identity.");
                     return prev;
                 }
             }
@@ -579,7 +576,7 @@ const RoleManagement = () => {
         // Validation for HOD role
         const isHodSelected = assignedRoleIds.some(rid => roles.find(r => r._id === rid)?.name === 'HOD');
         if (isHodSelected && selectedHodDepts.length === 0) {
-            showSnackbar("Please select at least one department for the HOD role", "error");
+            toast.error("Please select at least one department for the HOD role");
             return;
         }
 
@@ -591,7 +588,7 @@ const RoleManagement = () => {
                 hodDepartments: selectedHodDepts.map(d => d._id)
             });
             if (res.data.success) {
-                showSnackbar("Roles updated successfully!");
+                toast.success("Roles updated successfully!");
                 setHasTypedSearch(false);
                 setSelectedUser(null);
                 setUserSearchQuery("");
@@ -599,7 +596,7 @@ const RoleManagement = () => {
                 setSelectedHodDepts([]);
             }
         } catch (error) {
-            showSnackbar(error.response?.data?.message || "Failed to update roles", "error");
+            toast.error(error.response?.data?.message || "Failed to update roles");
         } finally {
             setSavingRoles(false);
         }
@@ -609,19 +606,19 @@ const RoleManagement = () => {
         const { userId, roleId } = deleteConfirm;
         const role = roles.find(r => r._id === roleId);
         if (role?.defaultRole) {
-            showSnackbar("Cannot remove a default identity-based role individually. Please use the assignment panel to swap it.", "warning");
+            toast.warning("Cannot remove a default identity-based role individually. Please use the assignment panel to swap it.");
             return;
         }
 
         try {
             const res = await API.delete(`/api/roles/${roleId}/users/${userId}`);
             if (res.data.success) {
-                showSnackbar("Role removed successfully");
+                toast.success("Role removed successfully");
                 setDeleteConfirm({ ...deleteConfirm, open: false });
                 handleUserSearch();
             }
         } catch (error) {
-            showSnackbar("Failed to remove role", "error");
+            toast.error("Failed to remove role");
         }
     };
 
@@ -1595,17 +1592,6 @@ const RoleManagement = () => {
                 </DialogActions>
             </Dialog>
 
-            <Snackbar
-                open={snackbar.open}
-                autoHideDuration={6000}
-                onClose={() => setSnackbar({ ...snackbar, open: false })}
-                anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
-                sx={{ top: '20px' }}
-            >
-                <Alert onClose={() => setSnackbar({ ...snackbar, open: false })} severity={snackbar.severity} sx={{ width: '100%', borderRadius: '12px', boxShadow: '0 8px 32px rgba(0,0,0,0.15)', border: '1px solid rgba(255,255,255,0.3)', backdropFilter: 'blur(10px)' }}>
-                    {snackbar.message}
-                </Alert>
-            </Snackbar>
         </Box>
     );
 };
