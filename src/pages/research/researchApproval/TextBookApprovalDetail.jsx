@@ -24,6 +24,7 @@ const TextBookApprovalDetail = ({ id, onBack, role }) => {
     const [remarks, setRemarks] = useState("");
     const [approvedAmount, setApprovedAmount] = useState("");
     const [actionLoading, setActionLoading] = useState(false);
+    const [imgError, setImgError] = useState(false);
 
     const isHOD = !role || role === 'HOD';
     const isDean = role === 'RESEARCH_DEAN';
@@ -301,11 +302,11 @@ const TextBookApprovalDetail = ({ id, onBack, role }) => {
                     </Box>
                 </Box>
 
-                <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2 }}>
-                    <Box sx={{ flex: { xs: "1 1 100%", sm: "1 1 23%" } }}><LabelValue label="Academic Year" value={data.academicYear?.year || "-"} /></Box>
-                    <Box sx={{ flex: { xs: "1 1 100%", sm: "1 1 23%" } }}><LabelValue label="Reference ID" value={`TBK-${new Date(data.createdAt).getFullYear()}-${data._id.substring(data._id.length - 6).toUpperCase()}`} /></Box>
-                    <Box sx={{ flex: { xs: "1 1 100%", sm: "1 1 23%" } }}><LabelValue label="Submission Date" value={new Date(data.createdAt).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })} /></Box>
-                    <Box sx={{ flex: { xs: "1 1 100%", sm: "1 1 23%" } }}>
+                <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2, width: "100%" }}>
+                    <Box sx={{ flex: { xs: "1 1 100%", sm: 1 } }}><LabelValue label="Academic Year" value={data.academicYear?.year || "-"} /></Box>
+                    <Box sx={{ flex: { xs: "1 1 100%", sm: 1 } }}><LabelValue label="Reference ID" value={`TBK-${new Date(data.createdAt).getFullYear()}-${data._id.substring(data._id.length - 6).toUpperCase()}`} /></Box>
+                    <Box sx={{ flex: { xs: "1 1 100%", sm: 1 } }}><LabelValue label="Submission Date" value={new Date(data.createdAt).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })} /></Box>
+                    <Box sx={{ flex: { xs: "1 1 100%", sm: 1 } }}>
                         <Box sx={{ p: 2, borderRadius: "12px", background: "transparent", height: "100%", display: "flex", flexDirection: "column", justifyContent: "center", transition: "all 0.3s ease", "&:hover": { transform: "translateY(-2px)" } }}>
                             <Typography variant="caption" sx={{
                                 background: "var(--gradient-primary)",
@@ -335,33 +336,45 @@ const TextBookApprovalDetail = ({ id, onBack, role }) => {
                     <SectionHeader icon={<PersonIcon />} title="Applicant Information" />
                     <Box sx={{ display: "flex", flexDirection: "column", gap: 3, alignItems: "center" }}>
                         <Box sx={{ flexShrink: 0 }}>
-                            <Box sx={{
-                                width: 100, height: 100, borderRadius: "50%",
-                                background: "var(--bg-panel)", overflow: "hidden", 
-                                border: "1px solid var(--border-color)",
-                                boxShadow: "0 8px 24px rgba(0,0,0,0.06)",
-                                display: "flex", alignItems: "center", justifyContent: "center"
-                            }}>
-                                {facultyId?.profileImage ? (
-                                    <img
-                                        src={(() => {
-                                            const backendURL = (import.meta.env.VITE_BACKEND_URL || "http://localhost:9000").replace(/\/$/, "");
-                                            let p = facultyId.profileImage.replace(/\\/g, '/');
-                                            if (!p.startsWith('http') && !p.includes('uploads/')) {
-                                                p = `/uploads/profile/${p.startsWith('/') ? p.substring(1) : p}`;
-                                            }
-                                            return p.startsWith('http') ? p : `${backendURL}${p.startsWith('/') ? p : `/${p}`}`;
-                                        })()}
-                                        alt="Faculty"
-                                        style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                                        onError={(e) => { e.target.src = "https://via.placeholder.com/150?text=Profile"; }}
-                                    />
-                                ) : (
-                                    <Typography sx={{ color: "var(--text-secondary)", fontWeight: 700, fontSize: 32 }}>
-                                        {facultyId?.name?.charAt(0) || "F"}
-                                    </Typography>
-                                )}
-                            </Box>
+                             <Box sx={{
+                                 width: 100, height: 100, borderRadius: "50%",
+                                 background: "var(--bg-panel)", overflow: "hidden", 
+                                 border: "1px solid var(--border-color)",
+                                 boxShadow: "0 8px 24px rgba(0,0,0,0.06)",
+                                 display: "flex", alignItems: "center", justifyContent: "center"
+                             }}>
+                                 {(() => {
+                                     const backendURL = (import.meta.env.VITE_BACKEND_URL || "http://localhost:9000").replace(/\/$/, "");
+                                     
+                                     let portalImg = null;
+                                     if (facultyId?.profileImage) {
+                                         let p = facultyId.profileImage.replace(/\\/g, '/');
+                                         if (!p.startsWith('http') && !p.includes('uploads/')) {
+                                             p = `/uploads/profile/${p.startsWith('/') ? p.substring(1) : p}`;
+                                         }
+                                         portalImg = p.startsWith('http') ? p : `${backendURL}${p.startsWith('/') ? p : `/${p}`}`;
+                                     }
+
+                                     const ecapImg = facultyId?.institutionId ? `https://info.aec.edu.in/aus/employeephotos/${facultyId.institutionId}.jpg` : null;
+                                     const src = portalImg || ecapImg;
+
+                                     if (src && !imgError) {
+                                         return (
+                                             <img
+                                                 src={src}
+                                                 alt="Faculty"
+                                                 style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                                                 onError={() => setImgError(true)}
+                                             />
+                                         );
+                                     }
+                                     return (
+                                         <Typography sx={{ color: "var(--text-secondary)", fontWeight: 700, fontSize: 32 }}>
+                                             {facultyId?.name?.charAt(0).toUpperCase() || "F"}
+                                         </Typography>
+                                     );
+                                 })()}
+                             </Box>
                         </Box>
                         <Box sx={{ flexGrow: 1, width: "100%" }}>
                             <Box sx={{ display: "flex", flexDirection: "column" }}>

@@ -5,6 +5,10 @@ import { Box, Typography } from '@mui/material';
 // Detail Components
 import TextBookApprovalDetail from './TextBookApprovalDetail';
 import BookChapterApprovalDetail from './BookChapterApprovalDetail';
+import JournalApprovalDetail from './JournalApprovalDetail';
+import PatentApprovalDetail from './PatentApprovalDetail';
+import FundedProjectApprovalDetail from './FundedProjectApprovalDetail';
+import ConsultancyApprovalDetail from './ConsultancyApprovalDetail';
 
 const ResearchApprovalDetailWrapper = ({ role }) => {
     const { type, id } = useParams();
@@ -28,11 +32,13 @@ const ResearchApprovalDetailWrapper = ({ role }) => {
             case 'bookchapter':
                 return <BookChapterApprovalDetail id={id} onBack={goBack} role={role} />;
             case 'journal':
-                return (
-                    <Box sx={{ p: 4, textAlign: 'center' }}>
-                        <Typography variant="h5" color="textSecondary">Journal Details Coming Soon</Typography>
-                    </Box>
-                );
+                return <JournalApprovalDetail id={id} onBack={goBack} role={role} />;
+            case 'patent':
+                return <PatentApprovalDetail id={id} onBack={goBack} role={role} />;
+            case 'fundedproject':
+                return <FundedProjectApprovalDetail id={id} onBack={goBack} role={role} />;
+            case 'consultancy':
+                return <ConsultancyApprovalDetail id={id} onBack={goBack} role={role} />;
             // Add other cases here
             default:
                 return (

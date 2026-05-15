@@ -5,7 +5,6 @@ import {
     CircularProgress, Chip, IconButton, Stack
 } from "@mui/material";
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import AutoStoriesIcon from '@mui/icons-material/AutoStories';
 import PersonIcon from '@mui/icons-material/Person';
 import DescriptionIcon from '@mui/icons-material/Description';
 import GroupsIcon from '@mui/icons-material/Groups';
@@ -15,10 +14,11 @@ import GavelIcon from '@mui/icons-material/Gavel';
 import DownloadIcon from '@mui/icons-material/Download';
 import CheckIcon from '@mui/icons-material/Check';
 import CloseIcon from '@mui/icons-material/Close';
+import ArticleIcon from '@mui/icons-material/Article';
 import { toast } from "sonner";
 import API from "../../../api/axios";
 
-const BookChapterApprovalDetail = ({ id, onBack, role }) => {
+const PatentApprovalDetail = ({ id, onBack, role }) => {
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [remarks, setRemarks] = useState("");
@@ -34,7 +34,7 @@ const BookChapterApprovalDetail = ({ id, onBack, role }) => {
     useEffect(() => {
         const fetchDetails = async () => {
             try {
-                const res = await API.get(`/api/research/book-chapter/${id}`);
+                const res = await API.get(`/api/research/patent/${id}`);
                 if (res.data?.success) {
                     setData(res.data.data);
                     if (res.data.data.rndComment) setRemarks(res.data.data.rndComment);
@@ -42,7 +42,7 @@ const BookChapterApprovalDetail = ({ id, onBack, role }) => {
                     if (res.data.data.approvedAmount) setApprovedAmount(res.data.data.approvedAmount);
                 }
             } catch (error) {
-                console.error("Failed to fetch book chapter details", error);
+                console.error("Failed to fetch patent details", error);
                 toast.error("Failed to load details");
             } finally {
                 setLoading(false);
@@ -66,7 +66,7 @@ const BookChapterApprovalDetail = ({ id, onBack, role }) => {
 
         setActionLoading(true);
         try {
-            const endpoint = isResearchAdmin ? `/api/research/book-chapter/rnd-action/${id}` : `/api/research/book-chapter/hod-action/${id}`;
+            const endpoint = isResearchAdmin ? `/api/research/patent/rnd-action/${id}` : `/api/research/patent/hod-action/${id}`;
             const res = await API.put(endpoint, {
                 action,
                 comment: remarks,
@@ -98,12 +98,12 @@ const BookChapterApprovalDetail = ({ id, onBack, role }) => {
 
     const renderFilePreview = (title, filepath, index) => {
         if (!filepath) return null;
-        const backendURL = import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
+        const backendURL = (import.meta.env.VITE_BACKEND_URL || "http://localhost:9000").replace(/\/$/, "");
         const fileUrl = filepath.startsWith('http') ? filepath : `${backendURL}${filepath}`;
         const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(filepath);
 
         return (
-            <Grid key={index} size={{ xs: 12, sm: 3 }}>
+            <Grid key={index} item xs={12} sm={6} md={3}>
                 <Box sx={{ mb: 1, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                     <Typography variant="subtitle2" sx={{ fontWeight: 800, color: "var(--color-primary)", fontSize: "0.75rem", textTransform: "uppercase" }}>
                         {index}. {title}
@@ -149,14 +149,14 @@ const BookChapterApprovalDetail = ({ id, onBack, role }) => {
             <Card sx={cardStyle}>
                 <Box sx={{ display: "flex", flexDirection: { xs: "column", sm: "row" }, justifyContent: "space-between", alignItems: { xs: "center", sm: "flex-start" }, gap: 2, mb: 4 }}>
                     <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-                        <Box sx={{ width: 50, height: 50, borderRadius: "50%", bgcolor: "rgba(25, 118, 210, 0.1)", color: "var(--color-primary)", display: "flex", alignItems: "center", justifyContent: "center" }}><AutoStoriesIcon /></Box>
+                        <Box sx={{ width: 50, height: 50, borderRadius: "50%", bgcolor: "rgba(190, 147, 55, 0.1)", color: "var(--color-primary)", display: "flex", alignItems: "center", justifyContent: "center" }}><DescriptionIcon /></Box>
                         <Box>
-                            <Typography variant="h5" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>{data.chapterTitle}</Typography>
-                            <Typography variant="body2" sx={{ color: "var(--text-secondary)", fontWeight: 600 }}>In: {data.textBookName}</Typography>
+                            <Typography variant="h5" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>{data.title}</Typography>
+                            <Typography variant="body2" sx={{ color: "var(--text-secondary)", fontWeight: 600 }}>Filing No: {data.filingNo}</Typography>
                         </Box>
                     </Box>
                     <Box sx={{ textAlign: { xs: "center", sm: "right" } }}>
-                        <Chip label="Book Chapter Publication" sx={{ bgcolor: "rgba(22, 101, 52, 0.1)", color: "#2e7d32", fontWeight: 800, borderRadius: "8px", textTransform: "uppercase", fontSize: "0.65rem" }} />
+                        <Chip label="Patent Application" sx={{ bgcolor: "rgba(22, 101, 52, 0.1)", color: "#2e7d32", fontWeight: 800, borderRadius: "8px", textTransform: "uppercase", fontSize: "0.65rem" }} />
                         <Typography variant="caption" sx={{ display: "block", mt: 1, color: "var(--text-secondary)", fontWeight: 700 }}>Submitted on {new Date(data.createdAt).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}</Typography>
                     </Box>
                 </Box>
@@ -166,7 +166,7 @@ const BookChapterApprovalDetail = ({ id, onBack, role }) => {
                         <LabelValue label="Academic Year" value={data.academicYear?.year} />
                     </Box>
                     <Box sx={{ flex: { xs: "1 1 100%", sm: "1 1 23%" } }}>
-                        <LabelValue label="Reference ID" value={`BCP-${new Date(data.createdAt).getFullYear()}-${data._id.substring(data._id.length - 6).toUpperCase()}`} />
+                        <LabelValue label="Reference ID" value={`PAT-${new Date(data.createdAt).getFullYear()}-${data._id.substring(data._id.length - 6).toUpperCase()}`} />
                     </Box>
                     <Box sx={{ flex: { xs: "1 1 100%", sm: "1 1 23%" } }}>
                         <LabelValue label="Submission Date" value={new Date(data.createdAt).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })} />
@@ -195,8 +195,8 @@ const BookChapterApprovalDetail = ({ id, onBack, role }) => {
                     <Box sx={{ display: "flex", flexDirection: "column", gap: 3, alignItems: "center" }}>
                         <Box sx={{ width: 100, height: 100, borderRadius: "50%", background: "var(--bg-panel)", border: "2px solid var(--border-color)", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "var(--shadow-premium)" }}>
                             {(() => {
-                                const backendURL = import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
-                                const portalImg = facultyId?.profileImage ? (facultyId.profileImage.startsWith('http') ? facultyId.profileImage : `${backendURL}${facultyId.profileImage}`) : null;
+                                const backendURL = (import.meta.env.VITE_BACKEND_URL || "http://localhost:9000").replace(/\/$/, "");
+                                const portalImg = facultyId?.profileImage ? (facultyId.profileImage.startsWith('http') ? facultyId.profileImage : `${backendURL}${facultyId.profileImage.startsWith('/') ? facultyId.profileImage : `/${facultyId.profileImage}`}`) : null;
                                 const ecapImg = facultyId?.institutionId ? `https://info.aec.edu.in/aus/employeephotos/${facultyId.institutionId}.jpg` : null;
                                 const src = portalImg || ecapImg;
 
@@ -224,32 +224,32 @@ const BookChapterApprovalDetail = ({ id, onBack, role }) => {
                     </Box>
                 </Card>
 
-                {/* Publication Details */}
+                {/* Patent Details */}
                 <Card sx={{ ...cardStyle, flex: { xs: "1 1 100%", lg: "1 1 48%" }, mb: 0 }}>
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 3 }}><AutoStoriesIcon sx={{ color: "var(--color-primary)" }} /><Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>Publication Details</Typography></Box>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 3 }}><ArticleIcon sx={{ color: "var(--color-primary)" }} /><Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>Patent Details</Typography></Box>
                     <Box sx={{ display: "flex", flexDirection: "column" }}>
-                        <LabelValue label="Publisher" value={data.publisher} horizontal />
-                        <LabelValue label="ISBN" value={data.isbn} horizontal />
-                        <LabelValue label="Pub Year" value={data.yearOfPublication} horizontal />
-                        <LabelValue label="First Author" value={data.firstAuthor} horizontal />
-                        <LabelValue label="Your Position" value={data.authorPosition} horizontal />
-                        <LabelValue label="Month/Year" value={`${data.month} ${data.year}`} horizontal />
+                        <LabelValue label="Applicant Name" value={data.applicantName} horizontal />
+                        <LabelValue label="Area of Patent" value={data.area} horizontal />
+                        <LabelValue label="Filing No" value={data.filingNo} horizontal />
+                        <LabelValue label="Date of Filing" value={new Date(data.dateOfFiling).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })} horizontal />
+                        <LabelValue label="Patent Status" value={data.patentStatus} horizontal />
+                        <LabelValue label="Month / Year" value={`${data.month} ${data.year}`} horizontal />
                         <LabelValue label="Incentive" horizontal chip={<Chip label={data.applyIncentive} size="small" sx={{ bgcolor: data.applyIncentive === 'Yes' ? "rgba(76, 175, 80, 0.1)" : "var(--bg-panel)", color: data.applyIncentive === 'Yes' ? "#4caf50" : "var(--text-secondary)", fontWeight: 800, border: "1px solid", borderColor: data.applyIncentive === 'Yes' ? "#4caf5044" : "var(--border-color)" }} />} />
-                        {data.applyIncentive === 'Yes' && <LabelValue label="Expected (₹)" value={data.expectedAmount} horizontal />}
+                        {data.applyIncentive === 'Yes' && <LabelValue label="Expected (₹)" value={data.expectedAmount || "1500"} horizontal />}
                     </Box>
                 </Card>
             </Box>
 
-            {/* Co-Authors */}
-            {data.coAuthors?.length > 0 && (
+            {/* Co-Inventors */}
+            {data.coInventors?.length > 0 && (
                 <Card sx={{ ...cardStyle, p: 0, overflow: "hidden" }}>
-                    <Box sx={{ p: 3, pb: 2 }}><Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 1 }}><GroupsIcon sx={{ color: "var(--color-primary)" }} /><Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>Co-Authors</Typography></Box></Box>
+                    <Box sx={{ p: 3, pb: 2 }}><Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 1 }}><GroupsIcon sx={{ color: "var(--color-primary)" }} /><Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>Co-Inventors</Typography></Box></Box>
                     <TableContainer><Table><TableHead sx={{ bgcolor: "var(--bg-panel)" }}><TableRow>
                         <TableCell sx={{ color: "var(--text-secondary)", fontWeight: 800, fontSize: "0.7rem", textTransform: "uppercase" }}>#</TableCell>
                         <TableCell sx={{ color: "var(--text-secondary)", fontWeight: 800, fontSize: "0.7rem", textTransform: "uppercase" }}>NAME</TableCell>
                         <TableCell sx={{ color: "var(--text-secondary)", fontWeight: 800, fontSize: "0.7rem", textTransform: "uppercase" }}>AFFILIATION</TableCell>
                     </TableRow></TableHead><TableBody>
-                        {data.coAuthors.map((ca, i) => (
+                        {data.coInventors.map((ca, i) => (
                             <TableRow key={i}><TableCell sx={{ fontWeight: 800, color: "var(--color-primary)" }}>{i + 1}</TableCell><TableCell sx={{ fontWeight: 700, color: "var(--text-primary)" }}>{ca.name}</TableCell><TableCell sx={{ fontWeight: 600, color: "var(--text-secondary)" }}>{ca.affiliation}</TableCell></TableRow>
                         ))}
                     </TableBody></Table></TableContainer>
@@ -260,10 +260,8 @@ const BookChapterApprovalDetail = ({ id, onBack, role }) => {
             <Card sx={cardStyle}>
                 <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 3 }}><AttachFileIcon sx={{ color: "var(--color-primary)" }} /><Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>Attached Documents</Typography></Box>
                 <Grid container spacing={3}>
-                    {renderFilePreview("Cover Page", data.coverPage, 1)}
-                    {renderFilePreview("Author Affiliation", data.authorAffiliation, 2)}
-                    {renderFilePreview("Index", data.index, 3)}
-                    {renderFilePreview("Soft Copy", data.softCopy, 4)}
+                    {renderFilePreview("e-Filing Receipt", data.eFilingReceipt, 1)}
+                    {renderFilePreview("Form - 1", data.form1, 2)}
                 </Grid>
             </Card>
 
@@ -279,7 +277,14 @@ const BookChapterApprovalDetail = ({ id, onBack, role }) => {
                             {isResearchAdmin && data.applyIncentive === 'Yes' && (
                                 <Box sx={{ mb: 3 }}>
                                     <Typography variant="subtitle2" sx={{ fontWeight: 900, mb: 1, color: "var(--color-primary)", fontSize: "0.75rem" }}>APPROVED INCENTIVE (₹)</Typography>
-                                    <TextField fullWidth size="small" type="number" placeholder={`Expected: ₹${data.expectedAmount}`} value={approvedAmount} onChange={e => setApprovedAmount(e.target.value)} sx={{ maxWidth: 250, "& .MuiOutlinedInput-root": { borderRadius: "10px", bgcolor: "var(--bg-panel)" } }} helperText={`Applicant's expected amount is ₹${data.expectedAmount}`} />
+                                    <TextField 
+                                        fullWidth size="small" type="number" 
+                                        placeholder={`Expected: ₹${data.expectedAmount || "1500"}`} 
+                                        value={approvedAmount} 
+                                        onChange={e => setApprovedAmount(e.target.value)} 
+                                        sx={{ maxWidth: 250, "& .MuiOutlinedInput-root": { borderRadius: "10px", bgcolor: "var(--bg-panel)" } }} 
+                                        helperText={`Applicant's expected amount is ₹${data.expectedAmount || "1500"}`} 
+                                    />
                                 </Box>
                             )}
 
@@ -309,4 +314,4 @@ const BookChapterApprovalDetail = ({ id, onBack, role }) => {
     );
 };
 
-export default BookChapterApprovalDetail;
+export default PatentApprovalDetail;
