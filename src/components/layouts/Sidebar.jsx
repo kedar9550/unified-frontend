@@ -263,6 +263,8 @@ const Sidebar = ({ mobileOpen, onDrawerToggle }) => {
             "DEPARTMENT HOD": <Groups sx={{ fontSize: "1.2rem" }} />,
             "UNIPRIME": <AdminPanelSettings sx={{ fontSize: "2rem" }} />,
             "RESEARCH FEEDBACK COMMITTEE": <Science sx={{ fontSize: "2rem" }} />,
+            "RESEARCH_DEAN": <Science sx={{ fontSize: "2rem" }} />,
+            "RESEARCH_COORDINATOR": <Science sx={{ fontSize: "2rem" }} />,
           }[roleUpper] || <AccountCircle sx={{ fontSize: "2rem" }} />;
 
           return (

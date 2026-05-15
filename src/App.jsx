@@ -34,8 +34,8 @@ import SDGManagement from "./pages/uniprime/SDGManagement";
 
 
 // Research Approval System (Consolidated)
-import ResearchApprovalList from './pages/researchApproval/ResearchApprovalList';
-import ResearchApprovalDetailWrapper from './pages/researchApproval/ResearchApprovalDetailWrapper';
+import ResearchApprovalList from './pages/research/researchApproval/ResearchApprovalList';
+import ResearchApprovalDetailWrapper from './pages/research/researchApproval/ResearchApprovalDetailWrapper';
 
 
 

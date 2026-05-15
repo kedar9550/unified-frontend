@@ -9,6 +9,7 @@ import ExamDashboard from "./examAdmin/ExamDashboard";
 import StudentDashboard from "./student/StudentDashboard";
 import ResearchFeedbackDashboard from "./feedback/ResearchFeedbackDashboard";
 import FeedbackCoordinatorDashboard from "./feedback/FeedbackCoordinatorDashboard";
+import RnDDeanDashboard from "./research/RnDDeanDashboard";
 
 function Dashboard() {
   const { activeRole } = useAuth();
@@ -19,7 +20,7 @@ function Dashboard() {
   }
 
   return (
-    <Box sx={{ p: { xs: 1, md: 2 } }}>
+    <Box sx={{ p: { xs: 1, md: 3, lg: 4 } }}>
       {/* <Typography variant="h4" fontWeight={800} color="#1a237e" mb={3} sx={{ textTransform: 'capitalize' }}>
        Welcome back! {activeRole.toLowerCase()} 
       </Typography> */}
@@ -32,6 +33,7 @@ function Dashboard() {
       {activeRole === "STUDENT" && <StudentDashboard />}
       {activeRole === "RESEARCH FEEDBACK COMMITTEE" && <ResearchFeedbackDashboard />}
       {activeRole === "FEEDBACK COORDINATOR" && <FeedbackCoordinatorDashboard />}
+      {activeRole === "RESEARCH_DEAN" && <RnDDeanDashboard />}
     </Box>
   );
 }

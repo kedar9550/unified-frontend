@@ -15,7 +15,7 @@ import GavelIcon from '@mui/icons-material/Gavel';
 import DownloadIcon from '@mui/icons-material/Download';
 import CheckIcon from '@mui/icons-material/Check';
 import CloseIcon from '@mui/icons-material/Close';
-import API from "../../api/axios";
+import API from "../../../api/axios";
 
 const TextBookApprovalDetail = ({ id, onBack, role }) => {
     const [data, setData] = useState(null);
@@ -115,9 +115,18 @@ const TextBookApprovalDetail = ({ id, onBack, role }) => {
     const renderFilePreview = (title, filepath, index) => {
         if (!filepath) return null;
 
-        const backendURL = import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
-        const fileUrl = filepath.startsWith('http') ? filepath : `${backendURL}${filepath}`;
-        const isImage = /\.(jpg|jpeg|png|gif)$/i.test(filepath);
+        const backendURL = (import.meta.env.VITE_BACKEND_URL || "http://localhost:9000").replace(/\/$/, "");
+        let normalizedPath = filepath.replace(/\\/g, '/');
+        
+        // Handle legacy data or missing prefixes
+        if (!normalizedPath.startsWith('http') && !normalizedPath.includes('uploads/')) {
+            // Prepend textbooks path if it's a relative filename
+            normalizedPath = `/uploads/textbooks/${normalizedPath.startsWith('/') ? normalizedPath.substring(1) : normalizedPath}`;
+        }
+        
+        const cleanPath = normalizedPath.startsWith('/') ? normalizedPath : `/${normalizedPath}`;
+        const fileUrl = normalizedPath.startsWith('http') ? normalizedPath : `${backendURL}${cleanPath}`;
+        const isImage = /\.(jpg|jpeg|png|gif)$/i.test(normalizedPath);
 
         return (
             <Grid size={{ xs: 12, sm: 4 }}>
@@ -150,7 +159,15 @@ const TextBookApprovalDetail = ({ id, onBack, role }) => {
                     "&:hover": { borderColor: "var(--color-primary)", transform: "translateY(-4px)", boxShadow: "0 8px 24px rgba(0,0,0,0.1)" }
                 }} onClick={() => window.open(fileUrl, '_blank')}>
                     {isImage ? (
-                        <img src={fileUrl} alt={title} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                        <img 
+                            src={fileUrl} 
+                            alt={title} 
+                            style={{ width: "100%", height: "100%", objectFit: "cover" }} 
+                            onError={(e) => {
+                                console.error(`Failed to load image: ${fileUrl}`);
+                                e.target.src = "https://via.placeholder.com/400x300?text=Image+Not+Found";
+                            }}
+                        />
                     ) : (
                         <Box sx={{ textAlign: "center" }}>
                             <DescriptionIcon sx={{ fontSize: 40, color: "var(--text-secondary)", mb: 1 }} />
@@ -324,9 +341,17 @@ const TextBookApprovalDetail = ({ id, onBack, role }) => {
                             }}>
                                 {facultyId?.profileImage ? (
                                     <img
-                                        src={facultyId.profileImage.startsWith('http') ? facultyId.profileImage : `${import.meta.env.VITE_BACKEND_URL || "http://localhost:5000"}${facultyId.profileImage}`}
+                                        src={(() => {
+                                            const backendURL = (import.meta.env.VITE_BACKEND_URL || "http://localhost:9000").replace(/\/$/, "");
+                                            let p = facultyId.profileImage.replace(/\\/g, '/');
+                                            if (!p.startsWith('http') && !p.includes('uploads/')) {
+                                                p = `/uploads/profile/${p.startsWith('/') ? p.substring(1) : p}`;
+                                            }
+                                            return p.startsWith('http') ? p : `${backendURL}${p.startsWith('/') ? p : `/${p}`}`;
+                                        })()}
                                         alt="Faculty"
                                         style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                                        onError={(e) => { e.target.src = "https://via.placeholder.com/150?text=Profile"; }}
                                     />
                                 ) : (
                                     <Typography sx={{ color: "var(--text-secondary)", fontWeight: 700, fontSize: 32 }}>

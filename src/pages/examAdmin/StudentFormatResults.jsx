@@ -566,7 +566,9 @@ export default function StudentFormatResults() {
                 <Typography sx={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.05em' }}>EXAM YEAR</Typography>
               </Box>
               <Select
-                variant="standard"
+                variant="standar
+                
+                d"
                 disableUnderline
                 value={selectedExamYear}
                 onChange={(e) => setSelectedExamYear(e.target.value)}

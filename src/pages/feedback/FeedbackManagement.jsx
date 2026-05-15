@@ -27,6 +27,7 @@ import { IconButton } from "@mui/material";
 
 export default function FeedbackManagement() {
   const [academicYears, setAcademicYears] = useState([]);
+  const [programs, setPrograms] = useState([]);
   const [selectedYearId, setSelectedYearId] = useState("");
   const [selectedPhase, setSelectedPhase] = useState("");
 
@@ -55,6 +56,16 @@ export default function FeedbackManagement() {
       }
     };
     fetchYears();
+
+    const fetchPrograms = async () => {
+      try {
+        const res = await API.get("/api/academics/programs");
+        setPrograms(res.data.data || []);
+      } catch (err) {
+        console.error("Error fetching programs:", err);
+      }
+    };
+    fetchPrograms();
   }, []);
 
   // 2. Fetch Results when filters change
@@ -138,7 +149,6 @@ export default function FeedbackManagement() {
     const headers = [
       "facultyId",
       "academicYear",
-      "program",
       "branch",
       "subjectName",
       "subjectCode",
@@ -151,7 +161,7 @@ export default function FeedbackManagement() {
       "overallPercentage",
     ];
     const sampleRows = [
-        ["FAC123", "2024-2025", "B.Tech", "CSE", "Mathematics", "MA101", "A", "1", "3", "60", "55", "91.6", "88.5"],
+        ["FAC123", "2024-2025", "CSE", "Mathematics", "MA101", "A", "1", "3", "60", "55", "91.6", "88.5"],
     ];
     const csvContent = headers.join(",") + "\n" + sampleRows.map(row => row.join(",")).join("\n") + "\n";
     const blob = new Blob([csvContent], { type: "text/csv" });
