@@ -521,7 +521,7 @@ const Studentuploads = () => {
                                 <Typography variant="body2" sx={{ color: "var(--text-secondary)", fontWeight: 600 }}>Drop your file here to upload</Typography>
                             </Box>
                             <Typography variant="caption" sx={{ color: "var(--text-secondary)", mt: 1.5, display: "flex", alignItems: "center", gap: 0.5, opacity: 0.8 }}>
-                                Only .csv files are allowed <InfoIcon sx={{ fontSize: 14 }} />
+                                Only .csv and .xlsx files are allowed <InfoIcon sx={{ fontSize: 14 }} />
                             </Typography>
                         </Box>
 
