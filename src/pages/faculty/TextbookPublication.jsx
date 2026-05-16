@@ -41,19 +41,19 @@ export default function TextbookPublication() {
   useEffect(() => {
     API.get("/api/research/textbook").then(res => {
       setPublicationsList(res.data?.data || res.data || []);
-    }).catch(err => console.log("Failed to fetch textbooks", err));
+    }).catch(err => {});
 
     API.get("/api/academic-years").then(res => {
       setAcademicYears(res.data?.years || res.data?.data || []);
-    }).catch(err => console.log("Failed to fetch academic years", err));
+    }).catch(err => {});
 
     API.get("/api/research/textbook/editions").then(res => {
       setEditions(res.data?.data || []);
-    }).catch(err => console.log("Failed to fetch editions", err));
+    }).catch(err => {});
 
     API.get("/api/publishers").then(res => {
       setPublishers(res.data?.data || []);
-    }).catch(err => console.log("Failed to fetch publishers", err));
+    }).catch(err => {});
   }, [viewMode]);
 
   // Handle dynamic author generation based on total authors and user position
