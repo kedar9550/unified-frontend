@@ -268,7 +268,21 @@ const AcademicManagement = () => {
       {years.map((yearDoc) => {
         const isYearExpanded = !!expandedYears[yearDoc._id];
         return (
-          <Paper key={yearDoc._id} sx={{ mb: 3, borderRadius: 2, background: "var(--bg-panel)", border: "1px solid var(--border-color)", overflow: "hidden" }}>
+          <Paper key={yearDoc._id} sx={{
+            position: "relative",
+            p: 0, mb: 3, borderRadius: 2, background: "var(--bg-panel)", border: "1px solid var(--border-color)",
+            overflow: "hidden",
+            "&::after": {
+              content: '""',
+              position: "absolute",
+              top: 0,
+              right: 0,
+              width: "140px",
+              height: "140px",
+              background: "radial-gradient(circle at top right, var(--color-primary-alpha), transparent 70%)",
+              zIndex: 0
+            }
+          }}>
             {/* Year Header */}
             <Box onClick={() => toggleYearExpand(yearDoc._id)} sx={{
               p: 2.5, display: "flex", 
@@ -313,7 +327,21 @@ const AcademicManagement = () => {
                   const cardKey = `${yearDoc._id}-${progId}`;
                   const isExpanded = !!expandedCards[cardKey];
                   return (
-                    <Card key={progId} variant="outlined" sx={{ borderRadius: 2, borderColor: "var(--border-color)", background: "var(--bg-glass)" }}>
+                    <Card key={progId} variant="outlined" sx={{
+                      position: "relative",
+                      borderRadius: 2, borderColor: "var(--border-color)", background: "var(--bg-glass)",
+                      overflow: "hidden",
+                      "&::after": {
+                        content: '""',
+                        position: "absolute",
+                        top: 0,
+                        right: 0,
+                        width: "120px",
+                        height: "120px",
+                        background: "radial-gradient(circle at top right, var(--color-primary-alpha), transparent 70%)",
+                        zIndex: 0
+                      }
+                    }}>
                       <Box onClick={() => toggleCard(cardKey)} sx={{
                         p: 2, display: "flex", justifyContent: "space-between", alignItems: "center",
                         background: "var(--bg-panel)", cursor: "pointer",

@@ -844,6 +844,18 @@ const cardStyle = {
     border: "1px solid var(--border-color)",
     boxShadow: "0 8px 32px 0 rgba(0, 0, 0, 0.08)",
     transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+    overflow: "hidden",
+    "&::before": {
+        content: '""',
+        position: "absolute",
+        top: 0,
+        right: 0,
+        width: "120px",
+        height: "120px",
+        background: "radial-gradient(circle at top right, var(--color-primary-alpha, rgba(2, 132, 199, 0.15)), transparent 70%)",
+        zIndex: 0,
+        pointerEvents: "none"
+    },
     "&::after": {
         content: '""',
         position: "absolute",
@@ -856,7 +868,8 @@ const cardStyle = {
         maskComposite: "exclude",
         opacity: 0,
         transition: "opacity 0.3s ease",
-        pointerEvents: "none"
+        pointerEvents: "none",
+        zIndex: 1
     },
     "&:hover": {
         transform: "translateY(-8px)",

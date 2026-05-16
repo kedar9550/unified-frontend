@@ -139,7 +139,15 @@ const PatentApprovalDetail = ({ id, onBack, role }) => {
         </Box>
     );
 
-    const cardStyle = { p: 3, mb: 3, borderRadius: "20px", border: "1px solid var(--border-color)", background: "var(--bg-glass)", backdropFilter: "blur(10px)", boxShadow: "var(--shadow-premium)" };
+    const cardStyle = {
+        p: 3,
+        mb: 3,
+        borderRadius: "20px",
+        border: "1px solid var(--border-color)",
+        background: "var(--bg-glass)",
+        backdropFilter: "blur(10px)",
+        boxShadow: "var(--shadow-premium)",
+    };
 
     return (
         <Box sx={{ width: "100%", pb: 5 }}>

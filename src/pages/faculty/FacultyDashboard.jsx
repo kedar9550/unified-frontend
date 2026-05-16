@@ -94,6 +94,7 @@ const FacultyDashboard = () => {
       subtitle: "This Semester",
       icon: <MenuBook />,
       gradient: "linear-gradient(135deg, #3B82F6, #2563EB)",
+      color: "#3B82F6",
       linkText: "View Details",
     },
     {
@@ -102,6 +103,7 @@ const FacultyDashboard = () => {
       subtitle: "Total Publications",
       icon: <Description />,
       gradient: "linear-gradient(135deg, #8B5CF6, #6D28D9)",
+      color: "#8B5CF6",
       linkText: "View Details",
     },
     {
@@ -110,6 +112,7 @@ const FacultyDashboard = () => {
       subtitle: "Requires Attention",
       icon: <AssignmentTurnedIn />,
       gradient: "linear-gradient(135deg, #F59E0B, #D97706)",
+      color: "#F59E0B",
       linkText: "View Details",
     },
     {
@@ -118,6 +121,7 @@ const FacultyDashboard = () => {
       subtitle: "Today",
       icon: <Event />,
       gradient: "linear-gradient(135deg, #EF4444, #DC2626)",
+      color: "#EF4444",
       linkText: "View Schedule",
     },
   ];
@@ -229,11 +233,13 @@ const FacultyDashboard = () => {
           >
             <Card
               sx={{
+                position: "relative",
                 borderRadius: 2,
                 background: "var(--bg-panel)",
                 border: "1px solid var(--border-color)",
                 boxShadow: "var(--shadow-premium)",
                 transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+                overflow: "hidden",
                 "&:hover": {
                   transform: "translateY(-6px)",
                   boxShadow: "0 20px 40px rgba(0,0,0,0.12)",
@@ -244,9 +250,19 @@ const FacultyDashboard = () => {
                 flexDirection: "column",
                 justifyContent: "space-between",
                 p: 2.5,
+                "&::after": {
+                  content: '""',
+                  position: "absolute",
+                  top: 0,
+                  right: 0,
+                  width: "120px",
+                  height: "120px",
+                  background: `radial-gradient(circle at top right, ${card.color}25, transparent 70%)`,
+                  zIndex: 0
+                }
               }}
             >
-              <Box sx={{ display: "flex", alignItems: "flex-start", gap: 2 }}>
+              <Box sx={{ display: "flex", alignItems: "flex-start", gap: 2, position: "relative", zIndex: 1 }}>
                 <Box
                   sx={{
                     width: 52,
@@ -558,6 +574,7 @@ const FacultyDashboard = () => {
         <Box sx={{ width: { xs: "100%", lg: "50%" }, display: "flex" }}>
           <Card
             sx={{
+              position: "relative",
               borderRadius: 2,
               background: "var(--bg-panel)",
               border: "1px solid var(--border-color)",
@@ -567,6 +584,17 @@ const FacultyDashboard = () => {
               width: "100%",
               display: "flex",
               flexDirection: "column",
+              overflow: "hidden",
+              "&::after": {
+                content: '""',
+                position: "absolute",
+                top: 0,
+                right: 0,
+                width: "160px",
+                height: "160px",
+                background: "radial-gradient(circle at top right, var(--color-primary-alpha), transparent 70%)",
+                zIndex: 0
+              }
             }}
           >
             <Typography
@@ -668,7 +696,6 @@ const FacultyDashboard = () => {
           boxShadow: "var(--shadow-premium)",
           p: 3,
           mb: 4,
-          overflow: "hidden"
         }}
       >
         <Box

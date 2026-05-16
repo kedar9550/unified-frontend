@@ -297,6 +297,7 @@ const Profile = () => {
           display: "flex"
         }}>
           <Paper sx={{
+            position: "relative",
             p: 4,
             borderRadius: "24px",
             background: "var(--bg-paper)",
@@ -307,7 +308,18 @@ const Profile = () => {
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
-            justifyContent: "center"
+            justifyContent: "center",
+            overflow: "hidden",
+            "&::after": {
+              content: '""',
+              position: "absolute",
+              top: 0,
+              right: 0,
+              width: "140px",
+              height: "140px",
+              background: "radial-gradient(circle at top right, var(--color-primary-alpha), transparent 70%)",
+              zIndex: 0
+            }
           }}>
             <Box sx={{ position: "relative", display: "inline-block", mb: 3 }}>
               <Avatar
@@ -402,11 +414,23 @@ const Profile = () => {
         <Box sx={{ flexGrow: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 3, width: "100%" }}>
           {/* Personal Information */}
           <Paper sx={{
+            position: "relative",
             p: 3,
             borderRadius: "24px",
             background: "var(--bg-paper)",
             border: "1px solid var(--border-color)",
-            boxShadow: "var(--shadow-lg)"
+            boxShadow: "var(--shadow-lg)",
+            overflow: "hidden",
+            "&::after": {
+              content: '""',
+              position: "absolute",
+              top: 0,
+              right: 0,
+              width: "140px",
+              height: "140px",
+              background: "radial-gradient(circle at top right, var(--color-primary-alpha), transparent 70%)",
+              zIndex: 0
+            }
           }}>
             <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
               <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
@@ -512,13 +536,25 @@ const Profile = () => {
 
       {/* Account & Security — full width below both columns */}
       <Paper sx={{
+        position: "relative",
         p: 3,
         borderRadius: "24px",
         background: "var(--bg-paper)",
         border: "1px solid var(--border-color)",
         boxShadow: "var(--shadow-lg)",
         mt: 3,
-        width: "100%"
+        width: "100%",
+        overflow: "hidden",
+        "&::after": {
+          content: '""',
+          position: "absolute",
+          top: 0,
+          right: 0,
+          width: "140px",
+          height: "140px",
+          background: "radial-gradient(circle at top right, var(--color-primary-alpha), transparent 70%)",
+          zIndex: 0
+        }
       }}>
         <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 2.5 }}>
           <Security sx={{ color: "var(--color-primary)" }} />

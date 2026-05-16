@@ -245,6 +245,16 @@ const SDGManagement = () => {
                     boxShadow: 'var(--shadow-premium)',
                     borderColor: brandColor,
                     transform: isMobile ? 'translateY(-2px)' : 'none'
+                  },
+                  '&::after': {
+                    content: '""',
+                    position: "absolute",
+                    top: 0,
+                    right: 0,
+                    width: "120px",
+                    height: "120px",
+                    background: `radial-gradient(circle at top right, ${brandColor}25, transparent 70%)`,
+                    zIndex: 0
                   }
                 }}
               >

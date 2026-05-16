@@ -139,7 +139,27 @@ const BookChapterApprovalDetail = ({ id, onBack, role }) => {
         </Box>
     );
 
-    const cardStyle = { p: 3, mb: 3, borderRadius: "20px", border: "1px solid var(--border-color)", background: "var(--bg-glass)", backdropFilter: "blur(10px)", boxShadow: "var(--shadow-premium)" };
+    const cardStyle = {
+        position: "relative",
+        p: 3,
+        mb: 3,
+        borderRadius: "20px",
+        border: "1px solid var(--border-color)",
+        background: "var(--bg-glass)",
+        backdropFilter: "blur(10px)",
+        boxShadow: "var(--shadow-premium)",
+        overflow: "hidden",
+        "&::after": {
+            content: '""',
+            position: "absolute",
+            top: 0,
+            right: 0,
+            width: "140px",
+            height: "140px",
+            background: "radial-gradient(circle at top right, var(--color-primary-alpha), transparent 70%)",
+            zIndex: 0
+        }
+    };
 
     return (
         <Box sx={{ width: "100%", px: { xs: 1.5, sm: 2, md: 3 }, pb: 5 }}>

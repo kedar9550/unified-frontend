@@ -231,9 +231,9 @@ const UniprimeDashboard = () => {
                       position: "absolute",
                       top: 0,
                       right: 0,
-                      width: "100px",
-                      height: "100px",
-                      background: `radial-gradient(circle at top right, ${card.color}20, transparent)`,
+                      width: "120px",
+                      height: "120px",
+                      background: `radial-gradient(circle at top right, ${card.color}25, transparent 70%)`,
                       zIndex: 0
                     }
                   }}
@@ -332,7 +332,9 @@ const UniprimeDashboard = () => {
                   height: "100%",
                   display: "flex",
                   flexDirection: "column",
-                  width: "100%"
+                  width: "100%",
+                  border: "1px solid var(--border-color)",
+                  background: "var(--bg-panel)",
                 }}
               >
                 {/* Header */}
@@ -392,7 +394,9 @@ const UniprimeDashboard = () => {
                   boxShadow: "0 6px 20px rgba(0,0,0,0.06)",
                   p: 2.5,
                   height: "100%",
-                  width: "100%"
+                  width: "100%",
+                  border: "1px solid var(--border-color)",
+                  background: "var(--bg-panel)",
                 }}
               >
                 {/* Header */}
@@ -501,9 +505,14 @@ const UniprimeDashboard = () => {
             {/* User & Role Overview */}
             <Box sx={{ width: { xs: "100%", lg: "50%" }, display: "flex" }}>
               <Card sx={{
-                borderRadius: 1, boxShadow: "0 2px 10px rgba(0,0,0,0.05)", height: "100%", width: "100%",
+                borderRadius: 1, 
+                boxShadow: "0 2px 10px rgba(0,0,0,0.05)", 
+                height: "100%", 
+                width: "100%",
                 display: "flex",
-                flexDirection: "column"
+                flexDirection: "column",
+                border: "1px solid var(--border-color)",
+                background: "var(--bg-panel)",
               }}>
                 <CardContent sx={{ flexGrow: 1 }}>
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
@@ -619,9 +628,14 @@ const UniprimeDashboard = () => {
             {/* Quick Actions */}
             <Box sx={{ width: { xs: "100%", lg: "50%" }, display: "flex" }}>
               <Card sx={{
-                borderRadius: 1, boxShadow: "0 2px 10px rgba(0,0,0,0.05)", height: "100%", width: "100%",
+                borderRadius: 1, 
+                boxShadow: "0 2px 10px rgba(0,0,0,0.05)", 
+                height: "100%", 
+                width: "100%",
                 display: "flex",
-                flexDirection: "column"
+                flexDirection: "column",
+                border: "1px solid var(--border-color)",
+                background: "var(--bg-panel)",
               }}>
                 <CardContent sx={{ flexGrow: 1 }}>
                   <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 2 }}>Quick Actions</Typography>

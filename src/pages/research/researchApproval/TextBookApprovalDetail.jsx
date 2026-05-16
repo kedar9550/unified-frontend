@@ -237,13 +237,25 @@ const TextBookApprovalDetail = ({ id, onBack, role }) => {
     );
 
     const cardStyle = {
+        position: "relative",
         p: 3,
         mb: 3,
         borderRadius: "16px",
         border: "1px solid var(--border-color)",
         boxShadow: "0 4px 24px rgba(0,0,0,0.04)",
         background: "var(--bg-glass)",
-        backdropFilter: "blur(10px)"
+        backdropFilter: "blur(10px)",
+        overflow: "hidden",
+        "&::after": {
+            content: '""',
+            position: "absolute",
+            top: 0,
+            right: 0,
+            width: "140px",
+            height: "140px",
+            background: "radial-gradient(circle at top right, var(--color-primary-alpha), transparent 70%)",
+            zIndex: 0
+        }
     };
 
     return (

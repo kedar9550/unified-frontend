@@ -911,6 +911,18 @@ const sectionCard = {
   boxShadow: "var(--shadow-premium)",
   border: "1px solid var(--border-color)",
   mb: 3,
+  position: "relative",
+  overflow: "hidden",
+  "&::after": {
+    content: '""',
+    position: "absolute",
+    top: 0,
+    right: 0,
+    width: "140px",
+    height: "140px",
+    background: "radial-gradient(circle at top right, var(--color-primary-alpha, rgba(2, 132, 199, 0.1)), transparent 70%)",
+    zIndex: 0
+  }
 };
 
 const tableHeaderStyle = {
