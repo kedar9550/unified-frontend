@@ -243,13 +243,35 @@ const DeptProctorUploads = () => {
         academicYear: activeYear
       };
 
+      let newMappingId = mappingId;
       if (mappingId) {
         await API.put(`/api/dept-proctor/${mappingId}`, payload);
       } else {
-        await API.post(`/api/dept-proctor`, payload);
+        const res = await API.post(`/api/dept-proctor`, payload);
+        if (res.data?.data?._id) newMappingId = res.data.data._id;
+        else if (res.data?._id) newMappingId = res.data._id;
       }
+      
       toast.success("Proctor assigned successfully!");
-      fetchStudents();
+      
+      // Update local state to preserve DataTable pagination (avoids going to front page)
+      setStudents(prev => prev.map(s => {
+        if (s.studentId === studentId) {
+          let updatedProctorName = s.proctorName;
+          const fetchedName = fetchedProctors[studentId];
+          if (fetchedName && !fetchedName.includes("Not Found") && !fetchedName.includes("Error")) {
+            updatedProctorName = fetchedName.split(" (")[0]; // extract name from "Name (ID)"
+          }
+          
+          return {
+            ...s,
+            proctorId: proctorId,
+            mappingId: newMappingId,
+            proctorName: updatedProctorName || "Assigned"
+          };
+        }
+        return s;
+      }));
     } catch (err) {
       toast.error(err.response?.data?.message || "Failed to save proctor mapping");
     }
