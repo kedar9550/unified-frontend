@@ -175,6 +175,17 @@ const MobileNavbar = () => {
 
     return (
         <>
+            {/* Global SVG Definitions for Icons */}
+            <svg width="0" height="0" style={{ position: 'absolute' }}>
+                <defs>
+                    <linearGradient id="mobile-nav-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" style={{ stopColor: 'var(--gradient-start)' }} />
+                        <stop offset="50%" style={{ stopColor: 'var(--gradient-mid)' }} />
+                        <stop offset="100%" style={{ stopColor: 'var(--gradient-end)' }} />
+                    </linearGradient>
+                </defs>
+            </svg>
+
             {/* Hourly Weather Callout - Paper Roll Animation */}
             <Box
                 sx={{
@@ -427,8 +438,7 @@ const MobileNavbar = () => {
                                         '& .MuiSvgIcon-root': {
                                             fontSize: '1.6rem',
                                             transition: 'all 0.3s ease',
-                                            // Simple trick to apply gradient to SVG icon
-                                            color: 'var(--color-primary)',
+                                            fill: 'url(#mobile-nav-gradient)',
                                             filter: 'drop-shadow(0 0 2px var(--color-primary-alpha))'
                                         }
                                     }

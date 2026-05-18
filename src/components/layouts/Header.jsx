@@ -101,7 +101,7 @@ const Header = ({ onMenuClick }) => {
             pr: 0.5,
             py: 0.5,
             borderRadius: "999px",
-            background: open 
+            background: open
               ? "linear-gradient(var(--bg-panel), var(--bg-panel)) padding-box, var(--gradient-primary) border-box"
               : "var(--bg-panel)",
             border: open ? "2px solid transparent" : "1px solid var(--border-color)",
@@ -109,7 +109,7 @@ const Header = ({ onMenuClick }) => {
             transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
             boxShadow: open ? "var(--shadow-premium)" : "none",
             "&:hover": {
-              background: open 
+              background: open
                 ? "linear-gradient(var(--bg-panel), var(--bg-panel)) padding-box, var(--gradient-primary) border-box"
                 : "var(--border-color)",
               borderColor: open ? "transparent" : "var(--text-secondary)",
@@ -187,16 +187,17 @@ const Header = ({ onMenuClick }) => {
             vertical: 'top',
             horizontal: 'right',
           }}
+          //profile container to change the Overall Size
           slotProps={{
             paper: {
               sx: {
                 mt: 1.5,
-                minWidth: 240, // Increased width for better proportions
+                minWidth: 260, // Increased width for better proportions
                 borderRadius: "20px", // Smoother corners
                 boxShadow: "0 15px 50px rgba(0, 0, 0, 0.15)",
                 border: "1px solid rgba(255, 255, 255, 0.8)",
-                px: 2, // Generous horizontal padding
-                py: 2.2,   // Balanced vertical padding
+                px: 0.5, // Generous horizontal padding
+                py: 0.5,   // Balanced vertical padding
               }
             }
           }}
@@ -244,7 +245,7 @@ const Header = ({ onMenuClick }) => {
                     fontWeight: 700,
                     color: isActive ? "var(--color-primary)" : "var(--text-secondary)",
                     background: isActive ? "var(--bg-accent-4) !important" : "transparent",
-                    py: 1, // Reduced height
+                    py: 1.2, // Reduced height
                     px: 1.5,
                     mb: 0.5,
                     display: "flex",
