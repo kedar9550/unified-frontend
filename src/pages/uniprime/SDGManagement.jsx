@@ -33,6 +33,7 @@ import {
   Cancel as CancelIcon,
   AutoFixHigh as AutoFixHighIcon,
   Settings as SettingsIcon,
+  Check as CheckIcon,
 } from "@mui/icons-material";
 import API from "../../api/axios";
 import PageHeader from "../../components/common/PageHeader";
@@ -76,6 +77,16 @@ const SDGManagement = () => {
   const [sdgs, setSdgs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [expandedId, setExpandedId] = useState(null);
+
+  const [editingSdgId, setEditingSdgId] = useState(null);
+  const [openAddKeywordDialog, setOpenAddKeywordDialog] = useState(false);
+  const [activeSdgForAdd, setActiveSdgForAdd] = useState(null);
+  const [newKeywordInput, setNewKeywordInput] = useState("");
+
+  const [openEditKeywordDialog, setOpenEditKeywordDialog] = useState(false);
+  const [activeSdgForEditKw, setActiveSdgForEditKw] = useState(null);
+  const [oldKeywordValue, setOldKeywordValue] = useState("");
+  const [editKeywordInput, setEditKeywordInput] = useState("");
 
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
@@ -163,6 +174,107 @@ const SDGManagement = () => {
       handleCloseDialog();
     } catch (err) {
       toast.error(err.response?.data?.message || "Failed to save SDG");
+    }
+  };
+
+  const handleDeleteKeyword = async (sdg, keywordToDelete) => {
+    try {
+      const updatedKeywords = sdg.keywords.filter(kw => kw !== keywordToDelete);
+      const payload = {
+        sdgNumber: sdg.sdgNumber,
+        sdgTitle: sdg.sdgTitle,
+        keywords: updatedKeywords
+      };
+      await API.put(`/api/sdgs/${sdg._id}`, payload);
+      toast.success(`"${keywordToDelete}" deleted successfully`);
+      fetchSdgs();
+    } catch (err) {
+      toast.error("Failed to delete keyword");
+      console.error(err);
+    }
+  };
+
+  const handleOpenAddKeyword = (sdg) => {
+    setActiveSdgForAdd(sdg);
+    setNewKeywordInput("");
+    setOpenAddKeywordDialog(true);
+  };
+
+  const handleCloseAddKeyword = () => {
+    setOpenAddKeywordDialog(false);
+    setActiveSdgForAdd(null);
+    setNewKeywordInput("");
+  };
+
+  const handleAddKeywordSubmit = async () => {
+    if (!newKeywordInput.trim()) return;
+    try {
+      const trimmed = newKeywordInput.trim();
+      if (activeSdgForAdd.keywords.includes(trimmed)) {
+        toast.error("Keyword already exists in this SDG");
+        return;
+      }
+      const updatedKeywords = [...activeSdgForAdd.keywords, trimmed];
+      const payload = {
+        sdgNumber: activeSdgForAdd.sdgNumber,
+        sdgTitle: activeSdgForAdd.sdgTitle,
+        keywords: updatedKeywords
+      };
+      await API.put(`/api/sdgs/${activeSdgForAdd._id}`, payload);
+      toast.success(`"${trimmed}" added successfully`);
+      fetchSdgs();
+      handleCloseAddKeyword();
+    } catch (err) {
+      toast.error("Failed to add keyword");
+      console.error(err);
+    }
+  };
+
+  const handleOpenEditKeyword = (sdg, keywordToEdit) => {
+    setActiveSdgForEditKw(sdg);
+    setOldKeywordValue(keywordToEdit);
+    setEditKeywordInput(keywordToEdit);
+    setOpenEditKeywordDialog(true);
+  };
+
+  const handleCloseEditKeyword = () => {
+    setOpenEditKeywordDialog(false);
+    setActiveSdgForEditKw(null);
+    setOldKeywordValue("");
+    setEditKeywordInput("");
+  };
+
+  const handleEditKeywordSubmit = async () => {
+    if (!editKeywordInput.trim()) return;
+    try {
+      const trimmed = editKeywordInput.trim();
+      if (trimmed === oldKeywordValue) {
+        handleCloseEditKeyword();
+        return;
+      }
+
+      if (activeSdgForEditKw.keywords.includes(trimmed) && trimmed !== oldKeywordValue) {
+        toast.error("Keyword already exists in this SDG");
+        return;
+      }
+
+      const updatedKeywords = activeSdgForEditKw.keywords.map(kw =>
+        kw === oldKeywordValue ? trimmed : kw
+      );
+
+      const payload = {
+        sdgNumber: activeSdgForEditKw.sdgNumber,
+        sdgTitle: activeSdgForEditKw.sdgTitle,
+        keywords: updatedKeywords
+      };
+
+      await API.put(`/api/sdgs/${activeSdgForEditKw._id}`, payload);
+      toast.success("Keyword updated successfully");
+      fetchSdgs();
+      handleCloseEditKeyword();
+    } catch (err) {
+      toast.error("Failed to update keyword");
+      console.error(err);
     }
   };
 
@@ -254,7 +366,8 @@ const SDGManagement = () => {
                     width: "120px",
                     height: "120px",
                     background: `radial-gradient(circle at top right, ${brandColor}25, transparent 70%)`,
-                    zIndex: 0
+                    zIndex: 0,
+                    pointerEvents: 'none'
                   }
                 }}
               >
@@ -313,65 +426,125 @@ const SDGManagement = () => {
 
                     {/* Action Buttons */}
                     <Box sx={{
-                      display: 'flex',
+                      display: "flex",
                       gap: 1,
-                      position: { xs: 'static', md: 'absolute' },
+                      position: { xs: "static", md: "absolute" },
                       top: 0,
-                      right: 0
+                      right: 0,
+                      zIndex: 2
                     }}>
-                      <Tooltip title="Edit SDG">
+                      <Tooltip title={editingSdgId === sdg._id ? "Done Editing" : "Edit SDG"}>
                         <IconButton
                           onClick={(e) => {
                             e.stopPropagation();
-                            handleOpenDialog(sdg);
+                            if (editingSdgId === sdg._id) {
+                              setEditingSdgId(null);
+                            } else {
+                              setEditingSdgId(sdg._id);
+                            }
                           }}
                           sx={{
-                            color: 'var(--color-primary)',
-                            background: 'var(--bg-accent-4)',
-                            '&:hover': { background: 'var(--bg-panel)' }
+                            color: editingSdgId === sdg._id ? "#22c55e" : "var(--color-primary)",
+                            background: editingSdgId === sdg._id ? "rgba(34, 197, 94, 0.1)" : "var(--bg-accent-4)",
+                            "&:hover": {
+                              background: editingSdgId === sdg._id ? "rgba(34, 197, 94, 0.2)" : "var(--bg-panel)"
+                            }
                           }}
                         >
-                          <EditIcon fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
-                      <Tooltip title="Delete SDG">
-                        <IconButton
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDelete(sdg._id);
-                          }}
-                          sx={{
-                            color: '#ef4444',
-                            background: 'rgba(239, 68, 68, 0.1)',
-                            '&:hover': { background: 'rgba(239, 68, 68, 0.2)' }
-                          }}
-                        >
-                          <DeleteIcon fontSize="small" />
+                          {editingSdgId === sdg._id ? <CheckIcon fontSize="small" /> : <EditIcon fontSize="small" />}
                         </IconButton>
                       </Tooltip>
                     </Box>
                   </Box>
 
                   <Collapse in={!isMobile || isExpanded} timeout="auto" unmountOnExit={isMobile}>
-                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, pt: 1 }}>
-                      {sdg.keywords.map((kw, i) => (
+                    <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, pt: 1 }}>
+                      {sdg.keywords.map((kw, i) => {
+                        const isEditingThisCard = editingSdgId === sdg._id;
+                        return (
+                          <Chip
+                            key={i}
+                            label={
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                <span>{kw}</span>
+                                {isEditingThisCard && (
+                                  <IconButton
+                                    size="small"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleOpenEditKeyword(sdg, kw);
+                                    }}
+                                    sx={{
+                                      p: 0,
+                                      ml: 0.5,
+                                      color: 'var(--text-secondary)',
+                                      '&:hover': {
+                                        color: brandColor,
+                                        transform: 'scale(1.15)'
+                                      },
+                                      transition: 'all 0.2s ease'
+                                    }}
+                                  >
+                                    <EditIcon sx={{ fontSize: '0.75rem' }} />
+                                  </IconButton>
+                                )}
+                              </Box>
+                            }
+                            size="small"
+                            onDelete={isEditingThisCard ? (e) => {
+                              e.stopPropagation();
+                              handleDeleteKeyword(sdg, kw);
+                            } : undefined}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                            }}
+                            sx={{
+                              background: isEditingThisCard ? 'rgba(239, 68, 68, 0.05)' : 'var(--bg-accent-4)',
+                              color: isEditingThisCard ? 'var(--text-primary)' : 'var(--text-secondary)',
+                              border: `1px solid ${isEditingThisCard ? 'rgba(239, 68, 68, 0.2)' : 'var(--border-color)'}`,
+                              fontSize: '0.75rem',
+                              fontWeight: 600,
+                              transition: 'all 0.2s ease',
+                              '& .MuiChip-deleteIcon': {
+                                color: '#ef4444',
+                                '&:hover': {
+                                  color: '#dc2626',
+                                }
+                              },
+                              '&:hover': {
+                                background: isEditingThisCard ? 'rgba(239, 68, 68, 0.1)' : 'var(--bg-accent-1)',
+                                color: 'var(--text-primary)',
+                              }
+                            }}
+                          />
+                        );
+                      })}
+                      {editingSdgId === sdg._id && (
                         <Chip
-                          key={i}
-                          label={kw}
+                          icon={<AddIcon size="small" style={{ color: 'var(--color-primary)' }} />}
+                          label="Add"
                           size="small"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleOpenAddKeyword(sdg);
+                          }}
                           sx={{
-                            background: 'var(--bg-accent-4)',
-                            color: 'var(--text-secondary)',
-                            border: '1px solid var(--border-color)',
+                            background: 'var(--color-primary-alpha)',
+                            color: 'var(--color-primary)',
+                            border: '1px dashed var(--color-primary)',
                             fontSize: '0.75rem',
-                            fontWeight: 600,
+                            fontWeight: 700,
+                            cursor: 'pointer',
                             '&:hover': {
-                              background: 'var(--bg-accent-1)',
-                              color: 'var(--text-primary)',
+                              background: 'var(--color-primary)',
+                              color: '#fff',
+                              '& .MuiChip-icon': {
+                                color: '#fff !important'
+                              }
                             }
                           }}
                         />
-                      ))}
+                      )}
                     </Box>
                   </Collapse>
                 </Box>
@@ -476,6 +649,232 @@ const SDGManagement = () => {
             }}
           >
             {isEdit ? "Update SDG" : "Create SDG"}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Add Keyword Dialog */}
+      <Dialog
+        open={openAddKeywordDialog}
+        onClose={handleCloseAddKeyword}
+        maxWidth="xs"
+        fullWidth
+        slotProps={{
+          paper: {
+            sx: {
+              borderRadius: '24px',
+              background: 'var(--bg-panel)',
+              border: '1px solid var(--border-color)',
+              boxShadow: 'var(--shadow-premium)',
+              backgroundImage: 'none'
+            }
+          }
+        }}
+      >
+        <DialogTitle sx={{
+          fontWeight: 850,
+          color: activeSdgForAdd ? (SDG_COLOR_MAP[activeSdgForAdd.sdgNumber] || 'var(--text-primary)') : 'var(--text-primary)',
+          borderBottom: `2px solid ${activeSdgForAdd ? (SDG_COLOR_MAP[activeSdgForAdd.sdgNumber] || 'var(--border-color)') : 'var(--border-color)'}`,
+          pb: 2
+        }}>
+          Add Keyword to {activeSdgForAdd?.sdgNumber}
+        </DialogTitle>
+        <DialogContent sx={{ py: 3, mt: 1 }}>
+          <TextField
+            fullWidth
+            autoFocus
+            label="New Keyword"
+            placeholder="e.g., Sustainability"
+            value={newKeywordInput}
+            onChange={(e) => setNewKeywordInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && newKeywordInput.trim()) {
+                e.preventDefault();
+                handleAddKeywordSubmit();
+              }
+            }}
+            variant="outlined"
+            helperText="Enter a keyword and press Enter or click Add."
+            sx={{ mt: 1.5 }}
+          />
+        </DialogContent>
+        <DialogActions sx={{ p: 2, px: 3, borderTop: '1px solid var(--border-color)' }}>
+          <Button 
+            onClick={handleCloseAddKeyword} 
+            startIcon={<CancelIcon />} 
+            color="inherit"
+            sx={{
+              borderRadius: '10px',
+              transition: 'all 0.3s ease',
+              '&:hover': {
+                color: '#ef4444',
+                background: 'rgba(239, 68, 68, 0.08)'
+              }
+            }}
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={handleAddKeywordSubmit}
+            variant="contained"
+            startIcon={<AddIcon />}
+            disabled={!newKeywordInput.trim()}
+            sx={{
+              position: 'relative',
+              overflow: 'hidden',
+              zIndex: 1,
+              background: 'var(--gradient-primary)',
+              color: '#fff',
+              borderRadius: '10px',
+              px: 3,
+              fontWeight: 700,
+              textTransform: 'none',
+              boxShadow: activeSdgForAdd ? `0 4px 12px ${SDG_COLOR_MAP[activeSdgForAdd.sdgNumber]}40` : '0 4px 12px var(--color-primary-alpha)',
+              transition: 'all 0.3s ease',
+              '&::after': {
+                content: '""',
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                width: '100%',
+                height: '100%',
+                background: 'linear-gradient(135deg, #15803d 50%, #22c55e 0%, #15803d 50%)',
+                opacity: 0,
+                zIndex: -1,
+                transition: 'opacity 0.4s ease',
+              },
+              '&:hover': {
+                filter: 'brightness(1.1)',
+                boxShadow: '0 8px 20px rgba(34, 197, 94, 0.4)',
+                transform: 'translateY(-1px)',
+                '&::after': {
+                  opacity: 1,
+                }
+              },
+              '&.Mui-disabled': {
+                background: 'rgba(255, 255, 255, 0.05)',
+                color: 'var(--text-secondary)',
+                boxShadow: 'none',
+                '&::after': {
+                  display: 'none'
+                }
+              }
+            }}
+          >
+            Add Keyword
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Edit Keyword Dialog */}
+      <Dialog
+        open={openEditKeywordDialog}
+        onClose={handleCloseEditKeyword}
+        maxWidth="xs"
+        fullWidth
+        slotProps={{
+          paper: {
+            sx: {
+              borderRadius: '24px',
+              background: 'var(--bg-panel)',
+              border: '1px solid var(--border-color)',
+              boxShadow: 'var(--shadow-premium)',
+              backgroundImage: 'none'
+            }
+          }
+        }}
+      >
+        <DialogTitle sx={{
+          fontWeight: 850,
+          color: activeSdgForEditKw ? (SDG_COLOR_MAP[activeSdgForEditKw.sdgNumber] || 'var(--text-primary)') : 'var(--text-primary)',
+          borderBottom: `2px solid ${activeSdgForEditKw ? (SDG_COLOR_MAP[activeSdgForEditKw.sdgNumber] || 'var(--border-color)') : 'var(--border-color)'}`,
+          pb: 2
+        }}>
+          Edit Keyword in {activeSdgForEditKw?.sdgNumber}
+        </DialogTitle>
+        <DialogContent sx={{ py: 3, mt: 1 }}>
+          <TextField
+            fullWidth
+            autoFocus
+            label="Keyword"
+            placeholder="e.g., Sustainability"
+            value={editKeywordInput}
+            onChange={(e) => setEditKeywordInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && editKeywordInput.trim()) {
+                e.preventDefault();
+                handleEditKeywordSubmit();
+              }
+            }}
+            variant="outlined"
+            helperText="Modify the keyword and press Enter or click Save."
+            sx={{ mt: 1.5 }}
+          />
+        </DialogContent>
+        <DialogActions sx={{ p: 2, px: 3, borderTop: '1px solid var(--border-color)' }}>
+          <Button 
+            onClick={handleCloseEditKeyword} 
+            startIcon={<CancelIcon />} 
+            color="inherit"
+            sx={{
+              borderRadius: '10px',
+              transition: 'all 0.3s ease',
+              '&:hover': {
+                color: '#ef4444',
+                background: 'rgba(239, 68, 68, 0.08)'
+              }
+            }}
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={handleEditKeywordSubmit}
+            variant="contained"
+            startIcon={<SaveIcon />}
+            disabled={!editKeywordInput.trim()}
+            sx={{
+              position: 'relative',
+              overflow: 'hidden',
+              zIndex: 1,
+              background: 'var(--gradient-primary)',
+              color: '#fff',
+              borderRadius: '10px',
+              px: 3,
+              fontWeight: 700,
+              textTransform: 'none',
+              boxShadow: activeSdgForEditKw ? `0 4px 12px ${SDG_COLOR_MAP[activeSdgForEditKw.sdgNumber]}40` : '0 4px 12px var(--color-primary-alpha)',
+              transition: 'all 0.3s ease',
+              '&::after': {
+                content: '""',
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                width: '100%',
+                height: '100%',
+                background: 'linear-gradient(135deg, #22c55e 0%, #15803d 100%)',
+                opacity: 0,
+                zIndex: -1,
+                transition: 'opacity 0.4s ease',
+              },
+              '&:hover': {
+                filter: 'brightness(1.1)',
+                boxShadow: '0 8px 20px rgba(34, 197, 94, 0.4)',
+                transform: 'translateY(-1px)',
+                '&::after': {
+                  opacity: 1,
+                }
+              },
+              '&.Mui-disabled': {
+                background: 'rgba(255, 255, 255, 0.05)',
+                color: 'var(--text-secondary)',
+                boxShadow: 'none',
+                '&::after': {
+                  display: 'none'
+                }
+              }
+            }}
+          >
+            Save Changes
           </Button>
         </DialogActions>
       </Dialog>

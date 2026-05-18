@@ -114,11 +114,25 @@ export default function Login() {
     'anim-slide-in-tl', 'anim-slide-in-tr', 'anim-slide-in-bl', 'anim-slide-in-br'
   ];
 
+  const resetForgotPasswordState = () => {
+    setFpStep(1);
+    setIsIdValid(false);
+    setFpData({
+      id: '',
+      email: '',
+      otp: '',
+      newPass: '',
+      confirmPass: ''
+    });
+    setFpMsg({ text: '', type: '' });
+    setShowResetPass(false);
+    setShowResetConfirm(false);
+  };
+
   const handleForgotClick = (e) => {
     e.preventDefault();
     setIsSignUp(true);
-    setFpStep(1);
-    setFpMsg({ text: '', type: '' });
+    resetForgotPasswordState();
   };
 
   // ── handle click outside for custom role select ──
@@ -134,8 +148,7 @@ export default function Login() {
 
   const toggleForgot = () => {
     setIsSignUp(false);
-    setFpData({ id: '', otp: '', newPass: '', confirmPass: '' });
-    setFpMsg({ text: '', type: '' });
+    resetForgotPasswordState();
   };
   const checkEmployeeId = async (employeeCode) => {
     try {
@@ -213,8 +226,7 @@ export default function Login() {
 
   const goSignIn = () => {
     setIsSignUp(false);
-    setFpStep(1);
-    setFpMsg({ text: '', type: '' });
+    resetForgotPasswordState();
   };
 
   return (
