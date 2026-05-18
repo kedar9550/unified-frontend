@@ -33,6 +33,7 @@ import {
   Pie,
   Cell,
 } from 'recharts';
+import { useNavigate } from 'react-router-dom';
 
 // Dummy data for visualization
 const trendData = [
@@ -73,6 +74,8 @@ const announcements = [
 ];
 
 const RnDDeanDashboard = () => {
+  const navigate = useNavigate();
+
   return (
     <Box sx={{ pb: 4 }}>
       {/* Welcome Header */}
@@ -95,69 +98,110 @@ const RnDDeanDashboard = () => {
       </Box>
 
       {/* Summary Cards */}
-      <Box sx={{ 
-        display: "grid", 
-        gridTemplateColumns: { 
-          xs: "1fr", 
-          sm: "repeat(2, 1fr)", 
-          md: "repeat(3, 1fr)",
-          xl: "repeat(5, 1fr)" 
-        }, 
-        gap: { xs: 2, md: 3 }, 
-        mb: 5 
-      }}>
+      <Box sx={{ display: "flex", gap: 2, mb: 5, flexWrap: "wrap" }}>
         {[
-          { title: 'Total Publications', value: 128, subtitle: 'This Academic Year', icon: <Description />, color: '#3b82f6', bg: 'rgba(59, 130, 246, 0.1)' },
-          { title: 'Approved', value: 94, subtitle: 'This Academic Year', icon: <CheckCircle />, color: '#10b981', bg: 'rgba(16, 185, 129, 0.1)' },
-          { title: 'Pending in HoD', value: 24, subtitle: 'Awaiting HoD Approval', icon: <PendingActions />, color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.1)' },
-          { title: 'Returned by HoD', value: 10, subtitle: 'Needs Faculty Update', icon: <AssignmentReturn />, color: '#8b5cf6', bg: 'rgba(139, 92, 246, 0.1)' },
-          { title: 'Rejected', value: 0, subtitle: 'This Academic Year', icon: <Cancel />, color: '#ef4444', bg: 'rgba(239, 68, 68, 0.1)' },
+          { title: 'Total Publications', value: 128, subtitle: 'This Academic Year', icon: <Description />, color: '#3b82f6', bg: 'rgba(59, 130, 246, 0.1)', path: '/research-dean/approvals' },
+          { title: 'Approved', value: 94, subtitle: 'This Academic Year', icon: <CheckCircle />, color: '#10b981', bg: 'rgba(16, 185, 129, 0.1)', path: '/research-dean/approvals' },
+          { title: 'Pending in HoD', value: 24, subtitle: 'Awaiting HoD Approval', icon: <PendingActions />, color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.1)', path: '/research-dean/approvals' },
+          { title: 'Returned by HoD', value: 10, subtitle: 'Needs Faculty Update', icon: <AssignmentReturn />, color: '#8b5cf6', bg: 'rgba(139, 92, 246, 0.1)', path: '/research-dean/approvals' },
+          { title: 'Rejected', value: 0, subtitle: 'This Academic Year', icon: <Cancel />, color: '#ef4444', bg: 'rgba(239, 68, 68, 0.1)', path: '/research-dean/approvals' },
         ].map((card, index) => (
-          <Card key={index} sx={{
-            p: 2.5,
-            borderRadius: '24px',
-            background: 'var(--bg-panel)',
-            border: '1px solid var(--border-color)',
-            transition: 'all 0.3s ease',
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'center',
-            height: '100%',
-            gap: 1.5,
-            position: 'relative',
-            overflow: 'hidden',
-            '&:hover': { transform: 'translateY(-5px)', boxShadow: 'var(--shadow-premium)', borderColor: card.color },
-            '&::after': {
-              content: '""',
-              position: 'absolute',
-              top: 0,
-              right: 0,
-              width: '120px',
-              height: '120px',
-              background: `radial-gradient(circle at top right, ${card.color}25, transparent 70%)`,
-              zIndex: 0
-            }
-          }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-              <Box sx={{ 
-                width: 48, 
-                height: 48, 
-                borderRadius: '12px', 
-                backgroundColor: card.bg, 
-                color: card.color, 
-                display: 'flex', 
-                alignItems: 'center', 
-                justifyContent: 'center' 
-              }}>
-                {card.icon}
+          <Box key={index} sx={{ flex: { xs: "1 1 100%", sm: "1 1 calc(50% - 16px)", lg: 1 }, minWidth: 0 }}>
+            <Card sx={{
+              p: 2.5,
+              borderRadius: '24px',
+              background: 'var(--bg-panel)',
+              border: '1px solid var(--border-color)',
+              transition: 'all 0.3s ease',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'space-between',
+              height: '100%',
+              gap: 2,
+              position: 'relative',
+              overflow: 'hidden',
+              cursor: card.path ? 'pointer' : 'default',
+              '&:hover': { 
+                transform: card.path ? 'translateY(-5px)' : 'none', 
+                boxShadow: 'var(--shadow-premium)', 
+                borderColor: card.color 
+              },
+              '&::after': {
+                content: '""',
+                position: 'absolute',
+                top: 0,
+                right: 0,
+                width: '120px',
+                height: '120px',
+                background: `radial-gradient(circle at top right, ${card.color}25, transparent 70%)`,
+                zIndex: 0,
+                pointerEvents: 'none'
+              },
+              '&:hover .view-all-arrow': {
+                transform: 'translateX(4px)'
+              }
+            }}>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, zIndex: 1 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                  <Box sx={{ 
+                    width: 48, 
+                    height: 48, 
+                    borderRadius: '12px', 
+                    backgroundColor: card.bg, 
+                    color: card.color, 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'center',
+                    flexShrink: 0
+                  }}>
+                    {card.icon}
+                  </Box>
+                  <Box sx={{ minWidth: 0, flex: 1 }}>
+                    <Typography variant="h4" sx={{ fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1 }}>{card.value}</Typography>
+                    <Typography sx={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', mt: 0.5 }}>{card.title}</Typography>
+                  </Box>
+                </Box>
+                <Typography sx={{ fontSize: '0.7rem', color: 'var(--text-secondary)', opacity: 0.7 }}>{card.subtitle}</Typography>
               </Box>
-              <Box>
-                <Typography variant="h4" sx={{ fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1 }}>{card.value}</Typography>
-                <Typography sx={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', mt: 0.5 }}>{card.title}</Typography>
-              </Box>
-            </Box>
-            <Typography sx={{ fontSize: '0.7rem', color: 'var(--text-secondary)', opacity: 0.7 }}>{card.subtitle}</Typography>
-          </Card>
+
+              {card.path && (
+                <Box sx={{ 
+                  display: "flex", 
+                  alignItems: "center", 
+                  justifyContent: "flex-end", 
+                  gap: 0.8,
+                  pt: 1.5, 
+                  borderTop: "1px solid var(--border-color)", 
+                  width: "100%",
+                  zIndex: 1,
+                  mt: "auto"
+                }}>
+                  <Typography 
+                    className="view-all-text"
+                    sx={{ 
+                      fontSize: "0.75rem", 
+                      fontWeight: 800, 
+                      background: "var(--gradient-primary)",
+                      WebkitBackgroundClip: "text",
+                      WebkitTextFillColor: "transparent",
+                      display: "inline-block",
+                      transition: "all 0.2s ease"
+                    }}
+                  >
+                    View Details
+                  </Typography>
+                  <ArrowForward 
+                    className="view-all-arrow"
+                    sx={{ 
+                      fontSize: 14, 
+                      color: "var(--color-primary)",
+                      transition: "transform 0.2s ease"
+                    }} 
+                  />
+                </Box>
+              )}
+            </Card>
+          </Box>
         ))}
       </Box>
 
@@ -190,9 +234,20 @@ const RnDDeanDashboard = () => {
 
         <Card sx={{ p: 3, borderRadius: '24px', background: 'var(--bg-panel)', border: '1px solid var(--border-color)', height: '100%' }}>
           <Typography variant="h6" sx={{ fontWeight: 700, mb: 3 }}>Publications by Type</Typography>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 3, height: 320 }}>
+          <Box sx={{ 
+            display: 'flex', 
+            flexDirection: { xs: 'column', sm: 'row' }, 
+            alignItems: 'center', 
+            gap: { xs: 4, sm: 3 }, 
+            minHeight: 320 
+          }}>
             {/* Chart */}
-            <Box sx={{ flex: 1.2, height: '100%', position: 'relative' }}>
+            <Box sx={{ 
+              flex: 1.2, 
+              width: '100%', 
+              height: 240, 
+              position: 'relative' 
+            }}>
                <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
@@ -218,25 +273,32 @@ const RnDDeanDashboard = () => {
             </Box>
 
             {/* Details Box */}
-            <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+            <Box sx={{ 
+              flex: 1, 
+              width: '100%', 
+              display: 'flex', 
+              flexDirection: 'column', 
+              gap: 1.5,
+              px: { xs: 1, sm: 0 } 
+            }}>
               {pieData.map((item, i) => (
                 <Box key={i} sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                    <Box sx={{ width: 10, height: 10, borderRadius: '3px', backgroundColor: item.color }} />
+                    <Box sx={{ width: 10, height: 10, borderRadius: '3px', backgroundColor: item.color, flexShrink: 0 }} />
                     <Typography sx={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)' }}>{item.name}</Typography>
                   </Box>
-                  <Typography sx={{ fontSize: '0.8rem', fontWeight: 700 }}>{item.value} <Box component="span" sx={{ color: 'var(--text-secondary)', fontWeight: 500, fontSize: '0.75rem' }}>({Math.round(item.value/128*100)}%)</Box></Typography>
+                  <Typography sx={{ fontSize: '0.8rem', fontWeight: 700, flexShrink: 0 }}>
+                    {item.value} <Box component="span" sx={{ color: 'var(--text-secondary)', fontWeight: 500, fontSize: '0.75rem' }}>({Math.round(item.value/128*100)}%)</Box>
+                  </Typography>
                 </Box>
               ))}
             </Box>
           </Box>
         </Card>
-      </Box>
-
-      {/* Bottom Row */}
-      <Grid container spacing={4}>
+      </Box>      {/* Bottom Row */}
+      <Box sx={{ display: "flex", gap: 4, flexWrap: "wrap", mb: 2 }}>
         {/* Top Departments */}
-        <Grid item xs={12} md={4}>
+        <Box sx={{ flex: { xs: "1 1 100%", md: "1 1 calc(33.33% - 27px)" }, minWidth: 0 }}>
           <Card sx={{ p: 3, borderRadius: '24px', background: 'var(--bg-panel)', border: '1px solid var(--border-color)', height: '100%' }}>
             <Typography variant="h6" sx={{ fontWeight: 700, mb: 3 }}>Top Departments by Publications</Typography>
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3.2 }}>
@@ -268,10 +330,10 @@ const RnDDeanDashboard = () => {
               </Button>
             </Box>
           </Card>
-        </Grid>
+        </Box>
 
         {/* Research Impact */}
-        <Grid item xs={12} md={4}>
+        <Box sx={{ flex: { xs: "1 1 100%", md: "1 1 calc(33.33% - 27px)" }, minWidth: 0 }}>
           <Card sx={{ p: 3, borderRadius: '24px', background: 'var(--bg-panel)', border: '1px solid var(--border-color)', height: '100%' }}>
              <Typography variant="h6" sx={{ fontWeight: 700, mb: 1 }}>Research Impact</Typography>
              <Typography variant="caption" sx={{ color: 'var(--text-secondary)', display: 'block', mb: 3, fontWeight: 500 }}>(This Academic Year)</Typography>
@@ -328,10 +390,10 @@ const RnDDeanDashboard = () => {
                 </Button>
              </Box>
           </Card>
-        </Grid>
+        </Box>
 
         {/* Recent Announcements */}
-        <Grid item xs={12} md={4}>
+        <Box sx={{ flex: { xs: "1 1 100%", md: "1 1 calc(33.33% - 27px)" }, minWidth: 0 }}>
           <Card sx={{ p: 3, borderRadius: '24px', background: 'var(--bg-panel)', border: '1px solid var(--border-color)', height: '100%' }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 4 }}>
               <Campaign sx={{ color: 'var(--color-primary)' }} />
@@ -350,7 +412,7 @@ const RnDDeanDashboard = () => {
                     border: '1px solid var(--border-color)'
                   }}>
                     <Typography sx={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--color-primary)', lineHeight: 1 }}>{item.date.split(' ')[0]}</Typography>
-                    <Typography sx={{ fontSize: '0.6rem', color: 'var(--text-secondary)', fontWeight: 700, textTransform: 'uppercase', mt: 0.5 }}>{item.date.split(' ').slice(1).join(' ')}</Typography>
+                    <Typography sx={{ fontSize: '0.65rem', color: 'var(--text-secondary)', fontWeight: 700, textTransform: 'uppercase', mt: 0.5 }}>{item.date.split(' ').slice(1).join(' ')}</Typography>
                   </Box>
                   <Box>
                     <Typography sx={{ fontSize: '0.95rem', fontWeight: 700, mb: 0.8, color: 'var(--text-primary)' }}>{item.title}</Typography>
@@ -368,8 +430,8 @@ const RnDDeanDashboard = () => {
               </Button>
             </Box>
           </Card>
-        </Grid>
-      </Grid>
+        </Box>
+      </Box>
       {/* Quick Actions */}
       <Box sx={{ mt: 6 }}>
         <Card sx={{

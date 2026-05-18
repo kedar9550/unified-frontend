@@ -96,11 +96,11 @@ const ExamDashboard = () => {
 
   // Top Cards Data
   const topCards = [
-    { title: "Total Faculties", value: data.totalFaculties, subtitle: `100% of ${data.totalFaculties}`, icon: <People />, color: "#3B82F6", bgColor: "rgba(59, 130, 246, 0.1)" },
-    { title: "Pending Submissions", value: data.pendingSubmissions, subtitle: `${data.totalFaculties > 0 ? Math.round((data.pendingSubmissions / data.totalFaculties) * 100) : 0}% of ${data.totalFaculties}`, icon: <AccessTime />, color: "#F59E0B", bgColor: "rgba(245, 158, 11, 0.1)" },
-    { title: "Submitted Faculties", value: data.submittedFaculties, subtitle: `${data.totalFaculties > 0 ? Math.round((data.submittedFaculties / data.totalFaculties) * 100) : 0}% of ${data.totalFaculties}`, icon: <CheckCircleOutlined />, color: "#10B981", bgColor: "rgba(16, 185, 129, 0.1)" },
+    { title: "Total Faculties", value: data.totalFaculties, subtitle: `100% of ${data.totalFaculties}`, icon: <People />, color: "#3B82F6", bgColor: "rgba(59, 130, 246, 0.1)", path: "/exam-result/faculty-format" },
+    { title: "Pending Submissions", value: data.pendingSubmissions, subtitle: `${data.totalFaculties > 0 ? Math.round((data.pendingSubmissions / data.totalFaculties) * 100) : 0}% of ${data.totalFaculties}`, icon: <AccessTime />, color: "#F59E0B", bgColor: "rgba(245, 158, 11, 0.1)", path: "/exam-result/faculty-format" },
+    { title: "Submitted Faculties", value: data.submittedFaculties, subtitle: `${data.totalFaculties > 0 ? Math.round((data.submittedFaculties / data.totalFaculties) * 100) : 0}% of ${data.totalFaculties}`, icon: <CheckCircleOutlined />, color: "#10B981", bgColor: "rgba(16, 185, 129, 0.1)", path: "/exam-result/faculty-format" },
     { title: "Discrepancies", value: data.discrepanciesCount, subtitle: "Require Action", icon: <WarningAmber />, color: "#EF4444", bgColor: "rgba(239, 68, 68, 0.1)", path: "/exam-result/discrepancies" },
-    { title: "Overall Pass %", value: data.overallPassRate, subtitle: "This Semester", icon: <BarChart />, color: "#F59E0B", bgColor: "rgba(245, 158, 11, 0.1)" },
+    { title: "Overall Pass %", value: data.overallPassRate, subtitle: "This Semester", icon: <BarChart />, color: "#8B5CF6", bgColor: "rgba(139, 92, 246, 0.1)", path: "/exam-result/students-format" },
   ];
 
   // Submission Chart Data
@@ -169,10 +169,11 @@ const ExamDashboard = () => {
                 border: "1px solid var(--border-color)",
                 background: "var(--bg-panel)",
                 boxShadow: "var(--shadow-premium)",
-                p: 2,
+                p: 2.5,
                 height: "100%",
                 display: "flex",
-                alignItems: "center",
+                flexDirection: "column",
+                justifyContent: "space-between",
                 gap: 2,
                 transition: "all 0.3s ease",
                 cursor: card.path ? "pointer" : "default",
@@ -190,17 +191,60 @@ const ExamDashboard = () => {
                   width: "120px",
                   height: "120px",
                   background: `radial-gradient(circle at top right, ${card.color}25, transparent 70%)`,
-                  zIndex: 0
+                  zIndex: 0,
+                  pointerEvents: "none"
+                },
+                "&:hover .view-all-arrow": {
+                  transform: "translateX(4px)"
                 }
               }}
             >
-              <Box sx={{ width: 48, height: 48, borderRadius: "14px", display: "flex", alignItems: "center", justifyContent: "center", backgroundColor: card.bgColor, color: card.color, flexShrink: 0 }}>
-                {card.icon}
+              <Box sx={{ display: "flex", alignItems: "center", gap: 2, zIndex: 1 }}>
+                <Box sx={{ width: 48, height: 48, borderRadius: "14px", display: "flex", alignItems: "center", justifyContent: "center", backgroundColor: card.bgColor, color: card.color, flexShrink: 0 }}>
+                  {card.icon}
+                </Box>
+                <Box sx={{ minWidth: 0, flex: 1 }}>
+                  <Typography variant="caption" sx={{ color: "var(--text-secondary)", fontWeight: 700, textTransform: "uppercase", fontSize: "0.65rem", letterSpacing: "0.02em", display: "block" }}>{card.title}</Typography>
+                  <Typography variant="h5" sx={{ fontWeight: 800, color: "var(--text-primary)", my: 0.1 }}>{card.value}</Typography>
+                </Box>
               </Box>
-              <Box>
-                <Typography variant="caption" sx={{ color: "var(--text-secondary)", fontWeight: 700, textTransform: "uppercase", fontSize: "0.65rem", letterSpacing: "0.02em" }}>{card.title}</Typography>
-                <Typography variant="h5" sx={{ fontWeight: 800, color: "var(--text-primary)", my: 0.1 }}>{card.value}</Typography>
-              </Box>
+
+              {card.path && (
+                <Box sx={{ 
+                  display: "flex", 
+                  alignItems: "center", 
+                  justifyContent: "flex-end", 
+                  gap: 0.8,
+                  pt: 1.5, 
+                  borderTop: "1px solid var(--border-color)", 
+                  width: "100%",
+                  zIndex: 1,
+                  mt: "auto"
+                }}>
+                  <Typography 
+                    className="view-all-text"
+                    sx={{ 
+                      fontSize: "0.75rem", 
+                      fontWeight: 800, 
+                      background: "var(--gradient-primary)",
+                      WebkitBackgroundClip: "text",
+                      WebkitTextFillColor: "transparent",
+                      display: "inline-block",
+                      transition: "all 0.2s ease"
+                    }}
+                  >
+                    View Details
+                  </Typography>
+                  <ArrowForward 
+                    className="view-all-arrow"
+                    sx={{ 
+                      fontSize: 14, 
+                      color: "var(--color-primary)",
+                      transition: "transform 0.2s ease"
+                    }} 
+                  />
+                </Box>
+              )}
             </Card>
           </Box>
         ))}

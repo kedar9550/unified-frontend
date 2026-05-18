@@ -283,7 +283,17 @@ export default function ResearchReports() {
                     variant="contained" 
                     startIcon={<DownloadIcon />} 
                     onClick={() => downloadCSV("journals")}
-                    sx={{ borderRadius: "12px", textTransform: "none", bgcolor: "var(--color-primary)" }}
+                    sx={{ 
+                        borderRadius: "12px", 
+                        textTransform: "none", 
+                        background: "var(--gradient-primary)",
+                        boxShadow: "0 4px 12px rgba(190, 147, 55, 0.2)",
+                        "&:hover": {
+                            background: "var(--gradient-primary)",
+                            opacity: 0.9,
+                            boxShadow: "0 6px 16px rgba(190, 147, 55, 0.3)"
+                        }
+                    }}
                 >
                     Export to Excel
                 </Button>
@@ -308,7 +318,17 @@ export default function ResearchReports() {
                     variant="contained" 
                     startIcon={<DownloadIcon />} 
                     onClick={() => downloadCSV("textbooks")}
-                    sx={{ borderRadius: "12px", textTransform: "none", bgcolor: "var(--color-primary)" }}
+                    sx={{ 
+                        borderRadius: "12px", 
+                        textTransform: "none", 
+                        background: "var(--gradient-primary)",
+                        boxShadow: "0 4px 12px rgba(190, 147, 55, 0.2)",
+                        "&:hover": {
+                            background: "var(--gradient-primary)",
+                            opacity: 0.9,
+                            boxShadow: "0 6px 16px rgba(190, 147, 55, 0.3)"
+                        }
+                    }}
                 >
                     Export to Excel
                 </Button>
@@ -333,7 +353,17 @@ export default function ResearchReports() {
                     variant="contained" 
                     startIcon={<DownloadIcon />} 
                     onClick={() => downloadCSV("chapters")}
-                    sx={{ borderRadius: "12px", textTransform: "none", bgcolor: "var(--color-primary)" }}
+                    sx={{ 
+                        borderRadius: "12px", 
+                        textTransform: "none", 
+                        background: "var(--gradient-primary)",
+                        boxShadow: "0 4px 12px rgba(190, 147, 55, 0.2)",
+                        "&:hover": {
+                            background: "var(--gradient-primary)",
+                            opacity: 0.9,
+                            boxShadow: "0 6px 16px rgba(190, 147, 55, 0.3)"
+                        }
+                    }}
                 >
                     Export to Excel
                 </Button>
@@ -358,8 +388,26 @@ export default function ResearchReports() {
                                 onChange={handleTabChange}
                                 sx={{ 
                                     minHeight: 48,
-                                    "& .MuiTabs-indicator": { height: 3, borderRadius: "3px" },
-                                    "& .MuiTab-root": { textTransform: "none", fontWeight: 700, fontSize: "0.95rem", minHeight: 48, py: 1.5 }
+                                    "& .MuiTabs-indicator": { 
+                                        height: 3, 
+                                        borderRadius: "3px",
+                                        background: "var(--gradient-primary) !important" 
+                                    },
+                                    "& .MuiTab-root": { 
+                                        textTransform: "none", 
+                                        fontWeight: 700, 
+                                        fontSize: "0.95rem", 
+                                        minHeight: 48, 
+                                        py: 1.5,
+                                        color: "var(--text-secondary)",
+                                        transition: "all 0.2s ease",
+                                        "&.Mui-selected": {
+                                            color: "var(--color-primary) !important",
+                                        },
+                                        "&.Mui-selected svg": {
+                                            color: "var(--color-primary) !important"
+                                        }
+                                    }
                                 }}
                             >
                                 <Tab icon={<JournalIcon sx={{ fontSize: 20 }} />} iconPosition="start" label="Journals" />
@@ -412,7 +460,19 @@ export default function ResearchReports() {
                                         size="large"
                                         startIcon={<DownloadIcon />} 
                                         onClick={() => downloadCSV("consolidated")}
-                                        sx={{ borderRadius: "12px", textTransform: "none", px: 4, py: 1.5, bgcolor: "var(--color-primary)" }}
+                                        sx={{ 
+                                            borderRadius: "12px", 
+                                            textTransform: "none", 
+                                            px: 4, 
+                                            py: 1.5, 
+                                            background: "var(--gradient-primary)",
+                                            boxShadow: "0 4px 12px rgba(190, 147, 55, 0.2)",
+                                            "&:hover": {
+                                                background: "var(--gradient-primary)",
+                                                opacity: 0.9,
+                                                boxShadow: "0 6px 16px rgba(190, 147, 55, 0.3)"
+                                            }
+                                        }}
                                     >
                                         Download Consolidated Report (.csv)
                                     </Button>
