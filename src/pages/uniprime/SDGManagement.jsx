@@ -296,32 +296,33 @@ const SDGManagement = () => {
         title="SDG Keywords Management"
         subtitle="Manage Sustainable Development Goals and their associated keywords for document analysis."
         breadcrumbs={["Home", "Academics", "SDG Management"]}
-        action={
-          <Button
-            variant="contained"
-            startIcon={<AddIcon />}
-            onClick={() => handleOpenDialog()}
-            sx={{
-              borderRadius: "10px",
-              px: 3,
-              background: 'var(--gradient-primary)',
-              color: '#fff',
-              fontWeight: 700,
-              textTransform: 'none',
-              boxShadow: '0 4px 12px var(--color-primary-alpha)',
-              '&:hover': {
-                background: 'var(--gradient-primary)',
-                filter: 'brightness(1.1)',
-                boxShadow: '0 8px 20px var(--color-primary-alpha)',
-                transform: 'translateY(-1px)'
-              },
-              transition: 'all 0.3s ease'
-            }}
-          >
-            Add New SDG
-          </Button>
-        }
       />
+
+      <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 3, mt: 1 }}>
+        <Button
+          variant="contained"
+          startIcon={<AddIcon />}
+          onClick={() => handleOpenDialog()}
+          sx={{
+            borderRadius: "10px",
+            px: 3,
+            background: 'var(--gradient-primary)',
+            color: '#fff',
+            fontWeight: 700,
+            textTransform: 'none',
+            boxShadow: '0 4px 12px var(--color-primary-alpha)',
+            '&:hover': {
+              background: 'var(--gradient-primary)',
+              filter: 'brightness(1.1)',
+              boxShadow: '0 8px 20px var(--color-primary-alpha)',
+              transform: 'translateY(-1px)'
+            },
+            transition: 'all 0.3s ease'
+          }}
+        >
+          Add New SDG
+        </Button>
+      </Box>
 
 
       {loading ? (
