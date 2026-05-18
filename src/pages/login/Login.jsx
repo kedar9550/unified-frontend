@@ -262,22 +262,6 @@ export default function Login() {
             </p>
           )}
 
-          {/* {fpStep === 1 && (
-            <form className="auth-form" onSubmit={handleSendOtp}>
-              <div className="auth-field">
-                <input id="fp-id" type="text" placeholder=" " value={fpData.id} onChange={e => setFpData({ ...fpData, id: e.target.value })} />
-                <label className="auth-label" htmlFor="fp-id">Employee / Student ID</label>
-              </div>
-              <div className="auth-field">
-                <input id="fp-id" type="text" placeholder=" " value={fpData.id} onChange={e => setFpData({ ...fpData, id: e.target.value })} />
-                <label className="auth-label" htmlFor="fp-id">Email Id</label>
-              </div>
-              <div className="btn-wrapper-center">
-                <button type="submit" className="btn-auth-primary">SEND OTP</button>
-              </div>
-              <button type="button" className="auth-forgot auth-forgot-center" onClick={toggleForgot}>Back to Sign In</button>
-            </form>
-          )} */}
           {fpStep === 1 && (
 
             <form

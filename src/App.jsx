@@ -33,7 +33,6 @@ import Profile from "./components/common/Profile";
 import SDGManagement from "./pages/uniprime/SDGManagement";
 
 
-// Research Approval System (Consolidated)
 import ResearchApprovalList from './pages/research/researchApproval/ResearchApprovalList';
 import ResearchApprovalDetailWrapper from './pages/research/researchApproval/ResearchApprovalDetailWrapper';
 import ResearchReports from './pages/research/ResearchReports';
@@ -63,7 +62,6 @@ function App() {
   const { isLoading, startLoading, stopLoading } = useLoading();
   const [isMobile, setIsMobile] = React.useState(window.innerWidth < 768);
 
-  // Register once — never re-registers on re-render
   useEffect(() => {
     registerLoadingHandlers(startLoading, stopLoading);
 
@@ -118,7 +116,6 @@ function App() {
         <Route path="/student/department-mapping" element={<ProtectedRoute element={<DepartmentMapping />} />} />
         <Route path="/profile" element={<ProtectedRoute element={<Profile />} />} />
         <Route path="/uniprime/sdg-management" element={<ProtectedRoute element={<SDGManagement />} />} />
-        {/* Research Approval System */}
         <Route path="/hod/research-approvals" element={<ProtectedRoute element={<ResearchApprovalList role="HOD" />} />} />
         <Route path="/hod/research-request/:type/:id" element={<ProtectedRoute element={<ResearchApprovalDetailWrapper role="HOD" />} />} />
 
@@ -128,7 +125,6 @@ function App() {
         <Route path="/research-coordinator/approvals" element={<ProtectedRoute element={<ResearchApprovalList role="RESEARCH_COORDINATOR" />} />} />
         <Route path="/research-coordinator/request/:type/:id" element={<ProtectedRoute element={<ResearchApprovalDetailWrapper role="RESEARCH_COORDINATOR" />} />} />
 
-        {/* Reports */}
         <Route path="/research-dean/reports" element={<ProtectedRoute element={<ResearchReports />} />} />
         <Route path="/research-coordinator/reports" element={<ProtectedRoute element={<ResearchReports />} />} />
 

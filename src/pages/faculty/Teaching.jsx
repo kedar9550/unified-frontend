@@ -186,12 +186,10 @@ export default function Teaching() {
       formData.append("file", file);
       formData.append("academicYear", selectedYearLabel);
 
-      // TODO: Update this to your actual CSV upload endpoint
       const res = await API.post("/api/faculty-subject-results/upload-csv", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
-      console.log("CSV uploaded successfully:", res.data);
       toast.success("CSV uploaded successfully!");
       
       // Refresh results

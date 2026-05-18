@@ -783,7 +783,7 @@ const AcademicStructure = () => {
                             fullWidth
                             value={modal.data.name || ''}
                             onChange={(e) => setModal({ ...modal, data: { ...modal.data, name: e.target.value } })}
-                            //disabled={modal.type === 'branch'}
+                            disabled={modal.type === 'branch'}
                             helperText={modal.type === 'branch' ? `Branch name is locked to Department: ${selectedDepartment?.name}` : ""}
                         />
 
