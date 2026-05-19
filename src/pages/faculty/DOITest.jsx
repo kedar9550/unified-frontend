@@ -28,8 +28,16 @@ function parseDate(str) {
 
 function cleanISSN(raw) {
   if (!raw) return "";
-  // handle "2045-2322 2045-2322" or single
+  // handle "2045-2322 2045-2322" or single — strip hyphen for Scopus
   return raw.split(" ")[0].replace(/-/g, "");
+}
+
+function formatISSNWithHyphen(raw) {
+  if (!raw) return "";
+  // Returns ISSN with hyphen for Clarivate: "20452322" → "2045-2322"
+  const digits = raw.split(" ")[0].replace(/-/g, "");
+  if (digits.length === 8) return digits.slice(0, 4) + "-" + digits.slice(4);
+  return raw.split(" ")[0]; // already has hyphen or unusual format
 }
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
@@ -161,7 +169,9 @@ export default function DOIFetcher() {
         R.date        = parseDate(core["prism:coverDisplayDate"] || core["prism:coverDate"]);
 
         // ISSN — try both print and electronic
-        R._issn = cleanISSN(core["prism:issn"] || core["prism:eIssn"] || "");
+        const rawIssn = core["prism:issn"] || core["prism:eIssn"] || "";
+        R._issn    = cleanISSN(rawIssn);           // without hyphen → Scopus Serial
+        R._issnWoS = formatISSNWithHyphen(rawIssn); // with hyphen  → Clarivate WoS
 
         // Source labels
         R._src = { title:"Scopus Abstract", journalName:"Scopus Abstract",
@@ -295,7 +305,10 @@ export default function DOIFetcher() {
             }
           }
           // ISSN fallback
-          if (!R._issn && msg.ISSN?.[0]) R._issn = cleanISSN(msg.ISSN[0]);
+          if (!R._issn && msg.ISSN?.[0]) {
+            R._issn    = cleanISSN(msg.ISSN[0]);
+            R._issnWoS = formatISSNWithHyphen(msg.ISSN[0]);
+          }
           doneStep("success", "Missing fields filled from Crossref");
         } else {
           doneStep("error", `HTTP ${res.status}`);
@@ -315,60 +328,29 @@ export default function DOIFetcher() {
     //  NO Bearer token needed — works without subscription
     //  Response: data[].editions[].edition.code  → "SCIE","SCI","ESCI","SSCI"
     // ══════════════════════════════════════════════════════════════════════════
-    const issn4wos = R._issn;
+    const issn4wos = R._issnWoS || R._issn;
     if (issn4wos) {
       pushStep(`Clarivate WoS — Journal Type: SCI/SCIE/ESCI  (ISSN: ${issn4wos})`);
       try {
-        const body = {
-          searchValue: issn4wos,
-          pageNum: 1, pageSize: 5,
-          sortOrder: [{ name:"RELEVANCE", order:"DESC" }],
-          filters: [{
-            filterName: "COVERED_LATEST_JEDI",
-            matchType: "BOOLEAN_EXACT",
-            caseSensitive: false,
-            values: [{ type:"VALUE", value:"true" }]
-          }],
-          searchIdentifier: "doi-fetch-" + Date.now()
-        };
-        const res = await fetch("https://mjl.clarivate.com/api/mjl/jprof/public/rank-search", {
+        // ── Call our backend proxy (avoids CORS + hides Bearer token) ──────
+        const PROXY_URL = "http://localhost:9000";   // mee backend port
+        const res = await fetch(`${PROXY_URL}/api/research/journal/wos-type`, {
           method: "POST",
           headers: {
-            "Accept":       "application/json",
-            "Content-Type": "application/json",
-            "origin":   "https://mjl.clarivate.com",
-            "referer":  "https://mjl.clarivate.com/search-results",
-            "x-1p-appid":   "mjl"
+            "Content-Type": "application/json"
           },
-          body: JSON.stringify(body)
+          body: JSON.stringify({ issn: issn4wos })
         });
         if (res.ok) {
           const json = await res.json();
-          // Response shape: { data: [ { editions: [ { edition: { code:"SCIE" } } ] } ] }
-          const entries = json?.data || json?.results || [];
-          const types = new Set();
-          entries.forEach(e => {
-            const eds = e.editions || e.coverageGroups || [];
-            eds.forEach(ed => {
-              const code = (ed?.edition?.code || ed?.code || "").toUpperCase();
-              if      (code.includes("SCIE")) types.add("SCIE");
-              else if (code.includes("SCI"))  types.add("SCI");
-              if (code.includes("ESCI"))      types.add("ESCI");
-              if (code.includes("SSCI"))      types.add("SSCI");
-              if (code.includes("AHCI"))      types.add("AHCI");
-            });
-          });
-          if (types.size > 0) {
-            types.add("WoS");
-            // Also always add SCOPUS if we got data from Scopus
-            if (R.title) types.add("SCOPUS");
-            R.journalType = [...types].join(" / ");
-            R._src.journalType = "Clarivate WoS";
+          if (json.inWoS && json.journalType) {
+            if (R.title) json.journalType += " / SCOPUS";
+            R.journalType      = json.journalType;
+            R._src.journalType = "Clarivate WoS (proxy)";
             doneStep("success", `Type: ${R.journalType}`);
           } else {
-            // Journal not in WoS — still SCOPUS if we found it there
             if (R.title) {
-              R.journalType = "SCOPUS";
+              R.journalType      = "SCOPUS";
               R._src.journalType = "Scopus (not in WoS)";
             }
             doneStep("success", "Not indexed in WoS — marked SCOPUS only");
