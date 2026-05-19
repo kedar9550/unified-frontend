@@ -393,6 +393,7 @@ const MobileNavbar = () => {
                     {/* Scrollable Navigation Items */}
                     <Box sx={{
                         flex: 1,
+                        minWidth: 0,
                         display: 'flex',
                         overflowX: 'auto',
                         '&::-webkit-scrollbar': { display: 'none' },
@@ -411,35 +412,39 @@ const MobileNavbar = () => {
                                 height: '100%',
                                 width: 'max-content',
                                 minWidth: '100%',
+                                justifyContent: 'flex-start',
+                                gap: '4px',
+                                px: '6px',
                                 '& .MuiBottomNavigationAction-root': {
-                                    minWidth: '75px',
+                                    minWidth: '76px',
                                     flexShrink: 0,
-                                    padding: '6px 2px',
+                                    padding: '6px 10px',
+                                    borderRadius: '12px',
                                     color: 'var(--text-secondary)',
-                                    transition: 'all 0.3s ease',
+                                    transition: 'all 0.25s ease',
                                     position: 'relative',
-                                    '&:not(:last-child)::after': {
-                                        content: '""',
-                                        position: 'absolute',
-                                        right: 0,
-                                        top: '25%',
-                                        height: '50%',
-                                        width: '1px',
-                                        background: 'var(--border-color)',
-                                        opacity: 0.5
+                                    '& .MuiBottomNavigationAction-label': {
+                                        fontSize: '0.68rem',
+                                        fontWeight: 600,
+                                        whiteSpace: 'nowrap',
+                                        overflow: 'visible',
+                                        mt: 0.3,
                                     },
                                     '&.Mui-selected': {
                                         color: 'var(--color-primary)',
+                                        background: 'transparent',
                                         '& .MuiBottomNavigationAction-label': {
-                                            fontSize: '0.75rem',
+                                            fontSize: '0.72rem',
                                             fontWeight: 800,
-                                            mt: 0.5,
+                                            mt: 0.3,
                                             background: 'var(--gradient-primary)',
                                             WebkitBackgroundClip: 'text',
                                             WebkitTextFillColor: 'transparent',
+                                            whiteSpace: 'nowrap',
+                                            overflow: 'visible',
                                         },
                                         '& .MuiSvgIcon-root': {
-                                            fontSize: '1.6rem',
+                                            fontSize: '1.5rem',
                                             transition: 'all 0.3s ease',
                                             fill: 'url(#mobile-nav-gradient)',
                                             filter: 'drop-shadow(0 0 2px var(--color-primary-alpha))'

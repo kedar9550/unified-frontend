@@ -136,8 +136,8 @@ const Header = ({ onMenuClick }) => {
             display: "flex",
             alignItems: "center",
             justifyContent: "flex-end", // Anchor avatar to the right
-            height: 42, // Fixed height
-            borderRadius: "999px",
+            height: 48, // Fixed height
+            borderRadius: "1000px",
             background: open
               ? "linear-gradient(var(--bg-panel), var(--bg-panel)) padding-box, var(--gradient-primary) border-box"
               : "var(--bg-panel)",
@@ -145,7 +145,7 @@ const Header = ({ onMenuClick }) => {
             cursor: "pointer",
             transition: "all 0.4s cubic-bezier(0.4, 0, 0.2, 1)",
             boxShadow: open ? "var(--shadow-premium)" : "none",
-            maxWidth: open ? "250px" : "42px", // Collapsed by default
+            maxWidth: open ? "250px" : "48px", // Collapsed = perfect circle (matches height)
             boxSizing: "border-box",
             overflow: "hidden",
             "&:hover": {
@@ -203,15 +203,16 @@ const Header = ({ onMenuClick }) => {
               minWidth: 40,
               width: 40,
               height: 40,
-              borderRadius: "50%",
+              borderRadius: "60%",
               overflow: "hidden",
-              border: "2px solid var(--border-color)",
+              border: "0px solid var(--border-color)",
               boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
               background: "var(--gradient-primary)",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              flexShrink: 0
+              flexShrink: 0,
+              mr: "3px"
             }}
           >
             {imageSrc && !imgError ? (
