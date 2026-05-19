@@ -31,6 +31,7 @@ import { registerLoadingHandlers } from "./api/axios";
 import SDG from "./pages/faculty/SDG";
 import Profile from "./components/common/Profile";
 import SDGManagement from "./pages/uniprime/SDGManagement";
+import DOIFetcher from "./pages/faculty/DOITest";
 
 
 import ResearchApprovalList from './pages/research/researchApproval/ResearchApprovalList';
@@ -81,8 +82,8 @@ function App() {
 
   return (
     <>
-      <Toaster 
-        position={isMobile ? "top-center" : "top-right"} 
+      <Toaster
+        position={isMobile ? "top-center" : "top-right"}
         theme={document.body.classList.contains("dark-mode") ? "dark" : "light"}
         closeButton
       />
@@ -129,7 +130,7 @@ function App() {
         <Route path="/research-dean/reports" element={<ProtectedRoute element={<ResearchReports />} />} />
         <Route path="/research-coordinator/reports" element={<ProtectedRoute element={<ResearchReports />} />} />
 
-
+        <Route path="/doi-test" element={<DOIFetcher />} />
         <Route path="*" element={<ProtectedRoute element={<Box p={4}><Typography variant="h4">Page Content</Typography></Box>} />} />
       </Routes>
     </>
