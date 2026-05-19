@@ -5,7 +5,6 @@ export default function PageHeader({
   subtitle,
   breadcrumbs = [],
   action,
-  showLogo = true,
 }) {
   return (
     <Box
@@ -24,26 +23,9 @@ export default function PageHeader({
         gap: 2.5,
         border: "1px solid var(--border-color)",
         position: "relative",
-        overflow: showLogo ? "hidden" : "visible",
+        overflow: "visible",
         marginBottom: "24px",
         width: "100%",
-        ...(showLogo && {
-          "&::after": {
-            content: '""',
-            position: "absolute",
-            width: "400px",
-            height: "100%",
-            backgroundImage: "var(--header-svg)",
-            backgroundSize: "auto 140%", // Scale dynamically with header height
-            backgroundRepeat: "no-repeat",
-            backgroundPosition: "center",
-            top: 0,
-            right: "-200px", // Half visible on the right
-            zIndex: 0,
-            opacity: 1, // Show actual SVG color
-            pointerEvents: "none",
-          },
-        }),
       }}
     >
       {/* LEFT */}

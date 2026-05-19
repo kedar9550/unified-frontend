@@ -1,4 +1,4 @@
-import Loader from "../../components/common/Loader";
+
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -46,7 +46,7 @@ import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
 
 const UniprimeDashboard = () => {
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [dashboardData, setDashboardData] = useState({
     academicYearsCount: 0,
     activeYear: "N/A",
@@ -63,8 +63,9 @@ const UniprimeDashboard = () => {
 
   useEffect(() => {
     const fetchDashboardData = async () => {
+      setLoading(true);
+      const timeout = setTimeout(() => setLoading(false), 8000); // Safety: never stuck
       try {
-        setLoading(true);
         const res = await API.get('/api/dashboard/uniprime');
 
         if (res.data?.status === 'success') {
@@ -85,6 +86,7 @@ const UniprimeDashboard = () => {
       } catch (error) {
         console.error("Error fetching dashboard data:", error);
       } finally {
+        clearTimeout(timeout);
         setLoading(false);
       }
     };
@@ -174,7 +176,7 @@ const UniprimeDashboard = () => {
     <Box>
       {loading ? (
         <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '60vh' }}>
-          <Loader />
+          <CircularProgress />
         </Box>
       ) : (
         <>
@@ -469,7 +471,7 @@ const UniprimeDashboard = () => {
                         Jan 15, 2025 - May 30, 2025
                       </Typography>
 
-                      <Loader
+                      <LinearProgress
                         variant="determinate"
                         value={60}
                         sx={{

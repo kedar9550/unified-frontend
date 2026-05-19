@@ -1,20 +1,7 @@
-import React, { useEffect, useState } from "react";
-import SunLoader from "./SunLoader.jsx";
-import { Box } from "@mui/material";
+import React from "react";
+import { CircularProgress, Box } from "@mui/material";
 
-const Loader = ({ fullScreen = false, size = 130, sx = {}, ...props }) => {
-    const [counter, setCounter] = useState(0);
-
-    useEffect(() => {
-        const interval = setInterval(() => {
-            setCounter((prev) => (prev >= 200 ? 0 : prev + 1));
-        }, 40);
-
-        return () => clearInterval(interval);
-    }, []);
-
-    const progress = counter <= 100 ? counter : 200 - counter;
-
+const Loader = ({ fullScreen = false, size = 40, sx = {}, color = "primary", ...props }) => {
     if (fullScreen) {
         return (
             <Box
@@ -34,14 +21,14 @@ const Loader = ({ fullScreen = false, size = 130, sx = {}, ...props }) => {
                 }}
                 {...props}
             >
-                <SunLoader progress={progress} size={size} />
+                <CircularProgress size={size} color={color} />
             </Box>
         );
     }
 
     return (
         <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", ...sx }} {...props}>
-            <SunLoader progress={progress} size={size} />
+            <CircularProgress size={size} color={color} />
         </Box>
     );
 };
