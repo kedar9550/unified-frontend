@@ -17,7 +17,6 @@ import {
   ListItemText,
   Divider,
   Paper,
-  CircularProgress,
 } from "@mui/material";
 import {
   CalendarToday,
@@ -46,7 +45,6 @@ import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
 
 const UniprimeDashboard = () => {
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(false);
   const [dashboardData, setDashboardData] = useState({
     academicYearsCount: 0,
     activeYear: "N/A",
@@ -63,8 +61,7 @@ const UniprimeDashboard = () => {
 
   useEffect(() => {
     const fetchDashboardData = async () => {
-      setLoading(true);
-      const timeout = setTimeout(() => setLoading(false), 8000); // Safety: never stuck
+      const timeout = setTimeout(() => {}, 8000);
       try {
         const res = await API.get('/api/dashboard/uniprime');
 
@@ -87,7 +84,6 @@ const UniprimeDashboard = () => {
         console.error("Error fetching dashboard data:", error);
       } finally {
         clearTimeout(timeout);
-        setLoading(false);
       }
     };
 
@@ -174,12 +170,7 @@ const UniprimeDashboard = () => {
 
   return (
     <Box>
-      {loading ? (
-        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '60vh' }}>
-          <CircularProgress />
-        </Box>
-      ) : (
-        <>
+      <>
           {/* Header */}
           <Box sx={{ mb: 4 }}>
             <Typography variant="h4" sx={{ fontWeight: 800, color: "var(--text-primary)", mb: 0.5, letterSpacing: "-0.02em" }}>
@@ -719,7 +710,6 @@ const UniprimeDashboard = () => {
 
           </Box>
         </>
-      )}
     </Box >
   );
 };
