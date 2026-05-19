@@ -528,7 +528,7 @@
   font-family: 'Product Sans', sans-serif;
   letter-spacing: 1.4px;
   cursor: pointer;
-  box-shadow: 0 6px 20px rgba(63, 90, 200, 0.4);
+  box-shadow: none;
   transition: transform 0.2s, box-shadow 0.2s, opacity 0.2s;
 }
 
@@ -550,7 +550,8 @@
 }
 
 .password-toggle:hover {
-  color: #0b5299;
+  color: var(--gradient-primary);
+  cursor: pointer;
 }
 
 .password-toggle svg {
@@ -559,7 +560,8 @@
 
 .btn-auth-primary:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 10px 28px rgba(63, 90, 200, 0.55);
+  background: var(--gradient-primary);
+  box-shadow: none;
 }
 
 .btn-auth-primary:active:not(:disabled) {

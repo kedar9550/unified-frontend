@@ -1,3 +1,4 @@
+import Loader from "../../components/common/Loader";
 import React, { useEffect, useState } from 'react';
 import {
   Box,
@@ -54,7 +55,7 @@ const HODDashboard = () => {
   if (loading) {
     return (
       <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", height: "60vh" }}>
-        <CircularProgress />
+        <Loader />
       </Box>
     );
   }

@@ -1,3 +1,4 @@
+import Loader from "../../components/common/Loader";
 import React from 'react';
 import {
   Box,
@@ -217,8 +218,8 @@ const RnDDeanDashboard = () => {
             <Typography variant="h6" sx={{ fontWeight: 700 }}>Publications Trend</Typography>
             <Chip label="This Academic Year" size="small" sx={{ borderRadius: '8px', background: 'var(--bg-accent-4)', fontWeight: 600 }} />
           </Box>
-          <Box sx={{ height: 320 }}>
-            <ResponsiveContainer width="100%" height="100%">
+          <Box sx={{ height: 320, width: '100%', minWidth: 0, position: 'relative' }}>
+            <ResponsiveContainer width="100%" height={320}>
               <LineChart data={trendData}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(148, 163, 184, 0.1)" />
                 <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: 'var(--text-secondary)', fontSize: 12 }} />
@@ -245,10 +246,11 @@ const RnDDeanDashboard = () => {
             <Box sx={{ 
               flex: 1.2, 
               width: '100%', 
+              minWidth: 0,
               height: 240, 
               position: 'relative' 
             }}>
-               <ResponsiveContainer width="100%" height="100%">
+               <ResponsiveContainer width="100%" height={240}>
                 <PieChart>
                   <Pie
                     data={pieData}
@@ -308,7 +310,7 @@ const RnDDeanDashboard = () => {
                     <Typography sx={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-primary)' }}>{dept.name}</Typography>
                     <Typography sx={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--text-primary)' }}>{dept.value}</Typography>
                   </Box>
-                  <LinearProgress 
+                  <Loader 
                     variant="determinate" 
                     value={(dept.value/34)*100} 
                     sx={{ 

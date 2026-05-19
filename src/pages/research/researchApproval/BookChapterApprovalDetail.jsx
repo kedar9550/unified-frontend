@@ -1,3 +1,4 @@
+import Loader from "../../../components/common/Loader";
 import React, { useState, useEffect } from "react";
 import {
     Box, Typography, Grid, Card, Button, TextField,
@@ -84,7 +85,7 @@ const BookChapterApprovalDetail = ({ id, onBack, role }) => {
         }
     };
 
-    if (loading) return <Box sx={{ display: 'flex', justifyContent: 'center', p: 10 }}><CircularProgress /></Box>;
+    if (loading) return <Box sx={{ display: 'flex', justifyContent: 'center', p: 10 }}><Loader /></Box>;
     if (!data) return <Box sx={{ textAlign: 'center', p: 5 }}><Typography color="error">Failed to load data.</Typography><Button onClick={onBack} sx={{ mt: 2 }}>Go Back</Button></Box>;
 
     const { facultyId } = data;

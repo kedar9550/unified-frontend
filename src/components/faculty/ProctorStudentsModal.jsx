@@ -1,3 +1,4 @@
+import Loader from "../common/Loader";
 import React, { useState, useEffect } from "react";
 import {
   Dialog,
@@ -151,7 +152,7 @@ const ProctorStudentsModal = ({ open, onClose, proctorId }) => {
       <DialogContent sx={{ p: 3 }}>
         {loading ? (
           <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>
-            <CircularProgress size={40} thickness={4} sx={{ color: "var(--color-primary)" }} />
+            <Loader size={40} thickness={4} sx={{ color: "var(--color-primary)" }} />
           </Box>
         ) : error ? (
           <Box sx={{ textAlign: "center", py: 8 }}>

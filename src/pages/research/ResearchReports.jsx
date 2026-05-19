@@ -1,3 +1,4 @@
+import Loader from "../../components/common/Loader";
 import React, { useState, useEffect } from "react";
 import {
     Box,
@@ -382,12 +383,22 @@ export default function ResearchReports() {
                 <Paper sx={{ borderRadius: "16px", border: "1px solid var(--border-color)", background: "var(--bg-panel)", overflow: "hidden" }}>
                     {/* Toolbar Section */}
                     <Box sx={{ p: 2.5, borderBottom: "1px solid var(--border-color)", background: "rgba(0,0,0,0.02)" }}>
-                        <Stack direction={{ xs: "column", sm: "row" }} spacing={3} alignItems="center" sx={{ width: "100%" }}>
+                        <Stack direction={{ xs: "column", sm: "row" }} spacing={3} sx={{ width: "100%", alignItems: "center" }}>
                             <Tabs 
                                 value={activeTab} 
                                 onChange={handleTabChange}
+                                variant="scrollable"
+                                scrollButtons="auto"
+                                allowScrollButtonsMobile
                                 sx={{ 
+                                    width: "100%",
+                                    maxWidth: "100%",
                                     minHeight: 48,
+                                    "& .MuiTabs-scrollButtons.Mui-disabled": {
+                                        width: 0,
+                                        opacity: 0,
+                                        overflow: "hidden"
+                                    },
                                     "& .MuiTabs-indicator": { 
                                         height: 3, 
                                         borderRadius: "3px",
@@ -441,7 +452,7 @@ export default function ResearchReports() {
 
                     {loading ? (
                         <Box sx={{ display: "flex", justifyContent: "center", py: 10 }}>
-                            <CircularProgress sx={{ color: "var(--color-primary)" }} />
+                            <Loader sx={{ color: "var(--color-primary)" }} />
                         </Box>
                     ) : (
                         <Box>

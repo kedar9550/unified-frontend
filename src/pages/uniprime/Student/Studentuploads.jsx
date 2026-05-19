@@ -1,3 +1,4 @@
+import Loader from "../../../components/common/Loader";
 import React, { useRef, useState, useEffect } from "react";
 import {
     Box,
@@ -491,7 +492,7 @@ const Studentuploads = () => {
                             >
                                 Individual Add
                             </Button>
-                            {uploading && <CircularProgress size={24} sx={{ color: "#10B981" }} />}
+                            {uploading && <Loader size={24} sx={{ color: "#10B981" }} />}
                         </Box>
                     </Paper>
                 </Box>
@@ -594,7 +595,7 @@ const Studentuploads = () => {
                             >
                                 Individual Update
                             </Button>
-                            {updatingBulk && <CircularProgress size={24} sx={{ color: "#8b5cf6" }} />}
+                            {updatingBulk && <Loader size={24} sx={{ color: "#8b5cf6" }} />}
                         </Box>
                     </Paper>
                 </Box>
@@ -663,7 +664,7 @@ const Studentuploads = () => {
                     />
                     <Paper elevation={0} sx={{ mt: 3, borderRadius: "24px", border: "1px solid var(--border-color)", background: "var(--bg-paper)", overflow: "hidden", position: "relative" }}>
                         {loadingStudents ? (
-                            <Box sx={{ display: "flex", justifyContent: "center", p: 8 }}><CircularProgress sx={{ color: "var(--color-primary)" }} /></Box>
+                            <Box sx={{ display: "flex", justifyContent: "center", p: 8 }}><Loader sx={{ color: "var(--color-primary)" }} /></Box>
                         ) : (
                             <DataTable columns={columns} rows={formattedRows} />
                         )}
@@ -815,7 +816,7 @@ const Studentuploads = () => {
                             }
                         }}
                     >
-                        {addingStudent ? <CircularProgress size={22} color="inherit" /> : (isUpdateModalOpen ? "Update Student" : "Add Student")}
+                        {addingStudent ? <Loader size={22} color="inherit" /> : (isUpdateModalOpen ? "Update Student" : "Add Student")}
                     </Button>
                 </DialogActions>
             </Dialog>

@@ -1,3 +1,4 @@
+import Loader from "../../components/common/Loader";
 import PageHeader from "../../components/common/PageHeader";
 import SectionHeader from "../../components/common/SectionHeader";
 import StatCard from "../../components/common/StatCard";
@@ -501,7 +502,7 @@ export default function FacultyFormatResults() {
 
         {loading ? (
           <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>
-            <CircularProgress />
+            <Loader />
           </Box>
         ) : results.length === 0 ? (
           <Box

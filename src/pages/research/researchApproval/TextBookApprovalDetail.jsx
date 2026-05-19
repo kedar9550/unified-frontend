@@ -1,3 +1,4 @@
+import Loader from "../../../components/common/Loader";
 import React, { useState, useEffect } from "react";
 import {
     Box, Typography, Grid, Card, Button, TextField,
@@ -90,7 +91,7 @@ const TextBookApprovalDetail = ({ id, onBack, role }) => {
     if (loading) {
         return (
             <Box sx={{ display: 'flex', justifyContent: 'center', p: 10 }}>
-                <CircularProgress />
+                <Loader />
             </Box>
         );
     }

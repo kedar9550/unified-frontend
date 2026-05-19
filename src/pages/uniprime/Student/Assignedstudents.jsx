@@ -1,3 +1,4 @@
+import Loader from "../../../components/common/Loader";
 import React, { useState, useEffect, useCallback } from "react";
 import { Box, Avatar, CircularProgress, Typography, MenuItem, Select, FormControl, InputLabel, Paper, Button, Grid } from "@mui/material";
 import { UploadFile, PersonAdd, Download } from "@mui/icons-material";
@@ -234,7 +235,7 @@ const Assignedstudents = () => {
                 <Box sx={{ flex: 1 }}>
                     {loading ? (
                         <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>
-                            <CircularProgress />
+                            <Loader />
                         </Box>
                     ) : (
                         <DataTable

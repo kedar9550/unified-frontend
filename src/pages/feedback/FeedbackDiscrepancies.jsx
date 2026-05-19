@@ -1,3 +1,4 @@
+import Loader from "../../components/common/Loader";
 import { useEffect, useState, useRef, useCallback } from "react";
 import {
   Box,
@@ -363,7 +364,7 @@ export default function FeedbackDiscrepancies() {
 
         {loading ? (
           <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>
-            <CircularProgress />
+            <Loader />
           </Box>
         ) : items.length === 0 ? (
           <Box sx={{ textAlign: "center", py: 8, color: "var(--text-secondary)" }}>
@@ -613,7 +614,7 @@ export default function FeedbackDiscrepancies() {
                 </Box>
 
                 {resultLoading ? (
-                  <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}><CircularProgress size={28} /></Box>
+                  <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}><Loader size={28} /></Box>
                 ) : resultData.length === 0 ? (
                   <Box sx={{ p: 4, borderRadius: "18px", background: "var(--bg-glass)", border: "1px dashed var(--border-color)", textAlign: "center" }}>
                     <Typography fontSize={14} color="var(--text-secondary)" fontWeight={600}>No feedback records found for this period.</Typography>
@@ -726,7 +727,7 @@ export default function FeedbackDiscrepancies() {
                 boxShadow: "var(--shadow-premium)",
               }}
             >
-              {submitting ? <CircularProgress size={20} color="inherit" /> : "✓ Submit & Resolve"}
+              {submitting ? <Loader size={20} color="inherit" /> : "✓ Submit & Resolve"}
             </Button>
           </DialogActions>
         )}
@@ -834,7 +835,7 @@ export default function FeedbackDiscrepancies() {
                 "&:hover": { background: "#DC2626" }
               }}
             >
-              {rejecting ? <CircularProgress size={20} color="inherit" /> : "✕ Confirm Reject"}
+              {rejecting ? <Loader size={20} color="inherit" /> : "✕ Confirm Reject"}
             </Button>
           </DialogActions>
         )}

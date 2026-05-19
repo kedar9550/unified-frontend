@@ -84,8 +84,9 @@ function App() {
       <Toaster 
         position={isMobile ? "top-center" : "top-right"} 
         theme={document.body.classList.contains("dark-mode") ? "dark" : "light"}
+        closeButton
       />
-      {isLoading && <Loader />}
+      {isLoading && <Loader fullScreen />}
       <Routes>
         <Route path="/" element={<PublicOnlyRoute><Login /></PublicOnlyRoute>} />
         <Route path="/signup" element={<Navigate to="/" replace />} />

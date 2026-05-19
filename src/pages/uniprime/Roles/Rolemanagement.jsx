@@ -1,3 +1,4 @@
+import Loader from "../../../components/common/Loader";
 import React, { useState, useEffect, useRef } from "react";
 import {
     Box, Button, Card, CardContent, Typography,
@@ -751,7 +752,7 @@ const RoleManagement = () => {
                                         <Button
                                             variant="outlined"
                                             size="small"
-                                            startIcon={uploadingBulk ? <CircularProgress size={16} color="inherit" /> : <UploadFile />}
+                                            startIcon={uploadingBulk ? <Loader size={16} color="inherit" /> : <UploadFile />}
                                             onClick={() => fileInputRef.current.click()}
                                             disabled={uploadingBulk}
                                             sx={{ width: { xs: '100%', sm: 'auto' }, borderRadius: '50px', textTransform: 'none', fontWeight: 700, border: '1.5px solid var(--color-primary)', background: 'transparent', color: 'var(--color-primary)', py: { xs: 1.2, sm: 0.5 }, transition: '0.3s', '&:hover': { background: 'rgba(0, 78, 146, 0.05)', boxShadow: '0 4px 10px rgba(0, 78, 146, 0.1)' } }}
@@ -808,7 +809,7 @@ const RoleManagement = () => {
                                                                 onClick={handleVerifyCreate}
                                                                 disabled={isVerifyingCreate || !createIndividualQuery.trim()}
                                                             >
-                                                                {isVerifyingCreate ? <CircularProgress size={16} /> : <ArrowForward fontSize="small" />}
+                                                                {isVerifyingCreate ? <Loader size={16} /> : <ArrowForward fontSize="small" />}
                                                             </IconButton>
                                                             <IconButton size="small" onClick={() => { setShowCreateIndividualSearch(false); setCreateIndividualQuery(""); setCreateIndividualPreview(null); setIsShowingSignupForm(false); }}><Close fontSize="small" /></IconButton>
                                                         </InputAdornment>
@@ -919,7 +920,7 @@ const RoleManagement = () => {
                                                         }
                                                     }}
                                                 >
-                                                    {isIndividualSubmitting ? <CircularProgress size={20} color="inherit" /> : 'Register'}
+                                                    {isIndividualSubmitting ? <Loader size={20} color="inherit" /> : 'Register'}
                                                 </Button>
                                             </Grid>
                                         </Grid>
@@ -945,7 +946,7 @@ const RoleManagement = () => {
                                             <Button
                                                 variant="outlined"
                                                 size="small"
-                                                startIcon={isSyncingBulk ? <CircularProgress size={16} color="inherit" /> : <Sync />}
+                                                startIcon={isSyncingBulk ? <Loader size={16} color="inherit" /> : <Sync />}
                                                 onClick={handleBulkSync}
                                                 disabled={isSyncingBulk}
                                                 sx={{ width: { xs: '100%', sm: 'auto' }, borderRadius: '50px', textTransform: 'none', fontWeight: 700, border: '1.5px solid var(--color-primary)', background: 'transparent', color: 'var(--color-primary)', py: { xs: 1.2, sm: 0.5 }, transition: '0.3s', '&:hover': { background: 'rgba(0, 78, 146, 0.05)', boxShadow: '0 4px 10px rgba(0, 78, 146, 0.1)' } }}
@@ -1176,7 +1177,7 @@ const RoleManagement = () => {
                                                 variant="contained"
                                                 onClick={handleUpdateEmployeeAdmin}
                                                 disabled={isUpdatingEmail || (!editableEmail && !editableCoreDept)}
-                                                startIcon={isUpdatingEmail ? <CircularProgress size={16} color="inherit" /> : <Save />}
+                                                startIcon={isUpdatingEmail ? <Loader size={16} color="inherit" /> : <Save />}
                                                 fullWidth={false}
                                                 sx={{
                                                     borderRadius: '50px',
@@ -1239,7 +1240,7 @@ const RoleManagement = () => {
                                         startAdornment: (<InputAdornment position="start"><Search fontSize="small" sx={{ color: 'var(--color-primary)' }} /></InputAdornment>),
                                         endAdornment: searchingUsers && (
                                             <InputAdornment position="end">
-                                                <CircularProgress size={16} color="inherit" />
+                                                <Loader size={16} color="inherit" />
                                             </InputAdornment>
                                         )
                                     }

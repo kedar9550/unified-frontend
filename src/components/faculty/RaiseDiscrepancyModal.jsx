@@ -1,3 +1,4 @@
+import Loader from "../common/Loader";
 import {
   Dialog,
   DialogTitle,
@@ -654,7 +655,7 @@ export default function RaiseDiscrepancyModal({
                   </Select>
                   {loadingSems && (
                     <Box sx={{ display: "flex", alignItems: "center", gap: 1, mt: 1 }}>
-                        <CircularProgress size={12} />
+                        <Loader size={12} />
                         <Typography fontSize={11} color="text.secondary">Fetching available periods...</Typography>
                     </Box>
                   )}
@@ -757,7 +758,7 @@ export default function RaiseDiscrepancyModal({
               "&.Mui-disabled": { background: "#eee", color: "#aaa" }
             }}
           >
-            {saving ? <CircularProgress size={20} color="inherit" /> : "Submit Discrepancy"}
+            {saving ? <Loader size={20} color="inherit" /> : "Submit Discrepancy"}
           </Button>
         </DialogActions>
       )}

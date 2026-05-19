@@ -1,3 +1,4 @@
+import Loader from "../../components/common/Loader";
 import { useState, useEffect } from "react";
 import axios from "axios";
 import { useAuth } from "../../context/AuthContext";
@@ -517,7 +518,7 @@ export default function TextbookPublication() {
               disabled={!form.isbn || isbnFetching}
               sx={{ minWidth: "100px", textTransform: "none", borderRadius: "8px", background: "var(--color-primary)" }}
             >
-              {isbnFetching ? <CircularProgress size={20} color="inherit" /> : "Fetch"}
+              {isbnFetching ? <Loader size={20} color="inherit" /> : "Fetch"}
             </Button>
           </Box>
         </Box>

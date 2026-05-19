@@ -95,12 +95,14 @@ export default function DataTable({ columns, rows, toolbarLeft }) {
             },
             "& .MuiInputBase-input": { color: "var(--text-primary)", fontSize: "0.875rem" },
           }}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <SearchIcon sx={{ color: "var(--text-secondary)", fontSize: "1.2rem" }} />
-              </InputAdornment>
-            ),
+          slotProps={{
+            input: {
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon sx={{ color: "var(--text-secondary)", fontSize: "1.2rem" }} />
+                </InputAdornment>
+              ),
+            },
           }}
         />
       </Box>

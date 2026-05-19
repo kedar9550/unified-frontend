@@ -1,3 +1,4 @@
+import Loader from "../../components/common/Loader";
 import { useState, useEffect } from "react";
 import { useAuth } from "../../context/AuthContext";
 
@@ -486,7 +487,7 @@ export default function JournalPublication() {
           variant="contained"
           onClick={fetchDOIData}
           disabled={!form.doi || doiFetching}
-          startIcon={doiFetching ? <CircularProgress size={16} color="inherit" /> : <Search />}
+          startIcon={doiFetching ? <Loader size={16} color="inherit" /> : <Search />}
           sx={{ minWidth: "130px", textTransform: "none", borderRadius: "8px", fontWeight: 700, background: "var(--color-primary)", whiteSpace: "nowrap" }}
         >
           {doiFetching ? "Fetching…" : "Fetch Data"}

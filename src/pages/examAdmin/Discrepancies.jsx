@@ -1,3 +1,4 @@
+import Loader from "../../components/common/Loader";
 import { useEffect, useState, useRef, useCallback } from "react";
 import {
   Box,
@@ -960,7 +961,7 @@ export default function Discrepancies() {
                 "&:hover": { background: "linear-gradient(135deg,#b71c1c,#c62828)" },
               }}
             >
-              {rejecting ? <CircularProgress size={20} color="inherit" /> : "✕ Reject with Note"}
+              {rejecting ? <Loader size={20} color="inherit" /> : "✕ Reject with Note"}
             </Button>
           </DialogActions>
         )}

@@ -1,3 +1,4 @@
+import Loader from "../../components/common/Loader";
 import React, { useState, useEffect } from 'react';
 import PageHeader from '../../components/common/PageHeader';
 import {
@@ -701,7 +702,7 @@ const SDG = () => {
             {loading ? (
                 <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '60vh' }}>
                     <Box sx={{ textAlign: 'center' }}>
-                        <CircularProgress size={50} sx={{ mb: 2 }} />
+                        <Loader size={50} sx={{ mb: 2 }} />
                         <Typography color="text.secondary">Loading SDG Keywords...</Typography>
                     </Box>
                 </Box>
@@ -787,7 +788,7 @@ const SDG = () => {
                                     >
                                         {isProcessing ? (
                                             <Box sx={{ textAlign: 'center' }}>
-                                                <CircularProgress size={60} sx={{ color: 'var(--color-primary)', mb: 3 }} />
+                                                <Loader size={60} sx={{ color: 'var(--color-primary)', mb: 3 }} />
                                                 <Typography variant="h6" sx={{ fontWeight: 800, color: 'var(--text-primary)' }}>
                                                     Scanning Document...
                                                 </Typography>

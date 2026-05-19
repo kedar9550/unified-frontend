@@ -1,3 +1,4 @@
+import Loader from "../common/Loader";
 import React, { useState, useEffect, useRef } from "react";
 import { 
     Box, 
@@ -156,7 +157,7 @@ const AcademicHierarchyFilter = ({ onChange, initialValues = {}, showSearch = fa
                                 ...params.InputProps,
                                 endAdornment: (
                                     <React.Fragment>
-                                        {isLoading ? <CircularProgress color="inherit" size={20} /> : null}
+                                        {isLoading ? <Loader color="inherit" size={20} /> : null}
                                         {params.InputProps.endAdornment}
                                     </React.Fragment>
                                 ),
@@ -191,7 +192,7 @@ const AcademicHierarchyFilter = ({ onChange, initialValues = {}, showSearch = fa
                     value={value}
                     onChange={(e) => onChangeHandler(e.target.value)}
                     label={label}
-                    IconComponent={isLoading ? () => <CircularProgress size={16} sx={{ mr: 1.5 }} /> : undefined}
+                    IconComponent={isLoading ? () => <Loader size={16} sx={{ mr: 1.5 }} /> : undefined}
                 >
                     <MenuItem value=""><em>None</em></MenuItem>
                     {options.map(opt => (

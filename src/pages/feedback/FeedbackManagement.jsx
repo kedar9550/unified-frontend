@@ -1,3 +1,4 @@
+import Loader from "../../components/common/Loader";
 import PageHeader from "../../components/common/PageHeader";
 import SectionHeader from "../../components/common/SectionHeader";
 import StatCard from "../../components/common/StatCard";
@@ -275,7 +276,7 @@ export default function FeedbackManagement() {
               }}
             >
               {uploading ? (
-                <CircularProgress size={18} color="inherit" />
+                <Loader size={18} color="inherit" />
               ) : (
                 <UploadIcon sx={{ mr: 1, fontSize: 18 }} />
               )}
@@ -357,7 +358,7 @@ export default function FeedbackManagement() {
 
         {loading ? (
           <Box sx={{ display: "flex", justifyContent: "center", py: 10 }}>
-            <CircularProgress />
+            <Loader />
           </Box>
         ) : results.length === 0 ? (
           <Box sx={{ textAlign: "center", py: 10, background: "rgba(0,0,0,0.02)", borderRadius: "16px", border: "1px dashed var(--border-color)" }}>

@@ -1,3 +1,4 @@
+import Loader from "../../components/common/Loader";
 import React from 'react';
 import {
   Box,
@@ -84,7 +85,7 @@ const FeedbackCoordinatorDashboard = () => {
     <Box>
       {loading ? (
         <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '60vh' }}>
-          <CircularProgress />
+          <Loader />
         </Box>
       ) : (
         <>
@@ -230,7 +231,7 @@ const FeedbackCoordinatorDashboard = () => {
                 
                 <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 4, flexWrap: "wrap", justifyContent: "center" }}>
                   <Box sx={{ position: "relative", width: 130, height: 130, flexShrink: 0 }}>
-                    <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
+                    <ResponsiveContainer width="100%" height={130}>
                       <PieChart>
                         <Pie data={dashboardData.chartData} dataKey="value" innerRadius={45} outerRadius={60} stroke="none" paddingAngle={5}>
                           {dashboardData.chartData.map((entry, index) => (
@@ -269,7 +270,7 @@ const FeedbackCoordinatorDashboard = () => {
                         <Typography variant="body2" sx={{ color: "var(--text-secondary)", fontSize: "0.75rem", fontWeight: 600 }}>Progress</Typography>
                         <Typography variant="body2" sx={{ color: "var(--color-primary)", fontSize: "0.75rem", fontWeight: 800 }}>{dashboardData.processedFeedbacks} / {dashboardData.totalFaculties}</Typography>
                     </Box>
-                    <LinearProgress 
+                    <Loader 
                         variant="determinate" 
                         value={dashboardData.totalFaculties > 0 ? (dashboardData.processedFeedbacks / dashboardData.totalFaculties) * 100 : 0} 
                         sx={{ 

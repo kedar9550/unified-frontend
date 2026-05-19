@@ -1,3 +1,4 @@
+import Loader from "../../components/common/Loader";
 import React, { useEffect, useState, useRef } from "react";
 import {
   Box,
@@ -784,7 +785,7 @@ export default function Teaching() {
 
         {proctorLoading ? (
           <Box sx={{ display: "flex", justifyContent: "center", py: 5 }}>
-            <CircularProgress size={32} />
+            <Loader size={32} />
           </Box>
         ) : proctorRows.length === 0 ? (
           <Box
@@ -821,7 +822,7 @@ export default function Teaching() {
 
         {feedbackLoading ? (
           <Box sx={{ display: "flex", justifyContent: "center", py: 6 }}>
-            <CircularProgress />
+            <Loader />
           </Box>
         ) : feedbackResults.length === 0 ? (
           <Box
@@ -856,7 +857,7 @@ export default function Teaching() {
 
         {coAttainmentLoading ? (
           <Box sx={{ display: "flex", justifyContent: "center", py: 6 }}>
-            <CircularProgress />
+            <Loader />
           </Box>
         ) : coAttainmentResults.length === 0 ? (
           <Box

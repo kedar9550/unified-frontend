@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from "react";
 import SunLoader from "./SunLoader.jsx";
+import { Box } from "@mui/material";
 
-const Loader = () => {
+const Loader = ({ fullScreen = false, size = 130, sx = {}, ...props }) => {
     const [counter, setCounter] = useState(0);
 
     useEffect(() => {
@@ -14,25 +15,34 @@ const Loader = () => {
 
     const progress = counter <= 100 ? counter : 200 - counter;
 
-    return (
-        <div
-            style={{
-                position: "fixed",
-                top: 0,
-                left: 0,
-                width: "100vw",
-                height: "100vh",
-                backgroundColor: "var(--bg-glass)", // Theme-aware overlay
-                backdropFilter: "blur(4px)", // Premium blur effect
-                display: "flex",
-                justifyContent: "center",
-                alignItems: "center",
-                zIndex: 9999, // Keep it on top of everything
-            }}
-        >
-            <SunLoader progress={progress} size={130} />
+    if (fullScreen) {
+        return (
+            <Box
+                sx={{
+                    position: "fixed",
+                    top: 0,
+                    left: 0,
+                    width: "100vw",
+                    height: "100vh",
+                    backgroundColor: "var(--bg-glass)",
+                    backdropFilter: "blur(4px)",
+                    display: "flex",
+                    justifyContent: "center",
+                    alignItems: "center",
+                    zIndex: 9999,
+                    ...sx
+                }}
+                {...props}
+            >
+                <SunLoader progress={progress} size={size} />
+            </Box>
+        );
+    }
 
-        </div>
+    return (
+        <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", ...sx }} {...props}>
+            <SunLoader progress={progress} size={size} />
+        </Box>
     );
 };
 

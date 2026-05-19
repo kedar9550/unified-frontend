@@ -1,3 +1,4 @@
+import Loader from "../../components/common/Loader";
 import React, { useEffect, useState, useRef } from "react";
 import {
   Box, Button, MenuItem, Select, Typography,
@@ -465,7 +466,7 @@ const DeptProctorUploads = () => {
 
       {/* ── Table ─────────────────────────────────────────── */}
       {loading ? (
-        <Box sx={{ display: "flex", justifyContent: "center", mt: 4 }}><CircularProgress /></Box>
+        <Box sx={{ display: "flex", justifyContent: "center", mt: 4 }}><Loader /></Box>
       ) : students.length > 0 ? (
         <DataTable
           columns={["Student ID", "Student Name", "Proctor ID", "Proctor Name", "Actions"]}

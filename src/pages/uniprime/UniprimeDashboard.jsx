@@ -1,3 +1,4 @@
+import Loader from "../../components/common/Loader";
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -173,7 +174,7 @@ const UniprimeDashboard = () => {
     <Box>
       {loading ? (
         <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '60vh' }}>
-          <CircularProgress />
+          <Loader />
         </Box>
       ) : (
         <>
@@ -468,7 +469,7 @@ const UniprimeDashboard = () => {
                         Jan 15, 2025 - May 30, 2025
                       </Typography>
 
-                      <LinearProgress
+                      <Loader
                         variant="determinate"
                         value={60}
                         sx={{
@@ -529,7 +530,7 @@ const UniprimeDashboard = () => {
                   }}>
                     {/* Chart */}
                     <Box sx={{ position: "relative", width: 200, height: 200, flexShrink: 0, mx: "auto", minWidth: 0 }}>
-                      <ResponsiveContainer width="100%" height={200} debounce={50}>
+                      <ResponsiveContainer width="100%" height={200} minWidth={1} minHeight={1} debounce={50}>
                         <PieChart>
                           <Pie
                             data={dashboardData.roleDistribution}

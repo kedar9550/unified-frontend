@@ -14,6 +14,8 @@ import {
 import { useAuth } from "../../context/AuthContext";
 import { useNavigate, useLocation } from "react-router-dom";
 import ThemeToggle from "../common/Themetoggle";
+import logoLightTheme from "../../assets/Logo_Light_theme.svg";
+import logoDarkTheme from "../../assets/Logo_Dark_theme.svg";
 
 const capitalizeRole = (role) => {
   if (!role) return "";
@@ -24,7 +26,17 @@ const Header = ({ onMenuClick }) => {
   const { user, activeRole, switchRole, logout } = useAuth();
   const [imgError, setImgError] = useState(false);
   const [anchorEl, setAnchorEl] = useState(null);
-  const [isDarkMode, setIsDarkMode] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    return document.body.classList.contains("dark-mode") || localStorage.getItem("theme") === "dark";
+  });
+
+  React.useEffect(() => {
+    const observer = new MutationObserver(() => {
+      setIsDarkMode(document.body.classList.contains("dark-mode"));
+    });
+    observer.observe(document.body, { attributes: true, attributeFilter: ["class"] });
+    return () => observer.disconnect();
+  }, []);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -34,6 +46,11 @@ const Header = ({ onMenuClick }) => {
 
   const handleClose = () => {
     setAnchorEl(null);
+    // Remove focus from the active element (e.g., clicked MenuItem) before the menu hides
+    // This prevents the "Blocked aria-hidden on an element because its descendant retained focus" warning.
+    if (document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur();
+    }
   };
 
   const handleLogout = () => {
@@ -78,9 +95,10 @@ const Header = ({ onMenuClick }) => {
         zIndex: 1100,
         display: "flex",
         alignItems: "center",
-        justifyContent: "flex-end",
+        justifyContent: { xs: "space-between", md: "flex-end" },
         gap: 2,
-        px: { xs: 1.5, md: 3 },
+        pl: { xs: 0, md: 3 },
+        pr: { xs: 1.5, md: 3 },
         py: { xs: 1.2, md: 1.2 },
         transition: "all 0.3s ease",
         background: "var(--bg-paper)",
@@ -88,6 +106,27 @@ const Header = ({ onMenuClick }) => {
         borderBottom: "1px solid var(--border-color)",
       }}
     >
+      {/* MOBILE ONLY LOGO: dynamic based on theme */}
+      <Box
+        sx={{
+          display: { xs: "flex", md: "none" },
+          alignItems: "center",
+          height: { xs: 45, sm: 52 },
+          ml: -1.2, // Shift slightly left to sit perfectly flush against the edge
+        }}
+      >
+        <Box
+          component="img"
+          src={isDarkMode ? logoDarkTheme : logoLightTheme}
+          alt="Aditya University Logo"
+          sx={{
+            height: "100%",
+            width: "auto",
+            objectFit: "contain",
+          }}
+        />
+      </Box>
+
       {/* RIGHT SECTION: Unified Profile & Role Pill */}
       <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
 
@@ -96,74 +135,83 @@ const Header = ({ onMenuClick }) => {
           sx={{
             display: "flex",
             alignItems: "center",
-            gap: 1.5,
-            pl: 2.5,
-            pr: 0.5,
-            py: 0.5,
+            justifyContent: "flex-end", // Anchor avatar to the right
+            height: 42, // Fixed height
             borderRadius: "999px",
             background: open
               ? "linear-gradient(var(--bg-panel), var(--bg-panel)) padding-box, var(--gradient-primary) border-box"
               : "var(--bg-panel)",
             border: open ? "2px solid transparent" : "1px solid var(--border-color)",
             cursor: "pointer",
-            transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+            transition: "all 0.4s cubic-bezier(0.4, 0, 0.2, 1)",
             boxShadow: open ? "var(--shadow-premium)" : "none",
+            maxWidth: open ? "250px" : "42px", // Collapsed by default
+            boxSizing: "border-box",
+            overflow: "hidden",
             "&:hover": {
+              maxWidth: "250px", // Expand on hover
               background: open
                 ? "linear-gradient(var(--bg-panel), var(--bg-panel)) padding-box, var(--gradient-primary) border-box"
                 : "var(--border-color)",
               borderColor: open ? "transparent" : "var(--text-secondary)",
               boxShadow: "0 2px 8px rgba(0,0,0,0.05)"
             },
-            userSelect: "none"
+            "&:hover .profile-text-content": {
+              opacity: 1,
+              transform: "translateX(0)"
+            },
+            userSelect: "none",
+            p: 0 // Remove padding so avatar fills the pill
           }}
         >
-          <Box sx={{ display: "flex", flexDirection: "column", alignItems: "flex-start" }}>
-            <Typography
+          {/* Expanding Details Section */}
+          <Box
+            className="profile-text-content"
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              gap: 1.5,
+              opacity: open ? 1 : 0,
+              transform: open ? "translateX(0)" : "translateX(10px)",
+              transition: "all 0.4s cubic-bezier(0.4, 0, 0.2, 1)",
+              whiteSpace: "nowrap",
+              pl: 2, // Added left padding since parent has 0
+              pr: 1
+            }}
+          >
+            <Box sx={{ display: "flex", flexDirection: "column", alignItems: "flex-start" }}>
+              <Typography sx={{ fontSize: "0.85rem", fontWeight: 700, color: "var(--text-primary)", lineHeight: 1, mb: 0.2 }}>
+                {capitalizeRole(activeRole) || "User"}
+              </Typography>
+              <Typography sx={{ fontSize: "0.7rem", fontWeight: 500, color: "var(--text-secondary)", lineHeight: 1 }}>
+                {user?.name || "System User"}
+              </Typography>
+            </Box>
+            <KeyboardArrowDown
               sx={{
-                fontSize: "0.85rem",
-                fontWeight: 700,
-                color: "var(--text-primary)",
-                lineHeight: 1,
-                mb: 0.2
+                fontSize: 18,
+                color: "#94a3b8",
+                transition: "transform 0.2s ease",
+                transform: open ? "rotate(180deg)" : "none"
               }}
-            >
-              {capitalizeRole(activeRole) || "User"}
-            </Typography>
-            <Typography
-              sx={{
-                fontSize: "0.7rem",
-                fontWeight: 500,
-                color: "var(--text-secondary)",
-                lineHeight: 1
-              }}
-            >
-              {user?.name || "System User"}
-            </Typography>
+            />
           </Box>
 
-          <KeyboardArrowDown
-            sx={{
-              fontSize: 18,
-              color: "#94a3b8",
-              transition: "transform 0.2s ease",
-              transform: open ? "rotate(180deg)" : "none"
-            }}
-          />
-
+          {/* Avatar Container */}
           <Box
             sx={{
-              width: 36,
-              height: 36,
+              minWidth: 40,
+              width: 40,
+              height: 40,
               borderRadius: "50%",
               overflow: "hidden",
-              border: "2px solid #fff",
+              border: "2px solid var(--border-color)",
               boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
               background: "var(--gradient-primary)",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              ml: 0.5
+              flexShrink: 0
             }}
           >
             {imageSrc && !imgError ? (
@@ -179,6 +227,7 @@ const Header = ({ onMenuClick }) => {
           anchorEl={anchorEl}
           open={open}
           onClose={handleClose}
+          disableScrollLock={true}
           anchorOrigin={{
             vertical: 'bottom',
             horizontal: 'right',

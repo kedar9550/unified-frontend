@@ -1,3 +1,4 @@
+import Loader from "../../components/common/Loader";
 import React from "react";
 import {
   Grid, Card, Typography, Box, Button, Chip,
@@ -171,7 +172,7 @@ const UniprimeDashboard = () => (
               <Typography fontSize={12} color="text.secondary">
                 136 days remaining
               </Typography>
-              <LinearProgress
+              <Loader
                 value={60}
                 variant="determinate"
                 sx={{ mt: 1, height: 6, borderRadius: 3 }}
@@ -282,7 +283,7 @@ const UniprimeDashboard = () => (
                 <Box key={i} display="flex" alignItems="center" mb={1.2}>
                   <Typography fontSize={12} sx={{ width: 80 }}>{item.label}</Typography>
                   <Box flex={1} mx={1}>
-                    <LinearProgress
+                    <Loader
                       value={(item.value / 182) * 100} // Relative to max value
                       variant="determinate"
                       sx={{ 

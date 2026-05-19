@@ -1,3 +1,4 @@
+import Loader from "../../components/common/Loader";
 import React, { useState, useEffect } from "react";
 import {
   Box,
@@ -327,7 +328,7 @@ const SDGManagement = () => {
 
       {loading ? (
         <Box sx={{ display: "flex", justifyContent: "center", py: 10 }}>
-          <CircularProgress />
+          <Loader />
         </Box>
       ) : (
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>

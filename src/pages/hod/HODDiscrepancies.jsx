@@ -1,3 +1,4 @@
+import Loader from "../../components/common/Loader";
 import { useEffect, useState, useRef, useCallback } from "react";
 import { useAuth } from "../../context/AuthContext";
 import {
@@ -265,7 +266,7 @@ export default function HODDiscrepancies() {
 
         {loading ? (
           <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>
-            <CircularProgress />
+            <Loader />
           </Box>
         ) : items.length === 0 ? (
           <Box sx={{ textAlign: "center", py: 10, color: "var(--text-secondary)" }}>
@@ -395,7 +396,7 @@ export default function HODDiscrepancies() {
           <DialogActions sx={{ p: 3 }}>
             <Button onClick={() => setSelected(null)}>Cancel</Button>
             <Button variant="contained" disabled={!proofFile || submitting} onClick={handleResolve}>
-              {submitting ? <CircularProgress size={20} /> : "Resolve Discrepancy"}
+              {submitting ? <Loader size={20} /> : "Resolve Discrepancy"}
             </Button>
           </DialogActions>
         )}

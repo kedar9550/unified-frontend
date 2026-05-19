@@ -1,3 +1,4 @@
+import Loader from "../../components/common/Loader";
 import React, { useState, useEffect } from 'react';
 import {
   Box,
@@ -89,7 +90,7 @@ const ExamDashboard = () => {
   if (loading) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '60vh' }}>
-        <CircularProgress />
+        <Loader />
       </Box>
     );
   }
@@ -269,7 +270,7 @@ const ExamDashboard = () => {
 
             <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 4, flexWrap: "wrap", justifyContent: "center" }}>
               <Box sx={{ position: "relative", width: 130, height: 130, flexShrink: 0 }}>
-                <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
+                <ResponsiveContainer width="100%" height={130}>
                   <PieChart>
                     <Pie data={submissionData} dataKey="value" innerRadius={45} outerRadius={60} stroke="none" paddingAngle={5}>
                       {submissionData.map((entry, index) => (
@@ -306,7 +307,7 @@ const ExamDashboard = () => {
                 <Typography variant="body2" sx={{ color: "var(--text-secondary)", fontSize: "0.75rem", fontWeight: 600 }}>Progress</Typography>
                 <Typography variant="body2" sx={{ color: "var(--color-primary)", fontSize: "0.75rem", fontWeight: 800 }}>{data.submittedFaculties} / {data.totalFaculties}</Typography>
               </Box>
-              <LinearProgress
+              <Loader
                 variant="determinate"
                 value={donePercentage}
                 sx={{
