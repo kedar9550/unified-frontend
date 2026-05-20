@@ -256,7 +256,7 @@ const MobileNavbar = () => {
                     }
                 }}
             >
-                <Box sx={{ p: 0, height: '100%', display: 'flex', flexDirection: 'column' }}>
+                <Box sx={{ p: 0, display: 'flex', flexDirection: 'column', maxHeight: '85vh' }}>
                     {/* Sub-menu Header */}
                     <Box sx={{
                         display: 'flex',
