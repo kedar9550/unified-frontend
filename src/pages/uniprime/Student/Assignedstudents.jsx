@@ -55,22 +55,34 @@ const Assignedstudents = () => {
             }
         };
 
-        const fetchActiveYear = async () => {
-            try {
-                const res = await API.get("/api/academic-years/active");
-                if (res.data?.success && res.data?.data) {
-                    setActiveSemesterType(res.data.data.activeSemesterTypeId?.name || "");
-                }
-            } catch (err) {
-                console.error("Failed to fetch active year", err);
-            }
-        };
-
         fetchAssignedStudents();
-        fetchActiveYear();
 
         return () => controller.abort(); // unmount అయినప్పుడు cancel చేస్తుంది
     }, [location.key]);
+
+    // Fetch active academic year and semester type when hierarchy program changes
+    useEffect(() => {
+        if (!hierarchy.program) {
+            setActiveSemesterType("");
+            return;
+        }
+
+        const fetchActiveYear = async () => {
+            try {
+                const res = await API.get(`/api/academic-years/active?programId=${hierarchy.program}`);
+                if (res.data?.success && res.data?.data) {
+                    setActiveSemesterType(res.data.data.activeSemesterTypeId?.name || "");
+                } else {
+                    setActiveSemesterType("");
+                }
+            } catch (err) {
+                console.error("Failed to fetch active year", err);
+                setActiveSemesterType("");
+            }
+        };
+
+        fetchActiveYear();
+    }, [hierarchy.program]);
 
     // Auto-apply filter whenever hierarchy or semester changes
     useEffect(() => {
