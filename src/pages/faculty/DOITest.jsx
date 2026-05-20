@@ -206,26 +206,37 @@ export default function DOIFetcher() {
           const json = await res.json();
           const entry = json?.["serial-metadata-response"]?.entry?.[0] || {};
 
-          // ── H-Index ─────────────────────────────────────────────────────────
-          // Directly in entry["H-index"] — no scraping needed
-          if (entry["H-index"]) {
-            R.hIndex = String(entry["H-index"]);
+          // ── H-Index ──────────────────────────────────────────────────────────
+          // NOT available in this Scopus API plan → comes from SCImago (Step 3)
+          const hRaw = entry["H-index"] || entry["h-index"] || null;
+          if (hRaw) {
+            R.hIndex = String(hRaw);
             R._src.hIndex = "Scopus Serial";
           }
 
-          // ── CiteScore (Impact Factor proxy) ─────────────────────────────────
-          // entry.citeScoreYearInfoList.citeScoreYearInfo → array, pick latest year
-          const csInfo = entry?.citeScoreYearInfoList?.citeScoreYearInfo;
+          // ── CiteScore ────────────────────────────────────────────────────────
+          // ACTUAL PATH (from console log):
+          //   entry.citeScoreYearInfoList → flat object with citeScoreCurrentMetric
+          //   NOT entry.citeScoreYearInfoList.citeScoreYearInfo[]
+          const csList = entry?.citeScoreYearInfoList;
           let citeScore = null;
-          if (Array.isArray(csInfo) && csInfo.length > 0) {
-            const latest = csInfo.sort((a,b) =>
-              parseInt(b["@year"]||0) - parseInt(a["@year"]||0)
-            )[0];
-            citeScore = latest?.citeScoreCurrentMetric || latest?.citeScore || null;
-          } else if (csInfo?.citeScore) {
-            citeScore = csInfo.citeScore;
-          } else if (csInfo?.citeScoreCurrentMetric) {
-            citeScore = csInfo.citeScoreCurrentMetric;
+
+          if (csList) {
+            // Case A: flat object  { citeScoreCurrentMetric: "6.7", ... }
+            if (csList.citeScoreCurrentMetric) {
+              citeScore = csList.citeScoreCurrentMetric;
+            }
+            // Case B: nested array  { citeScoreYearInfo: [{...}, ...] }
+            else if (Array.isArray(csList.citeScoreYearInfo)) {
+              const latest = [...csList.citeScoreYearInfo].sort((a, b) =>
+                parseInt(b["@year"] || 0) - parseInt(a["@year"] || 0)
+              )[0];
+              citeScore = latest?.citeScoreCurrentMetric || latest?.citeScore || null;
+            }
+            // Case C: single object  { citeScoreYearInfo: { citeScoreCurrentMetric: ... } }
+            else if (csList.citeScoreYearInfo?.citeScoreCurrentMetric) {
+              citeScore = csList.citeScoreYearInfo.citeScoreCurrentMetric;
+            }
           }
           if (citeScore) {
             R.impactFactor = String(citeScore);
@@ -233,34 +244,39 @@ export default function DOIFetcher() {
           }
 
           // ── Quartile ─────────────────────────────────────────────────────────
-          // CORRECT path: entry.ranks.rank[] → filter @type=="SJR" → @quartile
-          // NOT from raw SJR number (that gives wrong quartile)
-          const ranks = entry?.ranks?.rank;
+          // ACTUAL PATH (from console log):
+          //   entry.SJRList → { SJR: [ { "@year":"2024", "@quartile":"Q1", "$":"0.893" } ] }
+          //   NOT entry.ranks.rank[]
           let quartile = null;
-          if (Array.isArray(ranks)) {
-            // filter SJR type ranks, pick latest year
+
+          // Primary: SJRList (confirmed in response)
+          const sjrList = entry?.SJRList?.SJR;
+          if (sjrList) {
+            const sjrArr = Array.isArray(sjrList) ? sjrList : [sjrList];
+            const latest = [...sjrArr].sort((a, b) =>
+              parseInt(b["@year"] || 0) - parseInt(a["@year"] || 0)
+            )[0];
+            quartile = latest?.["@quartile"] || null;  // "Q1","Q2","Q3","Q4"
+          }
+
+          // Fallback: SNIPList or ranks (older API versions)
+          if (!quartile) {
+            const rawRanks = entry?.ranks?.rank;
+            const ranks = !rawRanks ? []
+                        : Array.isArray(rawRanks) ? rawRanks
+                        : [rawRanks];
             const sjrRanks = ranks.filter(r => r["@type"] === "SJR");
             if (sjrRanks.length > 0) {
-              const latest = sjrRanks.sort((a,b) =>
-                parseInt(b["@year"]||0) - parseInt(a["@year"]||0)
-              )[0];
-              quartile = latest["@quartile"] || null; // "Q1","Q2","Q3","Q4"
-            }
-          }
-          // Fallback: CiteScore ranks
-          if (!quartile) {
-            const csRanks = Array.isArray(ranks)
-              ? ranks.filter(r => r["@type"] === "CiteScore") : [];
-            if (csRanks.length > 0) {
-              const latest = csRanks.sort((a,b) =>
-                parseInt(b["@year"]||0) - parseInt(a["@year"]||0)
+              const latest = [...sjrRanks].sort((a, b) =>
+                parseInt(b["@year"] || 0) - parseInt(a["@year"] || 0)
               )[0];
               quartile = latest["@quartile"] || null;
             }
           }
+
           if (quartile) {
             R.quartile = quartile;
-            R._src.quartile = "Scopus Ranks";
+            R._src.quartile = "Scopus SJRList";
           }
 
           doneStep("success",
@@ -278,7 +294,49 @@ export default function DOIFetcher() {
     }
 
     // ══════════════════════════════════════════════════════════════════════════
-    // STEP 3 — Crossref fallback  →  fills any missing article-level fields
+    // STEP 3 — SCImago scraping  →  H-Index fallback (if Scopus didn't give it)
+    //
+    //  Backend route:  POST /api/research/journal/scimago-hindex
+    //  Body:           { issn: "20452322" }   ← without hyphen
+    //  Response:       { success, hIndex, sid, detailUrl }
+    //
+    //  SCImago URL flow:
+    //    1) scimagojr.com/journalsearch.php?q={issn}  → parse SID from first card
+    //    2) scimagojr.com/journalsearch.php?q={sid}&tip=sid&clean=0  → parse H-Index
+    // ══════════════════════════════════════════════════════════════════════════
+    if (!R.hIndex && R._issn) {
+      pushStep(`SCImago — H-Index scraping  (ISSN: ${R._issn})`);
+      try {
+        const res = await fetch(`/api/research/journal/scimago-hindex`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ issn: R._issn })
+        });
+        if (res.ok) {
+          const json = await res.json();
+          if (json.success && json.hIndex) {
+            R.hIndex       = String(json.hIndex);
+            R._src.hIndex  = "SCImago";
+            doneStep("success", `H-Index: ${R.hIndex}  (SID: ${json.sid})`);
+          } else {
+            doneStep("skip", json.message || "H-Index not found on SCImago");
+          }
+        } else {
+          doneStep("error", `HTTP ${res.status}`);
+        }
+      } catch(e) {
+        doneStep("error", e.message);
+      }
+    } else if (R.hIndex) {
+      pushStep("SCImago H-Index — skipped (already have from Scopus)", "skip");
+      doneStep("skip");
+    } else {
+      pushStep("SCImago H-Index — skipped (no ISSN)", "skip");
+      doneStep("skip");
+    }
+
+    // ══════════════════════════════════════════════════════════════════════════
+    // STEP 4 — Crossref fallback  →  fills any missing article-level fields
     // ══════════════════════════════════════════════════════════════════════════
     if (!R.title || !R.journalName || !R.volume) {
       pushStep("Crossref API — filling missing article fields (fallback)");
@@ -322,7 +380,7 @@ export default function DOIFetcher() {
     }
 
     // ══════════════════════════════════════════════════════════════════════════
-    // STEP 4 — Clarivate WoS PUBLIC endpoint  →  SCI / SCIE / ESCI / WoS type
+    // STEP 5 — Clarivate WoS PUBLIC endpoint  →  SCI / SCIE / ESCI / WoS type
     //
     //  This is the PUBLIC rank-search endpoint from mjl.clarivate.com
     //  NO Bearer token needed — works without subscription
@@ -332,9 +390,7 @@ export default function DOIFetcher() {
     if (issn4wos) {
       pushStep(`Clarivate WoS — Journal Type: SCI/SCIE/ESCI  (ISSN: ${issn4wos})`);
       try {
-        // ── Call our backend proxy (avoids CORS + hides Bearer token) ──────
-        const PROXY_URL = "http://localhost:9000";   // mee backend port
-        const res = await fetch(`${PROXY_URL}/api/research/journal/wos-type`, {
+        const res = await fetch(`/api/research/journal/wos-type`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json"
@@ -344,8 +400,7 @@ export default function DOIFetcher() {
         if (res.ok) {
           const json = await res.json();
           if (json.inWoS && json.journalType) {
-            if (R.title) json.journalType += " / SCOPUS";
-            R.journalType      = json.journalType;
+            R.journalType      = json.journalType;  // only jcrEdition: "SCIE" etc.
             R._src.journalType = "Clarivate WoS (proxy)";
             doneStep("success", `Type: ${R.journalType}`);
           } else {
@@ -418,8 +473,9 @@ export default function DOIFetcher() {
             DOI → Journal Metadata Fetcher
           </h1>
           <p style={{ margin:"6px 0 0", fontSize:12, color:"#4b5563", lineHeight:1.6 }}>
-            4-source pipeline: <span style={{color:"#f97316"}}>Scopus Abstract</span> →{" "}
+            5-source pipeline: <span style={{color:"#f97316"}}>Scopus Abstract</span> →{" "}
             <span style={{color:"#3b82f6"}}>Scopus Serial</span> →{" "}
+            <span style={{color:"#22c55e"}}>SCImago</span> →{" "}
             <span style={{color:"#a78bfa"}}>Crossref</span> →{" "}
             <span style={{color:"#38bdf8"}}>Clarivate WoS</span>
           </p>
@@ -500,6 +556,7 @@ export default function DOIFetcher() {
               {[
                 { name:"Scopus Abstract", color:"#f97316", info:"Title, Journal, Vol, Issue, Pages, Date, ISSN" },
                 { name:"Scopus Serial",   color:"#3b82f6", info:"H-Index (entry[\"H-index\"]), CiteScore, Quartile (ranks[])" },
+                { name:"SCImago",         color:"#22c55e", info:"H-Index fallback via web scraping (SID → detail page)" },
                 { name:"Crossref",        color:"#a78bfa", info:"Fallback for missing article fields" },
                 { name:"Clarivate WoS",   color:"#38bdf8", info:"SCI / SCIE / ESCI / WoS type (public endpoint)" },
               ].map(s => (
@@ -546,8 +603,8 @@ export default function DOIFetcher() {
                 path:'coredata["dc:title"], ["prism:volume"], ["prism:coverDisplayDate"]…',
                 color:"#f97316" },
               { field:"H-Index",
-                src:"Scopus Serial API",
-                path:'entry["H-index"]  ← direct field, accurate',
+                src:"Scopus Serial API → SCImago (fallback scraping)",
+                path:'Primary: entry["H-index"]  ← Scopus Serial (accurate)\nFallback: scimagojr.com/journalsearch.php?q={issn} → SID\n         → scimagojr.com/journalsearch.php?q={sid}&tip=sid&clean=0\n         → scrape <td>H-Index</td> next sibling value',
                 color:"#3b82f6" },
               { field:"Impact Factor",
                 src:"Scopus Serial API (CiteScore)",
