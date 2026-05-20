@@ -28,6 +28,39 @@ export default function PageHeader({
         width: "100%",
       }}
     >
+      {/* Decorative Sun SVG wrapper to crop it in half */}
+      <Box
+        sx={{
+          position: "absolute",
+          right: 0,
+          top: 0,
+          bottom: 0,
+          width: "200px",
+          overflow: "hidden",
+          borderTopRightRadius: "18px",
+          borderBottomRightRadius: "18px",
+          pointerEvents: "none",
+          zIndex: 0,
+          display: "block"
+        }}
+      >
+        <Box
+          sx={{
+            position: "absolute",
+            right: 0,
+            top: "50%",
+            height: "200%",
+            aspectRatio: "1",
+            transform: "translate(50%, -50%)",
+            backgroundImage: "var(--header-svg)",
+            backgroundSize: "contain",
+            backgroundRepeat: "no-repeat",
+            backgroundPosition: "center",
+            opacity: 0.85
+          }}
+        />
+      </Box>
+
       {/* LEFT */}
       <Box sx={{ position: "relative", zIndex: 1, pr: { xs: 2, md: 0 }, textAlign: "left" }}>
         {/* Breadcrumbs removed as per request */}
