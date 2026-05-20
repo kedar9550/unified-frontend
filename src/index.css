@@ -351,3 +351,20 @@ body::-webkit-scrollbar-thumb {
   background: var(--gradient-primary);
   border-radius: 0px;
 }
+
+/* Sidebar Scrollbar */
+.sidebar-scrollbar::-webkit-scrollbar,
+.MuiDrawer-paper::-webkit-scrollbar {
+  width: 3px !important;
+}
+
+.sidebar-scrollbar::-webkit-scrollbar-track,
+.MuiDrawer-paper::-webkit-scrollbar-track {
+  background: var(--bg-main) !important;
+}
+
+.sidebar-scrollbar::-webkit-scrollbar-thumb,
+.MuiDrawer-paper::-webkit-scrollbar-thumb {
+  background: var(--gradient-primary) !important;
+  border-radius: 0px !important;
+}
