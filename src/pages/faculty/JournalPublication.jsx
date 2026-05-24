@@ -45,7 +45,18 @@ async function fetchJournalDataByDOI(doi) {
   const issue = coredata["prism:issueIdentifier"] || "";
   const pageRange = coredata["prism:pageRange"] || "";
   const coverDisplayDate = coredata["prism:coverDisplayDate"] || "";
-  const issn = (coredata["prism:issn"] || coredata["prism:eIssn"] || "").replace(/-/g, "");
+  
+  // Clean ISSN
+  const rawIssn = coredata["prism:issn"] || coredata["prism:eIssn"] || "";
+  const issn = rawIssn.split(" ")[0].replace(/-/g, "");
+  
+  // Format ISSN with hyphen for WoS check
+  let issnWoS = "";
+  if (issn.length === 8) {
+    issnWoS = issn.slice(0, 4) + "-" + issn.slice(4);
+  } else {
+    issnWoS = rawIssn.split(" ")[0];
+  }
 
   // Parse month/year from coverDisplayDate e.g. "January 2024" or "2024-01-15"
   let month = "";
@@ -74,44 +85,76 @@ async function fetchJournalDataByDOI(doi) {
   // 2. Serial / journal metrics (H-Index, impact factor, quartile) via ISSN
   let hIndex = "";
   let impactFactor = "";
-  let quartile = "";
-  let journalType = "";
+  let quartile = "N/A";
+  let journalType = "SCOPUS";
 
   if (issn) {
     try {
       const serialRes = await fetch(
-        `https://api.elsevier.com/content/serial/title/issn/${issn}`,
+        `https://api.elsevier.com/content/serial/title/issn/${issn}?view=CITESCORE`,
         { method: "GET", headers }
       );
       if (serialRes.ok) {
         const serialJson = await serialRes.json();
         const entry = serialJson?.["serial-metadata-response"]?.entry?.[0] || {};
-        hIndex = entry["H-index"] || entry["SNIPList"]?.SNIP?.[0]?.["$"] || "";
-        // Impact Factor from SJRList or CiteScoreYearInfoList
-        const sjr = entry["SJRList"]?.SJR?.[0]?.["$"];
-        impactFactor = sjr || "";
+        
+        // H-Index (with SNIP fallback)
+        const snip = entry["SNIPList"]?.SNIP?.[0]?.["$"] || "";
+        hIndex = entry["H-index"] || snip || "";
 
-        // Quartile from source-normalized metrics
-        const ranks = entry["SubjectList"]?.Subject || [];
-        if (Array.isArray(ranks) && ranks.length > 0) {
-          quartile = ranks[0]["$"] || "";
+        // CiteScore (Impact Factor proxy, fallback to SJR)
+        const citeScore = entry?.citeScoreYearInfoList?.citeScoreCurrentMetric || "";
+        const sjr = entry["SJRList"]?.SJR?.[0]?.["$"] || "";
+        impactFactor = citeScore || sjr || "";
+
+        // Quartile from CiteScore Percentiles
+        const csYearInfo = entry?.citeScoreYearInfoList?.citeScoreYearInfo;
+        let highestPercentile = null;
+
+        if (Array.isArray(csYearInfo) && csYearInfo.length > 0) {
+          const sortedYears = [...csYearInfo].sort((a, b) => parseInt(b["@year"] || 0) - parseInt(a["@year"] || 0));
+          const latestYearInfo = sortedYears[0];
+          
+          const infoList = latestYearInfo.citeScoreInformationList || [];
+          let percentiles = [];
+          infoList.forEach(info => {
+            const csInfo = info.citeScoreInfo || [];
+            csInfo.forEach(cs => {
+              const subjectRanks = cs.citeScoreSubjectRank || [];
+              subjectRanks.forEach(sr => {
+                if (sr.percentile) {
+                  const pVal = parseFloat(sr.percentile);
+                  if (!isNaN(pVal)) percentiles.push(pVal);
+                }
+              });
+            });
+          });
+          
+          if (percentiles.length > 0) {
+            highestPercentile = Math.max(...percentiles);
+          }
         }
 
-        // Journal type — check subject areas for SCI/SCIE/ESCI/WoS/SCOPUS flags
-        const coverageList = entry["coverageList"]?.coverage || [];
-        const types = new Set();
-        coverageList.forEach(c => {
-          const name = (c["@type"] || "").toUpperCase();
-          if (name.includes("SCIE")) types.add("SCIE");
-          else if (name.includes("ESCI")) types.add("ESCI");
-          else if (name.includes("SCI")) types.add("SCI");
-          if (name.includes("WOS") || name.includes("WEB OF SCIENCE")) types.add("WoS");
-        });
-        // Scopus coverage always present if we got here
-        types.add("SCOPUS");
-        journalType = [...types].join(", ");
+        if (highestPercentile !== null) {
+          if (highestPercentile >= 75) quartile = "Q1";
+          else if (highestPercentile >= 50) quartile = "Q2";
+          else if (highestPercentile >= 25) quartile = "Q3";
+          else quartile = "Q4";
+        }
       }
     } catch (_) { /* ignore serial fetch errors */ }
+
+    // 3. Clarivate WoS proxy check for SCI / SCIE / ESCI / WoS flags
+    try {
+      const wosRes = await API.post("/api/research/journal/wos-type", { issn: issnWoS || issn });
+      if (wosRes.data?.success && wosRes.data?.inWoS) {
+        const typesStr = wosRes.data.journalType || "";
+        if (typesStr.includes("SCI")) journalType = "SCI";
+        else if (typesStr.includes("SCIE")) journalType = "SCIE";
+        else if (typesStr.includes("ESCI")) journalType = "ESCI";
+        else if (typesStr.includes("WoS")) journalType = "WoS";
+      }
+    } catch (_) { /* ignore WoS proxy errors */ }
   }
 
   return { title, journalName, vol, issue, pageRange, month, year, hIndex, impactFactor, quartile, journalType, issn };
@@ -342,25 +385,35 @@ export default function JournalPublication() {
     setLoading(true);
     try {
       const fd = new FormData();
-      const total = parseInt(form.totalAuthors);
-      const pos = parseInt(form.userAuthorPosition);
-      const allAuthors = [];
-      for (let i = 1; i <= total; i++) {
-        if (i === pos) allAuthors.push({ authorPosition: i });
-        else {
-          const coAuth = form.otherAuthors.find(a => a.authorPosition === i);
-          if (coAuth) allAuthors.push(coAuth);
-        }
-      }
+      
+      // Calculate firstAuthor and authorPosition
+      const isFirst = (parseInt(form.userAuthorPosition) === 1) ? "Yes" : "No";
+      const authPos = (isFirst === "Yes") ? "" : String(form.userAuthorPosition);
+
+      // Map coAuthors array matching CoAuthorSchema
+      const coAuthorsList = form.otherAuthors.map(a => ({
+        name: a.authorName || "",
+        affiliation: a.affiliationType === "Aditya University" ? "Aditya University" : (a.affiliationName || "")
+      })).filter(ca => ca.name && ca.affiliation);
 
       const fields = [
-        "doi","paperTitle","journalName","journalQuartile","journalType",
+        "doi","paperTitle","journalName","journalType",
         "vol","issue","pageNos","hIndex","impactFactor","agecRefCount",
         "referencingNos","month","year","applyIncentive","incentiveApplied",
         "totalAuthors","userAuthorPosition",
       ];
-      fields.forEach(k => fd.append(k, form[k] ?? ""));
-      fd.append("authors", JSON.stringify(allAuthors));
+      fields.forEach(k => {
+        if (k === "incentiveApplied" && form.applyIncentive === "No") {
+          fd.append(k, "N/A");
+        } else {
+          fd.append(k, form[k] ?? "");
+        }
+      });
+      
+      fd.append("firstAuthor", isFirst);
+      fd.append("authorPosition", authPos);
+      fd.append("categoryOfJournal", form.journalQuartile ?? "");
+      fd.append("coAuthors", JSON.stringify(coAuthorsList));
       fd.append("academicYear", selectedYear);
       fd.append("college", user?.college || "");
       fd.append("panNumber", user?.panNumber || "");
