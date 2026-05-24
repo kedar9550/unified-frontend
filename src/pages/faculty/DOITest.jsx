@@ -6,16 +6,16 @@ const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:9000";
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function parseDate(str) {
   if (!str) return null;
-  const months = ["January","February","March","April","May","June",
-                  "July","August","September","October","November","December"];
-  const short   = ["Jan","Feb","Mar","Apr","May","Jun",
-                   "Jul","Aug","Sep","Oct","Nov","Dec"];
+  const months = ["January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December"];
+  const short = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
+    "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
   let month = "", year = "";
   const yMatch = str.match(/\b(19|20)\d{2}\b/);
   if (yMatch) year = yMatch[0];
   for (let i = 0; i < 12; i++) {
     if (str.toLowerCase().includes(months[i].toLowerCase()) ||
-        str.toLowerCase().includes(short[i].toLowerCase())) {
+      str.toLowerCase().includes(short[i].toLowerCase())) {
       month = months[i]; break;
     }
   }
@@ -42,7 +42,7 @@ function formatISSNWithHyphen(raw) {
 // ─── Sub-components ───────────────────────────────────────────────────────────
 function StepRow({ step, idx }) {
   const colors = { loading: "#f59e0b", success: "#10b981", error: "#ef4444", skip: "#64748b" };
-  const icons  = { success: "✓", error: "✗", skip: "–" };
+  const icons = { success: "✓", error: "✗", skip: "–" };
   return (
     <div style={{
       display: "flex", gap: 12, alignItems: "flex-start", padding: "12px 0",
@@ -52,18 +52,18 @@ function StepRow({ step, idx }) {
         width: 22, height: 22, borderRadius: "50%", display: "flex", alignItems: "center",
         justifyContent: "center", fontSize: 11, flexShrink: 0, fontWeight: 700,
         background: step.status === "loading" ? "rgba(245, 158, 11, 0.1)"
-                  : step.status === "success" ? "rgba(16, 185, 129, 0.1)"
-                  : step.status === "skip"    ? "rgba(100, 116, 139, 0.1)"
-                  : "rgba(239, 68, 68, 0.1)",
+          : step.status === "success" ? "rgba(16, 185, 129, 0.1)"
+            : step.status === "skip" ? "rgba(100, 116, 139, 0.1)"
+              : "rgba(239, 68, 68, 0.1)",
         color: colors[step.status] || "#94a3b8",
         border: `1px solid ${colors[step.status] || "#334155"}`,
       }}>
         {step.status === "loading"
           ? <span style={{
-              display: "inline-block", width: 8, height: 8, borderRadius: "50%",
-              border: "2px solid #f59e0b", borderTopColor: "transparent",
-              animation: "spin 0.8s linear infinite"
-            }} />
+            display: "inline-block", width: 8, height: 8, borderRadius: "50%",
+            border: "2px solid #f59e0b", borderTopColor: "transparent",
+            animation: "spin 0.8s linear infinite"
+          }} />
           : (icons[step.status] || idx + 1)}
       </span>
       <div style={{ flex: 1 }}>
@@ -82,10 +82,10 @@ function StepRow({ step, idx }) {
 
 function ResultCard({ field, value }) {
   const [copied, setCopied] = useState(false);
-  
+
   const isNotFetched = !value || value === "Not fetched" || value === "—";
   const isUnavailable = value === "Not Available";
-  
+
   // Dynamic premium styles based on state
   let cardBg = "rgba(15, 23, 42, 0.6)";
   let borderStyle = "1px solid rgba(59, 130, 246, 0.15)";
@@ -173,7 +173,7 @@ export default function DOIFetcher() {
   // step helpers
   const pushStep = (label, status = "loading", note = "") =>
     setSteps(p => [...p, { label, status, note, id: Date.now() + Math.random() }]);
-    
+
   const doneStep = (status, note = "") =>
     setSteps(p => {
       const a = [...p];
@@ -222,15 +222,15 @@ export default function DOIFetcher() {
         const json = await res.json();
         const core = json?.["abstracts-retrieval-response"]?.coredata || {};
 
-        R.title       = core["dc:title"]              || "Not Available";
+        R.title = core["dc:title"] || "Not Available";
         R.journalName = core["prism:publicationName"] || "Not Available";
-        R.volume      = core["prism:volume"]          || "Not Available";
-        R.issue       = core["prism:issueIdentifier"] || "Not Available";
-        R.date        = parseDate(core["prism:coverDisplayDate"] || core["prism:coverDate"]) || "Not Available";
+        R.volume = core["prism:volume"] || "Not Available";
+        R.issue = core["prism:issueIdentifier"] || "Not Available";
+        R.date = parseDate(core["prism:coverDisplayDate"] || core["prism:coverDate"]) || "Not Available";
 
         const rawIssn = core["prism:issn"] || "";
         const rawEissn = core["prism:eIssn"] || "";
-        if (rawIssn)  extractedIssn  = cleanISSN(rawIssn);
+        if (rawIssn) extractedIssn = cleanISSN(rawIssn);
         if (rawEissn) extractedEissn = cleanISSN(rawEissn);
 
         doneStep("success", "Metadata loaded successfully.");
@@ -241,7 +241,7 @@ export default function DOIFetcher() {
         setData(R);
         return;
       }
-    } catch(e) {
+    } catch (e) {
       doneStep("error", `Scopus Abstract error: ${e.message}`);
       setErrorMessage("Network error connecting to Scopus. Please verify connection.");
       setBusy(false);
@@ -258,7 +258,7 @@ export default function DOIFetcher() {
       try {
         let serialDataFetched = false;
         let entry = {};
-        
+
         // Try with print ISSN first
         if (extractedIssn) {
           const res = await fetch(
@@ -271,7 +271,7 @@ export default function DOIFetcher() {
             serialDataFetched = true;
           }
         }
-        
+
         // Try with EISSN if print ISSN failed or was empty
         if (!serialDataFetched && extractedEissn) {
           const res = await fetch(
@@ -331,7 +331,7 @@ export default function DOIFetcher() {
         } else {
           doneStep("error", "Journal metrics not found in Scopus registry.");
         }
-      } catch(e) {
+      } catch (e) {
         doneStep("error", `Scopus Serial error: ${e.message}`);
       }
     } else {
@@ -387,7 +387,7 @@ export default function DOIFetcher() {
         } else {
           doneStep("success", "Not found in Clarivate index.");
         }
-      } catch(e) {
+      } catch (e) {
         doneStep("error", `Clarivate API error: ${e.message}`);
       }
     } else {
@@ -401,16 +401,16 @@ export default function DOIFetcher() {
 
   // ── Render ──────────────────────────────────────────────────────────────────
   const fields = [
-    { key: "doi",          label: "DOI",                          span: 2 },
-    { key: "title",        label: "Title of the Article",         span: 2 },
-    { key: "journalName",  label: "Name of the Journal",          span: 2 },
-    { key: "journalType",  label: "Type of Journal",              span: 1 },
-    { key: "quartile",     label: "Journal Quartile",             span: 1 },
-    { key: "volume",       label: "Volume",                       span: 1 },
-    { key: "issue",        label: "Issue",                        span: 1 },
-    { key: "date",         label: "Date of Publication",          span: 2 },
-    { key: "hIndex",       label: "Journal H-Index",              span: 1 },
-    { key: "impactFactor", label: "Impact Factor of Journal",     span: 1 },
+    { key: "doi", label: "DOI", span: 2 },
+    { key: "title", label: "Title of the Article", span: 2 },
+    { key: "journalName", label: "Name of the Journal", span: 2 },
+    { key: "journalType", label: "Type of Journal", span: 1 },
+    { key: "quartile", label: "Journal Quartile", span: 1 },
+    { key: "volume", label: "Volume", span: 1 },
+    { key: "issue", label: "Issue", span: 1 },
+    { key: "date", label: "Date of Publication", span: 2 },
+    { key: "hIndex", label: "Journal H-Index", span: 1 },
+    { key: "impactFactor", label: "Impact Factor of Journal", span: 1 },
   ];
 
   return (
@@ -582,7 +582,7 @@ export default function DOIFetcher() {
               fontSize: 11, color: "#3b82f6", fontWeight: 700,
               letterSpacing: "0.12em", marginBottom: 16, fontFamily: "'Space Grotesk', sans-serif"
             }}>HOW RELIABLE METADATA IS EXTRACTED</div>
-            
+
             <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
               {[
                 {

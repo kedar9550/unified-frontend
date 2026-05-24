@@ -15,7 +15,9 @@ import {
     CircularProgress,
     Dialog,
     TextField,
-    Tooltip
+    Tooltip,
+    useTheme,
+    useMediaQuery
 } from '@mui/material';
 import { toast } from "sonner";
 import API from "../../api/axios";
@@ -73,8 +75,10 @@ const SDG_COLOR_MAP = {
     "SDG-17": "#2D3B66"
 };
 
-const SDGCard = ({ id, sdg, imageUrl }) => {
+const SDGCard = ({ id, sdg, imageUrl, isExpanded, toggleExpand }) => {
     const brandColor = SDG_COLOR_MAP[id];
+    const theme = useTheme();
+    const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
     return (
         <Box
@@ -88,76 +92,110 @@ const SDGCard = ({ id, sdg, imageUrl }) => {
                 transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
                 '&:hover': {
                     background: 'rgba(255, 255, 255, 0.04)',
-                    transform: 'translateX(4px)'
+                    transform: isMobile ? 'none' : 'translateX(4px)'
                 }
             }}
         >
             <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' } }}>
-                {/* Left Section */}
-                <Box sx={{
-                    width: { xs: '100%', md: 160 },
-                    height: { xs: 140, md: 'auto' },
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    flexShrink: 0,
-                    p: 0,
-                    position: 'relative',
-                    background: brandColor,
-                    transition: 'all 0.4s ease'
-                }}>
+                {/* Left Section (Image Container) */}
+                <Box
+                    onClick={() => isMobile && toggleExpand(id)}
+                    sx={{
+                        width: { xs: '100%', md: 160 },
+                        height: { xs: 'auto', md: 'auto' },
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        flexShrink: 0,
+                        p: 0,
+                        position: 'relative',
+                        background: brandColor,
+                        transition: 'all 0.4s ease',
+                        cursor: isMobile ? 'pointer' : 'default',
+                        '&:hover': isMobile ? {
+                            filter: 'brightness(1.05)'
+                        } : {}
+                    }}
+                >
                     <Box
                         component="img"
                         src={imageUrl}
                         alt={sdg.title}
                         sx={{
                             width: '100%',
-                            height: '100%',
+                            height: { xs: 'auto', md: '100%' },
                             objectFit: 'contain',
+                            display: 'block',
                             transition: 'transform 0.5s ease',
                             '&:hover': {
-                                transform: 'scale(1.05)'
+                                transform: isMobile ? 'none' : 'scale(1.05)'
                             }
                         }}
                     />
+                    {isMobile && (
+                        <Box
+                            sx={{
+                                position: 'absolute',
+                                bottom: 8,
+                                right: 8,
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                background: 'rgba(0, 0, 0, 0.5)',
+                                backdropFilter: 'blur(4px)',
+                                borderRadius: '50%',
+                                width: 28,
+                                height: 28,
+                                color: '#fff',
+                                transition: 'transform 0.3s ease',
+                                transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
+                                border: '1px solid rgba(255, 255, 255, 0.2)',
+                                pointerEvents: 'none'
+                            }}
+                        >
+                            <ExpandMore sx={{ fontSize: 18 }} />
+                        </Box>
+                    )}
                 </Box>
 
                 {/* Main Content Area */}
-                <Box sx={{ flexGrow: 1, p: { xs: 1.5, md: 1.5 }, display: 'flex', flexDirection: 'column', width: '100%' }}>
-                    <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', width: '100%' }}>
-                        {/* Keyword Container (Shows all keywords) */}
-                        <Box
-                            sx={{
-                                display: 'flex',
-                                flexWrap: 'wrap',
-                                gap: 1,
-                                flexGrow: 1,
-                                position: 'relative',
-                                pb: 0.5
-                            }}
-                        >
-                            {sdg.keywords.map((kw, i) => (
-                                <Chip
-                                    key={i}
-                                    label={kw}
-                                    size="small"
-                                    sx={{
-                                        background: 'var(--bg-accent-4)',
-                                        color: 'var(--text-secondary)',
-                                        border: '1px solid var(--border-color)',
-                                        fontSize: '0.7rem',
-                                        fontWeight: 600,
-                                        height: '24px',
-                                        '&:hover': {
-                                            background: 'var(--bg-accent-1)',
-                                            color: 'var(--text-primary)',
-                                        }
-                                    }}
-                                />
-                            ))}
+                <Collapse in={!isMobile || isExpanded} timeout="auto" unmountOnExit={isMobile} sx={{ width: '100%' }}>
+                    <Box sx={{ flexGrow: 1, p: { xs: 1.5, md: 1.5 }, display: 'flex', flexDirection: 'column', width: '100%' }}>
+                        <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', width: '100%' }}>
+                            {/* Keyword Container (Shows all keywords) */}
+                            <Box
+                                sx={{
+                                    display: 'flex',
+                                    flexWrap: 'wrap',
+                                    gap: 1,
+                                    flexGrow: 1,
+                                    position: 'relative',
+                                    pb: 0.5
+                                }}
+                            >
+                                {sdg.keywords.map((kw, i) => (
+                                    <Chip
+                                        key={i}
+                                        label={kw}
+                                        size="small"
+                                        sx={{
+                                            background: 'var(--bg-accent-4)',
+                                            color: 'var(--text-secondary)',
+                                            border: '1px solid var(--border-color)',
+                                            fontSize: '0.7rem',
+                                            fontWeight: 600,
+                                            height: '24px',
+                                            '&:hover': {
+                                                background: 'var(--bg-accent-1)',
+                                                color: 'var(--text-primary)',
+                                            }
+                                        }}
+                                    />
+                                ))}
+                            </Box>
                         </Box>
                     </Box>
-                </Box>
+                </Collapse>
             </Box>
         </Box>
     );

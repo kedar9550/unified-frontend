@@ -299,7 +299,14 @@ const Sidebar = ({ mobileOpen, onDrawerToggle }) => {
 
       <Box sx={{ height: "1px", background: "var(--border-color)", mb: 2.5, mx: -2 }} />
 
-      <List sx={{ px: 0, overflowY: "auto", flexGrow: 1, "&::-webkit-scrollbar": { width: 4 }, "&::-webkit-scrollbar-thumb": { background: "#e2e8f0", borderRadius: 10 } }}>
+      <List
+        className="sidebar-scrollbar"
+        sx={{
+          px: 0,
+          overflowY: "auto",
+          flexGrow: 1
+        }}
+      >
         {menuItems.map((item) => (
           <React.Fragment key={item.text}>
             {item.nested ? (
@@ -471,6 +478,7 @@ const Sidebar = ({ mobileOpen, onDrawerToggle }) => {
             width: drawerWidth,
             borderRight: "none",
             background: "var(--bg-paper)",
+            overflow: "hidden",
           },
         }}
         open

@@ -449,44 +449,44 @@ const UniprimeDashboard = () => {
                 </Box>
 
                 {/* Duration */}
-                <Box sx={configBox}>
-                  <Box sx={{ display: "flex", gap: 2 }}>
-                    <CalendarMonth sx={{ color: "#2563EB", mt: 0.5 }} />
-
-                    <Box sx={{ flex: 1 }}>
+                <Box sx={{ ...configBox, display: "block" }}>
+                  <Box sx={{ display: "flex", gap: 2, mb: 1.5, alignItems: "center" }}>
+                    <CalendarMonth sx={{ color: "var(--color-primary)" }} />
+                    <Box>
                       <Typography sx={labelStyle}>
                         Semester Duration
                       </Typography>
-
                       <Typography sx={{ fontWeight: 600 }}>
                         Jan 15, 2025 - May 30, 2025
                       </Typography>
-
-                      <LinearProgress
-                        variant="determinate"
-                        value={60}
-                        sx={{
-                          mt: 1,
-                          height: 5,
-                          borderRadius: 2,
-                          bgcolor: "#E5E7EB",
-                          "& .MuiLinearProgress-bar": {
-                            bgcolor: "#2563EB",
-                          },
-                        }}
-                      />
-
-                      <Typography
-                        sx={{
-                          fontSize: "0.75rem",
-                          color: "var(--color-primary)",
-                          mt: 0.5,
-                          fontWeight: 600,
-                        }}
-                      >
-                        136 days remaining
-                      </Typography>
                     </Box>
+                  </Box>
+
+                  <Box sx={{ width: "100%" }}>
+                    <LinearProgress
+                      variant="determinate"
+                      value={60}
+                      sx={{
+                        height: 6,
+                        borderRadius: 3,
+                        bgcolor: "var(--border-color)",
+                        "& .MuiLinearProgress-bar": {
+                          background: "var(--gradient-primary)",
+                          borderRadius: 3,
+                        },
+                      }}
+                    />
+
+                    <Typography
+                      sx={{
+                        fontSize: "0.75rem",
+                        color: "var(--color-primary)",
+                        mt: 0.5,
+                        fontWeight: 600,
+                      }}
+                    >
+                      136 days remaining
+                    </Typography>
                   </Box>
                 </Box>
               </Card>

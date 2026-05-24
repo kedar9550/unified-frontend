@@ -268,7 +268,7 @@ body.dark-mode .MuiChip-outlined {
 [data-sonner-toaster] [data-sonner-toast] {
   font-family: 'Product Sans', sans-serif !important;
   border-radius: 16px !important;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.1) !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1) !important;
   border: 1px solid var(--border-color) !important;
 }
 
@@ -328,4 +328,43 @@ body.dark-mode [data-sonner-toast][data-type="info"] {
   [data-sonner-toaster][data-position='top-center'] {
     top: 20px !important;
   }
+}
+
+
+
+
+/* ================Custom Scrollbar Styles======================*/
+body {
+  overflow-y: scroll;
+}
+
+/* Custom Scrollbar */
+body::-webkit-scrollbar {
+  width: 3px;
+}
+
+body::-webkit-scrollbar-track {
+  background: var(--bg-main);
+}
+
+body::-webkit-scrollbar-thumb {
+  background: var(--gradient-primary);
+  border-radius: 0px;
+}
+
+/* Sidebar Scrollbar */
+.sidebar-scrollbar::-webkit-scrollbar,
+.MuiDrawer-paper::-webkit-scrollbar {
+  width: 3px !important;
+}
+
+.sidebar-scrollbar::-webkit-scrollbar-track,
+.MuiDrawer-paper::-webkit-scrollbar-track {
+  background: var(--bg-main) !important;
+}
+
+.sidebar-scrollbar::-webkit-scrollbar-thumb,
+.MuiDrawer-paper::-webkit-scrollbar-thumb {
+  background: var(--gradient-primary) !important;
+  border-radius: 0px !important;
 }
