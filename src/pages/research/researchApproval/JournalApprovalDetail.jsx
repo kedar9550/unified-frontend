@@ -25,6 +25,8 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
     const [loading, setLoading] = useState(true);
     const [remarks, setRemarks] = useState("");
     const [approvedAmount, setApprovedAmount] = useState("");
+    const [hIndex, setHIndex] = useState("");
+    const [impactFactor, setImpactFactor] = useState("");
     const [actionLoading, setActionLoading] = useState(false);
     const [imgError, setImgError] = useState(false);
 
@@ -42,6 +44,8 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
                     if (res.data.data.rndComment) setRemarks(res.data.data.rndComment);
                     else if (res.data.data.hodComment) setRemarks(res.data.data.hodComment);
                     if (res.data.data.approvedAmount) setApprovedAmount(res.data.data.approvedAmount);
+                    if (res.data.data.hIndex) setHIndex(res.data.data.hIndex);
+                    if (res.data.data.impactFactor) setImpactFactor(res.data.data.impactFactor);
                 }
             } catch (error) {
                 console.error("Failed to fetch journal details", error);
@@ -59,8 +63,16 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
             return;
         }
 
-        if (action === 'Approve' && isResearchAdmin && data.applyIncentive === 'Yes') {
-            if (!approvedAmount) {
+        if (action === 'Approve' && isResearchAdmin) {
+            if (!hIndex) {
+                toast.error('Please enter the Journal H-Index.');
+                return;
+            }
+            if (!impactFactor) {
+                toast.error('Please enter the Impact Factor.');
+                return;
+            }
+            if (data.applyIncentive === 'Yes' && !approvedAmount) {
                 toast.error('Please enter the approved incentive amount.');
                 return;
             }
@@ -69,11 +81,16 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
         setActionLoading(true);
         try {
             const endpoint = isResearchAdmin ? `/api/research/journal/rnd-action/${id}` : `/api/research/journal/hod-action/${id}`;
-            const res = await API.put(endpoint, {
+            const payload = {
                 action,
                 comment: remarks,
                 approvedAmount: isResearchAdmin && data.applyIncentive === 'Yes' ? approvedAmount : undefined
-            });
+            };
+            if (isResearchAdmin) {
+                payload.hIndex = hIndex;
+                payload.impactFactor = impactFactor;
+            }
+            const res = await API.put(endpoint, payload);
             if (res.data?.success) {
                 toast.success(`Request ${action === 'Approve' ? 'Approved' : 'Rejected'} successfully`);
                 onBack(); 
@@ -289,6 +306,31 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
                         <Card sx={{ ...cardStyle, borderTop: "4px solid var(--color-primary)", mb: 0 }}>
                             <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 3 }}><GavelIcon sx={{ color: "var(--color-primary)" }} /><Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>Review Decision</Typography></Box>
                             
+                            {isResearchAdmin && (
+                                <Box sx={{ display: "flex", gap: 3, mb: 3, flexWrap: "wrap" }}>
+                                    <Box sx={{ flex: "1 1 200px" }}>
+                                        <Typography variant="subtitle2" sx={{ fontWeight: 900, mb: 1, color: "var(--color-primary)", fontSize: "0.75rem" }}>JOURNAL H-INDEX *</Typography>
+                                        <TextField 
+                                            fullWidth size="small" 
+                                            placeholder="Enter Journal H-Index" 
+                                            value={hIndex} 
+                                            onChange={e => setHIndex(e.target.value)} 
+                                            sx={{ "& .MuiOutlinedInput-root": { borderRadius: "10px", bgcolor: "var(--bg-panel)" } }} 
+                                        />
+                                    </Box>
+                                    <Box sx={{ flex: "1 1 200px" }}>
+                                        <Typography variant="subtitle2" sx={{ fontWeight: 900, mb: 1, color: "var(--color-primary)", fontSize: "0.75rem" }}>IMPACT FACTOR *</Typography>
+                                        <TextField 
+                                            fullWidth size="small" 
+                                            placeholder="Enter Impact Factor" 
+                                            value={impactFactor} 
+                                            onChange={e => setImpactFactor(e.target.value)} 
+                                            sx={{ "& .MuiOutlinedInput-root": { borderRadius: "10px", bgcolor: "var(--bg-panel)" } }} 
+                                        />
+                                    </Box>
+                                </Box>
+                            )}
+
                             {isResearchAdmin && data.applyIncentive === 'Yes' && (
                                 <Box sx={{ mb: 3 }}>
                                     <Typography variant="subtitle2" sx={{ fontWeight: 900, mb: 1, color: "var(--color-primary)", fontSize: "0.75rem" }}>APPROVED INCENTIVE (₹)</Typography>

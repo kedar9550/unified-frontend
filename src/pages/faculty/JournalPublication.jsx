@@ -366,7 +366,7 @@ export default function JournalPublication() {
       toast.error("Please update your profile with PAN Number and College before submitting.");
       return;
     }
-    if (!form.doi || !form.paperTitle || !form.journalName || !form.vol || !form.issue || !form.pageNos || !form.month || !form.year || !form.hIndex || !form.impactFactor) {
+    if (!form.doi || !form.paperTitle || !form.journalName || !form.vol || !form.issue || !form.month || !form.year) {
       toast.error("Please fill all required fields.");
       return;
     }
@@ -417,9 +417,16 @@ export default function JournalPublication() {
         affiliation: a.affiliationType === "Aditya University" ? "Aditya University" : (a.affiliationName || "")
       })).filter(ca => ca.name && ca.affiliation);
 
+      // Compute papersCited dynamically from referencingNos
+      const calculateRefCount = (nos) => {
+        if (!nos || !nos.trim()) return "0";
+        return String(nos.split(',').map(s => s.trim()).filter(Boolean).length);
+      };
+      const papersCitedCount = calculateRefCount(form.referencingNos);
+
       const fields = [
         "doi","paperTitle","journalName","journalType",
-        "vol","issue","pageNos","hIndex","impactFactor","agecRefCount",
+        "vol","issue","pageNos","hIndex","impactFactor",
         "referencingNos","month","year","applyIncentive","incentiveApplied",
         "totalAuthors","userAuthorPosition",
       ];
@@ -430,6 +437,7 @@ export default function JournalPublication() {
           fd.append(k, form[k] ?? "");
         }
       });
+      fd.append("papersCited", papersCitedCount);
       
       fd.append("firstAuthor", isFirst);
       fd.append("authorPosition", authPos);
@@ -619,30 +627,6 @@ export default function JournalPublication() {
         <Box>
           <Typography sx={labelStyle}>Issue : *</Typography>
           <TextField size="small" fullWidth value={form.issue} onChange={set("issue")} disabled={isFetched("issue")} sx={isFetched("issue") ? disabledField : {}} />
-        </Box>
-
-        {/* Page Nos */}
-        <Box>
-          <Typography sx={labelStyle}>Page No's : *</Typography>
-          <TextField size="small" fullWidth value={form.pageNos} onChange={set("pageNos")} disabled={isFetched("pageNos")} sx={isFetched("pageNos") ? disabledField : {}} placeholder="e.g. 1245-1258" />
-        </Box>
-
-        {/* H-Index */}
-        <Box>
-          <Typography sx={labelStyle}>Journal H-Index : *</Typography>
-          <TextField size="small" fullWidth value={form.hIndex} onChange={set("hIndex")} disabled={isFetched("hIndex")} sx={isFetched("hIndex") ? disabledField : {}} />
-        </Box>
-
-        {/* Impact Factor */}
-        <Box>
-          <Typography sx={labelStyle}>Impact Factor : *</Typography>
-          <TextField size="small" fullWidth value={form.impactFactor} onChange={set("impactFactor")} disabled={isFetched("impactFactor")} sx={isFetched("impactFactor") ? disabledField : {}} />
-        </Box>
-
-        {/* AGEC References */}
-        <Box>
-          <Typography sx={labelStyle}>Number of References Belonging to AGEC :</Typography>
-          <TextField size="small" fullWidth type="number" value={form.agecRefCount} onChange={set("agecRefCount")} inputProps={{ min: 0 }} />
         </Box>
 
         {/* Referencing Nos */}
