@@ -21,8 +21,9 @@ export default function BookChapterPublication() {
 
   const [form, setForm] = useState({
     textBookName: "", chapterTitle: "", isbn: "", yearOfPublication: "",
-    firstAuthor: "", authorPosition: "", chaptersContributed: "", publisher: "", coAuthors: [], month: "", year: "",
-    applyIncentive: "", publicationType: "National", customPublisher: "", expectedAmount: "7,500"
+    chaptersContributed: "", publisher: "", month: "", year: "",
+    applyIncentive: "", publicationType: "National", customPublisher: "", expectedAmount: "7,500",
+    totalAuthors: 1, userAuthorPosition: 1, otherAuthors: []
   });
   const [files, setFiles] = useState({ coverPage: null, authorAffiliation: null, index: null, softCopy: null });
   const [loading, setLoading] = useState(false);
@@ -46,18 +47,95 @@ export default function BookChapterPublication() {
   const set = (k) => (e) => setForm((p) => ({ ...p, [k]: e.target.value }));
   const setFile = (k) => (e) => setFiles((p) => ({ ...p, [k]: e.target.files[0] }));
 
-  const handleAddCoAuthor = () => {
-    setForm(p => ({ ...p, coAuthors: [...p.coAuthors, { name: "", affiliation: "" }] }));
+  // Handle dynamic author generation based on total authors and user position
+  useEffect(() => {
+    let total = parseInt(form.totalAuthors);
+    if (isNaN(total) || total < 1) {
+      total = 1;
+      if (form.totalAuthors !== "") {
+        setForm(p => ({ ...p, totalAuthors: 1 }));
+      }
+    }
+    const pos = parseInt(form.userAuthorPosition) || 1;
+
+    // Auto-adjust if position is greater than total
+    if (pos > total) {
+      setForm(p => ({ ...p, userAuthorPosition: total }));
+      return;
+    }
+
+    if (total === 1) {
+      setForm(p => ({ ...p, otherAuthors: [] }));
+      return;
+    }
+
+    let newOtherAuthors = [];
+    for (let i = 1; i <= total; i++) {
+      if (i !== pos) {
+        // Keep existing data if available
+        const existing = form.otherAuthors.find(a => a.authorPosition === i);
+        newOtherAuthors.push(existing || {
+          authorPosition: i,
+          affiliationType: "",
+          empId: "",
+          authorName: "",
+          affiliationName: ""
+        });
+      }
+    }
+    setForm(p => ({ ...p, otherAuthors: newOtherAuthors }));
+  }, [form.totalAuthors, form.userAuthorPosition]);
+
+  const fetchCoAuthorName = async (pos, empId) => {
+    try {
+      const res = await API.get(`/api/employees/staff/${empId}`);
+      if (res.data && res.data.success) {
+        const staff = res.data.data;
+        const name = staff.employeename || staff.EmployeeName || "";
+
+        setForm(prev => {
+          const updated = prev.otherAuthors.map(a => {
+            if (a.authorPosition === pos) {
+              return { ...a, authorName: name, affiliationName: "Aditya University" };
+            }
+            return a;
+          });
+          return { ...prev, otherAuthors: updated };
+        });
+      }
+    } catch (err) {
+      console.error("Failed to fetch staff data", err);
+    }
   };
 
-  const handleRemoveCoAuthor = (index) => {
-    setForm(p => ({ ...p, coAuthors: p.coAuthors.filter((_, i) => i !== index) }));
-  };
+  const handleCoAuthorChange = (pos, field, value) => {
+    const updated = form.otherAuthors.map(a => {
+      if (a.authorPosition === pos) {
+        const newA = { ...a, [field]: value };
+        if (field === "affiliationType") {
+          if (value === "Aditya University") {
+            newA.affiliationName = "Aditya University";
+            newA.authorName = ""; // clear name so it can be fetched
+          } else {
+            newA.affiliationName = "";
+            newA.empId = "";
+            newA.authorName = "";
+          }
+        }
+        return newA;
+      }
+      return a;
+    });
 
-  const handleUpdateCoAuthor = (index, field, value) => {
-    const updated = [...form.coAuthors];
-    updated[index][field] = value;
-    setForm(p => ({ ...p, coAuthors: updated }));
+    setForm(p => ({ ...p, otherAuthors: updated }));
+
+    // Fetch name if Aditya University and Employee ID is entered (length >= 3)
+    if (field === "empId" && value.length >= 3) {
+      const author = updated.find(a => a.authorPosition === pos);
+      if (author && author.affiliationType === "Aditya University") {
+        fetchCoAuthorName(pos, value);
+      }
+    }
   };
 
   const handleSubmit = async () => {
@@ -66,7 +144,6 @@ export default function BookChapterPublication() {
     if (!form.chapterTitle) newErrors.chapterTitle = true;
     if (!form.isbn) newErrors.isbn = true;
     if (!form.yearOfPublication) newErrors.yearOfPublication = true;
-    if (!form.firstAuthor) newErrors.firstAuthor = true;
     if (!form.publisher) newErrors.publisher = true;
     if (!form.month) newErrors.month = true;
     if (!form.year) newErrors.year = true;
@@ -83,24 +160,54 @@ export default function BookChapterPublication() {
       toast.error("Please fill all mandatory fields and upload required documents");
       return;
     }
+
+    const total = parseInt(form.totalAuthors) || 1;
+    if (total < 1) {
+      toast.error("Total number of authors must be at least 1");
+      return;
+    }
+    
+    // Validate co-authors dynamically
+    if (total > 1) {
+      for (const a of form.otherAuthors) {
+        if (!a.affiliationType || (a.affiliationType === 'Others' && (!a.authorName || !a.affiliationName)) || (a.affiliationType === 'Aditya University' && (!a.empId || !a.authorName))) {
+          toast.error(`Please complete details for Author Position ${a.authorPosition}`);
+          return;
+        }
+      }
+    }
+
     setLoading(true);
     try {
       const fd = new FormData();
-      Object.entries(form).forEach(([k, v]) => {
-        if (k === "coAuthors") {
-          fd.append(k, JSON.stringify(v));
-        } else if (k === "publicationType") {
-          fd.append(k, form.publicationType);
-        } else if (k === "publisher") {
-          fd.append(k, form.publisher === "Others" ? form.customPublisher : form.publisher);
-        } else if (k === "expectedAmount") {
-          fd.append(k, form.expectedAmount);
-        } else if (k === "customPublisher") {
-          // ignore
-        } else {
-          fd.append(k, v);
-        }
-      });
+
+      // Calculate firstAuthor and authorPosition
+      const isFirst = (parseInt(form.userAuthorPosition) === 1) ? "Yes" : "No";
+      const authPos = (isFirst === "Yes") ? "" : String(form.userAuthorPosition);
+
+      // Map coAuthors array matching CoAuthorSchema
+      const coAuthorsList = form.otherAuthors.map(a => ({
+        name: a.authorName || "",
+        affiliation: a.affiliationType === "Aditya University" ? "Aditya University" : (a.affiliationName || "")
+      })).filter(ca => ca.name && ca.affiliation);
+
+      fd.append("textBookName", form.textBookName);
+      fd.append("chapterTitle", form.chapterTitle);
+      fd.append("isbn", form.isbn);
+      fd.append("yearOfPublication", form.yearOfPublication);
+      fd.append("firstAuthor", isFirst);
+      fd.append("authorPosition", authPos);
+      fd.append("chaptersContributed", form.chaptersContributed || "");
+      fd.append("publisher", form.publisher === "Others" ? form.customPublisher : form.publisher);
+      fd.append("coAuthors", JSON.stringify(coAuthorsList));
+      fd.append("month", form.month);
+      fd.append("year", form.year);
+      fd.append("applyIncentive", form.applyIncentive);
+      fd.append("publicationType", form.publicationType);
+      fd.append("expectedAmount", form.expectedAmount);
+      fd.append("totalAuthors", String(total));
+      fd.append("userAuthorPosition", String(form.userAuthorPosition));
+
       Object.entries(files).forEach(([k, v]) => { if (v) fd.append(k, v); });
       fd.append("academicYear", selectedYear);
       fd.append("college", user?.college || "");
@@ -108,7 +215,12 @@ export default function BookChapterPublication() {
 
       await API.post("/api/research/book-chapter", fd, { headers: { "Content-Type": "multipart/form-data" } });
       toast.success("Book Chapter submitted successfully!");
-      setForm({ textBookName: "", chapterTitle: "", isbn: "", yearOfPublication: "", firstAuthor: "", authorPosition: "", chaptersContributed: "", publisher: "", coAuthors: [], month: "", year: "", applyIncentive: "", publicationType: "National", customPublisher: "" });
+      setForm({
+        textBookName: "", chapterTitle: "", isbn: "", yearOfPublication: "",
+        chaptersContributed: "", publisher: "", month: "", year: "",
+        applyIncentive: "", publicationType: "National", customPublisher: "", expectedAmount: "7,500",
+        totalAuthors: 1, userAuthorPosition: 1, otherAuthors: []
+      });
       setFiles({ coverPage: null, authorAffiliation: null, index: null, softCopy: null });
       setErrors({});
       setSelectedYear("");
@@ -287,17 +399,24 @@ export default function BookChapterPublication() {
           </Select>
         </Box>
         <Box>
-          <Typography sx={labelStyle}>Whether you are the first author :</Typography>
-          <Select size="small" fullWidth displayEmpty value={form.firstAuthor} onChange={set("firstAuthor")} error={!!errors.firstAuthor}>
-            <MenuItem value="">Select</MenuItem>
-            <MenuItem value="Yes">Yes</MenuItem>
-            <MenuItem value="No">No</MenuItem>
-          </Select>
+          <Typography sx={labelStyle}>Total Number of Authors : *</Typography>
+          <TextField
+            size="small"
+            fullWidth
+            type="number"
+            value={form.totalAuthors}
+            onChange={set("totalAuthors")}
+            inputProps={{ min: 1 }}
+          />
         </Box>
-        {form.firstAuthor === "No" && (
+        {parseInt(form.totalAuthors) > 1 && (
           <Box>
-            <Typography sx={labelStyle}>Author Position :</Typography>
-            <TextField size="small" fullWidth type="number" value={form.authorPosition} onChange={set("authorPosition")} placeholder="e.g. 2" />
+            <Typography sx={labelStyle}>Applicant Author Position : *</Typography>
+            <Select size="small" fullWidth value={form.userAuthorPosition} onChange={set("userAuthorPosition")}>
+              {Array.from({ length: parseInt(form.totalAuthors) || 1 }, (_, i) => (
+                <MenuItem key={i + 1} value={i + 1}>{i + 1}</MenuItem>
+              ))}
+            </Select>
           </Box>
         )}
         <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
@@ -331,23 +450,79 @@ export default function BookChapterPublication() {
           )}
         </Box>
 
-        {form.firstAuthor === "No" && (
-          <Box sx={{ gridColumn: { sm: "1 / -1" }, mt: 2 }}>
-            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1 }}>
-              <Typography sx={labelStyle}>Name & affiliation of Co-Author(s) :</Typography>
-              <Button startIcon={<AddCircle />} onClick={handleAddCoAuthor} sx={{ textTransform: "none", fontWeight: 700, color: "var(--color-primary)" }}>Add Co-Author</Button>
-            </Box>
-            {form.coAuthors.map((co, idx) => (
-              <Box key={idx} sx={{ display: "flex", gap: 2, mb: 2, p: 2, background: "var(--bg-accent-1)", borderRadius: "16px", alignItems: "center", border: "1px solid var(--border-color)" }}>
-                <Box sx={{ flex: 1 }}>
-                  <Typography sx={{ fontSize: 11, fontWeight: 700, color: "var(--text-secondary)", mb: 0.5 }}>CO-AUTHOR NAME</Typography>
-                  <TextField size="small" fullWidth placeholder="Name" value={co.name} onChange={(e) => handleUpdateCoAuthor(idx, "name", e.target.value)} />
+        {parseInt(form.totalAuthors) > 1 && (
+          <Box sx={{ gridColumn: { sm: "1 / -1" }, mt: 2, background: "var(--bg-panel)", p: 2, borderRadius: "12px", border: "1px solid var(--border-color)" }}>
+            <Typography sx={{ ...labelStyle, mb: 1, fontWeight: 700 }}>Name & affiliation of Co-Author(s) :</Typography>
+            {form.otherAuthors.map((ca) => (
+              <Box key={ca.authorPosition} sx={{ display: "flex", flexDirection: "column", gap: 2, mb: 2, p: 2, borderRadius: "12px", border: "1px dashed var(--border-color)", background: "var(--bg-accent-1)" }}>
+                <Box sx={{ display: "flex", gap: 2, flexWrap: { xs: "wrap", sm: "nowrap" }, alignItems: "center" }}>
+                  <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", width: "30px", height: "30px", background: "var(--color-primary)", color: "#fff", borderRadius: "50%", fontWeight: 700, flexShrink: 0 }}>
+                    {ca.authorPosition}
+                  </Box>
+                  <Box sx={{ flex: 1, minWidth: "150px" }}>
+                    <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>AFFILIATION TYPE</Typography>
+                    <Select
+                      size="small"
+                      fullWidth
+                      value={ca.affiliationType}
+                      onChange={(e) => handleCoAuthorChange(ca.authorPosition, "affiliationType", e.target.value)}
+                      displayEmpty
+                    >
+                      <MenuItem value="" disabled>Select Affiliation</MenuItem>
+                      <MenuItem value="Aditya University">Aditya University</MenuItem>
+                      <MenuItem value="Others">Others</MenuItem>
+                    </Select>
+                  </Box>
+
+                  {ca.affiliationType === "Aditya University" ? (
+                    <>
+                      <Box sx={{ flex: 1, minWidth: "120px" }}>
+                        <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>EMPLOYEE ID</Typography>
+                        <TextField
+                          size="small"
+                          fullWidth
+                          value={ca.empId}
+                          onChange={(e) => handleCoAuthorChange(ca.authorPosition, "empId", e.target.value)}
+                          placeholder="e.g. 5741"
+                        />
+                      </Box>
+                      <Box sx={{ flex: 2, minWidth: "200px" }}>
+                        <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>CO-AUTHOR NAME</Typography>
+                        <TextField
+                          size="small"
+                          fullWidth
+                          value={ca.authorName}
+                          disabled
+                          placeholder="Fetched from API"
+                          sx={{ background: "rgba(0,0,0,0.02)" }}
+                        />
+                      </Box>
+                    </>
+                  ) : (
+                    <>
+                      <Box sx={{ flex: 1, minWidth: "180px" }}>
+                        <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>CO-AUTHOR NAME</Typography>
+                        <TextField
+                          size="small"
+                          fullWidth
+                          value={ca.authorName}
+                          onChange={(e) => handleCoAuthorChange(ca.authorPosition, "authorName", e.target.value)}
+                          placeholder="Full Name"
+                        />
+                      </Box>
+                      <Box sx={{ flex: 2, minWidth: "200px" }}>
+                        <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>AFFILIATION</Typography>
+                        <TextField
+                          size="small"
+                          fullWidth
+                          value={ca.affiliationName}
+                          onChange={(e) => handleCoAuthorChange(ca.authorPosition, "affiliationName", e.target.value)}
+                          placeholder="College / Organization"
+                        />
+                      </Box>
+                    </>
+                  )}
                 </Box>
-                <Box sx={{ flex: 2 }}>
-                  <Typography sx={{ fontSize: 11, fontWeight: 700, color: "var(--text-secondary)", mb: 0.5 }}>AFFILIATION</Typography>
-                  <TextField size="small" fullWidth placeholder="College / Organization" value={co.affiliation} onChange={(e) => handleUpdateCoAuthor(idx, "affiliation", e.target.value)} />
-                </Box>
-                <IconButton onClick={() => handleRemoveCoAuthor(idx)} sx={{ mt: 2, color: "var(--text-secondary)" }}><Delete /></IconButton>
               </Box>
             ))}
           </Box>

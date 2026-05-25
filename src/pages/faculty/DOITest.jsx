@@ -215,28 +215,44 @@ export default function DOIFetcher() {
     let extractedEissn = null;
     try {
       const res = await fetch(
-        `https://api.elsevier.com/content/abstract/doi/${encodeURIComponent(cleanDoi)}`,
+        `https://api.elsevier.com/content/search/scopus?query=DOI(${encodeURIComponent(cleanDoi)})`,
         { headers: ELS }
       );
       if (res.ok) {
         const json = await res.json();
-        const core = json?.["abstracts-retrieval-response"]?.coredata || {};
+        const entry = json?.["search-results"]?.entry?.[0];
 
-        R.title = core["dc:title"] || "Not Available";
-        R.journalName = core["prism:publicationName"] || "Not Available";
-        R.volume = core["prism:volume"] || "Not Available";
-        R.issue = core["prism:issueIdentifier"] || "Not Available";
-        R.date = parseDate(core["prism:coverDisplayDate"] || core["prism:coverDate"]) || "Not Available";
+        if (!entry) {
+          doneStep("error", "DOI not found in Scopus search.");
+          setErrorMessage("This DOI was not found in the Scopus registry. Please double-check it.");
+          setBusy(false);
+          setData(R);
+          return;
+        }
 
-        const rawIssn = core["prism:issn"] || "";
-        const rawEissn = core["prism:eIssn"] || "";
+        R.title = entry["dc:title"] || "Not Available";
+        R.journalName = entry["prism:publicationName"] || "Not Available";
+        R.volume = entry["prism:volume"] || "Not Available";
+        R.issue = entry["prism:issueIdentifier"] || "Not Available";
+        R.date = parseDate(entry["prism:coverDisplayDate"] || entry["prism:coverDate"]) || "Not Available";
+
+        const rawIssn = entry["prism:issn"] || "";
+        const rawEissn = entry["prism:eIssn"] || "";
         if (rawIssn) extractedIssn = cleanISSN(rawIssn);
         if (rawEissn) extractedEissn = cleanISSN(rawEissn);
 
         doneStep("success", "Metadata loaded successfully.");
       } else {
-        doneStep("error", `DOI not found in Scopus: HTTP ${res.status}`);
-        setErrorMessage("This DOI was not found in the Scopus registry. Please double-check it.");
+        if (res.status === 429) {
+          doneStep("error", `Elsevier/Scopus API rate limit exceeded: HTTP 429`);
+          setErrorMessage("Elsevier/Scopus API rate limit exceeded (HTTP 429). Please try again later or check your API key quota.");
+        } else if (res.status === 401) {
+          doneStep("error", `Unauthorized: HTTP 401`);
+          setErrorMessage("Invalid or unauthorized Elsevier API key. Please check your API key configuration.");
+        } else {
+          doneStep("error", `Scopus Search API error: HTTP ${res.status}`);
+          setErrorMessage("Failed to fetch DOI details from Scopus. Please double-check the DOI.");
+        }
         setBusy(false);
         setData(R);
         return;

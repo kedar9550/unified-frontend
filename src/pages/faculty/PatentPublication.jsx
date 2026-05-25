@@ -21,8 +21,8 @@ export default function PatentPublication() {
 
   const [form, setForm] = useState({
     title: "", applicantName: "", area: "", filingNo: "", dateOfFiling: "",
-    status: "", coInventors: [], month: "", year: "",
-    applyIncentive: ""
+    status: "", month: "", year: "", applyIncentive: "",
+    totalInventors: 1, otherInventors: []
   });
   const [files, setFiles] = useState({ eFilingReceipt: null, form1: null });
   const [loading, setLoading] = useState(false);
@@ -40,18 +40,86 @@ export default function PatentPublication() {
   const set = (k) => (e) => setForm((p) => ({ ...p, [k]: e.target.value }));
   const setFile = (k) => (e) => setFiles((p) => ({ ...p, [k]: e.target.files[0] }));
 
-  const handleAddCoInventor = () => {
-    setForm(p => ({ ...p, coInventors: [...p.coInventors, { name: "", affiliation: "" }] }));
+  // Handle dynamic inventor generation based on total inventors
+  useEffect(() => {
+    let total = parseInt(form.totalInventors);
+    if (isNaN(total) || total < 1) {
+      total = 1;
+      if (form.totalInventors !== "") {
+        setForm(p => ({ ...p, totalInventors: 1 }));
+      }
+    }
+
+    if (total === 1) {
+      setForm(p => ({ ...p, otherInventors: [] }));
+      return;
+    }
+
+    let newOtherInventors = [];
+    for (let i = 2; i <= total; i++) {
+      // Keep existing data if available
+      const existing = form.otherInventors.find(a => a.inventorPosition === i);
+      newOtherInventors.push(existing || {
+        inventorPosition: i,
+        affiliationType: "",
+        empId: "",
+        name: "",
+        affiliation: ""
+      });
+    }
+    setForm(p => ({ ...p, otherInventors: newOtherInventors }));
+  }, [form.totalInventors]);
+
+  const fetchCoInventorName = async (pos, empId) => {
+    try {
+      const res = await API.get(`/api/employees/staff/${empId}`);
+      if (res.data && res.data.success) {
+        const staff = res.data.data;
+        const name = staff.employeename || staff.EmployeeName || "";
+
+        setForm(prev => {
+          const updated = prev.otherInventors.map(a => {
+            if (a.inventorPosition === pos) {
+              return { ...a, name: name, affiliation: "Aditya University" };
+            }
+            return a;
+          });
+          return { ...prev, otherInventors: updated };
+        });
+      }
+    } catch (err) {
+      console.error("Failed to fetch staff data", err);
+    }
   };
 
-  const handleRemoveCoInventor = (index) => {
-    setForm(p => ({ ...p, coInventors: p.coInventors.filter((_, i) => i !== index) }));
-  };
+  const handleCoInventorChange = (pos, field, value) => {
+    const updated = form.otherInventors.map(a => {
+      if (a.inventorPosition === pos) {
+        const newA = { ...a, [field]: value };
+        if (field === "affiliationType") {
+          if (value === "Aditya University") {
+            newA.affiliation = "Aditya University";
+            newA.name = ""; // clear name so it can be fetched
+          } else {
+            newA.affiliation = "";
+            newA.empId = "";
+            newA.name = "";
+          }
+        }
+        return newA;
+      }
+      return a;
+    });
 
-  const handleUpdateCoInventor = (index, field, value) => {
-    const updated = [...form.coInventors];
-    updated[index][field] = value;
-    setForm(p => ({ ...p, coInventors: updated }));
+    setForm(p => ({ ...p, otherInventors: updated }));
+
+    // Fetch name if Aditya University and Employee ID is entered (length >= 3)
+    if (field === "empId" && value.length >= 3) {
+      const inventor = updated.find(a => a.inventorPosition === pos);
+      if (inventor && inventor.affiliationType === "Aditya University") {
+        fetchCoInventorName(pos, value);
+      }
+    }
   };
 
   const handleSubmit = async () => {
@@ -59,16 +127,44 @@ export default function PatentPublication() {
       toast.error("Please fill all required fields");
       return;
     }
+
+    // Validate co-inventors dynamically
+    const total = parseInt(form.totalInventors) || 1;
+    if (total < 1) {
+      toast.error("Total number of inventors must be at least 1");
+      return;
+    }
+    if (total > 1) {
+      for (const a of form.otherInventors) {
+        if (!a.affiliationType || (a.affiliationType === 'Others' && (!a.name || !a.affiliation)) || (a.affiliationType === 'Aditya University' && (!a.empId || !a.name))) {
+          toast.error(`Please complete details for Inventor Position ${a.inventorPosition}`);
+          return;
+        }
+      }
+    }
+
     setLoading(true);
     try {
       const fd = new FormData();
-      Object.entries(form).forEach(([k, v]) => {
-        if (k === "coInventors") {
-          fd.append(k, JSON.stringify(v));
-        } else {
-          fd.append(k, v);
-        }
-      });
+
+      // Map otherInventors to coInventors array
+      const coInventorsList = form.otherInventors.map(a => ({
+        name: a.name || "",
+        affiliation: a.affiliationType === "Aditya University" ? "Aditya University" : (a.affiliation || "")
+      })).filter(ca => ca.name && ca.affiliation);
+
+      fd.append("title", form.title);
+      fd.append("applicantName", form.applicantName);
+      fd.append("area", form.area);
+      fd.append("filingNo", form.filingNo);
+      fd.append("dateOfFiling", form.dateOfFiling);
+      fd.append("status", form.status);
+      fd.append("coInventors", JSON.stringify(coInventorsList));
+      fd.append("month", form.month);
+      fd.append("year", form.year);
+      fd.append("applyIncentive", form.applyIncentive);
+      fd.append("totalInventors", String(total));
+
       Object.entries(files).forEach(([k, v]) => { if (v) fd.append(k, v); });
       fd.append("academicYear", selectedYear);
       fd.append("college", user?.college || "");
@@ -76,7 +172,7 @@ export default function PatentPublication() {
 
       await API.post("/api/research/patent", fd, { headers: { "Content-Type": "multipart/form-data" } });
       toast.success("Patent submitted successfully!");
-      setForm({ title: "", applicantName: "", area: "", filingNo: "", dateOfFiling: "", status: "", coInventors: [], month: "", year: "", applyIncentive: "" });
+      setForm({ title: "", applicantName: "", area: "", filingNo: "", dateOfFiling: "", status: "", month: "", year: "", applyIncentive: "", totalInventors: 1, otherInventors: [] });
       setFiles({ eFilingReceipt: null, form1: null });
       setSelectedYear("");
       setViewMode("list");
@@ -251,25 +347,94 @@ export default function PatentPublication() {
             {PATENT_STATUSES.map((s) => <MenuItem key={s} value={s}>{s}</MenuItem>)}
           </Select>
         </Box>
-        <Box sx={{ gridColumn: { sm: "1 / -1" }, mt: 2 }}>
-          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1 }}>
-            <Typography sx={labelStyle}>Name & affiliation of Co-Inventors :</Typography>
-            <Button startIcon={<AddCircle />} onClick={handleAddCoInventor} sx={{ textTransform: "none", fontWeight: 700, color: "var(--color-primary)" }}>Add Co-Inventor</Button>
-          </Box>
-          {form.coInventors.map((co, idx) => (
-            <Box key={idx} sx={{ display: "flex", gap: 2, mb: 2, p: 2, background: "var(--bg-accent-1)", borderRadius: "12px", alignItems: "center" }}>
-              <Box sx={{ flex: 1 }}>
-                <Typography sx={{ fontSize: 11, fontWeight: 700, color: "var(--text-secondary)", mb: 0.5 }}>CO-INVENTOR NAME</Typography>
-                <TextField size="small" fullWidth placeholder="Name" value={co.name} onChange={(e) => handleUpdateCoInventor(idx, "name", e.target.value)} />
-              </Box>
-              <Box sx={{ flex: 2 }}>
-                <Typography sx={{ fontSize: 11, fontWeight: 700, color: "var(--text-secondary)", mb: 0.5 }}>AFFILIATION</Typography>
-                <TextField size="small" fullWidth placeholder="College / Organization" value={co.affiliation} onChange={(e) => handleUpdateCoInventor(idx, "affiliation", e.target.value)} />
-              </Box>
-              <IconButton onClick={() => handleRemoveCoInventor(idx)} sx={{ mt: 2, color: "var(--text-secondary)" }}><Delete /></IconButton>
-            </Box>
-          ))}
+        <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
+          <Typography sx={labelStyle}>Total Number of Inventors : *</Typography>
+          <TextField
+            size="small"
+            type="number"
+            value={form.totalInventors}
+            onChange={set("totalInventors")}
+            inputProps={{ min: 1 }}
+            sx={{ maxWidth: 250 }}
+          />
         </Box>
+        {parseInt(form.totalInventors) > 1 && (
+          <Box sx={{ gridColumn: { sm: "1 / -1" }, mt: 2, background: "var(--bg-panel)", p: 2, borderRadius: "12px", border: "1px solid var(--border-color)" }}>
+            <Typography sx={{ ...labelStyle, mb: 1, fontWeight: 700 }}>Name & affiliation of Co-Inventor(s) :</Typography>
+            {form.otherInventors.map((ca) => (
+              <Box key={ca.inventorPosition} sx={{ display: "flex", flexDirection: "column", gap: 2, mb: 2, p: 2, borderRadius: "12px", border: "1px dashed var(--border-color)", background: "var(--bg-accent-1)" }}>
+                <Box sx={{ display: "flex", gap: 2, flexWrap: { xs: "wrap", sm: "nowrap" }, alignItems: "center" }}>
+                  <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", width: "30px", height: "30px", background: "var(--color-primary)", color: "#fff", borderRadius: "50%", fontWeight: 700, flexShrink: 0 }}>
+                    {ca.inventorPosition}
+                  </Box>
+                  <Box sx={{ flex: 1, minWidth: "150px" }}>
+                    <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>AFFILIATION TYPE</Typography>
+                    <Select
+                      size="small"
+                      fullWidth
+                      value={ca.affiliationType}
+                      onChange={(e) => handleCoInventorChange(ca.inventorPosition, "affiliationType", e.target.value)}
+                      displayEmpty
+                    >
+                      <MenuItem value="" disabled>Select Affiliation</MenuItem>
+                      <MenuItem value="Aditya University">Aditya University</MenuItem>
+                      <MenuItem value="Others">Others</MenuItem>
+                    </Select>
+                  </Box>
+
+                  {ca.affiliationType === "Aditya University" ? (
+                    <>
+                      <Box sx={{ flex: 1, minWidth: "120px" }}>
+                        <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>EMPLOYEE ID</Typography>
+                        <TextField
+                          size="small"
+                          fullWidth
+                          value={ca.empId}
+                          onChange={(e) => handleCoInventorChange(ca.inventorPosition, "empId", e.target.value)}
+                          placeholder="e.g. 5741"
+                        />
+                      </Box>
+                      <Box sx={{ flex: 2, minWidth: "200px" }}>
+                        <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>CO-INVENTOR NAME</Typography>
+                        <TextField
+                          size="small"
+                          fullWidth
+                          value={ca.name}
+                          disabled
+                          placeholder="Fetched from API"
+                          sx={{ background: "rgba(0,0,0,0.02)" }}
+                        />
+                      </Box>
+                    </>
+                  ) : (
+                    <>
+                      <Box sx={{ flex: 1, minWidth: "180px" }}>
+                        <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>CO-INVENTOR NAME</Typography>
+                        <TextField
+                          size="small"
+                          fullWidth
+                          value={ca.name}
+                          onChange={(e) => handleCoInventorChange(ca.inventorPosition, "name", e.target.value)}
+                          placeholder="Full Name"
+                        />
+                      </Box>
+                      <Box sx={{ flex: 2, minWidth: "200px" }}>
+                        <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>AFFILIATION</Typography>
+                        <TextField
+                          size="small"
+                          fullWidth
+                          value={ca.affiliation}
+                          onChange={(e) => handleCoInventorChange(ca.inventorPosition, "affiliation", e.target.value)}
+                          placeholder="College / Organization"
+                        />
+                      </Box>
+                    </>
+                  )}
+                </Box>
+              </Box>
+            ))}
+          </Box>
+        )}
       </Grid2>
 
       <Grid2 sx={{ mt: 2 }}>

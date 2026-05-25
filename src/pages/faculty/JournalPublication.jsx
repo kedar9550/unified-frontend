@@ -32,22 +32,33 @@ async function fetchJournalDataByDOI(doi) {
 
   // 1. Abstract / article metadata
   const abstractRes = await fetch(
-    `https://api.elsevier.com/content/abstract/doi/${encodeURIComponent(doi)}`,
+    `https://api.elsevier.com/content/search/scopus?query=DOI(${encodeURIComponent(doi)})`,
     { method: "GET", headers }
   );
-  if (!abstractRes.ok) throw new Error("DOI not found in Scopus. Please fill fields manually.");
+  if (!abstractRes.ok) {
+    if (abstractRes.status === 429) {
+      throw new Error("Elsevier/Scopus API rate limit exceeded (HTTP 429). Please try again later or fill fields manually.");
+    } else if (abstractRes.status === 401) {
+      throw new Error("Invalid or unauthorized Elsevier API key. Please check your configuration.");
+    } else {
+      throw new Error("DOI not found in Scopus. Please fill fields manually.");
+    }
+  }
   const abstractJson = await abstractRes.json();
-  const coredata = abstractJson?.["abstracts-retrieval-response"]?.coredata || {};
+  const entry = abstractJson?.["search-results"]?.entry?.[0];
+  if (!entry) {
+    throw new Error("DOI not found in Scopus. Please fill fields manually.");
+  }
 
-  const title = coredata["dc:title"] || "";
-  const journalName = coredata["prism:publicationName"] || "";
-  const vol = coredata["prism:volume"] || "";
-  const issue = coredata["prism:issueIdentifier"] || "";
-  const pageRange = coredata["prism:pageRange"] || "";
-  const coverDisplayDate = coredata["prism:coverDisplayDate"] || "";
+  const title = entry["dc:title"] || "";
+  const journalName = entry["prism:publicationName"] || "";
+  const vol = entry["prism:volume"] || "";
+  const issue = entry["prism:issueIdentifier"] || "";
+  const pageRange = entry["prism:pageRange"] || "";
+  const coverDisplayDate = entry["prism:coverDisplayDate"] || "";
   
   // Clean ISSN
-  const rawIssn = coredata["prism:issn"] || coredata["prism:eIssn"] || "";
+  const rawIssn = entry["prism:issn"] || entry["prism:eIssn"] || "";
   const issn = rawIssn.split(" ")[0].replace(/-/g, "");
   
   // Format ISSN with hyphen for WoS check
@@ -149,8 +160,8 @@ async function fetchJournalDataByDOI(doi) {
       const wosRes = await API.post("/api/research/journal/wos-type", { issn: issnWoS || issn });
       if (wosRes.data?.success && wosRes.data?.inWoS) {
         const typesStr = wosRes.data.journalType || "";
-        if (typesStr.includes("SCI")) journalType = "SCI";
-        else if (typesStr.includes("SCIE")) journalType = "SCIE";
+        if (typesStr.includes("SCIE")) journalType = "SCIE";
+        else if (typesStr.includes("SCI")) journalType = "SCI";
         else if (typesStr.includes("ESCI")) journalType = "ESCI";
         else if (typesStr.includes("WoS")) journalType = "WoS";
       }
@@ -202,7 +213,13 @@ export default function JournalPublication() {
 
   // ── Dynamic co-author list (mirrors TextbookPublication logic) ──────────────
   useEffect(() => {
-    const total = parseInt(form.totalAuthors) || 1;
+    let total = parseInt(form.totalAuthors);
+    if (isNaN(total) || total < 1) {
+      total = 1;
+      if (form.totalAuthors !== "") {
+        setForm(p => ({ ...p, totalAuthors: 1 }));
+      }
+    }
     const pos = parseInt(form.userAuthorPosition) || 1;
 
     if (pos > total) {
@@ -363,7 +380,11 @@ export default function JournalPublication() {
     }
 
     // Validate co-authors
-    const total = parseInt(form.totalAuthors);
+    const total = parseInt(form.totalAuthors) || 1;
+    if (total < 1) {
+      toast.error("Total number of authors must be at least 1");
+      return;
+    }
     if (total > 1) {
       for (const a of form.otherAuthors) {
         if (

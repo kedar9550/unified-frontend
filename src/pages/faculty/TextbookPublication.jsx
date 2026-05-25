@@ -59,7 +59,13 @@ export default function TextbookPublication() {
 
   // Handle dynamic author generation based on total authors and user position
   useEffect(() => {
-    const total = parseInt(form.totalAuthors) || 1;
+    let total = parseInt(form.totalAuthors);
+    if (isNaN(total) || total < 1) {
+      total = 1;
+      if (form.totalAuthors !== "") {
+        setForm(p => ({ ...p, totalAuthors: 1 }));
+      }
+    }
     const pos = parseInt(form.userAuthorPosition) || 1;
 
     // Auto-adjust if position is greater than total
@@ -249,7 +255,11 @@ export default function TextbookPublication() {
     }
 
     // Check if total authors is correctly filled
-    const total = parseInt(form.totalAuthors);
+    const total = parseInt(form.totalAuthors) || 1;
+    if (total < 1) {
+      toast.error("Total number of authors must be at least 1");
+      return;
+    }
     if (total > 1) {
       for (const a of form.otherAuthors) {
         if (!a.affiliationType || (a.affiliationType === 'Others' && (!a.authorName || !a.affiliationName)) || (a.affiliationType === 'Aditya University' && (!a.empId || !a.authorName))) {
