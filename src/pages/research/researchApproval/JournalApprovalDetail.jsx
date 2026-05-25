@@ -63,7 +63,7 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
             return;
         }
 
-        if (action === 'Approve' && isResearchAdmin) {
+        if (action === 'Approve') {
             if (!hIndex) {
                 toast.error('Please enter the Journal H-Index.');
                 return;
@@ -72,7 +72,7 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
                 toast.error('Please enter the Impact Factor.');
                 return;
             }
-            if (data.applyIncentive === 'Yes' && !approvedAmount) {
+            if (isResearchAdmin && data.applyIncentive === 'Yes' && !approvedAmount) {
                 toast.error('Please enter the approved incentive amount.');
                 return;
             }
@@ -84,12 +84,10 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
             const payload = {
                 action,
                 comment: remarks,
-                approvedAmount: isResearchAdmin && data.applyIncentive === 'Yes' ? approvedAmount : undefined
+                approvedAmount: isResearchAdmin && data.applyIncentive === 'Yes' ? approvedAmount : undefined,
+                hIndex,
+                impactFactor
             };
-            if (isResearchAdmin) {
-                payload.hIndex = hIndex;
-                payload.impactFactor = impactFactor;
-            }
             const res = await API.put(endpoint, payload);
             if (res.data?.success) {
                 toast.success(`Request ${action === 'Approve' ? 'Approved' : 'Rejected'} successfully`);
@@ -255,16 +253,25 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
                 <Card sx={{ ...cardStyle, flex: { xs: "1 1 100%", lg: "1 1 48%" }, mb: 0 }}>
                     <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 3 }}><ArticleIcon sx={{ color: "var(--color-primary)" }} /><Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>Journal Details</Typography></Box>
                     <Box sx={{ display: "flex", flexDirection: "column" }}>
-                        <LabelValue label="Category" value={data.categoryOfJournal} horizontal />
+                        <LabelValue label="DOI" value={data.doi || "-"} horizontal />
+                        <LabelValue label="Journal Quartile" value={data.journalQuartile || data.categoryOfJournal || "-"} horizontal />
+                        <LabelValue label="Journal Type" value={data.journalType || "-"} horizontal />
                         <LabelValue label="Incentive For" value={data.incentiveApplied} horizontal />
-                        <LabelValue label="First Author" value={data.firstAuthor} horizontal />
-                        {data.firstAuthor === 'No' && <LabelValue label="Your Position" value={data.authorPosition} horizontal />}
+                        <LabelValue 
+                            label="Applicant Author Position" 
+                            value={data.userAuthorPosition ? `${data.userAuthorPosition} / ${data.totalAuthors}` : (data.firstAuthor === "Yes" ? "1" : data.authorPosition || "-")} 
+                            horizontal 
+                        />
                         <LabelValue label="Vol / Issue" value={`${data.vol || "-"} / ${data.issue || "-"}`} horizontal />
-                        <LabelValue label="Page No's" value={data.pageNos} horizontal />
-                        <LabelValue label="Month/Year" value={`${data.month} ${data.year}`} horizontal />
-                        <LabelValue label="H-Index" value={data.hIndex} horizontal />
-                        <LabelValue label="Impact Factor" value={data.impactFactor} horizontal />
-                        <LabelValue label="Papers Cited" value={data.papersCited} horizontal />
+                        <LabelValue 
+                            label="Month/Year" 
+                            value={`${data.publishedMonth || data.month || "-"} ${data.publishedYear || data.year || "-"}`} 
+                            horizontal 
+                        />
+                        <LabelValue label="H-Index" value={data.hIndex || "-"} horizontal />
+                        <LabelValue label="Impact Factor" value={data.impactFactor || "-"} horizontal />
+                        <LabelValue label="AGEC Referencing Numbers" value={data.referencingNos || "-"} horizontal />
+                        <LabelValue label="Number of References Belonging to AGEC" value={data.papersCited !== undefined ? data.papersCited : "-"} horizontal />
                         <LabelValue label="SDGS" value={data.sdgs} horizontal />
                         <LabelValue label="Incentive" horizontal chip={<Chip label={data.applyIncentive} size="small" sx={{ bgcolor: data.applyIncentive === 'Yes' ? "rgba(76, 175, 80, 0.1)" : "var(--bg-panel)", color: data.applyIncentive === 'Yes' ? "#4caf50" : "var(--text-secondary)", fontWeight: 800, border: "1px solid", borderColor: data.applyIncentive === 'Yes' ? "#4caf5044" : "var(--border-color)" }} />} />
                         {data.applyIncentive === 'Yes' && <LabelValue label="Expected (₹)" value="1500" horizontal />}
@@ -306,7 +313,7 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
                         <Card sx={{ ...cardStyle, borderTop: "4px solid var(--color-primary)", mb: 0 }}>
                             <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 3 }}><GavelIcon sx={{ color: "var(--color-primary)" }} /><Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>Review Decision</Typography></Box>
                             
-                            {isResearchAdmin && (
+                            {(isHOD || isResearchAdmin) && (
                                 <Box sx={{ display: "flex", gap: 3, mb: 3, flexWrap: "wrap" }}>
                                     <Box sx={{ flex: "1 1 200px" }}>
                                         <Typography variant="subtitle2" sx={{ fontWeight: 900, mb: 1, color: "var(--color-primary)", fontSize: "0.75rem" }}>JOURNAL H-INDEX *</Typography>

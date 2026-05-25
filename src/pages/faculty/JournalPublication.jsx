@@ -4,10 +4,11 @@ import { useAuth } from "../../context/AuthContext";
 
 import {
   Box, TextField, MenuItem, Select, Typography, Button, Table, TableBody,
-  TableCell, TableContainer, TableHead, TableRow, Paper, CircularProgress
+  TableCell, TableContainer, TableHead, TableRow, Paper, CircularProgress,
+  Dialog, DialogTitle, DialogContent, DialogActions, IconButton, Stack, Grid, Card, Chip, Divider
 } from "@mui/material";
 import { toast } from "sonner";
-import { Search } from "@mui/icons-material";
+import { Search, Close, Download, Description, Groups, Article, Person, AttachFile } from "@mui/icons-material";
 import PageHeader from "../../components/common/PageHeader";
 import {
   FacultyInfoRow, FormCard, Grid2, SubLabel, NoteBox, FileField, SubmitBtn,
@@ -178,6 +179,7 @@ export default function JournalPublication() {
   const [academicYears, setAcademicYears] = useState([]);
   const [selectedYear, setSelectedYear] = useState("");
   const [publicationsList, setPublicationsList] = useState([]);
+  const [selectedPubDetails, setSelectedPubDetails] = useState(null);
 
   // DOI fetch state
   const [doiFetching, setDoiFetching] = useState(false);
@@ -407,28 +409,16 @@ export default function JournalPublication() {
     try {
       const fd = new FormData();
       
-      // Calculate firstAuthor and authorPosition
-      const isFirst = (parseInt(form.userAuthorPosition) === 1) ? "Yes" : "No";
-      const authPos = (isFirst === "Yes") ? "" : String(form.userAuthorPosition);
-
       // Map coAuthors array matching CoAuthorSchema
       const coAuthorsList = form.otherAuthors.map(a => ({
         name: a.authorName || "",
         affiliation: a.affiliationType === "Aditya University" ? "Aditya University" : (a.affiliationName || "")
       })).filter(ca => ca.name && ca.affiliation);
 
-      // Compute papersCited dynamically from referencingNos
-      const calculateRefCount = (nos) => {
-        if (!nos || !nos.trim()) return "0";
-        return String(nos.split(',').map(s => s.trim()).filter(Boolean).length);
-      };
-      const papersCitedCount = calculateRefCount(form.referencingNos);
-
       const fields = [
         "doi","paperTitle","journalName","journalType",
-        "vol","issue","pageNos","hIndex","impactFactor",
-        "referencingNos","month","year","applyIncentive","incentiveApplied",
-        "totalAuthors","userAuthorPosition",
+        "vol","issue","referencingNos","applyIncentive","incentiveApplied",
+        "totalAuthors","userAuthorPosition","hIndex","impactFactor",
       ];
       fields.forEach(k => {
         if (k === "incentiveApplied" && form.applyIncentive === "No") {
@@ -437,11 +427,14 @@ export default function JournalPublication() {
           fd.append(k, form[k] ?? "");
         }
       });
-      fd.append("papersCited", papersCitedCount);
       
-      fd.append("firstAuthor", isFirst);
-      fd.append("authorPosition", authPos);
-      fd.append("categoryOfJournal", form.journalQuartile ?? "");
+      const refNos = form.referencingNos || "";
+      const calculatedPapersCited = refNos.split(',').map(s => s.trim()).filter(Boolean).length;
+      fd.append("papersCited", calculatedPapersCited);
+
+      fd.append("publishedMonth", form.month);
+      fd.append("publishedYear", form.year);
+      fd.append("journalQuartile", form.journalQuartile ?? "");
       fd.append("coAuthors", JSON.stringify(coAuthorsList));
       fd.append("academicYear", selectedYear);
       fd.append("college", user?.college || "");
@@ -487,14 +480,17 @@ export default function JournalPublication() {
               <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Paper Title</TableCell>
               <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Journal Name</TableCell>
               <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Quartile</TableCell>
-              <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Academic Year</TableCell>
+              <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Applicant</TableCell>
+              <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Author / Co-Author</TableCell>
+              <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Role</TableCell>
               <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Status</TableCell>
+              <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Actions</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
             {(!publicationsList || publicationsList.length === 0) ? (
               <TableRow>
-                <TableCell colSpan={6} align="center" sx={{ py: 4, color: "text.secondary" }}>
+                <TableCell colSpan={9} align="center" sx={{ py: 4, color: "text.secondary" }}>
                   No previous publications found. Click "Apply New" to submit one.
                 </TableCell>
               </TableRow>
@@ -504,8 +500,16 @@ export default function JournalPublication() {
                   <TableCell sx={{ color: "var(--text-secondary)", py: 2, fontSize: 12 }}>{pub.doi || "N/A"}</TableCell>
                   <TableCell sx={{ color: "var(--text-primary)", fontWeight: 500, py: 2 }}>{pub.paperTitle || "N/A"}</TableCell>
                   <TableCell sx={{ color: "var(--text-secondary)", py: 2 }}>{pub.journalName || "N/A"}</TableCell>
-                  <TableCell sx={{ color: "var(--text-secondary)", py: 2 }}>{pub.journalQuartile || "N/A"}</TableCell>
-                  <TableCell sx={{ color: "var(--text-secondary)", py: 2 }}>{pub.academicYear?.year || "N/A"}</TableCell>
+                  <TableCell sx={{ color: "var(--text-secondary)", py: 2 }}>{pub.journalQuartile || pub.categoryOfJournal || "N/A"}</TableCell>
+                  <TableCell sx={{ color: "var(--text-secondary)", py: 2 }}>{pub.facultyId?.name || "N/A"}</TableCell>
+                  <TableCell sx={{ color: "var(--text-secondary)", py: 2 }}>
+                    {pub.coAuthors && pub.coAuthors.length > 0 ? pub.coAuthors.map(ca => ca.name).join(", ") : "N/A"}
+                  </TableCell>
+                  <TableCell sx={{ py: 2 }}>
+                    <Typography variant="body2" sx={{ fontWeight: 600, color: pub.visibilityRole === "Applicant" ? "var(--color-primary)" : "text.secondary" }}>
+                      {pub.visibilityRole || "Applicant"}
+                    </Typography>
+                  </TableCell>
                   <TableCell sx={{ py: 2 }}>
                     <Typography variant="body2" sx={{
                       color: pub.status?.includes("Rejected") ? "#ef4444" : pub.status === "Approved" ? "#10b981" : "#e8a000",
@@ -515,6 +519,26 @@ export default function JournalPublication() {
                     }}>
                       {pub.status || "Pending"}
                     </Typography>
+                  </TableCell>
+                  <TableCell sx={{ py: 2 }}>
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      onClick={() => setSelectedPubDetails(pub)}
+                      sx={{
+                        borderRadius: "8px",
+                        textTransform: "none",
+                        fontWeight: 700,
+                        borderColor: "var(--color-primary)",
+                        color: "var(--color-primary)",
+                        "&:hover": {
+                          background: "var(--bg-accent-1)",
+                          borderColor: "var(--color-primary)"
+                        }
+                      }}
+                    >
+                      View
+                    </Button>
                   </TableCell>
                 </TableRow>
               ))
@@ -556,7 +580,7 @@ export default function JournalPublication() {
       <FacultyInfoRow />
 
       {/* ── DOI Section ── */}
-      <SubLabel text="DOI Lookup:" />
+      <SubLabel text="DOI Lookup: *" />
       <Box sx={{ display: "flex", gap: 1, mb: 3 }}>
         <TextField
           size="small"
@@ -800,12 +824,221 @@ export default function JournalPublication() {
     </FormCard>
   );
 
+  const handleCloseDetails = () => setSelectedPubDetails(null);
+
+  const LabelValue = ({ label, value, chip, horizontal = false }) => (
+    <Box sx={{
+      p: horizontal ? "10px 16px" : 1.5,
+      borderRadius: "10px",
+      background: horizontal ? "transparent" : "rgba(255,255,255,0.02)",
+      display: "flex",
+      flexDirection: horizontal ? "row" : "column",
+      alignItems: horizontal ? "center" : "flex-start",
+      justifyContent: horizontal ? "flex-start" : "center",
+      gap: horizontal ? 2 : 0.5,
+      borderBottom: horizontal ? "1px solid var(--border-color)" : "1px solid transparent",
+      "&:last-child": { borderBottom: "none" },
+    }}>
+      <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", letterSpacing: "0.05em", fontWeight: 800, fontSize: "0.65rem", mb: horizontal ? 0 : 0.5 }}>{label}</Typography>
+      <Box sx={{ flex: horizontal ? 1 : "none" }}>
+        {chip ? chip : <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", fontSize: "0.85rem" }}>{value || "-"}</Typography>}
+      </Box>
+    </Box>
+  );
+
+  const renderDetailFile = (title, filepath) => {
+    if (!filepath) return null;
+    const backendURL = (import.meta.env.VITE_BACKEND_URL || "http://localhost:9000").replace(/\/$/, "");
+    const fileUrl = filepath.startsWith('http') ? filepath : `${backendURL}${filepath}`;
+    const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(filepath);
+
+    return (
+      <Box sx={{ flex: "1 1 200px" }}>
+        <Typography variant="caption" sx={{ fontWeight: 800, color: "var(--color-primary)", fontSize: "0.7rem", textTransform: "uppercase", display: "block", mb: 1 }}>{title}</Typography>
+        <Box sx={{
+          height: 120, display: "flex", alignItems: "center", justifyContent: "center",
+          border: "1px solid var(--border-color)", background: "var(--bg-panel)", borderRadius: "8px",
+          overflow: "hidden", cursor: "pointer", transition: "all 0.2s ease",
+          "&:hover": { borderColor: "var(--color-primary)", transform: "translateY(-2px)" }
+        }} onClick={() => window.open(fileUrl, '_blank')}>
+          {isImage ? <img src={fileUrl} alt={title} style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <Box sx={{ textAlign: "center" }}><Description sx={{ fontSize: 24, color: "var(--text-secondary)", mb: 0.5 }} /><Typography variant="caption" sx={{ color: "var(--text-secondary)", fontWeight: 700, display: "block" }}>PDF</Typography></Box>}
+        </Box>
+      </Box>
+    );
+  };
+
+  const renderDetailsDialog = () => {
+    if (!selectedPubDetails) return null;
+    const data = selectedPubDetails;
+    const statusColor = (() => {
+      const s = data.status || "";
+      if (/Pending/i.test(s)) return "#ff9800";
+      if (/Approved/i.test(s)) return "#4caf50";
+      if (/Rejected/i.test(s)) return "#f44336";
+      return "#666";
+    })();
+
+    return (
+      <Dialog 
+        open={!!selectedPubDetails} 
+        onClose={handleCloseDetails}
+        maxWidth="md"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: "20px",
+            background: "var(--bg-glass)",
+            backdropFilter: "blur(12px)",
+            border: "1px solid var(--border-color)",
+            boxShadow: "var(--shadow-premium)",
+          }
+        }}
+      >
+        <DialogTitle sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "var(--gradient-primary)", color: "#fff", py: 2 }}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+            <Article sx={{ color: "#fff" }} />
+            <Typography variant="h6" sx={{ fontWeight: 800 }}>Journal Details</Typography>
+          </Box>
+          <IconButton onClick={handleCloseDetails} sx={{ color: "#fff" }}><Close /></IconButton>
+        </DialogTitle>
+        <DialogContent sx={{ p: 3, mt: 1 }}>
+          <Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)", mb: 1 }}>{data.paperTitle}</Typography>
+          <Typography variant="body2" sx={{ color: "var(--text-secondary)", mb: 3, fontWeight: 600 }}>Journal: {data.journalName}</Typography>
+          
+          <Grid container spacing={2}>
+            {/* Status and dates */}
+            <Grid item xs={12} sm={3}><LabelValue label="Academic Year" value={data.academicYear?.year || "N/A"} /></Grid>
+            <Grid item xs={12} sm={3}><LabelValue label="DOI" value={data.doi} /></Grid>
+            <Grid item xs={12} sm={3}><LabelValue label="Role" value={data.visibilityRole || "Applicant"} /></Grid>
+            <Grid item xs={12} sm={3}>
+              <LabelValue 
+                label="Status" 
+                chip={
+                  <Chip 
+                    label={data.status} 
+                    size="small" 
+                    sx={{ 
+                      bgcolor: `${statusColor}15`, 
+                      color: statusColor, 
+                      fontWeight: 800, 
+                      border: `1px solid ${statusColor}44`,
+                      borderRadius: "6px" 
+                    }} 
+                  />
+                } 
+              />
+            </Grid>
+
+            {/* Author position, Quartile, type */}
+            <Grid item xs={12} sm={4}>
+              <LabelValue 
+                label="Applicant Author Position" 
+                value={data.userAuthorPosition ? `${data.userAuthorPosition} / ${data.totalAuthors}` : (data.firstAuthor === "Yes" ? "1" : data.authorPosition || "-")} 
+              />
+            </Grid>
+            <Grid item xs={12} sm={4}><LabelValue label="Journal Quartile" value={data.journalQuartile || data.categoryOfJournal} /></Grid>
+            <Grid item xs={12} sm={4}><LabelValue label="Journal Type" value={data.journalType || "-"} /></Grid>
+
+            {/* H-Index, Impact Factor, Citations, SDGS */}
+            <Grid item xs={12} sm={3}><LabelValue label="H-Index" value={data.hIndex} /></Grid>
+            <Grid item xs={12} sm={3}><LabelValue label="Impact Factor" value={data.impactFactor} /></Grid>
+            <Grid item xs={12} sm={3}><LabelValue label="AGEC Referencing Numbers" value={data.referencingNos} /></Grid>
+            <Grid item xs={12} sm={3}><LabelValue label="AGEC References Count" value={data.papersCited !== undefined ? data.papersCited : "-"} /></Grid>
+
+            {/* Incentive information */}
+            <Grid item xs={12} sm={6}>
+              <LabelValue 
+                label="Incentive details" 
+                value={data.applyIncentive === "Yes" ? `Yes (${data.incentiveApplied || "National"})` : "No"} 
+              />
+            </Grid>
+            {data.status === "Approved" && data.approvedAmount && (
+              <Grid item xs={12} sm={6}>
+                <LabelValue 
+                  label="Approved Incentive" 
+                  value={`₹${data.approvedAmount}`} 
+                  chip={<Chip label={`₹${data.approvedAmount}`} size="small" sx={{ bgcolor: "rgba(76, 175, 80, 0.1)", color: "#4caf50", fontWeight: 800 }} />}
+                />
+              </Grid>
+            )}
+          </Grid>
+
+          <Divider sx={{ my: 3 }} />
+
+          {/* Co-Authors table */}
+          {data.coAuthors && data.coAuthors.length > 0 && (
+            <Card sx={{ p: 0, overflow: "hidden", mb: 3, border: "1px solid var(--border-color)", background: "rgba(255,255,255,0.01)" }}>
+              <Box sx={{ p: 2, display: "flex", alignItems: "center", gap: 1.5, borderBottom: "1px solid var(--border-color)" }}>
+                <Groups sx={{ color: "var(--color-primary)" }} />
+                <Typography sx={{ fontWeight: 800, color: "var(--text-primary)" }}>Co-Authors & Affiliations</Typography>
+              </Box>
+              <TableContainer>
+                <Table size="small">
+                  <TableHead sx={{ bgcolor: "var(--bg-panel)" }}>
+                    <TableRow>
+                      <TableCell sx={{ fontWeight: 700, color: "var(--text-secondary)" }}>#</TableCell>
+                      <TableCell sx={{ fontWeight: 700, color: "var(--text-secondary)" }}>NAME</TableCell>
+                      <TableCell sx={{ fontWeight: 700, color: "var(--text-secondary)" }}>AFFILIATION</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {data.coAuthors.map((ca, idx) => (
+                      <TableRow key={idx}>
+                        <TableCell sx={{ fontWeight: 800, color: "var(--color-primary)" }}>{idx + 1}</TableCell>
+                        <TableCell sx={{ fontWeight: 700, color: "var(--text-primary)" }}>{ca.name}</TableCell>
+                        <TableCell sx={{ color: "var(--text-secondary)" }}>{ca.affiliation}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            </Card>
+          )}
+
+          {/* Attached Files previews */}
+          <Box sx={{ mt: 3 }}>
+            <Box sx={{ display: "flex", gap: 1.5, alignItems: "center", mb: 2 }}>
+              <AttachFile sx={{ color: "var(--color-primary)" }} />
+              <Typography sx={{ fontWeight: 800, color: "var(--text-primary)" }}>Attached Documents</Typography>
+            </Box>
+            <Stack direction="row" spacing={3} flexWrap="wrap" useFlexGap>
+              {renderDetailFile("Published Paper (1st Page)", data.publishedPaper)}
+              {renderDetailFile("Reference Pages", data.referencePages)}
+            </Stack>
+          </Box>
+
+          {/* Remarks/Comments if available */}
+          {(data.hodComment || data.rndComment) && (
+            <Box sx={{ mt: 4, display: "flex", flexDirection: "column", gap: 2 }}>
+              {data.hodComment && (
+                <Box sx={{ p: 2, bgcolor: "rgba(255, 193, 7, 0.05)", borderRadius: "10px", border: "1px solid rgba(255, 193, 7, 0.2)" }}>
+                  <Typography variant="caption" sx={{ fontWeight: 900, color: "#ff9800", textTransform: "uppercase" }}>HOD Remarks</Typography>
+                  <Typography variant="body2" sx={{ fontStyle: "italic", mt: 0.5, color: "var(--text-secondary)" }}>"{data.hodComment}"</Typography>
+                </Box>
+              )}
+              {data.rndComment && (
+                <Box sx={{ p: 2, bgcolor: "rgba(76, 175, 80, 0.05)", borderRadius: "10px", border: "1px solid rgba(76, 175, 80, 0.2)" }}>
+                  <Typography variant="caption" sx={{ fontWeight: 900, color: "#4caf50", textTransform: "uppercase" }}>R&D Remarks</Typography>
+                  <Typography variant="body2" sx={{ fontStyle: "italic", mt: 0.5, color: "var(--text-secondary)" }}>"{data.rndComment}"</Typography>
+                </Box>
+              )}
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions sx={{ p: 2.5, borderTop: "1px solid var(--border-color)" }}>
+          <Button onClick={handleCloseDetails} sx={{ color: "var(--text-primary)", fontWeight: 700 }}>Close</Button>
+        </DialogActions>
+      </Dialog>
+    );
+  };
+
   return (
     <Box>
       <PageHeader title="Journal" subtitle="Manage and submit your journal publications" breadcrumbs={["Home", "Publications", "Journal"]} />
       {viewMode === "list" && renderList()}
       {viewMode === "select-year" && renderSelectYear()}
       {viewMode === "form" && renderForm()}
+      {renderDetailsDialog()}
     </Box>
   );
 }
