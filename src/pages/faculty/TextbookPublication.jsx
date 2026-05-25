@@ -30,10 +30,9 @@ export default function TextbookPublication() {
     title: "", publisher: "", isbn: "", yearOfPublication: "",
     totalAuthors: 1, userAuthorPosition: 1,
     edition: "", cost: "", month: "", year: "",
-    applyIncentive: "", expectedAmount: "10,000",
+    applyIncentive: "",
     otherAuthors: [],
     publicationType: "National",
-    expectedAmount: "10,000",
     customPublisher: "",
     currencySymbol: "₹"
   });
@@ -177,15 +176,7 @@ export default function TextbookPublication() {
     }
   };
 
-  const updateExpectedAmount = (type, publisherValue) => {
-    let amount = "5,000";
-    if (type === "International") {
-      amount = (publisherValue !== "Others" && !!publisherValue) ? "20,000" : "5,000";
-    } else {
-      amount = (publisherValue !== "Others" && !!publisherValue) ? "10,000" : "5,000";
-    }
-    setForm(p => ({ ...p, publicationType: type, publisher: publisherValue, expectedAmount: amount }));
-  };
+
 
   const fetchCoAuthorName = async (pos, empId) => {
     try {
@@ -306,7 +297,6 @@ export default function TextbookPublication() {
       fd.append("year", submissionForm.year);
       fd.append("publicationType", submissionForm.publicationType);
       fd.append("publisher", submissionForm.publisher === "Others" ? submissionForm.customPublisher : submissionForm.publisher);
-      fd.append("expectedAmount", submissionForm.expectedAmount);
       fd.append("applyIncentive", submissionForm.applyIncentive);
       fd.append("authors", JSON.stringify(allAuthors));
 
@@ -321,7 +311,7 @@ export default function TextbookPublication() {
       toast.success("Textbook submitted successfully!");
 
       // Reset form
-      setForm({ title: "", publisher: "", isbn: "", yearOfPublication: "", totalAuthors: 1, userAuthorPosition: 1, edition: "", cost: "", month: "", year: "", applyIncentive: "", expectedAmount: "10,000", otherAuthors: [], publicationType: "National", currencySymbol: "₹" });
+      setForm({ title: "", publisher: "", isbn: "", yearOfPublication: "", totalAuthors: 1, userAuthorPosition: 1, edition: "", cost: "", month: "", year: "", applyIncentive: "", otherAuthors: [], publicationType: "National", currencySymbol: "₹" });
       setFiles({ coverPage: null, authorAffiliation: null, index: null });
       setSelectedYear("");
       setViewMode("list");
@@ -527,7 +517,6 @@ export default function TextbookPublication() {
                     publicationType: val,
                     currencySymbol: val === "International" ? "$" : "₹"
                 }));
-                updateExpectedAmount(val, form.publisher);
             }}
           >
             <MenuItem value="National">National</MenuItem>
@@ -569,7 +558,6 @@ export default function TextbookPublication() {
             onChange={(e, newValue) => {
                 const val = newValue ? newValue.name : "";
                 setForm(p => ({ ...p, publisher: val }));
-                updateExpectedAmount(form.publicationType, val);
             }}
             freeSolo
             onInputChange={(e, newInputValue) => {
@@ -822,18 +810,7 @@ export default function TextbookPublication() {
             <MenuItem value="No">No</MenuItem>
           </Select>
         </Box>
-        {form.applyIncentive === "Yes" && (
-          <Box>
-            <Typography sx={{ fontSize: 13, fontWeight: 700, color: "var(--color-primary)" }}>Maximum Incentive/Claimable Amount:</Typography>
-            <TextField 
-                size="small" 
-                value={form.expectedAmount} 
-                disabled 
-                sx={{ "& .MuiInputBase-input.Mui-disabled": { WebkitTextFillColor: "#10b981", fontWeight: 800, background: "rgba(16, 185, 129, 0.1)", borderRadius: "8px" } }} 
-                helperText={form.publisher === "Others" || !form.publisher ? "Committee Approval Required" : `Reputed ${form.publicationType} Publisher`}
-            />
-          </Box>
-        )}
+
       </Grid2>
 
       <Box sx={{ display: "flex", gap: 2, justifyContent: "center", mt: 4 }}>
@@ -987,7 +964,7 @@ export default function TextbookPublication() {
             <Grid item xs={12} sm={6}>
               <LabelValueDetails 
                 label="Incentive details" 
-                value={data.applyIncentive === "Yes" ? `Yes (Expected: ₹${data.expectedAmount})` : "No"} 
+                value={data.applyIncentive === "Yes" ? "Yes" : "No"} 
               />
             </Grid>
             {data.status === "Approved" && data.approvedAmount && (

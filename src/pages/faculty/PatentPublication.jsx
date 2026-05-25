@@ -21,7 +21,7 @@ export default function PatentPublication() {
 
   const [form, setForm] = useState({
     title: "", applicantName: "", area: "", filingNo: "", dateOfFiling: "",
-    status: "", month: "", year: "", applyIncentive: "",
+    status: "", month: "", year: "", applyIncentive: "", applyingSeedGrant: "",
     totalInventors: 1, otherInventors: []
   });
   const [files, setFiles] = useState({ eFilingReceipt: null, form1: null });
@@ -127,6 +127,10 @@ export default function PatentPublication() {
       toast.error("Please fill all required fields");
       return;
     }
+    if (!form.applyingSeedGrant) {
+      toast.error("Please select whether applying as a Seed Grant Work.");
+      return;
+    }
 
     // Validate co-inventors dynamically
     const total = parseInt(form.totalInventors) || 1;
@@ -163,6 +167,7 @@ export default function PatentPublication() {
       fd.append("month", form.month);
       fd.append("year", form.year);
       fd.append("applyIncentive", form.applyIncentive);
+      fd.append("applyingSeedGrant", form.applyingSeedGrant);
       fd.append("totalInventors", String(total));
 
       Object.entries(files).forEach(([k, v]) => { if (v) fd.append(k, v); });
@@ -172,7 +177,7 @@ export default function PatentPublication() {
 
       await API.post("/api/research/patent", fd, { headers: { "Content-Type": "multipart/form-data" } });
       toast.success("Patent submitted successfully!");
-      setForm({ title: "", applicantName: "", area: "", filingNo: "", dateOfFiling: "", status: "", month: "", year: "", applyIncentive: "", totalInventors: 1, otherInventors: [] });
+      setForm({ title: "", applicantName: "", area: "", filingNo: "", dateOfFiling: "", status: "", month: "", year: "", applyIncentive: "", applyingSeedGrant: "", totalInventors: 1, otherInventors: [] });
       setFiles({ eFilingReceipt: null, form1: null });
       setSelectedYear("");
       setViewMode("list");
@@ -457,19 +462,21 @@ export default function PatentPublication() {
         <FileField label="e-Filing Receipt:" name="eFilingReceipt" onChange={setFile("eFilingReceipt")} />
         <FileField label="Form -1" name="form1" onChange={setFile("form1")} />
         <Box sx={{ mt: 1 }}>
-          <Typography sx={labelStyle}>Whether you want to apply for incentive?</Typography>
+          <Typography sx={labelStyle}>Applying as a Seed Grant Work? *</Typography>
+          <Select size="small" fullWidth displayEmpty value={form.applyingSeedGrant} onChange={set("applyingSeedGrant")}>
+            <MenuItem value="">Select</MenuItem>
+            <MenuItem value="Yes">Yes</MenuItem>
+            <MenuItem value="No">No</MenuItem>
+          </Select>
+        </Box>
+        <Box sx={{ mt: 1 }}>
+          <Typography sx={labelStyle}>Whether you want to apply for incentive? *</Typography>
           <Select size="small" fullWidth displayEmpty value={form.applyIncentive} onChange={set("applyIncentive")}>
             <MenuItem value="">Select</MenuItem>
             <MenuItem value="Yes">Yes</MenuItem>
             <MenuItem value="No">No</MenuItem>
           </Select>
         </Box>
-        {form.applyIncentive === "Yes" && (
-          <Box sx={{ mt: 1 }}>
-            <Typography sx={{ fontSize: 13, fontWeight: 700, color: "var(--color-primary)" }}>Expected Amount:</Typography>
-            <TextField size="small" value="1500" disabled sx={{ "& .MuiInputBase-input.Mui-disabled": { WebkitTextFillColor: "#10b981", fontWeight: 800, background: "rgba(16, 185, 129, 0.1)", borderRadius: "8px" } }} />
-          </Box>
-        )}
       </Grid2>
 
       <Box sx={{ display: "flex", gap: 2, justifyContent: "center", mt: 4 }}>

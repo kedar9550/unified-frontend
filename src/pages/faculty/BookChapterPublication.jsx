@@ -22,7 +22,7 @@ export default function BookChapterPublication() {
   const [form, setForm] = useState({
     textBookName: "", chapterTitle: "", isbn: "", yearOfPublication: "",
     chaptersContributed: "", publisher: "", month: "", year: "",
-    applyIncentive: "", publicationType: "National", customPublisher: "", expectedAmount: "7,500",
+    applyIncentive: "", publicationType: "National", customPublisher: "", applyingSeedGrant: "",
     totalAuthors: 1, userAuthorPosition: 1, otherAuthors: []
   });
   const [files, setFiles] = useState({ coverPage: null, authorAffiliation: null, index: null, softCopy: null });
@@ -148,6 +148,7 @@ export default function BookChapterPublication() {
     if (!form.month) newErrors.month = true;
     if (!form.year) newErrors.year = true;
     if (!form.applyIncentive) newErrors.applyIncentive = true;
+    if (!form.applyingSeedGrant) newErrors.applyingSeedGrant = true;
 
     if (!files.coverPage) newErrors.coverPage = true;
     if (!files.authorAffiliation) newErrors.authorAffiliation = true;
@@ -204,7 +205,7 @@ export default function BookChapterPublication() {
       fd.append("year", form.year);
       fd.append("applyIncentive", form.applyIncentive);
       fd.append("publicationType", form.publicationType);
-      fd.append("expectedAmount", form.expectedAmount);
+      fd.append("applyingSeedGrant", form.applyingSeedGrant);
       fd.append("totalAuthors", String(total));
       fd.append("userAuthorPosition", String(form.userAuthorPosition));
 
@@ -218,7 +219,7 @@ export default function BookChapterPublication() {
       setForm({
         textBookName: "", chapterTitle: "", isbn: "", yearOfPublication: "",
         chaptersContributed: "", publisher: "", month: "", year: "",
-        applyIncentive: "", publicationType: "National", customPublisher: "", expectedAmount: "7,500",
+        applyIncentive: "", publicationType: "National", customPublisher: "", applyingSeedGrant: "",
         totalAuthors: 1, userAuthorPosition: 1, otherAuthors: []
       });
       setFiles({ coverPage: null, authorAffiliation: null, index: null, softCopy: null });
@@ -552,25 +553,21 @@ export default function BookChapterPublication() {
         <FileField label="Attach Index" name="index" onChange={setFile("index")} error={!!errors.index} onError={(m) => toast.error(m)} />
         <FileField label="Attach Soft Copy of Chapter" name="softCopy" onChange={setFile("softCopy")} error={!!errors.softCopy} onError={(m) => toast.error(m)} />
         <Box>
-          <Typography sx={labelStyle}>Whether you want to apply for incentive?</Typography>
+          <Typography sx={labelStyle}>Applying as a Seed Grant Work? *</Typography>
+          <Select size="small" fullWidth displayEmpty value={form.applyingSeedGrant} onChange={set("applyingSeedGrant")} error={!!errors.applyingSeedGrant}>
+            <MenuItem value="">Select</MenuItem>
+            <MenuItem value="Yes">Yes</MenuItem>
+            <MenuItem value="No">No</MenuItem>
+          </Select>
+        </Box>
+        <Box>
+          <Typography sx={labelStyle}>Whether you want to apply for incentive? *</Typography>
           <Select size="small" fullWidth displayEmpty value={form.applyIncentive} onChange={set("applyIncentive")} error={!!errors.applyIncentive}>
             <MenuItem value="">Select</MenuItem>
             <MenuItem value="Yes">Yes</MenuItem>
             <MenuItem value="No">No</MenuItem>
           </Select>
         </Box>
-        {form.applyIncentive === "Yes" && (
-          <Box>
-            <Typography sx={{ fontSize: 13, fontWeight: 700, color: "var(--color-primary)" }}>Maximum Incentive/Claimable Amount:</Typography>
-            <TextField
-              size="small"
-              value={form.expectedAmount}
-              disabled
-              sx={{ "& .MuiInputBase-root": { background: "rgba(16, 185, 129, 0.05)" }, "& .MuiInputBase-input.Mui-disabled": { WebkitTextFillColor: "#10b981", fontWeight: 800, px: 2, borderRadius: "8px" } }}
-              helperText="For Book Chapter indexed in Scopus"
-            />
-          </Box>
-        )}
       </Grid2>
 
       <Box sx={{ display: "flex", gap: 2, justifyContent: "center", mt: 4 }}>

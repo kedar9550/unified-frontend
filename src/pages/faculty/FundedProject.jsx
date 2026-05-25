@@ -21,6 +21,7 @@ export default function FundedProject() {
     title: "", duration: "", fundingAgency: "", scheme: "",
     principalInvestigator: "", recurring: "", nonRecurring: "",
     sanctionedAmount: "", sanctionDate: "",
+    applyingSeedGrant: "",
     totalInvestigators: 1, otherInvestigatorsList: []
   });
   const [files, setFiles] = useState({ sanctionOrder: null });
@@ -122,7 +123,7 @@ export default function FundedProject() {
   };
 
   const handleSubmit = async () => {
-    if (!form.title || !form.fundingAgency || !form.sanctionedAmount || !form.sanctionDate) {
+    if (!form.title || !form.fundingAgency || !form.sanctionedAmount || !form.sanctionDate || !form.applyingSeedGrant) {
       toast.error("Please fill all required fields");
       return;
     }
@@ -161,6 +162,7 @@ export default function FundedProject() {
       fd.append("nonRecurring", form.nonRecurring || "");
       fd.append("sanctionedAmount", form.sanctionedAmount);
       fd.append("sanctionDate", form.sanctionDate);
+      fd.append("applyingSeedGrant", form.applyingSeedGrant);
       fd.append("otherInvestigators", otherNames);
       fd.append("totalInvestigators", String(total));
 
@@ -174,7 +176,7 @@ export default function FundedProject() {
       setForm({
         title: "", duration: "", fundingAgency: "", scheme: "",
         principalInvestigator: "", recurring: "", nonRecurring: "",
-        sanctionedAmount: "", sanctionDate: "",
+        sanctionedAmount: "", sanctionDate: "", applyingSeedGrant: "",
         totalInvestigators: 1, otherInvestigatorsList: []
       });
       setFiles({ sanctionOrder: null });
@@ -448,6 +450,14 @@ export default function FundedProject() {
         <Box>
           <Typography sx={labelStyle}>Date of Sanction :</Typography>
           <TextField size="small" fullWidth type="date" value={form.sanctionDate} onChange={set("sanctionDate")} InputLabelProps={{ shrink: true }} />
+        </Box>
+        <Box>
+          <Typography sx={labelStyle}>Applying as a Seed Grant Work? *</Typography>
+          <Select size="small" fullWidth displayEmpty value={form.applyingSeedGrant} onChange={set("applyingSeedGrant")}>
+            <MenuItem value="">Select</MenuItem>
+            <MenuItem value="Yes">Yes</MenuItem>
+            <MenuItem value="No">No</MenuItem>
+          </Select>
         </Box>
       </Grid2>
 

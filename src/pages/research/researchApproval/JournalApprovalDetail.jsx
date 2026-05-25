@@ -273,8 +273,8 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
                         <LabelValue label="AGEC Referencing Numbers" value={data.referencingNos || "-"} horizontal />
                         <LabelValue label="Number of References Belonging to AGEC" value={data.papersCited !== undefined ? data.papersCited : "-"} horizontal />
                         <LabelValue label="SDGS" value={data.sdgs} horizontal />
+                        <LabelValue label="Seed Grant Work" value={data.applyingSeedGrant || "No"} horizontal />
                         <LabelValue label="Incentive" horizontal chip={<Chip label={data.applyIncentive} size="small" sx={{ bgcolor: data.applyIncentive === 'Yes' ? "rgba(76, 175, 80, 0.1)" : "var(--bg-panel)", color: data.applyIncentive === 'Yes' ? "#4caf50" : "var(--text-secondary)", fontWeight: 800, border: "1px solid", borderColor: data.applyIncentive === 'Yes' ? "#4caf5044" : "var(--border-color)" }} />} />
-                        {data.applyIncentive === 'Yes' && <LabelValue label="Expected (₹)" value="1500" horizontal />}
                     </Box>
                 </Card>
             </Box>
@@ -301,6 +301,27 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
                 <Grid container spacing={3}>
                     {renderFilePreview("Published Paper (1st Page)", data.publishedPaper, 1)}
                     {renderFilePreview("Reference Pages", data.referencePages, 2)}
+                    {data.completeJournalName && (
+                        <Grid item xs={12} sm={6} md={3}>
+                            <Box sx={{ mb: 1 }}>
+                                <Typography variant="subtitle2" sx={{ fontWeight: 800, color: "var(--color-primary)", fontSize: "0.75rem", textTransform: "uppercase" }}>
+                                    3. Complete Journal
+                                </Typography>
+                            </Box>
+                            <Box sx={{
+                                height: 180, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", p: 2,
+                                border: "1px solid var(--border-color)", background: "var(--bg-panel)", borderRadius: "12px",
+                            }}>
+                                <DescriptionIcon sx={{ fontSize: 40, color: "var(--text-secondary)", mb: 1 }} />
+                                <Typography variant="body2" sx={{ color: "var(--text-secondary)", fontWeight: 700, textAlign: "center", maxWidth: "100%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                    {data.completeJournalName}
+                                </Typography>
+                                <Typography variant="caption" sx={{ color: "var(--color-primary)", fontWeight: 800, display: "block", mt: 0.5, fontSize: "0.65rem" }}>
+                                    (Client-side Scanned)
+                                </Typography>
+                            </Box>
+                        </Grid>
+                    )}
                 </Grid>
             </Card>
 

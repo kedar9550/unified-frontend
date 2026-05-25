@@ -61,12 +61,6 @@ const TextBookApprovalDetail = ({ id, onBack, role }) => {
                 toast.error('Please enter the approved incentive amount.');
                 return;
             }
-            const expected = parseFloat(data.expectedAmount?.replace(/,/g, '') || 0);
-            const approved = parseFloat(approvedAmount);
-            if (approved > expected) {
-                toast.error(`Approved amount (₹${approved}) cannot exceed expected amount (₹${expected}).`);
-                return;
-            }
         }
 
         setActionLoading(true);
@@ -434,13 +428,7 @@ const TextBookApprovalDetail = ({ id, onBack, role }) => {
                                 />
                             }
                         />
-                        {data.applyIncentive === 'Yes' && (
-                            <LabelValue 
-                                label="Expected Amount" 
-                                value={`₹${data.expectedAmount}`} 
-                                horizontal 
-                            />
-                        )}
+
                     </Box>
                 </Card>
             </Box>
@@ -541,7 +529,7 @@ const TextBookApprovalDetail = ({ id, onBack, role }) => {
                                         fullWidth
                                         size="small"
                                         type="number"
-                                        placeholder={`Expected: ₹${data.expectedAmount}`}
+                                        placeholder="Enter approved amount"
                                         value={approvedAmount}
                                         onChange={(e) => setApprovedAmount(e.target.value)}
                                         sx={{
@@ -549,7 +537,6 @@ const TextBookApprovalDetail = ({ id, onBack, role }) => {
                                             "& .MuiOutlinedInput-root": { borderRadius: "10px", bgcolor: "var(--bg-panel)" },
                                             "& .MuiOutlinedInput-input": { color: "var(--text-primary)", fontWeight: 600 }
                                         }}
-                                        helperText={`Applicant's expected amount is ₹${data.expectedAmount}`}
                                     />
                                 </Box>
                             )}

@@ -15,6 +15,12 @@ import {
   labelStyle, disabledField, MONTHS, YEARS
 } from "../../components/faculty/PublicationFormFields";
 import API from "../../api/axios";
+import mammoth from "mammoth";
+import * as pdfjsLib from "pdfjs-dist";
+import pdfWorker from "pdfjs-dist/build/pdf.worker.min.mjs?url";
+
+// Configure PDF.js worker
+pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorker;
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 const JOURNAL_TYPES = ["SCI", "SCIE", "ESCI", "WoS", "SCOPUS"];
@@ -186,6 +192,9 @@ export default function JournalPublication() {
   const [doiFetched, setDoiFetched] = useState(false);
   const [doiFetchedFields, setDoiFetchedFields] = useState({});
 
+  const [scanningSdg, setScanningSdg] = useState(false);
+  const [scannedSdgResults, setScannedSdgResults] = useState(null);
+
   const emptyForm = {
     doi: "",
     paperTitle: "",
@@ -203,6 +212,9 @@ export default function JournalPublication() {
     year: "",
     applyIncentive: "",
     incentiveApplied: "",
+    applyingSeedGrant: "",
+    completeJournalName: "",
+    sdgs: "",
     // Author details
     totalAuthors: 1,
     userAuthorPosition: 1,
@@ -210,7 +222,7 @@ export default function JournalPublication() {
   };
 
   const [form, setForm] = useState(emptyForm);
-  const [files, setFiles] = useState({ publishedPaper: null, referencePages: null });
+  const [files, setFiles] = useState({ publishedPaper: null, referencePages: null, completeJournal: null });
   const [loading, setLoading] = useState(false);
 
   // ── Dynamic co-author list (mirrors TextbookPublication logic) ──────────────
@@ -261,11 +273,29 @@ export default function JournalPublication() {
 
   // ── Field setters ────────────────────────────────────────────────────────────
   const set = (k) => (e) => {
-    setForm(p => ({ ...p, [k]: e.target.value }));
-    if (k === "doi") {
-      setDoiFetched(false);
-      setDoiFetchedFields({});
-    }
+    const val = e.target.value;
+    setForm(p => {
+      const newForm = { ...p, [k]: val };
+      if (k === "doi") {
+        newForm.paperTitle = "";
+        newForm.journalName = "";
+        newForm.journalQuartile = "";
+        newForm.journalType = "";
+        newForm.vol = "";
+        newForm.issue = "";
+        newForm.pageNos = "";
+        newForm.hIndex = "";
+        newForm.impactFactor = "";
+        newForm.month = "";
+        newForm.year = "";
+        newForm.sdgs = "";
+        newForm.completeJournalName = "";
+        setDoiFetched(false);
+        setDoiFetchedFields({});
+        setScannedSdgResults(null);
+      }
+      return newForm;
+    });
   };
 
   const validateFile = (file) => {
@@ -280,6 +310,101 @@ export default function JournalPublication() {
     const file = e.target.files[0];
     if (file && validateFile(file)) setFiles(p => ({ ...p, [k]: file }));
     else e.target.value = null;
+  };
+
+  const handleCompleteJournalChange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const allowedExtensions = ['.pdf', '.docx'];
+    const fileName = file.name.toLowerCase();
+    const isValidExtension = allowedExtensions.some(ext => fileName.endsWith(ext));
+    if (!isValidExtension) {
+      toast.error("Please upload only PDF or DOCX files for the Complete Journal.");
+      e.target.value = null;
+      return;
+    }
+
+    setFiles(p => ({ ...p, completeJournal: file }));
+    setForm(p => ({ ...p, completeJournalName: file.name }));
+
+    // Dynamic scan client-side for SDGs
+    setScanningSdg(true);
+    setScannedSdgResults(null);
+    try {
+      let sdgData = {};
+      const res = await API.get("/api/sdgs");
+      if (res.data && res.data.success) {
+        res.data.data.forEach(item => {
+          sdgData[item.sdgNumber] = {
+            title: item.sdgTitle,
+            keywords: item.keywords
+          };
+        });
+      }
+
+      if (Object.keys(sdgData).length === 0) {
+        toast.info("SDG keywords are loading. Dynamic scanning skipped.");
+        setScanningSdg(false);
+        return;
+      }
+
+      let text = "";
+      if (fileName.endsWith('.pdf')) {
+        const arrayBuffer = await file.arrayBuffer();
+        const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+        let fullText = "";
+        for (let i = 1; i <= pdf.numPages; i++) {
+          const page = await pdf.getPage(i);
+          const content = await page.getTextContent();
+          fullText += content.items.map(item => item.str).join(" ") + " ";
+        }
+        text = fullText;
+      } else {
+        const arrayBuffer = await file.arrayBuffer();
+        const result = await mammoth.extractRawText({ arrayBuffer });
+        text = result.value;
+      }
+
+      const normalizeText = (t) => {
+        return t.toLowerCase()
+          .replace(/[\u2018\u2019]/g, "'")
+          .replace(/[\u201C\u201D]/g, '"')
+          .replace(/[^a-z0-9'\s]/g, ' ')
+          .replace(/\s+/g, ' ')
+          .trim();
+      };
+
+      text = normalizeText(text);
+
+      const matchedList = [];
+      Object.entries(sdgData).forEach(([number, data]) => {
+        let matchCount = 0;
+        data.keywords.forEach(keyword => {
+          const kw = normalizeText(keyword);
+          if (kw.length > 2) {
+            const escapedKw = kw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            const regex = new RegExp(`\\b${escapedKw}\\b`, "gi");
+            if (regex.test(text)) {
+              matchCount++;
+            }
+          }
+        });
+        if (matchCount > 0) {
+          matchedList.push(number);
+        }
+      });
+
+      const matchedStr = matchedList.join(", ");
+      setForm(p => ({ ...p, sdgs: matchedStr }));
+      setScannedSdgResults(matchedList);
+      toast.success(`SDG keyword scanning completed! Matched: ${matchedList.length > 0 ? matchedStr : "None"}`);
+    } catch (err) {
+      console.error("SDG scan error:", err);
+      toast.error("Failed to dynamically scan SDG keywords, but file was attached.");
+    } finally {
+      setScanningSdg(false);
+    }
   };
 
   // ── DOI Fetch ────────────────────────────────────────────────────────────────
@@ -372,6 +497,10 @@ export default function JournalPublication() {
       toast.error("Please fill all required fields.");
       return;
     }
+    if (!form.applyingSeedGrant) {
+      toast.error("Please select whether applying as a Seed Grant Work.");
+      return;
+    }
     if (!form.applyIncentive) {
       toast.error("Please select whether you want to apply for an incentive.");
       return;
@@ -400,7 +529,7 @@ export default function JournalPublication() {
       }
     }
 
-    if (!files.publishedPaper || !files.referencePages) {
+    if (!files.publishedPaper || !files.referencePages || !files.completeJournal) {
       toast.error("Please attach all required documents.");
       return;
     }
@@ -436,6 +565,9 @@ export default function JournalPublication() {
       fd.append("publishedYear", form.year);
       fd.append("journalQuartile", form.journalQuartile ?? "");
       fd.append("coAuthors", JSON.stringify(coAuthorsList));
+      fd.append("applyingSeedGrant", form.applyingSeedGrant);
+      fd.append("completeJournalName", form.completeJournalName);
+      fd.append("sdgs", form.sdgs);
       fd.append("academicYear", selectedYear);
       fd.append("college", user?.college || "");
       fd.append("panNumber", user?.panNumber || "");
@@ -447,7 +579,7 @@ export default function JournalPublication() {
       toast.success("Journal submitted successfully!");
 
       setForm(emptyForm);
-      setFiles({ publishedPaper: null, referencePages: null });
+      setFiles({ publishedPaper: null, referencePages: null, completeJournal: null });
       setDoiFetched(false);
       setDoiFetchedFields({});
       setSelectedYear("");
@@ -787,10 +919,37 @@ export default function JournalPublication() {
       <Grid2 sx={{ mt: 2 }}>
         <FileField label="Published Paper – 1st Page *" name="publishedPaper" onChange={setFile("publishedPaper")} />
         <FileField label="Reference Pages (with tick mark) *" name="referencePages" onChange={setFile("referencePages")} />
+        <Box>
+          <FileField label="Complete Journal *" name="completeJournal" onChange={handleCompleteJournalChange} accept=".pdf,.docx" />
+          {scanningSdg && (
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mt: 1, p: 1.5, borderRadius: '8px', bgcolor: 'rgba(25, 118, 210, 0.05)', border: '1px solid rgba(25, 118, 210, 0.2)' }}>
+              <CircularProgress size={16} />
+              <Typography variant="caption" sx={{ fontWeight: 600, color: 'var(--color-primary)' }}>Scanning complete journal for SDG keywords...</Typography>
+            </Box>
+          )}
+          {!scanningSdg && form.sdgs && (
+            <Box sx={{ mt: 1.5, p: 2, borderRadius: '12px', border: '1px solid var(--border-color)', background: 'var(--bg-accent-1)' }}>
+              <Typography variant="caption" sx={{ fontWeight: 800, color: 'var(--color-primary)', textTransform: 'uppercase', display: 'block', mb: 1 }}>Matched SDGs from Scanning:</Typography>
+              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                {form.sdgs.split(', ').map((sdg, idx) => (
+                  <Chip key={idx} label={sdg} size="small" sx={{ bgcolor: 'rgba(76, 175, 80, 0.1)', color: '#4caf50', fontWeight: 800 }} />
+                ))}
+              </Box>
+            </Box>
+          )}
+        </Box>
       </Grid2>
 
       {/* ── Incentive ── */}
       <Grid2 sx={{ mt: 2 }}>
+        <Box>
+          <Typography sx={labelStyle}>Applying as a Seed Grant Work? *</Typography>
+          <Select size="small" fullWidth displayEmpty value={form.applyingSeedGrant} onChange={set("applyingSeedGrant")}>
+            <MenuItem value="">Select</MenuItem>
+            <MenuItem value="Yes">Yes</MenuItem>
+            <MenuItem value="No">No</MenuItem>
+          </Select>
+        </Box>
         <Box>
           <Typography sx={labelStyle}>Whether you want to apply for incentive? *</Typography>
           <Select size="small" fullWidth displayEmpty value={form.applyIncentive} onChange={set("applyIncentive")}>
@@ -905,11 +1064,9 @@ export default function JournalPublication() {
           <Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)", mb: 1 }}>{data.paperTitle}</Typography>
           <Typography variant="body2" sx={{ color: "var(--text-secondary)", mb: 3, fontWeight: 600 }}>Journal: {data.journalName}</Typography>
           
-          <Grid container spacing={2}>
-            {/* Status and dates */}
-            <Grid item xs={12} sm={3}><LabelValue label="Academic Year" value={data.academicYear?.year || "N/A"} /></Grid>
-            <Grid item xs={12} sm={3}><LabelValue label="DOI" value={data.doi} /></Grid>
-            <Grid item xs={12} sm={3}><LabelValue label="Role" value={data.visibilityRole || "Applicant"} /></Grid>
+          <Grid container spacing={2.5}>
+            <Grid item xs={12} sm={3}><LabelValue label="Academic Year" value={data.academicYear?.year || "-"} /></Grid>
+            <Grid item xs={12} sm={6}><LabelValue label="DOI" value={data.doi || "-"} /></Grid>
             <Grid item xs={12} sm={3}>
               <LabelValue 
                 label="Status" 
@@ -944,6 +1101,10 @@ export default function JournalPublication() {
             <Grid item xs={12} sm={3}><LabelValue label="Impact Factor" value={data.impactFactor} /></Grid>
             <Grid item xs={12} sm={3}><LabelValue label="AGEC Referencing Numbers" value={data.referencingNos} /></Grid>
             <Grid item xs={12} sm={3}><LabelValue label="AGEC References Count" value={data.papersCited !== undefined ? data.papersCited : "-"} /></Grid>
+            
+            {/* Seed Grant Work & SDGS */}
+            <Grid item xs={12} sm={6}><LabelValue label="Seed Grant Work" value={data.applyingSeedGrant || "No"} /></Grid>
+            <Grid item xs={12} sm={6}><LabelValue label="SDGS Matched" value={data.sdgs || "None"} /></Grid>
 
             {/* Incentive information */}
             <Grid item xs={12} sm={6}>
@@ -1004,6 +1165,23 @@ export default function JournalPublication() {
             <Stack direction="row" spacing={3} flexWrap="wrap" useFlexGap>
               {renderDetailFile("Published Paper (1st Page)", data.publishedPaper)}
               {renderDetailFile("Reference Pages", data.referencePages)}
+              {data.completeJournalName && (
+                <Box sx={{ flex: "1 1 200px" }}>
+                  <Typography variant="caption" sx={{ fontWeight: 800, color: "var(--color-primary)", fontSize: "0.7rem", textTransform: "uppercase", display: "block", mb: 1 }}>Complete Journal</Typography>
+                  <Box sx={{
+                    height: 120, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", p: 2,
+                    border: "1px solid var(--border-color)", background: "var(--bg-panel)", borderRadius: "8px",
+                  }}>
+                    <Description sx={{ fontSize: 24, color: "var(--text-secondary)", mb: 0.5 }} />
+                    <Typography variant="caption" sx={{ color: "var(--text-secondary)", fontWeight: 700, display: "block", textAlign: "center", maxWidth: "100%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      {data.completeJournalName}
+                    </Typography>
+                    <Typography variant="caption" sx={{ color: "var(--color-primary)", fontWeight: 800, display: "block", mt: 0.5, fontSize: "0.6rem" }}>
+                      (Client-side Scanned)
+                    </Typography>
+                  </Box>
+                </Box>
+              )}
             </Stack>
           </Box>
 
