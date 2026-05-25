@@ -124,16 +124,16 @@ export default function BookChapterPublication() {
     <Box>
       <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
         <Typography variant="h6" sx={{ color: "var(--text-primary)", fontWeight: 800 }}>My Book Chapter Publications</Typography>
-        <Button 
-          variant="contained" 
-          onClick={() => setViewMode("select-year")} 
-          sx={{ 
-            background: "var(--gradient-primary)", 
-            borderRadius: "12px", 
-            px: 3, 
-            fontWeight: 700, 
-            textTransform: "none", 
-            "&:hover": { 
+        <Button
+          variant="contained"
+          onClick={() => setViewMode("select-year")}
+          sx={{
+            background: "var(--gradient-primary)",
+            borderRadius: "12px",
+            px: 3,
+            fontWeight: 700,
+            textTransform: "none",
+            "&:hover": {
               opacity: 0.9,
               transform: "translateY(-1px)",
               boxShadow: "0 4px 12px rgba(0,0,0,0.1)"
@@ -194,12 +194,12 @@ export default function BookChapterPublication() {
           ))}
         </Select>
         <Box sx={{ display: "flex", gap: 2, mt: 4, justifyContent: "flex-end" }}>
-          <Button 
-            variant="outlined" 
-            onClick={() => setViewMode("list")} 
-            sx={{ 
-              borderRadius: "12px", 
-              textTransform: "none", 
+          <Button
+            variant="outlined"
+            onClick={() => setViewMode("list")}
+            sx={{
+              borderRadius: "12px",
+              textTransform: "none",
               fontWeight: 600,
               color: "var(--text-primary)",
               borderColor: "var(--border-color)",
@@ -211,17 +211,17 @@ export default function BookChapterPublication() {
           >
             Cancel
           </Button>
-          <Button 
-            variant="contained" 
-            disabled={!selectedYear} 
-            onClick={() => setViewMode("form")} 
-            sx={{ 
-              background: "var(--gradient-primary)", 
-              borderRadius: "12px", 
-              px: 4, 
-              fontWeight: 700, 
-              textTransform: "none", 
-              "&:hover": { 
+          <Button
+            variant="contained"
+            disabled={!selectedYear}
+            onClick={() => setViewMode("form")}
+            sx={{
+              background: "var(--gradient-primary)",
+              borderRadius: "12px",
+              px: 4,
+              fontWeight: 700,
+              textTransform: "none",
+              "&:hover": {
                 opacity: 0.9,
                 transform: "translateY(-1px)",
                 boxShadow: "0 4px 12px rgba(0,0,0,0.1)"
@@ -254,6 +254,10 @@ export default function BookChapterPublication() {
 
       <Grid2 sx={{ mt: 1 }}>
         <Box>
+          <Typography sx={labelStyle}>ISBN NO :</Typography>
+          <TextField size="small" fullWidth value={form.isbn} onChange={set("isbn")} error={!!errors.isbn} />
+        </Box>
+        <Box>
           <Typography sx={labelStyle}>Title of the Book:</Typography>
           <TextField size="small" fullWidth value={form.textBookName} onChange={set("textBookName")} error={!!errors.textBookName} />
         </Box>
@@ -262,10 +266,6 @@ export default function BookChapterPublication() {
           <TextField size="small" fullWidth value={form.chapterTitle} onChange={set("chapterTitle")} inputProps={{ maxLength: 100 }}
             error={!!errors.chapterTitle}
             helperText={errors.chapterTitle ? "Title is required" : `${100 - form.chapterTitle.length} Character(s) Remaining`} />
-        </Box>
-        <Box>
-          <Typography sx={labelStyle}>ISBN NO :</Typography>
-          <TextField size="small" fullWidth value={form.isbn} onChange={set("isbn")} error={!!errors.isbn} />
         </Box>
         <Box>
           <Typography sx={labelStyle}>Year of Publication:</Typography>
@@ -387,33 +387,33 @@ export default function BookChapterPublication() {
         {form.applyIncentive === "Yes" && (
           <Box>
             <Typography sx={{ fontSize: 13, fontWeight: 700, color: "var(--color-primary)" }}>Maximum Incentive/Claimable Amount:</Typography>
-            <TextField 
-                size="small" 
-                value={form.expectedAmount} 
-                disabled 
-                sx={{ "& .MuiInputBase-root": { background: "rgba(16, 185, 129, 0.05)" }, "& .MuiInputBase-input.Mui-disabled": { WebkitTextFillColor: "#10b981", fontWeight: 800, px: 2, borderRadius: "8px" } }} 
-                helperText="For Book Chapter indexed in Scopus"
+            <TextField
+              size="small"
+              value={form.expectedAmount}
+              disabled
+              sx={{ "& .MuiInputBase-root": { background: "rgba(16, 185, 129, 0.05)" }, "& .MuiInputBase-input.Mui-disabled": { WebkitTextFillColor: "#10b981", fontWeight: 800, px: 2, borderRadius: "8px" } }}
+              helperText="For Book Chapter indexed in Scopus"
             />
           </Box>
         )}
       </Grid2>
 
       <Box sx={{ display: "flex", gap: 2, justifyContent: "center", mt: 4 }}>
-        <Button 
-          variant="outlined" 
-          onClick={() => setViewMode("list")} 
-          sx={{ 
-            px: 4, 
-            height: "44px", 
-            borderRadius: "12px", 
-            textTransform: "none", 
+        <Button
+          variant="outlined"
+          onClick={() => setViewMode("list")}
+          sx={{
+            px: 4,
+            height: "44px",
+            borderRadius: "12px",
+            textTransform: "none",
             fontWeight: 600,
             color: "var(--text-primary)",
             borderColor: "var(--border-color)",
-            "&:hover": { 
-              borderColor: "#ef4444", 
+            "&:hover": {
+              borderColor: "#ef4444",
               color: "#ef4444",
-              background: "rgba(239, 68, 68, 0.05)" 
+              background: "rgba(239, 68, 68, 0.05)"
             },
             transition: "all 0.3s ease"
           }}
