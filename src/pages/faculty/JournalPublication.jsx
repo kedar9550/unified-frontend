@@ -27,6 +27,33 @@ const JOURNAL_TYPES = ["SCI", "SCIE", "ESCI", "WoS", "SCOPUS"];
 const QUARTILE_OPTIONS = ["Q1", "Q2", "Q3", "Q4", "N/A"];
 const INCENTIVE_OPTIONS = ["National", "International"];
 
+export const getSdgName = (sdgCode) => {
+  const mapping = {
+    "SDG-1": "SDG-1: No Poverty",
+    "SDG-2": "SDG-2: Zero Hunger",
+    "SDG-3": "SDG-3: Good Health and Well-being",
+    "SDG-4": "SDG-4: Quality Education",
+    "SDG-5": "SDG-5: Gender Equality",
+    "SDG-6": "SDG-6: Clean Water and Sanitation",
+    "SDG-7": "SDG-7: Affordable and Clean Energy",
+    "SDG-8": "SDG-8: Decent Work and Economic Growth",
+    "SDG-9": "SDG-9: Industry, Innovation and Infrastructure",
+    "SDG-10": "SDG-10: Reduced Inequality",
+    "SDG-11": "SDG-11: Sustainable Cities and Communities",
+    "SDG-12": "SDG-12: Responsible Consumption and Production",
+    "SDG-13": "SDG-13: Climate Action",
+    "SDG-14": "SDG-14: Life Below Water",
+    "SDG-15": "SDG-15: Life on Land",
+    "SDG-16": "SDG-16: Peace, Justice and Strong Institutions",
+    "SDG-17": "SDG-17: Partnerships for the Goals"
+  };
+  const cleanCode = (sdgCode || "").trim();
+  if (mapping[cleanCode]) return mapping[cleanCode];
+  if (cleanCode.startsWith("SDG-")) return cleanCode;
+  const key = `SDG-${cleanCode}`;
+  return mapping[key] || cleanCode;
+};
+
 // ─── Scopus / Elsevier API keys ───────────────────────────────────────────────
 const ELSEVIER_API_KEY = "0436d4fe788649172354545ceca9e650";
 
@@ -116,14 +143,9 @@ async function fetchJournalDataByDOI(doi) {
         const serialJson = await serialRes.json();
         const entry = serialJson?.["serial-metadata-response"]?.entry?.[0] || {};
         
-        // H-Index (with SNIP fallback)
-        const snip = entry["SNIPList"]?.SNIP?.[0]?.["$"] || "";
-        hIndex = entry["H-index"] || snip || "";
-
-        // CiteScore (Impact Factor proxy, fallback to SJR)
-        const citeScore = entry?.citeScoreYearInfoList?.citeScoreCurrentMetric || "";
-        const sjr = entry["SJRList"]?.SJR?.[0]?.["$"] || "";
-        impactFactor = citeScore || sjr || "";
+        // H-Index and Impact Factor are NOT fetched from API to prevent wrong/incorrect values
+        hIndex = "";
+        impactFactor = "";
 
         // Quartile from CiteScore Percentiles
         const csYearInfo = entry?.citeScoreYearInfoList?.citeScoreYearInfo;
@@ -206,12 +228,12 @@ export default function JournalPublication() {
     pageNos: "",
     hIndex: "",
     impactFactor: "",
-    agecRefCount: "",
-    referencingNos: "",
+    numberOfReferencesBelongingToAGEC: 0,
+    agecReferencingNumbers: "",
     month: "",
     year: "",
     applyIncentive: "",
-    incentiveApplied: "",
+    publicationScope: "",
     applyingSeedGrant: "",
     completeJournalName: "",
     sdgs: "",
@@ -325,6 +347,12 @@ export default function JournalPublication() {
       return;
     }
 
+    if (file.size > 500 * 1024) {
+      toast.error("Complete Journal file size exceeds 500KB limit.");
+      e.target.value = null;
+      return;
+    }
+
     setFiles(p => ({ ...p, completeJournal: file }));
     setForm(p => ({ ...p, completeJournalName: file.name }));
 
@@ -405,6 +433,20 @@ export default function JournalPublication() {
     } finally {
       setScanningSdg(false);
     }
+  };
+
+  const handleReferencingNosChange = (e) => {
+    const value = e.target.value;
+    // Allow only numbers and commas
+    const filteredValue = value.replace(/[^0-9,]/g, "");
+    // Split values using comma, trim spaces, ignore empty values, and count total valid entries
+    const count = filteredValue.split(',').map(s => s.trim()).filter(Boolean).length;
+    
+    setForm(p => ({
+      ...p,
+      agecReferencingNumbers: filteredValue,
+      numberOfReferencesBelongingToAGEC: count
+    }));
   };
 
   // ── DOI Fetch ────────────────────────────────────────────────────────────────
@@ -505,8 +547,8 @@ export default function JournalPublication() {
       toast.error("Please select whether you want to apply for an incentive.");
       return;
     }
-    if (form.applyIncentive === "Yes" && !form.incentiveApplied) {
-      toast.error("Please select National or International for Research Incentive.");
+    if (form.applyIncentive === "Yes" && !form.publicationScope) {
+      toast.error("Please select National or International for Publication Scope.");
       return;
     }
 
@@ -546,20 +588,18 @@ export default function JournalPublication() {
 
       const fields = [
         "doi","paperTitle","journalName","journalType",
-        "vol","issue","referencingNos","applyIncentive","incentiveApplied",
+        "vol","issue","agecReferencingNumbers","applyIncentive","publicationScope",
         "totalAuthors","userAuthorPosition","hIndex","impactFactor",
       ];
       fields.forEach(k => {
-        if (k === "incentiveApplied" && form.applyIncentive === "No") {
+        if (k === "publicationScope" && form.applyIncentive === "No") {
           fd.append(k, "N/A");
         } else {
           fd.append(k, form[k] ?? "");
         }
       });
       
-      const refNos = form.referencingNos || "";
-      const calculatedPapersCited = refNos.split(',').map(s => s.trim()).filter(Boolean).length;
-      fd.append("papersCited", calculatedPapersCited);
+      fd.append("numberOfReferencesBelongingToAGEC", form.numberOfReferencesBelongingToAGEC || 0);
 
       fd.append("publishedMonth", form.month);
       fd.append("publishedYear", form.year);
@@ -574,6 +614,7 @@ export default function JournalPublication() {
 
       if (files.publishedPaper) fd.append("publishedPaper", files.publishedPaper);
       if (files.referencePages) fd.append("referencePages", files.referencePages);
+      if (files.completeJournal) fd.append("completeJournal", files.completeJournal);
 
       await API.post("/api/research/journal", fd, { headers: { "Content-Type": "multipart/form-data" } });
       toast.success("Journal submitted successfully!");
@@ -786,9 +827,15 @@ export default function JournalPublication() {
         </Box>
 
         {/* Referencing Nos */}
-        <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
-          <Typography sx={labelStyle}>Mention the Referencing No's that Belong to AGEC :</Typography>
-          <TextField size="small" fullWidth placeholder="e.g. 3, 7, 12" value={form.referencingNos} onChange={set("referencingNos")} />
+        <Box>
+          <Typography sx={labelStyle}>AGEC Referencing Numbers :</Typography>
+          <TextField size="small" fullWidth placeholder="e.g. 1,4,7,10" value={form.agecReferencingNumbers} onChange={handleReferencingNosChange} />
+        </Box>
+
+        {/* Number of References Belonging to AGEC */}
+        <Box>
+          <Typography sx={labelStyle}>Number of References Belonging to AGEC :</Typography>
+          <TextField size="small" fullWidth disabled value={form.numberOfReferencesBelongingToAGEC} />
         </Box>
       </Grid2>
 
@@ -932,7 +979,7 @@ export default function JournalPublication() {
               <Typography variant="caption" sx={{ fontWeight: 800, color: 'var(--color-primary)', textTransform: 'uppercase', display: 'block', mb: 1 }}>Matched SDGs from Scanning:</Typography>
               <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
                 {form.sdgs.split(', ').map((sdg, idx) => (
-                  <Chip key={idx} label={sdg} size="small" sx={{ bgcolor: 'rgba(76, 175, 80, 0.1)', color: '#4caf50', fontWeight: 800 }} />
+                  <Chip key={idx} label={getSdgName(sdg)} size="small" sx={{ bgcolor: 'rgba(76, 175, 80, 0.1)', color: '#4caf50', fontWeight: 800 }} />
                 ))}
               </Box>
             </Box>
@@ -960,8 +1007,8 @@ export default function JournalPublication() {
         </Box>
         {form.applyIncentive === "Yes" && (
           <Box>
-            <Typography sx={labelStyle}>Research Incentive applied for : *</Typography>
-            <Select size="small" fullWidth displayEmpty value={form.incentiveApplied} onChange={set("incentiveApplied")}>
+            <Typography sx={labelStyle}>Publication Scope : *</Typography>
+            <Select size="small" fullWidth displayEmpty value={form.publicationScope} onChange={set("publicationScope")}>
               <MenuItem value="">Select</MenuItem>
               {INCENTIVE_OPTIONS.map(o => <MenuItem key={o} value={o}>{o}</MenuItem>)}
             </Select>
@@ -1099,18 +1146,18 @@ export default function JournalPublication() {
             {/* H-Index, Impact Factor, Citations, SDGS */}
             <Grid item xs={12} sm={3}><LabelValue label="H-Index" value={data.hIndex} /></Grid>
             <Grid item xs={12} sm={3}><LabelValue label="Impact Factor" value={data.impactFactor} /></Grid>
-            <Grid item xs={12} sm={3}><LabelValue label="AGEC Referencing Numbers" value={data.referencingNos} /></Grid>
-            <Grid item xs={12} sm={3}><LabelValue label="AGEC References Count" value={data.papersCited !== undefined ? data.papersCited : "-"} /></Grid>
+            <Grid item xs={12} sm={3}><LabelValue label="AGEC Referencing Numbers" value={data.agecReferencingNumbers || data.referencingNos} /></Grid>
+            <Grid item xs={12} sm={3}><LabelValue label="Number of References Belonging to AGEC" value={data.numberOfReferencesBelongingToAGEC !== undefined ? data.numberOfReferencesBelongingToAGEC : (data.papersCited !== undefined ? data.papersCited : "-")} /></Grid>
             
             {/* Seed Grant Work & SDGS */}
             <Grid item xs={12} sm={6}><LabelValue label="Seed Grant Work" value={data.applyingSeedGrant || "No"} /></Grid>
-            <Grid item xs={12} sm={6}><LabelValue label="SDGS Matched" value={data.sdgs || "None"} /></Grid>
+            <Grid item xs={12} sm={6}><LabelValue label="SDGS Matched" value={data.sdgs ? data.sdgs.split(', ').map(getSdgName).join(', ') : "None"} /></Grid>
 
-            {/* Incentive information */}
+            {/* Publication Scope information */}
             <Grid item xs={12} sm={6}>
               <LabelValue 
-                label="Incentive details" 
-                value={data.applyIncentive === "Yes" ? `Yes (${data.incentiveApplied || "National"})` : "No"} 
+                label="Publication Scope" 
+                value={data.publicationScope || data.incentiveApplied || "-"} 
               />
             </Grid>
             {data.status === "Approved" && data.approvedAmount && (
@@ -1165,22 +1212,26 @@ export default function JournalPublication() {
             <Stack direction="row" spacing={3} flexWrap="wrap" useFlexGap>
               {renderDetailFile("Published Paper (1st Page)", data.publishedPaper)}
               {renderDetailFile("Reference Pages", data.referencePages)}
-              {data.completeJournalName && (
-                <Box sx={{ flex: "1 1 200px" }}>
-                  <Typography variant="caption" sx={{ fontWeight: 800, color: "var(--color-primary)", fontSize: "0.7rem", textTransform: "uppercase", display: "block", mb: 1 }}>Complete Journal</Typography>
-                  <Box sx={{
-                    height: 120, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", p: 2,
-                    border: "1px solid var(--border-color)", background: "var(--bg-panel)", borderRadius: "8px",
-                  }}>
-                    <Description sx={{ fontSize: 24, color: "var(--text-secondary)", mb: 0.5 }} />
-                    <Typography variant="caption" sx={{ color: "var(--text-secondary)", fontWeight: 700, display: "block", textAlign: "center", maxWidth: "100%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                      {data.completeJournalName}
-                    </Typography>
-                    <Typography variant="caption" sx={{ color: "var(--color-primary)", fontWeight: 800, display: "block", mt: 0.5, fontSize: "0.6rem" }}>
-                      (Client-side Scanned)
-                    </Typography>
+              {data.completeJournal ? (
+                renderDetailFile("Complete Journal", data.completeJournal)
+              ) : (
+                data.completeJournalName && (
+                  <Box sx={{ flex: "1 1 200px" }}>
+                    <Typography variant="caption" sx={{ fontWeight: 800, color: "var(--color-primary)", fontSize: "0.7rem", textTransform: "uppercase", display: "block", mb: 1 }}>Complete Journal</Typography>
+                    <Box sx={{
+                      height: 120, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", p: 2,
+                      border: "1px solid var(--border-color)", background: "var(--bg-panel)", borderRadius: "8px",
+                    }}>
+                      <Description sx={{ fontSize: 24, color: "var(--text-secondary)", mb: 0.5 }} />
+                      <Typography variant="caption" sx={{ color: "var(--text-secondary)", fontWeight: 700, display: "block", textAlign: "center", maxWidth: "100%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        {data.completeJournalName}
+                      </Typography>
+                      <Typography variant="caption" sx={{ color: "var(--color-primary)", fontWeight: 800, display: "block", mt: 0.5, fontSize: "0.6rem" }}>
+                        (Client-side Scanned)
+                      </Typography>
+                    </Box>
                   </Box>
-                </Box>
+                )
               )}
             </Stack>
           </Box>

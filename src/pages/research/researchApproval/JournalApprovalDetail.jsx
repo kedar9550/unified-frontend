@@ -20,6 +20,33 @@ import ArticleIcon from '@mui/icons-material/Article';
 import { toast } from "sonner";
 import API from "../../../api/axios";
 
+const getSdgName = (sdgCode) => {
+    const mapping = {
+        "SDG-1": "SDG-1: No Poverty",
+        "SDG-2": "SDG-2: Zero Hunger",
+        "SDG-3": "SDG-3: Good Health and Well-being",
+        "SDG-4": "SDG-4: Quality Education",
+        "SDG-5": "SDG-5: Gender Equality",
+        "SDG-6": "SDG-6: Clean Water and Sanitation",
+        "SDG-7": "SDG-7: Affordable and Clean Energy",
+        "SDG-8": "SDG-8: Decent Work and Economic Growth",
+        "SDG-9": "SDG-9: Industry, Innovation and Infrastructure",
+        "SDG-10": "SDG-10: Reduced Inequality",
+        "SDG-11": "SDG-11: Sustainable Cities and Communities",
+        "SDG-12": "SDG-12: Responsible Consumption and Production",
+        "SDG-13": "SDG-13: Climate Action",
+        "SDG-14": "SDG-14: Life Below Water",
+        "SDG-15": "SDG-15: Life on Land",
+        "SDG-16": "SDG-16: Peace, Justice and Strong Institutions",
+        "SDG-17": "SDG-17: Partnerships for the Goals"
+    };
+    const cleanCode = (sdgCode || "").trim();
+    if (mapping[cleanCode]) return mapping[cleanCode];
+    if (cleanCode.startsWith("SDG-")) return cleanCode;
+    const key = `SDG-${cleanCode}`;
+    return mapping[key] || cleanCode;
+};
+
 const JournalApprovalDetail = ({ id, onBack, role }) => {
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -64,17 +91,19 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
         }
 
         if (action === 'Approve') {
-            if (!hIndex) {
-                toast.error('Please enter the Journal H-Index.');
-                return;
-            }
-            if (!impactFactor) {
-                toast.error('Please enter the Impact Factor.');
-                return;
-            }
-            if (isResearchAdmin && data.applyIncentive === 'Yes' && !approvedAmount) {
-                toast.error('Please enter the approved incentive amount.');
-                return;
+            if (isResearchAdmin) {
+                if (!hIndex) {
+                    toast.error('Please enter the Journal H-Index.');
+                    return;
+                }
+                if (!impactFactor) {
+                    toast.error('Please enter the Impact Factor.');
+                    return;
+                }
+                if (data.applyIncentive === 'Yes' && !approvedAmount) {
+                    toast.error('Please enter the approved incentive amount.');
+                    return;
+                }
             }
         }
 
@@ -85,8 +114,8 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
                 action,
                 comment: remarks,
                 approvedAmount: isResearchAdmin && data.applyIncentive === 'Yes' ? approvedAmount : undefined,
-                hIndex,
-                impactFactor
+                hIndex: isResearchAdmin ? hIndex : undefined,
+                impactFactor: isResearchAdmin ? impactFactor : undefined
             };
             const res = await API.put(endpoint, payload);
             if (res.data?.success) {
@@ -256,13 +285,14 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
                         <LabelValue label="DOI" value={data.doi || "-"} horizontal />
                         <LabelValue label="Journal Quartile" value={data.journalQuartile || data.categoryOfJournal || "-"} horizontal />
                         <LabelValue label="Journal Type" value={data.journalType || "-"} horizontal />
-                        <LabelValue label="Incentive For" value={data.incentiveApplied} horizontal />
+                        <LabelValue label="Publication Scope" value={data.publicationScope || data.incentiveApplied} horizontal />
                         <LabelValue 
                             label="Applicant Author Position" 
                             value={data.userAuthorPosition ? `${data.userAuthorPosition} / ${data.totalAuthors}` : (data.firstAuthor === "Yes" ? "1" : data.authorPosition || "-")} 
                             horizontal 
                         />
-                        <LabelValue label="Vol / Issue" value={`${data.vol || "-"} / ${data.issue || "-"}`} horizontal />
+                        <LabelValue label="Volume" value={data.vol || "-"} horizontal />
+                        <LabelValue label="Issue" value={data.issue || "-"} horizontal />
                         <LabelValue 
                             label="Month/Year" 
                             value={`${data.publishedMonth || data.month || "-"} ${data.publishedYear || data.year || "-"}`} 
@@ -270,9 +300,9 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
                         />
                         <LabelValue label="H-Index" value={data.hIndex || "-"} horizontal />
                         <LabelValue label="Impact Factor" value={data.impactFactor || "-"} horizontal />
-                        <LabelValue label="AGEC Referencing Numbers" value={data.referencingNos || "-"} horizontal />
-                        <LabelValue label="Number of References Belonging to AGEC" value={data.papersCited !== undefined ? data.papersCited : "-"} horizontal />
-                        <LabelValue label="SDGS" value={data.sdgs} horizontal />
+                        <LabelValue label="AGEC Referencing Numbers" value={data.agecReferencingNumbers || data.referencingNos || "-"} horizontal />
+                        <LabelValue label="Number of References Belonging to AGEC" value={data.numberOfReferencesBelongingToAGEC !== undefined ? data.numberOfReferencesBelongingToAGEC : (data.papersCited !== undefined ? data.papersCited : "-")} horizontal />
+                        <LabelValue label="SDGS" value={data.sdgs ? data.sdgs.split(', ').map(getSdgName).join(', ') : "-"} horizontal />
                         <LabelValue label="Seed Grant Work" value={data.applyingSeedGrant || "No"} horizontal />
                         <LabelValue label="Incentive" horizontal chip={<Chip label={data.applyIncentive} size="small" sx={{ bgcolor: data.applyIncentive === 'Yes' ? "rgba(76, 175, 80, 0.1)" : "var(--bg-panel)", color: data.applyIncentive === 'Yes' ? "#4caf50" : "var(--text-secondary)", fontWeight: 800, border: "1px solid", borderColor: data.applyIncentive === 'Yes' ? "#4caf5044" : "var(--border-color)" }} />} />
                     </Box>
@@ -301,26 +331,30 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
                 <Grid container spacing={3}>
                     {renderFilePreview("Published Paper (1st Page)", data.publishedPaper, 1)}
                     {renderFilePreview("Reference Pages", data.referencePages, 2)}
-                    {data.completeJournalName && (
-                        <Grid item xs={12} sm={6} md={3}>
-                            <Box sx={{ mb: 1 }}>
-                                <Typography variant="subtitle2" sx={{ fontWeight: 800, color: "var(--color-primary)", fontSize: "0.75rem", textTransform: "uppercase" }}>
-                                    3. Complete Journal
-                                </Typography>
-                            </Box>
-                            <Box sx={{
-                                height: 180, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", p: 2,
-                                border: "1px solid var(--border-color)", background: "var(--bg-panel)", borderRadius: "12px",
-                            }}>
-                                <DescriptionIcon sx={{ fontSize: 40, color: "var(--text-secondary)", mb: 1 }} />
-                                <Typography variant="body2" sx={{ color: "var(--text-secondary)", fontWeight: 700, textAlign: "center", maxWidth: "100%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                                    {data.completeJournalName}
-                                </Typography>
-                                <Typography variant="caption" sx={{ color: "var(--color-primary)", fontWeight: 800, display: "block", mt: 0.5, fontSize: "0.65rem" }}>
-                                    (Client-side Scanned)
-                                </Typography>
-                            </Box>
-                        </Grid>
+                    {data.completeJournal ? (
+                        renderFilePreview("Complete Journal", data.completeJournal, 3)
+                    ) : (
+                        data.completeJournalName && (
+                            <Grid item xs={12} sm={6} md={3}>
+                                <Box sx={{ mb: 1 }}>
+                                    <Typography variant="subtitle2" sx={{ fontWeight: 800, color: "var(--color-primary)", fontSize: "0.75rem", textTransform: "uppercase" }}>
+                                        3. Complete Journal
+                                    </Typography>
+                                </Box>
+                                <Box sx={{
+                                    height: 180, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", p: 2,
+                                    border: "1px solid var(--border-color)", background: "var(--bg-panel)", borderRadius: "12px",
+                                }}>
+                                    <DescriptionIcon sx={{ fontSize: 40, color: "var(--text-secondary)", mb: 1 }} />
+                                    <Typography variant="body2" sx={{ color: "var(--text-secondary)", fontWeight: 700, textAlign: "center", maxWidth: "100%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                        {data.completeJournalName}
+                                    </Typography>
+                                    <Typography variant="caption" sx={{ color: "var(--color-primary)", fontWeight: 800, display: "block", mt: 0.5, fontSize: "0.65rem" }}>
+                                        (Client-side Scanned)
+                                    </Typography>
+                                </Box>
+                            </Grid>
+                        )
                     )}
                 </Grid>
             </Card>
@@ -334,7 +368,7 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
                         <Card sx={{ ...cardStyle, borderTop: "4px solid var(--color-primary)", mb: 0 }}>
                             <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 3 }}><GavelIcon sx={{ color: "var(--color-primary)" }} /><Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>Review Decision</Typography></Box>
                             
-                            {(isHOD || isResearchAdmin) && (
+                            {isResearchAdmin && (
                                 <Box sx={{ display: "flex", gap: 3, mb: 3, flexWrap: "wrap" }}>
                                     <Box sx={{ flex: "1 1 200px" }}>
                                         <Typography variant="subtitle2" sx={{ fontWeight: 900, mb: 1, color: "var(--color-primary)", fontSize: "0.75rem" }}>JOURNAL H-INDEX *</Typography>
@@ -359,16 +393,15 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
                                 </Box>
                             )}
 
-                            {isResearchAdmin && data.applyIncentive === 'Yes' && (
+                             {isResearchAdmin && data.applyIncentive === 'Yes' && (
                                 <Box sx={{ mb: 3 }}>
                                     <Typography variant="subtitle2" sx={{ fontWeight: 900, mb: 1, color: "var(--color-primary)", fontSize: "0.75rem" }}>APPROVED INCENTIVE (₹)</Typography>
                                     <TextField 
                                         fullWidth size="small" type="number" 
-                                        placeholder={`Expected: ₹1500`} 
+                                        placeholder="Enter Approved Incentive Amount" 
                                         value={approvedAmount} 
                                         onChange={e => setApprovedAmount(e.target.value)} 
                                         sx={{ maxWidth: 250, "& .MuiOutlinedInput-root": { borderRadius: "10px", bgcolor: "var(--bg-panel)" } }} 
-                                        helperText={`Applicant's expected amount is ₹1500`} 
                                     />
                                 </Box>
                             )}
