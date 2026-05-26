@@ -252,6 +252,7 @@ const FundedProjectApprovalDetail = ({ id, onBack, role }) => {
                         <LabelValue label="Sanctioned Amt" value={`₹${data.sanctionedAmount}`} horizontal />
                         <LabelValue label="Recurring" value={`₹${data.recurring || "0"}`} horizontal />
                         <LabelValue label="Non-Recurring" value={`₹${data.nonRecurring || "0"}`} horizontal />
+                        <LabelValue label="Seed Grant Work" value={data.applyingSeedGrant || "No"} horizontal />
                     </Box>
                 </Card>
             </Box>

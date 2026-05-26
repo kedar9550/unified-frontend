@@ -19,6 +19,7 @@ export default function ConsultancyPublication() {
 
   const [form, setForm] = useState({
     title: "", organization: "", amount: "", duration: "", month: "", year: "",
+    applyingSeedGrant: "",
   });
   const [loading, setLoading] = useState(false);
 
@@ -35,7 +36,7 @@ export default function ConsultancyPublication() {
   const set = (k) => (e) => setForm((p) => ({ ...p, [k]: e.target.value }));
 
   const handleSubmit = async () => {
-    if (!form.title || !form.organization) {
+    if (!form.title || !form.organization || !form.applyingSeedGrant) {
       toast.error("Please fill all required fields");
       return;
     }
@@ -44,7 +45,7 @@ export default function ConsultancyPublication() {
       const payload = { ...form, academicYear: selectedYear, college: user?.college || "", panNumber: user?.panNumber || "" };
       await API.post("/api/research/consultancy", payload);
       toast.success("Consultancy submitted successfully!");
-      setForm({ title: "", organization: "", amount: "", duration: "", month: "", year: "" });
+      setForm({ title: "", organization: "", amount: "", duration: "", month: "", year: "", applyingSeedGrant: "" });
       setSelectedYear("");
       setViewMode("list");
     } catch (err) {
@@ -203,6 +204,17 @@ export default function ConsultancyPublication() {
         <Box>
           <Typography sx={labelStyle}>Year :</Typography>
           <TextField size="small" fullWidth value={form.year} onChange={set("year")} placeholder="YYYY" inputProps={{ maxLength: 4 }} />
+        </Box>
+      </Grid2>
+
+      <Grid2 sx={{ mt: 2 }}>
+        <Box>
+          <Typography sx={labelStyle}>Applying as a Seed Grant Work? *</Typography>
+          <Select size="small" fullWidth displayEmpty value={form.applyingSeedGrant} onChange={set("applyingSeedGrant")}>
+            <MenuItem value="">Select</MenuItem>
+            <MenuItem value="Yes">Yes</MenuItem>
+            <MenuItem value="No">No</MenuItem>
+          </Select>
         </Box>
       </Grid2>
 

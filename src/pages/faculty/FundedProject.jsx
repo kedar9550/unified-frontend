@@ -19,8 +19,10 @@ export default function FundedProject() {
 
   const [form, setForm] = useState({
     title: "", duration: "", fundingAgency: "", scheme: "",
-    otherInvestigators: "", principalInvestigator: "",
-    recurring: "", nonRecurring: "", sanctionedAmount: "", sanctionDate: "",
+    principalInvestigator: "", recurring: "", nonRecurring: "",
+    sanctionedAmount: "", sanctionDate: "",
+    applyingSeedGrant: "",
+    totalInvestigators: 1, otherInvestigatorsList: []
   });
   const [files, setFiles] = useState({ sanctionOrder: null });
   const [loading, setLoading] = useState(false);
@@ -38,15 +40,132 @@ export default function FundedProject() {
   const set = (k) => (e) => setForm((p) => ({ ...p, [k]: e.target.value }));
   const setFile = (k) => (e) => setFiles((p) => ({ ...p, [k]: e.target.files[0] }));
 
+  // Handle dynamic investigator generation based on total count
+  useEffect(() => {
+    let total = parseInt(form.totalInvestigators);
+    if (isNaN(total) || total < 1) {
+      total = 1;
+      if (form.totalInvestigators !== "") {
+        setForm(p => ({ ...p, totalInvestigators: 1 }));
+      }
+    }
+
+    if (total === 1) {
+      setForm(p => ({ ...p, otherInvestigatorsList: [] }));
+      return;
+    }
+
+    let newOtherInvestigators = [];
+    for (let i = 2; i <= total; i++) {
+      // Keep existing data if available
+      const existing = form.otherInvestigatorsList.find(a => a.investigatorPosition === i);
+      newOtherInvestigators.push(existing || {
+        investigatorPosition: i,
+        affiliationType: "",
+        empId: "",
+        name: "",
+        affiliation: ""
+      });
+    }
+    setForm(p => ({ ...p, otherInvestigatorsList: newOtherInvestigators }));
+  }, [form.totalInvestigators]);
+
+  const fetchCoInvestigatorName = async (pos, empId) => {
+    try {
+      const res = await API.get(`/api/employees/staff/${empId}`);
+      if (res.data && res.data.success) {
+        const staff = res.data.data;
+        const name = staff.employeename || staff.EmployeeName || "";
+
+        setForm(prev => {
+          const updated = prev.otherInvestigatorsList.map(a => {
+            if (a.investigatorPosition === pos) {
+              return { ...a, name: name, affiliation: "Aditya University" };
+            }
+            return a;
+          });
+          return { ...prev, otherInvestigatorsList: updated };
+        });
+      }
+    } catch (err) {
+      console.error("Failed to fetch staff data", err);
+    }
+  };
+
+  const handleCoInvestigatorChange = (pos, field, value) => {
+    const updated = form.otherInvestigatorsList.map(a => {
+      if (a.investigatorPosition === pos) {
+        const newA = { ...a, [field]: value };
+        if (field === "affiliationType") {
+          if (value === "Aditya University") {
+            newA.affiliation = "Aditya University";
+            newA.name = ""; // clear name so it can be fetched
+          } else {
+            newA.affiliation = "";
+            newA.empId = "";
+            newA.name = "";
+          }
+        }
+        return newA;
+      }
+      return a;
+    });
+
+    setForm(p => ({ ...p, otherInvestigatorsList: updated }));
+
+    // Fetch name if Aditya University and Employee ID is entered (length >= 3)
+    if (field === "empId" && value.length >= 3) {
+      const investigator = updated.find(a => a.investigatorPosition === pos);
+      if (investigator && investigator.affiliationType === "Aditya University") {
+        fetchCoInvestigatorName(pos, value);
+      }
+    }
+  };
+
   const handleSubmit = async () => {
-    if (!form.title || !form.fundingAgency) {
+    if (!form.title || !form.fundingAgency || !form.sanctionedAmount || !form.sanctionDate || !form.applyingSeedGrant) {
       toast.error("Please fill all required fields");
       return;
     }
+
+    // Validate co-investigators dynamically
+    const total = parseInt(form.totalInvestigators) || 1;
+    if (total < 1) {
+      toast.error("Total number of investigators must be at least 1");
+      return;
+    }
+    if (total > 1) {
+      for (const a of form.otherInvestigatorsList) {
+        if (!a.affiliationType || (a.affiliationType === 'Others' && (!a.name || !a.affiliation)) || (a.affiliationType === 'Aditya University' && (!a.empId || !a.name))) {
+          toast.error(`Please complete details for Investigator Position ${a.investigatorPosition}`);
+          return;
+        }
+      }
+    }
+
     setLoading(true);
     try {
       const fd = new FormData();
-      Object.entries(form).forEach(([k, v]) => fd.append(k, v));
+
+      // Construct otherInvestigators comma-separated string
+      const otherNames = form.otherInvestigatorsList
+        .map(a => a.name)
+        .filter(Boolean)
+        .join(", ");
+
+      fd.append("title", form.title);
+      fd.append("duration", form.duration);
+      fd.append("fundingAgency", form.fundingAgency);
+      fd.append("scheme", form.scheme || "");
+      fd.append("principalInvestigator", form.principalInvestigator);
+      fd.append("recurring", form.recurring || "");
+      fd.append("nonRecurring", form.nonRecurring || "");
+      fd.append("sanctionedAmount", form.sanctionedAmount);
+      fd.append("sanctionDate", form.sanctionDate);
+      fd.append("applyingSeedGrant", form.applyingSeedGrant);
+      fd.append("otherInvestigators", otherNames);
+      fd.append("totalInvestigators", String(total));
+
       if (files.sanctionOrder) fd.append("sanctionOrder", files.sanctionOrder);
       fd.append("academicYear", selectedYear);
       fd.append("college", user?.college || "");
@@ -54,7 +173,12 @@ export default function FundedProject() {
 
       await API.post("/api/research/funded-project", fd, { headers: { "Content-Type": "multipart/form-data" } });
       toast.success("Funded Project submitted successfully!");
-      setForm({ title: "", duration: "", fundingAgency: "", scheme: "", otherInvestigators: "", principalInvestigator: "", recurring: "", nonRecurring: "", sanctionedAmount: "", sanctionDate: "" });
+      setForm({
+        title: "", duration: "", fundingAgency: "", scheme: "",
+        principalInvestigator: "", recurring: "", nonRecurring: "",
+        sanctionedAmount: "", sanctionDate: "", applyingSeedGrant: "",
+        totalInvestigators: 1, otherInvestigatorsList: []
+      });
       setFiles({ sanctionOrder: null });
       setSelectedYear("");
       setViewMode("list");
@@ -217,9 +341,92 @@ export default function FundedProject() {
           <TextField size="small" fullWidth value={form.scheme} onChange={set("scheme")} />
         </Box>
         <Box>
-          <Typography sx={labelStyle}>Name and affiliation of Other Investigators :</Typography>
-          <TextField size="small" fullWidth value={form.otherInvestigators} onChange={set("otherInvestigators")} />
+          <Typography sx={labelStyle}>Total Number of Investigators : *</Typography>
+          <TextField
+            size="small"
+            type="number"
+            value={form.totalInvestigators}
+            onChange={set("totalInvestigators")}
+            inputProps={{ min: 1 }}
+          />
         </Box>
+        {parseInt(form.totalInvestigators) > 1 && (
+          <Box sx={{ gridColumn: { sm: "1 / -1" }, mt: 2, background: "var(--bg-panel)", p: 2, borderRadius: "12px", border: "1px solid var(--border-color)" }}>
+            <Typography sx={{ ...labelStyle, mb: 1, fontWeight: 700 }}>Name & affiliation of Co-Investigator(s) :</Typography>
+            {form.otherInvestigatorsList.map((ca) => (
+              <Box key={ca.investigatorPosition} sx={{ display: "flex", flexDirection: "column", gap: 2, mb: 2, p: 2, borderRadius: "12px", border: "1px dashed var(--border-color)", background: "var(--bg-accent-1)" }}>
+                <Box sx={{ display: "flex", gap: 2, flexWrap: { xs: "wrap", sm: "nowrap" }, alignItems: "center" }}>
+                  <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", width: "30px", height: "30px", background: "var(--color-primary)", color: "#fff", borderRadius: "50%", fontWeight: 700, flexShrink: 0 }}>
+                    {ca.investigatorPosition}
+                  </Box>
+                  <Box sx={{ flex: 1, minWidth: "150px" }}>
+                    <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>AFFILIATION TYPE</Typography>
+                    <Select
+                      size="small"
+                      fullWidth
+                      value={ca.affiliationType}
+                      onChange={(e) => handleCoInvestigatorChange(ca.investigatorPosition, "affiliationType", e.target.value)}
+                      displayEmpty
+                    >
+                      <MenuItem value="" disabled>Select Affiliation</MenuItem>
+                      <MenuItem value="Aditya University">Aditya University</MenuItem>
+                      <MenuItem value="Others">Others</MenuItem>
+                    </Select>
+                  </Box>
+
+                  {ca.affiliationType === "Aditya University" ? (
+                    <>
+                      <Box sx={{ flex: 1, minWidth: "120px" }}>
+                        <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>EMPLOYEE ID</Typography>
+                        <TextField
+                          size="small"
+                          fullWidth
+                          value={ca.empId}
+                          onChange={(e) => handleCoInvestigatorChange(ca.investigatorPosition, "empId", e.target.value)}
+                          placeholder="e.g. 5741"
+                        />
+                      </Box>
+                      <Box sx={{ flex: 2, minWidth: "200px" }}>
+                        <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>CO-INVESTIGATOR NAME</Typography>
+                        <TextField
+                          size="small"
+                          fullWidth
+                          value={ca.name}
+                          disabled
+                          placeholder="Fetched from API"
+                          sx={{ background: "rgba(0,0,0,0.02)" }}
+                        />
+                      </Box>
+                    </>
+                  ) : (
+                    <>
+                      <Box sx={{ flex: 1, minWidth: "180px" }}>
+                        <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>CO-INVESTIGATOR NAME</Typography>
+                        <TextField
+                          size="small"
+                          fullWidth
+                          value={ca.name}
+                          onChange={(e) => handleCoInvestigatorChange(ca.investigatorPosition, "name", e.target.value)}
+                          placeholder="Full Name"
+                        />
+                      </Box>
+                      <Box sx={{ flex: 2, minWidth: "200px" }}>
+                        <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>AFFILIATION</Typography>
+                        <TextField
+                          size="small"
+                          fullWidth
+                          value={ca.affiliation}
+                          onChange={(e) => handleCoInvestigatorChange(ca.investigatorPosition, "affiliation", e.target.value)}
+                          placeholder="College / Organization"
+                        />
+                      </Box>
+                    </>
+                  )}
+                </Box>
+              </Box>
+            ))}
+          </Box>
+        )}
         <Box>
           <Typography sx={labelStyle}>Are You The Principal Investigator:</Typography>
           <Select size="small" fullWidth displayEmpty value={form.principalInvestigator} onChange={set("principalInvestigator")}>
@@ -243,6 +450,14 @@ export default function FundedProject() {
         <Box>
           <Typography sx={labelStyle}>Date of Sanction :</Typography>
           <TextField size="small" fullWidth type="date" value={form.sanctionDate} onChange={set("sanctionDate")} InputLabelProps={{ shrink: true }} />
+        </Box>
+        <Box>
+          <Typography sx={labelStyle}>Applying as a Seed Grant Work? *</Typography>
+          <Select size="small" fullWidth displayEmpty value={form.applyingSeedGrant} onChange={set("applyingSeedGrant")}>
+            <MenuItem value="">Select</MenuItem>
+            <MenuItem value="Yes">Yes</MenuItem>
+            <MenuItem value="No">No</MenuItem>
+          </Select>
         </Box>
       </Grid2>
 

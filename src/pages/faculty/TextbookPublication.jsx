@@ -3,9 +3,9 @@ import { useState, useEffect } from "react";
 import axios from "axios";
 import { useAuth } from "../../context/AuthContext";
 
-import { Box, TextField, MenuItem, Select, Typography, Button, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, IconButton, CircularProgress, Autocomplete, InputAdornment } from "@mui/material";
+import { Box, TextField, MenuItem, Select, Typography, Button, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, IconButton, CircularProgress, Autocomplete, InputAdornment, Dialog, DialogTitle, DialogContent, DialogActions, Stack, Grid, Card, Chip, Divider } from "@mui/material";
 import { toast } from "sonner";
-import { Delete, Search, CurrencyRupee } from "@mui/icons-material";
+import { Delete, Search, CurrencyRupee, Close, Groups, MenuBook, AttachFile, Description, Download } from "@mui/icons-material";
 import PageHeader from "../../components/common/PageHeader";
 import {
   FacultyInfoRow, FormCard, Grid2, SubLabel, NoteBox, FileField, SubmitBtn,
@@ -19,6 +19,7 @@ export default function TextbookPublication() {
   const [academicYears, setAcademicYears] = useState([]);
   const [selectedYear, setSelectedYear] = useState("");
   const [publicationsList, setPublicationsList] = useState([]);
+  const [selectedPubDetails, setSelectedPubDetails] = useState(null);
   const [editions, setEditions] = useState([]);
   const [publishers, setPublishers] = useState([]);
   const [isbnFetching, setIsbnFetching] = useState(false);
@@ -29,10 +30,9 @@ export default function TextbookPublication() {
     title: "", publisher: "", isbn: "", yearOfPublication: "",
     totalAuthors: 1, userAuthorPosition: 1,
     edition: "", cost: "", month: "", year: "",
-    applyIncentive: "", expectedAmount: "10,000",
+    applyIncentive: "",
     otherAuthors: [],
     publicationType: "National",
-    expectedAmount: "10,000",
     customPublisher: "",
     currencySymbol: "₹"
   });
@@ -59,7 +59,13 @@ export default function TextbookPublication() {
 
   // Handle dynamic author generation based on total authors and user position
   useEffect(() => {
-    const total = parseInt(form.totalAuthors) || 1;
+    let total = parseInt(form.totalAuthors);
+    if (isNaN(total) || total < 1) {
+      total = 1;
+      if (form.totalAuthors !== "") {
+        setForm(p => ({ ...p, totalAuthors: 1 }));
+      }
+    }
     const pos = parseInt(form.userAuthorPosition) || 1;
 
     // Auto-adjust if position is greater than total
@@ -170,15 +176,7 @@ export default function TextbookPublication() {
     }
   };
 
-  const updateExpectedAmount = (type, publisherValue) => {
-    let amount = "5,000";
-    if (type === "International") {
-      amount = (publisherValue !== "Others" && !!publisherValue) ? "20,000" : "5,000";
-    } else {
-      amount = (publisherValue !== "Others" && !!publisherValue) ? "10,000" : "5,000";
-    }
-    setForm(p => ({ ...p, publicationType: type, publisher: publisherValue, expectedAmount: amount }));
-  };
+
 
   const fetchCoAuthorName = async (pos, empId) => {
     try {
@@ -249,7 +247,11 @@ export default function TextbookPublication() {
     }
 
     // Check if total authors is correctly filled
-    const total = parseInt(form.totalAuthors);
+    const total = parseInt(form.totalAuthors) || 1;
+    if (total < 1) {
+      toast.error("Total number of authors must be at least 1");
+      return;
+    }
     if (total > 1) {
       for (const a of form.otherAuthors) {
         if (!a.affiliationType || (a.affiliationType === 'Others' && (!a.authorName || !a.affiliationName)) || (a.affiliationType === 'Aditya University' && (!a.empId || !a.authorName))) {
@@ -295,7 +297,6 @@ export default function TextbookPublication() {
       fd.append("year", submissionForm.year);
       fd.append("publicationType", submissionForm.publicationType);
       fd.append("publisher", submissionForm.publisher === "Others" ? submissionForm.customPublisher : submissionForm.publisher);
-      fd.append("expectedAmount", submissionForm.expectedAmount);
       fd.append("applyIncentive", submissionForm.applyIncentive);
       fd.append("authors", JSON.stringify(allAuthors));
 
@@ -310,7 +311,7 @@ export default function TextbookPublication() {
       toast.success("Textbook submitted successfully!");
 
       // Reset form
-      setForm({ title: "", publisher: "", isbn: "", yearOfPublication: "", totalAuthors: 1, userAuthorPosition: 1, edition: "", cost: "", month: "", year: "", applyIncentive: "", expectedAmount: "10,000", otherAuthors: [], publicationType: "National", currencySymbol: "₹" });
+      setForm({ title: "", publisher: "", isbn: "", yearOfPublication: "", totalAuthors: 1, userAuthorPosition: 1, edition: "", cost: "", month: "", year: "", applyIncentive: "", otherAuthors: [], publicationType: "National", currencySymbol: "₹" });
       setFiles({ coverPage: null, authorAffiliation: null, index: null });
       setSelectedYear("");
       setViewMode("list");
@@ -356,12 +357,13 @@ export default function TextbookPublication() {
               <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Academic Year</TableCell>
               <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Role</TableCell>
               <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Status</TableCell>
+              <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Actions</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
             {(!publicationsList || publicationsList.length === 0) ? (
               <TableRow>
-                <TableCell colSpan={7} align="center" sx={{ py: 4, color: "text.secondary" }}>
+                <TableCell colSpan={8} align="center" sx={{ py: 4, color: "text.secondary" }}>
                   No previous publications found. Click "Apply New" to submit one.
                 </TableCell>
               </TableRow>
@@ -395,6 +397,26 @@ export default function TextbookPublication() {
                     >
                       {pub.status || "Pending"}
                     </Typography>
+                  </TableCell>
+                  <TableCell sx={{ py: 2 }}>
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      onClick={() => setSelectedPubDetails(pub)}
+                      sx={{
+                        borderRadius: "8px",
+                        textTransform: "none",
+                        fontWeight: 700,
+                        borderColor: "var(--color-primary)",
+                        color: "var(--color-primary)",
+                        "&:hover": {
+                          background: "var(--bg-accent-1)",
+                          borderColor: "var(--color-primary)"
+                        }
+                      }}
+                    >
+                      View
+                    </Button>
                   </TableCell>
                 </TableRow>
               ))
@@ -495,7 +517,6 @@ export default function TextbookPublication() {
                     publicationType: val,
                     currencySymbol: val === "International" ? "$" : "₹"
                 }));
-                updateExpectedAmount(val, form.publisher);
             }}
           >
             <MenuItem value="National">National</MenuItem>
@@ -537,7 +558,6 @@ export default function TextbookPublication() {
             onChange={(e, newValue) => {
                 const val = newValue ? newValue.name : "";
                 setForm(p => ({ ...p, publisher: val }));
-                updateExpectedAmount(form.publicationType, val);
             }}
             freeSolo
             onInputChange={(e, newInputValue) => {
@@ -790,18 +810,7 @@ export default function TextbookPublication() {
             <MenuItem value="No">No</MenuItem>
           </Select>
         </Box>
-        {form.applyIncentive === "Yes" && (
-          <Box>
-            <Typography sx={{ fontSize: 13, fontWeight: 700, color: "var(--color-primary)" }}>Maximum Incentive/Claimable Amount:</Typography>
-            <TextField 
-                size="small" 
-                value={form.expectedAmount} 
-                disabled 
-                sx={{ "& .MuiInputBase-input.Mui-disabled": { WebkitTextFillColor: "#10b981", fontWeight: 800, background: "rgba(16, 185, 129, 0.1)", borderRadius: "8px" } }} 
-                helperText={form.publisher === "Others" || !form.publisher ? "Committee Approval Required" : `Reputed ${form.publicationType} Publisher`}
-            />
-          </Box>
-        )}
+
       </Grid2>
 
       <Box sx={{ display: "flex", gap: 2, justifyContent: "center", mt: 4 }}>
@@ -831,14 +840,231 @@ export default function TextbookPublication() {
     </FormCard>
   );
 
+  const handleCloseDetails = () => setSelectedPubDetails(null);
+
+  const LabelValueDetails = ({ label, value, chip, horizontal = false }) => (
+    <Box sx={{
+      p: horizontal ? "10px 16px" : 1.5,
+      borderRadius: "10px",
+      background: horizontal ? "transparent" : "rgba(255,255,255,0.02)",
+      display: "flex",
+      flexDirection: horizontal ? "row" : "column",
+      alignItems: horizontal ? "center" : "flex-start",
+      justifyContent: horizontal ? "flex-start" : "center",
+      gap: horizontal ? 2 : 0.5,
+      borderBottom: horizontal ? "1px solid var(--border-color)" : "1px solid transparent",
+      "&:last-child": { borderBottom: "none" },
+    }}>
+      <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", letterSpacing: "0.05em", fontWeight: 800, fontSize: "0.65rem", mb: horizontal ? 0 : 0.5 }}>{label}</Typography>
+      <Box sx={{ flex: horizontal ? 1 : "none" }}>
+        {chip ? chip : <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", fontSize: "0.85rem" }}>{value || "-"}</Typography>}
+      </Box>
+    </Box>
+  );
+
+  const renderDetailFile = (title, filepath, folder = "textbooks") => {
+    if (!filepath) return null;
+    const backendURL = (import.meta.env.VITE_BACKEND_URL || "http://localhost:9000").replace(/\/$/, "");
+    let normalizedPath = filepath.replace(/\\/g, '/');
+    if (!normalizedPath.startsWith('http') && !normalizedPath.includes('uploads/')) {
+      normalizedPath = `/uploads/${folder}/${normalizedPath.startsWith('/') ? normalizedPath.substring(1) : normalizedPath}`;
+    }
+    const cleanPath = normalizedPath.startsWith('/') ? normalizedPath : `/${normalizedPath}`;
+    const fileUrl = normalizedPath.startsWith('http') ? normalizedPath : `${backendURL}${cleanPath}`;
+    const isImage = /\.(jpg|jpeg|png|gif)$/i.test(normalizedPath);
+
+    return (
+      <Box sx={{ flex: "1 1 200px" }}>
+        <Typography variant="caption" sx={{ fontWeight: 800, color: "var(--color-primary)", fontSize: "0.7rem", textTransform: "uppercase", display: "block", mb: 1 }}>{title}</Typography>
+        <Box sx={{
+          height: 120, display: "flex", alignItems: "center", justifyContent: "center",
+          border: "1px solid var(--border-color)", background: "var(--bg-panel)", borderRadius: "8px",
+          overflow: "hidden", cursor: "pointer", transition: "all 0.2s ease",
+          "&:hover": { borderColor: "var(--color-primary)", transform: "translateY(-2px)" }
+        }} onClick={() => window.open(fileUrl, '_blank')}>
+          {isImage ? <img src={fileUrl} alt={title} style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <Box sx={{ textAlign: "center" }}><Description sx={{ fontSize: 24, color: "var(--text-secondary)", mb: 0.5 }} /><Typography variant="caption" sx={{ color: "var(--text-secondary)", fontWeight: 700, display: "block" }}>PDF</Typography></Box>}
+        </Box>
+      </Box>
+    );
+  };
+
+  const renderDetailsDialog = () => {
+    if (!selectedPubDetails) return null;
+    const data = selectedPubDetails;
+    const statusColor = (() => {
+      const s = data.status || "";
+      if (/Pending/i.test(s)) return "#ff9800";
+      if (/Approved/i.test(s)) return "#4caf50";
+      if (/Rejected/i.test(s)) return "#f44336";
+      return "#666";
+    })();
+
+    return (
+      <Dialog 
+        open={!!selectedPubDetails} 
+        onClose={handleCloseDetails}
+        maxWidth="md"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: "20px",
+            background: "var(--bg-glass)",
+            backdropFilter: "blur(12px)",
+            border: "1px solid var(--border-color)",
+            boxShadow: "var(--shadow-premium)",
+          }
+        }}
+      >
+        <DialogTitle sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "var(--gradient-primary)", color: "#fff", py: 2 }}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+            <MenuBook sx={{ color: "#fff" }} />
+            <Typography variant="h6" sx={{ fontWeight: 800 }}>Text Book Details</Typography>
+          </Box>
+          <IconButton onClick={handleCloseDetails} sx={{ color: "#fff" }}><Close /></IconButton>
+        </DialogTitle>
+        <DialogContent sx={{ p: 3, mt: 1 }}>
+          <Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)", mb: 1 }}>{data.title}</Typography>
+          <Typography variant="body2" sx={{ color: "var(--text-secondary)", mb: 3, fontWeight: 600 }}>Publisher: {data.publisher}</Typography>
+          
+          <Grid container spacing={2}>
+            {/* Status and dates */}
+            <Grid item xs={12} sm={3}><LabelValueDetails label="Academic Year" value={data.academicYear?.year || "N/A"} /></Grid>
+            <Grid item xs={12} sm={3}><LabelValueDetails label="ISBN" value={data.isbn} /></Grid>
+            <Grid item xs={12} sm={3}><LabelValueDetails label="Role" value={data.visibilityRole || "Applicant"} /></Grid>
+            <Grid item xs={12} sm={3}>
+              <LabelValueDetails 
+                label="Status" 
+                chip={
+                  <Chip 
+                    label={data.status} 
+                    size="small" 
+                    sx={{ 
+                      bgcolor: `${statusColor}15`, 
+                      color: statusColor, 
+                      fontWeight: 800, 
+                      border: `1px solid ${statusColor}44`,
+                      borderRadius: "6px" 
+                    }} 
+                  />
+                } 
+              />
+            </Grid>
+
+            {/* Edition, cost, type, month/year */}
+            <Grid item xs={12} sm={3}><LabelValueDetails label="Edition" value={data.edition || "-"} /></Grid>
+            <Grid item xs={12} sm={3}><LabelValueDetails label="Cost" value={data.cost || "-"} /></Grid>
+            <Grid item xs={12} sm={3}><LabelValueDetails label="Publication Type" value={data.publicationType || "National"} /></Grid>
+            <Grid item xs={12} sm={3}><LabelValueDetails label="Month/Year" value={`${data.month || ""} ${data.year || ""}`} /></Grid>
+
+            {/* Author details */}
+            <Grid item xs={12} sm={6}><LabelValueDetails label="Total Authors" value={data.totalAuthors} /></Grid>
+            <Grid item xs={12} sm={6}><LabelValueDetails label="Applicant Position" value={data.userAuthorPosition} /></Grid>
+
+            {/* Incentive details */}
+            <Grid item xs={12} sm={6}>
+              <LabelValueDetails 
+                label="Incentive details" 
+                value={data.applyIncentive === "Yes" ? "Yes" : "No"} 
+              />
+            </Grid>
+            {data.status === "Approved" && data.approvedAmount && (
+              <Grid item xs={12} sm={6}>
+                <LabelValueDetails 
+                  label="Approved Incentive" 
+                  value={`₹${data.approvedAmount}`} 
+                  chip={<Chip label={`₹${data.approvedAmount}`} size="small" sx={{ bgcolor: "rgba(76, 175, 80, 0.1)", color: "#4caf50", fontWeight: 800 }} />}
+                />
+              </Grid>
+            )}
+          </Grid>
+
+          <Divider sx={{ my: 3 }} />
+
+          {/* Authors table */}
+          {data.authors && data.authors.length > 0 && (
+            <Card sx={{ p: 0, overflow: "hidden", mb: 3, border: "1px solid var(--border-color)", background: "rgba(255,255,255,0.01)" }}>
+              <Box sx={{ p: 2, display: "flex", alignItems: "center", gap: 1.5, borderBottom: "1px solid var(--border-color)" }}>
+                <Groups sx={{ color: "var(--color-primary)" }} />
+                <Typography sx={{ fontWeight: 800, color: "var(--text-primary)" }}>Authors & Affiliations</Typography>
+              </Box>
+              <TableContainer>
+                <Table size="small">
+                  <TableHead sx={{ bgcolor: "var(--bg-panel)" }}>
+                    <TableRow>
+                      <TableCell sx={{ fontWeight: 700, color: "var(--text-secondary)" }}>POSITION</TableCell>
+                      <TableCell sx={{ fontWeight: 700, color: "var(--text-secondary)" }}>NAME</TableCell>
+                      <TableCell sx={{ fontWeight: 700, color: "var(--text-secondary)" }}>AFFILIATION</TableCell>
+                      <TableCell sx={{ fontWeight: 700, color: "var(--text-secondary)" }}>EMPLOYEE ID</TableCell>
+                      <TableCell sx={{ fontWeight: 700, color: "var(--text-secondary)" }}>ROLE</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {data.authors.map((author, idx) => (
+                      <TableRow key={idx}>
+                        <TableCell sx={{ fontWeight: 800, color: "var(--color-primary)" }}>{author.authorPosition}</TableCell>
+                        <TableCell sx={{ fontWeight: 700, color: "var(--text-primary)" }}>{author.authorName}</TableCell>
+                        <TableCell sx={{ color: "var(--text-secondary)" }}>{author.affiliationName}</TableCell>
+                        <TableCell sx={{ color: "var(--text-secondary)" }}>{author.employeeId || "-"}</TableCell>
+                        <TableCell>
+                          {author.isIncentiveApplicant ? (
+                            <Chip label="Incentive Applicant" size="small" sx={{ bgcolor: "rgba(76, 175, 80, 0.1)", color: "#4caf50", fontWeight: 700 }} />
+                          ) : (
+                            <Chip label="Contributor" size="small" sx={{ bgcolor: "rgba(25, 118, 210, 0.05)", color: "var(--color-primary)", fontWeight: 700 }} />
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            </Card>
+          )}
+
+          {/* Attached Files previews */}
+          <Box sx={{ mt: 3 }}>
+            <Box sx={{ display: "flex", gap: 1.5, alignItems: "center", mb: 2 }}>
+              <AttachFile sx={{ color: "var(--color-primary)" }} />
+              <Typography sx={{ fontWeight: 800, color: "var(--text-primary)" }}>Attached Documents</Typography>
+            </Box>
+            <Stack direction="row" spacing={3} flexWrap="wrap" useFlexGap>
+              {renderDetailFile("Cover Page", data.coverPage)}
+              {renderDetailFile("Author Affiliation", data.authorAffiliation)}
+              {renderDetailFile("Index", data.index)}
+            </Stack>
+          </Box>
+
+          {/* Remarks/Comments if available */}
+          {(data.hodComment || data.rndComment) && (
+            <Box sx={{ mt: 4, display: "flex", flexDirection: "column", gap: 2 }}>
+              {data.hodComment && (
+                <Box sx={{ p: 2, bgcolor: "rgba(255, 193, 7, 0.05)", borderRadius: "10px", border: "1px solid rgba(255, 193, 7, 0.2)" }}>
+                  <Typography variant="caption" sx={{ fontWeight: 900, color: "#ff9800", textTransform: "uppercase" }}>HOD Remarks</Typography>
+                  <Typography variant="body2" sx={{ fontStyle: "italic", mt: 0.5, color: "var(--text-secondary)" }}>"{data.hodComment}"</Typography>
+                </Box>
+              )}
+              {data.rndComment && (
+                <Box sx={{ p: 2, bgcolor: "rgba(76, 175, 80, 0.05)", borderRadius: "10px", border: "1px solid rgba(76, 175, 80, 0.2)" }}>
+                  <Typography variant="caption" sx={{ fontWeight: 900, color: "#4caf50", textTransform: "uppercase" }}>R&D Remarks</Typography>
+                  <Typography variant="body2" sx={{ fontStyle: "italic", mt: 0.5, color: "var(--text-secondary)" }}>"{data.rndComment}"</Typography>
+                </Box>
+              )}
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions sx={{ p: 2.5, borderTop: "1px solid var(--border-color)" }}>
+          <Button onClick={handleCloseDetails} sx={{ color: "var(--text-primary)", fontWeight: 700 }}>Close</Button>
+        </DialogActions>
+      </Dialog>
+    );
+  };
+
   return (
     <Box>
       <PageHeader title="Text Book" subtitle="Manage and submit your textbook publication details" breadcrumbs={["Home", "Publications", "Text Book"]} />
-
       {viewMode === "list" && renderList()}
       {viewMode === "select-year" && renderSelectYear()}
       {viewMode === "form" && renderForm()}
-
+      {renderDetailsDialog()}
     </Box>
   );
 }

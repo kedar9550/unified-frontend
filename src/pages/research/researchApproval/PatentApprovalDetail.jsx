@@ -244,7 +244,7 @@ const PatentApprovalDetail = ({ id, onBack, role }) => {
                         <LabelValue label="Patent Status" value={data.patentStatus} horizontal />
                         <LabelValue label="Month / Year" value={`${data.month} ${data.year}`} horizontal />
                         <LabelValue label="Incentive" horizontal chip={<Chip label={data.applyIncentive} size="small" sx={{ bgcolor: data.applyIncentive === 'Yes' ? "rgba(76, 175, 80, 0.1)" : "var(--bg-panel)", color: data.applyIncentive === 'Yes' ? "#4caf50" : "var(--text-secondary)", fontWeight: 800, border: "1px solid", borderColor: data.applyIncentive === 'Yes' ? "#4caf5044" : "var(--border-color)" }} />} />
-                        {data.applyIncentive === 'Yes' && <LabelValue label="Expected (₹)" value={data.expectedAmount || "1500"} horizontal />}
+                        <LabelValue label="Seed Grant Work" value={data.applyingSeedGrant} horizontal />
                     </Box>
                 </Card>
             </Box>
@@ -288,11 +288,10 @@ const PatentApprovalDetail = ({ id, onBack, role }) => {
                                     <Typography variant="subtitle2" sx={{ fontWeight: 900, mb: 1, color: "var(--color-primary)", fontSize: "0.75rem" }}>APPROVED INCENTIVE (₹)</Typography>
                                     <TextField 
                                         fullWidth size="small" type="number" 
-                                        placeholder={`Expected: ₹${data.expectedAmount || "1500"}`} 
+                                        placeholder="Enter approved amount" 
                                         value={approvedAmount} 
                                         onChange={e => setApprovedAmount(e.target.value)} 
                                         sx={{ maxWidth: 250, "& .MuiOutlinedInput-root": { borderRadius: "10px", bgcolor: "var(--bg-panel)" } }} 
-                                        helperText={`Applicant's expected amount is ₹${data.expectedAmount || "1500"}`} 
                                     />
                                 </Box>
                             )}

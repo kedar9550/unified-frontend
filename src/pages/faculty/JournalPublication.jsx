@@ -4,21 +4,55 @@ import { useAuth } from "../../context/AuthContext";
 
 import {
   Box, TextField, MenuItem, Select, Typography, Button, Table, TableBody,
-  TableCell, TableContainer, TableHead, TableRow, Paper, CircularProgress
+  TableCell, TableContainer, TableHead, TableRow, Paper, CircularProgress,
+  Dialog, DialogTitle, DialogContent, DialogActions, IconButton, Stack, Grid, Card, Chip, Divider
 } from "@mui/material";
 import { toast } from "sonner";
-import { Search } from "@mui/icons-material";
+import { Search, Close, Download, Description, Groups, Article, Person, AttachFile } from "@mui/icons-material";
 import PageHeader from "../../components/common/PageHeader";
 import {
   FacultyInfoRow, FormCard, Grid2, SubLabel, NoteBox, FileField, SubmitBtn,
   labelStyle, disabledField, MONTHS, YEARS
 } from "../../components/faculty/PublicationFormFields";
 import API from "../../api/axios";
+import mammoth from "mammoth";
+import * as pdfjsLib from "pdfjs-dist";
+import pdfWorker from "pdfjs-dist/build/pdf.worker.min.mjs?url";
+
+// Configure PDF.js worker
+pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorker;
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 const JOURNAL_TYPES = ["SCI", "SCIE", "ESCI", "WoS", "SCOPUS"];
 const QUARTILE_OPTIONS = ["Q1", "Q2", "Q3", "Q4", "N/A"];
 const INCENTIVE_OPTIONS = ["National", "International"];
+
+export const getSdgName = (sdgCode) => {
+  const mapping = {
+    "SDG-1": "SDG-1: No Poverty",
+    "SDG-2": "SDG-2: Zero Hunger",
+    "SDG-3": "SDG-3: Good Health and Well-being",
+    "SDG-4": "SDG-4: Quality Education",
+    "SDG-5": "SDG-5: Gender Equality",
+    "SDG-6": "SDG-6: Clean Water and Sanitation",
+    "SDG-7": "SDG-7: Affordable and Clean Energy",
+    "SDG-8": "SDG-8: Decent Work and Economic Growth",
+    "SDG-9": "SDG-9: Industry, Innovation and Infrastructure",
+    "SDG-10": "SDG-10: Reduced Inequality",
+    "SDG-11": "SDG-11: Sustainable Cities and Communities",
+    "SDG-12": "SDG-12: Responsible Consumption and Production",
+    "SDG-13": "SDG-13: Climate Action",
+    "SDG-14": "SDG-14: Life Below Water",
+    "SDG-15": "SDG-15: Life on Land",
+    "SDG-16": "SDG-16: Peace, Justice and Strong Institutions",
+    "SDG-17": "SDG-17: Partnerships for the Goals"
+  };
+  const cleanCode = (sdgCode || "").trim();
+  if (mapping[cleanCode]) return mapping[cleanCode];
+  if (cleanCode.startsWith("SDG-")) return cleanCode;
+  const key = `SDG-${cleanCode}`;
+  return mapping[key] || cleanCode;
+};
 
 // ─── Scopus / Elsevier API keys ───────────────────────────────────────────────
 const ELSEVIER_API_KEY = "0436d4fe788649172354545ceca9e650";
@@ -32,22 +66,33 @@ async function fetchJournalDataByDOI(doi) {
 
   // 1. Abstract / article metadata
   const abstractRes = await fetch(
-    `https://api.elsevier.com/content/abstract/doi/${encodeURIComponent(doi)}`,
+    `https://api.elsevier.com/content/search/scopus?query=DOI(${encodeURIComponent(doi)})`,
     { method: "GET", headers }
   );
-  if (!abstractRes.ok) throw new Error("DOI not found in Scopus. Please fill fields manually.");
+  if (!abstractRes.ok) {
+    if (abstractRes.status === 429) {
+      throw new Error("Elsevier/Scopus API rate limit exceeded (HTTP 429). Please try again later or fill fields manually.");
+    } else if (abstractRes.status === 401) {
+      throw new Error("Invalid or unauthorized Elsevier API key. Please check your configuration.");
+    } else {
+      throw new Error("DOI not found in Scopus. Please fill fields manually.");
+    }
+  }
   const abstractJson = await abstractRes.json();
-  const coredata = abstractJson?.["abstracts-retrieval-response"]?.coredata || {};
+  const entry = abstractJson?.["search-results"]?.entry?.[0];
+  if (!entry) {
+    throw new Error("DOI not found in Scopus. Please fill fields manually.");
+  }
 
-  const title = coredata["dc:title"] || "";
-  const journalName = coredata["prism:publicationName"] || "";
-  const vol = coredata["prism:volume"] || "";
-  const issue = coredata["prism:issueIdentifier"] || "";
-  const pageRange = coredata["prism:pageRange"] || "";
-  const coverDisplayDate = coredata["prism:coverDisplayDate"] || "";
+  const title = entry["dc:title"] || "";
+  const journalName = entry["prism:publicationName"] || "";
+  const vol = entry["prism:volume"] || "";
+  const issue = entry["prism:issueIdentifier"] || "";
+  const pageRange = entry["prism:pageRange"] || "";
+  const coverDisplayDate = entry["prism:coverDisplayDate"] || "";
   
   // Clean ISSN
-  const rawIssn = coredata["prism:issn"] || coredata["prism:eIssn"] || "";
+  const rawIssn = entry["prism:issn"] || entry["prism:eIssn"] || "";
   const issn = rawIssn.split(" ")[0].replace(/-/g, "");
   
   // Format ISSN with hyphen for WoS check
@@ -98,14 +143,9 @@ async function fetchJournalDataByDOI(doi) {
         const serialJson = await serialRes.json();
         const entry = serialJson?.["serial-metadata-response"]?.entry?.[0] || {};
         
-        // H-Index (with SNIP fallback)
-        const snip = entry["SNIPList"]?.SNIP?.[0]?.["$"] || "";
-        hIndex = entry["H-index"] || snip || "";
-
-        // CiteScore (Impact Factor proxy, fallback to SJR)
-        const citeScore = entry?.citeScoreYearInfoList?.citeScoreCurrentMetric || "";
-        const sjr = entry["SJRList"]?.SJR?.[0]?.["$"] || "";
-        impactFactor = citeScore || sjr || "";
+        // H-Index and Impact Factor are NOT fetched from API to prevent wrong/incorrect values
+        hIndex = "";
+        impactFactor = "";
 
         // Quartile from CiteScore Percentiles
         const csYearInfo = entry?.citeScoreYearInfoList?.citeScoreYearInfo;
@@ -149,8 +189,8 @@ async function fetchJournalDataByDOI(doi) {
       const wosRes = await API.post("/api/research/journal/wos-type", { issn: issnWoS || issn });
       if (wosRes.data?.success && wosRes.data?.inWoS) {
         const typesStr = wosRes.data.journalType || "";
-        if (typesStr.includes("SCI")) journalType = "SCI";
-        else if (typesStr.includes("SCIE")) journalType = "SCIE";
+        if (typesStr.includes("SCIE")) journalType = "SCIE";
+        else if (typesStr.includes("SCI")) journalType = "SCI";
         else if (typesStr.includes("ESCI")) journalType = "ESCI";
         else if (typesStr.includes("WoS")) journalType = "WoS";
       }
@@ -167,11 +207,15 @@ export default function JournalPublication() {
   const [academicYears, setAcademicYears] = useState([]);
   const [selectedYear, setSelectedYear] = useState("");
   const [publicationsList, setPublicationsList] = useState([]);
+  const [selectedPubDetails, setSelectedPubDetails] = useState(null);
 
   // DOI fetch state
   const [doiFetching, setDoiFetching] = useState(false);
   const [doiFetched, setDoiFetched] = useState(false);
   const [doiFetchedFields, setDoiFetchedFields] = useState({});
+
+  const [scanningSdg, setScanningSdg] = useState(false);
+  const [scannedSdgResults, setScannedSdgResults] = useState(null);
 
   const emptyForm = {
     doi: "",
@@ -184,12 +228,15 @@ export default function JournalPublication() {
     pageNos: "",
     hIndex: "",
     impactFactor: "",
-    agecRefCount: "",
-    referencingNos: "",
+    numberOfReferencesBelongingToAGEC: 0,
+    agecReferencingNumbers: "",
     month: "",
     year: "",
     applyIncentive: "",
-    incentiveApplied: "",
+    publicationScope: "",
+    applyingSeedGrant: "",
+    completeJournalName: "",
+    sdgs: "",
     // Author details
     totalAuthors: 1,
     userAuthorPosition: 1,
@@ -197,12 +244,18 @@ export default function JournalPublication() {
   };
 
   const [form, setForm] = useState(emptyForm);
-  const [files, setFiles] = useState({ publishedPaper: null, referencePages: null });
+  const [files, setFiles] = useState({ publishedPaper: null, referencePages: null, completeJournal: null });
   const [loading, setLoading] = useState(false);
 
   // ── Dynamic co-author list (mirrors TextbookPublication logic) ──────────────
   useEffect(() => {
-    const total = parseInt(form.totalAuthors) || 1;
+    let total = parseInt(form.totalAuthors);
+    if (isNaN(total) || total < 1) {
+      total = 1;
+      if (form.totalAuthors !== "") {
+        setForm(p => ({ ...p, totalAuthors: 1 }));
+      }
+    }
     const pos = parseInt(form.userAuthorPosition) || 1;
 
     if (pos > total) {
@@ -242,11 +295,29 @@ export default function JournalPublication() {
 
   // ── Field setters ────────────────────────────────────────────────────────────
   const set = (k) => (e) => {
-    setForm(p => ({ ...p, [k]: e.target.value }));
-    if (k === "doi") {
-      setDoiFetched(false);
-      setDoiFetchedFields({});
-    }
+    const val = e.target.value;
+    setForm(p => {
+      const newForm = { ...p, [k]: val };
+      if (k === "doi") {
+        newForm.paperTitle = "";
+        newForm.journalName = "";
+        newForm.journalQuartile = "";
+        newForm.journalType = "";
+        newForm.vol = "";
+        newForm.issue = "";
+        newForm.pageNos = "";
+        newForm.hIndex = "";
+        newForm.impactFactor = "";
+        newForm.month = "";
+        newForm.year = "";
+        newForm.sdgs = "";
+        newForm.completeJournalName = "";
+        setDoiFetched(false);
+        setDoiFetchedFields({});
+        setScannedSdgResults(null);
+      }
+      return newForm;
+    });
   };
 
   const validateFile = (file) => {
@@ -261,6 +332,121 @@ export default function JournalPublication() {
     const file = e.target.files[0];
     if (file && validateFile(file)) setFiles(p => ({ ...p, [k]: file }));
     else e.target.value = null;
+  };
+
+  const handleCompleteJournalChange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const allowedExtensions = ['.pdf', '.docx'];
+    const fileName = file.name.toLowerCase();
+    const isValidExtension = allowedExtensions.some(ext => fileName.endsWith(ext));
+    if (!isValidExtension) {
+      toast.error("Please upload only PDF or DOCX files for the Complete Journal.");
+      e.target.value = null;
+      return;
+    }
+
+    if (file.size > 500 * 1024) {
+      toast.error("Complete Journal file size exceeds 500KB limit.");
+      e.target.value = null;
+      return;
+    }
+
+    setFiles(p => ({ ...p, completeJournal: file }));
+    setForm(p => ({ ...p, completeJournalName: file.name }));
+
+    // Dynamic scan client-side for SDGs
+    setScanningSdg(true);
+    setScannedSdgResults(null);
+    try {
+      let sdgData = {};
+      const res = await API.get("/api/sdgs");
+      if (res.data && res.data.success) {
+        res.data.data.forEach(item => {
+          sdgData[item.sdgNumber] = {
+            title: item.sdgTitle,
+            keywords: item.keywords
+          };
+        });
+      }
+
+      if (Object.keys(sdgData).length === 0) {
+        toast.info("SDG keywords are loading. Dynamic scanning skipped.");
+        setScanningSdg(false);
+        return;
+      }
+
+      let text = "";
+      if (fileName.endsWith('.pdf')) {
+        const arrayBuffer = await file.arrayBuffer();
+        const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+        let fullText = "";
+        for (let i = 1; i <= pdf.numPages; i++) {
+          const page = await pdf.getPage(i);
+          const content = await page.getTextContent();
+          fullText += content.items.map(item => item.str).join(" ") + " ";
+        }
+        text = fullText;
+      } else {
+        const arrayBuffer = await file.arrayBuffer();
+        const result = await mammoth.extractRawText({ arrayBuffer });
+        text = result.value;
+      }
+
+      const normalizeText = (t) => {
+        return t.toLowerCase()
+          .replace(/[\u2018\u2019]/g, "'")
+          .replace(/[\u201C\u201D]/g, '"')
+          .replace(/[^a-z0-9'\s]/g, ' ')
+          .replace(/\s+/g, ' ')
+          .trim();
+      };
+
+      text = normalizeText(text);
+
+      const matchedList = [];
+      Object.entries(sdgData).forEach(([number, data]) => {
+        let matchCount = 0;
+        data.keywords.forEach(keyword => {
+          const kw = normalizeText(keyword);
+          if (kw.length > 2) {
+            const escapedKw = kw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            const regex = new RegExp(`\\b${escapedKw}\\b`, "gi");
+            if (regex.test(text)) {
+              matchCount++;
+            }
+          }
+        });
+        if (matchCount > 0) {
+          matchedList.push(number);
+        }
+      });
+
+      const matchedStr = matchedList.join(", ");
+      setForm(p => ({ ...p, sdgs: matchedStr }));
+      setScannedSdgResults(matchedList);
+      toast.success(`SDG keyword scanning completed! Matched: ${matchedList.length > 0 ? matchedStr : "None"}`);
+    } catch (err) {
+      console.error("SDG scan error:", err);
+      toast.error("Failed to dynamically scan SDG keywords, but file was attached.");
+    } finally {
+      setScanningSdg(false);
+    }
+  };
+
+  const handleReferencingNosChange = (e) => {
+    const value = e.target.value;
+    // Allow only numbers and commas
+    const filteredValue = value.replace(/[^0-9,]/g, "");
+    // Split values using comma, trim spaces, ignore empty values, and count total valid entries
+    const count = filteredValue.split(',').map(s => s.trim()).filter(Boolean).length;
+    
+    setForm(p => ({
+      ...p,
+      agecReferencingNumbers: filteredValue,
+      numberOfReferencesBelongingToAGEC: count
+    }));
   };
 
   // ── DOI Fetch ────────────────────────────────────────────────────────────────
@@ -349,21 +535,29 @@ export default function JournalPublication() {
       toast.error("Please update your profile with PAN Number and College before submitting.");
       return;
     }
-    if (!form.doi || !form.paperTitle || !form.journalName || !form.vol || !form.issue || !form.pageNos || !form.month || !form.year || !form.hIndex || !form.impactFactor) {
+    if (!form.doi || !form.paperTitle || !form.journalName || !form.vol || !form.issue || !form.month || !form.year) {
       toast.error("Please fill all required fields.");
+      return;
+    }
+    if (!form.applyingSeedGrant) {
+      toast.error("Please select whether applying as a Seed Grant Work.");
       return;
     }
     if (!form.applyIncentive) {
       toast.error("Please select whether you want to apply for an incentive.");
       return;
     }
-    if (form.applyIncentive === "Yes" && !form.incentiveApplied) {
-      toast.error("Please select National or International for Research Incentive.");
+    if (form.applyIncentive === "Yes" && !form.publicationScope) {
+      toast.error("Please select National or International for Publication Scope.");
       return;
     }
 
     // Validate co-authors
-    const total = parseInt(form.totalAuthors);
+    const total = parseInt(form.totalAuthors) || 1;
+    if (total < 1) {
+      toast.error("Total number of authors must be at least 1");
+      return;
+    }
     if (total > 1) {
       for (const a of form.otherAuthors) {
         if (
@@ -377,7 +571,7 @@ export default function JournalPublication() {
       }
     }
 
-    if (!files.publishedPaper || !files.referencePages) {
+    if (!files.publishedPaper || !files.referencePages || !files.completeJournal) {
       toast.error("Please attach all required documents.");
       return;
     }
@@ -386,10 +580,6 @@ export default function JournalPublication() {
     try {
       const fd = new FormData();
       
-      // Calculate firstAuthor and authorPosition
-      const isFirst = (parseInt(form.userAuthorPosition) === 1) ? "Yes" : "No";
-      const authPos = (isFirst === "Yes") ? "" : String(form.userAuthorPosition);
-
       // Map coAuthors array matching CoAuthorSchema
       const coAuthorsList = form.otherAuthors.map(a => ({
         name: a.authorName || "",
@@ -398,34 +588,39 @@ export default function JournalPublication() {
 
       const fields = [
         "doi","paperTitle","journalName","journalType",
-        "vol","issue","pageNos","hIndex","impactFactor","agecRefCount",
-        "referencingNos","month","year","applyIncentive","incentiveApplied",
-        "totalAuthors","userAuthorPosition",
+        "vol","issue","agecReferencingNumbers","applyIncentive","publicationScope",
+        "totalAuthors","userAuthorPosition","hIndex","impactFactor",
       ];
       fields.forEach(k => {
-        if (k === "incentiveApplied" && form.applyIncentive === "No") {
+        if (k === "publicationScope" && form.applyIncentive === "No") {
           fd.append(k, "N/A");
         } else {
           fd.append(k, form[k] ?? "");
         }
       });
       
-      fd.append("firstAuthor", isFirst);
-      fd.append("authorPosition", authPos);
-      fd.append("categoryOfJournal", form.journalQuartile ?? "");
+      fd.append("numberOfReferencesBelongingToAGEC", form.numberOfReferencesBelongingToAGEC || 0);
+
+      fd.append("publishedMonth", form.month);
+      fd.append("publishedYear", form.year);
+      fd.append("journalQuartile", form.journalQuartile ?? "");
       fd.append("coAuthors", JSON.stringify(coAuthorsList));
+      fd.append("applyingSeedGrant", form.applyingSeedGrant);
+      fd.append("completeJournalName", form.completeJournalName);
+      fd.append("sdgs", form.sdgs);
       fd.append("academicYear", selectedYear);
       fd.append("college", user?.college || "");
       fd.append("panNumber", user?.panNumber || "");
 
       if (files.publishedPaper) fd.append("publishedPaper", files.publishedPaper);
       if (files.referencePages) fd.append("referencePages", files.referencePages);
+      if (files.completeJournal) fd.append("completeJournal", files.completeJournal);
 
       await API.post("/api/research/journal", fd, { headers: { "Content-Type": "multipart/form-data" } });
       toast.success("Journal submitted successfully!");
 
       setForm(emptyForm);
-      setFiles({ publishedPaper: null, referencePages: null });
+      setFiles({ publishedPaper: null, referencePages: null, completeJournal: null });
       setDoiFetched(false);
       setDoiFetchedFields({});
       setSelectedYear("");
@@ -458,14 +653,17 @@ export default function JournalPublication() {
               <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Paper Title</TableCell>
               <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Journal Name</TableCell>
               <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Quartile</TableCell>
-              <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Academic Year</TableCell>
+              <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Applicant</TableCell>
+              <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Author / Co-Author</TableCell>
+              <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Role</TableCell>
               <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Status</TableCell>
+              <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Actions</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
             {(!publicationsList || publicationsList.length === 0) ? (
               <TableRow>
-                <TableCell colSpan={6} align="center" sx={{ py: 4, color: "text.secondary" }}>
+                <TableCell colSpan={9} align="center" sx={{ py: 4, color: "text.secondary" }}>
                   No previous publications found. Click "Apply New" to submit one.
                 </TableCell>
               </TableRow>
@@ -475,8 +673,16 @@ export default function JournalPublication() {
                   <TableCell sx={{ color: "var(--text-secondary)", py: 2, fontSize: 12 }}>{pub.doi || "N/A"}</TableCell>
                   <TableCell sx={{ color: "var(--text-primary)", fontWeight: 500, py: 2 }}>{pub.paperTitle || "N/A"}</TableCell>
                   <TableCell sx={{ color: "var(--text-secondary)", py: 2 }}>{pub.journalName || "N/A"}</TableCell>
-                  <TableCell sx={{ color: "var(--text-secondary)", py: 2 }}>{pub.journalQuartile || "N/A"}</TableCell>
-                  <TableCell sx={{ color: "var(--text-secondary)", py: 2 }}>{pub.academicYear?.year || "N/A"}</TableCell>
+                  <TableCell sx={{ color: "var(--text-secondary)", py: 2 }}>{pub.journalQuartile || pub.categoryOfJournal || "N/A"}</TableCell>
+                  <TableCell sx={{ color: "var(--text-secondary)", py: 2 }}>{pub.facultyId?.name || "N/A"}</TableCell>
+                  <TableCell sx={{ color: "var(--text-secondary)", py: 2 }}>
+                    {pub.coAuthors && pub.coAuthors.length > 0 ? pub.coAuthors.map(ca => ca.name).join(", ") : "N/A"}
+                  </TableCell>
+                  <TableCell sx={{ py: 2 }}>
+                    <Typography variant="body2" sx={{ fontWeight: 600, color: pub.visibilityRole === "Applicant" ? "var(--color-primary)" : "text.secondary" }}>
+                      {pub.visibilityRole || "Applicant"}
+                    </Typography>
+                  </TableCell>
                   <TableCell sx={{ py: 2 }}>
                     <Typography variant="body2" sx={{
                       color: pub.status?.includes("Rejected") ? "#ef4444" : pub.status === "Approved" ? "#10b981" : "#e8a000",
@@ -486,6 +692,26 @@ export default function JournalPublication() {
                     }}>
                       {pub.status || "Pending"}
                     </Typography>
+                  </TableCell>
+                  <TableCell sx={{ py: 2 }}>
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      onClick={() => setSelectedPubDetails(pub)}
+                      sx={{
+                        borderRadius: "8px",
+                        textTransform: "none",
+                        fontWeight: 700,
+                        borderColor: "var(--color-primary)",
+                        color: "var(--color-primary)",
+                        "&:hover": {
+                          background: "var(--bg-accent-1)",
+                          borderColor: "var(--color-primary)"
+                        }
+                      }}
+                    >
+                      View
+                    </Button>
                   </TableCell>
                 </TableRow>
               ))
@@ -527,7 +753,7 @@ export default function JournalPublication() {
       <FacultyInfoRow />
 
       {/* ── DOI Section ── */}
-      <SubLabel text="DOI Lookup:" />
+      <SubLabel text="DOI Lookup: *" />
       <Box sx={{ display: "flex", gap: 1, mb: 3 }}>
         <TextField
           size="small"
@@ -600,34 +826,16 @@ export default function JournalPublication() {
           <TextField size="small" fullWidth value={form.issue} onChange={set("issue")} disabled={isFetched("issue")} sx={isFetched("issue") ? disabledField : {}} />
         </Box>
 
-        {/* Page Nos */}
+        {/* Referencing Nos */}
         <Box>
-          <Typography sx={labelStyle}>Page No's : *</Typography>
-          <TextField size="small" fullWidth value={form.pageNos} onChange={set("pageNos")} disabled={isFetched("pageNos")} sx={isFetched("pageNos") ? disabledField : {}} placeholder="e.g. 1245-1258" />
+          <Typography sx={labelStyle}>AGEC Referencing Numbers :</Typography>
+          <TextField size="small" fullWidth placeholder="e.g. 1,4,7,10" value={form.agecReferencingNumbers} onChange={handleReferencingNosChange} />
         </Box>
 
-        {/* H-Index */}
-        <Box>
-          <Typography sx={labelStyle}>Journal H-Index : *</Typography>
-          <TextField size="small" fullWidth value={form.hIndex} onChange={set("hIndex")} disabled={isFetched("hIndex")} sx={isFetched("hIndex") ? disabledField : {}} />
-        </Box>
-
-        {/* Impact Factor */}
-        <Box>
-          <Typography sx={labelStyle}>Impact Factor : *</Typography>
-          <TextField size="small" fullWidth value={form.impactFactor} onChange={set("impactFactor")} disabled={isFetched("impactFactor")} sx={isFetched("impactFactor") ? disabledField : {}} />
-        </Box>
-
-        {/* AGEC References */}
+        {/* Number of References Belonging to AGEC */}
         <Box>
           <Typography sx={labelStyle}>Number of References Belonging to AGEC :</Typography>
-          <TextField size="small" fullWidth type="number" value={form.agecRefCount} onChange={set("agecRefCount")} inputProps={{ min: 0 }} />
-        </Box>
-
-        {/* Referencing Nos */}
-        <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
-          <Typography sx={labelStyle}>Mention the Referencing No's that Belong to AGEC :</Typography>
-          <TextField size="small" fullWidth placeholder="e.g. 3, 7, 12" value={form.referencingNos} onChange={set("referencingNos")} />
+          <TextField size="small" fullWidth disabled value={form.numberOfReferencesBelongingToAGEC} />
         </Box>
       </Grid2>
 
@@ -758,10 +966,37 @@ export default function JournalPublication() {
       <Grid2 sx={{ mt: 2 }}>
         <FileField label="Published Paper – 1st Page *" name="publishedPaper" onChange={setFile("publishedPaper")} />
         <FileField label="Reference Pages (with tick mark) *" name="referencePages" onChange={setFile("referencePages")} />
+        <Box>
+          <FileField label="Complete Journal *" name="completeJournal" onChange={handleCompleteJournalChange} accept=".pdf,.docx" />
+          {scanningSdg && (
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mt: 1, p: 1.5, borderRadius: '8px', bgcolor: 'rgba(25, 118, 210, 0.05)', border: '1px solid rgba(25, 118, 210, 0.2)' }}>
+              <CircularProgress size={16} />
+              <Typography variant="caption" sx={{ fontWeight: 600, color: 'var(--color-primary)' }}>Scanning complete journal for SDG keywords...</Typography>
+            </Box>
+          )}
+          {!scanningSdg && form.sdgs && (
+            <Box sx={{ mt: 1.5, p: 2, borderRadius: '12px', border: '1px solid var(--border-color)', background: 'var(--bg-accent-1)' }}>
+              <Typography variant="caption" sx={{ fontWeight: 800, color: 'var(--color-primary)', textTransform: 'uppercase', display: 'block', mb: 1 }}>Matched SDGs from Scanning:</Typography>
+              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                {form.sdgs.split(', ').map((sdg, idx) => (
+                  <Chip key={idx} label={getSdgName(sdg)} size="small" sx={{ bgcolor: 'rgba(76, 175, 80, 0.1)', color: '#4caf50', fontWeight: 800 }} />
+                ))}
+              </Box>
+            </Box>
+          )}
+        </Box>
       </Grid2>
 
       {/* ── Incentive ── */}
       <Grid2 sx={{ mt: 2 }}>
+        <Box>
+          <Typography sx={labelStyle}>Applying as a Seed Grant Work? *</Typography>
+          <Select size="small" fullWidth displayEmpty value={form.applyingSeedGrant} onChange={set("applyingSeedGrant")}>
+            <MenuItem value="">Select</MenuItem>
+            <MenuItem value="Yes">Yes</MenuItem>
+            <MenuItem value="No">No</MenuItem>
+          </Select>
+        </Box>
         <Box>
           <Typography sx={labelStyle}>Whether you want to apply for incentive? *</Typography>
           <Select size="small" fullWidth displayEmpty value={form.applyIncentive} onChange={set("applyIncentive")}>
@@ -772,8 +1007,8 @@ export default function JournalPublication() {
         </Box>
         {form.applyIncentive === "Yes" && (
           <Box>
-            <Typography sx={labelStyle}>Research Incentive applied for : *</Typography>
-            <Select size="small" fullWidth displayEmpty value={form.incentiveApplied} onChange={set("incentiveApplied")}>
+            <Typography sx={labelStyle}>Publication Scope : *</Typography>
+            <Select size="small" fullWidth displayEmpty value={form.publicationScope} onChange={set("publicationScope")}>
               <MenuItem value="">Select</MenuItem>
               {INCENTIVE_OPTIONS.map(o => <MenuItem key={o} value={o}>{o}</MenuItem>)}
             </Select>
@@ -795,12 +1030,244 @@ export default function JournalPublication() {
     </FormCard>
   );
 
+  const handleCloseDetails = () => setSelectedPubDetails(null);
+
+  const LabelValue = ({ label, value, chip, horizontal = false }) => (
+    <Box sx={{
+      p: horizontal ? "10px 16px" : 1.5,
+      borderRadius: "10px",
+      background: horizontal ? "transparent" : "rgba(255,255,255,0.02)",
+      display: "flex",
+      flexDirection: horizontal ? "row" : "column",
+      alignItems: horizontal ? "center" : "flex-start",
+      justifyContent: horizontal ? "flex-start" : "center",
+      gap: horizontal ? 2 : 0.5,
+      borderBottom: horizontal ? "1px solid var(--border-color)" : "1px solid transparent",
+      "&:last-child": { borderBottom: "none" },
+    }}>
+      <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", letterSpacing: "0.05em", fontWeight: 800, fontSize: "0.65rem", mb: horizontal ? 0 : 0.5 }}>{label}</Typography>
+      <Box sx={{ flex: horizontal ? 1 : "none" }}>
+        {chip ? chip : <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", fontSize: "0.85rem" }}>{value || "-"}</Typography>}
+      </Box>
+    </Box>
+  );
+
+  const renderDetailFile = (title, filepath) => {
+    if (!filepath) return null;
+    const backendURL = (import.meta.env.VITE_BACKEND_URL || "http://localhost:9000").replace(/\/$/, "");
+    const fileUrl = filepath.startsWith('http') ? filepath : `${backendURL}${filepath}`;
+    const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(filepath);
+
+    return (
+      <Box sx={{ flex: "1 1 200px" }}>
+        <Typography variant="caption" sx={{ fontWeight: 800, color: "var(--color-primary)", fontSize: "0.7rem", textTransform: "uppercase", display: "block", mb: 1 }}>{title}</Typography>
+        <Box sx={{
+          height: 120, display: "flex", alignItems: "center", justifyContent: "center",
+          border: "1px solid var(--border-color)", background: "var(--bg-panel)", borderRadius: "8px",
+          overflow: "hidden", cursor: "pointer", transition: "all 0.2s ease",
+          "&:hover": { borderColor: "var(--color-primary)", transform: "translateY(-2px)" }
+        }} onClick={() => window.open(fileUrl, '_blank')}>
+          {isImage ? <img src={fileUrl} alt={title} style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <Box sx={{ textAlign: "center" }}><Description sx={{ fontSize: 24, color: "var(--text-secondary)", mb: 0.5 }} /><Typography variant="caption" sx={{ color: "var(--text-secondary)", fontWeight: 700, display: "block" }}>PDF</Typography></Box>}
+        </Box>
+      </Box>
+    );
+  };
+
+  const renderDetailsDialog = () => {
+    if (!selectedPubDetails) return null;
+    const data = selectedPubDetails;
+    const statusColor = (() => {
+      const s = data.status || "";
+      if (/Pending/i.test(s)) return "#ff9800";
+      if (/Approved/i.test(s)) return "#4caf50";
+      if (/Rejected/i.test(s)) return "#f44336";
+      return "#666";
+    })();
+
+    return (
+      <Dialog 
+        open={!!selectedPubDetails} 
+        onClose={handleCloseDetails}
+        maxWidth="md"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: "20px",
+            background: "var(--bg-glass)",
+            backdropFilter: "blur(12px)",
+            border: "1px solid var(--border-color)",
+            boxShadow: "var(--shadow-premium)",
+          }
+        }}
+      >
+        <DialogTitle sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "var(--gradient-primary)", color: "#fff", py: 2 }}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+            <Article sx={{ color: "#fff" }} />
+            <Typography variant="h6" sx={{ fontWeight: 800 }}>Journal Details</Typography>
+          </Box>
+          <IconButton onClick={handleCloseDetails} sx={{ color: "#fff" }}><Close /></IconButton>
+        </DialogTitle>
+        <DialogContent sx={{ p: 3, mt: 1 }}>
+          <Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)", mb: 1 }}>{data.paperTitle}</Typography>
+          <Typography variant="body2" sx={{ color: "var(--text-secondary)", mb: 3, fontWeight: 600 }}>Journal: {data.journalName}</Typography>
+          
+          <Grid container spacing={2.5}>
+            <Grid item xs={12} sm={3}><LabelValue label="Academic Year" value={data.academicYear?.year || "-"} /></Grid>
+            <Grid item xs={12} sm={6}><LabelValue label="DOI" value={data.doi || "-"} /></Grid>
+            <Grid item xs={12} sm={3}>
+              <LabelValue 
+                label="Status" 
+                chip={
+                  <Chip 
+                    label={data.status} 
+                    size="small" 
+                    sx={{ 
+                      bgcolor: `${statusColor}15`, 
+                      color: statusColor, 
+                      fontWeight: 800, 
+                      border: `1px solid ${statusColor}44`,
+                      borderRadius: "6px" 
+                    }} 
+                  />
+                } 
+              />
+            </Grid>
+
+            {/* Author position, Quartile, type */}
+            <Grid item xs={12} sm={4}>
+              <LabelValue 
+                label="Applicant Author Position" 
+                value={data.userAuthorPosition ? `${data.userAuthorPosition} / ${data.totalAuthors}` : (data.firstAuthor === "Yes" ? "1" : data.authorPosition || "-")} 
+              />
+            </Grid>
+            <Grid item xs={12} sm={4}><LabelValue label="Journal Quartile" value={data.journalQuartile || data.categoryOfJournal} /></Grid>
+            <Grid item xs={12} sm={4}><LabelValue label="Journal Type" value={data.journalType || "-"} /></Grid>
+
+            {/* H-Index, Impact Factor, Citations, SDGS */}
+            <Grid item xs={12} sm={3}><LabelValue label="H-Index" value={data.hIndex} /></Grid>
+            <Grid item xs={12} sm={3}><LabelValue label="Impact Factor" value={data.impactFactor} /></Grid>
+            <Grid item xs={12} sm={3}><LabelValue label="AGEC Referencing Numbers" value={data.agecReferencingNumbers || data.referencingNos} /></Grid>
+            <Grid item xs={12} sm={3}><LabelValue label="Number of References Belonging to AGEC" value={data.numberOfReferencesBelongingToAGEC !== undefined ? data.numberOfReferencesBelongingToAGEC : (data.papersCited !== undefined ? data.papersCited : "-")} /></Grid>
+            
+            {/* Seed Grant Work & SDGS */}
+            <Grid item xs={12} sm={6}><LabelValue label="Seed Grant Work" value={data.applyingSeedGrant || "No"} /></Grid>
+            <Grid item xs={12} sm={6}><LabelValue label="SDGS Matched" value={data.sdgs ? data.sdgs.split(', ').map(getSdgName).join(', ') : "None"} /></Grid>
+
+            {/* Publication Scope information */}
+            <Grid item xs={12} sm={6}>
+              <LabelValue 
+                label="Publication Scope" 
+                value={data.publicationScope || data.incentiveApplied || "-"} 
+              />
+            </Grid>
+            {data.status === "Approved" && data.approvedAmount && (
+              <Grid item xs={12} sm={6}>
+                <LabelValue 
+                  label="Approved Incentive" 
+                  value={`₹${data.approvedAmount}`} 
+                  chip={<Chip label={`₹${data.approvedAmount}`} size="small" sx={{ bgcolor: "rgba(76, 175, 80, 0.1)", color: "#4caf50", fontWeight: 800 }} />}
+                />
+              </Grid>
+            )}
+          </Grid>
+
+          <Divider sx={{ my: 3 }} />
+
+          {/* Co-Authors table */}
+          {data.coAuthors && data.coAuthors.length > 0 && (
+            <Card sx={{ p: 0, overflow: "hidden", mb: 3, border: "1px solid var(--border-color)", background: "rgba(255,255,255,0.01)" }}>
+              <Box sx={{ p: 2, display: "flex", alignItems: "center", gap: 1.5, borderBottom: "1px solid var(--border-color)" }}>
+                <Groups sx={{ color: "var(--color-primary)" }} />
+                <Typography sx={{ fontWeight: 800, color: "var(--text-primary)" }}>Co-Authors & Affiliations</Typography>
+              </Box>
+              <TableContainer>
+                <Table size="small">
+                  <TableHead sx={{ bgcolor: "var(--bg-panel)" }}>
+                    <TableRow>
+                      <TableCell sx={{ fontWeight: 700, color: "var(--text-secondary)" }}>#</TableCell>
+                      <TableCell sx={{ fontWeight: 700, color: "var(--text-secondary)" }}>NAME</TableCell>
+                      <TableCell sx={{ fontWeight: 700, color: "var(--text-secondary)" }}>AFFILIATION</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {data.coAuthors.map((ca, idx) => (
+                      <TableRow key={idx}>
+                        <TableCell sx={{ fontWeight: 800, color: "var(--color-primary)" }}>{idx + 1}</TableCell>
+                        <TableCell sx={{ fontWeight: 700, color: "var(--text-primary)" }}>{ca.name}</TableCell>
+                        <TableCell sx={{ color: "var(--text-secondary)" }}>{ca.affiliation}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            </Card>
+          )}
+
+          {/* Attached Files previews */}
+          <Box sx={{ mt: 3 }}>
+            <Box sx={{ display: "flex", gap: 1.5, alignItems: "center", mb: 2 }}>
+              <AttachFile sx={{ color: "var(--color-primary)" }} />
+              <Typography sx={{ fontWeight: 800, color: "var(--text-primary)" }}>Attached Documents</Typography>
+            </Box>
+            <Stack direction="row" spacing={3} flexWrap="wrap" useFlexGap>
+              {renderDetailFile("Published Paper (1st Page)", data.publishedPaper)}
+              {renderDetailFile("Reference Pages", data.referencePages)}
+              {data.completeJournal ? (
+                renderDetailFile("Complete Journal", data.completeJournal)
+              ) : (
+                data.completeJournalName && (
+                  <Box sx={{ flex: "1 1 200px" }}>
+                    <Typography variant="caption" sx={{ fontWeight: 800, color: "var(--color-primary)", fontSize: "0.7rem", textTransform: "uppercase", display: "block", mb: 1 }}>Complete Journal</Typography>
+                    <Box sx={{
+                      height: 120, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", p: 2,
+                      border: "1px solid var(--border-color)", background: "var(--bg-panel)", borderRadius: "8px",
+                    }}>
+                      <Description sx={{ fontSize: 24, color: "var(--text-secondary)", mb: 0.5 }} />
+                      <Typography variant="caption" sx={{ color: "var(--text-secondary)", fontWeight: 700, display: "block", textAlign: "center", maxWidth: "100%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        {data.completeJournalName}
+                      </Typography>
+                      <Typography variant="caption" sx={{ color: "var(--color-primary)", fontWeight: 800, display: "block", mt: 0.5, fontSize: "0.6rem" }}>
+                        (Client-side Scanned)
+                      </Typography>
+                    </Box>
+                  </Box>
+                )
+              )}
+            </Stack>
+          </Box>
+
+          {/* Remarks/Comments if available */}
+          {(data.hodComment || data.rndComment) && (
+            <Box sx={{ mt: 4, display: "flex", flexDirection: "column", gap: 2 }}>
+              {data.hodComment && (
+                <Box sx={{ p: 2, bgcolor: "rgba(255, 193, 7, 0.05)", borderRadius: "10px", border: "1px solid rgba(255, 193, 7, 0.2)" }}>
+                  <Typography variant="caption" sx={{ fontWeight: 900, color: "#ff9800", textTransform: "uppercase" }}>HOD Remarks</Typography>
+                  <Typography variant="body2" sx={{ fontStyle: "italic", mt: 0.5, color: "var(--text-secondary)" }}>"{data.hodComment}"</Typography>
+                </Box>
+              )}
+              {data.rndComment && (
+                <Box sx={{ p: 2, bgcolor: "rgba(76, 175, 80, 0.05)", borderRadius: "10px", border: "1px solid rgba(76, 175, 80, 0.2)" }}>
+                  <Typography variant="caption" sx={{ fontWeight: 900, color: "#4caf50", textTransform: "uppercase" }}>R&D Remarks</Typography>
+                  <Typography variant="body2" sx={{ fontStyle: "italic", mt: 0.5, color: "var(--text-secondary)" }}>"{data.rndComment}"</Typography>
+                </Box>
+              )}
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions sx={{ p: 2.5, borderTop: "1px solid var(--border-color)" }}>
+          <Button onClick={handleCloseDetails} sx={{ color: "var(--text-primary)", fontWeight: 700 }}>Close</Button>
+        </DialogActions>
+      </Dialog>
+    );
+  };
+
   return (
     <Box>
       <PageHeader title="Journal" subtitle="Manage and submit your journal publications" breadcrumbs={["Home", "Publications", "Journal"]} />
       {viewMode === "list" && renderList()}
       {viewMode === "select-year" && renderSelectYear()}
       {viewMode === "form" && renderForm()}
+      {renderDetailsDialog()}
     </Box>
   );
 }

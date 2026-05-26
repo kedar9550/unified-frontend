@@ -218,6 +218,7 @@ const ConsultancyApprovalDetail = ({ id, onBack, role }) => {
                         <LabelValue label="Duration" value={data.duration} horizontal />
                         <LabelValue label="Commencement Month" value={data.month} horizontal />
                         <LabelValue label="Commencement Year" value={data.year} horizontal />
+                        <LabelValue label="Seed Grant Work" value={data.applyingSeedGrant || "No"} horizontal />
                     </Box>
                 </Card>
             </Box>
