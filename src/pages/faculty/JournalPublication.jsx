@@ -645,30 +645,45 @@ export default function JournalPublication() {
           Apply New
         </Button>
       </Box>
-      <TableContainer component={Paper} sx={{ borderRadius: "16px", background: "var(--bg-panel)", border: "1px solid var(--border-color)", boxShadow: "var(--shadow-premium)", overflowX: "auto" }}>
-        <Table>
-          <TableHead sx={{ background: "var(--gradient-primary)" }}>
-            <TableRow>
-              <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>DOI</TableCell>
-              <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Paper Title</TableCell>
-              <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Journal Name</TableCell>
-              <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Quartile</TableCell>
-              <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Applicant</TableCell>
-              <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Author / Co-Author</TableCell>
-              <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Role</TableCell>
-              <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Status</TableCell>
-              <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Actions</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {(!publicationsList || publicationsList.length === 0) ? (
+      {(!publicationsList || publicationsList.length === 0) ? (
+        <Box sx={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          py: 8,
+          px: 3,
+          background: "var(--bg-panel)",
+          borderRadius: "16px",
+          border: "1px dashed var(--border-color)",
+          boxShadow: "var(--shadow-premium)",
+          textAlign: "center"
+        }}>
+          <Typography variant="h6" sx={{ color: "var(--text-secondary)", fontWeight: 600, mb: 1 }}>
+            No Previous Journals
+          </Typography>
+          <Typography variant="body2" sx={{ color: "text.secondary", mb: 3, maxWidth: "400px" }}>
+            You haven't submitted any journal details yet. Click the "Apply New" button to submit your first entry.
+          </Typography>
+        </Box>
+      ) : (
+        <TableContainer component={Paper} sx={{ borderRadius: "16px", background: "var(--bg-panel)", border: "1px solid var(--border-color)", boxShadow: "var(--shadow-premium)", overflowX: "auto" }}>
+          <Table>
+            <TableHead sx={{ background: "var(--gradient-primary)" }}>
               <TableRow>
-                <TableCell colSpan={9} align="center" sx={{ py: 4, color: "text.secondary" }}>
-                  No previous publications found. Click "Apply New" to submit one.
-                </TableCell>
+                <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>DOI</TableCell>
+                <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Paper Title</TableCell>
+                <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Journal Name</TableCell>
+                <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Quartile</TableCell>
+                <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Applicant</TableCell>
+                <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Author / Co-Author</TableCell>
+                <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Role</TableCell>
+                <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Status</TableCell>
+                <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Actions</TableCell>
               </TableRow>
-            ) : (
-              publicationsList.map((pub, i) => (
+            </TableHead>
+            <TableBody>
+              {publicationsList.map((pub, i) => (
                 <TableRow key={pub._id || i}>
                   <TableCell sx={{ color: "var(--text-secondary)", py: 2, fontSize: 12 }}>{pub.doi || "N/A"}</TableCell>
                   <TableCell sx={{ color: "var(--text-primary)", fontWeight: 500, py: 2 }}>{pub.paperTitle || "N/A"}</TableCell>
@@ -714,11 +729,11 @@ export default function JournalPublication() {
                     </Button>
                   </TableCell>
                 </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </TableContainer>
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      )}
     </Box>
   );
 

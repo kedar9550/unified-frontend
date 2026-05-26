@@ -9,6 +9,7 @@ import JournalApprovalDetail from './JournalApprovalDetail';
 import PatentApprovalDetail from './PatentApprovalDetail';
 import FundedProjectApprovalDetail from './FundedProjectApprovalDetail';
 import ConsultancyApprovalDetail from './ConsultancyApprovalDetail';
+import ConferenceApprovalDetails from './ConferenceApprovalDetails';
 
 const ResearchApprovalDetailWrapper = ({ role }) => {
     const { type, id } = useParams();
@@ -39,6 +40,8 @@ const ResearchApprovalDetailWrapper = ({ role }) => {
                 return <FundedProjectApprovalDetail id={id} onBack={goBack} role={role} />;
             case 'consultancy':
                 return <ConsultancyApprovalDetail id={id} onBack={goBack} role={role} />;
+            case 'conference':
+                return <ConferenceApprovalDetails id={id} onBack={goBack} role={role} />;
             // Add other cases here
             default:
                 return (

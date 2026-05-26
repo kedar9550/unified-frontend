@@ -11,6 +11,7 @@ import JournalPublication from "./pages/faculty/JournalPublication";
 import PatentPublication from "./pages/faculty/PatentPublication";
 import FundedProject from "./pages/faculty/FundedProject";
 import ConsultancyPublication from "./pages/faculty/ConsultancyPublication";
+import ConferencePublication from "./pages/faculty/ConferencePublication";
 import AcademicManagement from "./pages/uniprime/academics/AcademicManagement";
 import FacultyFormatResults from "./pages/examAdmin/FacultyFormatResults";
 import StudentFormatResults from "./pages/examAdmin/StudentFormatResults";
@@ -100,6 +101,7 @@ function App() {
         <Route path="/research/patent-publication" element={<ProtectedRoute element={<PatentPublication />} />} />
         <Route path="/research/funded-project" element={<ProtectedRoute element={<FundedProject />} />} />
         <Route path="/research/consultancy-publication" element={<ProtectedRoute element={<ConsultancyPublication />} />} />
+        <Route path="/research/conference-publication" element={<ProtectedRoute element={<ConferencePublication />} />} />
         <Route path="/research/sdg" element={<ProtectedRoute element={<SDG />} />} />
         <Route path="/academics/management" element={<ProtectedRoute element={<AcademicManagement />} />} />
         <Route path="exam-result/faculty-format" element={<ProtectedRoute element={<FacultyFormatResults />} />} />

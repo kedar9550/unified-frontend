@@ -213,36 +213,51 @@ export default function FundedProject() {
           Apply New
         </Button>
       </Box>
-      <TableContainer component={Paper} sx={{ borderRadius: "16px", background: "var(--bg-panel)", border: "1px solid var(--border-color)", boxShadow: "var(--shadow-premium)", overflow: "hidden" }}>
-        <Table>
-          <TableHead sx={{ background: "var(--gradient-primary)" }}>
-            <TableRow>
-              <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Title</TableCell>
-              <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Funding Agency</TableCell>
-              <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Sanction Date</TableCell>
-              <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Status</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {(!publicationsList || publicationsList.length === 0) ? (
+      {(!publicationsList || publicationsList.length === 0) ? (
+        <Box sx={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          py: 8,
+          px: 3,
+          background: "var(--bg-panel)",
+          borderRadius: "16px",
+          border: "1px dashed var(--border-color)",
+          boxShadow: "var(--shadow-premium)",
+          textAlign: "center"
+        }}>
+          <Typography variant="h6" sx={{ color: "var(--text-secondary)", fontWeight: 600, mb: 1 }}>
+            No Previous Funded Projects
+          </Typography>
+          <Typography variant="body2" sx={{ color: "text.secondary", mb: 3, maxWidth: "400px" }}>
+            You haven't submitted any funded project details yet. Click the "Apply New" button to submit your first entry.
+          </Typography>
+        </Box>
+      ) : (
+        <TableContainer component={Paper} sx={{ borderRadius: "16px", background: "var(--bg-panel)", border: "1px solid var(--border-color)", boxShadow: "var(--shadow-premium)", overflow: "hidden" }}>
+          <Table>
+            <TableHead sx={{ background: "var(--gradient-primary)" }}>
               <TableRow>
-                <TableCell colSpan={4} align="center" sx={{ py: 4, color: "text.secondary" }}>
-                  No previous projects found. Click "Apply New" to submit one.
-                </TableCell>
+                <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Title</TableCell>
+                <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Funding Agency</TableCell>
+                <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Sanction Date</TableCell>
+                <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Status</TableCell>
               </TableRow>
-            ) : (
-              publicationsList.map((pub, i) => (
+            </TableHead>
+            <TableBody>
+              {publicationsList.map((pub, i) => (
                 <TableRow key={pub._id || i}>
                   <TableCell sx={{ color: "var(--text-primary)", fontWeight: 500, py: 2 }}>{pub.title || "N/A"}</TableCell>
                   <TableCell sx={{ color: "var(--text-secondary)", py: 2 }}>{pub.fundingAgency || "N/A"}</TableCell>
                   <TableCell sx={{ color: "var(--text-secondary)", py: 2 }}>{pub.sanctionDate || "N/A"}</TableCell>
                   <TableCell sx={{ py: 2 }}><Typography variant="body2" sx={{ color: "#10b981", fontWeight: 700, background: "rgba(16, 185, 129, 0.1)", px: 1.5, py: 0.5, borderRadius: "6px", display: "inline-block" }}>Submitted</Typography></TableCell>
                 </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </TableContainer>
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      )}
     </Box>
   );
 
