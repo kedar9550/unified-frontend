@@ -1,15 +1,17 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../../context/AuthContext";
 
-import { Box, TextField, MenuItem, Select, Typography, Button, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, IconButton, Autocomplete } from "@mui/material";
+import { Box, TextField, MenuItem, Select, Typography, Button, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, IconButton, Autocomplete, CircularProgress } from "@mui/material";
 import { toast } from "sonner";
-import { AddCircle, Delete } from "@mui/icons-material";
+import { AddCircle, Delete, Search } from "@mui/icons-material";
 import PageHeader from "../../components/common/PageHeader";
 import {
   FacultyInfoRow, FormCard, Grid2, SubLabel, NoteBox, FileField, SubmitBtn,
-  labelStyle, MONTHS, YEARS
+  labelStyle, MONTHS, YEARS, disabledField
 } from "../../components/faculty/PublicationFormFields";
 import API from "../../api/axios";
+
+const ELSEVIER_API_KEY = "0436d4fe788649172354545ceca9e650";
 
 export default function BookChapterPublication() {
   const { user } = useAuth();
@@ -20,15 +22,18 @@ export default function BookChapterPublication() {
   const [publishers, setPublishers] = useState([]);
 
   const [form, setForm] = useState({
-    textBookName: "", chapterTitle: "", isbn: "", yearOfPublication: "",
+    textBookName: "", chapterTitle: "", yearOfPublication: "",
     chaptersContributed: "", publisher: "", month: "", year: "",
-    applyIncentive: "", publicationType: "National", customPublisher: "", applyingSeedGrant: "",
+    applyIncentive: "", publicationType: "", customPublisher: "", applyingSeedGrant: "",
     totalAuthors: 1, userAuthorPosition: 1, otherAuthors: []
   });
   const [files, setFiles] = useState({ coverPage: null, authorAffiliation: null, index: null, softCopy: null });
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
   const [snack, setSnack] = useState({ open: false, msg: "", severity: "success" });
+
+  const [scopusIndexed, setScopusIndexed] = useState(false);
+  const [scopusFetching, setScopusFetching] = useState(false);
 
   useEffect(() => {
     API.get("/api/research/book-chapter").then(res => {
@@ -46,6 +51,266 @@ export default function BookChapterPublication() {
 
   const set = (k) => (e) => setForm((p) => ({ ...p, [k]: e.target.value }));
   const setFile = (k) => (e) => setFiles((p) => ({ ...p, [k]: e.target.files[0] }));
+
+  const fetchScopusDetails = async () => {
+    if (!form.chapterTitle.trim()) {
+      toast.error("Please enter the Title of the Chapter first.");
+      return;
+    }
+    setScopusFetching(true);
+    try {
+      const headers = {
+        "X-ELS-APIKey": ELSEVIER_API_KEY,
+        Accept: "application/json",
+      };
+
+      // 1. Call Scopus Search API
+      const searchUrl = `https://api.elsevier.com/content/search/scopus?query=TITLE-ABS-KEY("${encodeURIComponent(form.chapterTitle)}")&count=10`;
+      const searchRes = await fetch(searchUrl, { method: "GET", headers });
+      if (!searchRes.ok) {
+        if (searchRes.status === 429) {
+          throw new Error("Elsevier/Scopus API rate limit exceeded (HTTP 429). Please try again later.");
+        } else if (searchRes.status === 401) {
+          throw new Error("Invalid or unauthorized Elsevier API key. Please check your configuration.");
+        } else {
+          throw new Error("Failed to search chapter in Scopus database.");
+        }
+      }
+
+      const searchJson = await searchRes.json();
+      const entries = searchJson?.["search-results"]?.entry || [];
+
+      if (entries.length === 0 || entries[0]?.error) {
+        setScopusIndexed(false);
+        toast.error("This book chapter is not indexed in Scopus.");
+        return;
+      }
+
+      // Title matching helper to find the most accurate chapter entry in the returned search results
+      const cleanTitle = (t) => {
+        if (!t) return "";
+        return t.toLowerCase()
+          .replace(/&/g, "and")
+          .replace(/[^a-z0-9]/g, "");
+      };
+      const userClean = cleanTitle(form.chapterTitle);
+      let bestEntry = null;
+
+      // STRICT exact normalized match ONLY
+      for (const ent of entries) {
+        const entClean = cleanTitle(ent["dc:title"]);
+        if (entClean === userClean) {
+          bestEntry = ent;
+          break;
+        }
+      }
+
+      // If still not matched, block to prevent matching wrong generic articles
+      if (!bestEntry) {
+        setScopusIndexed(false);
+        toast.error("This book chapter is not indexed in Scopus. (No exact title match was found)");
+        return;
+      }
+
+      // Extract SCOPUS_ID & DOI from the best matched entry
+      const dcIdentifier = bestEntry["dc:identifier"] || "";
+      let scopusId = "";
+      if (dcIdentifier.includes("SCOPUS_ID:")) {
+        scopusId = dcIdentifier.replace("SCOPUS_ID:", "");
+      } else {
+        const match = dcIdentifier.match(/\d+/);
+        if (match) scopusId = match[0];
+      }
+
+      const scopusDoi = bestEntry["prism:doi"] || "";
+
+      if (!scopusId) {
+        setScopusIndexed(false);
+        toast.error("Could not parse Scopus ID for this chapter.");
+        return;
+      }
+
+      // Initialize auto-filled metadata holders
+      let scopusBookTitle = "";
+      let scopusPublisher = "";
+      let scopusMonth = "";
+      let scopusYear = "";
+
+      // 1.5. Call Scopus Abstract Retrieval API for richer, accurate metadata
+      try {
+        const abstractUrl = `https://api.elsevier.com/content/abstract/scopus_id/${scopusId}`;
+        const absRes = await fetch(abstractUrl, { method: "GET", headers });
+        if (absRes.ok) {
+          const absJson = await absRes.json();
+          const coredata = absJson?.["abstracts-retrieval-response"]?.coredata || {};
+          
+          scopusBookTitle = coredata["prism:publicationName"] || "";
+          scopusPublisher = coredata["dc:publisher"] || "";
+          
+          const coverDate = coredata["prism:coverDate"] || ""; // "YYYY-MM-DD"
+          if (coverDate) {
+            const parts = coverDate.split("-");
+            if (parts[0]) scopusYear = parts[0];
+            if (parts[1]) {
+              const monthNum = parseInt(parts[1], 10);
+              const monthNames = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+              scopusMonth = monthNames[monthNum - 1] || "";
+            }
+          }
+        }
+      } catch (absErr) {
+        console.error("Failed to retrieve Scopus Abstract details:", absErr);
+      }
+
+      // Fallback to Search API entry fields if Abstract Retrieval fields are blank
+      if (!scopusBookTitle) {
+        scopusBookTitle = bestEntry["prism:publicationName"] || "";
+      }
+      if (!scopusYear || !scopusMonth) {
+        const coverDate = bestEntry["prism:coverDate"] || "";
+        if (coverDate) {
+          const parts = coverDate.split("-");
+          if (!scopusYear && parts[0]) scopusYear = parts[0];
+          if (!scopusMonth && parts[1]) {
+            const monthNum = parseInt(parts[1], 10);
+            const monthNames = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+            scopusMonth = monthNames[monthNum - 1] || "";
+          }
+        }
+      }
+
+      // 2. Call Crossref API using DOI as secondary fallback
+      let crossrefBookTitle = "";
+      let crossrefPublisher = "";
+      let crossrefMonth = "";
+      let crossrefYear = "";
+
+      if (scopusDoi) {
+        try {
+          const crossrefUrl = `https://api.crossref.org/works/${encodeURIComponent(scopusDoi)}`;
+          const crossrefRes = await fetch(crossrefUrl);
+          if (crossrefRes.ok) {
+            const crossrefJson = await crossrefRes.json();
+            const msg = crossrefJson?.message || {};
+
+            const containerTitleArray = msg["container-title"] || [];
+            crossrefBookTitle = containerTitleArray.length > 0 ? containerTitleArray[containerTitleArray.length - 1] : "";
+            crossrefPublisher = msg.publisher || "";
+
+            // Month & Year parsing logic from Crossref
+            const assertions = msg.assertion || [];
+            const dateAssertion = assertions.find(a => a.value && typeof a.value === "string" && /\b(19|20)\d{2}\b/.test(a.value));
+            if (dateAssertion) {
+              const val = dateAssertion.value;
+              const yearMatch = val.match(/\b(19|20)\d{2}\b/);
+              if (yearMatch) crossrefYear = yearMatch[0];
+              const monthNames = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+              const shortMonths = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+              for (let i = 0; i < 12; i++) {
+                if (val.toLowerCase().includes(monthNames[i].toLowerCase()) || val.toLowerCase().includes(shortMonths[i].toLowerCase())) {
+                  crossrefMonth = monthNames[i];
+                  break;
+                }
+              }
+            }
+
+            if (!crossrefMonth || !crossrefYear) {
+              const dateSource = msg["published-online"] || msg["published-print"] || msg["published"] || {};
+              const dateParts = dateSource["date-parts"]?.[0] || [];
+              if (dateParts.length > 0) {
+                if (!crossrefYear) crossrefYear = String(dateParts[0]);
+                if (!crossrefMonth && dateParts.length > 1) {
+                  const monthNum = parseInt(dateParts[1], 10);
+                  const monthNames = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+                  crossrefMonth = monthNames[monthNum - 1] || "";
+                }
+              }
+            }
+          }
+        } catch (crErr) {
+          console.error("Failed to retrieve Crossref details:", crErr);
+        }
+      }
+
+      // Prioritize Crossref for book chapter parents (exact Book Title) and clean publishers, falling back to Scopus series titles
+      const bookTitle = crossrefBookTitle || scopusBookTitle;
+      const rawPublisher = (crossrefPublisher || scopusPublisher || "").trim();
+      const extractedMonth = crossrefMonth || scopusMonth;
+      const extractedYear = crossrefYear || scopusYear;
+
+      // Match rawPublisher to local database publishers list with normalized substring matches
+      let matchedPublisher = null;
+      if (rawPublisher) {
+        const cleanRaw = rawPublisher.toLowerCase().replace(/[^a-z0-9]/g, "");
+
+        // Try exact match first
+        matchedPublisher = publishers.find(p => p.name?.toLowerCase() === rawPublisher.toLowerCase());
+
+        // Try substring match next
+        if (!matchedPublisher) {
+          matchedPublisher = publishers.find(p => {
+            const cleanDbName = p.name.toLowerCase().replace(/[^a-z0-9]/g, "");
+            return cleanRaw.includes(cleanDbName) || cleanDbName.includes(cleanRaw);
+          });
+        }
+
+        // Try major publisher alias mappings
+        if (!matchedPublisher) {
+          const lowerRaw = rawPublisher.toLowerCase();
+          let alias = "";
+          if (lowerRaw.includes("springer")) alias = "Springer";
+          else if (lowerRaw.includes("wiley")) alias = "Wiley";
+          else if (lowerRaw.includes("elsevier") || lowerRaw.includes("academic press")) alias = "Elsevier";
+          else if (lowerRaw.includes("crc") || lowerRaw.includes("taylor")) alias = "CRC Press";
+          else if (lowerRaw.includes("oxford")) alias = "Oxford University Press";
+          else if (lowerRaw.includes("cambridge")) alias = "Cambridge University Press";
+          else if (lowerRaw.includes("ieee")) alias = "IEEE";
+          else if (lowerRaw.includes("apress")) alias = "Apress";
+          else if (lowerRaw.includes("macmillan")) alias = "Macmillan Publishers";
+          else if (lowerRaw.includes("mcgraw")) alias = "McGraw Hill Education";
+          else if (lowerRaw.includes("pearson")) alias = "Pearson";
+          else if (lowerRaw.includes("sage")) alias = "SAGE Publishing";
+          else if (lowerRaw.includes("nova")) alias = "Nova Science Publishers";
+
+          if (alias) {
+            matchedPublisher = publishers.find(p => p.name?.toLowerCase() === alias.toLowerCase());
+          }
+        }
+      }
+
+      // Populate Form State
+      setForm(prev => {
+        const newState = {
+          ...prev,
+          textBookName: bookTitle || prev.textBookName,
+          month: extractedMonth || prev.month,
+          year: extractedYear || prev.year
+        };
+
+        if (matchedPublisher) {
+          newState.publisher = matchedPublisher.name;
+          newState.publicationType = matchedPublisher.type; // Auto-preselect National / International
+        } else if (rawPublisher) {
+          newState.publisher = "Others";
+          newState.customPublisher = rawPublisher;
+          newState.publicationType = "International"; // Default fallback for scopus indexed book chapters
+        } else {
+          newState.publisher = prev.publisher;
+        }
+
+        return newState;
+      });
+
+      setScopusIndexed(true);
+      toast.success("✓ Scopus indexing validated & metadata auto-filled!");
+    } catch (err) {
+      console.error(err);
+      setScopusIndexed(false);
+      toast.error(err.message || "An error occurred during verification.");
+    } finally {
+      setScopusFetching(false);
+    }
+  };
 
   // Handle dynamic author generation based on total authors and user position
   useEffect(() => {
@@ -142,18 +407,14 @@ export default function BookChapterPublication() {
     const newErrors = {};
     if (!form.textBookName) newErrors.textBookName = true;
     if (!form.chapterTitle) newErrors.chapterTitle = true;
-    if (!form.isbn) newErrors.isbn = true;
-    if (!form.yearOfPublication) newErrors.yearOfPublication = true;
     if (!form.publisher) newErrors.publisher = true;
     if (!form.month) newErrors.month = true;
     if (!form.year) newErrors.year = true;
     if (!form.applyIncentive) newErrors.applyIncentive = true;
     if (!form.applyingSeedGrant) newErrors.applyingSeedGrant = true;
+    if (!form.publicationType) newErrors.publicationType = true;
 
-    if (!files.coverPage) newErrors.coverPage = true;
     if (!files.authorAffiliation) newErrors.authorAffiliation = true;
-    if (!files.index) newErrors.index = true;
-    if (!files.softCopy) newErrors.softCopy = true;
 
     setErrors(newErrors);
 
@@ -194,8 +455,7 @@ export default function BookChapterPublication() {
 
       fd.append("textBookName", form.textBookName);
       fd.append("chapterTitle", form.chapterTitle);
-      fd.append("isbn", form.isbn);
-      fd.append("yearOfPublication", form.yearOfPublication);
+      fd.append("yearOfPublication", form.year);
       fd.append("firstAuthor", isFirst);
       fd.append("authorPosition", authPos);
       fd.append("chaptersContributed", form.chaptersContributed || "");
@@ -217,15 +477,16 @@ export default function BookChapterPublication() {
       await API.post("/api/research/book-chapter", fd, { headers: { "Content-Type": "multipart/form-data" } });
       toast.success("Book Chapter submitted successfully!");
       setForm({
-        textBookName: "", chapterTitle: "", isbn: "", yearOfPublication: "",
+        textBookName: "", chapterTitle: "", yearOfPublication: "",
         chaptersContributed: "", publisher: "", month: "", year: "",
-        applyIncentive: "", publicationType: "National", customPublisher: "", applyingSeedGrant: "",
+        applyIncentive: "", publicationType: "", customPublisher: "", applyingSeedGrant: "",
         totalAuthors: 1, userAuthorPosition: 1, otherAuthors: []
       });
       setFiles({ coverPage: null, authorAffiliation: null, index: null, softCopy: null });
       setErrors({});
       setSelectedYear("");
       setViewMode("list");
+      setScopusIndexed(false);
     } catch (err) {
       toast.error(err?.response?.data?.message || "Submission failed");
     } finally {
@@ -366,61 +627,83 @@ export default function BookChapterPublication() {
       <FacultyInfoRow />
 
       <Grid2 sx={{ mt: 1 }}>
-        <Box>
-          <Typography sx={labelStyle}>ISBN NO :</Typography>
-          <TextField size="small" fullWidth value={form.isbn} onChange={set("isbn")} error={!!errors.isbn} />
+        <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
+          <Typography sx={labelStyle}>Title of the Chapter: *</Typography>
+          <Box sx={{ display: "flex", gap: 1 }}>
+            <TextField
+              size="small"
+              fullWidth
+              placeholder="Enter the Title of the Chapter to fetch details from Scopus (e.g. Machine Learning in Healthcare)"
+              value={form.chapterTitle}
+              onChange={(e) => {
+                const newTitle = e.target.value;
+                setForm({
+                  chapterTitle: newTitle,
+                  textBookName: "",
+                  yearOfPublication: "",
+                  chaptersContributed: "",
+                  publisher: "",
+                  customPublisher: "",
+                  month: "",
+                  year: "",
+                  applyIncentive: "",
+                  publicationType: "",
+                  applyingSeedGrant: "",
+                  totalAuthors: 1,
+                  userAuthorPosition: 1,
+                  otherAuthors: []
+                });
+                setFiles({ coverPage: null, authorAffiliation: null, index: null, softCopy: null });
+                setScopusIndexed(false);
+              }}
+              error={!!errors.chapterTitle}
+              helperText={errors.chapterTitle ? "Title is required" : ""}
+            />
+            <Button
+              variant="contained"
+              onClick={fetchScopusDetails}
+              disabled={!form.chapterTitle || scopusFetching}
+              startIcon={scopusFetching ? <CircularProgress size={16} color="inherit" /> : <Search />}
+              sx={{
+                minWidth: "140px",
+                height: "40px",
+                textTransform: "none",
+                borderRadius: "8px",
+                fontWeight: 700,
+                background: "var(--color-primary)",
+                whiteSpace: "nowrap",
+                "&:hover": { background: "var(--color-primary-dark)" }
+              }}
+            >
+              {scopusFetching ? "Fetching..." : "Fetch Details"}
+            </Button>
+          </Box>
+          {scopusIndexed && (
+            <Typography variant="caption" sx={{ color: "#10b981", fontWeight: 700, mt: 0.5, display: "block" }}>
+              ✓ Scopus Indexing Verified! Details auto-filled below.
+            </Typography>
+          )}
         </Box>
         <Box>
           <Typography sx={labelStyle}>Title of the Book:</Typography>
           <TextField size="small" fullWidth value={form.textBookName} onChange={set("textBookName")} error={!!errors.textBookName} />
         </Box>
         <Box>
-          <Typography sx={labelStyle}>Title of the Chapter:</Typography>
-          <TextField size="small" fullWidth value={form.chapterTitle} onChange={set("chapterTitle")} inputProps={{ maxLength: 100 }}
-            error={!!errors.chapterTitle}
-            helperText={errors.chapterTitle ? "Title is required" : `${100 - form.chapterTitle.length} Character(s) Remaining`} />
-        </Box>
-        <Box>
-          <Typography sx={labelStyle}>Year of Publication:</Typography>
-          <Select size="small" fullWidth displayEmpty value={form.yearOfPublication} onChange={set("yearOfPublication")} error={!!errors.yearOfPublication}>
-            <MenuItem value="">Select</MenuItem>
-            {YEARS.map((y) => <MenuItem key={y} value={y}>{y}</MenuItem>)}
-          </Select>
-        </Box>
-        <Box>
           <Typography sx={labelStyle}>Publication Type:</Typography>
           <Select
             fullWidth
             size="small"
+            displayEmpty
             value={form.publicationType}
             onChange={(e) => setForm(p => ({ ...p, publicationType: e.target.value }))}
+            error={!!errors.publicationType}
           >
+            <MenuItem value="" disabled>Select</MenuItem>
             <MenuItem value="National">National</MenuItem>
             <MenuItem value="International">International</MenuItem>
           </Select>
         </Box>
         <Box>
-          <Typography sx={labelStyle}>Total Number of Authors : *</Typography>
-          <TextField
-            size="small"
-            fullWidth
-            type="number"
-            value={form.totalAuthors}
-            onChange={set("totalAuthors")}
-            inputProps={{ min: 1 }}
-          />
-        </Box>
-        {parseInt(form.totalAuthors) > 1 && (
-          <Box>
-            <Typography sx={labelStyle}>Applicant Author Position : *</Typography>
-            <Select size="small" fullWidth value={form.userAuthorPosition} onChange={set("userAuthorPosition")}>
-              {Array.from({ length: parseInt(form.totalAuthors) || 1 }, (_, i) => (
-                <MenuItem key={i + 1} value={i + 1}>{i + 1}</MenuItem>
-              ))}
-            </Select>
-          </Box>
-        )}
-        <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
           <Typography sx={labelStyle}>Name of the Publisher :</Typography>
           <Autocomplete
             options={[...publishers.filter(p => p.type === form.publicationType), { name: "Others", type: form.publicationType }]}
@@ -450,6 +733,27 @@ export default function BookChapterPublication() {
             />
           )}
         </Box>
+        <Box>
+          <Typography sx={labelStyle}>Total Number of Authors : *</Typography>
+          <TextField
+            size="small"
+            fullWidth
+            type="number"
+            value={form.totalAuthors}
+            onChange={set("totalAuthors")}
+            inputProps={{ min: 1 }}
+          />
+        </Box>
+        {parseInt(form.totalAuthors) > 1 && (
+          <Box>
+            <Typography sx={labelStyle}>Applicant Author Position : *</Typography>
+            <Select size="small" fullWidth value={form.userAuthorPosition} onChange={set("userAuthorPosition")}>
+              {Array.from({ length: parseInt(form.totalAuthors) || 1 }, (_, i) => (
+                <MenuItem key={i + 1} value={i + 1}>{i + 1}</MenuItem>
+              ))}
+            </Select>
+          </Box>
+        )}
 
         {parseInt(form.totalAuthors) > 1 && (
           <Box sx={{ gridColumn: { sm: "1 / -1" }, mt: 2, background: "var(--bg-panel)", p: 2, borderRadius: "12px", border: "1px solid var(--border-color)" }}>
@@ -548,10 +852,7 @@ export default function BookChapterPublication() {
       <NoteBox />
 
       <Grid2 sx={{ mt: 1 }}>
-        <FileField label="Attach CoverPage" name="coverPage" onChange={setFile("coverPage")} error={!!errors.coverPage} onError={(m) => toast.error(m)} />
-        <FileField label="Attach Page displaying author affiliation" name="authorAffiliation" onChange={setFile("authorAffiliation")} error={!!errors.authorAffiliation} onError={(m) => toast.error(m)} />
-        <FileField label="Attach Index" name="index" onChange={setFile("index")} error={!!errors.index} onError={(m) => toast.error(m)} />
-        <FileField label="Attach Soft Copy of Chapter" name="softCopy" onChange={setFile("softCopy")} error={!!errors.softCopy} onError={(m) => toast.error(m)} />
+        <FileField label="Attach Page displaying author affiliation and chapter title" name="authorAffiliation" onChange={setFile("authorAffiliation")} error={!!errors.authorAffiliation} onError={(m) => toast.error(m)} />
         <Box>
           <Typography sx={labelStyle}>Applying as a Seed Grant Work? *</Typography>
           <Select size="small" fullWidth displayEmpty value={form.applyingSeedGrant} onChange={set("applyingSeedGrant")} error={!!errors.applyingSeedGrant}>

@@ -250,7 +250,6 @@ const BookChapterApprovalDetail = ({ id, onBack, role }) => {
                     <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 3 }}><AutoStoriesIcon sx={{ color: "var(--color-primary)" }} /><Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>Publication Details</Typography></Box>
                     <Box sx={{ display: "flex", flexDirection: "column" }}>
                         <LabelValue label="Publisher" value={data.publisher} horizontal />
-                        <LabelValue label="ISBN" value={data.isbn} horizontal />
                         <LabelValue label="Pub Year" value={data.yearOfPublication} horizontal />
                         <LabelValue label="First Author" value={data.firstAuthor} horizontal />
                         <LabelValue label="Your Position" value={data.authorPosition} horizontal />
@@ -281,10 +280,12 @@ const BookChapterApprovalDetail = ({ id, onBack, role }) => {
             <Card sx={cardStyle}>
                 <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 3 }}><AttachFileIcon sx={{ color: "var(--color-primary)" }} /><Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>Attached Documents</Typography></Box>
                 <Grid container spacing={3}>
-                    {renderFilePreview("Cover Page", data.coverPage, 1)}
-                    {renderFilePreview("Author Affiliation", data.authorAffiliation, 2)}
-                    {renderFilePreview("Index", data.index, 3)}
-                    {renderFilePreview("Soft Copy", data.softCopy, 4)}
+                    {[
+                        { title: "Cover Page", path: data.coverPage },
+                        { title: "Author Affiliation & Chapter Title", path: data.authorAffiliation },
+                        { title: "Index", path: data.index },
+                        { title: "Soft Copy", path: data.softCopy }
+                    ].filter(doc => doc.path).map((doc, idx) => renderFilePreview(doc.title, doc.path, idx + 1))}
                 </Grid>
             </Card>
 
