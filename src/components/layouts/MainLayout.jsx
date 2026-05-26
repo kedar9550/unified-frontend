@@ -38,7 +38,7 @@ const MainLayout = ({ children }) => {
             px: { xs: 0, md: 3 },
             py: { xs: 1.5, md: 3 },
             pt: { xs: "70px", md: "88px" },
-            pb: { xs: "80px", md: 0 }, /* Space for bottom navbar */
+            pb: { xs: "80px", md: 3 }, /* Space for bottom navbar */
             transition: "all 0.3s ease",
             overflow: "hidden",
           }}

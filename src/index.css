@@ -39,7 +39,7 @@ html,
   transition: background-color 0.3s ease, color 0.3s ease;
   font-optical-sizing: auto;
   letter-spacing: -0.01em;
-  /* Slight tightening helps with high-contrast bleed */
+  overflow-x: hidden; /* Prevent horizontal scroll when using 100vw */
 }
 
 /* =========================================
@@ -335,7 +335,7 @@ body.dark-mode [data-sonner-toast][data-type="info"] {
 
 /* ================Custom Scrollbar Styles======================*/
 body {
-  overflow-y: scroll;
+  overflow-y: auto;
 }
 
 /* Custom Scrollbar */
@@ -344,7 +344,7 @@ body::-webkit-scrollbar {
 }
 
 body::-webkit-scrollbar-track {
-  background: var(--bg-main);
+  background: transparent;
 }
 
 body::-webkit-scrollbar-thumb {
