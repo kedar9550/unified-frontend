@@ -238,6 +238,7 @@ const PatentApprovalDetail = ({ id, onBack, role }) => {
                     <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 3 }}><ArticleIcon sx={{ color: "var(--color-primary)" }} /><Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>Patent Details</Typography></Box>
                     <Box sx={{ display: "flex", flexDirection: "column" }}>
                         <LabelValue label="Applicant Name" value={data.applicantName} horizontal />
+                        <LabelValue label="Name of the Applicant in Patent" value={data.patentName} horizontal />
                         <LabelValue label="Area of Patent" value={data.area} horizontal />
                         <LabelValue label="Filing No" value={data.filingNo} horizontal />
                         <LabelValue label="Date of Filing" value={new Date(data.dateOfFiling).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })} horizontal />

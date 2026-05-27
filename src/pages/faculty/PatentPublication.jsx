@@ -11,6 +11,7 @@ import { useAuth } from "../../context/AuthContext";
 import API from "../../api/axios";
 
 const PATENT_STATUSES = ["Filed", "Published", "Granted", "Abandoned"];
+const PATENT_APPLICANTS = ["Aditya University", "Aditya College of Pharmacy"];
 
 export default function PatentPublication() {
   const { user } = useAuth();
@@ -20,7 +21,7 @@ export default function PatentPublication() {
   const [publicationsList, setPublicationsList] = useState([]);
 
   const [form, setForm] = useState({
-    title: "", applicantName: "", area: "", filingNo: "", dateOfFiling: "",
+    title: "", applicantName: "", patentName: "", area: "", filingNo: "", dateOfFiling: "",
     status: "", month: "", year: "", applyIncentive: "", applyingSeedGrant: "",
     totalInventors: 1, otherInventors: []
   });
@@ -36,6 +37,12 @@ export default function PatentPublication() {
       setAcademicYears(res.data?.years || res.data?.data || []);
     }).catch(err => console.log("Failed to fetch academic years", err));
   }, [viewMode]);
+
+  useEffect(() => {
+    if (user?.name) {
+      setForm(prev => ({ ...prev, applicantName: user.name }));
+    }
+  }, [user]);
 
   const set = (k) => (e) => setForm((p) => ({ ...p, [k]: e.target.value }));
   const setFile = (k) => (e) => setFiles((p) => ({ ...p, [k]: e.target.files[0] }));
@@ -127,6 +134,10 @@ export default function PatentPublication() {
       toast.error("Please fill all required fields");
       return;
     }
+    if (!form.patentName) {
+      toast.error("Please select the Name of the Applicant in Patent");
+      return;
+    }
     if (!form.applyingSeedGrant) {
       toast.error("Please select whether applying as a Seed Grant Work.");
       return;
@@ -158,7 +169,8 @@ export default function PatentPublication() {
       })).filter(ca => ca.name && ca.affiliation);
 
       fd.append("title", form.title);
-      fd.append("applicantName", form.applicantName);
+      fd.append("applicantName", form.applicantName || user?.name || "");
+      fd.append("patentName", form.patentName);
       fd.append("area", form.area);
       fd.append("filingNo", form.filingNo);
       fd.append("dateOfFiling", form.dateOfFiling);
@@ -177,7 +189,7 @@ export default function PatentPublication() {
 
       await API.post("/api/research/patent", fd, { headers: { "Content-Type": "multipart/form-data" } });
       toast.success("Patent submitted successfully!");
-      setForm({ title: "", applicantName: "", area: "", filingNo: "", dateOfFiling: "", status: "", month: "", year: "", applyIncentive: "", applyingSeedGrant: "", totalInventors: 1, otherInventors: [] });
+      setForm({ title: "", applicantName: user?.name || "", patentName: "", area: "", filingNo: "", dateOfFiling: "", status: "", month: "", year: "", applyIncentive: "", applyingSeedGrant: "", totalInventors: 1, otherInventors: [] });
       setFiles({ eFilingReceipt: null, form1: null });
       setSelectedYear("");
       setViewMode("list");
@@ -192,16 +204,16 @@ export default function PatentPublication() {
     <Box>
       <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
         <Typography variant="h6" sx={{ color: "var(--text-primary)", fontWeight: 800 }}>My Patent Publications</Typography>
-        <Button 
-          variant="contained" 
-          onClick={() => setViewMode("select-year")} 
-          sx={{ 
-            background: "var(--gradient-primary)", 
-            borderRadius: "12px", 
-            px: 3, 
-            fontWeight: 700, 
-            textTransform: "none", 
-            "&:hover": { 
+        <Button
+          variant="contained"
+          onClick={() => setViewMode("select-year")}
+          sx={{
+            background: "var(--gradient-primary)",
+            borderRadius: "12px",
+            px: 3,
+            fontWeight: 700,
+            textTransform: "none",
+            "&:hover": {
               opacity: 0.9,
               transform: "translateY(-1px)",
               boxShadow: "0 4px 12px rgba(0,0,0,0.1)"
@@ -264,11 +276,11 @@ export default function PatentPublication() {
     <Box sx={{ maxWidth: 500, mx: "auto", mt: 5 }}>
       <FormCard title="Select Academic Year">
         <Typography sx={{ mb: 2, color: "var(--text-secondary)", fontWeight: 500 }}>Please select the academic year for this publication submission:</Typography>
-        <Select 
-          fullWidth 
-          size="small" 
-          displayEmpty 
-          value={selectedYear} 
+        <Select
+          fullWidth
+          size="small"
+          displayEmpty
+          value={selectedYear}
           onChange={(e) => setSelectedYear(e.target.value)}
         >
           <MenuItem value="" disabled>Select Academic Year</MenuItem>
@@ -277,12 +289,12 @@ export default function PatentPublication() {
           ))}
         </Select>
         <Box sx={{ display: "flex", gap: 2, mt: 4, justifyContent: "flex-end" }}>
-          <Button 
-            variant="outlined" 
-            onClick={() => setViewMode("list")} 
-            sx={{ 
-              borderRadius: "12px", 
-              textTransform: "none", 
+          <Button
+            variant="outlined"
+            onClick={() => setViewMode("list")}
+            sx={{
+              borderRadius: "12px",
+              textTransform: "none",
               fontWeight: 600,
               color: "var(--text-primary)",
               borderColor: "var(--border-color)",
@@ -294,17 +306,17 @@ export default function PatentPublication() {
           >
             Cancel
           </Button>
-          <Button 
-            variant="contained" 
-            disabled={!selectedYear} 
-            onClick={() => setViewMode("form")} 
-            sx={{ 
-              background: "var(--gradient-primary)", 
-              borderRadius: "12px", 
-              px: 4, 
-              fontWeight: 700, 
-              textTransform: "none", 
-              "&:hover": { 
+          <Button
+            variant="contained"
+            disabled={!selectedYear}
+            onClick={() => setViewMode("form")}
+            sx={{
+              background: "var(--gradient-primary)",
+              borderRadius: "12px",
+              px: 4,
+              fontWeight: 700,
+              textTransform: "none",
+              "&:hover": {
                 opacity: 0.9,
                 transform: "translateY(-1px)",
                 boxShadow: "0 4px 12px rgba(0,0,0,0.1)"
@@ -342,10 +354,12 @@ export default function PatentPublication() {
           <TextField size="small" fullWidth multiline rows={2} value={form.title} onChange={set("title")} />
         </Box>
         <Box>
-          <Typography sx={labelStyle}>Name of the Applicant in Patent:</Typography>
-          <Select size="small" fullWidth displayEmpty value={form.applicantName} onChange={set("applicantName")}>
-            <MenuItem value="">--Select--</MenuItem>
-            <MenuItem value={user?.name}>{user?.name}</MenuItem>
+          <Typography sx={labelStyle}>Name of the Applicant in Patent : *</Typography>
+          <Select size="small" fullWidth displayEmpty value={form.patentName} onChange={set("patentName")}>
+            <MenuItem value="" disabled>--Select--</MenuItem>
+            {PATENT_APPLICANTS.map((option) => (
+              <MenuItem key={option} value={option}>{option}</MenuItem>
+            ))}
           </Select>
         </Box>
         <Box>
@@ -495,21 +509,21 @@ export default function PatentPublication() {
       </Grid2>
 
       <Box sx={{ display: "flex", gap: 2, justifyContent: "center", mt: 4 }}>
-        <Button 
-          variant="outlined" 
-          onClick={() => setViewMode("list")} 
-          sx={{ 
-            px: 4, 
-            height: "44px", 
-            borderRadius: "12px", 
-            textTransform: "none", 
+        <Button
+          variant="outlined"
+          onClick={() => setViewMode("list")}
+          sx={{
+            px: 4,
+            height: "44px",
+            borderRadius: "12px",
+            textTransform: "none",
             fontWeight: 600,
             color: "var(--text-primary)",
             borderColor: "var(--border-color)",
-            "&:hover": { 
-              borderColor: "#ef4444", 
+            "&:hover": {
+              borderColor: "#ef4444",
               color: "#ef4444",
-              background: "rgba(239, 68, 68, 0.05)" 
+              background: "rgba(239, 68, 68, 0.05)"
             },
             transition: "all 0.3s ease"
           }}
