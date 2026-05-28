@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../../context/AuthContext";
 
-import { Box, TextField, MenuItem, Select, Typography, Button, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, IconButton, Autocomplete, CircularProgress } from "@mui/material";
+import { Box, TextField, MenuItem, Select, Typography, Button, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, IconButton, Autocomplete, CircularProgress, Dialog, DialogTitle, DialogContent, DialogActions, Stack, Grid, Card, Chip, Divider } from "@mui/material";
 import { toast } from "sonner";
-import { AddCircle, Delete, Search } from "@mui/icons-material";
+import { AddCircle, Delete, Search, Close, Description, Download, AttachFile, Groups, Book } from "@mui/icons-material";
 import PageHeader from "../../components/common/PageHeader";
 import {
   FacultyInfoRow, FormCard, Grid2, SubLabel, NoteBox, FileField, SubmitBtn,
@@ -20,6 +20,7 @@ export default function BookChapterPublication() {
   const [selectedYear, setSelectedYear] = useState("");
   const [publicationsList, setPublicationsList] = useState([]);
   const [publishers, setPublishers] = useState([]);
+  const [selectedPubDetails, setSelectedPubDetails] = useState(null);
 
   const [form, setForm] = useState({
     textBookName: "", chapterTitle: "", yearOfPublication: "",
@@ -51,6 +52,24 @@ export default function BookChapterPublication() {
 
   const set = (k) => (e) => setForm((p) => ({ ...p, [k]: e.target.value }));
   const setFile = (k) => (e) => setFiles((p) => ({ ...p, [k]: e.target.files[0] }));
+
+  const handleNumericChange = (key, allowDecimal = true) => (e) => {
+    const val = e.target.value;
+    const regex = allowDecimal ? /^\d*\.?\d*$/ : /^\d*$/;
+    if (regex.test(val)) {
+      setForm(p => ({ ...p, [key]: val }));
+    }
+  };
+
+  const getAvailableMonths = () => {
+    const selectedYearVal = parseInt(form.year);
+    const currentYear = new Date().getFullYear();
+    if (selectedYearVal === currentYear) {
+      const currentMonthIndex = new Date().getMonth(); // 0 to 11
+      return MONTHS.filter((_, idx) => idx <= currentMonthIndex);
+    }
+    return MONTHS;
+  };
 
   const fetchScopusDetails = async () => {
     if (!form.chapterTitle.trim()) {
@@ -423,6 +442,17 @@ export default function BookChapterPublication() {
       return;
     }
 
+    if (form.year && form.month) {
+      const selectedYear = parseInt(form.year);
+      const currentYear = new Date().getFullYear();
+      const currentMonthIndex = new Date().getMonth();
+      const monthIdx = MONTHS.indexOf(form.month);
+      if (selectedYear > currentYear || (selectedYear === currentYear && monthIdx > currentMonthIndex)) {
+        toast.error("Publication date cannot be in the future");
+        return;
+      }
+    }
+
     const total = parseInt(form.totalAuthors) || 1;
     if (total < 1) {
       toast.error("Total number of authors must be at least 1");
@@ -547,7 +577,11 @@ export default function BookChapterPublication() {
                 <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Text Book Name</TableCell>
                 <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Chapter Title</TableCell>
                 <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Publisher</TableCell>
+                <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Applicant</TableCell>
+                <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Role</TableCell>
+                <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Academic Year</TableCell>
                 <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Status</TableCell>
+                <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Actions</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -556,7 +590,49 @@ export default function BookChapterPublication() {
                   <TableCell sx={{ color: "var(--text-primary)", fontWeight: 500, py: 2 }}>{pub.textBookName || "N/A"}</TableCell>
                   <TableCell sx={{ color: "var(--text-secondary)", py: 2 }}>{pub.chapterTitle || "N/A"}</TableCell>
                   <TableCell sx={{ color: "var(--text-secondary)", py: 2 }}>{pub.publisher || "N/A"}</TableCell>
-                  <TableCell sx={{ py: 2 }}><Typography variant="body2" sx={{ color: "#10b981", fontWeight: 700, background: "rgba(16, 185, 129, 0.1)", px: 1.5, py: 0.5, borderRadius: "6px", display: "inline-block" }}>Submitted</Typography></TableCell>
+                  <TableCell sx={{ color: "var(--text-secondary)", py: 2 }}>{pub.facultyId?.name || "N/A"}</TableCell>
+                  <TableCell sx={{ py: 2 }}>
+                    <Typography variant="body2" sx={{ fontWeight: 600, color: pub.visibilityRole === "Applicant" ? "var(--color-primary)" : "text.secondary" }}>
+                      {pub.visibilityRole || "Applicant"}
+                    </Typography>
+                  </TableCell>
+                  <TableCell sx={{ color: "var(--text-secondary)", py: 2 }}>{pub.academicYear?.year || "N/A"}</TableCell>
+                  <TableCell sx={{ py: 2 }}>
+                    <Typography
+                      variant="body2"
+                      sx={{
+                        color: pub.status?.includes('Rejected') ? "#ef4444" : pub.status === 'Approved' ? "#10b981" : "#e8a000",
+                        fontWeight: 700,
+                        background: pub.status?.includes('Rejected') ? "rgba(239, 68, 68, 0.1)" : pub.status === 'Approved' ? "rgba(16, 185, 129, 0.1)" : "rgba(232, 160, 0, 0.1)",
+                        px: 1.5,
+                        py: 0.5,
+                        borderRadius: "6px",
+                        display: "inline-block"
+                      }}
+                    >
+                      {pub.status || "Pending"}
+                    </Typography>
+                  </TableCell>
+                  <TableCell sx={{ py: 2 }}>
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      onClick={() => setSelectedPubDetails(pub)}
+                      sx={{
+                        borderRadius: "8px",
+                        textTransform: "none",
+                        fontWeight: 700,
+                        borderColor: "var(--color-primary)",
+                        color: "var(--color-primary)",
+                        "&:hover": {
+                          background: "var(--bg-accent-1)",
+                          borderColor: "var(--color-primary)"
+                        }
+                      }}
+                    >
+                      View
+                    </Button>
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -852,15 +928,20 @@ export default function BookChapterPublication() {
       <SubLabel text="Date of the Publication:" />
       <Grid2>
         <Box>
-          <Typography sx={labelStyle}>Month:</Typography>
-          <Select size="small" fullWidth displayEmpty value={form.month} onChange={set("month")} error={!!errors.month}>
-            <MenuItem value="">Select</MenuItem>
-            {MONTHS.map((m) => <MenuItem key={m} value={m}>{m}</MenuItem>)}
+          <Typography sx={labelStyle}>Year:</Typography>
+          <Select size="small" fullWidth displayEmpty value={form.year} onChange={(e) => {
+            setForm(p => ({ ...p, year: e.target.value, month: "" }));
+          }} error={!!errors.year}>
+            <MenuItem value="">Select Year</MenuItem>
+            {YEARS.map((y) => <MenuItem key={y} value={y}>{y}</MenuItem>)}
           </Select>
         </Box>
         <Box>
-          <Typography sx={labelStyle}>Year:</Typography>
-          <TextField size="small" fullWidth value={form.year} onChange={set("year")} placeholder="YYYY" inputProps={{ maxLength: 4 }} error={!!errors.year} />
+          <Typography sx={labelStyle}>Month:</Typography>
+          <Select size="small" fullWidth displayEmpty value={form.month} onChange={set("month")} disabled={!form.year} error={!!errors.month}>
+            <MenuItem value="">Select Month</MenuItem>
+            {getAvailableMonths().map((m) => <MenuItem key={m} value={m}>{m}</MenuItem>)}
+          </Select>
         </Box>
       </Grid2>
 
@@ -913,6 +994,203 @@ export default function BookChapterPublication() {
     </FormCard>
   );
 
+  const handleCloseDetails = () => setSelectedPubDetails(null);
+
+  const LabelValueDetails = ({ label, value, chip, horizontal = false }) => (
+    <Box sx={{
+      p: horizontal ? "10px 16px" : 1.5,
+      borderRadius: "10px",
+      background: horizontal ? "transparent" : "rgba(255,255,255,0.02)",
+      display: "flex",
+      flexDirection: horizontal ? "row" : "column",
+      alignItems: horizontal ? "center" : "flex-start",
+      justifyContent: horizontal ? "flex-start" : "center",
+      gap: horizontal ? 2 : 0.5,
+      borderBottom: horizontal ? "1px solid var(--border-color)" : "1px solid transparent",
+      "&:last-child": { borderBottom: "none" },
+    }}>
+      <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", letterSpacing: "0.05em", fontWeight: 800, fontSize: "0.65rem", mb: horizontal ? 0 : 0.5 }}>{label}</Typography>
+      <Box sx={{ flex: horizontal ? 1 : "none" }}>
+        {chip ? chip : <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", fontSize: "0.85rem" }}>{value || "-"}</Typography>}
+      </Box>
+    </Box>
+  );
+
+  const renderDetailFile = (title, filepath, folder = "book-chapters") => {
+    if (!filepath) return null;
+    const backendURL = (import.meta.env.VITE_BACKEND_URL || "http://localhost:9000").replace(/\/$/, "");
+    let normalizedPath = filepath.replace(/\\/g, '/');
+    if (!normalizedPath.startsWith('http') && !normalizedPath.includes('uploads/')) {
+      normalizedPath = `/uploads/${folder}/${normalizedPath.startsWith('/') ? normalizedPath.substring(1) : normalizedPath}`;
+    }
+    const cleanPath = normalizedPath.startsWith('/') ? normalizedPath : `/${normalizedPath}`;
+    const fileUrl = normalizedPath.startsWith('http') ? normalizedPath : `${backendURL}${cleanPath}`;
+    const isImage = /\.(jpg|jpeg|png|gif)$/i.test(normalizedPath);
+
+    return (
+      <Box sx={{ flex: "1 1 200px" }}>
+        <Typography variant="caption" sx={{ fontWeight: 800, color: "var(--color-primary)", fontSize: "0.7rem", textTransform: "uppercase", display: "block", mb: 1 }}>{title}</Typography>
+        <Box sx={{
+          height: 120, display: "flex", alignItems: "center", justifyContent: "center",
+          border: "1px solid var(--border-color)", background: "var(--bg-panel)", borderRadius: "8px",
+          overflow: "hidden", cursor: "pointer", transition: "all 0.2s ease",
+          "&:hover": { borderColor: "var(--color-primary)", transform: "translateY(-2px)" }
+        }} onClick={() => window.open(fileUrl, '_blank')}>
+          {isImage ? <img src={fileUrl} alt={title} style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <Box sx={{ textAlign: "center" }}><Description sx={{ fontSize: 24, color: "var(--text-secondary)", mb: 0.5 }} /><Typography variant="caption" sx={{ color: "var(--text-secondary)", fontWeight: 700, display: "block" }}>PDF</Typography></Box>}
+        </Box>
+      </Box>
+    );
+  };
+
+  const renderDetailsDialog = () => {
+    if (!selectedPubDetails) return null;
+    const data = selectedPubDetails;
+    const statusColor = (() => {
+      const s = data.status || "";
+      if (/Pending/i.test(s)) return "#ff9800";
+      if (/Approved/i.test(s)) return "#4caf50";
+      if (/Rejected/i.test(s)) return "#f44336";
+      return "#666";
+    })();
+
+    return (
+      <Dialog 
+        open={!!selectedPubDetails} 
+        onClose={handleCloseDetails}
+        maxWidth="md"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: "20px",
+            background: "var(--bg-glass)",
+            backdropFilter: "blur(12px)",
+            border: "1px solid var(--border-color)",
+            boxShadow: "var(--shadow-premium)",
+          }
+        }}
+      >
+        <DialogTitle sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "var(--gradient-primary)", color: "#fff", py: 2 }}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+            <Book sx={{ color: "#fff" }} />
+            <Typography variant="h6" sx={{ fontWeight: 800 }}>Book Chapter Details</Typography>
+          </Box>
+          <IconButton onClick={handleCloseDetails} sx={{ color: "#fff" }}><Close /></IconButton>
+        </DialogTitle>
+        <DialogContent sx={{ p: 3, mt: 1 }}>
+          <Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)", mb: 1 }}>{data.chapterTitle}</Typography>
+          <Typography variant="body2" sx={{ color: "var(--text-secondary)", mb: 3, fontWeight: 600 }}>Text Book: {data.textBookName}</Typography>
+          
+          <Grid container spacing={2}>
+            <Grid item xs={12} sm={3}><LabelValueDetails label="Academic Year" value={data.academicYear?.year || "N/A"} /></Grid>
+            <Grid item xs={12} sm={3}><LabelValueDetails label="Publisher" value={data.publisher} /></Grid>
+            <Grid item xs={12} sm={3}><LabelValueDetails label="Role" value={data.visibilityRole || "Applicant"} /></Grid>
+            <Grid item xs={12} sm={3}>
+              <LabelValueDetails 
+                label="Status" 
+                chip={
+                  <Chip 
+                    label={data.status} 
+                    size="small" 
+                    sx={{ 
+                      bgcolor: `${statusColor}15`, 
+                      color: statusColor, 
+                      fontWeight: 800, 
+                      border: `1px solid ${statusColor}44`,
+                      borderRadius: "6px" 
+                    }} 
+                  />
+                } 
+              />
+            </Grid>
+
+            <Grid item xs={12} sm={3}><LabelValueDetails label="Publication Type" value={data.publicationType || "National"} /></Grid>
+            <Grid item xs={12} sm={3}><LabelValueDetails label="Month/Year" value={`${data.month || ""} ${data.year || ""}`} /></Grid>
+            <Grid item xs={12} sm={3}><LabelValueDetails label="First Author?" value={data.firstAuthor} /></Grid>
+            <Grid item xs={12} sm={3}><LabelValueDetails label="Author Position" value={data.userAuthorPosition || data.authorPosition || "1"} /></Grid>
+
+            <Grid item xs={12} sm={6}><LabelValueDetails label="Applying Seed Grant?" value={data.applyingSeedGrant === "Yes" ? "Yes" : "No"} /></Grid>
+            <Grid item xs={12} sm={6}><LabelValueDetails label="Apply Incentive?" value={data.applyIncentive === "Yes" ? "Yes" : "No"} /></Grid>
+
+            {data.status === "Approved" && data.approvedAmount && (
+              <Grid item xs={12} sm={6}>
+                <LabelValueDetails 
+                  label="Approved Incentive" 
+                  value={`₹${data.approvedAmount}`} 
+                  chip={<Chip label={`₹${data.approvedAmount}`} size="small" sx={{ bgcolor: "rgba(76, 175, 80, 0.1)", color: "#4caf50", fontWeight: 800 }} />}
+                />
+              </Grid>
+            )}
+          </Grid>
+
+          <Divider sx={{ my: 3 }} />
+
+          {/* Co-Authors detail list */}
+          {data.coAuthors && data.coAuthors.length > 0 && (
+            <Card sx={{ p: 0, overflow: "hidden", mb: 3, border: "1px solid var(--border-color)", background: "rgba(255,255,255,0.01)" }}>
+              <Box sx={{ p: 2, display: "flex", alignItems: "center", gap: 1.5, borderBottom: "1px solid var(--border-color)" }}>
+                <Groups sx={{ color: "var(--color-primary)" }} />
+                <Typography sx={{ fontWeight: 800, color: "var(--text-primary)" }}>Co-Authors & Affiliations</Typography>
+              </Box>
+              <TableContainer>
+                <Table size="small">
+                  <TableHead sx={{ bgcolor: "var(--bg-panel)" }}>
+                    <TableRow>
+                      <TableCell sx={{ fontWeight: 700, color: "var(--text-secondary)" }}>NAME</TableCell>
+                      <TableCell sx={{ fontWeight: 700, color: "var(--text-secondary)" }}>AFFILIATION</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {data.coAuthors.map((author, idx) => (
+                      <TableRow key={idx}>
+                        <TableCell sx={{ fontWeight: 700, color: "var(--text-primary)" }}>{author.name}</TableCell>
+                        <TableCell sx={{ color: "var(--text-secondary)" }}>{author.affiliation}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            </Card>
+          )}
+
+          {/* Attached Files previews */}
+          <Box sx={{ mt: 3 }}>
+            <Box sx={{ display: "flex", gap: 1.5, alignItems: "center", mb: 2 }}>
+              <AttachFile sx={{ color: "var(--color-primary)" }} />
+              <Typography sx={{ fontWeight: 800, color: "var(--text-primary)" }}>Attached Documents</Typography>
+            </Box>
+            <Stack direction="row" spacing={3} flexWrap="wrap" useFlexGap>
+              {renderDetailFile("Cover Page", data.coverPage)}
+              {renderDetailFile("Author Affiliation", data.authorAffiliation)}
+              {renderDetailFile("Index Page", data.index)}
+              {renderDetailFile("Soft Copy", data.softCopy)}
+            </Stack>
+          </Box>
+
+          {/* Remarks/Comments if available */}
+          {(data.hodComment || data.rndComment) && (
+            <Box sx={{ mt: 4, display: "flex", flexDirection: "column", gap: 2 }}>
+              {data.hodComment && (
+                <Box sx={{ p: 2, bgcolor: "rgba(255, 193, 7, 0.05)", borderRadius: "10px", border: "1px solid rgba(255, 193, 7, 0.2)" }}>
+                  <Typography variant="caption" sx={{ fontWeight: 900, color: "#ff9800", textTransform: "uppercase" }}>HOD Remarks</Typography>
+                  <Typography variant="body2" sx={{ fontStyle: "italic", mt: 0.5, color: "var(--text-secondary)" }}>"{data.hodComment}"</Typography>
+                </Box>
+              )}
+              {data.rndComment && (
+                <Box sx={{ p: 2, bgcolor: "rgba(76, 175, 80, 0.05)", borderRadius: "10px", border: "1px solid rgba(76, 175, 80, 0.2)" }}>
+                  <Typography variant="caption" sx={{ fontWeight: 900, color: "#4caf50", textTransform: "uppercase" }}>R&D Remarks</Typography>
+                  <Typography variant="body2" sx={{ fontStyle: "italic", mt: 0.5, color: "var(--text-secondary)" }}>"{data.rndComment}"</Typography>
+                </Box>
+              )}
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions sx={{ p: 2.5, borderTop: "1px solid var(--border-color)" }}>
+          <Button onClick={handleCloseDetails} sx={{ color: "var(--text-primary)", fontWeight: 700 }}>Close</Button>
+        </DialogActions>
+      </Dialog>
+    );
+  };
+
   return (
     <Box>
       <PageHeader title="Book Chapter" subtitle="Manage and submit your book chapter publication details" breadcrumbs={["Home", "Publications", "Book Chapter"]} />
@@ -920,7 +1198,7 @@ export default function BookChapterPublication() {
       {viewMode === "list" && renderList()}
       {viewMode === "select-year" && renderSelectYear()}
       {viewMode === "form" && renderForm()}
-
+      {renderDetailsDialog()}
     </Box>
   );
 }

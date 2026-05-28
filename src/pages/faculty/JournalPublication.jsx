@@ -320,6 +320,24 @@ export default function JournalPublication() {
     });
   };
 
+  const handleNumericChange = (key, allowDecimal = true) => (e) => {
+    const val = e.target.value;
+    const regex = allowDecimal ? /^\d*\.?\d*$/ : /^\d*$/;
+    if (regex.test(val)) {
+      setForm(p => ({ ...p, [key]: val }));
+    }
+  };
+
+  const getAvailableMonths = () => {
+    const selectedYearVal = parseInt(form.year);
+    const currentYear = new Date().getFullYear();
+    if (selectedYearVal === currentYear) {
+      const currentMonthIndex = new Date().getMonth(); // 0 to 11
+      return MONTHS.filter((_, idx) => idx <= currentMonthIndex);
+    }
+    return MONTHS;
+  };
+
   const validateFile = (file) => {
     if (!file) return true;
     const allowed = ["application/pdf", "image/jpeg", "image/jpg", "image/png"];
@@ -538,6 +556,17 @@ export default function JournalPublication() {
     if (!form.doi || !form.paperTitle || !form.journalName || !form.vol || !form.issue || !form.month || !form.year) {
       toast.error("Please fill all required fields.");
       return;
+    }
+
+    if (form.year && form.month) {
+      const selectedYear = parseInt(form.year);
+      const currentYear = new Date().getFullYear();
+      const currentMonthIndex = new Date().getMonth();
+      const monthIdx = MONTHS.indexOf(form.month);
+      if (selectedYear > currentYear || (selectedYear === currentYear && monthIdx > currentMonthIndex)) {
+        toast.error("Publication date cannot be in the future");
+        return;
+      }
     }
     if (!form.applyingSeedGrant) {
       toast.error("Please select whether applying as a Seed Grant Work.");
@@ -858,15 +887,20 @@ export default function JournalPublication() {
       <SubLabel text="Date of the Publication:" />
       <Grid2>
         <Box>
-          <Typography sx={labelStyle}>Month : *</Typography>
-          <Select size="small" fullWidth displayEmpty value={form.month} onChange={set("month")} disabled={isFetched("month")} sx={isFetched("month") ? disabledField : {}}>
-            <MenuItem value="">Select</MenuItem>
-            {MONTHS.map(m => <MenuItem key={m} value={m}>{m}</MenuItem>)}
+          <Typography sx={labelStyle}>Year : *</Typography>
+          <Select size="small" fullWidth displayEmpty value={form.year} onChange={(e) => {
+            setForm(p => ({ ...p, year: e.target.value, month: "" }));
+          }} disabled={isFetched("year")} sx={isFetched("year") ? disabledField : {}}>
+            <MenuItem value="">Select Year</MenuItem>
+            {YEARS.map(y => <MenuItem key={y} value={y}>{y}</MenuItem>)}
           </Select>
         </Box>
         <Box>
-          <Typography sx={labelStyle}>Year : *</Typography>
-          <TextField size="small" fullWidth value={form.year} onChange={set("year")} placeholder="YYYY" inputProps={{ maxLength: 4 }} disabled={isFetched("year")} sx={isFetched("year") ? disabledField : {}} />
+          <Typography sx={labelStyle}>Month : *</Typography>
+          <Select size="small" fullWidth displayEmpty value={form.month} onChange={set("month")} disabled={(!form.year) || isFetched("month")} sx={isFetched("month") ? disabledField : {}}>
+            <MenuItem value="">Select Month</MenuItem>
+            {getAvailableMonths().map(m => <MenuItem key={m} value={m}>{m}</MenuItem>)}
+          </Select>
         </Box>
       </Grid2>
 

@@ -104,6 +104,24 @@ export default function TextbookPublication() {
     }
   };
 
+  const handleNumericChange = (key, allowDecimal = true) => (e) => {
+    const val = e.target.value;
+    const regex = allowDecimal ? /^\d*\.?\d*$/ : /^\d*$/;
+    if (regex.test(val)) {
+      setForm(p => ({ ...p, [key]: val }));
+    }
+  };
+
+  const getAvailableMonths = () => {
+    const selectedYearVal = parseInt(form.year);
+    const currentYear = new Date().getFullYear();
+    if (selectedYearVal === currentYear) {
+      const currentMonthIndex = new Date().getMonth(); // 0 to 11
+      return MONTHS.filter((_, idx) => idx <= currentMonthIndex);
+    }
+    return MONTHS;
+  };
+
   const validateFile = (file) => {
     if (!file) return true;
     const allowed = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png'];
@@ -239,6 +257,25 @@ export default function TextbookPublication() {
     if (!form.title || !form.publisher || !form.isbn) {
       toast.error("Please fill all required fields");
       return;
+    }
+
+    if (form.cost) {
+      const numCost = Number(form.cost);
+      if (isNaN(numCost) || numCost < 0) {
+        toast.error("Cost must be a positive numeric value");
+        return;
+      }
+    }
+
+    if (form.year && form.month) {
+      const selectedYear = parseInt(form.year);
+      const currentYear = new Date().getFullYear();
+      const currentMonthIndex = new Date().getMonth();
+      const monthIdx = MONTHS.indexOf(form.month);
+      if (selectedYear > currentYear || (selectedYear === currentYear && monthIdx > currentMonthIndex)) {
+        toast.error("Publication date cannot be in the future");
+        return;
+      }
     }
 
     if (!form.applyIncentive) {
@@ -643,7 +680,7 @@ export default function TextbookPublication() {
             {/* Center: Input Field */}
             <input
               value={form.cost}
-              onChange={set("cost")}
+              onChange={handleNumericChange("cost")}
               placeholder="0.00"
               style={{
                 flex: 1,
@@ -799,15 +836,20 @@ export default function TextbookPublication() {
       <SubLabel text="Date of the Publication:" />
       <Grid2>
         <Box>
-          <Typography sx={labelStyle}>Month:</Typography>
-          <Select size="small" fullWidth displayEmpty value={form.month} onChange={set("month")} disabled={isbnFetched && !!form.month} sx={isbnFetched && !!form.month ? disabledField : {}}>
-            <MenuItem value="">Select</MenuItem>
-            {MONTHS.map((m) => <MenuItem key={m} value={m}>{m}</MenuItem>)}
+          <Typography sx={labelStyle}>Year:</Typography>
+          <Select size="small" fullWidth displayEmpty value={form.year} onChange={(e) => {
+            setForm(p => ({ ...p, year: e.target.value, month: "" }));
+          }} disabled={isbnFetched && !!form.year} sx={isbnFetched && !!form.year ? disabledField : {}}>
+            <MenuItem value="">Select Year</MenuItem>
+            {YEARS.map((y) => <MenuItem key={y} value={y}>{y}</MenuItem>)}
           </Select>
         </Box>
         <Box>
-          <Typography sx={labelStyle}>Year:</Typography>
-          <TextField size="small" fullWidth value={form.year} onChange={set("year")} placeholder="YYYY" inputProps={{ maxLength: 4 }} disabled={isbnFetched && !!form.year} sx={isbnFetched && !!form.year ? disabledField : {}} />
+          <Typography sx={labelStyle}>Month:</Typography>
+          <Select size="small" fullWidth displayEmpty value={form.month} onChange={set("month")} disabled={(!form.year) || (isbnFetched && !!form.month)} sx={isbnFetched && !!form.month ? disabledField : {}}>
+            <MenuItem value="">Select Month</MenuItem>
+            {getAvailableMonths().map((m) => <MenuItem key={m} value={m}>{m}</MenuItem>)}
+          </Select>
         </Box>
       </Grid2>
 

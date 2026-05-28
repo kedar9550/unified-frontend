@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../../context/AuthContext";
 
-import { Box, TextField, MenuItem, Select, Typography, Button, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper } from "@mui/material";
+import { Box, TextField, MenuItem, Select, Typography, Button, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, IconButton, Dialog, DialogTitle, DialogContent, DialogActions, Stack, Grid, Card, Chip, Divider } from "@mui/material";
 import { toast } from "sonner";
+import { Close, Description, Download, AttachFile, Groups, AccountBalanceWallet } from "@mui/icons-material";
 import PageHeader from "../../components/common/PageHeader";
 import {
   FacultyInfoRow, FormCard, Grid2, SubLabel, NoteBox, FileField, SubmitBtn,
@@ -16,6 +17,7 @@ export default function FundedProject() {
   const [academicYears, setAcademicYears] = useState([]);
   const [selectedYear, setSelectedYear] = useState("");
   const [publicationsList, setPublicationsList] = useState([]);
+  const [selectedPubDetails, setSelectedPubDetails] = useState(null);
 
   const [form, setForm] = useState({
     title: "", duration: "", fundingAgency: "", scheme: "",
@@ -39,6 +41,14 @@ export default function FundedProject() {
 
   const set = (k) => (e) => setForm((p) => ({ ...p, [k]: e.target.value }));
   const setFile = (k) => (e) => setFiles((p) => ({ ...p, [k]: e.target.files[0] }));
+
+  const handleNumericChange = (key, allowDecimal = true) => (e) => {
+    const val = e.target.value;
+    const regex = allowDecimal ? /^\d*\.?\d*$/ : /^\d*$/;
+    if (regex.test(val)) {
+      setForm(p => ({ ...p, [key]: val }));
+    }
+  };
 
   // Handle dynamic investigator generation based on total count
   useEffect(() => {
@@ -125,6 +135,43 @@ export default function FundedProject() {
   const handleSubmit = async () => {
     if (!form.title || !form.fundingAgency || !form.sanctionedAmount || !form.sanctionDate || !form.applyingSeedGrant) {
       toast.error("Please fill all required fields");
+      return;
+    }
+
+    // Numeric and Future Date Validations
+    if (form.duration) {
+      const numDuration = Number(form.duration);
+      if (isNaN(numDuration) || numDuration <= 0) {
+        toast.error("Duration of Project in Years must be a positive numeric value");
+        return;
+      }
+    }
+    if (form.recurring) {
+      const numRecurring = Number(form.recurring);
+      if (isNaN(numRecurring) || numRecurring < 0) {
+        toast.error("Recurring amount must be a positive numeric value");
+        return;
+      }
+    }
+    if (form.nonRecurring) {
+      const numNonRecurring = Number(form.nonRecurring);
+      if (isNaN(numNonRecurring) || numNonRecurring < 0) {
+        toast.error("Non-Recurring amount must be a positive numeric value");
+        return;
+      }
+    }
+    const numSanctioned = Number(form.sanctionedAmount);
+    if (isNaN(numSanctioned) || numSanctioned <= 0) {
+      toast.error("Sanctioned Amount must be a positive numeric value");
+      return;
+    }
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const selDate = new Date(form.sanctionDate);
+    selDate.setHours(0, 0, 0, 0);
+    if (selDate > today) {
+      toast.error("Sanction Date cannot be in the future");
       return;
     }
 
@@ -242,7 +289,11 @@ export default function FundedProject() {
                 <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Title</TableCell>
                 <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Funding Agency</TableCell>
                 <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Sanction Date</TableCell>
+                <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Applicant</TableCell>
+                <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Role</TableCell>
+                <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Academic Year</TableCell>
                 <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Status</TableCell>
+                <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Actions</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -250,8 +301,52 @@ export default function FundedProject() {
                 <TableRow key={pub._id || i}>
                   <TableCell sx={{ color: "var(--text-primary)", fontWeight: 500, py: 2 }}>{pub.title || "N/A"}</TableCell>
                   <TableCell sx={{ color: "var(--text-secondary)", py: 2 }}>{pub.fundingAgency || "N/A"}</TableCell>
-                  <TableCell sx={{ color: "var(--text-secondary)", py: 2 }}>{pub.sanctionDate || "N/A"}</TableCell>
-                  <TableCell sx={{ py: 2 }}><Typography variant="body2" sx={{ color: "#10b981", fontWeight: 700, background: "rgba(16, 185, 129, 0.1)", px: 1.5, py: 0.5, borderRadius: "6px", display: "inline-block" }}>Submitted</Typography></TableCell>
+                  <TableCell sx={{ color: "var(--text-secondary)", py: 2 }}>
+                    {pub.sanctionDate ? new Date(pub.sanctionDate).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric' }) : "N/A"}
+                  </TableCell>
+                  <TableCell sx={{ color: "var(--text-secondary)", py: 2 }}>{pub.facultyId?.name || "N/A"}</TableCell>
+                  <TableCell sx={{ py: 2 }}>
+                    <Typography variant="body2" sx={{ fontWeight: 600, color: pub.visibilityRole === "Applicant" ? "var(--color-primary)" : "text.secondary" }}>
+                      {pub.visibilityRole || "Applicant"}
+                    </Typography>
+                  </TableCell>
+                  <TableCell sx={{ color: "var(--text-secondary)", py: 2 }}>{pub.academicYear?.year || "N/A"}</TableCell>
+                  <TableCell sx={{ py: 2 }}>
+                    <Typography
+                      variant="body2"
+                      sx={{
+                        color: pub.status?.includes('Rejected') ? "#ef4444" : pub.status === 'Approved' ? "#10b981" : "#e8a000",
+                        fontWeight: 700,
+                        background: pub.status?.includes('Rejected') ? "rgba(239, 68, 68, 0.1)" : pub.status === 'Approved' ? "rgba(16, 185, 129, 0.1)" : "rgba(232, 160, 0, 0.1)",
+                        px: 1.5,
+                        py: 0.5,
+                        borderRadius: "6px",
+                        display: "inline-block"
+                      }}
+                    >
+                      {pub.status || "Pending"}
+                    </Typography>
+                  </TableCell>
+                  <TableCell sx={{ py: 2 }}>
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      onClick={() => setSelectedPubDetails(pub)}
+                      sx={{
+                        borderRadius: "8px",
+                        textTransform: "none",
+                        fontWeight: 700,
+                        borderColor: "var(--color-primary)",
+                        color: "var(--color-primary)",
+                        "&:hover": {
+                          background: "var(--bg-accent-1)",
+                          borderColor: "var(--color-primary)"
+                        }
+                      }}
+                    >
+                      View
+                    </Button>
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -340,12 +435,11 @@ export default function FundedProject() {
       <Grid2>
         <Box>
           <Typography sx={labelStyle}>Title of the Project :</Typography>
-          <TextField size="small" fullWidth value={form.title} onChange={set("title")} inputProps={{ maxLength: 30 }}
-            helperText={`${30 - form.title.length} Character(s) Remaining`} />
+          <TextField size="small" fullWidth value={form.title} onChange={set("title")} />
         </Box>
         <Box>
-          <Typography sx={labelStyle}>Duration of Project :</Typography>
-          <TextField size="small" fullWidth value={form.duration} onChange={set("duration")} placeholder="e.g. 2 Years" />
+          <Typography sx={labelStyle}>Duration of Project in Years :</Typography>
+          <TextField size="small" fullWidth value={form.duration} onChange={handleNumericChange("duration")} placeholder="e.g. 2 or 1.5 or 0.5" />
         </Box>
         <Box>
           <Typography sx={labelStyle}>Funding Agency :</Typography>
@@ -452,19 +546,19 @@ export default function FundedProject() {
         </Box>
         <Box>
           <Typography sx={labelStyle}>Recurring :</Typography>
-          <TextField size="small" fullWidth value={form.recurring} onChange={set("recurring")} placeholder="Amount" />
+          <TextField size="small" fullWidth value={form.recurring} onChange={handleNumericChange("recurring")} placeholder="Amount" />
         </Box>
         <Box>
           <Typography sx={labelStyle}>Non-Recurring :</Typography>
-          <TextField size="small" fullWidth value={form.nonRecurring} onChange={set("nonRecurring")} placeholder="Amount" />
+          <TextField size="small" fullWidth value={form.nonRecurring} onChange={handleNumericChange("nonRecurring")} placeholder="Amount" />
         </Box>
         <Box>
           <Typography sx={labelStyle}>Sanctioned Amount :</Typography>
-          <TextField size="small" fullWidth value={form.sanctionedAmount} onChange={set("sanctionedAmount")} placeholder="Amount" />
+          <TextField size="small" fullWidth value={form.sanctionedAmount} onChange={handleNumericChange("sanctionedAmount")} placeholder="Amount" />
         </Box>
         <Box>
           <Typography sx={labelStyle}>Date of Sanction :</Typography>
-          <TextField size="small" fullWidth type="date" value={form.sanctionDate} onChange={set("sanctionDate")} InputLabelProps={{ shrink: true }} />
+          <TextField size="small" fullWidth type="date" value={form.sanctionDate} onChange={set("sanctionDate")} InputLabelProps={{ shrink: true }} inputProps={{ max: new Date().toISOString().split("T")[0] }} />
         </Box>
         <Box>
           <Typography sx={labelStyle}>Applying as a Seed Grant Work? *</Typography>
@@ -509,6 +603,185 @@ export default function FundedProject() {
     </FormCard>
   );
 
+  const handleCloseDetails = () => setSelectedPubDetails(null);
+
+  const LabelValueDetails = ({ label, value, chip, horizontal = false }) => (
+    <Box sx={{
+      p: horizontal ? "10px 16px" : 1.5,
+      borderRadius: "10px",
+      background: horizontal ? "transparent" : "rgba(255,255,255,0.02)",
+      display: "flex",
+      flexDirection: horizontal ? "row" : "column",
+      alignItems: horizontal ? "center" : "flex-start",
+      justifyContent: horizontal ? "flex-start" : "center",
+      gap: horizontal ? 2 : 0.5,
+      borderBottom: horizontal ? "1px solid var(--border-color)" : "1px solid transparent",
+      "&:last-child": { borderBottom: "none" },
+    }}>
+      <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", letterSpacing: "0.05em", fontWeight: 800, fontSize: "0.65rem", mb: horizontal ? 0 : 0.5 }}>{label}</Typography>
+      <Box sx={{ flex: horizontal ? 1 : "none" }}>
+        {chip ? chip : <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", fontSize: "0.85rem" }}>{value || "-"}</Typography>}
+      </Box>
+    </Box>
+  );
+
+  const renderDetailFile = (title, filepath, folder = "funded-projects") => {
+    if (!filepath) return null;
+    const backendURL = (import.meta.env.VITE_BACKEND_URL || "http://localhost:9000").replace(/\/$/, "");
+    let normalizedPath = filepath.replace(/\\/g, '/');
+    if (!normalizedPath.startsWith('http') && !normalizedPath.includes('uploads/')) {
+      normalizedPath = `/uploads/${folder}/${normalizedPath.startsWith('/') ? normalizedPath.substring(1) : normalizedPath}`;
+    }
+    const cleanPath = normalizedPath.startsWith('/') ? normalizedPath : `/${normalizedPath}`;
+    const fileUrl = normalizedPath.startsWith('http') ? normalizedPath : `${backendURL}${cleanPath}`;
+    const isImage = /\.(jpg|jpeg|png|gif)$/i.test(normalizedPath);
+
+    return (
+      <Box sx={{ flex: "1 1 200px" }}>
+        <Typography variant="caption" sx={{ fontWeight: 800, color: "var(--color-primary)", fontSize: "0.7rem", textTransform: "uppercase", display: "block", mb: 1 }}>{title}</Typography>
+        <Box sx={{
+          height: 120, display: "flex", alignItems: "center", justifyContent: "center",
+          border: "1px solid var(--border-color)", background: "var(--bg-panel)", borderRadius: "8px",
+          overflow: "hidden", cursor: "pointer", transition: "all 0.2s ease",
+          "&:hover": { borderColor: "var(--color-primary)", transform: "translateY(-2px)" }
+        }} onClick={() => window.open(fileUrl, '_blank')}>
+          {isImage ? <img src={fileUrl} alt={title} style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <Box sx={{ textAlign: "center" }}><Description sx={{ fontSize: 24, color: "var(--text-secondary)", mb: 0.5 }} /><Typography variant="caption" sx={{ color: "var(--text-secondary)", fontWeight: 700, display: "block" }}>PDF</Typography></Box>}
+        </Box>
+      </Box>
+    );
+  };
+
+  const renderDetailsDialog = () => {
+    if (!selectedPubDetails) return null;
+    const data = selectedPubDetails;
+    const statusColor = (() => {
+      const s = data.status || "";
+      if (/Pending/i.test(s)) return "#ff9800";
+      if (/Approved/i.test(s)) return "#4caf50";
+      if (/Rejected/i.test(s)) return "#f44336";
+      return "#666";
+    })();
+
+    const formatDate = (dateStr) => {
+      if (!dateStr) return "-";
+      try {
+        const d = new Date(dateStr);
+        return d.toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric' });
+      } catch (e) {
+        return dateStr;
+      }
+    };
+
+    return (
+      <Dialog 
+        open={!!selectedPubDetails} 
+        onClose={handleCloseDetails}
+        maxWidth="md"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: "20px",
+            background: "var(--bg-glass)",
+            backdropFilter: "blur(12px)",
+            border: "1px solid var(--border-color)",
+            boxShadow: "var(--shadow-premium)",
+          }
+        }}
+      >
+        <DialogTitle sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "var(--gradient-primary)", color: "#fff", py: 2 }}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+            <AccountBalanceWallet sx={{ color: "#fff" }} />
+            <Typography variant="h6" sx={{ fontWeight: 800 }}>Funded Project Details</Typography>
+          </Box>
+          <IconButton onClick={handleCloseDetails} sx={{ color: "#fff" }}><Close /></IconButton>
+        </DialogTitle>
+        <DialogContent sx={{ p: 3, mt: 1 }}>
+          <Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)", mb: 1 }}>{data.title}</Typography>
+          <Typography variant="body2" sx={{ color: "var(--text-secondary)", mb: 3, fontWeight: 600 }}>Funding Agency: {data.fundingAgency}</Typography>
+          
+          <Grid container spacing={2}>
+            <Grid item xs={12} sm={3}><LabelValueDetails label="Academic Year" value={data.academicYear?.year || "N/A"} /></Grid>
+            <Grid item xs={12} sm={3}><LabelValueDetails label="Duration (Years)" value={data.duration} /></Grid>
+            <Grid item xs={12} sm={3}><LabelValueDetails label="Role" value={data.visibilityRole || "Applicant"} /></Grid>
+            <Grid item xs={12} sm={3}>
+              <LabelValueDetails 
+                label="Status" 
+                chip={
+                  <Chip 
+                    label={data.status} 
+                    size="small" 
+                    sx={{ 
+                      bgcolor: `${statusColor}15`, 
+                      color: statusColor, 
+                      fontWeight: 800, 
+                      border: `1px solid ${statusColor}44`,
+                      borderRadius: "6px" 
+                    }} 
+                  />
+                } 
+              />
+            </Grid>
+
+            <Grid item xs={12} sm={3}><LabelValueDetails label="Scheme" value={data.scheme || "-"} /></Grid>
+            <Grid item xs={12} sm={3}><LabelValueDetails label="Sanctioned Amount" value={`₹${data.sanctionedAmount}`} /></Grid>
+            <Grid item xs={12} sm={3}><LabelValueDetails label="Date of Sanction" value={formatDate(data.sanctionDate)} /></Grid>
+            <Grid item xs={12} sm={3}><LabelValueDetails label="Is PI?" value={data.principalInvestigator || "No"} /></Grid>
+
+            <Grid item xs={12} sm={4}><LabelValueDetails label="Recurring Amount" value={data.recurring ? `₹${data.recurring}` : "-"} /></Grid>
+            <Grid item xs={12} sm={4}><LabelValueDetails label="Non-Recurring Amount" value={data.nonRecurring ? `₹${data.nonRecurring}` : "-"} /></Grid>
+            <Grid item xs={12} sm={4}><LabelValueDetails label="Applying Seed Grant?" value={data.applyingSeedGrant === "Yes" ? "Yes" : "No"} /></Grid>
+
+            <Grid item xs={12} sm={12}><LabelValueDetails label="Other Investigators" value={data.otherInvestigators || "None"} /></Grid>
+
+            {data.status === "Approved" && data.approvedAmount && (
+              <Grid item xs={12} sm={6}>
+                <LabelValueDetails 
+                  label="Approved Incentive" 
+                  value={`₹${data.approvedAmount}`} 
+                  chip={<Chip label={`₹${data.approvedAmount}`} size="small" sx={{ bgcolor: "rgba(76, 175, 80, 0.1)", color: "#4caf50", fontWeight: 800 }} />}
+                />
+              </Grid>
+            )}
+          </Grid>
+
+          <Divider sx={{ my: 3 }} />
+
+          {/* Attached Files previews */}
+          <Box sx={{ mt: 3 }}>
+            <Box sx={{ display: "flex", gap: 1.5, alignItems: "center", mb: 2 }}>
+              <AttachFile sx={{ color: "var(--color-primary)" }} />
+              <Typography sx={{ fontWeight: 800, color: "var(--text-primary)" }}>Attached Documents</Typography>
+            </Box>
+            <Stack direction="row" spacing={3} flexWrap="wrap" useFlexGap>
+              {renderDetailFile("Sanction Order", data.sanctionOrder)}
+            </Stack>
+          </Box>
+
+          {/* Remarks/Comments if available */}
+          {(data.hodComment || data.rndComment) && (
+            <Box sx={{ mt: 4, display: "flex", flexDirection: "column", gap: 2 }}>
+              {data.hodComment && (
+                <Box sx={{ p: 2, bgcolor: "rgba(255, 193, 7, 0.05)", borderRadius: "10px", border: "1px solid rgba(255, 193, 7, 0.2)" }}>
+                  <Typography variant="caption" sx={{ fontWeight: 900, color: "#ff9800", textTransform: "uppercase" }}>HOD Remarks</Typography>
+                  <Typography variant="body2" sx={{ fontStyle: "italic", mt: 0.5, color: "var(--text-secondary)" }}>"{data.hodComment}"</Typography>
+                </Box>
+              )}
+              {data.rndComment && (
+                <Box sx={{ p: 2, bgcolor: "rgba(76, 175, 80, 0.05)", borderRadius: "10px", border: "1px solid rgba(76, 175, 80, 0.2)" }}>
+                  <Typography variant="caption" sx={{ fontWeight: 900, color: "#4caf50", textTransform: "uppercase" }}>R&D Remarks</Typography>
+                  <Typography variant="body2" sx={{ fontStyle: "italic", mt: 0.5, color: "var(--text-secondary)" }}>"{data.rndComment}"</Typography>
+                </Box>
+              )}
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions sx={{ p: 2.5, borderTop: "1px solid var(--border-color)" }}>
+          <Button onClick={handleCloseDetails} sx={{ color: "var(--text-primary)", fontWeight: 700 }}>Close</Button>
+        </DialogActions>
+      </Dialog>
+    );
+  };
+
   return (
     <>
       <PageHeader title="Funded Projects" subtitle="Manage and submit your funded project details" breadcrumbs={["Home", "Publications", "Funded Project"]} />
@@ -516,7 +789,7 @@ export default function FundedProject() {
       {viewMode === "list" && renderList()}
       {viewMode === "select-year" && renderSelectYear()}
       {viewMode === "form" && renderForm()}
-
+      {renderDetailsDialog()}
     </>
   );
 }
