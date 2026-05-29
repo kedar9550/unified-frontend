@@ -73,9 +73,10 @@ const AcademicHierarchyFilter = ({ onChange, initialValues = {}, showSearch = fa
         const fetchDepartments = async () => {
             setLoading(prev => ({ ...prev, departments: true }));
             try {
-                const res = await API.get(`/api/academics/departments?programId=${selectedProgram}&status=true`);
+                const res = await API.get(`/api/academics/departments?programId=${selectedProgram}&status=true&type=Academic`);
                 if (res.data.success) {
-                    setDepartments(res.data.data);
+                    const depts = res.data.data || [];
+                    setDepartments(depts.filter(d => d.type === "Academic" || !d.type));
                 }
             } catch (error) {
                 console.error("Failed to fetch departments", error);

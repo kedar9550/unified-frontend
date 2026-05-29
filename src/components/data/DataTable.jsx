@@ -13,7 +13,7 @@ import { useState, useMemo, useEffect } from "react";
 import { InputAdornment } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 
-export default function DataTable({ columns, rows, toolbarLeft }) {
+export default function DataTable({ columns, rows, toolbarLeft, nonSortableColumns = [] }) {
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [search, setSearch] = useState("");
@@ -147,41 +147,50 @@ export default function DataTable({ columns, rows, toolbarLeft }) {
                 borderRadius: "12px 12px 0 0",
               }}
             >
-              {columns.map((col, index) => (
-                <TableCell
-                  key={index}
-                  onClick={() => handleSort(index)}
-                  align="center"
-                  sx={{
-                    textAlign: "center",
-                    "&:first-of-type": {
-                      borderTopLeftRadius: "12px",
-                      bgcolor: "rgba(0,0,0,0.1)", // Slightly darker first column header
-                    },
-                    "&:last-of-type": {
-                      borderTopRightRadius: "12px",
-                    },
-                  }}
-                >
-                  <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 0.5 }}>
-                    {col}
-                    <Box
-                      component="span"
-                      sx={{
-                        fontSize: "0.9rem",
-                        fontWeight: "bold",
-                        color: sortIndex === index ? "#ffffff" : "rgba(255,255,255,0.3)",
-                      }}
-                    >
-                      {sortIndex === index
-                        ? sortDirection === "asc"
-                          ? "↑"
-                          : "↓"
-                        : ""}
+              {columns.map((col, index) => {
+                const isSortable = !nonSortableColumns.includes(index);
+                return (
+                  <TableCell
+                    key={index}
+                    onClick={() => isSortable && handleSort(index)}
+                    align="center"
+                    sx={{
+                      textAlign: "center",
+                      cursor: isSortable ? "pointer" : "default",
+                      "&:first-of-type": {
+                        borderTopLeftRadius: "12px",
+                        bgcolor: "rgba(0,0,0,0.1)", // Slightly darker first column header
+                      },
+                      "&:last-of-type": {
+                        borderTopRightRadius: "12px",
+                      },
+                      "&:hover": {
+                        background: isSortable ? "rgba(255, 255, 255, 0.05)" : "transparent",
+                      },
+                    }}
+                  >
+                    <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 0.5 }}>
+                      {col}
+                      {isSortable && (
+                        <Box
+                          component="span"
+                          sx={{
+                            fontSize: "0.9rem",
+                            fontWeight: "bold",
+                            color: sortIndex === index ? "#ffffff" : "rgba(255,255,255,0.3)",
+                          }}
+                        >
+                          {sortIndex === index
+                            ? sortDirection === "asc"
+                              ? "↑"
+                              : "↓"
+                            : ""}
+                        </Box>
+                      )}
                     </Box>
-                  </Box>
-                </TableCell>
-              ))}
+                  </TableCell>
+                );
+              })}
             </TableRow>
           </TableHead>
 

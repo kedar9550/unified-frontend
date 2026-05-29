@@ -1,6 +1,6 @@
 import Loader from "../../../components/common/Loader";
 import React, { useState, useEffect, useCallback } from "react";
-import { Box, Avatar, CircularProgress, Typography, MenuItem, Select, FormControl, InputLabel, Paper, Button, Grid } from "@mui/material";
+import { Box, Avatar, CircularProgress, Typography, MenuItem, Select, FormControl, InputLabel, Paper, Button, Grid, Checkbox } from "@mui/material";
 import { UploadFile, PersonAdd, Download } from "@mui/icons-material";
 import PageHeader from "../../../components/common/PageHeader";
 import SectionHeader from "../../../components/common/SectionHeader";
@@ -9,6 +9,7 @@ import API from "../../../api/axios";
 import AcademicHierarchyFilter from "../../../components/academics/AcademicHierarchyFilter";
 
 import { useLocation } from "react-router-dom";
+import { toast } from "sonner";
 
 const Assignedstudents = () => {
     const location = useLocation();
@@ -24,6 +25,11 @@ const Assignedstudents = () => {
         branchName: ""
     });
     const [activeSemesterType, setActiveSemesterType] = useState(""); // "ODD" or "EVEN"
+    const [selectedStudents, setSelectedStudents] = useState([]);
+    const [allDepartments, setAllDepartments] = useState([]);
+    const [selectedDept, setSelectedDept] = useState("");
+    const [movingDept, setMovingDept] = useState(false);
+    const [refreshTrigger, setRefreshTrigger] = useState(0);
 
     const handleHierarchyChange = useCallback((val) => {
         setHierarchy(val);
@@ -57,8 +63,25 @@ const Assignedstudents = () => {
 
         fetchAssignedStudents();
 
-        return () => controller.abort(); // unmount అయినప్పుడు cancel చేస్తుంది
-    }, [location.key]);
+        return () => controller.abort(); // unmou
+    }, [location.key, refreshTrigger]);
+
+    // Fetch all departments for selection dropdown on mount
+    useEffect(() => {
+        const fetchDepartments = async () => {
+            try {
+                const res = await API.get("/api/academics/departments?type=Academic");
+                if (res.data.success) {
+                    const depts = res.data.data || [];
+                    // Keep robust filtering in frontend as well
+                    setAllDepartments(depts.filter(d => d.type === "Academic" || !d.type));
+                }
+            } catch (error) {
+                console.error("Failed to fetch departments", error);
+            }
+        };
+        fetchDepartments();
+    }, []);
 
     // Fetch active academic year and semester type when hierarchy program changes
     useEffect(() => {
@@ -94,7 +117,44 @@ const Assignedstudents = () => {
             return matchesProgram && matchesDept && matchesBranch && matchesSemester;
         });
         setFilteredStudents(filtered);
+        setSelectedStudents([]);
     }, [hierarchy, filterSemester, students]);
+
+    const handleSelectRow = (rollNo) => {
+        setSelectedStudents(prev =>
+            prev.includes(rollNo) ? prev.filter(r => r !== rollNo) : [...prev, rollNo]
+        );
+    };
+
+    const handleSelectAll = () => {
+        if (selectedStudents.length === filteredStudents.length) {
+            setSelectedStudents([]);
+        } else {
+            setSelectedStudents(filteredStudents.map(s => s.rollNo));
+        }
+    };
+
+    const handleConfirmDeptChange = async () => {
+        if (!selectedDept || selectedStudents.length === 0) return;
+        setMovingDept(true);
+        try {
+            const res = await API.post("/api/student-data/assign", {
+                studentIds: selectedStudents,
+                deptId: selectedDept,
+            });
+            if (res.data.success) {
+                setSelectedStudents([]);
+                setSelectedDept("");
+                setRefreshTrigger(prev => prev + 1);
+                toast.success("Department changed successfully");
+            }
+        } catch (error) {
+            console.error("Failed to move department", error);
+            toast.error(error.response?.data?.message || "Failed to change department");
+        } finally {
+            setMovingDept(false);
+        }
+    };
 
     const hasActiveFilter = hierarchy.program || filterSemester;
 
@@ -147,10 +207,29 @@ const Assignedstudents = () => {
     };
 
     const columns = [
+        <Checkbox
+            size="small"
+            sx={{ color: "white", "&.Mui-checked": { color: "white" } }}
+            indeterminate={selectedStudents.length > 0 && selectedStudents.length < filteredStudents.length}
+            checked={filteredStudents.length > 0 && selectedStudents.length === filteredStudents.length}
+            onChange={handleSelectAll}
+            onClick={(e) => e.stopPropagation()}
+        />,
         "Roll No", "Name", "Assigned Dept", getSemYearHeader(), "Program", "Branch", "Email"
     ];
 
     const formattedRows = filteredStudents.map(s => [
+        {
+            value: "",
+            display: (
+                <Checkbox
+                    size="small"
+                    checked={selectedStudents.includes(s.rollNo)}
+                    onChange={() => handleSelectRow(s.rollNo)}
+                    onClick={(e) => e.stopPropagation()}
+                />
+            )
+        },
         { value: s.rollNo, display: <Box sx={{ fontWeight: 600, color: "var(--color-primary)" }}>{s.rollNo}</Box> },
         {
             value: s.personalInfo?.studentName,
@@ -184,8 +263,8 @@ const Assignedstudents = () => {
             value: s.academicInfo?.semester || s.academicInfo?.yearName,
             display: (
                 <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                    {s.academicInfo?.programName === "Pharma.D" 
-                        ? (s.academicInfo?.yearName || "Year —") 
+                    {s.academicInfo?.programName === "Pharma.D"
+                        ? (s.academicInfo?.yearName || "Year —")
                         : (s.academicInfo?.semester ? `Sem ${s.academicInfo?.semester}` : "Sem —")}
                 </Typography>
             )
@@ -253,6 +332,7 @@ const Assignedstudents = () => {
                         <DataTable
                             columns={columns}
                             rows={formattedRows}
+                            nonSortableColumns={[0]}
                             toolbarLeft={
                                 <Box sx={{ display: "flex", alignItems: "flex-end", gap: 2, flexWrap: "nowrap" }}>
                                     <AcademicHierarchyFilter
@@ -304,6 +384,81 @@ const Assignedstudents = () => {
                         />
                     )}
                 </Box>
+
+                {selectedStudents.length > 0 && (
+                    <Box
+                        sx={{
+                            p: 3,
+                            mt: 2,
+                            borderRadius: "16px",
+                            border: "1px solid var(--border-color)",
+                            display: "flex",
+                            justifyContent: "space-between",
+                            alignItems: "center",
+                            background: "var(--bg-paper)",
+                            boxShadow: "var(--shadow-premium)",
+                            flexWrap: "wrap",
+                            gap: 2
+                        }}
+                    >
+                        <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                            <Typography variant="body2" sx={{ color: "var(--text-primary)", fontWeight: 700 }}>
+                                {selectedStudents.length} students selected
+                            </Typography>
+                            <Button
+                                size="small"
+                                onClick={() => setSelectedStudents([])}
+                                sx={{ textTransform: "none", fontWeight: 800, color: "#ef4444" }}
+                            >
+                                Clear Selection
+                            </Button>
+                        </Box>
+                        <Box sx={{ display: "flex", gap: 2, alignItems: "center", flexWrap: "wrap" }}>
+                            <FormControl size="small" sx={{ minWidth: 220 }}>
+                                <InputLabel id="dept-move-label" sx={{ color: "var(--text-secondary)" }}>Change Department</InputLabel>
+                                <Select
+                                    labelId="dept-move-label"
+                                    value={selectedDept}
+                                    onChange={(e) => setSelectedDept(e.target.value)}
+                                    label="Change Department"
+                                    sx={{
+                                        borderRadius: "10px",
+                                        color: "var(--text-primary)",
+                                        "& .MuiOutlinedInput-notchedOutline": { borderColor: "var(--border-color)" }
+                                    }}
+                                >
+                                    {allDepartments.map((dept) => (
+                                        <MenuItem key={dept._id} value={dept._id}>{dept.name}</MenuItem>
+                                    ))}
+                                </Select>
+                            </FormControl>
+                            <Button
+                                variant="contained"
+                                aria-disabled={!selectedDept || movingDept}
+                                onClick={() => {
+                                    if (!selectedDept || movingDept) return;
+                                    handleConfirmDeptChange();
+                                }}
+                                sx={{ 
+                                    borderRadius: "50px", 
+                                    px: 4, 
+                                    textTransform: "none", 
+                                    fontWeight: 800, 
+                                    background: "var(--gradient-primary)", 
+                                    color: (!selectedDept || movingDept) ? "rgba(255, 255, 255, 0.4)" : "#ffffff",
+                                    opacity: (!selectedDept || movingDept) ? 0.6 : 1,
+                                    cursor: (!selectedDept || movingDept) ? "not-allowed" : "pointer",
+                                    pointerEvents: "auto",
+                                    "&:hover": { 
+                                        boxShadow: (!selectedDept || movingDept) ? "none" : "var(--shadow-premium)" 
+                                    } 
+                                }}
+                            >
+                                {movingDept ? "Moving..." : "Change Dept"}
+                            </Button>
+                        </Box>
+                    </Box>
+                )}
             </Box>
         </Box>
     );

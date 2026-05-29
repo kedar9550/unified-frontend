@@ -85,9 +85,10 @@ const Studentuploads = () => {
         const fetchDepartments = async () => {
             setLoadingDepts(true);
             try {
-                const res = await API.get("/api/academics/departments");
+                const res = await API.get("/api/academics/departments?type=Academic");
                 if (res.data.success) {
-                    setAllDepartments(res.data.data || []);
+                    const depts = res.data.data || [];
+                    setAllDepartments(depts.filter(d => d.type === "Academic" || !d.type));
                 }
             } catch (error) {
                 console.error("Failed to fetch departments", error);
