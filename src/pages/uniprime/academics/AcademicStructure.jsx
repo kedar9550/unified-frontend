@@ -102,11 +102,6 @@ const AcademicStructure = () => {
 
     const openModal = (type, mode = 'add', data = {}) => {
         const modalData = { ...data };
-        // Force branch name to match parent department name
-        if (type === 'branch' && selectedDepartment) {
-            modalData.name = selectedDepartment.name;
-        }
-
         setModal({ open: true, type, mode, data: modalData });
     };
 
@@ -490,7 +485,7 @@ const AcademicStructure = () => {
                                 border: "2px dashed var(--color-primary)",
                             }
                         }}
-                        onClick={() => openModal('branch', 'add', { departmentId: selectedDepartment._id, name: selectedDepartment.name })}
+                        onClick={() => openModal('branch', 'add', { departmentId: selectedDepartment._id })}
                     >
                         <Box sx={{ textAlign: "center" }}>
                             <Box sx={{
@@ -689,8 +684,8 @@ const AcademicStructure = () => {
 
             {/* Entity Dialog */}
             <Dialog open={modal.open} onClose={() => setModal({ ...modal, open: false })} maxWidth="xs" fullWidth>
-                <DialogTitle>
-                    {modal.mode === 'add' ? 'Add' : 'Edit'} {modal.type === 'branch' && selectedDepartment ? selectedDepartment.name.toUpperCase() : modal.type?.toUpperCase()}
+                <DialogTitle sx={{ fontWeight: 700 }}>
+                    {modal.mode === 'add' ? 'Add' : 'Edit'} {modal.type === 'branch' ? `Branch for ${selectedDepartment?.name}` : modal.type?.toUpperCase()}
                 </DialogTitle>
                 <DialogContent sx={{ py: 2 }}>
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, mt: 1 }}>
@@ -783,8 +778,7 @@ const AcademicStructure = () => {
                             fullWidth
                             value={modal.data.name || ''}
                             onChange={(e) => setModal({ ...modal, data: { ...modal.data, name: e.target.value } })}
-                            disabled={modal.type === 'branch'}
-                            helperText={modal.type === 'branch' ? `Branch name is locked to Department: ${selectedDepartment?.name}` : ""}
+                            helperText={modal.type === 'branch' ? "e.g., Computer Science & Engineering (AI & ML)" : ""}
                         />
 
                         {(modal.type === 'school' || modal.type === 'department' || modal.type === 'branch' || modal.type === 'program') && (
