@@ -541,7 +541,15 @@ const RoleManagement = () => {
     const selectUser = (user) => {
         setSelectedUser(user);
         const userRoles = user.roles || [];
-        setAssignedRoleIds(userRoles.map(r => r._id) || []);
+        const initialRoleIds = userRoles.map(r => r._id) || [];
+
+        const defaultRoleName = getSystemRoleName(user);
+        const defaultRoleObj = roles.find(r => r.name === defaultRoleName);
+        if (defaultRoleObj && !initialRoleIds.includes(defaultRoleObj._id.toString())) {
+            initialRoleIds.push(defaultRoleObj._id.toString());
+        }
+
+        setAssignedRoleIds(initialRoleIds);
 
         // Populate HOD departments if they exist
         const hod = userRoles.find(r => r.name === "HOD");
@@ -557,6 +565,11 @@ const RoleManagement = () => {
         if (!selectedUser) return;
         const id = roleId.toString();
         const role = roles.find(r => r._id === id);
+
+        // If this role is the identity default role, do not toggle it
+        if (role && getSystemRoleName(selectedUser) === role.name) {
+            return;
+        }
 
         setAssignedRoleIds(prev => {
             const isCurrentlySelected = prev.includes(id);
@@ -1385,6 +1398,7 @@ const RoleManagement = () => {
                                         <FormGroup>
                                             {roles.length > 0 ? roles.map((role) => {
                                                 const isIdentityDefault = getSystemRoleName(selectedUser) === role.name;
+                                                const isChecked = assignedRoleIds.includes(role._id.toString()) || (selectedUser && isIdentityDefault);
                                                 return (
                                                     <Box key={role._id} onClick={() => handleRoleToggle(role._id)} sx={{
                                                         p: 1.5,
@@ -1393,7 +1407,7 @@ const RoleManagement = () => {
                                                         background: 'var(--bg-glass)',
                                                         position: 'relative',
                                                         border: '1px solid transparent',
-                                                        ...(assignedRoleIds.includes(role._id.toString()) && {
+                                                        ...(isChecked && {
                                                             '&::before': {
                                                                 content: '""',
                                                                 position: 'absolute',
@@ -1408,29 +1422,29 @@ const RoleManagement = () => {
                                                                 zIndex: 0
                                                             }
                                                         }),
-                                                        cursor: selectedUser ? 'pointer' : 'default',
-                                                        opacity: selectedUser ? 1 : 0.6,
+                                                        cursor: selectedUser ? (isIdentityDefault ? 'not-allowed' : 'pointer') : 'default',
+                                                        opacity: selectedUser ? (isIdentityDefault ? 0.75 : 1) : 0.6,
                                                         display: 'flex',
                                                         alignItems: 'center',
                                                         transition: '0.2s',
-                                                        '&:hover': selectedUser ? { background: 'var(--bg-panel)' } : {}
+                                                        '&:hover': selectedUser && !isIdentityDefault ? { background: 'var(--bg-panel)' } : {}
                                                     }}>
                                                         <Box sx={{ display: 'flex', alignItems: 'center', width: '100%' }}>
                                                             <Checkbox
-                                                                checked={assignedRoleIds.includes(role._id.toString())}
-                                                                disabled={!selectedUser}
+                                                                checked={isChecked}
+                                                                disabled={!selectedUser || isIdentityDefault}
                                                                 sx={{
                                                                     p: 0,
                                                                     mr: 2,
                                                                     '&.Mui-checked': { color: 'var(--color-primary)' },
-                                                                    '&.MuiCheckbox-root': { color: assignedRoleIds.includes(role._id.toString()) ? 'var(--color-primary)' : 'var(--text-secondary)' }
+                                                                    '&.MuiCheckbox-root': { color: isChecked ? 'var(--color-primary)' : 'var(--text-secondary)' }
                                                                 }}
                                                             />
                                                             <Box sx={{ flex: 1 }}>
                                                                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                                                    <Typography variant="body2" fontWeight={700} sx={{ color: assignedRoleIds.includes(role._id.toString()) ? 'var(--color-primary)' : 'var(--text-primary)' }}>{role.name}</Typography>
+                                                                    <Typography variant="body2" fontWeight={700} sx={{ color: isChecked ? 'var(--color-primary)' : 'var(--text-primary)' }}>{role.name}</Typography>
                                                                     {role.defaultRole && <Chip label="Identity Role" size="small" color="success" sx={{ height: 16, fontSize: '0.6rem', fontWeight: 800 }} />}
-                                                                    {isIdentityDefault && <Tooltip title="Recommended"><Star sx={{ fontSize: 16, color: 'var(--color-primary)' }} /></Tooltip>}
+                                                                    {isIdentityDefault && <Tooltip title="Recommended Default Identity Role"><Star sx={{ fontSize: 16, color: 'var(--color-primary)' }} /></Tooltip>}
                                                                 </Box>
                                                             </Box>
                                                         </Box>
