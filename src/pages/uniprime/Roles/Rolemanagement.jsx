@@ -291,7 +291,7 @@ const RoleManagement = () => {
     };
 
     const handleDownloadTemplate = () => {
-        const csvContent = "data:text/csv;charset=utf-8,institutionId,fullname,department,designation,email,phone\n";
+        const csvContent = "data:text/csv;charset=utf-8,institutionId,email\n";
         const encodedUri = encodeURI(csvContent);
         const link = document.createElement("a");
         link.setAttribute("href", encodedUri);
