@@ -1485,7 +1485,7 @@ const RoleManagement = () => {
                                     <CardContent sx={{ textAlign: 'center', p: 3 }}>
                                         <Avatar sx={{ width: 60, height: 60, bgcolor: '#e8eaf6', color: '#3f51b5', mx: 'auto', mb: 2 }}><UploadFile fontSize="large" /></Avatar>
                                         <Typography variant="h6" fontWeight={700}>Bulk Upload</Typography>
-                                        <Typography variant="caption" color="textSecondary">Upload a CSV file. Format: institutionId, email, etc.</Typography>
+                                        <Typography variant="caption" color="textSecondary">Upload a CSV file. Format: institutionId, email</Typography>
                                     </CardContent>
                                 </Card>
                                 <Card
