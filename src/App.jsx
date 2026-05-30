@@ -18,6 +18,7 @@ import StudentFormatResults from "./pages/examAdmin/StudentFormatResults";
 import Discrepancies from "./pages/examAdmin/Discrepancies";
 import DeptProctorUploads from "./pages/hod/DeptProctorUploads";
 import HODDiscrepancies from "./pages/hod/HODDiscrepancies";
+import ProctoringApprovalList from "./pages/hod/ProctoringApprovalList";
 import AcademicStructure from "./pages/uniprime/academics/AcademicStructure";
 import Assignedstudents from "./pages/uniprime/Student/Assignedstudents";
 import RoleManagement from "./pages/uniprime/Roles/Rolemanagement";
@@ -120,6 +121,7 @@ function App() {
         <Route path="/uniprime/sdg-management" element={<ProtectedRoute element={<SDGManagement />} />} />
         <Route path="/hod/research-approvals" element={<ProtectedRoute element={<ResearchApprovalList role="HOD" />} />} />
         <Route path="/hod/research-request/:type/:id" element={<ProtectedRoute element={<ResearchApprovalDetailWrapper role="HOD" />} />} />
+        <Route path="/hod/proctoring-approvals" element={<ProtectedRoute element={<ProctoringApprovalList />} />} />
 
         <Route path="/research-dean/approvals" element={<ProtectedRoute element={<ResearchApprovalList role="RESEARCH_DEAN" />} />} />
         <Route path="/research-dean/request/:type/:id" element={<ProtectedRoute element={<ResearchApprovalDetailWrapper role="RESEARCH_DEAN" />} />} />

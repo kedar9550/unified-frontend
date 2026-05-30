@@ -104,6 +104,10 @@ export const ROLE_ROUTES = {
           text: "Research",
           path: "/hod/research-approvals"
         },
+        {
+          text: "Proctoring Data",
+          path: "/hod/proctoring-approvals"
+        },
       ]
     }
   ],
