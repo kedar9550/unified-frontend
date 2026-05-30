@@ -32,18 +32,18 @@ export const ROLE_ROUTES = {
 
       icon: <Science />,
       nested: [
-        { text: "Text Book", path: "/research/textbook-publication" },
-        { text: "Book Chapter", path: "/research/book-chapter-publication" },
         { text: "Journal", path: "/research/journal-publication" },
+        { text: "Conference", path: "/research/conference-publication" },
+        { text: "Book Chapter", path: "/research/book-chapter-publication" },
+        { text: "Text Book", path: "/research/textbook-publication" },
         { text: "Patent", path: "/research/patent-publication" },
         { text: "Funded Project", path: "/research/funded-project" },
         { text: "Consultancy", path: "/research/consultancy-publication" },
-        { text: "Conference", path: "/research/conference-publication" },
         { text: "SDG's", path: "/research/sdg" },
       ],
     },
-    { text: "Administration", path: "/admin", icon: <AccountBalance /> },
-    { text: "Interpersonal", path: "/interpersonal", icon: <Groups /> },
+    // { text: "Administration", path: "/admin", icon: <AccountBalance /> },
+    // { text: "Interpersonal", path: "/interpersonal", icon: <Groups /> },
   ],
 
   UNIPRIME: [
