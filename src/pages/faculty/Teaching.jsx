@@ -1027,10 +1027,12 @@ export default function Teaching() {
               <form onSubmit={handleManualSubmit}>
                 <Grid container spacing={3} sx={{ alignItems: "stretch" }}>
                   {/* Inputs */}
-                  <Grid item xs={12} md={8}>
+                  <Grid item xs={12} md={8} sx={{ display: "flex", flexDirection: "column" }}>
                     <Box
                       sx={{
                         p: 3,
+                        flexGrow: 1,
+                        width: "100%",
                         borderRadius: "16px",
                         bgcolor: "var(--bg-glass)",
                         border: "1px solid var(--border-color)",
@@ -1140,11 +1142,12 @@ export default function Teaching() {
                   </Grid>
 
                   {/* Calculations card */}
-                  <Grid item xs={12} md={4}>
+                  <Grid item xs={12} md={4} sx={{ display: "flex", flexDirection: "column" }}>
                     <Box
                       sx={{
                         p: 3,
-                        height: "100%",
+                        flexGrow: 1,
+                        width: "100%",
                         borderRadius: "16px",
                         bgcolor: "var(--bg-glass)",
                         border: "1px solid var(--border-color)",
