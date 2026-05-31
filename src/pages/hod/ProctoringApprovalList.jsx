@@ -406,6 +406,9 @@ const ProctoringApprovalList = () => {
                                             "& .MuiOutlinedInput-root": {
                                                 borderRadius: "12px",
                                                 bgcolor: "rgba(255,255,255,0.01)"
+                                            },
+                                            "& .MuiInputBase-input.Mui-disabled": {
+                                                WebkitTextFillColor: "var(--text-secondary)",
                                             }
                                         }}
                                     />

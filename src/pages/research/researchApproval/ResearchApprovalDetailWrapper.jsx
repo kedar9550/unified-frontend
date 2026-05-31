@@ -10,6 +10,8 @@ import PatentApprovalDetail from './PatentApprovalDetail';
 import FundedProjectApprovalDetail from './FundedProjectApprovalDetail';
 import ConsultancyApprovalDetail from './ConsultancyApprovalDetail';
 import ConferenceApprovalDetails from './ConferenceApprovalDetails';
+import PhdScholarApprovalDetail from './PhdScholarApprovalDetail';
+import NovelProductApprovalDetail from './NovelProductApprovalDetail';
 
 const ResearchApprovalDetailWrapper = ({ role }) => {
     const { type, id } = useParams();
@@ -42,6 +44,12 @@ const ResearchApprovalDetailWrapper = ({ role }) => {
                 return <ConsultancyApprovalDetail id={id} onBack={goBack} role={role} />;
             case 'conference':
                 return <ConferenceApprovalDetails id={id} onBack={goBack} role={role} />;
+            case 'ph.d. scholar':
+            case 'phdscholar':
+                return <PhdScholarApprovalDetail id={id} onBack={goBack} role={role} />;
+            case 'novel product':
+            case 'novelproduct':
+                return <NovelProductApprovalDetail id={id} onBack={goBack} role={role} />;
             // Add other cases here
             default:
                 return (

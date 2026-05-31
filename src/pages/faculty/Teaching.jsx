@@ -1061,6 +1061,9 @@ export default function Teaching() {
                               "& .MuiOutlinedInput-root": {
                                 borderRadius: "10px",
                                 bgcolor: "rgba(255,255,255,0.02)",
+                              },
+                              "& .MuiInputBase-input.Mui-disabled": {
+                                WebkitTextFillColor: "var(--text-secondary)",
                               }
                             }}
                           />
@@ -1084,6 +1087,9 @@ export default function Teaching() {
                               "& .MuiOutlinedInput-root": {
                                 borderRadius: "10px",
                                 bgcolor: "rgba(255,255,255,0.02)",
+                              },
+                              "& .MuiInputBase-input.Mui-disabled": {
+                                WebkitTextFillColor: "var(--text-secondary)",
                               }
                             }}
                           />
@@ -1107,6 +1113,9 @@ export default function Teaching() {
                               "& .MuiOutlinedInput-root": {
                                 borderRadius: "10px",
                                 bgcolor: "rgba(255,255,255,0.02)",
+                              },
+                              "& .MuiInputBase-input.Mui-disabled": {
+                                WebkitTextFillColor: "var(--text-secondary)",
                               }
                             }}
                           />

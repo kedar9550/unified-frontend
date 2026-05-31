@@ -12,6 +12,8 @@ import PatentPublication from "./pages/faculty/PatentPublication";
 import FundedProject from "./pages/faculty/FundedProject";
 import ConsultancyPublication from "./pages/faculty/ConsultancyPublication";
 import ConferencePublication from "./pages/faculty/ConferencePublication";
+import PhdScholarPublication from "./pages/faculty/PhdScholarPublication";
+import NovelProductPublication from "./pages/faculty/NovelProductPublication";
 import AcademicManagement from "./pages/uniprime/academics/AcademicManagement";
 import FacultyFormatResults from "./pages/examAdmin/FacultyFormatResults";
 import StudentFormatResults from "./pages/examAdmin/StudentFormatResults";
@@ -102,6 +104,8 @@ function App() {
         <Route path="/research/funded-project" element={<ProtectedRoute element={<FundedProject />} />} />
         <Route path="/research/consultancy-publication" element={<ProtectedRoute element={<ConsultancyPublication />} />} />
         <Route path="/research/conference-publication" element={<ProtectedRoute element={<ConferencePublication />} />} />
+        <Route path="/research/phd-scholars" element={<ProtectedRoute element={<PhdScholarPublication />} />} />
+        <Route path="/research/novel-products" element={<ProtectedRoute element={<NovelProductPublication />} />} />
         <Route path="/research/sdg" element={<ProtectedRoute element={<SDG />} />} />
         <Route path="/academics/management" element={<ProtectedRoute element={<AcademicManagement />} />} />
         <Route path="exam-result/faculty-format" element={<ProtectedRoute element={<FacultyFormatResults />} />} />

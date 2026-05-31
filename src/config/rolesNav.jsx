@@ -39,6 +39,8 @@ export const ROLE_ROUTES = {
         { text: "Patent", path: "/research/patent-publication" },
         { text: "Funded Project", path: "/research/funded-project" },
         { text: "Consultancy", path: "/research/consultancy-publication" },
+        { text: "Ph.D. Scholars", path: "/research/phd-scholars" },
+        { text: "Novel Products / Tech", path: "/research/novel-products" },
         { text: "SDG's", path: "/research/sdg" },
       ],
     },

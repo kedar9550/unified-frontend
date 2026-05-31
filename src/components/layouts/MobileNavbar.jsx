@@ -30,7 +30,8 @@ import {
     BusinessCenter,
     Campaign,
     Public,
-    Assignment
+    Assignment,
+    Devices
 } from "@mui/icons-material";
 import { useAuth } from "../../context/AuthContext";
 import { ROLE_ROUTES } from "../../config/rolesNav";
@@ -76,6 +77,8 @@ const SUB_ITEM_METADATA = {
     "Funded Project": { desc: "Track funded projects and grants", icon: <MonetizationOn />, color: "#FFFBEB", iconColor: "#B45309" },
     "Consultancy": { desc: "Manage consultancy and corporate work", icon: <BusinessCenter />, color: "#F0FDFA", iconColor: "#0F766E" },
     "Conference": { desc: "Record conference presentations", icon: <Campaign />, color: "#FDF2F8", iconColor: "#BE185D" },
+    "Ph.D. Scholars": { desc: "Record and manage guided Ph.D. scholars appraisal history", icon: <School />, color: "#F5F3FF", iconColor: "#7c3aed" },
+    "Novel Products / Tech": { desc: "Submit and manage novel products and technologies developed/implemented", icon: <Devices />, color: "#ECFDF5", iconColor: "#10b981" },
     "SDG's": { desc: "Track Sustainable Development Goals", icon: <Public />, color: "#ECFDF5", iconColor: "#047857" },
     "Faculty Format": { desc: "Download or view faculty-specific data formats", icon: <Assignment />, color: "rgba(124, 58, 237, 0.12)", iconColor: "#7c3aed" },
     "Students Format": { desc: "Download or view student-specific data formats", icon: <AssignmentInd />, color: "rgba(16, 185, 129, 0.12)", iconColor: "#10b981" }

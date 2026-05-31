@@ -44,7 +44,8 @@ import {
   MonetizationOn,
   BusinessCenter,
   Campaign,
-  Public
+  Public,
+  Devices
 } from "@mui/icons-material";
 
 const capitalizeRole = (role) => {
@@ -71,6 +72,8 @@ const ITEM_METADATA = {
   "Funded Project": { color: "rgba(180, 83, 9, 0.12)", iconColor: "#B45309", icon: <MonetizationOn /> },
   "Consultancy": { color: "rgba(15, 118, 110, 0.12)", iconColor: "#0F766E", icon: <BusinessCenter /> },
   "Conference": { color: "rgba(190, 24, 93, 0.12)", iconColor: "#BE185D", icon: <Campaign /> },
+  "Ph.D. Scholars": { color: "rgba(124, 58, 237, 0.12)", iconColor: "#7c3aed", icon: <School /> },
+  "Novel Products / Tech": { color: "rgba(16, 185, 129, 0.12)", iconColor: "#10b981", icon: <Devices /> },
   "SDG's": { color: "rgba(4, 120, 87, 0.12)", iconColor: "#047857", icon: <Public /> },
   "Approvals": { color: "rgba(22, 101, 52, 0.12)", iconColor: "#22c55e", icon: <Verified /> },
   "Proctordata": { color: "rgba(154, 52, 18, 0.12)", iconColor: "#f97316", icon: <People /> },
