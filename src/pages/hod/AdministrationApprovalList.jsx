@@ -42,7 +42,7 @@ export default function AdministrationApprovalList() {
   const [yearFilter, setYearFilter] = useState("All");
 
   // Review Modal States
-  const [selectedEntry, setSelectedEntry] = useState(null);
+  const [selectedRole, setSelectedRole] = useState(null);
   const [remarks, setRemarks] = useState("");
   const [actionLoading, setActionLoading] = useState(false);
 
@@ -65,28 +65,29 @@ export default function AdministrationApprovalList() {
     fetchEntries();
   }, []);
 
-  const handleOpenReview = (entry) => {
-    setSelectedEntry(entry);
-    setRemarks(entry.remarks || "");
+  const handleOpenReview = (roleItem) => {
+    setSelectedRole(roleItem);
+    setRemarks(roleItem.remarks || "");
   };
 
   const handleCloseReview = () => {
-    setSelectedEntry(null);
+    setSelectedRole(null);
     setRemarks("");
   };
 
   const handleHODAction = async (action) => {
-    if (!selectedEntry) return;
+    if (!selectedRole) return;
 
     setActionLoading(true);
     try {
-      const res = await API.put(`/api/faculty-administration/hod-action/${selectedEntry._id}`, {
+      const res = await API.put(`/api/faculty-administration/hod-action-role/${selectedRole._id}`, {
+        roleName: selectedRole.roleName,
         action,
         remarks
       });
 
       if (res.data?.success) {
-        toast.success(`Administration declaration ${action === "Approve" ? "Approved" : "Rejected"} successfully!`);
+        toast.success(`Role '${selectedRole.roleName}' has been ${action === "Approve" ? "Approved" : "Rejected"} successfully!`);
         fetchEntries();
         handleCloseReview();
       }
@@ -105,11 +106,33 @@ export default function AdministrationApprovalList() {
     return { bg: "var(--bg-glass)", color: "var(--text-secondary)", border: "var(--border-color)" };
   };
 
+  // Compile individual active roles
+  const allFlattenedRoles = [];
+  entries.forEach(entry => {
+    (entry.roles || []).forEach(role => {
+      if (role.isResponsible) {
+        allFlattenedRoles.push({
+          _id: entry._id,
+          roleName: role.roleName,
+          level: role.level,
+          details: role.details,
+          status: role.status || "Pending",
+          approvedBy: role.approvedBy,
+          approvalDate: role.approvalDate,
+          remarks: role.remarks,
+          facultyId: entry.facultyId,
+          academicYear: entry.academicYear,
+          entry: entry
+        });
+      }
+    });
+  });
+
   // Filter Logic
-  const uniqueYears = [...new Set(entries.map(e => e.academicYear?.year).filter(Boolean))];
-  const filteredEntries = entries.filter(entry => {
-    const matchesStatus = statusFilter === "All" || entry.status === statusFilter;
-    const matchesYear = yearFilter === "All" || entry.academicYear?.year === yearFilter;
+  const uniqueYears = [...new Set(allFlattenedRoles.map(r => r.academicYear?.year).filter(Boolean))];
+  const filteredRoles = allFlattenedRoles.filter(role => {
+    const matchesStatus = statusFilter === "All" || role.status === statusFilter;
+    const matchesYear = yearFilter === "All" || role.academicYear?.year === yearFilter;
     return matchesStatus && matchesYear;
   });
 
@@ -118,45 +141,49 @@ export default function AdministrationApprovalList() {
     "Faculty Name",
     "Emp ID",
     "Academic Year",
-    "Roles Declared",
+    "Role Declared",
+    "Level",
     "Status",
     "Actions"
   ];
 
-  const rows = filteredEntries.map((item, index) => {
-    const statusStyle = getStatusColor(item.status);
-    const declaredRolesCount = (item.roles || []).filter(r => r.isResponsible).length;
+  const rows = filteredRoles.map((roleItem, index) => {
+    const statusStyle = getStatusColor(roleItem.status);
 
     return [
       { value: index + 1, display: <Box sx={{ fontWeight: 600 }}>{index + 1}</Box> },
       {
-        value: item.facultyId?.name || "Unknown",
-        display: <Typography sx={{ fontWeight: 700, fontSize: 14, color: "var(--text-primary)" }}>{item.facultyId?.name || "Unknown"}</Typography>
+        value: roleItem.facultyId?.name || "Unknown",
+        display: <Typography sx={{ fontWeight: 700, fontSize: 14, color: "var(--text-primary)" }}>{roleItem.facultyId?.name || "Unknown"}</Typography>
       },
       {
-        value: item.facultyId?.institutionId || "—",
-        display: <Typography sx={{ fontWeight: 600, color: "var(--text-secondary)", fontSize: 13 }}>{item.facultyId?.institutionId || "—"}</Typography>
+        value: roleItem.facultyId?.institutionId || "—",
+        display: <Typography sx={{ fontWeight: 600, color: "var(--text-secondary)", fontSize: 13 }}>{roleItem.facultyId?.institutionId || "—"}</Typography>
       },
       {
-        value: item.academicYear?.year || "—",
-        display: <Chip label={item.academicYear?.year || "—"} size="small" sx={{ fontWeight: 700, bgcolor: "var(--bg-glass)", color: "var(--text-primary)" }} />
+        value: roleItem.academicYear?.year || "—",
+        display: <Chip label={roleItem.academicYear?.year || "—"} size="small" sx={{ fontWeight: 700, bgcolor: "var(--bg-glass)", color: "var(--text-primary)" }} />
       },
       {
-        value: declaredRolesCount,
+        value: roleItem.roleName,
+        display: <Typography sx={{ fontWeight: 700, fontSize: 13.5, color: "var(--text-primary)" }}>{roleItem.roleName}</Typography>
+      },
+      {
+        value: roleItem.level || "—",
         display: (
           <Chip
-            label={`${declaredRolesCount} Active Roles`}
+            label={roleItem.level || "—"}
             size="small"
-            color={declaredRolesCount > 0 ? "primary" : "default"}
-            sx={{ fontWeight: 700, borderRadius: "8px" }}
+            color={roleItem.level === "Institute level" ? "secondary" : "info"}
+            sx={{ fontWeight: 800, borderRadius: "6px", fontSize: "0.75rem" }}
           />
         )
       },
       {
-        value: item.status,
+        value: roleItem.status,
         display: (
           <Chip
-            label={item.status}
+            label={roleItem.status}
             size="small"
             sx={{
               bgcolor: statusStyle.bg,
@@ -172,11 +199,11 @@ export default function AdministrationApprovalList() {
         value: "actions",
         display: (
           <Stack direction="row" spacing={1}>
-            <Tooltip title={item.status === "Pending" ? "Review & Action" : "View Details"}>
+            <Tooltip title={roleItem.status === "Pending" ? "Review & Action" : "View Details"}>
               <IconButton
                 size="small"
                 sx={{ color: "var(--color-primary)" }}
-                onClick={() => handleOpenReview(item)}
+                onClick={() => handleOpenReview(roleItem)}
               >
                 <ViewIcon fontSize="small" />
               </IconButton>
@@ -244,8 +271,6 @@ export default function AdministrationApprovalList() {
     </Box>
   );
 
-  const activeRoles = selectedEntry ? (selectedEntry.roles || []).filter(r => r.isResponsible) : [];
-
   return (
     <Box sx={{ width: "100%", mb: 3 }}>
       <Stack spacing={3} sx={{ width: "100%" }}>
@@ -283,9 +308,9 @@ export default function AdministrationApprovalList() {
 
       {/* Review Dialog */}
       <Dialog
-        open={Boolean(selectedEntry)}
+        open={Boolean(selectedRole)}
         onClose={handleCloseReview}
-        maxWidth="md"
+        maxWidth="sm"
         fullWidth
         slotProps={{
           paper: {
@@ -299,11 +324,11 @@ export default function AdministrationApprovalList() {
           }
         }}
       >
-        {selectedEntry && (
+        {selectedRole && (
           <>
             <DialogTitle sx={{ fontWeight: 800, fontSize: 20, color: "var(--text-primary)", pb: 1, display: "flex", alignItems: "center", gap: 1 }}>
               <AssignmentTurnedIn sx={{ color: "var(--color-primary)" }} />
-              Review Administrative Roles
+              Review Administrative Role
             </DialogTitle>
             <DialogContent>
               <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5, mt: 1 }}>
@@ -314,7 +339,7 @@ export default function AdministrationApprovalList() {
                       Faculty Name
                     </Typography>
                     <Typography sx={{ fontWeight: 800, color: "var(--text-primary)", fontSize: 15, mt: 0.2 }}>
-                      {selectedEntry.facultyId?.name}
+                      {selectedRole.facultyId?.name}
                     </Typography>
                   </Box>
                   <Box sx={{ textAlign: { xs: "left", sm: "right" } }}>
@@ -322,75 +347,47 @@ export default function AdministrationApprovalList() {
                       Emp ID / Year
                     </Typography>
                     <Typography sx={{ fontWeight: 700, color: "var(--text-secondary)", fontSize: 14, mt: 0.2 }}>
-                      {selectedEntry.facultyId?.institutionId} ({selectedEntry.academicYear?.year})
+                      {selectedRole.facultyId?.institutionId} ({selectedRole.academicYear?.year})
                     </Typography>
                   </Box>
                 </Box>
 
                 <Divider sx={{ borderColor: "var(--border-color)" }} />
 
-                {/* Declared Roles List */}
-                <Box>
-                  <Typography sx={{ fontSize: 12, fontWeight: 900, color: "var(--text-secondary)", textTransform: "uppercase", mb: 1.5 }}>
-                    Declared Charges & Responsibilities
-                  </Typography>
+                {/* Declared Role Details */}
+                <Box sx={{ p: 2, borderRadius: "14px", bgcolor: "var(--bg-glass)", border: "1px solid var(--border-color)", display: "flex", flexDirection: "column", gap: 1.5 }}>
+                  <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 2 }}>
+                    <Typography sx={{ fontWeight: 800, color: "var(--text-primary)", fontSize: "1.05rem" }}>
+                      {selectedRole.roleName}
+                    </Typography>
+                    <Chip
+                      label={selectedRole.level}
+                      size="small"
+                      color={selectedRole.level === "Institute level" ? "secondary" : "info"}
+                      sx={{ fontWeight: 800, borderRadius: "6px", fontSize: "0.75rem" }}
+                    />
+                  </Box>
 
-                  {activeRoles.length === 0 ? (
-                    <Box sx={{ p: 3, textAlign: "center", bgcolor: "var(--bg-glass)", border: "1px dashed var(--border-color)", borderRadius: "12px", color: "var(--text-secondary)", fontWeight: 600 }}>
-                      No administrative responsibilities declared for this academic cycle.
+                  {selectedRole.details && (
+                    <Box sx={{ mt: 0.5, px: 1.5, py: 1, borderRadius: "8px", bgcolor: "rgba(255, 255, 255, 0.02)", border: "1px solid var(--border-color)", width: "100%" }}>
+                      <Typography sx={{ fontSize: "0.85rem", color: "var(--text-secondary)", fontWeight: 500 }}>
+                        <strong>Event/Activity Details:</strong> {selectedRole.details}
+                      </Typography>
                     </Box>
-                  ) : (
-                    <List sx={{ display: "flex", flexDirection: "column", gap: 2, p: 0 }}>
-                      {activeRoles.map((role, idx) => (
-                        <ListItem
-                          key={idx}
-                          sx={{
-                            p: 2,
-                            borderRadius: "14px",
-                            bgcolor: "var(--bg-glass)",
-                            border: "1px solid var(--border-color)",
-                            display: "flex",
-                            flexDirection: "column",
-                            alignItems: "flex-start",
-                            gap: 1
-                          }}
-                        >
-                          <Box sx={{ display: "flex", width: "100%", justifyContent: "space-between", alignItems: "flex-start", gap: 2 }}>
-                            <Typography sx={{ fontWeight: 800, color: "var(--text-primary)", fontSize: "0.95rem" }}>
-                              {role.roleName}
-                            </Typography>
-                            <Chip
-                              label={role.level}
-                              size="small"
-                              color={role.level === "Institute level" ? "secondary" : "info"}
-                              sx={{ fontWeight: 800, borderRadius: "6px", fontSize: "0.75rem" }}
-                            />
-                          </Box>
-
-                          {role.details && (
-                            <Box sx={{ mt: 0.5, px: 1.5, py: 1, borderRadius: "8px", bgcolor: "rgba(255, 255, 255, 0.02)", border: "1px solid var(--border-color)", width: "100%" }}>
-                              <Typography sx={{ fontSize: "0.82rem", color: "var(--text-secondary)", fontWeight: 500 }}>
-                                <strong>Event/Activity Details:</strong> {role.details}
-                              </Typography>
-                            </Box>
-                          )}
-                        </ListItem>
-                      ))}
-                    </List>
                   )}
                 </Box>
 
                 {/* Remarks input or view */}
                 <Box sx={{ mt: 1 }}>
                   <Typography sx={{ fontSize: 12, fontWeight: 900, color: "var(--text-secondary)", textTransform: "uppercase", mb: 1 }}>
-                    HOD Comments / Remarks {selectedEntry.status === "Pending" && "(Optional)"}
+                    HOD Comments / Remarks {selectedRole.status === "Pending" && "(Optional)"}
                   </Typography>
                   <TextField
                     fullWidth
                     multiline
                     rows={3}
                     value={remarks}
-                    disabled={selectedEntry.status !== "Pending" || actionLoading}
+                    disabled={selectedRole.status !== "Pending" || actionLoading}
                     onChange={(e) => setRemarks(e.target.value)}
                     placeholder="Add approval comments or rejection remarks..."
                     sx={{
@@ -406,15 +403,15 @@ export default function AdministrationApprovalList() {
                 </Box>
 
                 {/* Approved details if already processed */}
-                {selectedEntry.status !== "Pending" && (
+                {selectedRole.status !== "Pending" && (
                   <Box sx={{ p: 2, borderRadius: "12px", bgcolor: "var(--bg-glass)", border: "1px solid var(--border-color)" }}>
                     <Typography sx={{ fontSize: 12, color: "var(--text-secondary)", fontWeight: 500 }}>
-                      Processed status: <strong>{selectedEntry.status}</strong>
+                      Processed status: <strong>{selectedRole.status}</strong>
                     </Typography>
-                    {selectedEntry.approvalDate && (
+                    {selectedRole.approvalDate && (
                       <Typography sx={{ fontSize: 12, color: "var(--text-secondary)", fontWeight: 500, mt: 0.5 }}>
-                        By: <strong>{selectedEntry.approvedBy?.name || "HOD"}</strong> on{" "}
-                        {new Date(selectedEntry.approvalDate).toLocaleString("en-GB", {
+                        By: <strong>{selectedRole.approvedBy?.name || "HOD"}</strong> on{" "}
+                        {new Date(selectedRole.approvalDate).toLocaleString("en-GB", {
                           day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit"
                         })}
                       </Typography>
@@ -431,7 +428,7 @@ export default function AdministrationApprovalList() {
               >
                 Cancel
               </Button>
-              {selectedEntry.status === "Pending" && (
+              {selectedRole.status === "Pending" && (
                 <>
                   <Button
                     variant="outlined"
