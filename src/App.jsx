@@ -35,6 +35,8 @@ import SDG from "./pages/faculty/SDG";
 import Profile from "./components/common/Profile";
 import SDGManagement from "./pages/uniprime/SDGManagement";
 import DOIFetcher from "./pages/faculty/DOITest";
+import FacultyAdministration from "./pages/faculty/FacultyAdministration";
+import AdministrationApprovalList from "./pages/hod/AdministrationApprovalList";
 
 import ResourceUtilization from "./pages/faculty/ResourceUtilization";
 import Contribution from "./pages/faculty/Contribution";
@@ -137,6 +139,8 @@ function App() {
         <Route path="/hod/research-approvals" element={<ProtectedRoute element={<ResearchApprovalList role="HOD" />} />} />
         <Route path="/hod/research-request/:type/:id" element={<ProtectedRoute element={<ResearchApprovalDetailWrapper role="HOD" />} />} />
         <Route path="/hod/proctoring-approvals" element={<ProtectedRoute element={<ProctoringApprovalList />} />} />
+        <Route path="/faculty/administration" element={<ProtectedRoute element={<FacultyAdministration />} />} />
+        <Route path="/hod/administration-approvals" element={<ProtectedRoute element={<AdministrationApprovalList />} />} />
 
         <Route path="/research-dean/approvals" element={<ProtectedRoute element={<ResearchApprovalList role="RESEARCH_DEAN" />} />} />
         <Route path="/research-dean/request/:type/:id" element={<ProtectedRoute element={<ResearchApprovalDetailWrapper role="RESEARCH_DEAN" />} />} />

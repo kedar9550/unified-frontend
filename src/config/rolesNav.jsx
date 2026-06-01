@@ -46,6 +46,8 @@ export const ROLE_ROUTES = {
         { text: "SDG's", path: "/research/sdg" },
       ],
     },
+    { text: "Administration", path: "/faculty/administration", icon: <AccountBalance /> },
+    // { text: "Interpersonal", path: "/interpersonal", icon: <Groups /> },
     {
       text: "Value addition",
       icon: <AccountBalance />,
@@ -118,6 +120,11 @@ export const ROLE_ROUTES = {
           text: "Proctoring Verification",
           path: "/hod/proctoring-approvals",
           icon: <SupervisorAccount />
+        },
+        {
+          text: "Administration Verification",
+          path: "/hod/administration-approvals",
+          icon: <AccountBalance />
         },
       ]
     },
