@@ -1,0 +1,828 @@
+import { useState, useEffect } from "react";
+import {
+  Box, TextField, MenuItem, Select, Typography, Button, Table, TableBody, TableCell,
+  TableContainer, TableHead, TableRow, Paper, IconButton, Dialog, DialogTitle,
+  DialogContent, DialogActions, Grid, Chip, Divider, Stack
+} from "@mui/material";
+import { toast } from "sonner";
+import { Description, WorkspacePremium, Close, AddCircle, Edit, Delete, Visibility } from "@mui/icons-material";
+import PageHeader from "../../components/common/PageHeader";
+import {
+  FormCard, Grid2, SubLabel, NoteBox, FileField, SubmitBtn, labelStyle
+} from "../../components/faculty/PublicationFormFields";
+import { useAuth } from "../../context/AuthContext";
+import API from "../../api/axios";
+
+// Activity categories and types mappings
+const ACTIVITY_CATEGORIES = [
+  "CONFERENCE",
+  "STTP / REFRESHER COURSE",
+  "FDP",
+  "SYMPOSIUM",
+  "GUEST LECTURE",
+  "WORKSHOP",
+  "OTHER EVENT"
+];
+
+const ROLES_BY_CATEGORY = {
+  "CONFERENCE": [
+    "Conference Chair",
+    "Conference Co-Chair",
+    "Conference Finance Chair",
+    "Conference Publication Chair",
+    "Conference Registration Chair",
+    "Conference Resource Person",
+    "Conference Participant"
+  ],
+  "STTP / REFRESHER COURSE": [
+    "Convenor",
+    "Co-Convenor 1",
+    "Co-Convenor 2",
+    "Coordinator",
+    "Resource Person",
+    "Participant"
+  ],
+  "FDP": [
+    "FDP Convenor",
+    "FDP Co-Convenor",
+    "FDP Coordinator",
+    "FDP Resource Person",
+    "FDP Participant"
+  ],
+  "SYMPOSIUM": [
+    "Symposium Convenor",
+    "Symposium Co-Convenor",
+    "Symposium Coordinator",
+    "Symposium Resource Person",
+    "Symposium Participant"
+  ],
+  "GUEST LECTURE": [
+    "Guest Lecture Coordinator",
+    "Guest Lecture Resource Person"
+  ],
+  "WORKSHOP": [
+    "Workshop Coordinator",
+    "Workshop Resource Person"
+  ],
+  "OTHER EVENT": [
+    "Other Event Coordinator",
+    "Other Event Resource Person"
+  ]
+};
+
+export default function ResourceUtilization() {
+  const { user } = useAuth();
+  const [academicYears, setAcademicYears] = useState([]);
+  const [selectedYear, setSelectedYear] = useState("");
+  const [activitiesList, setActivitiesList] = useState([]);
+  
+  const [openFormModal, setOpenFormModal] = useState(false);
+  const [selectedActivityDetails, setSelectedActivityDetails] = useState(null);
+  
+  const [editingId, setEditingId] = useState(null); // stores ID when editing
+  const [form, setForm] = useState({
+    activityCategory: "",
+    activityType: "",
+    organizationName: "",
+    fromDate: "",
+    toDate: "",
+    duration: "",
+    remarks: "",
+    sessionsConducted: "",
+    daysParticipated: ""
+  });
+  
+  const [proofFile, setProofFile] = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  // Fetch academic years on load
+  useEffect(() => {
+    API.get("/api/academic-years")
+      .then(res => {
+        setAcademicYears(res.data?.years || res.data?.data || []);
+      })
+      .catch(err => console.log("Failed to fetch academic years", err));
+  }, []);
+
+  // Fetch activities when year changes
+  useEffect(() => {
+    if (selectedYear) {
+      fetchActivities();
+    } else {
+      setActivitiesList([]);
+    }
+  }, [selectedYear]);
+
+  // Recalculate duration automatically when fromDate/toDate change
+  useEffect(() => {
+    if (form.fromDate && form.toDate) {
+      const start = new Date(form.fromDate);
+      const end = new Date(form.toDate);
+      if (start <= end) {
+        const diffTime = Math.abs(end - start);
+        const days = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+        setForm(prev => ({ ...prev, duration: String(days) }));
+      }
+    }
+  }, [form.fromDate, form.toDate]);
+
+  const fetchActivities = () => {
+    API.get(`/api/value-addition/resource-utilization?academicYear=${selectedYear}`)
+      .then(res => {
+        setActivitiesList(res.data?.data || []);
+      })
+      .catch(err => console.log("Failed to fetch activities", err));
+  };
+
+  const setVal = (k) => (e) => setForm((p) => ({ ...p, [k]: e.target.value }));
+  
+  const handleFileChange = (e) => {
+    setProofFile(e.target.files[0]);
+  };
+
+  const handleCategoryChange = (e) => {
+    const category = e.target.value;
+    setForm(prev => ({
+      ...prev,
+      activityCategory: category,
+      activityType: "", 
+      sessionsConducted: "",
+      daysParticipated: ""
+    }));
+  };
+
+  const handleRoleChange = (e) => {
+    const role = e.target.value;
+    setForm(prev => ({
+      ...prev,
+      activityType: role,
+      sessionsConducted: "",
+      daysParticipated: ""
+    }));
+  };
+
+  const showSessionsField = form.activityType?.includes("Resource Person");
+  const showDaysField = form.activityType?.includes("Participant");
+
+  const handleOpenAddModal = () => {
+    setEditingId(null);
+    setForm({
+      activityCategory: "",
+      activityType: "",
+      organizationName: "",
+      fromDate: "",
+      toDate: "",
+      duration: "",
+      remarks: "",
+      sessionsConducted: "",
+      daysParticipated: ""
+    });
+    setProofFile(null);
+    setOpenFormModal(true);
+  };
+
+  const handleOpenEditModal = (activity) => {
+    setEditingId(activity._id);
+    setForm({
+      activityCategory: activity.activityCategory,
+      activityType: activity.activityType,
+      organizationName: activity.organizationName,
+      fromDate: activity.fromDate ? activity.fromDate.substring(0, 10) : "",
+      toDate: activity.toDate ? activity.toDate.substring(0, 10) : "",
+      duration: String(activity.duration),
+      remarks: activity.remarks || "",
+      sessionsConducted: activity.sessionsConducted !== undefined ? String(activity.sessionsConducted) : "",
+      daysParticipated: activity.daysParticipated !== undefined ? String(activity.daysParticipated) : ""
+    });
+    setProofFile(null);
+    setOpenFormModal(true);
+  };
+
+  const handleDelete = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this draft activity?")) return;
+    try {
+      await API.delete(`/api/value-addition/resource-utilization/${id}`);
+      toast.success("Activity deleted successfully!");
+      fetchActivities();
+    } catch (err) {
+      toast.error(err?.response?.data?.message || "Failed to delete activity.");
+    }
+  };
+
+  const handleSaveDraft = async () => {
+    if (!form.activityCategory || !form.activityType || !form.organizationName || !form.fromDate || !form.toDate) {
+      toast.error("Please fill all required fields");
+      return;
+    }
+
+    if (!proofFile && !editingId) {
+      toast.error("Supporting proof upload is mandatory");
+      return;
+    }
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const from = new Date(form.fromDate);
+    const to = new Date(form.toDate);
+
+    if (from > today || to > today) {
+      toast.error("Activity dates cannot be in the future");
+      return;
+    }
+
+    if (from > to) {
+      toast.error("From Date cannot be later than To Date");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const fd = new FormData();
+      fd.append("academicYear", selectedYear);
+      fd.append("activityCategory", form.activityCategory);
+      fd.append("activityType", form.activityType);
+      fd.append("organizationName", form.organizationName);
+      fd.append("fromDate", form.fromDate);
+      fd.append("toDate", form.toDate);
+      fd.append("duration", form.duration);
+      fd.append("remarks", form.remarks || "");
+      
+      if (showSessionsField && form.sessionsConducted) {
+        fd.append("sessionsConducted", form.sessionsConducted);
+      }
+      if (showDaysField && form.daysParticipated) {
+        fd.append("daysParticipated", form.daysParticipated);
+      }
+
+      if (proofFile) {
+        fd.append("proof", proofFile);
+      }
+
+      if (editingId) {
+        await API.put(`/api/value-addition/resource-utilization/${editingId}`, fd, {
+          headers: { "Content-Type": "multipart/form-data" }
+        });
+        toast.success("Draft updated successfully!");
+      } else {
+        await API.post("/api/value-addition/resource-utilization", fd, {
+          headers: { "Content-Type": "multipart/form-data" }
+        });
+        toast.success("Draft saved successfully!");
+      }
+
+      setOpenFormModal(false);
+      fetchActivities();
+    } catch (err) {
+      toast.error(err?.response?.data?.message || "Failed to save draft");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleBulkSubmit = async () => {
+    const activeDrafts = activitiesList.filter(a => a.status === 'Draft');
+    if (activeDrafts.length === 0) {
+      toast.error("No draft entries found for this academic year.");
+      return;
+    }
+
+    const yearText = academicYears.find(y => y._id === selectedYear)?.year || "";
+    if (!window.confirm(`Are you sure you want to submit all ${activeDrafts.length} draft entries for the academic year ${yearText}? Once submitted, they will become read-only.`)) {
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await API.post("/api/value-addition/resource-utilization/submit-academic-year", {
+        academicYear: selectedYear
+      });
+      toast.success("All drafts submitted successfully for approval!");
+      fetchActivities();
+    } catch (err) {
+      toast.error(err?.response?.data?.message || "Submission failed");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const renderFacultyInfoCard = () => (
+    <Box sx={{
+      background: "var(--bg-glass)",
+      border: "1px solid var(--border-color)",
+      borderRadius: "20px",
+      p: 2.5,
+      mb: 4,
+      display: "grid",
+      gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr 1fr 1fr" },
+      gap: 3,
+      boxShadow: "var(--shadow-premium)"
+    }}>
+      <Box>
+        <Typography sx={{ fontSize: 10, color: "var(--color-primary)", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.05em" }}>Faculty Name</Typography>
+        <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>{user?.name || "N/A"}</Typography>
+      </Box>
+      <Box>
+        <Typography sx={{ fontSize: 10, color: "var(--color-primary)", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.05em" }}>Employee ID</Typography>
+        <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>{user?.institutionId || "N/A"}</Typography>
+      </Box>
+      <Box>
+        <Typography sx={{ fontSize: 10, color: "var(--color-primary)", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.05em" }}>Department</Typography>
+        <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>{user?.coreDepartment || user?.department || "N/A"}</Typography>
+      </Box>
+      <Box>
+        <Typography sx={{ fontSize: 10, color: "var(--color-primary)", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.05em" }}>Designation</Typography>
+        <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>{user?.designation || "N/A"}</Typography>
+      </Box>
+    </Box>
+  );
+
+  const getStatusColor = (status) => {
+    if (status === 'Approved') return { bg: "rgba(16, 185, 129, 0.1)", color: "#10b981" };
+    if (status === 'Rejected') return { bg: "rgba(239, 68, 68, 0.1)", color: "#ef4444" };
+    if (status === 'Pending at HOD') return { bg: "rgba(232, 160, 0, 0.1)", color: "#e8a000" };
+    return { bg: "rgba(100, 116, 139, 0.1)", color: "#64748b" }; // Draft
+  };
+
+  const renderSelectYear = () => (
+    <Box sx={{ maxWidth: 500, mx: "auto", mt: 5 }}>
+      <FormCard title="Select Academic Year">
+        <Typography sx={{ mb: 2, color: "var(--text-secondary)", fontWeight: 500 }}>Please select the academic year to manage your activities:</Typography>
+        <Select
+          fullWidth
+          size="small"
+          displayEmpty
+          value={selectedYear}
+          onChange={(e) => setSelectedYear(e.target.value)}
+        >
+          <MenuItem value="" disabled>Select Academic Year</MenuItem>
+          {academicYears.map(y => (
+            <MenuItem key={y._id} value={y._id}>{y.year}</MenuItem>
+          ))}
+        </Select>
+      </FormCard>
+    </Box>
+  );
+
+  const renderDashboard = () => {
+    const activeDrafts = activitiesList.filter(a => a.status === 'Draft');
+
+    return (
+      <Box>
+        {renderFacultyInfoCard()}
+
+        <Box sx={{ display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 2, alignItems: "center", mb: 3 }}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+            <Typography variant="h6" sx={{ color: "var(--text-primary)", fontWeight: 800 }}>
+              Resource Utilization Records ({academicYears.find(y => y._id === selectedYear)?.year})
+            </Typography>
+            <Button size="small" variant="text" onClick={() => setSelectedYear("")} sx={{ fontWeight: 700, textTransform: "none", color: "var(--color-primary)" }}>
+              Change Year
+            </Button>
+          </Box>
+          <Stack direction="row" spacing={2}>
+            <Button
+              variant="outlined"
+              color="primary"
+              onClick={handleOpenAddModal}
+              startIcon={<AddCircle />}
+              sx={{ borderRadius: "12px", textTransform: "none", fontWeight: 700 }}
+            >
+              Add Resource Utilization
+            </Button>
+            <Button
+              variant="contained"
+              color="success"
+              disabled={activeDrafts.length === 0 || loading}
+              onClick={handleBulkSubmit}
+              sx={{
+                background: activeDrafts.length > 0 ? "var(--gradient-primary)" : "rgba(0,0,0,0.1)",
+                borderRadius: "12px",
+                px: 3,
+                fontWeight: 800,
+                textTransform: "none",
+                "&:hover": { opacity: 0.9 }
+              }}
+            >
+              Submit Academic Year Data ({activeDrafts.length} Drafts)
+            </Button>
+          </Stack>
+        </Box>
+
+        {activitiesList.length === 0 ? (
+          <Box sx={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            py: 8,
+            px: 3,
+            background: "var(--bg-panel)",
+            borderRadius: "16px",
+            border: "1px dashed var(--border-color)",
+            boxShadow: "var(--shadow-premium)",
+            textAlign: "center"
+          }}>
+            <Typography variant="h6" sx={{ color: "var(--text-secondary)", fontWeight: 600, mb: 1 }}>
+              No Records Saved
+            </Typography>
+            <Typography variant="body2" sx={{ color: "text.secondary", mb: 3, maxWidth: "450px" }}>
+              There are no entries for the selected academic year. Click the "Add Resource Utilization" button to create your first Draft entry.
+            </Typography>
+          </Box>
+        ) : (
+          <TableContainer component={Paper} sx={{ borderRadius: "16px", background: "var(--bg-panel)", border: "1px solid var(--border-color)", boxShadow: "var(--shadow-premium)", overflowX: "auto" }}>
+            <Table>
+              <TableHead sx={{ background: "var(--gradient-primary)" }}>
+                <TableRow>
+                  <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Category</TableCell>
+                  <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Role / Type</TableCell>
+                  <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Organization / Event</TableCell>
+                  <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Dates</TableCell>
+                  <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Duration</TableCell>
+                  <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Status</TableCell>
+                  <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Actions</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {activitiesList.map((activity, i) => {
+                  const isDraft = activity.status === 'Draft';
+                  const fromDateFormatted = new Date(activity.fromDate).toLocaleDateString("en-IN", { day: '2-digit', month: '2-digit', year: 'numeric' });
+                  const toDateFormatted = new Date(activity.toDate).toLocaleDateString("en-IN", { day: '2-digit', month: '2-digit', year: 'numeric' });
+                  const statusStyle = getStatusColor(activity.status);
+
+                  return (
+                    <TableRow key={activity._id || i}>
+                      <TableCell sx={{ color: "var(--text-primary)", fontWeight: 500, py: 2 }}>{activity.activityCategory}</TableCell>
+                      <TableCell sx={{ color: "var(--text-secondary)", py: 2 }}>{activity.activityType}</TableCell>
+                      <TableCell sx={{ color: "var(--text-secondary)", py: 2 }}>{activity.organizationName}</TableCell>
+                      <TableCell sx={{ color: "var(--text-secondary)", py: 2 }}>{fromDateFormatted} - {toDateFormatted}</TableCell>
+                      <TableCell sx={{ color: "var(--text-secondary)", py: 2 }}>{activity.duration} Days</TableCell>
+                      <TableCell sx={{ py: 2 }}>
+                        <Typography
+                          variant="body2"
+                          sx={{
+                            color: statusStyle.color,
+                            fontWeight: 700,
+                            background: statusStyle.bg,
+                            px: 1.5,
+                            py: 0.5,
+                            borderRadius: "6px",
+                            display: "inline-block"
+                          }}
+                        >
+                          {activity.status}
+                        </Typography>
+                      </TableCell>
+                      <TableCell sx={{ py: 2 }}>
+                        <Stack direction="row" spacing={1}>
+                          <IconButton
+                            size="small"
+                            onClick={() => setSelectedActivityDetails(activity)}
+                            sx={{ color: "var(--color-primary)" }}
+                          >
+                            <Visibility fontSize="small" />
+                          </IconButton>
+                          {isDraft && (
+                            <>
+                              <IconButton
+                                size="small"
+                                color="info"
+                                onClick={() => handleOpenEditModal(activity)}
+                              >
+                                <Edit fontSize="small" />
+                              </IconButton>
+                              <IconButton
+                                size="small"
+                                color="error"
+                                onClick={() => handleDelete(activity._id)}
+                              >
+                                <Delete fontSize="small" />
+                              </IconButton>
+                            </>
+                          )}
+                        </Stack>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        )}
+      </Box>
+    );
+  };
+
+  const renderDetailsDialog = () => {
+    if (!selectedActivityDetails) return null;
+    const data = selectedActivityDetails;
+    const statusStyle = getStatusColor(data.status);
+
+    const backendURL = (import.meta.env.VITE_BACKEND_URL || "http://localhost:9000").replace(/\/$/, "");
+    const fileUrl = data.proof ? (data.proof.startsWith('http') ? data.proof : `${backendURL}${data.proof}`) : null;
+    const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(data.proof || "");
+
+    return (
+      <Dialog
+        open={!!selectedActivityDetails}
+        onClose={() => setSelectedActivityDetails(null)}
+        maxWidth="md"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: "20px",
+            background: "var(--bg-glass)",
+            backdropFilter: "blur(12px)",
+            border: "1px solid var(--border-color)",
+            boxShadow: "var(--shadow-premium)",
+          }
+        }}
+      >
+        <DialogTitle sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "var(--gradient-primary)", color: "#fff", py: 2 }}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+            <WorkspacePremium sx={{ color: "#fff" }} />
+            <Typography variant="h6" sx={{ fontWeight: 800 }}>Activity Details</Typography>
+          </Box>
+          <IconButton onClick={() => setSelectedActivityDetails(null)} sx={{ color: "#fff" }}><Close /></IconButton>
+        </DialogTitle>
+        <DialogContent sx={{ p: 3, mt: 1 }}>
+          <Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)", mb: 1 }}>{data.activityCategory} - {data.activityType}</Typography>
+          <Typography variant="body2" sx={{ color: "var(--text-secondary)", mb: 3, fontWeight: 600 }}>Organization / Event: {data.organizationName}</Typography>
+
+          <Grid container spacing={2}>
+            <Grid item xs={12} sm={4}>
+              <Box sx={{ p: 1.5, borderRadius: "10px", background: "rgba(255,255,255,0.02)" }}>
+                <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", fontWeight: 800, fontSize: "0.65rem" }}>Dates</Typography>
+                <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>
+                  {new Date(data.fromDate).toLocaleDateString("en-IN")} to {new Date(data.toDate).toLocaleDateString("en-IN")}
+                </Typography>
+              </Box>
+            </Grid>
+            <Grid item xs={12} sm={4}>
+              <Box sx={{ p: 1.5, borderRadius: "10px", background: "rgba(255,255,255,0.02)" }}>
+                <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", fontWeight: 800, fontSize: "0.65rem" }}>Duration</Typography>
+                <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>{data.duration} Days</Typography>
+              </Box>
+            </Grid>
+            <Grid item xs={12} sm={4}>
+              <Box sx={{ p: 1.5, borderRadius: "10px", background: "rgba(255,255,255,0.02)" }}>
+                <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", fontWeight: 800, fontSize: "0.65rem" }}>Status</Typography>
+                <Box sx={{ mt: 0.5 }}>
+                  <Chip
+                    label={data.status}
+                    size="small"
+                    sx={{
+                      bgcolor: statusStyle.bg,
+                      color: statusStyle.color,
+                      fontWeight: 800,
+                      borderRadius: "6px"
+                    }}
+                  />
+                </Box>
+              </Box>
+            </Grid>
+
+            {data.sessionsConducted !== undefined && (
+              <Grid item xs={12} sm={4}>
+                <Box sx={{ p: 1.5, borderRadius: "10px", background: "rgba(255,255,255,0.02)" }}>
+                  <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", fontWeight: 800, fontSize: "0.65rem" }}>Sessions Conducted</Typography>
+                  <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>{data.sessionsConducted}</Typography>
+                </Box>
+              </Grid>
+            )}
+
+            {data.daysParticipated !== undefined && (
+              <Grid item xs={12} sm={4}>
+                <Box sx={{ p: 1.5, borderRadius: "10px", background: "rgba(255,255,255,0.02)" }}>
+                  <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", fontWeight: 800, fontSize: "0.65rem" }}>Days Participated</Typography>
+                  <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>{data.daysParticipated}</Typography>
+                </Box>
+              </Grid>
+            )}
+
+            {data.remarks && (
+              <Grid item xs={12}>
+                <Box sx={{ p: 1.5, borderRadius: "10px", background: "rgba(255,255,255,0.02)" }}>
+                  <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", fontWeight: 800, fontSize: "0.65rem" }}>Remarks</Typography>
+                  <Typography variant="body2" sx={{ color: "var(--text-primary)", mt: 0.5 }}>{data.remarks}</Typography>
+                </Box>
+              </Grid>
+            )}
+
+            {data.hodComment && (
+              <Grid item xs={12}>
+                <Box sx={{ p: 2, bgcolor: "rgba(255, 193, 7, 0.05)", borderRadius: "10px", border: "1px solid rgba(255, 193, 7, 0.2)" }}>
+                  <Typography variant="caption" sx={{ fontWeight: 900, color: "#ff9800", textTransform: "uppercase" }}>HOD Remarks</Typography>
+                  <Typography variant="body2" sx={{ fontStyle: "italic", mt: 0.5, color: "var(--text-secondary)" }}>"{data.hodComment}"</Typography>
+                </Box>
+              </Grid>
+            )}
+          </Grid>
+
+          <Divider sx={{ my: 3 }} />
+
+          {fileUrl && (
+            <Box sx={{ mt: 3 }}>
+              <Typography variant="caption" sx={{ fontWeight: 800, color: "var(--color-primary)", fontSize: "0.7rem", textTransform: "uppercase", display: "block", mb: 1 }}>Proof Document</Typography>
+              <Box sx={{
+                height: 250, display: "flex", alignItems: "center", justifyContent: "center",
+                border: "1px solid var(--border-color)", background: "var(--bg-panel)", borderRadius: "8px",
+                overflow: "hidden", cursor: "pointer", transition: "all 0.2s ease",
+                "&:hover": { borderColor: "var(--color-primary)", transform: "translateY(-2px)" }
+              }} onClick={() => window.open(fileUrl, '_blank')}>
+                {isImage ? (
+                  <img src={fileUrl} alt="Proof" style={{ width: "100%", height: "100%", objectFit: "contain" }} />
+                ) : (
+                  <Box sx={{ textAlign: "center" }}>
+                    <Description sx={{ fontSize: 40, color: "var(--text-secondary)", mb: 0.5 }} />
+                    <Typography variant="caption" sx={{ color: "var(--text-secondary)", fontWeight: 700, display: "block" }}>PDF Preview (Click to open)</Typography>
+                  </Box>
+                )}
+              </Box>
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions sx={{ p: 2.5, borderTop: "1px solid var(--border-color)" }}>
+          <Button onClick={() => setSelectedActivityDetails(null)} sx={{ color: "var(--text-primary)", fontWeight: 700 }}>Close</Button>
+        </DialogActions>
+      </Dialog>
+    );
+  };
+
+  const renderFormModal = () => (
+    <Dialog
+      open={openFormModal}
+      onClose={() => setOpenFormModal(false)}
+      maxWidth="md"
+      fullWidth
+      PaperProps={{ sx: { borderRadius: "20px" } }}
+    >
+      <DialogTitle sx={{ borderBottom: "1px solid var(--border-color)", pb: 2 }}>
+        <Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>
+          {editingId ? "Edit Resource Utilization Entry" : "Add Resource Utilization Entry"}
+        </Typography>
+      </DialogTitle>
+      <DialogContent sx={{ p: 3, pt: 4 }}>
+        <SubLabel text="Details of the Activity:" />
+        <Grid2>
+          <Box>
+            <Typography sx={labelStyle}>Activity Category: *</Typography>
+            <Select
+              size="small"
+              fullWidth
+              displayEmpty
+              value={form.activityCategory}
+              onChange={handleCategoryChange}
+            >
+              <MenuItem value="" disabled>--Select Category--</MenuItem>
+              {ACTIVITY_CATEGORIES.map(cat => (
+                <MenuItem key={cat} value={cat}>{cat}</MenuItem>
+              ))}
+            </Select>
+          </Box>
+
+          <Box>
+            <Typography sx={labelStyle}>Activity Role / Type: *</Typography>
+            <Select
+              size="small"
+              fullWidth
+              displayEmpty
+              value={form.activityType}
+              onChange={handleRoleChange}
+              disabled={!form.activityCategory}
+            >
+              <MenuItem value="" disabled>--Select Role--</MenuItem>
+              {form.activityCategory && ROLES_BY_CATEGORY[form.activityCategory]?.map(role => (
+                <MenuItem key={role} value={role}>{role}</MenuItem>
+              ))}
+            </Select>
+          </Box>
+
+          <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
+            <Typography sx={labelStyle}>Organization / Event Name: *</Typography>
+            <TextField
+              size="small"
+              fullWidth
+              value={form.organizationName}
+              onChange={setVal("organizationName")}
+              placeholder="Enter Name of Event or Organization"
+            />
+          </Box>
+
+          <Box>
+            <Typography sx={labelStyle}>From Date: *</Typography>
+            <TextField
+              size="small"
+              fullWidth
+              type="date"
+              value={form.fromDate}
+              onChange={setVal("fromDate")}
+              InputLabelProps={{ shrink: true }}
+              inputProps={{ max: new Date().toISOString().split("T")[0] }}
+            />
+          </Box>
+
+          <Box>
+            <Typography sx={labelStyle}>To Date: *</Typography>
+            <TextField
+              size="small"
+              fullWidth
+              type="date"
+              value={form.toDate}
+              onChange={setVal("toDate")}
+              InputLabelProps={{ shrink: true }}
+              inputProps={{ max: new Date().toISOString().split("T")[0] }}
+            />
+          </Box>
+
+          <Box>
+            <Typography sx={labelStyle}>Duration (Days): *</Typography>
+            <TextField
+              size="small"
+              fullWidth
+              type="number"
+              value={form.duration}
+              onChange={setVal("duration")}
+              helperText="Auto-calculated but editable"
+            />
+          </Box>
+
+          {showSessionsField && (
+            <Box>
+              <Typography sx={labelStyle}>Number of Sessions Conducted: *</Typography>
+              <TextField
+                size="small"
+                fullWidth
+                type="number"
+                value={form.sessionsConducted}
+                onChange={setVal("sessionsConducted")}
+                placeholder="e.g. 3"
+              />
+            </Box>
+          )}
+
+          {showDaysField && (
+            <Box>
+              <Typography sx={labelStyle}>Number of Days Participated: *</Typography>
+              <TextField
+                size="small"
+                fullWidth
+                type="number"
+                value={form.daysParticipated}
+                onChange={setVal("daysParticipated")}
+                placeholder="e.g. 5"
+              />
+            </Box>
+          )}
+
+          <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
+            <Typography sx={labelStyle}>Remarks (Optional):</Typography>
+            <TextField
+              size="small"
+              fullWidth
+              multiline
+              rows={2}
+              value={form.remarks}
+              onChange={setVal("remarks")}
+              placeholder="Any additional remarks..."
+            />
+          </Box>
+        </Grid2>
+
+        <NoteBox />
+
+        <Box sx={{ mt: 2 }}>
+          <FileField
+            label={editingId ? "Upload New Proof (Optional):" : "Relevant Proof Upload: *"}
+            name="proof"
+            onChange={handleFileChange}
+          />
+        </Box>
+      </DialogContent>
+      <DialogActions sx={{ p: 2.5, borderTop: "1px solid var(--border-color)" }}>
+        <Button
+          variant="outlined"
+          onClick={() => setOpenFormModal(false)}
+          sx={{ borderRadius: "10px", textTransform: "none", fontWeight: 700 }}
+        >
+          Cancel
+        </Button>
+        <SubmitBtn onClick={handleSaveDraft} loading={loading} />
+      </DialogActions>
+    </Dialog>
+  );
+
+  return (
+    <Box sx={{ width: "100%", pb: 5 }}>
+      <PageHeader
+        title="Faculty Resource Utilization"
+        subtitle="Manage, edit drafts, and submit all FDP, workshop, refesher course, seminar and event utilization activities."
+      />
+      <Box sx={{ mt: 4 }}>
+        {!selectedYear ? renderSelectYear() : renderDashboard()}
+        {renderDetailsDialog()}
+        {renderFormModal()}
+      </Box>
+    </Box>
+  );
+}

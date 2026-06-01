@@ -28,7 +28,8 @@ import {
   Flag,
   MenuBook,
   AccountBalance,
-  Assessment
+  Assessment,
+  WorkspacePremium
 } from "@mui/icons-material";
 import { useAuth } from "../../context/AuthContext";
 import { ROLE_ROUTES } from "../../config/rolesNav";
@@ -86,7 +87,9 @@ const ITEM_METADATA = {
   "Feedback Reports": { color: "rgba(30, 64, 175, 0.12)", iconColor: "#3b82f6", icon: <Analytics /> },
   "Feedback Management": { color: "rgba(22, 101, 52, 0.12)", iconColor: "#22c55e", icon: <MenuBook /> },
   "SDG Management": { color: "rgba(4, 120, 87, 0.12)", iconColor: "#047857", icon: <Public /> },
-  "Reports": { color: "rgba(154, 52, 18, 0.12)", iconColor: "#f97316", icon: <Assessment /> }
+  "Reports": { color: "rgba(154, 52, 18, 0.12)", iconColor: "#f97316", icon: <Assessment /> },
+  "Resource Utilization": { color: "rgba(15, 118, 110, 0.12)", iconColor: "#0f766e", icon: <Assignment /> },
+  "Contribution": { color: "rgba(180, 83, 9, 0.12)", iconColor: "#b45309", icon: <WorkspacePremium /> }
 };
 
 const drawerWidth = 270;
