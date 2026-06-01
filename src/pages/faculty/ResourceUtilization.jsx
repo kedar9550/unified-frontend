@@ -226,6 +226,16 @@ export default function ResourceUtilization() {
       return;
     }
 
+    if (showSessionsField && !form.sessionsConducted) {
+      toast.error("Number of Sessions Conducted is required for Resource Person role");
+      return;
+    }
+
+    if (showDaysField && !form.daysParticipated) {
+      toast.error("Number of Days Participated is required for Participant role");
+      return;
+    }
+
     if (!proofFile && !editingId) {
       toast.error("Supporting proof upload is mandatory");
       return;
