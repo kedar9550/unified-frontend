@@ -15,18 +15,12 @@ import {
   FormLabel,
   TextField,
   Chip,
-  Alert,
   Divider,
   Switch
 } from "@mui/material";
 import { toast } from "sonner";
 import {
-  AccountBalance,
-  Save,
-  CheckCircle,
-  Pending,
-  Cancel,
-  ArrowForward
+  Save
 } from "@mui/icons-material";
 import PageHeader from "../../components/common/PageHeader";
 import SectionHeader from "../../components/common/SectionHeader";
@@ -235,51 +229,6 @@ export default function FacultyAdministration() {
     }
   };
 
-  const getStatusChip = (status) => {
-    if (status === "Approved") {
-      return (
-        <Chip
-          icon={<CheckCircle style={{ color: "#fff" }} />}
-          label="Approved"
-          sx={{
-            background: "linear-gradient(135deg, #10B981 0%, #059669 100%)",
-            color: "#fff",
-            fontWeight: 800,
-            borderRadius: "12px",
-            pl: 0.5
-          }}
-        />
-      );
-    }
-    if (status === "Rejected") {
-      return (
-        <Chip
-          icon={<Cancel style={{ color: "#fff" }} />}
-          label="Rejected"
-          sx={{
-            background: "linear-gradient(135deg, #EF4444 0%, #DC2626 100%)",
-            color: "#fff",
-            fontWeight: 800,
-            borderRadius: "12px",
-            pl: 0.5
-          }}
-        />
-      );
-    }
-    return (
-      <Chip
-        icon={<Pending style={{ color: "#fff" }} />}
-        label="Pending Approval"
-        sx={{
-          background: "linear-gradient(135deg, #F59E0B 0%, #D97706 100%)",
-          color: "#fff",
-          fontWeight: 800,
-          borderRadius: "12px",
-          pl: 0.5
-        }}
-      />
-    );
-  };
 
   const hasActiveRoles = currentEntry && (currentEntry.roles || []).some(r => r.isResponsible);
 
@@ -330,63 +279,7 @@ export default function FacultyAdministration() {
           ))}
         </Select>
 
-        {currentEntry && (
-          <Box sx={{ ml: { sm: "auto" }, display: "flex", alignItems: "center", gap: 1.5 }}>
-            <Typography sx={{ fontSize: "0.85rem", fontWeight: 700, color: "var(--text-secondary)" }}>
-              Submission Status:
-            </Typography>
-            {getStatusChip(currentEntry.status)}
-          </Box>
-        )}
       </Box>
-
-      {currentEntry?.status === "Rejected" && (
-        <Alert
-          severity="error"
-          variant="filled"
-          icon={<Cancel />}
-          sx={{
-            mb: 4,
-            borderRadius: "16px",
-            boxShadow: "0 4px 15px rgba(239, 68, 68, 0.2)",
-            background: "linear-gradient(135deg, #EF4444 0%, #B91C1C 100%)",
-            color: "#fff"
-          }}
-        >
-          <Typography sx={{ fontWeight: 800, fontSize: "0.95rem" }}>
-            Declaration Rejected by HOD
-          </Typography>
-          <Typography sx={{ mt: 0.5, fontSize: "0.85rem", opacity: 0.9 }}>
-            Comments: {currentEntry.remarks || "No comments provided."}
-          </Typography>
-          <Typography sx={{ mt: 1, fontSize: "0.85rem", fontWeight: 700 }}>
-            Please revise your inputs and re-submit for approval.
-          </Typography>
-        </Alert>
-      )}
-
-      {currentEntry?.status === "Approved" && (
-        <Alert
-          severity="success"
-          variant="filled"
-          icon={<CheckCircle />}
-          sx={{
-            mb: 4,
-            borderRadius: "16px",
-            boxShadow: "0 4px 15px rgba(16, 185, 129, 0.15)",
-            background: "linear-gradient(135deg, #10B981 0%, #047857 100%)",
-            color: "#fff"
-          }}
-        >
-          <Typography sx={{ fontWeight: 800, fontSize: "0.95rem" }}>
-            Declaration Approved
-          </Typography>
-          <Typography sx={{ mt: 0.5, fontSize: "0.85rem", opacity: 0.9 }}>
-            This record was approved by HOD {currentEntry.approvedBy?.name || ""} on{" "}
-            {new Date(currentEntry.approvalDate).toLocaleDateString("en-IN")}. Editing is disabled.
-          </Typography>
-        </Alert>
-      )}
 
       {loading ? (
         <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>
@@ -397,7 +290,33 @@ export default function FacultyAdministration() {
           {/* Declared Roles Summary List at the Start */}
           {currentEntry && (
             <Box sx={{ mb: 5 }}>
-              <SectionHeader title="Current Administrative Roles Summary" />
+              <SectionHeader
+                title="Current Administrative Roles Summary"
+                action={
+                  !isAddingRole && hasActiveRoles && (
+                    <Button
+                      variant="contained"
+                      onClick={() => setIsAddingRole(true)}
+                      sx={{
+                        borderRadius: "12px",
+                        px: 3,
+                        py: 1,
+                        textTransform: "none",
+                        fontWeight: 700,
+                        fontSize: "0.85rem",
+                        background: "linear-gradient(135deg, var(--color-primary) 0%, #2563eb 100%)",
+                        boxShadow: "0 4px 15px rgba(59, 130, 246, 0.2)",
+                        color: "#fff",
+                        "&:hover": {
+                          opacity: 0.95
+                        }
+                      }}
+                    >
+                      Add Another Role
+                    </Button>
+                  )
+                }
+              />
               <Grid container spacing={2.5} sx={{ mt: 0.5 }}>
                 {(() => {
                   const activeRoles = (currentEntry.roles || []).filter(r => r.isResponsible);
@@ -501,30 +420,7 @@ export default function FacultyAdministration() {
                 })()}
               </Grid>
 
-              {!isAddingRole && hasActiveRoles && (
-                <Box sx={{ mt: 4, display: "flex", justifyContent: "center" }}>
-                  <Button
-                    variant="contained"
-                    onClick={() => setIsAddingRole(true)}
-                    sx={{
-                      borderRadius: "12px",
-                      px: 4,
-                      py: 1.5,
-                      textTransform: "none",
-                      fontWeight: 700,
-                      fontSize: "0.95rem",
-                      background: "linear-gradient(135deg, var(--color-primary) 0%, #2563eb 100%)",
-                      boxShadow: "0 4px 15px rgba(59, 130, 246, 0.2)",
-                      color: "#fff",
-                      "&:hover": {
-                        opacity: 0.95
-                      }
-                    }}
-                  >
-                    Add Another Role
-                  </Button>
-                </Box>
-              )}
+
             </Box>
           )}
 
@@ -573,9 +469,9 @@ export default function FacultyAdministration() {
                             <Typography sx={{ fontWeight: 800, fontSize: "1.02rem", color: "var(--text-primary)" }}>
                               {role.label}
                             </Typography>
-                            <Typography sx={{ fontSize: "0.78rem", color: "var(--text-secondary)", mt: 0.5, fontWeight: 500 }}>
+                            {/* <Typography sx={{ fontSize: "0.78rem", color: "var(--text-secondary)", mt: 0.5, fontWeight: 500 }}>
                               Toggle the switch if you held this administrative charge.
-                            </Typography>
+                            </Typography> */}
                           </Box>
 
                           <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
