@@ -61,11 +61,10 @@ export default function FacultyAdministration() {
 
   // Helper to check if role is already submitted and active
   const isPreExistingActive = (roleLabel) => {
-    return !!(
-      currentEntry &&
-      (currentEntry.status === "Approved" || currentEntry.status === "Pending") &&
-      (currentEntry.roles || []).find((x) => x.roleName === roleLabel)?.isResponsible
-    );
+    if (!currentEntry) return false;
+    const foundRole = (currentEntry.roles || []).find((x) => x.roleName === roleLabel);
+    if (!foundRole || !foundRole.isResponsible) return false;
+    return foundRole.status === "Approved" || foundRole.status === "Pending";
   };
 
   // 1. Fetch Academic Years
@@ -341,7 +340,7 @@ export default function FacultyAdministration() {
                           activeRoles.push({
                             ...r,
                             academicYearLabel: yrLabel,
-                            status: entry.status
+                            status: r.status || "Pending"
                           });
                         }
                       });
@@ -353,7 +352,7 @@ export default function FacultyAdministration() {
                         activeRoles.push({
                           ...r,
                           academicYearLabel: yrLabel,
-                          status: currentEntry.status
+                          status: r.status || "Pending"
                         });
                       }
                     });
@@ -505,11 +504,7 @@ export default function FacultyAdministration() {
                 {ADMINISTRATIVE_ROLES_LIST.map((role) => {
                   const formData = rolesFormData[role.id] || { isResponsible: false, level: "", details: "" };
                   
-                  const isPreExistingActive = currentEntry && 
-                    (currentEntry.status === "Approved" || currentEntry.status === "Pending") &&
-                    (currentEntry.roles || []).find(x => x.roleName === role.label)?.isResponsible;
-
-                  const isCardDisabled = !!isPreExistingActive;
+                  const isCardDisabled = isPreExistingActive(role.label);
 
                   return (
                     <Grid item xs={12} key={role.id}>
