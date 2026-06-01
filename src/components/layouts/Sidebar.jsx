@@ -29,7 +29,8 @@ import {
   MenuBook,
   AccountBalance,
   Assessment,
-  WorkspacePremium
+  WorkspacePremium,
+  SupervisorAccount
 } from "@mui/icons-material";
 import { useAuth } from "../../context/AuthContext";
 import { ROLE_ROUTES } from "../../config/rolesNav";
@@ -89,7 +90,9 @@ const ITEM_METADATA = {
   "SDG Management": { color: "rgba(4, 120, 87, 0.12)", iconColor: "#047857", icon: <Public /> },
   "Reports": { color: "rgba(154, 52, 18, 0.12)", iconColor: "#f97316", icon: <Assessment /> },
   "Resource Utilization": { color: "rgba(15, 118, 110, 0.12)", iconColor: "#0f766e", icon: <Assignment /> },
-  "Contribution": { color: "rgba(180, 83, 9, 0.12)", iconColor: "#b45309", icon: <WorkspacePremium /> }
+  "Contribution": { color: "rgba(180, 83, 9, 0.12)", iconColor: "#b45309", icon: <WorkspacePremium /> },
+  "Proctoring Verification": { color: "rgba(124, 58, 237, 0.12)", iconColor: "#7c3aed", icon: <SupervisorAccount /> },
+  "Administration Verification": { color: "rgba(91, 33, 182, 0.12)", iconColor: "#a855f7", icon: <AccountBalance /> }
 };
 
 const drawerWidth = 270;

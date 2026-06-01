@@ -15,19 +15,19 @@ import API from "../../api/axios";
 
 // 13 Categories definitions
 const CONTRIBUTION_CATEGORIES = [
-  { id: 1, name: "Category 1: Member of BOG / GB / AC / BOS" },
-  { id: 2, name: "Category 2: Editorial Board Member (SCIE / Q1 / Q2)" },
-  { id: 3, name: "Category 3: Editorial Board Member (ESCI / Q3 / Q4 / Conference Proceedings)" },
-  { id: 4, name: "Category 4: Awards (MHRD / AICTE / UGC / State Govt / Top Institutions)" },
-  { id: 5, name: "Category 5: Awards (NGO / Trust / Others)" },
-  { id: 6, name: "Category 6: Developed E-Content" },
-  { id: 7, name: "Category 7: Certification on New Age Technologies" },
-  { id: 8, name: "Category 8: Students Trained and Shortlisted for Finals" },
-  { id: 9, name: "Category 9: Articles Published in Magazine / Newspaper" },
-  { id: 10, name: "Category 10: Research Facility Establishment / Maintenance" },
-  { id: 11, name: "Category 11: NPTEL Course Completion" },
-  { id: 12, name: "Category 12: Coursera Course Completion" },
-  { id: 13, name: "Category 13: FDP / Seminar Grant Sanctioned" }
+  { id: 1, name: "Member of BOG / GB / AC / BOS" },
+  { id: 2, name: "Editorial Board Member (SCIE / Q1 / Q2)" },
+  { id: 3, name: "Editorial Board Member (ESCI / Q3 / Q4 / Conference Proceedings)" },
+  { id: 4, name: "Awards (MHRD / AICTE / UGC / State Govt / Top Institutions)" },
+  { id: 5, name: "Awards (NGO / Trust / Others)" },
+  { id: 6, name: "Developed E-Content" },
+  { id: 7, name: "Certification on New Age Technologies" },
+  { id: 8, name: "Students Trained and Shortlisted for Finals" },
+  { id: 9, name: "Articles Published in Magazine / Newspaper" },
+  { id: 10, name: "Research Facility Establishment / Maintenance" },
+  { id: 11, name: "NPTEL Course Completion" },
+  { id: 12, name: "Coursera Course Completion" },
+  { id: 13, name: "FDP / Seminar Grant Sanctioned" }
 ];
 
 export default function ContributionApproval() {
@@ -126,11 +126,11 @@ export default function ContributionApproval() {
   };
 
   const handleSelectAllForFaculty = (entries, isChecked) => {
-    const ids = entries.map(e => e._id);
+    const pendingIds = entries.filter(e => e.status === 'Pending at HOD').map(e => e._id);
     if (isChecked) {
-      setSelectedIds(prev => [...new Set([...prev, ...ids])]);
+      setSelectedIds(prev => [...new Set([...prev, ...pendingIds])]);
     } else {
-      setSelectedIds(prev => prev.filter(i => !ids.includes(i)));
+      setSelectedIds(prev => prev.filter(i => !pendingIds.includes(i)));
     }
   };
 
@@ -214,38 +214,66 @@ export default function ContributionApproval() {
     return new Date(dateStr).toLocaleDateString("en-IN", { day: "2-digit", month: "2-digit", year: "numeric" });
   };
 
+  const renderDurationPeriod = (item) => {
+    const cat = parseInt(item.category);
+    
+    // Categories that use Dates (From Date - To Date)
+    if ([1, 2, 3, 7, 10, 12, 13].includes(cat)) {
+      if (item.fromDate && item.toDate) {
+        const toDateFormatted = new Date(item.toDate).getFullYear() > 2050 ? "Present" : formatDate(item.toDate);
+        return `${formatDate(item.fromDate)} - ${toDateFormatted}`;
+      }
+      if (item.duration) {
+        return item.duration.includes("Days") || item.duration.includes("Hours") || item.duration.includes("Weeks")
+          ? item.duration
+          : `${item.duration} Days`;
+      }
+    }
+    
+    // Category 11 (NPTEL Course) uses duration weeks
+    if (cat === 11) {
+      return item.duration || "-";
+    }
+
+    // Category 4, 5 (Awards)
+    if ([4, 5].includes(cat) && item.awardDate) {
+      return formatDate(item.awardDate);
+    }
+
+    // Category 8 (Hackathon Students)
+    if (cat === 8 && item.eventDate) {
+      return formatDate(item.eventDate);
+    }
+
+    // Category 9 (Articles)
+    if (cat === 9 && item.publicationDate) {
+      return formatDate(item.publicationDate);
+    }
+
+    // Category 10 (Research Facility - facilityDate)
+    if (cat === 10 && item.facilityDate) {
+      return formatDate(item.facilityDate);
+    }
+
+    // Category 13 (FDP / Seminar Grant Sanctioned - sanctionDate)
+    if (cat === 13 && item.sanctionDate) {
+      return formatDate(item.sanctionDate);
+    }
+
+    return "-";
+  };
+
   const renderDynamicTextDetails = (item) => {
     const cat = parseInt(item.category);
     switch (cat) {
       case 1:
-        return (
-          <Box>
-            <Typography variant="body2" sx={{ fontWeight: 600 }}>{item.organizationName}</Typography>
-            <Typography sx={{ fontSize: 10, color: "var(--color-primary)", fontWeight: 700 }}>
-              Duration: {formatDate(item.fromDate)} - {formatDate(item.toDate)}
-            </Typography>
-          </Box>
-        );
+        return <Typography variant="body2" sx={{ fontWeight: 600 }}>{item.organizationName}</Typography>;
       case 2:
       case 3:
-        return (
-          <Box>
-            <Typography variant="body2" sx={{ fontWeight: 600 }}>{item.journalName || item.journalConferenceName}</Typography>
-            <Typography sx={{ fontSize: 10, color: "var(--color-primary)", fontWeight: 700 }}>
-              Duration: {item.duration}
-            </Typography>
-          </Box>
-        );
+        return <Typography variant="body2" sx={{ fontWeight: 600 }}>{item.journalName || item.journalConferenceName}</Typography>;
       case 4:
       case 5:
-        return (
-          <Box>
-            <Typography variant="body2" sx={{ fontWeight: 600 }}>{item.awardName}</Typography>
-            <Typography sx={{ fontSize: 10, color: "var(--color-primary)", fontWeight: 700 }}>
-              Award Date: {formatDate(item.awardDate)}
-            </Typography>
-          </Box>
-        );
+        return <Typography variant="body2" sx={{ fontWeight: 600 }}>{item.awardName}</Typography>;
       case 6:
         return (
           <Box>
@@ -256,60 +284,25 @@ export default function ContributionApproval() {
           </Box>
         );
       case 7:
-        return (
-          <Box>
-            <Typography variant="body2" sx={{ fontWeight: 600 }}>{item.certificationName}</Typography>
-            <Typography sx={{ fontSize: 10, color: "var(--color-primary)", fontWeight: 700 }}>
-              Duration: {item.duration}
-            </Typography>
-          </Box>
-        );
+        return <Typography variant="body2" sx={{ fontWeight: 600 }}>{item.certificationName}</Typography>;
       case 8:
-        return (
-          <Box>
-            <Typography variant="body2" sx={{ fontWeight: 600 }}>{item.eventName}</Typography>
-            <Typography sx={{ fontSize: 10, color: "var(--color-primary)", fontWeight: 700 }}>
-              Event Date: {formatDate(item.eventDate)}
-            </Typography>
-          </Box>
-        );
+        return <Typography variant="body2" sx={{ fontWeight: 600 }}>{item.eventName}</Typography>;
       case 9:
         return (
           <Box>
             <Typography variant="body2" sx={{ fontWeight: 600 }}>{item.articleTitle}</Typography>
             <Typography sx={{ fontSize: 10, color: "var(--color-primary)", fontWeight: 700 }}>
-              Publication: {item.publicationName} ({formatDate(item.publicationDate)})
+              Publication: {item.publicationName}
             </Typography>
           </Box>
         );
       case 10:
-        return (
-          <Box>
-            <Typography variant="body2" sx={{ fontWeight: 600 }}>{item.facilityName}</Typography>
-            <Typography sx={{ fontSize: 10, color: "var(--color-primary)", fontWeight: 700 }}>
-              Date: {formatDate(item.facilityDate)}
-            </Typography>
-          </Box>
-        );
+        return <Typography variant="body2" sx={{ fontWeight: 600 }}>{item.facilityName}</Typography>;
       case 11:
       case 12:
-        return (
-          <Box>
-            <Typography variant="body2" sx={{ fontWeight: 600 }}>{item.courseName}</Typography>
-            <Typography sx={{ fontSize: 10, color: "var(--color-primary)", fontWeight: 700 }}>
-              Duration: {item.duration}
-            </Typography>
-          </Box>
-        );
+        return <Typography variant="body2" sx={{ fontWeight: 600 }}>{item.courseName}</Typography>;
       case 13:
-        return (
-          <Box>
-            <Typography variant="body2" sx={{ fontWeight: 600 }}>{item.grantName}</Typography>
-            <Typography sx={{ fontSize: 10, color: "var(--color-primary)", fontWeight: 700 }}>
-              Sanction Date: {formatDate(item.sanctionDate)}
-            </Typography>
-          </Box>
-        );
+        return <Typography variant="body2" sx={{ fontWeight: 600 }}>{item.grantName}</Typography>;
       default:
         return null;
     }
@@ -333,22 +326,6 @@ export default function ContributionApproval() {
           <Grid container spacing={2} sx={{ alignItems: "center" }}>
             <Grid item xs={12} sm={3}>
               <FormControl fullWidth size="small">
-                <InputLabel>Academic Year</InputLabel>
-                <Select
-                  value={selectedYear}
-                  label="Academic Year"
-                  onChange={e => setSelectedYear(e.target.value)}
-                  sx={{ borderRadius: "12px", background: "var(--bg-glass)" }}
-                >
-                  {academicYears.map(y => (
-                    <MenuItem key={y._id} value={y._id}>{y.year}</MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Grid>
-
-            <Grid item xs={12} sm={3}>
-              <FormControl fullWidth size="small">
                 <InputLabel>Status</InputLabel>
                 <Select
                   value={statusFilter}
@@ -366,22 +343,21 @@ export default function ContributionApproval() {
 
             <Grid item xs={12} sm={3}>
               <FormControl fullWidth size="small">
-                <InputLabel>Category</InputLabel>
+                <InputLabel>Academic Year</InputLabel>
                 <Select
-                  value={categoryFilter}
-                  label="Category"
-                  onChange={e => setCategoryFilter(e.target.value)}
+                  value={selectedYear}
+                  label="Academic Year"
+                  onChange={e => setSelectedYear(e.target.value)}
                   sx={{ borderRadius: "12px", background: "var(--bg-glass)" }}
                 >
-                  <MenuItem value="All">All Categories</MenuItem>
-                  {CONTRIBUTION_CATEGORIES.map(c => (
-                    <MenuItem key={c.id} value={c.id}>{`Category ${c.id}`}</MenuItem>
+                  {academicYears.map(y => (
+                    <MenuItem key={y._id} value={y._id}>{y.year}</MenuItem>
                   ))}
                 </Select>
               </FormControl>
             </Grid>
 
-            <Grid item xs={12} sm={3}>
+            <Grid item xs={12} sm={6}>
               <TextField
                 fullWidth
                 size="small"
@@ -434,8 +410,10 @@ export default function ContributionApproval() {
             const fac = group.faculty;
             const entries = group.entries;
             
-            const allChecked = entries.every(e => selectedIds.includes(e._id));
-            const someChecked = entries.some(e => selectedIds.includes(e._id)) && !allChecked;
+            // Check if all pending entries for this faculty are checked
+            const pendingEntries = entries.filter(e => e.status === 'Pending at HOD');
+            const allChecked = pendingEntries.length > 0 && pendingEntries.every(e => selectedIds.includes(e._id));
+            const someChecked = pendingEntries.some(e => selectedIds.includes(e._id)) && !allChecked;
 
             return (
               <Card key={facId} sx={{
@@ -474,10 +452,11 @@ export default function ContributionApproval() {
                     <Checkbox
                       checked={allChecked}
                       indeterminate={someChecked}
+                      disabled={pendingEntries.length === 0}
                       onChange={(e) => handleSelectAllForFaculty(entries, e.target.checked)}
                       sx={{ color: "var(--color-primary)" }}
                     />
-                    <Typography variant="caption" sx={{ color: "var(--text-secondary)", fontWeight: 700 }}>Select All</Typography>
+                    <Typography variant="caption" sx={{ color: pendingEntries.length === 0 ? "text.disabled" : "var(--text-secondary)", fontWeight: 700 }}>Select All</Typography>
                   </Box>
                 </Box>
 
@@ -488,7 +467,8 @@ export default function ContributionApproval() {
                       <TableRow>
                         <TableCell sx={{ width: "40px" }}></TableCell>
                         <TableCell sx={{ fontWeight: 800, color: "var(--text-secondary)", py: 1.5 }}>Category</TableCell>
-                        <TableCell sx={{ fontWeight: 800, color: "var(--text-secondary)", py: 1.5 }}>Specific Dynamic Parameters</TableCell>
+                        <TableCell sx={{ fontWeight: 800, color: "var(--text-secondary)", py: 1.5 }}>Contribution Details</TableCell>
+                        <TableCell sx={{ fontWeight: 800, color: "var(--text-secondary)", py: 1.5 }}>Duration / Period</TableCell>
                         <TableCell sx={{ fontWeight: 800, color: "var(--text-secondary)", py: 1.5 }}>Proof</TableCell>
                         <TableCell sx={{ fontWeight: 800, color: "var(--text-secondary)", py: 1.5 }}>Status</TableCell>
                         <TableCell sx={{ fontWeight: 800, color: "var(--text-secondary)", py: 1.5 }}>HOD Remarks</TableCell>
@@ -514,6 +494,9 @@ export default function ContributionApproval() {
                             </TableCell>
                             <TableCell sx={{ color: "var(--text-secondary)" }}>
                               {renderDynamicTextDetails(item)}
+                            </TableCell>
+                            <TableCell sx={{ color: "var(--text-secondary)", fontWeight: 600 }}>
+                              {renderDurationPeriod(item)}
                             </TableCell>
                             <TableCell>
                               {item.proof && (

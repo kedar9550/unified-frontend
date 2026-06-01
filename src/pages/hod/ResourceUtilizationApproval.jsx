@@ -106,11 +106,11 @@ export default function ResourceUtilizationApproval() {
   };
 
   const handleSelectAllForFaculty = (entries, isChecked) => {
-    const ids = entries.map(e => e._id);
+    const pendingIds = entries.filter(e => e.status === 'Pending at HOD').map(e => e._id);
     if (isChecked) {
-      setSelectedIds(prev => [...new Set([...prev, ...ids])]);
+      setSelectedIds(prev => [...new Set([...prev, ...pendingIds])]);
     } else {
-      setSelectedIds(prev => prev.filter(i => !ids.includes(i)));
+      setSelectedIds(prev => prev.filter(i => !pendingIds.includes(i)));
     }
   };
 
@@ -202,22 +202,6 @@ export default function ResourceUtilizationApproval() {
           <Grid container spacing={2.5} sx={{ alignItems: "center" }}>
             <Grid item xs={12} sm={3}>
               <FormControl fullWidth size="small">
-                <InputLabel>Academic Year</InputLabel>
-                <Select
-                  value={selectedYear}
-                  label="Academic Year"
-                  onChange={e => setSelectedYear(e.target.value)}
-                  sx={{ borderRadius: "12px", background: "var(--bg-glass)" }}
-                >
-                  {academicYears.map(y => (
-                    <MenuItem key={y._id} value={y._id}>{y.year}</MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Grid>
-
-            <Grid item xs={12} sm={3}>
-              <FormControl fullWidth size="small">
                 <InputLabel>Status</InputLabel>
                 <Select
                   value={statusFilter}
@@ -229,6 +213,22 @@ export default function ResourceUtilizationApproval() {
                   <MenuItem value="Pending at HOD">Pending at HOD</MenuItem>
                   <MenuItem value="Approved">Approved</MenuItem>
                   <MenuItem value="Rejected">Rejected</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
+
+            <Grid item xs={12} sm={3}>
+              <FormControl fullWidth size="small">
+                <InputLabel>Academic Year</InputLabel>
+                <Select
+                  value={selectedYear}
+                  label="Academic Year"
+                  onChange={e => setSelectedYear(e.target.value)}
+                  sx={{ borderRadius: "12px", background: "var(--bg-glass)" }}
+                >
+                  {academicYears.map(y => (
+                    <MenuItem key={y._id} value={y._id}>{y.year}</MenuItem>
+                  ))}
                 </Select>
               </FormControl>
             </Grid>
@@ -286,9 +286,10 @@ export default function ResourceUtilizationApproval() {
             const fac = group.faculty;
             const entries = group.entries;
             
-            // Check if all entries for this faculty are checked
-            const allChecked = entries.every(e => selectedIds.includes(e._id));
-            const someChecked = entries.some(e => selectedIds.includes(e._id)) && !allChecked;
+            // Check if all pending entries for this faculty are checked
+            const pendingEntries = entries.filter(e => e.status === 'Pending at HOD');
+            const allChecked = pendingEntries.length > 0 && pendingEntries.every(e => selectedIds.includes(e._id));
+            const someChecked = pendingEntries.some(e => selectedIds.includes(e._id)) && !allChecked;
 
             return (
               <Card key={facId} sx={{
@@ -327,10 +328,11 @@ export default function ResourceUtilizationApproval() {
                     <Checkbox
                       checked={allChecked}
                       indeterminate={someChecked}
+                      disabled={pendingEntries.length === 0}
                       onChange={(e) => handleSelectAllForFaculty(entries, e.target.checked)}
                       sx={{ color: "var(--color-primary)" }}
                     />
-                    <Typography variant="caption" sx={{ color: "var(--text-secondary)", fontWeight: 700 }}>Select All</Typography>
+                    <Typography variant="caption" sx={{ color: pendingEntries.length === 0 ? "text.disabled" : "var(--text-secondary)", fontWeight: 700 }}>Select All</Typography>
                   </Box>
                 </Box>
 
@@ -340,9 +342,10 @@ export default function ResourceUtilizationApproval() {
                     <TableHead sx={{ bgcolor: "rgba(0,0,0,0.01)" }}>
                       <TableRow>
                         <TableCell sx={{ width: "40px" }}></TableCell>
-                        <TableCell sx={{ fontWeight: 800, color: "var(--text-secondary)", py: 1.5 }}>Category</TableCell>
+                        <TableCell sx={{ fontWeight: 800, color: "var(--text-secondary)", py: 1.5 }}>Event Category</TableCell>
                         <TableCell sx={{ fontWeight: 800, color: "var(--text-secondary)", py: 1.5 }}>Role / Type</TableCell>
-                        <TableCell sx={{ fontWeight: 800, color: "var(--text-secondary)", py: 1.5 }}>Event / Details</TableCell>
+                        <TableCell sx={{ fontWeight: 800, color: "var(--text-secondary)", py: 1.5 }}>Organization / Event Name</TableCell>
+                        <TableCell sx={{ fontWeight: 800, color: "var(--text-secondary)", py: 1.5 }}>No. of Sessions / Days</TableCell>
                         <TableCell sx={{ fontWeight: 800, color: "var(--text-secondary)", py: 1.5 }}>Duration / Dates</TableCell>
                         <TableCell sx={{ fontWeight: 800, color: "var(--text-secondary)", py: 1.5 }}>Proof</TableCell>
                         <TableCell sx={{ fontWeight: 800, color: "var(--text-secondary)", py: 1.5 }}>Status</TableCell>
@@ -368,16 +371,13 @@ export default function ResourceUtilizationApproval() {
                             <TableCell sx={{ color: "var(--text-secondary)" }}>{act.activityType}</TableCell>
                             <TableCell sx={{ color: "var(--text-secondary)", maxWidth: 220 }}>
                               <Typography variant="body2" sx={{ fontWeight: 600 }}>{act.organizationName}</Typography>
-                              {act.sessionsConducted !== undefined && (
-                                <Typography sx={{ fontSize: 10, color: "var(--color-primary)", fontWeight: 700 }}>
-                                  Sessions: {act.sessionsConducted}
-                                </Typography>
-                              )}
-                              {act.daysParticipated !== undefined && (
-                                <Typography sx={{ fontSize: 10, color: "var(--color-primary)", fontWeight: 700 }}>
-                                  Days: {act.daysParticipated}
-                                </Typography>
-                              )}
+                            </TableCell>
+                            <TableCell sx={{ color: "var(--text-secondary)", fontWeight: 600 }}>
+                              {act.sessionsConducted !== undefined && act.sessionsConducted !== null
+                                ? `${act.sessionsConducted} Sessions`
+                                : act.daysParticipated !== undefined && act.daysParticipated !== null
+                                ? `${act.daysParticipated} Days`
+                                : "-"}
                             </TableCell>
                             <TableCell sx={{ color: "var(--text-secondary)" }}>
                               <Typography variant="caption" sx={{ fontWeight: 700, display: "block" }}>{act.duration} Days</Typography>

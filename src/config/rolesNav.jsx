@@ -126,15 +126,17 @@ export const ROLE_ROUTES = {
           path: "/hod/administration-approvals",
           icon: <AccountBalance />
         },
+        {
+          text: "Resource Utilization",
+          path: "/hod/value-addition/resource-utilization",
+          icon: <Assignment />
+        },
+        {
+          text: "Contribution",
+          path: "/hod/value-addition/contribution",
+          icon: <WorkspacePremium />
+        },
       ]
-    },
-    {
-      text: "Value addition",
-      icon: <AccountBalance />,
-      nested: [
-        { text: "Resource Utilization", path: "/hod/value-addition/resource-utilization", icon: <Assignment /> },
-        { text: "Contribution", path: "/hod/value-addition/contribution", icon: <WorkspacePremium /> },
-      ],
     },
     // { text: "Proctordata", path: "/hod/protecrdataupload", icon: <People /> },
   ],

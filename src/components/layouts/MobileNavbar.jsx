@@ -31,7 +31,9 @@ import {
     Campaign,
     Public,
     Assignment,
-    Devices
+    Devices,
+    AccountBalance,
+    SupervisorAccount
 } from "@mui/icons-material";
 import { useAuth } from "../../context/AuthContext";
 import { ROLE_ROUTES } from "../../config/rolesNav";
@@ -81,7 +83,9 @@ const SUB_ITEM_METADATA = {
     "Novel Products / Tech": { desc: "Submit and manage novel products and technologies developed/implemented", icon: <Devices />, color: "#ECFDF5", iconColor: "#10b981" },
     "SDG's": { desc: "Track Sustainable Development Goals", icon: <Public />, color: "#ECFDF5", iconColor: "#047857" },
     "Faculty Format": { desc: "Download or view faculty-specific data formats", icon: <Assignment />, color: "rgba(124, 58, 237, 0.12)", iconColor: "#7c3aed" },
-    "Students Format": { desc: "Download or view student-specific data formats", icon: <AssignmentInd />, color: "rgba(16, 185, 129, 0.12)", iconColor: "#10b981" }
+    "Students Format": { desc: "Download or view student-specific data formats", icon: <AssignmentInd />, color: "rgba(16, 185, 129, 0.12)", iconColor: "#10b981" },
+    "Proctoring Verification": { desc: "Verify and approve proctoring data and allocations", icon: <SupervisorAccount />, color: "#F5F3FF", iconColor: "#7c3aed" },
+    "Administration Verification": { desc: "Verify and approve administration duties and records", icon: <AccountBalance />, color: "#F5F3FF", iconColor: "#a855f7" }
 };
 
 const MobileNavbar = () => {
