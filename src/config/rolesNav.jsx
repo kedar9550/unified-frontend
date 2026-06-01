@@ -10,7 +10,9 @@ import {
   People,
   Verified,
   SupervisorAccount,
-  ManageAccounts
+  ManageAccounts,
+  Assignment,
+  WorkspacePremium
 } from "@mui/icons-material";
 import PersonIcon from '@mui/icons-material/Person';
 import React from "react";
@@ -44,8 +46,14 @@ export const ROLE_ROUTES = {
         { text: "SDG's", path: "/research/sdg" },
       ],
     },
-    // { text: "Administration", path: "/admin", icon: <AccountBalance /> },
-    // { text: "Interpersonal", path: "/interpersonal", icon: <Groups /> },
+    {
+      text: "Value addition",
+      icon: <AccountBalance />,
+      nested: [
+        { text: "Resource Utilization", path: "/value-addition/resource-utilization", icon: <Assignment /> },
+        { text: "Contribution", path: "/value-addition/contribution", icon: <WorkspacePremium /> },
+      ],
+    },
   ],
 
   UNIPRIME: [
@@ -112,6 +120,14 @@ export const ROLE_ROUTES = {
           icon: <SupervisorAccount />
         },
       ]
+    },
+    {
+      text: "Value addition",
+      icon: <AccountBalance />,
+      nested: [
+        { text: "Resource Utilization", path: "/hod/value-addition/resource-utilization", icon: <Assignment /> },
+        { text: "Contribution", path: "/hod/value-addition/contribution", icon: <WorkspacePremium /> },
+      ],
     },
     // { text: "Proctordata", path: "/hod/protecrdataupload", icon: <People /> },
   ],

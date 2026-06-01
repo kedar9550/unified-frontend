@@ -36,6 +36,10 @@ import Profile from "./components/common/Profile";
 import SDGManagement from "./pages/uniprime/SDGManagement";
 import DOIFetcher from "./pages/faculty/DOITest";
 
+import ResourceUtilization from "./pages/faculty/ResourceUtilization";
+import Contribution from "./pages/faculty/Contribution";
+import ResourceUtilizationApproval from "./pages/hod/ResourceUtilizationApproval";
+import ContributionApproval from "./pages/hod/ContributionApproval";
 
 import ResearchApprovalList from './pages/research/researchApproval/ResearchApprovalList';
 import ResearchApprovalDetailWrapper from './pages/research/researchApproval/ResearchApprovalDetailWrapper';
@@ -123,6 +127,13 @@ function App() {
         <Route path="/student/assigned-students" element={<ProtectedRoute element={<Assignedstudents />} />} />
         <Route path="/profile" element={<ProtectedRoute element={<Profile />} />} />
         <Route path="/uniprime/sdg-management" element={<ProtectedRoute element={<SDGManagement />} />} />
+        
+        {/* Value Addition Modules */}
+        <Route path="/value-addition/resource-utilization" element={<ProtectedRoute element={<ResourceUtilization />} />} />
+        <Route path="/value-addition/contribution" element={<ProtectedRoute element={<Contribution />} />} />
+        <Route path="/hod/value-addition/resource-utilization" element={<ProtectedRoute element={<ResourceUtilizationApproval />} />} />
+        <Route path="/hod/value-addition/contribution" element={<ProtectedRoute element={<ContributionApproval />} />} />
+
         <Route path="/hod/research-approvals" element={<ProtectedRoute element={<ResearchApprovalList role="HOD" />} />} />
         <Route path="/hod/research-request/:type/:id" element={<ProtectedRoute element={<ResearchApprovalDetailWrapper role="HOD" />} />} />
         <Route path="/hod/proctoring-approvals" element={<ProtectedRoute element={<ProctoringApprovalList />} />} />
