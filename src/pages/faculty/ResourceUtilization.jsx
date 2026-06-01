@@ -16,12 +16,13 @@ import API from "../../api/axios";
 // Activity categories and types mappings
 const ACTIVITY_CATEGORIES = [
   "CONFERENCE",
-  "STTP / REFRESHER COURSE",
+  "STTP",
+  "Refresher Course",
   "FDP",
   "SYMPOSIUM",
   "GUEST LECTURE",
   "WORKSHOP",
-  "OTHER EVENT"
+  "Event"
 ];
 
 const ROLES_BY_CATEGORY = {
@@ -34,7 +35,15 @@ const ROLES_BY_CATEGORY = {
     "Conference Resource Person",
     "Conference Participant"
   ],
-  "STTP / REFRESHER COURSE": [
+  "STTP": [
+    "Convenor",
+    "Co-Convenor 1",
+    "Co-Convenor 2",
+    "Coordinator",
+    "Resource Person",
+    "Participant"
+  ],
+  "Refresher Course": [
     "Convenor",
     "Co-Convenor 1",
     "Co-Convenor 2",
@@ -64,9 +73,9 @@ const ROLES_BY_CATEGORY = {
     "Workshop Coordinator",
     "Workshop Resource Person"
   ],
-  "OTHER EVENT": [
-    "Other Event Coordinator",
-    "Other Event Resource Person"
+  "Event": [
+    "Event Coordinator",
+    "Event Resource Person"
   ]
 };
 
@@ -81,6 +90,7 @@ export default function ResourceUtilization() {
   
   const [editingId, setEditingId] = useState(null); // stores ID when editing
   const [form, setForm] = useState({
+    academicYear: "",
     activityCategory: "",
     activityType: "",
     organizationName: "",
@@ -106,11 +116,7 @@ export default function ResourceUtilization() {
 
   // Fetch activities when year changes
   useEffect(() => {
-    if (selectedYear) {
-      fetchActivities();
-    } else {
-      setActivitiesList([]);
-    }
+    fetchActivities();
   }, [selectedYear]);
 
   // Recalculate duration automatically when fromDate/toDate change
@@ -120,14 +126,17 @@ export default function ResourceUtilization() {
       const end = new Date(form.toDate);
       if (start <= end) {
         const diffTime = Math.abs(end - start);
-        const days = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+        const days = Math.max(0, Math.ceil(diffTime / (1000 * 60 * 60 * 24)));
         setForm(prev => ({ ...prev, duration: String(days) }));
       }
     }
   }, [form.fromDate, form.toDate]);
 
   const fetchActivities = () => {
-    API.get(`/api/value-addition/resource-utilization?academicYear=${selectedYear}`)
+    const url = selectedYear 
+      ? `/api/value-addition/resource-utilization?academicYear=${selectedYear}` 
+      : `/api/value-addition/resource-utilization`;
+    API.get(url)
       .then(res => {
         setActivitiesList(res.data?.data || []);
       })
@@ -167,6 +176,7 @@ export default function ResourceUtilization() {
   const handleOpenAddModal = () => {
     setEditingId(null);
     setForm({
+      academicYear: selectedYear || "",
       activityCategory: "",
       activityType: "",
       organizationName: "",
@@ -184,6 +194,7 @@ export default function ResourceUtilization() {
   const handleOpenEditModal = (activity) => {
     setEditingId(activity._id);
     setForm({
+      academicYear: activity.academicYear?._id || activity.academicYear || "",
       activityCategory: activity.activityCategory,
       activityType: activity.activityType,
       organizationName: activity.organizationName,
@@ -210,7 +221,7 @@ export default function ResourceUtilization() {
   };
 
   const handleSaveDraft = async () => {
-    if (!form.activityCategory || !form.activityType || !form.organizationName || !form.fromDate || !form.toDate) {
+    if (!form.academicYear || !form.activityCategory || !form.activityType || !form.organizationName || !form.fromDate || !form.toDate) {
       toast.error("Please fill all required fields");
       return;
     }
@@ -230,15 +241,15 @@ export default function ResourceUtilization() {
       return;
     }
 
-    if (from > to) {
-      toast.error("From Date cannot be later than To Date");
+    if (from >= to) {
+      toast.error("To Date must be greater than From Date");
       return;
     }
 
     setLoading(true);
     try {
       const fd = new FormData();
-      fd.append("academicYear", selectedYear);
+      fd.append("academicYear", form.academicYear);
       fd.append("activityCategory", form.activityCategory);
       fd.append("activityType", form.activityType);
       fd.append("organizationName", form.organizationName);
@@ -280,6 +291,10 @@ export default function ResourceUtilization() {
   };
 
   const handleBulkSubmit = async () => {
+    if (!selectedYear) {
+      toast.error("Please filter by a specific Academic Year on the main page to bulk-submit draft records.");
+      return;
+    }
     const activeDrafts = activitiesList.filter(a => a.status === 'Draft');
     if (activeDrafts.length === 0) {
       toast.error("No draft entries found for this academic year.");
@@ -343,41 +358,28 @@ export default function ResourceUtilization() {
     return { bg: "rgba(100, 116, 139, 0.1)", color: "#64748b" }; // Draft
   };
 
-  const renderSelectYear = () => (
-    <Box sx={{ maxWidth: 500, mx: "auto", mt: 5 }}>
-      <FormCard title="Select Academic Year">
-        <Typography sx={{ mb: 2, color: "var(--text-secondary)", fontWeight: 500 }}>Please select the academic year to manage your activities:</Typography>
-        <Select
-          fullWidth
-          size="small"
-          displayEmpty
-          value={selectedYear}
-          onChange={(e) => setSelectedYear(e.target.value)}
-        >
-          <MenuItem value="" disabled>Select Academic Year</MenuItem>
-          {academicYears.map(y => (
-            <MenuItem key={y._id} value={y._id}>{y.year}</MenuItem>
-          ))}
-        </Select>
-      </FormCard>
-    </Box>
-  );
-
   const renderDashboard = () => {
     const activeDrafts = activitiesList.filter(a => a.status === 'Draft');
 
     return (
       <Box>
-        {renderFacultyInfoCard()}
-
         <Box sx={{ display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 2, alignItems: "center", mb: 3 }}>
           <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
             <Typography variant="h6" sx={{ color: "var(--text-primary)", fontWeight: 800 }}>
-              Resource Utilization Records ({academicYears.find(y => y._id === selectedYear)?.year})
+              Resource Utilization Records
             </Typography>
-            <Button size="small" variant="text" onClick={() => setSelectedYear("")} sx={{ fontWeight: 700, textTransform: "none", color: "var(--color-primary)" }}>
-              Change Year
-            </Button>
+            <Select
+              size="small"
+              value={selectedYear}
+              onChange={(e) => setSelectedYear(e.target.value)}
+              displayEmpty
+              sx={{ minWidth: 180, borderRadius: "8px", background: "var(--bg-glass)" }}
+            >
+              <MenuItem value="">All Academic Years</MenuItem>
+              {academicYears.map(y => (
+                <MenuItem key={y._id} value={y._id}>{y.year}</MenuItem>
+              ))}
+            </Select>
           </Box>
           <Stack direction="row" spacing={2}>
             <Button
@@ -426,14 +428,15 @@ export default function ResourceUtilization() {
               No Records Saved
             </Typography>
             <Typography variant="body2" sx={{ color: "text.secondary", mb: 3, maxWidth: "450px" }}>
-              There are no entries for the selected academic year. Click the "Add Resource Utilization" button to create your first Draft entry.
+              Click the "Add Resource Utilization" button to create your first Draft entry.
             </Typography>
           </Box>
         ) : (
           <TableContainer component={Paper} sx={{ borderRadius: "16px", background: "var(--bg-panel)", border: "1px solid var(--border-color)", boxShadow: "var(--shadow-premium)", overflowX: "auto" }}>
             <Table>
-              <TableHead sx={{ background: "var(--gradient-primary)" }}>
+               <TableHead sx={{ background: "var(--gradient-primary)" }}>
                 <TableRow>
+                  <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Academic Year</TableCell>
                   <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Category</TableCell>
                   <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Role / Type</TableCell>
                   <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Organization / Event</TableCell>
@@ -452,6 +455,7 @@ export default function ResourceUtilization() {
 
                   return (
                     <TableRow key={activity._id || i}>
+                      <TableCell sx={{ color: "var(--text-secondary)", py: 2 }}>{activity.academicYear?.year || "N/A"}</TableCell>
                       <TableCell sx={{ color: "var(--text-primary)", fontWeight: 500, py: 2 }}>{activity.activityCategory}</TableCell>
                       <TableCell sx={{ color: "var(--text-secondary)", py: 2 }}>{activity.activityType}</TableCell>
                       <TableCell sx={{ color: "var(--text-secondary)", py: 2 }}>{activity.organizationName}</TableCell>
@@ -665,6 +669,22 @@ export default function ResourceUtilization() {
       <DialogContent sx={{ p: 3, pt: 4 }}>
         <SubLabel text="Details of the Activity:" />
         <Grid2>
+          <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
+            <Typography sx={labelStyle}>Academic Year: *</Typography>
+            <Select
+              size="small"
+              fullWidth
+              displayEmpty
+              value={form.academicYear}
+              onChange={setVal("academicYear")}
+            >
+              <MenuItem value="" disabled>--Select Academic Year--</MenuItem>
+              {academicYears.map(y => (
+                <MenuItem key={y._id} value={y._id}>{y.year}</MenuItem>
+              ))}
+            </Select>
+          </Box>
+
           <Box>
             <Typography sx={labelStyle}>Activity Category: *</Typography>
             <Select
@@ -740,10 +760,9 @@ export default function ResourceUtilization() {
             <TextField
               size="small"
               fullWidth
-              type="number"
-              value={form.duration}
-              onChange={setVal("duration")}
-              helperText="Auto-calculated but editable"
+              disabled
+              value={form.duration || ""}
+              placeholder="Calculated automatically"
             />
           </Box>
 
@@ -819,7 +838,7 @@ export default function ResourceUtilization() {
         subtitle="Manage, edit drafts, and submit all FDP, workshop, refesher course, seminar and event utilization activities."
       />
       <Box sx={{ mt: 4 }}>
-        {!selectedYear ? renderSelectYear() : renderDashboard()}
+        {renderDashboard()}
         {renderDetailsDialog()}
         {renderFormModal()}
       </Box>

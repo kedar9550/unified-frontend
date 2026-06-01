@@ -41,6 +41,7 @@ export default function Contribution() {
   
   const [editingId, setEditingId] = useState(null);
   const [form, setForm] = useState({
+    academicYear: "",
     category: "",
     organizationName: "",
     fromDate: "",
@@ -78,15 +79,27 @@ export default function Contribution() {
 
   // Fetch contributions when year changes
   useEffect(() => {
-    if (selectedYear) {
-      fetchContributions();
-    } else {
-      setContributionsList([]);
-    }
+    fetchContributions();
   }, [selectedYear]);
 
+  // Recalculate duration automatically when fromDate/toDate change
+  useEffect(() => {
+    if (form.fromDate && form.toDate) {
+      const start = new Date(form.fromDate);
+      const end = new Date(form.toDate);
+      if (start <= end) {
+        const diffTime = Math.abs(end - start);
+        const days = Math.max(0, Math.ceil(diffTime / (1000 * 60 * 60 * 24)));
+        setForm(prev => ({ ...prev, duration: `${days} Days` }));
+      }
+    }
+  }, [form.fromDate, form.toDate]);
+
   const fetchContributions = () => {
-    API.get(`/api/value-addition/contribution?academicYear=${selectedYear}`)
+    const url = selectedYear 
+      ? `/api/value-addition/contribution?academicYear=${selectedYear}` 
+      : `/api/value-addition/contribution`;
+    API.get(url)
       .then(res => {
         setContributionsList(res.data?.data || []);
       })
@@ -100,8 +113,9 @@ export default function Contribution() {
 
   const handleCategoryChange = (e) => {
     const cat = e.target.value;
-    setForm({
+    setForm(prev => ({
       category: cat,
+      academicYear: prev.academicYear || "",
       organizationName: "",
       fromDate: "",
       toDate: "",
@@ -122,13 +136,14 @@ export default function Contribution() {
       facilityDate: "",
       grantName: "",
       sanctionDate: ""
-    });
+    }));
     setProofFile(null);
   };
 
   const handleOpenAddModal = () => {
     setEditingId(null);
     setForm({
+      academicYear: selectedYear || "",
       category: "",
       organizationName: "",
       fromDate: "",
@@ -159,6 +174,7 @@ export default function Contribution() {
     setEditingId(item._id);
     const cat = item.category;
     setForm({
+      academicYear: item.academicYear?._id || item.academicYear || "",
       category: cat,
       organizationName: item.organizationName || "",
       fromDate: item.fromDate ? item.fromDate.substring(0, 10) : "",
@@ -197,6 +213,10 @@ export default function Contribution() {
   };
 
   const handleSaveDraft = async () => {
+    if (!form.academicYear) {
+      toast.error("Academic Year is required");
+      return;
+    }
     if (!form.category) {
       toast.error("Please select a contribution category");
       return;
@@ -211,75 +231,86 @@ export default function Contribution() {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    const validateDate = (dateStr, fieldLabel) => {
+    const validateDate = (dateStr, fieldLabel, allowFuture = false) => {
       if (!dateStr) return `${fieldLabel} is required.`;
       const dateVal = new Date(dateStr);
-      if (dateVal > today) return `${fieldLabel} cannot be in the future.`;
+      if (!allowFuture && dateVal > today) return `${fieldLabel} cannot be in the future.`;
       return null;
     };
 
     let fieldErr = null;
-    switch (cat) {
-      case 1:
-        if (!form.organizationName || !form.fromDate || !form.toDate) {
-          fieldErr = "Organization Name, From Date, and To Date are mandatory.";
+
+    // Unified check for categories that use From Date, To Date and Auto Duration: 1, 2, 3, 7, 10, 12, 13
+    if ([1, 2, 3, 7, 10, 12, 13].includes(cat)) {
+      if (!form.fromDate || !form.toDate) {
+        fieldErr = "From Date and To Date are required.";
+      } else {
+        const from = new Date(form.fromDate);
+        const to = new Date(form.toDate);
+        if (from > today) {
+          fieldErr = "From Date cannot be in the future.";
+        } else if (from >= to) {
+          fieldErr = "To Date must be greater than From Date.";
         } else {
-          const from = new Date(form.fromDate);
-          const to = new Date(form.toDate);
-          if (from > today || to > today) fieldErr = "Dates cannot be in the future.";
-          else if (from > to) fieldErr = "From Date cannot be later than To Date.";
+          // Category 7, 10, 12, 13 do NOT allow future toDate
+          if ([7, 10, 12, 13].includes(cat) && to > today) {
+            fieldErr = "To Date cannot be in the future.";
+          }
         }
-        break;
-      case 2:
-        if (!form.journalName || !form.duration) {
-          fieldErr = "Journal Name and Duration are mandatory.";
-        }
-        break;
-      case 3:
-        if (!form.journalConferenceName || !form.duration) {
-          fieldErr = "Journal / Conference Name and Duration are mandatory.";
-        }
-        break;
-      case 4:
-      case 5:
-        if (!form.awardName) fieldErr = "Award Name is mandatory.";
-        else fieldErr = validateDate(form.awardDate, "Award Date");
-        break;
-      case 6:
-        if (!form.courseName || !form.url) {
-          fieldErr = "Course Name and URL are mandatory.";
-        }
-        break;
-      case 7:
-        if (!form.certificationName || !form.duration) {
-          fieldErr = "Certification Name and Duration are mandatory.";
-        }
-        break;
-      case 8:
-        if (!form.eventName) fieldErr = "Event Name is mandatory.";
-        else fieldErr = validateDate(form.eventDate, "Event Date");
-        break;
-      case 9:
-        if (!form.articleTitle || !form.publicationName) {
-          fieldErr = "Article Title and Publication Name are mandatory.";
-        } else fieldErr = validateDate(form.publicationDate, "Publication Date");
-        break;
-      case 10:
-        if (!form.facilityName) fieldErr = "Facility Name is mandatory.";
-        else fieldErr = validateDate(form.facilityDate, "Establishment Date");
-        break;
-      case 11:
-      case 12:
-        if (!form.courseName || !form.duration) {
-          fieldErr = "Course Name and Duration are mandatory.";
-        }
-        break;
-      case 13:
-        if (!form.grantName) fieldErr = "Grant Name is mandatory.";
-        else fieldErr = validateDate(form.sanctionDate, "Sanction Date");
-        break;
-      default:
-        fieldErr = "Invalid Category.";
+      }
+    }
+
+    // Category-specific text field validations
+    if (!fieldErr) {
+      switch (cat) {
+        case 1:
+          if (!form.organizationName) fieldErr = "Organization Name is required.";
+          break;
+        case 2:
+          if (!form.journalName) fieldErr = "Journal Name is required.";
+          break;
+        case 3:
+          if (!form.journalConferenceName) fieldErr = "Journal / Conference Name is required.";
+          break;
+        case 4:
+        case 5:
+          if (!form.awardName) fieldErr = "Award Name is required.";
+          else fieldErr = validateDate(form.awardDate, "Award Date");
+          break;
+        case 6:
+          if (!form.courseName || !form.url) {
+            fieldErr = "Course Name and URL are mandatory.";
+          }
+          break;
+        case 7:
+          if (!form.certificationName) fieldErr = "Certification Name is required.";
+          break;
+        case 8:
+          if (!form.eventName) fieldErr = "Event Name is required.";
+          else fieldErr = validateDate(form.eventDate, "Event Date");
+          break;
+        case 9:
+          if (!form.articleTitle || !form.publicationName) {
+            fieldErr = "Article Title and Publication Name are mandatory.";
+          } else fieldErr = validateDate(form.publicationDate, "Publication Date");
+          break;
+        case 10:
+          if (!form.facilityName) fieldErr = "Facility Name is required.";
+          break;
+        case 11:
+          if (!form.courseName || !form.duration) {
+            fieldErr = "Course Name and Duration are required.";
+          }
+          break;
+        case 12:
+          if (!form.courseName) fieldErr = "Course Name is required.";
+          break;
+        case 13:
+          if (!form.grantName) fieldErr = "Grant Name is required.";
+          break;
+        default:
+          fieldErr = "Invalid Category.";
+      }
     }
 
     if (fieldErr) {
@@ -290,19 +321,22 @@ export default function Contribution() {
     setLoading(true);
     try {
       const fd = new FormData();
-      fd.append("academicYear", selectedYear);
+      fd.append("academicYear", form.academicYear);
       fd.append("category", String(cat));
+
+      // Append From Date, To Date, Duration for categories that use them
+      if ([1, 2, 3, 7, 10, 12, 13].includes(cat)) {
+        fd.append("fromDate", form.fromDate);
+        fd.append("toDate", form.toDate);
+        fd.append("duration", form.duration);
+      }
 
       if (cat === 1) {
         fd.append("organizationName", form.organizationName);
-        fd.append("fromDate", form.fromDate);
-        fd.append("toDate", form.toDate);
       } else if (cat === 2) {
         fd.append("journalName", form.journalName);
-        fd.append("duration", form.duration);
       } else if (cat === 3) {
         fd.append("journalConferenceName", form.journalConferenceName);
-        fd.append("duration", form.duration);
       } else if (cat === 4 || cat === 5) {
         fd.append("awardName", form.awardName);
         fd.append("awardDate", form.awardDate);
@@ -311,7 +345,6 @@ export default function Contribution() {
         fd.append("url", form.url);
       } else if (cat === 7) {
         fd.append("certificationName", form.certificationName);
-        fd.append("duration", form.duration);
       } else if (cat === 8) {
         fd.append("eventName", form.eventName);
         fd.append("eventDate", form.eventDate);
@@ -321,13 +354,13 @@ export default function Contribution() {
         fd.append("publicationDate", form.publicationDate);
       } else if (cat === 10) {
         fd.append("facilityName", form.facilityName);
-        fd.append("facilityDate", form.facilityDate);
-      } else if (cat === 11 || cat === 12) {
+      } else if (cat === 11) {
         fd.append("courseName", form.courseName);
         fd.append("duration", form.duration);
+      } else if (cat === 12) {
+        fd.append("courseName", form.courseName);
       } else if (cat === 13) {
         fd.append("grantName", form.grantName);
-        fd.append("sanctionDate", form.sanctionDate);
       }
 
       if (proofFile) {
@@ -356,6 +389,10 @@ export default function Contribution() {
   };
 
   const handleBulkSubmit = async () => {
+    if (!selectedYear) {
+      toast.error("Please filter by a specific Academic Year on the main page to bulk-submit draft records.");
+      return;
+    }
     const activeDrafts = contributionsList.filter(a => a.status === 'Draft');
     if (activeDrafts.length === 0) {
       toast.error("No draft entries found for this academic year.");
@@ -424,25 +461,42 @@ export default function Contribution() {
     return found ? found.name : `Category ${catId}`;
   };
 
-  const renderSelectYear = () => (
-    <Box sx={{ maxWidth: 500, mx: "auto", mt: 5 }}>
-      <FormCard title="Select Academic Year">
-        <Typography sx={{ mb: 2, color: "var(--text-secondary)", fontWeight: 500 }}>Please select the academic year to manage contributions:</Typography>
-        <Select
-          fullWidth
-          size="small"
-          displayEmpty
-          value={selectedYear}
-          onChange={(e) => setSelectedYear(e.target.value)}
-        >
-          <MenuItem value="" disabled>Select Academic Year</MenuItem>
-          {academicYears.map(y => (
-            <MenuItem key={y._id} value={y._id}>{y.year}</MenuItem>
-          ))}
-        </Select>
-      </FormCard>
-    </Box>
-  );
+  const renderDateFields = () => {
+    const isFutureAllowed = [1, 2, 3].includes(parseInt(form.category));
+    const todayStr = new Date().toISOString().split("T")[0];
+    return (
+      <>
+        <Box>
+          <Typography sx={labelStyle}>From Date: *</Typography>
+          <TextField
+            size="small"
+            fullWidth
+            type="date"
+            value={form.fromDate}
+            onChange={setVal("fromDate")}
+            InputLabelProps={{ shrink: true }}
+            inputProps={{ max: todayStr }}
+          />
+        </Box>
+        <Box>
+          <Typography sx={labelStyle}>To Date: *</Typography>
+          <TextField
+            size="small"
+            fullWidth
+            type="date"
+            value={form.toDate}
+            onChange={setVal("toDate")}
+            InputLabelProps={{ shrink: true }}
+            inputProps={isFutureAllowed ? {} : { max: todayStr }}
+          />
+        </Box>
+        <Box>
+          <Typography sx={labelStyle}>Auto Duration (Days):</Typography>
+          <TextField size="small" fullWidth disabled value={form.duration || ""} placeholder="Calculated automatically" />
+        </Box>
+      </>
+    );
+  };
 
   const renderCategorySpecificFields = () => {
     const cat = parseInt(form.category);
@@ -456,27 +510,17 @@ export default function Contribution() {
               <Typography sx={labelStyle}>Organization Name: *</Typography>
               <TextField size="small" fullWidth value={form.organizationName} onChange={setVal("organizationName")} />
             </Box>
-            <Box>
-              <Typography sx={labelStyle}>From Date: *</Typography>
-              <TextField size="small" fullWidth type="date" value={form.fromDate} onChange={setVal("fromDate")} InputLabelProps={{ shrink: true }} />
-            </Box>
-            <Box>
-              <Typography sx={labelStyle}>To Date: *</Typography>
-              <TextField size="small" fullWidth type="date" value={form.toDate} onChange={setVal("toDate")} InputLabelProps={{ shrink: true }} />
-            </Box>
+            {renderDateFields()}
           </>
         );
       case 2:
         return (
           <>
             <Box>
-              <Typography sx={labelStyle}>Journal Name: *</Typography>
+              <Typography sx={labelStyle}>Journal Name (SCIE / Q1 / Q2): *</Typography>
               <TextField size="small" fullWidth value={form.journalName} onChange={setVal("journalName")} />
             </Box>
-            <Box>
-              <Typography sx={labelStyle}>Duration (e.g. 1 Year / 6 Months): *</Typography>
-              <TextField size="small" fullWidth value={form.duration} onChange={setVal("duration")} />
-            </Box>
+            {renderDateFields()}
           </>
         );
       case 3:
@@ -486,10 +530,7 @@ export default function Contribution() {
               <Typography sx={labelStyle}>Journal / Conference Name: *</Typography>
               <TextField size="small" fullWidth value={form.journalConferenceName} onChange={setVal("journalConferenceName")} />
             </Box>
-            <Box>
-              <Typography sx={labelStyle}>Duration (e.g. 1 Year / 6 Months): *</Typography>
-              <TextField size="small" fullWidth value={form.duration} onChange={setVal("duration")} />
-            </Box>
+            {renderDateFields()}
           </>
         );
       case 4:
@@ -502,7 +543,7 @@ export default function Contribution() {
             </Box>
             <Box>
               <Typography sx={labelStyle}>Award Date: *</Typography>
-              <TextField size="small" fullWidth type="date" value={form.awardDate} onChange={setVal("awardDate")} InputLabelProps={{ shrink: true }} />
+              <TextField size="small" fullWidth type="date" value={form.awardDate} onChange={setVal("awardDate")} InputLabelProps={{ shrink: true }} inputProps={{ max: new Date().toISOString().split("T")[0] }} />
             </Box>
           </>
         );
@@ -526,10 +567,7 @@ export default function Contribution() {
               <Typography sx={labelStyle}>Certification Name: *</Typography>
               <TextField size="small" fullWidth value={form.certificationName} onChange={setVal("certificationName")} />
             </Box>
-            <Box>
-              <Typography sx={labelStyle}>Duration (e.g. 4 Weeks / 2 Months): *</Typography>
-              <TextField size="small" fullWidth value={form.duration} onChange={setVal("duration")} />
-            </Box>
+            {renderDateFields()}
           </>
         );
       case 8:
@@ -541,7 +579,7 @@ export default function Contribution() {
             </Box>
             <Box>
               <Typography sx={labelStyle}>Event Date: *</Typography>
-              <TextField size="small" fullWidth type="date" value={form.eventDate} onChange={setVal("eventDate")} InputLabelProps={{ shrink: true }} />
+              <TextField size="small" fullWidth type="date" value={form.eventDate} onChange={setVal("eventDate")} InputLabelProps={{ shrink: true }} inputProps={{ max: new Date().toISOString().split("T")[0] }} />
             </Box>
           </>
         );
@@ -558,7 +596,7 @@ export default function Contribution() {
             </Box>
             <Box>
               <Typography sx={labelStyle}>Publication Date: *</Typography>
-              <TextField size="small" fullWidth type="date" value={form.publicationDate} onChange={setVal("publicationDate")} InputLabelProps={{ shrink: true }} />
+              <TextField size="small" fullWidth type="date" value={form.publicationDate} onChange={setVal("publicationDate")} InputLabelProps={{ shrink: true }} inputProps={{ max: new Date().toISOString().split("T")[0] }} />
             </Box>
           </>
         );
@@ -569,14 +607,10 @@ export default function Contribution() {
               <Typography sx={labelStyle}>Facility Name: *</Typography>
               <TextField size="small" fullWidth value={form.facilityName} onChange={setVal("facilityName")} />
             </Box>
-            <Box>
-              <Typography sx={labelStyle}>Date: *</Typography>
-              <TextField size="small" fullWidth type="date" value={form.facilityDate} onChange={setVal("facilityDate")} InputLabelProps={{ shrink: true }} />
-            </Box>
+            {renderDateFields()}
           </>
         );
       case 11:
-      case 12:
         return (
           <>
             <Box>
@@ -584,9 +618,35 @@ export default function Contribution() {
               <TextField size="small" fullWidth value={form.courseName} onChange={setVal("courseName")} />
             </Box>
             <Box>
-              <Typography sx={labelStyle}>Duration (e.g. 8 Weeks / 12 Weeks): *</Typography>
-              <TextField size="small" fullWidth value={form.duration} onChange={setVal("duration")} />
+              <Typography sx={labelStyle}>Duration: *</Typography>
+              <Select
+                size="small"
+                fullWidth
+                value={form.duration}
+                onChange={setVal("duration")}
+                displayEmpty
+              >
+                <MenuItem value="" disabled>--Select NPTEL Duration--</MenuItem>
+                <MenuItem value="12 Weeks">12 Weeks</MenuItem>
+                <MenuItem value="8 Weeks">8 Weeks</MenuItem>
+                <MenuItem value="4 Weeks">4 Weeks</MenuItem>
+              </Select>
             </Box>
+            <Box sx={{ mt: 2, p: 2, bgcolor: "rgba(232, 160, 0, 0.08)", border: "1px solid rgba(232, 160, 0, 0.3)", borderRadius: "8px" }}>
+              <Typography variant="body2" sx={{ color: "#e8a000", fontWeight: 700 }}>
+                Note: Certificate will be considered only in one metric, either 3.1 or 3.2.
+              </Typography>
+            </Box>
+          </>
+        );
+      case 12:
+        return (
+          <>
+            <Box>
+              <Typography sx={labelStyle}>Course Name (Coursera): *</Typography>
+              <TextField size="small" fullWidth value={form.courseName} onChange={setVal("courseName")} />
+            </Box>
+            {renderDateFields()}
           </>
         );
       case 13:
@@ -596,10 +656,7 @@ export default function Contribution() {
               <Typography sx={labelStyle}>Grant Name: *</Typography>
               <TextField size="small" fullWidth value={form.grantName} onChange={setVal("grantName")} />
             </Box>
-            <Box>
-              <Typography sx={labelStyle}>Sanction Date: *</Typography>
-              <TextField size="small" fullWidth type="date" value={form.sanctionDate} onChange={setVal("sanctionDate")} InputLabelProps={{ shrink: true }} />
-            </Box>
+            {renderDateFields()}
           </>
         );
       default:
@@ -612,16 +669,23 @@ export default function Contribution() {
 
     return (
       <Box>
-        {renderFacultyInfoCard()}
-
         <Box sx={{ display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 2, alignItems: "center", mb: 3 }}>
           <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
             <Typography variant="h6" sx={{ color: "var(--text-primary)", fontWeight: 800 }}>
-              Expertise / Contribution Records ({academicYears.find(y => y._id === selectedYear)?.year || "N/A"})
+              Expertise / Contribution Records
             </Typography>
-            <Button size="small" variant="text" onClick={() => setSelectedYear("")} sx={{ fontWeight: 700, textTransform: "none", color: "var(--color-primary)" }}>
-              Change Year
-            </Button>
+            <Select
+              size="small"
+              value={selectedYear}
+              onChange={(e) => setSelectedYear(e.target.value)}
+              displayEmpty
+              sx={{ minWidth: 180, borderRadius: "8px", background: "var(--bg-glass)" }}
+            >
+              <MenuItem value="">All Academic Years</MenuItem>
+              {academicYears.map(y => (
+                <MenuItem key={y._id} value={y._id}>{y.year}</MenuItem>
+              ))}
+            </Select>
           </Box>
           
           <Stack direction="row" spacing={2}>
@@ -671,7 +735,7 @@ export default function Contribution() {
               No Records Saved
             </Typography>
             <Typography variant="body2" sx={{ color: "text.secondary", mb: 3, maxWidth: "450px" }}>
-              There are no entries for the selected academic year. Click the "Add Contribution" button to create your first Draft entry.
+              Click the "Add Contribution" button to create your first Draft entry.
             </Typography>
           </Box>
         ) : (
@@ -679,6 +743,7 @@ export default function Contribution() {
             <Table>
               <TableHead sx={{ background: "var(--gradient-primary)" }}>
                 <TableRow>
+                  <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Academic Year</TableCell>
                   <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Category</TableCell>
                   <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Date Submitted</TableCell>
                   <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Status</TableCell>
@@ -693,6 +758,9 @@ export default function Contribution() {
 
                   return (
                     <TableRow key={item._id || i}>
+                      <TableCell sx={{ color: "var(--text-primary)", fontWeight: 500, py: 2 }}>
+                        {item.academicYear?.year || "N/A"}
+                      </TableCell>
                       <TableCell sx={{ color: "var(--text-primary)", fontWeight: 500, py: 2, maxWidth: 350, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                         {getCategoryName(item.category)}
                       </TableCell>
@@ -768,35 +836,51 @@ export default function Contribution() {
       return new Date(dateStr).toLocaleDateString("en-IN", { day: "2-digit", month: "2-digit", year: "numeric" });
     };
 
+    const renderDetailDates = () => (
+      <>
+        <Grid item xs={12} sm={6}>
+          <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", fontWeight: 800, fontSize: "0.65rem", display: "block" }}>Dates</Typography>
+          <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>
+            {formatDate(data.fromDate)} to {formatDate(data.toDate)}
+          </Typography>
+        </Grid>
+        <Grid item xs={12} sm={6}>
+          <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", fontWeight: 800, fontSize: "0.65rem", display: "block" }}>Duration</Typography>
+          <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>{data.duration || "-"}</Typography>
+        </Grid>
+      </>
+    );
+
     const renderDynamicDetailGrid = () => {
       switch (cat) {
         case 1:
           return (
             <>
-              <Grid item xs={12} sm={6}>
+              <Grid item xs={12} sm={12}>
                 <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", fontWeight: 800, fontSize: "0.65rem", display: "block" }}>Organization Name</Typography>
                 <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>{data.organizationName || "-"}</Typography>
               </Grid>
-              <Grid item xs={12} sm={6}>
-                <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", fontWeight: 800, fontSize: "0.65rem", display: "block" }}>Duration</Typography>
-                <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>
-                  {formatDate(data.fromDate)} to {formatDate(data.toDate)}
-                </Typography>
-              </Grid>
+              {renderDetailDates()}
             </>
           );
         case 2:
+          return (
+            <>
+              <Grid item xs={12} sm={12}>
+                <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", fontWeight: 800, fontSize: "0.65rem", display: "block" }}>Journal Name (SCIE / Q1 / Q2)</Typography>
+                <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>{data.journalName || "-"}</Typography>
+              </Grid>
+              {renderDetailDates()}
+            </>
+          );
         case 3:
           return (
             <>
-              <Grid item xs={12} sm={6}>
+              <Grid item xs={12} sm={12}>
                 <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", fontWeight: 800, fontSize: "0.65rem", display: "block" }}>Journal / Conference Name</Typography>
-                <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>{data.journalName || data.journalConferenceName || "-"}</Typography>
+                <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>{data.journalConferenceName || "-"}</Typography>
               </Grid>
-              <Grid item xs={12} sm={6}>
-                <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", fontWeight: 800, fontSize: "0.65rem", display: "block" }}>Duration</Typography>
-                <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>{data.duration || "-"}</Typography>
-              </Grid>
+              {renderDetailDates()}
             </>
           );
         case 4:
@@ -831,14 +915,11 @@ export default function Contribution() {
         case 7:
           return (
             <>
-              <Grid item xs={12} sm={6}>
+              <Grid item xs={12} sm={12}>
                 <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", fontWeight: 800, fontSize: "0.65rem", display: "block" }}>Certification Name</Typography>
                 <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>{data.certificationName || "-"}</Typography>
               </Grid>
-              <Grid item xs={12} sm={6}>
-                <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", fontWeight: 800, fontSize: "0.65rem", display: "block" }}>Duration</Typography>
-                <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>{data.duration || "-"}</Typography>
-              </Grid>
+              {renderDetailDates()}
             </>
           );
         case 8:
@@ -874,22 +955,18 @@ export default function Contribution() {
         case 10:
           return (
             <>
-              <Grid item xs={12} sm={6}>
+              <Grid item xs={12} sm={12}>
                 <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", fontWeight: 800, fontSize: "0.65rem", display: "block" }}>Facility Name</Typography>
                 <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>{data.facilityName || "-"}</Typography>
               </Grid>
-              <Grid item xs={12} sm={6}>
-                <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", fontWeight: 800, fontSize: "0.65rem", display: "block" }}>Date</Typography>
-                <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>{formatDate(data.facilityDate)}</Typography>
-              </Grid>
+              {renderDetailDates()}
             </>
           );
         case 11:
-        case 12:
           return (
             <>
               <Grid item xs={12} sm={6}>
-                <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", fontWeight: 800, fontSize: "0.65rem", display: "block" }}>Course Name</Typography>
+                <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", fontWeight: 800, fontSize: "0.65rem", display: "block" }}>Course Name (NPTEL)</Typography>
                 <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>{data.courseName || "-"}</Typography>
               </Grid>
               <Grid item xs={12} sm={6}>
@@ -898,17 +975,24 @@ export default function Contribution() {
               </Grid>
             </>
           );
+        case 12:
+          return (
+            <>
+              <Grid item xs={12} sm={12}>
+                <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", fontWeight: 800, fontSize: "0.65rem", display: "block" }}>Course Name (Coursera)</Typography>
+                <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>{data.courseName || "-"}</Typography>
+              </Grid>
+              {renderDetailDates()}
+            </>
+          );
         case 13:
           return (
             <>
-              <Grid item xs={12} sm={6}>
+              <Grid item xs={12} sm={12}>
                 <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", fontWeight: 800, fontSize: "0.65rem", display: "block" }}>Grant Name</Typography>
                 <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>{data.grantName || "-"}</Typography>
               </Grid>
-              <Grid item xs={12} sm={6}>
-                <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", fontWeight: 800, fontSize: "0.65rem", display: "block" }}>Sanction Date</Typography>
-                <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>{formatDate(data.sanctionDate)}</Typography>
-              </Grid>
+              {renderDetailDates()}
             </>
           );
         default:
@@ -1035,6 +1119,22 @@ export default function Contribution() {
       <DialogContent sx={{ p: 3, pt: 4 }}>
         <SubLabel text="Details of the Contribution:" />
         
+        <Box sx={{ mb: 2, maxWidth: 500 }}>
+          <Typography sx={labelStyle}>Academic Year: *</Typography>
+          <Select
+            size="small"
+            fullWidth
+            value={form.academicYear}
+            onChange={setVal("academicYear")}
+            displayEmpty
+          >
+            <MenuItem value="" disabled>--Select Academic Year--</MenuItem>
+            {academicYears.map(y => (
+              <MenuItem key={y._id} value={y._id}>{y.year}</MenuItem>
+            ))}
+          </Select>
+        </Box>
+
         <Box sx={{ mb: 4, maxWidth: 500 }}>
           <Typography sx={labelStyle}>Contribution Category: *</Typography>
           <Select
@@ -1091,7 +1191,7 @@ export default function Contribution() {
         subtitle="Manage and submit dynamic drafts of e-content, course completions, magazine articles, and awards."
       />
       <Box sx={{ mt: 4 }}>
-        {!selectedYear ? renderSelectYear() : renderDashboard()}
+        {renderDashboard()}
         {renderDetailsDialog()}
         {renderFormModal()}
       </Box>

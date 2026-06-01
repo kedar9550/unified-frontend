@@ -304,8 +304,8 @@ export default function NovelProductPublication() {
         )}
 
         <Grid item xs={12}>
-          <Typography sx={labelStyle}>Description / Highlights : *</Typography>
-          <TextField size="small" fullWidth multiline rows={4} value={form.description} onChange={set("description")} placeholder="Provide detailed specifications, utility, and outcomes of the product..." />
+          <Typography sx={labelStyle}>Description of Novel Product / Technology : *</Typography>
+          <TextField size="small" fullWidth multiline rows={6} value={form.description} onChange={set("description")} placeholder="Provide detailed specifications, utility, and outcomes of the product..." />
         </Grid>
 
         <Grid item xs={12}>

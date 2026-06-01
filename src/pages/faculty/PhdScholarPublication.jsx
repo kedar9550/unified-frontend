@@ -167,7 +167,7 @@ export default function PhdScholarPublication() {
             transition: "all 0.2s ease"
           }}
         >
-          Add Ph.D. Scholar
+          Add Student
         </Button>
       </Box>
       {(!publicationsList || publicationsList.length === 0) ? (
