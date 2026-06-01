@@ -49,7 +49,7 @@ export default function FacultyAdministration() {
 
   // ── States ────────────────────────────────────────────────────────
   const [academicYears, setAcademicYears] = useState([]);
-  const [selectedYearLabel, setSelectedYearLabel] = useState("");
+  const [selectedYearLabel, setSelectedYearLabel] = useState("all");
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [allEntries, setAllEntries] = useState([]);
@@ -81,8 +81,8 @@ export default function FacultyAdministration() {
 
         setAcademicYears(years);
 
-        if (years.length > 0 && !selectedYearLabel) {
-          setSelectedYearLabel(years[0].year);
+        if (years.length > 0 && (!selectedYearLabel || selectedYearLabel === "")) {
+          setSelectedYearLabel("all");
         }
       } catch (err) {
         console.error("Error fetching academic years:", err);
@@ -115,6 +115,13 @@ export default function FacultyAdministration() {
 
   // 3. Sync form with selected year
   useEffect(() => {
+    if (selectedYearLabel === "all") {
+      setCurrentEntry(null);
+      setIsAddingRole(false);
+      setRolesFormData({});
+      return;
+    }
+
     const selectedYear = academicYears.find((y) => y.year === selectedYearLabel);
     if (!selectedYear) return;
 
@@ -230,7 +237,10 @@ export default function FacultyAdministration() {
   };
 
 
-  const hasActiveRoles = currentEntry && (currentEntry.roles || []).some(r => r.isResponsible);
+  const hasAnyActiveRoles = allEntries.some(entry => (entry.roles || []).some(r => r.isResponsible));
+  const hasActiveRoles = selectedYearLabel === "all"
+    ? hasAnyActiveRoles
+    : !!(currentEntry && (currentEntry.roles || []).some(r => r.isResponsible));
 
   return (
     <Box sx={{ width: "100%", pb: 5 }}>
@@ -272,6 +282,9 @@ export default function FacultyAdministration() {
             "& .MuiOutlinedInput-notchedOutline": { borderColor: "var(--border-color)" }
           }}
         >
+          <MenuItem value="all" sx={{ fontWeight: 600 }}>
+            All Academic Years
+          </MenuItem>
           {academicYears.map((y) => (
             <MenuItem key={y._id} value={y.year} sx={{ fontWeight: 600 }}>
               {y.year}
@@ -288,12 +301,12 @@ export default function FacultyAdministration() {
       ) : (
         <Box>
           {/* Declared Roles Summary List at the Start */}
-          {currentEntry && (
+          {hasActiveRoles && (
             <Box sx={{ mb: 5 }}>
               <SectionHeader
                 title="Current Administrative Roles Summary"
                 action={
-                  !isAddingRole && hasActiveRoles && (
+                  selectedYearLabel !== "all" && !isAddingRole && hasActiveRoles && (
                     <Button
                       variant="contained"
                       onClick={() => setIsAddingRole(true)}
@@ -319,7 +332,33 @@ export default function FacultyAdministration() {
               />
               <Grid container spacing={2.5} sx={{ mt: 0.5 }}>
                 {(() => {
-                  const activeRoles = (currentEntry.roles || []).filter(r => r.isResponsible);
+                  const activeRoles = [];
+                  if (selectedYearLabel === "all") {
+                    allEntries.forEach(entry => {
+                      const yrLabel = entry.academicYear?.year || "Unknown";
+                      (entry.roles || []).forEach(r => {
+                        if (r.isResponsible) {
+                          activeRoles.push({
+                            ...r,
+                            academicYearLabel: yrLabel,
+                            status: entry.status
+                          });
+                        }
+                      });
+                    });
+                  } else if (currentEntry) {
+                    const yrLabel = currentEntry.academicYear?.year || selectedYearLabel;
+                    (currentEntry.roles || []).forEach(r => {
+                      if (r.isResponsible) {
+                        activeRoles.push({
+                          ...r,
+                          academicYearLabel: yrLabel,
+                          status: currentEntry.status
+                        });
+                      }
+                    });
+                  }
+
                   if (activeRoles.length === 0) {
                     return (
                       <Grid item xs={12}>
@@ -340,23 +379,23 @@ export default function FacultyAdministration() {
                     );
                   }
                   return activeRoles.map((role, idx) => {
-                    const statusText = currentEntry.status === "Rejected" ? "Disapproved" : currentEntry.status;
+                    const statusText = role.status === "Rejected" ? "Disapproved" : role.status;
                     const statusColor =
-                      currentEntry.status === "Approved"
+                      role.status === "Approved"
                         ? "#10B981"
-                        : currentEntry.status === "Rejected"
+                        : role.status === "Rejected"
                         ? "#EF4444"
                         : "#d97706";
                     const statusBg =
-                      currentEntry.status === "Approved"
+                      role.status === "Approved"
                         ? "rgba(16, 185, 129, 0.1)"
-                        : currentEntry.status === "Rejected"
+                        : role.status === "Rejected"
                         ? "rgba(239, 68, 68, 0.1)"
                         : "rgba(245, 158, 11, 0.1)";
                     const statusBorder =
-                      currentEntry.status === "Approved"
+                      role.status === "Approved"
                         ? "rgba(16, 185, 129, 0.25)"
-                        : currentEntry.status === "Rejected"
+                        : role.status === "Rejected"
                         ? "rgba(239, 68, 68, 0.25)"
                         : "rgba(245, 158, 11, 0.25)";
 
@@ -397,6 +436,18 @@ export default function FacultyAdministration() {
                           
                           <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, alignItems: "center", mt: "auto" }}>
                             <Chip
+                              label={role.academicYearLabel}
+                              size="small"
+                              sx={{
+                                fontWeight: 800,
+                                fontSize: "0.7rem",
+                                color: "var(--color-primary)",
+                                border: "1px solid var(--color-primary-alpha)",
+                                bgcolor: "rgba(59, 130, 246, 0.08)",
+                                borderRadius: "8px"
+                              }}
+                            />
+                            <Chip
                               label={role.level}
                               size="small"
                               variant="outlined"
@@ -419,12 +470,31 @@ export default function FacultyAdministration() {
                   });
                 })()}
               </Grid>
-
-
             </Box>
           )}
 
-          {(!hasActiveRoles || isAddingRole) && (
+          {selectedYearLabel === "all" && (
+            <Card
+              sx={{
+                p: 4,
+                textAlign: "center",
+                background: "var(--bg-panel)",
+                border: "1px dashed var(--border-color)",
+                borderRadius: "20px",
+                mt: 4,
+                boxShadow: "var(--shadow-premium)"
+              }}
+            >
+              <Typography sx={{ color: "var(--text-secondary)", fontWeight: 600, fontSize: "1rem", mb: 1 }}>
+                Want to declare new roles or update existing ones?
+              </Typography>
+              <Typography sx={{ color: "var(--text-secondary)", fontSize: "0.88rem", opacity: 0.8 }}>
+                Please select a specific Academic Cycle from the dropdown at the top of the page.
+              </Typography>
+            </Card>
+          )}
+
+          {selectedYearLabel !== "all" && (!hasActiveRoles || isAddingRole) && (
             <form onSubmit={handleSubmit}>
               {hasActiveRoles && (
                 <Divider sx={{ my: 4, borderColor: "var(--border-color)" }} />
