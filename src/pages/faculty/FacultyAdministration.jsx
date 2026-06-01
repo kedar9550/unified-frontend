@@ -15,18 +15,12 @@ import {
   FormLabel,
   TextField,
   Chip,
-  Alert,
   Divider,
   Switch
 } from "@mui/material";
 import { toast } from "sonner";
 import {
-  AccountBalance,
-  Save,
-  CheckCircle,
-  Pending,
-  Cancel,
-  ArrowForward
+  Save
 } from "@mui/icons-material";
 import PageHeader from "../../components/common/PageHeader";
 import SectionHeader from "../../components/common/SectionHeader";
@@ -60,9 +54,19 @@ export default function FacultyAdministration() {
   const [saving, setSaving] = useState(false);
   const [allEntries, setAllEntries] = useState([]);
   const [currentEntry, setCurrentEntry] = useState(null);
+  const [isAddingRole, setIsAddingRole] = useState(false);
 
   // Form representation
   const [rolesFormData, setRolesFormData] = useState({});
+
+  // Helper to check if role is already submitted and active
+  const isPreExistingActive = (roleLabel) => {
+    return !!(
+      currentEntry &&
+      (currentEntry.status === "Approved" || currentEntry.status === "Pending") &&
+      (currentEntry.roles || []).find((x) => x.roleName === roleLabel)?.isResponsible
+    );
+  };
 
   // 1. Fetch Academic Years
   useEffect(() => {
@@ -119,6 +123,7 @@ export default function FacultyAdministration() {
     );
 
     setCurrentEntry(matched || null);
+    setIsAddingRole(false);
 
     // Populate rolesFormData
     const initialForm = {};
@@ -140,7 +145,8 @@ export default function FacultyAdministration() {
   }, [selectedYearLabel, allEntries, academicYears]);
 
   const handleToggleResponsibility = (id, checked) => {
-    if (currentEntry?.status === "Approved") return;
+    const roleLabel = ADMINISTRATIVE_ROLES_LIST.find((r) => r.id === id)?.label;
+    if (isPreExistingActive(roleLabel)) return;
 
     setRolesFormData((prev) => ({
       ...prev,
@@ -155,7 +161,8 @@ export default function FacultyAdministration() {
   };
 
   const handleLevelChange = (id, level) => {
-    if (currentEntry?.status === "Approved") return;
+    const roleLabel = ADMINISTRATIVE_ROLES_LIST.find((r) => r.id === id)?.label;
+    if (isPreExistingActive(roleLabel)) return;
 
     setRolesFormData((prev) => ({
       ...prev,
@@ -167,7 +174,8 @@ export default function FacultyAdministration() {
   };
 
   const handleDetailsChange = (id, details) => {
-    if (currentEntry?.status === "Approved") return;
+    const roleLabel = ADMINISTRATIVE_ROLES_LIST.find((r) => r.id === id)?.label;
+    if (isPreExistingActive(roleLabel)) return;
 
     setRolesFormData((prev) => ({
       ...prev,
@@ -184,11 +192,6 @@ export default function FacultyAdministration() {
     const selectedYear = academicYears.find((y) => y.year === selectedYearLabel);
     if (!selectedYear?._id) {
       toast.error("Please select a valid Academic Year");
-      return;
-    }
-
-    if (currentEntry?.status === "Approved") {
-      toast.warning("This record is already approved and cannot be modified.");
       return;
     }
 
@@ -215,6 +218,7 @@ export default function FacultyAdministration() {
 
       if (res.data?.success) {
         toast.success("Administrative roles saved successfully!");
+        setIsAddingRole(false);
         fetchDeclarations();
       }
     } catch (err) {
@@ -225,51 +229,8 @@ export default function FacultyAdministration() {
     }
   };
 
-  const getStatusChip = (status) => {
-    if (status === "Approved") {
-      return (
-        <Chip
-          icon={<CheckCircle style={{ color: "#fff" }} />}
-          label="Approved"
-          sx={{
-            background: "linear-gradient(135deg, #10B981 0%, #059669 100%)",
-            color: "#fff",
-            fontWeight: 800,
-            borderRadius: "12px",
-            pl: 0.5
-          }}
-        />
-      );
-    }
-    if (status === "Rejected") {
-      return (
-        <Chip
-          icon={<Cancel style={{ color: "#fff" }} />}
-          label="Rejected"
-          sx={{
-            background: "linear-gradient(135deg, #EF4444 0%, #DC2626 100%)",
-            color: "#fff",
-            fontWeight: 800,
-            borderRadius: "12px",
-            pl: 0.5
-          }}
-        />
-      );
-    }
-    return (
-      <Chip
-        icon={<Pending style={{ color: "#fff" }} />}
-        label="Pending Approval"
-        sx={{
-          background: "linear-gradient(135deg, #F59E0B 0%, #D97706 100%)",
-          color: "#fff",
-          fontWeight: 800,
-          borderRadius: "12px",
-          pl: 0.5
-        }}
-      />
-    );
-  };
+
+  const hasActiveRoles = currentEntry && (currentEntry.roles || []).some(r => r.isResponsible);
 
   return (
     <Box sx={{ width: "100%", pb: 5 }}>
@@ -318,63 +279,7 @@ export default function FacultyAdministration() {
           ))}
         </Select>
 
-        {currentEntry && (
-          <Box sx={{ ml: { sm: "auto" }, display: "flex", alignItems: "center", gap: 1.5 }}>
-            <Typography sx={{ fontSize: "0.85rem", fontWeight: 700, color: "var(--text-secondary)" }}>
-              Submission Status:
-            </Typography>
-            {getStatusChip(currentEntry.status)}
-          </Box>
-        )}
       </Box>
-
-      {currentEntry?.status === "Rejected" && (
-        <Alert
-          severity="error"
-          variant="filled"
-          icon={<Cancel />}
-          sx={{
-            mb: 4,
-            borderRadius: "16px",
-            boxShadow: "0 4px 15px rgba(239, 68, 68, 0.2)",
-            background: "linear-gradient(135deg, #EF4444 0%, #B91C1C 100%)",
-            color: "#fff"
-          }}
-        >
-          <Typography sx={{ fontWeight: 800, fontSize: "0.95rem" }}>
-            Declaration Rejected by HOD
-          </Typography>
-          <Typography sx={{ mt: 0.5, fontSize: "0.85rem", opacity: 0.9 }}>
-            Comments: {currentEntry.remarks || "No comments provided."}
-          </Typography>
-          <Typography sx={{ mt: 1, fontSize: "0.85rem", fontWeight: 700 }}>
-            Please revise your inputs and re-submit for approval.
-          </Typography>
-        </Alert>
-      )}
-
-      {currentEntry?.status === "Approved" && (
-        <Alert
-          severity="success"
-          variant="filled"
-          icon={<CheckCircle />}
-          sx={{
-            mb: 4,
-            borderRadius: "16px",
-            boxShadow: "0 4px 15px rgba(16, 185, 129, 0.15)",
-            background: "linear-gradient(135deg, #10B981 0%, #047857 100%)",
-            color: "#fff"
-          }}
-        >
-          <Typography sx={{ fontWeight: 800, fontSize: "0.95rem" }}>
-            Declaration Approved
-          </Typography>
-          <Typography sx={{ mt: 0.5, fontSize: "0.85rem", opacity: 0.9 }}>
-            This record was approved by HOD {currentEntry.approvedBy?.name || ""} on{" "}
-            {new Date(currentEntry.approvalDate).toLocaleDateString("en-IN")}. Editing is disabled.
-          </Typography>
-        </Alert>
-      )}
 
       {loading ? (
         <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>
@@ -385,7 +290,33 @@ export default function FacultyAdministration() {
           {/* Declared Roles Summary List at the Start */}
           {currentEntry && (
             <Box sx={{ mb: 5 }}>
-              <SectionHeader title="Current Administrative Roles Summary" />
+              <SectionHeader
+                title="Current Administrative Roles Summary"
+                action={
+                  !isAddingRole && hasActiveRoles && (
+                    <Button
+                      variant="contained"
+                      onClick={() => setIsAddingRole(true)}
+                      sx={{
+                        borderRadius: "12px",
+                        px: 3,
+                        py: 1,
+                        textTransform: "none",
+                        fontWeight: 700,
+                        fontSize: "0.85rem",
+                        background: "linear-gradient(135deg, var(--color-primary) 0%, #2563eb 100%)",
+                        boxShadow: "0 4px 15px rgba(59, 130, 246, 0.2)",
+                        color: "#fff",
+                        "&:hover": {
+                          opacity: 0.95
+                        }
+                      }}
+                    >
+                      Add Another Role
+                    </Button>
+                  )
+                }
+              />
               <Grid container spacing={2.5} sx={{ mt: 0.5 }}>
                 {(() => {
                   const activeRoles = (currentEntry.roles || []).filter(r => r.isResponsible);
@@ -488,179 +419,210 @@ export default function FacultyAdministration() {
                   });
                 })()}
               </Grid>
-              <Divider sx={{ my: 4, borderColor: "var(--border-color)" }} />
+
+
             </Box>
           )}
 
-          <form onSubmit={handleSubmit}>
-            <SectionHeader title="Select Held Administrative Roles" />
+          {(!hasActiveRoles || isAddingRole) && (
+            <form onSubmit={handleSubmit}>
+              {hasActiveRoles && (
+                <Divider sx={{ my: 4, borderColor: "var(--border-color)" }} />
+              )}
+              <SectionHeader title="Select Held Administrative Roles" />
 
-            <Grid container spacing={3} sx={{ mt: 0.5 }}>
-              {ADMINISTRATIVE_ROLES_LIST.map((role) => {
-                const formData = rolesFormData[role.id] || { isResponsible: false, level: "", details: "" };
-                
-                const isPreExistingActive = currentEntry && 
-                  (currentEntry.status === "Approved" || currentEntry.status === "Pending") &&
-                  (currentEntry.roles || []).find(x => x.roleName === role.label)?.isResponsible;
+              <Grid container spacing={3} sx={{ mt: 0.5 }}>
+                {ADMINISTRATIVE_ROLES_LIST.map((role) => {
+                  const formData = rolesFormData[role.id] || { isResponsible: false, level: "", details: "" };
+                  
+                  const isPreExistingActive = currentEntry && 
+                    (currentEntry.status === "Approved" || currentEntry.status === "Pending") &&
+                    (currentEntry.roles || []).find(x => x.roleName === role.label)?.isResponsible;
 
-                const isCardDisabled = !!isPreExistingActive;
+                  const isCardDisabled = !!isPreExistingActive;
 
-                return (
-                  <Grid item xs={12} key={role.id}>
-                    <Card
+                  return (
+                    <Grid item xs={12} key={role.id}>
+                      <Card
+                        sx={{
+                          p: 3,
+                          borderRadius: "20px",
+                          background: formData.isResponsible
+                            ? "linear-gradient(135deg, var(--bg-panel) 0%, rgba(91, 33, 182, 0.03) 100%)"
+                            : "var(--bg-panel)",
+                          border: formData.isResponsible
+                            ? "1px solid rgba(139, 92, 246, 0.25)"
+                            : "1px solid var(--border-color)",
+                          transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+                          boxShadow: formData.isResponsible
+                            ? "0 4px 20px rgba(139, 92, 246, 0.05)"
+                            : "none",
+                          "&:hover": {
+                            transform: "translateY(-2px)",
+                            boxShadow: "var(--shadow-premium)",
+                            borderColor: formData.isResponsible ? "rgba(139, 92, 246, 0.4)" : "var(--color-primary-alpha)"
+                          }
+                        }}
+                      >
+                        <Box sx={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 3 }}>
+                          <Box sx={{ flexGrow: 1, minWidth: 280 }}>
+                            <Typography sx={{ fontWeight: 800, fontSize: "1.02rem", color: "var(--text-primary)" }}>
+                              {role.label}
+                            </Typography>
+                            {/* <Typography sx={{ fontSize: "0.78rem", color: "var(--text-secondary)", mt: 0.5, fontWeight: 500 }}>
+                              Toggle the switch if you held this administrative charge.
+                            </Typography> */}
+                          </Box>
+
+                          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                            <Typography sx={{ fontSize: "0.85rem", fontWeight: 700, color: formData.isResponsible ? "var(--color-primary)" : "var(--text-secondary)" }}>
+                              {formData.isResponsible ? "YES" : "NO"}
+                            </Typography>
+                            <Switch
+                              checked={formData.isResponsible}
+                              disabled={isCardDisabled || saving}
+                              onChange={(e) => handleToggleResponsibility(role.id, e.target.checked)}
+                              sx={{
+                                "& .MuiSwitch-switchBase.Mui-checked": {
+                                  color: "var(--color-primary)",
+                                },
+                                "& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track": {
+                                  backgroundColor: "var(--color-primary)",
+                                }
+                              }}
+                            />
+                          </Box>
+                        </Box>
+
+                        {formData.isResponsible && !isPreExistingActive && (
+                          <Box sx={{ mt: 3, pt: 2.5, borderTop: "1px dashed var(--border-color)" }}>
+                            <FormControl component="fieldset" disabled={saving}>
+                              <FormLabel
+                                component="legend"
+                                sx={{
+                                  fontSize: "0.8rem",
+                                  fontWeight: 800,
+                                  color: "var(--text-secondary)",
+                                  textTransform: "uppercase",
+                                  mb: 1.5,
+                                  letterSpacing: "0.5px"
+                                }}
+                              >
+                                Select Responsibility Level:
+                              </FormLabel>
+                              <RadioGroup
+                                row
+                                value={formData.level}
+                                onChange={(e) => handleLevelChange(role.id, e.target.value)}
+                              >
+                                <FormControlLabel
+                                  value="Institute level"
+                                  control={<Radio sx={{ color: "var(--border-color)", "&.Mui-checked": { color: "var(--color-primary)" } }} />}
+                                  label={<Typography sx={{ fontSize: "0.9rem", fontWeight: 700, color: "var(--text-primary)" }}>Institute Level</Typography>}
+                                  sx={{ mr: 4 }}
+                                />
+                                <FormControlLabel
+                                  value="Department level"
+                                  control={<Radio sx={{ color: "var(--border-color)", "&.Mui-checked": { color: "var(--color-primary)" } }} />}
+                                  label={<Typography sx={{ fontSize: "0.9rem", fontWeight: 700, color: "var(--text-primary)" }}>Department Level</Typography>}
+                                />
+                              </RadioGroup>
+                            </FormControl>
+
+                            {role.hasDetails && (
+                              <Box sx={{ mt: 2.5 }}>
+                                <TextField
+                                  fullWidth
+                                  label="Name of the Event or Activity"
+                                  variant="outlined"
+                                  size="small"
+                                  value={formData.details}
+                                  disabled={saving}
+                                  required={formData.isResponsible}
+                                  onChange={(e) => handleDetailsChange(role.id, e.target.value)}
+                                  placeholder="e.g. Smart Interviews Bootcamp Coordinator, Technical Fest Coordinator..."
+                                  sx={{
+                                    maxWidth: 600,
+                                    "& .MuiOutlinedInput-root": {
+                                      borderRadius: "12px",
+                                      bgcolor: "var(--bg-glass)"
+                                    }
+                                  }}
+                                />
+                              </Box>
+                            )}
+                          </Box>
+                        )}
+                      </Card>
+                    </Grid>
+                  );
+                })}
+              </Grid>
+
+              {/* Action Row */}
+              {true && (
+                <Box
+                  sx={{
+                    mt: 4,
+                    p: 3,
+                    background: "var(--bg-panel)",
+                    borderRadius: "20px",
+                    border: "1px solid var(--border-color)",
+                    display: "flex",
+                    justifyContent: "flex-end",
+                    gap: 2,
+                    boxShadow: "var(--shadow-premium)"
+                  }}
+                >
+                  {hasActiveRoles && (
+                    <Button
+                      variant="outlined"
+                      onClick={() => setIsAddingRole(false)}
+                      disabled={saving}
                       sx={{
-                        p: 3,
-                        borderRadius: "20px",
-                        background: formData.isResponsible
-                          ? "linear-gradient(135deg, var(--bg-panel) 0%, rgba(91, 33, 182, 0.03) 100%)"
-                          : "var(--bg-panel)",
-                        border: formData.isResponsible
-                          ? "1px solid rgba(139, 92, 246, 0.25)"
-                          : "1px solid var(--border-color)",
-                        transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-                        boxShadow: formData.isResponsible
-                          ? "0 4px 20px rgba(139, 92, 246, 0.05)"
-                          : "none",
+                        borderRadius: "12px",
+                        px: 4,
+                        py: 1.5,
+                        textTransform: "none",
+                        fontWeight: 700,
+                        fontSize: "0.95rem",
+                        borderColor: "var(--border-color)",
+                        color: "var(--text-secondary)",
                         "&:hover": {
-                          transform: "translateY(-2px)",
-                          boxShadow: "var(--shadow-premium)",
-                          borderColor: formData.isResponsible ? "rgba(139, 92, 246, 0.4)" : "var(--color-primary-alpha)"
+                          borderColor: "var(--text-primary)",
+                          color: "var(--text-primary)",
+                          background: "rgba(255, 255, 255, 0.05)"
                         }
                       }}
                     >
-                      <Box sx={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 3 }}>
-                        <Box sx={{ flexGrow: 1, minWidth: 280 }}>
-                          <Typography sx={{ fontWeight: 800, fontSize: "1.02rem", color: "var(--text-primary)" }}>
-                            {role.label}
-                          </Typography>
-                          <Typography sx={{ fontSize: "0.78rem", color: "var(--text-secondary)", mt: 0.5, fontWeight: 500 }}>
-                            Toggle the switch if you held this administrative charge.
-                          </Typography>
-                        </Box>
-
-                        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                          <Typography sx={{ fontSize: "0.85rem", fontWeight: 700, color: formData.isResponsible ? "var(--color-primary)" : "var(--text-secondary)" }}>
-                            {formData.isResponsible ? "YES" : "NO"}
-                          </Typography>
-                          <Switch
-                            checked={formData.isResponsible}
-                            disabled={isCardDisabled || saving}
-                            onChange={(e) => handleToggleResponsibility(role.id, e.target.checked)}
-                            sx={{
-                              "& .MuiSwitch-switchBase.Mui-checked": {
-                                color: "var(--color-primary)",
-                              },
-                              "& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track": {
-                                backgroundColor: "var(--color-primary)",
-                              }
-                            }}
-                          />
-                        </Box>
-                      </Box>
-
-                      {formData.isResponsible && !isPreExistingActive && currentEntry?.status !== "Approved" && (
-                        <Box sx={{ mt: 3, pt: 2.5, borderTop: "1px dashed var(--border-color)" }}>
-                          <FormControl component="fieldset" disabled={saving}>
-                            <FormLabel
-                              component="legend"
-                              sx={{
-                                fontSize: "0.8rem",
-                                fontWeight: 800,
-                                color: "var(--text-secondary)",
-                                textTransform: "uppercase",
-                                mb: 1.5,
-                                letterSpacing: "0.5px"
-                              }}
-                            >
-                              Select Responsibility Level:
-                            </FormLabel>
-                            <RadioGroup
-                              row
-                              value={formData.level}
-                              onChange={(e) => handleLevelChange(role.id, e.target.value)}
-                            >
-                              <FormControlLabel
-                                value="Institute level"
-                                control={<Radio sx={{ color: "var(--border-color)", "&.Mui-checked": { color: "var(--color-primary)" } }} />}
-                                label={<Typography sx={{ fontSize: "0.9rem", fontWeight: 700, color: "var(--text-primary)" }}>Institute Level</Typography>}
-                                sx={{ mr: 4 }}
-                              />
-                              <FormControlLabel
-                                value="Department level"
-                                control={<Radio sx={{ color: "var(--border-color)", "&.Mui-checked": { color: "var(--color-primary)" } }} />}
-                                label={<Typography sx={{ fontSize: "0.9rem", fontWeight: 700, color: "var(--text-primary)" }}>Department Level</Typography>}
-                              />
-                            </RadioGroup>
-                          </FormControl>
-
-                          {role.hasDetails && (
-                            <Box sx={{ mt: 2.5 }}>
-                              <TextField
-                                fullWidth
-                                label="Name of the Event or Activity"
-                                variant="outlined"
-                                size="small"
-                                value={formData.details}
-                                disabled={saving}
-                                required={formData.isResponsible}
-                                onChange={(e) => handleDetailsChange(role.id, e.target.value)}
-                                placeholder="e.g. Smart Interviews Bootcamp Coordinator, Technical Fest Coordinator..."
-                                sx={{
-                                  maxWidth: 600,
-                                  "& .MuiOutlinedInput-root": {
-                                    borderRadius: "12px",
-                                    bgcolor: "var(--bg-glass)"
-                                  }
-                                }}
-                              />
-                            </Box>
-                          )}
-                        </Box>
-                      )}
-                    </Card>
-                  </Grid>
-                );
-              })}
-            </Grid>
-
-            {/* Action Row */}
-            {true && (
-              <Box
-                sx={{
-                  mt: 4,
-                  p: 3,
-                  background: "var(--bg-panel)",
-                  borderRadius: "20px",
-                  border: "1px solid var(--border-color)",
-                  display: "flex",
-                  justifyContent: "flex-end",
-                  boxShadow: "var(--shadow-premium)"
-                }}
-              >
-                <Button
-                  type="submit"
-                  disabled={saving}
-                  startIcon={saving ? <CircularProgress size={18} sx={{ color: "#fff" }} /> : <Save />}
-                  sx={{
-                    borderRadius: "12px",
-                    px: 4,
-                    py: 1.5,
-                    textTransform: "none",
-                    fontWeight: 700,
-                    fontSize: "0.95rem",
-                    background: "linear-gradient(135deg, var(--color-primary) 0%, #2563eb 100%)",
-                    boxShadow: "0 4px 15px rgba(59, 130, 246, 0.2)",
-                    color: "#fff",
-                    "&:hover": {
-                      opacity: 0.95
-                    }
-                  }}
-                >
-                  {saving ? "Saving Changes..." : "Submit to HOD for Approval"}
-                </Button>
-              </Box>
-            )}
-          </form>
+                      Cancel
+                    </Button>
+                  )}
+                  <Button
+                    type="submit"
+                    disabled={saving}
+                    startIcon={saving ? <CircularProgress size={18} sx={{ color: "#fff" }} /> : <Save />}
+                    sx={{
+                      borderRadius: "12px",
+                      px: 4,
+                      py: 1.5,
+                      textTransform: "none",
+                      fontWeight: 700,
+                      fontSize: "0.95rem",
+                      background: "linear-gradient(135deg, var(--color-primary) 0%, #2563eb 100%)",
+                      boxShadow: "0 4px 15px rgba(59, 130, 246, 0.2)",
+                      color: "#fff",
+                      "&:hover": {
+                        opacity: 0.95
+                      }
+                    }}
+                  >
+                    {saving ? "Saving Changes..." : "Submit to HOD for Approval"}
+                  </Button>
+                </Box>
+              )}
+            </form>
+          )}
         </Box>
       )}
     </Box>
