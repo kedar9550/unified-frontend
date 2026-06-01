@@ -24,6 +24,7 @@ export default function PhdScholarPublication() {
   const [rollNumberInput, setRollNumberInput] = useState("");
   const [isVerifying, setIsVerifying] = useState(false);
   const [isVerified, setIsVerified] = useState(false);
+  const [studentsList, setStudentsList] = useState([]);
 
   const [form, setForm] = useState({
     rollNumber: "",
@@ -89,13 +90,13 @@ export default function PhdScholarPublication() {
     }
   };
 
-  const handleSubmit = async () => {
+  const handleAddStudentToList = () => {
     if (!isVerified || !form.rollNumber) {
       toast.error("Please verify a valid scholar roll number first.");
       return;
     }
     if (!form.scholarStatus) {
-      toast.error("Please select the scholar current status.");
+      toast.error("Please select the scholar status.");
       return;
     }
     if (!form.admissionOrAwardDate) {
@@ -117,25 +118,79 @@ export default function PhdScholarPublication() {
       return;
     }
 
+    // Add to studentsList
+    const newStudent = {
+      rollNumber: form.rollNumber,
+      studentName: form.studentName,
+      course: form.course,
+      branch: form.branch,
+      scholarStatus: form.scholarStatus,
+      admissionOrAwardDate: form.admissionOrAwardDate,
+      document: files.document,
+      documentName: files.document.name
+    };
+
+    setStudentsList(prev => [...prev, newStudent]);
+    toast.success(`Student ${form.studentName} added to the list!`);
+
+    // Reset verification and form fields so they can add another student
+    setForm({
+      rollNumber: "",
+      studentName: "",
+      course: "",
+      branch: "",
+      scholarStatus: "",
+      admissionOrAwardDate: ""
+    });
+    setRollNumberInput("");
+    setFiles({ document: null });
+    setIsVerified(false);
+  };
+
+  const handleSubmit = async () => {
+    let finalStudents = [...studentsList];
+    
+    // Automatically add the currently active student if they filled in all the details but forgot to click "Add Student"
+    if (isVerified && form.rollNumber && form.scholarStatus && form.admissionOrAwardDate && files.document) {
+      finalStudents.push({
+        rollNumber: form.rollNumber,
+        studentName: form.studentName,
+        course: form.course,
+        branch: form.branch,
+        scholarStatus: form.scholarStatus,
+        admissionOrAwardDate: form.admissionOrAwardDate,
+        document: files.document
+      });
+    }
+
+    if (finalStudents.length === 0) {
+      toast.error("Please verify and add at least one student record first.");
+      return;
+    }
+
     setLoading(true);
     try {
-      const fd = new FormData();
-      fd.append("rollNumber", form.rollNumber);
-      fd.append("studentName", form.studentName);
-      fd.append("course", form.course);
-      fd.append("branch", form.branch);
-      fd.append("scholarStatus", form.scholarStatus);
-      fd.append("admissionOrAwardDate", form.admissionOrAwardDate);
-      fd.append("document", files.document);
-      fd.append("academicYear", selectedYear);
+      for (const student of finalStudents) {
+        const fd = new FormData();
+        fd.append("rollNumber", student.rollNumber);
+        fd.append("studentName", student.studentName);
+        fd.append("course", student.course);
+        fd.append("branch", student.branch || "N/A");
+        fd.append("scholarStatus", student.scholarStatus);
+        fd.append("admissionOrAwardDate", student.admissionOrAwardDate);
+        fd.append("document", student.document);
+        fd.append("academicYear", selectedYear);
 
-      await API.post("/api/research/phd-scholar", fd, { headers: { "Content-Type": "multipart/form-data" } });
-      toast.success("Ph.D. Scholar appraisal submitted successfully!");
+        await API.post("/api/research/phd-scholar", fd, { headers: { "Content-Type": "multipart/form-data" } });
+      }
+
+      toast.success(`Successfully submitted appraisal for ${finalStudents.length} scholar(s)!`);
       
       // Reset state
       setForm({ rollNumber: "", studentName: "", course: "", branch: "", scholarStatus: "", admissionOrAwardDate: "" });
       setRollNumberInput("");
       setFiles({ document: null });
+      setStudentsList([]);
       setIsVerified(false);
       setSelectedYear("");
       setViewMode("list");
@@ -290,7 +345,10 @@ export default function PhdScholarPublication() {
         <Box sx={{ display: "flex", gap: 2, mt: 4, justifyContent: "flex-end" }}>
           <Button
             variant="outlined"
-            onClick={() => setViewMode("list")}
+            onClick={() => {
+              setViewMode("list");
+              setStudentsList([]);
+            }}
             sx={{
               borderRadius: "12px",
               textTransform: "none",
@@ -393,7 +451,7 @@ export default function PhdScholarPublication() {
               </Grid>
               <Grid item xs={12} sm={4}>
                 <Typography variant="caption" sx={{ color: "var(--text-secondary)", fontWeight: 700 }}>BRANCH</Typography>
-                <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>{form.branch}</Typography>
+                <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>{form.branch || "N/A"}</Typography>
               </Grid>
             </Grid>
           </Box>
@@ -438,7 +496,76 @@ export default function PhdScholarPublication() {
               onChange={setFile("document")} 
             />
           </Box>
+          
+          <Box sx={{ mt: 3, display: "flex", justifyContent: "flex-end" }}>
+            <Button
+              variant="contained"
+              onClick={handleAddStudentToList}
+              startIcon={<AddCircle />}
+              sx={{
+                background: "var(--gradient-primary)",
+                borderRadius: "10px",
+                px: 3,
+                fontWeight: 700,
+                textTransform: "none",
+                "&:hover": { opacity: 0.9 }
+              }}
+            >
+              Add Student
+            </Button>
+          </Box>
         </>
+      )}
+
+      {studentsList.length > 0 && (
+        <Box sx={{ mt: 4, mb: 3 }}>
+          <Typography variant="subtitle2" sx={{ fontWeight: 800, color: "var(--color-primary)", mb: 2 }}>
+            Added Students ({studentsList.length}):
+          </Typography>
+          <TableContainer component={Paper} sx={{ borderRadius: "12px", background: "var(--bg-panel)", border: "1px solid var(--border-color)" }}>
+            <Table size="small">
+              <TableHead sx={{ background: "rgba(0,0,0,0.02)" }}>
+                <TableRow>
+                  <TableCell sx={{ fontWeight: 700 }}>Roll No</TableCell>
+                  <TableCell sx={{ fontWeight: 700 }}>Name</TableCell>
+                  <TableCell sx={{ fontWeight: 700 }}>Program</TableCell>
+                  <TableCell sx={{ fontWeight: 700 }}>Status</TableCell>
+                  <TableCell sx={{ fontWeight: 700 }}>Date</TableCell>
+                  <TableCell sx={{ fontWeight: 700 }}>Document</TableCell>
+                  <TableCell sx={{ fontWeight: 700 }}>Action</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {studentsList.map((stud, idx) => (
+                  <TableRow key={idx}>
+                    <TableCell sx={{ fontWeight: 600 }}>{stud.rollNumber}</TableCell>
+                    <TableCell>{stud.studentName}</TableCell>
+                    <TableCell>{stud.course} - {stud.branch}</TableCell>
+                    <TableCell>
+                      <Chip label={stud.scholarStatus} size="small" sx={{ fontWeight: 700 }} />
+                    </TableCell>
+                    <TableCell>{new Date(stud.admissionOrAwardDate).toLocaleDateString("en-IN")}</TableCell>
+                    <TableCell sx={{ maxWidth: 150, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      {stud.documentName}
+                    </TableCell>
+                    <TableCell>
+                      <IconButton
+                        size="small"
+                        color="error"
+                        onClick={() => {
+                          setStudentsList(prev => prev.filter((_, i) => i !== idx));
+                          toast.success("Student removed from list.");
+                        }}
+                      >
+                        <Delete fontSize="small" />
+                      </IconButton>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        </Box>
       )}
 
       <Box sx={{ display: "flex", gap: 2, justifyContent: "center", mt: 5 }}>
@@ -463,7 +590,7 @@ export default function PhdScholarPublication() {
         >
           Cancel
         </Button>
-        {isVerified && <SubmitBtn onClick={handleSubmit} loading={loading} />}
+        {(studentsList.length > 0 || isVerified) && <SubmitBtn onClick={handleSubmit} loading={loading} />}
       </Box>
     </FormCard>
   );

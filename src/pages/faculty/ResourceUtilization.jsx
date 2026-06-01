@@ -126,7 +126,7 @@ export default function ResourceUtilization() {
       const end = new Date(form.toDate);
       if (start <= end) {
         const diffTime = Math.abs(end - start);
-        const days = Math.max(0, Math.ceil(diffTime / (1000 * 60 * 60 * 24)));
+        const days = Math.max(0, Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1);
         setForm(prev => ({ ...prev, duration: String(days) }));
       }
     }
@@ -291,27 +291,24 @@ export default function ResourceUtilization() {
   };
 
   const handleBulkSubmit = async () => {
-    if (!selectedYear) {
-      toast.error("Please filter by a specific Academic Year on the main page to bulk-submit draft records.");
-      return;
-    }
     const activeDrafts = activitiesList.filter(a => a.status === 'Draft');
     if (activeDrafts.length === 0) {
-      toast.error("No draft entries found for this academic year.");
+      toast.error("No draft entries found.");
       return;
     }
 
-    const yearText = academicYears.find(y => y._id === selectedYear)?.year || "";
-    if (!window.confirm(`Are you sure you want to submit all ${activeDrafts.length} draft entries for the academic year ${yearText}? Once submitted, they will become read-only.`)) {
+    const confirmMessage = `Are you sure you want to submit all ${activeDrafts.length} draft entries? Once submitted, they will become read-only.`;
+
+    if (!window.confirm(confirmMessage)) {
       return;
     }
 
     setLoading(true);
     try {
       await API.post("/api/value-addition/resource-utilization/submit-academic-year", {
-        academicYear: selectedYear
+        academicYear: selectedYear || undefined
       });
-      toast.success("All drafts submitted successfully for approval!");
+      toast.success("Drafts submitted successfully for approval!");
       fetchActivities();
     } catch (err) {
       toast.error(err?.response?.data?.message || "Submission failed");
