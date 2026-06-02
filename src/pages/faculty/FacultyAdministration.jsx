@@ -201,22 +201,29 @@ export default function FacultyAdministration() {
       return;
     }
 
-    // Prepare payload
-    const rolesPayload = Object.values(rolesFormData).map((role) => {
-      // Validate details for Role 14
-      if (role.roleName === "Any other remarkable event / activity coordinator" && role.isResponsible && !role.details.trim()) {
-        throw new Error("Please specify the name of the event/activity.");
-      }
-      return {
-        roleName: role.roleName,
-        isResponsible: role.isResponsible,
-        level: role.isResponsible ? role.level : "",
-        details: role.isResponsible ? role.details : ""
-      };
-    });
+    // Verify at least one responsibility is selected
+    const hasSelectedRole = Object.values(rolesFormData).some((role) => role.isResponsible);
+    if (!hasSelectedRole) {
+      toast.error("Please select at least one administrative responsibility before submitting.");
+      return;
+    }
 
-    setSaving(true);
+    // Prepare payload
     try {
+      const rolesPayload = Object.values(rolesFormData).map((role) => {
+        // Validate details for Role 14
+        if (role.roleName === "Any other remarkable event / activity coordinator" && role.isResponsible && !role.details.trim()) {
+          throw new Error("Please specify the name of the event/activity.");
+        }
+        return {
+          roleName: role.roleName,
+          isResponsible: role.isResponsible,
+          level: role.isResponsible ? role.level : "",
+          details: role.isResponsible ? role.details : ""
+        };
+      });
+
+      setSaving(true);
       const res = await API.post("/api/faculty-administration", {
         academicYear: selectedYear._id,
         roles: rolesPayload
