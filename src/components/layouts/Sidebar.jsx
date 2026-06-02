@@ -92,7 +92,11 @@ const ITEM_METADATA = {
   "Resource Utilization": { color: "rgba(15, 118, 110, 0.12)", iconColor: "#0f766e", icon: <Assignment /> },
   "Contribution": { color: "rgba(180, 83, 9, 0.12)", iconColor: "#b45309", icon: <WorkspacePremium /> },
   "Proctoring Verification": { color: "rgba(124, 58, 237, 0.12)", iconColor: "#7c3aed", icon: <SupervisorAccount /> },
-  "Administration Verification": { color: "rgba(91, 33, 182, 0.12)", iconColor: "#a855f7", icon: <AccountBalance /> }
+  "Administration Verification": { color: "rgba(91, 33, 182, 0.12)", iconColor: "#a855f7", icon: <AccountBalance /> },
+  "Self Appraisal": { color: "rgba(154, 52, 18, 0.12)", iconColor: "#f97316", icon: <DescriptionIcon /> },
+  "Appraisal Settings": { color: "rgba(91, 33, 182, 0.12)", iconColor: "#a855f7", icon: <ManageAccounts /> },
+  "Appraisal Verification": { color: "rgba(22, 101, 52, 0.12)", iconColor: "#22c55e", icon: <DescriptionIcon /> },
+  "Appraisal Finalization": { color: "rgba(30, 64, 175, 0.12)", iconColor: "#3b82f6", icon: <DescriptionIcon /> }
 };
 
 const drawerWidth = 270;

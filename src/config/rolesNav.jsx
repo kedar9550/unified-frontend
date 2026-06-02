@@ -12,7 +12,8 @@ import {
   SupervisorAccount,
   ManageAccounts,
   Assignment,
-  WorkspacePremium
+  WorkspacePremium,
+  Description
 } from "@mui/icons-material";
 import PersonIcon from '@mui/icons-material/Person';
 import React from "react";
@@ -56,6 +57,7 @@ export const ROLE_ROUTES = {
         { text: "Contribution", path: "/value-addition/contribution", icon: <WorkspacePremium /> },
       ],
     },
+    { text: "Self Appraisal", path: "/faculty/appraisal", icon: <Description /> },
   ],
 
   UNIPRIME: [
@@ -102,6 +104,11 @@ export const ROLE_ROUTES = {
       path: "/uniprime/sdg-management",
       icon: <Public />
     },
+    {
+      text: "Appraisal Settings",
+      path: "/uniprime/appraisal-settings",
+      icon: <ManageAccounts />
+    },
   ],
 
   // Example for a future "Department HOD" role
@@ -135,6 +142,11 @@ export const ROLE_ROUTES = {
           text: "Contribution",
           path: "/hod/value-addition/contribution",
           icon: <WorkspacePremium />
+        },
+        {
+          text: "Appraisal Verification",
+          path: "/hod/appraisal-verification",
+          icon: <Description />
         },
       ]
     },
@@ -181,6 +193,11 @@ export const ROLE_ROUTES = {
           path: "/research-dean/approvals"
         },
         {
+          text: "Appraisal Finalization",
+          path: "/research-dean/appraisal-finalization",
+          icon: <Description />
+        },
+        {
           text: "Reports",
           path: "/research-dean/reports"
         }
@@ -197,6 +214,11 @@ export const ROLE_ROUTES = {
         {
           text: "Research",
           path: "/research-coordinator/approvals"
+        },
+        {
+          text: "Appraisal Finalization",
+          path: "/research-coordinator/appraisal-finalization",
+          icon: <Description />
         },
         {
           text: "Reports",

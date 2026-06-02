@@ -47,6 +47,12 @@ import ResearchApprovalList from './pages/research/researchApproval/ResearchAppr
 import ResearchApprovalDetailWrapper from './pages/research/researchApproval/ResearchApprovalDetailWrapper';
 import ResearchReports from './pages/research/ResearchReports';
 
+// Self Appraisal Modules
+import SelfAppraisal from "./pages/faculty/SelfAppraisal";
+import AppraisalSettings from "./pages/uniprime/AppraisalSettings";
+import AppraisalEvaluation from "./pages/hod/AppraisalEvaluation";
+import AppraisalResearchScoring from "./pages/research/AppraisalResearchScoring";
+
 
 
 const PublicOnlyRoute = ({ children }) => {
@@ -141,6 +147,13 @@ function App() {
         <Route path="/hod/proctoring-approvals" element={<ProtectedRoute element={<ProctoringApprovalList />} />} />
         <Route path="/faculty/administration" element={<ProtectedRoute element={<FacultyAdministration />} />} />
         <Route path="/hod/administration-approvals" element={<ProtectedRoute element={<AdministrationApprovalList />} />} />
+
+        {/* Self Appraisal routes */}
+        <Route path="/faculty/appraisal" element={<ProtectedRoute element={<SelfAppraisal />} />} />
+        <Route path="/hod/appraisal-verification" element={<ProtectedRoute element={<AppraisalEvaluation />} />} />
+        <Route path="/uniprime/appraisal-settings" element={<ProtectedRoute element={<AppraisalSettings />} />} />
+        <Route path="/research-dean/appraisal-finalization" element={<ProtectedRoute element={<AppraisalResearchScoring />} />} />
+        <Route path="/research-coordinator/appraisal-finalization" element={<ProtectedRoute element={<AppraisalResearchScoring />} />} />
 
         <Route path="/research-dean/approvals" element={<ProtectedRoute element={<ResearchApprovalList role="RESEARCH_DEAN" />} />} />
         <Route path="/research-dean/request/:type/:id" element={<ProtectedRoute element={<ResearchApprovalDetailWrapper role="RESEARCH_DEAN" />} />} />
