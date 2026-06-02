@@ -938,7 +938,7 @@ export default function BookChapterPublication() {
         </Box>
         <Box>
           <Typography sx={labelStyle}>Month:</Typography>
-          <Select size="small" fullWidth displayEmpty value={form.month} onChange={set("month")} disabled={!form.year} error={!!errors.month}>
+          <Select size="small" fullWidth displayEmpty value={form.month} onChange={set("month")} disabled={!form.year || (scopusIndexed && !!form.month)} sx={(scopusIndexed && !!form.month) ? disabledField : {}} error={!!errors.month}>
             <MenuItem value="">Select Month</MenuItem>
             {getAvailableMonths().map((m) => <MenuItem key={m} value={m}>{m}</MenuItem>)}
           </Select>

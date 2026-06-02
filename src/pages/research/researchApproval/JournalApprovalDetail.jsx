@@ -54,6 +54,7 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
     const [approvedAmount, setApprovedAmount] = useState("");
     const [hIndex, setHIndex] = useState("");
     const [impactFactor, setImpactFactor] = useState("");
+    const [citations, setCitations] = useState("");
     const [actionLoading, setActionLoading] = useState(false);
     const [imgError, setImgError] = useState(false);
 
@@ -73,6 +74,7 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
                     if (res.data.data.approvedAmount) setApprovedAmount(res.data.data.approvedAmount);
                     if (res.data.data.hIndex) setHIndex(res.data.data.hIndex);
                     if (res.data.data.impactFactor) setImpactFactor(res.data.data.impactFactor);
+                    if (res.data.data.citations) setCitations(res.data.data.citations);
                 }
             } catch (error) {
                 console.error("Failed to fetch journal details", error);
@@ -115,7 +117,8 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
                 comment: remarks,
                 approvedAmount: isResearchAdmin && data.applyIncentive === 'Yes' ? approvedAmount : undefined,
                 hIndex: isResearchAdmin ? hIndex : undefined,
-                impactFactor: isResearchAdmin ? impactFactor : undefined
+                impactFactor: isResearchAdmin ? impactFactor : undefined,
+                citations: isResearchAdmin ? citations : undefined
             };
             const res = await API.put(endpoint, payload);
             if (res.data?.success) {
@@ -125,6 +128,29 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
         } catch (error) {
             console.error("Action failed", error);
             toast.error(error.response?.data?.message || "Action failed. Please try again.");
+        } finally {
+            setActionLoading(false);
+        }
+    };
+
+    const handleUpdateMetrics = async () => {
+        setActionLoading(true);
+        try {
+            const res = await API.put(`/api/research/journal/update-metrics/${id}`, {
+                hIndex,
+                impactFactor,
+                citations
+            });
+            if (res.data?.success) {
+                toast.success("Journal metrics updated successfully");
+                setData(res.data.data);
+                if (res.data.data.hIndex) setHIndex(res.data.data.hIndex);
+                if (res.data.data.impactFactor) setImpactFactor(res.data.data.impactFactor);
+                if (res.data.data.citations) setCitations(res.data.data.citations);
+            }
+        } catch (error) {
+            console.error("Update metrics failed", error);
+            toast.error(error.response?.data?.message || "Failed to update metrics. Please try again.");
         } finally {
             setActionLoading(false);
         }
@@ -300,6 +326,7 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
                         />
                         <LabelValue label="H-Index" value={data.hIndex || "-"} horizontal />
                         <LabelValue label="Impact Factor" value={data.impactFactor || "-"} horizontal />
+                        <LabelValue label="Citations" value={data.citations || "-"} horizontal />
                         <LabelValue label="AGEC Referencing Numbers" value={data.agecReferencingNumbers || data.referencingNos || "-"} horizontal />
                         <LabelValue label="Number of References Belonging to AGEC" value={data.numberOfReferencesBelongingToAGEC !== undefined ? data.numberOfReferencesBelongingToAGEC : (data.papersCited !== undefined ? data.papersCited : "-")} horizontal />
                         <LabelValue label="SDGS" value={data.sdgs ? data.sdgs.split(', ').map(getSdgName).join(', ') : "-"} horizontal />
@@ -390,6 +417,16 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
                                             sx={{ "& .MuiOutlinedInput-root": { borderRadius: "10px", bgcolor: "var(--bg-panel)" } }} 
                                         />
                                     </Box>
+                                    <Box sx={{ flex: "1 1 200px" }}>
+                                        <Typography variant="subtitle2" sx={{ fontWeight: 900, mb: 1, color: "var(--color-primary)", fontSize: "0.75rem" }}>CITATIONS</Typography>
+                                        <TextField 
+                                            fullWidth size="small" 
+                                            placeholder="Enter Citations" 
+                                            value={citations} 
+                                            onChange={e => setCitations(e.target.value)} 
+                                            sx={{ "& .MuiOutlinedInput-root": { borderRadius: "10px", bgcolor: "var(--bg-panel)" } }} 
+                                        />
+                                    </Box>
                                 </Box>
                             )}
 
@@ -414,17 +451,72 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
                             </Box>
                         </Card>
                     ) : (
-                        <Card sx={{ ...cardStyle, p: 4, textAlign: "center", mb: 0 }}>
-                            <Typography variant="h6" color="var(--text-secondary)" sx={{ fontWeight: 800 }}>Request already processed</Typography>
-                            <Typography variant="body2" sx={{ mt: 1, fontWeight: 700 }}>Current Status: <span style={{ color: statusStyle.color }}>{data.status}</span></Typography>
-                            {data.rndComment && (
-                                <Box sx={{ mt: 3, textAlign: "left", p: 2, bgcolor: "rgba(16, 185, 129, 0.05)", borderRadius: "10px", border: "1px solid #10b98133" }}>
-                                    <Typography variant="caption" sx={{ fontWeight: 900, color: "#10b981", textTransform: "uppercase" }}>R&D Remarks:</Typography>
-                                    <Typography variant="body2" sx={{ fontWeight: 600, mt: 0.5 }}>"{data.rndComment}"</Typography>
-                                    {data.approvedAmount && <Typography variant="h6" sx={{ mt: 2, fontWeight: 900, color: "#10b981" }}>Approved: ₹{data.approvedAmount}</Typography>}
-                                </Box>
+                        <Stack spacing={3}>
+                            <Card sx={{ ...cardStyle, p: 4, textAlign: "center", mb: 0 }}>
+                                <Typography variant="h6" color="var(--text-secondary)" sx={{ fontWeight: 800 }}>Request already processed</Typography>
+                                <Typography variant="body2" sx={{ mt: 1, fontWeight: 700 }}>Current Status: <span style={{ color: statusStyle.color }}>{data.status}</span></Typography>
+                                {data.rndComment && (
+                                    <Box sx={{ mt: 3, textAlign: "left", p: 2, bgcolor: "rgba(16, 185, 129, 0.05)", borderRadius: "10px", border: "1px solid #10b98133" }}>
+                                        <Typography variant="caption" sx={{ fontWeight: 900, color: "#10b981", textTransform: "uppercase" }}>R&D Remarks:</Typography>
+                                        <Typography variant="body2" sx={{ fontWeight: 600, mt: 0.5 }}>"{data.rndComment}"</Typography>
+                                        {data.approvedAmount && <Typography variant="h6" sx={{ mt: 2, fontWeight: 900, color: "#10b981" }}>Approved: ₹{data.approvedAmount}</Typography>}
+                                    </Box>
+                                )}
+                            </Card>
+
+                            {isResearchAdmin && (
+                                <Card sx={{ ...cardStyle, borderTop: "4px solid var(--color-primary)", mb: 0 }}>
+                                    <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 3 }}>
+                                        <GavelIcon sx={{ color: "var(--color-primary)" }} />
+                                        <Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>Update Journal Metrics</Typography>
+                                    </Box>
+                                    
+                                    <Box sx={{ display: "flex", gap: 3, mb: 3, flexWrap: "wrap" }}>
+                                        <Box sx={{ flex: "1 1 200px" }}>
+                                            <Typography variant="subtitle2" sx={{ fontWeight: 900, mb: 1, color: "var(--color-primary)", fontSize: "0.75rem" }}>JOURNAL H-INDEX</Typography>
+                                            <TextField 
+                                                fullWidth size="small" 
+                                                placeholder="Enter Journal H-Index" 
+                                                value={hIndex} 
+                                                onChange={e => setHIndex(e.target.value)} 
+                                                sx={{ "& .MuiOutlinedInput-root": { borderRadius: "10px", bgcolor: "var(--bg-panel)" } }} 
+                                            />
+                                        </Box>
+                                        <Box sx={{ flex: "1 1 200px" }}>
+                                            <Typography variant="subtitle2" sx={{ fontWeight: 900, mb: 1, color: "var(--color-primary)", fontSize: "0.75rem" }}>IMPACT FACTOR</Typography>
+                                            <TextField 
+                                                fullWidth size="small" 
+                                                placeholder="Enter Impact Factor" 
+                                                value={impactFactor} 
+                                                onChange={e => setImpactFactor(e.target.value)} 
+                                                sx={{ "& .MuiOutlinedInput-root": { borderRadius: "10px", bgcolor: "var(--bg-panel)" } }} 
+                                            />
+                                        </Box>
+                                        <Box sx={{ flex: "1 1 200px" }}>
+                                            <Typography variant="subtitle2" sx={{ fontWeight: 900, mb: 1, color: "var(--color-primary)", fontSize: "0.75rem" }}>CITATIONS</Typography>
+                                            <TextField 
+                                                fullWidth size="small" 
+                                                placeholder="Enter Citations" 
+                                                value={citations} 
+                                                onChange={e => setCitations(e.target.value)} 
+                                                sx={{ "& .MuiOutlinedInput-root": { borderRadius: "10px", bgcolor: "var(--bg-panel)" } }} 
+                                            />
+                                        </Box>
+                                    </Box>
+
+                                    <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
+                                        <Button 
+                                            variant="contained" 
+                                            disabled={actionLoading} 
+                                            onClick={handleUpdateMetrics} 
+                                            sx={{ bgcolor: "var(--color-primary)", color: "#fff", fontWeight: 800, borderRadius: "10px", textTransform: "none", px: 4, "&:hover": { opacity: 0.9 } }}
+                                        >
+                                            Update Metrics
+                                        </Button>
+                                    </Box>
+                                </Card>
                             )}
-                        </Card>
+                        </Stack>
                     )}
                 </Box>
             </Box>

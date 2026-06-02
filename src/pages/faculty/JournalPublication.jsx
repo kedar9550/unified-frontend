@@ -897,7 +897,7 @@ export default function JournalPublication() {
         </Box>
         <Box>
           <Typography sx={labelStyle}>Month : *</Typography>
-          <Select size="small" fullWidth displayEmpty value={form.month} onChange={set("month")} disabled={(!form.year) || isFetched("month")} sx={isFetched("month") ? disabledField : {}}>
+          <Select size="small" fullWidth displayEmpty value={form.month} onChange={set("month")} disabled={(!form.year) || (isFetched("month") && !!form.month)} sx={(isFetched("month") && !!form.month) ? disabledField : {}}>
             <MenuItem value="">Select Month</MenuItem>
             {getAvailableMonths().map(m => <MenuItem key={m} value={m}>{m}</MenuItem>)}
           </Select>
@@ -1193,10 +1193,12 @@ export default function JournalPublication() {
             <Grid item xs={12} sm={4}><LabelValue label="Journal Type" value={data.journalType || "-"} /></Grid>
 
             {/* H-Index, Impact Factor, Citations, SDGS */}
-            <Grid item xs={12} sm={3}><LabelValue label="H-Index" value={data.hIndex} /></Grid>
-            <Grid item xs={12} sm={3}><LabelValue label="Impact Factor" value={data.impactFactor} /></Grid>
-            <Grid item xs={12} sm={3}><LabelValue label="AGEC Referencing Numbers" value={data.agecReferencingNumbers || data.referencingNos} /></Grid>
-            <Grid item xs={12} sm={3}><LabelValue label="Number of References Belonging to AGEC" value={data.numberOfReferencesBelongingToAGEC !== undefined ? data.numberOfReferencesBelongingToAGEC : (data.papersCited !== undefined ? data.papersCited : "-")} /></Grid>
+            <Grid item xs={12} sm={4}><LabelValue label="H-Index" value={data.hIndex || "-"} /></Grid>
+            <Grid item xs={12} sm={4}><LabelValue label="Impact Factor" value={data.impactFactor || "-"} /></Grid>
+            <Grid item xs={12} sm={4}><LabelValue label="Citations" value={data.citations || "-"} /></Grid>
+            
+            <Grid item xs={12} sm={6}><LabelValue label="AGEC Referencing Numbers" value={data.agecReferencingNumbers || data.referencingNos || "-"} /></Grid>
+            <Grid item xs={12} sm={6}><LabelValue label="Number of References Belonging to AGEC" value={data.numberOfReferencesBelongingToAGEC !== undefined ? data.numberOfReferencesBelongingToAGEC : (data.papersCited !== undefined ? data.papersCited : "-")} /></Grid>
             
             {/* Seed Grant Work & SDGS */}
             <Grid item xs={12} sm={6}><LabelValue label="Seed Grant Work" value={data.applyingSeedGrant || "No"} /></Grid>
