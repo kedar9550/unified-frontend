@@ -46,6 +46,7 @@ import ContributionApproval from "./pages/hod/ContributionApproval";
 import ResearchApprovalList from './pages/research/researchApproval/ResearchApprovalList';
 import ResearchApprovalDetailWrapper from './pages/research/researchApproval/ResearchApprovalDetailWrapper';
 import ResearchReports from './pages/research/ResearchReports';
+import ReferenceJournalManagement from './pages/research/ReferenceJournalManagement';
 
 // Self Appraisal Modules
 import SelfAppraisal from "./pages/faculty/SelfAppraisal";
@@ -163,6 +164,9 @@ function App() {
 
         <Route path="/research-dean/reports" element={<ProtectedRoute element={<ResearchReports />} />} />
         <Route path="/research-coordinator/reports" element={<ProtectedRoute element={<ResearchReports />} />} />
+
+        <Route path="/research-dean/journals-database" element={<ProtectedRoute element={<ReferenceJournalManagement />} />} />
+        <Route path="/research-coordinator/journals-database" element={<ProtectedRoute element={<ReferenceJournalManagement />} />} />
 
         <Route path="/doi-test" element={<DOIFetcher />} />
         <Route path="*" element={<ProtectedRoute element={<Box p={4}><Typography variant="h4">Page Content</Typography></Box>} />} />
