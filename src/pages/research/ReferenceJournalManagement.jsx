@@ -89,6 +89,16 @@ const ReferenceJournalManagement = () => {
   // Edit State
   const [editingJournal, setEditingJournal] = useState(null);
 
+  // JIF Tab State
+  const [jifs, setJifs] = useState([]);
+  const [jifLoading, setJifLoading] = useState(false);
+  const [jifSearchQuery, setJifSearchQuery] = useState("");
+  const [jifDebouncedSearch, setJifDebouncedSearch] = useState("");
+  const [jifPage, setJifPage] = useState(0);
+  const [jifRowsPerPage, setJifRowsPerPage] = useState(10);
+  const [jifTotalRows, setJifTotalRows] = useState(0);
+  const [editingJif, setEditingJif] = useState(null);
+
   // Debounce search query
   useEffect(() => {
     const handler = setTimeout(() => {
@@ -100,6 +110,18 @@ const ReferenceJournalManagement = () => {
       clearTimeout(handler);
     };
   }, [searchQuery]);
+
+  // Debounce JIF search query
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setJifDebouncedSearch(jifSearchQuery);
+      setJifPage(0);
+    }, 300);
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [jifSearchQuery]);
 
   const fetchJournals = async () => {
     setLoading(true);
@@ -131,9 +153,37 @@ const ReferenceJournalManagement = () => {
     }
   };
 
+  const fetchJifs = async () => {
+    setJifLoading(true);
+    try {
+      const res = await API.get("/api/journal-impact-factors", {
+        params: {
+          search: jifDebouncedSearch,
+          page: jifPage + 1,
+          limit: jifRowsPerPage
+        }
+      });
+      if (res.data?.success) {
+        setJifs(res.data.data);
+        setJifTotalRows(res.data.pagination.total);
+      }
+    } catch (err) {
+      toast.error("Failed to retrieve journal impact factors.");
+      console.error(err);
+    } finally {
+      setJifLoading(false);
+    }
+  };
+
   useEffect(() => {
     fetchJournals();
   }, [selectedType, page, rowsPerPage, debouncedSearch]);
+
+  useEffect(() => {
+    if (activeTab === 2) {
+      fetchJifs();
+    }
+  }, [activeTab, jifPage, jifRowsPerPage, jifDebouncedSearch]);
 
   const handleSearchSubmit = (e) => {
     e.preventDefault();
@@ -222,6 +272,63 @@ const ReferenceJournalManagement = () => {
       }
     } catch (err) {
       const errMsg = err.response?.data?.message || "Failed to update journal.";
+      toast.error(errMsg);
+    }
+  };
+
+  const handleJifClearSearch = () => {
+    setJifSearchQuery("");
+    setJifDebouncedSearch("");
+    setJifPage(0);
+  };
+
+  const handleJifDelete = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this journal impact factor entry?")) return;
+    try {
+      const res = await API.delete(`/api/journal-impact-factors/${id}`);
+      if (res.data?.success) {
+        toast.success("Journal impact factor entry deleted successfully");
+        fetchJifs();
+      }
+    } catch (err) {
+      toast.error("Failed to delete journal impact factor entry.");
+    }
+  };
+
+  const handleJifEditClick = (jif) => {
+    setEditingJif({
+      _id: jif._id,
+      rank: jif.rank,
+      journalName: jif.journalName,
+      abbreviatedJournal: jif.abbreviatedJournal || "",
+      publisher: jif.publisher || "",
+      jif: jif.jif
+    });
+  };
+
+  const handleJifEditSubmit = async (e) => {
+    e.preventDefault();
+    if (!editingJif.journalName.trim()) return toast.error("Journal name is required");
+    if (editingJif.rank === undefined || editingJif.rank === "") return toast.error("Rank is required");
+    if (editingJif.jif === undefined || editingJif.jif === "") return toast.error("JIF value is required");
+
+    const payload = {
+      rank: Number(editingJif.rank),
+      journalName: editingJif.journalName.trim(),
+      abbreviatedJournal: editingJif.abbreviatedJournal.trim(),
+      publisher: editingJif.publisher.trim(),
+      jif: Number(editingJif.jif)
+    };
+
+    try {
+      const res = await API.put(`/api/journal-impact-factors/${editingJif._id}`, payload);
+      if (res.data?.success) {
+        toast.success("Journal impact factor updated successfully");
+        setEditingJif(null);
+        fetchJifs();
+      }
+    } catch (err) {
+      const errMsg = err.response?.data?.message || "Failed to update journal impact factor.";
       toast.error(errMsg);
     }
   };
@@ -352,6 +459,11 @@ const ReferenceJournalManagement = () => {
           <Tab
             label="Add / Upload"
             icon={<UploadIcon sx={{ fontSize: "1.2rem", mr: 0.5 }} />}
+            iconPosition="start"
+          />
+          <Tab
+            label="Impact Factors"
+            icon={<Assessment sx={{ fontSize: "1.2rem", mr: 0.5 }} />}
             iconPosition="start"
           />
         </Tabs>
@@ -884,6 +996,204 @@ const ReferenceJournalManagement = () => {
         </Box>
       )}
 
+      {activeTab === 2 && (
+        <Box sx={{ animation: "fadeIn 0.3s ease" }}>
+          {/* Controls Bar for JIF */}
+          <Paper
+            sx={{
+              borderRadius: "20px",
+              border: "1px solid var(--border-color)",
+              background: "var(--bg-panel)",
+              p: 2.5,
+              boxShadow: "0 4px 20px rgba(0, 0, 0, 0.01)",
+              mb: 3
+            }}
+          >
+            <Grid container spacing={2} alignItems="center">
+              <Grid item xs={12}>
+                <form onSubmit={(e) => e.preventDefault()}>
+                  <TextField
+                    fullWidth
+                    size="small"
+                    value={jifSearchQuery}
+                    onChange={(e) => setJifSearchQuery(e.target.value)}
+                    placeholder="Search by journal name, abbreviated name, or publisher..."
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <SearchIcon sx={{ color: "var(--text-secondary)", fontSize: "1.1rem" }} />
+                        </InputAdornment>
+                      ),
+                      endAdornment: jifSearchQuery && (
+                        <InputAdornment position="end">
+                          <IconButton size="small" onClick={handleJifClearSearch}>
+                            <Close sx={{ fontSize: "1rem" }} />
+                          </IconButton>
+                        </InputAdornment>
+                      )
+                    }}
+                    sx={{
+                      "& .MuiOutlinedInput-root": {
+                        borderRadius: "12px",
+                        background: "var(--bg-paper)",
+                        "& .MuiOutlinedInput-notchedOutline": {
+                          borderColor: "var(--border-color)",
+                        },
+                        "&:hover .MuiOutlinedInput-notchedOutline": {
+                          borderColor: "var(--color-primary)",
+                        }
+                      }
+                    }}
+                  />
+                </form>
+              </Grid>
+            </Grid>
+          </Paper>
+
+          {jifLoading ? (
+            <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>
+              <Loader />
+            </Box>
+          ) : (
+            <>
+              <TableContainer 
+                component={Paper} 
+                sx={{ 
+                  borderRadius: "20px", 
+                  background: "var(--bg-paper)", 
+                  border: "1px solid var(--border-color)",
+                  boxShadow: "0 4px 24px rgba(0,0,0,0.01)",
+                  overflow: "hidden"
+                }}
+              >
+                <Table size="medium">
+                  <TableHead>
+                    <TableRow sx={{ background: "rgba(11, 82, 153, 0.03)" }}>
+                      <TableCell sx={{ fontWeight: 800, width: "80px", color: "var(--text-primary)" }} align="center">Rank</TableCell>
+                      <TableCell sx={{ fontWeight: 800, color: "var(--text-primary)" }}>Journal Name</TableCell>
+                      <TableCell sx={{ fontWeight: 800, color: "var(--text-primary)" }}>Abbreviated Journal</TableCell>
+                      <TableCell sx={{ fontWeight: 800, color: "var(--text-primary)" }}>Publisher</TableCell>
+                      <TableCell sx={{ fontWeight: 800, width: "140px", color: "var(--text-primary)" }} align="center">JIF</TableCell>
+                      <TableCell sx={{ fontWeight: 800, width: "120px", color: "var(--text-primary)" }} align="center">Actions</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {jifs.length > 0 ? (
+                      jifs.map((record) => (
+                        <TableRow 
+                          key={record._id} 
+                          sx={{ 
+                            transition: "all 0.2s",
+                            "&:hover": { 
+                              background: "rgba(11, 82, 153, 0.01)",
+                              boxShadow: "inset 4px 0 0 var(--color-primary)"
+                            } 
+                          }}
+                        >
+                          <TableCell align="center" sx={{ fontWeight: 700, color: "var(--text-secondary)" }}>
+                            {record.rank}
+                          </TableCell>
+                          <TableCell sx={{ fontWeight: 700, color: "var(--text-primary)", fontSize: "0.95rem" }}>
+                            {record.journalName}
+                          </TableCell>
+                          <TableCell sx={{ fontWeight: 600, color: "var(--text-secondary)" }}>
+                            {record.abbreviatedJournal || "—"}
+                          </TableCell>
+                          <TableCell sx={{ fontWeight: 600, color: "var(--text-secondary)" }}>
+                            {record.publisher || "—"}
+                          </TableCell>
+                          <TableCell align="center">
+                            <Chip
+                              label={record.jif}
+                              size="small"
+                              sx={{
+                                fontWeight: 800,
+                                fontSize: "0.8rem",
+                                bgcolor: "rgba(234, 179, 8, 0.12)",
+                                color: "#ca8a04",
+                                borderRadius: "8px",
+                                px: 1.5,
+                                border: "1px solid rgba(234, 179, 8, 0.25)"
+                              }}
+                            />
+                          </TableCell>
+                          <TableCell align="center">
+                            <Stack direction="row" spacing={1} justifyContent="center">
+                              <Tooltip title="Edit Details">
+                                <IconButton
+                                  size="small"
+                                  sx={{ 
+                                    color: "var(--color-primary)",
+                                    background: "rgba(11, 82, 153, 0.05)",
+                                    "&:hover": { background: "rgba(11, 82, 153, 0.12)" }
+                                  }}
+                                  onClick={() => handleJifEditClick(record)}
+                                >
+                                  <EditIcon fontSize="small" />
+                                </IconButton>
+                              </Tooltip>
+                              <Tooltip title="Remove Record">
+                                <IconButton
+                                  size="small"
+                                  sx={{ 
+                                    color: "#ef4444",
+                                    background: "rgba(239, 68, 68, 0.05)",
+                                    "&:hover": { background: "rgba(239, 68, 68, 0.12)" }
+                                  }}
+                                  onClick={() => handleJifDelete(record._id)}
+                                >
+                                  <DeleteIcon fontSize="small" />
+                                </IconButton>
+                              </Tooltip>
+                            </Stack>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    ) : (
+                      <TableRow>
+                        <TableCell colSpan={6} align="center" sx={{ py: 8 }}>
+                          <Box sx={{ textContent: "center", opacity: 0.7 }}>
+                            <Typography variant="body1" sx={{ fontWeight: 700, mb: 0.5, color: "var(--text-secondary)" }}>
+                              No JIF Registry Entries Found
+                            </Typography>
+                            <Typography variant="body2" sx={{ color: "var(--text-secondary)" }}>
+                              No registries match your search criteria.
+                            </Typography>
+                          </Box>
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+
+              <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 2 }}>
+                <TablePagination
+                  rowsPerPageOptions={[5, 10, 25, 50]}
+                  component="div"
+                  count={jifTotalRows}
+                  rowsPerPage={jifRowsPerPage}
+                  page={jifPage}
+                  onPageChange={(e, newPage) => setJifPage(newPage)}
+                  onRowsPerPageChange={(e) => {
+                    setJifRowsPerPage(parseInt(e.target.value, 10));
+                    setJifPage(0);
+                  }}
+                  sx={{ 
+                    color: "var(--text-primary)",
+                    border: "none",
+                    "& .MuiTablePagination-selectLabel, & .MuiTablePagination-displayedRows": {
+                      fontWeight: 700,
+                      color: "var(--text-secondary)"
+                    }
+                  }}
+                />
+              </Box>
+            </>
+          )}
+        </Box>
+      )}
+
       {/* Edit Modal Dialog */}
       <Dialog
         open={!!editingJournal}
@@ -997,6 +1307,132 @@ const ReferenceJournalManagement = () => {
                 }}
               >
                 Update Journal
+              </Button>
+            </DialogActions>
+          </Box>
+        )}
+      </Dialog>
+
+      {/* JIF Edit Modal Dialog */}
+      <Dialog
+        open={!!editingJif}
+        onClose={() => setEditingJif(null)}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: "24px",
+            p: 2,
+            background: "var(--bg-paper)",
+            border: "1px solid var(--border-color)",
+            boxShadow: "var(--shadow-premium)"
+          }
+        }}
+      >
+        {editingJif && (
+          <Box component="form" onSubmit={handleJifEditSubmit}>
+            <DialogTitle sx={{ fontWeight: 800, pb: 1, color: "var(--text-primary)" }}>
+              Edit Journal Impact Factor Details
+            </DialogTitle>
+            <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 3, pt: 3 }}>
+              <Box sx={{ display: "flex", gap: 2, mt: 1 }}>
+                <Box sx={{ width: "100px" }}>
+                  <TextField
+                    label="Rank"
+                    required
+                    type="number"
+                    fullWidth
+                    value={editingJif.rank}
+                    onChange={(e) => setEditingJif({ ...editingJif, rank: e.target.value })}
+                    sx={{
+                      "& .MuiOutlinedInput-root": {
+                        borderRadius: "12px",
+                      }
+                    }}
+                  />
+                </Box>
+                <Box sx={{ flex: 1 }}>
+                  <TextField
+                    label="JIF"
+                    required
+                    type="number"
+                    inputProps={{ step: "any" }}
+                    fullWidth
+                    value={editingJif.jif}
+                    onChange={(e) => setEditingJif({ ...editingJif, jif: e.target.value })}
+                    sx={{
+                      "& .MuiOutlinedInput-root": {
+                        borderRadius: "12px",
+                      }
+                    }}
+                  />
+                </Box>
+              </Box>
+
+              <TextField
+                label="Journal Name"
+                required
+                fullWidth
+                value={editingJif.journalName}
+                onChange={(e) => setEditingJif({ ...editingJif, journalName: e.target.value })}
+                sx={{
+                  "& .MuiOutlinedInput-root": {
+                    borderRadius: "12px",
+                  }
+                }}
+              />
+
+              <TextField
+                label="Abbreviated Journal"
+                fullWidth
+                value={editingJif.abbreviatedJournal}
+                onChange={(e) => setEditingJif({ ...editingJif, abbreviatedJournal: e.target.value })}
+                sx={{
+                  "& .MuiOutlinedInput-root": {
+                    borderRadius: "12px",
+                  }
+                }}
+              />
+
+              <TextField
+                label="Publisher"
+                fullWidth
+                value={editingJif.publisher}
+                onChange={(e) => setEditingJif({ ...editingJif, publisher: e.target.value })}
+                sx={{
+                  "& .MuiOutlinedInput-root": {
+                    borderRadius: "12px",
+                  }
+                }}
+              />
+            </DialogContent>
+            <DialogActions sx={{ px: 3, pb: 2 }}>
+              <Button 
+                onClick={() => setEditingJif(null)}
+                sx={{ 
+                  textTransform: "none", 
+                  fontWeight: 700, 
+                  borderRadius: "10px",
+                  color: "var(--text-secondary)"
+                }}
+              >
+                Cancel
+              </Button>
+              <Button 
+                type="submit"
+                variant="contained"
+                sx={{ 
+                  textTransform: "none", 
+                  fontWeight: 700, 
+                  borderRadius: "10px",
+                  background: "var(--gradient-primary)",
+                  color: "#fff",
+                  "&:hover": {
+                    background: "var(--gradient-primary-hover)"
+                  }
+                }}
+              >
+                Update JIF Entry
               </Button>
             </DialogActions>
           </Box>
