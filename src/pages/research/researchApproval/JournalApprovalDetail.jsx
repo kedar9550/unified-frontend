@@ -68,13 +68,28 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
             try {
                 const res = await API.get(`/api/research/journal/${id}`);
                 if (res.data?.success) {
-                    setData(res.data.data);
-                    if (res.data.data.rndComment) setRemarks(res.data.data.rndComment);
-                    else if (res.data.data.hodComment) setRemarks(res.data.data.hodComment);
-                    if (res.data.data.approvedAmount) setApprovedAmount(res.data.data.approvedAmount);
-                    if (res.data.data.hIndex) setHIndex(res.data.data.hIndex);
-                    if (res.data.data.impactFactor) setImpactFactor(res.data.data.impactFactor);
-                    if (res.data.data.citations) setCitations(res.data.data.citations);
+                    const journal = res.data.data;
+                    setData(journal);
+                    if (journal.rndComment) setRemarks(journal.rndComment);
+                    else if (journal.hodComment) setRemarks(journal.hodComment);
+                    if (journal.approvedAmount) setApprovedAmount(journal.approvedAmount);
+                    if (journal.hIndex) setHIndex(journal.hIndex);
+                    if (journal.citations) setCitations(journal.citations);
+
+                    if (journal.impactFactor) {
+                        setImpactFactor(journal.impactFactor);
+                    } else if (journal.journalName) {
+                        try {
+                            const jifRes = await API.get(`/api/journal-impact-factors?search=${encodeURIComponent(journal.journalName)}`);
+                            if (jifRes.data?.success && jifRes.data.data?.length > 0) {
+                                const exactMatch = jifRes.data.data.find(j => j.journalName.toLowerCase() === journal.journalName.toLowerCase());
+                                const matchedJif = exactMatch ? exactMatch.jif : jifRes.data.data[0].jif;
+                                setImpactFactor(String(matchedJif));
+                            }
+                        } catch (jifErr) {
+                            console.error("Failed to fetch JIF from database", jifErr);
+                        }
+                    }
                 }
             } catch (error) {
                 console.error("Failed to fetch journal details", error);
@@ -94,12 +109,8 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
 
         if (action === 'Approve') {
             if (isResearchAdmin) {
-                if (!hIndex) {
-                    toast.error('Please enter the Journal H-Index.');
-                    return;
-                }
                 if (!impactFactor) {
-                    toast.error('Please enter the Impact Factor.');
+                    toast.error('Please enter the Impact Factor (JCR).');
                     return;
                 }
                 if (data.applyIncentive === 'Yes' && !approvedAmount) {
@@ -309,6 +320,7 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
                     <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 3 }}><ArticleIcon sx={{ color: "var(--color-primary)" }} /><Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>Journal Details</Typography></Box>
                     <Box sx={{ display: "flex", flexDirection: "column" }}>
                         <LabelValue label="DOI" value={data.doi || "-"} horizontal />
+                        <LabelValue label="Journal Name" value={data.journalName || "-"} horizontal />
                         <LabelValue label="Journal Quartile" value={data.journalQuartile || data.categoryOfJournal || "-"} horizontal />
                         <LabelValue label="Journal Type" value={data.journalType || "-"} horizontal />
                         <LabelValue label="Publication Scope" value={data.publicationScope || data.incentiveApplied} horizontal />
@@ -325,7 +337,7 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
                             horizontal 
                         />
                         <LabelValue label="H-Index" value={data.hIndex || "-"} horizontal />
-                        <LabelValue label="Impact Factor" value={data.impactFactor || "-"} horizontal />
+                        <LabelValue label="Impact Factor (JCR)" value={data.impactFactor || "-"} horizontal />
                         <LabelValue label="Citations" value={data.citations || "-"} horizontal />
                         <LabelValue label="AGEC Referencing Numbers" value={data.agecReferencingNumbers || data.referencingNos || "-"} horizontal />
                         <LabelValue label="Number of References Belonging to AGEC" value={data.numberOfReferencesBelongingToAGEC !== undefined ? data.numberOfReferencesBelongingToAGEC : (data.papersCited !== undefined ? data.papersCited : "-")} horizontal />
@@ -398,7 +410,7 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
                             {isResearchAdmin && (
                                 <Box sx={{ display: "flex", gap: 3, mb: 3, flexWrap: "wrap" }}>
                                     <Box sx={{ flex: "1 1 200px" }}>
-                                        <Typography variant="subtitle2" sx={{ fontWeight: 900, mb: 1, color: "var(--color-primary)", fontSize: "0.75rem" }}>JOURNAL H-INDEX *</Typography>
+                                        <Typography variant="subtitle2" sx={{ fontWeight: 900, mb: 1, color: "var(--color-primary)", fontSize: "0.75rem" }}>JOURNAL H-INDEX</Typography>
                                         <TextField 
                                             fullWidth size="small" 
                                             placeholder="Enter Journal H-Index" 
@@ -408,10 +420,10 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
                                         />
                                     </Box>
                                     <Box sx={{ flex: "1 1 200px" }}>
-                                        <Typography variant="subtitle2" sx={{ fontWeight: 900, mb: 1, color: "var(--color-primary)", fontSize: "0.75rem" }}>IMPACT FACTOR *</Typography>
+                                        <Typography variant="subtitle2" sx={{ fontWeight: 900, mb: 1, color: "var(--color-primary)", fontSize: "0.75rem" }}>IMPACT FACTOR (JCR) *</Typography>
                                         <TextField 
                                             fullWidth size="small" 
-                                            placeholder="Enter Impact Factor" 
+                                            placeholder="Enter Impact Factor (JCR)" 
                                             value={impactFactor} 
                                             onChange={e => setImpactFactor(e.target.value)} 
                                             sx={{ "& .MuiOutlinedInput-root": { borderRadius: "10px", bgcolor: "var(--bg-panel)" } }} 
@@ -483,10 +495,10 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
                                             />
                                         </Box>
                                         <Box sx={{ flex: "1 1 200px" }}>
-                                            <Typography variant="subtitle2" sx={{ fontWeight: 900, mb: 1, color: "var(--color-primary)", fontSize: "0.75rem" }}>IMPACT FACTOR</Typography>
+                                            <Typography variant="subtitle2" sx={{ fontWeight: 900, mb: 1, color: "var(--color-primary)", fontSize: "0.75rem" }}>IMPACT FACTOR (JCR)</Typography>
                                             <TextField 
                                                 fullWidth size="small" 
-                                                placeholder="Enter Impact Factor" 
+                                                placeholder="Enter Impact Factor (JCR)" 
                                                 value={impactFactor} 
                                                 onChange={e => setImpactFactor(e.target.value)} 
                                                 sx={{ "& .MuiOutlinedInput-root": { borderRadius: "10px", bgcolor: "var(--bg-panel)" } }} 
