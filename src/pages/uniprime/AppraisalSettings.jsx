@@ -792,6 +792,24 @@ const AppraisalSettings = () => {
                       </TableBody>
                     </Table>
                   </Box>
+
+                  <Grid container spacing={2}>
+                    <Grid item xs={12}>
+                      <TextField
+                        label="Max Resource Utilization Points Capped (Max: 10)"
+                        type="number"
+                        fullWidth
+                        size="small"
+                        value={config.valueAddition?.resourceUtilizationMaxPoints ?? ""}
+                        onChange={(e) => setConfig(prev => {
+                          const updated = { ...prev };
+                          if (!updated.valueAddition) updated.valueAddition = {};
+                          updated.valueAddition.resourceUtilizationMaxPoints = Number(e.target.value);
+                          return updated;
+                        })}
+                      />
+                    </Grid>
+                  </Grid>
                 </CardContent>
               </Card>
             </Grid>
