@@ -561,7 +561,141 @@ const SelfAppraisal = () => {
                     </Table>
                   </TableContainer>
                 </Grid>
+
+                {/* 2.4 Patents */}
+                <Grid item xs={12} md={6}>
+                  <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 1, color: "var(--color-primary)" }}>
+                    2.4 Patents
+                  </Typography>
+                  <TableContainer component={Paper} sx={{ borderRadius: "12px", background: "var(--bg-paper)", border: "1px solid var(--border-color)" }}>
+                    <Table size="small">
+                      <TableHead>
+                        <TableRow sx={{ background: "var(--bg-accent-4)" }}>
+                          <TableCell sx={{ fontWeight: 700 }}>Patent Title</TableCell>
+                          <TableCell sx={{ fontWeight: 700 }}>Status</TableCell>
+                          <TableCell sx={{ fontWeight: 700 }} align="right">Points</TableCell>
+                        </TableRow>
+                      </TableHead>
+                      <TableBody>
+                        {appraisal.research.patents?.items?.length > 0 ? (
+                          appraisal.research.patents.items.map((p, i) => (
+                            <TableRow key={i}>
+                              <TableCell>{p.title}</TableCell>
+                              <TableCell>{p.status}</TableCell>
+                              <TableCell align="right" sx={{ fontWeight: 700 }}>{p.pointsClaimed}</TableCell>
+                            </TableRow>
+                          ))
+                        ) : (
+                          <TableRow>
+                            <TableCell colSpan={3} align="center">None</TableCell>
+                          </TableRow>
+                        )}
+                      </TableBody>
+                    </Table>
+                  </TableContainer>
+                </Grid>
+
+                {/* 2.5 Novel Products / Technology */}
+                <Grid item xs={12} md={6}>
+                  <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 1, color: "var(--color-primary)" }}>
+                    2.5 Novel Products / Technology
+                  </Typography>
+                  <TableContainer component={Paper} sx={{ borderRadius: "12px", background: "var(--bg-paper)", border: "1px solid var(--border-color)" }}>
+                    <Table size="small">
+                      <TableHead>
+                        <TableRow sx={{ background: "var(--bg-accent-4)" }}>
+                          <TableCell sx={{ fontWeight: 700 }}>Product Title</TableCell>
+                          <TableCell sx={{ fontWeight: 700 }}>Status</TableCell>
+                          <TableCell sx={{ fontWeight: 700 }} align="right">Points</TableCell>
+                        </TableRow>
+                      </TableHead>
+                      <TableBody>
+                        {appraisal.research.novelProducts?.items?.length > 0 ? (
+                          appraisal.research.novelProducts.items.map((p, i) => (
+                            <TableRow key={i}>
+                              <TableCell>{p.title}</TableCell>
+                              <TableCell>{p.status}</TableCell>
+                              <TableCell align="right" sx={{ fontWeight: 700 }}>{p.pointsClaimed}</TableCell>
+                            </TableRow>
+                          ))
+                        ) : (
+                          <TableRow>
+                            <TableCell colSpan={3} align="center">None</TableCell>
+                          </TableRow>
+                        )}
+                      </TableBody>
+                    </Table>
+                  </TableContainer>
+                </Grid>
+
+                {/* 2.6 Project Proposals / Consultancies */}
+                <Grid item xs={12}>
+                  <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 1, color: "var(--color-primary)" }}>
+                    2.6 Funded Projects & Consultancies
+                  </Typography>
+                  <TableContainer component={Paper} sx={{ borderRadius: "12px", background: "var(--bg-paper)", border: "1px solid var(--border-color)" }}>
+                    <Table size="small">
+                      <TableHead>
+                        <TableRow sx={{ background: "var(--bg-accent-4)" }}>
+                          <TableCell sx={{ fontWeight: 700 }}>Project Title</TableCell>
+                          <TableCell sx={{ fontWeight: 700 }}>Type</TableCell>
+                          <TableCell sx={{ fontWeight: 700 }}>Agency</TableCell>
+                          <TableCell sx={{ fontWeight: 700 }} align="right">Amount (Lakhs)</TableCell>
+                          <TableCell sx={{ fontWeight: 700 }}>Status</TableCell>
+                          <TableCell sx={{ fontWeight: 700 }} align="right">Points</TableCell>
+                        </TableRow>
+                      </TableHead>
+                      <TableBody>
+                        {appraisal.research.projectsConsultancies?.items?.length > 0 ? (
+                          appraisal.research.projectsConsultancies.items.map((p, i) => (
+                            <TableRow key={i}>
+                              <TableCell sx={{ fontWeight: 500 }}>{p.title}</TableCell>
+                              <TableCell>{p.projectType === 'FundedProject' ? 'Funded Project' : 'Consultancy'}</TableCell>
+                              <TableCell>{p.agency || "N/A"}</TableCell>
+                              <TableCell align="right">{p.amountInLakhs || 0}</TableCell>
+                              <TableCell>{p.status}</TableCell>
+                              <TableCell align="right" sx={{ fontWeight: 700 }}>{p.pointsClaimed}</TableCell>
+                            </TableRow>
+                          ))
+                        ) : (
+                          <TableRow>
+                            <TableCell colSpan={6} align="center">None</TableCell>
+                          </TableRow>
+                        )}
+                      </TableBody>
+                    </Table>
+                  </TableContainer>
+                </Grid>
               </Grid>
+
+              {/* R&D Admin Provided Scores */}
+              <Box sx={{ mt: 4, p: 2, background: "var(--bg-accent-4)", borderRadius: "12px", border: "1px solid var(--border-color)" }}>
+                <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 1, color: "var(--text-primary)" }}>
+                  Research & Development Admin Verified Scores
+                </Typography>
+                <Grid container spacing={2}>
+                  <Grid item xs={12} sm={6}>
+                    <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", p: 1.5, background: "var(--bg-paper)", borderRadius: "8px", border: "1px solid var(--border-color)" }}>
+                      <Typography variant="body2" sx={{ fontWeight: 600, color: "var(--text-secondary)" }}>
+                        2.7 Scopus Citation Score
+                      </Typography>
+                      <Typography variant="body2" sx={{ fontWeight: 800, color: "var(--color-primary)" }}>
+                        {appraisal.research.scopusCitationScore || 0} pts
+                      </Typography>
+                    </Box>
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", p: 1.5, background: "var(--bg-paper)", borderRadius: "8px", border: "1px solid var(--border-color)" }}>
+                      <Typography variant="body2" sx={{ fontWeight: 600, color: "var(--text-secondary)" }}>
+                        2.8 Scopus h-index Score Points
+                      </Typography>
+                      <Typography variant="body2" sx={{ fontWeight: 800, color: "var(--color-primary)" }}>
+                        {appraisal.research.scopusHIndexScore || 0} pts
+                      </Typography>
+                    </Box>
+                  </Grid>
+                </Grid>
+              </Box>
             </CardContent>
           </Card>
         </Grid>

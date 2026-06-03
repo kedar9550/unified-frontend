@@ -14,7 +14,12 @@ import {
   IconButton,
   Divider,
   Alert,
-  Tooltip
+  Tooltip,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableRow
 } from "@mui/material";
 import { Save, Add, Delete, Settings, InfoOutlined } from "@mui/icons-material";
 import axiosInstance from "../../api/axios";
@@ -25,6 +30,11 @@ const AppraisalSettings = () => {
   const [selectedYear, setSelectedYear] = useState("");
   const [loading, setLoading] = useState(false);
   const [config, setConfig] = useState(null);
+  
+  // Guidelines panels toggle states
+  const [show31Rules, setShow31Rules] = useState(false);
+  const [show32Rules, setShow32Rules] = useState(false);
+  const [show4Rules, setShow4Rules] = useState(false);
 
   // Load academic years
   useEffect(() => {
@@ -69,7 +79,9 @@ const AppraisalSettings = () => {
       const res = await axiosInstance.post("/api/appraisal/config", {
         academicYearId: selectedYear,
         teaching: config.teaching,
-        research: config.research
+        research: config.research,
+        valueAddition: config.valueAddition,
+        administration: config.administration
       });
       if (res.data && res.data.success) {
         toast.success("Points configurations saved successfully!");
@@ -122,6 +134,36 @@ const AppraisalSettings = () => {
     });
   };
 
+  const updateResourcePoint = (key, value) => {
+    setConfig(prev => {
+      const updated = { ...prev };
+      if (!updated.valueAddition) updated.valueAddition = {};
+      if (!updated.valueAddition.resourceUtilizationPoints) updated.valueAddition.resourceUtilizationPoints = {};
+      updated.valueAddition.resourceUtilizationPoints[key] = Number(value);
+      return updated;
+    });
+  };
+
+  const updateExpertisePoint = (key, value) => {
+    setConfig(prev => {
+      const updated = { ...prev };
+      if (!updated.valueAddition) updated.valueAddition = {};
+      if (!updated.valueAddition.expertisePoints) updated.valueAddition.expertisePoints = {};
+      updated.valueAddition.expertisePoints[key] = Number(value);
+      return updated;
+    });
+  };
+
+  const updateAdminRolePoint = (key, value) => {
+    setConfig(prev => {
+      const updated = { ...prev };
+      if (!updated.administration) updated.administration = {};
+      if (!updated.administration.rolePoints) updated.administration.rolePoints = {};
+      updated.administration.rolePoints[key] = Number(value);
+      return updated;
+    });
+  };
+
   if (!config) {
     return (
       <Box p={4} sx={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "60vh" }}>
@@ -133,11 +175,11 @@ const AppraisalSettings = () => {
   return (
     <Box p={4} sx={{ maxWidth: 1200, margin: "0 auto", animation: "fadeIn 0.5s ease" }}>
       {/* Header section with Glassmorphic design */}
-      <Box 
-        sx={{ 
-          display: "flex", 
+      <Box
+        sx={{
+          display: "flex",
           flexDirection: { xs: "column", md: "row" },
-          justifyContent: "space-between", 
+          justifyContent: "space-between",
           alignItems: { xs: "flex-start", md: "center" },
           mb: 4,
           p: 3,
@@ -407,9 +449,9 @@ const AppraisalSettings = () => {
           </Typography>
 
           <Grid container spacing={3}>
-            {/* 2.1 Journal Publication points */}
+            {/* 2.1 Papers Publication Points */}
             <Grid item xs={12} md={6}>
-              <Card sx={{ borderRadius: "16px", background: "var(--bg-panel)", border: "1px solid var(--border-color)" }}>
+              <Card sx={{ borderRadius: "16px", background: "var(--bg-panel)", border: "1px solid var(--border-color)", height: "100%" }}>
                 <CardContent>
                   <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 2, color: "var(--color-primary)" }}>
                     2.1 Papers Publication Points
@@ -434,12 +476,12 @@ const AppraisalSettings = () => {
               </Card>
             </Grid>
 
-            {/* Other Research Weights */}
+            {/* 2.2 Ph.D Guiding Points */}
             <Grid item xs={12} md={6}>
               <Card sx={{ borderRadius: "16px", background: "var(--bg-panel)", border: "1px solid var(--border-color)", height: "100%" }}>
                 <CardContent>
                   <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 2, color: "var(--color-primary)" }}>
-                    Guiding, Patents, & Proposal Metrics
+                    2.2 Ph.D Guiding Points
                   </Typography>
                   <Divider sx={{ mb: 2 }} />
 
@@ -464,7 +506,21 @@ const AppraisalSettings = () => {
                         onChange={(e) => updateResearchMetric("phdGuidingPoints", "awarded", e.target.value)}
                       />
                     </Grid>
+                  </Grid>
+                </CardContent>
+              </Card>
+            </Grid>
 
+            {/* 2.3 Books, Chapters & Conferences */}
+            <Grid item xs={12} md={6}>
+              <Card sx={{ borderRadius: "16px", background: "var(--bg-panel)", border: "1px solid var(--border-color)", height: "100%" }}>
+                <CardContent>
+                  <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 2, color: "var(--color-primary)" }}>
+                    2.3 Books, Chapters & Conferences
+                  </Typography>
+                  <Divider sx={{ mb: 2 }} />
+
+                  <Grid container spacing={2}>
                     <Grid item xs={6}>
                       <TextField
                         label="ISBN Book (2.3)"
@@ -505,7 +561,21 @@ const AppraisalSettings = () => {
                         onChange={(e) => updateResearchMetric("bookConferencePoints", "maxPoints", e.target.value)}
                       />
                     </Grid>
+                  </Grid>
+                </CardContent>
+              </Card>
+            </Grid>
 
+            {/* 2.4 Patents Points */}
+            <Grid item xs={12} md={6}>
+              <Card sx={{ borderRadius: "16px", background: "var(--bg-panel)", border: "1px solid var(--border-color)", height: "100%" }}>
+                <CardContent>
+                  <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 2, color: "var(--color-primary)" }}>
+                    2.4 Patents Points
+                  </Typography>
+                  <Divider sx={{ mb: 2 }} />
+
+                  <Grid container spacing={2}>
                     <Grid item xs={6}>
                       <TextField
                         label="Patents (Published)"
@@ -526,7 +596,21 @@ const AppraisalSettings = () => {
                         onChange={(e) => updateResearchMetric("patentPoints", "granted", e.target.value)}
                       />
                     </Grid>
+                  </Grid>
+                </CardContent>
+              </Card>
+            </Grid>
 
+            {/* 2.5 Novel Products / Technology */}
+            <Grid item xs={12} md={6}>
+              <Card sx={{ borderRadius: "16px", background: "var(--bg-panel)", border: "1px solid var(--border-color)", height: "100%" }}>
+                <CardContent>
+                  <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 2, color: "var(--color-primary)" }}>
+                    2.5 Novel Products / Technology
+                  </Typography>
+                  <Divider sx={{ mb: 2 }} />
+
+                  <Grid container spacing={2}>
                     <Grid item xs={6}>
                       <TextField
                         label="Novel Product (Developed)"
@@ -547,7 +631,21 @@ const AppraisalSettings = () => {
                         onChange={(e) => updateResearchMetric("novelProductPoints", "implemented", e.target.value)}
                       />
                     </Grid>
+                  </Grid>
+                </CardContent>
+              </Card>
+            </Grid>
 
+            {/* 2.6 Project Proposals / Consultancies Points */}
+            <Grid item xs={12} md={6}>
+              <Card sx={{ borderRadius: "16px", background: "var(--bg-panel)", border: "1px solid var(--border-color)", height: "100%" }}>
+                <CardContent>
+                  <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 2, color: "var(--color-primary)" }}>
+                    2.6 Project Proposals / Consultancies Points
+                  </Typography>
+                  <Divider sx={{ mb: 2 }} />
+
+                  <Grid container spacing={2}>
                     <Grid item xs={6}>
                       <TextField
                         label="Project Proposals (Shortlisted)"
@@ -568,21 +666,6 @@ const AppraisalSettings = () => {
                         onChange={(e) => updateResearchMetric("projectProposalPoints", "sanctionedPerLakh", e.target.value)}
                       />
                     </Grid>
-
-                    <Grid item xs={12}>
-                      <TextField
-                        label="Scopus Citation rate (Points per citation)"
-                        type="number"
-                        fullWidth
-                        size="small"
-                        value={config.research.citationRate}
-                        onChange={(e) => setConfig(prev => {
-                          const updated = { ...prev };
-                          updated.research.citationRate = Number(e.target.value);
-                          return updated;
-                        })}
-                      />
-                    </Grid>
                   </Grid>
                 </CardContent>
               </Card>
@@ -599,79 +682,116 @@ const AppraisalSettings = () => {
           <Grid container spacing={3}>
             {/* 3.1 Faculty Resource Utilization */}
             <Grid item xs={12} md={6}>
-              <Card sx={{ borderRadius: "16px", background: "var(--bg-panel)", border: "1px solid var(--border-color)" }}>
+              <Card sx={{ borderRadius: "16px", background: "var(--bg-panel)", border: "1px solid var(--border-color)", height: "100%" }}>
                 <CardContent>
-                  <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 2, color: "var(--color-primary)" }}>
-                    3.1 Resource Utilization Points
-                  </Typography>
+                  <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
+                    <Typography variant="subtitle1" sx={{ fontWeight: 700, color: "var(--color-primary)" }}>
+                      3.1 Resource Utilization Capped Points (Max: 10)
+                    </Typography>
+                  </Box>
                   <Divider sx={{ mb: 2 }} />
 
-                  <Grid container spacing={2}>
-                    <Grid item xs={6}>
-                      <TextField
-                        label="Organized Event (STTP/FDP/Conf)"
-                        type="number"
-                        fullWidth
-                        size="small"
-                        value={config.valueAddition?.resourceUtilization?.organized ?? ""}
-                        onChange={(e) => setConfig(prev => {
-                          const updated = { ...prev };
-                          if (!updated.valueAddition) updated.valueAddition = { resourceUtilization: {} };
-                          if (!updated.valueAddition.resourceUtilization) updated.valueAddition.resourceUtilization = {};
-                          updated.valueAddition.resourceUtilization.organized = Number(e.target.value);
-                          return updated;
-                        })}
-                      />
-                    </Grid>
-                    <Grid item xs={6}>
-                      <TextField
-                        label="Guest Lecture Coordinator"
-                        type="number"
-                        fullWidth
-                        size="small"
-                        value={config.valueAddition?.resourceUtilization?.guestLectureCoordinator ?? ""}
-                        onChange={(e) => setConfig(prev => {
-                          const updated = { ...prev };
-                          if (!updated.valueAddition) updated.valueAddition = { resourceUtilization: {} };
-                          if (!updated.valueAddition.resourceUtilization) updated.valueAddition.resourceUtilization = {};
-                          updated.valueAddition.resourceUtilization.guestLectureCoordinator = Number(e.target.value);
-                          return updated;
-                        })}
-                      />
-                    </Grid>
-                    <Grid item xs={6}>
-                      <TextField
-                        label="Resource Person (per session)"
-                        type="number"
-                        fullWidth
-                        size="small"
-                        value={config.valueAddition?.resourceUtilization?.resourcePerson ?? ""}
-                        onChange={(e) => setConfig(prev => {
-                          const updated = { ...prev };
-                          if (!updated.valueAddition) updated.valueAddition = { resourceUtilization: {} };
-                          if (!updated.valueAddition.resourceUtilization) updated.valueAddition.resourceUtilization = {};
-                          updated.valueAddition.resourceUtilization.resourcePerson = Number(e.target.value);
-                          return updated;
-                        })}
-                      />
-                    </Grid>
-                    <Grid item xs={6}>
-                      <TextField
-                        label="Participated (per day)"
-                        type="number"
-                        fullWidth
-                        size="small"
-                        value={config.valueAddition?.resourceUtilization?.participated ?? ""}
-                        onChange={(e) => setConfig(prev => {
-                          const updated = { ...prev };
-                          if (!updated.valueAddition) updated.valueAddition = { resourceUtilization: {} };
-                          if (!updated.valueAddition.resourceUtilization) updated.valueAddition.resourceUtilization = {};
-                          updated.valueAddition.resourceUtilization.participated = Number(e.target.value);
-                          return updated;
-                        })}
-                      />
-                    </Grid>
-                  </Grid>
+                  <Typography variant="body2" sx={{ fontSize: "0.75rem", color: "var(--text-secondary)", mb: 2 }}>
+                    Configure the points for organizing events, acting as resource persons, or participating.
+                  </Typography>
+
+                  <Box sx={{ mb: 2, border: "1px solid var(--border-color)", borderRadius: "12px", p: 1, background: "var(--bg-accent-4)" }}>
+                    <Table size="small">
+                      <TableHead>
+                        <TableRow>
+                          <TableCell sx={{ fontWeight: 700, py: 1, fontSize: "0.75rem" }}>Event / Category</TableCell>
+                          <TableCell sx={{ fontWeight: 700, py: 1, fontSize: "0.75rem" }}>Role</TableCell>
+                          <TableCell sx={{ fontWeight: 700, py: 1, fontSize: "0.75rem", width: "100px" }} align="right">Points</TableCell>
+                        </TableRow>
+                      </TableHead>
+                      <TableBody>
+                        <TableRow>
+                          <TableCell sx={{ py: 1, fontSize: "0.75rem" }}>Conference</TableCell>
+                          <TableCell sx={{ py: 1, fontSize: "0.75rem" }}>Chair / Co-Chair / Finance / Publication / Registration</TableCell>
+                          <TableCell sx={{ py: 0.5 }} align="right">
+                            <TextField
+                              type="number"
+                              size="small"
+                              value={config.valueAddition?.resourceUtilizationPoints?.conference ?? 10}
+                              onChange={(e) => updateResourcePoint("conference", e.target.value)}
+                              inputProps={{ style: { textAlign: 'right', padding: '6px' } }}
+                              sx={{ width: "80px" }}
+                            />
+                          </TableCell>
+                        </TableRow>
+                        <TableRow>
+                          <TableCell sx={{ py: 1, fontSize: "0.75rem" }}>STTP / Refresher Course</TableCell>
+                          <TableCell sx={{ py: 1, fontSize: "0.75rem" }}>Convenor / Co-Convenor / Coordinator</TableCell>
+                          <TableCell sx={{ py: 0.5 }} align="right">
+                            <TextField
+                              type="number"
+                              size="small"
+                              value={config.valueAddition?.resourceUtilizationPoints?.sttp ?? 10}
+                              onChange={(e) => updateResourcePoint("sttp", e.target.value)}
+                              inputProps={{ style: { textAlign: 'right', padding: '6px' } }}
+                              sx={{ width: "80px" }}
+                            />
+                          </TableCell>
+                        </TableRow>
+                        <TableRow>
+                          <TableCell sx={{ py: 1, fontSize: "0.75rem" }}>FDP / Symposium</TableCell>
+                          <TableCell sx={{ py: 1, fontSize: "0.75rem" }}>Convenor / Co-Convenor / Coordinator</TableCell>
+                          <TableCell sx={{ py: 0.5 }} align="right">
+                            <TextField
+                              type="number"
+                              size="small"
+                              value={config.valueAddition?.resourceUtilizationPoints?.fdp ?? 10}
+                              onChange={(e) => updateResourcePoint("fdp", e.target.value)}
+                              inputProps={{ style: { textAlign: 'right', padding: '6px' } }}
+                              sx={{ width: "80px" }}
+                            />
+                          </TableCell>
+                        </TableRow>
+                        <TableRow>
+                          <TableCell sx={{ py: 1, fontSize: "0.75rem" }}>Guest Lecture / Workshop</TableCell>
+                          <TableCell sx={{ py: 1, fontSize: "0.75rem" }}>Coordinator</TableCell>
+                          <TableCell sx={{ py: 0.5 }} align="right">
+                            <TextField
+                              type="number"
+                              size="small"
+                              value={config.valueAddition?.resourceUtilizationPoints?.guestLecture ?? 2}
+                              onChange={(e) => updateResourcePoint("guestLecture", e.target.value)}
+                              inputProps={{ style: { textAlign: 'right', padding: '6px' } }}
+                              sx={{ width: "80px" }}
+                            />
+                          </TableCell>
+                        </TableRow>
+                        <TableRow>
+                          <TableCell sx={{ py: 1, fontSize: "0.75rem" }}>Resource Person</TableCell>
+                          <TableCell sx={{ py: 1, fontSize: "0.75rem" }}>Per session conducted</TableCell>
+                          <TableCell sx={{ py: 0.5 }} align="right">
+                            <TextField
+                              type="number"
+                              size="small"
+                              value={config.valueAddition?.resourceUtilizationPoints?.resourcePerson ?? 2}
+                              onChange={(e) => updateResourcePoint("resourcePerson", e.target.value)}
+                              inputProps={{ style: { textAlign: 'right', padding: '6px' } }}
+                              sx={{ width: "80px" }}
+                            />
+                          </TableCell>
+                        </TableRow>
+                        <TableRow>
+                          <TableCell sx={{ py: 1, fontSize: "0.75rem" }}>Participant</TableCell>
+                          <TableCell sx={{ py: 1, fontSize: "0.75rem" }}>Per day attended</TableCell>
+                          <TableCell sx={{ py: 0.5 }} align="right">
+                            <TextField
+                              type="number"
+                              size="small"
+                              value={config.valueAddition?.resourceUtilizationPoints?.participated ?? 1}
+                              onChange={(e) => updateResourcePoint("participated", e.target.value)}
+                              inputProps={{ style: { textAlign: 'right', padding: '6px' } }}
+                              sx={{ width: "80px" }}
+                            />
+                          </TableCell>
+                        </TableRow>
+                      </TableBody>
+                    </Table>
+                  </Box>
                 </CardContent>
               </Card>
             </Grid>
@@ -680,10 +800,60 @@ const AppraisalSettings = () => {
             <Grid item xs={12} md={6}>
               <Card sx={{ borderRadius: "16px", background: "var(--bg-panel)", border: "1px solid var(--border-color)", height: "100%" }}>
                 <CardContent>
-                  <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 2, color: "var(--color-primary)" }}>
-                    3.2 Expertise/Recognition Capped Points
-                  </Typography>
+                  <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
+                    <Typography variant="subtitle1" sx={{ fontWeight: 700, color: "var(--color-primary)" }}>
+                      3.2 Expertise/Recognition Capped Points (Max: 10)
+                    </Typography>
+                  </Box>
                   <Divider sx={{ mb: 2 }} />
+
+                  <Typography variant="body2" sx={{ fontSize: "0.75rem", color: "var(--text-secondary)", mb: 2 }}>
+                    Configure the points for individual expertise, recognition, and contributions.
+                  </Typography>
+
+                  <Box sx={{ mb: 2, maxHeight: "320px", overflowY: "auto", border: "1px solid var(--border-color)", borderRadius: "12px", p: 1, background: "var(--bg-accent-4)" }}>
+                    <Table size="small">
+                      <TableHead>
+                        <TableRow>
+                          <TableCell sx={{ fontWeight: 700, py: 1, fontSize: "0.75rem" }}>Activity</TableCell>
+                          <TableCell sx={{ fontWeight: 700, py: 1, fontSize: "0.75rem", width: "100px" }} align="right">Points</TableCell>
+                        </TableRow>
+                      </TableHead>
+                      <TableBody>
+                        {[
+                          { key: "memberBOS", name: "Member of BOG/GB/AC/BOS (Outside AUS only)", def: 5 },
+                          { key: "editorialBoardSCIE", name: "Editorial Board Member (SCIE / Q1 / Q2)", def: 5 },
+                          { key: "editorialBoardESCI", name: "Editorial Board Member (ESCI/Q3/Q4/Conf)", def: 3 },
+                          { key: "awardsGovt", name: "Awards (MHRD/AICTE/UGC/State Govt./Top 2%)", def: 5 },
+                          { key: "awardsOthers", name: "Awards (NGO / Trust / Others)", def: 3 },
+                          { key: "developedEContent", name: "Developed E-Content (Complete Course)", def: 10 },
+                          { key: "certificationNewAge", name: "Certification on New Age Tech (Min. 40 Hours)", def: 5 },
+                          { key: "hackathonShortlisted", name: "Student Shortlisted in Hackathon Finals", def: 5 },
+                          { key: "newspaperArticle", name: "Magazine/Newspaper Article Published", def: 3 },
+                          { key: "researchFacility", name: "Establishment/Maintenance of Research Facility", def: 3 },
+                          { key: "nptel12W", name: "NPTEL Course Completion (12 Weeks)", def: 10 },
+                          { key: "nptel8W", name: "NPTEL Course Completion (8 Weeks)", def: 8 },
+                          { key: "nptel4W", name: "NPTEL Course Completion (4 Weeks)", def: 5 },
+                          { key: "coursera", name: "Coursera Course Completion (Min. 40 Hours)", def: 5 },
+                          { key: "grantSanctioned", name: "FDP/Seminar Grant Sanctioned", def: 5 }
+                        ].map((row) => (
+                          <TableRow key={row.key}>
+                            <TableCell sx={{ py: 1, fontSize: "0.75rem" }}>{row.name}</TableCell>
+                            <TableCell sx={{ py: 0.5 }} align="right">
+                              <TextField
+                                type="number"
+                                size="small"
+                                value={config.valueAddition?.expertisePoints?.[row.key] ?? row.def}
+                                onChange={(e) => updateExpertisePoint(row.key, e.target.value)}
+                                inputProps={{ style: { textAlign: 'right', padding: '6px' } }}
+                                sx={{ width: "80px" }}
+                              />
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </Box>
 
                   <Grid container spacing={2}>
                     <Grid item xs={12}>
@@ -702,9 +872,6 @@ const AppraisalSettings = () => {
                       />
                     </Grid>
                   </Grid>
-                  <Alert severity="info" sx={{ mt: 3, borderRadius: "10px", fontSize: "0.8rem" }}>
-                    Capped maximum self-assessment points allowed under Faculty Expertise/Contribution section.
-                  </Alert>
                 </CardContent>
               </Card>
             </Grid>
@@ -714,17 +881,81 @@ const AppraisalSettings = () => {
         {/* Section 4: Administrative Responsibilities */}
         <Grid item xs={12}>
           <Typography variant="h6" sx={{ fontWeight: 700, mb: 2, display: "flex", alignItems: "center", gap: 1, color: "var(--text-primary)", mt: 2 }}>
-            4. Administrative Responsibilities Points
+            4. Administrative Responsibilities Capped Points (Max: 20)
           </Typography>
 
           <Grid container spacing={3}>
-            <Grid item xs={12} md={6}>
+            <Grid item xs={12}>
               <Card sx={{ borderRadius: "16px", background: "var(--bg-panel)", border: "1px solid var(--border-color)" }}>
                 <CardContent>
-                  <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 2, color: "var(--color-primary)" }}>
-                    Administrative Responsibilities Capped Points
-                  </Typography>
+                  <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
+                    <Typography variant="subtitle1" sx={{ fontWeight: 700, color: "var(--color-primary)" }}>
+                      Administrative Responsibilities Capped Points (Max: 20)
+                    </Typography>
+                  </Box>
                   <Divider sx={{ mb: 2 }} />
+
+                  <Typography variant="body2" sx={{ fontSize: "0.75rem", color: "var(--text-secondary)", mb: 2 }}>
+                    Configure the points for Central Level and Department Level administrative roles.
+                  </Typography>
+
+                  <Box sx={{ mb: 2, maxHeight: "360px", overflowY: "auto", border: "1px solid var(--border-color)", borderRadius: "12px", p: 1, background: "var(--bg-accent-4)" }}>
+                    <Table size="small">
+                      <TableHead>
+                        <TableRow>
+                          <TableCell sx={{ fontWeight: 700, py: 1, fontSize: "0.75rem" }}>Activity / Role</TableCell>
+                          <TableCell sx={{ fontWeight: 700, py: 1, fontSize: "0.75rem", width: "120px" }} align="right">Central Level</TableCell>
+                          <TableCell sx={{ fontWeight: 700, py: 1, fontSize: "0.75rem", width: "120px" }} align="right">Dept Level</TableCell>
+                        </TableRow>
+                      </TableHead>
+                      <TableBody>
+                        {[
+                          { name: "Dean / Associate Dean / CoE", centralKey: "deanCentral", deptKey: null, defCentral: 20, defDept: null },
+                          { name: "HoD / Dy. CoE / Controller (University Office)", centralKey: "hodCentral", deptKey: "hodDept", defCentral: 15, defDept: 15 },
+                          { name: "Dy. HoD / Department Exam Cell Incharge", centralKey: null, deptKey: "dyHodDept", defCentral: null, defDept: 10 },
+                          { name: "Time Table / Project Coordinator / Curriculum Coordinator", centralKey: null, deptKey: "timetableDept", defCentral: null, defDept: 10 },
+                          { name: "Placement / Internship / Alumni Coordinator", centralKey: "placementCentral", deptKey: "placementDept", defCentral: 10, defDept: 10 },
+                          { name: "Coursera / LinkedIn Learning Coordinator / ALA", centralKey: "courseraCentral", deptKey: "courseraDept", defCentral: 10, defDept: 5 },
+                          { name: "EDC / IIC / IQAC Coordinator", centralKey: "edcCentral", deptKey: "edcDept", defCentral: 10, defDept: 5 },
+                          { name: "Course Coordinator", centralKey: null, deptKey: "courseDept", defCentral: null, defDept: 5 },
+                          { name: "Website Coordinator", centralKey: "websiteCentral", deptKey: null, defCentral: 10, defDept: null },
+                          { name: "NSS / Professional Chapter Coordinator", centralKey: "nssCentral", deptKey: "nssDept", defCentral: 10, defDept: 5 },
+                          { name: "Training Program Coordinator (Smart Interviews/GPP/etc.)", centralKey: "trainingCentral", deptKey: "trainingDept", defCentral: 10, defDept: 5 },
+                          { name: "DRC / Research Coordinator", centralKey: null, deptKey: "drcDept", defCentral: null, defDept: 5 },
+                          { name: "Anti-Ragging Committee Coordinator", centralKey: "antiRaggingCentral", deptKey: "antiRaggingDept", defCentral: 5, defDept: 3 },
+                          { name: "Any Other Remarkable Activity Coordinator", centralKey: "otherCentral", deptKey: "otherDept", defCentral: 10, defDept: 5 }
+                        ].map((row, idx) => (
+                          <TableRow key={idx}>
+                            <TableCell sx={{ py: 1, fontSize: "0.75rem" }}>{row.name}</TableCell>
+                            <TableCell sx={{ py: 0.5 }} align="right">
+                              {row.centralKey ? (
+                                <TextField
+                                  type="number"
+                                  size="small"
+                                  value={config.administration?.rolePoints?.[row.centralKey] ?? row.defCentral}
+                                  onChange={(e) => updateAdminRolePoint(row.centralKey, e.target.value)}
+                                  inputProps={{ style: { textAlign: 'right', padding: '6px' } }}
+                                  sx={{ width: "90px" }}
+                                />
+                              ) : "-"}
+                            </TableCell>
+                            <TableCell sx={{ py: 0.5 }} align="right">
+                              {row.deptKey ? (
+                                <TextField
+                                  type="number"
+                                  size="small"
+                                  value={config.administration?.rolePoints?.[row.deptKey] ?? row.defDept}
+                                  onChange={(e) => updateAdminRolePoint(row.deptKey, e.target.value)}
+                                  inputProps={{ style: { textAlign: 'right', padding: '6px' } }}
+                                  sx={{ width: "90px" }}
+                                />
+                              ) : "-"}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </Box>
 
                   <Grid container spacing={2}>
                     <Grid item xs={12}>
@@ -743,9 +974,6 @@ const AppraisalSettings = () => {
                       />
                     </Grid>
                   </Grid>
-                  <Alert severity="info" sx={{ mt: 3, borderRadius: "10px", fontSize: "0.8rem" }}>
-                    Capped maximum points allowed for Dean, HoD, Coordinator, and Incharge duties.
-                  </Alert>
                 </CardContent>
               </Card>
             </Grid>
