@@ -13,7 +13,8 @@ import {
   ManageAccounts,
   Assignment,
   WorkspacePremium,
-  Description
+  Description,
+  LibraryBooks
 } from "@mui/icons-material";
 import PersonIcon from '@mui/icons-material/Person';
 import React from "react";
@@ -203,7 +204,7 @@ export const ROLE_ROUTES = {
         }
       ]
     },
-    { text: "Journals Database", path: "/research-dean/journals-database", icon: <Science /> }
+    { text: "Reference Journals", path: "/research-dean/reference-journals", icon: <LibraryBooks /> }
   ],
 
   "RESEARCH_COORDINATOR": [
@@ -227,6 +228,6 @@ export const ROLE_ROUTES = {
         }
       ]
     },
-    { text: "Journals Database", path: "/research-coordinator/journals-database", icon: <Science /> }
+    { text: "Reference Journals", path: "/research-coordinator/reference-journals", icon: <LibraryBooks /> }
   ],
 };

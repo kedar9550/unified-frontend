@@ -25,7 +25,6 @@ import {
 import PageHeader from "../../components/common/PageHeader";
 import SectionHeader from "../../components/common/SectionHeader";
 import API from "../../api/axios";
-import { useAuth } from "../../context/AuthContext";
 
 const ADMINISTRATIVE_ROLES_LIST = [
   { id: "dean", label: "Deans / Assoc Deans / CoE" },
@@ -45,8 +44,6 @@ const ADMINISTRATIVE_ROLES_LIST = [
 ];
 
 export default function FacultyAdministration() {
-  const { user } = useAuth();
-
   // ── States ────────────────────────────────────────────────────────
   const [academicYears, setAcademicYears] = useState([]);
   const [selectedYearLabel, setSelectedYearLabel] = useState("all");
@@ -91,6 +88,7 @@ export default function FacultyAdministration() {
       }
     };
     fetchYears();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // 2. Fetch User declarations
@@ -566,7 +564,7 @@ export default function FacultyAdministration() {
                           </Box>
                         </Box>
 
-                        {formData.isResponsible && !isPreExistingActive && (
+                        {formData.isResponsible && !isCardDisabled && (
                           <Box sx={{ mt: 3, pt: 2.5, borderTop: "1px dashed var(--border-color)" }}>
                             <FormControl component="fieldset" disabled={saving}>
                               <FormLabel
@@ -632,48 +630,24 @@ export default function FacultyAdministration() {
               </Grid>
 
               {/* Action Row */}
-              {true && (
-                <Box
-                  sx={{
-                    mt: 4,
-                    p: 3,
-                    background: "var(--bg-panel)",
-                    borderRadius: "20px",
-                    border: "1px solid var(--border-color)",
-                    display: "flex",
-                    justifyContent: "flex-end",
-                    gap: 2,
-                    boxShadow: "var(--shadow-premium)"
-                  }}
-                >
-                  {hasActiveRoles && (
-                    <Button
-                      variant="outlined"
-                      onClick={() => setIsAddingRole(false)}
-                      disabled={saving}
-                      sx={{
-                        borderRadius: "12px",
-                        px: 4,
-                        py: 1.5,
-                        textTransform: "none",
-                        fontWeight: 700,
-                        fontSize: "0.95rem",
-                        borderColor: "var(--border-color)",
-                        color: "var(--text-secondary)",
-                        "&:hover": {
-                          borderColor: "var(--text-primary)",
-                          color: "var(--text-primary)",
-                          background: "rgba(255, 255, 255, 0.05)"
-                        }
-                      }}
-                    >
-                      Cancel
-                    </Button>
-                  )}
+              <Box
+                sx={{
+                  mt: 4,
+                  p: 3,
+                  background: "var(--bg-panel)",
+                  borderRadius: "20px",
+                  border: "1px solid var(--border-color)",
+                  display: "flex",
+                  justifyContent: "flex-end",
+                  gap: 2,
+                  boxShadow: "var(--shadow-premium)"
+                }}
+              >
+                {hasActiveRoles && (
                   <Button
-                    type="submit"
+                    variant="outlined"
+                    onClick={() => setIsAddingRole(false)}
                     disabled={saving}
-                    startIcon={saving ? <CircularProgress size={18} sx={{ color: "#fff" }} /> : <Save />}
                     sx={{
                       borderRadius: "12px",
                       px: 4,
@@ -681,18 +655,40 @@ export default function FacultyAdministration() {
                       textTransform: "none",
                       fontWeight: 700,
                       fontSize: "0.95rem",
-                      background: "linear-gradient(135deg, var(--color-primary) 0%, #2563eb 100%)",
-                      boxShadow: "0 4px 15px rgba(59, 130, 246, 0.2)",
-                      color: "#fff",
+                      borderColor: "var(--border-color)",
+                      color: "var(--text-secondary)",
                       "&:hover": {
-                        opacity: 0.95
+                        borderColor: "var(--text-primary)",
+                        color: "var(--text-primary)",
+                        background: "rgba(255, 255, 255, 0.05)"
                       }
                     }}
                   >
-                    {saving ? "Saving Changes..." : "Submit to HOD for Approval"}
+                    Cancel
                   </Button>
-                </Box>
-              )}
+                )}
+                <Button
+                  type="submit"
+                  disabled={saving}
+                  startIcon={saving ? <CircularProgress size={18} sx={{ color: "#fff" }} /> : <Save />}
+                  sx={{
+                    borderRadius: "12px",
+                    px: 4,
+                    py: 1.5,
+                    textTransform: "none",
+                    fontWeight: 700,
+                    fontSize: "0.95rem",
+                    background: "linear-gradient(135deg, var(--color-primary) 0%, #2563eb 100%)",
+                    boxShadow: "0 4px 15px rgba(59, 130, 246, 0.2)",
+                    color: "#fff",
+                    "&:hover": {
+                      opacity: 0.95
+                    }
+                  }}
+                >
+                  {saving ? "Saving Changes..." : "Submit to HOD for Approval"}
+                </Button>
+              </Box>
             </form>
           )}
         </Box>
