@@ -202,7 +202,8 @@ export const ROLE_ROUTES = {
           path: "/research-dean/reports"
         }
       ]
-    }
+    },
+    { text: "Journals Database", path: "/research-dean/journals-database", icon: <Science /> }
   ],
 
   "RESEARCH_COORDINATOR": [
@@ -225,6 +226,7 @@ export const ROLE_ROUTES = {
           path: "/research-coordinator/reports"
         }
       ]
-    }
+    },
+    { text: "Journals Database", path: "/research-coordinator/journals-database", icon: <Science /> }
   ],
 };
