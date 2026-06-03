@@ -1,5 +1,5 @@
 import Loader from "../../components/common/Loader";
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Box,
   Typography,
@@ -35,47 +35,65 @@ import {
   Cell,
 } from 'recharts';
 import { useNavigate } from 'react-router-dom';
-
-// Dummy data for visualization
-const trendData = [
-  { name: 'Jun', publications: 10 },
-  { name: 'Jul', publications: 12 },
-  { name: 'Aug', publications: 18 },
-  { name: 'Sep', publications: 11 },
-  { name: 'Oct', publications: 14 },
-  { name: 'Nov', publications: 17 },
-  { name: 'Dec', publications: 12 },
-  { name: 'Jan', publications: 15 },
-  { name: 'Feb', publications: 19 },
-  { name: 'Mar', publications: 16 },
-  { name: 'Apr', publications: 22 },
-  { name: 'May', publications: 18 },
-];
-
-const pieData = [
-  { name: 'Journal Articles', value: 58, color: '#3b82f6' },
-  { name: 'Conference Papers', value: 32, color: '#10b981' },
-  { name: 'Book Chapters', value: 19, color: '#f59e0b' },
-  { name: 'Books', value: 13, color: '#8b5cf6' },
-  { name: 'Others', value: 6, color: '#ec4899' },
-];
-
-const departments = [
-  { name: 'Computer Science & Engineering', value: 34, color: '#3b82f6' },
-  { name: 'Electronics & Communication', value: 28, color: '#6366f1' },
-  { name: 'Mechanical Engineering', value: 21, color: '#8b5cf6' },
-  { name: 'Electrical & Electronics Engineering', value: 18, color: '#ec4899' },
-  { name: 'Biotechnology', value: 12, color: '#f59e0b' },
-];
-
-const announcements = [
-  { date: '20 May 2024', title: 'R&D Seed Grant 2024', desc: 'Apply for the R&D Seed Grant 2024 by 15th June 2024.' },
-  { date: '15 May 2024', title: 'Research Excellence Award', desc: 'Nominations open for Research Excellence Award 2024.' },
-  { date: '10 May 2024', title: 'Workshop on Research Ethics', desc: 'Join the workshop on 25th May 2024.' },
-];
+import API from "../../api/axios";
 
 const RnDDeanDashboard = () => {
   const navigate = useNavigate();
+  const [loading, setLoading] = useState(true);
+  const [data, setData] = useState(null);
+
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      try {
+        const res = await API.get('/api/dashboard/research-dean');
+        if (res.data?.status === 'success') {
+          setData(res.data.data);
+        }
+      } catch (err) {
+        console.error("Error fetching Research Dean dashboard data:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchDashboardData();
+  }, []);
+
+  if (loading) {
+    return (
+      <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", height: "60vh" }}>
+        <Loader />
+      </Box>
+    );
+  }
+
+  const dashboard = data || {
+    totalPublications: 0,
+    approved: 0,
+    pendingHod: 0,
+    pendingRnd: 0,
+    rejected: 0,
+    trendData: [],
+    pieData: [],
+    departments: [],
+    researchImpact: [],
+    announcements: []
+  };
+
+  const trendData = dashboard.trendData && dashboard.trendData.length > 0 ? dashboard.trendData : [];
+  const pieData = dashboard.pieData && dashboard.pieData.length > 0 ? dashboard.pieData : [];
+  const departments = dashboard.departments && dashboard.departments.length > 0 ? dashboard.departments : [];
+  const announcements = dashboard.announcements && dashboard.announcements.length > 0 ? dashboard.announcements : [];
+  const researchImpact = dashboard.researchImpact && dashboard.researchImpact.length > 0 ? dashboard.researchImpact : [];
+
+  const maxDeptValue = departments.length > 0 ? Math.max(...departments.map(d => d.value), 1) : 1;
+
+  const summaryCards = [
+    { title: 'Total Publications', value: dashboard.totalPublications, subtitle: 'Total Submissions', icon: <Description />, color: '#3b82f6', bg: 'rgba(59, 130, 246, 0.1)', path: '/research-dean/approvals' },
+    { title: 'Approved', value: dashboard.approved, subtitle: 'This Academic Year', icon: <CheckCircle />, color: '#10b981', bg: 'rgba(16, 185, 129, 0.1)', path: '/research-dean/approvals' },
+    { title: 'Pending in HoD', value: dashboard.pendingHod, subtitle: 'Awaiting HoD Approval', icon: <PendingActions />, color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.1)', path: '/research-dean/approvals' },
+    { title: 'Pending in R&D', value: dashboard.pendingRnd, subtitle: 'Awaiting R&D Approval', icon: <AssignmentReturn />, color: '#8b5cf6', bg: 'rgba(139, 92, 246, 0.1)', path: '/research-dean/approvals' },
+    { title: 'Rejected', value: dashboard.rejected, subtitle: 'This Academic Year', icon: <Cancel />, color: '#ef4444', bg: 'rgba(239, 68, 68, 0.1)', path: '/research-dean/approvals' },
+  ];
 
   return (
     <Box sx={{ pb: 4 }}>
@@ -91,22 +109,16 @@ const RnDDeanDashboard = () => {
         </Box>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
            <Chip 
-            label="23 May 2024" 
+            label="Live Data" 
             variant="outlined" 
-            sx={{ borderRadius: '10px', border: '1px solid var(--border-color)', fontWeight: 600, background: 'var(--bg-panel)' }} 
+            sx={{ borderRadius: '10px', border: '1px solid var(--border-color)', fontWeight: 600, background: 'var(--bg-panel)', color: 'var(--color-primary)' }} 
           />
         </Box>
       </Box>
 
       {/* Summary Cards */}
       <Box sx={{ display: "flex", gap: 2, mb: 5, flexWrap: "wrap" }}>
-        {[
-          { title: 'Total Publications', value: 128, subtitle: 'This Academic Year', icon: <Description />, color: '#3b82f6', bg: 'rgba(59, 130, 246, 0.1)', path: '/research-dean/approvals' },
-          { title: 'Approved', value: 94, subtitle: 'This Academic Year', icon: <CheckCircle />, color: '#10b981', bg: 'rgba(16, 185, 129, 0.1)', path: '/research-dean/approvals' },
-          { title: 'Pending in HoD', value: 24, subtitle: 'Awaiting HoD Approval', icon: <PendingActions />, color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.1)', path: '/research-dean/approvals' },
-          { title: 'Returned by HoD', value: 10, subtitle: 'Needs Faculty Update', icon: <AssignmentReturn />, color: '#8b5cf6', bg: 'rgba(139, 92, 246, 0.1)', path: '/research-dean/approvals' },
-          { title: 'Rejected', value: 0, subtitle: 'This Academic Year', icon: <Cancel />, color: '#ef4444', bg: 'rgba(239, 68, 68, 0.1)', path: '/research-dean/approvals' },
-        ].map((card, index) => (
+        {summaryCards.map((card, index) => (
           <Box key={index} sx={{ flex: { xs: "1 1 100%", sm: "1 1 calc(50% - 16px)", lg: 1 }, minWidth: 0 }}>
             <Card sx={{
               p: 2.5,
@@ -216,119 +228,140 @@ const RnDDeanDashboard = () => {
         <Card sx={{ p: 3, borderRadius: '24px', background: 'var(--bg-panel)', border: '1px solid var(--border-color)', height: '100%' }}>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
             <Typography variant="h6" sx={{ fontWeight: 700 }}>Publications Trend</Typography>
-            <Chip label="This Academic Year" size="small" sx={{ borderRadius: '8px', background: 'var(--bg-accent-4)', fontWeight: 600 }} />
+            <Chip label="Last 12 Months" size="small" sx={{ borderRadius: '8px', background: 'var(--bg-accent-4)', fontWeight: 600 }} />
           </Box>
           <Box sx={{ height: 320, width: '100%', minWidth: 0, position: 'relative' }}>
-            <ResponsiveContainer width="100%" height={320}>
-              <LineChart data={trendData}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(148, 163, 184, 0.1)" />
-                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: 'var(--text-secondary)', fontSize: 12 }} />
-                <YAxis axisLine={false} tickLine={false} tick={{ fill: 'var(--text-secondary)', fontSize: 12 }} />
-                <RechartsTooltip 
-                  contentStyle={{ borderRadius: '16px', background: 'var(--bg-panel)', border: '1px solid var(--border-color)', boxShadow: 'var(--shadow-premium)' }}
-                />
-                <Line type="monotone" dataKey="publications" stroke="#3b82f6" strokeWidth={4} dot={{ r: 4, fill: '#3b82f6', strokeWidth: 2, stroke: '#fff' }} activeDot={{ r: 6, strokeWidth: 0 }} />
-              </LineChart>
-            </ResponsiveContainer>
+            {trendData.length > 0 ? (
+              <ResponsiveContainer width="100%" height={320}>
+                <LineChart data={trendData}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(148, 163, 184, 0.1)" />
+                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: 'var(--text-secondary)', fontSize: 12 }} />
+                  <YAxis axisLine={false} tickLine={false} tick={{ fill: 'var(--text-secondary)', fontSize: 12 }} />
+                  <RechartsTooltip 
+                    contentStyle={{ borderRadius: '16px', background: 'var(--bg-panel)', border: '1px solid var(--border-color)', boxShadow: 'var(--shadow-premium)' }}
+                  />
+                  <Line type="monotone" dataKey="publications" stroke="#3b82f6" strokeWidth={4} dot={{ r: 4, fill: '#3b82f6', strokeWidth: 2, stroke: '#fff' }} activeDot={{ r: 6, strokeWidth: 0 }} />
+                </LineChart>
+              </ResponsiveContainer>
+            ) : (
+              <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100%", color: "var(--text-secondary)" }}>
+                No trend data available.
+              </Box>
+            )}
           </Box>
         </Card>
 
         <Card sx={{ p: 3, borderRadius: '24px', background: 'var(--bg-panel)', border: '1px solid var(--border-color)', height: '100%' }}>
           <Typography variant="h6" sx={{ fontWeight: 700, mb: 3 }}>Publications by Type</Typography>
-          <Box sx={{ 
-            display: 'flex', 
-            flexDirection: { xs: 'column', sm: 'row' }, 
-            alignItems: 'center', 
-            gap: { xs: 4, sm: 3 }, 
-            minHeight: 320 
-          }}>
-            {/* Chart */}
+          {pieData.some(d => d.value > 0) ? (
             <Box sx={{ 
-              flex: 1.2, 
-              width: '100%', 
-              minWidth: 0,
-              height: 240, 
-              position: 'relative' 
+              display: 'flex', 
+              flexDirection: { xs: 'column', sm: 'row' }, 
+              alignItems: 'center', 
+              gap: { xs: 4, sm: 3 }, 
+              minHeight: 320 
             }}>
-               <ResponsiveContainer width="100%" height={240}>
-                <PieChart>
-                  <Pie
-                    data={pieData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={70}
-                    outerRadius={90}
-                    paddingAngle={8}
-                    dataKey="value"
-                  >
-                    {pieData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} cornerRadius={4} />
-                    ))}
-                  </Pie>
-                  <RechartsTooltip />
-                </PieChart>
-              </ResponsiveContainer>
-              <Box sx={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', textAlign: 'center' }}>
-                <Typography variant="h4" sx={{ fontWeight: 800, color: 'var(--text-primary)' }}>128</Typography>
-                <Typography variant="caption" sx={{ color: 'var(--text-secondary)', fontWeight: 600 }}>Total</Typography>
+              {/* Chart */}
+              <Box sx={{ 
+                flex: 1.2, 
+                width: '100%', 
+                minWidth: 0,
+                height: 240, 
+                position: 'relative' 
+              }}>
+                 <ResponsiveContainer width="100%" height={240}>
+                  <PieChart>
+                    <Pie
+                      data={pieData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={70}
+                      outerRadius={90}
+                      paddingAngle={8}
+                      dataKey="value"
+                    >
+                      {pieData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} cornerRadius={4} />
+                      ))}
+                    </Pie>
+                    <RechartsTooltip />
+                  </PieChart>
+                </ResponsiveContainer>
+                <Box sx={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', textAlign: 'center' }}>
+                  <Typography variant="h4" sx={{ fontWeight: 800, color: 'var(--text-primary)' }}>{dashboard.approved}</Typography>
+                  <Typography variant="caption" sx={{ color: 'var(--text-secondary)', fontWeight: 600 }}>Approved</Typography>
+                </Box>
+              </Box>
+
+              {/* Details Box */}
+              <Box sx={{ 
+                flex: 1, 
+                width: '100%', 
+                display: 'flex', 
+                flexDirection: 'column', 
+                gap: 1.5,
+                px: { xs: 1, sm: 0 } 
+              }}>
+                {pieData.map((item, i) => (
+                  <Box key={i} sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                      <Box sx={{ width: 10, height: 10, borderRadius: '3px', backgroundColor: item.color, flexShrink: 0 }} />
+                      <Typography sx={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)' }}>{item.name}</Typography>
+                    </Box>
+                    <Typography sx={{ fontSize: '0.8rem', fontWeight: 700, flexShrink: 0 }}>
+                      {item.value} <Box component="span" sx={{ color: 'var(--text-secondary)', fontWeight: 500, fontSize: '0.75rem' }}>({dashboard.approved > 0 ? Math.round(item.value/dashboard.approved*100) : 0}%)</Box>
+                    </Typography>
+                  </Box>
+                ))}
               </Box>
             </Box>
-
-            {/* Details Box */}
-            <Box sx={{ 
-              flex: 1, 
-              width: '100%', 
-              display: 'flex', 
-              flexDirection: 'column', 
-              gap: 1.5,
-              px: { xs: 1, sm: 0 } 
-            }}>
-              {pieData.map((item, i) => (
-                <Box key={i} sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                    <Box sx={{ width: 10, height: 10, borderRadius: '3px', backgroundColor: item.color, flexShrink: 0 }} />
-                    <Typography sx={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)' }}>{item.name}</Typography>
-                  </Box>
-                  <Typography sx={{ fontSize: '0.8rem', fontWeight: 700, flexShrink: 0 }}>
-                    {item.value} <Box component="span" sx={{ color: 'var(--text-secondary)', fontWeight: 500, fontSize: '0.75rem' }}>({Math.round(item.value/128*100)}%)</Box>
-                  </Typography>
-                </Box>
-              ))}
+          ) : (
+            <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", height: 320, color: "var(--text-secondary)" }}>
+              No approved publications recorded yet.
             </Box>
-          </Box>
+          )}
         </Card>
-      </Box>      {/* Bottom Row */}
+      </Box>
+
+      {/* Bottom Row */}
       <Box sx={{ display: "flex", gap: 4, flexWrap: "wrap", mb: 2 }}>
         {/* Top Departments */}
         <Box sx={{ flex: { xs: "1 1 100%", md: "1 1 calc(33.33% - 27px)" }, minWidth: 0 }}>
           <Card sx={{ p: 3, borderRadius: '24px', background: 'var(--bg-panel)', border: '1px solid var(--border-color)', height: '100%' }}>
             <Typography variant="h6" sx={{ fontWeight: 700, mb: 3 }}>Top Departments by Publications</Typography>
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3.2 }}>
-              {departments.map((dept, i) => (
-                <Box key={i}>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1.2 }}>
-                    <Typography sx={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-primary)' }}>{dept.name}</Typography>
-                    <Typography sx={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--text-primary)' }}>{dept.value}</Typography>
+            {departments.length > 0 ? (
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3.2 }}>
+                {departments.map((dept, i) => (
+                  <Box key={i}>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1.2 }}>
+                      <Typography sx={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-primary)' }}>{dept.name}</Typography>
+                      <Typography sx={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--text-primary)' }}>{dept.value}</Typography>
+                    </Box>
+                    <LinearProgress 
+                      variant="determinate" 
+                      value={(dept.value / maxDeptValue) * 100} 
+                      sx={{ 
+                        height: 8, 
+                        borderRadius: 4, 
+                        backgroundColor: 'var(--bg-accent-4)', 
+                        '& .MuiLinearProgress-bar': { backgroundColor: dept.color || 'var(--color-primary)', borderRadius: 4 } 
+                      }}
+                    />
                   </Box>
-                  <Loader 
-                    variant="determinate" 
-                    value={(dept.value/34)*100} 
-                    sx={{ 
-                      height: 8, 
-                      borderRadius: 4, 
-                      backgroundColor: 'var(--bg-accent-4)', 
-                      '& .MuiLinearProgress-bar': { backgroundColor: dept.color, borderRadius: 4 } 
-                    }}
-                  />
-                </Box>
-              ))}
-            </Box>
+                ))}
+              </Box>
+            ) : (
+              <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", height: 200, color: "var(--text-secondary)" }}>
+                No department data available.
+              </Box>
+            )}
             <Box sx={{ mt: 4, textAlign: 'center' }}>
               <Button 
                 endIcon={<ArrowForward />} 
+                onClick={() => navigate("/research-dean/reports")}
                 sx={{ textTransform: 'none', fontWeight: 700, color: 'var(--color-primary)' }}
               >
-                View All Departments
+                View R&D Reports
               </Button>
             </Box>
           </Card>
@@ -338,54 +371,57 @@ const RnDDeanDashboard = () => {
         <Box sx={{ flex: { xs: "1 1 100%", md: "1 1 calc(33.33% - 27px)" }, minWidth: 0 }}>
           <Card sx={{ p: 3, borderRadius: '24px', background: 'var(--bg-panel)', border: '1px solid var(--border-color)', height: '100%' }}>
              <Typography variant="h6" sx={{ fontWeight: 700, mb: 1 }}>Research Impact</Typography>
-             <Typography variant="caption" sx={{ color: 'var(--text-secondary)', display: 'block', mb: 3, fontWeight: 500 }}>(This Academic Year)</Typography>
-             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
-                {[
-                  { label: 'Citations', value: 256, trend: '+18%', icon: '“', color: '#3b82f6', bg: 'rgba(59, 130, 246, 0.1)' },
-                  { label: 'h-index', value: 18, trend: '+12%', icon: 'h.', color: '#10b981', bg: 'rgba(16, 185, 129, 0.1)' },
-                  { label: 'i10-index', value: 42, trend: '+20%', icon: 'i10', color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.1)' },
-                ].map((item, i) => (
-                  <Box key={i} sx={{ 
-                    p: 2.5, 
-                    borderRadius: '20px', 
-                    background: 'var(--bg-accent-4)', 
-                    border: '1px solid var(--border-color)', 
-                    display: 'flex', 
-                    justifyContent: 'space-between', 
-                    alignItems: 'center',
-                    transition: 'all 0.3s ease',
-                    '&:hover': { borderColor: item.color, background: 'var(--bg-panel)' }
-                  }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2.5 }}>
-                       <Box sx={{ 
-                         width: 44, 
-                         height: 44, 
-                         borderRadius: '12px', 
-                         backgroundColor: item.bg, 
-                         color: item.color, 
-                         display: 'flex', 
-                         alignItems: 'center', 
-                         justifyContent: 'center', 
-                         fontWeight: 800, 
-                         fontSize: '1.2rem' 
-                       }}>
-                        {item.icon}
-                       </Box>
-                       <Box>
-                         <Typography variant="h5" sx={{ fontWeight: 800, lineHeight: 1 }}>{item.value}</Typography>
-                         <Typography variant="caption" sx={{ color: 'var(--text-secondary)', fontWeight: 600 }}>{item.label}</Typography>
-                       </Box>
+             <Typography variant="caption" sx={{ color: 'var(--text-secondary)', display: 'block', mb: 3, fontWeight: 500 }}>(All Approved Journals)</Typography>
+             {researchImpact.length > 0 ? (
+               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
+                  {researchImpact.map((item, i) => (
+                    <Box key={i} sx={{ 
+                      p: 2.5, 
+                      borderRadius: '20px', 
+                      background: 'var(--bg-accent-4)', 
+                      border: '1px solid var(--border-color)', 
+                      display: 'flex', 
+                      justifyContent: 'space-between', 
+                      alignItems: 'center',
+                      transition: 'all 0.3s ease',
+                      '&:hover': { borderColor: item.color, background: 'var(--bg-panel)' }
+                    }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2.5 }}>
+                         <Box sx={{ 
+                           width: 44, 
+                           height: 44, 
+                           borderRadius: '12px', 
+                           backgroundColor: item.bg, 
+                           color: item.color, 
+                           display: 'flex', 
+                           alignItems: 'center', 
+                           justifyContent: 'center', 
+                           fontWeight: 800, 
+                           fontSize: '1.2rem' 
+                         }}>
+                          {item.icon}
+                         </Box>
+                         <Box>
+                           <Typography variant="h5" sx={{ fontWeight: 800, lineHeight: 1 }}>{item.value}</Typography>
+                           <Typography variant="caption" sx={{ color: 'var(--text-secondary)', fontWeight: 600 }}>{item.label}</Typography>
+                         </Box>
+                      </Box>
+                      <Box sx={{ textAlign: 'right' }}>
+                         <Typography sx={{ color: '#10b981', fontWeight: 800, fontSize: '0.85rem' }}>↑ {item.trend}</Typography>
+                         <Typography sx={{ fontSize: '0.65rem', color: 'var(--text-secondary)', fontWeight: 500 }}>vs last year</Typography>
+                      </Box>
                     </Box>
-                    <Box sx={{ textAlign: 'right' }}>
-                       <Typography sx={{ color: '#10b981', fontWeight: 800, fontSize: '0.85rem' }}>↑ {item.trend}</Typography>
-                       <Typography sx={{ fontSize: '0.65rem', color: 'var(--text-secondary)', fontWeight: 500 }}>vs last year</Typography>
-                    </Box>
-                  </Box>
-                ))}
-             </Box>
+                  ))}
+               </Box>
+             ) : (
+               <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", height: 200, color: "var(--text-secondary)" }}>
+                 No impact analytics available.
+               </Box>
+             )}
              <Box sx={{ mt: 4, textAlign: 'center' }}>
                 <Button 
                   endIcon={<ArrowForward />} 
+                  onClick={() => navigate("/research-dean/reports")}
                   sx={{ textTransform: 'none', fontWeight: 700, color: 'var(--color-primary)' }}
                 >
                   View Research Analytics
@@ -401,28 +437,34 @@ const RnDDeanDashboard = () => {
               <Campaign sx={{ color: 'var(--color-primary)' }} />
               <Typography variant="h6" sx={{ fontWeight: 700 }}>Recent Announcements</Typography>
             </Box>
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3.5 }}>
-              {announcements.map((item, i) => (
-                <Box key={i} sx={{ display: 'flex', gap: 2.5 }}>
-                  <Box sx={{ 
-                    textAlign: 'center', 
-                    minWidth: 64, 
-                    p: 1.5, 
-                    borderRadius: '16px', 
-                    background: 'var(--bg-accent-4)',
-                    height: 'fit-content',
-                    border: '1px solid var(--border-color)'
-                  }}>
-                    <Typography sx={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--color-primary)', lineHeight: 1 }}>{item.date.split(' ')[0]}</Typography>
-                    <Typography sx={{ fontSize: '0.65rem', color: 'var(--text-secondary)', fontWeight: 700, textTransform: 'uppercase', mt: 0.5 }}>{item.date.split(' ').slice(1).join(' ')}</Typography>
+            {announcements.length > 0 ? (
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3.5 }}>
+                {announcements.map((item, i) => (
+                  <Box key={i} sx={{ display: 'flex', gap: 2.5 }}>
+                    <Box sx={{ 
+                      textAlign: 'center', 
+                      minWidth: 64, 
+                      p: 1.5, 
+                      borderRadius: '16px', 
+                      background: 'var(--bg-accent-4)',
+                      height: 'fit-content',
+                      border: '1px solid var(--border-color)'
+                    }}>
+                      <Typography sx={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--color-primary)', lineHeight: 1 }}>{item.date.split(' ')[0]}</Typography>
+                      <Typography sx={{ fontSize: '0.65rem', color: 'var(--text-secondary)', fontWeight: 700, textTransform: 'uppercase', mt: 0.5 }}>{item.date.split(' ').slice(1).join(' ')}</Typography>
+                    </Box>
+                    <Box>
+                      <Typography sx={{ fontSize: '0.95rem', fontWeight: 700, mb: 0.8, color: 'var(--text-primary)' }}>{item.title}</Typography>
+                      <Typography sx={{ fontSize: '0.8rem', color: 'var(--text-secondary)', lineHeight: 1.5, fontWeight: 500 }}>{item.desc}</Typography>
+                    </Box>
                   </Box>
-                  <Box>
-                    <Typography sx={{ fontSize: '0.95rem', fontWeight: 700, mb: 0.8, color: 'var(--text-primary)' }}>{item.title}</Typography>
-                    <Typography sx={{ fontSize: '0.8rem', color: 'var(--text-secondary)', lineHeight: 1.5, fontWeight: 500 }}>{item.desc}</Typography>
-                  </Box>
-                </Box>
-              ))}
-            </Box>
+                ))}
+              </Box>
+            ) : (
+              <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", height: 200, color: "var(--text-secondary)" }}>
+                No recent announcements.
+              </Box>
+            )}
             <Box sx={{ mt: 'auto', pt: 4, textAlign: 'center' }}>
               <Button 
                 endIcon={<ArrowForward />} 
@@ -434,6 +476,7 @@ const RnDDeanDashboard = () => {
           </Card>
         </Box>
       </Box>
+
       {/* Quick Actions */}
       <Box sx={{ mt: 6 }}>
         <Card sx={{
@@ -451,7 +494,7 @@ const RnDDeanDashboard = () => {
           <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2.5 }}>
             <Button
               variant="contained"
-              onClick={() => window.location.href = "/research-dean/approvals"}
+              onClick={() => navigate("/research-dean/approvals")}
               sx={{
                 flex: 1,
                 minWidth: "220px",
@@ -472,6 +515,7 @@ const RnDDeanDashboard = () => {
             </Button>
             <Button
               variant="contained"
+              onClick={() => navigate("/research-dean/reports")}
               sx={{
                 flex: 1,
                 minWidth: "220px",
@@ -492,6 +536,7 @@ const RnDDeanDashboard = () => {
             </Button>
             <Button
               variant="contained"
+              onClick={() => navigate("/research-dean/reports")}
               sx={{
                 flex: 1,
                 minWidth: "220px",
