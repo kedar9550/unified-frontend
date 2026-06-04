@@ -56,6 +56,7 @@ import {
 } from "@mui/icons-material";
 import axiosInstance from "../../api/axios";
 import { toast } from "sonner";
+import { SubLabel, Grid2, labelStyle, NoteBox, FileField } from "../../components/faculty/PublicationFormFields";
 
 const ADMINISTRATIVE_ROLES_LIST = [
   { id: "dean", label: "Deans / Assoc Deans / CoE" },
@@ -162,6 +163,7 @@ const SelfAppraisal = () => {
   const [appraisal, setAppraisal] = useState(null);
   const [profileComplete, setProfileComplete] = useState(true);
   const [missingFields, setMissingFields] = useState([]);
+  const [appraisalConfig, setAppraisalConfig] = useState(null);
 
   // Claim research publication modal states
   const [claimModalOpen, setClaimModalOpen] = useState(false);
@@ -254,6 +256,16 @@ const SelfAppraisal = () => {
     if (!selectedYear) return;
     setLoading(true);
     try {
+      // Fetch Appraisal Config Settings
+      try {
+        const configRes = await axiosInstance.get(`/api/appraisal/config/${selectedYear}`);
+        if (configRes.data && configRes.data.success) {
+          setAppraisalConfig(configRes.data.data);
+        }
+      } catch (configErr) {
+        console.error("Failed to load appraisal config:", configErr);
+      }
+
       const res = await axiosInstance.get(`/api/appraisal/initiate/${selectedYear}`);
       if (res.data && res.data.success) {
         setAppraisal(res.data.data);
@@ -900,6 +912,150 @@ const SelfAppraisal = () => {
     if (status === 'Rejected') return { bg: "rgba(239, 68, 68, 0.1)", color: "#ef4444" };
     if (status === 'Pending at HOD' || status === 'Pending') return { bg: "rgba(232, 160, 0, 0.1)", color: "#e8a000" };
     return { bg: "rgba(100, 116, 139, 0.1)", color: "#64748b" }; // Draft
+  };
+
+  const calculateResourceUtilizationPoints = (r, config) => {
+    const resourceUtConf = config?.valueAddition?.resourceUtilizationPoints || {
+        conference: 10,
+        sttp: 10,
+        fdp: 10,
+        guestLecture: 2,
+        resourcePerson: 2,
+        participated: 1
+    };
+    let pts = 0;
+    const activityRole = (r.activityType || '').toLowerCase();
+    const activityCat = (r.activityCategory || '').toLowerCase();
+    
+    if (activityRole.includes('resource person') || activityRole.includes('resourceperson')) {
+        pts = (parseInt(r.sessionsConducted) || 1) * (resourceUtConf.resourcePerson ?? 2);
+    } else if (activityRole.includes('participant') || activityRole.includes('participated')) {
+        pts = (parseInt(r.daysParticipated) || 1) * (resourceUtConf.participated ?? 1);
+    } else if (activityRole.includes('guest lecture') || activityRole.includes('workshop') || activityRole.includes('event')) {
+        pts = resourceUtConf.guestLecture ?? 2;
+    } else {
+        // Organized STTP/FDP/Conference
+        if (activityCat.includes('conference')) {
+            pts = resourceUtConf.conference ?? 10;
+        } else if (activityCat.includes('sttp') || activityCat.includes('refresher')) {
+            pts = resourceUtConf.sttp ?? 10;
+        } else if (activityCat.includes('fdp') || activityCat.includes('symposium')) {
+            pts = resourceUtConf.fdp ?? 10;
+        } else {
+            pts = resourceUtConf.conference ?? 10; // fallback
+        }
+    }
+    return pts;
+  };
+
+  const calculateContributionPoints = (item, config) => {
+    const expPointsConf = config?.valueAddition?.expertisePoints || {
+        memberBOS: 5,
+        editorialBoardSCIE: 5,
+        editorialBoardESCI: 3,
+        awardsGovt: 5,
+        awardsOthers: 3,
+        developedEContent: 10,
+        certificationNewAge: 5,
+        hackathonShortlisted: 5,
+        newspaperArticle: 3,
+        researchFacility: 3,
+        nptel12W: 10,
+        nptel8W: 8,
+        nptel4W: 5,
+        coursera: 5,
+        grantSanctioned: 5
+    };
+    
+    const cat = parseInt(item.category);
+    switch (cat) {
+        case 1: return expPointsConf.memberBOS ?? 5;
+        case 2: return expPointsConf.editorialBoardSCIE ?? 5;
+        case 3: return expPointsConf.editorialBoardESCI ?? 3;
+        case 4: return expPointsConf.awardsGovt ?? 5;
+        case 5: return expPointsConf.awardsOthers ?? 3;
+        case 6: return expPointsConf.developedEContent ?? 10;
+        case 7: return expPointsConf.certificationNewAge ?? 5;
+        case 8: return expPointsConf.hackathonShortlisted ?? 5;
+        case 9: return expPointsConf.newspaperArticle ?? 3;
+        case 10: return expPointsConf.researchFacility ?? 3;
+        case 11:
+            const dur = (item.duration || '').toLowerCase();
+            if (dur.includes('12')) return expPointsConf.nptel12W ?? 10;
+            if (dur.includes('8')) return expPointsConf.nptel8W ?? 8;
+            if (dur.includes('4')) return expPointsConf.nptel4W ?? 5;
+            return expPointsConf.nptel8W ?? 8;
+        case 12: return expPointsConf.coursera ?? 5;
+        case 13: return expPointsConf.grantSanctioned ?? 5;
+        default: return 0;
+    }
+  };
+
+  const calculateAdministrativePoints = (r, config) => {
+    const adminConf = config?.administration?.rolePoints || {
+        deanCentral: 20,
+        hodCentral: 15,
+        hodDept: 15,
+        dyHodDept: 10,
+        timetableDept: 10,
+        placementCentral: 10,
+        placementDept: 10,
+        courseraCentral: 10,
+        courseraDept: 5,
+        edcCentral: 10,
+        edcDept: 5,
+        courseDept: 5,
+        websiteCentral: 10,
+        nssCentral: 10,
+        nssDept: 5,
+        trainingCentral: 10,
+        trainingDept: 5,
+        drcDept: 5,
+        antiRaggingCentral: 5,
+        antiRaggingDept: 3,
+        otherCentral: 10,
+        otherDept: 5
+    };
+
+    let pts = 5; // default fallback
+    const name = r.roleName.toLowerCase();
+    const level = (r.level || '').toLowerCase();
+    const isCentral = level.includes('central') || level.includes('institute');
+    
+    if (name.includes('dean') || name.includes('coe')) {
+        pts = adminConf.deanCentral ?? 20;
+    } else if (name.includes('hod')) {
+        if (name.includes('dy') || name.includes('vice')) {
+            pts = adminConf.dyHodDept ?? 10;
+        } else {
+            pts = isCentral ? (adminConf.hodCentral ?? 15) : (adminConf.hodDept ?? 15);
+        }
+    } else if (name.includes('exam cell') || name.includes('exam incharge')) {
+        pts = adminConf.dyHodDept ?? 10;
+    } else if (name.includes('timetable') || name.includes('time table') || name.includes('project') || name.includes('curriculum')) {
+        pts = adminConf.timetableDept ?? 10;
+    } else if (name.includes('placement') || name.includes('internship') || name.includes('alumni')) {
+        pts = isCentral ? (adminConf.placementCentral ?? 10) : (adminConf.placementDept ?? 10);
+    } else if (name.includes('coursera') || name.includes('linkedin') || name.includes('ala')) {
+        pts = isCentral ? (adminConf.courseraCentral ?? 10) : (adminConf.courseraDept ?? 5);
+    } else if (name.includes('edc') || name.includes('iic') || name.includes('iqac')) {
+        pts = isCentral ? (adminConf.edcCentral ?? 10) : (adminConf.edcDept ?? 5);
+    } else if (name.includes('course coordinator')) {
+        pts = adminConf.courseDept ?? 5;
+    } else if (name.includes('website')) {
+        pts = adminConf.websiteCentral ?? 10;
+    } else if (name.includes('nss') || name.includes('professional chapter')) {
+        pts = isCentral ? (adminConf.nssCentral ?? 10) : (adminConf.nssDept ?? 5);
+    } else if (name.includes('training')) {
+        pts = isCentral ? (adminConf.trainingCentral ?? 10) : (adminConf.trainingDept ?? 5);
+    } else if (name.includes('drc') || name.includes('research')) {
+        pts = adminConf.drcDept ?? 5;
+    } else if (name.includes('anti-ragging') || name.includes('antiragging')) {
+        pts = isCentral ? (adminConf.antiRaggingCentral ?? 5) : (adminConf.antiRaggingDept ?? 3);
+    } else {
+        pts = isCentral ? (adminConf.otherCentral ?? 10) : (adminConf.otherDept ?? 5);
+    }
+    return pts;
   };
 
   const getCategoryName = (catId) => {
@@ -1609,76 +1765,98 @@ const SelfAppraisal = () => {
                 )}
               </Box>
 
+
               <TableContainer component={Paper} sx={{ mb: 4, borderRadius: "12px", background: "var(--bg-paper)", border: "1px solid var(--border-color)" }}>
                 <Table size="small">
                   <TableHead>
                     <TableRow sx={{ background: "var(--bg-accent-4)" }}>
-                      <TableCell sx={{ fontWeight: 700 }}>Category</TableCell>
-                      <TableCell sx={{ fontWeight: 700 }}>Role / Type</TableCell>
-                      <TableCell sx={{ fontWeight: 700 }}>Organization / Event</TableCell>
-                      <TableCell sx={{ fontWeight: 700 }}>Duration</TableCell>
-                      <TableCell sx={{ fontWeight: 700 }}>Status</TableCell>
-                      <TableCell sx={{ fontWeight: 700 }} align="center">Actions</TableCell>
+                      <TableCell sx={{ fontWeight: 700, width: "60px" }}>S. No</TableCell>
+                      <TableCell sx={{ fontWeight: 700 }}>Details of the Event along with dates</TableCell>
+                      <TableCell sx={{ fontWeight: 700, width: "120px" }}>Duration</TableCell>
+                      <TableCell sx={{ fontWeight: 700, width: "180px" }}>Role</TableCell>
+                      <TableCell sx={{ fontWeight: 700, width: "130px" }}>Points claimed</TableCell>
+                      <TableCell sx={{ fontWeight: 700, width: "120px" }}>Status</TableCell>
+                      <TableCell sx={{ fontWeight: 700, width: "120px" }} align="center">Actions</TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
                     {resourceUtilizationDetails.length > 0 ? (
-                      resourceUtilizationDetails.map((activity, i) => {
-                        const statusStyle = getStatusColor(activity.status);
-                        const isEditable = activity.status === 'Draft' || activity.status === 'Rejected';
-                        return (
-                          <TableRow key={activity._id || i}>
-                            <TableCell sx={{ fontWeight: 500 }}>{activity.activityCategory}</TableCell>
-                            <TableCell>{activity.activityType}</TableCell>
-                            <TableCell>{activity.organizationName}</TableCell>
-                            <TableCell>{activity.duration} Days</TableCell>
-                            <TableCell>
-                              <Chip
-                                label={activity.status}
-                                size="small"
-                                sx={{
-                                  bgcolor: statusStyle.bg,
-                                  color: statusStyle.color,
-                                  fontWeight: 800,
-                                  borderRadius: "6px"
-                                }}
-                              />
-                            </TableCell>
-                            <TableCell align="center">
-                              <Stack direction="row" spacing={1} justifyContent="center">
-                                <IconButton
+                      <>
+                        {resourceUtilizationDetails.map((activity, i) => {
+                          const statusStyle = getStatusColor(activity.status);
+                          const isEditable = activity.status === 'Draft' || activity.status === 'Rejected';
+                          const fromDateFormatted = activity.fromDate ? new Date(activity.fromDate).toLocaleDateString("en-IN", { day: '2-digit', month: '2-digit', year: 'numeric' }) : "";
+                          const toDateFormatted = activity.toDate ? new Date(activity.toDate).toLocaleDateString("en-IN", { day: '2-digit', month: '2-digit', year: 'numeric' }) : "";
+                          
+                          return (
+                            <TableRow key={activity._id || i}>
+                              <TableCell>{i + 1}</TableCell>
+                              <TableCell sx={{ fontWeight: 500 }}>
+                                {activity.organizationName} {fromDateFormatted && toDateFormatted ? `(${fromDateFormatted} - ${toDateFormatted})` : ""}
+                              </TableCell>
+                              <TableCell>{activity.duration} Days</TableCell>
+                              <TableCell>{activity.activityType}</TableCell>
+                              <TableCell sx={{ fontWeight: 700, color: "var(--color-primary)" }}>
+                                {calculateResourceUtilizationPoints(activity, appraisalConfig)}
+                              </TableCell>
+                              <TableCell>
+                                <Chip
+                                  label={activity.status}
                                   size="small"
-                                  onClick={() => setSelectedResUtDetails(activity)}
-                                  sx={{ color: "var(--color-primary)" }}
-                                >
-                                  <Visibility fontSize="small" />
-                                </IconButton>
-                                {isEditable && (appraisal.status === "Draft" || appraisal.status === "Rejected by HOD") && (
-                                  <>
-                                    <IconButton
-                                      size="small"
-                                      color="info"
-                                      onClick={() => handleResUtOpenEdit(activity)}
-                                    >
-                                      <Edit fontSize="small" />
-                                    </IconButton>
-                                    <IconButton
-                                      size="small"
-                                      color="error"
-                                      onClick={() => handleResUtDelete(activity._id)}
-                                    >
-                                      <Delete fontSize="small" />
-                                    </IconButton>
-                                  </>
-                                )}
-                              </Stack>
-                            </TableCell>
-                          </TableRow>
-                        );
-                      })
+                                  sx={{
+                                    bgcolor: statusStyle.bg,
+                                    color: statusStyle.color,
+                                    fontWeight: 800,
+                                    borderRadius: "6px"
+                                  }}
+                                />
+                              </TableCell>
+                              <TableCell align="center">
+                                <Stack direction="row" spacing={1} justifyContent="center">
+                                  <IconButton
+                                    size="small"
+                                    onClick={() => setSelectedResUtDetails(activity)}
+                                    sx={{ color: "var(--color-primary)" }}
+                                  >
+                                    <Visibility fontSize="small" />
+                                  </IconButton>
+                                  {isEditable && (appraisal.status === "Draft" || appraisal.status === "Rejected by HOD") && (
+                                    <>
+                                      <IconButton
+                                        size="small"
+                                        color="info"
+                                        onClick={() => handleResUtOpenEdit(activity)}
+                                      >
+                                        <Edit fontSize="small" />
+                                      </IconButton>
+                                      <IconButton
+                                        size="small"
+                                        color="error"
+                                        onClick={() => handleResUtDelete(activity._id)}
+                                      >
+                                        <Delete fontSize="small" />
+                                      </IconButton>
+                                    </>
+                                  )}
+                                </Stack>
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
+                        {/* Footer row displaying dynamic sum */}
+                        <TableRow sx={{ background: "rgba(0,0,0,0.02)" }}>
+                          <TableCell colSpan={4} align="right" sx={{ fontWeight: 800, pr: 2 }}>
+                            Self-Assessment Points (Max:10)
+                          </TableCell>
+                          <TableCell sx={{ fontWeight: 800, color: "var(--color-primary)", fontSize: "0.95rem" }}>
+                            {Math.min(10, resourceUtilizationDetails.reduce((sum, r) => r.status !== 'Rejected' ? sum + calculateResourceUtilizationPoints(r, appraisalConfig) : sum, 0))}
+                          </TableCell>
+                          <TableCell colSpan={2}></TableCell>
+                        </TableRow>
+                      </>
                     ) : (
                       <TableRow>
-                        <TableCell colSpan={6} align="center" sx={{ color: "var(--text-secondary)", py: 2 }}>
+                        <TableCell colSpan={7} align="center" sx={{ color: "var(--text-secondary)", py: 2 }}>
                           No Resource Utilization records found for this academic year.
                         </TableCell>
                       </TableRow>
@@ -1705,73 +1883,92 @@ const SelfAppraisal = () => {
                 )}
               </Box>
 
+
               <TableContainer component={Paper} sx={{ borderRadius: "12px", background: "var(--bg-paper)", border: "1px solid var(--border-color)" }}>
                 <Table size="small">
                   <TableHead>
                     <TableRow sx={{ background: "var(--bg-accent-4)" }}>
-                      <TableCell sx={{ fontWeight: 700 }}>Category</TableCell>
-                      <TableCell sx={{ fontWeight: 700 }}>Description</TableCell>
-                      <TableCell sx={{ fontWeight: 700 }}>Status</TableCell>
-                      <TableCell sx={{ fontWeight: 700 }} align="center">Actions</TableCell>
+                      <TableCell sx={{ fontWeight: 700, width: "60px" }}>S. No</TableCell>
+                      <TableCell sx={{ fontWeight: 700 }}>Details of the Faculty Expertise/Recognition/Contribution</TableCell>
+                      <TableCell sx={{ fontWeight: 700, width: "130px" }}>Points claimed</TableCell>
+                      <TableCell sx={{ fontWeight: 700, width: "120px" }}>Status</TableCell>
+                      <TableCell sx={{ fontWeight: 700, width: "120px" }} align="center">Actions</TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
                     {contributionDetails.length > 0 ? (
-                      contributionDetails.map((item, i) => {
-                        const statusStyle = getStatusColor(item.status);
-                        const isEditable = item.status === 'Draft' || item.status === 'Rejected';
-                        const { value } = getContributionNameField(item.category, item);
-                        return (
-                          <TableRow key={item._id || i}>
-                            <TableCell sx={{ fontWeight: 500 }}>{getCategoryName(item.category)}</TableCell>
-                            <TableCell>{value || "N/A"}</TableCell>
-                            <TableCell>
-                              <Chip
-                                label={item.status}
-                                size="small"
-                                sx={{
-                                  bgcolor: statusStyle.bg,
-                                  color: statusStyle.color,
-                                  fontWeight: 800,
-                                  borderRadius: "6px"
-                                }}
-                              />
-                            </TableCell>
-                            <TableCell align="center">
-                              <Stack direction="row" spacing={1} justifyContent="center">
-                                <IconButton
+                      <>
+                        {contributionDetails.map((item, i) => {
+                          const statusStyle = getStatusColor(item.status);
+                          const isEditable = item.status === 'Draft' || item.status === 'Rejected';
+                          const { value } = getContributionNameField(item.category, item);
+                          return (
+                            <TableRow key={item._id || i}>
+                              <TableCell>{i + 1}</TableCell>
+                              <TableCell sx={{ fontWeight: 500 }}>
+                                {getCategoryName(item.category)} - {value || "N/A"}
+                              </TableCell>
+                              <TableCell sx={{ fontWeight: 700, color: "var(--color-primary)" }}>
+                                {calculateContributionPoints(item, appraisalConfig)}
+                              </TableCell>
+                              <TableCell>
+                                <Chip
+                                  label={item.status}
                                   size="small"
-                                  onClick={() => setSelectedContDetails(item)}
-                                  sx={{ color: "var(--color-primary)" }}
-                                >
-                                  <Visibility fontSize="small" />
-                                </IconButton>
-                                {isEditable && (appraisal.status === "Draft" || appraisal.status === "Rejected by HOD") && (
-                                  <>
-                                    <IconButton
-                                      size="small"
-                                      color="info"
-                                      onClick={() => handleContOpenEdit(item)}
-                                    >
-                                      <Edit fontSize="small" />
-                                    </IconButton>
-                                    <IconButton
-                                      size="small"
-                                      color="error"
-                                      onClick={() => handleContDelete(item._id)}
-                                    >
-                                      <Delete fontSize="small" />
-                                    </IconButton>
-                                  </>
-                                )}
-                              </Stack>
-                            </TableCell>
-                          </TableRow>
-                        );
-                      })
+                                  sx={{
+                                    bgcolor: statusStyle.bg,
+                                    color: statusStyle.color,
+                                    fontWeight: 800,
+                                    borderRadius: "6px"
+                                  }}
+                                />
+                              </TableCell>
+                              <TableCell align="center">
+                                <Stack direction="row" spacing={1} justifyContent="center">
+                                  <IconButton
+                                    size="small"
+                                    onClick={() => setSelectedContDetails(item)}
+                                    sx={{ color: "var(--color-primary)" }}
+                                  >
+                                    <Visibility fontSize="small" />
+                                  </IconButton>
+                                  {isEditable && (appraisal.status === "Draft" || appraisal.status === "Rejected by HOD") && (
+                                    <>
+                                      <IconButton
+                                        size="small"
+                                        color="info"
+                                        onClick={() => handleContOpenEdit(item)}
+                                      >
+                                        <Edit fontSize="small" />
+                                      </IconButton>
+                                      <IconButton
+                                        size="small"
+                                        color="error"
+                                        onClick={() => handleContDelete(item._id)}
+                                      >
+                                        <Delete fontSize="small" />
+                                      </IconButton>
+                                    </>
+                                  )}
+                                </Stack>
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
+                        {/* Footer row displaying dynamic sum */}
+                        <TableRow sx={{ background: "rgba(0,0,0,0.02)" }}>
+                          <TableCell colSpan={2} align="right" sx={{ fontWeight: 800, pr: 2 }}>
+                            Self-Assessment Points (Max:10)
+                          </TableCell>
+                          <TableCell sx={{ fontWeight: 800, color: "var(--color-primary)", fontSize: "0.95rem" }}>
+                            {Math.min(10, contributionDetails.reduce((sum, r) => r.status !== 'Rejected' ? sum + calculateContributionPoints(r, appraisalConfig) : sum, 0))}
+                          </TableCell>
+                          <TableCell colSpan={2}></TableCell>
+                        </TableRow>
+                      </>
                     ) : (
                       <TableRow>
-                        <TableCell colSpan={4} align="center" sx={{ color: "var(--text-secondary)", py: 2 }}>
+                        <TableCell colSpan={5} align="center" sx={{ color: "var(--text-secondary)", py: 2 }}>
                           No Expertise / Contribution records found for this academic year.
                         </TableCell>
                       </TableRow>
@@ -1805,45 +2002,72 @@ const SelfAppraisal = () => {
               </Box>
               <Divider sx={{ mb: 3 }} />
 
+
               {administrationDetail && (administrationDetail.status === "Approved" || administrationDetail.status === "Pending") ? (
                 <TableContainer component={Paper} sx={{ borderRadius: "12px", background: "var(--bg-paper)", border: "1px solid var(--border-color)" }}>
                   <Table size="small">
                     <TableHead>
                       <TableRow sx={{ background: "var(--bg-accent-4)" }}>
-                        <TableCell sx={{ fontWeight: 700 }}>Role / Responsibility</TableCell>
-                        <TableCell sx={{ fontWeight: 700 }}>Level</TableCell>
-                        <TableCell sx={{ fontWeight: 700 }}>Details / Activity</TableCell>
-                        <TableCell sx={{ fontWeight: 700 }}>Status</TableCell>
+                        <TableCell sx={{ fontWeight: 700, width: "60px" }}>S. No</TableCell>
+                        <TableCell sx={{ fontWeight: 700 }}>Details of the Administrative Responsibility</TableCell>
+                        <TableCell sx={{ fontWeight: 700, width: "150px" }}>Assigned by</TableCell>
+                        <TableCell sx={{ fontWeight: 700, width: "130px" }}>Points claimed</TableCell>
+                        <TableCell sx={{ fontWeight: 700, width: "120px" }}>Status</TableCell>
                         {administrationDetail.roles?.some(r => r.isResponsible && r.remarks) && (
-                          <TableCell sx={{ fontWeight: 700 }}>Remarks</TableCell>
+                          <TableCell sx={{ fontWeight: 700, width: "180px" }}>Remarks</TableCell>
                         )}
                       </TableRow>
                     </TableHead>
                     <TableBody>
-                      {administrationDetail.roles?.filter(r => r.isResponsible).map((role, i) => (
-                        <TableRow key={i}>
-                          <TableCell sx={{ fontWeight: 500 }}>{role.roleName}</TableCell>
-                          <TableCell>{role.level}</TableCell>
-                          <TableCell>{role.details || "N/A"}</TableCell>
-                          <TableCell>
-                            <Chip
-                              label={role.status}
-                              size="small"
-                              sx={{
-                                bgcolor: getStatusColor(role.status).bg,
-                                color: getStatusColor(role.status).color,
-                                fontWeight: 800,
-                                borderRadius: "6px"
-                              }}
-                            />
-                          </TableCell>
-                          {administrationDetail.roles?.some(r => r.isResponsible && r.remarks) && (
-                            <TableCell sx={{ fontStyle: "italic", color: "var(--text-secondary)" }}>
-                              {role.remarks || "-"}
-                            </TableCell>
-                          )}
-                        </TableRow>
-                      ))}
+                      {(() => {
+                        const responsibleRoles = administrationDetail.roles?.filter(r => r.isResponsible) || [];
+                        return (
+                          <>
+                            {responsibleRoles.map((role, i) => {
+                              const assignedByText = role.level && (role.level.toLowerCase().includes("central") || role.level.toLowerCase().includes("institute")) ? "Central" : "Dept";
+                              return (
+                                <TableRow key={i}>
+                                  <TableCell>{i + 1}</TableCell>
+                                  <TableCell sx={{ fontWeight: 500 }}>
+                                    {role.roleName} {role.details ? `(${role.details})` : ""}
+                                  </TableCell>
+                                  <TableCell>{assignedByText}</TableCell>
+                                  <TableCell sx={{ fontWeight: 700, color: "var(--color-primary)" }}>
+                                    {calculateAdministrativePoints(role, appraisalConfig)}
+                                  </TableCell>
+                                  <TableCell>
+                                    <Chip
+                                      label={role.status}
+                                      size="small"
+                                      sx={{
+                                        bgcolor: getStatusColor(role.status).bg,
+                                        color: getStatusColor(role.status).color,
+                                        fontWeight: 800,
+                                        borderRadius: "6px"
+                                      }}
+                                    />
+                                  </TableCell>
+                                  {administrationDetail.roles?.some(r => r.isResponsible && r.remarks) && (
+                                    <TableCell sx={{ fontStyle: "italic", color: "var(--text-secondary)" }}>
+                                      {role.remarks || "-"}
+                                    </TableCell>
+                                  )}
+                                </TableRow>
+                              );
+                            })}
+                            {/* Footer row displaying dynamic sum */}
+                            <TableRow sx={{ background: "rgba(0,0,0,0.02)" }}>
+                              <TableCell colSpan={3} align="right" sx={{ fontWeight: 800, pr: 2 }}>
+                                Self-Assessment points (Max:20)
+                              </TableCell>
+                              <TableCell sx={{ fontWeight: 800, color: "var(--color-primary)", fontSize: "0.95rem" }}>
+                                {Math.min(20, responsibleRoles.reduce((sum, r) => r.status !== 'Rejected' ? sum + calculateAdministrativePoints(r, appraisalConfig) : sum, 0))}
+                              </TableCell>
+                              <TableCell colSpan={administrationDetail.roles?.some(r => r.isResponsible && r.remarks) ? 2 : 1}></TableCell>
+                            </TableRow>
+                          </>
+                        );
+                      })()}
                     </TableBody>
                   </Table>
                 </TableContainer>
@@ -1854,9 +2078,26 @@ const SelfAppraisal = () => {
                       <strong>Rejection Remarks from HOD:</strong> {administrationDetail.remarks || "Please check individual role feedback."}
                     </Alert>
                   )}
-                  <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-secondary)", mb: 3 }}>
-                    Select your Administrative Responsibilities for the Academic Year:
-                  </Typography>
+                  
+                  {/* Live Claim Counter Header Box */}
+                  <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
+                    <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-secondary)" }}>
+                      Select your Administrative Responsibilities for the Academic Year:
+                    </Typography>
+                    {(() => {
+                      const livePoints = Math.min(20, Object.values(adminRolesForm).reduce((sum, role) => {
+                        return role.isResponsible ? sum + calculateAdministrativePoints(role, appraisalConfig) : sum;
+                      }, 0));
+                      return (
+                        <Chip 
+                          label={`Live Points Claimed: ${livePoints} / 20`}
+                          color="primary"
+                          variant="outlined"
+                          sx={{ fontWeight: 800, px: 1, borderColor: "var(--color-primary)", color: "var(--color-primary)" }}
+                        />
+                      );
+                    })()}
+                  </Box>
 
                   <TableContainer component={Paper} sx={{ borderRadius: "12px", background: "var(--bg-paper)", border: "1px solid var(--border-color)", mb: 3 }}>
                     <Table size="small">
@@ -1968,20 +2209,6 @@ const SelfAppraisal = () => {
                 </Box>
               ))}
 
-              <Box sx={{ mt: 3, p: 2, background: "var(--bg-paper)", borderRadius: "14px", border: "1px solid var(--border-color)", textAlign: "center" }}>
-                <Typography variant="caption" color="var(--text-secondary)" sx={{ fontWeight: 700, textTransform: "uppercase" }}>
-                  Estimated Point Score
-                </Typography>
-                <Typography variant="h3" sx={{ fontWeight: 900, color: "var(--color-primary)", my: 0.5 }}>
-                  {Number((
-                    appraisal.teaching.totalClaimed + 
-                    appraisal.research.totalClaimed + 
-                    appraisal.valueAddition.totalClaimed + 
-                    appraisal.administration.totalClaimed +
-                    (appraisal.hodEvaluation?.totalInterpersonalPoints || 0)
-                  ).toFixed(2))}
-                </Typography>
-              </Box>
             </CardContent>
           </Card>
         </Grid>
@@ -2071,51 +2298,75 @@ const SelfAppraisal = () => {
           </Typography>
         </DialogTitle>
         <DialogContent sx={{ p: 3, pt: 4 }}>
-          <Grid container spacing={2.5} sx={{ mt: 0.5 }}>
-            <Grid item xs={12} sm={6}>
-              <FormControl fullWidth size="small">
-                <InputLabel>Activity Category *</InputLabel>
-                <Select
-                  value={resUtForm.activityCategory}
-                  onChange={handleResUtCategoryChange}
-                  label="Activity Category *"
-                >
-                  {RESOURCE_UTILIZATION_CATEGORIES.map(cat => (
-                    <MenuItem key={cat} value={cat}>{cat}</MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Grid>
+          <SubLabel text="Details of the Activity:" />
+          <Grid2>
+            <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
+              <Typography sx={labelStyle}>Academic Year:</Typography>
+              {/* Show the selected year as read-only disabled field since it is already selected in appraisal */}
+              {(() => {
+                const yearObj = academicYears.find(y => y._id === selectedYear);
+                return (
+                  <TextField
+                    size="small"
+                    fullWidth
+                    disabled
+                    value={yearObj ? yearObj.year : "N/A"}
+                    sx={{
+                      "& .MuiInputBase-root": { background: "rgba(0,0,0,0.02)" },
+                      "& .MuiInputBase-input.Mui-disabled": { WebkitTextFillColor: "var(--text-secondary)", fontWeight: 600 }
+                    }}
+                  />
+                );
+              })()}
+            </Box>
 
-            <Grid item xs={12} sm={6}>
-              <FormControl fullWidth size="small" disabled={!resUtForm.activityCategory}>
-                <InputLabel>Activity Role / Type *</InputLabel>
-                <Select
-                  value={resUtForm.activityType}
-                  onChange={handleResUtRoleChange}
-                  label="Activity Role / Type *"
-                >
-                  {resUtForm.activityCategory && ROLES_BY_CATEGORY[resUtForm.activityCategory]?.map(role => (
-                    <MenuItem key={role} value={role}>{role}</MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Grid>
+            <Box>
+              <Typography sx={labelStyle}>Activity Category: *</Typography>
+              <Select
+                size="small"
+                fullWidth
+                displayEmpty
+                value={resUtForm.activityCategory}
+                onChange={handleResUtCategoryChange}
+              >
+                <MenuItem value="" disabled>--Select Category--</MenuItem>
+                {RESOURCE_UTILIZATION_CATEGORIES.map(cat => (
+                  <MenuItem key={cat} value={cat}>{cat}</MenuItem>
+                ))}
+              </Select>
+            </Box>
 
-            <Grid item xs={12}>
+            <Box>
+              <Typography sx={labelStyle}>Activity Role / Type: *</Typography>
+              <Select
+                size="small"
+                fullWidth
+                displayEmpty
+                value={resUtForm.activityType}
+                onChange={handleResUtRoleChange}
+                disabled={!resUtForm.activityCategory}
+              >
+                <MenuItem value="" disabled>--Select Role--</MenuItem>
+                {resUtForm.activityCategory && ROLES_BY_CATEGORY[resUtForm.activityCategory]?.map(role => (
+                  <MenuItem key={role} value={role}>{role}</MenuItem>
+                ))}
+              </Select>
+            </Box>
+
+            <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
+              <Typography sx={labelStyle}>Organization / Event Name: *</Typography>
               <TextField
-                label="Organization / Event Name *"
                 size="small"
                 fullWidth
                 value={resUtForm.organizationName}
                 onChange={(e) => setResUtForm(p => ({ ...p, organizationName: e.target.value }))}
                 placeholder="Enter Name of Event or Organization"
               />
-            </Grid>
+            </Box>
 
-            <Grid item xs={12} sm={4}>
+            <Box>
+              <Typography sx={labelStyle}>From Date: *</Typography>
               <TextField
-                label="From Date *"
                 size="small"
                 fullWidth
                 type="date"
@@ -2124,11 +2375,11 @@ const SelfAppraisal = () => {
                 InputLabelProps={{ shrink: true }}
                 inputProps={{ max: new Date().toISOString().split("T")[0] }}
               />
-            </Grid>
+            </Box>
 
-            <Grid item xs={12} sm={4}>
+            <Box>
+              <Typography sx={labelStyle}>To Date: *</Typography>
               <TextField
-                label="To Date *"
                 size="small"
                 fullWidth
                 type="date"
@@ -2137,23 +2388,23 @@ const SelfAppraisal = () => {
                 InputLabelProps={{ shrink: true }}
                 inputProps={{ max: new Date().toISOString().split("T")[0] }}
               />
-            </Grid>
+            </Box>
 
-            <Grid item xs={12} sm={4}>
+            <Box>
+              <Typography sx={labelStyle}>Duration (Days):</Typography>
               <TextField
-                label="Duration (Days)"
                 size="small"
                 fullWidth
                 disabled
                 value={resUtForm.duration || ""}
                 placeholder="Calculated automatically"
               />
-            </Grid>
+            </Box>
 
             {resUtForm.activityType?.includes("Resource Person") && (
-              <Grid item xs={12} sm={6}>
+              <Box>
+                <Typography sx={labelStyle}>Number of Sessions Conducted: *</Typography>
                 <TextField
-                  label="Number of Sessions Conducted *"
                   size="small"
                   fullWidth
                   type="number"
@@ -2161,13 +2412,13 @@ const SelfAppraisal = () => {
                   onChange={(e) => setResUtForm(p => ({ ...p, sessionsConducted: e.target.value }))}
                   placeholder="e.g. 3"
                 />
-              </Grid>
+              </Box>
             )}
 
             {resUtForm.activityType?.includes("Participant") && (
-              <Grid item xs={12} sm={6}>
+              <Box>
+                <Typography sx={labelStyle}>Number of Days Participated: *</Typography>
                 <TextField
-                  label="Number of Days Participated *"
                   size="small"
                   fullWidth
                   type="number"
@@ -2175,12 +2426,12 @@ const SelfAppraisal = () => {
                   onChange={(e) => setResUtForm(p => ({ ...p, daysParticipated: e.target.value }))}
                   placeholder="e.g. 5"
                 />
-              </Grid>
+              </Box>
             )}
 
-            <Grid item xs={12}>
+            <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
+              <Typography sx={labelStyle}>Remarks / Comments:</Typography>
               <TextField
-                label="Remarks / Comments"
                 size="small"
                 fullWidth
                 multiline
@@ -2189,26 +2440,18 @@ const SelfAppraisal = () => {
                 onChange={(e) => setResUtForm(p => ({ ...p, remarks: e.target.value }))}
                 placeholder="Any additional information..."
               />
-            </Grid>
+            </Box>
 
-            <Grid item xs={12}>
-              <Button
-                variant="outlined"
-                component="label"
-                fullWidth
-                startIcon={<CloudUpload />}
-                sx={{ py: 1.2, borderStyle: "dashed", textTransform: "none", fontWeight: 700 }}
-              >
-                {resUtProof ? `File Selected: ${resUtProof.name}` : resUtEditingId ? "Upload New Proof (Leave empty to keep existing)" : "Upload Supporting Proof (PDF/Image, Max 500KB) *"}
-                <input
-                  type="file"
-                  hidden
-                  accept=".pdf,.png,.jpg,.jpeg"
-                  onChange={(e) => setResUtProof(e.target.files[0])}
-                />
-              </Button>
-            </Grid>
-          </Grid>
+            <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
+              <FileField 
+                label={resUtEditingId ? "Upload New Proof (Leave empty to keep existing)" : "Supporting Proof (PDF/Image, Max 500KB) *"}
+                name="proof" 
+                onChange={(e) => setResUtProof(e.target.files[0])} 
+                error={!resUtProof && !resUtEditingId} 
+              />
+            </Box>
+          </Grid2>
+          <NoteBox />
         </DialogContent>
         <DialogActions sx={{ p: 2.5, borderTop: "1px solid var(--border-color)" }}>
           <Button onClick={() => setResUtOpen(false)} sx={{ fontWeight: 700 }}>Cancel</Button>
@@ -2378,196 +2621,262 @@ const SelfAppraisal = () => {
           </Typography>
         </DialogTitle>
         <DialogContent sx={{ p: 3, pt: 4 }}>
-          <Grid container spacing={2.5} sx={{ mt: 0.5 }}>
-            <Grid item xs={12}>
-              <FormControl fullWidth size="small">
-                <InputLabel>Contribution Category *</InputLabel>
-                <Select
-                  value={contForm.category}
-                  onChange={handleContCategoryChange}
-                  label="Contribution Category *"
-                  disabled={!!contEditingId}
-                >
-                  {CONTRIBUTION_CATEGORIES.map(cat => (
-                    <MenuItem key={cat.id} value={cat.id}>{cat.name}</MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Grid>
+          <SubLabel text="Details of the Contribution:" />
+          <Grid2>
+            <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
+              <Typography sx={labelStyle}>Academic Year:</Typography>
+              {/* Show the selected year as read-only disabled field since it is already selected in appraisal */}
+              {(() => {
+                const yearObj = academicYears.find(y => y._id === selectedYear);
+                return (
+                  <TextField
+                    size="small"
+                    fullWidth
+                    disabled
+                    value={yearObj ? yearObj.year : "N/A"}
+                    sx={{
+                      "& .MuiInputBase-root": { background: "rgba(0,0,0,0.02)" },
+                      "& .MuiInputBase-input.Mui-disabled": { WebkitTextFillColor: "var(--text-secondary)", fontWeight: 600 }
+                    }}
+                  />
+                );
+              })()}
+            </Box>
+
+            <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
+              <Typography sx={labelStyle}>Contribution Category: *</Typography>
+              <Select
+                size="small"
+                fullWidth
+                displayEmpty
+                value={contForm.category}
+                onChange={handleContCategoryChange}
+                disabled={!!contEditingId}
+              >
+                <MenuItem value="" disabled>--Select Category--</MenuItem>
+                {CONTRIBUTION_CATEGORIES.map(cat => (
+                  <MenuItem key={cat.id} value={cat.id}>{cat.name}</MenuItem>
+                ))}
+              </Select>
+            </Box>
 
             {/* Render fields conditionally based on category selection */}
             {contForm.category && (() => {
               const cat = parseInt(contForm.category);
-              return (
+              const isFutureAllowed = [1, 2, 3].includes(cat);
+              const todayStr = new Date().toISOString().split("T")[0];
+
+              const renderDateFields = () => (
                 <>
-                  {cat === 1 && (
-                    <Grid item xs={12}>
-                      <TextField label="Organization Name *" size="small" fullWidth value={contForm.organizationName} onChange={(e) => setContForm(p => ({ ...p, organizationName: e.target.value }))} />
-                    </Grid>
-                  )}
-
-                  {cat === 2 && (
-                    <Grid item xs={12}>
-                      <TextField label="Journal Name *" size="small" fullWidth value={contForm.journalName} onChange={(e) => setContForm(p => ({ ...p, journalName: e.target.value }))} />
-                    </Grid>
-                  )}
-
-                  {cat === 3 && (
-                    <Grid item xs={12}>
-                      <TextField label="Journal / Conference Name *" size="small" fullWidth value={contForm.journalConferenceName} onChange={(e) => setContForm(p => ({ ...p, journalConferenceName: e.target.value }))} />
-                    </Grid>
-                  )}
-
-                  {(cat === 4 || cat === 5) && (
-                    <>
-                      <Grid item xs={12} sm={8}>
-                        <TextField label="Award Name *" size="small" fullWidth value={contForm.awardName} onChange={(e) => setContForm(p => ({ ...p, awardName: e.target.value }))} />
-                      </Grid>
-                      <Grid item xs={12} sm={4}>
-                        <TextField label="Award Date *" type="date" size="small" fullWidth InputLabelProps={{ shrink: true }} value={contForm.awardDate} onChange={(e) => setContForm(p => ({ ...p, awardDate: e.target.value }))} inputProps={{ max: new Date().toISOString().split("T")[0] }} />
-                      </Grid>
-                    </>
-                  )}
-
-                  {cat === 6 && (
-                    <>
-                      <Grid item xs={12} sm={6}>
-                        <TextField label="Course Name *" size="small" fullWidth value={contForm.courseName} onChange={(e) => setContForm(p => ({ ...p, courseName: e.target.value }))} />
-                      </Grid>
-                      <Grid item xs={12} sm={6}>
-                        <TextField label="E-Content URL *" size="small" fullWidth value={contForm.url} onChange={(e) => setContForm(p => ({ ...p, url: e.target.value }))} placeholder="https://..." />
-                      </Grid>
-                    </>
-                  )}
-
-                  {cat === 7 && (
-                    <Grid item xs={12}>
-                      <TextField label="Certification Name *" size="small" fullWidth value={contForm.certificationName} onChange={(e) => setContForm(p => ({ ...p, certificationName: e.target.value }))} />
-                    </Grid>
-                  )}
-
-                  {cat === 8 && (
-                    <>
-                      <Grid item xs={12} sm={8}>
-                        <TextField label="Event Name *" size="small" fullWidth value={contForm.eventName} onChange={(e) => setContForm(p => ({ ...p, eventName: e.target.value }))} />
-                      </Grid>
-                      <Grid item xs={12} sm={4}>
-                        <TextField label="Event Date *" type="date" size="small" fullWidth InputLabelProps={{ shrink: true }} value={contForm.eventDate} onChange={(e) => setContForm(p => ({ ...p, eventDate: e.target.value }))} inputProps={{ max: new Date().toISOString().split("T")[0] }} />
-                      </Grid>
-                    </>
-                  )}
-
-                  {cat === 9 && (
-                    <>
-                      <Grid item xs={12}>
-                        <TextField label="Article Title *" size="small" fullWidth value={contForm.articleTitle} onChange={(e) => setContForm(p => ({ ...p, articleTitle: e.target.value }))} />
-                      </Grid>
-                      <Grid item xs={12} sm={8}>
-                        <TextField label="Publication (Newspaper/Magazine) Name *" size="small" fullWidth value={contForm.publicationName} onChange={(e) => setContForm(p => ({ ...p, publicationName: e.target.value }))} />
-                      </Grid>
-                      <Grid item xs={12} sm={4}>
-                        <TextField label="Publication Date *" type="date" size="small" fullWidth InputLabelProps={{ shrink: true }} value={contForm.publicationDate} onChange={(e) => setContForm(p => ({ ...p, publicationDate: e.target.value }))} inputProps={{ max: new Date().toISOString().split("T")[0] }} />
-                      </Grid>
-                    </>
-                  )}
-
-                  {cat === 10 && (
-                    <Grid item xs={12}>
-                      <TextField label="Research Facility Name *" size="small" fullWidth value={contForm.facilityName} onChange={(e) => setContForm(p => ({ ...p, facilityName: e.target.value }))} />
-                    </Grid>
-                  )}
-
-                  {cat === 11 && (
-                    <>
-                      <Grid item xs={12} sm={8}>
-                        <TextField label="Course Name *" size="small" fullWidth value={contForm.courseName} onChange={(e) => setContForm(p => ({ ...p, courseName: e.target.value }))} />
-                      </Grid>
-                      <Grid item xs={12} sm={4}>
-                        <FormControl fullWidth size="small">
-                          <InputLabel>Duration *</InputLabel>
-                          <Select value={contForm.duration} label="Duration *" onChange={(e) => setContForm(p => ({ ...p, duration: e.target.value }))}>
-                            <MenuItem value="4 Weeks">4 Weeks</MenuItem>
-                            <MenuItem value="8 Weeks">8 Weeks</MenuItem>
-                            <MenuItem value="12 Weeks">12 Weeks</MenuItem>
-                          </Select>
-                        </FormControl>
-                      </Grid>
-                    </>
-                  )}
-
-                  {cat === 12 && (
-                    <Grid item xs={12}>
-                      <TextField label="Course Name *" size="small" fullWidth value={contForm.courseName} onChange={(e) => setContForm(p => ({ ...p, courseName: e.target.value }))} />
-                    </Grid>
-                  )}
-
-                  {cat === 13 && (
-                    <Grid item xs={12}>
-                      <TextField label="Grant / FDP / Seminar Name *" size="small" fullWidth value={contForm.grantName} onChange={(e) => setContForm(p => ({ ...p, grantName: e.target.value }))} />
-                    </Grid>
-                  )}
-
-                  {/* Date fields if applicable */}
-                  {[1, 2, 3, 7, 10, 12, 13].includes(cat) && (
-                    <>
-                      <Grid item xs={12} sm={4}>
-                        <TextField
-                          label="From Date *"
-                          size="small"
-                          fullWidth
-                          type="date"
-                          value={contForm.fromDate}
-                          onChange={(e) => setContForm(p => ({ ...p, fromDate: e.target.value }))}
-                          InputLabelProps={{ shrink: true }}
-                          inputProps={{ max: new Date().toISOString().split("T")[0] }}
-                        />
-                      </Grid>
-                      <Grid item xs={12} sm={4}>
-                        <TextField
-                          label="To Date *"
-                          size="small"
-                          fullWidth
-                          type="date"
-                          value={contForm.toDate}
-                          onChange={(e) => setContForm(p => ({ ...p, toDate: e.target.value }))}
-                          InputLabelProps={{ shrink: true }}
-                          inputProps={{ max: new Date().toISOString().split("T")[0] }}
-                        />
-                      </Grid>
-                      <Grid item xs={12} sm={4}>
-                        <TextField
-                          label="Duration (Calculated)"
-                          size="small"
-                          fullWidth
-                          disabled
-                          value={contForm.duration || ""}
-                          placeholder="Auto-calculated"
-                        />
-                      </Grid>
-                    </>
-                  )}
+                  <Box>
+                    <Typography sx={labelStyle}>From Date: *</Typography>
+                    <TextField
+                      size="small"
+                      fullWidth
+                      type="date"
+                      value={contForm.fromDate}
+                      onChange={(e) => setContForm(p => ({ ...p, fromDate: e.target.value }))}
+                      InputLabelProps={{ shrink: true }}
+                      inputProps={{ max: todayStr }}
+                    />
+                  </Box>
+                  <Box>
+                    <Typography sx={labelStyle}>To Date: *</Typography>
+                    <TextField
+                      size="small"
+                      fullWidth
+                      type="date"
+                      value={contForm.toDate}
+                      onChange={(e) => setContForm(p => ({ ...p, toDate: e.target.value }))}
+                      InputLabelProps={{ shrink: true }}
+                      inputProps={isFutureAllowed ? {} : { max: todayStr }}
+                    />
+                  </Box>
+                  <Box>
+                    <Typography sx={labelStyle}>Auto Duration (Days):</Typography>
+                    <TextField
+                      size="small"
+                      fullWidth
+                      disabled
+                      value={contForm.duration || ""}
+                      placeholder="Calculated automatically"
+                    />
+                  </Box>
                 </>
               );
+
+              switch (cat) {
+                case 1:
+                  return (
+                    <>
+                      <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
+                        <Typography sx={labelStyle}>Organization Name: *</Typography>
+                        <TextField size="small" fullWidth value={contForm.organizationName} onChange={(e) => setContForm(p => ({ ...p, organizationName: e.target.value }))} />
+                      </Box>
+                      {renderDateFields()}
+                    </>
+                  );
+                case 2:
+                  return (
+                    <>
+                      <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
+                        <Typography sx={labelStyle}>Journal Name (SCIE / Q1 / Q2): *</Typography>
+                        <TextField size="small" fullWidth value={contForm.journalName} onChange={(e) => setContForm(p => ({ ...p, journalName: e.target.value }))} />
+                      </Box>
+                      {renderDateFields()}
+                    </>
+                  );
+                case 3:
+                  return (
+                    <>
+                      <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
+                        <Typography sx={labelStyle}>Journal / Conference Name: *</Typography>
+                        <TextField size="small" fullWidth value={contForm.journalConferenceName} onChange={(e) => setContForm(p => ({ ...p, journalConferenceName: e.target.value }))} />
+                      </Box>
+                      {renderDateFields()}
+                    </>
+                  );
+                case 4:
+                case 5:
+                  return (
+                    <>
+                      <Box>
+                        <Typography sx={labelStyle}>Award Name: *</Typography>
+                        <TextField size="small" fullWidth value={contForm.awardName} onChange={(e) => setContForm(p => ({ ...p, awardName: e.target.value }))} />
+                      </Box>
+                      <Box>
+                        <Typography sx={labelStyle}>Award Date: *</Typography>
+                        <TextField size="small" fullWidth type="date" value={contForm.awardDate} onChange={(e) => setContForm(p => ({ ...p, awardDate: e.target.value }))} InputLabelProps={{ shrink: true }} inputProps={{ max: todayStr }} />
+                      </Box>
+                    </>
+                  );
+                case 6:
+                  return (
+                    <>
+                      <Box>
+                        <Typography sx={labelStyle}>Course Name: *</Typography>
+                        <TextField size="small" fullWidth value={contForm.courseName} onChange={(e) => setContForm(p => ({ ...p, courseName: e.target.value }))} />
+                      </Box>
+                      <Box>
+                        <Typography sx={labelStyle}>E-Content URL: *</Typography>
+                        <TextField size="small" fullWidth value={contForm.url} onChange={(e) => setContForm(p => ({ ...p, url: e.target.value }))} placeholder="https://example.com/course" />
+                      </Box>
+                    </>
+                  );
+                case 7:
+                  return (
+                    <>
+                      <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
+                        <Typography sx={labelStyle}>Certification Name: *</Typography>
+                        <TextField size="small" fullWidth value={contForm.certificationName} onChange={(e) => setContForm(p => ({ ...p, certificationName: e.target.value }))} />
+                      </Box>
+                      {renderDateFields()}
+                    </>
+                  );
+                case 8:
+                  return (
+                    <>
+                      <Box>
+                        <Typography sx={labelStyle}>Event Name: *</Typography>
+                        <TextField size="small" fullWidth value={contForm.eventName} onChange={(e) => setContForm(p => ({ ...p, eventName: e.target.value }))} />
+                      </Box>
+                      <Box>
+                        <Typography sx={labelStyle}>Event Date: *</Typography>
+                        <TextField size="small" fullWidth type="date" value={contForm.eventDate} onChange={(e) => setContForm(p => ({ ...p, eventDate: e.target.value }))} InputLabelProps={{ shrink: true }} inputProps={{ max: todayStr }} />
+                      </Box>
+                    </>
+                  );
+                case 9:
+                  return (
+                    <>
+                      <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
+                        <Typography sx={labelStyle}>Article Title: *</Typography>
+                        <TextField size="small" fullWidth value={contForm.articleTitle} onChange={(e) => setContForm(p => ({ ...p, articleTitle: e.target.value }))} />
+                      </Box>
+                      <Box>
+                        <Typography sx={labelStyle}>Publication Name: *</Typography>
+                        <TextField size="small" fullWidth value={contForm.publicationName} onChange={(e) => setContForm(p => ({ ...p, publicationName: e.target.value }))} />
+                      </Box>
+                      <Box>
+                        <Typography sx={labelStyle}>Publication Date: *</Typography>
+                        <TextField size="small" fullWidth type="date" value={contForm.publicationDate} onChange={(e) => setContForm(p => ({ ...p, publicationDate: e.target.value }))} InputLabelProps={{ shrink: true }} inputProps={{ max: todayStr }} />
+                      </Box>
+                    </>
+                  );
+                case 10:
+                  return (
+                    <>
+                      <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
+                        <Typography sx={labelStyle}>Facility Name: *</Typography>
+                        <TextField size="small" fullWidth value={contForm.facilityName} onChange={(e) => setContForm(p => ({ ...p, facilityName: e.target.value }))} />
+                      </Box>
+                      {renderDateFields()}
+                    </>
+                  );
+                case 11:
+                  return (
+                    <>
+                      <Box>
+                        <Typography sx={labelStyle}>Course Name: *</Typography>
+                        <TextField size="small" fullWidth value={contForm.courseName} onChange={(e) => setContForm(p => ({ ...p, courseName: e.target.value }))} />
+                      </Box>
+                      <Box>
+                        <Typography sx={labelStyle}>Duration: *</Typography>
+                        <Select
+                          size="small"
+                          fullWidth
+                          value={contForm.duration}
+                          onChange={(e) => setContForm(p => ({ ...p, duration: e.target.value }))}
+                          displayEmpty
+                        >
+                          <MenuItem value="" disabled>--Select NPTEL Duration--</MenuItem>
+                          <MenuItem value="12 Weeks">12 Weeks</MenuItem>
+                          <MenuItem value="8 Weeks">8 Weeks</MenuItem>
+                          <MenuItem value="4 Weeks">4 Weeks</MenuItem>
+                        </Select>
+                      </Box>
+                      <Box sx={{ gridColumn: { sm: "1 / -1" }, mt: 2, p: 2, bgcolor: "rgba(232, 160, 0, 0.08)", border: "1px solid rgba(232, 160, 0, 0.3)", borderRadius: "8px" }}>
+                        <Typography variant="body2" sx={{ color: "#e8a000", fontWeight: 700 }}>
+                          Note: Certificate will be considered only in one metric, either 3.1 or 3.2.
+                        </Typography>
+                      </Box>
+                    </>
+                  );
+                case 12:
+                  return (
+                    <>
+                      <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
+                        <Typography sx={labelStyle}>Course Name (Coursera): *</Typography>
+                        <TextField size="small" fullWidth value={contForm.courseName} onChange={(e) => setContForm(p => ({ ...p, courseName: e.target.value }))} />
+                      </Box>
+                      {renderDateFields()}
+                    </>
+                  );
+                case 13:
+                  return (
+                    <>
+                      <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
+                        <Typography sx={labelStyle}>Grant Name: *</Typography>
+                        <TextField size="small" fullWidth value={contForm.grantName} onChange={(e) => setContForm(p => ({ ...p, grantName: e.target.value }))} />
+                      </Box>
+                      {renderDateFields()}
+                    </>
+                  );
+                default:
+                  return null;
+              }
             })()}
 
-            <Grid item xs={12}>
-              <Button
-                variant="outlined"
-                component="label"
-                fullWidth
-                startIcon={<CloudUpload />}
-                sx={{ py: 1.2, borderStyle: "dashed", textTransform: "none", fontWeight: 700 }}
-              >
-                {contProof ? `File Selected: ${contProof.name}` : contEditingId ? "Upload New Proof (Leave empty to keep existing)" : "Upload Supporting Proof (PDF/Image, Max 500KB) *"}
-                <input
-                  type="file"
-                  hidden
-                  accept=".pdf,.png,.jpg,.jpeg"
-                  onChange={(e) => setContProof(e.target.files[0])}
-                />
-              </Button>
-            </Grid>
-          </Grid>
+            <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
+              <FileField 
+                label={contEditingId ? "Upload New Proof (Leave empty to keep existing)" : "Supporting Proof (PDF/Image, Max 500KB) *"}
+                name="proof" 
+                onChange={(e) => setContProof(e.target.files[0])} 
+                error={!contProof && !contEditingId} 
+              />
+            </Box>
+          </Grid2>
+          <NoteBox />
         </DialogContent>
         <DialogActions sx={{ p: 2.5, borderTop: "1px solid var(--border-color)" }}>
           <Button onClick={() => setContOpen(false)} sx={{ fontWeight: 700 }}>Cancel</Button>
