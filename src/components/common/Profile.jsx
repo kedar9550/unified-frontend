@@ -318,7 +318,8 @@ const Profile = () => {
               width: "140px",
               height: "140px",
               background: "radial-gradient(circle at top right, var(--color-primary-alpha), transparent 70%)",
-              zIndex: 0
+              zIndex: 0,
+              pointerEvents: "none"
             }
           }}>
             <Box sx={{ position: "relative", display: "inline-block", mb: 3 }}>
@@ -429,7 +430,8 @@ const Profile = () => {
               width: "140px",
               height: "140px",
               background: "radial-gradient(circle at top right, var(--color-primary-alpha), transparent 70%)",
-              zIndex: 0
+              zIndex: 0,
+              pointerEvents: "none"
             }
           }}>
             <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
@@ -553,7 +555,8 @@ const Profile = () => {
           width: "140px",
           height: "140px",
           background: "radial-gradient(circle at top right, var(--color-primary-alpha), transparent 70%)",
-          zIndex: 0
+          zIndex: 0,
+          pointerEvents: "none"
         }
       }}>
         <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 2.5 }}>
