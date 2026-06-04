@@ -198,7 +198,14 @@ const SelfAppraisal = () => {
     duration: "",
     remarks: "",
     sessionsConducted: "",
-    daysParticipated: ""
+    daysParticipated: "",
+    courseFdpName: "",
+    organizingInstitutionCategory: "",
+    location: "",
+    labName: "",
+    universityName: "",
+    instituteName: "",
+    nirfRank: ""
   });
   const [resUtProof, setResUtProof] = useState(null);
   const [resUtLoading, setResUtLoading] = useState(false);
@@ -477,7 +484,14 @@ const SelfAppraisal = () => {
       duration: "",
       remarks: "",
       sessionsConducted: "",
-      daysParticipated: ""
+      daysParticipated: "",
+      courseFdpName: "",
+      organizingInstitutionCategory: "",
+      location: "",
+      labName: "",
+      universityName: "",
+      instituteName: "",
+      nirfRank: ""
     });
     setResUtProof(null);
     setResUtOpen(true);
@@ -494,7 +508,14 @@ const SelfAppraisal = () => {
       duration: String(activity.duration),
       remarks: activity.remarks || "",
       sessionsConducted: activity.sessionsConducted !== undefined ? String(activity.sessionsConducted) : "",
-      daysParticipated: activity.daysParticipated !== undefined ? String(activity.daysParticipated) : ""
+      daysParticipated: activity.daysParticipated !== undefined ? String(activity.daysParticipated) : "",
+      courseFdpName: activity.courseFdpName || "",
+      organizingInstitutionCategory: activity.organizingInstitutionCategory || "",
+      location: activity.location || "",
+      labName: activity.labName || "",
+      universityName: activity.universityName || "",
+      instituteName: activity.instituteName || "",
+      nirfRank: activity.nirfRank !== undefined ? String(activity.nirfRank) : ""
     });
     setResUtProof(null);
     setResUtOpen(true);
@@ -515,9 +536,48 @@ const SelfAppraisal = () => {
     const showSessionsField = resUtForm.activityType?.includes("Resource Person");
     const showDaysField = resUtForm.activityType?.includes("Participant");
 
-    if (!resUtForm.activityCategory || !resUtForm.activityType || !resUtForm.organizationName || !resUtForm.fromDate || !resUtForm.toDate) {
+    const isFdpParticipant = resUtForm.activityCategory === "FDP" && resUtForm.activityType === "FDP Participant";
+    const basicFieldsValid = isFdpParticipant 
+      ? (resUtForm.activityCategory && resUtForm.activityType && resUtForm.courseFdpName && resUtForm.fromDate && resUtForm.toDate)
+      : (resUtForm.activityCategory && resUtForm.activityType && resUtForm.organizationName && resUtForm.fromDate && resUtForm.toDate);
+
+    if (!basicFieldsValid) {
       toast.error("Please fill all required fields");
       return;
+    }
+
+    if (isFdpParticipant) {
+      if (!resUtForm.organizingInstitutionCategory) {
+        toast.error("Organizing Institution Category is required");
+        return;
+      }
+      if (!resUtForm.location) {
+        toast.error("Location is required");
+        return;
+      }
+      if (resUtForm.organizingInstitutionCategory === "MHRD R&D Lab" && !resUtForm.labName) {
+        toast.error("Lab Name is required");
+        return;
+      }
+      if (resUtForm.organizingInstitutionCategory === "Govt. University" && !resUtForm.universityName) {
+        toast.error("University Name is required");
+        return;
+      }
+      if (resUtForm.organizingInstitutionCategory === "NIRF Ranked Institute (Below 200)") {
+        if (!resUtForm.instituteName) {
+          toast.error("Institute Name is required");
+          return;
+        }
+        if (!resUtForm.nirfRank) {
+          toast.error("NIRF Rank is required");
+          return;
+        }
+        const rank = parseInt(resUtForm.nirfRank);
+        if (isNaN(rank) || rank <= 0 || rank >= 200) {
+          toast.error("NIRF Rank must be a positive integer less than 200");
+          return;
+        }
+      }
     }
 
     if (showSessionsField && !resUtForm.sessionsConducted) {
@@ -553,12 +613,28 @@ const SelfAppraisal = () => {
       fd.append("academicYear", selectedYear);
       fd.append("activityCategory", resUtForm.activityCategory);
       fd.append("activityType", resUtForm.activityType);
-      fd.append("organizationName", resUtForm.organizationName);
       fd.append("fromDate", resUtForm.fromDate);
       fd.append("toDate", resUtForm.toDate);
       fd.append("duration", resUtForm.duration);
       fd.append("remarks", resUtForm.remarks || "");
       
+      if (isFdpParticipant) {
+        fd.append("courseFdpName", resUtForm.courseFdpName);
+        fd.append("organizingInstitutionCategory", resUtForm.organizingInstitutionCategory);
+        fd.append("location", resUtForm.location);
+        fd.append("organizationName", resUtForm.courseFdpName);
+        if (resUtForm.organizingInstitutionCategory === "MHRD R&D Lab") {
+          fd.append("labName", resUtForm.labName);
+        } else if (resUtForm.organizingInstitutionCategory === "Govt. University") {
+          fd.append("universityName", resUtForm.universityName);
+        } else if (resUtForm.organizingInstitutionCategory === "NIRF Ranked Institute (Below 200)") {
+          fd.append("instituteName", resUtForm.instituteName);
+          fd.append("nirfRank", resUtForm.nirfRank);
+        }
+      } else {
+        fd.append("organizationName", resUtForm.organizationName);
+      }
+
       if (showSessionsField && resUtForm.sessionsConducted) {
         fd.append("sessionsConducted", resUtForm.sessionsConducted);
       }
@@ -846,7 +922,14 @@ const SelfAppraisal = () => {
       activityCategory: category,
       activityType: "",
       sessionsConducted: "",
-      daysParticipated: ""
+      daysParticipated: "",
+      courseFdpName: "",
+      organizingInstitutionCategory: "",
+      location: "",
+      labName: "",
+      universityName: "",
+      instituteName: "",
+      nirfRank: ""
     }));
   };
 
@@ -856,7 +939,14 @@ const SelfAppraisal = () => {
       ...prev,
       activityType: role,
       sessionsConducted: "",
-      daysParticipated: ""
+      daysParticipated: "",
+      courseFdpName: "",
+      organizingInstitutionCategory: "",
+      location: "",
+      labName: "",
+      universityName: "",
+      instituteName: "",
+      nirfRank: ""
     }));
   };
 
@@ -2353,6 +2443,112 @@ const SelfAppraisal = () => {
               </Select>
             </Box>
 
+          {resUtForm.activityCategory === "FDP" && resUtForm.activityType === "FDP Participant" ? (
+            <>
+              <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
+                <Typography sx={labelStyle}>Course / FDP Name: *</Typography>
+                <TextField
+                  size="small"
+                  fullWidth
+                  value={resUtForm.courseFdpName}
+                  onChange={(e) => setResUtForm(p => ({ ...p, courseFdpName: e.target.value }))}
+                  placeholder="Enter Name of the Course / FDP"
+                />
+              </Box>
+
+              <Box>
+                <Typography sx={labelStyle}>Organizing Institution Category: *</Typography>
+                <Select
+                  size="small"
+                  fullWidth
+                  displayEmpty
+                  value={resUtForm.organizingInstitutionCategory}
+                  onChange={(e) => setResUtForm(p => ({ ...p, organizingInstitutionCategory: e.target.value }))}
+                >
+                  <MenuItem value="" disabled>--Select Category--</MenuItem>
+                  {[
+                    "UGC",
+                    "AICTE",
+                    "IIT",
+                    "IIM",
+                    "NIT",
+                    "MHRD R&D Lab",
+                    "NITTTR",
+                    "NIPER",
+                    "ICMR",
+                    "Govt. University",
+                    "NIRF Ranked Institute (Below 200)",
+                    "NPTEL"
+                  ].map(opt => (
+                    <MenuItem key={opt} value={opt}>{opt}</MenuItem>
+                  ))}
+                </Select>
+              </Box>
+
+              <Box>
+                <Typography sx={labelStyle}>Location (City, State): *</Typography>
+                <TextField
+                  size="small"
+                  fullWidth
+                  value={resUtForm.location}
+                  onChange={(e) => setResUtForm(p => ({ ...p, location: e.target.value }))}
+                  placeholder="e.g. Hyderabad, Telangana"
+                />
+              </Box>
+
+              {resUtForm.organizingInstitutionCategory === "MHRD R&D Lab" && (
+                <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
+                  <Typography sx={labelStyle}>Lab Name: *</Typography>
+                  <TextField
+                    size="small"
+                    fullWidth
+                    value={resUtForm.labName}
+                    onChange={(e) => setResUtForm(p => ({ ...p, labName: e.target.value }))}
+                    placeholder="Enter Lab Name"
+                  />
+                </Box>
+              )}
+
+              {resUtForm.organizingInstitutionCategory === "Govt. University" && (
+                <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
+                  <Typography sx={labelStyle}>University Name: *</Typography>
+                  <TextField
+                    size="small"
+                    fullWidth
+                    value={resUtForm.universityName}
+                    onChange={(e) => setResUtForm(p => ({ ...p, universityName: e.target.value }))}
+                    placeholder="Enter University Name"
+                  />
+                </Box>
+              )}
+
+              {resUtForm.organizingInstitutionCategory === "NIRF Ranked Institute (Below 200)" && (
+                <>
+                  <Box>
+                    <Typography sx={labelStyle}>Institute Name: *</Typography>
+                    <TextField
+                      size="small"
+                      fullWidth
+                      value={resUtForm.instituteName}
+                      onChange={(e) => setResUtForm(p => ({ ...p, instituteName: e.target.value }))}
+                      placeholder="Enter Institute Name"
+                    />
+                  </Box>
+                  <Box>
+                    <Typography sx={labelStyle}>NIRF Rank: *</Typography>
+                    <TextField
+                      size="small"
+                      fullWidth
+                      type="number"
+                      value={resUtForm.nirfRank}
+                      onChange={(e) => setResUtForm(p => ({ ...p, nirfRank: e.target.value }))}
+                      placeholder="e.g. 45"
+                    />
+                  </Box>
+                </>
+              )}
+            </>
+          ) : (
             <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
               <Typography sx={labelStyle}>Organization / Event Name: *</Typography>
               <TextField
@@ -2363,6 +2559,7 @@ const SelfAppraisal = () => {
                 placeholder="Enter Name of Event or Organization"
               />
             </Box>
+          )}
 
             <Box>
               <Typography sx={labelStyle}>From Date: *</Typography>
@@ -2499,11 +2696,62 @@ const SelfAppraisal = () => {
               <Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)", mb: 1 }}>
                 {data.activityCategory} - {data.activityType}
               </Typography>
-              <Typography variant="body2" sx={{ color: "var(--text-secondary)", mb: 3, fontWeight: 600 }}>
-                Organization / Event Name: {data.organizationName}
-              </Typography>
+              {data.activityCategory === "FDP" && data.activityType === "FDP Participant" ? (
+                <Typography variant="body2" sx={{ color: "var(--text-secondary)", mb: 3, fontWeight: 600 }}>Course / FDP Name: {data.courseFdpName || data.organizationName}</Typography>
+              ) : (
+                <Typography variant="body2" sx={{ color: "var(--text-secondary)", mb: 3, fontWeight: 600 }}>Organization / Event Name: {data.organizationName}</Typography>
+              )}
 
               <Grid container spacing={2}>
+                {data.activityCategory === "FDP" && data.activityType === "FDP Participant" && (
+                  <>
+                    <Grid item xs={12} sm={4}>
+                      <Box sx={{ p: 1.5, borderRadius: "10px", background: "var(--bg-paper)", border: "1px solid var(--border-color)" }}>
+                        <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", fontWeight: 800 }}>Organizing Category</Typography>
+                        <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>{data.organizingInstitutionCategory}</Typography>
+                      </Box>
+                    </Grid>
+                    <Grid item xs={12} sm={4}>
+                      <Box sx={{ p: 1.5, borderRadius: "10px", background: "var(--bg-paper)", border: "1px solid var(--border-color)" }}>
+                        <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", fontWeight: 800 }}>Location</Typography>
+                        <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>{data.location}</Typography>
+                      </Box>
+                    </Grid>
+                    {data.organizingInstitutionCategory === "MHRD R&D Lab" && (
+                      <Grid item xs={12} sm={4}>
+                        <Box sx={{ p: 1.5, borderRadius: "10px", background: "var(--bg-paper)", border: "1px solid var(--border-color)" }}>
+                          <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", fontWeight: 800 }}>Lab Name</Typography>
+                          <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>{data.labName}</Typography>
+                        </Box>
+                      </Grid>
+                    )}
+                    {data.organizingInstitutionCategory === "Govt. University" && (
+                      <Grid item xs={12} sm={4}>
+                        <Box sx={{ p: 1.5, borderRadius: "10px", background: "var(--bg-paper)", border: "1px solid var(--border-color)" }}>
+                          <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", fontWeight: 800 }}>University Name</Typography>
+                          <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>{data.universityName}</Typography>
+                        </Box>
+                      </Grid>
+                    )}
+                    {data.organizingInstitutionCategory === "NIRF Ranked Institute (Below 200)" && (
+                      <>
+                        <Grid item xs={12} sm={4}>
+                          <Box sx={{ p: 1.5, borderRadius: "10px", background: "var(--bg-paper)", border: "1px solid var(--border-color)" }}>
+                            <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", fontWeight: 800 }}>Institute Name</Typography>
+                            <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>{data.instituteName}</Typography>
+                          </Box>
+                        </Grid>
+                        <Grid item xs={12} sm={4}>
+                          <Box sx={{ p: 1.5, borderRadius: "10px", background: "var(--bg-paper)", border: "1px solid var(--border-color)" }}>
+                            <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", fontWeight: 800 }}>NIRF Rank</Typography>
+                            <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>{data.nirfRank}</Typography>
+                          </Box>
+                        </Grid>
+                      </>
+                    )}
+                  </>
+                )}
+
                 <Grid item xs={12} sm={4}>
                   <Box sx={{ p: 1.5, borderRadius: "10px", background: "var(--bg-paper)", border: "1px solid var(--border-color)" }}>
                     <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", fontWeight: 800 }}>Dates</Typography>

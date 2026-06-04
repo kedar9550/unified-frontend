@@ -434,8 +434,30 @@ const AppraisalEvaluation = () => {
                             <Chip label={item.status} size="small" sx={{ bgcolor: statusColor.bg, color: statusColor.color, fontWeight: 800, borderRadius: "6px" }} />
                           </Box>
                           <Typography variant="caption" color="var(--text-secondary)" display="block" mb={1}>
-                            Organization / Event: <strong>{item.organizationName}</strong> | Duration: {item.duration} Days ({new Date(item.fromDate).toLocaleDateString("en-IN")} to {new Date(item.toDate).toLocaleDateString("en-IN")})
+                            {item.activityCategory === "FDP" && item.activityType === "FDP Participant" ? "Course / FDP Name" : "Organization / Event"}: <strong>{item.organizationName}</strong> | Duration: {item.duration} Days ({new Date(item.fromDate).toLocaleDateString("en-IN")} to {new Date(item.toDate).toLocaleDateString("en-IN")})
                           </Typography>
+                          {item.activityCategory === "FDP" && item.activityType === "FDP Participant" && (
+                            <Box sx={{ mb: 1.5, p: 1.5, borderRadius: "6px", background: "rgba(0,0,0,0.02)", border: "1px dashed var(--border-color)" }}>
+                              <Typography variant="caption" color="var(--text-secondary)" display="block">
+                                Organizing Category: <strong style={{ color: "var(--color-primary)" }}>{item.organizingInstitutionCategory}</strong> | Location: <strong>{item.location}</strong>
+                              </Typography>
+                              {item.organizingInstitutionCategory === "MHRD R&D Lab" && item.labName && (
+                                <Typography variant="caption" color="var(--text-secondary)" display="block">
+                                  Lab Name: <strong>{item.labName}</strong>
+                                </Typography>
+                              )}
+                              {item.organizingInstitutionCategory === "Govt. University" && item.universityName && (
+                                <Typography variant="caption" color="var(--text-secondary)" display="block">
+                                  University Name: <strong>{item.universityName}</strong>
+                                </Typography>
+                              )}
+                              {item.organizingInstitutionCategory === "NIRF Ranked Institute (Below 200)" && item.instituteName && (
+                                <Typography variant="caption" color="var(--text-secondary)" display="block">
+                                  Institute Name: <strong>{item.instituteName}</strong> | NIRF Rank: <strong>{item.nirfRank}</strong>
+                                </Typography>
+                              )}
+                            </Box>
+                          )}
                           {item.sessionsConducted !== undefined && (
                             <Typography variant="caption" color="var(--text-secondary)" display="block">
                               Sessions Conducted: {item.sessionsConducted}

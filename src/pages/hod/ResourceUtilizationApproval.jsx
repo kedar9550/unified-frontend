@@ -371,6 +371,33 @@ export default function ResourceUtilizationApproval() {
                             <TableCell sx={{ color: "var(--text-secondary)" }}>{act.activityType}</TableCell>
                             <TableCell sx={{ color: "var(--text-secondary)", maxWidth: 220 }}>
                               <Typography variant="body2" sx={{ fontWeight: 600 }}>{act.organizationName}</Typography>
+                              {act.activityCategory === "FDP" && act.activityType === "FDP Participant" && (
+                                <Box sx={{ mt: 0.5 }}>
+                                  <Typography sx={{ fontSize: 10, color: "text.secondary", fontWeight: 700 }}>
+                                    Category: <strong style={{ color: "var(--color-primary)" }}>{act.organizingInstitutionCategory}</strong>
+                                  </Typography>
+                                  {act.location && (
+                                    <Typography sx={{ fontSize: 10, color: "text.secondary" }}>
+                                      Location: {act.location}
+                                    </Typography>
+                                  )}
+                                  {act.organizingInstitutionCategory === "MHRD R&D Lab" && act.labName && (
+                                    <Typography sx={{ fontSize: 10, color: "text.secondary" }}>
+                                      Lab: {act.labName}
+                                    </Typography>
+                                  )}
+                                  {act.organizingInstitutionCategory === "Govt. University" && act.universityName && (
+                                    <Typography sx={{ fontSize: 10, color: "text.secondary" }}>
+                                      Univ: {act.universityName}
+                                    </Typography>
+                                  )}
+                                  {act.organizingInstitutionCategory === "NIRF Ranked Institute (Below 200)" && act.instituteName && (
+                                    <Typography sx={{ fontSize: 10, color: "text.secondary" }}>
+                                      Inst: {act.instituteName} (Rank: {act.nirfRank})
+                                    </Typography>
+                                  )}
+                                </Box>
+                              )}
                             </TableCell>
                             <TableCell sx={{ color: "var(--text-secondary)", fontWeight: 600 }}>
                               {act.sessionsConducted !== undefined && act.sessionsConducted !== null

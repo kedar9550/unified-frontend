@@ -99,7 +99,14 @@ export default function ResourceUtilization() {
     duration: "",
     remarks: "",
     sessionsConducted: "",
-    daysParticipated: ""
+    daysParticipated: "",
+    courseFdpName: "",
+    organizingInstitutionCategory: "",
+    location: "",
+    labName: "",
+    universityName: "",
+    instituteName: "",
+    nirfRank: ""
   });
   
   const [proofFile, setProofFile] = useState(null);
@@ -156,7 +163,14 @@ export default function ResourceUtilization() {
       activityCategory: category,
       activityType: "", 
       sessionsConducted: "",
-      daysParticipated: ""
+      daysParticipated: "",
+      courseFdpName: "",
+      organizingInstitutionCategory: "",
+      location: "",
+      labName: "",
+      universityName: "",
+      instituteName: "",
+      nirfRank: ""
     }));
   };
 
@@ -166,7 +180,14 @@ export default function ResourceUtilization() {
       ...prev,
       activityType: role,
       sessionsConducted: "",
-      daysParticipated: ""
+      daysParticipated: "",
+      courseFdpName: "",
+      organizingInstitutionCategory: "",
+      location: "",
+      labName: "",
+      universityName: "",
+      instituteName: "",
+      nirfRank: ""
     }));
   };
 
@@ -185,7 +206,14 @@ export default function ResourceUtilization() {
       duration: "",
       remarks: "",
       sessionsConducted: "",
-      daysParticipated: ""
+      daysParticipated: "",
+      courseFdpName: "",
+      organizingInstitutionCategory: "",
+      location: "",
+      labName: "",
+      universityName: "",
+      instituteName: "",
+      nirfRank: ""
     });
     setProofFile(null);
     setOpenFormModal(true);
@@ -203,7 +231,14 @@ export default function ResourceUtilization() {
       duration: String(activity.duration),
       remarks: activity.remarks || "",
       sessionsConducted: activity.sessionsConducted !== undefined ? String(activity.sessionsConducted) : "",
-      daysParticipated: activity.daysParticipated !== undefined ? String(activity.daysParticipated) : ""
+      daysParticipated: activity.daysParticipated !== undefined ? String(activity.daysParticipated) : "",
+      courseFdpName: activity.courseFdpName || "",
+      organizingInstitutionCategory: activity.organizingInstitutionCategory || "",
+      location: activity.location || "",
+      labName: activity.labName || "",
+      universityName: activity.universityName || "",
+      instituteName: activity.instituteName || "",
+      nirfRank: activity.nirfRank !== undefined ? String(activity.nirfRank) : ""
     });
     setProofFile(null);
     setOpenFormModal(true);
@@ -221,9 +256,48 @@ export default function ResourceUtilization() {
   };
 
   const handleSaveDraft = async () => {
-    if (!form.academicYear || !form.activityCategory || !form.activityType || !form.organizationName || !form.fromDate || !form.toDate) {
+    const isFdpParticipant = form.activityCategory === "FDP" && form.activityType === "FDP Participant";
+    const basicFieldsValid = isFdpParticipant 
+      ? (form.academicYear && form.activityCategory && form.activityType && form.courseFdpName && form.fromDate && form.toDate)
+      : (form.academicYear && form.activityCategory && form.activityType && form.organizationName && form.fromDate && form.toDate);
+
+    if (!basicFieldsValid) {
       toast.error("Please fill all required fields");
       return;
+    }
+
+    if (isFdpParticipant) {
+      if (!form.organizingInstitutionCategory) {
+        toast.error("Organizing Institution Category is required");
+        return;
+      }
+      if (!form.location) {
+        toast.error("Location is required");
+        return;
+      }
+      if (form.organizingInstitutionCategory === "MHRD R&D Lab" && !form.labName) {
+        toast.error("Lab Name is required");
+        return;
+      }
+      if (form.organizingInstitutionCategory === "Govt. University" && !form.universityName) {
+        toast.error("University Name is required");
+        return;
+      }
+      if (form.organizingInstitutionCategory === "NIRF Ranked Institute (Below 200)") {
+        if (!form.instituteName) {
+          toast.error("Institute Name is required");
+          return;
+        }
+        if (!form.nirfRank) {
+          toast.error("NIRF Rank is required");
+          return;
+        }
+        const rank = parseInt(form.nirfRank);
+        if (isNaN(rank) || rank <= 0 || rank >= 200) {
+          toast.error("NIRF Rank must be a positive integer less than 200");
+          return;
+        }
+      }
     }
 
     if (showSessionsField && !form.sessionsConducted) {
@@ -262,12 +336,28 @@ export default function ResourceUtilization() {
       fd.append("academicYear", form.academicYear);
       fd.append("activityCategory", form.activityCategory);
       fd.append("activityType", form.activityType);
-      fd.append("organizationName", form.organizationName);
       fd.append("fromDate", form.fromDate);
       fd.append("toDate", form.toDate);
       fd.append("duration", form.duration);
       fd.append("remarks", form.remarks || "");
       
+      if (isFdpParticipant) {
+        fd.append("courseFdpName", form.courseFdpName);
+        fd.append("organizingInstitutionCategory", form.organizingInstitutionCategory);
+        fd.append("location", form.location);
+        fd.append("organizationName", form.courseFdpName);
+        if (form.organizingInstitutionCategory === "MHRD R&D Lab") {
+          fd.append("labName", form.labName);
+        } else if (form.organizingInstitutionCategory === "Govt. University") {
+          fd.append("universityName", form.universityName);
+        } else if (form.organizingInstitutionCategory === "NIRF Ranked Institute (Below 200)") {
+          fd.append("instituteName", form.instituteName);
+          fd.append("nirfRank", form.nirfRank);
+        }
+      } else {
+        fd.append("organizationName", form.organizationName);
+      }
+
       if (showSessionsField && form.sessionsConducted) {
         fd.append("sessionsConducted", form.sessionsConducted);
       }
@@ -558,9 +648,62 @@ export default function ResourceUtilization() {
         </DialogTitle>
         <DialogContent sx={{ p: 3, mt: 1 }}>
           <Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)", mb: 1 }}>{data.activityCategory} - {data.activityType}</Typography>
-          <Typography variant="body2" sx={{ color: "var(--text-secondary)", mb: 3, fontWeight: 600 }}>Organization / Event: {data.organizationName}</Typography>
+          {data.activityCategory === "FDP" && data.activityType === "FDP Participant" ? (
+            <Typography variant="body2" sx={{ color: "var(--text-secondary)", mb: 3, fontWeight: 600 }}>Course / FDP Name: {data.courseFdpName || data.organizationName}</Typography>
+          ) : (
+            <Typography variant="body2" sx={{ color: "var(--text-secondary)", mb: 3, fontWeight: 600 }}>Organization / Event: {data.organizationName}</Typography>
+          )}
 
           <Grid container spacing={2}>
+            {data.activityCategory === "FDP" && data.activityType === "FDP Participant" && (
+              <>
+                <Grid item xs={12} sm={4}>
+                  <Box sx={{ p: 1.5, borderRadius: "10px", background: "rgba(255,255,255,0.02)" }}>
+                    <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", fontWeight: 800, fontSize: "0.65rem" }}>Organizing Category</Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>{data.organizingInstitutionCategory}</Typography>
+                  </Box>
+                </Grid>
+                <Grid item xs={12} sm={4}>
+                  <Box sx={{ p: 1.5, borderRadius: "10px", background: "rgba(255,255,255,0.02)" }}>
+                    <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", fontWeight: 800, fontSize: "0.65rem" }}>Location</Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>{data.location}</Typography>
+                  </Box>
+                </Grid>
+                {data.organizingInstitutionCategory === "MHRD R&D Lab" && (
+                  <Grid item xs={12} sm={4}>
+                    <Box sx={{ p: 1.5, borderRadius: "10px", background: "rgba(255,255,255,0.02)" }}>
+                      <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", fontWeight: 800, fontSize: "0.65rem" }}>Lab Name</Typography>
+                      <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>{data.labName}</Typography>
+                    </Box>
+                  </Grid>
+                )}
+                {data.organizingInstitutionCategory === "Govt. University" && (
+                  <Grid item xs={12} sm={4}>
+                    <Box sx={{ p: 1.5, borderRadius: "10px", background: "rgba(255,255,255,0.02)" }}>
+                      <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", fontWeight: 800, fontSize: "0.65rem" }}>University Name</Typography>
+                      <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>{data.universityName}</Typography>
+                    </Box>
+                  </Grid>
+                )}
+                {data.organizingInstitutionCategory === "NIRF Ranked Institute (Below 200)" && (
+                  <>
+                    <Grid item xs={12} sm={4}>
+                      <Box sx={{ p: 1.5, borderRadius: "10px", background: "rgba(255,255,255,0.02)" }}>
+                        <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", fontWeight: 800, fontSize: "0.65rem" }}>Institute Name</Typography>
+                        <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>{data.instituteName}</Typography>
+                      </Box>
+                    </Grid>
+                    <Grid item xs={12} sm={4}>
+                      <Box sx={{ p: 1.5, borderRadius: "10px", background: "rgba(255,255,255,0.02)" }}>
+                        <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", fontWeight: 800, fontSize: "0.65rem" }}>NIRF Rank</Typography>
+                        <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>{data.nirfRank}</Typography>
+                      </Box>
+                    </Grid>
+                  </>
+                )}
+              </>
+            )}
+
             <Grid item xs={12} sm={4}>
               <Box sx={{ p: 1.5, borderRadius: "10px", background: "rgba(255,255,255,0.02)" }}>
                 <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", fontWeight: 800, fontSize: "0.65rem" }}>Dates</Typography>
@@ -725,16 +868,123 @@ export default function ResourceUtilization() {
             </Select>
           </Box>
 
-          <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
-            <Typography sx={labelStyle}>Organization / Event Name: *</Typography>
-            <TextField
-              size="small"
-              fullWidth
-              value={form.organizationName}
-              onChange={setVal("organizationName")}
-              placeholder="Enter Name of Event or Organization"
-            />
-          </Box>
+          {form.activityCategory === "FDP" && form.activityType === "FDP Participant" ? (
+            <>
+              <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
+                <Typography sx={labelStyle}>Course / FDP Name: *</Typography>
+                <TextField
+                  size="small"
+                  fullWidth
+                  value={form.courseFdpName}
+                  onChange={setVal("courseFdpName")}
+                  placeholder="Enter Name of the Course / FDP"
+                />
+              </Box>
+
+              <Box>
+                <Typography sx={labelStyle}>Organizing Institution Category: *</Typography>
+                <Select
+                  size="small"
+                  fullWidth
+                  displayEmpty
+                  value={form.organizingInstitutionCategory}
+                  onChange={setVal("organizingInstitutionCategory")}
+                >
+                  <MenuItem value="" disabled>--Select Category--</MenuItem>
+                  {[
+                    "UGC",
+                    "AICTE",
+                    "IIT",
+                    "IIM",
+                    "NIT",
+                    "MHRD R&D Lab",
+                    "NITTTR",
+                    "NIPER",
+                    "ICMR",
+                    "Govt. University",
+                    "NIRF Ranked Institute (Below 200)",
+                    "NPTEL"
+                  ].map(opt => (
+                    <MenuItem key={opt} value={opt}>{opt}</MenuItem>
+                  ))}
+                </Select>
+              </Box>
+
+              <Box>
+                <Typography sx={labelStyle}>Location (City, State): *</Typography>
+                <TextField
+                  size="small"
+                  fullWidth
+                  value={form.location}
+                  onChange={setVal("location")}
+                  placeholder="e.g. Hyderabad, Telangana"
+                />
+              </Box>
+
+              {form.organizingInstitutionCategory === "MHRD R&D Lab" && (
+                <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
+                  <Typography sx={labelStyle}>Lab Name: *</Typography>
+                  <TextField
+                    size="small"
+                    fullWidth
+                    value={form.labName}
+                    onChange={setVal("labName")}
+                    placeholder="Enter Lab Name"
+                  />
+                </Box>
+              )}
+
+              {form.organizingInstitutionCategory === "Govt. University" && (
+                <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
+                  <Typography sx={labelStyle}>University Name: *</Typography>
+                  <TextField
+                    size="small"
+                    fullWidth
+                    value={form.universityName}
+                    onChange={setVal("universityName")}
+                    placeholder="Enter University Name"
+                  />
+                </Box>
+              )}
+
+              {form.organizingInstitutionCategory === "NIRF Ranked Institute (Below 200)" && (
+                <>
+                  <Box>
+                    <Typography sx={labelStyle}>Institute Name: *</Typography>
+                    <TextField
+                      size="small"
+                      fullWidth
+                      value={form.instituteName}
+                      onChange={setVal("instituteName")}
+                      placeholder="Enter Institute Name"
+                    />
+                  </Box>
+                  <Box>
+                    <Typography sx={labelStyle}>NIRF Rank: *</Typography>
+                    <TextField
+                      size="small"
+                      fullWidth
+                      type="number"
+                      value={form.nirfRank}
+                      onChange={setVal("nirfRank")}
+                      placeholder="e.g. 45"
+                    />
+                  </Box>
+                </>
+              )}
+            </>
+          ) : (
+            <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
+              <Typography sx={labelStyle}>Organization / Event Name: *</Typography>
+              <TextField
+                size="small"
+                fullWidth
+                value={form.organizationName}
+                onChange={setVal("organizationName")}
+                placeholder="Enter Name of Event or Organization"
+              />
+            </Box>
+          )}
 
           <Box>
             <Typography sx={labelStyle}>From Date: *</Typography>
