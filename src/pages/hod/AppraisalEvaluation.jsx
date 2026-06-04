@@ -434,7 +434,7 @@ const AppraisalEvaluation = () => {
                             <Chip label={item.status} size="small" sx={{ bgcolor: statusColor.bg, color: statusColor.color, fontWeight: 800, borderRadius: "6px" }} />
                           </Box>
                           <Typography variant="caption" color="var(--text-secondary)" display="block" mb={1}>
-                            {item.activityCategory === "FDP" && item.activityType === "FDP Participant" ? "Course / FDP Name" : "Organization / Event"}: <strong>{item.organizationName}</strong> | Duration: {item.duration} Days ({new Date(item.fromDate).toLocaleDateString("en-IN")} to {new Date(item.toDate).toLocaleDateString("en-IN")})
+                            {item.activityCategory === "FDP" && item.activityType === "FDP Participant" ? "Course Name" : "Organization / Event"}: <strong>{item.organizationName}</strong> | Duration: {item.duration} Days ({new Date(item.fromDate).toLocaleDateString("en-IN")} to {new Date(item.toDate).toLocaleDateString("en-IN")})
                           </Typography>
                           {item.activityCategory === "FDP" && item.activityType === "FDP Participant" && (
                             <Box sx={{ mb: 1.5, p: 1.5, borderRadius: "6px", background: "rgba(0,0,0,0.02)", border: "1px dashed var(--border-color)" }}>

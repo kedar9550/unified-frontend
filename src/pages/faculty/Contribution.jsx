@@ -15,19 +15,19 @@ import API from "../../api/axios";
 
 // 13 Categories definitions
 const CONTRIBUTION_CATEGORIES = [
-  { id: 1, name: "Category 1: Member of BOG / GB / AC / BOS" },
-  { id: 2, name: "Category 2: Editorial Board Member (SCIE / Q1 / Q2)" },
-  { id: 3, name: "Category 3: Editorial Board Member (ESCI / Q3 / Q4 / Conference Proceedings)" },
-  { id: 4, name: "Category 4: Awards (MHRD / AICTE / UGC / State Govt / Top Institutions)" },
-  { id: 5, name: "Category 5: Awards (NGO / Trust / Others)" },
-  { id: 6, name: "Category 6: Developed E-Content" },
-  { id: 7, name: "Category 7: Certification on New Age Technologies" },
-  { id: 8, name: "Category 8: Students Trained and Shortlisted for Finals" },
-  { id: 9, name: "Category 9: Articles Published in Magazine / Newspaper" },
-  { id: 10, name: "Category 10: Research Facility Establishment / Maintenance" },
-  { id: 11, name: "Category 11: NPTEL Course Completion" },
-  { id: 12, name: "Category 12: Coursera Course Completion" },
-  { id: 13, name: "Category 13: FDP / Seminar Grant Sanctioned" }
+  { id: 1, name: "Member of BOG / GB / AC / BOS" },
+  { id: 2, name: "Editorial Board Member (SCIE / Q1 / Q2)" },
+  { id: 3, name: "Editorial Board Member (ESCI / Q3 / Q4 / Conference Proceedings)" },
+  { id: 4, name: "Awards (MHRD / AICTE / UGC / State Govt / Top Institutions)" },
+  { id: 5, name: "Awards (NGO / Trust / Others)" },
+  { id: 6, name: "Developed E-Content" },
+  { id: 7, name: "Certification on New Age Technologies" },
+  { id: 8, name: "Students Trained and Shortlisted for Finals" },
+  { id: 9, name: "Articles Published in Magazine / Newspaper" },
+  { id: 10, name: "Research Facility Establishment / Maintenance" },
+  { id: 11, name: "NPTEL Course Completion" },
+  { id: 12, name: "Coursera Course Completion" },
+  { id: 13, name: "FDP / Seminar Grant Sanctioned" }
 ];
 
 export default function Contribution() {
@@ -35,10 +35,10 @@ export default function Contribution() {
   const [academicYears, setAcademicYears] = useState([]);
   const [selectedYear, setSelectedYear] = useState("");
   const [contributionsList, setContributionsList] = useState([]);
-  
+
   const [openFormModal, setOpenFormModal] = useState(false);
   const [selectedContributionDetails, setSelectedContributionDetails] = useState(null);
-  
+
   const [editingId, setEditingId] = useState(null);
   const [form, setForm] = useState({
     academicYear: "",
@@ -64,7 +64,7 @@ export default function Contribution() {
     grantName: "",
     sanctionDate: ""
   });
-  
+
   const [proofFile, setProofFile] = useState(null);
   const [loading, setLoading] = useState(false);
 
@@ -96,8 +96,8 @@ export default function Contribution() {
   }, [form.fromDate, form.toDate]);
 
   const fetchContributions = () => {
-    const url = selectedYear 
-      ? `/api/value-addition/contribution?academicYear=${selectedYear}` 
+    const url = selectedYear
+      ? `/api/value-addition/contribution?academicYear=${selectedYear}`
       : `/api/value-addition/contribution`;
     API.get(url)
       .then(res => {
@@ -684,7 +684,7 @@ export default function Contribution() {
               ))}
             </Select>
           </Box>
-          
+
           <Stack direction="row" spacing={2}>
             <Button
               variant="outlined"
@@ -1115,7 +1115,7 @@ export default function Contribution() {
       </DialogTitle>
       <DialogContent sx={{ p: 3, pt: 4 }}>
         <SubLabel text="Details of the Contribution:" />
-        
+
         <Box sx={{ mb: 2, maxWidth: 500 }}>
           <Typography sx={labelStyle}>Academic Year: *</Typography>
           <Select

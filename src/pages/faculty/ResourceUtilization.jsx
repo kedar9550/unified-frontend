@@ -649,7 +649,7 @@ export default function ResourceUtilization() {
         <DialogContent sx={{ p: 3, mt: 1 }}>
           <Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)", mb: 1 }}>{data.activityCategory} - {data.activityType}</Typography>
           {data.activityCategory === "FDP" && data.activityType === "FDP Participant" ? (
-            <Typography variant="body2" sx={{ color: "var(--text-secondary)", mb: 3, fontWeight: 600 }}>Course / FDP Name: {data.courseFdpName || data.organizationName}</Typography>
+            <Typography variant="body2" sx={{ color: "var(--text-secondary)", mb: 3, fontWeight: 600 }}>Course Name: {data.courseFdpName || data.organizationName}</Typography>
           ) : (
             <Typography variant="body2" sx={{ color: "var(--text-secondary)", mb: 3, fontWeight: 600 }}>Organization / Event: {data.organizationName}</Typography>
           )}
@@ -871,13 +871,13 @@ export default function ResourceUtilization() {
           {form.activityCategory === "FDP" && form.activityType === "FDP Participant" ? (
             <>
               <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
-                <Typography sx={labelStyle}>Course / FDP Name: *</Typography>
+                <Typography sx={labelStyle}>Course Name: *</Typography>
                 <TextField
                   size="small"
                   fullWidth
                   value={form.courseFdpName}
                   onChange={setVal("courseFdpName")}
-                  placeholder="Enter Name of the Course / FDP"
+                  placeholder="Enter Course Name"
                 />
               </Box>
 

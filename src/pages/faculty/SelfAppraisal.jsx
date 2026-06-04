@@ -76,19 +76,19 @@ const ADMINISTRATIVE_ROLES_LIST = [
 ];
 
 const CONTRIBUTION_CATEGORIES = [
-  { id: 1, name: "Category 1: Member of BOG / GB / AC / BOS" },
-  { id: 2, name: "Category 2: Editorial Board Member (SCIE / Q1 / Q2)" },
-  { id: 3, name: "Category 3: Editorial Board Member (ESCI / Q3 / Q4 / Conference Proceedings)" },
-  { id: 4, name: "Category 4: Awards (MHRD / AICTE / UGC / State Govt / Top Institutions)" },
-  { id: 5, name: "Category 5: Awards (NGO / Trust / Others)" },
-  { id: 6, name: "Category 6: Developed E-Content" },
-  { id: 7, name: "Category 7: Certification on New Age Technologies" },
-  { id: 8, name: "Category 8: Students Trained and Shortlisted for Finals" },
-  { id: 9, name: "Category 9: Articles Published in Magazine / Newspaper" },
-  { id: 10, name: "Category 10: Research Facility Establishment / Maintenance" },
-  { id: 11, name: "Category 11: NPTEL Course Completion" },
-  { id: 12, name: "Category 12: Coursera Course Completion" },
-  { id: 13, name: "Category 13: FDP / Seminar Grant Sanctioned" }
+  { id: 1, name: "Member of BOG / GB / AC / BOS" },
+  { id: 2, name: "Editorial Board Member (SCIE / Q1 / Q2)" },
+  { id: 3, name: "Editorial Board Member (ESCI / Q3 / Q4 / Conference Proceedings)" },
+  { id: 4, name: "Awards (MHRD / AICTE / UGC / State Govt / Top Institutions)" },
+  { id: 5, name: "Awards (NGO / Trust / Others)" },
+  { id: 6, name: "Developed E-Content" },
+  { id: 7, name: "Certification on New Age Technologies" },
+  { id: 8, name: "Students Trained and Shortlisted for Finals" },
+  { id: 9, name: "Articles Published in Magazine / Newspaper" },
+  { id: 10, name: "Research Facility Establishment / Maintenance" },
+  { id: 11, name: "NPTEL Course Completion" },
+  { id: 12, name: "Coursera Course Completion" },
+  { id: 13, name: "FDP / Seminar Grant Sanctioned" }
 ];
 
 const RESOURCE_UTILIZATION_CATEGORIES = [
@@ -278,7 +278,7 @@ const SelfAppraisal = () => {
         setAppraisal(res.data.data);
         setProfileComplete(res.data.isProfileComplete);
         setMissingFields(res.data.missingProfileFields || []);
-        
+
         // Populating extra states
         const proc = res.data.proctoringDetail || null;
         setProctoringDetail(proc);
@@ -537,7 +537,7 @@ const SelfAppraisal = () => {
     const showDaysField = resUtForm.activityType?.includes("Participant");
 
     const isFdpParticipant = resUtForm.activityCategory === "FDP" && resUtForm.activityType === "FDP Participant";
-    const basicFieldsValid = isFdpParticipant 
+    const basicFieldsValid = isFdpParticipant
       ? (resUtForm.activityCategory && resUtForm.activityType && resUtForm.courseFdpName && resUtForm.fromDate && resUtForm.toDate)
       : (resUtForm.activityCategory && resUtForm.activityType && resUtForm.organizationName && resUtForm.fromDate && resUtForm.toDate);
 
@@ -617,7 +617,7 @@ const SelfAppraisal = () => {
       fd.append("toDate", resUtForm.toDate);
       fd.append("duration", resUtForm.duration);
       fd.append("remarks", resUtForm.remarks || "");
-      
+
       if (isFdpParticipant) {
         fd.append("courseFdpName", resUtForm.courseFdpName);
         fd.append("organizingInstitutionCategory", resUtForm.organizingInstitutionCategory);
@@ -1006,144 +1006,144 @@ const SelfAppraisal = () => {
 
   const calculateResourceUtilizationPoints = (r, config) => {
     const resourceUtConf = config?.valueAddition?.resourceUtilizationPoints || {
-        conference: 10,
-        sttp: 10,
-        fdp: 10,
-        guestLecture: 2,
-        resourcePerson: 2,
-        participated: 1
+      conference: 10,
+      sttp: 10,
+      fdp: 10,
+      guestLecture: 2,
+      resourcePerson: 2,
+      participated: 1
     };
     let pts = 0;
     const activityRole = (r.activityType || '').toLowerCase();
     const activityCat = (r.activityCategory || '').toLowerCase();
-    
+
     if (activityRole.includes('resource person') || activityRole.includes('resourceperson')) {
-        pts = (parseInt(r.sessionsConducted) || 1) * (resourceUtConf.resourcePerson ?? 2);
+      pts = (parseInt(r.sessionsConducted) || 1) * (resourceUtConf.resourcePerson ?? 2);
     } else if (activityRole.includes('participant') || activityRole.includes('participated')) {
-        pts = (parseInt(r.daysParticipated) || 1) * (resourceUtConf.participated ?? 1);
+      pts = (parseInt(r.daysParticipated) || 1) * (resourceUtConf.participated ?? 1);
     } else if (activityRole.includes('guest lecture') || activityRole.includes('workshop') || activityRole.includes('event')) {
-        pts = resourceUtConf.guestLecture ?? 2;
+      pts = resourceUtConf.guestLecture ?? 2;
     } else {
-        // Organized STTP/FDP/Conference
-        if (activityCat.includes('conference')) {
-            pts = resourceUtConf.conference ?? 10;
-        } else if (activityCat.includes('sttp') || activityCat.includes('refresher')) {
-            pts = resourceUtConf.sttp ?? 10;
-        } else if (activityCat.includes('fdp') || activityCat.includes('symposium')) {
-            pts = resourceUtConf.fdp ?? 10;
-        } else {
-            pts = resourceUtConf.conference ?? 10; // fallback
-        }
+      // Organized STTP/FDP/Conference
+      if (activityCat.includes('conference')) {
+        pts = resourceUtConf.conference ?? 10;
+      } else if (activityCat.includes('sttp') || activityCat.includes('refresher')) {
+        pts = resourceUtConf.sttp ?? 10;
+      } else if (activityCat.includes('fdp') || activityCat.includes('symposium')) {
+        pts = resourceUtConf.fdp ?? 10;
+      } else {
+        pts = resourceUtConf.conference ?? 10; // fallback
+      }
     }
     return pts;
   };
 
   const calculateContributionPoints = (item, config) => {
     const expPointsConf = config?.valueAddition?.expertisePoints || {
-        memberBOS: 5,
-        editorialBoardSCIE: 5,
-        editorialBoardESCI: 3,
-        awardsGovt: 5,
-        awardsOthers: 3,
-        developedEContent: 10,
-        certificationNewAge: 5,
-        hackathonShortlisted: 5,
-        newspaperArticle: 3,
-        researchFacility: 3,
-        nptel12W: 10,
-        nptel8W: 8,
-        nptel4W: 5,
-        coursera: 5,
-        grantSanctioned: 5
+      memberBOS: 5,
+      editorialBoardSCIE: 5,
+      editorialBoardESCI: 3,
+      awardsGovt: 5,
+      awardsOthers: 3,
+      developedEContent: 10,
+      certificationNewAge: 5,
+      hackathonShortlisted: 5,
+      newspaperArticle: 3,
+      researchFacility: 3,
+      nptel12W: 10,
+      nptel8W: 8,
+      nptel4W: 5,
+      coursera: 5,
+      grantSanctioned: 5
     };
-    
+
     const cat = parseInt(item.category);
     switch (cat) {
-        case 1: return expPointsConf.memberBOS ?? 5;
-        case 2: return expPointsConf.editorialBoardSCIE ?? 5;
-        case 3: return expPointsConf.editorialBoardESCI ?? 3;
-        case 4: return expPointsConf.awardsGovt ?? 5;
-        case 5: return expPointsConf.awardsOthers ?? 3;
-        case 6: return expPointsConf.developedEContent ?? 10;
-        case 7: return expPointsConf.certificationNewAge ?? 5;
-        case 8: return expPointsConf.hackathonShortlisted ?? 5;
-        case 9: return expPointsConf.newspaperArticle ?? 3;
-        case 10: return expPointsConf.researchFacility ?? 3;
-        case 11:
-            const dur = (item.duration || '').toLowerCase();
-            if (dur.includes('12')) return expPointsConf.nptel12W ?? 10;
-            if (dur.includes('8')) return expPointsConf.nptel8W ?? 8;
-            if (dur.includes('4')) return expPointsConf.nptel4W ?? 5;
-            return expPointsConf.nptel8W ?? 8;
-        case 12: return expPointsConf.coursera ?? 5;
-        case 13: return expPointsConf.grantSanctioned ?? 5;
-        default: return 0;
+      case 1: return expPointsConf.memberBOS ?? 5;
+      case 2: return expPointsConf.editorialBoardSCIE ?? 5;
+      case 3: return expPointsConf.editorialBoardESCI ?? 3;
+      case 4: return expPointsConf.awardsGovt ?? 5;
+      case 5: return expPointsConf.awardsOthers ?? 3;
+      case 6: return expPointsConf.developedEContent ?? 10;
+      case 7: return expPointsConf.certificationNewAge ?? 5;
+      case 8: return expPointsConf.hackathonShortlisted ?? 5;
+      case 9: return expPointsConf.newspaperArticle ?? 3;
+      case 10: return expPointsConf.researchFacility ?? 3;
+      case 11:
+        const dur = (item.duration || '').toLowerCase();
+        if (dur.includes('12')) return expPointsConf.nptel12W ?? 10;
+        if (dur.includes('8')) return expPointsConf.nptel8W ?? 8;
+        if (dur.includes('4')) return expPointsConf.nptel4W ?? 5;
+        return expPointsConf.nptel8W ?? 8;
+      case 12: return expPointsConf.coursera ?? 5;
+      case 13: return expPointsConf.grantSanctioned ?? 5;
+      default: return 0;
     }
   };
 
   const calculateAdministrativePoints = (r, config) => {
     const adminConf = config?.administration?.rolePoints || {
-        deanCentral: 20,
-        hodCentral: 15,
-        hodDept: 15,
-        dyHodDept: 10,
-        timetableDept: 10,
-        placementCentral: 10,
-        placementDept: 10,
-        courseraCentral: 10,
-        courseraDept: 5,
-        edcCentral: 10,
-        edcDept: 5,
-        courseDept: 5,
-        websiteCentral: 10,
-        nssCentral: 10,
-        nssDept: 5,
-        trainingCentral: 10,
-        trainingDept: 5,
-        drcDept: 5,
-        antiRaggingCentral: 5,
-        antiRaggingDept: 3,
-        otherCentral: 10,
-        otherDept: 5
+      deanCentral: 20,
+      hodCentral: 15,
+      hodDept: 15,
+      dyHodDept: 10,
+      timetableDept: 10,
+      placementCentral: 10,
+      placementDept: 10,
+      courseraCentral: 10,
+      courseraDept: 5,
+      edcCentral: 10,
+      edcDept: 5,
+      courseDept: 5,
+      websiteCentral: 10,
+      nssCentral: 10,
+      nssDept: 5,
+      trainingCentral: 10,
+      trainingDept: 5,
+      drcDept: 5,
+      antiRaggingCentral: 5,
+      antiRaggingDept: 3,
+      otherCentral: 10,
+      otherDept: 5
     };
 
     let pts = 5; // default fallback
     const name = r.roleName.toLowerCase();
     const level = (r.level || '').toLowerCase();
     const isCentral = level.includes('central') || level.includes('institute');
-    
+
     if (name.includes('dean') || name.includes('coe')) {
-        pts = adminConf.deanCentral ?? 20;
+      pts = adminConf.deanCentral ?? 20;
     } else if (name.includes('hod')) {
-        if (name.includes('dy') || name.includes('vice')) {
-            pts = adminConf.dyHodDept ?? 10;
-        } else {
-            pts = isCentral ? (adminConf.hodCentral ?? 15) : (adminConf.hodDept ?? 15);
-        }
-    } else if (name.includes('exam cell') || name.includes('exam incharge')) {
+      if (name.includes('dy') || name.includes('vice')) {
         pts = adminConf.dyHodDept ?? 10;
+      } else {
+        pts = isCentral ? (adminConf.hodCentral ?? 15) : (adminConf.hodDept ?? 15);
+      }
+    } else if (name.includes('exam cell') || name.includes('exam incharge')) {
+      pts = adminConf.dyHodDept ?? 10;
     } else if (name.includes('timetable') || name.includes('time table') || name.includes('project') || name.includes('curriculum')) {
-        pts = adminConf.timetableDept ?? 10;
+      pts = adminConf.timetableDept ?? 10;
     } else if (name.includes('placement') || name.includes('internship') || name.includes('alumni')) {
-        pts = isCentral ? (adminConf.placementCentral ?? 10) : (adminConf.placementDept ?? 10);
+      pts = isCentral ? (adminConf.placementCentral ?? 10) : (adminConf.placementDept ?? 10);
     } else if (name.includes('coursera') || name.includes('linkedin') || name.includes('ala')) {
-        pts = isCentral ? (adminConf.courseraCentral ?? 10) : (adminConf.courseraDept ?? 5);
+      pts = isCentral ? (adminConf.courseraCentral ?? 10) : (adminConf.courseraDept ?? 5);
     } else if (name.includes('edc') || name.includes('iic') || name.includes('iqac')) {
-        pts = isCentral ? (adminConf.edcCentral ?? 10) : (adminConf.edcDept ?? 5);
+      pts = isCentral ? (adminConf.edcCentral ?? 10) : (adminConf.edcDept ?? 5);
     } else if (name.includes('course coordinator')) {
-        pts = adminConf.courseDept ?? 5;
+      pts = adminConf.courseDept ?? 5;
     } else if (name.includes('website')) {
-        pts = adminConf.websiteCentral ?? 10;
+      pts = adminConf.websiteCentral ?? 10;
     } else if (name.includes('nss') || name.includes('professional chapter')) {
-        pts = isCentral ? (adminConf.nssCentral ?? 10) : (adminConf.nssDept ?? 5);
+      pts = isCentral ? (adminConf.nssCentral ?? 10) : (adminConf.nssDept ?? 5);
     } else if (name.includes('training')) {
-        pts = isCentral ? (adminConf.trainingCentral ?? 10) : (adminConf.trainingDept ?? 5);
+      pts = isCentral ? (adminConf.trainingCentral ?? 10) : (adminConf.trainingDept ?? 5);
     } else if (name.includes('drc') || name.includes('research')) {
-        pts = adminConf.drcDept ?? 5;
+      pts = adminConf.drcDept ?? 5;
     } else if (name.includes('anti-ragging') || name.includes('antiragging')) {
-        pts = isCentral ? (adminConf.antiRaggingCentral ?? 5) : (adminConf.antiRaggingDept ?? 3);
+      pts = isCentral ? (adminConf.antiRaggingCentral ?? 5) : (adminConf.antiRaggingDept ?? 3);
     } else {
-        pts = isCentral ? (adminConf.otherCentral ?? 10) : (adminConf.otherDept ?? 5);
+      pts = isCentral ? (adminConf.otherCentral ?? 10) : (adminConf.otherDept ?? 5);
     }
     return pts;
   };
@@ -1156,7 +1156,7 @@ const SelfAppraisal = () => {
   // Claim Publication Submit handler
   const handleClaimSubmit = async () => {
     if (!selectedPaper) return;
-    
+
     const formData = new FormData();
     formData.append("researchId", selectedPaper.paperId);
     formData.append("researchType", "Journal");
@@ -1194,13 +1194,13 @@ const SelfAppraisal = () => {
 
   return (
     <Box p={4} sx={{ maxWidth: 1300, margin: "0 auto", animation: "fadeIn 0.5s ease" }}>
-      
+
       {/* Header Panel */}
-      <Box 
-        sx={{ 
-          display: "flex", 
+      <Box
+        sx={{
+          display: "flex",
           flexDirection: { xs: "column", md: "row" },
-          justifyContent: "space-between", 
+          justifyContent: "space-between",
           alignItems: { xs: "flex-start", md: "center" },
           mb: 4,
           p: 3,
@@ -1255,10 +1255,10 @@ const SelfAppraisal = () => {
               Submit to HOD
             </Button>
           ) : (
-            <Chip 
-              label={`Status: ${appraisal.status}`} 
-              color={appraisal.status === "Completed" ? "success" : "info"} 
-              icon={<AssignmentTurnedIn />} 
+            <Chip
+              label={`Status: ${appraisal.status}`}
+              color={appraisal.status === "Completed" ? "success" : "info"}
+              icon={<AssignmentTurnedIn />}
               sx={{ fontWeight: 700, px: 2, py: 2.2, borderRadius: "10px" }}
             />
           )}
@@ -1269,14 +1269,14 @@ const SelfAppraisal = () => {
       {!profileComplete && (
         <Alert severity="warning" variant="filled" sx={{ mb: 4, borderRadius: "16px" }}>
           <AlertTitle sx={{ fontWeight: 700 }}>Profile Details Incomplete</AlertTitle>
-          You must complete the following fields in your profile before you can submit this appraisal to HOD: 
+          You must complete the following fields in your profile before you can submit this appraisal to HOD:
           <strong> {missingFields.join(", ")}</strong>. Please navigate to the Profile settings to update them.
         </Alert>
       )}
 
       {/* Main Grid */}
       <Grid container spacing={4}>
-        
+
         {/* Left Side: Detail Sheets */}
         <Grid item xs={12} lg={8.5}>
           {/* PART-A: Personal Information */}
@@ -1298,12 +1298,12 @@ const SelfAppraisal = () => {
                     <Typography variant="caption" color="var(--text-secondary)" sx={{ fontWeight: 700 }}>
                       {item.label}
                     </Typography>
-                    <Typography 
-                      variant="body1" 
-                      sx={{ 
-                        fontWeight: 600, 
+                    <Typography
+                      variant="body1"
+                      sx={{
+                        fontWeight: 600,
                         color: item.highlight ? "var(--color-danger)" : "var(--text-primary)",
-                        mt: 0.5 
+                        mt: 0.5
                       }}
                     >
                       {item.val}
@@ -1315,7 +1315,7 @@ const SelfAppraisal = () => {
           </Card>
 
           {/* PART-B: Performance Details */}
-          
+
           {/* 1. Teaching & Learning */}
           <Card sx={{ borderRadius: "16px", background: "var(--bg-panel)", border: "1px solid var(--border-color)", mb: 4 }}>
             <CardContent>
@@ -1368,9 +1368,9 @@ const SelfAppraisal = () => {
                     <Typography variant="subtitle1" sx={{ fontWeight: 700, color: "var(--color-primary)" }}>
                       1.2 Proctoring Students' Average Pass Percentage
                     </Typography>
-                    <Chip 
-                      label={proctoringDetail.status} 
-                      size="small" 
+                    <Chip
+                      label={proctoringDetail.status}
+                      size="small"
                       sx={{
                         bgcolor: getStatusColor(proctoringDetail.status).bg,
                         color: getStatusColor(proctoringDetail.status).color,
@@ -1597,9 +1597,9 @@ const SelfAppraisal = () => {
                               <Chip label="Eligible (Single AUS Author)" color="info" size="small" />
                             )}
                             {p.claimStatus === "requires_claim_action" && (
-                              <Button 
-                                variant="outlined" 
-                                color="warning" 
+                              <Button
+                                variant="outlined"
+                                color="warning"
                                 size="small"
                                 onClick={() => {
                                   setSelectedPaper(p);
@@ -1877,7 +1877,7 @@ const SelfAppraisal = () => {
                           const isEditable = activity.status === 'Draft' || activity.status === 'Rejected';
                           const fromDateFormatted = activity.fromDate ? new Date(activity.fromDate).toLocaleDateString("en-IN", { day: '2-digit', month: '2-digit', year: 'numeric' }) : "";
                           const toDateFormatted = activity.toDate ? new Date(activity.toDate).toLocaleDateString("en-IN", { day: '2-digit', month: '2-digit', year: 'numeric' }) : "";
-                          
+
                           return (
                             <TableRow key={activity._id || i}>
                               <TableCell>{i + 1}</TableCell>
@@ -2168,7 +2168,7 @@ const SelfAppraisal = () => {
                       <strong>Rejection Remarks from HOD:</strong> {administrationDetail.remarks || "Please check individual role feedback."}
                     </Alert>
                   )}
-                  
+
                   {/* Live Claim Counter Header Box */}
                   <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
                     <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-secondary)" }}>
@@ -2179,7 +2179,7 @@ const SelfAppraisal = () => {
                         return role.isResponsible ? sum + calculateAdministrativePoints(role, appraisalConfig) : sum;
                       }, 0));
                       return (
-                        <Chip 
+                        <Chip
                           label={`Live Points Claimed: ${livePoints} / 20`}
                           color="primary"
                           variant="outlined"
@@ -2265,14 +2265,14 @@ const SelfAppraisal = () => {
             </CardContent>
           </Card>
         </Grid>
-        
+
         {/* Right Side: Quick Points Scorecard Summary Panel */}
         <Grid item xs={12} lg={3.5}>
-          <Card 
-            sx={{ 
-              position: "sticky", 
-              top: 24, 
-              borderRadius: "20px", 
+          <Card
+            sx={{
+              position: "sticky",
+              top: 24,
+              borderRadius: "20px",
               background: "linear-gradient(135deg, var(--bg-accent-4) 0%, var(--bg-panel) 100%)",
               border: "1px solid var(--border-color)",
               boxShadow: "var(--shadow-premium)"
@@ -2306,25 +2306,25 @@ const SelfAppraisal = () => {
 
       {/* Co-author claims modal */}
       <Modal open={claimModalOpen} onClose={() => setClaimModalOpen(false)}>
-        <Box 
-          sx={{ 
-            position: "absolute", 
-            top: "50%", 
-            left: "50%", 
-            transform: "translate(-50%, -50%)", 
-            width: 480, 
-            background: "var(--bg-panel)", 
+        <Box
+          sx={{
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            width: 480,
+            background: "var(--bg-panel)",
             border: "1px solid var(--border-color)",
-            boxShadow: 24, 
-            p: 4, 
-            borderRadius: "16px" 
+            boxShadow: 24,
+            p: 4,
+            borderRadius: "16px"
           }}
         >
           <Typography variant="h6" sx={{ fontWeight: 800, mb: 2, color: "var(--text-primary)" }}>
             Claim Co-Authored Research
           </Typography>
           <Divider sx={{ mb: 2 }} />
-          
+
           <Typography variant="body2" color="var(--text-secondary)" sx={{ mb: 3 }}>
             Only one author from Aditya University can claim this paper. If you are <strong>not</strong> the first author, you must upload a signed <strong>Undertaking Form</strong> from other authors.
           </Typography>
@@ -2337,11 +2337,11 @@ const SelfAppraisal = () => {
             sx={{ py: 1.5, borderStyle: "dashed", mb: 3, textTransform: "none", fontWeight: 700 }}
           >
             Upload Undertaking (PDF/Image)
-            <input 
-              type="file" 
-              hidden 
+            <input
+              type="file"
+              hidden
               accept=".pdf,.png,.jpg,.jpeg"
-              onChange={(e) => setUndertakingFile(e.target.files[0])} 
+              onChange={(e) => setUndertakingFile(e.target.files[0])}
             />
           </Button>
 
@@ -2355,10 +2355,10 @@ const SelfAppraisal = () => {
             <Button onClick={() => setClaimModalOpen(false)} sx={{ fontWeight: 700 }}>
               Cancel
             </Button>
-            <Button 
-              variant="contained" 
-              color="warning" 
-              onClick={handleClaimSubmit} 
+            <Button
+              variant="contained"
+              color="warning"
+              onClick={handleClaimSubmit}
               disabled={loading}
               sx={{ fontWeight: 700, color: "#fff" }}
             >
@@ -2443,123 +2443,123 @@ const SelfAppraisal = () => {
               </Select>
             </Box>
 
-          {resUtForm.activityCategory === "FDP" && resUtForm.activityType === "FDP Participant" ? (
-            <>
+            {resUtForm.activityCategory === "FDP" && resUtForm.activityType === "FDP Participant" ? (
+              <>
+                <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
+                  <Typography sx={labelStyle}>Course Name: *</Typography>
+                  <TextField
+                    size="small"
+                    fullWidth
+                    value={resUtForm.courseFdpName}
+                    onChange={(e) => setResUtForm(p => ({ ...p, courseFdpName: e.target.value }))}
+                    placeholder="Enter Course Name"
+                  />
+                </Box>
+
+                <Box>
+                  <Typography sx={labelStyle}>Organizing Institution Category: *</Typography>
+                  <Select
+                    size="small"
+                    fullWidth
+                    displayEmpty
+                    value={resUtForm.organizingInstitutionCategory}
+                    onChange={(e) => setResUtForm(p => ({ ...p, organizingInstitutionCategory: e.target.value }))}
+                  >
+                    <MenuItem value="" disabled>--Select Category--</MenuItem>
+                    {[
+                      "UGC",
+                      "AICTE",
+                      "IIT",
+                      "IIM",
+                      "NIT",
+                      "MHRD R&D Lab",
+                      "NITTTR",
+                      "NIPER",
+                      "ICMR",
+                      "Govt. University",
+                      "NIRF Ranked Institute (Below 200)",
+                      "NPTEL"
+                    ].map(opt => (
+                      <MenuItem key={opt} value={opt}>{opt}</MenuItem>
+                    ))}
+                  </Select>
+                </Box>
+
+                <Box>
+                  <Typography sx={labelStyle}>Location (City, State): *</Typography>
+                  <TextField
+                    size="small"
+                    fullWidth
+                    value={resUtForm.location}
+                    onChange={(e) => setResUtForm(p => ({ ...p, location: e.target.value }))}
+                    placeholder="e.g. Hyderabad, Telangana"
+                  />
+                </Box>
+
+                {resUtForm.organizingInstitutionCategory === "MHRD R&D Lab" && (
+                  <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
+                    <Typography sx={labelStyle}>Lab Name: *</Typography>
+                    <TextField
+                      size="small"
+                      fullWidth
+                      value={resUtForm.labName}
+                      onChange={(e) => setResUtForm(p => ({ ...p, labName: e.target.value }))}
+                      placeholder="Enter Lab Name"
+                    />
+                  </Box>
+                )}
+
+                {resUtForm.organizingInstitutionCategory === "Govt. University" && (
+                  <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
+                    <Typography sx={labelStyle}>University Name: *</Typography>
+                    <TextField
+                      size="small"
+                      fullWidth
+                      value={resUtForm.universityName}
+                      onChange={(e) => setResUtForm(p => ({ ...p, universityName: e.target.value }))}
+                      placeholder="Enter University Name"
+                    />
+                  </Box>
+                )}
+
+                {resUtForm.organizingInstitutionCategory === "NIRF Ranked Institute (Below 200)" && (
+                  <>
+                    <Box>
+                      <Typography sx={labelStyle}>Institute Name: *</Typography>
+                      <TextField
+                        size="small"
+                        fullWidth
+                        value={resUtForm.instituteName}
+                        onChange={(e) => setResUtForm(p => ({ ...p, instituteName: e.target.value }))}
+                        placeholder="Enter Institute Name"
+                      />
+                    </Box>
+                    <Box>
+                      <Typography sx={labelStyle}>NIRF Rank: *</Typography>
+                      <TextField
+                        size="small"
+                        fullWidth
+                        type="number"
+                        value={resUtForm.nirfRank}
+                        onChange={(e) => setResUtForm(p => ({ ...p, nirfRank: e.target.value }))}
+                        placeholder="e.g. 45"
+                      />
+                    </Box>
+                  </>
+                )}
+              </>
+            ) : (
               <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
-                <Typography sx={labelStyle}>Course / FDP Name: *</Typography>
+                <Typography sx={labelStyle}>Organization / Event Name: *</Typography>
                 <TextField
                   size="small"
                   fullWidth
-                  value={resUtForm.courseFdpName}
-                  onChange={(e) => setResUtForm(p => ({ ...p, courseFdpName: e.target.value }))}
-                  placeholder="Enter Name of the Course / FDP"
+                  value={resUtForm.organizationName}
+                  onChange={(e) => setResUtForm(p => ({ ...p, organizationName: e.target.value }))}
+                  placeholder="Enter Name of Event or Organization"
                 />
               </Box>
-
-              <Box>
-                <Typography sx={labelStyle}>Organizing Institution Category: *</Typography>
-                <Select
-                  size="small"
-                  fullWidth
-                  displayEmpty
-                  value={resUtForm.organizingInstitutionCategory}
-                  onChange={(e) => setResUtForm(p => ({ ...p, organizingInstitutionCategory: e.target.value }))}
-                >
-                  <MenuItem value="" disabled>--Select Category--</MenuItem>
-                  {[
-                    "UGC",
-                    "AICTE",
-                    "IIT",
-                    "IIM",
-                    "NIT",
-                    "MHRD R&D Lab",
-                    "NITTTR",
-                    "NIPER",
-                    "ICMR",
-                    "Govt. University",
-                    "NIRF Ranked Institute (Below 200)",
-                    "NPTEL"
-                  ].map(opt => (
-                    <MenuItem key={opt} value={opt}>{opt}</MenuItem>
-                  ))}
-                </Select>
-              </Box>
-
-              <Box>
-                <Typography sx={labelStyle}>Location (City, State): *</Typography>
-                <TextField
-                  size="small"
-                  fullWidth
-                  value={resUtForm.location}
-                  onChange={(e) => setResUtForm(p => ({ ...p, location: e.target.value }))}
-                  placeholder="e.g. Hyderabad, Telangana"
-                />
-              </Box>
-
-              {resUtForm.organizingInstitutionCategory === "MHRD R&D Lab" && (
-                <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
-                  <Typography sx={labelStyle}>Lab Name: *</Typography>
-                  <TextField
-                    size="small"
-                    fullWidth
-                    value={resUtForm.labName}
-                    onChange={(e) => setResUtForm(p => ({ ...p, labName: e.target.value }))}
-                    placeholder="Enter Lab Name"
-                  />
-                </Box>
-              )}
-
-              {resUtForm.organizingInstitutionCategory === "Govt. University" && (
-                <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
-                  <Typography sx={labelStyle}>University Name: *</Typography>
-                  <TextField
-                    size="small"
-                    fullWidth
-                    value={resUtForm.universityName}
-                    onChange={(e) => setResUtForm(p => ({ ...p, universityName: e.target.value }))}
-                    placeholder="Enter University Name"
-                  />
-                </Box>
-              )}
-
-              {resUtForm.organizingInstitutionCategory === "NIRF Ranked Institute (Below 200)" && (
-                <>
-                  <Box>
-                    <Typography sx={labelStyle}>Institute Name: *</Typography>
-                    <TextField
-                      size="small"
-                      fullWidth
-                      value={resUtForm.instituteName}
-                      onChange={(e) => setResUtForm(p => ({ ...p, instituteName: e.target.value }))}
-                      placeholder="Enter Institute Name"
-                    />
-                  </Box>
-                  <Box>
-                    <Typography sx={labelStyle}>NIRF Rank: *</Typography>
-                    <TextField
-                      size="small"
-                      fullWidth
-                      type="number"
-                      value={resUtForm.nirfRank}
-                      onChange={(e) => setResUtForm(p => ({ ...p, nirfRank: e.target.value }))}
-                      placeholder="e.g. 45"
-                    />
-                  </Box>
-                </>
-              )}
-            </>
-          ) : (
-            <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
-              <Typography sx={labelStyle}>Organization / Event Name: *</Typography>
-              <TextField
-                size="small"
-                fullWidth
-                value={resUtForm.organizationName}
-                onChange={(e) => setResUtForm(p => ({ ...p, organizationName: e.target.value }))}
-                placeholder="Enter Name of Event or Organization"
-              />
-            </Box>
-          )}
+            )}
 
             <Box>
               <Typography sx={labelStyle}>From Date: *</Typography>
@@ -2640,11 +2640,11 @@ const SelfAppraisal = () => {
             </Box>
 
             <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
-              <FileField 
+              <FileField
                 label={resUtEditingId ? "Upload New Proof (Leave empty to keep existing)" : "Supporting Proof (PDF/Image, Max 500KB) *"}
-                name="proof" 
-                onChange={(e) => setResUtProof(e.target.files[0])} 
-                error={!resUtProof && !resUtEditingId} 
+                name="proof"
+                onChange={(e) => setResUtProof(e.target.files[0])}
+                error={!resUtProof && !resUtEditingId}
               />
             </Box>
           </Grid2>
@@ -2697,7 +2697,7 @@ const SelfAppraisal = () => {
                 {data.activityCategory} - {data.activityType}
               </Typography>
               {data.activityCategory === "FDP" && data.activityType === "FDP Participant" ? (
-                <Typography variant="body2" sx={{ color: "var(--text-secondary)", mb: 3, fontWeight: 600 }}>Course / FDP Name: {data.courseFdpName || data.organizationName}</Typography>
+                <Typography variant="body2" sx={{ color: "var(--text-secondary)", mb: 3, fontWeight: 600 }}>Course Name: {data.courseFdpName || data.organizationName}</Typography>
               ) : (
                 <Typography variant="body2" sx={{ color: "var(--text-secondary)", mb: 3, fontWeight: 600 }}>Organization / Event Name: {data.organizationName}</Typography>
               )}
@@ -3116,11 +3116,11 @@ const SelfAppraisal = () => {
             })()}
 
             <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
-              <FileField 
+              <FileField
                 label={contEditingId ? "Upload New Proof (Leave empty to keep existing)" : "Supporting Proof (PDF/Image, Max 500KB) *"}
-                name="proof" 
-                onChange={(e) => setContProof(e.target.files[0])} 
-                error={!contProof && !contEditingId} 
+                name="proof"
+                onChange={(e) => setContProof(e.target.files[0])}
+                error={!contProof && !contEditingId}
               />
             </Box>
           </Grid2>
