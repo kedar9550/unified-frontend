@@ -1290,6 +1290,7 @@ const SelfAppraisal = () => {
                 {[
                   { label: "Name with Emp ID", val: `${appraisal.personalInfoSnapshot?.name} (${appraisal.personalInfoSnapshot?.institutionId})` },
                   { label: "Designation & Dept", val: `${appraisal.personalInfoSnapshot?.designation} - ${appraisal.personalInfoSnapshot?.departmentName}` },
+                  { label: "Qualification", val: appraisal.personalInfoSnapshot?.qualification || "N/A" },
                   { label: "Scopus ID", val: appraisal.personalInfoSnapshot?.scopusId || "N/A", highlight: !appraisal.personalInfoSnapshot?.scopusId },
                   { label: "Web of Science ID", val: appraisal.personalInfoSnapshot?.wosId || "N/A", highlight: !appraisal.personalInfoSnapshot?.wosId },
                   { label: "ORCID ID", val: appraisal.personalInfoSnapshot?.orcidId || "N/A", highlight: !appraisal.personalInfoSnapshot?.orcidId }

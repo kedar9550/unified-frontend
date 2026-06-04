@@ -129,7 +129,8 @@ const Profile = () => {
     orcidId: "",
     googleScholarId: "",
     panNumber: "",
-    college: ""
+    college: "",
+    qualification: ""
   });
   const [loading, setLoading] = React.useState(false);
   const [errors, setErrors] = React.useState({});
@@ -170,7 +171,8 @@ const Profile = () => {
           orcidId: fresh.orcidId || "",
           googleScholarId: fresh.googleScholarId || "",
           panNumber: fresh.panNumber || "",
-          college: fresh.college || ""
+          college: fresh.college || "",
+          qualification: fresh.qualification || ""
         });
 
         // Fetch DOJ from ECAP
@@ -197,7 +199,8 @@ const Profile = () => {
           orcidId: profile?.orcidId || "",
           googleScholarId: profile?.googleScholarId || "",
           panNumber: profile?.panNumber || "",
-          college: profile?.college || ""
+          college: profile?.college || "",
+          qualification: profile?.qualification || ""
         });
       }
     };
@@ -502,6 +505,11 @@ const Profile = () => {
                       <Typography sx={{ fontSize: "0.85rem", fontWeight: 700, color: "var(--text-primary)" }}>{profile?.college || "N/A"}</Typography>
                     )}
                   </EditableField>
+                  <EditableField
+                    icon={AutoStories} label="Qualification" fieldKey="qualification" value={profile?.qualification}
+                    isEditing={isEditing} fieldValue={form.qualification} fieldError={errors.qualification}
+                    onFieldChange={handleChange("qualification")} maxLength={100}
+                  />
                   <EditableField
                     icon={CreditCard} label="PAN Number" fieldKey="panNumber" value={profile?.panNumber}
                     isEditing={isEditing} fieldValue={form.panNumber} fieldError={errors.panNumber}
