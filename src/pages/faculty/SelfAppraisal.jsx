@@ -52,7 +52,9 @@ import {
   Save,
   Warning,
   Info,
-  Description
+  Description,
+  Cancel,
+  HourglassEmpty
 } from "@mui/icons-material";
 import axiosInstance from "../../api/axios";
 import { toast } from "sonner";
@@ -161,6 +163,7 @@ const SelfAppraisal = () => {
   const [selectedYear, setSelectedYear] = useState("");
   const [loading, setLoading] = useState(false);
   const [appraisal, setAppraisal] = useState(null);
+  const [faculty, setFaculty] = useState(null);
   const [profileComplete, setProfileComplete] = useState(true);
   const [missingFields, setMissingFields] = useState([]);
   const [appraisalConfig, setAppraisalConfig] = useState(null);
@@ -302,6 +305,7 @@ const SelfAppraisal = () => {
         setShowGatekeeperModal(false);
 
         setAppraisal(appraisalData);
+        setFaculty(res.data.faculty || null);
         setProfileComplete(res.data.isProfileComplete);
         setMissingFields(res.data.missingProfileFields || []);
 
@@ -329,6 +333,7 @@ const SelfAppraisal = () => {
         toast.error("Failed to fetch or calculate self appraisal.");
       }
       setAppraisal(null);
+      setFaculty(null);
     } finally {
       setLoading(false);
     }
@@ -1204,6 +1209,132 @@ const SelfAppraisal = () => {
     return found ? found.name : `Category ${catId}`;
   };
 
+  const getFacultyCategory = (fac) => {
+    if (!fac) return "Non-Doctorate Faculty";
+    const doc = (fac.doctorate || "").toLowerCase().trim();
+    const lead = (fac.leadership || "").toLowerCase().trim();
+    if (doc === "yes" && lead === "no") return "Doctorate Faculty";
+    if (lead === "yes") return "Leadership Team";
+    return "Non-Doctorate Faculty";
+  };
+
+  const getCategoryThresholds = (category) => {
+    if (category === "Doctorate Faculty") {
+      return { teaching: 50, metric21: 40, total1to4: 135, grandTotal: 165 };
+    }
+    if (category === "Leadership Team") {
+      return { teaching: 40, metric21: 30, total1to4: 110, grandTotal: 140 };
+    }
+    return { teaching: 50, metric21: 30, total1to4: 110, grandTotal: 140 };
+  };
+
+  const checkFdpCourseraRequirement = () => {
+    const allowedOrg = [
+      "ugc", "aicte", "iit", "iim", "nit", "mhrd r&d lab", "mhrd r&d labs",
+      "nitttr", "niper", "icmr", "nirf ranked institute (below 200)",
+      "nirf ranked institute (below rank 200)", "govt. university", "government university", "nptel"
+    ];
+
+    const hasValidFdp = resourceUtilizationDetails.some(r => {
+      if (r.status === 'Rejected') return false;
+      const cat = (r.activityCategory || '').toLowerCase().trim();
+      const type = (r.activityType || '').toLowerCase().trim();
+      const org = (r.organizingInstitutionCategory || '').toLowerCase().trim();
+      const days = Number(r.daysParticipated) || Number(r.duration) || 0;
+      return cat === 'fdp' && type === 'fdp participant' && days >= 5 && allowedOrg.includes(org);
+    });
+
+    const hasValidNptelOrCoursera = contributionDetails.some(c => {
+      if (c.status === 'Rejected') return false;
+      const cat = parseInt(c.category);
+      return cat === 11 || cat === 12;
+    });
+
+    return hasValidFdp || hasValidNptelOrCoursera;
+  };
+
+  const getMetric21Score = () => {
+    return appraisal?.research?.papers?.totalClaimed || 0;
+  };
+
+  const calculateOverallScores = () => {
+    if (!appraisal) return { total1to4: 0, grandTotal: 0, T: 0, R_sum: 0, V: 0, A: 0, I: 0 };
+    const T = Number(appraisal.teaching?.totalClaimed) || 0;
+    const R_sum = Number(appraisal.research?.totalClaimed) || 0;
+    const V = Number(appraisal.valueAddition?.totalClaimed) || 0;
+    const A = Number(appraisal.administration?.totalClaimed) || 0;
+    const I = Number(appraisal.hodEvaluation?.totalInterpersonalPoints) || 0;
+
+    const total1to4 = Math.min(200, T + R_sum + V + A);
+    const grandTotal = total1to4 + I;
+
+    return { T, R_sum, V, A, I, total1to4, grandTotal };
+  };
+
+  const getEligibilityChecklist = () => {
+    const category = getFacultyCategory(faculty);
+    const thresholds = getCategoryThresholds(category);
+    const scores = calculateOverallScores();
+
+    const fdpCourseraPassed = checkFdpCourseraRequirement();
+    const metric21Score = getMetric21Score();
+    const metric21Passed = metric21Score >= thresholds.metric21;
+    const teachingPassed = scores.T >= thresholds.teaching;
+    const total1to4Passed = scores.total1to4 >= thresholds.total1to4;
+    const interpersonalScore = scores.I;
+    const interpersonalPassed = interpersonalScore >= 30;
+    const grandTotalPassed = scores.grandTotal >= thresholds.grandTotal;
+
+    const canSubmit = fdpCourseraPassed && metric21Passed;
+
+    return {
+      category,
+      thresholds,
+      scores,
+      canSubmit,
+      checklist: {
+        fdpCoursera: {
+          label: "FDP / NPTEL / Coursera",
+          desc: "FDP of min 5 days by allowed organizers OR NPTEL course OR Coursera course completed",
+          passed: fdpCourseraPassed,
+          isGating: true
+        },
+        metric21: {
+          label: `Metric 2.1 Score (Min ${thresholds.metric21})`,
+          desc: `Current: ${metric21Score}`,
+          passed: metric21Passed,
+          isGating: true
+        },
+        teaching: {
+          label: `Teaching Score (Min ${thresholds.teaching})`,
+          desc: `Current: ${scores.T} / 80`,
+          passed: teachingPassed,
+          isGating: false
+        },
+        total1to4: {
+          label: `Total (1-4) Score (Min ${thresholds.total1to4})`,
+          desc: `Current: ${scores.total1to4} / 200`,
+          passed: total1to4Passed,
+          isGating: false
+        },
+        interpersonal: {
+          label: "Interpersonal Skills (Min 30)",
+          desc: `Current: ${interpersonalScore} / 50`,
+          passed: interpersonalPassed,
+          isGating: false,
+          isPending: interpersonalScore === 0
+        },
+        grandTotal: {
+          label: `Grand Total (Min ${thresholds.grandTotal})`,
+          desc: `Current: ${scores.grandTotal} / 250`,
+          passed: grandTotalPassed,
+          isGating: false,
+          isPending: interpersonalScore === 0 && scores.grandTotal < thresholds.grandTotal
+        }
+      }
+    };
+  };
+
   // Claim Publication Submit handler
   const handleClaimSubmit = async () => {
     if (!selectedPaper) return;
@@ -1455,6 +1586,8 @@ const SelfAppraisal = () => {
     );
   }
 
+  const eligibility = getEligibilityChecklist();
+
   return (
     <Box p={4} sx={{ maxWidth: 1300, margin: "0 auto", animation: "fadeIn 0.5s ease" }}>
 
@@ -1504,7 +1637,7 @@ const SelfAppraisal = () => {
               variant="contained"
               startIcon={<Send />}
               onClick={handleSubmit}
-              disabled={loading}
+              disabled={loading || !eligibility.canSubmit || !profileComplete}
               sx={{
                 borderRadius: "10px",
                 textTransform: "none",
@@ -2539,30 +2672,130 @@ const SelfAppraisal = () => {
               borderRadius: "20px",
               background: "linear-gradient(135deg, var(--bg-accent-4) 0%, var(--bg-panel) 100%)",
               border: "1px solid var(--border-color)",
-              boxShadow: "var(--shadow-premium)"
+              boxShadow: "var(--shadow-premium)",
+              overflow: "hidden"
             }}
           >
-            <CardContent>
-              <Typography variant="h6" sx={{ fontWeight: 800, mb: 3, color: "var(--text-primary)", display: "flex", alignItems: "center", gap: 1 }}>
+            <CardContent sx={{ p: 3 }}>
+              {/* Category Header */}
+              <Box sx={{ mb: 3 }}>
+                <Typography variant="caption" sx={{ fontWeight: 800, color: "var(--color-primary)", textTransform: "uppercase", display: "block", mb: 0.5 }}>
+                  Faculty Category
+                </Typography>
+                <Chip
+                  label={eligibility.category}
+                  color="primary"
+                  sx={{
+                    fontWeight: 800,
+                    fontSize: "0.9rem",
+                    background: "var(--gradient-primary)",
+                    color: "#fff",
+                    boxShadow: "0 2px 8px rgba(34, 197, 94, 0.2)"
+                  }}
+                />
+              </Box>
+
+              <Typography variant="h6" sx={{ fontWeight: 800, mb: 2, color: "var(--text-primary)", display: "flex", alignItems: "center", gap: 1 }}>
                 <CardMembership sx={{ color: "var(--color-primary)" }} /> Points Scorecard
               </Typography>
-              <Divider sx={{ mb: 2 }} />
+              <Divider sx={{ mb: 1.5 }} />
 
+              {/* Points Breakdown */}
               {[
-                { label: "1. Teaching & Learning", points: appraisal.teaching.totalClaimed, max: 80 },
-                { label: "2. Research Contributions", points: appraisal.research.totalClaimed, max: "N/A" },
-                { label: "3. Extension / Value Addition", points: appraisal.valueAddition.totalClaimed, max: "N/A" },
-                { label: "4. Administrative Duties", points: appraisal.administration.totalClaimed, max: 20 },
-                { label: "HOD Interpersonal Skills", points: appraisal.hodEvaluation?.totalInterpersonalPoints || 0, max: 50 }
+                { label: "1. Teaching & Learning", points: eligibility.scores.T, max: 80 },
+                { label: "2. Research Contributions", points: eligibility.scores.R_sum, max: "N/A" },
+                { label: "3. Extension / Value Addition", points: eligibility.scores.V, max: 20 },
+                { label: "4. Administrative Duties", points: eligibility.scores.A, max: 20 },
+                { label: "5. HOD Interpersonal Skills", points: eligibility.scores.I, max: 50 }
               ].map((m, i) => (
-                <Box key={i} sx={{ display: "flex", justifyContent: "space-between", py: 1.5, borderBottom: "1px solid var(--border-color)" }}>
+                <Box key={i} sx={{ display: "flex", justifyContent: "space-between", py: 1.25, borderBottom: "1px solid var(--border-color)" }}>
                   <Typography variant="body2" sx={{ fontWeight: 600, color: "var(--text-secondary)" }}>{m.label}</Typography>
-                  <Typography variant="body2" sx={{ fontWeight: 800, color: "var(--color-primary)" }}>
+                  <Typography variant="body2" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>
                     {m.points} {m.max !== "N/A" ? `/ ${m.max}` : ""}
                   </Typography>
                 </Box>
               ))}
 
+              {/* Total (1-4) and Grand Total */}
+              <Box sx={{ display: "flex", justifyContent: "space-between", py: 1.5, mt: 1 }}>
+                <Typography variant="body2" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>Total (1-4)</Typography>
+                <Typography variant="body2" sx={{ fontWeight: 800, color: "var(--color-primary)" }}>
+                  {eligibility.scores.total1to4} / 200
+                </Typography>
+              </Box>
+              <Box sx={{ display: "flex", justifyContent: "space-between", py: 1.5, borderBottom: "2px double var(--border-color)" }}>
+                <Typography variant="body1" sx={{ fontWeight: 900, color: "var(--text-primary)" }}>Grand Total</Typography>
+                <Typography variant="body1" sx={{ fontWeight: 900, color: "var(--color-primary)" }}>
+                  {eligibility.scores.grandTotal} / 250
+                </Typography>
+              </Box>
+
+              <Typography variant="caption" sx={{ color: "var(--text-secondary)", display: "block", mt: 1, mb: 3, fontStyle: "italic" }}>
+                * Extra research points beyond 80 are counted towards Total (1-4) until the total reaches 200.
+              </Typography>
+
+              {/* Eligibility Checklist */}
+              <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 2, color: "var(--text-primary)", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+                Eligibility Checklist
+              </Typography>
+
+              <Stack spacing={2} sx={{ mb: 3 }}>
+                {Object.entries(eligibility.checklist).map(([key, item]) => {
+                  let icon = <CheckCircle sx={{ color: "#10b981", fontSize: 20 }} />;
+                  let bgColor = "rgba(16, 185, 129, 0.05)";
+                  let borderColor = "rgba(16, 185, 129, 0.2)";
+
+                  if (item.isPending) {
+                    icon = <HourglassEmpty sx={{ color: "#e8a000", fontSize: 20 }} />;
+                    bgColor = "rgba(232, 160, 0, 0.05)";
+                    borderColor = "rgba(232, 160, 0, 0.2)";
+                  } else if (!item.passed) {
+                    icon = <Cancel sx={{ color: "#ef4444", fontSize: 20 }} />;
+                    bgColor = "rgba(239, 68, 68, 0.05)";
+                    borderColor = "rgba(239, 68, 68, 0.2)";
+                  }
+
+                  return (
+                    <Box
+                      key={key}
+                      sx={{
+                        p: 1.5,
+                        borderRadius: "12px",
+                        bgcolor: bgColor,
+                        border: `1px solid ${borderColor}`,
+                        display: "flex",
+                        alignItems: "flex-start",
+                        gap: 1.5
+                      }}
+                    >
+                      {icon}
+                      <Box>
+                        <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", lineHeight: 1.2 }}>
+                          {item.label}
+                        </Typography>
+                        <Typography variant="caption" sx={{ color: "var(--text-secondary)", mt: 0.5, display: "block", lineHeight: 1.2 }}>
+                          {item.desc}
+                        </Typography>
+                        {item.isGating && !item.passed && (
+                          <Chip
+                            label="Required to Submit"
+                            size="small"
+                            color="error"
+                            sx={{ mt: 1, fontWeight: 700, height: 18, fontSize: "0.65rem" }}
+                          />
+                        )}
+                      </Box>
+                    </Box>
+                  );
+                })}
+              </Stack>
+
+              {/* Validation Summary Warning */}
+              {!eligibility.canSubmit && (appraisal.status === "Draft" || appraisal.status === "Rejected by HOD") && (
+                <Alert severity="error" variant="outlined" sx={{ borderRadius: "12px", "& .MuiAlert-message": { fontSize: "0.8rem", fontWeight: 600 } }}>
+                  Please satisfy all gating requirements marked as "Required to Submit" to enable appraisal submission.
+                </Alert>
+              )}
             </CardContent>
           </Card>
         </Grid>
