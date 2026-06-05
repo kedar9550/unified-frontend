@@ -32,7 +32,10 @@ export default function PhdScholarPublication() {
     course: "",
     branch: "",
     scholarStatus: "",
-    admissionOrAwardDate: ""
+    admissionOrAwardDate: "",
+    scholarType: "",
+    universitySelect: "Aditya University",
+    universityText: ""
   });
   
   const [files, setFiles] = useState({ document: null });
@@ -91,8 +94,37 @@ export default function PhdScholarPublication() {
   };
 
   const handleAddStudentToList = () => {
-    if (!isVerified || !form.rollNumber) {
-      toast.error("Please verify a valid scholar roll number first.");
+    const finalUniversity = form.universitySelect === "Aditya University" 
+      ? "Aditya University" 
+      : form.universityText.trim();
+
+    if (!finalUniversity) {
+      toast.error("Please specify the University.");
+      return;
+    }
+
+    if (form.universitySelect === "Aditya University") {
+      if (!isVerified || !form.rollNumber) {
+        toast.error("Please verify a valid scholar roll number first.");
+        return;
+      }
+    } else {
+      if (!form.rollNumber.trim()) {
+        toast.error("Please enter the student Roll Number/ID.");
+        return;
+      }
+      if (!form.studentName.trim()) {
+        toast.error("Please enter the student Name.");
+        return;
+      }
+      if (!form.course.trim()) {
+        toast.error("Please enter the course name.");
+        return;
+      }
+    }
+
+    if (!form.scholarType) {
+      toast.error("Please select the scholar type (Full-Time / Part-Time).");
       return;
     }
     if (!form.scholarStatus) {
@@ -123,8 +155,10 @@ export default function PhdScholarPublication() {
       rollNumber: form.rollNumber,
       studentName: form.studentName,
       course: form.course,
-      branch: form.branch,
+      branch: form.branch || "N/A",
       scholarStatus: form.scholarStatus,
+      scholarType: form.scholarType,
+      university: finalUniversity,
       admissionOrAwardDate: form.admissionOrAwardDate,
       document: files.document,
       documentName: files.document.name
@@ -140,7 +174,10 @@ export default function PhdScholarPublication() {
       course: "",
       branch: "",
       scholarStatus: "",
-      admissionOrAwardDate: ""
+      admissionOrAwardDate: "",
+      scholarType: "",
+      universitySelect: "Aditya University",
+      universityText: ""
     });
     setRollNumberInput("");
     setFiles({ document: null });
@@ -150,21 +187,37 @@ export default function PhdScholarPublication() {
   const handleSubmit = async () => {
     let finalStudents = [...studentsList];
     
-    // Automatically add the currently active student if they filled in all the details but forgot to click "Add Student"
-    if (isVerified && form.rollNumber && form.scholarStatus && form.admissionOrAwardDate && files.document) {
+    const finalUniversity = form.universitySelect === "Aditya University" 
+      ? "Aditya University" 
+      : form.universityText.trim();
+
+    const currentFilled = 
+      form.rollNumber && 
+      form.studentName && 
+      form.course && 
+      form.scholarType &&
+      form.scholarStatus && 
+      form.admissionOrAwardDate && 
+      files.document &&
+      finalUniversity &&
+      (form.universitySelect === "Other" || isVerified);
+
+    if (currentFilled) {
       finalStudents.push({
         rollNumber: form.rollNumber,
         studentName: form.studentName,
         course: form.course,
-        branch: form.branch,
+        branch: form.branch || "N/A",
         scholarStatus: form.scholarStatus,
+        scholarType: form.scholarType,
+        university: finalUniversity,
         admissionOrAwardDate: form.admissionOrAwardDate,
         document: files.document
       });
     }
 
     if (finalStudents.length === 0) {
-      toast.error("Please verify and add at least one student record first.");
+      toast.error("Please fill, verify and add at least one student record first.");
       return;
     }
 
@@ -177,6 +230,8 @@ export default function PhdScholarPublication() {
         fd.append("course", student.course);
         fd.append("branch", student.branch || "N/A");
         fd.append("scholarStatus", student.scholarStatus);
+        fd.append("scholarType", student.scholarType);
+        fd.append("university", student.university);
         fd.append("admissionOrAwardDate", student.admissionOrAwardDate);
         fd.append("document", student.document);
         fd.append("academicYear", selectedYear);
@@ -187,7 +242,7 @@ export default function PhdScholarPublication() {
       toast.success(`Successfully submitted appraisal for ${finalStudents.length} scholar(s)!`);
       
       // Reset state
-      setForm({ rollNumber: "", studentName: "", course: "", branch: "", scholarStatus: "", admissionOrAwardDate: "" });
+      setForm({ rollNumber: "", studentName: "", course: "", branch: "", scholarStatus: "", admissionOrAwardDate: "", scholarType: "", universitySelect: "Aditya University", universityText: "" });
       setRollNumberInput("");
       setFiles({ document: null });
       setStudentsList([]);
@@ -404,61 +459,144 @@ export default function PhdScholarPublication() {
 
       <FacultyInfoRow />
 
-      <SubLabel text="Student Verification (ECAP API)" />
-      
-      <Box sx={{ background: "var(--bg-panel)", p: 3, borderRadius: "16px", border: "1px solid var(--border-color)", mb: 3 }}>
-        <Typography sx={{ ...labelStyle, color: "var(--color-primary)" }}>Student Roll Number *</Typography>
-        <Stack direction="row" spacing={2} sx={{ mt: 1, mb: 2, maxWidth: 500 }}>
+      <SubLabel text="University & Scholar Type Details" />
+      <Grid2>
+        <Box>
+          <Typography sx={labelStyle}>University : *</Typography>
+          <Select size="small" fullWidth value={form.universitySelect} onChange={set("universitySelect")}>
+            <MenuItem value="Aditya University">Aditya University</MenuItem>
+            <MenuItem value="Other">Other University</MenuItem>
+          </Select>
+        </Box>
+        <Box>
+          <Typography sx={labelStyle}>Scholar Type : *</Typography>
+          <Select size="small" fullWidth displayEmpty value={form.scholarType} onChange={set("scholarType")}>
+            <MenuItem value="" disabled>--Select--</MenuItem>
+            <MenuItem value="Full-Time">Full-Time (FT)</MenuItem>
+            <MenuItem value="Part-Time">Part-Time (PT)</MenuItem>
+          </Select>
+        </Box>
+      </Grid2>
+
+      {form.universitySelect === "Other" && (
+        <Box sx={{ mt: 2, mb: 1 }}>
+          <Typography sx={labelStyle}>Specify University Name : *</Typography>
           <TextField
             size="small"
             fullWidth
-            value={rollNumberInput}
-            onChange={(e) => setRollNumberInput(e.target.value)}
-            disabled={isVerifying || loading}
-            placeholder="e.g. 21A91A0501"
+            placeholder="Enter university name"
+            value={form.universityText}
+            onChange={set("universityText")}
           />
-          <Button
-            variant="contained"
-            onClick={handleVerifyRollNumber}
-            disabled={isVerifying || !rollNumberInput.trim() || loading}
-            startIcon={isVerifying ? <CircularProgress size={16} color="inherit" /> : <CheckCircle />}
-            sx={{
-              background: "linear-gradient(135deg, #10B981 0%, #059669 100%)",
-              borderRadius: "10px",
-              px: 3,
-              fontWeight: 700,
-              textTransform: "none",
-              color: "#fff"
-            }}
-          >
-            Verify
-          </Button>
-        </Stack>
-        
-        {isVerified && (
-          <Box sx={{ mt: 2, p: 2, bgcolor: "rgba(16, 185, 129, 0.05)", border: "1px solid rgba(16, 185, 129, 0.2)", borderRadius: "12px" }}>
-            <Typography variant="subtitle2" sx={{ fontWeight: 800, color: "#10B981", display: "flex", alignItems: "center", gap: 1 }}>
-              <CheckCircle fontSize="small" /> Scholar Details Validated Successfully
-            </Typography>
-            <Grid container spacing={2} sx={{ mt: 1 }}>
-              <Grid item xs={12} sm={4}>
-                <Typography variant="caption" sx={{ color: "var(--text-secondary)", fontWeight: 700 }}>STUDENT NAME</Typography>
-                <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>{form.studentName}</Typography>
+        </Box>
+      )}
+
+      {form.universitySelect === "Aditya University" ? (
+        <>
+          <SubLabel text="Student Verification (ECAP API)" />
+          <Box sx={{ background: "var(--bg-panel)", p: 3, borderRadius: "16px", border: "1px solid var(--border-color)", mb: 3 }}>
+            <Typography sx={{ ...labelStyle, color: "var(--color-primary)" }}>Student Roll Number *</Typography>
+            <Stack direction="row" spacing={2} sx={{ mt: 1, mb: 2, maxWidth: 500 }}>
+              <TextField
+                size="small"
+                fullWidth
+                value={rollNumberInput}
+                onChange={(e) => setRollNumberInput(e.target.value)}
+                disabled={isVerifying || loading}
+                placeholder="e.g. 21A91A0501"
+              />
+              <Button
+                variant="contained"
+                onClick={handleVerifyRollNumber}
+                disabled={isVerifying || !rollNumberInput.trim() || loading}
+                startIcon={isVerifying ? <CircularProgress size={16} color="inherit" /> : <CheckCircle />}
+                sx={{
+                  background: "linear-gradient(135deg, #10B981 0%, #059669 100%)",
+                  borderRadius: "10px",
+                  px: 3,
+                  fontWeight: 700,
+                  textTransform: "none",
+                  color: "#fff"
+                }}
+              >
+                Verify
+              </Button>
+            </Stack>
+            
+            {isVerified && (
+              <Box sx={{ mt: 2, p: 2, bgcolor: "rgba(16, 185, 129, 0.05)", border: "1px solid rgba(16, 185, 129, 0.2)", borderRadius: "12px" }}>
+                <Typography variant="subtitle2" sx={{ fontWeight: 800, color: "#10B981", display: "flex", alignItems: "center", gap: 1 }}>
+                  <CheckCircle fontSize="small" /> Scholar Details Validated Successfully
+                </Typography>
+                <Grid container spacing={2} sx={{ mt: 1 }}>
+                  <Grid item xs={12} sm={4}>
+                    <Typography variant="caption" sx={{ color: "var(--text-secondary)", fontWeight: 700 }}>STUDENT NAME</Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>{form.studentName}</Typography>
+                  </Grid>
+                  <Grid item xs={12} sm={4}>
+                    <Typography variant="caption" sx={{ color: "var(--text-secondary)", fontWeight: 700 }}>COURSE / PROGRAM</Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>{form.course}</Typography>
+                  </Grid>
+                  <Grid item xs={12} sm={4}>
+                    <Typography variant="caption" sx={{ color: "var(--text-secondary)", fontWeight: 700 }}>BRANCH</Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>{form.branch || "N/A"}</Typography>
+                  </Grid>
+                </Grid>
+              </Box>
+            )}
+          </Box>
+        </>
+      ) : (
+        <>
+          <SubLabel text="Student Details (Manual Entry)" />
+          <Box sx={{ background: "var(--bg-panel)", p: 3, borderRadius: "16px", border: "1px solid var(--border-color)", mb: 3 }}>
+            <Grid container spacing={2}>
+              <Grid item xs={12} sm={6}>
+                <Typography sx={labelStyle}>Scholar Roll Number / ID *</Typography>
+                <TextField
+                  size="small"
+                  fullWidth
+                  value={form.rollNumber}
+                  onChange={set("rollNumber")}
+                  placeholder="e.g. Scholar ID or Roll Number"
+                />
               </Grid>
-              <Grid item xs={12} sm={4}>
-                <Typography variant="caption" sx={{ color: "var(--text-secondary)", fontWeight: 700 }}>COURSE / PROGRAM</Typography>
-                <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>{form.course}</Typography>
+              <Grid item xs={12} sm={6}>
+                <Typography sx={labelStyle}>Student Name *</Typography>
+                <TextField
+                  size="small"
+                  fullWidth
+                  value={form.studentName}
+                  onChange={set("studentName")}
+                  placeholder="Enter student name"
+                />
               </Grid>
-              <Grid item xs={12} sm={4}>
-                <Typography variant="caption" sx={{ color: "var(--text-secondary)", fontWeight: 700 }}>BRANCH</Typography>
-                <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>{form.branch || "N/A"}</Typography>
+              <Grid item xs={12} sm={6}>
+                <Typography sx={labelStyle}>Course / Program *</Typography>
+                <TextField
+                  size="small"
+                  fullWidth
+                  value={form.course}
+                  onChange={set("course")}
+                  placeholder="e.g. Ph.D. in Computer Science"
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <Typography sx={labelStyle}>Branch</Typography>
+                <TextField
+                  size="small"
+                  fullWidth
+                  value={form.branch}
+                  onChange={set("branch")}
+                  placeholder="e.g. CSE"
+                />
               </Grid>
             </Grid>
           </Box>
-        )}
-      </Box>
+        </>
+      )}
 
-      {isVerified && (
+      {(form.universitySelect === "Other" || isVerified) && (
         <>
           <SubLabel text="Appraisal Information:" />
           <Grid2>
@@ -539,7 +677,12 @@ export default function PhdScholarPublication() {
                 {studentsList.map((stud, idx) => (
                   <TableRow key={idx}>
                     <TableCell sx={{ fontWeight: 600 }}>{stud.rollNumber}</TableCell>
-                    <TableCell>{stud.studentName}</TableCell>
+                    <TableCell>
+                      {stud.studentName}
+                      <Typography variant="caption" sx={{ color: "var(--text-secondary)", display: "block" }}>
+                        {stud.university} ({stud.scholarType === 'Part-Time' ? 'PT' : 'FT'})
+                      </Typography>
+                    </TableCell>
                     <TableCell>{stud.course} - {stud.branch}</TableCell>
                     <TableCell>
                       <Chip label={stud.scholarStatus} size="small" sx={{ fontWeight: 700 }} />
@@ -713,6 +856,8 @@ export default function PhdScholarPublication() {
               />
             </Grid>
 
+            <Grid item xs={12} sm={6}><LabelValueDetails label="University" value={data.university || "Aditya University"} /></Grid>
+            <Grid item xs={12} sm={6}><LabelValueDetails label="Scholar Type" value={data.scholarType || "Full-Time"} /></Grid>
             <Grid item xs={12} sm={6}><LabelValueDetails label="Admission / Award Date" value={formatDate(data.admissionOrAwardDate)} /></Grid>
             <Grid item xs={12} sm={6}>
               <LabelValueDetails 
