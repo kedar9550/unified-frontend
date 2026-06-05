@@ -194,9 +194,16 @@ const SelfAppraisal = () => {
   const [studentsPassed, setPassed] = useState("");
   const [submittingProctoring, setSubmittingProctoring] = useState(false);
 
-  // Administration Inline Form States
+  // Administration Modal States
   const [adminRolesForm, setAdminRolesForm] = useState({});
   const [submittingAdmin, setSubmittingAdmin] = useState(false);
+  const [adminOpen, setAdminOpen] = useState(false);
+  const [adminForm, setAdminForm] = useState({
+    roleName: "",
+    level: "Department level",
+    details: ""
+  });
+  const [adminEditingRole, setAdminEditingRole] = useState(null);
 
   // Resource Utilization Modal States
   const [resUtOpen, setResUtOpen] = useState(false);
@@ -455,59 +462,49 @@ const SelfAppraisal = () => {
     setAdminRolesForm(initialForm);
   }, [selectedYear, administrationDetail]);
 
-  const handleToggleResponsibility = (id, checked) => {
-    const roleLabel = ADMINISTRATIVE_ROLES_LIST.find((r) => r.id === id)?.label;
-    if (administrationDetail) {
-      const foundRole = (administrationDetail.roles || []).find((x) => x.roleName === roleLabel);
-      if (foundRole && foundRole.isResponsible && (foundRole.status === "Approved" || foundRole.status === "Pending")) {
-        return;
-      }
-    }
-    setAdminRolesForm((prev) => ({
-      ...prev,
-      [id]: {
-        ...prev[id],
-        isResponsible: checked,
-        level: checked ? (prev[id].level || "Department level") : "",
-        details: checked ? prev[id].details : ""
-      }
-    }));
+  const openAdminModalAdd = () => {
+    setAdminEditingRole(null);
+    setAdminForm({ roleName: "", level: "Department level", details: "" });
+    setAdminOpen(true);
   };
 
-  const handleLevelChange = (id, level) => {
-    setAdminRolesForm((prev) => ({
-      ...prev,
-      [id]: { ...prev[id], level }
-    }));
+  const openAdminModalEdit = (role) => {
+    setAdminEditingRole(role.roleName);
+    setAdminForm({ roleName: role.roleName, level: role.level || "Department level", details: role.details || "" });
+    setAdminOpen(true);
   };
 
-  const handleDetailsChange = (id, details) => {
-    setAdminRolesForm((prev) => ({
-      ...prev,
-      [id]: { ...prev[id], details }
-    }));
-  };
-
-  const handleAdminRolesSubmit = async (e) => {
+  const handleAdminSave = async (e) => {
     e.preventDefault();
-    const hasSelectedRole = Object.values(adminRolesForm).some((role) => role.isResponsible);
-    if (!hasSelectedRole) {
-      toast.error("Please select at least one administrative responsibility before submitting.");
+    if (!adminForm.roleName) {
+      toast.error("Please select an administrative role.");
+      return;
+    }
+    const roleConfig = ADMINISTRATIVE_ROLES_LIST.find((r) => r.label === adminForm.roleName);
+    if (roleConfig && roleConfig.hasDetails && !adminForm.details.trim()) {
+      toast.error("Please specify the event/activity name.");
       return;
     }
 
+    const updatedForm = { ...adminRolesForm };
+    const roleId = roleConfig ? roleConfig.id : null;
+    
+    if (roleId) {
+      updatedForm[roleId] = {
+        roleName: adminForm.roleName,
+        isResponsible: true,
+        level: adminForm.level,
+        details: adminForm.details
+      };
+    }
+
     try {
-      const rolesPayload = Object.values(adminRolesForm).map((role) => {
-        if (role.roleName === "Any other remarkable event / activity coordinator" && role.isResponsible && !role.details.trim()) {
-          throw new Error("Please specify the name of the event/activity.");
-        }
-        return {
-          roleName: role.roleName,
-          isResponsible: role.isResponsible,
-          level: role.isResponsible ? role.level : "",
-          details: role.isResponsible ? role.details : ""
-        };
-      });
+      const rolesPayload = Object.values(updatedForm).map((role) => ({
+        roleName: role.roleName,
+        isResponsible: role.isResponsible,
+        level: role.isResponsible ? role.level : "",
+        details: role.isResponsible ? role.details : ""
+      }));
 
       setSubmittingAdmin(true);
       const res = await axiosInstance.post("/api/faculty-administration", {
@@ -515,13 +512,44 @@ const SelfAppraisal = () => {
         roles: rolesPayload
       });
       if (res.data?.success) {
-        toast.success("Administrative roles saved successfully!");
+        toast.success("Administrative role saved successfully!");
+        setAdminOpen(false);
         fetchAppraisal();
       }
     } catch (err) {
-      toast.error(err.message || err.response?.data?.message || "Failed to save administrative roles.");
+      toast.error(err.message || err.response?.data?.message || "Failed to save administrative role.");
     } finally {
       setSubmittingAdmin(false);
+    }
+  };
+
+  const handleAdminDelete = async (roleName) => {
+    if (!window.confirm("Are you sure you want to delete this administrative role?")) return;
+    
+    const roleId = ADMINISTRATIVE_ROLES_LIST.find((r) => r.label === roleName)?.id;
+    const updatedForm = { ...adminRolesForm };
+    if (roleId && updatedForm[roleId]) {
+      updatedForm[roleId].isResponsible = false;
+    }
+
+    try {
+      const rolesPayload = Object.values(updatedForm).map((role) => ({
+        roleName: role.roleName,
+        isResponsible: role.isResponsible,
+        level: role.isResponsible ? role.level : "",
+        details: role.isResponsible ? role.details : ""
+      }));
+
+      const res = await axiosInstance.post("/api/faculty-administration", {
+        academicYear: selectedYear,
+        roles: rolesPayload
+      });
+      if (res.data?.success) {
+        toast.success("Administrative role deleted successfully!");
+        fetchAppraisal();
+      }
+    } catch (err) {
+      toast.error("Failed to delete administrative role.");
     }
   };
 
@@ -2414,8 +2442,9 @@ const SelfAppraisal = () => {
                   <TableHead sx={{ background: "var(--gradient-primary)" }}>
                     <TableRow>
                       <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2, width: "60px" }} align="center">S. No</TableCell>
-                      <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }}>Title</TableCell>
-                      <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }}>ISBN</TableCell>
+                      <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }}>Details of Books/Chapter/conference Proceedings published along with ISBN/ISSN number</TableCell>
+                      <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }}>Category (Book/chapter/Proceedings)</TableCell>
+                      <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }}>Publisher</TableCell>
                       <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }} align="center">Points claimed</TableCell>
                     </TableRow>
                   </TableHead>
@@ -2425,14 +2454,15 @@ const SelfAppraisal = () => {
                         {appraisal.research.booksChapters.items.map((b, i) => (
                           <TableRow key={i} sx={{ "&:hover": { bgcolor: "rgba(0, 0, 0, 0.015)" }, "body.dark-mode &:hover": { bgcolor: "rgba(255, 255, 255, 0.015)" } }}>
                             <TableCell align="center" sx={{ color: "var(--text-primary)" }}>{i + 1}</TableCell>
-                            <TableCell sx={{ fontWeight: 600, color: "var(--text-primary)" }}>{b.title}</TableCell>
-                            <TableCell sx={{ color: "var(--text-primary)" }}>{b.isbn || "N/A"}</TableCell>
+                            <TableCell sx={{ fontWeight: 600, color: "var(--text-primary)" }}>{b.title} {b.isbn && b.isbn !== "N/A" ? `(${b.isbn})` : ""}</TableCell>
+                            <TableCell sx={{ color: "var(--text-primary)" }}>{b.itemType}</TableCell>
+                            <TableCell sx={{ color: "var(--text-primary)" }}>{b.publisher}</TableCell>
                             <TableCell align="center" sx={{ fontWeight: 800, color: "var(--color-primary)" }}>{b.pointsClaimed}</TableCell>
                           </TableRow>
                         ))}
                         <TableRow sx={{ background: "rgba(0, 78, 146, 0.04)", "&:hover": { bgcolor: "rgba(0, 78, 146, 0.06) !important" } }}>
-                          <TableCell colSpan={3} align="right" sx={{ fontWeight: 800, color: "var(--text-primary)", pr: 3 }}>
-                            Self-Assessment Points (Max: 10)
+                          <TableCell colSpan={4} align="right" sx={{ fontWeight: 800, color: "var(--text-primary)", pr: 3 }}>
+                            Self-Assessment Points (Max:10)
                           </TableCell>
                           <TableCell align="center" sx={{ fontWeight: 900, color: "var(--color-primary)", fontSize: "0.95rem" }}>
                             {Math.min(10, appraisal.research.booksChapters.items.reduce((sum, b) => sum + (Number(b.pointsClaimed) || 0), 0))}
@@ -2441,7 +2471,7 @@ const SelfAppraisal = () => {
                       </>
                     ) : (
                       <TableRow>
-                        <TableCell colSpan={4} align="center" sx={{ py: 3, color: "var(--text-secondary)", fontStyle: "italic" }}>
+                        <TableCell colSpan={5} align="center" sx={{ py: 3, color: "var(--text-secondary)", fontStyle: "italic" }}>
                           No books or chapters found.
                         </TableCell>
                       </TableRow>
@@ -2459,24 +2489,30 @@ const SelfAppraisal = () => {
                   <TableHead sx={{ background: "var(--gradient-primary)" }}>
                     <TableRow>
                       <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2, width: "60px" }} align="center">S. No</TableCell>
-                      <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }}>Patent Title</TableCell>
-                      <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }}>Status</TableCell>
+                      <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }}>Patent Title along with Number and date</TableCell>
+                      <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }}>Patent filed Country</TableCell>
+                      <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }}>Published/Granted</TableCell>
                       <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }} align="center">Points claimed</TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
                     {appraisal.research.patents?.items?.length > 0 ? (
                       <>
-                        {appraisal.research.patents.items.map((p, i) => (
-                          <TableRow key={i} sx={{ "&:hover": { bgcolor: "rgba(0, 0, 0, 0.015)" }, "body.dark-mode &:hover": { bgcolor: "rgba(255, 255, 255, 0.015)" } }}>
-                            <TableCell align="center" sx={{ color: "var(--text-primary)" }}>{i + 1}</TableCell>
-                            <TableCell sx={{ fontWeight: 600, color: "var(--text-primary)" }}>{p.title}</TableCell>
-                            <TableCell sx={{ color: "var(--text-primary)" }}>{p.status}</TableCell>
-                            <TableCell align="center" sx={{ fontWeight: 800, color: "var(--color-primary)" }}>{p.pointsClaimed}</TableCell>
-                          </TableRow>
-                        ))}
+                        {appraisal.research.patents.items.map((p, i) => {
+                          const dateObj = new Date(p.dateOfFiling);
+                          const dateString = !isNaN(dateObj) ? dateObj.toLocaleDateString() : "N/A";
+                          return (
+                            <TableRow key={i} sx={{ "&:hover": { bgcolor: "rgba(0, 0, 0, 0.015)" }, "body.dark-mode &:hover": { bgcolor: "rgba(255, 255, 255, 0.015)" } }}>
+                              <TableCell align="center" sx={{ color: "var(--text-primary)" }}>{i + 1}</TableCell>
+                              <TableCell sx={{ fontWeight: 600, color: "var(--text-primary)" }}>{p.title} - {p.filingNo} ({dateString})</TableCell>
+                              <TableCell sx={{ color: "var(--text-primary)" }}>{p.country}</TableCell>
+                              <TableCell sx={{ color: "var(--text-primary)" }}>{p.status}</TableCell>
+                              <TableCell align="center" sx={{ fontWeight: 800, color: "var(--color-primary)" }}>{p.pointsClaimed}</TableCell>
+                            </TableRow>
+                          );
+                        })}
                         <TableRow sx={{ background: "rgba(0, 78, 146, 0.04)", "&:hover": { bgcolor: "rgba(0, 78, 146, 0.06) !important" } }}>
-                          <TableCell colSpan={3} align="right" sx={{ fontWeight: 800, color: "var(--text-primary)", pr: 3 }}>
+                          <TableCell colSpan={4} align="right" sx={{ fontWeight: 800, color: "var(--text-primary)", pr: 3 }}>
                             Self-Assessment Points
                           </TableCell>
                           <TableCell align="center" sx={{ fontWeight: 900, color: "var(--color-primary)", fontSize: "0.95rem" }}>
@@ -2486,7 +2522,7 @@ const SelfAppraisal = () => {
                       </>
                     ) : (
                       <TableRow>
-                        <TableCell colSpan={4} align="center" sx={{ py: 3, color: "var(--text-secondary)", fontStyle: "italic" }}>
+                        <TableCell colSpan={5} align="center" sx={{ py: 3, color: "var(--text-secondary)", fontStyle: "italic" }}>
                           No patents found.
                         </TableCell>
                       </TableRow>
@@ -2504,8 +2540,8 @@ const SelfAppraisal = () => {
                   <TableHead sx={{ background: "var(--gradient-primary)" }}>
                     <TableRow>
                       <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2, width: "60px" }} align="center">S. No</TableCell>
-                      <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }}>Product Title</TableCell>
-                      <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }}>Status</TableCell>
+                      <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }}>Details of the Novel Product/Technology</TableCell>
+                      <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }}>Name of the Implemented organization</TableCell>
                       <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }} align="center">Points claimed</TableCell>
                     </TableRow>
                   </TableHead>
@@ -2515,8 +2551,8 @@ const SelfAppraisal = () => {
                         {appraisal.research.novelProducts.items.map((p, i) => (
                           <TableRow key={i} sx={{ "&:hover": { bgcolor: "rgba(0, 0, 0, 0.015)" }, "body.dark-mode &:hover": { bgcolor: "rgba(255, 255, 255, 0.015)" } }}>
                             <TableCell align="center" sx={{ color: "var(--text-primary)" }}>{i + 1}</TableCell>
-                            <TableCell sx={{ fontWeight: 600, color: "var(--text-primary)" }}>{p.title}</TableCell>
-                            <TableCell sx={{ color: "var(--text-primary)" }}>{p.status}</TableCell>
+                            <TableCell sx={{ fontWeight: 600, color: "var(--text-primary)" }}>{p.title} ({p.status})</TableCell>
+                            <TableCell sx={{ color: "var(--text-primary)" }}>{p.organizationName}</TableCell>
                             <TableCell align="center" sx={{ fontWeight: 800, color: "var(--color-primary)" }}>{p.pointsClaimed}</TableCell>
                           </TableRow>
                         ))}
@@ -2549,11 +2585,9 @@ const SelfAppraisal = () => {
                   <TableHead sx={{ background: "var(--gradient-primary)" }}>
                     <TableRow>
                       <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2, width: "60px" }} align="center">S. No</TableCell>
-                      <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }}>Project Title</TableCell>
-                      <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }}>Type</TableCell>
-                      <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }}>Agency</TableCell>
-                      <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }} align="right">Amount (Lakhs)</TableCell>
-                      <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }}>Status</TableCell>
+                      <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }}>Details of the Research Project/Consultancy</TableCell>
+                      <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }}>Funding Agency/Industry</TableCell>
+                      <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }} align="right">Total worth (in lakhs)</TableCell>
                       <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }} align="center">Points claimed</TableCell>
                     </TableRow>
                   </TableHead>
@@ -2563,16 +2597,16 @@ const SelfAppraisal = () => {
                         {appraisal.research.projectsConsultancies.items.map((p, i) => (
                           <TableRow key={i} sx={{ "&:hover": { bgcolor: "rgba(0, 0, 0, 0.015)" }, "body.dark-mode &:hover": { bgcolor: "rgba(255, 255, 255, 0.015)" } }}>
                             <TableCell align="center" sx={{ color: "var(--text-primary)" }}>{i + 1}</TableCell>
-                            <TableCell sx={{ fontWeight: 600, color: "var(--text-primary)" }}>{p.title}</TableCell>
-                            <TableCell sx={{ color: "var(--text-primary)" }}>{p.projectType === 'FundedProject' ? 'Funded Project' : 'Consultancy'}</TableCell>
+                            <TableCell sx={{ fontWeight: 600, color: "var(--text-primary)" }}>
+                              {p.title} ({p.projectType === 'FundedProject' ? 'Funded Project' : 'Consultancy'} - {p.status})
+                            </TableCell>
                             <TableCell sx={{ color: "var(--text-primary)" }}>{p.agency || "N/A"}</TableCell>
                             <TableCell align="right" sx={{ color: "var(--text-primary)" }}>{p.amountInLakhs || 0}</TableCell>
-                            <TableCell sx={{ color: "var(--text-primary)" }}>{p.status}</TableCell>
                             <TableCell align="center" sx={{ fontWeight: 800, color: "var(--color-primary)" }}>{p.pointsClaimed}</TableCell>
                           </TableRow>
                         ))}
                         <TableRow sx={{ background: "rgba(0, 78, 146, 0.04)", "&:hover": { bgcolor: "rgba(0, 78, 146, 0.06) !important" } }}>
-                          <TableCell colSpan={6} align="right" sx={{ fontWeight: 800, color: "var(--text-primary)", pr: 3 }}>
+                          <TableCell colSpan={4} align="right" sx={{ fontWeight: 800, color: "var(--text-primary)", pr: 3 }}>
                             Self-Assessment Points
                           </TableCell>
                           <TableCell align="center" sx={{ fontWeight: 900, color: "var(--color-primary)", fontSize: "0.95rem" }}>
@@ -2582,7 +2616,7 @@ const SelfAppraisal = () => {
                       </>
                     ) : (
                       <TableRow>
-                        <TableCell colSpan={7} align="center" sx={{ py: 3, color: "var(--text-secondary)", fontStyle: "italic" }}>
+                        <TableCell colSpan={5} align="center" sx={{ py: 3, color: "var(--text-secondary)", fontStyle: "italic" }}>
                           No funded projects or consultancies found.
                         </TableCell>
                       </TableRow>
@@ -2863,198 +2897,102 @@ const SelfAppraisal = () => {
           {/* 4. Administrative Responsibilities */}
           <Card sx={{ borderRadius: "20px", background: "var(--bg-panel)", border: "1px solid var(--border-color)", mb: 4, boxShadow: "var(--shadow-premium)" }}>
             <CardContent sx={{ p: 3.5 }}>
-              <Box display="flex" alignItems="center" gap={1.5} mb={3}>
-                <AssignmentTurnedIn sx={{ color: "var(--color-primary)" }} />
-                <Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>
+              <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
+                <Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)", display: "flex", alignItems: "center", gap: 1.5 }}>
+                  <AssignmentTurnedIn sx={{ color: "var(--color-primary)" }} />
                   4. Administrative Responsibilities (Max 20 points)
                 </Typography>
-                {administrationDetail && (
-                  <Chip
-                    label={administrationDetail.status}
+                {(appraisal.status === "Draft" || appraisal.status === "Rejected by HOD") && (
+                  <Button
+                    variant="outlined"
                     size="small"
-                    sx={{
-                      bgcolor: getStatusColor(administrationDetail.status).bg,
-                      color: getStatusColor(administrationDetail.status).color,
-                      fontWeight: 800,
-                      borderRadius: "6px"
-                    }}
-                  />
+                    startIcon={<AddCircle />}
+                    onClick={openAdminModalAdd}
+                    sx={{ textTransform: "none", fontWeight: 700, whiteSpace: "nowrap", flexShrink: 0 }}
+                  >
+                    Add Responsibility
+                  </Button>
                 )}
               </Box>
               <Divider sx={{ mb: 3 }} />
 
-
-              {administrationDetail && (administrationDetail.status === "Approved" || administrationDetail.status === "Pending") ? (
-                <TableContainer component={Paper} sx={{ borderRadius: "16px", background: "var(--bg-paper)", border: "1px solid var(--border-color)", overflow: "hidden" }}>
-                  <Table size="small">
-                    <TableHead sx={{ background: "var(--gradient-primary)" }}>
-                      <TableRow>
-                        <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2, width: "60px" }}>S. No</TableCell>
-                        <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }}>Details of the Administrative Responsibility</TableCell>
-                        <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2, width: "150px" }}>Assigned by</TableCell>
-                        <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2, width: "130px" }}>Points claimed</TableCell>
-                        <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2, width: "120px" }}>Status</TableCell>
-                        {administrationDetail.roles?.some(r => r.isResponsible && r.remarks) && (
-                          <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2, width: "180px" }}>Remarks</TableCell>
-                        )}
-                      </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      {(() => {
-                        const responsibleRoles = administrationDetail.roles?.filter(r => r.isResponsible) || [];
-                        return (
-                          <>
-                            {responsibleRoles.map((role, i) => {
-                              const assignedByText = role.level && (role.level.toLowerCase().includes("central") || role.level.toLowerCase().includes("institute")) ? "Central" : "Dept";
-                              return (
-                                <TableRow key={i} sx={{ "&:hover": { bgcolor: "rgba(0, 0, 0, 0.015)" }, "body.dark-mode &:hover": { bgcolor: "rgba(255, 255, 255, 0.015)" } }}>
-                                  <TableCell sx={{ color: "var(--text-primary)" }}>{i + 1}</TableCell>
-                                  <TableCell sx={{ fontWeight: 600, color: "var(--text-primary)" }}>
-                                    {role.roleName} {role.details ? `(${role.details})` : ""}
-                                  </TableCell>
-                                  <TableCell sx={{ color: "var(--text-primary)" }}>{assignedByText}</TableCell>
-                                  <TableCell sx={{ fontWeight: 800, color: "var(--color-primary)" }}>
-                                    {calculateAdministrativePoints(role, appraisalConfig)}
-                                  </TableCell>
-                                  <TableCell>
-                                    <Chip
-                                      label={role.status}
-                                      size="small"
-                                      sx={{
-                                        bgcolor: getStatusColor(role.status).bg,
-                                        color: getStatusColor(role.status).color,
-                                        fontWeight: 800,
-                                        borderRadius: "6px"
-                                      }}
-                                    />
-                                  </TableCell>
-                                  {administrationDetail.roles?.some(r => r.isResponsible && r.remarks) && (
-                                    <TableCell sx={{ fontStyle: "italic", color: "var(--text-secondary)", fontSize: "0.85rem" }}>
-                                      {role.remarks || "-"}
-                                    </TableCell>
-                                  )}
-                                </TableRow>
-                              );
-                            })}
-                            {/* Footer row displaying dynamic sum */}
-                            <TableRow sx={{ background: "var(--bg-accent-1)" }}>
-                              <TableCell colSpan={3} align="right" sx={{ fontWeight: 800, pr: 2, color: "var(--text-primary)" }}>
-                                Self-Assessment points (Max:20)
-                              </TableCell>
-                              <TableCell sx={{ fontWeight: 800, color: "var(--color-primary)", fontSize: "0.95rem" }}>
-                                {Math.min(20, responsibleRoles.reduce((sum, r) => r.status !== 'Rejected' ? sum + calculateAdministrativePoints(r, appraisalConfig) : sum, 0))}
-                              </TableCell>
-                              <TableCell colSpan={administrationDetail.roles?.some(r => r.isResponsible && r.remarks) ? 2 : 1}></TableCell>
-                            </TableRow>
-                          </>
-                        );
-                      })()}
-                    </TableBody>
-                  </Table>
-                </TableContainer>
-              ) : (
-                <Box sx={{ p: 3, border: "1px dashed var(--border-color)", borderRadius: "16px", background: "var(--bg-glass)" }}>
-                  {administrationDetail && administrationDetail.status === "Rejected" && (
-                    <Alert severity="error" sx={{ mb: 3, borderRadius: "12px" }}>
-                      <strong>Rejection Remarks from HOD:</strong> {administrationDetail.remarks || "Please check individual role feedback."}
-                    </Alert>
-                  )}
-
-                  {/* Live Claim Counter Header Box */}
-                  <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-                    <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-secondary)" }}>
-                      Select your Administrative Responsibilities for the Academic Year:
-                    </Typography>
-                    {(() => {
-                      const livePoints = Math.min(20, Object.values(adminRolesForm).reduce((sum, role) => {
-                        return role.isResponsible ? sum + calculateAdministrativePoints(role, appraisalConfig) : sum;
-                      }, 0));
-                      return (
-                        <Chip
-                          label={`Live Points Claimed: ${livePoints} / 20`}
-                          color="primary"
-                          variant="outlined"
-                          sx={{ fontWeight: 800, px: 2, py: 1.5, height: "auto", borderColor: "var(--color-primary)", color: "var(--color-primary)", borderRadius: "10px" }}
-                        />
-                      );
-                    })()}
-                  </Box>
-
-                  <TableContainer component={Paper} sx={{ borderRadius: "16px", background: "var(--bg-paper)", border: "1px solid var(--border-color)", mb: 3.5, overflow: "hidden" }}>
-                    <Table size="small">
-                      <TableHead sx={{ background: "var(--gradient-primary)" }}>
-                        <TableRow>
-                          <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }} width="50">Claim</TableCell>
-                          <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }}>Administrative Role / Responsibility</TableCell>
-                          <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }} width="220">Level</TableCell>
-                          <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }} width="300">Remarkable Event / Work Done Details</TableCell>
-                        </TableRow>
-                      </TableHead>
-                      <TableBody>
-                        {ADMINISTRATIVE_ROLES_LIST.map((role) => {
-                          const formRole = adminRolesForm[role.id] || { isResponsible: false, level: "Department level", details: "" };
+              <TableContainer component={Paper} sx={{ borderRadius: "16px", background: "var(--bg-paper)", border: "1px solid var(--border-color)", overflow: "hidden" }}>
+                <Table size="small">
+                  <TableHead sx={{ background: "var(--gradient-primary)" }}>
+                    <TableRow>
+                      <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2, width: "60px" }}>S. No</TableCell>
+                      <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }}>Details of the Administrative Responsibility</TableCell>
+                      <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2, width: "150px" }}>Assigned by</TableCell>
+                      <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2, width: "130px" }}>Points claimed</TableCell>
+                      <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2, width: "120px" }}>Status</TableCell>
+                      <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2, width: "120px" }} align="center">Actions</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {administrationDetail && administrationDetail.roles?.filter(r => r.isResponsible).length > 0 ? (
+                      <>
+                        {administrationDetail.roles.filter(r => r.isResponsible).map((role, i) => {
+                          const assignedByText = role.level && (role.level.toLowerCase().includes("central") || role.level.toLowerCase().includes("institute")) ? "Central" : "Dept";
+                          const isEditable = role.status === 'Pending' || role.status === 'Rejected';
                           return (
-                            <TableRow key={role.id} sx={{ "&:hover": { bgcolor: "rgba(0, 0, 0, 0.015)" }, "body.dark-mode &:hover": { bgcolor: "rgba(255, 255, 255, 0.015)" } }}>
+                            <TableRow key={i} sx={{ "&:hover": { bgcolor: "rgba(0, 0, 0, 0.015)" }, "body.dark-mode &:hover": { bgcolor: "rgba(255, 255, 255, 0.015)" } }}>
+                              <TableCell sx={{ color: "var(--text-primary)" }}>{i + 1}</TableCell>
+                              <TableCell sx={{ fontWeight: 600, color: "var(--text-primary)" }}>
+                                {role.roleName} {role.details ? `(${role.details})` : ""}
+                              </TableCell>
+                              <TableCell sx={{ color: "var(--text-primary)" }}>{assignedByText}</TableCell>
+                              <TableCell sx={{ fontWeight: 800, color: "var(--color-primary)" }}>
+                                {calculateAdministrativePoints(role, appraisalConfig)}
+                              </TableCell>
                               <TableCell>
-                                <Switch
+                                <Chip
+                                  label={role.status || "Pending"}
                                   size="small"
-                                  checked={formRole.isResponsible}
-                                  onChange={(e) => handleToggleResponsibility(role.id, e.target.checked)}
-                                  disabled={submittingAdmin}
+                                  sx={{
+                                    bgcolor: getStatusColor(role.status || "Pending").bg,
+                                    color: getStatusColor(role.status || "Pending").color,
+                                    fontWeight: 800,
+                                    borderRadius: "6px"
+                                  }}
                                 />
                               </TableCell>
-                              <TableCell sx={{ fontWeight: 600, color: formRole.isResponsible ? "var(--color-primary)" : "var(--text-primary)" }}>
-                                {role.label}
-                              </TableCell>
-                              <TableCell>
-                                {formRole.isResponsible && (
-                                  <Select
-                                    size="small"
-                                    fullWidth
-                                    value={formRole.level}
-                                    onChange={(e) => handleLevelChange(role.id, e.target.value)}
-                                    disabled={submittingAdmin}
-                                    sx={{ borderRadius: "8px" }}
-                                  >
-                                    <MenuItem value="Department level">Department level</MenuItem>
-                                    <MenuItem value="Institute / Central level">Institute / Central level</MenuItem>
-                                  </Select>
-                                )}
-                              </TableCell>
-                              <TableCell>
-                                {formRole.isResponsible && (
-                                  <TextField
-                                    size="small"
-                                    fullWidth
-                                    placeholder={role.hasDetails ? "Specify event/activity name *" : "Enter work description"}
-                                    value={formRole.details}
-                                    onChange={(e) => handleDetailsChange(role.id, e.target.value)}
-                                    disabled={submittingAdmin}
-                                    required={role.hasDetails}
-                                    sx={{ "& .MuiOutlinedInput-root": { borderRadius: "8px" } }}
-                                  />
-                                )}
+                              <TableCell align="center">
+                                <Stack direction="row" spacing={1} justifyContent="center">
+                                  {isEditable && (appraisal.status === "Draft" || appraisal.status === "Rejected by HOD") && (
+                                    <>
+                                      <IconButton size="small" color="info" onClick={() => openAdminModalEdit(role)}>
+                                        <Edit fontSize="small" />
+                                      </IconButton>
+                                      <IconButton size="small" color="error" onClick={() => handleAdminDelete(role.roleName)}>
+                                        <Delete fontSize="small" />
+                                      </IconButton>
+                                    </>
+                                  )}
+                                </Stack>
                               </TableCell>
                             </TableRow>
                           );
                         })}
-                      </TableBody>
-                    </Table>
-                  </TableContainer>
-
-                  <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
-                    <Button
-                      variant="contained"
-                      onClick={handleAdminRolesSubmit}
-                      disabled={submittingAdmin || (appraisal.status !== "Draft" && appraisal.status !== "Rejected by HOD")}
-                      startIcon={<Save />}
-                      sx={{ textTransform: "none", fontWeight: 700, borderRadius: "8px", color: "#fff" }}
-                    >
-                      {submittingAdmin ? "Saving Roles..." : "Submit Administrative Roles"}
-                    </Button>
-                  </Box>
-                </Box>
-              )}
+                        <TableRow sx={{ background: "var(--bg-accent-1)" }}>
+                          <TableCell colSpan={3} align="right" sx={{ fontWeight: 800, pr: 2, color: "var(--text-primary)" }}>
+                            Self-Assessment points (Max:20)
+                          </TableCell>
+                          <TableCell sx={{ fontWeight: 800, color: "var(--color-primary)", fontSize: "0.95rem" }}>
+                            {Math.min(20, administrationDetail.roles.filter(r => r.isResponsible).reduce((sum, r) => r.status !== 'Rejected' ? sum + calculateAdministrativePoints(r, appraisalConfig) : sum, 0))}
+                          </TableCell>
+                          <TableCell colSpan={2}></TableCell>
+                        </TableRow>
+                      </>
+                    ) : (
+                      <TableRow>
+                        <TableCell colSpan={6} align="center" sx={{ color: "var(--text-secondary)", py: 3, fontStyle: "italic" }}>
+                          No administrative responsibilities claimed yet.
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </TableContainer>
             </CardContent>
           </Card>
         </Grid>
@@ -4542,6 +4480,91 @@ const SelfAppraisal = () => {
           </Dialog>
         );
       })()}
+
+      {/* 4. Administrative Responsibilities Dialog */}
+      <Dialog open={adminOpen} onClose={() => setAdminOpen(false)} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: "20px", background: "var(--bg-panel)" } }}>
+        <DialogTitle sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "var(--bg-accent-4)", py: 2 }}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+            <AssignmentTurnedIn sx={{ color: "var(--color-primary)" }} />
+            <Typography variant="h6" sx={{ fontWeight: 800 }}>{adminEditingRole ? "Edit" : "Add"} Administrative Responsibility</Typography>
+          </Box>
+          <IconButton onClick={() => setAdminOpen(false)}><Close /></IconButton>
+        </DialogTitle>
+        <DialogContent sx={{ p: 3, mt: 1 }}>
+          <Grid2 sx={{ mb: 2 }}>
+            <Box sx={{ gridColumn: "1 / -1", mb: 2 }}>
+              <Typography sx={labelStyle}>Select Administrative Role / Responsibility: *</Typography>
+              <Select
+                size="small"
+                fullWidth
+                value={adminForm.roleName}
+                onChange={(e) => setAdminForm(p => ({ ...p, roleName: e.target.value }))}
+                disabled={!!adminEditingRole}
+              >
+                {ADMINISTRATIVE_ROLES_LIST.map(role => (
+                  <MenuItem key={role.id} value={role.label} disabled={!adminEditingRole && adminRolesForm[role.id]?.isResponsible && (administrationDetail?.roles?.find(r => r.roleName === role.label)?.status !== 'Rejected')}>
+                    {role.label}
+                  </MenuItem>
+                ))}
+              </Select>
+            </Box>
+
+            <Box sx={{ gridColumn: "1 / -1", mb: 2 }}>
+              <Typography sx={labelStyle}>Level (Assigned By): *</Typography>
+              <Select
+                size="small"
+                fullWidth
+                value={adminForm.level}
+                onChange={(e) => setAdminForm(p => ({ ...p, level: e.target.value }))}
+              >
+                <MenuItem value="Department level">Department level</MenuItem>
+                <MenuItem value="Institute level">Institute / Central level</MenuItem>
+              </Select>
+            </Box>
+
+            {(() => {
+              const roleConfig = ADMINISTRATIVE_ROLES_LIST.find((r) => r.label === adminForm.roleName);
+              if (roleConfig && roleConfig.hasDetails) {
+                return (
+                  <Box sx={{ gridColumn: "1 / -1", mb: 2 }}>
+                    <Typography sx={labelStyle}>Specify event / activity name: *</Typography>
+                    <TextField
+                      size="small"
+                      fullWidth
+                      value={adminForm.details}
+                      onChange={(e) => setAdminForm(p => ({ ...p, details: e.target.value }))}
+                      placeholder="Enter work description"
+                    />
+                  </Box>
+                );
+              }
+              return (
+                <Box sx={{ gridColumn: "1 / -1", mb: 2 }}>
+                  <Typography sx={labelStyle}>Remarks / Details (Optional):</Typography>
+                  <TextField
+                    size="small"
+                    fullWidth
+                    value={adminForm.details}
+                    onChange={(e) => setAdminForm(p => ({ ...p, details: e.target.value }))}
+                    placeholder="Any specific remarks"
+                  />
+                </Box>
+              );
+            })()}
+          </Grid2>
+        </DialogContent>
+        <DialogActions sx={{ p: 2.5, borderTop: "1px solid var(--border-color)" }}>
+          <Button onClick={() => setAdminOpen(false)} sx={{ fontWeight: 700 }}>Cancel</Button>
+          <Button
+            variant="contained"
+            onClick={handleAdminSave}
+            disabled={submittingAdmin}
+            sx={{ fontWeight: 700, color: "#fff" }}
+          >
+            {submittingAdmin ? "Saving..." : "Save Entry"}
+          </Button>
+        </DialogActions>
+      </Dialog>
 
     </Box>
   );
