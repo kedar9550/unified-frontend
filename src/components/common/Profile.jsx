@@ -505,11 +505,24 @@ const Profile = () => {
                       <Typography sx={{ fontSize: "0.85rem", fontWeight: 700, color: "var(--text-primary)" }}>{profile?.college || "N/A"}</Typography>
                     )}
                   </EditableField>
-                  <EditableField
-                    icon={AutoStories} label="Qualification" fieldKey="qualification" value={profile?.qualification}
-                    isEditing={isEditing} fieldValue={form.qualification} fieldError={errors.qualification}
-                    onFieldChange={handleChange("qualification")} maxLength={100}
-                  />
+                  <EditableField icon={AutoStories} label="Qualification" fieldKey="qualification" value={profile?.qualification} isEditing={isEditing}>
+                    {isEditing ? (
+                      <Select
+                        size="small"
+                        fullWidth
+                        value={form.qualification}
+                        onChange={handleChange("qualification")}
+                        sx={{ borderRadius: "8px", height: "35px", fontSize: "0.85rem", background: "var(--bg-accent-1)" }}
+                      >
+                        <MenuItem value="">Select Qualification</MenuItem>
+                        <MenuItem value="UG">UG</MenuItem>
+                        <MenuItem value="PG">PG</MenuItem>
+                        <MenuItem value="PHD">PHD</MenuItem>
+                      </Select>
+                    ) : (
+                      <Typography sx={{ fontSize: "0.85rem", fontWeight: 700, color: "var(--text-primary)" }}>{profile?.qualification || "N/A"}</Typography>
+                    )}
+                  </EditableField>
                   <EditableField
                     icon={CreditCard} label="PAN Number" fieldKey="panNumber" value={profile?.panNumber}
                     isEditing={isEditing} fieldValue={form.panNumber} fieldError={errors.panNumber}
