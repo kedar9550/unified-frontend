@@ -262,27 +262,15 @@ const SelfAppraisal = () => {
   const [unresolvedClaims, setUnresolvedClaims] = useState([]);
   const [showGatekeeperModal, setShowGatekeeperModal] = useState(false);
   const [resolvingClaimId, setResolvingClaimId] = useState(null);
+  const [appraisalError, setAppraisalError] = useState("");
 
   // Fetch/Initiate Appraisal on Academic Year change
   const fetchAppraisal = async () => {
     if (!selectedYear) return;
     setLoading(true);
+    setAppraisalError("");
     try {
-      // Check for unresolved co-authored claims first
-      const claimsRes = await axiosInstance.get(`/api/appraisal/unresolved-claims/${selectedYear}`);
-      if (claimsRes.data && claimsRes.data.success && claimsRes.data.data.length > 0) {
-        setUnresolvedClaims(claimsRes.data.data);
-        setShowGatekeeperModal(true);
-        setAppraisal(null);
-        setLoading(false);
-        return;
-      }
-
-      // No unresolved claims found
-      setUnresolvedClaims([]);
-      setShowGatekeeperModal(false);
-
-      // Fetch Appraisal Config Settings
+      // Fetch Appraisal Config Settings first
       try {
         const configRes = await axiosInstance.get(`/api/appraisal/config/${selectedYear}`);
         if (configRes.data && configRes.data.success) {
@@ -292,9 +280,28 @@ const SelfAppraisal = () => {
         console.error("Failed to load appraisal config:", configErr);
       }
 
+      // Fetch/Initiate Appraisal. This will return a 403 status code if appraisal is not active for this academic year.
       const res = await axiosInstance.get(`/api/appraisal/initiate/${selectedYear}`);
       if (res.data && res.data.success) {
-        setAppraisal(res.data.data);
+        const appraisalData = res.data.data;
+
+        // Only check for unresolved co-authored claims if the appraisal is still a Draft or is Rejected by HOD
+        if (appraisalData.status === "Draft" || appraisalData.status === "Rejected by HOD") {
+          const claimsRes = await axiosInstance.get(`/api/appraisal/unresolved-claims/${selectedYear}`);
+          if (claimsRes.data && claimsRes.data.success && claimsRes.data.data.length > 0) {
+            setUnresolvedClaims(claimsRes.data.data);
+            setShowGatekeeperModal(true);
+            setAppraisal(null);
+            setLoading(false);
+            return;
+          }
+        }
+
+        // No unresolved claims found or appraisal is already submitted/evaluated
+        setUnresolvedClaims([]);
+        setShowGatekeeperModal(false);
+
+        setAppraisal(appraisalData);
         setProfileComplete(res.data.isProfileComplete);
         setMissingFields(res.data.missingProfileFields || []);
 
@@ -316,7 +323,12 @@ const SelfAppraisal = () => {
         }
       }
     } catch (err) {
-      toast.error("Failed to fetch or calculate self appraisal.");
+      if (err.response?.status === 403) {
+        setAppraisalError(err.response?.data?.message || "Self-appraisal is not active for this academic year.");
+      } else {
+        toast.error("Failed to fetch or calculate self appraisal.");
+      }
+      setAppraisal(null);
     } finally {
       setLoading(false);
     }
@@ -1315,6 +1327,62 @@ const SelfAppraisal = () => {
   };
 
   if (!appraisal) {
+    if (appraisalError) {
+      return (
+        <Box p={4} sx={{ maxWidth: 800, margin: "40px auto", textAlign: "center" }}>
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              mb: 4,
+              p: 3,
+              borderRadius: "20px",
+              background: "var(--bg-panel)",
+              border: "1px solid var(--border-color)",
+              backdropFilter: "blur(12px)",
+              gap: 2
+            }}
+          >
+            <Box sx={{ textAlign: "left" }}>
+              <Typography variant="h5" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>
+                Faculty Self Appraisal Portal
+              </Typography>
+              <Typography variant="body2" color="var(--text-secondary)">
+                Academic Year Selection
+              </Typography>
+            </Box>
+            <FormControl variant="outlined" size="small" sx={{ minWidth: 200, background: "var(--bg-paper)", borderRadius: "8px" }}>
+              <InputLabel>Academic Year</InputLabel>
+              <Select
+                value={selectedYear}
+                onChange={(e) => setSelectedYear(e.target.value)}
+                label="Academic Year"
+              >
+                {academicYears.map((ay) => (
+                  <MenuItem key={ay._id} value={ay._id}>
+                    {ay.year}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Box>
+
+          <Card sx={{ p: 4, borderRadius: "20px", border: "1px solid var(--border-color)", background: "var(--bg-panel)", boxShadow: "var(--shadow-premium)" }}>
+            <Box sx={{ display: "flex", justifyContent: "center", mb: 2 }}>
+              <Info sx={{ fontSize: 60, color: "var(--color-primary)" }} />
+            </Box>
+            <Typography variant="h5" sx={{ fontWeight: 800, color: "var(--text-primary)", mb: 2 }}>
+              Appraisal Inactive
+            </Typography>
+            <Typography variant="body2" sx={{ color: "var(--text-secondary)" }}>
+              {appraisalError}
+            </Typography>
+          </Card>
+        </Box>
+      );
+    }
+
     if (unresolvedClaims && unresolvedClaims.length > 0) {
       return (
         <Box p={4} sx={{ maxWidth: 800, margin: "40px auto", textAlign: "center" }}>

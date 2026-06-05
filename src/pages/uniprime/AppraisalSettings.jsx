@@ -19,7 +19,9 @@ import {
   TableBody,
   TableCell,
   TableHead,
-  TableRow
+  TableRow,
+  Switch,
+  FormControlLabel
 } from "@mui/material";
 import { Save, Add, Delete, Settings, InfoOutlined } from "@mui/icons-material";
 import axiosInstance from "../../api/axios";
@@ -81,7 +83,8 @@ const AppraisalSettings = () => {
         teaching: config.teaching,
         research: config.research,
         valueAddition: config.valueAddition,
-        administration: config.administration
+        administration: config.administration,
+        isActive: config.isActive || false
       });
       if (res.data && res.data.success) {
         toast.success("Points configurations saved successfully!");
@@ -202,7 +205,21 @@ const AppraisalSettings = () => {
           </Box>
         </Box>
 
-        <Box sx={{ display: "flex", alignItems: "center", gap: 2, width: { xs: "100%", md: "auto" } }}>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 2, width: { xs: "100%", md: "auto" }, flexWrap: "wrap" }}>
+          <FormControlLabel
+            control={
+              <Switch
+                checked={config.isActive || false}
+                onChange={(e) => setConfig(prev => ({ ...prev, isActive: e.target.checked }))}
+                color="primary"
+              />
+            }
+            label={
+              <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)" }}>
+                Active Appraisal Year
+              </Typography>
+            }
+          />
           <FormControl variant="outlined" size="small" sx={{ minWidth: 200, background: "var(--bg-paper)", borderRadius: "8px" }}>
             <InputLabel>Academic Year</InputLabel>
             <Select
