@@ -46,6 +46,8 @@ export default function FundedProject() {
     principalInvestigator: "", recurring: "", nonRecurring: "",
     sanctionedAmount: "", sanctionDate: "",
     applyingSeedGrant: "",
+    applyIncentive: "No",
+    projectStatus: "Sanctioned",
     totalInvestigators: 1, otherInvestigatorsList: []
   });
   const [files, setFiles] = useState({ sanctionOrder: null });
@@ -72,7 +74,7 @@ export default function FundedProject() {
     }
   };
 
-  // Handle dynamic investigator generation based on total count
+  // Generate dynamic investigator fields
   useEffect(() => {
     let total = parseInt(form.totalInvestigators);
     if (isNaN(total) || total < 1) {
@@ -96,11 +98,74 @@ export default function FundedProject() {
         affiliationType: "",
         empId: "",
         name: "",
-        affiliation: ""
+        affiliation: "",
+        principalInvestigator: "No",
+        coPrincipalInvestigator: "Yes"
       });
     }
     setForm(p => ({ ...p, otherInvestigatorsList: newOtherInvestigators }));
   }, [form.totalInvestigators]);
+
+  const handleApplicantPIChange = (value) => {
+    setForm(prev => {
+      const isPI = value === "Yes";
+      const updatedList = isPI 
+        ? prev.otherInvestigatorsList.map(d => ({ ...d, principalInvestigator: "No" }))
+        : prev.otherInvestigatorsList;
+      return {
+        ...prev,
+        principalInvestigator: value,
+        coPrincipalInvestigator: isPI ? "No" : "Yes",
+        otherInvestigatorsList: updatedList
+      };
+    });
+  };
+
+  const handleApplicantCoPIChange = (value) => {
+    setForm(prev => ({
+      ...prev,
+      coPrincipalInvestigator: value
+    }));
+  };
+
+  const handleCoInvestigatorPIChange = (pos, value) => {
+    setForm(prev => {
+      const isPI = value === "Yes";
+      const updatedList = prev.otherInvestigatorsList.map(d => {
+        if (d.investigatorPosition === pos) {
+          return {
+            ...d,
+            principalInvestigator: value,
+            coPrincipalInvestigator: isPI ? "No" : d.coPrincipalInvestigator
+          };
+        } else if (isPI) {
+          return {
+            ...d,
+            principalInvestigator: "No"
+          };
+        }
+        return d;
+      });
+
+      return {
+        ...prev,
+        principalInvestigator: isPI ? "No" : prev.principalInvestigator,
+        otherInvestigatorsList: updatedList
+      };
+    });
+  };
+
+  const handleCoInvestigatorCoPIChange = (pos, value) => {
+    setForm(prev => {
+      const updated = prev.otherInvestigatorsList.map(d => {
+        if (d.investigatorPosition === pos) {
+          return { ...d, coPrincipalInvestigator: value };
+        }
+        return d;
+      });
+      return { ...prev, otherInvestigatorsList: updated };
+    });
+  };
 
   const fetchCoInvestigatorName = async (pos, empId) => {
     try {
@@ -222,18 +287,30 @@ export default function FundedProject() {
         .filter(Boolean)
         .join(", ");
 
+      const coInvestigatorsList = form.otherInvestigatorsList.map(a => ({
+        name: a.name || "",
+        affiliation: a.affiliationType === "Aditya University" ? "Aditya University" : (a.affiliation || ""),
+        employeeId: a.affiliationType === "Aditya University" ? a.empId : null,
+        principalInvestigator: a.principalInvestigator || "No",
+        coPrincipalInvestigator: a.coPrincipalInvestigator || "No"
+      })).filter(ca => ca.name && ca.affiliation);
+
       fd.append("title", form.title);
       fd.append("duration", form.duration);
       fd.append("fundingAgency", form.fundingAgency);
       fd.append("scheme", form.scheme || "");
       fd.append("principalInvestigator", form.principalInvestigator);
+      fd.append("coPrincipalInvestigator", form.coPrincipalInvestigator);
       fd.append("recurring", form.recurring || "");
       fd.append("nonRecurring", form.nonRecurring || "");
       fd.append("sanctionedAmount", form.sanctionedAmount);
       fd.append("sanctionDate", form.sanctionDate);
       fd.append("applyingSeedGrant", form.applyingSeedGrant);
+      fd.append("applyIncentive", form.applyIncentive);
+      fd.append("projectStatus", form.projectStatus);
       fd.append("otherInvestigators", otherNames);
       fd.append("totalInvestigators", String(total));
+      fd.append("coInvestigators", JSON.stringify(coInvestigatorsList));
 
       if (files.sanctionOrder) fd.append("sanctionOrder", files.sanctionOrder);
       fd.append("academicYear", selectedYear);
@@ -244,8 +321,10 @@ export default function FundedProject() {
       toast.success("Funded Project submitted successfully!");
       setForm({
         title: "", duration: "", fundingAgency: "", scheme: "",
-        principalInvestigator: "", recurring: "", nonRecurring: "",
+        principalInvestigator: "Yes", coPrincipalInvestigator: "No", recurring: "", nonRecurring: "",
         sanctionedAmount: "", sanctionDate: "", applyingSeedGrant: "",
+        applyIncentive: "No",
+        projectStatus: "Sanctioned",
         totalInvestigators: 1, otherInvestigatorsList: []
       });
       setFiles({ sanctionOrder: null });
@@ -442,130 +521,180 @@ export default function FundedProject() {
     </Box>
   );
 
-  const renderForm = () => (
-    <FormCard title="Funded Projects Submission">
-      <Box sx={{ mb: 3, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <Typography variant="body2" sx={{ background: "var(--bg-accent-1)", color: "var(--color-primary)", px: 2, py: 0.8, borderRadius: "8px", fontWeight: 700, border: "1px solid var(--border-color)" }}>
-          Academic Year: {academicYears.find(y => y._id === selectedYear)?.year || "Selected"}
-        </Typography>
-        <Button size="small" variant="text" onClick={() => setViewMode("select-year")} sx={{ fontWeight: 700, textTransform: "none", color: "var(--color-primary)" }}>Change Year</Button>
-      </Box>
+  const renderForm = () => {
+    const hasPI = form.principalInvestigator === "Yes" || form.otherInvestigatorsList.some(d => d.principalInvestigator === "Yes");
+    return (
+      <FormCard title="Funded Projects Submission">
+        <Box sx={{ mb: 3, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <Typography variant="body2" sx={{ background: "var(--bg-accent-1)", color: "var(--color-primary)", px: 2, py: 0.8, borderRadius: "8px", fontWeight: 700, border: "1px solid var(--border-color)" }}>
+            Academic Year: {academicYears.find(y => y._id === selectedYear)?.year || "Selected"}
+          </Typography>
+          <Button size="small" variant="text" onClick={() => setViewMode("select-year")} sx={{ fontWeight: 700, textTransform: "none", color: "var(--color-primary)" }}>Change Year</Button>
+        </Box>
 
-      <FacultyInfoRow />
+        <FacultyInfoRow />
 
-      <SubLabel text="Details of the Funded Projects:" />
-      <Grid2>
-        <Box>
-          <Typography sx={labelStyle}>Title of the Project :</Typography>
-          <TextField size="small" fullWidth value={form.title} onChange={set("title")} />
-        </Box>
-        <Box>
-          <Typography sx={labelStyle}>Duration of Project in Years :</Typography>
-          <TextField size="small" fullWidth value={form.duration} onChange={handleNumericChange("duration")} placeholder="e.g. 2 or 1.5 or 0.5" />
-        </Box>
-        <Box>
-          <Typography sx={labelStyle}>Funding Agency :</Typography>
-          <TextField size="small" fullWidth value={form.fundingAgency} onChange={set("fundingAgency")} />
-        </Box>
-        <Box>
-          <Typography sx={labelStyle}>Scheme :</Typography>
-          <TextField size="small" fullWidth value={form.scheme} onChange={set("scheme")} />
-        </Box>
-        <Box>
-          <Typography sx={labelStyle}>Total Number of Investigators : *</Typography>
-          <TextField
-            size="small"
-            type="number"
-            value={form.totalInvestigators}
-            onChange={set("totalInvestigators")}
-            inputProps={{ min: 1 }}
-          />
-        </Box>
-        {parseInt(form.totalInvestigators) > 1 && (
-          <Box sx={{ gridColumn: { sm: "1 / -1" }, mt: 2, background: "var(--bg-panel)", p: 2, borderRadius: "12px", border: "1px solid var(--border-color)" }}>
-            <Typography sx={{ ...labelStyle, mb: 1, fontWeight: 700 }}>Name & affiliation of Co-Investigator(s) :</Typography>
-            {form.otherInvestigatorsList.map((ca) => (
-              <Box key={ca.investigatorPosition} sx={{ display: "flex", flexDirection: "column", gap: 2, mb: 2, p: 2, borderRadius: "12px", border: "1px dashed var(--border-color)", background: "var(--bg-accent-1)" }}>
-                <Box sx={{ display: "flex", gap: 2, flexWrap: { xs: "wrap", sm: "nowrap" }, alignItems: "center" }}>
-                  <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", width: "30px", height: "30px", background: "var(--color-primary)", color: "#fff", borderRadius: "50%", fontWeight: 700, flexShrink: 0 }}>
-                    {ca.investigatorPosition}
-                  </Box>
-                  <Box sx={{ flex: 1, minWidth: "150px" }}>
-                    <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>AFFILIATION TYPE</Typography>
-                    <Select
-                      size="small"
-                      fullWidth
-                      value={ca.affiliationType}
-                      onChange={(e) => handleCoInvestigatorChange(ca.investigatorPosition, "affiliationType", e.target.value)}
-                      displayEmpty
-                    >
-                      <MenuItem value="" disabled>Select Affiliation</MenuItem>
-                      <MenuItem value="Aditya University">Aditya University</MenuItem>
-                      <MenuItem value="Others">Others</MenuItem>
-                    </Select>
-                  </Box>
-
-                  {ca.affiliationType === "Aditya University" ? (
-                    <>
-                      <Box sx={{ flex: 1, minWidth: "120px" }}>
-                        <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>EMPLOYEE ID</Typography>
-                        <TextField
-                          size="small"
-                          fullWidth
-                          value={ca.empId}
-                          onChange={(e) => handleCoInvestigatorChange(ca.investigatorPosition, "empId", e.target.value)}
-                          placeholder="e.g. 5741"
-                        />
-                      </Box>
-                      <Box sx={{ flex: 2, minWidth: "200px" }}>
-                        <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>CO-INVESTIGATOR NAME</Typography>
-                        <TextField
-                          size="small"
-                          fullWidth
-                          value={ca.name}
-                          disabled
-                          placeholder="Fetched from API"
-                          sx={{ background: "rgba(0,0,0,0.02)" }}
-                        />
-                      </Box>
-                    </>
-                  ) : (
-                    <>
-                      <Box sx={{ flex: 1, minWidth: "180px" }}>
-                        <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>CO-INVESTIGATOR NAME</Typography>
-                        <TextField
-                          size="small"
-                          fullWidth
-                          value={ca.name}
-                          onChange={(e) => handleCoInvestigatorChange(ca.investigatorPosition, "name", e.target.value)}
-                          placeholder="Full Name"
-                        />
-                      </Box>
-                      <Box sx={{ flex: 2, minWidth: "200px" }}>
-                        <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>AFFILIATION</Typography>
-                        <TextField
-                          size="small"
-                          fullWidth
-                          value={ca.affiliation}
-                          onChange={(e) => handleCoInvestigatorChange(ca.investigatorPosition, "affiliation", e.target.value)}
-                          placeholder="College / Organization"
-                        />
-                      </Box>
-                    </>
-                  )}
-                </Box>
-              </Box>
-            ))}
+        <SubLabel text="Details of the Funded Projects:" />
+        <Grid2>
+          <Box>
+            <Typography sx={labelStyle}>Title of the Project :</Typography>
+            <TextField size="small" fullWidth value={form.title} onChange={set("title")} />
           </Box>
-        )}
-        <Box>
-          <Typography sx={labelStyle}>Are You The Principal Investigator:</Typography>
-          <Select size="small" fullWidth displayEmpty value={form.principalInvestigator} onChange={set("principalInvestigator")}>
-            <MenuItem value="">--Select--</MenuItem>
-            <MenuItem value="Yes">Yes</MenuItem>
-            <MenuItem value="No">No</MenuItem>
-          </Select>
-        </Box>
+          <Box>
+            <Typography sx={labelStyle}>Duration of Project in Years :</Typography>
+            <TextField size="small" fullWidth value={form.duration} onChange={handleNumericChange("duration")} placeholder="e.g. 2 or 1.5 or 0.5" />
+          </Box>
+          <Box>
+            <Typography sx={labelStyle}>Funding Agency :</Typography>
+            <TextField size="small" fullWidth value={form.fundingAgency} onChange={set("fundingAgency")} />
+          </Box>
+          <Box>
+            <Typography sx={labelStyle}>Scheme (if any) :</Typography>
+            <TextField size="small" fullWidth value={form.scheme} onChange={set("scheme")} />
+          </Box>
+          <Box>
+            <Typography sx={labelStyle}>Total Number of Investigators :</Typography>
+            <TextField
+              size="small"
+              type="number"
+              fullWidth
+              value={form.totalInvestigators}
+              onChange={set("totalInvestigators")}
+              inputProps={{ min: 1 }}
+            />
+          </Box>
+
+          {parseInt(form.totalInvestigators) > 1 && (
+            <Box sx={{ gridColumn: "span 2", mt: 2, background: "var(--bg-panel)", p: 2, borderRadius: "12px", border: "1px solid var(--border-color)" }}>
+              <Typography sx={{ ...labelStyle, mb: 1, fontWeight: 700 }}>Name & affiliation of Co-Investigator(s) :</Typography>
+              {form.otherInvestigatorsList.map((ca) => {
+                const isThisDevPI = ca.principalInvestigator === "Yes";
+                return (
+                  <Box key={ca.investigatorPosition} sx={{ display: "flex", flexDirection: "column", gap: 2, mb: 2, p: 2, borderRadius: "12px", border: "1px dashed var(--border-color)", background: "var(--bg-accent-1)" }}>
+                    <Box sx={{ display: "flex", gap: 2, flexWrap: { xs: "wrap", sm: "nowrap" }, alignItems: "center" }}>
+                      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", width: "30px", height: "30px", background: "var(--color-primary)", color: "#fff", borderRadius: "50%", fontWeight: 700, flexShrink: 0 }}>
+                        {ca.investigatorPosition}
+                      </Box>
+                      <Box sx={{ flex: 1, minWidth: "150px" }}>
+                        <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>AFFILIATION TYPE</Typography>
+                        <Select
+                          size="small"
+                          fullWidth
+                          value={ca.affiliationType}
+                          onChange={(e) => handleCoInvestigatorChange(ca.investigatorPosition, "affiliationType", e.target.value)}
+                          displayEmpty
+                        >
+                          <MenuItem value="" disabled>Select Affiliation</MenuItem>
+                          <MenuItem value="Aditya University">Aditya University</MenuItem>
+                          <MenuItem value="Others">Others</MenuItem>
+                        </Select>
+                      </Box>
+
+                      {ca.affiliationType === "Aditya University" ? (
+                        <>
+                          <Box sx={{ flex: 1, minWidth: "120px" }}>
+                            <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>EMPLOYEE ID</Typography>
+                            <TextField
+                              size="small"
+                              fullWidth
+                              value={ca.empId}
+                              onChange={(e) => handleCoInvestigatorChange(ca.investigatorPosition, "empId", e.target.value)}
+                              placeholder="e.g. 5741"
+                            />
+                          </Box>
+                          <Box sx={{ flex: 2, minWidth: "200px" }}>
+                            <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>CO-INVESTIGATOR NAME</Typography>
+                            <TextField
+                              size="small"
+                              fullWidth
+                              value={ca.name}
+                              disabled
+                              placeholder="Fetched from API"
+                              sx={{ background: "rgba(0,0,0,0.02)" }}
+                            />
+                          </Box>
+                        </>
+                      ) : (
+                        <>
+                          <Box sx={{ flex: 1, minWidth: "180px" }}>
+                            <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>CO-INVESTIGATOR NAME</Typography>
+                            <TextField
+                              size="small"
+                              fullWidth
+                              value={ca.name}
+                              onChange={(e) => handleCoInvestigatorChange(ca.investigatorPosition, "name", e.target.value)}
+                              placeholder="Full Name"
+                            />
+                          </Box>
+                          <Box sx={{ flex: 2, minWidth: "200px" }}>
+                            <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>AFFILIATION</Typography>
+                            <TextField
+                              size="small"
+                              fullWidth
+                              value={ca.affiliation}
+                              onChange={(e) => handleCoInvestigatorChange(ca.investigatorPosition, "affiliation", e.target.value)}
+                              placeholder="College / Organization"
+                            />
+                          </Box>
+                        </>
+                      )}
+
+                      {(!hasPI || isThisDevPI) && (
+                        <Box sx={{ flex: 1, minWidth: "100px" }}>
+                          <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>PI? *</Typography>
+                          <Select
+                            size="small"
+                            fullWidth
+                            value={ca.principalInvestigator || "No"}
+                            onChange={(e) => handleCoInvestigatorPIChange(ca.investigatorPosition, e.target.value)}
+                          >
+                            <MenuItem value="Yes">Yes</MenuItem>
+                            <MenuItem value="No">No</MenuItem>
+                          </Select>
+                        </Box>
+                      )}
+
+                      {((hasPI && !isThisDevPI) || ca.principalInvestigator === "No") && (
+                        <Box sx={{ flex: 1, minWidth: "110px" }}>
+                          <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>CO-PI? *</Typography>
+                          <Select
+                            size="small"
+                            fullWidth
+                            value={ca.coPrincipalInvestigator || "Yes"}
+                            onChange={(e) => handleCoInvestigatorCoPIChange(ca.investigatorPosition, e.target.value)}
+                          >
+                            <MenuItem value="Yes">Yes</MenuItem>
+                            <MenuItem value="No">No</MenuItem>
+                          </Select>
+                        </Box>
+                      )}
+                    </Box>
+                  </Box>
+                );
+              })}
+            </Box>
+          )}
+
+          <Box>
+            {(!hasPI || form.principalInvestigator === "Yes") && (
+              <Box sx={{ mb: 2 }}>
+                <Typography sx={labelStyle}>Are You The Principal Investigator : *</Typography>
+                <Select size="small" fullWidth displayEmpty value={form.principalInvestigator} onChange={(e) => handleApplicantPIChange(e.target.value)}>
+                  <MenuItem value="Yes">Yes</MenuItem>
+                  <MenuItem value="No">No</MenuItem>
+                </Select>
+              </Box>
+            )}
+            {((hasPI && form.principalInvestigator === "No") || form.principalInvestigator === "No") && (
+              <Box sx={{ mb: 2 }}>
+                <Typography sx={labelStyle}>Are You The Co-Principal Investigator : *</Typography>
+                <Select size="small" fullWidth displayEmpty value={form.coPrincipalInvestigator} onChange={(e) => handleApplicantCoPIChange(e.target.value)}>
+                  <MenuItem value="Yes">Yes</MenuItem>
+                  <MenuItem value="No">No</MenuItem>
+                </Select>
+              </Box>
+            )}
+          </Box>
         <Box>
           <Typography sx={labelStyle}>Recurring :</Typography>
           <TextField size="small" fullWidth value={form.recurring} onChange={handleNumericChange("recurring")} placeholder="Amount" />
@@ -588,6 +717,20 @@ export default function FundedProject() {
             <MenuItem value="">Select</MenuItem>
             <MenuItem value="Yes">Yes</MenuItem>
             <MenuItem value="No">No</MenuItem>
+          </Select>
+        </Box>
+        <Box>
+          <Typography sx={labelStyle}>Applying for Incentive? *</Typography>
+          <Select size="small" fullWidth displayEmpty value={form.applyIncentive} onChange={set("applyIncentive")}>
+            <MenuItem value="Yes">Yes</MenuItem>
+            <MenuItem value="No">No</MenuItem>
+          </Select>
+        </Box>
+        <Box>
+          <Typography sx={labelStyle}>Project Status *</Typography>
+          <Select size="small" fullWidth displayEmpty value={form.projectStatus} onChange={set("projectStatus")}>
+            <MenuItem value="Shortlisted">Shortlisted</MenuItem>
+            <MenuItem value="Sanctioned">Sanctioned</MenuItem>
           </Select>
         </Box>
       </Grid2>
@@ -623,7 +766,8 @@ export default function FundedProject() {
         <SubmitBtn onClick={handleSubmit} loading={loading} />
       </Box>
     </FormCard>
-  );
+    );
+  };
 
   const handleCloseDetails = () => setSelectedPubDetails(null);
 
@@ -748,12 +892,41 @@ export default function FundedProject() {
             <Grid item xs={12} sm={3}><LabelValueDetails label="Sanctioned Amount" value={`₹${data.sanctionedAmount}`} /></Grid>
             <Grid item xs={12} sm={3}><LabelValueDetails label="Date of Sanction" value={formatDate(data.sanctionDate)} /></Grid>
             <Grid item xs={12} sm={3}><LabelValueDetails label="Is PI?" value={data.principalInvestigator || "No"} /></Grid>
+            <Grid item xs={12} sm={3}><LabelValueDetails label="Is Co-PI?" value={data.coPrincipalInvestigator || "No"} /></Grid>
 
             <Grid item xs={12} sm={4}><LabelValueDetails label="Recurring Amount" value={data.recurring ? `₹${data.recurring}` : "-"} /></Grid>
             <Grid item xs={12} sm={4}><LabelValueDetails label="Non-Recurring Amount" value={data.nonRecurring ? `₹${data.nonRecurring}` : "-"} /></Grid>
             <Grid item xs={12} sm={4}><LabelValueDetails label="Applying Seed Grant?" value={data.applyingSeedGrant === "Yes" ? "Yes" : "No"} /></Grid>
 
-            <Grid item xs={12} sm={12}><LabelValueDetails label="Other Investigators" value={data.otherInvestigators || "None"} /></Grid>
+            <Grid item xs={12} sm={12}>
+              <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", letterSpacing: "0.05em", fontWeight: 800, fontSize: "0.65rem", display: "block", mb: 1.5 }}>
+                Investigators & Roles List
+              </Typography>
+              <Stack spacing={1}>
+                <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", p: 1.5, bgcolor: "rgba(255,255,255,0.03)", borderRadius: "8px", border: "1px solid var(--border-color)" }}>
+                  <Box>
+                    <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)" }}>{data.facultyId?.name} (Applicant)</Typography>
+                    <Typography variant="caption" sx={{ color: "var(--text-secondary)" }}>Aditya University</Typography>
+                  </Box>
+                  <Stack direction="row" spacing={1}>
+                    <Chip size="small" label={`PI: ${data.principalInvestigator || "No"}`} color={data.principalInvestigator === "Yes" ? "primary" : "default"} />
+                    <Chip size="small" label={`Co-PI: ${data.coPrincipalInvestigator || "No"}`} color={data.coPrincipalInvestigator === "Yes" ? "secondary" : "default"} />
+                  </Stack>
+                </Box>
+                {(data.coInvestigators || []).map((co, idx) => (
+                  <Box key={idx} sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", p: 1.5, bgcolor: "rgba(255,255,255,0.01)", borderRadius: "8px", border: "1px dashed var(--border-color)" }}>
+                    <Box>
+                      <Typography variant="body2" sx={{ fontWeight: 600, color: "var(--text-primary)" }}>{co.name}</Typography>
+                      <Typography variant="caption" sx={{ color: "var(--text-secondary)" }}>{co.affiliation}</Typography>
+                    </Box>
+                    <Stack direction="row" spacing={1}>
+                      <Chip size="small" label={`PI: ${co.principalInvestigator || "No"}`} color={co.principalInvestigator === "Yes" ? "primary" : "default"} />
+                      <Chip size="small" label={`Co-PI: ${co.coPrincipalInvestigator || "No"}`} color={co.coPrincipalInvestigator === "Yes" ? "secondary" : "default"} />
+                    </Stack>
+                  </Box>
+                ))}
+              </Stack>
+            </Grid>
 
             {data.status === "Approved" && data.approvedAmount && (
               <Grid item xs={12} sm={6}>
@@ -772,9 +945,19 @@ export default function FundedProject() {
                 chip={
                   (() => {
                     const isApplicant = data.visibilityRole === "Applicant";
-                    const hasCoInvestigators = data.otherInvestigators && data.otherInvestigators.trim().length > 0;
+                    const eligibleClaimants = [
+                      { _id: data.facultyId?._id, name: data.facultyId?.name, institutionId: data.facultyId?.institutionId },
+                      ...((data.coInvestigators || [])
+                        .filter(ca => ca.employeeId)
+                        .map(ca => ({
+                          _id: ca.employeeId?._id || ca.employeeId,
+                          name: ca.employeeId?.name || ca.name,
+                          institutionId: ca.employeeId?.institutionId || ""
+                        })))
+                    ];
+                    const uniqueClaimants = eligibleClaimants.filter((v, i, a) => v._id && a.findIndex(t => t._id.toString() === v._id.toString()) === i);
 
-                    if (!hasCoInvestigators) {
+                    if (uniqueClaimants.length <= 1) {
                       return (
                         <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>
                           {data.facultyId?.name || "-"} (Auto-assigned)
@@ -784,66 +967,45 @@ export default function FundedProject() {
 
                     if (isApplicant) {
                       return (
-                        <Autocomplete
-                          size="small"
-                          fullWidth
-                          sx={{ mt: 0.5 }}
-                          options={[
-                            { _id: data.facultyId?._id, name: data.facultyId?.name, institutionId: data.facultyId?.institutionId },
-                            ...colleagueResults
-                          ].filter((v, i, a) => v._id && a.findIndex(t => t._id.toString() === v._id.toString()) === i)}
-                          getOptionLabel={(option) => `${option.name} (${option.institutionId})`}
-                          value={
-                            data.appraisalClaimant
-                              ? (typeof data.appraisalClaimant === 'string'
-                                  ? { _id: data.appraisalClaimant, name: `ID: ${data.appraisalClaimant}`, institutionId: data.appraisalClaimant }
-                                  : { _id: data.appraisalClaimant._id, name: data.appraisalClaimant.name, institutionId: data.appraisalClaimant.institutionId })
-                              : null
-                          }
-                          loading={colleagueLoading}
-                          onInputChange={(e, val) => setColleagueSearchQuery(val)}
-                          onChange={async (e, newValue) => {
-                            const selectedVal = newValue ? (newValue.institutionId || newValue._id) : null;
-                            if (!selectedVal) return;
-                            try {
-                              const res = await API.post("/api/appraisal/resolve-claim", {
-                                researchId: data._id,
-                                researchType: "FundedProject",
-                                claimantId: selectedVal
-                              });
-                              if (res.data?.success) {
-                                toast.success("Claimant resolved successfully!");
-                                setPublicationsList(prev => prev.map(p => p._id === data._id ? { ...p, appraisalClaimant: selectedVal } : p));
-                                setSelectedPubDetails(prev => ({ ...prev, appraisalClaimant: selectedVal }));
+                        <FormControl size="small" fullWidth sx={{ mt: 0.5 }}>
+                          <Select
+                            value={data.appraisalClaimant?.institutionId || data.appraisalClaimant || ""}
+                            onChange={async (e) => {
+                              const selectedVal = e.target.value;
+                              try {
+                                const res = await API.post("/api/appraisal/resolve-claim", {
+                                  researchId: data._id,
+                                  researchType: "FundedProject",
+                                  claimantId: selectedVal
+                                });
+                                if (res.data?.success) {
+                                  toast.success("Claimant resolved successfully!");
+                                  setPublicationsList(prev => prev.map(p => p._id === data._id ? { ...p, appraisalClaimant: selectedVal } : p));
+                                  setSelectedPubDetails(prev => ({ ...prev, appraisalClaimant: selectedVal }));
+                                }
+                              } catch (err) {
+                                toast.error(err.response?.data?.message || "Failed to resolve claim.");
                               }
-                            } catch (err) {
-                              toast.error(err.response?.data?.message || "Failed to resolve claim.");
-                            }
-                          }}
-                          renderInput={(params) => (
-                            <TextField 
-                              {...params} 
-                              placeholder="Search claimant by name/ID" 
-                              InputProps={{
-                                ...params.InputProps,
-                                endAdornment: (
-                                  <>
-                                    {colleagueLoading ? <CircularProgress color="inherit" size={20} /> : null}
-                                    {params.InputProps.endAdornment}
-                                  </>
-                                )
-                              }}
-                            />
-                          )}
-                        />
+                            }}
+                            displayEmpty
+                          >
+                            <MenuItem value="" disabled>--Select Claimant--</MenuItem>
+                            {uniqueClaimants.map(c => (
+                              <MenuItem key={c.institutionId || c._id} value={c.institutionId || c._id}>
+                                {c.name} {c.institutionId ? `(${c.institutionId})` : ""}
+                              </MenuItem>
+                            ))}
+                          </Select>
+                        </FormControl>
                       );
                     } else {
-                      const claimantName = typeof data.appraisalClaimant === 'string'
-                        ? `Claimant ID: ${data.appraisalClaimant}`
-                        : (data.appraisalClaimant?.name ? `${data.appraisalClaimant.name} (${data.appraisalClaimant.institutionId})` : "Not Yet Designated");
+                      const currentClaimantObj = uniqueClaimants.find(c => 
+                        (c.institutionId && c.institutionId === (data.appraisalClaimant?.institutionId || data.appraisalClaimant || "").toString()) ||
+                        (c._id && c._id.toString() === (data.appraisalClaimant?._id || data.appraisalClaimant || "").toString())
+                      );
                       return (
                         <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>
-                          {claimantName}
+                          {currentClaimantObj ? `${currentClaimantObj.name} (${currentClaimantObj.institutionId})` : "Not Yet Designated"}
                         </Typography>
                       );
                     }
