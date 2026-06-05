@@ -258,11 +258,30 @@ const SelfAppraisal = () => {
     fetchYears();
   }, []);
 
+  // Unresolved co-authored claims state variables
+  const [unresolvedClaims, setUnresolvedClaims] = useState([]);
+  const [showGatekeeperModal, setShowGatekeeperModal] = useState(false);
+  const [resolvingClaimId, setResolvingClaimId] = useState(null);
+
   // Fetch/Initiate Appraisal on Academic Year change
   const fetchAppraisal = async () => {
     if (!selectedYear) return;
     setLoading(true);
     try {
+      // Check for unresolved co-authored claims first
+      const claimsRes = await axiosInstance.get(`/api/appraisal/unresolved-claims/${selectedYear}`);
+      if (claimsRes.data && claimsRes.data.success && claimsRes.data.data.length > 0) {
+        setUnresolvedClaims(claimsRes.data.data);
+        setShowGatekeeperModal(true);
+        setAppraisal(null);
+        setLoading(false);
+        return;
+      }
+
+      // No unresolved claims found
+      setUnresolvedClaims([]);
+      setShowGatekeeperModal(false);
+
       // Fetch Appraisal Config Settings
       try {
         const configRes = await axiosInstance.get(`/api/appraisal/config/${selectedYear}`);
@@ -300,6 +319,26 @@ const SelfAppraisal = () => {
       toast.error("Failed to fetch or calculate self appraisal.");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleResolveClaim = async (claimId, type, claimantId) => {
+    if (!claimantId) return;
+    setResolvingClaimId(claimId);
+    try {
+      const res = await axiosInstance.post("/api/appraisal/resolve-claim", {
+        researchId: claimId,
+        researchType: type,
+        claimantId: claimantId
+      });
+      if (res.data && res.data.success) {
+        toast.success("Claim resolved successfully!");
+        fetchAppraisal();
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to resolve claim.");
+    } finally {
+      setResolvingClaimId(null);
     }
   };
 
@@ -1184,7 +1223,163 @@ const SelfAppraisal = () => {
     }
   };
 
+  const renderGatekeeperModal = () => {
+    return (
+      <Dialog
+        open={showGatekeeperModal}
+        onClose={() => setShowGatekeeperModal(false)}
+        maxWidth="md"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: "20px",
+            background: "var(--bg-panel)",
+            border: "1px solid var(--border-color)",
+            boxShadow: "var(--shadow-premium)"
+          }
+        }}
+      >
+        <DialogTitle sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "var(--bg-accent-4)", py: 2 }}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+            <Warning sx={{ color: "#e8a000" }} />
+            <Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>Action Required: Unresolved Co-Authored Publications</Typography>
+          </Box>
+          <IconButton onClick={() => setShowGatekeeperModal(false)}><Close /></IconButton>
+        </DialogTitle>
+        <DialogContent sx={{ p: 3, mt: 1 }}>
+          <Typography variant="body2" sx={{ color: "var(--text-secondary)", mb: 3 }}>
+            Below are co-authored publications for this academic year where the appraisal claimant has not been selected.
+            <strong> Applicants</strong> must select who will claim the points. <strong>Co-authors</strong> must wait for the applicant to resolve.
+          </Typography>
+          
+          <TableContainer component={Paper} sx={{ borderRadius: "12px", background: "var(--bg-paper)", border: "1px solid var(--border-color)", overflow: "hidden" }}>
+            <Table size="small">
+              <TableHead sx={{ bgcolor: "var(--bg-panel)" }}>
+                <TableRow>
+                  <TableCell sx={{ fontWeight: 700 }}>Type</TableCell>
+                  <TableCell sx={{ fontWeight: 700 }}>Title / Details</TableCell>
+                  <TableCell sx={{ fontWeight: 700 }}>Applicant</TableCell>
+                  <TableCell sx={{ fontWeight: 700 }} align="center">Action / Status</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {unresolvedClaims.map((claim) => (
+                  <TableRow key={claim._id}>
+                    <TableCell sx={{ fontWeight: 700 }}>
+                      <Chip label={claim.type} size="small" color="primary" variant="outlined" sx={{ fontWeight: 700 }} />
+                    </TableCell>
+                    <TableCell>
+                      <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)" }}>{claim.title}</Typography>
+                      <Typography variant="caption" sx={{ color: "var(--text-secondary)", display: "block" }}>{claim.info}</Typography>
+                    </TableCell>
+                    <TableCell>
+                      <Typography variant="body2" sx={{ fontWeight: 600, color: "var(--text-primary)" }}>{claim.applicant?.name || "N/A"}</Typography>
+                      <Typography variant="caption" sx={{ color: "var(--text-secondary)" }}>{claim.applicant?.institutionId}</Typography>
+                    </TableCell>
+                    <TableCell align="center">
+                      {claim.isApplicant ? (
+                        <FormControl size="small" sx={{ minWidth: 200 }}>
+                          <Select
+                            displayEmpty
+                            value=""
+                            onChange={(e) => handleResolveClaim(claim._id, claim.type, e.target.value)}
+                            disabled={resolvingClaimId === claim._id}
+                          >
+                            <MenuItem value="" disabled>Select Claimant</MenuItem>
+                             {claim.eligibleClaimants.map((el) => (
+                              <MenuItem key={el.institutionId || el._id} value={el.institutionId || el._id}>
+                                {el.name} ({el.institutionId})
+                              </MenuItem>
+                            ))}
+                          </Select>
+                        </FormControl>
+                      ) : (
+                        <Chip
+                          label={`Awaiting ${claim.applicant?.name || "Applicant"}`}
+                          size="small"
+                          sx={{ bgcolor: "rgba(232, 160, 0, 0.1)", color: "#e8a000", fontWeight: 700 }}
+                        />
+                      )}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        </DialogContent>
+        <DialogActions sx={{ p: 2.5, borderTop: "1px solid var(--border-color)" }}>
+          <Button onClick={() => setShowGatekeeperModal(false)} sx={{ fontWeight: 700 }}>Close</Button>
+        </DialogActions>
+      </Dialog>
+    );
+  };
+
   if (!appraisal) {
+    if (unresolvedClaims && unresolvedClaims.length > 0) {
+      return (
+        <Box p={4} sx={{ maxWidth: 800, margin: "40px auto", textAlign: "center" }}>
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              mb: 4,
+              p: 3,
+              borderRadius: "20px",
+              background: "var(--bg-panel)",
+              border: "1px solid var(--border-color)",
+              backdropFilter: "blur(12px)",
+              gap: 2
+            }}
+          >
+            <Box sx={{ textAlign: "left" }}>
+              <Typography variant="h5" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>
+                Faculty Self Appraisal Portal
+              </Typography>
+              <Typography variant="body2" color="var(--text-secondary)">
+                Action Required: Unresolved Co-authored claims
+              </Typography>
+            </Box>
+            <FormControl variant="outlined" size="small" sx={{ minWidth: 200, background: "var(--bg-paper)", borderRadius: "8px" }}>
+              <InputLabel>Academic Year</InputLabel>
+              <Select
+                value={selectedYear}
+                onChange={(e) => setSelectedYear(e.target.value)}
+                label="Academic Year"
+              >
+                {academicYears.map((ay) => (
+                  <MenuItem key={ay._id} value={ay._id}>
+                    {ay.year}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Box>
+
+          <Card sx={{ p: 4, borderRadius: "20px", border: "1px solid var(--border-color)", background: "var(--bg-panel)", boxShadow: "var(--shadow-premium)" }}>
+            <Box sx={{ display: "flex", justifyContent: "center", mb: 2 }}>
+              <Warning sx={{ fontSize: 60, color: "#e8a000" }} />
+            </Box>
+            <Typography variant="h5" sx={{ fontWeight: 800, color: "var(--text-primary)", mb: 2 }}>
+              Action Required: Unresolved Co-Authored Claims
+            </Typography>
+            <Typography variant="body2" sx={{ color: "var(--text-secondary)", mb: 4 }}>
+              You have pending co-authored publications for the selected academic year. You must designate the appraisal claimant before you can proceed to your self-appraisal form.
+            </Typography>
+            
+            <Button 
+              variant="contained" 
+              onClick={() => setShowGatekeeperModal(true)}
+              sx={{ background: "var(--gradient-primary)", color: "#fff", fontWeight: 700, borderRadius: "10px", px: 4, py: 1.5 }}
+            >
+              Resolve Pending Claims
+            </Button>
+          </Card>
+          {renderGatekeeperModal()}
+        </Box>
+      );
+    }
+
     return (
       <Box p={4} display="flex" justifyContent="center" alignItems="center" minHeight="50vh">
         <Typography color="var(--text-secondary)">Loading appraisal details...</Typography>

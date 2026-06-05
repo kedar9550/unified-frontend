@@ -318,7 +318,16 @@ export default function TextbookPublication() {
           allAuthors.push({ authorPosition: i }); // Backend will fill user details
         } else {
           const coAuth = form.otherAuthors.find(a => a.authorPosition === i);
-          if (coAuth) allAuthors.push(coAuth);
+          if (coAuth) {
+            allAuthors.push({
+              authorPosition: coAuth.authorPosition,
+              authorName: coAuth.authorName,
+              affiliationType: coAuth.affiliationType,
+              employeeId: coAuth.affiliationType === "Aditya University" ? coAuth.empId : null, // Backend accepts author.employeeId || author.empId
+              empId: coAuth.affiliationType === "Aditya University" ? coAuth.empId : null,
+              affiliationName: coAuth.affiliationType === "Aditya University" ? "Aditya University" : coAuth.affiliationName
+            });
+          }
         }
       }
 
@@ -1033,6 +1042,82 @@ export default function TextbookPublication() {
                 />
               </Grid>
             )}
+
+            {/* Appraisal Claimant Selector */}
+            <Grid item xs={12} sm={6}>
+              <LabelValueDetails 
+                label="Appraisal Claimant"
+                chip={
+                  (() => {
+                    const isApplicant = data.visibilityRole === "Applicant" || (data.facultyId && (data.facultyId === user?.userId || data.facultyId._id === user?.userId));
+                    const eligibleClaimants = [
+                      { _id: data.facultyId?._id, name: data.facultyId?.name, institutionId: data.facultyId?.institutionId },
+                      ...((data.authors || [])
+                        .filter(a => a.employeeObjectId)
+                        .map(a => ({
+                          _id: a.employeeObjectId?._id || a.employeeObjectId,
+                          name: a.employeeObjectId?.name || a.authorName,
+                          institutionId: a.employeeObjectId?.institutionId || ""
+                        })))
+                    ];
+                    const uniqueClaimants = eligibleClaimants.filter((v, i, a) => v._id && a.findIndex(t => t._id.toString() === v._id.toString()) === i);
+
+                    if (uniqueClaimants.length <= 1) {
+                      return (
+                        <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>
+                          {data.facultyId?.name || "-"} (Auto-assigned)
+                        </Typography>
+                      );
+                    }
+
+                    if (isApplicant) {
+                      return (
+                        <FormControl size="small" fullWidth sx={{ mt: 0.5 }}>
+                          <Select
+                            value={data.appraisalClaimant?.institutionId || data.appraisalClaimant || ""}
+                            onChange={async (e) => {
+                              const selectedVal = e.target.value;
+                              try {
+                                const res = await API.post("/api/appraisal/resolve-claim", {
+                                  researchId: data._id,
+                                  researchType: "Textbook",
+                                  claimantId: selectedVal
+                                });
+                                if (res.data?.success) {
+                                  toast.success("Claimant resolved successfully!");
+                                  setPublicationsList(prev => prev.map(p => p._id === data._id ? { ...p, appraisalClaimant: selectedVal } : p));
+                                  setSelectedPubDetails(prev => ({ ...prev, appraisalClaimant: selectedVal }));
+                                }
+                              } catch (err) {
+                                toast.error(err.response?.data?.message || "Failed to resolve claim.");
+                              }
+                            }}
+                            displayEmpty
+                          >
+                            <MenuItem value="" disabled>--Select Claimant--</MenuItem>
+                            {uniqueClaimants.map(c => (
+                              <MenuItem key={c.institutionId || c._id} value={c.institutionId || c._id}>
+                                {c.name} {c.institutionId ? `(${c.institutionId})` : ""}
+                              </MenuItem>
+                            ))}
+                          </Select>
+                        </FormControl>
+                      );
+                    } else {
+                      const currentClaimantObj = uniqueClaimants.find(c => 
+                        (c.institutionId && c.institutionId === (data.appraisalClaimant?.institutionId || data.appraisalClaimant || "").toString()) ||
+                        (c._id && c._id.toString() === (data.appraisalClaimant?._id || data.appraisalClaimant || "").toString())
+                      );
+                      return (
+                        <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>
+                          {currentClaimantObj ? `${currentClaimantObj.name} (${currentClaimantObj.institutionId})` : "Not Yet Designated"}
+                        </Typography>
+                      );
+                    }
+                  })()
+                }
+              />
+            </Grid>
           </Grid>
 
           <Divider sx={{ my: 3 }} />

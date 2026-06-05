@@ -176,7 +176,8 @@ export default function PatentPublication() {
       // Map otherInventors to coInventors array
       const coInventorsList = form.otherInventors.map(a => ({
         name: a.name || "",
-        affiliation: a.affiliationType === "Aditya University" ? "Aditya University" : (a.affiliation || "")
+        affiliation: a.affiliationType === "Aditya University" ? "Aditya University" : (a.affiliation || ""),
+        employeeId: a.affiliationType === "Aditya University" ? a.empId : null
       })).filter(ca => ca.name && ca.affiliation);
 
       fd.append("title", form.title);
@@ -728,6 +729,82 @@ export default function PatentPublication() {
                 />
               </Grid>
             )}
+
+            {/* Appraisal Claimant Selector */}
+            <Grid item xs={12} sm={6}>
+              <LabelValueDetails 
+                label="Appraisal Claimant"
+                chip={
+                  (() => {
+                    const isApplicant = data.visibilityRole === "Applicant";
+                    const eligibleClaimants = [
+                      { _id: data.facultyId?._id, name: data.facultyId?.name, institutionId: data.facultyId?.institutionId },
+                      ...((data.coInventors || [])
+                        .filter(ca => ca.employeeId)
+                        .map(ca => ({
+                          _id: ca.employeeId?._id || ca.employeeId,
+                          name: ca.employeeId?.name || ca.name,
+                          institutionId: ca.employeeId?.institutionId || ""
+                        })))
+                    ];
+                    const uniqueClaimants = eligibleClaimants.filter((v, i, a) => v._id && a.findIndex(t => t._id.toString() === v._id.toString()) === i);
+
+                    if (uniqueClaimants.length <= 1) {
+                      return (
+                        <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>
+                          {data.facultyId?.name || "-"} (Auto-assigned)
+                        </Typography>
+                      );
+                    }
+
+                    if (isApplicant) {
+                      return (
+                        <FormControl size="small" fullWidth sx={{ mt: 0.5 }}>
+                          <Select
+                            value={data.appraisalClaimant?.institutionId || data.appraisalClaimant || ""}
+                            onChange={async (e) => {
+                              const selectedVal = e.target.value;
+                              try {
+                                const res = await API.post("/api/appraisal/resolve-claim", {
+                                  researchId: data._id,
+                                  researchType: "Patent",
+                                  claimantId: selectedVal
+                                });
+                                if (res.data?.success) {
+                                  toast.success("Claimant resolved successfully!");
+                                  setPublicationsList(prev => prev.map(p => p._id === data._id ? { ...p, appraisalClaimant: selectedVal } : p));
+                                  setSelectedPubDetails(prev => ({ ...prev, appraisalClaimant: selectedVal }));
+                                }
+                              } catch (err) {
+                                toast.error(err.response?.data?.message || "Failed to resolve claim.");
+                              }
+                            }}
+                            displayEmpty
+                          >
+                            <MenuItem value="" disabled>--Select Claimant--</MenuItem>
+                            {uniqueClaimants.map(c => (
+                              <MenuItem key={c.institutionId || c._id} value={c.institutionId || c._id}>
+                                {c.name} {c.institutionId ? `(${c.institutionId})` : ""}
+                              </MenuItem>
+                            ))}
+                          </Select>
+                        </FormControl>
+                      );
+                    } else {
+                      const currentClaimantObj = uniqueClaimants.find(c => 
+                        (c.institutionId && c.institutionId === (data.appraisalClaimant?.institutionId || data.appraisalClaimant || "").toString()) ||
+                        (c._id && c._id.toString() === (data.appraisalClaimant?._id || data.appraisalClaimant || "").toString())
+                      );
+                      return (
+                        <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>
+                          {currentClaimantObj ? `${currentClaimantObj.name} (${currentClaimantObj.institutionId})` : "Not Yet Designated"}
+                        </Typography>
+                      );
+                    }
+                  })()
+                }
+              />
+            </Grid>
           </Grid>
 
           <Divider sx={{ my: 3 }} />

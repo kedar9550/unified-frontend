@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../../context/AuthContext";
 
-import { Box, TextField, MenuItem, Select, Typography, Button, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, IconButton, Dialog, DialogTitle, DialogContent, DialogActions, Stack, Grid, Card, Chip, Divider } from "@mui/material";
+import { Box, TextField, MenuItem, Select, Typography, Button, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, IconButton, Dialog, DialogTitle, DialogContent, DialogActions, Stack, Grid, Card, Chip, Divider, Autocomplete, CircularProgress } from "@mui/material";
 import { toast } from "sonner";
 import { Close, Description, Download, AttachFile, Groups, AccountBalanceWallet } from "@mui/icons-material";
 import PageHeader from "../../components/common/PageHeader";
@@ -18,6 +18,28 @@ export default function FundedProject() {
   const [selectedYear, setSelectedYear] = useState("");
   const [publicationsList, setPublicationsList] = useState([]);
   const [selectedPubDetails, setSelectedPubDetails] = useState(null);
+
+  const [colleagueSearchQuery, setColleagueSearchQuery] = useState("");
+  const [colleagueResults, setColleagueResults] = useState([]);
+  const [colleagueLoading, setColleagueLoading] = useState(false);
+
+  useEffect(() => {
+    if (!colleagueSearchQuery || colleagueSearchQuery.length < 2) {
+      setColleagueResults([]);
+      return;
+    }
+    const delayDebounce = setTimeout(() => {
+      setColleagueLoading(true);
+      API.get(`/api/employees/search?query=${colleagueSearchQuery}`)
+        .then(res => {
+          setColleagueResults(res.data || []);
+        })
+        .catch(() => {})
+        .finally(() => setColleagueLoading(false));
+    }, 400);
+
+    return () => clearTimeout(delayDebounce);
+  }, [colleagueSearchQuery]);
 
   const [form, setForm] = useState({
     title: "", duration: "", fundingAgency: "", scheme: "",
@@ -742,6 +764,93 @@ export default function FundedProject() {
                 />
               </Grid>
             )}
+
+            {/* Appraisal Claimant Selector */}
+            <Grid item xs={12} sm={6}>
+              <LabelValueDetails 
+                label="Appraisal Claimant"
+                chip={
+                  (() => {
+                    const isApplicant = data.visibilityRole === "Applicant";
+                    const hasCoInvestigators = data.otherInvestigators && data.otherInvestigators.trim().length > 0;
+
+                    if (!hasCoInvestigators) {
+                      return (
+                        <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>
+                          {data.facultyId?.name || "-"} (Auto-assigned)
+                        </Typography>
+                      );
+                    }
+
+                    if (isApplicant) {
+                      return (
+                        <Autocomplete
+                          size="small"
+                          fullWidth
+                          sx={{ mt: 0.5 }}
+                          options={[
+                            { _id: data.facultyId?._id, name: data.facultyId?.name, institutionId: data.facultyId?.institutionId },
+                            ...colleagueResults
+                          ].filter((v, i, a) => v._id && a.findIndex(t => t._id.toString() === v._id.toString()) === i)}
+                          getOptionLabel={(option) => `${option.name} (${option.institutionId})`}
+                          value={
+                            data.appraisalClaimant
+                              ? (typeof data.appraisalClaimant === 'string'
+                                  ? { _id: data.appraisalClaimant, name: `ID: ${data.appraisalClaimant}`, institutionId: data.appraisalClaimant }
+                                  : { _id: data.appraisalClaimant._id, name: data.appraisalClaimant.name, institutionId: data.appraisalClaimant.institutionId })
+                              : null
+                          }
+                          loading={colleagueLoading}
+                          onInputChange={(e, val) => setColleagueSearchQuery(val)}
+                          onChange={async (e, newValue) => {
+                            const selectedVal = newValue ? (newValue.institutionId || newValue._id) : null;
+                            if (!selectedVal) return;
+                            try {
+                              const res = await API.post("/api/appraisal/resolve-claim", {
+                                researchId: data._id,
+                                researchType: "FundedProject",
+                                claimantId: selectedVal
+                              });
+                              if (res.data?.success) {
+                                toast.success("Claimant resolved successfully!");
+                                setPublicationsList(prev => prev.map(p => p._id === data._id ? { ...p, appraisalClaimant: selectedVal } : p));
+                                setSelectedPubDetails(prev => ({ ...prev, appraisalClaimant: selectedVal }));
+                              }
+                            } catch (err) {
+                              toast.error(err.response?.data?.message || "Failed to resolve claim.");
+                            }
+                          }}
+                          renderInput={(params) => (
+                            <TextField 
+                              {...params} 
+                              placeholder="Search claimant by name/ID" 
+                              InputProps={{
+                                ...params.InputProps,
+                                endAdornment: (
+                                  <>
+                                    {colleagueLoading ? <CircularProgress color="inherit" size={20} /> : null}
+                                    {params.InputProps.endAdornment}
+                                  </>
+                                )
+                              }}
+                            />
+                          )}
+                        />
+                      );
+                    } else {
+                      const claimantName = typeof data.appraisalClaimant === 'string'
+                        ? `Claimant ID: ${data.appraisalClaimant}`
+                        : (data.appraisalClaimant?.name ? `${data.appraisalClaimant.name} (${data.appraisalClaimant.institutionId})` : "Not Yet Designated");
+                      return (
+                        <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>
+                          {claimantName}
+                        </Typography>
+                      );
+                    }
+                  })()
+                }
+              />
+            </Grid>
           </Grid>
 
           <Divider sx={{ my: 3 }} />
