@@ -30,19 +30,24 @@ import {
   PersonOff,
   CalendarMonth,
   Visibility,
+  Science,
 } from "@mui/icons-material";
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
 import API from "../../api/axios";
 import { useAuth } from "../../context/AuthContext";
 import DataTable from "../../components/data/DataTable";
 import ProctorStudentsModal from "../../components/faculty/ProctorStudentsModal";
+import { useNavigate } from "react-router-dom";
 
 const FacultyDashboard = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
 
   const [academicYears, setAcademicYears] = useState([]);
   const [selectedYear, setSelectedYear] = useState("");
   const [isProctorModalOpen, setIsProctorModalOpen] = useState(false);
+  const [dashboardData, setDashboardData] = useState(null);
+  const [loadingDashboard, setLoadingDashboard] = useState(true);
 
   // Fetch academic years for the year dropdown
   useEffect(() => {
@@ -84,74 +89,87 @@ const FacultyDashboard = () => {
     fetchYears();
   }, []);
 
+  const fetchDashboardData = async (year) => {
+    setLoadingDashboard(true);
+    try {
+      const url = year ? `/api/dashboard/faculty?academicYear=${year}` : "/api/dashboard/faculty";
+      const res = await API.get(url);
+      setDashboardData(res.data.data);
+    } catch (err) {
+      console.error("Failed to fetch faculty dashboard data:", err);
+    } finally {
+      setLoadingDashboard(false);
+    }
+  };
 
+  useEffect(() => {
+    if (selectedYear) {
+      fetchDashboardData(selectedYear);
+    }
+  }, [selectedYear]);
 
-  // ── Static Data (to be wired up later) ───────────────────────────────────
   const topCards = [
     {
-      title: "Courses Assigned",
-      value: "8",
-      subtitle: "This Semester",
-      icon: <MenuBook />,
+      title: "Research Works",
+      value: dashboardData?.totalResearch || 0,
+      subtitle: `${dashboardData?.approvedResearch || 0} Approved • ${dashboardData?.pendingResearch || 0} Pending`,
+      icon: <Science />,
       gradient: "linear-gradient(135deg, #3B82F6, #2563EB)",
       color: "#3B82F6",
-      linkText: "View Details",
+      linkText: "Manage Research",
+      onClick: () => navigate("/research/journal-publication")
     },
     {
-      title: "Publications",
-      value: "12",
-      subtitle: "Total Publications",
-      icon: <Description />,
+      title: "Proctored Students",
+      value: dashboardData?.proctoredStudentsCount || 0,
+      subtitle: "Assigned for Mentorship",
+      icon: <Group />,
       gradient: "linear-gradient(135deg, #8B5CF6, #6D28D9)",
       color: "#8B5CF6",
-      linkText: "View Details",
+      linkText: "View Assignments",
+      onClick: () => setIsProctorModalOpen(true)
     },
     {
-      title: "Pending Tasks",
-      value: "5",
-      subtitle: "Requires Attention",
+      title: "Appraisal Status",
+      value: dashboardData?.appraisalStatus || "Not Started",
+      subtitle: `Claimed Score: ${dashboardData?.appraisalScore || 0} pts`,
       icon: <AssignmentTurnedIn />,
       gradient: "linear-gradient(135deg, #F59E0B, #D97706)",
       color: "#F59E0B",
-      linkText: "View Details",
+      linkText: "View Appraisal",
+      onClick: () => navigate("/faculty/appraisal")
     },
     {
-      title: "Upcoming Classes",
-      value: "3",
-      subtitle: "Today",
+      title: "Value Additions",
+      value: dashboardData?.activitiesCount || 0,
+      subtitle: "Resource Util. & Contrib.",
       icon: <Event />,
       gradient: "linear-gradient(135deg, #EF4444, #DC2626)",
       color: "#EF4444",
-      linkText: "View Schedule",
+      linkText: "Manage Value Add.",
+      onClick: () => navigate("/value-addition/resource-utilization")
     },
   ];
 
-  const courseLoadData = [
-    { name: "Theory Courses", value: 5 },
-    { name: "Lab Courses", value: 2 },
-    { name: "Tutorials", value: 1 },
-  ];
-  const CHART_COLORS = ["#3B82F6", "#10B981", "#F59E0B"];
+  const CHART_COLORS = ["#3B82F6", "#10B981", "#F59E0B", "#8B5CF6", "#EC4899", "#06B6D4"];
 
   const quickActions = [
-    { title: "View Time Table", desc: "Check class schedule", icon: <Event sx={{ color: "#3B82F6" }} /> },
-    { title: "Upload Materials", desc: "Share study materials", icon: <CloudUpload sx={{ color: "#10B981" }} /> },
-    { title: "Mark Attendance", desc: "Take attendance", icon: <Group sx={{ color: "#3B82F6" }} /> },
-    { title: "Student Feedback", desc: "View feedback", icon: <Feedback sx={{ color: "#10B981" }} /> },
-    { title: "Proctoring", desc: "Assigned students", icon: <Group sx={{ color: "#8B5CF6" }} />, onClick: () => setIsProctorModalOpen(true) },
-    { title: "Academic Calendar", desc: "Important dates", icon: <CalendarMonth sx={{ color: "#8B5CF6" }} /> },
-    { title: "Leave Request", desc: "Apply for leave", icon: <PersonOff sx={{ color: "#3B82F6" }} /> },
+    { title: "Submit Journal", desc: "Publish research paper", icon: <Science sx={{ color: "#3B82F6" }} />, onClick: () => navigate("/research/journal-publication") },
+    { title: "Submit Patent", desc: "Register intellectual property", icon: <Science sx={{ color: "#10B981" }} />, onClick: () => navigate("/research/patent-publication") },
+    { title: "Submit Textbook", desc: "Publish textbook details", icon: <MenuBook sx={{ color: "#3B82F6" }} />, onClick: () => navigate("/research/textbook-publication") },
+    { title: "Resource Utilization", desc: "Log equipment & lab use", icon: <AssignmentTurnedIn sx={{ color: "#10B981" }} />, onClick: () => navigate("/value-addition/resource-utilization") },
+    { title: "Contributions", desc: "Faculty achievements", icon: <Description sx={{ color: "#8B5CF6" }} />, onClick: () => navigate("/value-addition/contribution") },
+    { title: "Self Appraisal", desc: "Submit yearly appraisal", icon: <AssignmentTurnedIn sx={{ color: "#8B5CF6" }} />, onClick: () => navigate("/faculty/appraisal") },
+    { title: "Proctoring", desc: "Assigned students list", icon: <Group sx={{ color: "#EF4444" }} />, onClick: () => setIsProctorModalOpen(true) },
   ];
 
-  const myCourses = [
-    { code: "MA101", name: "Mathematics", branch: "CSE", sem: "1", students: 60 },
-    { code: "MA201", name: "Discrete Mathematics", branch: "CSE", sem: "3", students: 55 },
-    { code: "MA301", name: "Numerical Methods", branch: "CSE", sem: "5", students: 48 },
-    { code: "MA401", name: "Probability & Statistics", branch: "CSE", sem: "7", students: 45 },
-    { code: "MA502", name: "Operations Research", branch: "CSE", sem: "9", students: 40 },
-  ];
-
-
+  if (loadingDashboard && !dashboardData) {
+    return (
+      <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "60vh" }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
 
   return (
     <Box>
@@ -188,24 +206,26 @@ const FacultyDashboard = () => {
           </Typography>
         </Box>
         <Box sx={{ display: "flex", gap: 2, alignItems: "center", alignSelf: { xs: "flex-end", sm: "center" } }}>
-          <Button
-            variant="outlined"
+          <Select
+            size="small"
+            value={selectedYear}
+            onChange={(e) => setSelectedYear(e.target.value)}
             sx={{
               borderRadius: "12px",
               borderColor: "var(--border-color)",
               color: "var(--text-primary)",
-              textTransform: "none",
               background: "var(--bg-glass)",
               backdropFilter: "blur(10px)",
-              "&:hover": {
-                borderColor: "var(--color-primary)",
-                background: "var(--bg-accent-1)",
-              },
+              "& fieldset": { borderColor: "var(--border-color)" },
+              "&:hover fieldset": { borderColor: "var(--color-primary)" },
+              "&.Mui-focused fieldset": { borderColor: "var(--color-primary)" },
+              minWidth: 150
             }}
-            startIcon={<CalendarMonth sx={{ color: "var(--color-primary)" }} />}
           >
-            {selectedYear || "Academic Year"}
-          </Button>
+            {academicYears.map((y) => (
+              <MenuItem key={y._id} value={y.year}>{y.year}</MenuItem>
+            ))}
+          </Select>
         </Box>
       </Box>
 
@@ -308,6 +328,7 @@ const FacultyDashboard = () => {
                       fontWeight: 800,
                       color: "var(--text-primary)",
                       mt: 0.5,
+                      fontSize: typeof card.value === "string" && card.value.length > 8 ? "1.5rem" : "2.125rem"
                     }}
                   >
                     {card.value}
@@ -341,6 +362,7 @@ const FacultyDashboard = () => {
                       textDecoration: "underline",
                     },
                   }}
+                  onClick={card.onClick}
                 >
                   {card.linkText}
                 </Button>
@@ -350,7 +372,7 @@ const FacultyDashboard = () => {
         ))}
       </Box>
 
-      {/* Row 2: Teaching Overview and Quick Actions */}
+      {/* Row 2: Research Overview and Quick Actions */}
       <Box
         sx={{
           display: "flex",
@@ -359,7 +381,7 @@ const FacultyDashboard = () => {
           mb: 4,
         }}
       >
-        {/* Teaching Overview */}
+        {/* Research Overview */}
         <Box sx={{ width: { xs: "100%", lg: "50%" }, display: "flex" }}>
           <Card
             sx={{
@@ -382,7 +404,7 @@ const FacultyDashboard = () => {
                   color: "var(--text-primary)",
                 }}
               >
-                Teaching Overview
+                Research & Publications
               </Typography>
               <Button
                 size="small"
@@ -393,8 +415,9 @@ const FacultyDashboard = () => {
                   color: "var(--color-primary)",
                   fontWeight: 600,
                 }}
+                onClick={() => navigate("/research/journal-publication")}
               >
-                View All Courses
+                View All Research
               </Button>
             </Box>
 
@@ -428,13 +451,13 @@ const FacultyDashboard = () => {
                     letterSpacing: "0.05em",
                   }}
                 >
-                  Course Load
+                  Submissions by Type
                 </Typography>
                 <Box sx={{ position: "relative", width: 160, height: 160, minWidth: 0 }}>
                   <ResponsiveContainer width="100%" height={160}>
                     <PieChart>
                       <Pie
-                        data={courseLoadData}
+                        data={dashboardData?.researchTypeDistribution || []}
                         dataKey="value"
                         nameKey="name"
                         innerRadius={55}
@@ -442,7 +465,7 @@ const FacultyDashboard = () => {
                         paddingAngle={4}
                         stroke="none"
                       >
-                        {courseLoadData.map((entry, index) => (
+                        {(dashboardData?.researchTypeDistribution || []).map((entry, index) => (
                           <Cell
                             key={`cell-${index}`}
                             fill={CHART_COLORS[index % CHART_COLORS.length]}
@@ -469,7 +492,7 @@ const FacultyDashboard = () => {
                         lineHeight: 1,
                       }}
                     >
-                      8
+                      {dashboardData?.totalResearch || 0}
                     </Typography>
                     <Typography
                       sx={{
@@ -480,12 +503,12 @@ const FacultyDashboard = () => {
                         mt: 0.5,
                       }}
                     >
-                      Assigned
+                      Submissions
                     </Typography>
                   </Box>
                 </Box>
-                <Box sx={{ mt: 2, width: "100%" }}>
-                  {courseLoadData.map((item, idx) => (
+                <Box sx={{ mt: 2, width: "100%", maxHeight: 150, overflowY: "auto" }}>
+                  {(dashboardData?.researchTypeDistribution || []).filter(item => item.value > 0).map((item, idx) => (
                     <Box
                       key={idx}
                       sx={{
@@ -530,7 +553,7 @@ const FacultyDashboard = () => {
                 </Box>
               </Box>
 
-              {/* Semester Stats */}
+              {/* Research Status Summary */}
               <Box sx={{ width: { xs: "100%", sm: "50%" } }}>
                 <Typography
                   variant="subtitle2"
@@ -543,14 +566,14 @@ const FacultyDashboard = () => {
                     letterSpacing: "0.05em",
                   }}
                 >
-                  Semester Stats
+                  Verification Status
                 </Typography>
                 <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
                   {[
-                    { label: "Total Classes", value: 96, icon: <Event sx={{ fontSize: 20, color: "var(--color-primary)" }} /> },
-                    { label: "Classes Conducted", value: 68, icon: <Group sx={{ fontSize: 20, color: "#10B981" }} /> },
-                    { label: "Attendance Avg.", value: "87%", icon: <Box sx={{ width: 20, height: 20, borderRadius: 1, display: "flex", alignItems: "center", justifyContent: "center", border: "1px solid var(--color-primary)", color: "var(--color-primary)", fontSize: 12, fontWeight: 800 }}>%</Box> },
-                    { label: "Remaining Classes", value: 28, icon: <Event sx={{ fontSize: 20, color: "#F59E0B" }} /> },
+                    { label: "Total Submissions", value: dashboardData?.totalResearch || 0, icon: <Description sx={{ fontSize: 20, color: "var(--color-primary)" }} /> },
+                    { label: "Approved Items", value: dashboardData?.approvedResearch || 0, icon: <AssignmentTurnedIn sx={{ fontSize: 20, color: "#10B981" }} /> },
+                    { label: "Pending Verification", value: dashboardData?.pendingResearch || 0, icon: <Event sx={{ fontSize: 20, color: "#F59E0B" }} /> },
+                    { label: "Rejected / Returned", value: dashboardData?.rejectedResearch || 0, icon: <PersonOff sx={{ fontSize: 20, color: "#EF4444" }} /> },
                   ].map((stat, i) => (
                     <Box key={i} sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                       <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
@@ -687,7 +710,7 @@ const FacultyDashboard = () => {
         </Box>
       </Box>
 
-      {/* Row 3: Courses Table */}
+      {/* Row 3: Recent Research Submissions Table */}
       <Card
         sx={{
           borderRadius: 2,
@@ -715,7 +738,7 @@ const FacultyDashboard = () => {
               color: "var(--text-primary)",
             }}
           >
-            My Courses
+            Recent Research Submissions
           </Typography>
           <Button
             size="small"
@@ -726,33 +749,49 @@ const FacultyDashboard = () => {
               color: "var(--color-primary)",
               fontWeight: 600,
             }}
+            onClick={() => navigate("/research/journal-publication")}
           >
-            View All Courses
+            View All Submissions
           </Button>
         </Box>
 
         <DataTable
-          columns={["COURSE CODE", "COURSE NAME", "BRANCH", "SEMESTER", "STUDENTS", "ACTIONS"]}
-          rows={myCourses.map(course => [
-            course.code,
-            course.name,
-            course.branch,
-            course.sem,
-            course.students,
+          columns={["TITLE / NAME", "TYPE", "ACADEMIC YEAR", "STATUS", "DATE SUBMITTED"]}
+          rows={(dashboardData?.recentResearchList || []).map(item => [
+            item.title,
+            item.type,
+            item.year,
             {
               display: (
-                <IconButton 
-                  size="small" 
-                  sx={{ 
-                    color: "var(--color-primary)",
-                    "&:hover": { background: "var(--bg-accent-1)" }
+                <Chip
+                  label={item.status}
+                  size="small"
+                  sx={{
+                    fontWeight: 700,
+                    fontSize: "0.75rem",
+                    bgcolor:
+                      item.status === "Approved"
+                        ? "#dcfce7"
+                        : item.status.startsWith("Pending")
+                        ? "#fef3c7"
+                        : "#fee2e2",
+                    color:
+                      item.status === "Approved"
+                        ? "#166534"
+                        : item.status.startsWith("Pending")
+                        ? "#92400e"
+                        : "#991b1b",
+                    textTransform: "capitalize"
                   }}
-                >
-                  <Visibility fontSize="small" />
-                </IconButton>
+                />
               ),
-              value: "View"
-            }
+              value: item.status
+            },
+            new Date(item.createdAt).toLocaleDateString("en-IN", {
+              day: "2-digit",
+              month: "short",
+              year: "numeric"
+            })
           ])}
         />
       </Card>
