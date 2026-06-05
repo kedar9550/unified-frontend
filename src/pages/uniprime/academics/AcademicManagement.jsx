@@ -280,7 +280,8 @@ const AcademicManagement = () => {
               width: "140px",
               height: "140px",
               background: "radial-gradient(circle at top right, var(--color-primary-alpha), transparent 70%)",
-              zIndex: 0
+              zIndex: 0,
+              pointerEvents: "none"
             }
           }}>
             {/* Year Header */}
@@ -311,7 +312,8 @@ const AcademicManagement = () => {
                   }}>
                   ADD PROGRAM
                 </Button>
-                <IconButton size="small" sx={{ color: "var(--text-secondary)" }}>
+                <IconButton size="small" sx={{ color: "var(--text-secondary)" }}
+                  onClick={(e) => { e.stopPropagation(); toggleYearExpand(yearDoc._id); }}>
                   {isYearExpanded ? <ExpandLess fontSize="small" /> : <ExpandMore fontSize="small" />}
                 </IconButton>
               </Box>
@@ -339,7 +341,8 @@ const AcademicManagement = () => {
                         width: "120px",
                         height: "120px",
                         background: "radial-gradient(circle at top right, var(--color-primary-alpha), transparent 70%)",
-                        zIndex: 0
+                        zIndex: 0,
+                        pointerEvents: "none"
                       }
                     }}>
                       <Box onClick={() => toggleCard(cardKey)} sx={{
@@ -359,7 +362,8 @@ const AcademicManagement = () => {
                               color: pattern === "SEMESTER" ? "#22c55e" : "#a78bfa", fontWeight: 600, fontSize: "0.7rem" }} />
                         </Box>
                         <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
-                          <IconButton size="small" sx={{ color: "var(--text-secondary)" }}>
+                          <IconButton size="small" sx={{ color: "var(--text-secondary)" }}
+                            onClick={(e) => { e.stopPropagation(); toggleCard(cardKey); }}>
                             {isExpanded ? <ExpandLess fontSize="small" /> : <ExpandMore fontSize="small" />}
                           </IconButton>
                         </Box>
