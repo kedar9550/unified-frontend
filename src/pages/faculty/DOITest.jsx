@@ -202,7 +202,7 @@ export default function DOIFetcher() {
       issue: "Not Available",
       date: "Not Available",
       hIndex: "Not Available",
-      impactFactor: "Not Available"
+      jcrImpactFactor: "Not Available"
     };
 
     const ELS = { "X-ELS-APIKey": ELSEVIER_API_KEY, Accept: "application/json" };
@@ -308,7 +308,7 @@ export default function DOIFetcher() {
           }
 
           // CiteScore only (no SJR fallback)
-          // Since JIF is different and unavailable, we keep R.impactFactor as "Not Available" per user decision.
+          // Since JIF is different and unavailable, we keep R.jcrImpactFactor as "Not Available" per user decision.
 
           // Quartile Calculation based on existing CiteScore percentile quartile calculation logic
           const csYearInfo = entry?.citeScoreYearInfoList?.citeScoreYearInfo;
@@ -426,7 +426,7 @@ export default function DOIFetcher() {
     { key: "issue", label: "Issue", span: 1 },
     { key: "date", label: "Date of Publication", span: 2 },
     { key: "hIndex", label: "Journal H-Index", span: 1 },
-    { key: "impactFactor", label: "Impact Factor of Journal", span: 1 },
+    { key: "jcrImpactFactor", label: "Impact Factor of Journal", span: 1 },
   ];
 
   return (

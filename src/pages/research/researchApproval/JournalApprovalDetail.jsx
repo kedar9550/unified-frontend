@@ -53,7 +53,7 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
     const [remarks, setRemarks] = useState("");
     const [approvedAmount, setApprovedAmount] = useState("");
     const [hIndex, setHIndex] = useState("");
-    const [impactFactor, setImpactFactor] = useState("");
+    const [jcrImpactFactor, setJcrImpactFactor] = useState("");
     const [citations, setCitations] = useState("");
     const [actionLoading, setActionLoading] = useState(false);
     const [imgError, setImgError] = useState(false);
@@ -76,15 +76,16 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
                     if (journal.hIndex) setHIndex(journal.hIndex);
                     if (journal.citations) setCitations(journal.citations);
 
-                    if (journal.impactFactor) {
-                        setImpactFactor(journal.impactFactor);
+                    const jcrIFValue = journal.jcrImpactFactor || journal.impactFactor;
+                    if (jcrIFValue) {
+                        setJcrImpactFactor(jcrIFValue);
                     } else if (journal.journalName) {
                         try {
                             const jifRes = await API.get(`/api/journal-impact-factors?search=${encodeURIComponent(journal.journalName)}`);
                             if (jifRes.data?.success && jifRes.data.data?.length > 0) {
                                 const exactMatch = jifRes.data.data.find(j => j.journalName.toLowerCase() === journal.journalName.toLowerCase());
                                 const matchedJif = exactMatch ? exactMatch.jif : jifRes.data.data[0].jif;
-                                setImpactFactor(String(matchedJif));
+                                setJcrImpactFactor(String(matchedJif));
                             }
                         } catch (jifErr) {
                             console.error("Failed to fetch JIF from database", jifErr);
@@ -109,7 +110,7 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
 
         if (action === 'Approve') {
             if (isResearchAdmin) {
-                if (!impactFactor) {
+                if (!jcrImpactFactor) {
                     toast.error('Please enter the Impact Factor (JCR).');
                     return;
                 }
@@ -128,7 +129,7 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
                 comment: remarks,
                 approvedAmount: isResearchAdmin && data.applyIncentive === 'Yes' ? approvedAmount : undefined,
                 hIndex: isResearchAdmin ? hIndex : undefined,
-                impactFactor: isResearchAdmin ? impactFactor : undefined,
+                jcrImpactFactor: isResearchAdmin ? jcrImpactFactor : undefined,
                 citations: isResearchAdmin ? citations : undefined
             };
             const res = await API.put(endpoint, payload);
@@ -149,14 +150,15 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
         try {
             const res = await API.put(`/api/research/journal/update-metrics/${id}`, {
                 hIndex,
-                impactFactor,
+                jcrImpactFactor,
                 citations
             });
             if (res.data?.success) {
                 toast.success("Journal metrics updated successfully");
                 setData(res.data.data);
                 if (res.data.data.hIndex) setHIndex(res.data.data.hIndex);
-                if (res.data.data.impactFactor) setImpactFactor(res.data.data.impactFactor);
+                const updatedIF = res.data.data.jcrImpactFactor || res.data.data.impactFactor;
+                if (updatedIF) setJcrImpactFactor(updatedIF);
                 if (res.data.data.citations) setCitations(res.data.data.citations);
             }
         } catch (error) {
@@ -337,7 +339,7 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
                             horizontal 
                         />
                         <LabelValue label="H-Index" value={data.hIndex || "-"} horizontal />
-                        <LabelValue label="Impact Factor (JCR)" value={data.impactFactor || "-"} horizontal />
+                        <LabelValue label="Impact Factor (JCR)" value={data.jcrImpactFactor || data.impactFactor || "-"} horizontal />
                         <LabelValue label="Citations" value={data.citations || "-"} horizontal />
                         <LabelValue label="AGEC Referencing Numbers" value={data.agecReferencingNumbers || data.referencingNos || "-"} horizontal />
                         <LabelValue label="Number of References Belonging to AGEC" value={data.numberOfReferencesBelongingToAGEC !== undefined ? data.numberOfReferencesBelongingToAGEC : (data.papersCited !== undefined ? data.papersCited : "-")} horizontal />
@@ -424,8 +426,8 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
                                         <TextField 
                                             fullWidth size="small" 
                                             placeholder="Enter Impact Factor (JCR)" 
-                                            value={impactFactor} 
-                                            onChange={e => setImpactFactor(e.target.value)} 
+                                            value={jcrImpactFactor} 
+                                            onChange={e => setJcrImpactFactor(e.target.value)} 
                                             sx={{ "& .MuiOutlinedInput-root": { borderRadius: "10px", bgcolor: "var(--bg-panel)" } }} 
                                         />
                                     </Box>
@@ -499,8 +501,8 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
                                             <TextField 
                                                 fullWidth size="small" 
                                                 placeholder="Enter Impact Factor (JCR)" 
-                                                value={impactFactor} 
-                                                onChange={e => setImpactFactor(e.target.value)} 
+                                                value={jcrImpactFactor} 
+                                                onChange={e => setJcrImpactFactor(e.target.value)} 
                                                 sx={{ "& .MuiOutlinedInput-root": { borderRadius: "10px", bgcolor: "var(--bg-panel)" } }} 
                                             />
                                         </Box>

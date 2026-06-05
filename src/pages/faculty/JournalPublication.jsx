@@ -127,9 +127,9 @@ async function fetchJournalDataByDOI(doi) {
     }
   }
 
-  // 2. Serial / journal metrics (H-Index, impact factor, quartile) via ISSN
+  // 2. Serial / journal metrics (H-Index, jcrImpactFactor, quartile) via ISSN
   let hIndex = "";
-  let impactFactor = "";
+  let jcrImpactFactor = "";
   let quartile = "N/A";
   let journalType = "SCOPUS";
 
@@ -145,7 +145,7 @@ async function fetchJournalDataByDOI(doi) {
         
         // H-Index and Impact Factor are NOT fetched from API to prevent wrong/incorrect values
         hIndex = "";
-        impactFactor = "";
+        jcrImpactFactor = "";
 
         // Quartile from CiteScore Percentiles
         const csYearInfo = entry?.citeScoreYearInfoList?.citeScoreYearInfo;
@@ -197,7 +197,7 @@ async function fetchJournalDataByDOI(doi) {
     } catch (_) { /* ignore WoS proxy errors */ }
   }
 
-  return { title, journalName, vol, issue, pageRange, month, year, hIndex, impactFactor, quartile, journalType, issn };
+  return { title, journalName, vol, issue, pageRange, month, year, hIndex, jcrImpactFactor, quartile, journalType, issn };
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -227,7 +227,7 @@ export default function JournalPublication() {
     issue: "",
     pageNos: "",
     hIndex: "",
-    impactFactor: "",
+    jcrImpactFactor: "",
     numberOfReferencesBelongingToAGEC: 0,
     agecReferencingNumbers: "",
     month: "",
@@ -307,7 +307,7 @@ export default function JournalPublication() {
         newForm.issue = "";
         newForm.pageNos = "";
         newForm.hIndex = "";
-        newForm.impactFactor = "";
+        newForm.jcrImpactFactor = "";
         newForm.month = "";
         newForm.year = "";
         newForm.sdgs = "";
@@ -486,7 +486,7 @@ export default function JournalPublication() {
         month: data.month,
         year: data.year,
         hIndex: String(data.hIndex || ""),
-        impactFactor: String(data.impactFactor || ""),
+        jcrImpactFactor: String(data.jcrImpactFactor || data.impactFactor || ""),
         journalQuartile: data.quartile,
         journalType: data.journalType,
       };
@@ -618,7 +618,7 @@ export default function JournalPublication() {
       const fields = [
         "doi","paperTitle","journalName","journalType",
         "vol","issue","agecReferencingNumbers","applyIncentive","publicationScope",
-        "totalAuthors","userAuthorPosition","hIndex","impactFactor",
+        "totalAuthors","userAuthorPosition","hIndex","jcrImpactFactor",
       ];
       fields.forEach(k => {
         if (k === "publicationScope" && form.applyIncentive === "No") {
@@ -1194,7 +1194,7 @@ export default function JournalPublication() {
 
             {/* H-Index, Impact Factor, Citations, SDGS */}
             <Grid item xs={12} sm={4}><LabelValue label="H-Index" value={data.hIndex || "-"} /></Grid>
-            <Grid item xs={12} sm={4}><LabelValue label="Impact Factor" value={data.impactFactor || "-"} /></Grid>
+            <Grid item xs={12} sm={4}><LabelValue label="Impact Factor" value={data.jcrImpactFactor || data.impactFactor || "-"} /></Grid>
             <Grid item xs={12} sm={4}><LabelValue label="Citations" value={data.citations || "-"} /></Grid>
             
             <Grid item xs={12} sm={6}><LabelValue label="AGEC Referencing Numbers" value={data.agecReferencingNumbers || data.referencingNos || "-"} /></Grid>
