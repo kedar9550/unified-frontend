@@ -687,6 +687,73 @@ const AppraisalSettings = () => {
                 </CardContent>
               </Card>
             </Grid>
+
+            {/* 2.7 & 2.8 Scopus Citation & H-index Points Settings */}
+            <Grid item xs={12} md={6}>
+              <Card sx={{ borderRadius: "16px", background: "var(--bg-panel)", border: "1px solid var(--border-color)", height: "100%" }}>
+                <CardContent>
+                  <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 2, color: "var(--color-primary)" }}>
+                    2.7 & 2.8 Scopus Citation & H-index Points Settings
+                  </Typography>
+                  <Divider sx={{ mb: 2 }} />
+
+                  <Grid container spacing={2}>
+                    <Grid item xs={12}>
+                      <TextField
+                        label="Scopus Citation Rate (points per citation)"
+                        type="number"
+                        fullWidth
+                        size="small"
+                        value={config.research.citationRate ?? 0.2}
+                        onChange={(e) => setConfig(prev => ({
+                          ...prev,
+                          research: { ...prev.research, citationRate: Number(e.target.value) }
+                        }))}
+                      />
+                    </Grid>
+                    <Grid item xs={4}>
+                      <TextField
+                        label="H-index Rate (< 5)"
+                        type="number"
+                        fullWidth
+                        size="small"
+                        value={config.research.hIndexRateLow ?? 1}
+                        onChange={(e) => setConfig(prev => ({
+                          ...prev,
+                          research: { ...prev.research, hIndexRateLow: Number(e.target.value) }
+                        }))}
+                      />
+                    </Grid>
+                    <Grid item xs={4}>
+                      <TextField
+                        label="H-index Rate (5 to 10)"
+                        type="number"
+                        fullWidth
+                        size="small"
+                        value={config.research.hIndexRateMid ?? 2}
+                        onChange={(e) => setConfig(prev => ({
+                          ...prev,
+                          research: { ...prev.research, hIndexRateMid: Number(e.target.value) }
+                        }))}
+                      />
+                    </Grid>
+                    <Grid item xs={4}>
+                      <TextField
+                        label="H-index Rate (> 10)"
+                        type="number"
+                        fullWidth
+                        size="small"
+                        value={config.research.hIndexRateHigh ?? 4}
+                        onChange={(e) => setConfig(prev => ({
+                          ...prev,
+                          research: { ...prev.research, hIndexRateHigh: Number(e.target.value) }
+                        }))}
+                      />
+                    </Grid>
+                  </Grid>
+                </CardContent>
+              </Card>
+            </Grid>
           </Grid>
         </Grid>
 
