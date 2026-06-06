@@ -1,4 +1,3 @@
-import Loader from "../../components/common/Loader";
 import React, { useState, useEffect } from "react";
 import {
   Box,
@@ -326,12 +325,7 @@ const SDGManagement = () => {
       </Box>
 
 
-      {loading ? (
-        <Box sx={{ display: "flex", justifyContent: "center", py: 10 }}>
-          <Loader />
-        </Box>
-      ) : (
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
           {sdgs.sort((a, b) => {
             const numA = parseInt(a.sdgNumber.split('-')[1]) || 0;
             const numB = parseInt(b.sdgNumber.split('-')[1]) || 0;
@@ -554,7 +548,6 @@ const SDGManagement = () => {
             );
           })}
         </Box>
-      )}
 
       {/* Add/Edit Dialog */}
       <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="md" fullWidth
