@@ -404,7 +404,7 @@ const AppraisalResearchScoring = () => {
           </Box>
 
           {/* Carousel Section */}
-          {/*<Card sx={{
+          <Card sx={{
             borderRadius: "20px",
             background: "var(--bg-panel)",
             border: "1px solid var(--border-color)",
@@ -545,7 +545,7 @@ const AppraisalResearchScoring = () => {
                 <ChevronRight />
               </IconButton>
             </Box>
-          </Card>*/}
+          </Card>
 
           {/* Faculty Profile Card */}
           <Card sx={{
