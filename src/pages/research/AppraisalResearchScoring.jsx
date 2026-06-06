@@ -404,7 +404,7 @@ const AppraisalResearchScoring = () => {
           </Box>
 
           {/* Carousel Section */}
-          <Card sx={{
+          {/* <Card sx={{
             borderRadius: "20px",
             background: "var(--bg-panel)",
             border: "1px solid var(--border-color)",
@@ -545,7 +545,7 @@ const AppraisalResearchScoring = () => {
                 <ChevronRight />
               </IconButton>
             </Box>
-          </Card>
+          </Card> */}
 
           {/* Faculty Profile Card */}
           <Card sx={{
@@ -555,197 +555,282 @@ const AppraisalResearchScoring = () => {
             boxShadow: "var(--shadow-premium)",
             p: 3
           }}>
-                <Grid container spacing={3} alignItems="center">
-                  <Grid item xs={12} md={8} sx={{ display: "flex", gap: 3, alignItems: "center", flexWrap: { xs: "wrap", sm: "nowrap" } }}>
-                    <Avatar
-                      src={getFacultyImage()}
-                      imgProps={{
-                        style: {
-                          imageRendering: "-webkit-optimize-contrast"
-                        }
-                      }}
-                      sx={{
-                        width: 90,
-                        height: 90,
-                        bgcolor: "rgba(124, 58, 237, 0.08)",
-                        color: "#7c3aed",
-                        fontWeight: 700,
-                        fontSize: "2rem",
-                        boxShadow: "0 4px 14px rgba(0,0,0,0.05)",
-                        border: "3px solid var(--border-color)"
-                      }}
-                    >
-                      {selectedAppraisal.personalInfoSnapshot?.name?.charAt(0) || selectedAppraisal.facultyId?.name?.charAt(0)}
-                    </Avatar>
+            <Grid container spacing={3} alignItems="center">
+              <Grid item xs={12} md={8} sx={{ display: "flex", gap: 3, alignItems: "center", flexWrap: { xs: "wrap", sm: "nowrap" } }}>
+                <Avatar
+                  src={getFacultyImage()}
+                  imgProps={{
+                    style: {
+                      imageRendering: "-webkit-optimize-contrast"
+                    }
+                  }}
+                  sx={{
+                    width: 90,
+                    height: 90,
+                    bgcolor: "rgba(124, 58, 237, 0.08)",
+                    color: "#7c3aed",
+                    fontWeight: 700,
+                    fontSize: "2rem",
+                    boxShadow: "0 4px 14px rgba(0,0,0,0.05)",
+                    border: "3px solid var(--border-color)"
+                  }}
+                >
+                  {selectedAppraisal.personalInfoSnapshot?.name?.charAt(0) || selectedAppraisal.facultyId?.name?.charAt(0)}
+                </Avatar>
 
-                    <Box>
-                      <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 1, flexWrap: "wrap" }}>
-                        <Typography variant="h5" sx={{ fontWeight: 800, color: "var(--text-primary)", lineHeight: 1.2 }}>
-                          {selectedAppraisal.personalInfoSnapshot?.name || selectedAppraisal.facultyId?.name}
-                        </Typography>
-                        <Box sx={{
-                          bgcolor: "rgba(245, 158, 11, 0.08)",
-                          color: "#f59e0b",
-                          px: 1,
-                          py: 0.25,
-                          borderRadius: "4px",
-                          fontSize: "0.65rem",
-                          fontWeight: 800,
-                          textTransform: "uppercase"
-                        }}>
-                          Pending Review
-                        </Box>
-                      </Box>
-
-                      <Typography variant="body2" sx={{ fontWeight: 600, color: "var(--text-secondary)", mb: 2 }}>
-                        {selectedAppraisal.personalInfoSnapshot?.designation || "Faculty Member"} • {selectedAppraisal.personalInfoSnapshot?.departmentName}
-                      </Typography>
-
-                      {/* Detail row 1 */}
-                      <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1.5 }}>
-                        {[
-                          { icon: <Badge sx={{ fontSize: 16 }} />, label: selectedAppraisal.personalInfoSnapshot?.institutionId || selectedAppraisal.facultyId?.institutionId || "N/A" },
-                          { icon: <School sx={{ fontSize: 16 }} />, label: selectedAppraisal.personalInfoSnapshot?.qualification || "Faculty" },
-                          { icon: <CalendarToday sx={{ fontSize: 16 }} />, label: `Academic Year ${selectedAppraisal.academicYearId?.year || "N/A"}` },
-                          { icon: <AccessTime sx={{ fontSize: 16 }} />, label: getRelativeTime(selectedAppraisal.updatedAt || selectedAppraisal.createdAt) }
-                        ].map((b, i) => (
-                          <Box key={i} sx={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 0.8,
-                            px: 1.5,
-                            py: 0.6,
-                            borderRadius: "8px",
-                            border: "1px solid var(--border-color)",
-                            bgcolor: "var(--bg-paper)",
-                            color: "var(--text-secondary)",
-                            fontSize: "0.75rem",
-                            fontWeight: 700
-                          }}>
-                            {b.icon}
-                            {b.label}
-                          </Box>
-                        ))}
-                      </Box>
+                <Box>
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 1, flexWrap: "wrap" }}>
+                    <Typography variant="h5" sx={{ fontWeight: 800, color: "var(--text-primary)", lineHeight: 1.2 }}>
+                      {selectedAppraisal.personalInfoSnapshot?.name || selectedAppraisal.facultyId?.name}
+                    </Typography>
+                    <Box sx={{
+                      bgcolor: "rgba(245, 158, 11, 0.08)",
+                      color: "#f59e0b",
+                      px: 1,
+                      py: 0.25,
+                      borderRadius: "4px",
+                      fontSize: "0.65rem",
+                      fontWeight: 800,
+                      textTransform: "uppercase"
+                    }}>
+                      Pending Review
                     </Box>
-                  </Grid>
+                  </Box>
 
-                  {/* Contact/Metadata Grid Section */}
-                  <Grid item xs={12} sx={{ width: "100%" }}>
-                    <Divider sx={{ my: 1 }} />
-                    <Grid container spacing={2} sx={{ pt: 1.5 }}>
-                      {[
-                        { icon: <Email sx={{ color: "#3b82f6" }} />, val: selectedAppraisal.facultyId?.email || "N/A", label: "Email" },
-                        { icon: <Phone sx={{ color: "#10b981" }} />, val: selectedAppraisal.facultyId?.phone || "N/A", label: "Phone" },
-                        { icon: <Business sx={{ color: "#a855f7" }} />, val: selectedAppraisal.facultyId?.college || "Aditya University", label: "Institution" },
-                        { icon: <Place sx={{ color: "#ef4444" }} />, val: selectedAppraisal.facultyId?.college ? (selectedAppraisal.facultyId.college.includes("Pharm") ? "Surampalem, Kakinada" : "Surampalem, East Godavari") : "Surampalem, Andhra Pradesh", label: "Address" },
-                        { icon: <Description sx={{ color: "#f59e0b" }} />, val: selectedAppraisal.personalInfoSnapshot?.orcidId || "N/A", label: "ORCID ID" },
-                        { icon: <Science sx={{ color: "#06b6d4" }} />, val: selectedAppraisal.personalInfoSnapshot?.scopusId || "N/A", label: "Scopus ID" },
-                        { icon: <Public sx={{ color: "#ef4444" }} />, val: selectedAppraisal.personalInfoSnapshot?.wosId || "N/A", label: "Web of Science ID" },
-                        { icon: <School sx={{ color: "#3b82f6" }} />, val: selectedAppraisal.personalInfoSnapshot?.qualification || "N/A", label: "Qualification" }
-                      ].map((item, idx) => (
-                        <Grid item xs={12} sm={6} md={3} key={idx}>
-                          <Box sx={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 1.5,
-                            p: 1.5,
-                            borderRadius: "12px",
-                            bgcolor: "var(--bg-paper)",
-                            border: "1px solid var(--border-color)",
-                            height: "100%"
-                          }}>
-                            <Box sx={{
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              width: 32,
-                              height: 32,
-                              borderRadius: "8px",
-                              bgcolor: "var(--bg-panel)",
-                              color: "inherit"
-                            }}>
-                              {item.icon}
-                            </Box>
-                            <Box sx={{ overflow: "hidden" }}>
-                              <Typography variant="caption" sx={{ color: "var(--text-secondary)", display: "block", fontSize: "0.65rem", fontWeight: 700, letterSpacing: "0.5px", textTransform: "uppercase" }}>
-                                {item.label}
-                              </Typography>
-                              <Typography variant="body2" sx={{ fontWeight: 750, color: "var(--text-primary)", fontSize: "0.78rem", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                                {item.val}
-                              </Typography>
-                            </Box>
-                          </Box>
-                        </Grid>
-                      ))}
-                    </Grid>
-                  </Grid>
-                </Grid>
-              </Card>
+                  <Typography variant="body2" sx={{ fontWeight: 600, color: "var(--text-secondary)", mb: 2 }}>
+                    {selectedAppraisal.personalInfoSnapshot?.designation || "Faculty Member"} • {selectedAppraisal.personalInfoSnapshot?.departmentName}
+                  </Typography>
 
-              {/* Grid Content for inputs and summary */}
-              <Grid container spacing={3}>
+                  {/* Detail row 1 */}
+                  <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1.5 }}>
+                    {[
+                      { icon: <Badge sx={{ fontSize: 16 }} />, label: selectedAppraisal.personalInfoSnapshot?.institutionId || selectedAppraisal.facultyId?.institutionId || "N/A" },
+                      { icon: <School sx={{ fontSize: 16 }} />, label: selectedAppraisal.personalInfoSnapshot?.qualification || "Faculty" },
+                      { icon: <CalendarToday sx={{ fontSize: 16 }} />, label: `Academic Year ${selectedAppraisal.academicYearId?.year || "N/A"}` },
+                      { icon: <AccessTime sx={{ fontSize: 16 }} />, label: getRelativeTime(selectedAppraisal.updatedAt || selectedAppraisal.createdAt) }
+                    ].map((b, i) => (
+                      <Box key={i} sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 0.8,
+                        px: 1.5,
+                        py: 0.6,
+                        borderRadius: "8px",
+                        border: "1px solid var(--border-color)",
+                        bgcolor: "var(--bg-paper)",
+                        color: "var(--text-secondary)",
+                        fontSize: "0.75rem",
+                        fontWeight: 700
+                      }}>
+                        {b.icon}
+                        {b.label}
+                      </Box>
+                    ))}
+                  </Box>
+                </Box>
+              </Grid>
 
-                {/* Left Column: Evaluation Inputs */}
-                <Grid item xs={12} md={7.2}>
-                  <Card sx={{
-                    borderRadius: "20px",
-                    background: "var(--bg-panel)",
-                    border: "1px solid var(--border-color)",
-                    p: 3,
-                    boxShadow: "var(--shadow-premium)",
-                    height: "100%"
-                  }}>
-                    {/* Header */}
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 4 }}>
+              {/* Contact/Metadata Grid Section */}
+              <Grid item xs={12} sx={{ width: "100%" }}>
+                <Divider sx={{ my: 1 }} />
+                <Grid container spacing={2} sx={{ pt: 1.5 }}>
+                  {[
+                    { icon: <Email sx={{ color: "#3b82f6" }} />, val: selectedAppraisal.facultyId?.email || "N/A", label: "Email" },
+                    { icon: <Phone sx={{ color: "#10b981" }} />, val: selectedAppraisal.facultyId?.phone || "N/A", label: "Phone" },
+                    { icon: <Business sx={{ color: "#a855f7" }} />, val: selectedAppraisal.facultyId?.college || "Aditya University", label: "Institution" },
+                    { icon: <Place sx={{ color: "#ef4444" }} />, val: selectedAppraisal.facultyId?.college ? (selectedAppraisal.facultyId.college.includes("Pharm") ? "Surampalem, Kakinada" : "Surampalem, East Godavari") : "Surampalem, Andhra Pradesh", label: "Address" },
+                    { icon: <Description sx={{ color: "#f59e0b" }} />, val: selectedAppraisal.personalInfoSnapshot?.orcidId || "N/A", label: "ORCID ID" },
+                    { icon: <Science sx={{ color: "#06b6d4" }} />, val: selectedAppraisal.personalInfoSnapshot?.scopusId || "N/A", label: "Scopus ID" },
+                    { icon: <Public sx={{ color: "#ef4444" }} />, val: selectedAppraisal.personalInfoSnapshot?.wosId || "N/A", label: "Web of Science ID" },
+                    { icon: <School sx={{ color: "#3b82f6" }} />, val: selectedAppraisal.personalInfoSnapshot?.qualification || "N/A", label: "Qualification" }
+                  ].map((item, idx) => (
+                    <Grid item xs={12} sm={6} md={3} key={idx}>
                       <Box sx={{
                         display: "flex",
                         alignItems: "center",
-                        justifyContent: "center",
-                        width: 34,
-                        height: 34,
-                        borderRadius: "50%",
-                        bgcolor: "rgba(124, 58, 237, 0.08)",
-                        color: "#7c3aed"
+                        gap: 1.5,
+                        p: 1.5,
+                        borderRadius: "12px",
+                        bgcolor: "var(--bg-paper)",
+                        border: "1px solid var(--border-color)",
+                        height: "100%"
                       }}>
-                        <Edit fontSize="small" />
+                        <Box sx={{
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          width: 32,
+                          height: 32,
+                          borderRadius: "8px",
+                          bgcolor: "var(--bg-panel)",
+                          color: "inherit"
+                        }}>
+                          {item.icon}
+                        </Box>
+                        <Box sx={{ overflow: "hidden" }}>
+                          <Typography variant="caption" sx={{ color: "var(--text-secondary)", display: "block", fontSize: "0.65rem", fontWeight: 700, letterSpacing: "0.5px", textTransform: "uppercase" }}>
+                            {item.label}
+                          </Typography>
+                          <Typography variant="body2" sx={{ fontWeight: 750, color: "var(--text-primary)", fontSize: "0.78rem", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                            {item.val}
+                          </Typography>
+                        </Box>
                       </Box>
-                      <Typography variant="subtitle1" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>
-                        Evaluation Inputs
-                      </Typography>
+                    </Grid>
+                  ))}
+                </Grid>
+              </Grid>
+            </Grid>
+          </Card>
+
+          {/* Grid Content for inputs and summary */}
+          <Grid container spacing={3}>
+
+            {/* Left Column: Evaluation Inputs */}
+            <Grid item xs={12} md={7.2}>
+              <Card sx={{
+                borderRadius: "20px",
+                background: "var(--bg-panel)",
+                border: "1px solid var(--border-color)",
+                p: 3,
+                boxShadow: "var(--shadow-premium)",
+                height: "100%"
+              }}>
+                {/* Header */}
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 4 }}>
+                  <Box sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    width: 34,
+                    height: 34,
+                    borderRadius: "50%",
+                    bgcolor: "rgba(124, 58, 237, 0.08)",
+                    color: "#7c3aed"
+                  }}>
+                    <Edit fontSize="small" />
+                  </Box>
+                  <Typography variant="subtitle1" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>
+                    Evaluation Inputs
+                  </Typography>
+                </Box>
+
+                {/* Citations */}
+                <Stack spacing={3}>
+                  <Box>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 800, color: "var(--text-primary)", mb: 0.5 }}>
+                      1. Scopus Citations
+                    </Typography>
+                    <Typography variant="caption" sx={{ color: "var(--text-secondary)", display: "block", mb: 2, fontWeight: 500 }}>
+                      Total citations from Scopus
+                    </Typography>
+
+                    <TextField
+                      type="number"
+                      value={citations}
+                      onChange={(e) => setCitations(e.target.value)}
+                      fullWidth
+                      InputProps={{
+                        endAdornment: (
+                          <InputAdornment position="end" sx={{ pl: 1.5, borderLeft: "1px solid var(--border-color)", height: "30px" }}>
+                            <Typography sx={{ fontWeight: 700, color: "var(--text-secondary)", mr: 1, fontSize: "0.85rem" }}>Citations</Typography>
+                          </InputAdornment>
+                        ),
+                        sx: {
+                          fontSize: "1.25rem",
+                          fontWeight: 750,
+                          borderRadius: "12px",
+                          background: "var(--bg-paper)",
+                          height: "56px"
+                        }
+                      }}
+                    />
+
+                    <Box sx={{
+                      bgcolor: "rgba(124, 58, 237, 0.05)",
+                      color: "#7c3aed",
+                      p: 1.5,
+                      borderRadius: "8px",
+                      fontWeight: 750,
+                      fontSize: "0.82rem",
+                      mt: 1.5,
+                      mb: 1.5
+                    }}>
+                      Rate: {(activeConfig?.research?.citationRate ?? 0.2).toFixed(2)} points per citation
                     </Box>
 
-                    {/* Citations */}
-                    <Stack spacing={3}>
-                      <Box>
-                        <Typography variant="subtitle2" sx={{ fontWeight: 800, color: "var(--text-primary)", mb: 0.5 }}>
-                          1. Scopus Citations
-                        </Typography>
-                        <Typography variant="caption" sx={{ color: "var(--text-secondary)", display: "block", mb: 2, fontWeight: 500 }}>
-                          Total citations from Scopus
-                        </Typography>
+                    <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", py: 1.2, px: 0.5 }}>
+                      <Typography sx={{ fontWeight: 700, color: "#7c3aed", fontSize: "0.95rem" }}>Citation Points</Typography>
+                      <Typography sx={{ fontWeight: 850, color: "#7c3aed", fontSize: "1.15rem" }}>{citationPoints.toFixed(2)} pts</Typography>
+                    </Box>
+                  </Box>
 
+                  <Divider sx={{ my: 1 }} />
+
+                  {/* H-Index */}
+                  <Box>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 800, color: "var(--text-primary)", mb: 0.5 }}>
+                      2. H-Index (Scopus)
+                    </Typography>
+
+                    <Grid container spacing={2} alignItems="center" sx={{ mt: 1 }}>
+                      <Grid item xs={5}>
+                        <Typography variant="caption" sx={{ fontWeight: 700, color: "var(--text-secondary)", display: "block", mb: 0.8 }}>H-Index 2024</Typography>
                         <TextField
                           type="number"
-                          value={citations}
-                          onChange={(e) => setCitations(e.target.value)}
+                          value={hIndex2024}
+                          onChange={(e) => setHIndex2024(e.target.value)}
                           fullWidth
-                          InputProps={{
-                            endAdornment: (
-                              <InputAdornment position="end" sx={{ pl: 1.5, borderLeft: "1px solid var(--border-color)", height: "30px" }}>
-                                <Typography sx={{ fontWeight: 700, color: "var(--text-secondary)", mr: 1, fontSize: "0.85rem" }}>Citations</Typography>
-                              </InputAdornment>
-                            ),
-                            sx: {
-                              fontSize: "1.25rem",
-                              fontWeight: 750,
-                              borderRadius: "12px",
-                              background: "var(--bg-paper)",
-                              height: "56px"
-                            }
-                          }}
+                          InputProps={{ sx: { borderRadius: "10px", fontWeight: 750, background: "var(--bg-paper)" } }}
                         />
+                      </Grid>
+                      <Grid item xs={2} sx={{ display: "flex", justifyContent: "center", pt: "28px !important" }}>
+                        <East sx={{ color: "var(--text-secondary)", fontSize: 20 }} />
+                      </Grid>
+                      <Grid item xs={5}>
+                        <Typography variant="caption" sx={{ fontWeight: 700, color: "var(--text-secondary)", display: "block", mb: 0.8 }}>H-Index 2025</Typography>
+                        <TextField
+                          type="number"
+                          value={hIndex2025}
+                          onChange={(e) => setHIndex2025(e.target.value)}
+                          fullWidth
+                          InputProps={{ sx: { borderRadius: "10px", fontWeight: 750, background: "var(--bg-paper)" } }}
+                        />
+                      </Grid>
+                    </Grid>
 
+                    <Box sx={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      p: 1.8,
+                      borderRadius: "10px",
+                      border: "1px solid var(--border-color)",
+                      bgcolor: "var(--bg-paper)",
+                      mt: 2,
+                      mb: 2
+                    }}>
+                      <Typography sx={{ fontWeight: 700, color: "var(--text-secondary)", fontSize: "0.85rem" }}>H-Index Raise</Typography>
+                      <Typography sx={{ fontWeight: 850, color: "#10b981", fontSize: "1.1rem" }}>{hIndexRaise}</Typography>
+                    </Box>
+
+                    {/* Rate dynamic text */}
+                    {(() => {
+                      const h24 = Number(hIndex2024) || 0;
+                      const lowRate = activeConfig?.research?.hIndexRateLow ?? 1;
+                      const midRate = activeConfig?.research?.hIndexRateMid ?? 2;
+                      const highRate = activeConfig?.research?.hIndexRateHigh ?? 4;
+
+                      let dynamicRateText = "";
+                      if (h24 >= 5 && h24 <= 10) {
+                        dynamicRateText = `Rate: ${midRate} points per index (Based on 2024 H-Index range 5-10)`;
+                      } else if (h24 > 10) {
+                        dynamicRateText = `Rate: ${highRate} points per index (Based on 2024 H-Index range >10)`;
+                      } else {
+                        dynamicRateText = `Rate: ${lowRate} points per index (Based on 2024 H-Index range 0-4)`;
+                      }
+
+                      return (
                         <Box sx={{
                           bgcolor: "rgba(124, 58, 237, 0.05)",
                           color: "#7c3aed",
@@ -753,472 +838,387 @@ const AppraisalResearchScoring = () => {
                           borderRadius: "8px",
                           fontWeight: 750,
                           fontSize: "0.82rem",
-                          mt: 1.5,
                           mb: 1.5
                         }}>
-                          Rate: {(activeConfig?.research?.citationRate ?? 0.2).toFixed(2)} points per citation
+                          {dynamicRateText}
                         </Box>
+                      );
+                    })()}
 
-                        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", py: 1.2, px: 0.5 }}>
-                          <Typography sx={{ fontWeight: 700, color: "#7c3aed", fontSize: "0.95rem" }}>Citation Points</Typography>
-                          <Typography sx={{ fontWeight: 850, color: "#7c3aed", fontSize: "1.15rem" }}>{citationPoints.toFixed(2)} pts</Typography>
-                        </Box>
-                      </Box>
+                    <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", py: 1.2, px: 0.5 }}>
+                      <Typography sx={{ fontWeight: 700, color: "#7c3aed", fontSize: "0.95rem" }}>H-Index Points</Typography>
+                      <Typography sx={{ fontWeight: 850, color: "#7c3aed", fontSize: "1.15rem" }}>{hIndexPoints.toFixed(2)} pts</Typography>
+                    </Box>
+                  </Box>
 
-                      <Divider sx={{ my: 1 }} />
+                  <Divider sx={{ my: 1 }} />
 
-                      {/* H-Index */}
-                      <Box>
-                        <Typography variant="subtitle2" sx={{ fontWeight: 800, color: "var(--text-primary)", mb: 0.5 }}>
-                          2. H-Index (Scopus)
-                        </Typography>
+                  {/* Evaluator Comments */}
+                  <Box>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 800, color: "var(--text-primary)", mb: 0.5 }}>
+                      3. Evaluator Comments
+                    </Typography>
+                    <Typography variant="caption" sx={{ color: "var(--text-secondary)", display: "block", mb: 2, fontWeight: 500 }}>
+                      Add your comments and observations
+                    </Typography>
 
-                        <Grid container spacing={2} alignItems="center" sx={{ mt: 1 }}>
-                          <Grid item xs={5}>
-                            <Typography variant="caption" sx={{ fontWeight: 700, color: "var(--text-secondary)", display: "block", mb: 0.8 }}>H-Index 2024</Typography>
-                            <TextField
-                              type="number"
-                              value={hIndex2024}
-                              onChange={(e) => setHIndex2024(e.target.value)}
-                              fullWidth
-                              InputProps={{ sx: { borderRadius: "10px", fontWeight: 750, background: "var(--bg-paper)" } }}
-                            />
-                          </Grid>
-                          <Grid item xs={2} sx={{ display: "flex", justifyContent: "center", pt: "28px !important" }}>
-                            <East sx={{ color: "var(--text-secondary)", fontSize: 20 }} />
-                          </Grid>
-                          <Grid item xs={5}>
-                            <Typography variant="caption" sx={{ fontWeight: 700, color: "var(--text-secondary)", display: "block", mb: 0.8 }}>H-Index 2025</Typography>
-                            <TextField
-                              type="number"
-                              value={hIndex2025}
-                              onChange={(e) => setHIndex2025(e.target.value)}
-                              fullWidth
-                              InputProps={{ sx: { borderRadius: "10px", fontWeight: 750, background: "var(--bg-paper)" } }}
-                            />
-                          </Grid>
-                        </Grid>
-
-                        <Box sx={{
-                          display: "flex",
-                          justifyContent: "space-between",
-                          alignItems: "center",
-                          p: 1.8,
-                          borderRadius: "10px",
-                          border: "1px solid var(--border-color)",
-                          bgcolor: "var(--bg-paper)",
-                          mt: 2,
-                          mb: 2
-                        }}>
-                          <Typography sx={{ fontWeight: 700, color: "var(--text-secondary)", fontSize: "0.85rem" }}>H-Index Raise</Typography>
-                          <Typography sx={{ fontWeight: 850, color: "#10b981", fontSize: "1.1rem" }}>{hIndexRaise}</Typography>
-                        </Box>
-
-                        {/* Rate dynamic text */}
-                        {(() => {
-                          const h24 = Number(hIndex2024) || 0;
-                          const lowRate = activeConfig?.research?.hIndexRateLow ?? 1;
-                          const midRate = activeConfig?.research?.hIndexRateMid ?? 2;
-                          const highRate = activeConfig?.research?.hIndexRateHigh ?? 4;
-
-                          let dynamicRateText = "";
-                          if (h24 >= 5 && h24 <= 10) {
-                            dynamicRateText = `Rate: ${midRate} points per index (Based on 2024 H-Index range 5-10)`;
-                          } else if (h24 > 10) {
-                            dynamicRateText = `Rate: ${highRate} points per index (Based on 2024 H-Index range >10)`;
-                          } else {
-                            dynamicRateText = `Rate: ${lowRate} points per index (Based on 2024 H-Index range 0-4)`;
+                    <Box sx={{ position: "relative" }}>
+                      <TextField
+                        placeholder="Enter remarks regarding the research scoring..."
+                        multiline
+                        rows={4}
+                        fullWidth
+                        value={comments}
+                        onChange={(e) => setComments(e.target.value.slice(0, 1000))}
+                        InputProps={{
+                          sx: {
+                            borderRadius: "12px",
+                            background: "var(--bg-paper)",
+                            pb: 4,
+                            fontSize: "0.9rem",
+                            fontWeight: 500
                           }
+                        }}
+                      />
+                      <Typography sx={{
+                        position: "absolute",
+                        bottom: 10,
+                        right: 12,
+                        fontSize: "0.75rem",
+                        color: "var(--text-secondary)",
+                        fontWeight: 700
+                      }}>
+                        {comments.length} / 1000
+                      </Typography>
+                    </Box>
+                  </Box>
+                </Stack>
+              </Card>
+            </Grid>
 
-                          return (
-                            <Box sx={{
-                              bgcolor: "rgba(124, 58, 237, 0.05)",
-                              color: "#7c3aed",
-                              p: 1.5,
-                              borderRadius: "8px",
-                              fontWeight: 750,
-                              fontSize: "0.82rem",
-                              mb: 1.5
-                            }}>
-                              {dynamicRateText}
-                            </Box>
-                          );
-                        })()}
+            {/* Right Column: Score Summary & Scoring Rules */}
+            <Grid item xs={12} md={4.8}>
+              <Stack spacing={3} sx={{ height: "100%" }}>
 
-                        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", py: 1.2, px: 0.5 }}>
-                          <Typography sx={{ fontWeight: 700, color: "#7c3aed", fontSize: "0.95rem" }}>H-Index Points</Typography>
-                          <Typography sx={{ fontWeight: 850, color: "#7c3aed", fontSize: "1.15rem" }}>{hIndexPoints.toFixed(2)} pts</Typography>
-                        </Box>
-                      </Box>
-
-                      <Divider sx={{ my: 1 }} />
-
-                      {/* Evaluator Comments */}
-                      <Box>
-                        <Typography variant="subtitle2" sx={{ fontWeight: 800, color: "var(--text-primary)", mb: 0.5 }}>
-                          3. Evaluator Comments
-                        </Typography>
-                        <Typography variant="caption" sx={{ color: "var(--text-secondary)", display: "block", mb: 2, fontWeight: 500 }}>
-                          Add your comments and observations
-                        </Typography>
-
-                        <Box sx={{ position: "relative" }}>
-                          <TextField
-                            placeholder="Enter remarks regarding the research scoring..."
-                            multiline
-                            rows={4}
-                            fullWidth
-                            value={comments}
-                            onChange={(e) => setComments(e.target.value.slice(0, 1000))}
-                            InputProps={{
-                              sx: {
-                                borderRadius: "12px",
-                                background: "var(--bg-paper)",
-                                pb: 4,
-                                fontSize: "0.9rem",
-                                fontWeight: 500
-                              }
-                            }}
-                          />
-                          <Typography sx={{
-                            position: "absolute",
-                            bottom: 10,
-                            right: 12,
-                            fontSize: "0.75rem",
-                            color: "var(--text-secondary)",
-                            fontWeight: 700
-                          }}>
-                            {comments.length} / 1000
-                          </Typography>
-                        </Box>
-                      </Box>
-                    </Stack>
-                  </Card>
-                </Grid>
-
-                {/* Right Column: Score Summary & Scoring Rules */}
-                <Grid item xs={12} md={4.8}>
-                  <Stack spacing={3} sx={{ height: "100%" }}>
-
-                    {/* Score Summary */}
-                    <Card sx={{
-                      borderRadius: "20px",
-                      background: "var(--bg-panel)",
-                      border: "1px solid var(--border-color)",
-                      p: 3,
-                      boxShadow: "var(--shadow-premium)"
+                {/* Score Summary */}
+                <Card sx={{
+                  borderRadius: "20px",
+                  background: "var(--bg-panel)",
+                  border: "1px solid var(--border-color)",
+                  p: 3,
+                  boxShadow: "var(--shadow-premium)"
+                }}>
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 3 }}>
+                    <Box sx={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      width: 34,
+                      height: 34,
+                      borderRadius: "50%",
+                      bgcolor: "rgba(59, 130, 246, 0.08)",
+                      color: "#3b82f6"
                     }}>
-                      <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 3 }}>
+                      <ShowChart fontSize="small" />
+                    </Box>
+                    <Typography variant="subtitle1" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>
+                      Research Score Summary
+                    </Typography>
+                  </Box>
+
+                  {/* Total Score Gradient Card */}
+                  <Card sx={{
+                    borderRadius: "16px",
+                    background: "linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%)",
+                    color: "#fff",
+                    position: "relative",
+                    overflow: "hidden",
+                    p: 3,
+                    mb: 3,
+                    boxShadow: "0 10px 25px rgba(59, 130, 246, 0.2)"
+                  }}>
+                    <EmojiEvents sx={{
+                      position: "absolute",
+                      right: -10,
+                      bottom: -15,
+                      fontSize: "7.5rem",
+                      opacity: 0.15,
+                      color: "#fff",
+                      transform: "rotate(15deg)"
+                    }} />
+                    <Box sx={{ zIndex: 1, position: "relative" }}>
+                      <Typography variant="caption" sx={{ fontWeight: 700, opacity: 0.9, letterSpacing: "0.5px", textTransform: "uppercase", fontSize: "0.7rem" }}>
+                        Total Research Score
+                      </Typography>
+                      <Typography variant="h3" sx={{ fontWeight: 900, my: 1, letterSpacing: "-1px" }}>
+                        {(citationPoints + hIndexPoints).toFixed(2)}
+                      </Typography>
+                      <Typography variant="caption" sx={{ fontWeight: 700, opacity: 0.9, fontSize: "0.7rem" }}>
+                        Total Points Earned
+                      </Typography>
+                    </Box>
+                  </Card>
+
+                  {/* Breakdown Rows */}
+                  <Stack spacing={2.5}>
+                    <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
                         <Box sx={{
                           display: "flex",
                           alignItems: "center",
                           justifyContent: "center",
-                          width: 34,
-                          height: 34,
-                          borderRadius: "50%",
+                          width: 32,
+                          height: 32,
+                          borderRadius: "8px",
                           bgcolor: "rgba(59, 130, 246, 0.08)",
                           color: "#3b82f6"
                         }}>
-                          <ShowChart fontSize="small" />
+                          <Article fontSize="small" />
                         </Box>
-                        <Typography variant="subtitle1" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>
-                          Research Score Summary
-                        </Typography>
+                        <Typography sx={{ fontWeight: 600, color: "var(--text-secondary)", fontSize: "0.85rem" }}>Citation Points</Typography>
                       </Box>
+                      <Typography sx={{ fontWeight: 800, color: "#3b82f6", fontSize: "0.95rem" }}>{citationPoints.toFixed(2)} pts</Typography>
+                    </Box>
 
-                      {/* Total Score Gradient Card */}
-                      <Card sx={{
-                        borderRadius: "16px",
-                        background: "linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%)",
-                        color: "#fff",
-                        position: "relative",
-                        overflow: "hidden",
-                        p: 3,
-                        mb: 3,
-                        boxShadow: "0 10px 25px rgba(59, 130, 246, 0.2)"
-                      }}>
-                        <EmojiEvents sx={{
-                          position: "absolute",
-                          right: -10,
-                          bottom: -15,
-                          fontSize: "7.5rem",
-                          opacity: 0.15,
-                          color: "#fff",
-                          transform: "rotate(15deg)"
-                        }} />
-                        <Box sx={{ zIndex: 1, position: "relative" }}>
-                          <Typography variant="caption" sx={{ fontWeight: 700, opacity: 0.9, letterSpacing: "0.5px", textTransform: "uppercase", fontSize: "0.7rem" }}>
-                            Total Research Score
-                          </Typography>
-                          <Typography variant="h3" sx={{ fontWeight: 900, my: 1, letterSpacing: "-1px" }}>
-                            {(citationPoints + hIndexPoints).toFixed(2)}
-                          </Typography>
-                          <Typography variant="caption" sx={{ fontWeight: 700, opacity: 0.9, fontSize: "0.7rem" }}>
-                            Total Points Earned
-                          </Typography>
-                        </Box>
-                      </Card>
-
-                      {/* Breakdown Rows */}
-                      <Stack spacing={2.5}>
-                        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                          <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-                            <Box sx={{
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              width: 32,
-                              height: 32,
-                              borderRadius: "8px",
-                              bgcolor: "rgba(59, 130, 246, 0.08)",
-                              color: "#3b82f6"
-                            }}>
-                              <Article fontSize="small" />
-                            </Box>
-                            <Typography sx={{ fontWeight: 600, color: "var(--text-secondary)", fontSize: "0.85rem" }}>Citation Points</Typography>
-                          </Box>
-                          <Typography sx={{ fontWeight: 800, color: "#3b82f6", fontSize: "0.95rem" }}>{citationPoints.toFixed(2)} pts</Typography>
-                        </Box>
-
-                        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                          <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-                            <Box sx={{
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              width: 32,
-                              height: 32,
-                              borderRadius: "8px",
-                              bgcolor: "rgba(139, 92, 246, 0.08)",
-                              color: "#8b5cf6"
-                            }}>
-                              <ShowChart fontSize="small" />
-                            </Box>
-                            <Typography sx={{ fontWeight: 600, color: "var(--text-secondary)", fontSize: "0.85rem" }}>H-Index Points</Typography>
-                          </Box>
-                          <Typography sx={{ fontWeight: 800, color: "#3b82f6", fontSize: "0.95rem" }}>{hIndexPoints.toFixed(2)} pts</Typography>
-                        </Box>
-
-                        <Divider />
-
-                        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                          <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-                            <Box sx={{
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              width: 32,
-                              height: 32,
-                              borderRadius: "8px",
-                              bgcolor: "rgba(100, 116, 139, 0.08)",
-                              color: "#64748b"
-                            }}>
-                              <Shield fontSize="small" />
-                            </Box>
-                            <Typography sx={{ fontWeight: 700, color: "var(--text-primary)", fontSize: "0.85rem" }}>Maximum Possible</Typography>
-                          </Box>
-                          <Typography sx={{ fontWeight: 850, color: "var(--text-primary)", fontSize: "0.95rem" }}>100.00 pts</Typography>
-                        </Box>
-                      </Stack>
-                    </Card>
-
-                    {/* Scoring Rules */}
-                    <Card sx={{
-                      borderRadius: "20px",
-                      background: "var(--bg-panel)",
-                      border: "1px solid var(--border-color)",
-                      p: 3,
-                      boxShadow: "var(--shadow-premium)",
-                      flexGrow: 1
-                    }}>
-                      <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 3 }}>
+                    <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
                         <Box sx={{
                           display: "flex",
                           alignItems: "center",
                           justifyContent: "center",
-                          width: 34,
-                          height: 34,
-                          borderRadius: "50%",
-                          bgcolor: "rgba(16, 185, 129, 0.08)",
-                          color: "#10b981"
+                          width: 32,
+                          height: 32,
+                          borderRadius: "8px",
+                          bgcolor: "rgba(139, 92, 246, 0.08)",
+                          color: "#8b5cf6"
                         }}>
-                          <Rule fontSize="small" />
+                          <ShowChart fontSize="small" />
                         </Box>
-                        <Typography variant="subtitle1" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>
-                          Scoring Rules
-                        </Typography>
+                        <Typography sx={{ fontWeight: 600, color: "var(--text-secondary)", fontSize: "0.85rem" }}>H-Index Points</Typography>
                       </Box>
+                      <Typography sx={{ fontWeight: 800, color: "#3b82f6", fontSize: "0.95rem" }}>{hIndexPoints.toFixed(2)} pts</Typography>
+                    </Box>
 
-                      {/* Citation Rule */}
-                      <Box sx={{ mb: 3 }}>
-                        <Typography variant="subtitle2" sx={{ fontWeight: 800, color: "var(--text-primary)", mb: 0.5, fontSize: "0.85rem" }}>
-                          Citation Scoring
-                        </Typography>
-                        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mt: 1 }}>
-                          <Typography variant="body2" sx={{ color: "var(--text-secondary)", fontWeight: 500, fontSize: "0.82rem" }}>
-                            Points = Citations × Rate
-                          </Typography>
-                          <Chip
-                            label={`Rate: ${(activeConfig?.research?.citationRate ?? 0.2).toFixed(2)}`}
-                            size="small"
-                            sx={{
-                              bgcolor: "rgba(16, 185, 129, 0.08)",
-                              color: "#10b981",
-                              fontWeight: 800,
-                              borderRadius: "6px"
-                            }}
-                          />
+                    <Divider />
+
+                    <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                        <Box sx={{
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          width: 32,
+                          height: 32,
+                          borderRadius: "8px",
+                          bgcolor: "rgba(100, 116, 139, 0.08)",
+                          color: "#64748b"
+                        }}>
+                          <Shield fontSize="small" />
                         </Box>
+                        <Typography sx={{ fontWeight: 700, color: "var(--text-primary)", fontSize: "0.85rem" }}>Maximum Possible</Typography>
                       </Box>
-
-                      <Divider sx={{ my: 2 }} />
-
-                      {/* H-Index Rule & Table */}
-                      <Box>
-                        <Typography variant="subtitle2" sx={{ fontWeight: 800, color: "var(--text-primary)", mb: 0.5, fontSize: "0.85rem" }}>
-                          H-Index Scoring <Typography component="span" sx={{ fontSize: "0.75rem", color: "var(--text-secondary)", fontWeight: 600 }}>(Based on 2024 H-Index)</Typography>
-                        </Typography>
-
-                        {/* Rules table */}
-                        {(() => {
-                          const h24Val = Number(hIndex2024) || 0;
-                          const rowStyle = (rangeType) => {
-                            let isActive = false;
-                            if (rangeType === "low" && h24Val < 5) isActive = true;
-                            if (rangeType === "mid" && h24Val >= 5 && h24Val <= 10) isActive = true;
-                            if (rangeType === "high" && h24Val > 10) isActive = true;
-
-                            return isActive ? {
-                              bgcolor: "rgba(59, 130, 246, 0.06)",
-                              "& td": {
-                                color: "#3b82f6 !important",
-                                fontWeight: "800 !important",
-                                borderBottom: "1px solid rgba(59, 130, 246, 0.1) !important"
-                              }
-                            } : {};
-                          };
-
-                          const lowRate = activeConfig?.research?.hIndexRateLow ?? 1;
-                          const midRate = activeConfig?.research?.hIndexRateMid ?? 2;
-                          const highRate = activeConfig?.research?.hIndexRateHigh ?? 4;
-
-                          return (
-                            <TableContainer component={Paper} sx={{ mt: 1.5, borderRadius: "10px", border: "1px solid var(--border-color)", background: "var(--bg-paper)", boxShadow: "none" }}>
-                              <Table size="small">
-                                <TableHead>
-                                  <TableRow sx={{ bgcolor: "var(--bg-panel)" }}>
-                                    <TableCell sx={{ fontWeight: 700, fontSize: "0.75rem", color: "var(--text-secondary)" }}>2024 H-Index Range</TableCell>
-                                    <TableCell sx={{ fontWeight: 700, fontSize: "0.75rem", color: "var(--text-secondary)" }}>Points per Index Raise</TableCell>
-                                  </TableRow>
-                                </TableHead>
-                                <TableBody>
-                                  <TableRow sx={rowStyle("low")}>
-                                    <TableCell sx={{ fontSize: "0.78rem", py: 1.2, fontWeight: 500 }}>0 - 4</TableCell>
-                                    <TableCell sx={{ fontSize: "0.78rem", py: 1.2, fontWeight: 700 }}>{lowRate} Point</TableCell>
-                                  </TableRow>
-                                  <TableRow sx={rowStyle("mid")}>
-                                    <TableCell sx={{ fontSize: "0.78rem", py: 1.2, fontWeight: 500 }}>5 - 10</TableCell>
-                                    <TableCell sx={{ fontSize: "0.78rem", py: 1.2, fontWeight: 700 }}>{midRate} Points</TableCell>
-                                  </TableRow>
-                                  <TableRow sx={rowStyle("high")}>
-                                    <TableCell sx={{ fontSize: "0.78rem", py: 1.2, fontWeight: 500 }}>11 and above</TableCell>
-                                    <TableCell sx={{ fontSize: "0.78rem", py: 1.2, fontWeight: 700 }}>{highRate} Points</TableCell>
-                                  </TableRow>
-                                </TableBody>
-                              </Table>
-                            </TableContainer>
-                          );
-                        })()}
-
-                        <Typography sx={{ color: "var(--text-secondary)", fontSize: "0.72rem", fontWeight: 600, display: "block", mt: 1.5, textAlign: "center" }}>
-                          Points = Index Raise × Applicable Rate
-                        </Typography>
-                      </Box>
-                    </Card>
+                      <Typography sx={{ fontWeight: 850, color: "var(--text-primary)", fontSize: "0.95rem" }}>100.00 pts</Typography>
+                    </Box>
                   </Stack>
-                </Grid>
-              </Grid>
+                </Card>
 
-              {/* Bottom Sticky Action Bar */}
-              <Box sx={{
-                position: "sticky",
-                bottom: -32,
-                left: 0,
-                right: 0,
-                mx: { xs: -2, md: -4 },
-                mb: { xs: -1.5, md: -4 },
-                borderTop: "1px solid var(--border-color)",
-                bgcolor: "var(--bg-paper)",
-                p: 2.5,
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                boxShadow: "0 -4px 20px rgba(0,0,0,0.04)",
-                zIndex: 1000,
-                borderRadius: "0 0 16px 16px"
-              }}>
-                <Box sx={{ display: "flex", flexDirection: "column" }}>
-                  <Typography variant="caption" sx={{ color: "var(--text-secondary)", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.5px", fontSize: "0.68rem" }}>
-                    Total Score
-                  </Typography>
-                  <Box sx={{ display: "flex", alignItems: "baseline", gap: 0.5 }}>
-                    <Typography variant="h5" sx={{ fontWeight: 900, color: "var(--text-primary)" }}>
-                      {(citationPoints + hIndexPoints).toFixed(2)}
-                    </Typography>
-                    <Typography variant="body2" sx={{ color: "var(--text-secondary)", fontWeight: 600, fontSize: "0.85rem" }}>
-                      / 100.00 pts
+                {/* Scoring Rules */}
+                <Card sx={{
+                  borderRadius: "20px",
+                  background: "var(--bg-panel)",
+                  border: "1px solid var(--border-color)",
+                  p: 3,
+                  boxShadow: "var(--shadow-premium)",
+                  flexGrow: 1
+                }}>
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 3 }}>
+                    <Box sx={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      width: 34,
+                      height: 34,
+                      borderRadius: "50%",
+                      bgcolor: "rgba(16, 185, 129, 0.08)",
+                      color: "#10b981"
+                    }}>
+                      <Rule fontSize="small" />
+                    </Box>
+                    <Typography variant="subtitle1" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>
+                      Scoring Rules
                     </Typography>
                   </Box>
-                </Box>
 
-                <Box sx={{ display: "flex", gap: 2 }}>
-                  <Button
-                    variant="outlined"
-                    startIcon={<Save sx={{ fontSize: "1.1rem" }} />}
-                    onClick={() => handleSaveScoring(true)}
-                    disabled={loading}
-                    sx={{
-                      textTransform: "none",
-                      fontWeight: 700,
-                      borderRadius: "10px",
-                      px: 3.5,
-                      py: 1.2,
-                      borderColor: "var(--border-color)",
-                      color: "var(--text-primary)",
-                      fontSize: "0.85rem",
-                      "&:hover": {
-                        borderColor: "var(--text-secondary)",
-                        bgcolor: "var(--bg-panel)"
-                      }
-                    }}
-                  >
-                    Save as Draft
-                  </Button>
-                  <Button
-                    variant="contained"
-                    startIcon={<CheckCircle sx={{ fontSize: "1.1rem" }} />}
-                    onClick={() => handleSaveScoring(false)}
-                    disabled={loading}
-                    sx={{
-                      textTransform: "none",
-                      fontWeight: 700,
-                      borderRadius: "10px",
-                      px: 3.5,
-                      py: 1.2,
-                      color: "#fff",
-                      bgcolor: "#3b82f6",
-                      fontSize: "0.85rem",
-                      boxShadow: "0 4px 12px rgba(59, 130, 246, 0.2)",
-                      "&:hover": {
-                        bgcolor: "#2563eb",
-                        boxShadow: "0 6px 16px rgba(59, 130, 246, 0.3)"
-                      }
-                    }}
-                  >
-                    Finalize Evaluation
-                  </Button>
-                </Box>
+                  {/* Citation Rule */}
+                  <Box sx={{ mb: 3 }}>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 800, color: "var(--text-primary)", mb: 0.5, fontSize: "0.85rem" }}>
+                      Citation Scoring
+                    </Typography>
+                    <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mt: 1 }}>
+                      <Typography variant="body2" sx={{ color: "var(--text-secondary)", fontWeight: 500, fontSize: "0.82rem" }}>
+                        Points = Citations × Rate
+                      </Typography>
+                      <Chip
+                        label={`Rate: ${(activeConfig?.research?.citationRate ?? 0.2).toFixed(2)}`}
+                        size="small"
+                        sx={{
+                          bgcolor: "rgba(16, 185, 129, 0.08)",
+                          color: "#10b981",
+                          fontWeight: 800,
+                          borderRadius: "6px"
+                        }}
+                      />
+                    </Box>
+                  </Box>
+
+                  <Divider sx={{ my: 2 }} />
+
+                  {/* H-Index Rule & Table */}
+                  <Box>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 800, color: "var(--text-primary)", mb: 0.5, fontSize: "0.85rem" }}>
+                      H-Index Scoring <Typography component="span" sx={{ fontSize: "0.75rem", color: "var(--text-secondary)", fontWeight: 600 }}>(Based on 2024 H-Index)</Typography>
+                    </Typography>
+
+                    {/* Rules table */}
+                    {(() => {
+                      const h24Val = Number(hIndex2024) || 0;
+                      const rowStyle = (rangeType) => {
+                        let isActive = false;
+                        if (rangeType === "low" && h24Val < 5) isActive = true;
+                        if (rangeType === "mid" && h24Val >= 5 && h24Val <= 10) isActive = true;
+                        if (rangeType === "high" && h24Val > 10) isActive = true;
+
+                        return isActive ? {
+                          bgcolor: "rgba(59, 130, 246, 0.06)",
+                          "& td": {
+                            color: "#3b82f6 !important",
+                            fontWeight: "800 !important",
+                            borderBottom: "1px solid rgba(59, 130, 246, 0.1) !important"
+                          }
+                        } : {};
+                      };
+
+                      const lowRate = activeConfig?.research?.hIndexRateLow ?? 1;
+                      const midRate = activeConfig?.research?.hIndexRateMid ?? 2;
+                      const highRate = activeConfig?.research?.hIndexRateHigh ?? 4;
+
+                      return (
+                        <TableContainer component={Paper} sx={{ mt: 1.5, borderRadius: "10px", border: "1px solid var(--border-color)", background: "var(--bg-paper)", boxShadow: "none" }}>
+                          <Table size="small">
+                            <TableHead>
+                              <TableRow sx={{ bgcolor: "var(--bg-panel)" }}>
+                                <TableCell sx={{ fontWeight: 700, fontSize: "0.75rem", color: "var(--text-secondary)" }}>2024 H-Index Range</TableCell>
+                                <TableCell sx={{ fontWeight: 700, fontSize: "0.75rem", color: "var(--text-secondary)" }}>Points per Index Raise</TableCell>
+                              </TableRow>
+                            </TableHead>
+                            <TableBody>
+                              <TableRow sx={rowStyle("low")}>
+                                <TableCell sx={{ fontSize: "0.78rem", py: 1.2, fontWeight: 500 }}>0 - 4</TableCell>
+                                <TableCell sx={{ fontSize: "0.78rem", py: 1.2, fontWeight: 700 }}>{lowRate} Point</TableCell>
+                              </TableRow>
+                              <TableRow sx={rowStyle("mid")}>
+                                <TableCell sx={{ fontSize: "0.78rem", py: 1.2, fontWeight: 500 }}>5 - 10</TableCell>
+                                <TableCell sx={{ fontSize: "0.78rem", py: 1.2, fontWeight: 700 }}>{midRate} Points</TableCell>
+                              </TableRow>
+                              <TableRow sx={rowStyle("high")}>
+                                <TableCell sx={{ fontSize: "0.78rem", py: 1.2, fontWeight: 500 }}>11 and above</TableCell>
+                                <TableCell sx={{ fontSize: "0.78rem", py: 1.2, fontWeight: 700 }}>{highRate} Points</TableCell>
+                              </TableRow>
+                            </TableBody>
+                          </Table>
+                        </TableContainer>
+                      );
+                    })()}
+
+                    <Typography sx={{ color: "var(--text-secondary)", fontSize: "0.72rem", fontWeight: 600, display: "block", mt: 1.5, textAlign: "center" }}>
+                      Points = Index Raise × Applicable Rate
+                    </Typography>
+                  </Box>
+                </Card>
+              </Stack>
+            </Grid>
+          </Grid>
+
+          {/* Bottom Sticky Action Bar */}
+          <Box sx={{
+            position: "sticky",
+            bottom: -32,
+            left: 0,
+            right: 0,
+            mx: { xs: -2, md: -4 },
+            mb: { xs: -1.5, md: -4 },
+            borderTop: "1px solid var(--border-color)",
+            bgcolor: "var(--bg-paper)",
+            p: 2.5,
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            boxShadow: "0 -4px 20px rgba(0,0,0,0.04)",
+            zIndex: 1000,
+            borderRadius: "0 0 16px 16px"
+          }}>
+            <Box sx={{ display: "flex", flexDirection: "column" }}>
+              <Typography variant="caption" sx={{ color: "var(--text-secondary)", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.5px", fontSize: "0.68rem" }}>
+                Total Score
+              </Typography>
+              <Box sx={{ display: "flex", alignItems: "baseline", gap: 0.5 }}>
+                <Typography variant="h5" sx={{ fontWeight: 900, color: "var(--text-primary)" }}>
+                  {(citationPoints + hIndexPoints).toFixed(2)}
+                </Typography>
+                <Typography variant="body2" sx={{ color: "var(--text-secondary)", fontWeight: 600, fontSize: "0.85rem" }}>
+                  / 100.00 pts
+                </Typography>
               </Box>
+            </Box>
+
+            <Box sx={{ display: "flex", gap: 2 }}>
+              <Button
+                variant="outlined"
+                startIcon={<Save sx={{ fontSize: "1.1rem" }} />}
+                onClick={() => handleSaveScoring(true)}
+                disabled={loading}
+                sx={{
+                  textTransform: "none",
+                  fontWeight: 700,
+                  borderRadius: "10px",
+                  px: 3.5,
+                  py: 1.2,
+                  borderColor: "var(--border-color)",
+                  color: "var(--text-primary)",
+                  fontSize: "0.85rem",
+                  "&:hover": {
+                    borderColor: "var(--text-secondary)",
+                    bgcolor: "var(--bg-panel)"
+                  }
+                }}
+              >
+                Save as Draft
+              </Button>
+              <Button
+                variant="contained"
+                startIcon={<CheckCircle sx={{ fontSize: "1.1rem" }} />}
+                onClick={() => handleSaveScoring(false)}
+                disabled={loading}
+                sx={{
+                  textTransform: "none",
+                  fontWeight: 700,
+                  borderRadius: "10px",
+                  px: 3.5,
+                  py: 1.2,
+                  color: "#fff",
+                  bgcolor: "#3b82f6",
+                  fontSize: "0.85rem",
+                  boxShadow: "0 4px 12px rgba(59, 130, 246, 0.2)",
+                  "&:hover": {
+                    bgcolor: "#2563eb",
+                    boxShadow: "0 6px 16px rgba(59, 130, 246, 0.3)"
+                  }
+                }}
+              >
+                Finalize Evaluation
+              </Button>
+            </Box>
+          </Box>
         </Stack>
       )}
 
