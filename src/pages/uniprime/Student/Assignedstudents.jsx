@@ -1,4 +1,3 @@
-import Loader from "../../../components/common/Loader";
 import React, { useState, useEffect, useCallback } from "react";
 import { Box, Avatar, CircularProgress, Typography, MenuItem, Select, FormControl, InputLabel, Paper, Button, Grid, Checkbox } from "@mui/material";
 import { UploadFile, PersonAdd, Download } from "@mui/icons-material";
@@ -324,16 +323,11 @@ const Assignedstudents = () => {
                 />
 
                 <Box sx={{ flex: 1 }}>
-                    {loading ? (
-                        <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>
-                            <Loader />
-                        </Box>
-                    ) : (
-                        <DataTable
-                            columns={columns}
-                            rows={formattedRows}
-                            nonSortableColumns={[0]}
-                            toolbarLeft={
+                    <DataTable
+                        columns={columns}
+                        rows={formattedRows}
+                        nonSortableColumns={[0]}
+                        toolbarLeft={
                                 <Box sx={{ display: "flex", alignItems: "flex-end", gap: 2, flexWrap: "nowrap" }}>
                                     <AcademicHierarchyFilter
                                         onChange={handleHierarchyChange}
@@ -382,7 +376,6 @@ const Assignedstudents = () => {
                                 </Box>
                             }
                         />
-                    )}
                 </Box>
 
                 {selectedStudents.length > 0 && (
