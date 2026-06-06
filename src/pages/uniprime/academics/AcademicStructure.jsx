@@ -229,6 +229,10 @@ const AcademicStructure = () => {
         if (type === 'branch' && mode === 'add') {
             if (selectedDepartment) {
                 modalData.departmentId = selectedDepartment._id;
+                if (!selectedProgram) {
+                    modalData.name = selectedDepartment.name;
+                    modalData.code = selectedDepartment.code;
+                }
             }
             if (selectedProgram) {
                 modalData.programId = selectedProgram._id;
@@ -1140,7 +1144,7 @@ const AcademicStructure = () => {
             {/* Entity Dialog */}
             <Dialog open={modal.open} onClose={() => setModal({ ...modal, open: false })} maxWidth="xs" fullWidth>
                 <DialogTitle sx={{ fontWeight: 700 }}>
-                    {modal.mode === 'add' ? 'Add' : 'Edit'} {modal.type === 'branch' ? `Specialization for ${selectedDepartment?.name}` : modal.type?.toUpperCase()}
+                    {modal.mode === 'add' ? 'Add' : 'Edit'} {modal.type === 'branch' ? (selectedProgram ? `Specialization for ${selectedProgram.name}` : `Program for ${selectedDepartment?.name}`) : modal.type?.toUpperCase()}
                 </DialogTitle>
                 <DialogContent sx={{ py: 2 }}>
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, mt: 1 }}>
@@ -1250,7 +1254,7 @@ const AcademicStructure = () => {
                             fullWidth
                             value={modal.data.name || ''}
                             onChange={(e) => setModal({ ...modal, data: { ...modal.data, name: e.target.value } })}
-                            helperText={modal.type === 'branch' ? "e.g., Artificial Intelligence & Machine Learning" : ""}
+                            helperText={modal.type === 'branch' ? (selectedProgram ? "e.g., Structural Engineering" : `e.g., ${selectedDepartment?.name || "Civil Engineering"}`) : ""}
                         />
 
                         {(modal.type === 'school' || modal.type === 'department' || modal.type === 'branch' || modal.type === 'program') && (
@@ -1259,7 +1263,12 @@ const AcademicStructure = () => {
                                 fullWidth
                                 value={modal.data.code || ''}
                                 onChange={(e) => setModal({ ...modal, data: { ...modal.data, code: e.target.value.toUpperCase() } })}
-                                helperText={modal.type === 'school' ? "e.g., SOE" : modal.type === 'department' ? "e.g., CSE" : modal.type === 'program' ? "e.g., BTECH" : "e.g., AIML"}
+                                helperText={
+                                    modal.type === 'school' ? "e.g., SOE" :
+                                    modal.type === 'department' ? "e.g., CSE" :
+                                    modal.type === 'program' ? "e.g., BTECH" :
+                                    (selectedProgram ? "e.g., SE" : `e.g., ${selectedDepartment?.code || "CE"}`)
+                                }
                             />
                         )}
 
