@@ -15,17 +15,30 @@ export const registerLoadingHandlers = (start, stop) => {
 };
 
 API.interceptors.request.use((config) => {
-  _startLoading();
+  const isUpload = config.data instanceof FormData || 
+                   /multipart\/form-data/i.test(config.headers?.['Content-Type'] || config.headers?.['content-type'] || '');
+
+  if (isUpload) {
+    config.skipGlobalLoader = true;
+  }
+
+  if (!config.skipGlobalLoader) {
+    _startLoading();
+  }
   return config;
 });
 
 API.interceptors.response.use(
   (response) => {
-    _stopLoading();
+    if (!response.config?.skipGlobalLoader) {
+      _stopLoading();
+    }
     return response;
   },
   (error) => {
-    _stopLoading();
+    if (!error.config?.skipGlobalLoader) {
+      _stopLoading();
+    }
     return Promise.reject(error);
   }
 );

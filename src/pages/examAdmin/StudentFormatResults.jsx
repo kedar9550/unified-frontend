@@ -58,7 +58,7 @@ export default function StudentFormatResults() {
   useEffect(() => {
     const dataFetch = async () => {
       try {
-        const progRes = await API.get("/api/academics/programs");
+        const progRes = await API.get("/api/academics/programs", { skipGlobalLoader: true });
         const progs = progRes.data.data || [];
         setPrograms(progs);
       } catch (err) {
@@ -76,7 +76,7 @@ export default function StudentFormatResults() {
       if (selectedProgramId) params.programId = selectedProgramId;
       if (selectedExamYear) params.examYear = selectedExamYear;
       if (bulkStudentId.trim()) params.studentId = bulkStudentId.trim();
-      const res = await API.get("/api/student-results", { params });
+      const res = await API.get("/api/student-results", { params, skipGlobalLoader: true });
       setResults(res.data);
     } catch (err) {
       console.error("Error fetching results:", err);
@@ -111,7 +111,7 @@ export default function StudentFormatResults() {
   const handleDelete = async (id) => {
     if (!window.confirm("Are you sure you want to delete this specific entry?")) return;
     try {
-      await API.delete(`/api/student-results/${id}`);
+      await API.delete(`/api/student-results/${id}`, { skipGlobalLoader: true });
       fetchResults();
     } catch (err) {
       console.error("Delete failed:", err);
@@ -157,7 +157,7 @@ export default function StudentFormatResults() {
     if (!window.confirm(confirmMsg)) return;
 
     try {
-      await API.delete("/api/student-results/bulk", { data: params });
+      await API.delete("/api/student-results/bulk", { data: params, skipGlobalLoader: true });
       setDeleteMenuAnchor(null);
       if (type === "STUDENT") setBulkStudentId("");
       if (type === "SELECTED") setSelectedIds([]);
@@ -190,6 +190,7 @@ export default function StudentFormatResults() {
     try {
       const res = await API.post(uploadUrl, formData, {
         headers: { "Content-Type": "multipart/form-data" },
+        skipGlobalLoader: true,
       });
 
       const { message, errors } = res.data;

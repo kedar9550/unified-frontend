@@ -1,5 +1,5 @@
 import Loader from "../../../components/common/Loader";
-import React, { useRef, useState, useEffect } from "react";
+import React, { useRef, useState, useEffect, useCallback } from "react";
 import {
     Box,
     Avatar,
@@ -20,7 +20,9 @@ import {
     TextField,
     Button,
     Grid,
-    Paper,Alert
+    Paper,
+    Alert,
+    LinearProgress
 } from "@mui/material";
 import { toast } from "sonner";
 import {
@@ -36,7 +38,10 @@ import {
     Description as ExcelIcon,
     CloudUpload as CloudUploadIcon,
     InfoOutlined as InfoIcon,
-    ArrowForward as ArrowForwardIcon
+    ArrowForward as ArrowForwardIcon,
+    CheckCircle as CheckCircleIcon,
+    RadioButtonUnchecked as PendingIcon,
+    Storage as StorageIcon
 } from "@mui/icons-material";
 import PageHeader from "../../../components/common/PageHeader";
 import SectionHeader from "../../../components/common/SectionHeader";
@@ -44,6 +49,181 @@ import ActionButton from "../../../components/common/ActionButton";
 import DataTable from "../../../components/data/DataTable";
 import API from "../../../api/axios";
 import HelpOutlinedIcon from "@mui/icons-material/HelpOutlined";
+
+// Upload progress steps config
+const UPLOAD_STEPS = [
+    { key: "upload", label: "Upload File", description: "Uploading file to server...", doneDesc: "File uploaded successfully", icon: CloudUploadIcon },
+    { key: "read", label: "Read Excel Data", description: "Reading and parsing file contents...", doneDesc: "Excel file read successfully", icon: ExcelIcon },
+    { key: "validate", label: "Validate Student Records", description: "Validating student information and required fields...", doneDesc: "All records validated", icon: ConfirmIcon },
+    { key: "save", label: "Save to Database", description: "Records will be saved to the system", doneDesc: "Records saved successfully", icon: StorageIcon }
+];
+
+const formatElapsed = (seconds) => {
+    const m = String(Math.floor(seconds / 60)).padStart(2, "0");
+    const s = String(seconds % 60).padStart(2, "0");
+    return `${m}:${s}`;
+};
+
+// ── Upload Progress Tracker Component ──
+const UploadProgressTracker = ({ activeStep, stepTimers, isComplete, hasError }) => {
+    const totalSteps = UPLOAD_STEPS.length;
+    const progressPercent = isComplete
+        ? 100
+        : Math.round(((activeStep + 0.5) / totalSteps) * 100);
+
+    return (
+        <Box sx={{ width: "100%" }}>
+            {/* Steps list */}
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5, mb: 4 }}>
+                {UPLOAD_STEPS.map((step, idx) => {
+                    const isDone = idx < activeStep || isComplete;
+                    const isActive = idx === activeStep && !isComplete;
+                    const isPending = idx > activeStep && !isComplete;
+                    const StepIcon = step.icon;
+
+                    return (
+                        <Box key={step.key} sx={{ display: "flex", alignItems: "flex-start", gap: 2 }}>
+                            {/* Status icon */}
+                            <Box sx={{ pt: 0.3, flexShrink: 0 }}>
+                                {isDone ? (
+                                    <CheckCircleIcon sx={{ fontSize: 28, color: "#10B981" }} />
+                                ) : isActive ? (
+                                    <Box
+                                        sx={{
+                                            width: 28,
+                                            height: 28,
+                                            borderRadius: "50%",
+                                            border: "3px solid #8b5cf6",
+                                            borderTopColor: "transparent",
+                                            animation: "uploadSpin 1s linear infinite",
+                                            display: "flex",
+                                            alignItems: "center",
+                                            justifyContent: "center"
+                                        }}
+                                    />
+                                ) : (
+                                    <PendingIcon sx={{ fontSize: 28, color: "var(--border-color)" }} />
+                                )}
+                            </Box>
+
+                            {/* Step info */}
+                            <Box sx={{ flex: 1, minWidth: 0 }}>
+                                <Typography
+                                    variant="subtitle2"
+                                    sx={{
+                                        fontWeight: 700,
+                                        fontSize: "0.95rem",
+                                        color: isDone
+                                            ? "var(--text-primary)"
+                                            : isActive
+                                            ? "#8b5cf6"
+                                            : "var(--text-secondary)"
+                                    }}
+                                >
+                                    {step.label}
+                                </Typography>
+                                <Typography
+                                    variant="caption"
+                                    sx={{
+                                        color: "var(--text-secondary)",
+                                        opacity: isPending ? 0.6 : 0.9,
+                                        display: "block",
+                                        mt: 0.2
+                                    }}
+                                >
+                                    {isDone ? step.doneDesc : step.description}
+                                </Typography>
+                            </Box>
+
+                            {/* Timer */}
+                            <Typography
+                                variant="caption"
+                                sx={{
+                                    fontWeight: 600,
+                                    fontFamily: "monospace",
+                                    fontSize: "0.85rem",
+                                    color: isActive
+                                        ? "#10B981"
+                                        : isDone
+                                        ? "#10B981"
+                                        : "var(--text-secondary)",
+                                    opacity: isPending ? 0.5 : 1,
+                                    flexShrink: 0,
+                                    pt: 0.3
+                                }}
+                            >
+                                {isPending ? "Pending" : formatElapsed(stepTimers[idx] || 0)}
+                            </Typography>
+                        </Box>
+                    );
+                })}
+            </Box>
+
+            {/* Progress bar */}
+            <Box sx={{ mb: 1.5 }}>
+                <LinearProgress
+                    variant="determinate"
+                    value={progressPercent}
+                    sx={{
+                        height: 10,
+                        borderRadius: 5,
+                        backgroundColor: "var(--border-color)",
+                        "& .MuiLinearProgress-bar": {
+                            borderRadius: 5,
+                            background: "linear-gradient(90deg, #10B981, #8b5cf6)"
+                        }
+                    }}
+                />
+                <Typography
+                    variant="caption"
+                    sx={{
+                        display: "block",
+                        textAlign: "center",
+                        mt: 1,
+                        fontWeight: 600,
+                        color: "#10B981",
+                        fontSize: "0.85rem"
+                    }}
+                >
+                    {progressPercent}% Complete
+                </Typography>
+            </Box>
+
+            {/* Warning notice */}
+            {!isComplete && (
+                <Box
+                    sx={{
+                        mt: 3,
+                        p: 2,
+                        borderRadius: "16px",
+                        background: "var(--bg-accent-1)",
+                        border: "1px solid var(--border-color)",
+                        display: "flex",
+                        alignItems: "flex-start",
+                        gap: 1.5
+                    }}
+                >
+                    <InfoIcon sx={{ color: "var(--color-primary)", fontSize: 22, mt: 0.2 }} />
+                    <Box>
+                        <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)" }}>
+                            Please do not close this window while processing.
+                        </Typography>
+                        <Typography variant="caption" sx={{ color: "var(--text-secondary)" }}>
+                            This may take a few minutes depending on the number of records.
+                        </Typography>
+                    </Box>
+                </Box>
+            )}
+
+            <style>{`
+                @keyframes uploadSpin {
+                    from { transform: rotate(0deg); }
+                    to { transform: rotate(360deg); }
+                }
+            `}</style>
+        </Box>
+    );
+};
 
 const Studentuploads = () => {
     const fileInputRef = useRef(null);
@@ -67,10 +247,82 @@ const Studentuploads = () => {
     const [selectedBulkProgram, setSelectedBulkProgram] = useState("");
     const [isBulkUpdateModalOpen, setIsBulkUpdateModalOpen] = useState(false);
 
+    // Upload progress tracker state
+    const [uploadActiveStep, setUploadActiveStep] = useState(0);
+    const [uploadStepTimers, setUploadStepTimers] = useState([0, 0, 0, 0]);
+    const [uploadComplete, setUploadComplete] = useState(false);
+    const [uploadHasError, setUploadHasError] = useState(false);
+    const uploadTimerRef = useRef(null);
+    const uploadStepAdvanceRef = useRef(null);
+
+    // Step advancement delays (ms) — simulated progression for the first 3 steps
+    const STEP_DELAYS = [2000, 4000, 6000];
+
+    const startUploadProgress = useCallback(() => {
+        setUploadActiveStep(0);
+        setUploadStepTimers([0, 0, 0, 0]);
+        setUploadComplete(false);
+        setUploadHasError(false);
+
+        // Tick timer every second for the active step
+        uploadTimerRef.current = setInterval(() => {
+            setUploadActiveStep((currentStep) => {
+                setUploadStepTimers((prev) => {
+                    const next = [...prev];
+                    next[currentStep] = (next[currentStep] || 0) + 1;
+                    return next;
+                });
+                return currentStep;
+            });
+        }, 1000);
+
+        // Auto-advance through first 3 simulated steps
+        let stepIdx = 0;
+        const advanceStep = () => {
+            if (stepIdx < STEP_DELAYS.length - 1) {
+                stepIdx++;
+                setUploadActiveStep(stepIdx);
+                uploadStepAdvanceRef.current = setTimeout(advanceStep, STEP_DELAYS[stepIdx]);
+            }
+        };
+        uploadStepAdvanceRef.current = setTimeout(advanceStep, STEP_DELAYS[0]);
+    }, []);
+
+    const finishUploadProgress = useCallback((success = true) => {
+        // Clear timers
+        if (uploadTimerRef.current) clearInterval(uploadTimerRef.current);
+        if (uploadStepAdvanceRef.current) clearTimeout(uploadStepAdvanceRef.current);
+
+        // Jump to last step and complete
+        setUploadActiveStep(UPLOAD_STEPS.length - 1);
+        if (!success) setUploadHasError(true);
+
+        // Brief delay then mark complete
+        setTimeout(() => {
+            setUploadComplete(true);
+            // Auto-close the dialog after 2 seconds
+            setTimeout(() => {
+                setUploading(false);
+                setUploadActiveStep(0);
+                setUploadStepTimers([0, 0, 0, 0]);
+                setUploadComplete(false);
+                setUploadHasError(false);
+            }, 2000);
+        }, 800);
+    }, []);
+
+    // Cleanup on unmount
+    useEffect(() => {
+        return () => {
+            if (uploadTimerRef.current) clearInterval(uploadTimerRef.current);
+            if (uploadStepAdvanceRef.current) clearTimeout(uploadStepAdvanceRef.current);
+        };
+    }, []);
+
     const fetchUnassignedStudents = async () => {
         setLoadingStudents(true);
         try {
-            const res = await API.get("/api/student-data/unassigned");
+            const res = await API.get("/api/student-data/unassigned", { skipGlobalLoader: true });
             if (res.data.success) {
                 setStudents(res.data.data || []);
             }
@@ -85,7 +337,7 @@ const Studentuploads = () => {
         const fetchDepartments = async () => {
             setLoadingDepts(true);
             try {
-                const res = await API.get("/api/academics/departments?type=Academic");
+                const res = await API.get("/api/academics/departments?type=Academic", { skipGlobalLoader: true });
                 if (res.data.success) {
                     const depts = res.data.data || [];
                     setAllDepartments(depts.filter(d => d.type === "Academic" || !d.type));
@@ -99,7 +351,7 @@ const Studentuploads = () => {
 
         const fetchPrograms = async () => {
             try {
-                const res = await API.get("/api/student-data/filter-options");
+                const res = await API.get("/api/student-data/filter-options", { skipGlobalLoader: true });
                 if (res.data.success) {
                     setAllPrograms(res.data.data?.programs || []);
                 }
@@ -125,22 +377,25 @@ const Studentuploads = () => {
         formData.append("file", file);
 
         setUploading(true);
+        startUploadProgress();
 
         try {
             const endpoint = "/api/student-data/upload";
             const res = await API.post(endpoint, formData, {
-                headers: { "Content-Type": "multipart/form-data" }
+                headers: { "Content-Type": "multipart/form-data" },
+                skipGlobalLoader: true
             });
             if (res.data.success) {
                 setUploadResult(res.data.summary);
                 toast.success(res.data.message || "Data uploaded successfully");
                 fetchUnassignedStudents();
             }
+            finishUploadProgress(true);
         } catch (error) {
             console.error("Operation failed", error);
             toast.error(error.response?.data?.message || "Operation failed");
+            finishUploadProgress(false);
         } finally {
-            setUploading(false);
             e.target.value = null; // Reset input
         }
     };
@@ -154,7 +409,7 @@ const Studentuploads = () => {
 
         setUpdatingBulk(true);
         try {
-            const res = await API.post("/api/student-data/sync", { program });
+            const res = await API.post("/api/student-data/sync", { program }, { skipGlobalLoader: true });
             if (res.data.success) {
                 setUploadResult(res.data.summary);
 
@@ -187,7 +442,7 @@ const Studentuploads = () => {
         try {
             const res = await API.post("/api/student-data/sync", {
                 rollNos: selectedIds
-            });
+            }, { skipGlobalLoader: true });
             if (res.data.success) {
                 setUploadResult(res.data.summary);
                 toast[res.data.updated ? "success" : "info"](res.data.message);
@@ -209,7 +464,7 @@ const Studentuploads = () => {
             const res = await API.post("/api/student-data/add", {
                 rollNo: addRollNo,
                 department: addDept
-            });
+            }, { skipGlobalLoader: true });
             if (res.data.success) {
                 setIsAddModalOpen(false);
                 setIsUpdateModalOpen(false);
@@ -232,7 +487,7 @@ const Studentuploads = () => {
             const res = await API.post("/api/student-data/assign", {
                 studentIds: selectedIds,
                 deptId: selectedDept,
-            });
+            }, { skipGlobalLoader: true });
             if (res.data.success) {
                 setIsProceeding(false);
                 setSelectedIds([]);
@@ -493,7 +748,6 @@ const Studentuploads = () => {
                             >
                                 Individual Add
                             </Button>
-                            {uploading && <Loader size={24} sx={{ color: "#10B981" }} />}
                         </Box>
                     </Paper>
                 </Box>
@@ -820,6 +1074,54 @@ const Studentuploads = () => {
                         {addingStudent ? <Loader size={22} color="inherit" /> : (isUpdateModalOpen ? "Update Student" : "Add Student")}
                     </Button>
                 </DialogActions>
+            </Dialog>
+
+            {/* Upload Progress Dialog */}
+            <Dialog
+                open={uploading}
+                maxWidth="sm"
+                fullWidth
+                sx={{
+                    "& .MuiBackdrop-root": {
+                        backgroundColor: "rgba(0, 0, 0, 0.2) !important",
+                        backdropFilter: "none !important",
+                        WebkitBackdropFilter: "none !important"
+                    }
+                }}
+                slotProps={{
+                    backdrop: {
+                        sx: {
+                            backgroundColor: "rgba(0, 0, 0, 0.2) !important",
+                            backdropFilter: "none !important",
+                            WebkitBackdropFilter: "none !important"
+                        }
+                    },
+                    paper: {
+                        sx: {
+                            borderRadius: "24px",
+                            p: 2,
+                            background: "var(--bg-paper)",
+                            backgroundImage: "none",
+                            border: "1px solid var(--border-color)",
+                            boxShadow: "0 25px 60px rgba(0, 0, 0, 0.15), 0 10px 30px rgba(0, 0, 0, 0.1)",
+                            overflow: "visible",
+                            zIndex: 1
+                        }
+                    }
+                }}
+            >
+                <DialogTitle sx={{ fontWeight: 800, color: "var(--text-primary)", pb: 0, display: "flex", alignItems: "center", gap: 1.5 }}>
+                    <CloudUploadIcon sx={{ color: "#10B981" }} />
+                    Processing Upload
+                </DialogTitle>
+                <DialogContent sx={{ pt: 3 }}>
+                    <UploadProgressTracker
+                        activeStep={uploadActiveStep}
+                        stepTimers={uploadStepTimers}
+                        isComplete={uploadComplete}
+                        hasError={uploadHasError}
+                    />
+                </DialogContent>
             </Dialog>
 
         </Box>

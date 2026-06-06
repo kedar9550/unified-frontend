@@ -51,7 +51,7 @@ export default function FacultyFormatResults() {
   useEffect(() => {
     const fetchYears = async () => {
       try {
-        const res = await API.get("/api/academic-years");
+        const res = await API.get("/api/academic-years", { skipGlobalLoader: true });
         const years = res.data.years || [];
         // Remove duplicates if any
         const uniqueYears = Array.from(new Set(years.map(y => y.year)))
@@ -71,7 +71,7 @@ export default function FacultyFormatResults() {
 
     const fetchPrograms = async () => {
       try {
-        const res = await API.get("/api/academics/programs");
+        const res = await API.get("/api/academics/programs", { skipGlobalLoader: true });
         setPrograms(res.data.data || []);
       } catch (err) {
         console.error("Error fetching programs:", err);
@@ -93,6 +93,7 @@ export default function FacultyFormatResults() {
           programId: selectedProgramId,
           facultyId: searchFacultyId
         },
+        skipGlobalLoader: true,
       });
       setResults(res.data);
     } catch (err) {
@@ -125,6 +126,7 @@ export default function FacultyFormatResults() {
         formData,
         {
           headers: { "Content-Type": "multipart/form-data" },
+          skipGlobalLoader: true,
         }
       );
 
@@ -163,7 +165,7 @@ export default function FacultyFormatResults() {
   const handleDelete = async (id) => {
     if (!window.confirm("Are you sure you want to delete this record?")) return;
     try {
-      await API.delete(`/api/faculty-subject-results/${id}`);
+      await API.delete(`/api/faculty-subject-results/${id}`, { skipGlobalLoader: true });
       setResults((prev) => prev.filter((r) => r._id !== id));
     } catch (err) {
       console.error("Delete failed:", err);
@@ -201,7 +203,7 @@ export default function FacultyFormatResults() {
     
     setLoading(true);
     try {
-      await API.delete("/api/faculty-subject-results/semester", { params });
+      await API.delete("/api/faculty-subject-results/semester", { params, skipGlobalLoader: true });
       toast.success("Records cleared successfully.");
       setDeleteMenuAnchor(null);
       fetchResults();
