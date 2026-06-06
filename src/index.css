@@ -21,6 +21,7 @@
   --text-secondary: #475569;
   --border-color: #e2e8f0;
   --color-primary: #004e92;
+  --color-blue: #004e92;
   --color-currency: #05a500;
   --gradient-primary: linear-gradient(140deg, #000428, #013c6e, #000428);
   --gradient-start: #000428;
@@ -60,6 +61,7 @@ body.dark-mode {
   --text-secondary: #94a3b8;
   --border-color: #1e293b;
   --color-primary: #BE9337;
+  --color-blue: #3b82f6;
   --color-currency: #05a500;
   --gradient-primary: linear-gradient(140deg, #705000, #8f702e, #705000);
   --gradient-start: #705000;

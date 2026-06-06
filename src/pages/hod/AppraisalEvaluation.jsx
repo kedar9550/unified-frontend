@@ -741,8 +741,8 @@ const AppraisalEvaluation = () => {
                 <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 1, color: "var(--color-primary)", display: "block" }}>
                   1.1 Course Average Pass Percentage (Theory only)
                 </Typography>
-                <TableContainer component={Paper} sx={{ mb: 3, borderRadius: "12px", background: "var(--bg-paper)", border: "1px solid var(--border-color)", overflow: "hidden" }}>
-                  <Table size="small">
+                <TableContainer component={Paper} sx={{ mb: 3, borderRadius: "12px", background: "var(--bg-paper)", border: "1px solid var(--border-color)", overflowX: "auto", maxWidth: { xs: "100%", md: "100%", lg: 1000, xl: 1100 }, mx: "auto" }}>
+                  <Table size="small" sx={{ minWidth: 650, mx: "auto" }}>
                     <TableHead sx={{ background: "var(--gradient-primary)" }}>
                       <TableRow>
                         <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 1 }}>Course Name</TableCell>
@@ -767,7 +767,11 @@ const AppraisalEvaluation = () => {
                             </TableRow>
                           ))}
                           <TableRow sx={{ background: "rgba(0, 78, 146, 0.04)" }}>
-                            <TableCell colSpan={2} sx={{ fontWeight: 800, color: "var(--text-primary)" }}>Overall Performance</TableCell>
+                            <TableCell colSpan={2} sx={{ fontWeight: 800, color: "var(--text-primary)", pl: 2 }}>
+                              <Box component="span" sx={{ position: "sticky", left: 16, display: "inline-block", whiteSpace: "nowrap" }}>
+                                Overall Performance
+                              </Box>
+                            </TableCell>
                             <TableCell align="center" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>{selectedAppraisal.teaching.passPercentage.courses.reduce((sum, c) => sum + (Number(c.appeared) || 0), 0)}</TableCell>
                             <TableCell align="center" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>{selectedAppraisal.teaching.passPercentage.courses.reduce((sum, c) => sum + (Number(c.passed) || 0), 0)}</TableCell>
                             <TableCell align="center" sx={{ fontWeight: 900, color: "var(--color-primary)" }}>
@@ -791,8 +795,8 @@ const AppraisalEvaluation = () => {
                 <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 1, color: "var(--color-primary)", display: "block" }}>
                   1.2 Proctoring Students' Average Pass Percentage
                 </Typography>
-                <TableContainer component={Paper} sx={{ mb: 2, borderRadius: "12px", background: "var(--bg-paper)", border: "1px solid var(--border-color)", overflow: "hidden" }}>
-                  <Table size="small">
+                <TableContainer component={Paper} sx={{ mb: 2, borderRadius: "12px", background: "var(--bg-paper)", border: "1px solid var(--border-color)", overflowX: "auto", maxWidth: { xs: "100%", md: "100%", lg: 1000, xl: 1100 }, mx: "auto" }}>
+                  <Table size="small" sx={{ minWidth: 650, mx: "auto" }}>
                     <TableHead sx={{ background: "var(--gradient-primary)" }}>
                       <TableRow>
                         <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 1 }} align="center">Total Allotted</TableCell>
@@ -814,8 +818,12 @@ const AppraisalEvaluation = () => {
                               <TableCell align="center" sx={{ fontWeight: 800, color: "var(--color-primary)" }}>{e.pointsClaimed}</TableCell>
                             </TableRow>
                           ))}
-                          <TableRow sx={{ background: "rgba(0, 78, 146, 0.04)" }}>
-                            <TableCell align="center" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>Overall Performance</TableCell>
+                           <TableRow sx={{ background: "rgba(0, 78, 146, 0.04)" }}>
+                            <TableCell sx={{ fontWeight: 800, color: "var(--text-primary)", pl: 2 }}>
+                              <Box component="span" sx={{ position: "sticky", left: 16, display: "inline-block", whiteSpace: "nowrap" }}>
+                                Overall Performance
+                              </Box>
+                            </TableCell>
                             <TableCell align="center" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>{selectedAppraisal.teaching.proctoring.entries.reduce((sum, e) => sum + (Number(e.appeared) || 0), 0)}</TableCell>
                             <TableCell align="center" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>{selectedAppraisal.teaching.proctoring.entries.reduce((sum, e) => sum + (Number(e.passed) || 0), 0)}</TableCell>
                             <TableCell align="center" sx={{ fontWeight: 900, color: "var(--color-primary)" }}>
@@ -874,8 +882,8 @@ const AppraisalEvaluation = () => {
                 <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 1, color: "var(--color-primary)", display: "block" }}>
                   1.3 Course Student Feedback Points
                 </Typography>
-                <TableContainer component={Paper} sx={{ mb: 3, borderRadius: "12px", background: "var(--bg-paper)", border: "1px solid var(--border-color)", overflow: "hidden" }}>
-                  <Table size="small">
+                <TableContainer component={Paper} sx={{ mb: 3, borderRadius: "12px", background: "var(--bg-paper)", border: "1px solid var(--border-color)", overflowX: "auto", maxWidth: { xs: "100%", md: "100%", lg: 1000, xl: 1100 }, mx: "auto" }}>
+                  <Table size="small" sx={{ minWidth: 650, mx: "auto" }}>
                     <TableHead sx={{ background: "var(--gradient-primary)" }}>
                       <TableRow>
                         <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 1 }}>Course Name</TableCell>
@@ -898,7 +906,11 @@ const AppraisalEvaluation = () => {
                             </TableRow>
                           ))}
                           <TableRow sx={{ background: "rgba(0, 78, 146, 0.04)" }}>
-                            <TableCell colSpan={2} sx={{ fontWeight: 800, color: "var(--text-primary)" }}>Overall Performance</TableCell>
+                            <TableCell colSpan={2} sx={{ fontWeight: 800, color: "var(--text-primary)", pl: 2 }}>
+                              <Box component="span" sx={{ position: "sticky", left: 16, display: "inline-block", whiteSpace: "nowrap" }}>
+                                Overall Performance
+                              </Box>
+                            </TableCell>
                             <TableCell align="center" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>{selectedAppraisal.teaching.feedback.courses.reduce((sum, c) => sum + (Number(c.noOfStudents) || 0), 0)}</TableCell>
                             <TableCell align="center" sx={{ fontWeight: 900, color: "var(--color-primary)" }}>
                               {(selectedAppraisal.teaching.feedback.courses.reduce((sum, c) => sum + (Number(c.noOfStudents) || 0), 0) > 0
@@ -921,8 +933,8 @@ const AppraisalEvaluation = () => {
                 <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 1, color: "var(--color-primary)", display: "block" }}>
                   1.4 Course CO Attainment Points
                 </Typography>
-                <TableContainer component={Paper} sx={{ borderRadius: "12px", background: "var(--bg-paper)", border: "1px solid var(--border-color)", overflow: "hidden" }}>
-                  <Table size="small">
+                <TableContainer component={Paper} sx={{ borderRadius: "12px", background: "var(--bg-paper)", border: "1px solid var(--border-color)", overflowX: "auto", maxWidth: { xs: "100%", md: "100%", lg: 1000, xl: 1100 }, mx: "auto", mb: 4 }}>
+                  <Table size="small" sx={{ minWidth: 650, mx: "auto" }}>
                     <TableHead sx={{ background: "var(--gradient-primary)" }}>
                       <TableRow>
                         <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 1 }}>Course Name</TableCell>
@@ -945,7 +957,11 @@ const AppraisalEvaluation = () => {
                             </TableRow>
                           ))}
                           <TableRow sx={{ background: "rgba(0, 78, 146, 0.04)" }}>
-                            <TableCell colSpan={2} sx={{ fontWeight: 800, color: "var(--text-primary)" }}>Overall Performance</TableCell>
+                            <TableCell colSpan={2} sx={{ fontWeight: 800, color: "var(--text-primary)", pl: 2 }}>
+                              <Box component="span" sx={{ position: "sticky", left: 16, display: "inline-block", whiteSpace: "nowrap" }}>
+                                Overall Performance
+                              </Box>
+                            </TableCell>
                             <TableCell align="center" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>{selectedAppraisal.teaching.coAttainment.courses.reduce((sum, c) => sum + (Number(c.noOfCos) || 0), 0)}</TableCell>
                             <TableCell align="center" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>{selectedAppraisal.teaching.coAttainment.courses.reduce((sum, c) => sum + (Number(c.noOfCosAttained) || 0), 0)}</TableCell>
                             <TableCell align="center" sx={{ fontWeight: 900, color: "var(--color-primary)" }}>{selectedAppraisal.teaching.coAttainment.averagePoints}</TableCell>
@@ -1021,8 +1037,8 @@ const AppraisalEvaluation = () => {
                 <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 1, color: "var(--color-primary)", display: "block" }}>
                   2.1 Journal / Conference Publications
                 </Typography>
-                <TableContainer component={Paper} sx={{ mb: 3, borderRadius: "12px", background: "var(--bg-paper)", border: "1px solid var(--border-color)", overflow: "hidden" }}>
-                  <Table size="small">
+                <TableContainer component={Paper} sx={{ mb: 3, borderRadius: "12px", background: "var(--bg-paper)", border: "1px solid var(--border-color)", overflowX: "auto", maxWidth: { xs: "100%", md: "100%", lg: 1000, xl: 1100 }, mx: "auto" }}>
+                  <Table size="small" sx={{ minWidth: 800, mx: "auto" }}>
                     <TableHead sx={{ background: "var(--gradient-primary)" }}>
                       <TableRow>
                         <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 1, width: "80px", whiteSpace: "nowrap" }} align="center">S. No</TableCell>
@@ -1045,7 +1061,11 @@ const AppraisalEvaluation = () => {
                             </TableRow>
                           ))}
                           <TableRow sx={{ background: "rgba(0, 78, 146, 0.04)" }}>
-                            <TableCell colSpan={4} align="right" sx={{ fontWeight: 800, color: "var(--text-primary)", pr: 2 }}>Self-Assessment Points</TableCell>
+                            <TableCell colSpan={4} sx={{ fontWeight: 800, color: "var(--text-primary)", pl: 2 }}>
+                              <Box component="span" sx={{ position: "sticky", left: 16, display: "inline-block", whiteSpace: "nowrap" }}>
+                                Self-Assessment Points
+                              </Box>
+                            </TableCell>
                             <TableCell align="center" sx={{ fontWeight: 900, color: "var(--color-primary)" }}>{selectedAppraisal.research.papers.items.reduce((sum, p) => sum + (Number(p.pointsClaimed) || 0), 0)}</TableCell>
                           </TableRow>
                         </>
@@ -1064,8 +1084,8 @@ const AppraisalEvaluation = () => {
                     <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 1, color: "var(--color-primary)", display: "block" }}>
                       2.2 Guiding Ph. D Scholars
                     </Typography>
-                    <TableContainer component={Paper} sx={{ mb: 3, borderRadius: "12px", background: "var(--bg-paper)", border: "1px solid var(--border-color)", overflow: "hidden" }}>
-                      <Table size="small">
+                    <TableContainer component={Paper} sx={{ mb: 3, borderRadius: "12px", background: "var(--bg-paper)", border: "1px solid var(--border-color)", overflowX: "auto", maxWidth: { xs: "100%", md: "100%", lg: 1000, xl: 1100 }, mx: "auto" }}>
+                      <Table size="small" sx={{ minWidth: 800, mx: "auto" }}>
                         <TableHead sx={{ background: "var(--gradient-primary)" }}>
                           <TableRow>
                             <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 1, width: "80px", whiteSpace: "nowrap" }} align="center">S. No</TableCell>
@@ -1090,7 +1110,11 @@ const AppraisalEvaluation = () => {
                             </TableRow>
                           ))}
                           <TableRow sx={{ background: "rgba(0, 78, 146, 0.04)" }}>
-                            <TableCell colSpan={5} align="right" sx={{ fontWeight: 800, color: "var(--text-primary)", pr: 2 }}>Self-Assessment Points</TableCell>
+                            <TableCell colSpan={5} sx={{ fontWeight: 800, color: "var(--text-primary)", pl: 2 }}>
+                              <Box component="span" sx={{ position: "sticky", left: 16, display: "inline-block", whiteSpace: "nowrap" }}>
+                                Self-Assessment Points
+                              </Box>
+                            </TableCell>
                             <TableCell align="center" sx={{ fontWeight: 900, color: "var(--color-primary)" }}>{selectedAppraisal.research.phdGuiding.items.reduce((sum, p) => sum + (Number(p.pointsClaimed) || 0), 0)}</TableCell>
                           </TableRow>
                         </TableBody>
@@ -1105,8 +1129,8 @@ const AppraisalEvaluation = () => {
                     <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 1, color: "var(--color-primary)", display: "block" }}>
                       2.3 Books / Chapters (Max 10 pts)
                     </Typography>
-                    <TableContainer component={Paper} sx={{ mb: 3, borderRadius: "12px", background: "var(--bg-paper)", border: "1px solid var(--border-color)", overflow: "hidden" }}>
-                      <Table size="small">
+                    <TableContainer component={Paper} sx={{ mb: 3, borderRadius: "12px", background: "var(--bg-paper)", border: "1px solid var(--border-color)", overflowX: "auto", maxWidth: { xs: "100%", md: "100%", lg: 1000, xl: 1100 }, mx: "auto" }}>
+                      <Table size="small" sx={{ minWidth: 800, mx: "auto" }}>
                         <TableHead sx={{ background: "var(--gradient-primary)" }}>
                           <TableRow>
                             <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 1, width: "80px", whiteSpace: "nowrap" }} align="center">S. No</TableCell>
@@ -1127,7 +1151,11 @@ const AppraisalEvaluation = () => {
                             </TableRow>
                           ))}
                           <TableRow sx={{ background: "rgba(0, 78, 146, 0.04)" }}>
-                            <TableCell colSpan={4} align="right" sx={{ fontWeight: 800, color: "var(--text-primary)", pr: 2 }}>Self-Assessment Points</TableCell>
+                            <TableCell colSpan={4} sx={{ fontWeight: 800, color: "var(--text-primary)", pl: 2 }}>
+                              <Box component="span" sx={{ position: "sticky", left: 16, display: "inline-block", whiteSpace: "nowrap" }}>
+                                Self-Assessment Points
+                              </Box>
+                            </TableCell>
                             <TableCell align="center" sx={{ fontWeight: 900, color: "var(--color-primary)" }}>
                               {Math.min(10, selectedAppraisal.research.booksChapters.items.reduce((sum, b) => sum + (Number(b.pointsClaimed) || 0), 0))}
                             </TableCell>
@@ -1144,8 +1172,8 @@ const AppraisalEvaluation = () => {
                     <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 1, color: "var(--color-primary)", display: "block" }}>
                       2.4 Patents
                     </Typography>
-                    <TableContainer component={Paper} sx={{ mb: 3, borderRadius: "12px", background: "var(--bg-paper)", border: "1px solid var(--border-color)", overflow: "hidden" }}>
-                      <Table size="small">
+                    <TableContainer component={Paper} sx={{ mb: 3, borderRadius: "12px", background: "var(--bg-paper)", border: "1px solid var(--border-color)", overflowX: "auto", maxWidth: { xs: "100%", md: "100%", lg: 1000, xl: 1100 }, mx: "auto" }}>
+                      <Table size="small" sx={{ minWidth: 800, mx: "auto" }}>
                         <TableHead sx={{ background: "var(--gradient-primary)" }}>
                           <TableRow>
                             <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 1, width: "80px", whiteSpace: "nowrap" }} align="center">S. No</TableCell>
@@ -1166,7 +1194,11 @@ const AppraisalEvaluation = () => {
                             </TableRow>
                           ))}
                           <TableRow sx={{ background: "rgba(0, 78, 146, 0.04)" }}>
-                            <TableCell colSpan={4} align="right" sx={{ fontWeight: 800, color: "var(--text-primary)", pr: 2 }}>Self-Assessment Points</TableCell>
+                            <TableCell colSpan={4} sx={{ fontWeight: 800, color: "var(--text-primary)", pl: 2 }}>
+                              <Box component="span" sx={{ position: "sticky", left: 16, display: "inline-block", whiteSpace: "nowrap" }}>
+                                Self-Assessment Points
+                              </Box>
+                            </TableCell>
                             <TableCell align="center" sx={{ fontWeight: 900, color: "var(--color-primary)" }}>{selectedAppraisal.research.patents.items.reduce((sum, p) => sum + (Number(p.pointsClaimed) || 0), 0)}</TableCell>
                           </TableRow>
                         </TableBody>
@@ -1181,8 +1213,8 @@ const AppraisalEvaluation = () => {
                     <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 1, color: "var(--color-primary)", display: "block" }}>
                       2.5 Novel Products / Technology
                     </Typography>
-                    <TableContainer component={Paper} sx={{ mb: 3, borderRadius: "12px", background: "var(--bg-paper)", border: "1px solid var(--border-color)", overflow: "hidden" }}>
-                      <Table size="small">
+                    <TableContainer component={Paper} sx={{ mb: 3, borderRadius: "12px", background: "var(--bg-paper)", border: "1px solid var(--border-color)", overflowX: "auto", maxWidth: { xs: "100%", md: "100%", lg: 1000, xl: 1100 }, mx: "auto" }}>
+                      <Table size="small" sx={{ minWidth: 700, mx: "auto" }}>
                         <TableHead sx={{ background: "var(--gradient-primary)" }}>
                           <TableRow>
                             <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 1, width: "80px", whiteSpace: "nowrap" }} align="center">S. No</TableCell>
@@ -1201,7 +1233,11 @@ const AppraisalEvaluation = () => {
                             </TableRow>
                           ))}
                           <TableRow sx={{ background: "rgba(0, 78, 146, 0.04)" }}>
-                            <TableCell colSpan={3} align="right" sx={{ fontWeight: 800, color: "var(--text-primary)", pr: 2 }}>Self-Assessment Points</TableCell>
+                            <TableCell colSpan={3} sx={{ fontWeight: 800, color: "var(--text-primary)", pl: 2 }}>
+                              <Box component="span" sx={{ position: "sticky", left: 16, display: "inline-block", whiteSpace: "nowrap" }}>
+                                Self-Assessment Points
+                              </Box>
+                            </TableCell>
                             <TableCell align="center" sx={{ fontWeight: 900, color: "var(--color-primary)" }}>{selectedAppraisal.research.novelProducts.items.reduce((sum, p) => sum + (Number(p.pointsClaimed) || 0), 0)}</TableCell>
                           </TableRow>
                         </TableBody>
@@ -1216,8 +1252,8 @@ const AppraisalEvaluation = () => {
                     <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 1, color: "var(--color-primary)", display: "block" }}>
                       2.6 Funded Projects & Consultancies
                     </Typography>
-                    <TableContainer component={Paper} sx={{ mb: 3, borderRadius: "12px", background: "var(--bg-paper)", border: "1px solid var(--border-color)", overflow: "hidden" }}>
-                      <Table size="small">
+                    <TableContainer component={Paper} sx={{ mb: 3, borderRadius: "12px", background: "var(--bg-paper)", border: "1px solid var(--border-color)", overflowX: "auto", maxWidth: { xs: "100%", md: "100%", lg: 1000, xl: 1100 }, mx: "auto" }}>
+                      <Table size="small" sx={{ minWidth: 800, mx: "auto" }}>
                         <TableHead sx={{ background: "var(--gradient-primary)" }}>
                           <TableRow>
                             <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 1, width: "80px", whiteSpace: "nowrap" }} align="center">S. No</TableCell>
@@ -1238,7 +1274,11 @@ const AppraisalEvaluation = () => {
                             </TableRow>
                           ))}
                           <TableRow sx={{ background: "rgba(0, 78, 146, 0.04)" }}>
-                            <TableCell colSpan={4} align="right" sx={{ fontWeight: 800, color: "var(--text-primary)", pr: 2 }}>Self-Assessment Points</TableCell>
+                            <TableCell colSpan={4} sx={{ fontWeight: 800, color: "var(--text-primary)", pl: 2 }}>
+                              <Box component="span" sx={{ position: "sticky", left: 16, display: "inline-block", whiteSpace: "nowrap" }}>
+                                Self-Assessment Points
+                              </Box>
+                            </TableCell>
                             <TableCell align="center" sx={{ fontWeight: 900, color: "var(--color-primary)" }}>{selectedAppraisal.research.projectsConsultancies.items.reduce((sum, p) => sum + (Number(p.pointsClaimed) || 0), 0)}</TableCell>
                           </TableRow>
                         </TableBody>
@@ -1335,15 +1375,15 @@ const AppraisalEvaluation = () => {
                 <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 1, color: "var(--color-primary)", display: "block" }}>
                   3.1 Resource Utilization (Max 10 points)
                 </Typography>
-                <TableContainer component={Paper} sx={{ mb: 4, borderRadius: "12px", background: "var(--bg-paper)", border: "1px solid var(--border-color)", overflow: "hidden" }}>
-                  <Table size="small">
+                <TableContainer component={Paper} sx={{ mb: 4, borderRadius: "12px", background: "var(--bg-paper)", border: "1px solid var(--border-color)", overflowX: "auto", maxWidth: { xs: "100%", md: "100%", lg: 1000, xl: 1100 }, mx: "auto" }}>
+                  <Table size="small" sx={{ minWidth: 800, mx: "auto" }}>
                     <TableHead sx={{ background: "var(--gradient-primary)" }}>
                       <TableRow>
                         <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 1, width: "80px", whiteSpace: "nowrap" }}>S. No</TableCell>
                         <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 1 }}>Details of the Event along with dates</TableCell>
                         <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 1, width: "120px" }}>Duration</TableCell>
                         <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 1, width: "180px" }}>Role</TableCell>
-                        <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 1, width: "130px" }}>Points claimed</TableCell>
+                        <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 1, width: "130px" }} align="center">Points claimed</TableCell>
                         <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 1, width: "120px" }}>Status</TableCell>
                         <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 1, width: "80px" }} align="center">Actions</TableCell>
                       </TableRow>
@@ -1438,8 +1478,10 @@ const AppraisalEvaluation = () => {
                             );
                           })}
                           <TableRow sx={{ background: "rgba(0, 78, 146, 0.04)" }}>
-                            <TableCell colSpan={4} align="right" sx={{ fontWeight: 800, pr: 2, color: "var(--text-primary)" }}>
-                              Self-Assessment Points (Max:10)
+                            <TableCell colSpan={4} sx={{ fontWeight: 800, pl: 2, color: "var(--text-primary)" }}>
+                              <Box component="span" sx={{ position: "sticky", left: 16, display: "inline-block", whiteSpace: "nowrap" }}>
+                                Self-Assessment Points (Max:10)
+                              </Box>
                             </TableCell>
                             <TableCell align="center" sx={{ fontWeight: 900, color: "var(--color-primary)" }}>
                               {Math.min(10, selectedAppraisal.resourceUtilizationDetails.reduce((sum, r) => r.status !== 'Rejected' ? sum + calculateResourceUtilizationPoints(r, appraisalConfig) : sum, 0))}
@@ -1464,13 +1506,13 @@ const AppraisalEvaluation = () => {
                 <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 1, color: "var(--color-primary)", display: "block" }}>
                   3.2 Expertise / Contribution (Max 10 points)
                 </Typography>
-                <TableContainer component={Paper} sx={{ mb: 2, borderRadius: "12px", background: "var(--bg-paper)", border: "1px solid var(--border-color)", overflow: "hidden" }}>
-                  <Table size="small">
+                <TableContainer component={Paper} sx={{ mb: 2, borderRadius: "12px", background: "var(--bg-paper)", border: "1px solid var(--border-color)", overflowX: "auto", maxWidth: { xs: "100%", md: "100%", lg: 1000, xl: 1100 }, mx: "auto" }}>
+                  <Table size="small" sx={{ minWidth: 800, mx: "auto" }}>
                     <TableHead sx={{ background: "var(--gradient-primary)" }}>
                       <TableRow>
                         <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 1, width: "80px", whiteSpace: "nowrap" }}>S. No</TableCell>
                         <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 1 }}>Details of the Faculty Expertise/Recognition/Contribution</TableCell>
-                        <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 1, width: "130px", whiteSpace: "nowrap" }}>Points claimed</TableCell>
+                        <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 1, width: "130px", whiteSpace: "nowrap" }} align="center">Points claimed</TableCell>
                         <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 1, width: "120px" }}>Status</TableCell>
                         <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 1, width: "80px" }} align="center">Actions</TableCell>
                       </TableRow>
@@ -1549,8 +1591,10 @@ const AppraisalEvaluation = () => {
                             );
                           })}
                           <TableRow sx={{ background: "rgba(0, 78, 146, 0.04)" }}>
-                            <TableCell colSpan={2} align="right" sx={{ fontWeight: 800, pr: 2, color: "var(--text-primary)" }}>
-                              Self-Assessment Points (Max:10)
+                            <TableCell colSpan={2} sx={{ fontWeight: 800, pl: 2, color: "var(--text-primary)" }}>
+                              <Box component="span" sx={{ position: "sticky", left: 16, display: "inline-block", whiteSpace: "nowrap" }}>
+                                Self-Assessment Points (Max:10)
+                              </Box>
                             </TableCell>
                             <TableCell align="center" sx={{ fontWeight: 900, color: "var(--color-primary)" }}>
                               {Math.min(10, selectedAppraisal.contributionDetails.reduce((sum, r) => r.status !== 'Rejected' ? sum + calculateContributionPoints(r, appraisalConfig) : sum, 0))}
@@ -1626,14 +1670,14 @@ const AppraisalEvaluation = () => {
                 </Box>
                 <Divider sx={{ mb: 2.5 }} />
 
-                <TableContainer component={Paper} sx={{ borderRadius: "12px", background: "var(--bg-paper)", border: "1px solid var(--border-color)", overflow: "hidden" }}>
-                  <Table size="small">
+                <TableContainer component={Paper} sx={{ borderRadius: "12px", background: "var(--bg-paper)", border: "1px solid var(--border-color)", overflowX: "auto", maxWidth: { xs: "100%", md: "100%", lg: 1000, xl: 1100 }, mx: "auto", mb: 4 }}>
+                  <Table size="small" sx={{ minWidth: 800, mx: "auto" }}>
                     <TableHead sx={{ background: "var(--gradient-primary)" }}>
                       <TableRow>
                         <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 1, width: "80px", whiteSpace: "nowrap" }}>S. No</TableCell>
                         <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 1 }}>Details of the Administrative Responsibility</TableCell>
                         <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 1, width: "150px" }}>Assigned by</TableCell>
-                        <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 1, width: "130px", whiteSpace: "nowrap" }}>Points claimed</TableCell>
+                        <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 1, width: "130px", whiteSpace: "nowrap" }} align="center">Points claimed</TableCell>
                         <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 1, width: "120px" }}>Status</TableCell>
                       </TableRow>
                     </TableHead>
@@ -1690,8 +1734,10 @@ const AppraisalEvaluation = () => {
                             );
                           })}
                           <TableRow sx={{ background: "rgba(0, 78, 146, 0.04)" }}>
-                            <TableCell colSpan={3} align="right" sx={{ fontWeight: 800, pr: 2, color: "var(--text-primary)" }}>
-                              Self-Assessment Points (Max:20)
+                            <TableCell colSpan={3} sx={{ fontWeight: 800, pl: 2, color: "var(--text-primary)" }}>
+                              <Box component="span" sx={{ position: "sticky", left: 16, display: "inline-block", whiteSpace: "nowrap" }}>
+                                Self-Assessment Points (Max:20)
+                              </Box>
                             </TableCell>
                             <TableCell align="center" sx={{ fontWeight: 900, color: "var(--color-primary)" }}>
                               {Math.min(20, selectedAppraisal.administrationDetail.roles.filter(r => r.isResponsible).reduce((sum, r) => r.status !== 'Rejected' ? sum + calculateAdministrativePoints(r, appraisalConfig) : sum, 0))}
