@@ -9,15 +9,123 @@ import {
 import { toast } from "sonner";
 import {
     Add, Edit, Delete, AccountTree, Business, Code, School,
-    CheckCircle, Cancel, Warning, ArrowBack
+    CheckCircle, Cancel, Warning, ArrowBack, ChevronRight
 } from "@mui/icons-material";
 import PageHeader from "../../../components/common/PageHeader";
 import API from "../../../api/axios";
+
+const ConnectorLine = ({ color = "var(--color-primary)" }) => (
+    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', my: 2 }}>
+        <Box sx={{ width: '2px', height: '16px', backgroundColor: color }} />
+        <Box sx={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: color }} />
+        <Box sx={{ width: '2px', height: '16px', backgroundColor: color }} />
+    </Box>
+);
+
+const GridConnector = ({ activeIndex, itemsCount, color = "var(--color-primary)", height = 32, noWrap = false, sx = {} }) => {
+    if (activeIndex === null || activeIndex === undefined || activeIndex === -1) return null;
+
+    if (noWrap) {
+        return (
+            <Grid 
+                container 
+                spacing={3} 
+                sx={{ 
+                    mt: -2, 
+                    mb: 1, 
+                    pointerEvents: 'none', 
+                    flexWrap: 'nowrap', 
+                    display: { xs: 'none', sm: 'flex' },
+                    ...sx 
+                }}
+            >
+                {Array.from({ length: itemsCount }).map((_, idx) => {
+                    const isConnector = idx === activeIndex;
+                    return (
+                        <Grid 
+                            item 
+                            xs={true} 
+                            key={idx} 
+                            sx={{ 
+                                display: 'flex',
+                                justifyContent: 'center',
+                                flex: '1 1 0px',
+                                minWidth: 0
+                            }}
+                        >
+                            {isConnector ? (
+                                <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', height: `${height}px`, justifyContent: 'center', width: '100%' }}>
+                                    <Box sx={{ width: '2px', height: `${height}px`, backgroundColor: color, position: 'relative' }}>
+                                        <Box sx={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: color, position: 'absolute', top: -3, left: -2 }} />
+                                        <Box sx={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: color, position: 'absolute', bottom: -3, left: -2 }} />
+                                    </Box>
+                                </Box>
+                            ) : (
+                                <Box sx={{ height: `${height}px` }} />
+                            )}
+                        </Grid>
+                    );
+                })}
+            </Grid>
+        );
+    }
+
+    return (
+        <Box 
+            sx={{ 
+                mt: -2, 
+                mb: 1, 
+                pointerEvents: 'none', 
+                display: { xs: 'none', sm: 'grid' },
+                gridTemplateColumns: {
+                    sm: 'repeat(2, 1fr)',
+                    md: 'repeat(4, 1fr)'
+                },
+                gap: 3,
+                width: '100%',
+                ...sx 
+            }}
+        >
+            {/* Desktop Connector */}
+            <Box sx={{
+                display: { sm: 'none', md: 'flex' },
+                gridColumn: (activeIndex % 4) + 1,
+                justifyContent: 'center',
+                alignItems: 'center',
+                height: `${height}px`
+            }}>
+                <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', height: `${height}px`, justifyContent: 'center', width: '100%' }}>
+                    <Box sx={{ width: '2px', height: `${height}px`, backgroundColor: color, position: 'relative' }}>
+                        <Box sx={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: color, position: 'absolute', top: -3, left: -2 }} />
+                        <Box sx={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: color, position: 'absolute', bottom: -3, left: -2 }} />
+                    </Box>
+                </Box>
+            </Box>
+
+            {/* Tablet Connector */}
+            <Box sx={{
+                display: { sm: 'flex', md: 'none' },
+                gridColumn: (activeIndex % 2) + 1,
+                justifyContent: 'center',
+                alignItems: 'center',
+                height: `${height}px`
+            }}>
+                <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', height: `${height}px`, justifyContent: 'center', width: '100%' }}>
+                    <Box sx={{ width: '2px', height: `${height}px`, backgroundColor: color, position: 'relative' }}>
+                        <Box sx={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: color, position: 'absolute', top: -3, left: -2 }} />
+                        <Box sx={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: color, position: 'absolute', bottom: -3, left: -2 }} />
+                    </Box>
+                </Box>
+            </Box>
+        </Box>
+    );
+};
 
 const AcademicStructure = () => {
     const [activeTab, setActiveTab] = useState(0);
     const [selectedSchool, setSelectedSchool] = useState(null);
     const [selectedDepartment, setSelectedDepartment] = useState(null);
+    const [selectedProgram, setSelectedProgram] = useState(null);
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
 
@@ -61,23 +169,37 @@ const AcademicStructure = () => {
         const { type, mode, data } = modal;
         setSubmitting(true);
         try {
+            // Sanitize populated fields to send only plain IDs
+            const payload = { ...data };
+            if (payload.schoolId && typeof payload.schoolId === 'object') {
+                payload.schoolId = payload.schoolId._id;
+            }
+            if (payload.departmentId && typeof payload.departmentId === 'object') {
+                payload.departmentId = payload.departmentId._id;
+            }
+            if (payload.programId && typeof payload.programId === 'object') {
+                payload.programId = payload.programId._id;
+            }
+
             let res;
             const pluralType = type === 'branch' ? 'branches' : `${type}s`;
             const endpoint = `/api/academics/${pluralType}`;
 
             if (mode === 'add') {
-                res = await API.post(endpoint, data);
+                res = await API.post(endpoint, payload);
             } else {
-                res = await API.put(`${endpoint}/${data._id}`, data);
+                res = await API.put(`${endpoint}/${payload._id}`, payload);
             }
 
             if (res.data.success) {
-                toast.success(`${type.charAt(0).toUpperCase() + type.slice(1)} ${mode === 'add' ? 'added' : 'updated'} successfully!`);
+                const displayName = type === 'branch' ? 'Specialization' : type.charAt(0).toUpperCase() + type.slice(1);
+                toast.success(`${displayName} ${mode === 'add' ? 'added' : 'updated'} successfully!`);
                 setModal({ open: false, type: '', mode: 'add', data: {} });
                 fetchData();
             }
         } catch (error) {
-            toast.error(error.response?.data?.message || `Error saving ${type}.`);
+            const displayName = type === 'branch' ? 'specialization' : type;
+            toast.error(error.response?.data?.message || `Error saving ${displayName}.`);
         } finally {
             setSubmitting(false);
         }
@@ -89,12 +211,14 @@ const AcademicStructure = () => {
             const pluralType = deleteConfirm.type === 'branch' ? 'branches' : `${deleteConfirm.type}s`;
             const res = await API.delete(`/api/academics/${pluralType}/${deleteConfirm.id}`);
             if (res.data.success) {
-                toast.success(`${deleteConfirm.type.charAt(0).toUpperCase() + deleteConfirm.type.slice(1)} deleted successfully.`);
+                const displayName = deleteConfirm.type === 'branch' ? 'Specialization' : deleteConfirm.type.charAt(0).toUpperCase() + deleteConfirm.type.slice(1);
+                toast.success(`${displayName} deleted successfully.`);
                 setDeleteConfirm({ open: false, type: '', id: null, name: "" });
                 fetchData();
             }
         } catch (error) {
-            toast.error(error.response?.data?.message || "Error deleting item.");
+            const displayName = deleteConfirm.type === 'branch' ? 'specialization' : deleteConfirm.type;
+            toast.error(error.response?.data?.message || `Error deleting ${displayName}.`);
         } finally {
             setSubmitting(false);
         }
@@ -102,230 +226,758 @@ const AcademicStructure = () => {
 
     const openModal = (type, mode = 'add', data = {}) => {
         const modalData = { ...data };
+        if (type === 'branch' && mode === 'add') {
+            if (selectedDepartment) {
+                modalData.departmentId = selectedDepartment._id;
+            }
+            if (selectedProgram) {
+                modalData.programId = selectedProgram._id;
+            }
+        }
         setModal({ open: true, type, mode, data: modalData });
     };
 
-    const renderSchoolsAndCentralView = () => {
+    const renderAcademicHierarchy = () => {
         const centralDepts = departments.filter(d => d.type === 'Central');
 
-        return (
-            <Box>
-                {/* SCHOOLS SECTION */}
-                <Box sx={{ 
-                    display: 'flex', 
-                    flexDirection: { xs: 'column', sm: 'row' },
-                    justifyContent: 'space-between', 
-                    alignItems: { xs: 'flex-start', sm: 'center' }, 
-                    gap: { xs: 2, sm: 0 },
-                    mb: 3 
-                }}>
-                    <Box>
-                        <Typography variant="h6" fontWeight={700} sx={{ display: 'flex', alignItems: 'center', gap: 1, color: 'var(--text-primary)' }}>
-                            <Business sx={{ color: 'var(--color-primary)' }} /> Schools
-                        </Typography>
-                        <Typography variant="body2" color="textSecondary">
-                            Schools are the major academic divisions in the university.
-                        </Typography>
-                    </Box>
-                    <Button variant="contained" startIcon={<Add />} onClick={() => openModal('school', 'add')} 
-                        sx={{ 
-                            borderRadius: '50px', 
-                            background: "var(--gradient-primary)", 
-                            textTransform: 'none', 
-                            fontWeight: 700,
-                            width: { xs: '100%', sm: 'auto' }
-                        }}>
-                        Create School
-                    </Button>
-                </Box>
+        // School departments (if a school is selected)
+        const schoolDepts = selectedSchool 
+            ? departments.filter(d => d.schoolId?._id === selectedSchool._id || d.schoolId === selectedSchool._id)
+            : [];
 
-                <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr', md: 'repeat(2, 1fr)', lg: 'repeat(3, 1fr)', xl: 'repeat(4, 1fr)' }, gap: 3, mb: 5 }}>
-                    {schools.map(school => {
-                        const schoolDepts = departments.filter(d => d.schoolId?._id === school._id || d.schoolId === school._id);
-                        const schoolBranches = branches.filter(b => schoolDepts.some(d => d._id === b.departmentId?._id || d._id === b.departmentId));
-                        
-                        return (
-                            <Card key={school._id} sx={{ ...cardDrillStyle, minHeight: '140px', display: 'flex', flexDirection: 'column' }} onClick={() => setSelectedSchool(school)}>
-                                <CardContent sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', p: '24px !important' }}>
-                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
-                                        <Box sx={{ width: 48, height: 48, borderRadius: '50%', background: 'var(--bg-accent-1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                            <School sx={{ color: 'var(--color-primary)' }} />
-                                        </Box>
-                                        <Box>
-                                            <Typography variant="subtitle1" fontWeight={700} sx={{ lineHeight: 1.2, color: 'var(--color-primary)' }}>
-                                                {school.name}
-                                            </Typography>
-                                            <Typography variant="caption" fontWeight={700} color="textSecondary">
-                                                ({school.code})
-                                            </Typography>
-                                        </Box>
-                                    </Box>
-                                    
-                                    <Typography variant="caption" color="textSecondary" sx={{ mb: 'auto', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-                                        {school.description || "Academic division"}
-                                    </Typography>
+        // Programs for the selected department
+        let deptPrograms = [];
+        if (selectedDepartment) {
+            const deptBranches = branches.filter(b => b.departmentId?._id === selectedDepartment._id || b.departmentId === selectedDepartment._id);
+            const programIdsSeen = new Set();
+            deptBranches.forEach(b => {
+                if (b.programId && b.programId._id) {
+                    const progId = b.programId._id.toString();
+                    if (!programIdsSeen.has(progId)) {
+                        programIdsSeen.add(progId);
+                        deptPrograms.push(b.programId);
+                    }
+                }
+            });
 
-                                    <Divider sx={{ my: 2, opacity: 0.5 }} />
-                                    
-                                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                        <Box>
-                                            <Typography variant="caption" color="textSecondary">Branches</Typography>
-                                            <Typography variant="h6" fontWeight={800} color="var(--color-primary)">{schoolBranches.length}</Typography>
-                                        </Box>
-                                        <IconButton size="small" sx={{ border: '1px solid var(--border-color)', color: 'var(--color-primary)' }} onClick={(e) => { e.stopPropagation(); openModal('school', 'edit', school); }}>
-                                            <Edit fontSize="small" />
-                                        </IconButton>
-                                    </Box>
-                                </CardContent>
-                            </Card>
-                        );
-                    })}
-                </Box>
+            if (selectedDepartment.programId) {
+                const prog = programs.find(p => p._id === (selectedDepartment.programId._id || selectedDepartment.programId));
+                if (prog && !programIdsSeen.has(prog._id.toString())) {
+                    programIdsSeen.add(prog._id.toString());
+                    deptPrograms.push(prog);
+                }
+            }
+        }
 
-                {/* CENTRAL DEPARTMENTS SECTION */}
-                <Box sx={{ 
-                    display: 'flex', 
-                    flexDirection: { xs: 'column', sm: 'row' },
-                    justifyContent: 'space-between', 
-                    alignItems: { xs: 'flex-start', sm: 'center' }, 
-                    gap: { xs: 2, sm: 0 },
-                    mb: 3 
-                }}>
-                    <Box>
-                        <Typography variant="h6" fontWeight={700} sx={{ display: 'flex', alignItems: 'center', gap: 1, color: 'var(--text-primary)' }}>
-                            <Business sx={{ color: 'var(--color-primary)' }} /> Central Level Departments
-                        </Typography>
-                        <Typography variant="body2" color="textSecondary">
-                            Departments that operate at the central level and are not under any school.
-                        </Typography>
-                    </Box>
-                    <Button variant="contained" startIcon={<Add />} onClick={() => openModal('department', 'add', { type: 'Central' })} 
-                        sx={{ 
-                            borderRadius: '50px', 
-                            background: "var(--gradient-primary)", 
-                            textTransform: 'none', 
-                            fontWeight: 700,
-                            width: { xs: '100%', sm: 'auto' }
-                        }}>
-                        Add Central Department
-                    </Button>
-                </Box>
-
-                <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr', md: 'repeat(2, 1fr)' }, gap: 3 }}>
-                    {centralDepts.map(dept => {
-                        const deptBranches = branches.filter(b => b.departmentId?._id === dept._id || b.departmentId === dept._id);
-                        return (
-                            <Card key={dept._id} sx={{ ...cardDrillStyle, minHeight: '80px', display: 'flex', alignItems: 'center' }} onClick={() => setSelectedDepartment(dept)}>
-                                <CardContent sx={{ flexGrow: 1, p: '16px 24px !important', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                                        <Box sx={{ width: 40, height: 40, borderRadius: '50%', background: 'var(--bg-accent-1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                            <Typography variant="body2" fontWeight={800} color="var(--color-primary)">{dept.code}</Typography>
-                                        </Box>
-                                        <Box>
-                                            <Typography variant="subtitle2" fontWeight={700} sx={{ color: 'var(--text-primary)' }}>{dept.name}</Typography>
-                                            <Typography variant="caption" color="textSecondary">Branches: {deptBranches.length}</Typography>
-                                        </Box>
-                                    </Box>
-                                    <Box sx={{ display: 'flex', gap: 1 }}>
-                                        <IconButton size="small" onClick={(e) => { e.stopPropagation(); openModal('department', 'edit', dept); }} 
-                                            sx={{ 
-                                                color: 'var(--text-secondary)', 
-                                                p: 0.8,
-                                                borderRadius: '10px',
-                                                border: '1px solid var(--border-color)',
-                                                transition: 'all 0.3s ease',
-                                                "&:hover": { 
-                                                    color: '#fff', 
-                                                    background: 'var(--gradient-primary)',
-                                                    borderColor: 'transparent',
-                                                    transform: 'scale(1.1)',
-                                                    boxShadow: '0 4px 12px rgba(0,0,0,0.2)'
-                                                } 
-                                            }}>
-                                            <Edit fontSize="small" />
-                                        </IconButton>
-                                        <IconButton size="small" onClick={(e) => { e.stopPropagation(); setDeleteConfirm({ open: true, type: 'department', id: dept._id, name: dept.name }); }} 
-                                            sx={{ 
-                                                color: 'var(--text-secondary)', 
-                                                p: 0.8,
-                                                borderRadius: '10px',
-                                                border: '1px solid var(--border-color)',
-                                                transition: 'all 0.3s ease',
-                                                "&:hover": { 
-                                                    color: '#fff', 
-                                                    background: 'linear-gradient(135deg, #ff416c, #ff4b2b)',
-                                                    borderColor: 'transparent',
-                                                    transform: 'scale(1.1)',
-                                                    boxShadow: '0 4px 12px rgba(255,75,43,0.3)'
-                                                } 
-                                            }}>
-                                            <Delete fontSize="small" />
-                                        </IconButton>
-                                    </Box>
-                                </CardContent>
-                            </Card>
-                        );
-                    })}
-                </Box>
-            </Box>
-        );
-    };
-
-    const renderSchoolDepartmentsView = () => {
-        const schoolDepts = departments.filter(d => d.schoolId?._id === selectedSchool._id || d.schoolId === selectedSchool._id);
+        // Specializations for the selected department and program
+        const programBranches = (selectedDepartment && selectedProgram)
+            ? branches.filter(b => 
+                (b.departmentId?._id === selectedDepartment._id || b.departmentId === selectedDepartment._id) &&
+                (b.programId?._id === selectedProgram._id || b.programId === selectedProgram._id)
+              )
+            : [];
 
         return (
-            <Box>
-                <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
-                    <Button startIcon={<ArrowBack />} onClick={() => setSelectedSchool(null)} sx={{ color: 'var(--color-primary)', fontWeight: 700 }}>
-                        Back to Schools
-                    </Button>
-                </Box>
-
-                <Paper sx={{ p: 3, mb: 4, borderRadius: "20px", background: "var(--bg-glass)", border: "1px solid var(--border-color)" }}>
-                    <Typography variant="h5" fontWeight={800} sx={{ color: 'var(--text-primary)', mb: 1 }}>
-                        {selectedSchool.name} <Chip label={selectedSchool.code} size="small" sx={{ ml: 1, fontWeight: 800, background: "var(--gradient-primary)", color: 'white' }} />
-                    </Typography>
-                    <Typography variant="body2" color="textSecondary">
-                        {selectedSchool.description || "Manage academic departments for this school."}
-                    </Typography>
-                </Paper>
-
-                <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr', md: 'repeat(2, 1fr)', lg: 'repeat(3, 1fr)', xl: 'repeat(4, 1fr)' }, gap: 3 }}>
-                    <Card
-                        sx={{ ...cardDrillStyle, border: "2px dashed var(--color-primary)", background: "var(--bg-accent-1)", display: "flex", alignItems: "center", justifyContent: "center", minHeight: "140px", boxShadow: 'none' }}
-                        onClick={() => openModal('department', 'add', { type: 'Academic', schoolId: selectedSchool._id })}
-                    >
-                        <Box sx={{ textAlign: "center" }}>
-                            <Box sx={{ width: 54, height: 54, borderRadius: '50%', border: '2px solid var(--color-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', background: "var(--bg-glass)" }}>
-                                <Add sx={{ fontSize: 32, color: 'var(--color-primary)' }} />
-                            </Box>
-                            <Typography variant="body1" fontWeight={800} sx={{ color: 'var(--color-primary)' }}>Add Department</Typography>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                {/* SCHOOLS ROW */}
+                <Box>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                        <Box>
+                            <Typography variant="h6" fontWeight={800} sx={{ display: 'flex', alignItems: 'center', gap: 1.5, color: 'var(--text-primary)' }}>
+                                <School sx={{ color: 'var(--color-primary)' }} /> Schools
+                            </Typography>
+                            <Typography variant="body2" color="textSecondary">
+                                Schools are the major academic divisions in the university. Click to explore.
+                            </Typography>
                         </Box>
-                    </Card>
+                        <Button variant="contained" startIcon={<Add />} onClick={() => openModal('school', 'add')} 
+                            sx={{ borderRadius: '50px', background: "var(--gradient-primary)", textTransform: 'none', fontWeight: 700 }}>
+                            Create School
+                        </Button>
+                    </Box>
+                    
+                    <Grid container spacing={3} sx={{ mb: 2, flexWrap: 'nowrap' }}>
+                        {schools.map(school => {
+                            const sDepts = departments.filter(d => d.schoolId?._id === school._id || d.schoolId === school._id);
+                            const sBranches = branches.filter(b => sDepts.some(d => d._id === b.departmentId?._id || d._id === b.departmentId));
+                            const sProgs = programs.filter(p => p.schoolId?._id === school._id || p.schoolId === school._id);
+                            const isSelected = selectedSchool?._id === school._id;
+                            
+                            return (
+                                <Grid item xs key={school._id} sx={{ display: 'flex', flexDirection: 'column', flex: '1 1 0px', minWidth: 0 }}>
+                                    <Card 
+                                        sx={{ 
+                                            height: '100%',
+                                            display: 'flex',
+                                            flexDirection: 'column',
+                                            borderRadius: "12px",
+                                            background: "#ffffff",
+                                            border: isSelected ? '1.5px solid var(--color-primary)' : '1px solid rgba(0, 0, 0, 0.06)',
+                                            boxShadow: isSelected ? '0 8px 20px rgba(37, 99, 235, 0.1)' : '0 2px 8px rgba(0,0,0,0.02)',
+                                            cursor: 'pointer',
+                                            position: 'relative',
+                                            transition: 'all 0.2s ease-in-out',
+                                            '&:hover': {
+                                                transform: 'translateY(-2px)',
+                                                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.05)',
+                                                '& .edit-school-btn': { opacity: 1, visibility: 'visible' }
+                                            }
+                                        }} 
+                                        onClick={() => {
+                                            if (isSelected) {
+                                                setSelectedSchool(null);
+                                                setSelectedDepartment(null);
+                                                setSelectedProgram(null);
+                                            } else {
+                                                setSelectedSchool(school);
+                                                setSelectedDepartment(null);
+                                                setSelectedProgram(null);
+                                            }
+                                        }}
+                                    >
+                                        <CardContent sx={{ p: '20px !important', display: 'flex', flexDirection: 'column', height: '100%', flexGrow: 1 }}>
+                                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1.5 }}>
+                                                <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'center' }}>
+                                                    <Box sx={{ 
+                                                        width: 40, 
+                                                        height: 40, 
+                                                        borderRadius: '50%', 
+                                                        background: 'var(--color-primary)', 
+                                                        display: 'flex', 
+                                                        alignItems: 'center', 
+                                                        justifyContent: 'center',
+                                                        flexShrink: 0
+                                                    }}>
+                                                        <School sx={{ color: '#fff', fontSize: 20 }} />
+                                                    </Box>
+                                                    <Box>
+                                                        <Typography variant="subtitle1" fontWeight={700} sx={{ color: '#1e3a8a', fontSize: '0.95rem', lineHeight: 1.2 }}>
+                                                            {school.name}
+                                                        </Typography>
+                                                        <Typography variant="caption" fontWeight={600} color="textSecondary" sx={{ fontSize: '0.75rem' }}>
+                                                            ({school.code})
+                                                        </Typography>
+                                                    </Box>
+                                                </Box>
+                                                
+                                                <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center', mt: -0.5, mr: -1 }}>
+                                                    <IconButton 
+                                                        size="small" 
+                                                        className="edit-school-btn"
+                                                        onClick={(e) => { e.stopPropagation(); openModal('school', 'edit', school); }}
+                                                        sx={{ 
+                                                            color: 'text.secondary', 
+                                                            p: 0.5, 
+                                                            opacity: 0, 
+                                                            visibility: 'hidden', 
+                                                            transition: 'all 0.2s ease',
+                                                            '&:hover': { color: 'var(--color-primary)', background: 'rgba(37, 99, 235, 0.08)' } 
+                                                        }}
+                                                    >
+                                                        <Edit sx={{ fontSize: 16 }} />
+                                                    </IconButton>
+                                                    <ChevronRight sx={{ color: 'text.secondary', fontSize: 18, opacity: 0.5 }} />
+                                                </Box>
+                                            </Box>
 
-                    {schoolDepts.map(dept => (
-                        <Card key={dept._id} sx={{ ...cardDrillStyle, width: '100%', minHeight: '120px', display: 'flex', flexDirection: 'column' }} onClick={() => setSelectedDepartment(dept)}>
-                            <CardContent sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', p: '24px !important' }}>
-                                <Box sx={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1.5 }}>
-                                    <Typography variant="subtitle1" fontWeight={700} sx={{ lineHeight: 1.3, color: 'var(--text-primary)' }}>{dept.name}</Typography>
-                                    <IconButton size="small" onClick={(e) => { e.stopPropagation(); openModal('department', 'edit', dept); }} sx={{ color: 'var(--text-secondary)' }}><Edit sx={{ fontSize: 18 }} /></IconButton>
-                                </Box>
-                                <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mb: 2 }}>
-                                    <Chip label={dept.code} size="small" sx={{ fontWeight: 800, height: 22, fontSize: '0.7rem', background: "var(--gradient-primary)", color: '#fff' }} />
-                                    <Chip label="Academic" size="small" variant="outlined" sx={{ fontWeight: 800, height: 22, fontSize: '0.65rem', color: '#2e7d32', border: '1.5px solid #2e7d32' }} />
-                                </Box>
-                                <Divider sx={{ mb: 1.5, mt: 'auto', opacity: 0.5 }} />
-                                <Typography variant="caption" color="textSecondary" sx={{ display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-                                    {dept.description || "No description"}
-                                </Typography>
-                            </CardContent>
-                        </Card>
-                    ))}
+                                            <Typography variant="body2" color="textSecondary" sx={{ mb: 2.5, minHeight: 36, fontSize: '0.8rem', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                                                {school.description || "Academic division for engineering, technology, and sciences."}
+                                            </Typography>
+
+                                            <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 1, textAlign: 'left', mt: 'auto' }}>
+                                                <Box>
+                                                    <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', fontSize: '0.65rem', fontWeight: 600 }}>
+                                                        Departments
+                                                    </Typography>
+                                                    <Typography variant="subtitle1" sx={{ fontWeight: 800, color: 'text.primary', mt: 0.25, fontSize: '0.95rem' }}>
+                                                        {sDepts.length}
+                                                    </Typography>
+                                                </Box>
+                                                <Box>
+                                                    <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', fontSize: '0.65rem', fontWeight: 600 }}>
+                                                        Programs
+                                                    </Typography>
+                                                    <Typography variant="subtitle1" sx={{ fontWeight: 800, color: 'text.primary', mt: 0.25, fontSize: '0.95rem' }}>
+                                                        {sProgs.length}
+                                                    </Typography>
+                                                </Box>
+                                                <Box>
+                                                    <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', fontSize: '0.65rem', fontWeight: 600 }}>
+                                                        Specializations
+                                                    </Typography>
+                                                    <Typography variant="subtitle1" sx={{ fontWeight: 800, color: 'text.primary', mt: 0.25, fontSize: '0.95rem' }}>
+                                                        {sBranches.length}
+                                                    </Typography>
+                                                </Box>
+                                            </Box>
+                                        </CardContent>
+                                    </Card>
+                                </Grid>
+                            );
+                        })}
+                    </Grid>
                 </Box>
+
+                {/* SCHOOL TO DEPARTMENTS CONNECTOR */}
+                {selectedSchool && (
+                    <>
+                        <GridConnector 
+                            activeIndex={schools.findIndex(s => s._id === selectedSchool._id)} 
+                            itemsCount={schools.length} 
+                            color="#10B981" 
+                            noWrap
+                        />
+                        <Box sx={{ display: { xs: 'flex', sm: 'none' }, justifyContent: 'center', mt: -1, mb: 1 }}>
+                            <ConnectorLine color="#10B981" />
+                        </Box>
+                    </>
+                )}
+
+                {/* DEPARTMENTS SECTION */}
+                {selectedSchool && (
+                    <Box sx={{ p: 2.5, borderRadius: '16px', background: '#f4fbf7', border: '1px solid #d1f2e1', mb: 2, ml: { xs: 1.5, sm: 3, md: 4 } }}>
+                        {/* Header */}
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2.5 }}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                                <Box sx={{ 
+                                    width: 32, 
+                                    height: 32, 
+                                    borderRadius: '50%', 
+                                    background: '#10B981', 
+                                    display: 'flex', 
+                                    alignItems: 'center', 
+                                    justifyContent: 'center',
+                                    boxShadow: '0 4px 10px rgba(16, 185, 129, 0.2)'
+                                }}>
+                                    <Business sx={{ color: '#fff', fontSize: 16 }} />
+                                </Box>
+                                <Box>
+                                    <Typography variant="subtitle1" fontWeight={700} sx={{ color: '#1b4332', fontSize: '1rem', lineHeight: 1.2 }}>
+                                        {selectedSchool.name} ({selectedSchool.code}) - Departments
+                                    </Typography>
+                                    <Typography variant="caption" color="textSecondary">
+                                        Click a department to view its programs and specializations.
+                                    </Typography>
+                                </Box>
+                            </Box>
+                            <Typography variant="body2" sx={{ color: '#047857', fontWeight: 700, fontSize: '0.8rem' }}>
+                                {schoolDepts.length} Departments
+                            </Typography>
+                        </Box>
+
+                        {/* Departments grid */}
+                        <Grid container spacing={3}>
+                            {schoolDepts.map(dept => {
+                                const isSelected = selectedDepartment?._id === dept._id;
+                                return (
+                                    <Grid item xs={12} sm={6} md={3} key={dept._id} sx={{ display: 'flex', flexDirection: 'column' }}>
+                                        <Card 
+                                            sx={{ 
+                                                height: '100%',
+                                                display: 'flex',
+                                                flexDirection: 'column',
+                                                borderRadius: "12px",
+                                                background: "#ffffff",
+                                                border: isSelected ? '1.5px solid #10B981' : '1px solid rgba(0, 0, 0, 0.06)',
+                                                boxShadow: isSelected ? '0 8px 20px rgba(16, 185, 129, 0.1)' : '0 2px 8px rgba(0,0,0,0.02)',
+                                                cursor: 'pointer',
+                                                position: 'relative',
+                                                transition: 'all 0.2s ease-in-out',
+                                                minHeight: '100px',
+                                                '&:hover': {
+                                                    transform: 'translateY(-2px)',
+                                                    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.05)',
+                                                    '& .edit-dept-btn': { opacity: 1, visibility: 'visible' }
+                                                }
+                                            }} 
+                                            onClick={() => {
+                                                if (isSelected) {
+                                                    setSelectedDepartment(null);
+                                                    setSelectedProgram(null);
+                                                } else {
+                                                    setSelectedDepartment(dept);
+                                                    setSelectedProgram(null);
+                                                }
+                                            }}
+                                        >
+                                            <CardContent sx={{ p: '16px !important', display: 'flex', flexDirection: 'column', height: '100%', flexGrow: 1 }}>
+                                                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
+                                                    <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'center' }}>
+                                                        <Box sx={{ 
+                                                            width: 32, 
+                                                            height: 32, 
+                                                            borderRadius: '50%', 
+                                                            background: '#10B981', 
+                                                            display: 'flex', 
+                                                            alignItems: 'center', 
+                                                            justifyContent: 'center',
+                                                            flexShrink: 0
+                                                        }}>
+                                                            <Business sx={{ color: '#fff', fontSize: 16 }} />
+                                                        </Box>
+                                                        <Box>
+                                                            <Typography variant="subtitle1" fontWeight={700} sx={{ color: '#065f46', fontSize: '0.85rem', lineHeight: 1.2 }}>
+                                                                {dept.name}
+                                                            </Typography>
+                                                            <Typography variant="caption" fontWeight={600} color="textSecondary" sx={{ fontSize: '0.75rem', mt: 0.25, display: 'block' }}>
+                                                                {dept.code}
+                                                            </Typography>
+                                                        </Box>
+                                                    </Box>
+                                                    
+                                                    <IconButton 
+                                                        size="small" 
+                                                        className="edit-dept-btn"
+                                                        onClick={(e) => { e.stopPropagation(); openModal('department', 'edit', dept); }}
+                                                        sx={{ 
+                                                            color: 'text.secondary', 
+                                                            p: 0.5, 
+                                                            opacity: 0, 
+                                                            visibility: 'hidden', 
+                                                            transition: 'all 0.2s ease',
+                                                            mt: -0.5, 
+                                                            mr: -1, 
+                                                            '&:hover': { color: '#10B981', background: 'rgba(16, 185, 129, 0.08)' } 
+                                                        }}
+                                                    >
+                                                        <Edit sx={{ fontSize: 16 }} />
+                                                    </IconButton>
+                                                </Box>
+ 
+                                                <Box sx={{ mt: 'auto', pt: 1 }}>
+                                                    <Typography variant="caption" sx={{ color: '#10B981', fontWeight: 700, fontSize: '0.75rem', textTransform: 'none' }}>
+                                                        Specializations
+                                                    </Typography>
+                                                </Box>
+                                            </CardContent>
+                                        </Card>
+                                    </Grid>
+                                );
+                            })}
+                            
+                            {/* Add Department card */}
+                            <Grid item xs={12} sm={6} md={3}>
+                                <Card
+                                    sx={{ 
+                                        border: "1.5px dashed #10B981", 
+                                        background: "rgba(16,185,129,0.02)", 
+                                        display: "flex", 
+                                        alignItems: "center", 
+                                        justifyContent: "center", 
+                                        borderRadius: "12px",
+                                        minHeight: "100px", 
+                                        boxShadow: 'none',
+                                        cursor: 'pointer',
+                                        transition: 'all 0.3s ease-in-out',
+                                        "&:hover": {
+                                            background: "rgba(16,185,129,0.05)",
+                                            borderColor: "#059669",
+                                            transform: 'translateY(-2px)'
+                                        }
+                                    }}
+                                    onClick={() => openModal('department', 'add', { type: 'Academic', schoolId: selectedSchool._id })}
+                                >
+                                    <Box sx={{ textAlign: "center", p: 1.5 }}>
+                                        <Add sx={{ fontSize: 20, color: '#10B981', mb: 0.25 }} />
+                                        <Typography variant="subtitle2" fontWeight={700} sx={{ color: '#10B981', fontSize: '0.8rem' }}>Add Department</Typography>
+                                    </Box>
+                                </Card>
+                            </Grid>
+                        </Grid>
+                    </Box>
+                )}
+
+                {/* DEPARTMENTS TO PROGRAMS CONNECTOR */}
+                {selectedSchool && selectedDepartment && (
+                    <>
+                        <GridConnector 
+                            activeIndex={schoolDepts.findIndex(d => d._id === selectedDepartment._id)} 
+                            itemsCount={schoolDepts.length + 1} 
+                            color="#10B981" 
+                            sx={{ ml: { xs: 1.5, sm: 3, md: 4 }, px: 2.5 }}
+                        />
+                        <Box sx={{ display: { xs: 'flex', sm: 'none' }, justifyContent: 'center', mt: -1, mb: 1, ml: { xs: 1.5, sm: 3, md: 4 } }}>
+                            <ConnectorLine color="#10B981" />
+                        </Box>
+                    </>
+                )}
+
+                {/* PROGRAMS SECTION */}
+                {selectedDepartment && (
+                    <Box sx={{ p: 2, borderRadius: '12px', background: '#f0f9ff', border: '1px solid #bae6fd', mb: 2, ml: { xs: 2.5, sm: 5, md: 8 } }}>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                                <Box sx={{ 
+                                    width: 28, 
+                                    height: 28, 
+                                    borderRadius: '50%', 
+                                    background: 'var(--color-primary)', 
+                                    display: 'flex', 
+                                    alignItems: 'center', 
+                                    justifyContent: 'center',
+                                    boxShadow: '0 4px 10px rgba(2, 132, 199, 0.2)'
+                                }}>
+                                    <School sx={{ color: '#fff', fontSize: 14 }} />
+                                </Box>
+                                <Box>
+                                    <Typography variant="subtitle2" fontWeight={800} sx={{ color: '#0369a1', fontSize: '0.925rem', lineHeight: 1.2 }}>
+                                        {selectedDepartment.name} ({selectedDepartment.code}) - Programs
+                                    </Typography>
+                                    <Typography variant="caption" color="textSecondary" sx={{ fontSize: '0.7rem' }}>
+                                        Click a program to view its specializations.
+                                    </Typography>
+                                </Box>
+                            </Box>
+                            <Typography variant="body2" sx={{ color: '#0369a1', fontWeight: 700, fontSize: '0.75rem' }}>
+                                {deptPrograms.length} Programs
+                            </Typography>
+                        </Box>
+ 
+                        <Grid container spacing={3}>
+                            {deptPrograms.map(prog => {
+                                const isSelected = selectedProgram?._id === prog._id;
+                                return (
+                                    <Grid item xs={12} sm={6} md={3} key={prog._id} sx={{ display: 'flex', flexDirection: 'column' }}>
+                                        <Card 
+                                            sx={{ 
+                                                height: '100%',
+                                                display: 'flex',
+                                                flexDirection: 'column',
+                                                borderRadius: "10px",
+                                                background: "#ffffff",
+                                                border: isSelected ? '1.5px solid var(--color-primary)' : '1px solid rgba(0, 0, 0, 0.06)',
+                                                boxShadow: isSelected ? '0 8px 20px rgba(37, 99, 235, 0.1)' : '0 2px 8px rgba(0,0,0,0.02)',
+                                                cursor: 'pointer',
+                                                position: 'relative',
+                                                transition: 'all 0.2s ease-in-out',
+                                                minHeight: '85px',
+                                                '&:hover': {
+                                                    transform: 'translateY(-2px)',
+                                                    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.05)',
+                                                    '& .edit-prog-btn': { opacity: 1, visibility: 'visible' }
+                                                }
+                                            }} 
+                                            onClick={() => {
+                                                if (isSelected) {
+                                                    setSelectedProgram(null);
+                                                } else {
+                                                    setSelectedProgram(prog);
+                                                }
+                                            }}
+                                        >
+                                            <CardContent sx={{ p: '12px !important', display: 'flex', flexDirection: 'column', height: '100%', flexGrow: 1 }}>
+                                                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
+                                                    <Box>
+                                                        <Typography variant="subtitle2" fontWeight={700} sx={{ color: 'text.primary', fontSize: '0.825rem', lineHeight: 1.2 }}>
+                                                            {prog.name}
+                                                        </Typography>
+                                                        <Typography variant="caption" fontWeight={600} color="textSecondary" sx={{ mt: 0.25, display: 'block', fontSize: '0.725rem' }}>
+                                                            {prog.type} · {prog.durationYears || 4} Years
+                                                        </Typography>
+                                                    </Box>
+                                                    
+                                                    <IconButton 
+                                                        size="small" 
+                                                        className="edit-prog-btn"
+                                                        onClick={(e) => { e.stopPropagation(); openModal('program', 'edit', prog); }}
+                                                        sx={{ 
+                                                            color: 'text.secondary', 
+                                                            p: 0.5, 
+                                                            opacity: 0, 
+                                                            visibility: 'hidden', 
+                                                            transition: 'all 0.2s ease',
+                                                            mt: -0.5, 
+                                                            mr: -1, 
+                                                            '&:hover': { color: 'var(--color-primary)', background: 'rgba(37, 99, 235, 0.08)' } 
+                                                        }}
+                                                    >
+                                                        <Edit sx={{ fontSize: 14 }} />
+                                                    </IconButton>
+                                                </Box>
+ 
+                                                <Box sx={{ mt: 'auto', display: 'flex', gap: 1, alignItems: 'center', pt: 1 }}>
+                                                    <Chip 
+                                                        label={prog.programPattern === 'YEAR' ? 'YEAR WISE' : 'SEMESTER WISE'} 
+                                                        size="small" 
+                                                        sx={{ 
+                                                            fontWeight: 700, 
+                                                            height: 18, 
+                                                            fontSize: '0.6rem', 
+                                                            borderRadius: '4px', 
+                                                            bgcolor: 'rgba(37, 99, 235, 0.08)', 
+                                                            color: 'var(--color-primary)' 
+                                                        }} 
+                                                    />
+                                                </Box>
+                                            </CardContent>
+                                        </Card>
+                                    </Grid>
+                                );
+                            })}
+ 
+                            {/* Add Program card */}
+                            <Grid item xs={12} sm={6} md={3}>
+                                <Card
+                                    sx={{ 
+                                        border: "1.5px dashed var(--color-primary)", 
+                                        background: "rgba(37,99,235,0.02)", 
+                                        display: "flex", 
+                                        alignItems: "center", 
+                                        justifyContent: "center", 
+                                        borderRadius: "10px",
+                                        minHeight: "85px", 
+                                        boxShadow: 'none',
+                                        cursor: 'pointer',
+                                        transition: 'all 0.2s ease-in-out',
+                                        "&:hover": {
+                                            background: "rgba(37,99,235,0.05)",
+                                            borderColor: "#1d4ed8",
+                                            transform: 'translateY(-2px)'
+                                        }
+                                    }}
+                                    onClick={() => openModal('branch', 'add', { departmentId: selectedDepartment._id })}
+                                >
+                                    <Box sx={{ textAlign: "center", p: 1.5 }}>
+                                        <Add sx={{ fontSize: 20, color: 'var(--color-primary)', mb: 0.25 }} />
+                                        <Typography variant="subtitle2" fontWeight={700} sx={{ color: 'var(--color-primary)', fontSize: '0.75rem' }}>Add Program</Typography>
+                                    </Box>
+                                </Card>
+                            </Grid>
+                        </Grid>
+                    </Box>
+                )}
+
+                {/* PROGRAMS TO SPECIALIZATIONS CONNECTOR */}
+                {selectedDepartment && selectedProgram && (
+                    <>
+                        <GridConnector 
+                            activeIndex={deptPrograms.findIndex(p => p._id === selectedProgram._id)} 
+                            itemsCount={deptPrograms.length + 1} 
+                            color="var(--color-primary)" 
+                            sx={{ ml: { xs: 2.5, sm: 5, md: 8 }, px: 2 }}
+                        />
+                        <Box sx={{ display: { xs: 'flex', sm: 'none' }, justifyContent: 'center', mt: -1, mb: 1, ml: { xs: 2.5, sm: 5, md: 8 } }}>
+                            <ConnectorLine color="var(--color-primary)" />
+                        </Box>
+                    </>
+                )}
+
+                {/* SPECIALIZATIONS SECTION */}
+                {selectedProgram && (
+                    <Box sx={{ p: 1.5, borderRadius: '10px', background: '#faf5ff', border: '1px solid #f3e8ff', mb: 2, ml: { xs: 3.5, sm: 7, md: 12 } }}>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5 }}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                                <Box sx={{ 
+                                    width: 24, 
+                                    height: 24, 
+                                    borderRadius: '50%', 
+                                    background: '#8b5cf6', 
+                                    display: 'flex', 
+                                    alignItems: 'center', 
+                                    justifyContent: 'center',
+                                    boxShadow: '0 4px 10px rgba(139, 92, 246, 0.2)'
+                                }}>
+                                    <AccountTree sx={{ color: '#fff', fontSize: 12 }} />
+                                </Box>
+                                <Box>
+                                    <Typography variant="subtitle2" fontWeight={800} sx={{ color: '#5b21b6', fontSize: '0.85rem', lineHeight: 1.2 }}>
+                                        {selectedProgram.name} - Specializations
+                                    </Typography>
+                                    <Typography variant="caption" color="textSecondary" sx={{ fontSize: '0.65rem' }}>
+                                        Manage the academic specializations under this program.
+                                    </Typography>
+                                </Box>
+                            </Box>
+                            <Typography variant="body2" sx={{ color: '#6d28d9', fontWeight: 700, fontSize: '0.7rem' }}>
+                                {programBranches.length} Specializations
+                            </Typography>
+                        </Box>
+
+                        <Grid container spacing={2}>
+                            {programBranches.map(spec => (
+                                <Grid item xs={12} sm={6} md={3} key={spec._id} sx={{ display: 'flex', flexDirection: 'column' }}>
+                                    <Card 
+                                        sx={{ 
+                                            borderRadius: "8px",
+                                            background: "#ffffff",
+                                            border: '1px solid rgba(0, 0, 0, 0.08)',
+                                            boxShadow: '0 4px 12px rgba(0,0,0,0.03)',
+                                            transition: 'all 0.3s ease',
+                                            minHeight: '70px',
+                                            display: 'flex',
+                                            flexDirection: 'column',
+                                            '&:hover': {
+                                                transform: 'translateY(-2px)',
+                                                boxShadow: '0 8px 24px rgba(0, 0, 0, 0.08)'
+                                            }
+                                        }}
+                                    >
+                                        <CardContent sx={{ p: '10px 12px !important', display: 'flex', flexDirection: 'column', height: '100%', flexGrow: 1 }}>
+                                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                                                <Box>
+                                                    <Typography variant="subtitle2" fontWeight={700} sx={{ color: 'text.primary', fontSize: '0.775rem', lineHeight: 1.2 }}>
+                                                        {spec.name}
+                                                    </Typography>
+                                                    <Typography variant="caption" fontWeight={600} color="textSecondary" sx={{ mt: 0.25, display: 'block', fontSize: '0.7rem' }}>
+                                                        CODE: {spec.code}
+                                                    </Typography>
+                                                </Box>
+                                                
+                                                <Box sx={{ display: 'flex', gap: 0.25, mt: -0.5, mr: -0.5 }}>
+                                                    <IconButton 
+                                                        size="small" 
+                                                        onClick={() => openModal('branch', 'edit', spec)}
+                                                        sx={{ color: 'text.secondary', p: 0.25, '&:hover': { color: 'var(--color-primary)', background: 'rgba(2, 132, 199, 0.08)' } }}
+                                                    >
+                                                        <Edit sx={{ fontSize: 14 }} />
+                                                    </IconButton>
+                                                    <IconButton 
+                                                        size="small" 
+                                                        onClick={() => setDeleteConfirm({ open: true, type: 'branch', id: spec._id, name: spec.name })}
+                                                        sx={{ color: 'error.main', p: 0.25, '&:hover': { background: 'rgba(239, 68, 68, 0.08)' } }}
+                                                    >
+                                                        <Delete sx={{ fontSize: 14 }} />
+                                                    </IconButton>
+                                                </Box>
+                                            </Box>
+                                        </CardContent>
+                                    </Card>
+                                </Grid>
+                            ))}
+
+                            {/* Add Specialization card */}
+                            <Grid item xs={12} sm={6} md={3}>
+                                <Card
+                                    sx={{ 
+                                        border: "1.5px dashed #8b5cf6", 
+                                        background: "rgba(139,92,246,0.02)", 
+                                        display: "flex", 
+                                        alignItems: "center", 
+                                        justifyContent: "center", 
+                                        borderRadius: "8px",
+                                        minHeight: "70px", 
+                                        boxShadow: 'none',
+                                        cursor: 'pointer',
+                                        transition: 'all 0.3s ease',
+                                        "&:hover": {
+                                            background: "rgba(139,92,246,0.06)",
+                                            borderColor: "#7c3aed",
+                                            transform: 'translateY(-2px)'
+                                        }
+                                    }}
+                                    onClick={() => openModal('branch', 'add', { departmentId: selectedDepartment._id, programId: selectedProgram._id })}
+                                >
+                                    <Box sx={{ textAlign: "center", p: 1 }}>
+                                        <Add sx={{ fontSize: 20, color: '#8b5cf6', mb: 0.25 }} />
+                                        <Typography variant="subtitle2" fontWeight={700} sx={{ color: '#8b5cf6', fontSize: '0.725rem' }}>Add Specialization</Typography>
+                                    </Box>
+                                </Card>
+                            </Grid>
+                        </Grid>
+                    </Box>
+                )}
+
+                {/* CENTRAL LEVEL DEPARTMENTS */}
+                {(!selectedSchool || selectedDepartment?.type === 'Central') && (
+                    <Box sx={{ mt: 4 }}>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                            <Box>
+                                <Typography variant="h6" fontWeight={800} sx={{ display: 'flex', alignItems: 'center', gap: 1.5, color: 'var(--text-primary)' }}>
+                                    <Business sx={{ color: 'var(--color-primary)' }} /> Central Level Departments
+                                </Typography>
+                                <Typography variant="body2" color="textSecondary">
+                                    Departments operating at the central level. Click to explore.
+                                </Typography>
+                            </Box>
+                            <Button variant="contained" startIcon={<Add />} onClick={() => openModal('department', 'add', { type: 'Central' })} 
+                                sx={{ borderRadius: '50px', background: "var(--gradient-primary)", textTransform: 'none', fontWeight: 700 }}>
+                                Add Central Department
+                            </Button>
+                        </Box>
+
+                        <Grid container spacing={3}>
+                            {centralDepts.map(dept => {
+                                const isSelected = selectedDepartment?._id === dept._id;
+                                return (
+                                    <Grid item xs={12} sm={6} md={3} key={dept._id} sx={{ display: 'flex', flexDirection: 'column' }}>
+                                        <Card 
+                                            sx={{ 
+                                                height: '100%',
+                                                display: 'flex',
+                                                flexDirection: 'column',
+                                                borderRadius: "12px",
+                                                background: "#ffffff",
+                                                border: isSelected ? '1.5px solid var(--color-primary)' : '1px solid rgba(0, 0, 0, 0.08)',
+                                                boxShadow: isSelected ? '0 8px 20px rgba(37, 99, 235, 0.1)' : '0 2px 8px rgba(0,0,0,0.02)',
+                                                cursor: 'pointer',
+                                                position: 'relative',
+                                                transition: 'all 0.3s ease',
+                                                minHeight: '100px',
+                                                '&:hover': {
+                                                    transform: 'translateY(-2px)',
+                                                    boxShadow: '0 8px 24px rgba(0, 0, 0, 0.08)'
+                                                }
+                                            }} 
+                                            onClick={() => {
+                                                if (isSelected) {
+                                                    setSelectedDepartment(null);
+                                                    setSelectedProgram(null);
+                                                } else {
+                                                    setSelectedSchool(null); // Clear active school
+                                                    setSelectedDepartment(dept);
+                                                    setSelectedProgram(null);
+                                                }
+                                            }}
+                                        >
+                                            <CardContent sx={{ p: '16px !important', display: 'flex', flexDirection: 'column', height: '100%', flexGrow: 1 }}>
+                                                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
+                                                    <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'center' }}>
+                                                        <Box sx={{ 
+                                                            width: 32, 
+                                                            height: 32, 
+                                                            borderRadius: '50%', 
+                                                            background: 'var(--color-primary)', 
+                                                            display: 'flex', 
+                                                            alignItems: 'center', 
+                                                            justifyContent: 'center',
+                                                            flexShrink: 0
+                                                        }}>
+                                                            <Business sx={{ color: '#fff', fontSize: 16 }} />
+                                                        </Box>
+                                                        <Box>
+                                                            <Typography variant="subtitle1" fontWeight={700} sx={{ color: '#1e3a8a', fontSize: '0.85rem', lineHeight: 1.2 }}>
+                                                                {dept.name}
+                                                            </Typography>
+                                                            <Typography variant="caption" fontWeight={600} color="textSecondary" sx={{ fontSize: '0.75rem', mt: 0.25, display: 'block' }}>
+                                                                {dept.code}
+                                                            </Typography>
+                                                        </Box>
+                                                    </Box>
+                                                    
+                                                    <IconButton 
+                                                        size="small" 
+                                                        onClick={(e) => { e.stopPropagation(); openModal('department', 'edit', dept); }}
+                                                        sx={{ color: 'text.secondary', p: 0.5, mt: -0.5, mr: -1, '&:hover': { color: 'var(--color-primary)', background: 'rgba(2, 132, 199, 0.08)' } }}
+                                                    >
+                                                        <Edit sx={{ fontSize: 16 }} />
+                                                    </IconButton>
+                                                </Box>
+                                                <Box sx={{ mt: 'auto', pt: 1 }}>
+                                                    <Typography variant="caption" sx={{ color: 'var(--color-primary)', fontWeight: 700, fontSize: '0.75rem', textTransform: 'none' }}>
+                                                        Specializations
+                                                    </Typography>
+                                                </Box>
+                                            </CardContent>
+                                        </Card>
+                                    </Grid>
+                                );
+                            })}
+                        </Grid>
+                    </Box>
+                )}
             </Box>
         );
-    };
+    };;
 
     const renderProgramsView = () => {
         return (
@@ -399,6 +1051,9 @@ const AcademicStructure = () => {
 
                             <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mb: 2 }}>
                                 <Chip label={prog.code} size="small" sx={{ fontWeight: 800, height: 22, fontSize: '0.7rem', borderRadius: '50px', background: "var(--gradient-primary)", color: '#fff' }} />
+                                {prog.schoolId && (
+                                    <Chip label={`School: ${prog.schoolId.code || prog.schoolId.name}`} size="small" variant="outlined" sx={{ fontWeight: 700, height: 22, fontSize: '0.65rem', borderRadius: '50px', border: '1.5px solid #f59e0b', color: '#f59e0b' }} />
+                                )}
                                 <Chip label={prog.type} size="small" variant="outlined" sx={{ fontWeight: 700, height: 22, fontSize: '0.65rem', borderRadius: '50px', border: '1.5px solid var(--color-primary)', color: 'var(--color-primary)' }} />
                                 <Chip label={`${prog.durationYears || 4} Years`} size="small" variant="outlined" sx={{ fontWeight: 700, height: 22, fontSize: '0.65rem', borderRadius: '50px', border: '1px solid #10b981', color: '#10b981' }} />
                                 <Chip label={prog.programPattern === 'YEAR' ? 'YEAR WISE' : 'SEMESTER WISE'} size="small" variant="outlined" sx={{ fontWeight: 700, height: 22, fontSize: '0.65rem', borderRadius: '50px', border: '1px solid #8b5cf6', color: '#8b5cf6' }} />
@@ -424,260 +1079,60 @@ const AcademicStructure = () => {
         );
     };
 
-    const renderBranchesView = () => {
-        const deptBranches = branches.filter(b => b.departmentId?._id === selectedDepartment._id);
-
-        return (
-            <Box>
-                <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
-                    <Button startIcon={<ArrowBack />} onClick={() => setSelectedDepartment(null)} sx={{ color: 'var(--color-primary)', fontWeight: 700 }}>
-                        Back to Departments
-                    </Button>
-                </Box>
-
-                {/* Department Header Info */}
-                <Paper sx={{
-                    p: 3,
-                    mb: 4,
-                    borderRadius: "20px",
-                    background: "var(--bg-glass)",
-                    backdropFilter: "blur(10px)",
-                    border: "1px solid var(--border-color)"
-                }}>
-                    <Grid container spacing={3} alignItems="center">
-                        <Grid xs={12}>
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1 }}>
-                                <Typography variant="h5" fontWeight={800} sx={{ color: 'var(--text-primary)' }}>
-                                    {selectedDepartment.name}
-                                </Typography>
-                                <Chip label={selectedDepartment.code} size="small" sx={{ fontWeight: 800, background: "var(--gradient-primary)", color: 'white', borderRadius: '50px' }} />
-                            </Box>
-                            <Typography variant="body2" color="textSecondary" sx={{ mb: 2 }}>
-                                {selectedDepartment.description || "No description provided for this department."}
-                            </Typography>
-                        </Grid>
-                    </Grid>
-                </Paper>
-
-                <Typography variant="h6" fontWeight={700} sx={{ mb: 3, display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <AccountTree sx={{ color: 'var(--color-primary)' }} /> Department Branches
-                </Typography>
-
-                <Box sx={{
-                    display: 'grid',
-                    gridTemplateColumns: { xs: '1fr', sm: '1fr', md: 'repeat(2, 1fr)', lg: 'repeat(3, 1fr)', xl: 'repeat(4, 1fr)' },
-                    gap: 3
-                }}>
-                    <Card
-                        sx={{
-                            ...cardDrillStyle,
-                            border: "2px dashed var(--color-primary)",
-                            background: "var(--bg-accent-1)",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            width: '100%',
-                            minHeight: "140px",
-                            boxShadow: 'none',
-                            "&:hover": {
-                                background: "var(--bg-accent-2)",
-                                transform: 'translateY(-8px)',
-                                border: "2px dashed var(--color-primary)",
-                            }
-                        }}
-                        onClick={() => openModal('branch', 'add', { departmentId: selectedDepartment._id })}
-                    >
-                        <Box sx={{ textAlign: "center" }}>
-                            <Box sx={{
-                                width: 48,
-                                height: 48,
-                                borderRadius: '50%',
-                                border: '2px solid var(--color-primary)',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                margin: '0 auto 12px',
-                                background: "var(--bg-glass)",
-                                backdropFilter: "blur(4px)"
-                            }}>
-                                <Add sx={{ fontSize: 28, color: 'var(--color-primary)' }} />
-                            </Box>
-                            <Typography variant="body1" fontWeight={800} sx={{ color: 'var(--color-primary)', letterSpacing: '0.5px' }}>
-                                Add Branch
-                            </Typography>
-                        </Box>
-                    </Card>
-
-                    {deptBranches.length === 0 && (
-                        <Box sx={{ gridColumn: '1 / -1', py: 5 }}>
-                            <Typography variant="body1" color="textSecondary" align="center">No branches found.</Typography>
-                        </Box>
-                    )}
-
-                    {deptBranches.map(branch => (
-                        <Card key={branch._id} sx={{ ...cardStyle, width: '100%', minHeight: '100px', display: 'flex', flexDirection: 'column' }}>
-                            <CardContent sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', p: '24px !important' }}>
-                                <Box sx={{ mb: 2 }}>
-                                    <Box sx={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                                        <Typography variant="h6" fontWeight={700} sx={{
-                                            lineHeight: 1.2,
-                                            wordBreak: 'break-word',
-                                            color: 'var(--text-primary)',
-                                            pr: 1
-                                        }}>
-                                            {branch.name}
-                                        </Typography>
-                                        <Box sx={{ display: 'flex', gap: 1 }}>
-                                            <IconButton size="small" onClick={(e) => { e.stopPropagation(); openModal('branch', 'edit', branch); }} 
-                                                sx={{ 
-                                                    color: 'var(--text-secondary)', 
-                                                    p: 0.8,
-                                                    borderRadius: '10px',
-                                                    border: '1px solid var(--border-color)',
-                                                    transition: 'all 0.3s ease',
-                                                    "&:hover": { 
-                                                        color: '#fff', 
-                                                        background: 'var(--gradient-primary)',
-                                                        borderColor: 'transparent',
-                                                        transform: 'scale(1.1)',
-                                                        boxShadow: '0 4px 12px rgba(0,0,0,0.2)'
-                                                    } 
-                                                }}>
-                                                <Edit fontSize="small" />
-                                            </IconButton>
-                                            <IconButton size="small" onClick={(e) => { e.stopPropagation(); setDeleteConfirm({ open: true, type: 'branch', id: branch._id, name: branch.name }); }} 
-                                                sx={{ 
-                                                    color: 'var(--text-secondary)', 
-                                                    p: 0.8,
-                                                    borderRadius: '10px',
-                                                    border: '1px solid var(--border-color)',
-                                                    transition: 'all 0.3s ease',
-                                                    "&:hover": { 
-                                                        color: '#fff', 
-                                                        background: 'linear-gradient(135deg, #ff416c, #ff4b2b)',
-                                                        borderColor: 'transparent',
-                                                        transform: 'scale(1.1)',
-                                                        boxShadow: '0 4px 12px rgba(255,75,43,0.3)'
-                                                    } 
-                                                }}>
-                                                <Delete fontSize="small" />
-                                            </IconButton>
-                                        </Box>
-                                    </Box>
-                                    <Typography variant="caption" color="textSecondary" sx={{ fontWeight: 700 }}>
-                                        CODE: {branch.code}
-                                    </Typography>
-                                </Box>
-                                <Box mt="auto" display="flex" alignItems="center" gap={1} flexWrap="wrap">
-                                    {branch.programId && (
-                                        <Chip
-                                            label={branch.programId.name}
-                                            size="small"
-                                            variant="outlined"
-                                            sx={{ fontWeight: 800, borderRadius: '50px', border: '1.5px solid var(--color-primary)', color: 'var(--color-primary)' }}
-                                        />
-                                    )}
-                                </Box>
-                            </CardContent>
-                        </Card>
-                    ))}
-                </Box>
-            </Box>
-        );
-    };
-
     return (
         <Box>
             <PageHeader
                 title="Academic Structure"
-                subtitle="Configure Departments, Programs, and Branches for the University"
+                subtitle="Configure Departments, Programs, and Specializations for the University"
                 breadcrumbs={["Home", "UniPrime", "Academics", "Structure"]}
             />
 
-            {!selectedDepartment && (
-                <Paper sx={{
-                    mb: 4,
-                    p: 2,
-                    background: "var(--bg-glass)",
-                    backdropFilter: "blur(12px)",
-                    border: "1px solid var(--border-color)",
-                    borderRadius: "16px",
-                    boxShadow: "0 4px 20px rgba(0,0,0,0.05)"
-                }}>
-                    <Tabs
-                        value={activeTab}
-                        onChange={(_, val) => setActiveTab(val)}
-                        variant={window.innerWidth < 600 ? "fullWidth" : "standard"}
-                        scrollButtons="auto"
-                        allowScrollButtonsMobile
-                        sx={{
-                            '& .MuiTabs-flexContainer': { gap: { xs: 0, sm: 1 } },
-                            '& .MuiTab-root': { 
-                                color: 'var(--text-secondary)', 
-                                fontWeight: 700, 
-                                minHeight: '48px',
-                                borderRadius: '12px',
-                                transition: 'all 0.3s ease',
-                                textTransform: 'none',
-                                px: { xs: 1, sm: 3 },
-                                fontSize: { xs: '0.85rem', sm: '1rem' }
-                            },
-                            '& .Mui-selected': { 
-                                color: 'var(--color-primary) !important',
-                                background: 'rgba(0, 78, 146, 0.08) !important',
-                            },
-                            '& .MuiTabs-indicator': { 
-                                backgroundColor: 'var(--color-primary)',
-                                height: '3px',
-                                borderRadius: '3px 3px 0 0'
-                            }
-                        }}
-                    >
-                        <Tab icon={<Business />} iconPosition="start" label="Departments & Branches" />
-                        <Tab icon={<School />} iconPosition="start" label="Programs" />
-                    </Tabs>
-                </Paper>
-            )}
-
-            {selectedDepartment && (
-                <Box sx={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    mb: 4,
-                    gap: 1,
-                    background: 'var(--bg-glass)',
-                    backdropFilter: "blur(12px)",
-                    WebkitBackdropFilter: "blur(12px)",
-                    border: "1px solid var(--border-color)",
-                    p: 1,
-                    borderRadius: "16px",
-                    boxShadow: "0 4px 20px rgba(0,0,0,0.05)"
-                }}>
-                    <Button
-                        variant="text"
-                        onClick={() => setSelectedDepartment(null)}
-                        startIcon={<Business />}
-                        sx={{ borderRadius: "10px", color: 'var(--color-primary)', fontWeight: 700 }}
-                    >
-                        Departments
-                    </Button>
-                    <Typography color="textSecondary" sx={{ opacity: 0.6 }}>/</Typography>
-                    <Button
-                        variant="contained"
-                        startIcon={<AccountTree />}
-                        disableElevation
-                        sx={{ borderRadius: "10px", px: 2, background: 'var(--gradient-primary)', fontWeight: 700 }}
-                    >
-                        {selectedDepartment.name} Branches
-                    </Button>
-                </Box>
-            )}
+            <Paper sx={{
+                mb: 4,
+                p: 2,
+                background: "var(--bg-glass)",
+                backdropFilter: "blur(12px)",
+                border: "1px solid var(--border-color)",
+                borderRadius: "16px",
+                boxShadow: "0 4px 20px rgba(0,0,0,0.05)"
+            }}>
+                <Tabs
+                    value={activeTab}
+                    onChange={(_, val) => setActiveTab(val)}
+                    variant={window.innerWidth < 600 ? "fullWidth" : "standard"}
+                    scrollButtons="auto"
+                    allowScrollButtonsMobile
+                    sx={{
+                        '& .MuiTabs-flexContainer': { gap: { xs: 0, sm: 1 } },
+                        '& .MuiTab-root': { 
+                            color: 'var(--text-secondary)', 
+                            fontWeight: 700, 
+                            minHeight: '48px',
+                            borderRadius: '12px',
+                            transition: 'all 0.3s ease',
+                            textTransform: 'none',
+                            px: { xs: 1, sm: 3 },
+                            fontSize: { xs: '0.85rem', sm: '1rem' }
+                        },
+                        '& .Mui-selected': { 
+                            color: 'var(--color-primary) !important',
+                            background: 'rgba(0, 78, 146, 0.08) !important',
+                        },
+                        '& .MuiTabs-indicator': { 
+                            backgroundColor: 'var(--color-primary)',
+                            height: '3px',
+                            borderRadius: '3px 3px 0 0'
+                        }
+                    }}
+                >
+                    <Tab icon={<Business />} iconPosition="start" label="Departments & Specializations" />
+                    <Tab icon={<School />} iconPosition="start" label="Programs" />
+                </Tabs>
+            </Paper>
 
             <Fade in={!loading}>
                 <Box>
-                    {activeTab === 0 && !selectedSchool && !selectedDepartment && renderSchoolsAndCentralView()}
-                    {activeTab === 0 && selectedSchool && !selectedDepartment && renderSchoolDepartmentsView()}
-                    {activeTab === 0 && selectedDepartment && renderBranchesView()}
+                    {activeTab === 0 && renderAcademicHierarchy()}
                     {activeTab === 1 && renderProgramsView()}
                 </Box>
             </Fade>
@@ -685,12 +1140,24 @@ const AcademicStructure = () => {
             {/* Entity Dialog */}
             <Dialog open={modal.open} onClose={() => setModal({ ...modal, open: false })} maxWidth="xs" fullWidth>
                 <DialogTitle sx={{ fontWeight: 700 }}>
-                    {modal.mode === 'add' ? 'Add' : 'Edit'} {modal.type === 'branch' ? `Branch for ${selectedDepartment?.name}` : modal.type?.toUpperCase()}
+                    {modal.mode === 'add' ? 'Add' : 'Edit'} {modal.type === 'branch' ? `Specialization for ${selectedDepartment?.name}` : modal.type?.toUpperCase()}
                 </DialogTitle>
                 <DialogContent sx={{ py: 2 }}>
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, mt: 1 }}>
                         {modal.type === 'program' && (
                             <>
+                                <FormControl fullWidth>
+                                    <InputLabel>School</InputLabel>
+                                    <Select
+                                        value={modal.data.schoolId?._id || modal.data.schoolId || ''}
+                                        onChange={(e) => setModal({ ...modal, data: { ...modal.data, schoolId: e.target.value } })}
+                                        label="School"
+                                    >
+                                        <MenuItem value=""><em>None / Central Level</em></MenuItem>
+                                        {schools.map(s => <MenuItem key={s._id} value={s._id}>{s.name} ({s.code})</MenuItem>)}
+                                    </Select>
+                                </FormControl>
+
                                 <FormControl fullWidth>
                                     <InputLabel>Type (Level)</InputLabel>
                                     <Select
@@ -736,8 +1203,13 @@ const AcademicStructure = () => {
                                     value={modal.data.programId?._id || modal.data.programId || ''}
                                     onChange={(e) => setModal({ ...modal, data: { ...modal.data, programId: e.target.value } })}
                                     label="Program"
+                                    disabled={modal.mode === 'edit' || (modal.mode === 'add' && !!selectedProgram)}
                                 >
-                                    {programs.map(p => <MenuItem key={p._id} value={p._id}>{p.name} ({p.type})</MenuItem>)}
+                                    {programs.map(p => (
+                                        <MenuItem key={p._id} value={p._id}>
+                                            {p.name} ({p.type}){p.schoolId ? ` — ${p.schoolId.code || p.schoolId.name}` : ''}
+                                        </MenuItem>
+                                    ))}
                                 </Select>
                             </FormControl>
                         )}
@@ -778,7 +1250,7 @@ const AcademicStructure = () => {
                             fullWidth
                             value={modal.data.name || ''}
                             onChange={(e) => setModal({ ...modal, data: { ...modal.data, name: e.target.value } })}
-                            helperText={modal.type === 'branch' ? "e.g., Computer Science & Engineering (AI & ML)" : ""}
+                            helperText={modal.type === 'branch' ? "e.g., Artificial Intelligence & Machine Learning" : ""}
                         />
 
                         {(modal.type === 'school' || modal.type === 'department' || modal.type === 'branch' || modal.type === 'program') && (
@@ -787,7 +1259,7 @@ const AcademicStructure = () => {
                                 fullWidth
                                 value={modal.data.code || ''}
                                 onChange={(e) => setModal({ ...modal, data: { ...modal.data, code: e.target.value.toUpperCase() } })}
-                                helperText={modal.type === 'school' ? "e.g., SOE" : modal.type === 'department' ? "e.g., CSE" : modal.type === 'program' ? "e.g., BTECH" : "e.g., CSE-VLSI"}
+                                helperText={modal.type === 'school' ? "e.g., SOE" : modal.type === 'department' ? "e.g., CSE" : modal.type === 'program' ? "e.g., BTECH" : "e.g., AIML"}
                             />
                         )}
 
@@ -831,48 +1303,15 @@ const AcademicStructure = () => {
 
 const cardStyle = {
     position: "relative",
-    borderRadius: "24px",
-    background: "var(--bg-glass)",
-    backdropFilter: "blur(18px) saturate(160%)",
-    WebkitBackdropFilter: "blur(18px) saturate(160%)",
-    border: "1px solid var(--border-color)",
-    boxShadow: "0 8px 32px 0 rgba(0, 0, 0, 0.08)",
-    transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+    borderRadius: "16px",
+    background: "#ffffff",
+    border: "1px solid rgba(0, 0, 0, 0.08)",
+    boxShadow: "0 4px 16px 0 rgba(0, 0, 0, 0.04)",
+    transition: "all 0.2s ease-in-out",
     overflow: "hidden",
-    "&::before": {
-        content: '""',
-        position: "absolute",
-        top: 0,
-        right: 0,
-        width: "120px",
-        height: "120px",
-        background: "radial-gradient(circle at top right, var(--color-primary-alpha, rgba(2, 132, 199, 0.15)), transparent 70%)",
-        zIndex: 0,
-        pointerEvents: "none"
-    },
-    "&::after": {
-        content: '""',
-        position: "absolute",
-        inset: "-1px",
-        borderRadius: "24px",
-        padding: "2px",
-        background: "var(--gradient-primary)",
-        WebkitMask: "linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)",
-        WebkitMaskComposite: "xor",
-        maskComposite: "exclude",
-        opacity: 0,
-        transition: "opacity 0.3s ease",
-        pointerEvents: "none",
-        zIndex: 1
-    },
     "&:hover": {
-        transform: "translateY(-8px)",
-        background: "var(--bg-panel)",
-        boxShadow: "0 12px 40px 0 rgba(0, 0, 0, 0.15)",
-        borderColor: "transparent",
-    },
-    "&:hover::after": {
-        opacity: 1
+        transform: "translateY(-4px)",
+        boxShadow: "0 8px 24px 0 rgba(0, 0, 0, 0.08)",
     }
 };
 
