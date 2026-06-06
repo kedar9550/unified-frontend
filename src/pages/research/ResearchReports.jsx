@@ -47,7 +47,7 @@ export default function ResearchReports() {
         try {
             const params = {};
             if (selectedYear !== "All") params.academicYear = selectedYear;
-            
+
             const res = await API.get("/api/hod/research-requests/reports", { params });
             if (res.data?.success) {
                 setData(res.data.data);
@@ -280,13 +280,13 @@ export default function ResearchReports() {
         ]);
         return (
             <DataTable columns={columns} rows={rows} toolbarLeft={
-                <Button 
-                    variant="contained" 
-                    startIcon={<DownloadIcon />} 
+                <Button
+                    variant="contained"
+                    startIcon={<DownloadIcon />}
                     onClick={() => downloadCSV("journals")}
-                    sx={{ 
-                        borderRadius: "12px", 
-                        textTransform: "none", 
+                    sx={{
+                        borderRadius: "12px",
+                        textTransform: "none",
                         background: "var(--gradient-primary)",
                         boxShadow: "0 4px 12px rgba(190, 147, 55, 0.2)",
                         "&:hover": {
@@ -315,13 +315,13 @@ export default function ResearchReports() {
         ]);
         return (
             <DataTable columns={columns} rows={rows} toolbarLeft={
-                <Button 
-                    variant="contained" 
-                    startIcon={<DownloadIcon />} 
+                <Button
+                    variant="contained"
+                    startIcon={<DownloadIcon />}
                     onClick={() => downloadCSV("textbooks")}
-                    sx={{ 
-                        borderRadius: "12px", 
-                        textTransform: "none", 
+                    sx={{
+                        borderRadius: "12px",
+                        textTransform: "none",
                         background: "var(--gradient-primary)",
                         boxShadow: "0 4px 12px rgba(190, 147, 55, 0.2)",
                         "&:hover": {
@@ -350,13 +350,13 @@ export default function ResearchReports() {
         ]);
         return (
             <DataTable columns={columns} rows={rows} toolbarLeft={
-                <Button 
-                    variant="contained" 
-                    startIcon={<DownloadIcon />} 
+                <Button
+                    variant="contained"
+                    startIcon={<DownloadIcon />}
                     onClick={() => downloadCSV("chapters")}
-                    sx={{ 
-                        borderRadius: "12px", 
-                        textTransform: "none", 
+                    sx={{
+                        borderRadius: "12px",
+                        textTransform: "none",
                         background: "var(--gradient-primary)",
                         boxShadow: "0 4px 12px rgba(190, 147, 55, 0.2)",
                         "&:hover": {
@@ -375,8 +375,8 @@ export default function ResearchReports() {
     return (
         <Box sx={{ width: "100%", p: { xs: 1.5, sm: 2, md: 3 } }}>
             <Stack spacing={3}>
-                <PageHeader 
-                    title="Research & Incentive Reports" 
+                <PageHeader
+                    title="Research & Incentive Reports"
                     subtitle="Generate and export comprehensive research publication and incentive reports"
                 />
 
@@ -384,13 +384,13 @@ export default function ResearchReports() {
                     {/* Toolbar Section */}
                     <Box sx={{ p: 2.5, borderBottom: "1px solid var(--border-color)", background: "rgba(0,0,0,0.02)" }}>
                         <Stack direction={{ xs: "column", sm: "row" }} spacing={3} sx={{ width: "100%", alignItems: "center" }}>
-                            <Tabs 
-                                value={activeTab} 
+                            <Tabs
+                                value={activeTab}
                                 onChange={handleTabChange}
                                 variant="scrollable"
                                 scrollButtons="auto"
                                 allowScrollButtonsMobile
-                                sx={{ 
+                                sx={{
                                     width: "100%",
                                     maxWidth: "100%",
                                     minHeight: 48,
@@ -399,16 +399,16 @@ export default function ResearchReports() {
                                         opacity: 0,
                                         overflow: "hidden"
                                     },
-                                    "& .MuiTabs-indicator": { 
-                                        height: 3, 
+                                    "& .MuiTabs-indicator": {
+                                        height: 3,
                                         borderRadius: "3px",
-                                        background: "var(--gradient-primary) !important" 
+                                        background: "var(--gradient-primary) !important"
                                     },
-                                    "& .MuiTab-root": { 
-                                        textTransform: "none", 
-                                        fontWeight: 700, 
-                                        fontSize: "0.95rem", 
-                                        minHeight: 48, 
+                                    "& .MuiTab-root": {
+                                        textTransform: "none",
+                                        fontWeight: 700,
+                                        fontSize: "0.95rem",
+                                        minHeight: 48,
                                         py: 1.5,
                                         color: "var(--text-secondary)",
                                         transition: "all 0.2s ease",
@@ -450,11 +450,11 @@ export default function ResearchReports() {
                     {/* Content Section */}
                     <Box sx={{ p: 2.5 }}>
 
-                    {loading ? (
+                        {/* {loading ? (
                         <Box sx={{ display: "flex", justifyContent: "center", py: 10 }}>
                             <Loader sx={{ color: "var(--color-primary)" }} />
                         </Box>
-                    ) : (
+                    ) : ( */}
                         <Box>
                             {activeTab === 0 && renderJournals()}
                             {activeTab === 1 && renderTextbooks()}
@@ -466,16 +466,16 @@ export default function ResearchReports() {
                                     <Typography variant="body2" sx={{ color: "var(--text-secondary)", mb: 3 }}>
                                         This will generate a single file containing all research categories.
                                     </Typography>
-                                    <Button 
-                                        variant="contained" 
+                                    <Button
+                                        variant="contained"
                                         size="large"
-                                        startIcon={<DownloadIcon />} 
+                                        startIcon={<DownloadIcon />}
                                         onClick={() => downloadCSV("consolidated")}
-                                        sx={{ 
-                                            borderRadius: "12px", 
-                                            textTransform: "none", 
-                                            px: 4, 
-                                            py: 1.5, 
+                                        sx={{
+                                            borderRadius: "12px",
+                                            textTransform: "none",
+                                            px: 4,
+                                            py: 1.5,
                                             background: "var(--gradient-primary)",
                                             boxShadow: "0 4px 12px rgba(190, 147, 55, 0.2)",
                                             "&:hover": {
@@ -490,7 +490,7 @@ export default function ResearchReports() {
                                 </Box>
                             )}
                         </Box>
-                    )}
+                        {/* )} */}
                     </Box>
                 </Paper>
             </Stack>
