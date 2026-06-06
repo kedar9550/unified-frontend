@@ -58,13 +58,13 @@ const RnDDeanDashboard = () => {
     fetchDashboardData();
   }, []);
 
-  if (loading) {
-    return (
-      <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", height: "60vh" }}>
-        <Loader />
-      </Box>
-    );
-  }
+  // if (loading) {
+  //   return (
+  //     <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", height: "60vh" }}>
+  //       <Loader />
+  //     </Box>
+  //   );
+  // }
 
   const dashboard = data || {
     totalPublications: 0,
@@ -108,10 +108,10 @@ const RnDDeanDashboard = () => {
           </Typography>
         </Box>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-           <Chip 
-            label="Live Data" 
-            variant="outlined" 
-            sx={{ borderRadius: '10px', border: '1px solid var(--border-color)', fontWeight: 600, background: 'var(--bg-panel)', color: 'var(--color-primary)' }} 
+          <Chip
+            label="Live Data"
+            variant="outlined"
+            sx={{ borderRadius: '10px', border: '1px solid var(--border-color)', fontWeight: 600, background: 'var(--bg-panel)', color: 'var(--color-primary)' }}
           />
         </Box>
       </Box>
@@ -134,10 +134,10 @@ const RnDDeanDashboard = () => {
               position: 'relative',
               overflow: 'hidden',
               cursor: card.path ? 'pointer' : 'default',
-              '&:hover': { 
-                transform: card.path ? 'translateY(-5px)' : 'none', 
-                boxShadow: 'var(--shadow-premium)', 
-                borderColor: card.color 
+              '&:hover': {
+                transform: card.path ? 'translateY(-5px)' : 'none',
+                boxShadow: 'var(--shadow-premium)',
+                borderColor: card.color
               },
               '&::after': {
                 content: '""',
@@ -156,14 +156,14 @@ const RnDDeanDashboard = () => {
             }}>
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, zIndex: 1 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                  <Box sx={{ 
-                    width: 48, 
-                    height: 48, 
-                    borderRadius: '12px', 
-                    backgroundColor: card.bg, 
-                    color: card.color, 
-                    display: 'flex', 
-                    alignItems: 'center', 
+                  <Box sx={{
+                    width: 48,
+                    height: 48,
+                    borderRadius: '12px',
+                    backgroundColor: card.bg,
+                    color: card.color,
+                    display: 'flex',
+                    alignItems: 'center',
                     justifyContent: 'center',
                     flexShrink: 0
                   }}>
@@ -178,22 +178,22 @@ const RnDDeanDashboard = () => {
               </Box>
 
               {card.path && (
-                <Box sx={{ 
-                  display: "flex", 
-                  alignItems: "center", 
-                  justifyContent: "flex-end", 
+                <Box sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "flex-end",
                   gap: 0.8,
-                  pt: 1.5, 
-                  borderTop: "1px solid var(--border-color)", 
+                  pt: 1.5,
+                  borderTop: "1px solid var(--border-color)",
                   width: "100%",
                   zIndex: 1,
                   mt: "auto"
                 }}>
-                  <Typography 
+                  <Typography
                     className="view-all-text"
-                    sx={{ 
-                      fontSize: "0.75rem", 
-                      fontWeight: 800, 
+                    sx={{
+                      fontSize: "0.75rem",
+                      fontWeight: 800,
                       background: "var(--gradient-primary)",
                       WebkitBackgroundClip: "text",
                       WebkitTextFillColor: "transparent",
@@ -203,13 +203,13 @@ const RnDDeanDashboard = () => {
                   >
                     View Details
                   </Typography>
-                  <ArrowForward 
+                  <ArrowForward
                     className="view-all-arrow"
-                    sx={{ 
-                      fontSize: 14, 
+                    sx={{
+                      fontSize: 14,
                       color: "var(--color-primary)",
                       transition: "transform 0.2s ease"
-                    }} 
+                    }}
                   />
                 </Box>
               )}
@@ -219,11 +219,11 @@ const RnDDeanDashboard = () => {
       </Box>
 
       {/* Charts Row */}
-      <Box sx={{ 
-        display: "grid", 
-        gridTemplateColumns: { xs: "1fr", lg: "1fr 1fr" }, 
-        gap: 4, 
-        mb: 5 
+      <Box sx={{
+        display: "grid",
+        gridTemplateColumns: { xs: "1fr", lg: "1fr 1fr" },
+        gap: 4,
+        mb: 5
       }}>
         <Card sx={{ p: 3, borderRadius: '24px', background: 'var(--bg-panel)', border: '1px solid var(--border-color)', height: '100%' }}>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
@@ -237,7 +237,7 @@ const RnDDeanDashboard = () => {
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(148, 163, 184, 0.1)" />
                   <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: 'var(--text-secondary)', fontSize: 12 }} />
                   <YAxis axisLine={false} tickLine={false} tick={{ fill: 'var(--text-secondary)', fontSize: 12 }} />
-                  <RechartsTooltip 
+                  <RechartsTooltip
                     contentStyle={{ borderRadius: '16px', background: 'var(--bg-panel)', border: '1px solid var(--border-color)', boxShadow: 'var(--shadow-premium)' }}
                   />
                   <Line type="monotone" dataKey="publications" stroke="#3b82f6" strokeWidth={4} dot={{ r: 4, fill: '#3b82f6', strokeWidth: 2, stroke: '#fff' }} activeDot={{ r: 6, strokeWidth: 0 }} />
@@ -254,22 +254,22 @@ const RnDDeanDashboard = () => {
         <Card sx={{ p: 3, borderRadius: '24px', background: 'var(--bg-panel)', border: '1px solid var(--border-color)', height: '100%' }}>
           <Typography variant="h6" sx={{ fontWeight: 700, mb: 3 }}>Publications by Type</Typography>
           {pieData.some(d => d.value > 0) ? (
-            <Box sx={{ 
-              display: 'flex', 
-              flexDirection: { xs: 'column', sm: 'row' }, 
-              alignItems: 'center', 
-              gap: { xs: 4, sm: 3 }, 
-              minHeight: 320 
+            <Box sx={{
+              display: 'flex',
+              flexDirection: { xs: 'column', sm: 'row' },
+              alignItems: 'center',
+              gap: { xs: 4, sm: 3 },
+              minHeight: 320
             }}>
               {/* Chart */}
-              <Box sx={{ 
-                flex: 1.2, 
-                width: '100%', 
+              <Box sx={{
+                flex: 1.2,
+                width: '100%',
                 minWidth: 0,
-                height: 240, 
-                position: 'relative' 
+                height: 240,
+                position: 'relative'
               }}>
-                 <ResponsiveContainer width="100%" height={240}>
+                <ResponsiveContainer width="100%" height={240}>
                   <PieChart>
                     <Pie
                       data={pieData}
@@ -294,13 +294,13 @@ const RnDDeanDashboard = () => {
               </Box>
 
               {/* Details Box */}
-              <Box sx={{ 
-                flex: 1, 
-                width: '100%', 
-                display: 'flex', 
-                flexDirection: 'column', 
+              <Box sx={{
+                flex: 1,
+                width: '100%',
+                display: 'flex',
+                flexDirection: 'column',
                 gap: 1.5,
-                px: { xs: 1, sm: 0 } 
+                px: { xs: 1, sm: 0 }
               }}>
                 {pieData.map((item, i) => (
                   <Box key={i} sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -309,7 +309,7 @@ const RnDDeanDashboard = () => {
                       <Typography sx={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)' }}>{item.name}</Typography>
                     </Box>
                     <Typography sx={{ fontSize: '0.8rem', fontWeight: 700, flexShrink: 0 }}>
-                      {item.value} <Box component="span" sx={{ color: 'var(--text-secondary)', fontWeight: 500, fontSize: '0.75rem' }}>({dashboard.approved > 0 ? Math.round(item.value/dashboard.approved*100) : 0}%)</Box>
+                      {item.value} <Box component="span" sx={{ color: 'var(--text-secondary)', fontWeight: 500, fontSize: '0.75rem' }}>({dashboard.approved > 0 ? Math.round(item.value / dashboard.approved * 100) : 0}%)</Box>
                     </Typography>
                   </Box>
                 ))}
@@ -337,14 +337,14 @@ const RnDDeanDashboard = () => {
                       <Typography sx={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-primary)' }}>{dept.name}</Typography>
                       <Typography sx={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--text-primary)' }}>{dept.value}</Typography>
                     </Box>
-                    <LinearProgress 
-                      variant="determinate" 
-                      value={(dept.value / maxDeptValue) * 100} 
-                      sx={{ 
-                        height: 8, 
-                        borderRadius: 4, 
-                        backgroundColor: 'var(--bg-accent-4)', 
-                        '& .MuiLinearProgress-bar': { backgroundColor: dept.color || 'var(--color-primary)', borderRadius: 4 } 
+                    <LinearProgress
+                      variant="determinate"
+                      value={(dept.value / maxDeptValue) * 100}
+                      sx={{
+                        height: 8,
+                        borderRadius: 4,
+                        backgroundColor: 'var(--bg-accent-4)',
+                        '& .MuiLinearProgress-bar': { backgroundColor: dept.color || 'var(--color-primary)', borderRadius: 4 }
                       }}
                     />
                   </Box>
@@ -356,8 +356,8 @@ const RnDDeanDashboard = () => {
               </Box>
             )}
             <Box sx={{ mt: 4, textAlign: 'center' }}>
-              <Button 
-                endIcon={<ArrowForward />} 
+              <Button
+                endIcon={<ArrowForward />}
                 onClick={() => navigate("/research-dean/reports")}
                 sx={{ textTransform: 'none', fontWeight: 700, color: 'var(--color-primary)' }}
               >
@@ -370,63 +370,63 @@ const RnDDeanDashboard = () => {
         {/* Research Impact */}
         <Box sx={{ flex: { xs: "1 1 100%", md: "1 1 calc(33.33% - 27px)" }, minWidth: 0 }}>
           <Card sx={{ p: 3, borderRadius: '24px', background: 'var(--bg-panel)', border: '1px solid var(--border-color)', height: '100%' }}>
-             <Typography variant="h6" sx={{ fontWeight: 700, mb: 1 }}>Research Impact</Typography>
-             <Typography variant="caption" sx={{ color: 'var(--text-secondary)', display: 'block', mb: 3, fontWeight: 500 }}>(All Approved Journals)</Typography>
-             {researchImpact.length > 0 ? (
-               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
-                  {researchImpact.map((item, i) => (
-                    <Box key={i} sx={{ 
-                      p: 2.5, 
-                      borderRadius: '20px', 
-                      background: 'var(--bg-accent-4)', 
-                      border: '1px solid var(--border-color)', 
-                      display: 'flex', 
-                      justifyContent: 'space-between', 
-                      alignItems: 'center',
-                      transition: 'all 0.3s ease',
-                      '&:hover': { borderColor: item.color, background: 'var(--bg-panel)' }
-                    }}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2.5 }}>
-                         <Box sx={{ 
-                           width: 44, 
-                           height: 44, 
-                           borderRadius: '12px', 
-                           backgroundColor: item.bg, 
-                           color: item.color, 
-                           display: 'flex', 
-                           alignItems: 'center', 
-                           justifyContent: 'center', 
-                           fontWeight: 800, 
-                           fontSize: '1.2rem' 
-                         }}>
-                          {item.icon}
-                         </Box>
-                         <Box>
-                           <Typography variant="h5" sx={{ fontWeight: 800, lineHeight: 1 }}>{item.value}</Typography>
-                           <Typography variant="caption" sx={{ color: 'var(--text-secondary)', fontWeight: 600 }}>{item.label}</Typography>
-                         </Box>
+            <Typography variant="h6" sx={{ fontWeight: 700, mb: 1 }}>Research Impact</Typography>
+            <Typography variant="caption" sx={{ color: 'var(--text-secondary)', display: 'block', mb: 3, fontWeight: 500 }}>(All Approved Journals)</Typography>
+            {researchImpact.length > 0 ? (
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
+                {researchImpact.map((item, i) => (
+                  <Box key={i} sx={{
+                    p: 2.5,
+                    borderRadius: '20px',
+                    background: 'var(--bg-accent-4)',
+                    border: '1px solid var(--border-color)',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    transition: 'all 0.3s ease',
+                    '&:hover': { borderColor: item.color, background: 'var(--bg-panel)' }
+                  }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2.5 }}>
+                      <Box sx={{
+                        width: 44,
+                        height: 44,
+                        borderRadius: '12px',
+                        backgroundColor: item.bg,
+                        color: item.color,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontWeight: 800,
+                        fontSize: '1.2rem'
+                      }}>
+                        {item.icon}
                       </Box>
-                      <Box sx={{ textAlign: 'right' }}>
-                         <Typography sx={{ color: '#10b981', fontWeight: 800, fontSize: '0.85rem' }}>↑ {item.trend}</Typography>
-                         <Typography sx={{ fontSize: '0.65rem', color: 'var(--text-secondary)', fontWeight: 500 }}>vs last year</Typography>
+                      <Box>
+                        <Typography variant="h5" sx={{ fontWeight: 800, lineHeight: 1 }}>{item.value}</Typography>
+                        <Typography variant="caption" sx={{ color: 'var(--text-secondary)', fontWeight: 600 }}>{item.label}</Typography>
                       </Box>
                     </Box>
-                  ))}
-               </Box>
-             ) : (
-               <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", height: 200, color: "var(--text-secondary)" }}>
-                 No impact analytics available.
-               </Box>
-             )}
-             <Box sx={{ mt: 4, textAlign: 'center' }}>
-                <Button 
-                  endIcon={<ArrowForward />} 
-                  onClick={() => navigate("/research-dean/reports")}
-                  sx={{ textTransform: 'none', fontWeight: 700, color: 'var(--color-primary)' }}
-                >
-                  View Research Analytics
-                </Button>
-             </Box>
+                    <Box sx={{ textAlign: 'right' }}>
+                      <Typography sx={{ color: '#10b981', fontWeight: 800, fontSize: '0.85rem' }}>↑ {item.trend}</Typography>
+                      <Typography sx={{ fontSize: '0.65rem', color: 'var(--text-secondary)', fontWeight: 500 }}>vs last year</Typography>
+                    </Box>
+                  </Box>
+                ))}
+              </Box>
+            ) : (
+              <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", height: 200, color: "var(--text-secondary)" }}>
+                No impact analytics available.
+              </Box>
+            )}
+            <Box sx={{ mt: 4, textAlign: 'center' }}>
+              <Button
+                endIcon={<ArrowForward />}
+                onClick={() => navigate("/research-dean/reports")}
+                sx={{ textTransform: 'none', fontWeight: 700, color: 'var(--color-primary)' }}
+              >
+                View Research Analytics
+              </Button>
+            </Box>
           </Card>
         </Box>
 
@@ -441,11 +441,11 @@ const RnDDeanDashboard = () => {
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3.5 }}>
                 {announcements.map((item, i) => (
                   <Box key={i} sx={{ display: 'flex', gap: 2.5 }}>
-                    <Box sx={{ 
-                      textAlign: 'center', 
-                      minWidth: 64, 
-                      p: 1.5, 
-                      borderRadius: '16px', 
+                    <Box sx={{
+                      textAlign: 'center',
+                      minWidth: 64,
+                      p: 1.5,
+                      borderRadius: '16px',
                       background: 'var(--bg-accent-4)',
                       height: 'fit-content',
                       border: '1px solid var(--border-color)'
@@ -466,8 +466,8 @@ const RnDDeanDashboard = () => {
               </Box>
             )}
             <Box sx={{ mt: 'auto', pt: 4, textAlign: 'center' }}>
-              <Button 
-                endIcon={<ArrowForward />} 
+              <Button
+                endIcon={<ArrowForward />}
                 sx={{ textTransform: 'none', fontWeight: 700, color: 'var(--color-primary)' }}
               >
                 View All Announcements
@@ -505,7 +505,7 @@ const RnDDeanDashboard = () => {
                 borderRadius: "16px",
                 fontWeight: 700,
                 border: '1px solid rgba(255,255,255,0.2)',
-                "&:hover": { 
+                "&:hover": {
                   background: "rgba(255,255,255,0.25)",
                   transform: 'scale(1.02)'
                 }
@@ -526,7 +526,7 @@ const RnDDeanDashboard = () => {
                 borderRadius: "16px",
                 fontWeight: 700,
                 border: '1px solid rgba(255,255,255,0.2)',
-                "&:hover": { 
+                "&:hover": {
                   background: "rgba(255,255,255,0.25)",
                   transform: 'scale(1.02)'
                 }
@@ -547,7 +547,7 @@ const RnDDeanDashboard = () => {
                 borderRadius: "16px",
                 fontWeight: 700,
                 border: '1px solid rgba(255,255,255,0.2)',
-                "&:hover": { 
+                "&:hover": {
                   background: "rgba(255,255,255,0.25)",
                   transform: 'scale(1.02)'
                 }

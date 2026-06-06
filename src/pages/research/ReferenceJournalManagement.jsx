@@ -59,7 +59,7 @@ const ReferenceJournalManagement = () => {
   const [selectedType, setSelectedType] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
-  
+
   // Tabs State
   const [activeTab, setActiveTab] = useState(0);
 
@@ -554,169 +554,169 @@ const ReferenceJournalManagement = () => {
             </Grid>
           </Paper>
 
-          {loading ? (
+          {/* {loading ? (
             <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>
               <Loader />
             </Box>
-          ) : (
-            <>
-              <TableContainer 
-                component={Paper} 
-                sx={{ 
-                  borderRadius: "20px", 
-                  background: "var(--bg-paper)", 
-                  border: "1px solid var(--border-color)",
-                  boxShadow: "0 4px 24px rgba(0,0,0,0.01)",
-                  overflow: "hidden"
-                }}
-              >
-                <Table size="medium">
-                  <TableHead>
-                    <TableRow sx={{ background: "rgba(11, 82, 153, 0.03)" }}>
-                      <TableCell sx={{ fontWeight: 800, width: "70px", color: "var(--text-primary)" }}>S.No</TableCell>
-                      <TableCell sx={{ fontWeight: 800, color: "var(--text-primary)" }}>Journal Name</TableCell>
-                      <TableCell sx={{ fontWeight: 800, width: "160px", color: "var(--text-primary)" }} align="center">Impact Factor</TableCell>
-                      <TableCell sx={{ fontWeight: 800, width: "160px", color: "var(--text-primary)" }} align="center">Type</TableCell>
-                      <TableCell sx={{ fontWeight: 800, width: "120px", color: "var(--text-primary)" }} align="center">Actions</TableCell>
+          ) : ( */}
+          <>
+            <TableContainer
+              component={Paper}
+              sx={{
+                borderRadius: "20px",
+                background: "var(--bg-paper)",
+                border: "1px solid var(--border-color)",
+                boxShadow: "0 4px 24px rgba(0,0,0,0.01)",
+                overflow: "hidden"
+              }}
+            >
+              <Table size="medium">
+                <TableHead>
+                  <TableRow sx={{ background: "rgba(11, 82, 153, 0.03)" }}>
+                    <TableCell sx={{ fontWeight: 800, width: "70px", color: "var(--text-primary)" }}>S.No</TableCell>
+                    <TableCell sx={{ fontWeight: 800, color: "var(--text-primary)" }}>Journal Name</TableCell>
+                    <TableCell sx={{ fontWeight: 800, width: "160px", color: "var(--text-primary)" }} align="center">Impact Factor</TableCell>
+                    <TableCell sx={{ fontWeight: 800, width: "160px", color: "var(--text-primary)" }} align="center">Type</TableCell>
+                    <TableCell sx={{ fontWeight: 800, width: "120px", color: "var(--text-primary)" }} align="center">Actions</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {journals.length > 0 ? (
+                    journals.map((journal, index) => {
+                      const style = getChipColor(journal.type);
+                      return (
+                        <TableRow
+                          key={journal._id}
+                          sx={{
+                            transition: "all 0.2s",
+                            "&:hover": {
+                              background: "rgba(11, 82, 153, 0.01)",
+                              boxShadow: "inset 4px 0 0 var(--color-primary)"
+                            }
+                          }}
+                        >
+                          <TableCell sx={{ fontWeight: 600, color: "var(--text-secondary)" }}>
+                            {page * rowsPerPage + index + 1}
+                          </TableCell>
+                          <TableCell sx={{ fontWeight: 700, color: "var(--text-primary)", fontSize: "0.95rem" }}>
+                            {journal.title}
+                          </TableCell>
+                          <TableCell align="center">
+                            <Chip
+                              label={journal.impactFactor}
+                              size="small"
+                              sx={{
+                                fontWeight: 800,
+                                fontSize: "0.75rem",
+                                bgcolor: journal.impactFactor === "NA" ? "var(--bg-panel)" : "rgba(16, 185, 129, 0.08)",
+                                color: journal.impactFactor === "NA" ? "var(--text-secondary)" : "#10b981",
+                                borderRadius: "8px",
+                                px: 1,
+                                border: journal.impactFactor === "NA" ? "1px solid var(--border-color)" : "1px solid rgba(16, 185, 129, 0.15)"
+                              }}
+                            />
+                          </TableCell>
+                          <TableCell align="center">
+                            <Chip
+                              label={journal.type}
+                              size="small"
+                              sx={{
+                                fontWeight: 800,
+                                fontSize: "0.75rem",
+                                bgcolor: style.bg,
+                                color: style.color,
+                                border: `1px solid ${style.border}`,
+                                borderRadius: "8px",
+                                px: 1
+                              }}
+                            />
+                          </TableCell>
+                          <TableCell align="center">
+                            <Stack direction="row" spacing={1} justifyContent="center">
+                              <Tooltip title="Edit Details">
+                                <IconButton
+                                  size="small"
+                                  sx={{
+                                    color: "var(--color-primary)",
+                                    background: "rgba(11, 82, 153, 0.05)",
+                                    "&:hover": { background: "rgba(11, 82, 153, 0.12)" }
+                                  }}
+                                  onClick={() => handleEditClick(journal)}
+                                >
+                                  <EditIcon fontSize="small" />
+                                </IconButton>
+                              </Tooltip>
+                              <Tooltip title="Remove Journal">
+                                <IconButton
+                                  size="small"
+                                  sx={{
+                                    color: "#ef4444",
+                                    background: "rgba(239, 68, 68, 0.05)",
+                                    "&:hover": { background: "rgba(239, 68, 68, 0.12)" }
+                                  }}
+                                  onClick={() => handleDelete(journal._id)}
+                                >
+                                  <DeleteIcon fontSize="small" />
+                                </IconButton>
+                              </Tooltip>
+                            </Stack>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={5} align="center" sx={{ py: 8 }}>
+                        <Box sx={{ textContent: "center", opacity: 0.7 }}>
+                          <Typography variant="body1" sx={{ fontWeight: 700, mb: 0.5, color: "var(--text-secondary)" }}>
+                            No Reference Journals Found
+                          </Typography>
+                          <Typography variant="body2" sx={{ color: "var(--text-secondary)" }}>
+                            No registries match your search criteria.
+                          </Typography>
+                        </Box>
+                      </TableCell>
                     </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {journals.length > 0 ? (
-                      journals.map((journal, index) => {
-                        const style = getChipColor(journal.type);
-                        return (
-                          <TableRow 
-                            key={journal._id} 
-                            sx={{ 
-                              transition: "all 0.2s",
-                              "&:hover": { 
-                                background: "rgba(11, 82, 153, 0.01)",
-                                boxShadow: "inset 4px 0 0 var(--color-primary)"
-                              } 
-                            }}
-                          >
-                            <TableCell sx={{ fontWeight: 600, color: "var(--text-secondary)" }}>
-                              {page * rowsPerPage + index + 1}
-                            </TableCell>
-                            <TableCell sx={{ fontWeight: 700, color: "var(--text-primary)", fontSize: "0.95rem" }}>
-                              {journal.title}
-                            </TableCell>
-                            <TableCell align="center">
-                              <Chip
-                                label={journal.impactFactor}
-                                size="small"
-                                sx={{
-                                  fontWeight: 800,
-                                  fontSize: "0.75rem",
-                                  bgcolor: journal.impactFactor === "NA" ? "var(--bg-panel)" : "rgba(16, 185, 129, 0.08)",
-                                  color: journal.impactFactor === "NA" ? "var(--text-secondary)" : "#10b981",
-                                  borderRadius: "8px",
-                                  px: 1,
-                                  border: journal.impactFactor === "NA" ? "1px solid var(--border-color)" : "1px solid rgba(16, 185, 129, 0.15)"
-                                }}
-                              />
-                            </TableCell>
-                            <TableCell align="center">
-                              <Chip
-                                label={journal.type}
-                                size="small"
-                                sx={{
-                                  fontWeight: 800,
-                                  fontSize: "0.75rem",
-                                  bgcolor: style.bg,
-                                  color: style.color,
-                                  border: `1px solid ${style.border}`,
-                                  borderRadius: "8px",
-                                  px: 1
-                                }}
-                              />
-                            </TableCell>
-                            <TableCell align="center">
-                              <Stack direction="row" spacing={1} justifyContent="center">
-                                <Tooltip title="Edit Details">
-                                  <IconButton
-                                    size="small"
-                                    sx={{ 
-                                      color: "var(--color-primary)",
-                                      background: "rgba(11, 82, 153, 0.05)",
-                                      "&:hover": { background: "rgba(11, 82, 153, 0.12)" }
-                                    }}
-                                    onClick={() => handleEditClick(journal)}
-                                  >
-                                    <EditIcon fontSize="small" />
-                                  </IconButton>
-                                </Tooltip>
-                                <Tooltip title="Remove Journal">
-                                  <IconButton
-                                    size="small"
-                                    sx={{ 
-                                      color: "#ef4444",
-                                      background: "rgba(239, 68, 68, 0.05)",
-                                      "&:hover": { background: "rgba(239, 68, 68, 0.12)" }
-                                    }}
-                                    onClick={() => handleDelete(journal._id)}
-                                  >
-                                    <DeleteIcon fontSize="small" />
-                                  </IconButton>
-                                </Tooltip>
-                              </Stack>
-                            </TableCell>
-                          </TableRow>
-                        );
-                      })
-                    ) : (
-                      <TableRow>
-                        <TableCell colSpan={5} align="center" sx={{ py: 8 }}>
-                          <Box sx={{ textContent: "center", opacity: 0.7 }}>
-                            <Typography variant="body1" sx={{ fontWeight: 700, mb: 0.5, color: "var(--text-secondary)" }}>
-                              No Reference Journals Found
-                            </Typography>
-                            <Typography variant="body2" sx={{ color: "var(--text-secondary)" }}>
-                              No registries match your search criteria.
-                            </Typography>
-                          </Box>
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
-              </TableContainer>
+                  )}
+                </TableBody>
+              </Table>
+            </TableContainer>
 
-              <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 2 }}>
-                <TablePagination
-                  rowsPerPageOptions={[5, 10, 25, 50]}
-                  component="div"
-                  count={totalRows}
-                  rowsPerPage={rowsPerPage}
-                  page={page}
-                  onPageChange={(e, newPage) => setPage(newPage)}
-                  onRowsPerPageChange={(e) => {
-                    setRowsPerPage(parseInt(e.target.value, 10));
-                    setPage(0);
-                  }}
-                  sx={{ 
-                    color: "var(--text-primary)",
-                    border: "none",
-                    "& .MuiTablePagination-selectLabel, & .MuiTablePagination-displayedRows": {
-                      fontWeight: 700,
-                      color: "var(--text-secondary)"
-                    }
-                  }}
-                />
-              </Box>
-            </>
-          )}
+            <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 2 }}>
+              <TablePagination
+                rowsPerPageOptions={[5, 10, 25, 50]}
+                component="div"
+                count={totalRows}
+                rowsPerPage={rowsPerPage}
+                page={page}
+                onPageChange={(e, newPage) => setPage(newPage)}
+                onRowsPerPageChange={(e) => {
+                  setRowsPerPage(parseInt(e.target.value, 10));
+                  setPage(0);
+                }}
+                sx={{
+                  color: "var(--text-primary)",
+                  border: "none",
+                  "& .MuiTablePagination-selectLabel, & .MuiTablePagination-displayedRows": {
+                    fontWeight: 700,
+                    color: "var(--text-secondary)"
+                  }
+                }}
+              />
+            </Box>
+          </>
+          {/* )} */}
         </Box>
       )}
 
       {activeTab === 1 && (
-        <Box 
-          sx={{ 
-            animation: "fadeIn 0.3s ease", 
-            display: "flex", 
-            flexDirection: { xs: "column", sm: "row" }, 
-            gap: 3, 
-            alignItems: "stretch" 
+        <Box
+          sx={{
+            animation: "fadeIn 0.3s ease",
+            display: "flex",
+            flexDirection: { xs: "column", sm: "row" },
+            gap: 3,
+            alignItems: "stretch"
           }}
         >
           {/* CSV Bulk Uploader */}
@@ -747,19 +747,19 @@ const ReferenceJournalManagement = () => {
               onDrop={handleDrop}
               onClick={triggerFileInput}
               sx={{
-                border: dragActive 
-                  ? "2px dashed var(--color-primary)" 
+                border: dragActive
+                  ? "2px dashed var(--color-primary)"
                   : "2px dashed var(--border-color)",
                 borderRadius: "20px",
                 p: 4,
                 textAlign: "center",
-                background: dragActive 
-                  ? "rgba(11, 82, 153, 0.05)" 
+                background: dragActive
+                  ? "rgba(11, 82, 153, 0.05)"
                   : "rgba(0,0,0,0.01)",
                 cursor: "pointer",
                 mb: 3,
                 transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-                "&:hover": { 
+                "&:hover": {
                   borderColor: "var(--color-primary)",
                   background: "rgba(11, 82, 153, 0.02)"
                 }
@@ -806,8 +806,8 @@ const ReferenceJournalManagement = () => {
                     </Typography>
                   </Box>
                 </Box>
-                <IconButton 
-                  size="small" 
+                <IconButton
+                  size="small"
                   onClick={(e) => {
                     e.stopPropagation();
                     setCsvFile(null);
@@ -827,9 +827,9 @@ const ReferenceJournalManagement = () => {
                 size="medium"
                 startIcon={<DownloadIcon />}
                 onClick={downloadSampleTemplate}
-                sx={{ 
-                  textTransform: "none", 
-                  borderRadius: "12px", 
+                sx={{
+                  textTransform: "none",
+                  borderRadius: "12px",
                   fontWeight: 700,
                   borderColor: "var(--border-color)",
                   color: "var(--text-primary)",
@@ -865,8 +865,8 @@ const ReferenceJournalManagement = () => {
             {uploadResult && (
               <Alert
                 severity="success"
-                sx={{ 
-                  borderRadius: "16px", 
+                sx={{
+                  borderRadius: "16px",
                   fontSize: "0.85rem",
                   border: "1px solid rgba(16, 185, 129, 0.2)",
                   background: "rgba(16, 185, 129, 0.05)"
@@ -1056,11 +1056,11 @@ const ReferenceJournalManagement = () => {
             </Box>
           ) : (
             <>
-              <TableContainer 
-                component={Paper} 
-                sx={{ 
-                  borderRadius: "20px", 
-                  background: "var(--bg-paper)", 
+              <TableContainer
+                component={Paper}
+                sx={{
+                  borderRadius: "20px",
+                  background: "var(--bg-paper)",
                   border: "1px solid var(--border-color)",
                   boxShadow: "0 4px 24px rgba(0,0,0,0.01)",
                   overflow: "hidden"
@@ -1080,14 +1080,14 @@ const ReferenceJournalManagement = () => {
                   <TableBody>
                     {jifs.length > 0 ? (
                       jifs.map((record) => (
-                        <TableRow 
-                          key={record._id} 
-                          sx={{ 
+                        <TableRow
+                          key={record._id}
+                          sx={{
                             transition: "all 0.2s",
-                            "&:hover": { 
+                            "&:hover": {
                               background: "rgba(11, 82, 153, 0.01)",
                               boxShadow: "inset 4px 0 0 var(--color-primary)"
-                            } 
+                            }
                           }}
                         >
                           <TableCell align="center" sx={{ fontWeight: 700, color: "var(--text-secondary)" }}>
@@ -1122,7 +1122,7 @@ const ReferenceJournalManagement = () => {
                               <Tooltip title="Edit Details">
                                 <IconButton
                                   size="small"
-                                  sx={{ 
+                                  sx={{
                                     color: "var(--color-primary)",
                                     background: "rgba(11, 82, 153, 0.05)",
                                     "&:hover": { background: "rgba(11, 82, 153, 0.12)" }
@@ -1135,7 +1135,7 @@ const ReferenceJournalManagement = () => {
                               <Tooltip title="Remove Record">
                                 <IconButton
                                   size="small"
-                                  sx={{ 
+                                  sx={{
                                     color: "#ef4444",
                                     background: "rgba(239, 68, 68, 0.05)",
                                     "&:hover": { background: "rgba(239, 68, 68, 0.12)" }
@@ -1179,7 +1179,7 @@ const ReferenceJournalManagement = () => {
                     setJifRowsPerPage(parseInt(e.target.value, 10));
                     setJifPage(0);
                   }}
-                  sx={{ 
+                  sx={{
                     color: "var(--text-primary)",
                     border: "none",
                     "& .MuiTablePagination-selectLabel, & .MuiTablePagination-displayedRows": {
@@ -1281,23 +1281,23 @@ const ReferenceJournalManagement = () => {
               )}
             </DialogContent>
             <DialogActions sx={{ px: 3, pb: 2 }}>
-              <Button 
+              <Button
                 onClick={() => setEditingJournal(null)}
-                sx={{ 
-                  textTransform: "none", 
-                  fontWeight: 700, 
+                sx={{
+                  textTransform: "none",
+                  fontWeight: 700,
                   borderRadius: "10px",
                   color: "var(--text-secondary)"
                 }}
               >
                 Cancel
               </Button>
-              <Button 
+              <Button
                 type="submit"
                 variant="contained"
-                sx={{ 
-                  textTransform: "none", 
-                  fontWeight: 700, 
+                sx={{
+                  textTransform: "none",
+                  fontWeight: 700,
                   borderRadius: "10px",
                   background: "var(--gradient-primary)",
                   color: "#fff",
@@ -1407,23 +1407,23 @@ const ReferenceJournalManagement = () => {
               />
             </DialogContent>
             <DialogActions sx={{ px: 3, pb: 2 }}>
-              <Button 
+              <Button
                 onClick={() => setEditingJif(null)}
-                sx={{ 
-                  textTransform: "none", 
-                  fontWeight: 700, 
+                sx={{
+                  textTransform: "none",
+                  fontWeight: 700,
                   borderRadius: "10px",
                   color: "var(--text-secondary)"
                 }}
               >
                 Cancel
               </Button>
-              <Button 
+              <Button
                 type="submit"
                 variant="contained"
-                sx={{ 
-                  textTransform: "none", 
-                  fontWeight: 700, 
+                sx={{
+                  textTransform: "none",
+                  fontWeight: 700,
                   borderRadius: "10px",
                   background: "var(--gradient-primary)",
                   color: "#fff",
