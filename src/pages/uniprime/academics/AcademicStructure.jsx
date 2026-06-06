@@ -232,13 +232,13 @@ const AcademicStructure = () => {
         if (type === 'branch' && mode === 'add') {
             if (selectedDepartment) {
                 modalData.departmentId = selectedDepartment._id;
-                if (!selectedProgram) {
+                if (!data.programId) {
                     modalData.name = selectedDepartment.name;
                     modalData.code = selectedDepartment.code;
                 }
             }
-            if (selectedProgram) {
-                modalData.programId = selectedProgram._id;
+            if (data.programId) {
+                modalData.programId = data.programId;
             }
             if (selectedSchool) {
                 modalData.schoolId = selectedSchool._id;
@@ -887,7 +887,7 @@ const AcademicStructure = () => {
                                             transform: 'translateY(-2px)'
                                         }
                                     }}
-                                    onClick={() => openModal('branch', 'add', { departmentId: selectedDepartment._id, programId: selectedProgram._id })}
+                                    onClick={() => openModal('branch', 'add', { departmentId: selectedDepartment._id, programId: selectedProgram._id, lockProgram: true })}
                                 >
                                     <Box sx={{ textAlign: "center", p: 1 }}>
                                         <Add sx={{ fontSize: 20, color: '#8b5cf6', mb: 0.25 }} />
@@ -1162,7 +1162,15 @@ const AcademicStructure = () => {
             {/* Entity Dialog */}
             <Dialog open={modal.open} onClose={() => setModal({ ...modal, open: false })} maxWidth="xs" fullWidth>
                 <DialogTitle sx={{ fontWeight: 700 }}>
-                    {modal.mode === 'add' ? 'Add' : 'Edit'} {modal.type === 'branch' ? (selectedProgram ? `Specialization for ${selectedProgram.name}` : `Program for ${selectedDepartment?.name}`) : modal.type?.toUpperCase()}
+                    {modal.mode === 'add' 
+                        ? (modal.type === 'branch' 
+                            ? (modal.data.lockProgram 
+                                ? `Add Specialization for ${programs.find(p => p._id === (modal.data.programId?._id || modal.data.programId))?.name || ''}`
+                                : `Add Program for ${selectedDepartment?.name || ''}`)
+                            : `Add ${modal.type?.toUpperCase()}`)
+                        : (modal.type === 'branch'
+                            ? `Edit Specialization for ${programs.find(p => p._id === (modal.data.programId?._id || modal.data.programId))?.name || ''}`
+                            : `Edit ${modal.type?.toUpperCase()}`)}
                 </DialogTitle>
                 <DialogContent sx={{ py: 2 }}>
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, mt: 1 }}>
@@ -1225,7 +1233,7 @@ const AcademicStructure = () => {
                                     value={modal.data.programId?._id || modal.data.programId || ''}
                                     onChange={(e) => setModal({ ...modal, data: { ...modal.data, programId: e.target.value } })}
                                     label="Program"
-                                    disabled={modal.mode === 'edit' || (modal.mode === 'add' && !!selectedProgram)}
+                                    disabled={modal.mode === 'edit' || (modal.mode === 'add' && !!modal.data.lockProgram)}
                                 >
                                     {programs.map(p => (
                                         <MenuItem key={p._id} value={p._id}>
