@@ -180,6 +180,9 @@ const AcademicStructure = () => {
             if (payload.programId && typeof payload.programId === 'object') {
                 payload.programId = payload.programId._id;
             }
+            if (payload.schoolIds && Array.isArray(payload.schoolIds)) {
+                payload.schoolIds = payload.schoolIds.map(s => typeof s === 'object' ? s._id : s);
+            }
 
             let res;
             const pluralType = type === 'branch' ? 'branches' : `${type}s`;
@@ -237,6 +240,9 @@ const AcademicStructure = () => {
             if (selectedProgram) {
                 modalData.programId = selectedProgram._id;
             }
+            if (selectedSchool) {
+                modalData.schoolId = selectedSchool._id;
+            }
         }
         setModal({ open: true, type, mode, data: modalData });
     };
@@ -246,7 +252,11 @@ const AcademicStructure = () => {
 
         // School departments (if a school is selected)
         const schoolDepts = selectedSchool 
-            ? departments.filter(d => d.schoolId?._id === selectedSchool._id || d.schoolId === selectedSchool._id)
+            ? departments.filter(d => 
+                (d.schoolIds && d.schoolIds.some(id => (id?._id || id) === selectedSchool._id)) ||
+                d.schoolId?._id === selectedSchool._id || 
+                d.schoolId === selectedSchool._id
+              )
             : [];
 
         // Programs for the selected department
@@ -277,7 +287,8 @@ const AcademicStructure = () => {
         const programBranches = (selectedDepartment && selectedProgram)
             ? branches.filter(b => 
                 (b.departmentId?._id === selectedDepartment._id || b.departmentId === selectedDepartment._id) &&
-                (b.programId?._id === selectedProgram._id || b.programId === selectedProgram._id)
+                (b.programId?._id === selectedProgram._id || b.programId === selectedProgram._id) &&
+                (!selectedSchool || !b.schoolId || (b.schoolId?._id === selectedSchool._id || b.schoolId === selectedSchool._id))
               )
             : [];
 
@@ -302,8 +313,15 @@ const AcademicStructure = () => {
                     
                     <Grid container spacing={3} sx={{ mb: 2, flexWrap: 'nowrap' }}>
                         {schools.map(school => {
-                            const sDepts = departments.filter(d => d.schoolId?._id === school._id || d.schoolId === school._id);
-                            const sBranches = branches.filter(b => sDepts.some(d => d._id === b.departmentId?._id || d._id === b.departmentId));
+                            const sDepts = departments.filter(d => 
+                                (d.schoolIds && d.schoolIds.some(id => (id?._id || id) === school._id)) ||
+                                d.schoolId?._id === school._id || 
+                                d.schoolId === school._id
+                            );
+                            const sBranches = branches.filter(b => 
+                                b.schoolId?._id === school._id || b.schoolId === school._id ||
+                                (!b.schoolId && sDepts.some(d => d._id === b.departmentId?._id || d._id === b.departmentId))
+                            );
                             const sProgs = programs.filter(p => p.schoolId?._id === school._id || p.schoolId === school._id);
                             const isSelected = selectedSchool?._id === school._id;
                             
@@ -1236,13 +1254,30 @@ const AcademicStructure = () => {
                                 
                                 {(!modal.data.type || modal.data.type === 'Academic') && (
                                     <FormControl fullWidth>
-                                        <InputLabel>School</InputLabel>
+                                        <InputLabel>Schools</InputLabel>
                                         <Select
-                                            value={modal.data.schoolId?._id || modal.data.schoolId || ''}
-                                            onChange={(e) => setModal({ ...modal, data: { ...modal.data, schoolId: e.target.value } })}
-                                            label="School"
+                                            multiple
+                                            value={
+                                                modal.data.schoolIds 
+                                                    ? modal.data.schoolIds.map(s => typeof s === 'object' ? s._id : s) 
+                                                    : (modal.data.schoolId ? [typeof modal.data.schoolId === 'object' ? modal.data.schoolId._id : modal.data.schoolId] : [])
+                                            }
+                                            onChange={(e) => setModal({ ...modal, data: { ...modal.data, schoolIds: e.target.value } })}
+                                            label="Schools"
+                                            renderValue={(selected) => (
+                                                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                                                    {selected.map((value) => {
+                                                        const school = schools.find(s => s._id === value);
+                                                        return <Chip key={value} label={school ? school.code : value} size="small" />;
+                                                    })}
+                                                </Box>
+                                            )}
                                         >
-                                            {schools.map(s => <MenuItem key={s._id} value={s._id}>{s.name} ({s.code})</MenuItem>)}
+                                            {schools.map(s => (
+                                                <MenuItem key={s._id} value={s._id}>
+                                                    {s.name} ({s.code})
+                                                </MenuItem>
+                                            ))}
                                         </Select>
                                     </FormControl>
                                 )}
