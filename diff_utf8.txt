@@ -1,0 +1,854 @@
+diff --git a/src/pages/hod/AppraisalEvaluation.jsx b/src/pages/hod/AppraisalEvaluation.jsx
+index 79609ce..4ba30b5 100644
+--- a/src/pages/hod/AppraisalEvaluation.jsx
++++ b/src/pages/hod/AppraisalEvaluation.jsx
+@@ -23,9 +23,16 @@ import {
+   Chip,
+   Stack,
+   IconButton,
+-  CircularProgress
++  CircularProgress,
++  Dialog,
++  DialogTitle,
++  DialogContent,
++  DialogActions,
++  InputAdornment,
++  Select,
++  MenuItem
+ } from "@mui/material";
+-import { RateReview, CheckCircle, Reply, Visibility, OpenInNew, School, Science, CardMembership, Work, Groups, Person, MenuBook, Badge, Description, Public, Fingerprint, Cancel, BarChart } from "@mui/icons-material";
++import { RateReview, CheckCircle, Reply, Visibility, OpenInNew, School, Science, CardMembership, Work, Groups, Person, MenuBook, Badge, Description, Public, Fingerprint, Cancel, BarChart, Close, Search } from "@mui/icons-material";
+ import axiosInstance from "../../api/axios";
+ import { toast } from "sonner";
+ 
+@@ -220,6 +227,15 @@ const AppraisalEvaluation = () => {
+   const [contRemarks, setContRemarks] = useState({}); // { itemId: remarks }
+   const [adminRemarks, setAdminRemarks] = useState({}); // { roleName: remarks }
+ 
++  // Details dialog states
++  const [selectedResUtDetails, setSelectedResUtDetails] = useState(null);
++  const [selectedContDetails, setSelectedContDetails] = useState(null);
++  const [dialogComment, setDialogComment] = useState("");
++
++  // Filters
++  const [statusFilter, setStatusFilter] = useState("Pending");
++  const [searchTerm, setSearchTerm] = useState("");
++
+   // HOD actions on individual sections
+   const handleProctoringHODAction = async (id, action, remarks) => {
+     if (action === "Reject" && (!remarks || !remarks.trim())) {
+@@ -404,14 +420,20 @@ const AppraisalEvaluation = () => {
+ 
+   const handleSelectAppraisal = async (appr) => {
+     setSelectedAppraisal(appr);
+-    // Initialize ratings
+     const initRatings = {};
+-    PARAMETERS.forEach(p => {
+-      initRatings[p.id] = 5; // default to 5
+-    });
++    if (appr.hodEvaluation?.interpersonalRatings?.length > 0) {
++      appr.hodEvaluation.interpersonalRatings.forEach(r => {
++        initRatings[r.parameterId] = r.rating;
++      });
++      setComments(appr.hodEvaluation.comments || "");
++    } else {
++      PARAMETERS.forEach(p => {
++        initRatings[p.id] = ""; // default to empty (no selection)
++      });
++      setComments("");
++    }
+     setRatings(initRatings);
+-    setComments("");
+-    setProctoringRemarks("");
++    setProctoringRemarks(appr.proctoringDetail?.remarks || "");
+     setResUtRemarks({});
+     setContRemarks({});
+     setAdminRemarks({});
+@@ -436,7 +458,7 @@ const AppraisalEvaluation = () => {
+   const calculateTotalScore = () => {
+     let total = 0;
+     Object.keys(ratings).forEach(k => {
+-      total += ratings[k];
++      total += Number(ratings[k]) || 0;
+     });
+     return total;
+   };
+@@ -470,6 +492,24 @@ const AppraisalEvaluation = () => {
+       setLoading(false);
+     }
+   };
++    const filteredList = pendingList.filter(appr => {
++    // 1. Status Filter
++    const matchesStatus = (() => {
++      if (statusFilter === "Pending") return appr.status === "Submitted to HOD";
++      if (statusFilter === "Approved") return appr.status === "Pending Research Admin" || appr.status === "Completed";
++      if (statusFilter === "Rejected") return appr.status === "Rejected by HOD";
++      return true; // "All"
++    })();
++
++    // 2. Search Term Filter
++    const name = appr.facultyId?.name?.toLowerCase() || "";
++    const empId = appr.facultyId?.institutionId?.toLowerCase() || "";
++    const dept = appr.personalInfoSnapshot?.departmentName?.toLowerCase() || "";
++    const query = searchTerm.toLowerCase();
++    const matchesSearch = name.includes(query) || empId.includes(query) || dept.includes(query);
++
++    return matchesStatus && matchesSearch;
++  });
+ 
+   return (
+     <Box p={4} sx={{ maxWidth: 1200, margin: "0 auto", animation: "fadeIn 0.5s ease" }}>
+@@ -479,51 +519,123 @@ const AppraisalEvaluation = () => {
+       </Typography>
+ 
+       {!selectedAppraisal ? (
+-        <Card sx={{ borderRadius: "16px", background: "var(--bg-panel)", border: "1px solid var(--border-color)" }}>
+-          <CardContent>
+-            <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 3, color: "var(--text-secondary)" }}>
+-              Pending Faculty Appraisals
+-            </Typography>
+-
+-            <TableContainer component={Paper} sx={{ borderRadius: "12px", background: "var(--bg-paper)", border: "1px solid var(--border-color)" }}>
+-              <Table size="small">
+-                <TableHead>
+-                  <TableRow sx={{ background: "var(--bg-accent-4)" }}>
+-                    <TableCell sx={{ fontWeight: 700 }}>Faculty Name</TableCell>
+-                    <TableCell sx={{ fontWeight: 700 }}>Employee ID</TableCell>
+-                    <TableCell sx={{ fontWeight: 700 }}>Department</TableCell>
+-                    <TableCell sx={{ fontWeight: 700 }}>Academic Year</TableCell>
+-                    <TableCell sx={{ fontWeight: 700 }} align="center">Action</TableCell>
+-                  </TableRow>
+-                </TableHead>
+-                <TableBody>
+-                  {pendingList.length > 0 ? (
+-                    pendingList.map((appr) => (
+-                      <TableRow key={appr._id}>
+-                        <TableCell sx={{ fontWeight: 600 }}>{appr.facultyId?.name}</TableCell>
+-                        <TableCell>{appr.facultyId?.institutionId}</TableCell>
+-                        <TableCell>{appr.personalInfoSnapshot?.departmentName}</TableCell>
+-                        <TableCell>{appr.academicYearId?.year}</TableCell>
+-                        <TableCell align="center">
+-                          <Button 
+-                            variant="contained" 
+-                            size="small" 
+-                            startIcon={<RateReview />}
+-                            onClick={() => handleSelectAppraisal(appr)}
+-                            sx={{ textTransform: "none", fontWeight: 700 }}
+-                          >
+-                            Evaluate
+-                          </Button>
+-                        </TableCell>
+-                      </TableRow>
+-                    ))
+-                  ) : (
++        <Box>
++          {/* Filters Block */}
++          <Box sx={{ display: "flex", gap: 3, mb: 4, flexWrap: "wrap", alignItems: "center", justifyContent: "space-between" }}>
++            <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
++              <FormControl size="small" sx={{ minWidth: 200 }}>
++                <Typography variant="caption" sx={{ fontWeight: 700, mb: 0.5, color: "var(--text-secondary)" }}>Status</Typography>
++                <Select
++                  value={statusFilter}
++                  onChange={(e) => setStatusFilter(e.target.value)}
++                  sx={{
++                    borderRadius: "10px",
++                    background: "var(--bg-paper)",
++                    "& .MuiOutlinedInput-notchedOutline": { borderColor: "var(--border-color)" }
++                  }}
++                >
++                  <MenuItem value="Pending">Pending Verification</MenuItem>
++                  <MenuItem value="Approved">Approved / Forwarded</MenuItem>
++                  <MenuItem value="Rejected">Rejected by HOD</MenuItem>
++                  <MenuItem value="All">All Requests</MenuItem>
++                </Select>
++              </FormControl>
++            </Box>
++
++            <Box sx={{ width: { xs: "100%", sm: 320 } }}>
++              <Typography variant="caption" sx={{ fontWeight: 700, mb: 0.5, color: "var(--text-secondary)", display: "block" }}>Search</Typography>
++              <TextField
++                size="small"
++                fullWidth
++                placeholder="Search by name, Emp ID..."
++                value={searchTerm}
++                onChange={(e) => setSearchTerm(e.target.value)}
++                sx={{
++                  "& .MuiOutlinedInput-root": {
++                    borderRadius: "10px",
++                    background: "var(--bg-paper)",
++                    borderColor: "var(--border-color)"
++                  }
++                }}
++                InputProps={{
++                  startAdornment: (
++                    <InputAdornment position="start">
++                      <Search sx={{ color: "var(--text-secondary)", fontSize: "1.2rem" }} />
++                    </InputAdornment>
++                  )
++                }}
++              />
++            </Box>
++          </Box>
++
++          <Card sx={{ borderRadius: "16px", background: "var(--bg-panel)", border: "1px solid var(--border-color)", boxShadow: "var(--shadow-premium)" }}>
++            <CardContent sx={{ p: 3 }}>
++              <Typography variant="subtitle1" sx={{ fontWeight: 800, mb: 3, color: "var(--text-primary)" }}>
++                Faculty Appraisals List
++              </Typography>
++
++              <TableContainer component={Paper} sx={{ borderRadius: "12px", background: "var(--bg-paper)", border: "1px solid var(--border-color)", overflow: "hidden" }}>
++                <Table size="small">
++                  <TableHead sx={{ background: "linear-gradient(to right, #003366, #004E92)" }}>
+                     <TableRow>
+-                      <TableCell colSpan={5} align="center" sx={{ py: 4, color: "var(--text-secondary)" }}>
+-                        No pending appraisals to verify.
+-                      </TableCell>
++                      <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 1.5, width: "60px" }}>#</TableCell>
++                      <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 1.5 }}>FACULTY NAME</TableCell>
++                      <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 1.5, width: "130px" }}>EMPLOYEE ID</TableCell>
++                      <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 1.5 }}>DEPARTMENT</TableCell>
++                      <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 1.5, width: "150px" }}>ACADEMIC YEAR</TableCell>
++                      <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 1.5, width: "150px" }}>STATUS</TableCell>
++                      <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 1.5, width: "120px" }} align="center">ACTION</TableCell>
+                     </TableRow>
+-                  )}
++                  </TableHead>
++                  <TableBody>
++                    {filteredList.length > 0 ? (
++                      filteredList.map((appr, idx) => {
++                        const displayStatus = appr.status === "Submitted to HOD" 
++                          ? "Pending" 
++                          : (appr.status === "Pending Research Admin" || appr.status === "Completed" ? "Approved" : "Rejected");
++                        const statusColor = getStatusColor(displayStatus === "Pending" ? "Pending at HOD" : displayStatus);
++
++                        return (
++                          <TableRow key={appr._id} sx={{ "&:hover": { bgcolor: "rgba(0,0,0,0.015)" } }}>
++                            <TableCell sx={{ fontWeight: 600 }}>{idx + 1}</TableCell>
++                            <TableCell sx={{ fontWeight: 700, color: "var(--text-primary)" }}>{appr.facultyId?.name}</TableCell>
++                            <TableCell sx={{ fontWeight: 600 }}>{appr.facultyId?.institutionId}</TableCell>
++                            <TableCell>{appr.personalInfoSnapshot?.departmentName}</TableCell>
++                            <TableCell sx={{ fontWeight: 600 }}>{appr.academicYearId?.year}</TableCell>
++                            <TableCell>
++                              <Chip 
++                                label={displayStatus === "Pending" ? "Pending at HOD" : displayStatus} 
++                                size="small" 
++                                sx={{ 
++                                  bgcolor: statusColor.bg, 
++                                  color: statusColor.color, 
++                                  fontWeight: 800, 
++                                  borderRadius: "6px" 
++                                }} 
++                              />
++                            </TableCell>
++                            <TableCell align="center">
++                              <Button 
++                                variant={appr.status === "Submitted to HOD" ? "contained" : "outlined"}
++                                size="small" 
++                                startIcon={appr.status === "Submitted to HOD" ? <RateReview /> : <Visibility />}
++                                onClick={() => handleSelectAppraisal(appr)}
++                                color={appr.status === "Submitted to HOD" ? "primary" : "secondary"}
++                                sx={{ textTransform: "none", fontWeight: 700 }}
++                              >
++                                {appr.status === "Submitted to HOD" ? "Evaluate" : "View"}
++                              </Button>
++                            </TableCell>
++                          </TableRow>
++                        );
++                      })
++                    ) : (
++                      <TableRow>
++                        <TableCell colSpan={7} align="center" sx={{ py: 4, color: "var(--text-secondary)" }}>
++                          No appraisals found matching the filters.
++                        </TableCell>
++                      </TableRow>
++                    )}
+                 </TableBody>
+               </Table>
+             </TableContainer>
+@@ -1232,6 +1344,7 @@ const AppraisalEvaluation = () => {
+                         <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 1, width: "180px" }}>Role</TableCell>
+                         <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 1, width: "130px" }}>Points claimed</TableCell>
+                         <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 1, width: "120px" }}>Status</TableCell>
++                        <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 1, width: "80px" }} align="center">Actions</TableCell>
+                       </TableRow>
+                     </TableHead>
+                     <TableBody>
+@@ -1272,16 +1385,7 @@ const AppraisalEvaluation = () => {
+                                           )}
+                                         </Box>
+                                       )}
+-                                      {item.remarks && (
+-                                        <Typography variant="caption" color="var(--text-secondary)" display="block" sx={{ mt: 0.5 }}>
+-                                          Faculty Remarks: {item.remarks}
+-                                        </Typography>
+-                                      )}
+-                                      {fileUrl && (
+-                                        <Button size="small" startIcon={<OpenInNew />} onClick={() => window.open(fileUrl, '_blank')} sx={{ mt: 0.5, textTransform: "none", py: 0.1, px: 0.5, minWidth: 0, fontSize: "0.72rem" }}>
+-                                          View Proof
+-                                        </Button>
+-                                      )}
++                                      {/* Removed remarks and proof buttons as they are available in eye-icon dialog */}
+                                     </Box>
+                                   </TableCell>
+                                   <TableCell sx={{ color: "var(--text-primary)" }}>{item.duration} Days</TableCell>
+@@ -1292,12 +1396,24 @@ const AppraisalEvaluation = () => {
+                                   <TableCell>
+                                     <Chip label={item.status} size="small" sx={{ bgcolor: statusColor.bg, color: statusColor.color, fontWeight: 800, borderRadius: "6px" }} />
+                                   </TableCell>
++                                  <TableCell align="center">
++                                    <IconButton
++                                      size="small"
++                                      color="primary"
++                                      onClick={() => {
++                                        setSelectedResUtDetails(item);
++                                        setDialogComment(item.hodComment || "");
++                                      }}
++                                    >
++                                      <Visibility fontSize="small" />
++                                    </IconButton>
++                                  </TableCell>
+                                 </TableRow>
+ 
+                                 {/* Inline Actions Row */}
+                                 {(item.status === "Pending" || item.status === "Pending at HOD") ? (
+                                   <TableRow sx={{ background: "rgba(232, 160, 0, 0.02)" }}>
+-                                    <TableCell colSpan={6} sx={{ py: 1.5 }}>
++                                    <TableCell colSpan={7} sx={{ py: 1.5 }}>
+                                       <Box display="flex" gap={2} alignItems="center" px={1}>
+                                         <TextField
+                                           size="small"
+@@ -1327,7 +1443,7 @@ const AppraisalEvaluation = () => {
+                             <TableCell align="center" sx={{ fontWeight: 900, color: "var(--color-primary)" }}>
+                               {Math.min(10, selectedAppraisal.resourceUtilizationDetails.reduce((sum, r) => r.status !== 'Rejected' ? sum + calculateResourceUtilizationPoints(r, appraisalConfig) : sum, 0))}
+                             </TableCell>
+-                            <TableCell></TableCell>
++                            <TableCell colSpan={2}></TableCell>
+                           </TableRow>
+                         </>
+                       ) : (
+@@ -1355,6 +1471,7 @@ const AppraisalEvaluation = () => {
+                         <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 1 }}>Details of the Faculty Expertise/Recognition/Contribution</TableCell>
+                         <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 1, width: "130px", whiteSpace: "nowrap" }}>Points claimed</TableCell>
+                         <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 1, width: "120px" }}>Status</TableCell>
++                        <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 1, width: "80px" }} align="center">Actions</TableCell>
+                       </TableRow>
+                     </TableHead>
+                     <TableBody>
+@@ -1381,11 +1498,7 @@ const AppraisalEvaluation = () => {
+                                       {item.duration && <Typography variant="caption" color="var(--text-secondary)" display="block" sx={{ fontSize: "0.7rem" }}>Duration: {item.duration}</Typography>}
+                                       {item.fromDate && <Typography variant="caption" color="var(--text-secondary)" display="block" sx={{ fontSize: "0.7rem" }}>Dates: {new Date(item.fromDate).toLocaleDateString("en-IN")} to {new Date(item.toDate).toLocaleDateString("en-IN")}</Typography>}
+                                       {item.url && <Typography variant="caption" color="var(--text-secondary)" display="block" sx={{ fontSize: "0.7rem" }}>Link: <a href={item.url} target="_blank" rel="noopener noreferrer" style={{ color: "var(--color-primary)" }}>{item.url}</a></Typography>}
+-                                      {fileUrl && (
+-                                        <Button size="small" startIcon={<OpenInNew />} onClick={() => window.open(fileUrl, '_blank')} sx={{ mt: 0.5, textTransform: "none", py: 0.1, px: 0.5, minWidth: 0, fontSize: "0.72rem" }}>
+-                                          View Proof
+-                                        </Button>
+-                                      )}
++                                      {/* Removed proof button as it is available in eye-icon dialog */}
+                                     </Box>
+                                   </TableCell>
+                                   <TableCell align="center" sx={{ fontWeight: 800, color: "var(--color-primary)" }}>
+@@ -1394,12 +1507,24 @@ const AppraisalEvaluation = () => {
+                                   <TableCell>
+                                     <Chip label={item.status} size="small" sx={{ bgcolor: statusColor.bg, color: statusColor.color, fontWeight: 800, borderRadius: "6px" }} />
+                                   </TableCell>
++                                  <TableCell align="center">
++                                    <IconButton
++                                      size="small"
++                                      color="primary"
++                                      onClick={() => {
++                                        setSelectedContDetails(item);
++                                        setDialogComment(item.hodComment || "");
++                                      }}
++                                    >
++                                      <Visibility fontSize="small" />
++                                    </IconButton>
++                                  </TableCell>
+                                 </TableRow>
+ 
+                                 {/* Inline Actions Row */}
+                                 {(item.status === "Pending" || item.status === "Pending at HOD") ? (
+                                   <TableRow sx={{ background: "rgba(232, 160, 0, 0.02)" }}>
+-                                    <TableCell colSpan={4} sx={{ py: 1.5 }}>
++                                    <TableCell colSpan={5} sx={{ py: 1.5 }}>
+                                       <Box display="flex" gap={2} alignItems="center" px={1}>
+                                         <TextField
+                                           size="small"
+@@ -1429,7 +1554,7 @@ const AppraisalEvaluation = () => {
+                             <TableCell align="center" sx={{ fontWeight: 900, color: "var(--color-primary)" }}>
+                               {Math.min(10, selectedAppraisal.contributionDetails.reduce((sum, r) => r.status !== 'Rejected' ? sum + calculateContributionPoints(r, appraisalConfig) : sum, 0))}
+                             </TableCell>
+-                            <TableCell></TableCell>
++                            <TableCell colSpan={2}></TableCell>
+                           </TableRow>
+                         </>
+                       ) : (
+@@ -1609,8 +1734,9 @@ const AppraisalEvaluation = () => {
+                       <FormControl component="fieldset">
+                         <RadioGroup
+                           row
+-                          value={ratings[p.id] || 5}
++                          value={ratings[p.id] !== undefined && ratings[p.id] !== null ? ratings[p.id] : ""}
+                           onChange={(e) => handleRatingChange(p.id, e.target.value)}
++                          disabled={selectedAppraisal.status !== "Submitted to HOD"}
+                         >
+                           {[1, 2, 3, 4, 5].map((val) => (
+                             <FormControlLabel 
+@@ -1640,59 +1766,414 @@ const AppraisalEvaluation = () => {
+                   fullWidth
+                   value={comments}
+                   onChange={(e) => setComments(e.target.value)}
++                  InputProps={{ readOnly: selectedAppraisal.status !== "Submitted to HOD" }}
+                   sx={{ mb: 2 }}
+                 />
+ 
+-                {(() => {
+-                  const validationStatus = getAppraisalValidationStatus();
+-                  return (
+-                    <>
+-                      {validationStatus.hasPending && (
+-                        <Alert severity="warning" sx={{ mb: 2, borderRadius: "10px", py: 0.5 }}>
+-                          <Typography variant="caption" sx={{ fontWeight: 700 }}>
+-                            Please approve or reject all pending sections first.
+-                          </Typography>
+-                        </Alert>
+-                      )}
+-                      {validationStatus.hasRejected && (
+-                        <Alert severity="error" sx={{ mb: 2, borderRadius: "10px", py: 0.5 }}>
+-                          <Typography variant="caption" sx={{ fontWeight: 700 }}>
+-                            Some sections have been rejected. Click "Send Back for Corrections" to return the form to the faculty member.
+-                          </Typography>
+-                        </Alert>
+-                      )}
+-                      <Box display="flex" gap={1.5} justifyContent="flex-end">
+-                        <Button 
+-                          variant="outlined" 
+-                          color="error" 
+-                          size="small"
+-                          onClick={() => handleSubmitEvaluation("Reject")}
+-                          disabled={loading}
+-                          sx={{ textTransform: "none", fontWeight: 700 }}
+-                        >
+-                          Send Back for Corrections
+-                        </Button>
+-                        <Button 
+-                          variant="contained" 
+-                          color="success" 
+-                          size="small"
+-                          startIcon={<CheckCircle />}
+-                          onClick={() => handleSubmitEvaluation("Approve")}
+-                          disabled={loading || validationStatus.hasPending || validationStatus.hasRejected}
+-                          sx={{ textTransform: "none", fontWeight: 700, color: "#fff" }}
+-                        >
+-                          Approve & Forward
+-                        </Button>
+-                      </Box>
+-                    </>
+-                  );
+-                })()}
++                {selectedAppraisal.status !== "Submitted to HOD" ? (
++                  <Alert 
++                    severity={selectedAppraisal.status === "Rejected by HOD" ? "error" : "success"}
++                    sx={{ mb: 2, borderRadius: "10px", py: 1 }}
++                  >
++                    <Typography variant="body2" sx={{ fontWeight: 700 }}>
++                      {selectedAppraisal.status === "Rejected by HOD" 
++                        ? `This appraisal was rejected and sent back to the faculty member.`
++                        : `This appraisal has been verified and forwarded to R&D Admin.`}
++                    </Typography>
++                    {selectedAppraisal.hodEvaluation?.evaluationDate && (
++                      <Typography variant="caption" sx={{ color: "text.secondary", display: "block", mt: 0.5 }}>
++                        Evaluation Date: {new Date(selectedAppraisal.hodEvaluation.evaluationDate).toLocaleString("en-IN")}
++                      </Typography>
++                    )}
++                  </Alert>
++                ) : (
++                  (() => {
++                    const validationStatus = getAppraisalValidationStatus();
++                    const allRatingsProvided = PARAMETERS.every(p => ratings[p.id] !== undefined && ratings[p.id] !== null && ratings[p.id] !== "");
++                    return (
++                      <>
++                        {validationStatus.hasPending && (
++                          <Alert severity="warning" sx={{ mb: 2, borderRadius: "10px", py: 0.5 }}>
++                            <Typography variant="caption" sx={{ fontWeight: 700 }}>
++                              Please approve or reject all pending sections first.
++                            </Typography>
++                          </Alert>
++                        )}
++                        {!allRatingsProvided && (
++                          <Alert severity="warning" sx={{ mb: 2, borderRadius: "10px", py: 0.5 }}>
++                            <Typography variant="caption" sx={{ fontWeight: 700 }}>
++                              Please rate all 10 HOD Interpersonal Skills parameters.
++                            </Typography>
++                          </Alert>
++                        )}
++                        {validationStatus.hasRejected && (
++                          <Alert severity="error" sx={{ mb: 2, borderRadius: "10px", py: 0.5 }}>
++                            <Typography variant="caption" sx={{ fontWeight: 700 }}>
++                              Some sections have been rejected. Click "Send Back for Corrections" to return the form to the faculty member.
++                            </Typography>
++                          </Alert>
++                        )}
++                        <Box display="flex" gap={1.5} justifyContent="flex-end">
++                          <Button 
++                            variant="outlined" 
++                            color="error" 
++                            size="small"
++                            onClick={() => handleSubmitEvaluation("Reject")}
++                            disabled={loading}
++                            sx={{ textTransform: "none", fontWeight: 700 }}
++                          >
++                            Send Back for Corrections
++                          </Button>
++                          <Button 
++                            variant="contained" 
++                            color="success" 
++                            size="small"
++                            startIcon={<CheckCircle />}
++                            onClick={() => handleSubmitEvaluation("Approve")}
++                            disabled={loading || validationStatus.hasPending || validationStatus.hasRejected || !allRatingsProvided}
++                            sx={{ textTransform: "none", fontWeight: 700, color: "#fff" }}
++                          >
++                            Approve & Forward
++                          </Button>
++                        </Box>
++                      </>
++                    );
++                  })()
++                )}
+               </CardContent>
+             </Card>
+           </Grid>
+         </Grid>
+       )}
+ 
++      {/* Resource Utilization Detail View Dialog */}
++      <Dialog
++        open={Boolean(selectedResUtDetails)}
++        onClose={() => setSelectedResUtDetails(null)}
++        maxWidth="sm"
++        fullWidth
++        PaperProps={{
++          sx: {
++            borderRadius: "16px",
++            background: "var(--bg-panel)",
++            border: "1px solid var(--border-color)",
++          }
++        }}
++      >
++        <DialogTitle sx={{ borderBottom: "1px solid var(--border-color)", display: "flex", justifyContent: "space-between", alignItems: "center", pb: 2 }}>
++          <Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>
++            Resource Utilization Details
++          </Typography>
++          <IconButton onClick={() => setSelectedResUtDetails(null)} size="small">
++            <Close />
++          </IconButton>
++        </DialogTitle>
++        <DialogContent sx={{ p: 3, pt: 2 }}>
++          {selectedResUtDetails && (
++            <Stack spacing={2} sx={{ mt: 1 }}>
++              <Box>
++                <Typography variant="caption" color="textSecondary" sx={{ fontWeight: 600 }}>Activity Category</Typography>
++                <Typography variant="body1" sx={{ fontWeight: 700, color: "var(--text-primary)" }}>{selectedResUtDetails.activityCategory}</Typography>
++              </Box>
++              <Box>
++                <Typography variant="caption" color="textSecondary" sx={{ fontWeight: 600 }}>Role / Activity Type</Typography>
++                <Typography variant="body1" sx={{ fontWeight: 700, color: "var(--text-primary)" }}>{selectedResUtDetails.activityType}</Typography>
++              </Box>
++              <Box>
++                <Typography variant="caption" color="textSecondary" sx={{ fontWeight: 600 }}>
++                  {selectedResUtDetails.activityCategory === "FDP" && selectedResUtDetails.activityType === "FDP Participant" ? "Course Name" : "Organization Name"}
++                </Typography>
++                <Typography variant="body1" sx={{ fontWeight: 700, color: "var(--text-primary)" }}>
++                  {selectedResUtDetails.activityCategory === "FDP" && selectedResUtDetails.activityType === "FDP Participant" ? selectedResUtDetails.courseFdpName : selectedResUtDetails.organizationName}
++                </Typography>
++              </Box>
++              <Box display="flex" gap={4}>
++                <Box>
++                  <Typography variant="caption" color="textSecondary" sx={{ fontWeight: 600 }}>Duration</Typography>
++                  <Typography variant="body1" sx={{ fontWeight: 700, color: "var(--text-primary)" }}>{selectedResUtDetails.duration} Days</Typography>
++                </Box>
++                <Box>
++                  <Typography variant="caption" color="textSecondary" sx={{ fontWeight: 600 }}>Dates</Typography>
++                  <Typography variant="body1" sx={{ fontWeight: 700, color: "var(--text-primary)" }}>
++                    {selectedResUtDetails.fromDate ? new Date(selectedResUtDetails.fromDate).toLocaleDateString("en-IN") : ""} - {selectedResUtDetails.toDate ? new Date(selectedResUtDetails.toDate).toLocaleDateString("en-IN") : ""}
++                  </Typography>
++                </Box>
++              </Box>
++              {selectedResUtDetails.activityCategory === "FDP" && selectedResUtDetails.activityType === "FDP Participant" && (
++                <>
++                  <Box display="flex" gap={4}>
++                    <Box>
++                      <Typography variant="caption" color="textSecondary" sx={{ fontWeight: 600 }}>Organizing Category</Typography>
++                      <Typography variant="body1" sx={{ fontWeight: 700, color: "var(--text-primary)" }}>{selectedResUtDetails.organizingInstitutionCategory}</Typography>
++                    </Box>
++                    <Box>
++                      <Typography variant="caption" color="textSecondary" sx={{ fontWeight: 600 }}>Location</Typography>
++                      <Typography variant="body1" sx={{ fontWeight: 700, color: "var(--text-primary)" }}>{selectedResUtDetails.location}</Typography>
++                    </Box>
++                  </Box>
++                  {selectedResUtDetails.labName && (
++                    <Box>
++                      <Typography variant="caption" color="textSecondary" sx={{ fontWeight: 600 }}>Lab Name</Typography>
++                      <Typography variant="body1" sx={{ fontWeight: 700, color: "var(--text-primary)" }}>{selectedResUtDetails.labName}</Typography>
++                    </Box>
++                  )}
++                  {selectedResUtDetails.universityName && (
++                    <Box>
++                      <Typography variant="caption" color="textSecondary" sx={{ fontWeight: 600 }}>University Name</Typography>
++                      <Typography variant="body1" sx={{ fontWeight: 700, color: "var(--text-primary)" }}>{selectedResUtDetails.universityName}</Typography>
++                    </Box>
++                  )}
++                  {selectedResUtDetails.instituteName && (
++                    <Box display="flex" gap={4}>
++                      <Box>
++                        <Typography variant="caption" color="textSecondary" sx={{ fontWeight: 600 }}>Institute Name</Typography>
++                        <Typography variant="body1" sx={{ fontWeight: 700, color: "var(--text-primary)" }}>{selectedResUtDetails.instituteName}</Typography>
++                      </Box>
++                      <Box>
++                        <Typography variant="caption" color="textSecondary" sx={{ fontWeight: 600 }}>NIRF Rank</Typography>
++                        <Typography variant="body1" sx={{ fontWeight: 700, color: "var(--text-primary)" }}>{selectedResUtDetails.nirfRank}</Typography>
++                      </Box>
++                    </Box>
++                  )}
++                </>
++              )}
++              {selectedResUtDetails.remarks && (
++                <Box>
++                  <Typography variant="caption" color="textSecondary" sx={{ fontWeight: 600 }}>Faculty Remarks</Typography>
++                  <Typography variant="body2" sx={{ color: "var(--text-primary)", fontStyle: "italic" }}>{selectedResUtDetails.remarks}</Typography>
++                </Box>
++              )}
++              <Box>
++                <Typography variant="caption" color="textSecondary" sx={{ fontWeight: 600, display: "block", mb: 0.5 }}>Proof Certificate</Typography>
++                {selectedResUtDetails.proof ? (
++                  <Button
++                    size="small"
++                    variant="outlined"
++                    startIcon={<OpenInNew />}
++                    onClick={() => {
++                      const backendURL = (import.meta.env.VITE_BACKEND_URL || "http://localhost:9000").replace(/\/$/, "");
++                      const fileUrl = selectedResUtDetails.proof.startsWith('http') ? selectedResUtDetails.proof : `${backendURL}${selectedResUtDetails.proof}`;
++                      window.open(fileUrl, '_blank');
++                    }}
++                  >
++                    Open Certificate
++                  </Button>
++                ) : (
++                  <Typography variant="body2" color="error">No proof uploaded</Typography>
++                )}
++              </Box>
++
++              <Divider sx={{ my: 1 }} />
++
++              {(selectedResUtDetails.status === "Pending" || selectedResUtDetails.status === "Pending at HOD") ? (
++                <Box>
++                  <Typography variant="caption" color="textSecondary" sx={{ fontWeight: 600, display: "block", mb: 1 }}>HOD Evaluation Action</Typography>
++                  <TextField
++                    size="small"
++                    fullWidth
++                    multiline
++                    rows={3}
++                    placeholder="Enter HOD remarks/comments..."
++                    value={dialogComment}
++                    onChange={(e) => setDialogComment(e.target.value)}
++                    sx={{ mb: 2 }}
++                  />
++                  <Box display="flex" gap={2} justifyContent="flex-end">
++                    <Button
++                      variant="outlined"
++                      color="error"
++                      onClick={async () => {
++                        await handleResUtHODAction(selectedResUtDetails._id, "Reject", dialogComment);
++                        setSelectedResUtDetails(null);
++                      }}
++                    >
++                      Reject Entry
++                    </Button>
++                    <Button
++                      variant="contained"
++                      color="success"
++                      sx={{ color: "#fff" }}
++                      onClick={async () => {
++                        await handleResUtHODAction(selectedResUtDetails._id, "Approve", dialogComment);
++                        setSelectedResUtDetails(null);
++                      }}
++                    >
++                      Approve Entry
++                    </Button>
++                  </Box>
++                </Box>
++              ) : (
++                <Box>
++                  <Typography variant="caption" color="textSecondary" sx={{ fontWeight: 600, display: "block" }}>Status</Typography>
++                  <Chip
++                    label={selectedResUtDetails.status}
++                    size="small"
++                    sx={{
++                      bgcolor: getStatusColor(selectedResUtDetails.status).bg,
++                      color: getStatusColor(selectedResUtDetails.status).color,
++                      fontWeight: 800,
++                      borderRadius: "6px",
++                      mt: 0.5,
++                      mb: 1
++                    }}
++                  />
++                  {selectedResUtDetails.hodComment && (
++                    <Box sx={{ mt: 1 }}>
++                      <Typography variant="caption" color="textSecondary" sx={{ fontWeight: 600 }}>HOD Remarks</Typography>
++                      <Typography variant="body2" sx={{ color: "var(--text-primary)" }}>{selectedResUtDetails.hodComment}</Typography>
++                    </Box>
++                  )}
++                </Box>
++              )}
++            </Stack>
++          )}
++        </DialogContent>
++      </Dialog>
++
++      {/* Expertise / Contribution Detail View Dialog */}
++      <Dialog
++        open={Boolean(selectedContDetails)}
++        onClose={() => setSelectedContDetails(null)}
++        maxWidth="sm"
++        fullWidth
++        PaperProps={{
++          sx: {
++            borderRadius: "16px",
++            background: "var(--bg-panel)",
++            border: "1px solid var(--border-color)",
++          }
++        }}
++      >
++        <DialogTitle sx={{ borderBottom: "1px solid var(--border-color)", display: "flex", justifyContent: "space-between", alignItems: "center", pb: 2 }}>
++          <Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>
++            Expertise / Contribution Details
++          </Typography>
++          <IconButton onClick={() => setSelectedContDetails(null)} size="small">
++            <Close />
++          </IconButton>
++        </DialogTitle>
++        <DialogContent sx={{ p: 3, pt: 2 }}>
++          {selectedContDetails && (
++            <Stack spacing={2} sx={{ mt: 1 }}>
++              <Box>
++                <Typography variant="caption" color="textSecondary" sx={{ fontWeight: 600 }}>Contribution Category</Typography>
++                <Typography variant="body1" sx={{ fontWeight: 700, color: "var(--text-primary)" }}>{getContCategoryName(selectedContDetails.category)}</Typography>
++              </Box>
++              <Box>
++                <Typography variant="caption" color="textSecondary" sx={{ fontWeight: 600 }}>Detail Information</Typography>
++                <Typography variant="body1" sx={{ fontWeight: 700, color: "var(--text-primary)" }}>{getContDescription(selectedContDetails.category, selectedContDetails)}</Typography>
++              </Box>
++              {selectedContDetails.duration && (
++                <Box>
++                  <Typography variant="caption" color="textSecondary" sx={{ fontWeight: 600 }}>Duration</Typography>
++                  <Typography variant="body1" sx={{ fontWeight: 700, color: "var(--text-primary)" }}>{selectedContDetails.duration}</Typography>
++                </Box>
++              )}
++              {selectedContDetails.fromDate && (
++                <Box>
++                  <Typography variant="caption" color="textSecondary" sx={{ fontWeight: 600 }}>Dates</Typography>
++                  <Typography variant="body1" sx={{ fontWeight: 700, color: "var(--text-primary)" }}>
++                    {new Date(selectedContDetails.fromDate).toLocaleDateString("en-IN")} to {new Date(selectedContDetails.toDate).toLocaleDateString("en-IN")}
++                  </Typography>
++                </Box>
++              )}
++              {selectedContDetails.url && (
++                <Box>
++                  <Typography variant="caption" color="textSecondary" sx={{ fontWeight: 600 }}>Link / URL</Typography>
++                  <Typography variant="body1" sx={{ fontWeight: 700 }}>
++                    <a href={selectedContDetails.url} target="_blank" rel="noopener noreferrer" style={{ color: "var(--color-primary)" }}>
++                      {selectedContDetails.url}
++                    </a>
++                  </Typography>
++                </Box>
++              )}
++              <Box>
++                <Typography variant="caption" color="textSecondary" sx={{ fontWeight: 600, display: "block", mb: 0.5 }}>Proof Certificate</Typography>
++                {selectedContDetails.proof ? (
++                  <Button
++                    size="small"
++                    variant="outlined"
++                    startIcon={<OpenInNew />}
++                    onClick={() => {
++                      const backendURL = (import.meta.env.VITE_BACKEND_URL || "http://localhost:9000").replace(/\/$/, "");
++                      const fileUrl = selectedContDetails.proof.startsWith('http') ? selectedContDetails.proof : `${backendURL}${selectedContDetails.proof}`;
++                      window.open(fileUrl, '_blank');
++                    }}
++                  >
++                    Open Certificate
++                  </Button>
++                ) : (
++                  <Typography variant="body2" color="error">No proof uploaded</Typography>
++                )}
++              </Box>
++
++              <Divider sx={{ my: 1 }} />
++
++              {(selectedContDetails.status === "Pending" || selectedContDetails.status === "Pending at HOD") ? (
++                <Box>
++                  <Typography variant="caption" color="textSecondary" sx={{ fontWeight: 600, display: "block", mb: 1 }}>HOD Evaluation Action</Typography>
++                  <TextField
++                    size="small"
++                    fullWidth
++                    multiline
++                    rows={3}
++                    placeholder="Enter HOD remarks/comments..."
++                    value={dialogComment}
++                    onChange={(e) => setDialogComment(e.target.value)}
++                    sx={{ mb: 2 }}
++                  />
++                  <Box display="flex" gap={2} justifyContent="flex-end">
++                    <Button
++                      variant="outlined"
++                      color="error"
++                      onClick={async () => {
++                        await handleContHODAction(selectedContDetails._id, "Reject", dialogComment);
++                        setSelectedContDetails(null);
++                      }}
++                    >
++                      Reject Entry
++                    </Button>
++                    <Button
++                      variant="contained"
++                      color="success"
++                      sx={{ color: "#fff" }}
++                      onClick={async () => {
++                        await handleContHODAction(selectedContDetails._id, "Approve", dialogComment);
++                        setSelectedContDetails(null);
++                      }}
++                    >
++                      Approve Entry
++                    </Button>
++                  </Box>
++                </Box>
++              ) : (
++                <Box>
++                  <Typography variant="caption" color="textSecondary" sx={{ fontWeight: 600, display: "block" }}>Status</Typography>
++                  <Chip
++                    label={selectedContDetails.status}
++                    size="small"
++                    sx={{
++                      bgcolor: getStatusColor(selectedContDetails.status).bg,
++                      color: getStatusColor(selectedContDetails.status).color,
++                      fontWeight: 800,
++                      borderRadius: "6px",
++                      mt: 0.5,
++                      mb: 1
++                    }}
++                  />
++                  {selectedContDetails.hodComment && (
++                    <Box sx={{ mt: 1 }}>
++                      <Typography variant="caption" color="textSecondary" sx={{ fontWeight: 600 }}>HOD Remarks</Typography>
++                      <Typography variant="body2" sx={{ color: "var(--text-primary)" }}>{selectedContDetails.hodComment}</Typography>
++                    </Box>
++                  )}
++                </Box>
++              )}
++            </Stack>
++          )}
++        </DialogContent>
++      </Dialog>
++
+     </Box>
+   );
+ };
