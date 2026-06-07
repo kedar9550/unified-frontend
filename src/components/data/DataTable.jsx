@@ -13,9 +13,9 @@ import { useState, useMemo, useEffect } from "react";
 import { InputAdornment } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 
-export default function DataTable({ columns, rows, toolbarLeft, nonSortableColumns = [] }) {
+export default function DataTable({ columns, rows, toolbarLeft, nonSortableColumns = [], defaultRowsPerPage = 10 }) {
   const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [rowsPerPage, setRowsPerPage] = useState(defaultRowsPerPage);
   const [search, setSearch] = useState("");
   const [sortIndex, setSortIndex] = useState(null);
   const [sortDirection, setSortDirection] = useState("asc");
@@ -217,6 +217,7 @@ export default function DataTable({ columns, rows, toolbarLeft, nonSortableColum
                   {row.map((cell, j) => (
                     <TableCell
                       key={j}
+                      align="center"
                       sx={{
                         py: 2,
                         px: 3,

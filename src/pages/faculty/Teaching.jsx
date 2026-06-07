@@ -495,7 +495,7 @@ export default function Teaching() {
       {
         value: r.courseName,
         display: (
-          <Box>
+          <Box sx={{ textAlign: "start" }}>
             <Typography sx={{ fontWeight: 700, fontSize: 14, color: "var(--text-primary)" }}>{r.courseName}</Typography>
             <Typography sx={{ fontSize: 11, color: "var(--text-secondary)", fontWeight: 500 }}>{r.courseCode}</Typography>
           </Box>
@@ -599,7 +599,7 @@ export default function Teaching() {
       {
         value: r.subjectName,
         display: (
-          <Box>
+          <Box sx={{ textAlign: "start" }}>
             <Typography sx={{ fontWeight: 700, fontSize: 14, color: "var(--text-primary)" }}>{r.subjectName}</Typography>
             <Typography sx={{ fontSize: 11, color: "var(--text-secondary)", fontWeight: 500 }}>{r.subjectCode}</Typography>
           </Box>
@@ -700,7 +700,7 @@ export default function Teaching() {
       {
         value: r.courseName,
         display: (
-          <Box>
+          <Box sx={{ textAlign: "start" }}>
             <Typography sx={{ fontWeight: 700, fontSize: 14, color: "var(--text-primary)" }}>{r.courseName}</Typography>
             <Typography sx={{ fontSize: 11, color: "var(--text-secondary)", fontWeight: 500 }}>{r.courseCode}</Typography>
           </Box>
@@ -870,6 +870,96 @@ export default function Teaching() {
     });
   })();
 
+  const selectedYearDocForProctoring = academicYears.find((y) => y.year === selectedYearLabel);
+  const filteredManualProctoringEntries = selectedYearDocForProctoring
+    ? manualEntries.filter(
+      (entry) => entry.academicYear?._id === selectedYearDocForProctoring._id || entry.academicYear === selectedYearDocForProctoring._id
+    )
+    : [];
+
+  const manualProctorColumns = [
+    "S.NO",
+    "PROGRAM",
+    "SEM/YR - BRANCH - SEC",
+    "TOTAL ALLOTTED",
+    "ELIGIBLE (A)",
+    "PASSED (B)",
+    "PASS %",
+    "STATUS",
+    "REMARKS",
+  ];
+
+  const manualProctorRows = filteredManualProctoringEntries.map((entry, i) => {
+    const progName = entry.programId?.code || "—";
+    const isYearProg = entry.programId?.programPattern === "YEAR";
+    const branchDisplay = entry.branchId?.code || "—";
+    const semYrBranchSec = isYearProg
+      ? `YEAR-${entry.yearNumber || "—"} ${branchDisplay} - SEC ${entry.section}`
+      : `SEM-${entry.semesterNumber || "—"} ${branchDisplay} - SEC ${entry.section}`;
+    const passPct = entry.passPercentage !== undefined ? entry.passPercentage.toFixed(2) : "0.00";
+
+    return [
+      {
+        value: i + 1,
+        display: <Box sx={{ fontWeight: 600 }}>{i + 1}</Box>,
+      },
+      {
+        value: progName,
+        display: <Box sx={{ fontWeight: 600, color: "var(--text-primary)" }}>{progName}</Box>,
+      },
+      {
+        value: semYrBranchSec,
+        display: <Box sx={{ color: "var(--text-primary)" }}>{semYrBranchSec}</Box>,
+      },
+      {
+        value: entry.totalStudents || 0,
+        display: <Box sx={{ color: "var(--text-primary)" }}>{entry.totalStudents}</Box>,
+      },
+      {
+        value: entry.eligibleStudents || 0,
+        display: <Box sx={{ color: "#8B5CF6", fontWeight: 600 }}>{entry.eligibleStudents}</Box>,
+      },
+      {
+        value: entry.passedStudents || 0,
+        display: <Box sx={{ color: "#10B981", fontWeight: 600 }}>{entry.passedStudents}</Box>,
+      },
+      {
+        value: parseFloat(passPct),
+        display: <Box sx={{ color: "var(--color-primary)", fontWeight: 800 }}>{passPct}%</Box>,
+      },
+      {
+        value: entry.status,
+        display: (
+          <Chip
+            label={entry.status}
+            size="small"
+            sx={{
+              fontWeight: 700,
+              fontSize: 10,
+              borderRadius: "6px",
+              bgcolor:
+                entry.status === "Approved" ? "rgba(16, 185, 129, 0.15)" :
+                  entry.status === "Rejected" ? "rgba(239, 68, 68, 0.15)" :
+                    "rgba(245, 158, 11, 0.15)",
+              color:
+                entry.status === "Approved" ? "#10B981" :
+                  entry.status === "Rejected" ? "#EF4444" :
+                    "#D97706",
+            }}
+          />
+        ),
+      },
+      {
+        value: entry.remarks || "—",
+        display: (
+          <Box sx={{ color: "var(--text-secondary)", fontSize: 12, fontStyle: "italic" }}>
+            {entry.remarks || "—"}
+          </Box>
+        ),
+      },
+    ];
+  });
+
   return (
     <Box>
       {/* ── PAGE HEADER ────────────────────────────────────── */}
@@ -986,7 +1076,7 @@ export default function Teaching() {
             </span>
           </Box>
         ) : (
-          <DataTable columns={columns} rows={rows} />
+          <DataTable columns={columns} rows={rows} defaultRowsPerPage={5} />
         )}
       </Box>
 
@@ -1051,111 +1141,24 @@ export default function Teaching() {
           <Box sx={{ display: "flex", justifyContent: "center", py: 5 }}>
             <CircularProgress size={32} sx={{ color: "var(--color-primary)" }} />
           </Box>
-        ) : (() => {
-          const selectedYear = academicYears.find((y) => y.year === selectedYearLabel);
-          const filteredYearEntries = selectedYear
-            ? manualEntries.filter(
-              (entry) => entry.academicYear?._id === selectedYear._id || entry.academicYear === selectedYear._id
-            )
-            : [];
-
-          if (filteredYearEntries.length === 0) {
-            return (
-              <Box
-                sx={{
-                  textAlign: "center",
-                  py: 6,
-                  color: "var(--text-secondary)",
-                  fontSize: 15,
-                  border: "1px dashed var(--border-color)",
-                  borderRadius: "16px",
-                  background: "var(--bg-glass)",
-                  mb: 3
-                }}
-              >
-                No proctoring records found for this academic cycle. Click "Add Record" to enter proctoring details.
-              </Box>
-            );
-          }
-
-          return (
-            <TableContainer component={Paper} elevation={0} sx={{ borderRadius: "16px", border: "1px solid var(--border-color)", overflow: "hidden", background: "var(--bg-paper)", mb: 3 }}>
-              <Table size="small">
-                <TableHead sx={{ background: "var(--gradient-primary)" }}>
-                  <TableRow>
-                    <TableCell sx={{ fontWeight: 700, color: "#fff", py: 1.5 }}>Program</TableCell>
-                    <TableCell sx={{ fontWeight: 700, color: "#fff", py: 1.5 }}>Sem/Yr - Branch - Sec</TableCell>
-                    <TableCell sx={{ fontWeight: 700, color: "#fff", py: 1.5 }} align="right">Total Allotted</TableCell>
-                    <TableCell sx={{ fontWeight: 700, color: "#fff", py: 1.5 }} align="right">Eligible (A)</TableCell>
-                    <TableCell sx={{ fontWeight: 700, color: "#fff", py: 1.5 }} align="right">Passed (B)</TableCell>
-                    <TableCell sx={{ fontWeight: 700, color: "#fff", py: 1.5 }} align="right">Pass %</TableCell>
-                    <TableCell sx={{ fontWeight: 700, color: "#fff", py: 1.5 }}>Status</TableCell>
-                    <TableCell sx={{ fontWeight: 700, color: "#fff", py: 1.5 }}>Remarks</TableCell>
-                    <TableCell sx={{ fontWeight: 700, color: "#fff", py: 1.5 }} align="center">Actions</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {filteredYearEntries.map((entry) => {
-                    const progName = entry.programId?.code || "—";
-                    const isYearProg = entry.programId?.programPattern === "YEAR";
-                    const branchDisplay = entry.branchId?.code || "—";
-                    const semYrBranchSec = isYearProg
-                      ? `YEAR-${entry.yearNumber || "—"} ${branchDisplay} - SEC ${entry.section}`
-                      : `SEM-${entry.semesterNumber || "—"} ${branchDisplay} - SEC ${entry.section}`;
-                    const passPct = entry.passPercentage !== undefined ? entry.passPercentage.toFixed(2) : "0.00";
-
-                    return (
-                      <TableRow key={entry._id} sx={{ "&:hover": { bgcolor: "rgba(0,0,0,0.02)" } }}>
-                        <TableCell sx={{ fontWeight: 600, color: "var(--text-primary)" }}>{progName}</TableCell>
-                        <TableCell sx={{ color: "var(--text-primary)" }}>{semYrBranchSec}</TableCell>
-                        <TableCell sx={{ color: "var(--text-primary)" }} align="right">{entry.totalStudents}</TableCell>
-                        <TableCell sx={{ color: "#8B5CF6", fontWeight: 600 }} align="right">{entry.eligibleStudents}</TableCell>
-                        <TableCell sx={{ color: "#10B981", fontWeight: 600 }} align="right">{entry.passedStudents}</TableCell>
-                        <TableCell sx={{ color: "var(--color-primary)", fontWeight: 800 }} align="right">{passPct}%</TableCell>
-                        <TableCell>
-                          <Chip
-                            label={entry.status}
-                            size="small"
-                            sx={{
-                              fontWeight: 700,
-                              fontSize: 10,
-                              borderRadius: "6px",
-                              bgcolor:
-                                entry.status === "Approved" ? "rgba(16, 185, 129, 0.15)" :
-                                  entry.status === "Rejected" ? "rgba(239, 68, 68, 0.15)" :
-                                    "rgba(245, 158, 11, 0.15)",
-                              color:
-                                entry.status === "Approved" ? "#10B981" :
-                                  entry.status === "Rejected" ? "#EF4444" :
-                                    "#D97706",
-                            }}
-                          />
-                        </TableCell>
-                        <TableCell sx={{ color: "var(--text-secondary)", fontSize: 12, fontStyle: "italic" }}>
-                          {entry.remarks || "—"}
-                        </TableCell>
-                        <TableCell align="center">
-                          {entry.status !== "Approved" ? (
-                            <Box sx={{ display: "flex", justifyContent: "center", gap: 1 }}>
-                              <IconButton size="small" onClick={() => handleOpenEditModal(entry)} sx={{ color: "var(--color-primary)" }}>
-                                <EditIcon fontSize="small" />
-                              </IconButton>
-                              <IconButton size="small" onClick={() => handleDeleteEntry(entry._id)} sx={{ color: "#EF4444" }}>
-                                <DeleteIcon fontSize="small" />
-                              </IconButton>
-                            </Box>
-                          ) : (
-                            <Typography sx={{ fontSize: 12, color: "var(--text-secondary)", fontStyle: "italic" }}>Locked</Typography>
-                          )}
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-            </TableContainer>
-          );
-        })()}
+        ) : filteredManualProctoringEntries.length === 0 ? (
+          <Box
+            sx={{
+              textAlign: "center",
+              py: 6,
+              color: "var(--text-secondary)",
+              fontSize: 15,
+              border: "1px dashed var(--border-color)",
+              borderRadius: "16px",
+              background: "var(--bg-glass)",
+              mb: 3
+            }}
+          >
+            No proctoring records found for this academic cycle. Click "Add Record" to enter proctoring details.
+          </Box>
+        ) : (
+          <DataTable columns={manualProctorColumns} rows={manualProctorRows} defaultRowsPerPage={5} />
+        )}
       </Box>
 
       {/* Proctoring Form Add/Edit Modal */}
@@ -1417,7 +1420,7 @@ export default function Teaching() {
             No feedback results available for this selection.
           </Box>
         ) : (
-          <DataTable columns={feedbackColumns} rows={feedbackRows} />
+          <DataTable columns={feedbackColumns} rows={feedbackRows} defaultRowsPerPage={5} />
         )}
       </Box>
 
@@ -1452,7 +1455,7 @@ export default function Teaching() {
             No CO Attainment results available for this selection.
           </Box>
         ) : (
-          <DataTable columns={coAttainmentColumns} rows={coAttainmentRows} />
+          <DataTable columns={coAttainmentColumns} rows={coAttainmentRows} defaultRowsPerPage={5} />
         )}
       </Box>
 
