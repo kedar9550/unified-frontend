@@ -237,9 +237,12 @@ export default function FacultyFormatResults() {
       "section",
     ];
     const sampleRows = [
-      ["FAC123", "2024-2025", "B.Tech", "CSE", "Mathematics", "MA101", "THEORY", "3", "60", "55", "5", "4", "A"],
+      ["FAC123", "2024-2025", "B.Tech", "CSE", "Mathematics", "MA101", "T", "3", "60", "55", "5", "4", "A"],
+      ["FAC123", "2024-2025", "B.Tech", "CSE", "Physics Lab", "PH102", "P", "3", "60", "58", "4", "4", "A"],
+      ["FAC123", "2024-2025", "B.Tech", "CSE", "Programming", "CS103", "I", "3", "60", "57", "6", "5", "A"],
     ];
-    const csvContent = headers.join(",") + "\n" + sampleRows.map(row => row.join(",")).join("\n") + "\n";
+    const note = "# Result Type: Use T = Theory, P = Practical, I = Integrated.";
+    const csvContent = headers.join(",") + "\n" + sampleRows.map(row => row.join(",")).join("\n") + "\n" + note + "\n";
     const blob = new Blob([csvContent], { type: "text/csv" });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -341,6 +344,22 @@ export default function FacultyFormatResults() {
         </Box>
 
         <Divider sx={{ borderStyle: 'dashed', opacity: 0.5 }} />
+
+        {/* Info Note Banner for T/P/I */}
+        <Box sx={{ 
+          p: 2, 
+          borderRadius: "14px", 
+          background: "rgba(2, 132, 199, 0.04)", 
+          border: "1px solid rgba(2, 132, 199, 0.12)",
+          display: "flex",
+          alignItems: "center",
+          gap: 1.5
+        }}>
+          <InfoIcon sx={{ color: "var(--color-primary)", fontSize: 20 }} />
+          <Typography sx={{ fontSize: 13, color: "var(--text-secondary)", fontWeight: 600 }}>
+            Result Type: Use <strong>T</strong> = Theory, <strong>P</strong> = Practical, <strong>I</strong> = Integrated.
+          </Typography>
+        </Box>
 
         {/* Row 2: Filtering and Search */}
         <Box sx={{ display: "flex", gap: 3, alignItems: "center", justifyContent: "space-between", flexWrap: "wrap" }}>

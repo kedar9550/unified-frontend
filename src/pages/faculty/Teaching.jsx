@@ -394,14 +394,12 @@ export default function Teaching() {
         ),
       },
       {
-        value: `${r.semesterDisplay || r.semester || "—"} - ${r.branch} - ${r.section}`,
+        value: `${r.semesterDisplay || r.semester || "—"} ${r.branchCode || r.branch} - SEC ${r.section}`,
         display: (
           <Box sx={{ whiteSpace: "nowrap" }}>
-            <Typography sx={{ fontWeight: 700, fontSize: 13, color: "var(--text-primary)" }}>{r.semesterDisplay || r.semester || "—"}</Typography>
-            <Box sx={{ display: 'flex', gap: 1, mt: 0.5 }}>
-              <Typography sx={{ fontSize: 11, color: "var(--text-secondary)", fontWeight: 600 }}>{r.branch}</Typography>
-              <Typography sx={{ fontSize: 11, color: "var(--color-primary)", fontWeight: 800 }}>• SEC {r.section}</Typography>
-            </Box>
+            <Typography sx={{ fontWeight: 700, fontSize: 13, color: "var(--text-primary)" }}>
+              {r.semesterDisplay || r.semester || "—"} {r.branchCode || r.branch} - SEC {r.section}
+            </Typography>
           </Box>
         ),
       },
@@ -488,14 +486,12 @@ export default function Teaching() {
         ),
       },
       {
-        value: `${r.semesterDisplay || "—"} - ${r.branch || "—"} - ${r.section || "—"}`,
+        value: `${r.semesterDisplay || "—"} ${r.branchCode || r.branch || "—"} - SEC ${r.section || "—"}`,
         display: (
           <Box sx={{ whiteSpace: "nowrap" }}>
-            <Typography sx={{ fontWeight: 700, fontSize: 13, color: "var(--text-primary)" }}>{r.semesterDisplay || "—"}</Typography>
-            <Box sx={{ display: 'flex', gap: 1, mt: 0.5 }}>
-              <Typography sx={{ fontSize: 11, color: "var(--text-secondary)", fontWeight: 600 }}>{r.branch}</Typography>
-              <Typography sx={{ fontSize: 11, color: "var(--color-primary)", fontWeight: 800 }}>• SEC {r.section}</Typography>
-            </Box>
+            <Typography sx={{ fontWeight: 700, fontSize: 13, color: "var(--text-primary)" }}>
+              {r.semesterDisplay || "—"} {r.branchCode || r.branch || "—"} - SEC {r.section || "—"}
+            </Typography>
           </Box>
         ),
       },
@@ -591,14 +587,12 @@ export default function Teaching() {
         ),
       },
       {
-        value: `${r.semesterDisplay || r.semester || "—"} - ${r.branch} - ${r.section}`,
+        value: `${r.semesterDisplay || r.semester || "—"} ${r.branchCode || r.branch} - SEC ${r.section}`,
         display: (
           <Box sx={{ whiteSpace: "nowrap" }}>
-            <Typography sx={{ fontWeight: 700, fontSize: 13, color: "var(--text-primary)" }}>{r.semesterDisplay || r.semester || "—"}</Typography>
-            <Box sx={{ display: 'flex', gap: 1, mt: 0.5 }}>
-              <Typography sx={{ fontSize: 11, color: "var(--text-secondary)", fontWeight: 600 }}>{r.branch}</Typography>
-              <Typography sx={{ fontSize: 11, color: "var(--color-primary)", fontWeight: 800 }}>• SEC {r.section}</Typography>
-            </Box>
+            <Typography sx={{ fontWeight: 700, fontSize: 13, color: "var(--text-primary)" }}>
+              {r.semesterDisplay || r.semester || "—"} {r.branchCode || r.branch} - SEC {r.section}
+            </Typography>
           </Box>
         ),
       },
