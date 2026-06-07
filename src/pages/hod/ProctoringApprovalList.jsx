@@ -114,9 +114,11 @@ const ProctoringApprovalList = () => {
         "Faculty Name",
         "Emp ID",
         "Academic Year",
+        "Program",
+        "Sem/Yr - Branch - Sec",
         "Total Students",
-        "Appeared",
-        "Passed",
+        "Eligible (A)",
+        "Passed (B)",
         "Pass %",
         "Status",
         "Actions"
@@ -124,6 +126,12 @@ const ProctoringApprovalList = () => {
 
     const rows = filteredEntries.map((item, index) => {
         const statusStyle = getStatusColor(item.status);
+        const isYearProg = item.programId?.programPattern === "YEAR";
+        const branchCode = item.branchId?.code || "—";
+        const semYrBranchSec = isYearProg
+            ? `YEAR-${item.yearNumber || "—"} ${branchCode} - SEC ${item.section}`
+            : `SEM-${item.semesterNumber || "—"} ${branchCode} - SEC ${item.section}`;
+
         return [
             { value: index + 1, display: <Box sx={{ fontWeight: 600 }}>{index + 1}</Box> },
             {
@@ -139,16 +147,24 @@ const ProctoringApprovalList = () => {
                 display: <Chip label={item.academicYear?.year || "—"} size="small" sx={{ fontWeight: 700, bgcolor: "var(--bg-glass)", color: "var(--text-primary)" }} />
             },
             {
+                value: item.programId?.code || "—",
+                display: <Typography sx={{ fontWeight: 600, color: "var(--text-primary)" }}>{item.programId?.code || "—"}</Typography>
+            },
+            {
+                value: semYrBranchSec,
+                display: <Typography sx={{ color: "var(--text-primary)" }}>{semYrBranchSec}</Typography>
+            },
+            {
                 value: item.totalStudents,
                 display: <Typography sx={{ fontWeight: 700, textAlign: "center" }}>{item.totalStudents}</Typography>
             },
             {
-                value: item.studentsAppeared,
-                display: <Typography sx={{ fontWeight: 700, color: "#8B5CF6", textAlign: "center" }}>{item.studentsAppeared}</Typography>
+                value: item.eligibleStudents,
+                display: <Typography sx={{ fontWeight: 700, color: "#8B5CF6", textAlign: "center" }}>{item.eligibleStudents}</Typography>
             },
             {
-                value: item.studentsPassed,
-                display: <Typography sx={{ fontWeight: 700, color: "#10B981", textAlign: "center" }}>{item.studentsPassed}</Typography>
+                value: item.passedStudents,
+                display: <Typography sx={{ fontWeight: 700, color: "#10B981", textAlign: "center" }}>{item.passedStudents}</Typography>
             },
             {
                 value: item.passPercentage,
@@ -332,6 +348,46 @@ const ProctoringApprovalList = () => {
 
                                 <Divider sx={{ borderColor: "var(--border-color)" }} />
 
+                                {/* Program, Semester/Year, Branch, Section */}
+                                <Grid container spacing={2}>
+                                    <Grid item xs={6} sm={3}>
+                                        <Typography sx={{ fontSize: 11, fontWeight: 900, color: "var(--text-secondary)", textTransform: "uppercase" }}>
+                                            Program
+                                        </Typography>
+                                        <Typography sx={{ fontWeight: 700, color: "var(--text-primary)", fontSize: 14, mt: 0.5 }}>
+                                            {selectedEntry.programId?.code || "—"}
+                                        </Typography>
+                                    </Grid>
+                                    <Grid item xs={6} sm={3}>
+                                        <Typography sx={{ fontSize: 11, fontWeight: 900, color: "var(--text-secondary)", textTransform: "uppercase" }}>
+                                            Sem / Year
+                                        </Typography>
+                                        <Typography sx={{ fontWeight: 700, color: "var(--text-primary)", fontSize: 14, mt: 0.5 }}>
+                                            {selectedEntry.programId?.programPattern === "YEAR"
+                                                ? `Year ${selectedEntry.yearNumber || "—"}`
+                                                : `Sem ${selectedEntry.semesterNumber || "—"}`}
+                                        </Typography>
+                                    </Grid>
+                                    <Grid item xs={6} sm={3}>
+                                        <Typography sx={{ fontSize: 11, fontWeight: 900, color: "var(--text-secondary)", textTransform: "uppercase" }}>
+                                            Branch
+                                        </Typography>
+                                        <Typography sx={{ fontWeight: 700, color: "var(--text-primary)", fontSize: 14, mt: 0.5 }}>
+                                            {selectedEntry.branchId?.code || "—"}
+                                        </Typography>
+                                    </Grid>
+                                    <Grid item xs={6} sm={3}>
+                                        <Typography sx={{ fontSize: 11, fontWeight: 900, color: "var(--text-secondary)", textTransform: "uppercase" }}>
+                                            Section
+                                        </Typography>
+                                        <Typography sx={{ fontWeight: 700, color: "var(--text-primary)", fontSize: 14, mt: 0.5 }}>
+                                            SEC {selectedEntry.section}
+                                        </Typography>
+                                    </Grid>
+                                </Grid>
+
+                                <Divider sx={{ borderColor: "var(--border-color)" }} />
+
                                 {/* Entered Stats */}
                                 <Grid container spacing={2}>
                                     <Grid item xs={4}>
@@ -344,18 +400,18 @@ const ProctoringApprovalList = () => {
                                     </Grid>
                                     <Grid item xs={4}>
                                         <Typography sx={{ fontSize: 11, fontWeight: 900, color: "var(--text-secondary)", textTransform: "uppercase", textAlign: "center" }}>
-                                            Appeared
+                                            Eligible (A)
                                         </Typography>
                                         <Typography sx={{ fontWeight: 800, fontSize: 18, color: "#8B5CF6", textAlign: "center", mt: 0.5 }}>
-                                            {selectedEntry.studentsAppeared}
+                                            {selectedEntry.eligibleStudents}
                                         </Typography>
                                     </Grid>
                                     <Grid item xs={4}>
                                         <Typography sx={{ fontSize: 11, fontWeight: 900, color: "var(--text-secondary)", textTransform: "uppercase", textAlign: "center" }}>
-                                            Passed
+                                            Passed (B)
                                         </Typography>
                                         <Typography sx={{ fontWeight: 800, fontSize: 18, color: "#10B981", textAlign: "center", mt: 0.5 }}>
-                                            {selectedEntry.studentsPassed}
+                                            {selectedEntry.passedStudents}
                                         </Typography>
                                     </Grid>
                                 </Grid>

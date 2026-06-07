@@ -184,16 +184,25 @@ const SelfAppraisal = () => {
   const [undertakingFile, setUndertakingFile] = useState(null);
 
   // Extra Details States
-  const [proctoringDetail, setProctoringDetail] = useState(null);
+  const [proctoringDetail, setProctoringDetail] = useState([]);
   const [resourceUtilizationDetails, setResourceUtilizationDetails] = useState([]);
   const [contributionDetails, setContributionDetails] = useState([]);
   const [administrationDetail, setAdministrationDetail] = useState(null);
 
-  // Proctoring Inline Form States
+  // Proctoring Form States
+  const [programs, setPrograms] = useState([]);
+  const [branches, setBranches] = useState([]);
+  const [selectedProgramId, setSelectedProgramId] = useState("");
+  const [selectedBranchId, setSelectedBranchId] = useState("");
+  const [semesterNumber, setSemesterNumber] = useState("");
+  const [yearNumber, setYearNumber] = useState("");
+  const [section, setSection] = useState("");
   const [totalStudents, setTotalStudents] = useState("");
-  const [studentsAppeared, setAppeared] = useState("");
-  const [studentsPassed, setPassed] = useState("");
+  const [eligibleStudents, setEligibleStudents] = useState("");
+  const [passedStudents, setPassedStudents] = useState("");
   const [submittingProctoring, setSubmittingProctoring] = useState(false);
+  const [isProctorModalOpen, setIsProctorModalOpen] = useState(false);
+  const [editingEntry, setEditingEntry] = useState(null);
 
   // Administration Modal States
   const [adminRolesForm, setAdminRolesForm] = useState({});
@@ -327,21 +336,11 @@ const SelfAppraisal = () => {
         setMissingFields(res.data.missingProfileFields || []);
 
         // Populating extra states
-        const proc = res.data.proctoringDetail || null;
+        const proc = res.data.proctoringDetail || [];
         setProctoringDetail(proc);
         setResourceUtilizationDetails(res.data.resourceUtilizationDetails || []);
         setContributionDetails(res.data.contributionDetails || []);
         setAdministrationDetail(res.data.administrationDetail || null);
-
-        if (proc) {
-          setTotalStudents(proc.totalStudents ? proc.totalStudents.toString() : "");
-          setAppeared(proc.studentsAppeared ? proc.studentsAppeared.toString() : "");
-          setPassed(proc.studentsPassed ? proc.studentsPassed.toString() : "");
-        } else {
-          setTotalStudents("");
-          setAppeared("");
-          setPassed("");
-        }
       }
     } catch (err) {
       if (err.response?.status === 403) {
@@ -413,46 +412,189 @@ const SelfAppraisal = () => {
     }
   };
 
-  // 1.2 Proctoring Submit Handler
-  const handleProctoringSubmit = async (e) => {
-    e.preventDefault();
-    const total = parseInt(totalStudents);
-    const appeared = parseInt(studentsAppeared);
-    const passed = parseInt(studentsPassed);
+  // Fetch all active programs
+  const fetchPrograms = async () => {
+    try {
+      const res = await axiosInstance.get("/api/academics/programs?status=true");
+      if (res.data?.success) {
+        setPrograms(res.data.data);
+      }
+    } catch (err) {
+      console.error("Error fetching programs:", err);
+    }
+  };
 
-    if (isNaN(total) || isNaN(appeared) || isNaN(passed)) {
-      toast.warning("Please fill in all the student counts with valid numbers");
+  // Fetch branches dynamically
+  useEffect(() => {
+    const fetchBranches = async () => {
+      if (!selectedProgramId) {
+        setBranches([]);
+        setSelectedBranchId("");
+        return;
+      }
+      try {
+        const res = await axiosInstance.get(`/api/academics/branches?programId=${selectedProgramId}&status=true`);
+        if (res.data?.success) {
+          setBranches(res.data.data);
+        }
+      } catch (err) {
+        console.error("Error fetching branches:", err);
+      }
+    };
+    fetchBranches();
+  }, [selectedProgramId]);
+
+  // Load programs on mount
+  useEffect(() => {
+    fetchPrograms();
+  }, []);
+
+  const handleOpenAddModal = () => {
+    setEditingEntry(null);
+    setSelectedProgramId("");
+    setSelectedBranchId("");
+    setSemesterNumber("");
+    setYearNumber("");
+    setSection("");
+    setTotalStudents("");
+    setEligibleStudents("");
+    setPassedStudents("");
+    setIsProctorModalOpen(true);
+  };
+
+  const handleOpenEditModal = (entry) => {
+    setEditingEntry(entry);
+    setSelectedProgramId(entry.programId?._id || entry.programId);
+    setSelectedBranchId(entry.branchId?._id || entry.branchId);
+    setSemesterNumber(entry.semesterNumber !== null && entry.semesterNumber !== undefined ? entry.semesterNumber.toString() : "");
+    setYearNumber(entry.yearNumber !== null && entry.yearNumber !== undefined ? entry.yearNumber.toString() : "");
+    setSection(entry.section !== null && entry.section !== undefined ? entry.section.toString() : "");
+    setTotalStudents(entry.totalStudents !== null && entry.totalStudents !== undefined ? entry.totalStudents.toString() : "");
+    setEligibleStudents(entry.eligibleStudents !== null && entry.eligibleStudents !== undefined ? entry.eligibleStudents.toString() : "");
+    setPassedStudents(entry.passedStudents !== null && entry.passedStudents !== undefined ? entry.passedStudents.toString() : "");
+    setIsProctorModalOpen(true);
+  };
+
+  const handleDeleteEntry = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this proctoring record?")) return;
+    try {
+      const res = await axiosInstance.delete(`/api/faculty-proctoring/${id}`);
+      if (res.data?.success) {
+        toast.success("Proctoring record deleted successfully!");
+        fetchAppraisal();
+      }
+    } catch (err) {
+      console.error("Delete error:", err);
+      toast.error(err.response?.data?.message || "Failed to delete record.");
+    }
+  };
+
+  const handleProctorModalSubmit = async (e) => {
+    e.preventDefault();
+    if (!selectedYear) {
+      toast.error("Please select a valid academic year");
       return;
     }
-    if (total < 0 || appeared < 0 || passed < 0) {
-      toast.warning("Counts cannot be negative");
+
+    if (!selectedProgramId) {
+      toast.error("Please select a Program");
       return;
     }
-    if (appeared > total) {
-      toast.warning("Appeared count cannot exceed total students under proctoring");
+    if (!selectedBranchId) {
+      toast.error("Please select a Branch");
       return;
     }
-    if (passed > appeared) {
-      toast.warning("Passed count cannot exceed appeared count");
+
+    const program = programs.find(p => p._id === selectedProgramId);
+    const semVal = program?.programPattern === "YEAR" ? null : parseInt(semesterNumber);
+    const yrVal = program?.programPattern === "YEAR" ? parseInt(yearNumber) : null;
+
+    if (program?.programPattern === "YEAR" && (yrVal === null || isNaN(yrVal))) {
+      toast.error("Year number must be a valid number");
+      return;
+    }
+    if (program?.programPattern !== "YEAR" && (semVal === null || isNaN(semVal))) {
+      toast.error("Semester number must be a valid number");
+      return;
+    }
+
+    const secVal = parseInt(section);
+    if (isNaN(secVal) || secVal < 1) {
+      toast.error("Section must be a positive number");
+      return;
+    }
+
+    const total = parseInt(totalStudents);
+    const eligible = parseInt(eligibleStudents);
+    const passed = parseInt(passedStudents);
+
+    if (isNaN(total) || isNaN(eligible) || isNaN(passed)) {
+      toast.error("Please enter valid student counts");
+      return;
+    }
+
+    if (total < 0 || eligible < 0 || passed < 0) {
+      toast.error("Counts cannot be negative");
+      return;
+    }
+
+    if (eligible > total) {
+      toast.error("Eligible students cannot exceed total allotted students");
+      return;
+    }
+
+    if (passed > eligible) {
+      toast.error("Passed students cannot exceed eligible students");
       return;
     }
 
     setSubmittingProctoring(true);
     try {
-      const res = await axiosInstance.post("/api/faculty-proctoring", {
+      const payload = {
         academicYear: selectedYear,
+        programId: selectedProgramId,
+        branchId: selectedBranchId,
+        semesterNumber: semVal,
+        yearNumber: yrVal,
+        section: secVal,
         totalStudents: total,
-        studentsAppeared: appeared,
-        studentsPassed: passed
-      });
+        eligibleStudents: eligible,
+        passedStudents: passed
+      };
+
+      let res;
+      if (editingEntry) {
+        res = await axiosInstance.put(`/api/faculty-proctoring/${editingEntry._id}`, payload);
+      } else {
+        res = await axiosInstance.post("/api/faculty-proctoring", payload);
+      }
+
       if (res.data?.success) {
-        toast.success("Proctoring statistics submitted successfully!");
+        toast.success(`Proctoring statistics ${editingEntry ? "updated" : "submitted"} successfully!`);
+        setIsProctorModalOpen(false);
         fetchAppraisal();
       }
     } catch (err) {
+      console.error("Submit error:", err);
       toast.error(err.response?.data?.message || "Failed to submit proctoring statistics.");
     } finally {
       setSubmittingProctoring(false);
+    }
+  };
+
+  const handleDutiesToggle = async (val) => {
+    try {
+      const res = await axiosInstance.post("/api/appraisal/proctoring-duties", {
+        academicYearId: selectedYear,
+        hasProctoringDuties: val
+      });
+      if (res.data?.success) {
+        toast.success(`Response saved: Proctoring duties set to ${val}`);
+        fetchAppraisal();
+      }
+    } catch (err) {
+      console.error("Failed to update duties response:", err);
+      toast.error(err.response?.data?.message || "Failed to save proctoring duties selection.");
     }
   };
 
@@ -2153,152 +2295,384 @@ const SelfAppraisal = () => {
               </TableContainer>
 
               {/* 1.2 Proctoring Students' Average Pass Percentage */}
-              {proctoringDetail && (proctoringDetail.status === "Approved" || proctoringDetail.status === "Pending") ? (
-                <>
-                  <Box display="flex" alignItems="center" gap={1.5} mb={1.5}>
-                    <Typography variant="subtitle1" sx={{ fontWeight: 700, color: "var(--color-primary)" }}>
-                      1.2 Proctoring Students' Average Pass Percentage
-                    </Typography>
-                    <Chip
-                      label={proctoringDetail.status}
-                      size="small"
-                      sx={{
-                        bgcolor: getStatusColor(proctoringDetail.status).bg,
-                        color: getStatusColor(proctoringDetail.status).color,
-                        fontWeight: 800,
-                        borderRadius: "6px"
-                      }}
-                    />
-                  </Box>
-                  <TableContainer component={Paper} elevation={0} sx={{ mb: 3.5, borderRadius: "16px", background: "var(--bg-paper)", border: "1px solid var(--border-color)", overflowX: "auto", boxShadow: "none", maxWidth: { xs: "100%", md: "100%", lg: 1000, xl: 1100 }, mx: "auto" }}>
-                    <Table size="small" sx={{ minWidth: 650, mx: "auto" }}>
-                      <TableHead sx={{ background: "var(--gradient-primary)" }}>
-                        <TableRow>
-                          <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }} align="center">Total Allotted</TableCell>
-                          <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }} align="center">Appeared (A)</TableCell>
-                          <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }} align="center">Passed (B)</TableCell>
-                          <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }} align="center">Pass % (B/A)</TableCell>
-                          <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }} align="center">Points claimed</TableCell>
-                        </TableRow>
-                      </TableHead>
-                      <TableBody>
-                        {appraisal.teaching.proctoring.entries.length > 0 ? (
-                          <>
-                            {appraisal.teaching.proctoring.entries.map((e, i) => (
-                              <TableRow key={i} sx={{ "&:hover": { bgcolor: "rgba(0, 0, 0, 0.015)" }, "body.dark-mode &:hover": { bgcolor: "rgba(255, 255, 255, 0.015)" } }}>
-                                <TableCell align="center" sx={{ fontWeight: 600, color: "var(--text-primary)" }}>{e.totalStudents}</TableCell>
-                                <TableCell align="center" sx={{ color: "var(--text-primary)" }}>{e.appeared}</TableCell>
-                                <TableCell align="center" sx={{ color: "var(--text-primary)" }}>{e.passed}</TableCell>
-                                <TableCell align="center" sx={{ color: "var(--text-primary)" }}>{e.percentage}%</TableCell>
-                                <TableCell align="center" sx={{ fontWeight: 800, color: "var(--color-primary)" }}>{e.pointsClaimed}</TableCell>
-                              </TableRow>
-                            ))}
-                            {/* Summary / Average Row */}
-                            {(() => {
-                              const totalAppeared = appraisal.teaching.proctoring.entries.reduce((sum, e) => sum + (Number(e.appeared) || 0), 0);
-                              const totalPassed = appraisal.teaching.proctoring.entries.reduce((sum, e) => sum + (Number(e.passed) || 0), 0);
-                              const overallPassPct = totalAppeared > 0 ? ((totalPassed / totalAppeared) * 100).toFixed(2) : "0.00";
-                              return (
-                                <TableRow sx={{ background: "rgba(0, 78, 146, 0.04)", "&:hover": { bgcolor: "rgba(0, 78, 146, 0.06) !important" } }}>
-                                  <TableCell sx={{ fontWeight: 800, color: "var(--text-primary)", pl: 2 }}>
-                                    <Box component="span" sx={{ position: "sticky", left: 16, display: "inline-block", whiteSpace: "nowrap" }}>
-                                      Overall Performance
-                                    </Box>
-                                  </TableCell>
-                                  <TableCell align="center" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>{totalAppeared}</TableCell>
-                                  <TableCell align="center" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>{totalPassed}</TableCell>
-                                  <TableCell align="center" sx={{ fontWeight: 900, color: "var(--color-primary)" }}>{overallPassPct}%</TableCell>
-                                  <TableCell align="center" sx={{ fontWeight: 900, color: "var(--color-primary)", fontSize: "0.95rem" }}>
-                                    {appraisal.teaching.proctoring.averagePoints}
-                                  </TableCell>
-                                </TableRow>
-                              );
-                            })()}
-                          </>
-                        ) : (
-                          <TableRow>
-                            <TableCell colSpan={5} align="center" sx={{ py: 3, color: "var(--text-secondary)", fontStyle: "italic" }}>
-                              No proctoring entries found.
-                            </TableCell>
-                          </TableRow>
-                        )}
-                      </TableBody>
-                    </Table>
-                  </TableContainer>
-                </>
-              ) : (
-                <>
-                  <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 1.5, color: "var(--color-primary)" }}>
+              <Box sx={{ mb: 4 }}>
+                <Box display="flex" alignItems="center" gap={1.5} mb={2}>
+                  <Typography variant="subtitle1" sx={{ fontWeight: 700, color: "var(--color-primary)" }}>
                     1.2 Proctoring Students' Average Pass Percentage
                   </Typography>
-                  <Box sx={{ p: 3, mb: 3.5, border: "1px dashed var(--border-color)", borderRadius: "16px", background: "var(--bg-glass)" }}>
-                    {proctoringDetail && proctoringDetail.status === "Rejected" && (
-                      <Alert severity="error" sx={{ mb: 2.5, borderRadius: "12px" }}>
-                        <strong>Rejection Remarks from HOD:</strong> {proctoringDetail.remarks || "No comments provided."}
-                      </Alert>
-                    )}
-                    <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-secondary)", mb: 2.5 }}>
-                      {proctoringDetail ? "Edit and Resubmit Proctoring Statistics:" : "No Proctoring records found for this academic cycle. Please enter details inline:"}
+                </Box>
+
+                <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
+                  <Box display="flex" alignItems="center" gap={1.5}>
+                    <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-secondary)" }}>
+                      Proctoring Records for this cycle:
                     </Typography>
-                    <Grid container spacing={2.5} alignItems="center">
-                      <Grid item xs={12} sm={3}>
+                  </Box>
+                  {(appraisal.status === "Draft" || appraisal.status === "Rejected by HOD") && (
+                    <Button
+                      variant="contained"
+                      size="small"
+                      startIcon={<AddCircle />}
+                      onClick={handleOpenAddModal}
+                      sx={{
+                        borderRadius: "8px",
+                        textTransform: "none",
+                        fontWeight: 700,
+                        background: "var(--gradient-primary)",
+                        color: "#fff"
+                      }}
+                    >
+                      Add Record
+                    </Button>
+                  )}
+                </Box>
+
+                {proctoringDetail && proctoringDetail.some(e => e.status === "Rejected") && (
+                  <Alert severity="error" sx={{ mb: 2, borderRadius: "12px" }}>
+                    <strong>Rejected Records:</strong> You have proctoring records rejected by HOD. Please edit or delete them before submitting your appraisal.
+                  </Alert>
+                )}
+
+                <TableContainer component={Paper} elevation={0} sx={{ mb: 3.5, borderRadius: "16px", background: "var(--bg-paper)", border: "1px solid var(--border-color)", overflowX: "auto", boxShadow: "none", maxWidth: { xs: "100%", md: "100%", lg: 1000, xl: 1100 }, mx: "auto" }}>
+                  <Table size="small" sx={{ minWidth: 650, mx: "auto" }}>
+                    <TableHead sx={{ background: "var(--gradient-primary)" }}>
+                      <TableRow>
+                        <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }}>Program</TableCell>
+                        <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }}>Sem/Yr - Branch - Sec</TableCell>
+                        <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }} align="right">Total Allotted</TableCell>
+                        <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }} align="right">Eligible (A)</TableCell>
+                        <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }} align="right">Passed (B)</TableCell>
+                        <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }} align="right">Pass % (B/A)</TableCell>
+                        <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }} align="right">Points</TableCell>
+                        <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }} align="center">Status</TableCell>
+                        <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }} align="center">Actions</TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {appraisal.teaching.proctoring.entries.length > 0 ? (
+                        <>
+                          {appraisal.teaching.proctoring.entries.map((e, i) => {
+                            const isYearProg = e.yearNumber !== null && e.yearNumber !== undefined && e.yearNumber !== 0;
+                            const semYrBranchSec = isYearProg
+                              ? `YEAR-${e.yearNumber} ${e.branchCode || "—"} - SEC ${e.section}`
+                              : `SEM-${e.semesterNumber} ${e.branchCode || "—"} - SEC ${e.section}`;
+                            const originalEntry = proctoringDetail.find(
+                              (pd) => pd.section === e.section &&
+                                (pd.semesterNumber === e.semesterNumber || pd.yearNumber === e.yearNumber) &&
+                                (pd.programId?._id === e.programId || pd.programId === e.programId)
+                            );
+                            return (
+                              <TableRow key={i} sx={{
+                                "&:hover": { bgcolor: "rgba(0, 0, 0, 0.015)" },
+                                "body.dark-mode &:hover": { bgcolor: "rgba(255, 255, 255, 0.015)" },
+                                bgcolor: originalEntry?.status === "Rejected" ? "rgba(239, 68, 68, 0.04)" : "inherit"
+                              }}>
+                                <TableCell sx={{ fontWeight: 600, color: "var(--text-primary)" }}>{e.programCode || "—"}</TableCell>
+                                <TableCell sx={{ color: "var(--text-primary)" }}>{semYrBranchSec}</TableCell>
+                                <TableCell align="right" sx={{ color: "var(--text-primary)" }}>{e.totalStudents}</TableCell>
+                                    <TableCell align="right" sx={{ color: "#8B5CF6", fontWeight: 600 }}>{e.appeared}</TableCell>
+                                    <TableCell align="right" sx={{ color: "#10B981", fontWeight: 600 }}>{e.passed}</TableCell>
+                                    <TableCell align="right" sx={{ color: "var(--text-primary)" }}>{e.percentage.toFixed(2)}%</TableCell>
+                                    <TableCell align="right" sx={{ fontWeight: 800, color: "var(--color-primary)" }}>{e.pointsClaimed}</TableCell>
+                                    <TableCell align="center">
+                                      {originalEntry ? (
+                                        <Chip
+                                          label={originalEntry.status}
+                                          size="small"
+                                          sx={{
+                                            fontWeight: 700,
+                                            fontSize: 9,
+                                            borderRadius: "6px",
+                                            bgcolor:
+                                              originalEntry.status === "Approved" ? "rgba(16, 185, 129, 0.12)" :
+                                                originalEntry.status === "Rejected" ? "rgba(239, 68, 68, 0.12)" :
+                                                  "rgba(245, 158, 11, 0.12)",
+                                            color:
+                                              originalEntry.status === "Approved" ? "#10B981" :
+                                                originalEntry.status === "Rejected" ? "#EF4444" :
+                                                  "#D97706"
+                                          }}
+                                        />
+                                      ) : "—"}
+                                    </TableCell>
+                                    <TableCell align="center">
+                                      {originalEntry && originalEntry.status !== "Approved" && (appraisal.status === "Draft" || appraisal.status === "Rejected by HOD") ? (
+                                        <Box sx={{ display: "flex", justifyContent: "center" }}>
+                                          <IconButton size="small" onClick={() => handleOpenEditModal(originalEntry)} sx={{ color: "var(--color-primary)" }}>
+                                            <Edit sx={{ fontSize: 16 }} />
+                                          </IconButton>
+                                          <IconButton size="small" onClick={() => handleDeleteEntry(originalEntry._id)} sx={{ color: "#EF4444" }}>
+                                            <Delete sx={{ fontSize: 16 }} />
+                                          </IconButton>
+                                        </Box>
+                                      ) : (
+                                        <Typography sx={{ fontSize: 11, color: "var(--text-secondary)", fontStyle: "italic" }}>Locked</Typography>
+                                      )}
+                                    </TableCell>
+                                  </TableRow>
+                                );
+                              })}
+                              {/* Summary / Average Row */}
+                              {(() => {
+                                const totalAppeared = appraisal.teaching.proctoring.entries.reduce((sum, e) => sum + (Number(e.appeared) || 0), 0);
+                                const totalPassed = appraisal.teaching.proctoring.entries.reduce((sum, e) => sum + (Number(e.passed) || 0), 0);
+                                const overallPassPct = totalAppeared > 0 ? ((totalPassed / totalAppeared) * 100).toFixed(2) : "0.00";
+                                return (
+                                  <TableRow sx={{ background: "rgba(0, 78, 146, 0.04)", "&:hover": { bgcolor: "rgba(0, 78, 146, 0.06) !important" } }}>
+                                    <TableCell colSpan={2} sx={{ fontWeight: 800, color: "var(--text-primary)", pl: 2 }}>
+                                      <Box component="span" sx={{ display: "inline-block", whiteSpace: "nowrap" }}>
+                                        Overall Performance (Average Points)
+                                      </Box>
+                                    </TableCell>
+                                    <TableCell align="right" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>{appraisal.teaching.proctoring.entries.reduce((sum, e) => sum + (Number(e.totalStudents) || 0), 0)}</TableCell>
+                                    <TableCell align="right" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>{totalAppeared}</TableCell>
+                                    <TableCell align="right" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>{totalPassed}</TableCell>
+                                    <TableCell align="right" sx={{ fontWeight: 900, color: "var(--color-primary)" }}>{overallPassPct}%</TableCell>
+                                    <TableCell align="right" sx={{ fontWeight: 900, color: "var(--color-primary)", fontSize: "0.95rem" }} colSpan={3}>
+                                      {appraisal.teaching.proctoring.averagePoints} Points
+                                    </TableCell>
+                                  </TableRow>
+                                );
+                              })()}
+                            </>
+                          ) : (
+                            <TableRow>
+                              <TableCell colSpan={9} align="center" sx={{ py: 3, color: "var(--text-secondary)", fontStyle: "italic" }}>
+                                No proctoring records found. Click "Add Record" to submit details.
+                              </TableCell>
+                            </TableRow>
+                          )}
+                        </TableBody>
+                      </Table>
+                    </TableContainer>
+              </Box>
+
+              {/* Self Appraisal Proctoring Form CRUD Dialog Modal */}
+              <Dialog
+                open={isProctorModalOpen}
+                onClose={() => setIsProctorModalOpen(false)}
+                maxWidth="sm"
+                fullWidth
+                slotProps={{
+                  paper: {
+                    sx: {
+                      borderRadius: "20px",
+                      bgcolor: "var(--bg-panel)",
+                      border: "1px solid var(--border-color)",
+                      backgroundImage: "none",
+                      p: 1
+                    }
+                  }
+                }}
+              >
+                <DialogTitle sx={{ fontWeight: 800, fontSize: 18, color: "var(--text-primary)", pb: 1 }}>
+                  {editingEntry ? "Edit Proctoring Record" : "Add Proctoring Record"}
+                </DialogTitle>
+                <form onSubmit={handleProctorModalSubmit}>
+                  <DialogContent>
+                    <Grid container spacing={2.5} sx={{ mt: 0.5 }}>
+                      {/* Program selection */}
+                      <Grid item xs={12} sm={6}>
+                        <FormControl fullWidth size="small">
+                          <InputLabel shrink sx={{ color: "var(--text-secondary)" }}>Program</InputLabel>
+                          <Select
+                            value={selectedProgramId}
+                            label="Program"
+                            onChange={(e) => setSelectedProgramId(e.target.value)}
+                            displayEmpty
+                            fullWidth
+                            sx={{ borderRadius: "10px", color: "var(--text-primary)", bgcolor: "rgba(255,255,255,0.01)" }}
+                          >
+                            <MenuItem value="" disabled sx={{ fontStyle: "italic", color: "var(--text-secondary)" }}>
+                              Select Program
+                            </MenuItem>
+                            {programs.map((p) => (
+                              <MenuItem key={p._id} value={p._id}>
+                                {p.name} ({p.code})
+                              </MenuItem>
+                            ))}
+                          </Select>
+                        </FormControl>
+                      </Grid>
+
+                      {/* Branch selection */}
+                      <Grid item xs={12} sm={6}>
+                        <FormControl fullWidth size="small" disabled={!selectedProgramId}>
+                          <InputLabel shrink sx={{ color: "var(--text-secondary)" }}>Branch Code</InputLabel>
+                          <Select
+                            value={selectedBranchId}
+                            label="Branch Code"
+                            onChange={(e) => setSelectedBranchId(e.target.value)}
+                            displayEmpty
+                            fullWidth
+                            sx={{ borderRadius: "10px", color: "var(--text-primary)", bgcolor: "rgba(255,255,255,0.01)" }}
+                          >
+                            <MenuItem value="" disabled sx={{ fontStyle: "italic", color: "var(--text-secondary)" }}>
+                              Select Branch
+                            </MenuItem>
+                            {branches.map((b) => (
+                              <MenuItem key={b._id} value={b._id}>
+                                {b.name} ({b.code})
+                              </MenuItem>
+                            ))}
+                          </Select>
+                        </FormControl>
+                      </Grid>
+
+                      {/* Sem/Year numeric input based on Program Pattern */}
+                      <Grid item xs={12} sm={6}>
+                        {(() => {
+                          const program = programs.find((p) => p._id === selectedProgramId);
+                          const isYearPattern = program?.programPattern === "YEAR";
+                          if (isYearPattern) {
+                            return (
+                              <TextField
+                                label="Year Number"
+                                type="number"
+                                fullWidth
+                                size="small"
+                                required
+                                value={yearNumber}
+                                onChange={(e) => setYearNumber(e.target.value)}
+                                slotProps={{ htmlInput: { min: 1, step: 1 } }}
+                                sx={{ "& .MuiOutlinedInput-root": { borderRadius: "10px" } }}
+                              />
+                            );
+                          } else {
+                            return (
+                              <TextField
+                                label="Semester Number"
+                                type="number"
+                                fullWidth
+                                size="small"
+                                required
+                                value={semesterNumber}
+                                onChange={(e) => setSemesterNumber(e.target.value)}
+                                slotProps={{ htmlInput: { min: 1, step: 1 } }}
+                                sx={{ "& .MuiOutlinedInput-root": { borderRadius: "10px" } }}
+                              />
+                            );
+                          }
+                        })()}
+                      </Grid>
+
+                      {/* Section - numeric only */}
+                      <Grid item xs={12} sm={6}>
                         <TextField
-                          label="Total Allotted Students"
+                          label="Section (Numeric Only)"
                           type="number"
-                          size="small"
                           fullWidth
+                          size="small"
+                          required
+                          value={section}
+                          onChange={(e) => setSection(e.target.value)}
+                          slotProps={{ htmlInput: { min: 1, step: 1 } }}
+                          sx={{ "& .MuiOutlinedInput-root": { borderRadius: "10px" } }}
+                        />
+                      </Grid>
+
+                      {/* Student counts inputs */}
+                      <Grid item xs={12} sm={4}>
+                        <TextField
+                          label="Total Allotted"
+                          type="number"
+                          fullWidth
+                          size="small"
+                          required
                           value={totalStudents}
                           onChange={(e) => setTotalStudents(e.target.value)}
-                          disabled={submittingProctoring}
+                          slotProps={{ htmlInput: { min: 0, step: 1 } }}
+                          sx={{ "& .MuiOutlinedInput-root": { borderRadius: "10px" } }}
                         />
                       </Grid>
-                      <Grid item xs={12} sm={3}>
+
+                      <Grid item xs={12} sm={4}>
                         <TextField
-                          label="Students Appeared"
+                          label="Eligible for End Exams (A)"
                           type="number"
-                          size="small"
                           fullWidth
-                          value={studentsAppeared}
-                          onChange={(e) => setAppeared(e.target.value)}
-                          disabled={submittingProctoring}
+                          size="small"
+                          required
+                          value={eligibleStudents}
+                          onChange={(e) => setEligibleStudents(e.target.value)}
+                          slotProps={{ htmlInput: { min: 0, step: 1 } }}
+                          sx={{ "& .MuiOutlinedInput-root": { borderRadius: "10px" } }}
                         />
                       </Grid>
-                      <Grid item xs={12} sm={3}>
+
+                      <Grid item xs={12} sm={4}>
                         <TextField
-                          label="Students Passed"
+                          label="Passed Students (B)"
                           type="number"
-                          size="small"
                           fullWidth
-                          value={studentsPassed}
-                          onChange={(e) => setPassed(e.target.value)}
-                          disabled={submittingProctoring}
+                          size="small"
+                          required
+                          value={passedStudents}
+                          onChange={(e) => setPassedStudents(e.target.value)}
+                          slotProps={{ htmlInput: { min: 0, step: 1 } }}
+                          sx={{ "& .MuiOutlinedInput-root": { borderRadius: "10px" } }}
                         />
                       </Grid>
-                      <Grid item xs={12} sm={3}>
-                        <Box display="flex" flexDirection="column">
-                          <Typography variant="caption" sx={{ fontWeight: 800, color: "var(--text-secondary)" }}>
-                            Calculated Pass %
+
+                      {/* Calculated Pass Percentage display */}
+                      <Grid item xs={12}>
+                        <Box
+                          sx={{
+                            p: 2,
+                            borderRadius: "12px",
+                            bgcolor: "rgba(2, 132, 199, 0.05)",
+                            border: "1px solid rgba(2, 132, 199, 0.15)",
+                            display: "flex",
+                            justifyContent: "space-between",
+                            alignItems: "center"
+                          }}
+                        >
+                          <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-secondary)" }}>
+                            Calculated Pass Percentage:
                           </Typography>
-                          <Typography variant="body1" sx={{ fontWeight: 800, color: "var(--color-primary)", mt: 0.5 }}>
-                            {studentsAppeared > 0 && studentsPassed >= 0 ? ((parseInt(studentsPassed) / parseInt(studentsAppeared)) * 100).toFixed(2) + '%' : '0.00%'}
+                          <Typography variant="subtitle1" sx={{ fontWeight: 800, color: "var(--color-primary)" }}>
+                            {(() => {
+                              const elg = parseInt(eligibleStudents);
+                              const pass = parseInt(passedStudents);
+                              if (isNaN(elg) || isNaN(pass) || elg <= 0 || pass < 0 || pass > elg) return "0.00%";
+                              return `${((pass / elg) * 100).toFixed(2)}%`;
+                            })()}
                           </Typography>
                         </Box>
                       </Grid>
-                      <Grid item xs={12} sx={{ display: "flex", justifyContent: "flex-end", mt: 1 }}>
-                        <Button
-                          variant="contained"
-                          onClick={handleProctoringSubmit}
-                          disabled={submittingProctoring}
-                          size="small"
-                          sx={{ textTransform: "none", fontWeight: 800, borderRadius: "10px", color: "#fff", px: 3 }}
-                        >
-                          {submittingProctoring ? "Submitting..." : proctoringDetail ? "Resubmit Proctoring" : "Submit Proctoring"}
-                        </Button>
-                      </Grid>
                     </Grid>
-                  </Box>
-                </>
-              )}
+                  </DialogContent>
+                  <DialogActions sx={{ px: 3, pb: 2.5, gap: 1 }}>
+                    <Button
+                      onClick={() => setIsProctorModalOpen(false)}
+                      disabled={submittingProctoring}
+                      sx={{ textTransform: "none", fontWeight: 700, borderRadius: "10px", color: "var(--text-secondary)" }}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      type="submit"
+                      variant="contained"
+                      disabled={submittingProctoring}
+                      sx={{
+                        textTransform: "none",
+                        fontWeight: 700,
+                        borderRadius: "10px",
+                        px: 3,
+                        background: "var(--gradient-primary)",
+                        color: "#fff",
+                        boxShadow: "0 4px 15px rgba(0, 78, 146, 0.2)",
+                        "&:hover": {
+                          background: "var(--gradient-primary)",
+                          opacity: 0.95
+                        }
+                      }}
+                    >
+                      {submittingProctoring ? <CircularProgress size={16} sx={{ color: "#fff" }} /> : editingEntry ? "Save Changes" : "Add Record"}
+                    </Button>
+                  </DialogActions>
+                </form>
+              </Dialog>
 
               {/* 1.3 Course Feedback */}
               <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 1.5, color: "var(--color-primary)" }}>

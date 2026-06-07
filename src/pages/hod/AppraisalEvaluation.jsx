@@ -237,26 +237,41 @@ const AppraisalEvaluation = () => {
   const [searchTerm, setSearchTerm] = useState("");
 
   // HOD actions on individual sections
-  const handleProctoringHODAction = async (id, action, remarks) => {
+  const handleProctoringHODBulkAction = async (action, remarks) => {
     if (action === "Reject" && (!remarks || !remarks.trim())) {
       toast.warning("Please provide a rejection reason/remarks.");
       return;
     }
+    const facultyId = selectedAppraisal.facultyId?._id || selectedAppraisal.facultyId;
+    const academicYear = selectedAppraisal.academicYearId?._id || selectedAppraisal.academicYearId;
+
     try {
-      const res = await axiosInstance.put(`/api/faculty-proctoring/hod-action/${id}`, { action, remarks });
+      const res = await axiosInstance.post("/api/faculty-proctoring/hod-action-bulk", {
+        facultyId,
+        academicYear,
+        action,
+        remarks
+      });
       if (res.data?.success) {
-        toast.success(`Proctoring entry ${action.toLowerCase()}d successfully.`);
-        if (action === "Reject") {
-          await handleSubmitEvaluation("Reject", `Proctoring entry rejected: ${remarks}`);
-        } else {
-          setSelectedAppraisal(prev => ({
+        toast.success(`Proctoring entries ${action.toLowerCase()}d successfully.`);
+        
+        // Update local selectedAppraisal state
+        setSelectedAppraisal(prev => {
+          const updatedDetail = Array.isArray(prev.proctoringDetail)
+            ? prev.proctoringDetail.map(e => e.status === "Pending" || e.status === "Pending at HOD" ? { ...e, status: action === "Approve" ? "Approved" : "Rejected", remarks } : e)
+            : prev.proctoringDetail;
+          return {
             ...prev,
-            proctoringDetail: { ...prev.proctoringDetail, status: "Approved", remarks }
-          }));
+            proctoringDetail: updatedDetail
+          };
+        });
+
+        if (action === "Reject") {
+          await handleSubmitEvaluation("Reject", `Proctoring entries rejected: ${remarks}`);
         }
       }
     } catch (err) {
-      toast.error(err.response?.data?.message || "Failed to update proctoring entry.");
+      toast.error(err.response?.data?.message || "Failed to update proctoring entries.");
     }
   };
 
@@ -336,8 +351,12 @@ const AppraisalEvaluation = () => {
   const getAppraisalValidationStatus = () => {
     if (!selectedAppraisal) return { hasPending: false, hasRejected: false };
 
-    const hasPendingProctoring = selectedAppraisal.proctoringDetail?.status === "Pending";
-    const hasRejectedProctoring = selectedAppraisal.proctoringDetail?.status === "Rejected";
+    const hasPendingProctoring = Array.isArray(selectedAppraisal.proctoringDetail)
+      ? selectedAppraisal.proctoringDetail.some(item => item.status === "Pending" || item.status === "Pending at HOD")
+      : selectedAppraisal.proctoringDetail?.status === "Pending";
+    const hasRejectedProctoring = Array.isArray(selectedAppraisal.proctoringDetail)
+      ? selectedAppraisal.proctoringDetail.some(item => item.status === "Rejected")
+      : selectedAppraisal.proctoringDetail?.status === "Rejected";
 
     const hasPendingResUt = selectedAppraisal.resourceUtilizationDetails?.some(item => item.status === "Pending" || item.status === "Pending at HOD");
     const hasRejectedResUt = selectedAppraisal.resourceUtilizationDetails?.some(item => item.status === "Rejected");
@@ -433,7 +452,11 @@ const AppraisalEvaluation = () => {
       setComments("");
     }
     setRatings(initRatings);
-    setProctoringRemarks(appr.proctoringDetail?.remarks || "");
+    setProctoringRemarks(
+      Array.isArray(appr.proctoringDetail)
+        ? (appr.proctoringDetail.find(e => e.remarks)?.remarks || "")
+        : (appr.proctoringDetail?.remarks || "")
+    );
     setResUtRemarks({});
     setContRemarks({});
     setAdminRemarks({});
@@ -792,91 +815,113 @@ const AppraisalEvaluation = () => {
                 </TableContainer>
 
                 {/* 1.2 Proctoring Students' average Pass percentage */}
-                <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 1, color: "var(--color-primary)", display: "block" }}>
-                  1.2 Proctoring Students' Average Pass Percentage
-                </Typography>
-                <TableContainer component={Paper} sx={{ mb: 2, borderRadius: "12px", background: "var(--bg-paper)", border: "1px solid var(--border-color)", overflowX: "auto", maxWidth: { xs: "100%", md: "100%", lg: 1000, xl: 1100 }, mx: "auto" }}>
-                  <Table size="small" sx={{ minWidth: 650, mx: "auto" }}>
-                    <TableHead sx={{ background: "var(--gradient-primary)" }}>
-                      <TableRow>
-                        <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 1 }} align="center">Total Allotted</TableCell>
-                        <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 1 }} align="center">Appeared</TableCell>
-                        <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 1 }} align="center">Passed</TableCell>
-                        <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 1 }} align="center">Pass %</TableCell>
-                        <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 1 }} align="center">Points claimed</TableCell>
-                      </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      {selectedAppraisal.teaching?.proctoring?.entries?.length > 0 ? (
-                        <>
-                          {selectedAppraisal.teaching.proctoring.entries.map((e, i) => (
-                            <TableRow key={i}>
-                              <TableCell align="center" sx={{ fontWeight: 600, color: "var(--text-primary)" }}>{e.totalStudents}</TableCell>
-                              <TableCell align="center" sx={{ color: "var(--text-primary)" }}>{e.appeared}</TableCell>
-                              <TableCell align="center" sx={{ color: "var(--text-primary)" }}>{e.passed}</TableCell>
-                              <TableCell align="center" sx={{ color: "var(--text-primary)" }}>{e.percentage}%</TableCell>
-                              <TableCell align="center" sx={{ fontWeight: 800, color: "var(--color-primary)" }}>{e.pointsClaimed}</TableCell>
-                            </TableRow>
-                          ))}
+                 <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 1, color: "var(--color-primary)", display: "block" }}>
+                   1.2 Proctoring Students' Average Pass Percentage
+                 </Typography>
+                 <TableContainer component={Paper} sx={{ mb: 2, borderRadius: "12px", background: "var(--bg-paper)", border: "1px solid var(--border-color)", overflowX: "auto", maxWidth: { xs: "100%", md: "100%", lg: 1000, xl: 1100 }, mx: "auto" }}>
+                   <Table size="small" sx={{ minWidth: 650, mx: "auto" }}>
+                     <TableHead sx={{ background: "var(--gradient-primary)" }}>
+                       <TableRow>
+                         <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 1 }}>Program</TableCell>
+                         <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 1 }}>Sem/Yr - Branch - Sec</TableCell>
+                         <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 1 }} align="right">Total Allotted</TableCell>
+                         <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 1 }} align="right">Eligible (A)</TableCell>
+                         <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 1 }} align="right">Passed (B)</TableCell>
+                         <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 1 }} align="right">Pass % (B/A)</TableCell>
+                         <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 1 }} align="right">Points claimed</TableCell>
+                       </TableRow>
+                     </TableHead>
+                     <TableBody>
+                       {selectedAppraisal.teaching?.proctoring?.entries?.length > 0 ? (
+                         <>
+                           {selectedAppraisal.teaching.proctoring.entries.map((e, i) => {
+                             const isYearProg = e.yearNumber !== null && e.yearNumber !== undefined && e.yearNumber !== 0;
+                             const semYrBranchSec = isYearProg
+                               ? `YEAR-${e.yearNumber} ${e.branchCode || "—"} - SEC ${e.section}`
+                               : `SEM-${e.semesterNumber} ${e.branchCode || "—"} - SEC ${e.section}`;
+                             return (
+                               <TableRow key={i}>
+                                 <TableCell sx={{ fontWeight: 600, color: "var(--text-primary)" }}>{e.programCode || "—"}</TableCell>
+                                 <TableCell sx={{ color: "var(--text-primary)" }}>{semYrBranchSec}</TableCell>
+                                 <TableCell align="right" sx={{ color: "var(--text-primary)" }}>{e.totalStudents}</TableCell>
+                                 <TableCell align="right" sx={{ color: "#8B5CF6", fontWeight: 600 }}>{e.appeared}</TableCell>
+                                 <TableCell align="right" sx={{ color: "#10B981", fontWeight: 600 }}>{e.passed}</TableCell>
+                                 <TableCell align="right" sx={{ color: "var(--text-primary)" }}>{Number(e.percentage || 0).toFixed(2)}%</TableCell>
+                                 <TableCell align="right" sx={{ fontWeight: 800, color: "var(--color-primary)" }}>{e.pointsClaimed}</TableCell>
+                               </TableRow>
+                             );
+                           })}
                            <TableRow sx={{ background: "rgba(0, 78, 146, 0.04)" }}>
-                            <TableCell sx={{ fontWeight: 800, color: "var(--text-primary)", pl: 2 }}>
-                              <Box component="span" sx={{ position: "sticky", left: 16, display: "inline-block", whiteSpace: "nowrap" }}>
-                                Overall Performance
-                              </Box>
-                            </TableCell>
-                            <TableCell align="center" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>{selectedAppraisal.teaching.proctoring.entries.reduce((sum, e) => sum + (Number(e.appeared) || 0), 0)}</TableCell>
-                            <TableCell align="center" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>{selectedAppraisal.teaching.proctoring.entries.reduce((sum, e) => sum + (Number(e.passed) || 0), 0)}</TableCell>
-                            <TableCell align="center" sx={{ fontWeight: 900, color: "var(--color-primary)" }}>
-                              {(selectedAppraisal.teaching.proctoring.entries.reduce((sum, e) => sum + (Number(e.appeared) || 0), 0) > 0 
-                                ? ((selectedAppraisal.teaching.proctoring.entries.reduce((sum, e) => sum + (Number(e.passed) || 0), 0) / selectedAppraisal.teaching.proctoring.entries.reduce((sum, e) => sum + (Number(e.appeared) || 0), 0)) * 100).toFixed(2)
-                                : "0.00")}%
-                            </TableCell>
-                            <TableCell align="center" sx={{ fontWeight: 900, color: "var(--color-primary)" }}>{selectedAppraisal.teaching.proctoring.averagePoints}</TableCell>
-                          </TableRow>
-                        </>
-                      ) : (
-                        <TableRow>
-                          <TableCell colSpan={5} align="center" sx={{ py: 2, color: "var(--text-secondary)", fontStyle: "italic" }}>No proctoring entries found.</TableCell>
-                        </TableRow>
-                      )}
-                    </TableBody>
-                  </Table>
-                </TableContainer>
+                             <TableCell colSpan={2} sx={{ fontWeight: 800, color: "var(--text-primary)", pl: 2 }}>
+                               <Box component="span" sx={{ display: "inline-block", whiteSpace: "nowrap" }}>
+                                 Overall Performance (Average Points)
+                               </Box>
+                             </TableCell>
+                             <TableCell align="right" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>
+                               {selectedAppraisal.teaching.proctoring.entries.reduce((sum, e) => sum + (Number(e.totalStudents) || 0), 0)}
+                             </TableCell>
+                             <TableCell align="right" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>
+                               {selectedAppraisal.teaching.proctoring.entries.reduce((sum, e) => sum + (Number(e.appeared) || 0), 0)}
+                             </TableCell>
+                             <TableCell align="right" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>
+                               {selectedAppraisal.teaching.proctoring.entries.reduce((sum, e) => sum + (Number(e.passed) || 0), 0)}
+                             </TableCell>
+                             <TableCell align="right" sx={{ fontWeight: 900, color: "var(--color-primary)" }}>
+                               {(() => {
+                                 const totalAppeared = selectedAppraisal.teaching.proctoring.entries.reduce((sum, e) => sum + (Number(e.appeared) || 0), 0);
+                                 const totalPassed = selectedAppraisal.teaching.proctoring.entries.reduce((sum, e) => sum + (Number(e.passed) || 0), 0);
+                                 return totalAppeared > 0 ? ((totalPassed / totalAppeared) * 100).toFixed(2) : "0.00";
+                               })()}%
+                             </TableCell>
+                             <TableCell align="right" sx={{ fontWeight: 900, color: "var(--color-primary)" }}>
+                               {selectedAppraisal.teaching.proctoring.averagePoints}
+                             </TableCell>
+                           </TableRow>
+                         </>
+                       ) : (
+                         <TableRow>
+                           <TableCell colSpan={7} align="center" sx={{ py: 2, color: "var(--text-secondary)", fontStyle: "italic" }}>No proctoring entries found.</TableCell>
+                         </TableRow>
+                       )}
+                     </TableBody>
+                   </Table>
+                 </TableContainer>
 
-                {/* Inline HOD Actions for Proctoring */}
-                {selectedAppraisal.proctoringDetail ? (() => {
-                  const proc = selectedAppraisal.proctoringDetail;
-                  if (proc.status !== "Pending" && proc.status !== "Pending at HOD") {
-                    return null;
-                  }
-                  const statusStyle = getStatusColor(proc.status);
-                  return (
-                    <Box sx={{ p: 2, mb: 3, borderRadius: "10px", background: "var(--bg-paper)", border: "1px solid var(--border-color)" }}>
-                      <Box display="flex" justifyContent="space-between" alignItems="center" mb={1.5}>
-                        <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)" }}>
-                          Proctoring HOD Action Required:
-                        </Typography>
-                        <Chip label={proc.status} size="small" sx={{ bgcolor: statusStyle.bg, color: statusStyle.color, fontWeight: 800, borderRadius: "6px" }} />
-                      </Box>
-                      <Box>
-                        <TextField
-                          size="small"
-                          fullWidth
-                          placeholder="Provide rejection reason or approval remarks..."
-                          value={proctoringRemarks}
-                          onChange={(e) => setProctoringRemarks(e.target.value)}
-                          sx={{ mb: 1.5 }}
-                        />
-                        <Stack direction="row" spacing={2} justifyContent="flex-end">
-                          <Button size="small" variant="outlined" color="error" onClick={() => handleProctoringHODAction(proc._id, "Reject", proctoringRemarks)}>Reject</Button>
-                          <Button size="small" variant="contained" color="success" sx={{ color: "#fff" }} onClick={() => handleProctoringHODAction(proc._id, "Approve", proctoringRemarks)}>Approve</Button>
-                        </Stack>
-                      </Box>
-                    </Box>
-                  );
-                })() : (
-                  <Typography variant="body2" sx={{ mb: 3, color: "var(--text-secondary)", fontStyle: "italic" }}>No proctoring details claimed for this year.</Typography>
-                )}
+                    {/* Inline HOD Actions for Proctoring */}
+                    {(() => {
+                      const pendingProcEntries = Array.isArray(selectedAppraisal.proctoringDetail)
+                        ? selectedAppraisal.proctoringDetail.filter(e => e.status === "Pending" || e.status === "Pending at HOD")
+                        : (selectedAppraisal.proctoringDetail?.status === "Pending" || selectedAppraisal.proctoringDetail?.status === "Pending at HOD" ? [selectedAppraisal.proctoringDetail] : []);
+
+                      if (pendingProcEntries.length === 0) {
+                        return null;
+                      }
+
+                      return (
+                        <Box sx={{ p: 2, mb: 3, borderRadius: "10px", background: "var(--bg-paper)", border: "1px solid var(--border-color)" }}>
+                          <Box display="flex" justifyContent="space-between" alignItems="center" mb={1.5}>
+                            <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)" }}>
+                              Proctoring HOD Action Required (Bulk):
+                            </Typography>
+                            <Chip label="Pending Review" size="small" sx={{ bgcolor: "rgba(232, 160, 0, 0.1)", color: "#e8a000", fontWeight: 800, borderRadius: "6px" }} />
+                          </Box>
+                          <Box>
+                            <TextField
+                              size="small"
+                              fullWidth
+                              placeholder="Provide rejection reason or approval remarks for all pending proctoring entries..."
+                              value={proctoringRemarks}
+                              onChange={(e) => setProctoringRemarks(e.target.value)}
+                              sx={{ mb: 1.5 }}
+                            />
+                            <Stack direction="row" spacing={2} justifyContent="flex-end">
+                              <Button size="small" variant="outlined" color="error" onClick={() => handleProctoringHODBulkAction("Reject", proctoringRemarks)}>Reject All</Button>
+                              <Button size="small" variant="contained" color="success" sx={{ color: "#fff" }} onClick={() => handleProctoringHODBulkAction("Approve", proctoringRemarks)}>Approve All</Button>
+                            </Stack>
+                          </Box>
+                        </Box>
+                      );
+                    })()}
 
                 {/* 1.3 Subject Feedback Table */}
                 <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 1, color: "var(--color-primary)", display: "block" }}>

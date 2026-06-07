@@ -11,13 +11,30 @@ import {
   Card,
   Chip,
   TextField,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  FormControl,
+  InputLabel,
+  IconButton,
+  Table,
+  TableHead,
+  TableBody,
+  TableRow,
+  TableCell,
+  TableContainer,
+  Paper,
 } from "@mui/material";
 import { toast } from "sonner";
 import {
   Flag as FlagIcon,
   CloudUpload as CloudUploadIcon,
   SupervisorAccount,
-  PeopleAlt
+  PeopleAlt,
+  Edit as EditIcon,
+  Delete as DeleteIcon,
+  Add as AddIcon
 } from "@mui/icons-material";
 import CheckCircleOutlinedIcon from "@mui/icons-material/CheckCircleOutlined";
 import CancelOutlinedIcon from "@mui/icons-material/CancelOutlined";
@@ -61,10 +78,19 @@ export default function Teaching() {
   // ── Manual Proctoring Entry state ─────────────────────────────────
   const [manualEntries, setManualEntries] = useState([]);
   const [manualLoading, setManualLoading] = useState(false);
+  const [programs, setPrograms] = useState([]);
+  const [branches, setBranches] = useState([]);
+  const [selectedProgramId, setSelectedProgramId] = useState("");
+  const [selectedBranchId, setSelectedBranchId] = useState("");
+  const [semesterNumber, setSemesterNumber] = useState("");
+  const [yearNumber, setYearNumber] = useState("");
+  const [section, setSection] = useState("");
   const [totalStudents, setTotalStudents] = useState("");
-  const [studentsAppeared, setAppeared] = useState("");
-  const [studentsPassed, setPassed] = useState("");
+  const [eligibleStudents, setEligibleStudents] = useState("");
+  const [passedStudents, setPassedStudents] = useState("");
   const [submittingManual, setSubmittingManual] = useState(false);
+  const [isProctorModalOpen, setIsProctorModalOpen] = useState(false);
+  const [editingEntry, setEditingEntry] = useState(null);
 
   // 1. Fetch Academic Years on mount
   useEffect(() => {
@@ -87,8 +113,41 @@ export default function Teaching() {
         console.error("Error fetching academic years:", err);
       }
     };
+
+    const fetchPrograms = async () => {
+      try {
+        const res = await API.get("/api/academics/programs?status=true");
+        if (res.data?.success) {
+          setPrograms(res.data.data);
+        }
+      } catch (err) {
+        console.error("Error fetching programs:", err);
+      }
+    };
+
     fetchYears();
+    fetchPrograms();
   }, []);
+
+  // Fetch branches for selected program
+  useEffect(() => {
+    const fetchBranches = async () => {
+      if (!selectedProgramId) {
+        setBranches([]);
+        setSelectedBranchId("");
+        return;
+      }
+      try {
+        const res = await API.get(`/api/academics/branches?programId=${selectedProgramId}&status=true`);
+        if (res.data?.success) {
+          setBranches(res.data.data);
+        }
+      } catch (err) {
+        console.error("Error fetching branches:", err);
+      }
+    };
+    fetchBranches();
+  }, [selectedProgramId]);
 
 
   // 2. Fetch Results for this faculty when filters change
@@ -190,7 +249,47 @@ export default function Teaching() {
     }
   };
 
-  const handleManualSubmit = async (e) => {
+  const handleOpenAddModal = () => {
+    setEditingEntry(null);
+    setSelectedProgramId("");
+    setSelectedBranchId("");
+    setSemesterNumber("");
+    setYearNumber("");
+    setSection("");
+    setTotalStudents("");
+    setEligibleStudents("");
+    setPassedStudents("");
+    setIsProctorModalOpen(true);
+  };
+
+  const handleOpenEditModal = (entry) => {
+    setEditingEntry(entry);
+    setSelectedProgramId(entry.programId?._id || entry.programId);
+    setSelectedBranchId(entry.branchId?._id || entry.branchId);
+    setSemesterNumber(entry.semesterNumber !== null && entry.semesterNumber !== undefined ? entry.semesterNumber.toString() : "");
+    setYearNumber(entry.yearNumber !== null && entry.yearNumber !== undefined ? entry.yearNumber.toString() : "");
+    setSection(entry.section !== null && entry.section !== undefined ? entry.section.toString() : "");
+    setTotalStudents(entry.totalStudents !== null && entry.totalStudents !== undefined ? entry.totalStudents.toString() : "");
+    setEligibleStudents(entry.eligibleStudents !== null && entry.eligibleStudents !== undefined ? entry.eligibleStudents.toString() : "");
+    setPassedStudents(entry.passedStudents !== null && entry.passedStudents !== undefined ? entry.passedStudents.toString() : "");
+    setIsProctorModalOpen(true);
+  };
+
+  const handleDeleteEntry = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this proctoring record?")) return;
+    try {
+      const res = await API.delete(`/api/faculty-proctoring/${id}`);
+      if (res.data?.success) {
+        toast.success("Proctoring record deleted successfully!");
+        fetchManualEntries();
+      }
+    } catch (err) {
+      console.error("Delete error:", err);
+      toast.error(err.response?.data?.message || "Failed to delete record.");
+    }
+  };
+
+  const handleProctorModalSubmit = async (e) => {
     e.preventDefault();
     const selectedYear = academicYears.find((y) => y.year === selectedYearLabel);
     if (!selectedYear?._id) {
@@ -198,70 +297,91 @@ export default function Teaching() {
       return;
     }
 
+    if (!selectedProgramId) {
+      toast.error("Please select a Program");
+      return;
+    }
+    if (!selectedBranchId) {
+      toast.error("Please select a Branch");
+      return;
+    }
+
+    const program = programs.find(p => p._id === selectedProgramId);
+    const semVal = program?.programPattern === "YEAR" ? null : parseInt(semesterNumber);
+    const yrVal = program?.programPattern === "YEAR" ? parseInt(yearNumber) : null;
+
+    if (program?.programPattern === "YEAR" && (yrVal === null || isNaN(yrVal))) {
+      toast.error("Year number must be a valid number");
+      return;
+    }
+    if (program?.programPattern !== "YEAR" && (semVal === null || isNaN(semVal))) {
+      toast.error("Semester number must be a valid number");
+      return;
+    }
+
+    const secVal = parseInt(section);
+    if (isNaN(secVal) || secVal < 1) {
+      toast.error("Section must be a positive number");
+      return;
+    }
+
     const total = parseInt(totalStudents);
-    const appeared = parseInt(studentsAppeared);
-    const passed = parseInt(studentsPassed);
+    const eligible = parseInt(eligibleStudents);
+    const passed = parseInt(passedStudents);
 
-    if (isNaN(total) || isNaN(appeared) || isNaN(passed)) {
-      toast.warning("Please fill in all the student counts with valid numbers");
+    if (isNaN(total) || isNaN(eligible) || isNaN(passed)) {
+      toast.error("Please enter valid student counts");
       return;
     }
 
-    if (total < 0 || appeared < 0 || passed < 0) {
-      toast.warning("Counts cannot be negative");
+    if (total < 0 || eligible < 0 || passed < 0) {
+      toast.error("Counts cannot be negative");
       return;
     }
 
-    if (appeared > total) {
-      toast.warning("Appeared count cannot exceed total students under proctoring");
+    if (eligible > total) {
+      toast.error("Eligible students cannot exceed total allotted students");
       return;
     }
 
-    if (passed > appeared) {
-      toast.warning("Passed count cannot exceed appeared count");
+    if (passed > eligible) {
+      toast.error("Passed students cannot exceed eligible students");
       return;
     }
 
     setSubmittingManual(true);
     try {
-      const res = await API.post("/api/faculty-proctoring", {
+      const payload = {
         academicYear: selectedYear._id,
+        programId: selectedProgramId,
+        branchId: selectedBranchId,
+        semesterNumber: semVal,
+        yearNumber: yrVal,
+        section: secVal,
         totalStudents: total,
-        studentsAppeared: appeared,
-        studentsPassed: passed
-      });
+        eligibleStudents: eligible,
+        passedStudents: passed
+      };
+
+      let res;
+      if (editingEntry) {
+        res = await API.put(`/api/faculty-proctoring/${editingEntry._id}`, payload);
+      } else {
+        res = await API.post("/api/faculty-proctoring", payload);
+      }
 
       if (res.data?.success) {
-        toast.success("Proctoring statistics submitted successfully!");
+        toast.success(`Proctoring statistics ${editingEntry ? "updated" : "submitted"} successfully!`);
+        setIsProctorModalOpen(false);
         fetchManualEntries();
       }
     } catch (err) {
-      console.error("Manual submit error:", err);
+      console.error("Submit error:", err);
       toast.error(err.response?.data?.message || "Failed to submit proctoring statistics.");
     } finally {
       setSubmittingManual(false);
     }
   };
-
-  // Synchronize inputs with currentManualEntry
-  useEffect(() => {
-    const selectedYear = academicYears.find((y) => y.year === selectedYearLabel);
-    if (!selectedYear) return;
-
-    const currentEntry = manualEntries.find(
-      (entry) => entry.academicYear?._id === selectedYear._id || entry.academicYear === selectedYear._id
-    );
-
-    if (currentEntry) {
-      setTotalStudents(currentEntry.totalStudents.toString());
-      setAppeared(currentEntry.studentsAppeared.toString());
-      setPassed(currentEntry.studentsPassed.toString());
-    } else {
-      setTotalStudents("");
-      setAppeared("");
-      setPassed("");
-    }
-  }, [selectedYearLabel, manualEntries, academicYears]);
 
   // ── CSV Upload Handler ────────────────────────────────────────────
   const handleCSVUploadClick = () => {
@@ -900,9 +1020,32 @@ export default function Teaching() {
       </Box>
       */}
 
-      {/* ── NEW SECTION : Temporary Proctoring Data Entry ────── */}
       <Box sx={sectionCard}>
-        <SectionHeader title="SECTION : Proctoring Students' Average Pass Percentage" />
+        <SectionHeader
+          title="SECTION : Proctoring Students' Average Pass Percentage"
+          action={
+            <Button
+              variant="contained"
+              startIcon={<AddIcon />}
+              onClick={handleOpenAddModal}
+              sx={{
+                borderRadius: "10px",
+                textTransform: "none",
+                fontWeight: 700,
+                px: 3,
+                background: "var(--gradient-primary)",
+                color: "#fff",
+                boxShadow: "0 4px 15px rgba(0, 78, 146, 0.2)",
+                "&:hover": {
+                  background: "var(--gradient-primary)",
+                  opacity: 0.95
+                }
+              }}
+            >
+              Add Record
+            </Button>
+          }
+        />
 
         {manualLoading ? (
           <Box sx={{ display: "flex", justifyContent: "center", py: 5 }}>
@@ -910,304 +1053,337 @@ export default function Teaching() {
           </Box>
         ) : (() => {
           const selectedYear = academicYears.find((y) => y.year === selectedYearLabel);
-          const currentEntry = selectedYear
-            ? manualEntries.find(
+          const filteredYearEntries = selectedYear
+            ? manualEntries.filter(
               (entry) => entry.academicYear?._id === selectedYear._id || entry.academicYear === selectedYear._id
             )
-            : null;
+            : [];
 
-          const isApproved = currentEntry?.status === "Approved";
-          const isPending = currentEntry?.status === "Pending";
-          const isRejected = currentEntry?.status === "Rejected";
-
-          // Live calculated pass percentage
-          const liveAppeared = parseInt(studentsAppeared);
-          const livePassed = parseInt(studentsPassed);
-          const livePassPercentage = liveAppeared > 0 && livePassed >= 0 && livePassed <= liveAppeared
-            ? ((livePassed / liveAppeared) * 100).toFixed(2)
-            : "0.00";
+          if (filteredYearEntries.length === 0) {
+            return (
+              <Box
+                sx={{
+                  textAlign: "center",
+                  py: 6,
+                  color: "var(--text-secondary)",
+                  fontSize: 15,
+                  border: "1px dashed var(--border-color)",
+                  borderRadius: "16px",
+                  background: "var(--bg-glass)",
+                  mb: 3
+                }}
+              >
+                No proctoring records found for this academic cycle. Click "Add Record" to enter proctoring details.
+              </Box>
+            );
+          }
 
           return (
-            <Box>
-              <Typography
-                variant="subtitle2"
-                sx={{ mb: 3, color: "var(--text-secondary)", fontWeight: 500, lineHeight: 1.6 }}
-              >
-                Temporary approach for the current appraisal cycle: Please enter your proctoring statistics below for the selected academic year. Submissions will be sent to the HOD for review and approval.
-              </Typography>
+            <TableContainer component={Paper} elevation={0} sx={{ borderRadius: "16px", border: "1px solid var(--border-color)", overflow: "hidden", background: "var(--bg-paper)", mb: 3 }}>
+              <Table size="small">
+                <TableHead sx={{ background: "var(--gradient-primary)" }}>
+                  <TableRow>
+                    <TableCell sx={{ fontWeight: 700, color: "#fff", py: 1.5 }}>Program</TableCell>
+                    <TableCell sx={{ fontWeight: 700, color: "#fff", py: 1.5 }}>Sem/Yr - Branch - Sec</TableCell>
+                    <TableCell sx={{ fontWeight: 700, color: "#fff", py: 1.5 }} align="right">Total Allotted</TableCell>
+                    <TableCell sx={{ fontWeight: 700, color: "#fff", py: 1.5 }} align="right">Eligible (A)</TableCell>
+                    <TableCell sx={{ fontWeight: 700, color: "#fff", py: 1.5 }} align="right">Passed (B)</TableCell>
+                    <TableCell sx={{ fontWeight: 700, color: "#fff", py: 1.5 }} align="right">Pass %</TableCell>
+                    <TableCell sx={{ fontWeight: 700, color: "#fff", py: 1.5 }}>Status</TableCell>
+                    <TableCell sx={{ fontWeight: 700, color: "#fff", py: 1.5 }}>Remarks</TableCell>
+                    <TableCell sx={{ fontWeight: 700, color: "#fff", py: 1.5 }} align="center">Actions</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {filteredYearEntries.map((entry) => {
+                    const progName = entry.programId?.code || "—";
+                    const isYearProg = entry.programId?.programPattern === "YEAR";
+                    const branchDisplay = entry.branchId?.code || "—";
+                    const semYrBranchSec = isYearProg
+                      ? `YEAR-${entry.yearNumber || "—"} ${branchDisplay} - SEC ${entry.section}`
+                      : `SEM-${entry.semesterNumber || "—"} ${branchDisplay} - SEC ${entry.section}`;
+                    const passPct = entry.passPercentage !== undefined ? entry.passPercentage.toFixed(2) : "0.00";
 
-              {/* Status Banner */}
-              {currentEntry && (
-                <Box
-                  sx={{
-                    mb: 3,
-                    p: 2.5,
-                    borderRadius: "16px",
-                    border: "1px solid",
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: 1,
-                    background:
-                      isApproved ? "rgba(16, 185, 129, 0.06)" :
-                        isRejected ? "rgba(239, 68, 68, 0.06)" :
-                          "rgba(245, 158, 11, 0.06)",
-                    borderColor:
-                      isApproved ? "rgba(16, 185, 129, 0.2)" :
-                        isRejected ? "rgba(239, 68, 68, 0.2)" :
-                          "rgba(245, 158, 11, 0.2)",
-                  }}
-                >
-                  <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-                    <Typography sx={{ fontWeight: 800, fontSize: 13, textTransform: "uppercase", letterSpacing: "0.5px", color: "var(--text-primary)" }}>
-                      Approval Status:
-                    </Typography>
-                    <Chip
-                      label={
-                        isApproved ? "Approved by HOD" :
-                          isRejected ? "Rejected by HOD" :
-                            "Pending HOD Review"
-                      }
-                      size="small"
-                      sx={{
-                        fontWeight: 700,
-                        fontSize: 11,
-                        borderRadius: "8px",
-                        bgcolor:
-                          isApproved ? "rgba(16, 185, 129, 0.15)" :
-                            isRejected ? "rgba(239, 68, 68, 0.15)" :
-                              "rgba(245, 158, 11, 0.15)",
-                        color:
-                          isApproved ? "#10B981" :
-                            isRejected ? "#EF4444" :
-                              "#D97706",
-                        border: "1px solid",
-                        borderColor: "currentColor",
-                      }}
-                    />
-                  </Box>
-
-                  {isApproved && (
-                    <Typography sx={{ fontSize: 13, color: "var(--text-secondary)", mt: 0.5, fontWeight: 500 }}>
-                      Approved by <strong>{currentEntry.approvedBy?.name || "HOD"}</strong> on{" "}
-                      {new Date(currentEntry.approvalDate).toLocaleDateString("en-GB", {
-                        day: "2-digit",
-                        month: "short",
-                        year: "numeric",
-                        hour: "2-digit",
-                        minute: "2-digit"
-                      })}.
-                    </Typography>
-                  )}
-
-                  {isRejected && currentEntry.remarks && (
-                    <Box sx={{ mt: 1, p: 1.5, bgcolor: "rgba(239, 68, 68, 0.03)", borderRadius: "8px", borderLeft: "4px solid #EF4444" }}>
-                      <Typography sx={{ fontSize: 13, color: "#EF4444", fontWeight: 700, mb: 0.5 }}>
-                        Rejection Reason:
-                      </Typography>
-                      <Typography sx={{ fontSize: 13, color: "var(--text-primary)", fontWeight: 500, fontStyle: "italic" }}>
-                        "{currentEntry.remarks}"
-                      </Typography>
-                    </Box>
-                  )}
-
-                  {isPending && (
-                    <Typography sx={{ fontSize: 13, color: "var(--text-secondary)", mt: 0.5, fontWeight: 500 }}>
-                      Your submission is currently locked for review. You will be able to edit it if the HOD requests changes.
-                    </Typography>
-                  )}
-                </Box>
-              )}
-
-              <form onSubmit={handleManualSubmit}>
-                <Grid container spacing={3} sx={{ alignItems: "stretch" }}>
-                  {/* Inputs */}
-                  <Grid item xs={12} md={8} sx={{ display: "flex", flexDirection: "column" }}>
-                    <Box
-                      sx={{
-                        p: 3,
-                        flexGrow: 1,
-                        width: "100%",
-                        borderRadius: "16px",
-                        bgcolor: "var(--bg-glass)",
-                        border: "1px solid var(--border-color)",
-                        display: "flex",
-                        flexDirection: "column",
-                        gap: 2.5
-                      }}
-                    >
-                      <Grid container spacing={2}>
-                        <Grid item xs={12} sm={4}>
-                          <Typography sx={{ fontSize: 12, fontWeight: 800, color: "var(--text-secondary)", mb: 1, textTransform: "uppercase", letterSpacing: "0.5px" }}>
-                            Total Students under Proctoring
-                          </Typography>
-                          <TextField
-                            fullWidth
+                    return (
+                      <TableRow key={entry._id} sx={{ "&:hover": { bgcolor: "rgba(0,0,0,0.02)" } }}>
+                        <TableCell sx={{ fontWeight: 600, color: "var(--text-primary)" }}>{progName}</TableCell>
+                        <TableCell sx={{ color: "var(--text-primary)" }}>{semYrBranchSec}</TableCell>
+                        <TableCell sx={{ color: "var(--text-primary)" }} align="right">{entry.totalStudents}</TableCell>
+                        <TableCell sx={{ color: "#8B5CF6", fontWeight: 600 }} align="right">{entry.eligibleStudents}</TableCell>
+                        <TableCell sx={{ color: "#10B981", fontWeight: 600 }} align="right">{entry.passedStudents}</TableCell>
+                        <TableCell sx={{ color: "var(--color-primary)", fontWeight: 800 }} align="right">{passPct}%</TableCell>
+                        <TableCell>
+                          <Chip
+                            label={entry.status}
                             size="small"
-                            type="number"
-                            value={totalStudents}
-                            disabled={isApproved || isPending}
-                            onChange={(e) => setTotalStudents(e.target.value)}
-                            placeholder="Enter count"
-                            slotProps={{
-                              htmlInput: { min: 0 }
-                            }}
                             sx={{
-                              "& .MuiOutlinedInput-root": {
-                                borderRadius: "10px",
-                                bgcolor: "rgba(255,255,255,0.02)",
-                              },
-                              "& .MuiInputBase-input.Mui-disabled": {
-                                WebkitTextFillColor: "var(--text-secondary)",
-                              }
-                            }}
-                          />
-                        </Grid>
-                        <Grid item xs={12} sm={4}>
-                          <Typography sx={{ fontSize: 12, fontWeight: 800, color: "var(--text-secondary)", mb: 1, textTransform: "uppercase", letterSpacing: "0.5px" }}>
-                            Students Appeared for Exams
-                          </Typography>
-                          <TextField
-                            fullWidth
-                            size="small"
-                            type="number"
-                            value={studentsAppeared}
-                            disabled={isApproved || isPending}
-                            onChange={(e) => setAppeared(e.target.value)}
-                            placeholder="Enter count"
-                            slotProps={{
-                              htmlInput: { min: 0 }
-                            }}
-                            sx={{
-                              "& .MuiOutlinedInput-root": {
-                                borderRadius: "10px",
-                                bgcolor: "rgba(255,255,255,0.02)",
-                              },
-                              "& .MuiInputBase-input.Mui-disabled": {
-                                WebkitTextFillColor: "var(--text-secondary)",
-                              }
-                            }}
-                          />
-                        </Grid>
-                        <Grid item xs={12} sm={4}>
-                          <Typography sx={{ fontSize: 12, fontWeight: 800, color: "var(--text-secondary)", mb: 1, textTransform: "uppercase", letterSpacing: "0.5px" }}>
-                            Students Passed
-                          </Typography>
-                          <TextField
-                            fullWidth
-                            size="small"
-                            type="number"
-                            value={studentsPassed}
-                            disabled={isApproved || isPending}
-                            onChange={(e) => setPassed(e.target.value)}
-                            placeholder="Enter count"
-                            slotProps={{
-                              htmlInput: { min: 0 }
-                            }}
-                            sx={{
-                              "& .MuiOutlinedInput-root": {
-                                borderRadius: "10px",
-                                bgcolor: "rgba(255,255,255,0.02)",
-                              },
-                              "& .MuiInputBase-input.Mui-disabled": {
-                                WebkitTextFillColor: "var(--text-secondary)",
-                              }
-                            }}
-                          />
-                        </Grid>
-                      </Grid>
-
-                      {!(isApproved || isPending) && (
-                        <Box sx={{ mt: 1, display: "flex", justifyContent: "flex-end" }}>
-                          <Button
-                            type="submit"
-                            variant="contained"
-                            disabled={submittingManual}
-                            sx={{
-                              borderRadius: "10px",
-                              px: 4,
-                              py: 1,
-                              textTransform: "none",
                               fontWeight: 700,
-                              background: "var(--gradient-primary)",
-                              color: "#fff",
-                              boxShadow: "0 4px 15px rgba(0, 78, 146, 0.2)",
-                              "&:hover": {
-                                background: "var(--gradient-primary)",
-                                opacity: 0.9
-                              }
+                              fontSize: 10,
+                              borderRadius: "6px",
+                              bgcolor:
+                                entry.status === "Approved" ? "rgba(16, 185, 129, 0.15)" :
+                                  entry.status === "Rejected" ? "rgba(239, 68, 68, 0.15)" :
+                                    "rgba(245, 158, 11, 0.15)",
+                              color:
+                                entry.status === "Approved" ? "#10B981" :
+                                  entry.status === "Rejected" ? "#EF4444" :
+                                    "#D97706",
                             }}
-                          >
-                            {submittingManual ? <CircularProgress size={20} sx={{ color: "#fff" }} /> : currentEntry ? "Resubmit Statistics" : "Submit Statistics"}
-                          </Button>
-                        </Box>
-                      )}
-                    </Box>
-                  </Grid>
-
-                  {/* Calculations card */}
-                  <Grid item xs={12} md={4} sx={{ display: "flex", flexDirection: "column" }}>
-                    <Box
-                      sx={{
-                        p: 3,
-                        flexGrow: 1,
-                        width: "100%",
-                        borderRadius: "16px",
-                        bgcolor: "var(--bg-glass)",
-                        border: "1px solid var(--border-color)",
-                        display: "flex",
-                        flexDirection: "column",
-                        justifyContent: "center",
-                        alignItems: "center",
-                        textAlign: "center",
-                        position: "relative",
-                        overflow: "hidden"
-                      }}
-                    >
-                      <Box
-                        sx={{
-                          position: "absolute",
-                          top: 0,
-                          right: 0,
-                          width: "80px",
-                          height: "80px",
-                          background: "radial-gradient(circle at top right, var(--color-primary-alpha, rgba(2, 132, 199, 0.08)), transparent 70%)",
-                          zIndex: 0
-                        }}
-                      />
-
-                      <Typography sx={{ fontSize: 11, fontWeight: 900, color: "var(--text-secondary)", letterSpacing: "0.1em", textTransform: "uppercase", mb: 1, zIndex: 1 }}>
-                        {isApproved ? "Approved Pass Percentage" : "Calculated Pass Percentage"}
-                      </Typography>
-
-                      <Typography
-                        variant="h3"
-                        sx={{
-                          fontWeight: 900,
-                          background: isApproved
-                            ? "linear-gradient(135deg, #10B981 0%, #059669 100%)"
-                            : isRejected
-                              ? "linear-gradient(135deg, #EF4444 0%, #B91C1C 100%)"
-                              : "linear-gradient(135deg, var(--color-primary) 0%, #2563eb 100%)",
-                          WebkitBackgroundClip: "text",
-                          WebkitTextFillColor: "transparent",
-                          mb: 1.5,
-                          zIndex: 1
-                        }}
-                      >
-                        {currentEntry ? currentEntry.passPercentage.toFixed(2) : livePassPercentage}%
-                      </Typography>
-
-                      {/* <Typography sx={{ fontSize: 13, color: "var(--text-secondary)", fontWeight: 500, zIndex: 1 }}>
-                        Formula: (Passed / Appeared) × 100
-                      </Typography> */}
-                    </Box>
-                  </Grid>
-                </Grid>
-              </form>
-            </Box>
+                          />
+                        </TableCell>
+                        <TableCell sx={{ color: "var(--text-secondary)", fontSize: 12, fontStyle: "italic" }}>
+                          {entry.remarks || "—"}
+                        </TableCell>
+                        <TableCell align="center">
+                          {entry.status !== "Approved" ? (
+                            <Box sx={{ display: "flex", justifyContent: "center", gap: 1 }}>
+                              <IconButton size="small" onClick={() => handleOpenEditModal(entry)} sx={{ color: "var(--color-primary)" }}>
+                                <EditIcon fontSize="small" />
+                              </IconButton>
+                              <IconButton size="small" onClick={() => handleDeleteEntry(entry._id)} sx={{ color: "#EF4444" }}>
+                                <DeleteIcon fontSize="small" />
+                              </IconButton>
+                            </Box>
+                          ) : (
+                            <Typography sx={{ fontSize: 12, color: "var(--text-secondary)", fontStyle: "italic" }}>Locked</Typography>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </TableContainer>
           );
         })()}
       </Box>
+
+      {/* Proctoring Form Add/Edit Modal */}
+      <Dialog
+        open={isProctorModalOpen}
+        onClose={() => setIsProctorModalOpen(false)}
+        maxWidth="sm"
+        fullWidth
+        slotProps={{
+          paper: {
+            sx: {
+              borderRadius: "20px",
+              bgcolor: "var(--bg-panel)",
+              border: "1px solid var(--border-color)",
+              backgroundImage: "none",
+              p: 1
+            }
+          }
+        }}
+      >
+        <DialogTitle sx={{ fontWeight: 800, fontSize: 18, color: "var(--text-primary)", pb: 1 }}>
+          {editingEntry ? "Edit Proctoring Record" : "Add Proctoring Record"}
+        </DialogTitle>
+        <form onSubmit={handleProctorModalSubmit}>
+          <DialogContent>
+            <Grid container spacing={2.5} sx={{ mt: 0.5 }}>
+              {/* Program selection */}
+              <Grid item xs={12} sm={6}>
+                <FormControl fullWidth size="small">
+                  <InputLabel shrink sx={{ color: "var(--text-secondary)" }}>Program</InputLabel>
+                  <Select
+                    value={selectedProgramId}
+                    label="Program"
+                    onChange={(e) => setSelectedProgramId(e.target.value)}
+                    displayEmpty
+                    fullWidth
+                    sx={{ borderRadius: "10px", color: "var(--text-primary)", bgcolor: "rgba(255,255,255,0.01)" }}
+                  >
+                    <MenuItem value="" disabled sx={{ fontStyle: "italic", color: "var(--text-secondary)" }}>
+                      Select Program
+                    </MenuItem>
+                    {programs.map((p) => (
+                      <MenuItem key={p._id} value={p._id}>
+                        {p.name} ({p.code})
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Grid>
+
+              {/* Branch selection */}
+              <Grid item xs={12} sm={6}>
+                <FormControl fullWidth size="small" disabled={!selectedProgramId}>
+                  <InputLabel shrink sx={{ color: "var(--text-secondary)" }}>Branch Code</InputLabel>
+                  <Select
+                    value={selectedBranchId}
+                    label="Branch Code"
+                    onChange={(e) => setSelectedBranchId(e.target.value)}
+                    displayEmpty
+                    fullWidth
+                    sx={{ borderRadius: "10px", color: "var(--text-primary)", bgcolor: "rgba(255,255,255,0.01)" }}
+                  >
+                    <MenuItem value="" disabled sx={{ fontStyle: "italic", color: "var(--text-secondary)" }}>
+                      Select Branch
+                    </MenuItem>
+                    {branches.map((b) => (
+                      <MenuItem key={b._id} value={b._id}>
+                        {b.name} ({b.code})
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Grid>
+
+              {/* Sem/Year numeric input based on Program Pattern */}
+              <Grid item xs={12} sm={6}>
+                {(() => {
+                  const program = programs.find((p) => p._id === selectedProgramId);
+                  const isYearPattern = program?.programPattern === "YEAR";
+                  if (isYearPattern) {
+                    return (
+                      <TextField
+                        label="Year Number"
+                        type="number"
+                        fullWidth
+                        size="small"
+                        required
+                        value={yearNumber}
+                        onChange={(e) => setYearNumber(e.target.value)}
+                        slotProps={{ htmlInput: { min: 1, step: 1 } }}
+                        sx={{ "& .MuiOutlinedInput-root": { borderRadius: "10px" } }}
+                      />
+                    );
+                  } else {
+                    return (
+                      <TextField
+                        label="Semester Number"
+                        type="number"
+                        fullWidth
+                        size="small"
+                        required
+                        value={semesterNumber}
+                        onChange={(e) => setSemesterNumber(e.target.value)}
+                        slotProps={{ htmlInput: { min: 1, step: 1 } }}
+                        sx={{ "& .MuiOutlinedInput-root": { borderRadius: "10px" } }}
+                      />
+                    );
+                  }
+                })()}
+              </Grid>
+
+              {/* Section - numeric only */}
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  label="Section (Numeric Only)"
+                  type="number"
+                  fullWidth
+                  size="small"
+                  required
+                  value={section}
+                  onChange={(e) => setSection(e.target.value)}
+                  slotProps={{ htmlInput: { min: 1, step: 1 } }}
+                  sx={{ "& .MuiOutlinedInput-root": { borderRadius: "10px" } }}
+                />
+              </Grid>
+
+              {/* Student counts inputs */}
+              <Grid item xs={12} sm={4}>
+                <TextField
+                  label="Total Allotted"
+                  type="number"
+                  fullWidth
+                  size="small"
+                  required
+                  value={totalStudents}
+                  onChange={(e) => setTotalStudents(e.target.value)}
+                  slotProps={{ htmlInput: { min: 0, step: 1 } }}
+                  sx={{ "& .MuiOutlinedInput-root": { borderRadius: "10px" } }}
+                />
+              </Grid>
+
+              <Grid item xs={12} sm={4}>
+                <TextField
+                  label="Eligible for End Exams (A)"
+                  type="number"
+                  fullWidth
+                  size="small"
+                  required
+                  value={eligibleStudents}
+                  onChange={(e) => setEligibleStudents(e.target.value)}
+                  slotProps={{ htmlInput: { min: 0, step: 1 } }}
+                  sx={{ "& .MuiOutlinedInput-root": { borderRadius: "10px" } }}
+                />
+              </Grid>
+
+              <Grid item xs={12} sm={4}>
+                <TextField
+                  label="Passed Students (B)"
+                  type="number"
+                  fullWidth
+                  size="small"
+                  required
+                  value={passedStudents}
+                  onChange={(e) => setPassedStudents(e.target.value)}
+                  slotProps={{ htmlInput: { min: 0, step: 1 } }}
+                  sx={{ "& .MuiOutlinedInput-root": { borderRadius: "10px" } }}
+                />
+              </Grid>
+
+              {/* Calculated Pass Percentage display */}
+              <Grid item xs={12}>
+                <Box
+                  sx={{
+                    p: 2,
+                    borderRadius: "12px",
+                    bgcolor: "rgba(2, 132, 199, 0.05)",
+                    border: "1px solid rgba(2, 132, 199, 0.15)",
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center"
+                  }}
+                >
+                  <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-secondary)" }}>
+                    Calculated Pass Percentage:
+                  </Typography>
+                  <Typography variant="subtitle1" sx={{ fontWeight: 800, color: "var(--color-primary)" }}>
+                    {(() => {
+                      const elg = parseInt(eligibleStudents);
+                      const pass = parseInt(passedStudents);
+                      if (isNaN(elg) || isNaN(pass) || elg <= 0 || pass < 0 || pass > elg) return "0.00%";
+                      return `${((pass / elg) * 100).toFixed(2)}%`;
+                    })()}
+                  </Typography>
+                </Box>
+              </Grid>
+            </Grid>
+          </DialogContent>
+          <DialogActions sx={{ px: 3, pb: 2.5, gap: 1 }}>
+            <Button
+              onClick={() => setIsProctorModalOpen(false)}
+              disabled={submittingManual}
+              sx={{ textTransform: "none", fontWeight: 700, borderRadius: "10px", color: "var(--text-secondary)" }}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              variant="contained"
+              disabled={submittingManual}
+              sx={{
+                textTransform: "none",
+                fontWeight: 700,
+                borderRadius: "10px",
+                px: 3,
+                background: "var(--gradient-primary)",
+                color: "#fff",
+                boxShadow: "0 4px 15px rgba(0, 78, 146, 0.2)",
+                "&:hover": {
+                  background: "var(--gradient-primary)",
+                  opacity: 0.95
+                }
+              }}
+            >
+              {submittingManual ? <CircularProgress size={16} sx={{ color: "#fff" }} /> : editingEntry ? "Save Changes" : "Add Record"}
+            </Button>
+          </DialogActions>
+        </form>
+      </Dialog>
 
 
       {/* ── SECTION : Feedback ────────────────────────────── */}
@@ -1324,7 +1500,8 @@ const sectionCard = {
     width: "140px",
     height: "140px",
     background: "radial-gradient(circle at top right, var(--color-primary-alpha, rgba(2, 132, 199, 0.1)), transparent 70%)",
-    zIndex: 0
+    zIndex: 0,
+    pointerEvents: "none"
   }
 };
 
