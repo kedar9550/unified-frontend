@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../../context/AuthContext";
 
-import { Box, TextField, MenuItem, Select, Typography, Button, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, IconButton, Dialog, DialogTitle, DialogContent, DialogActions, Stack, Grid, Card, Chip, Divider, FormControl } from "@mui/material";
+import { Box, TextField, MenuItem, Select, Typography, Button, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, IconButton, Dialog, DialogTitle, DialogContent, DialogActions, Stack, Grid, Card, Chip, Divider, FormControl, Tooltip, TablePagination } from "@mui/material";
 import { toast } from "sonner";
-import { Close, Description, Download, AttachFile, Groups, AssignmentInd } from "@mui/icons-material";
+import { Close, Description, Download, AttachFile, Groups, AssignmentInd, Visibility } from "@mui/icons-material";
 import PageHeader from "../../components/common/PageHeader";
 import {
   FacultyInfoRow, FormCard, Grid2, SubLabel, SubmitBtn,
@@ -18,6 +18,8 @@ export default function ConsultancyPublication() {
   const [selectedYear, setSelectedYear] = useState("");
   const [publicationsList, setPublicationsList] = useState([]);
   const [selectedPubDetails, setSelectedPubDetails] = useState(null);
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
 
   const [form, setForm] = useState({
     title: "", organization: "", amount: "", duration: "", month: "", year: "",
@@ -65,7 +67,7 @@ export default function ConsultancyPublication() {
   const handleApplicantPIChange = (value) => {
     setForm(prev => {
       const isPI = value === "Yes";
-      const updatedList = isPI 
+      const updatedList = isPI
         ? prev.otherInvestigatorsList.map(d => ({ ...d, principalInvestigator: "No" }))
         : prev.otherInvestigatorsList;
       return {
@@ -199,7 +201,7 @@ export default function ConsultancyPublication() {
       toast.error("Please fill all required fields");
       return;
     }
-    
+
     // Numeric Validations
     const numAmount = Number(form.amount);
     if (isNaN(numAmount) || numAmount <= 0) {
@@ -251,17 +253,17 @@ export default function ConsultancyPublication() {
         coPrincipalInvestigator: a.coPrincipalInvestigator || "No"
       })).filter(ca => ca.name && ca.affiliation);
 
-      const payload = { 
-        ...form, 
+      const payload = {
+        ...form,
         coInvestigators: coInvestigatorsList,
-        academicYear: selectedYear, 
-        college: user?.college || "", 
-        panNumber: user?.panNumber || "" 
+        academicYear: selectedYear,
+        college: user?.college || "",
+        panNumber: user?.panNumber || ""
       };
 
       await API.post("/api/research/consultancy", payload);
       toast.success("Consultancy submitted successfully!");
-      setForm({ 
+      setForm({
         title: "", organization: "", amount: "", duration: "", month: "", year: "", applyingSeedGrant: "",
         principalInvestigator: "Yes", coPrincipalInvestigator: "No", applyIncentive: "No", projectStatus: "Sanctioned",
         totalInvestigators: 1, otherInvestigatorsList: []
@@ -336,12 +338,18 @@ export default function ConsultancyPublication() {
               </TableRow>
             </TableHead>
             <TableBody>
-              {publicationsList.map((pub, i) => (
-                <TableRow key={pub._id || i}>
+              {publicationsList.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((pub, i) => (
+                <TableRow key={pub._id || i} sx={{ "&:hover": { background: "rgba(var(--color-primary-rgb, 99,102,241), 0.04)", transition: "background 0.2s" } }}>
                   <TableCell sx={{ color: "var(--text-primary)", fontWeight: 500, py: 2 }}>{pub.title || "N/A"}</TableCell>
                   <TableCell sx={{ color: "var(--text-secondary)", py: 2 }}>{pub.organization || "N/A"}</TableCell>
                   <TableCell sx={{ color: "var(--text-secondary)", py: 2 }}>{pub.amount || "N/A"}</TableCell>
-                  <TableCell sx={{ color: "var(--text-secondary)", py: 2 }}>{pub.facultyId?.name || "N/A"}</TableCell>
+                  <TableCell sx={{ color: "var(--text-secondary)", py: 2, maxWidth: 160 }}>
+                    <Tooltip title={pub.facultyId?.name || "N/A"} arrow>
+                      <Typography variant="body2" sx={{ fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 150 }}>
+                        {pub.facultyId?.name || "N/A"}
+                      </Typography>
+                    </Tooltip>
+                  </TableCell>
                   <TableCell sx={{ py: 2 }}>
                     <Typography variant="body2" sx={{ fontWeight: 600, color: pub.visibilityRole === "Applicant" ? "var(--color-primary)" : "text.secondary" }}>
                       {pub.visibilityRole || "Applicant"}
@@ -365,29 +373,34 @@ export default function ConsultancyPublication() {
                     </Typography>
                   </TableCell>
                   <TableCell sx={{ py: 2 }}>
-                    <Button
-                      variant="outlined"
-                      size="small"
-                      onClick={() => setSelectedPubDetails(pub)}
-                      sx={{
-                        borderRadius: "8px",
-                        textTransform: "none",
-                        fontWeight: 700,
-                        borderColor: "var(--color-primary)",
-                        color: "var(--color-primary)",
-                        "&:hover": {
-                          background: "var(--bg-accent-1)",
-                          borderColor: "var(--color-primary)"
-                        }
-                      }}
-                    >
-                      View
-                    </Button>
+                    <Tooltip title="View Details" arrow>
+                      <IconButton
+                        size="small"
+                        onClick={() => setSelectedPubDetails(pub)}
+                        sx={{
+                          color: "var(--color-primary)",
+                          "&:hover": { background: "var(--bg-accent-1)", transform: "scale(1.1)" },
+                          transition: "all 0.2s ease"
+                        }}
+                      >
+                        <Visibility fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
                   </TableCell>
                 </TableRow>
               ))}
             </TableBody>
           </Table>
+          <TablePagination
+            component="div"
+            count={publicationsList.length}
+            page={page}
+            onPageChange={(e, newPage) => setPage(newPage)}
+            rowsPerPage={rowsPerPage}
+            onRowsPerPageChange={(e) => { setRowsPerPage(parseInt(e.target.value, 10)); setPage(0); }}
+            rowsPerPageOptions={[5, 10, 25]}
+            sx={{ borderTop: "1px solid var(--border-color)", color: "var(--text-secondary)" }}
+          />
         </TableContainer>
       )}
     </Box>
@@ -613,7 +626,7 @@ export default function ConsultancyPublication() {
               setForm(p => ({ ...p, year: e.target.value, month: "" })); // clear month when year changes
             }}>
               <MenuItem value="">--Select Year--</MenuItem>
-              {Array.from({ length: 11 }, (_, i) => String(new Date().getFullYear() - i)).map((y) => (
+              {Array.from({ length: 2 }, (_, i) => String(new Date().getFullYear() - i)).map((y) => (
                 <MenuItem key={y} value={y}>{y}</MenuItem>
               ))}
             </Select>
@@ -734,8 +747,8 @@ export default function ConsultancyPublication() {
     })();
 
     return (
-      <Dialog 
-        open={!!selectedPubDetails} 
+      <Dialog
+        open={!!selectedPubDetails}
         onClose={handleCloseDetails}
         maxWidth="md"
         fullWidth
@@ -759,27 +772,27 @@ export default function ConsultancyPublication() {
         <DialogContent sx={{ p: 3, mt: 1 }}>
           <Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)", mb: 1 }}>{data.title}</Typography>
           <Typography variant="body2" sx={{ color: "var(--text-secondary)", mb: 3, fontWeight: 600 }}>Organization / Client: {data.organization}</Typography>
-          
+
           <Grid container spacing={2}>
             <Grid item xs={12} sm={3}><LabelValueDetails label="Academic Year" value={data.academicYear?.year || "N/A"} /></Grid>
             <Grid item xs={12} sm={3}><LabelValueDetails label="Amount" value={`₹${data.amount}`} /></Grid>
             <Grid item xs={12} sm={3}><LabelValueDetails label="Duration (Years)" value={data.duration || "-"} /></Grid>
             <Grid item xs={12} sm={3}>
-              <LabelValueDetails 
-                label="Status" 
+              <LabelValueDetails
+                label="Status"
                 chip={
-                  <Chip 
-                    label={data.status} 
-                    size="small" 
-                    sx={{ 
-                      bgcolor: `${statusColor}15`, 
-                      color: statusColor, 
-                      fontWeight: 800, 
+                  <Chip
+                    label={data.status}
+                    size="small"
+                    sx={{
+                      bgcolor: `${statusColor}15`,
+                      color: statusColor,
+                      fontWeight: 800,
                       border: `1px solid ${statusColor}44`,
-                      borderRadius: "6px" 
-                    }} 
+                      borderRadius: "6px"
+                    }}
                   />
-                } 
+                }
               />
             </Grid>
 
@@ -791,7 +804,7 @@ export default function ConsultancyPublication() {
             <Grid item xs={12} sm={3}><LabelValueDetails label="Applying Incentive?" value={data.applyIncentive || "No"} /></Grid>
             <Grid item xs={12} sm={3}><LabelValueDetails label="Project Status" value={data.projectStatus || "Sanctioned"} /></Grid>
             <Grid item xs={12} sm={6}>
-              <LabelValueDetails 
+              <LabelValueDetails
                 label="Appraisal Claimant"
                 chip={
                   (() => {
@@ -850,7 +863,7 @@ export default function ConsultancyPublication() {
                         </FormControl>
                       );
                     } else {
-                      const currentClaimantObj = uniqueClaimants.find(c => 
+                      const currentClaimantObj = uniqueClaimants.find(c =>
                         (c.institutionId && c.institutionId === (data.appraisalClaimant?.institutionId || data.appraisalClaimant || "").toString()) ||
                         (c._id && c._id.toString() === (data.appraisalClaimant?._id || data.appraisalClaimant || "").toString())
                       );
@@ -867,9 +880,9 @@ export default function ConsultancyPublication() {
 
             {data.status === "Approved" && data.approvedAmount && (
               <Grid item xs={12} sm={6}>
-                <LabelValueDetails 
-                  label="Approved Incentive" 
-                  value={`₹${data.approvedAmount}`} 
+                <LabelValueDetails
+                  label="Approved Incentive"
+                  value={`₹${data.approvedAmount}`}
                   chip={<Chip label={`₹${data.approvedAmount}`} size="small" sx={{ bgcolor: "rgba(76, 175, 80, 0.1)", color: "#4caf50", fontWeight: 800 }} />}
                 />
               </Grid>

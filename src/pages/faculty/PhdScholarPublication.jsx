@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
-import { Box, TextField, MenuItem, Select, Typography, Button, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, IconButton, Dialog, DialogTitle, DialogContent, DialogActions, Stack, Grid, Card, Chip, Divider, CircularProgress } from "@mui/material";
+import { Box, TextField, MenuItem, Select, Typography, Button, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, IconButton, Dialog, DialogTitle, DialogContent, DialogActions, Stack, Grid, Card, Chip, Divider, CircularProgress, TablePagination, Tooltip } from "@mui/material";
 import { toast } from "sonner";
-import { AddCircle, Delete, Close, Description, Download, AttachFile, Groups, WorkspacePremium, CheckCircle } from "@mui/icons-material";
+import { AddCircle, Delete, Close, Description, Download, AttachFile, Groups, WorkspacePremium, CheckCircle, Visibility } from "@mui/icons-material";
 import PageHeader from "../../components/common/PageHeader";
 import {
   FacultyInfoRow, FormCard, Grid2, SubLabel, NoteBox, FileField, SubmitBtn,
@@ -19,6 +19,8 @@ export default function PhdScholarPublication() {
   const [selectedYear, setSelectedYear] = useState("");
   const [publicationsList, setPublicationsList] = useState([]);
   const [selectedPubDetails, setSelectedPubDetails] = useState(null);
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
 
   // Form state
   const [rollNumberInput, setRollNumberInput] = useState("");
@@ -313,12 +315,12 @@ export default function PhdScholarPublication() {
                 <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Appraisal Status</TableCell>
                 <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Academic Year</TableCell>
                 <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Approval Status</TableCell>
-                <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Actions</TableCell>
+                <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2, textAlign: "center" }}>Actions</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
-              {publicationsList.map((pub, i) => (
-                <TableRow key={pub._id || i}>
+              {publicationsList.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((pub, i) => (
+                <TableRow key={pub._id || i} sx={{ "&:hover": { background: "var(--bg-accent-1)" }, transition: "background 0.15s" }}>
                   <TableCell sx={{ color: "var(--text-primary)", fontWeight: 600, py: 2 }}>{pub.rollNumber || "N/A"}</TableCell>
                   <TableCell sx={{ color: "var(--text-primary)", fontWeight: 500, py: 2 }}>{pub.studentName || "N/A"}</TableCell>
                   <TableCell sx={{ color: "var(--text-secondary)", py: 2 }}>{pub.course || "N/A"}</TableCell>
@@ -349,33 +351,52 @@ export default function PhdScholarPublication() {
                         display: "inline-block"
                       }}
                     >
-                      {pub.status || "Pending"}
+                      {pub.status || "Pending at HOD"}
                     </Typography>
                   </TableCell>
-                  <TableCell sx={{ py: 2 }}>
-                    <Button
-                      variant="outlined"
-                      size="small"
-                      onClick={() => setSelectedPubDetails(pub)}
-                      sx={{
-                        borderRadius: "8px",
-                        textTransform: "none",
-                        fontWeight: 700,
-                        borderColor: "var(--color-primary)",
-                        color: "var(--color-primary)",
-                        "&:hover": {
-                          background: "var(--bg-accent-1)",
-                          borderColor: "var(--color-primary)"
-                        }
-                      }}
-                    >
-                      View
-                    </Button>
+                  <TableCell sx={{ py: 2, textAlign: "center" }}>
+                    <Tooltip title="View Details" arrow>
+                      <IconButton
+                        size="small"
+                        onClick={() => setSelectedPubDetails(pub)}
+                        sx={{
+                          color: "var(--color-primary)",
+                          border: "1px solid var(--color-primary)",
+                          borderRadius: "8px",
+                          p: "5px",
+                          transition: "all 0.2s ease",
+                          "&:hover": {
+                            background: "var(--bg-accent-1)",
+                            transform: "scale(1.1)",
+                            boxShadow: "0 2px 8px rgba(0,0,0,0.15)"
+                          }
+                        }}
+                      >
+                        <Visibility fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
                   </TableCell>
                 </TableRow>
               ))}
             </TableBody>
           </Table>
+          <TablePagination
+            component="div"
+            count={publicationsList.length}
+            page={page}
+            onPageChange={(_, newPage) => setPage(newPage)}
+            rowsPerPage={rowsPerPage}
+            onRowsPerPageChange={(e) => { setRowsPerPage(parseInt(e.target.value, 10)); setPage(0); }}
+            rowsPerPageOptions={[5, 10, 25]}
+            sx={{
+              borderTop: "1px solid var(--border-color)",
+              color: "var(--text-secondary)",
+              ".MuiTablePagination-select": { color: "var(--text-primary)" },
+              ".MuiTablePagination-selectIcon": { color: "var(--text-secondary)" },
+              ".MuiIconButton-root": { color: "var(--text-secondary)" },
+              ".MuiIconButton-root.Mui-disabled": { opacity: 0.3 }
+            }}
+          />
         </TableContainer>
       )}
     </Box>

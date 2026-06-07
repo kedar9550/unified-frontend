@@ -5,10 +5,11 @@ import { useAuth } from "../../context/AuthContext";
 import {
   Box, TextField, MenuItem, Select, Typography, Button, Table, TableBody,
   TableCell, TableContainer, TableHead, TableRow, Paper, CircularProgress,
-  Dialog, DialogTitle, DialogContent, DialogActions, IconButton, Stack, Grid, Card, Chip, Divider, FormControl
+  Dialog, DialogTitle, DialogContent, DialogActions, IconButton, Stack, Grid, Card, Chip, Divider, FormControl,
+  TablePagination, Tooltip
 } from "@mui/material";
 import { toast } from "sonner";
-import { Search, Close, Download, Description, Groups, Article, Person, AttachFile } from "@mui/icons-material";
+import { Search, Close, Download, Description, Groups, Article, Person, AttachFile, Visibility } from "@mui/icons-material";
 import PageHeader from "../../components/common/PageHeader";
 import {
   FacultyInfoRow, FormCard, Grid2, SubLabel, NoteBox, FileField, SubmitBtn,
@@ -208,6 +209,8 @@ export default function JournalPublication() {
   const [selectedYear, setSelectedYear] = useState("");
   const [publicationsList, setPublicationsList] = useState([]);
   const [selectedPubDetails, setSelectedPubDetails] = useState(null);
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
 
   // DOI fetch state
   const [doiFetching, setDoiFetching] = useState(false);
@@ -706,22 +709,28 @@ export default function JournalPublication() {
                 <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Journal Name</TableCell>
                 <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Quartile</TableCell>
                 <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Applicant</TableCell>
-                <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Author / Co-Author</TableCell>
+                <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Co-Authors</TableCell>
                 <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Role</TableCell>
                 <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Status</TableCell>
-                <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Actions</TableCell>
+                <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2, textAlign: "center" }}>Actions</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
-              {publicationsList.map((pub, i) => (
-                <TableRow key={pub._id || i}>
+              {publicationsList.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((pub, i) => (
+                <TableRow key={pub._id || i} sx={{ "&:hover": { background: "var(--bg-accent-1)" }, transition: "background 0.15s" }}>
                   <TableCell sx={{ color: "var(--text-secondary)", py: 2, fontSize: 12 }}>{pub.doi || "N/A"}</TableCell>
-                  <TableCell sx={{ color: "var(--text-primary)", fontWeight: 500, py: 2 }}>{pub.paperTitle || "N/A"}</TableCell>
+                  <TableCell sx={{ color: "var(--text-primary)", fontWeight: 500, py: 2, maxWidth: 200 }}>{pub.paperTitle || "N/A"}</TableCell>
                   <TableCell sx={{ color: "var(--text-secondary)", py: 2 }}>{pub.journalName || "N/A"}</TableCell>
                   <TableCell sx={{ color: "var(--text-secondary)", py: 2 }}>{pub.journalQuartile || pub.categoryOfJournal || "N/A"}</TableCell>
                   <TableCell sx={{ color: "var(--text-secondary)", py: 2 }}>{pub.facultyId?.name || "N/A"}</TableCell>
-                  <TableCell sx={{ color: "var(--text-secondary)", py: 2 }}>
-                    {pub.coAuthors && pub.coAuthors.length > 0 ? pub.coAuthors.map(ca => ca.name).join(", ") : "N/A"}
+                  <TableCell sx={{ color: "var(--text-secondary)", py: 2, maxWidth: 160 }}>
+                    {pub.coAuthors && pub.coAuthors.length > 0
+                      ? <Tooltip title={pub.coAuthors.map(ca => ca.name).join(", ")} arrow>
+                          <Typography variant="body2" sx={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 150, cursor: "default" }}>
+                            {pub.coAuthors.map(ca => ca.name).join(", ")}
+                          </Typography>
+                        </Tooltip>
+                      : <Typography variant="body2" sx={{ color: "var(--text-secondary)" }}>—</Typography>}
                   </TableCell>
                   <TableCell sx={{ py: 2 }}>
                     <Typography variant="body2" sx={{ fontWeight: 600, color: pub.visibilityRole === "Applicant" ? "var(--color-primary)" : "text.secondary" }}>
@@ -738,30 +747,49 @@ export default function JournalPublication() {
                       {pub.status || "Pending"}
                     </Typography>
                   </TableCell>
-                  <TableCell sx={{ py: 2 }}>
-                    <Button
-                      variant="outlined"
-                      size="small"
-                      onClick={() => setSelectedPubDetails(pub)}
-                      sx={{
-                        borderRadius: "8px",
-                        textTransform: "none",
-                        fontWeight: 700,
-                        borderColor: "var(--color-primary)",
-                        color: "var(--color-primary)",
-                        "&:hover": {
-                          background: "var(--bg-accent-1)",
-                          borderColor: "var(--color-primary)"
-                        }
-                      }}
-                    >
-                      View
-                    </Button>
+                  <TableCell sx={{ py: 2, textAlign: "center" }}>
+                    <Tooltip title="View Details" arrow>
+                      <IconButton
+                        size="small"
+                        onClick={() => setSelectedPubDetails(pub)}
+                        sx={{
+                          color: "var(--color-primary)",
+                          border: "1px solid var(--color-primary)",
+                          borderRadius: "8px",
+                          p: "5px",
+                          transition: "all 0.2s ease",
+                          "&:hover": {
+                            background: "var(--bg-accent-1)",
+                            transform: "scale(1.1)",
+                            boxShadow: "0 2px 8px rgba(0,0,0,0.15)"
+                          }
+                        }}
+                      >
+                        <Visibility fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
                   </TableCell>
                 </TableRow>
               ))}
             </TableBody>
           </Table>
+          <TablePagination
+            component="div"
+            count={publicationsList.length}
+            page={page}
+            onPageChange={(_, newPage) => setPage(newPage)}
+            rowsPerPage={rowsPerPage}
+            onRowsPerPageChange={(e) => { setRowsPerPage(parseInt(e.target.value, 10)); setPage(0); }}
+            rowsPerPageOptions={[5, 10, 25]}
+            sx={{
+              borderTop: "1px solid var(--border-color)",
+              color: "var(--text-secondary)",
+              ".MuiTablePagination-select": { color: "var(--text-primary)" },
+              ".MuiTablePagination-selectIcon": { color: "var(--text-secondary)" },
+              ".MuiIconButton-root": { color: "var(--text-secondary)" },
+              ".MuiIconButton-root.Mui-disabled": { opacity: 0.3 }
+            }}
+          />
         </TableContainer>
       )}
     </Box>

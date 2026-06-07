@@ -10,7 +10,7 @@ import PatentApprovalDetail from './PatentApprovalDetail';
 import FundedProjectApprovalDetail from './FundedProjectApprovalDetail';
 import ConsultancyApprovalDetail from './ConsultancyApprovalDetail';
 import ConferenceApprovalDetails from './ConferenceApprovalDetails';
-import PhdScholarApprovalDetail from './PhdScholarApprovalDetail';
+import PhdScholarFacultyDetail from './PhdScholarFacultyDetail';
 import NovelProductApprovalDetail from './NovelProductApprovalDetail';
 
 const ResearchApprovalDetailWrapper = ({ role }) => {
@@ -45,8 +45,9 @@ const ResearchApprovalDetailWrapper = ({ role }) => {
             case 'conference':
                 return <ConferenceApprovalDetails id={id} onBack={goBack} role={role} />;
             case 'ph.d. scholar':
+            case 'ph.d.scholar':
             case 'phdscholar':
-                return <PhdScholarApprovalDetail id={id} onBack={goBack} role={role} />;
+                return <PhdScholarFacultyDetail facultyId={id} onBack={goBack} role={role} />;
             case 'novel product':
             case 'novelproduct':
                 return <NovelProductApprovalDetail id={id} onBack={goBack} role={role} />;

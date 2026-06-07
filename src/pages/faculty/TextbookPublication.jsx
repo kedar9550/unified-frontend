@@ -3,9 +3,9 @@ import { useState, useEffect } from "react";
 import axios from "axios";
 import { useAuth } from "../../context/AuthContext";
 
-import { Box, TextField, MenuItem, Select, Typography, Button, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, IconButton, CircularProgress, Autocomplete, InputAdornment, Dialog, DialogTitle, DialogContent, DialogActions, Stack, Grid, Card, Chip, Divider } from "@mui/material";
+import { Box, TextField, MenuItem, Select, Typography, Button, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, IconButton, CircularProgress, Autocomplete, InputAdornment, Dialog, DialogTitle, DialogContent, DialogActions, Stack, Grid, Card, Chip, Divider, Tooltip, TablePagination } from "@mui/material";
 import { toast } from "sonner";
-import { Delete, Search, CurrencyRupee, Close, Groups, MenuBook, AttachFile, Description, Download } from "@mui/icons-material";
+import { Delete, Search, CurrencyRupee, Close, Groups, MenuBook, AttachFile, Description, Download, Visibility } from "@mui/icons-material";
 import PageHeader from "../../components/common/PageHeader";
 import {
   FacultyInfoRow, FormCard, Grid2, SubLabel, NoteBox, FileField, SubmitBtn,
@@ -20,6 +20,8 @@ export default function TextbookPublication() {
   const [selectedYear, setSelectedYear] = useState("");
   const [publicationsList, setPublicationsList] = useState([]);
   const [selectedPubDetails, setSelectedPubDetails] = useState(null);
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
   const [editions, setEditions] = useState([]);
   const [publishers, setPublishers] = useState([]);
   const [isbnFetching, setIsbnFetching] = useState(false);
@@ -429,13 +431,23 @@ export default function TextbookPublication() {
               </TableRow>
             </TableHead>
             <TableBody>
-              {publicationsList.map((pub, i) => (
-                <TableRow key={pub._id || i}>
+              {publicationsList.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((pub, i) => (
+                <TableRow key={pub._id || i} sx={{ "&:hover": { background: "rgba(var(--color-primary-rgb, 99,102,241), 0.04)", transition: "background 0.2s" } }}>
                   <TableCell sx={{ color: "var(--text-primary)", fontWeight: 500, py: 2 }}>{pub.title || "N/A"}</TableCell>
                   <TableCell sx={{ color: "var(--text-secondary)", py: 2 }}>{pub.isbn || "N/A"}</TableCell>
-                  <TableCell sx={{ color: "var(--text-secondary)", py: 2 }}>{pub.facultyId?.name || "N/A"}</TableCell>
-                  <TableCell sx={{ color: "var(--text-secondary)", py: 2 }}>
-                    {pub.authors && pub.authors.length > 0 ? pub.authors.map(a => a.authorName).join(", ") : "N/A"}
+                  <TableCell sx={{ color: "var(--text-secondary)", py: 2, maxWidth: 160 }}>
+                    <Tooltip title={pub.facultyId?.name || "N/A"} arrow>
+                      <Typography variant="body2" sx={{ fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 150 }}>
+                        {pub.facultyId?.name || "N/A"}
+                      </Typography>
+                    </Tooltip>
+                  </TableCell>
+                  <TableCell sx={{ color: "var(--text-secondary)", py: 2, maxWidth: 180 }}>
+                    <Tooltip title={pub.authors && pub.authors.length > 0 ? pub.authors.map(a => a.authorName).filter(Boolean).join(", ") : "N/A"} arrow>
+                      <Typography variant="body2" sx={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 170 }}>
+                        {pub.authors && pub.authors.length > 0 ? pub.authors.map(a => a.authorName).filter(Boolean).join(", ") : "N/A"}
+                      </Typography>
+                    </Tooltip>
                   </TableCell>
                   <TableCell sx={{ color: "var(--text-secondary)", py: 2 }}>{pub.academicYear?.year || "N/A"}</TableCell>
                   <TableCell sx={{ py: 2 }}>
@@ -460,29 +472,34 @@ export default function TextbookPublication() {
                     </Typography>
                   </TableCell>
                   <TableCell sx={{ py: 2 }}>
-                    <Button
-                      variant="outlined"
-                      size="small"
-                      onClick={() => setSelectedPubDetails(pub)}
-                      sx={{
-                        borderRadius: "8px",
-                        textTransform: "none",
-                        fontWeight: 700,
-                        borderColor: "var(--color-primary)",
-                        color: "var(--color-primary)",
-                        "&:hover": {
-                          background: "var(--bg-accent-1)",
-                          borderColor: "var(--color-primary)"
-                        }
-                      }}
-                    >
-                      View
-                    </Button>
+                    <Tooltip title="View Details" arrow>
+                      <IconButton
+                        size="small"
+                        onClick={() => setSelectedPubDetails(pub)}
+                        sx={{
+                          color: "var(--color-primary)",
+                          "&:hover": { background: "var(--bg-accent-1)", transform: "scale(1.1)" },
+                          transition: "all 0.2s ease"
+                        }}
+                      >
+                        <Visibility fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
                   </TableCell>
                 </TableRow>
               ))}
             </TableBody>
           </Table>
+          <TablePagination
+            component="div"
+            count={publicationsList.length}
+            page={page}
+            onPageChange={(e, newPage) => setPage(newPage)}
+            rowsPerPage={rowsPerPage}
+            onRowsPerPageChange={(e) => { setRowsPerPage(parseInt(e.target.value, 10)); setPage(0); }}
+            rowsPerPageOptions={[5, 10, 25]}
+            sx={{ borderTop: "1px solid var(--border-color)", color: "var(--text-secondary)" }}
+          />
         </TableContainer>
       )}
     </Box>
@@ -848,18 +865,32 @@ export default function TextbookPublication() {
           <Typography sx={labelStyle}>Year:</Typography>
           <Select size="small" fullWidth displayEmpty value={form.year} onChange={(e) => {
             setForm(p => ({ ...p, year: e.target.value, month: "" }));
-          }} disabled={isbnFetched && !!form.year} sx={isbnFetched && !!form.year ? disabledField : {}}>
+          }}>
             <MenuItem value="">Select Year</MenuItem>
             {YEARS.map((y) => <MenuItem key={y} value={y}>{y}</MenuItem>)}
           </Select>
+          {isbnFetched && !form.year && (
+            <Typography variant="caption" sx={{ color: "#e8a000", fontWeight: 600, mt: 0.5, display: "block" }}>
+              ⚠ Year not found from ISBN — please select manually
+            </Typography>
+          )}
         </Box>
-        <Box>
-          <Typography sx={labelStyle}>Month:</Typography>
-          <Select size="small" fullWidth displayEmpty value={form.month} onChange={set("month")} disabled={(!form.year) || (isbnFetched && !!form.month)} sx={isbnFetched && !!form.month ? disabledField : {}}>
-            <MenuItem value="">Select Month</MenuItem>
-            {getAvailableMonths().map((m) => <MenuItem key={m} value={m}>{m}</MenuItem>)}
-          </Select>
-        </Box>
+        {form.year ? (
+          <Box>
+            <Typography sx={labelStyle}>Month:</Typography>
+            <Select size="small" fullWidth displayEmpty value={form.month} onChange={set("month")}>
+              <MenuItem value="">Select Month</MenuItem>
+              {getAvailableMonths().map((m) => <MenuItem key={m} value={m}>{m}</MenuItem>)}
+            </Select>
+            {isbnFetched && !form.month && (
+              <Typography variant="caption" sx={{ color: "#e8a000", fontWeight: 600, mt: 0.5, display: "block" }}>
+                ⚠ Month not found from ISBN — please select manually
+              </Typography>
+            )}
+          </Box>
+        ) : (
+          <Box />
+        )}
       </Grid2>
 
       <NoteBox />

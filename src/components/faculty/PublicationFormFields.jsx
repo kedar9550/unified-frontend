@@ -86,7 +86,7 @@ export const disabledField = {
 export const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
 // Year options (last 10 years)
-export const YEARS = Array.from({ length: 10 }, (_, i) => String(new Date().getFullYear() - i));
+export const YEARS = Array.from({ length: 2 }, (_, i) => String(new Date().getFullYear() - i));
 
 // NoteBox
 export function NoteBox() {

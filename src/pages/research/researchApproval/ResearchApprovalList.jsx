@@ -66,6 +66,7 @@ const ResearchApprovalList = ({ role }) => {
 
             const res = await API.get("/api/hod/research-requests", { params });
             if (res.data?.success) {
+                console.log("Research Approval Data:", res.data.data);
                 setData(res.data.data);
             }
         } catch (error) {

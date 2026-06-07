@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../../context/AuthContext";
 
-import { Box, TextField, MenuItem, Select, Typography, Button, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, IconButton, Autocomplete, CircularProgress, Dialog, DialogTitle, DialogContent, DialogActions, Stack, Grid, Card, Chip, Divider } from "@mui/material";
+import { Box, TextField, MenuItem, Select, Typography, Button, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, IconButton, Autocomplete, CircularProgress, Dialog, DialogTitle, DialogContent, DialogActions, Stack, Grid, Card, Chip, Divider, Tooltip, TablePagination } from "@mui/material";
 import { toast } from "sonner";
-import { AddCircle, Delete, Search, Close, Description, Download, AttachFile, Groups, Book } from "@mui/icons-material";
+import { AddCircle, Delete, Search, Close, Description, Download, AttachFile, Groups, Book, Visibility } from "@mui/icons-material";
 import PageHeader from "../../components/common/PageHeader";
 import {
   FacultyInfoRow, FormCard, Grid2, SubLabel, NoteBox, FileField, SubmitBtn,
@@ -21,6 +21,8 @@ export default function BookChapterPublication() {
   const [publicationsList, setPublicationsList] = useState([]);
   const [publishers, setPublishers] = useState([]);
   const [selectedPubDetails, setSelectedPubDetails] = useState(null);
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
 
   const [form, setForm] = useState({
     textBookName: "", chapterTitle: "", yearOfPublication: "",
@@ -586,12 +588,18 @@ export default function BookChapterPublication() {
               </TableRow>
             </TableHead>
             <TableBody>
-              {publicationsList.map((pub, i) => (
-                <TableRow key={pub._id || i}>
+              {publicationsList.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((pub, i) => (
+                <TableRow key={pub._id || i} sx={{ "&:hover": { background: "rgba(var(--color-primary-rgb, 99,102,241), 0.04)", transition: "background 0.2s" } }}>
                   <TableCell sx={{ color: "var(--text-primary)", fontWeight: 500, py: 2 }}>{pub.textBookName || "N/A"}</TableCell>
                   <TableCell sx={{ color: "var(--text-secondary)", py: 2 }}>{pub.chapterTitle || "N/A"}</TableCell>
                   <TableCell sx={{ color: "var(--text-secondary)", py: 2 }}>{pub.publisher || "N/A"}</TableCell>
-                  <TableCell sx={{ color: "var(--text-secondary)", py: 2 }}>{pub.facultyId?.name || "N/A"}</TableCell>
+                  <TableCell sx={{ color: "var(--text-secondary)", py: 2, maxWidth: 160 }}>
+                    <Tooltip title={pub.facultyId?.name || "N/A"} arrow>
+                      <Typography variant="body2" sx={{ fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 150 }}>
+                        {pub.facultyId?.name || "N/A"}
+                      </Typography>
+                    </Tooltip>
+                  </TableCell>
                   <TableCell sx={{ py: 2 }}>
                     <Typography variant="body2" sx={{ fontWeight: 600, color: pub.visibilityRole === "Applicant" ? "var(--color-primary)" : "text.secondary" }}>
                       {pub.visibilityRole || "Applicant"}
@@ -615,29 +623,34 @@ export default function BookChapterPublication() {
                     </Typography>
                   </TableCell>
                   <TableCell sx={{ py: 2 }}>
-                    <Button
-                      variant="outlined"
-                      size="small"
-                      onClick={() => setSelectedPubDetails(pub)}
-                      sx={{
-                        borderRadius: "8px",
-                        textTransform: "none",
-                        fontWeight: 700,
-                        borderColor: "var(--color-primary)",
-                        color: "var(--color-primary)",
-                        "&:hover": {
-                          background: "var(--bg-accent-1)",
-                          borderColor: "var(--color-primary)"
-                        }
-                      }}
-                    >
-                      View
-                    </Button>
+                    <Tooltip title="View Details" arrow>
+                      <IconButton
+                        size="small"
+                        onClick={() => setSelectedPubDetails(pub)}
+                        sx={{
+                          color: "var(--color-primary)",
+                          "&:hover": { background: "var(--bg-accent-1)", transform: "scale(1.1)" },
+                          transition: "all 0.2s ease"
+                        }}
+                      >
+                        <Visibility fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
                   </TableCell>
                 </TableRow>
               ))}
             </TableBody>
           </Table>
+          <TablePagination
+            component="div"
+            count={publicationsList.length}
+            page={page}
+            onPageChange={(e, newPage) => setPage(newPage)}
+            rowsPerPage={rowsPerPage}
+            onRowsPerPageChange={(e) => { setRowsPerPage(parseInt(e.target.value, 10)); setPage(0); }}
+            rowsPerPageOptions={[5, 10, 25]}
+            sx={{ borderTop: "1px solid var(--border-color)", color: "var(--text-secondary)" }}
+          />
         </TableContainer>
       )}
     </Box>
