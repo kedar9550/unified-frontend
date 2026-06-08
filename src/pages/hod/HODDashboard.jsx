@@ -76,13 +76,13 @@ const HODDashboard = () => {
     return name.split(" ").map(n => n[0]).join("").substring(0, 2).toUpperCase();
   };
 
-  if (loading) {
-    return (
-      <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", height: "60vh" }}>
-        <Loader />
-      </Box>
-    );
-  }
+  // if (loading) {
+  //   return (
+  //     <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", height: "60vh" }}>
+  //       <Loader />
+  //     </Box>
+  //   );
+  // }
 
   const dashboard = data || {
     totalFaculty: 0,
