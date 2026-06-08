@@ -26,6 +26,7 @@ export default function PatentPublication() {
   const [form, setForm] = useState({
     title: "", applicantName: "", patentName: "", area: "", filingNo: "", dateOfFiling: "",
     status: "", month: "", year: "", applyIncentive: "", applyingSeedGrant: "",
+    patentFiledCountry: "", customCountryName: "",
     totalInventors: 1, otherInventors: []
   });
   const [files, setFiles] = useState({ eFilingReceipt: null, form1: null });
@@ -137,6 +138,14 @@ export default function PatentPublication() {
       toast.error("Please fill all required fields");
       return;
     }
+    if (!form.patentFiledCountry) {
+      toast.error("Please select the Patent Filed Country");
+      return;
+    }
+    if (form.patentFiledCountry === 'Others' && !form.customCountryName) {
+      toast.error("Please enter the custom country name");
+      return;
+    }
     if (!form.patentName) {
       toast.error("Please select the Name of the Applicant in Patent");
       return;
@@ -189,6 +198,7 @@ export default function PatentPublication() {
       fd.append("filingNo", form.filingNo);
       fd.append("dateOfFiling", form.dateOfFiling);
       fd.append("status", form.status);
+      fd.append("patentFiledCountry", form.patentFiledCountry === 'Others' ? form.customCountryName : form.patentFiledCountry);
       fd.append("coInventors", JSON.stringify(coInventorsList));
       fd.append("month", form.month);
       fd.append("year", form.year);
@@ -203,7 +213,7 @@ export default function PatentPublication() {
 
       await API.post("/api/research/patent", fd, { headers: { "Content-Type": "multipart/form-data" } });
       toast.success("Patent submitted successfully!");
-      setForm({ title: "", applicantName: user?.name || "", patentName: "", area: "", filingNo: "", dateOfFiling: "", status: "", month: "", year: "", applyIncentive: "", applyingSeedGrant: "", totalInventors: 1, otherInventors: [] });
+      setForm({ title: "", applicantName: user?.name || "", patentName: "", area: "", filingNo: "", dateOfFiling: "", status: "", month: "", year: "", applyIncentive: "", applyingSeedGrant: "", patentFiledCountry: "", customCountryName: "", totalInventors: 1, otherInventors: [] });
       setFiles({ eFilingReceipt: null, form1: null });
       setSelectedYear("");
       setViewMode("list");
@@ -452,6 +462,20 @@ export default function PatentPublication() {
             {PATENT_STATUSES.map((s) => <MenuItem key={s} value={s}>{s}</MenuItem>)}
           </Select>
         </Box>
+        <Box>
+          <Typography sx={labelStyle}>Patent Filed Country : *</Typography>
+          <Select size="small" fullWidth displayEmpty value={form.patentFiledCountry} onChange={set("patentFiledCountry")}>
+            <MenuItem value="" disabled>--Select--</MenuItem>
+            <MenuItem value="India">India</MenuItem>
+            <MenuItem value="Others">Others</MenuItem>
+          </Select>
+        </Box>
+        {form.patentFiledCountry === 'Others' && (
+          <Box>
+            <Typography sx={labelStyle}>Enter Country Name : *</Typography>
+            <TextField size="small" fullWidth value={form.customCountryName} onChange={set("customCountryName")} placeholder="e.g., USA, UK" />
+          </Box>
+        )}
         <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
           <Typography sx={labelStyle}>Total Number of Inventors : *</Typography>
           <TextField
@@ -741,6 +765,7 @@ export default function PatentPublication() {
             <Grid item xs={12} sm={3}><LabelValueDetails label="Date of Filing" value={formatDate(data.dateOfFiling)} /></Grid>
             <Grid item xs={12} sm={3}><LabelValueDetails label="Patent Status" value={data.patentStatus} /></Grid>
             <Grid item xs={12} sm={3}><LabelValueDetails label="Month/Year" value={`${data.month || ""} ${data.year || ""}`} /></Grid>
+            <Grid item xs={12} sm={3}><LabelValueDetails label="Filed Country" value={data.patentFiledCountry || "India"} /></Grid>
 
             <Grid item xs={12} sm={6}><LabelValueDetails label="Applying Seed Grant?" value={data.applyingSeedGrant === "Yes" ? "Yes" : "No"} /></Grid>
             <Grid item xs={12} sm={6}><LabelValueDetails label="Apply Incentive?" value={data.applyIncentive === "Yes" ? "Yes" : "No"} /></Grid>

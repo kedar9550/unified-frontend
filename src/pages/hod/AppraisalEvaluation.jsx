@@ -1232,7 +1232,7 @@ const AppraisalEvaluation = () => {
                           {selectedAppraisal.research.patents.items.map((p, i) => (
                             <TableRow key={i}>
                               <TableCell align="center" sx={{ color: "var(--text-primary)" }}>{i + 1}</TableCell>
-                              <TableCell sx={{ fontWeight: 600, color: "var(--text-primary)" }}>{p.title} - {p.filingNo} ({p.dateOfFiling ? new Date(p.dateOfFiling).toLocaleDateString() : ""})</TableCell>
+                              <TableCell sx={{ fontWeight: 600, color: "var(--text-primary)" }}>{p.title} - {p.filingNo} - {p.dateOfFiling ? new Date(p.dateOfFiling).toLocaleDateString() : ""}</TableCell>
                               <TableCell sx={{ color: "var(--text-primary)" }}>{p.country}</TableCell>
                               <TableCell sx={{ color: "var(--text-primary)" }}>{p.status}</TableCell>
                               <TableCell align="center" sx={{ fontWeight: 800, color: "var(--color-primary)" }}>{p.pointsClaimed}</TableCell>

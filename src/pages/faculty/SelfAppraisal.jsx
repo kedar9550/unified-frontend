@@ -3015,7 +3015,7 @@ const SelfAppraisal = () => {
                           return (
                             <TableRow key={i} sx={{ "&:hover": { bgcolor: "rgba(0, 0, 0, 0.015)" }, "body.dark-mode &:hover": { bgcolor: "rgba(255, 255, 255, 0.015)" } }}>
                               <TableCell align="center" sx={{ color: "var(--text-primary)" }}>{i + 1}</TableCell>
-                              <TableCell sx={{ fontWeight: 600, color: "var(--text-primary)" }}>{p.title} - {p.filingNo} ({dateString})</TableCell>
+                              <TableCell sx={{ fontWeight: 600, color: "var(--text-primary)" }}>{p.title} - {p.filingNo} - {dateString}</TableCell>
                               <TableCell sx={{ color: "var(--text-primary)" }}>{p.country}</TableCell>
                               <TableCell sx={{ color: "var(--text-primary)" }}>{p.status}</TableCell>
                               <TableCell align="center" sx={{ fontWeight: 800, color: "var(--color-primary)" }}>{p.pointsClaimed}</TableCell>
