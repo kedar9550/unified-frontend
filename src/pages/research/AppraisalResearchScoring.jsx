@@ -57,6 +57,7 @@ import {
 } from "@mui/icons-material";
 import axiosInstance from "../../api/axios";
 import { toast } from "sonner";
+import DataTable from "../../components/data/DataTable";
 // Helper to extract short department code
 const getDeptCode = (deptName) => {
   if (!deptName) return "";
@@ -114,7 +115,6 @@ const AppraisalResearchScoring = () => {
   // Two-stage view: "list" shows the pending table, "detail" shows the evaluation UI
   const [view, setView] = useState("list");
   const [statusFilter, setStatusFilter] = useState("Pending");
-  const [searchTerm, setSearchTerm] = useState("");
 
   // Scoring States
   const [citations, setCitations] = useState("");
@@ -285,19 +285,9 @@ const AppraisalResearchScoring = () => {
 
   const filteredList = pendingList.filter(appr => {
     // 1. Status Filter
-    const matchesStatus = (() => {
-      if (statusFilter === "Pending") return appr.status === "Pending Research Admin";
-      if (statusFilter === "Approved") return appr.status === "Completed";
-      return true; // "All"
-    })();
-
-    // 2. Search Term Filter
-    const name = (appr.personalInfoSnapshot?.name || appr.facultyId?.name || "").toLowerCase();
-    const empId = (appr.personalInfoSnapshot?.institutionId || appr.facultyId?.institutionId || "").toLowerCase();
-    const dept = (appr.personalInfoSnapshot?.departmentName || "").toLowerCase();
-    const query = searchTerm.toLowerCase();
-    
-    return matchesStatus && (name.includes(query) || empId.includes(query) || dept.includes(query));
+    if (statusFilter === "Pending") return appr.status === "Pending Research Admin";
+    if (statusFilter === "Approved") return appr.status === "Completed";
+    return true; // "All"
   });
 
   return (
@@ -316,160 +306,110 @@ const AppraisalResearchScoring = () => {
       {/* ─── LIST VIEW ─── */}
       {view === "list" && (
         <>
-          {/* Filters Block */}
-          <Box sx={{ display: "flex", gap: 3, mb: 4, flexWrap: "wrap", alignItems: "center", justifyContent: "space-between" }}>
-            <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
-              <FormControl size="small" sx={{ minWidth: 200 }}>
-                <Typography variant="caption" sx={{ fontWeight: 700, mb: 0.5, color: "var(--text-secondary)" }}>Status</Typography>
-                <Select
-                  value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value)}
-                  sx={{
-                    borderRadius: "10px",
-                    background: "var(--bg-paper)",
-                    "& .MuiOutlinedInput-notchedOutline": { borderColor: "var(--border-color)" }
-                  }}
-                >
-                  <MenuItem value="Pending">Pending Evaluation</MenuItem>
-                  <MenuItem value="Approved">Approved / Completed</MenuItem>
-                  <MenuItem value="All">All Requests</MenuItem>
-                </Select>
-              </FormControl>
-            </Box>
-
-            <Box sx={{ width: { xs: "100%", sm: 320 } }}>
-              <Typography variant="caption" sx={{ fontWeight: 700, mb: 0.5, color: "var(--text-secondary)", display: "block" }}>Search</Typography>
-              <TextField
-                size="small"
-                fullWidth
-                placeholder="Search by name, Emp ID..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                sx={{
-                  "& .MuiOutlinedInput-root": {
-                    borderRadius: "10px",
-                    background: "var(--bg-paper)",
-                    borderColor: "var(--border-color)"
-                  }
-                }}
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <Search sx={{ color: "var(--text-secondary)", fontSize: "1.2rem" }} />
-                    </InputAdornment>
-                  )
-                }}
-              />
-            </Box>
-          </Box>
-
           <Card sx={{
             borderRadius: "16px",
             background: "var(--bg-panel)",
             border: "1px solid var(--border-color)",
             boxShadow: "var(--shadow-premium)",
+            p: 3,
             overflow: "hidden"
           }}>
-            <Box sx={{ px: 3, py: 2.5, borderBottom: "1px solid var(--border-color)" }}>
+            <Box sx={{ px: 0, pb: 2.5, borderBottom: "1px solid var(--border-color)", mb: 2 }}>
               <Typography variant="subtitle1" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>
                 Faculty Appraisals List
               </Typography>
             </Box>
-            <TableContainer>
-              <Table>
-                <TableHead>
-                  <TableRow sx={{ bgcolor: "var(--bg-paper)" }}>
-                    {["Faculty Name", "Employee ID", "Department", "Academic Year", "Status", "Action"].map((col) => (
-                      <TableCell key={col} sx={{
-                        fontWeight: 700,
-                        fontSize: "0.82rem",
-                        color: "var(--text-secondary)",
-                        py: 1.5,
-                        borderBottom: "1px solid var(--border-color)"
-                      }}>
-                        {col}
-                      </TableCell>
-                    ))}
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {filteredList.length > 0 ? (
-                    filteredList.map((appr) => {
-                      const name = appr.personalInfoSnapshot?.name || appr.facultyId?.name || "N/A";
-                      const empId = appr.personalInfoSnapshot?.institutionId || appr.facultyId?.institutionId || "N/A";
-                      const dept = appr.personalInfoSnapshot?.departmentName || "N/A";
-                      const year = appr.academicYearId?.year || "N/A";
-                      const status = appr.status;
-                      
-                      const getStatusColor = (statusVal) => {
-                        if (statusVal === 'Completed') return { bg: "rgba(16, 185, 129, 0.1)", color: "#10b981" };
-                        if (statusVal === 'Pending Research Admin') return { bg: "rgba(232, 160, 0, 0.1)", color: "#e8a000" };
-                        return { bg: "rgba(100, 116, 139, 0.1)", color: "#64748b" };
-                      };
-                      const statusColor = getStatusColor(status);
 
-                      return (
-                        <TableRow
-                          key={appr._id}
-                          sx={{ "&:hover": { bgcolor: "var(--bg-paper)" }, transition: "background 0.15s" }}
-                        >
-                          <TableCell sx={{ fontWeight: 700, color: "var(--text-primary)", fontSize: "0.88rem", py: 2 }}>{name}</TableCell>
-                          <TableCell sx={{ color: "var(--text-secondary)", fontSize: "0.85rem", py: 2 }}>{empId}</TableCell>
-                          <TableCell sx={{ color: "var(--text-secondary)", fontSize: "0.85rem", py: 2 }}>{dept}</TableCell>
-                          <TableCell sx={{ color: "var(--text-secondary)", fontSize: "0.85rem", py: 2 }}>{year}</TableCell>
-                          <TableCell sx={{ py: 2 }}>
-                            <Chip 
-                              label={status === "Pending Research Admin" ? "Pending" : status === "Completed" ? "Approved" : status} 
-                              size="small" 
-                              sx={{ 
-                                bgcolor: statusColor.bg, 
-                                color: statusColor.color, 
-                                fontWeight: 800, 
-                                borderRadius: "6px" 
-                              }} 
-                            />
-                          </TableCell>
-                          <TableCell sx={{ py: 2 }}>
-                            <Button
-                              variant={status === "Completed" ? "outlined" : "contained"}
-                              size="small"
-                              startIcon={status === "Completed" ? <Visibility sx={{ fontSize: "1rem" }} /> : <Person sx={{ fontSize: "1rem" }} />}
-                              onClick={() => handleScoreResearch(appr)}
-                              disabled={loading}
-                              sx={{
-                                textTransform: "none",
-                                fontWeight: 700,
-                                fontSize: "0.8rem",
-                                borderRadius: "8px",
-                                px: 2,
-                                py: 0.8,
-                                bgcolor: status === "Completed" ? "transparent" : "#1e3a5f",
-                                color: status === "Completed" ? "var(--text-primary)" : "#fff",
-                                borderColor: status === "Completed" ? "var(--border-color)" : "transparent",
-                                boxShadow: "none",
-                                "&:hover": { 
-                                  bgcolor: status === "Completed" ? "var(--bg-panel)" : "#2563eb", 
-                                  borderColor: status === "Completed" ? "var(--text-secondary)" : "transparent",
-                                  boxShadow: status === "Completed" ? "none" : "0 4px 12px rgba(59,130,246,0.25)" 
-                                }
-                              }}
-                            >
-                              {status === "Completed" ? "View Details" : "Score Research"}
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })
-                  ) : (
-                    <TableRow>
-                      <TableCell colSpan={6} align="center" sx={{ py: 4, color: "var(--text-secondary)", fontWeight: 600 }}>
-                        No appraisals found matching the filters.
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            </TableContainer>
+            <DataTable 
+              columns={["Faculty Name", "Employee ID", "Department", "Academic Year", "Status", "Action"]}
+              rows={filteredList.map((appr) => {
+                const name = appr.personalInfoSnapshot?.name || appr.facultyId?.name || "N/A";
+                const empId = appr.personalInfoSnapshot?.institutionId || appr.facultyId?.institutionId || "N/A";
+                const dept = appr.personalInfoSnapshot?.departmentName || "N/A";
+                const year = appr.academicYearId?.year || "N/A";
+                const status = appr.status;
+                const statusVal = status === "Pending Research Admin" ? "Pending" : status === "Completed" ? "Approved" : status;
+                
+                const getStatusColor = (statusVal) => {
+                  if (statusVal === 'Completed') return { bg: "rgba(16, 185, 129, 0.1)", color: "#10b981" };
+                  if (statusVal === 'Pending Research Admin') return { bg: "rgba(232, 160, 0, 0.1)", color: "#e8a000" };
+                  return { bg: "rgba(100, 116, 139, 0.1)", color: "#64748b" };
+                };
+                const statusColor = getStatusColor(status);
+
+                return [
+                  { value: name, display: <Typography sx={{ fontWeight: 700, color: "var(--text-primary)", fontSize: "0.88rem" }}>{name}</Typography> },
+                  { value: empId, display: empId },
+                  { value: dept, display: dept },
+                  { value: year, display: year },
+                  { 
+                    value: statusVal, 
+                    display: (
+                      <Chip 
+                        label={statusVal} 
+                        size="small" 
+                        sx={{ 
+                          bgcolor: statusColor.bg, 
+                          color: statusColor.color, 
+                          fontWeight: 800, 
+                          borderRadius: "6px" 
+                        }} 
+                      />
+                    ) 
+                  },
+                  { 
+                    value: "", 
+                    display: (
+                      <Button
+                        variant={status === "Completed" ? "outlined" : "contained"}
+                        size="small"
+                        startIcon={status === "Completed" ? <Visibility sx={{ fontSize: "1rem" }} /> : <Person sx={{ fontSize: "1rem" }} />}
+                        onClick={() => handleScoreResearch(appr)}
+                        disabled={loading}
+                        sx={{
+                          textTransform: "none",
+                          fontWeight: 700,
+                          fontSize: "0.8rem",
+                          borderRadius: "8px",
+                          px: 2,
+                          py: 0.8,
+                          bgcolor: status === "Completed" ? "transparent" : "#1e3a5f",
+                          color: status === "Completed" ? "var(--text-primary)" : "#fff",
+                          borderColor: status === "Completed" ? "var(--border-color)" : "transparent",
+                          boxShadow: "none",
+                          "&:hover": { 
+                            bgcolor: status === "Completed" ? "var(--bg-panel)" : "#2563eb", 
+                            borderColor: status === "Completed" ? "var(--text-secondary)" : "transparent",
+                            boxShadow: status === "Completed" ? "none" : "0 4px 12px rgba(59,130,246,0.25)" 
+                          }
+                        }}
+                      >
+                        {status === "Completed" ? "View Details" : "Score Research"}
+                      </Button>
+                    ) 
+                  }
+                ];
+              })}
+              nonSortableColumns={[5]}
+              toolbarLeft={(
+                <FormControl size="small" sx={{ minWidth: 200 }}>
+                  <Typography variant="caption" sx={{ fontWeight: 700, mb: 0.5, color: "var(--text-secondary)" }}>Status</Typography>
+                  <Select
+                    value={statusFilter}
+                    onChange={(e) => setStatusFilter(e.target.value)}
+                    sx={{
+                      borderRadius: "10px",
+                      background: "var(--bg-paper)",
+                      "& .MuiOutlinedInput-notchedOutline": { borderColor: "var(--border-color)" }
+                    }}
+                  >
+                    <MenuItem value="Pending">Pending Evaluation</MenuItem>
+                    <MenuItem value="Approved">Approved / Completed</MenuItem>
+                    <MenuItem value="All">All Requests</MenuItem>
+                  </Select>
+                </FormControl>
+              )}
+            />
           </Card>
         </>
       )}
