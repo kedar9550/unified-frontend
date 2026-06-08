@@ -22,7 +22,7 @@ const ConnectorLine = ({ color = "var(--color-primary)" }) => (
     </Box>
 );
 
-const GridConnector = ({ activeIndex, itemsCount, color = "var(--color-primary)", height = 32, noWrap = false, sx = {} }) => {
+const GridConnector = ({ activeIndex, itemsCount, color = "var(--color-primary)", height = 32, noWrap = false, cols = { sm: 2, md: 4 }, sx = {} }) => {
     if (activeIndex === null || activeIndex === undefined || activeIndex === -1) return null;
 
     if (noWrap) {
@@ -70,6 +70,10 @@ const GridConnector = ({ activeIndex, itemsCount, color = "var(--color-primary)"
         );
     }
 
+    const smCols = cols.sm || 2;
+    const mdCols = cols.md || 4;
+    const lgCols = cols.lg || mdCols;
+
     return (
         <Box 
             sx={{ 
@@ -78,18 +82,19 @@ const GridConnector = ({ activeIndex, itemsCount, color = "var(--color-primary)"
                 pointerEvents: 'none', 
                 display: { xs: 'none', sm: 'grid' },
                 gridTemplateColumns: {
-                    sm: 'repeat(2, 1fr)',
-                    md: 'repeat(4, 1fr)'
+                    sm: `repeat(${smCols}, 1fr)`,
+                    md: `repeat(${mdCols}, 1fr)`,
+                    lg: `repeat(${lgCols}, 1fr)`
                 },
                 gap: 3,
                 width: '100%',
                 ...sx 
             }}
         >
-            {/* Desktop Connector */}
+            {/* Large Desktop Connector (lg) */}
             <Box sx={{
-                display: { sm: 'none', md: 'flex' },
-                gridColumn: (activeIndex % 4) + 1,
+                display: { xs: 'none', sm: 'none', md: 'none', lg: lgCols !== mdCols ? 'flex' : 'none' },
+                gridColumn: (activeIndex % lgCols) + 1,
                 justifyContent: 'center',
                 alignItems: 'center',
                 height: `${height}px`
@@ -102,10 +107,26 @@ const GridConnector = ({ activeIndex, itemsCount, color = "var(--color-primary)"
                 </Box>
             </Box>
 
-            {/* Tablet Connector */}
+            {/* Medium Desktop Connector (md) */}
             <Box sx={{
-                display: { sm: 'flex', md: 'none' },
-                gridColumn: (activeIndex % 2) + 1,
+                display: { xs: 'none', sm: 'none', md: 'flex', lg: lgCols !== mdCols ? 'none' : 'flex' },
+                gridColumn: (activeIndex % mdCols) + 1,
+                justifyContent: 'center',
+                alignItems: 'center',
+                height: `${height}px`
+            }}>
+                <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', height: `${height}px`, justifyContent: 'center', width: '100%' }}>
+                    <Box sx={{ width: '2px', height: `${height}px`, backgroundColor: color, position: 'relative' }}>
+                        <Box sx={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: color, position: 'absolute', top: -3, left: -2 }} />
+                        <Box sx={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: color, position: 'absolute', bottom: -3, left: -2 }} />
+                    </Box>
+                </Box>
+            </Box>
+
+            {/* Tablet Connector (sm) */}
+            <Box sx={{
+                display: { xs: 'none', sm: 'flex', md: 'none', lg: 'none' },
+                gridColumn: (activeIndex % smCols) + 1,
                 justifyContent: 'center',
                 alignItems: 'center',
                 height: `${height}px`
@@ -311,7 +332,7 @@ const AcademicStructure = () => {
                         </Button>
                     </Box>
                     
-                    <Grid container spacing={3} sx={{ mb: 2, flexWrap: 'nowrap' }}>
+                    <Grid container spacing={3} sx={{ mb: 2 }}>
                         {schools.map(school => {
                             const sDepts = departments.filter(d => 
                                 (d.schoolIds && d.schoolIds.some(id => (id?._id || id) === school._id)) ||
@@ -326,7 +347,7 @@ const AcademicStructure = () => {
                             const isSelected = selectedSchool?._id === school._id;
                             
                             return (
-                                <Grid item xs key={school._id} sx={{ display: 'flex', flexDirection: 'column', flex: '1 1 0px', minWidth: 0 }}>
+                                <Grid item xs={12} sm={6} md={6} lg={3} key={school._id} sx={{ display: 'flex', flexDirection: 'column' }}>
                                     <Card 
                                         sx={{ 
                                             height: '100%',
@@ -447,7 +468,7 @@ const AcademicStructure = () => {
                             activeIndex={schools.findIndex(s => s._id === selectedSchool._id)} 
                             itemsCount={schools.length} 
                             color="#10B981" 
-                            noWrap
+                            cols={{ sm: 2, md: 2, lg: 4 }}
                         />
                         <Box sx={{ display: { xs: 'flex', sm: 'none' }, justifyContent: 'center', mt: -1, mb: 1 }}>
                             <ConnectorLine color="#10B981" />
