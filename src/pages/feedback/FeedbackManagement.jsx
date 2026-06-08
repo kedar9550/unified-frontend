@@ -163,10 +163,9 @@ export default function FeedbackManagement() {
       "totalStudents",
       "givenStudents",
       "percentage",
-      "overallPercentage",
     ];
     const sampleRows = [
-        ["FAC123", "2024-2025", "B.Tech", "CSE", "Mathematics", "MA101", "A", "1", "3", "60", "55", "91.6", "88.5"],
+        ["FAC123", "2024-2025", "B.Tech", "CSE", "Mathematics", "MA101", "A", "1", "3", "60", "55", "91.6"],
     ];
     const csvContent = headers.join(",") + "\n" + sampleRows.map(row => row.join(",")).join("\n") + "\n";
     const blob = new Blob([csvContent], { type: "text/csv" });
