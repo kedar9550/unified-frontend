@@ -62,7 +62,9 @@ export default function Contribution() {
     facilityName: "",
     facilityDate: "",
     grantName: "",
-    sanctionDate: ""
+    sanctionDate: "",
+    courseHours: "",
+    certificateNumber: ""
   });
 
   const [proofFile, setProofFile] = useState(null);
@@ -135,7 +137,9 @@ export default function Contribution() {
       facilityName: "",
       facilityDate: "",
       grantName: "",
-      sanctionDate: ""
+      sanctionDate: "",
+      courseHours: "",
+      certificateNumber: ""
     }));
     setProofFile(null);
   };
@@ -164,7 +168,9 @@ export default function Contribution() {
       facilityName: "",
       facilityDate: "",
       grantName: "",
-      sanctionDate: ""
+      sanctionDate: "",
+      courseHours: "",
+      certificateNumber: ""
     });
     setProofFile(null);
     setOpenFormModal(true);
@@ -195,7 +201,9 @@ export default function Contribution() {
       facilityName: item.facilityName || "",
       facilityDate: item.facilityDate ? item.facilityDate.substring(0, 10) : "",
       grantName: item.grantName || "",
-      sanctionDate: item.sanctionDate ? item.sanctionDate.substring(0, 10) : ""
+      sanctionDate: item.sanctionDate ? item.sanctionDate.substring(0, 10) : "",
+      courseHours: item.courseHours !== undefined ? String(item.courseHours) : "",
+      certificateNumber: item.certificateNumber || ""
     });
     setProofFile(null);
     setOpenFormModal(true);
@@ -300,10 +308,26 @@ export default function Contribution() {
         case 11:
           if (!form.courseName || !form.duration) {
             fieldErr = "Course Name and Duration are required.";
+          } else if (!form.certificateNumber) {
+            fieldErr = "Certificate Number is required for NPTEL course.";
           }
           break;
         case 12:
-          if (!form.courseName) fieldErr = "Course Name is required.";
+          if (!form.courseName) {
+            fieldErr = "Course Name is required.";
+          } else if (!form.courseHours) {
+            fieldErr = "Course Hours is required for Coursera course.";
+          } else {
+            const hrs = parseFloat(form.courseHours);
+            if (isNaN(hrs) || hrs <= 0) {
+              fieldErr = "Course Hours must be a positive number.";
+            } else if (hrs < 40) {
+              fieldErr = "Coursera course must be at least 40 hours to qualify for eligibility.";
+            }
+          }
+          if (!fieldErr && !form.certificateNumber) {
+            fieldErr = "Certificate Number is required for Coursera course.";
+          }
           break;
         case 13:
           if (!form.grantName) fieldErr = "Grant Name is required.";
@@ -357,8 +381,11 @@ export default function Contribution() {
       } else if (cat === 11) {
         fd.append("courseName", form.courseName);
         fd.append("duration", form.duration);
+        fd.append("certificateNumber", form.certificateNumber);
       } else if (cat === 12) {
         fd.append("courseName", form.courseName);
+        fd.append("courseHours", form.courseHours);
+        fd.append("certificateNumber", form.certificateNumber);
       } else if (cat === 13) {
         fd.append("grantName", form.grantName);
       }
@@ -629,9 +656,19 @@ export default function Contribution() {
                 <MenuItem value="4 Weeks">4 Weeks</MenuItem>
               </Select>
             </Box>
-            <Box sx={{ mt: 2, p: 2, bgcolor: "rgba(232, 160, 0, 0.08)", border: "1px solid rgba(232, 160, 0, 0.3)", borderRadius: "8px" }}>
+            <Box>
+              <Typography sx={labelStyle}>Certificate Number: *</Typography>
+              <TextField
+                size="small"
+                fullWidth
+                value={form.certificateNumber}
+                onChange={setVal("certificateNumber")}
+                placeholder="e.g. NPTEL24CS01S1234"
+              />
+            </Box>
+            <Box sx={{ gridColumn: { sm: "1 / -1" }, mt: 1, p: 2, bgcolor: "rgba(232, 160, 0, 0.08)", border: "1px solid rgba(232, 160, 0, 0.3)", borderRadius: "8px" }}>
               <Typography variant="body2" sx={{ color: "#e8a000", fontWeight: 700 }}>
-                Note: Certificate will be considered only in one metric, either 3.1 or 3.2.
+                ⚠️ Note: This NPTEL certificate can only be claimed in one metric — either Metric 3.1 (Resource Utilization) or Metric 3.2 (Contribution), not both.
               </Typography>
             </Box>
           </>
@@ -642,6 +679,28 @@ export default function Contribution() {
             <Box>
               <Typography sx={labelStyle}>Course Name (Coursera): *</Typography>
               <TextField size="small" fullWidth value={form.courseName} onChange={setVal("courseName")} />
+            </Box>
+            <Box>
+              <Typography sx={labelStyle}>Course Hours: *</Typography>
+              <TextField
+                size="small"
+                fullWidth
+                type="number"
+                value={form.courseHours}
+                onChange={setVal("courseHours")}
+                placeholder="e.g. 40"
+                helperText="Minimum 40 hours required for eligibility"
+              />
+            </Box>
+            <Box>
+              <Typography sx={labelStyle}>Certificate Number: *</Typography>
+              <TextField
+                size="small"
+                fullWidth
+                value={form.certificateNumber}
+                onChange={setVal("certificateNumber")}
+                placeholder="e.g. ABC-XYZ-123"
+              />
             </Box>
             {renderDateFields()}
           </>
@@ -970,15 +1029,33 @@ export default function Contribution() {
                 <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", fontWeight: 800, fontSize: "0.65rem", display: "block" }}>Duration</Typography>
                 <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>{data.duration || "-"}</Typography>
               </Grid>
+              {data.certificateNumber && (
+                <Grid item xs={12} sm={6}>
+                  <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", fontWeight: 800, fontSize: "0.65rem", display: "block" }}>Certificate Number</Typography>
+                  <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>{data.certificateNumber}</Typography>
+                </Grid>
+              )}
             </>
           );
         case 12:
           return (
             <>
-              <Grid item xs={12} sm={12}>
+              <Grid item xs={12} sm={6}>
                 <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", fontWeight: 800, fontSize: "0.65rem", display: "block" }}>Course Name (Coursera)</Typography>
                 <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>{data.courseName || "-"}</Typography>
               </Grid>
+              {data.courseHours !== undefined && data.courseHours !== null && (
+                <Grid item xs={12} sm={6}>
+                  <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", fontWeight: 800, fontSize: "0.65rem", display: "block" }}>Course Hours</Typography>
+                  <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>{data.courseHours} hrs</Typography>
+                </Grid>
+              )}
+              {data.certificateNumber && (
+                <Grid item xs={12} sm={6}>
+                  <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", fontWeight: 800, fontSize: "0.65rem", display: "block" }}>Certificate Number</Typography>
+                  <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>{data.certificateNumber}</Typography>
+                </Grid>
+              )}
               {renderDetailDates()}
             </>
           );

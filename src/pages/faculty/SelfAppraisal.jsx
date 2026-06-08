@@ -949,7 +949,9 @@ const SelfAppraisal = () => {
       facilityName: "",
       facilityDate: "",
       grantName: "",
-      sanctionDate: ""
+      sanctionDate: "",
+      courseHours: "",
+      certificateNumber: ""
     });
     setContProof(null);
     setContOpen(true);
@@ -978,7 +980,9 @@ const SelfAppraisal = () => {
       facilityName: item.facilityName || "",
       facilityDate: item.facilityDate ? item.facilityDate.substring(0, 10) : "",
       grantName: item.grantName || "",
-      sanctionDate: item.sanctionDate ? item.sanctionDate.substring(0, 10) : ""
+      sanctionDate: item.sanctionDate ? item.sanctionDate.substring(0, 10) : "",
+      courseHours: item.courseHours || "",
+      certificateNumber: item.certificateNumber || ""
     });
     setContProof(null);
     setContOpen(true);
@@ -1078,7 +1082,13 @@ const SelfAppraisal = () => {
           }
           break;
         case 12:
-          if (!contForm.courseName) fieldErr = "Course Name is required.";
+          if (!contForm.courseName) {
+            fieldErr = "Course Name is required.";
+          } else if (!contForm.courseHours) {
+            fieldErr = "Course Duration (Hours) is required.";
+          } else if (isNaN(Number(contForm.courseHours)) || Number(contForm.courseHours) < 40) {
+            fieldErr = "Coursera Course must be at least 40 Hours.";
+          }
           break;
         case 13:
           if (!contForm.grantName) fieldErr = "Grant Name is required.";
@@ -1103,6 +1113,10 @@ const SelfAppraisal = () => {
         fd.append("fromDate", contForm.fromDate);
         fd.append("toDate", contForm.toDate);
         fd.append("duration", contForm.duration);
+      }
+
+      if (contForm.certificateNumber) {
+        fd.append("certificateNumber", contForm.certificateNumber);
       }
 
       if (cat === 1) {
@@ -1133,6 +1147,7 @@ const SelfAppraisal = () => {
         fd.append("duration", contForm.duration);
       } else if (cat === 12) {
         fd.append("courseName", contForm.courseName);
+        fd.append("courseHours", contForm.courseHours);
       } else if (cat === 13) {
         fd.append("grantName", contForm.grantName);
       }
@@ -1220,7 +1235,9 @@ const SelfAppraisal = () => {
       facilityName: "",
       facilityDate: "",
       grantName: "",
-      sanctionDate: ""
+      sanctionDate: "",
+      courseHours: "",
+      certificateNumber: ""
     });
   };
 
@@ -1419,6 +1436,8 @@ const SelfAppraisal = () => {
     return { teaching: 50, metric21: 30, total1to4: 110, grandTotal: 140 };
   };
 
+
+
   const checkFdpCourseraRequirement = () => {
     const allowedOrg = [
       "ugc", "aicte", "iit", "iim", "nit", "mhrd r&d lab", "mhrd r&d labs",
@@ -1432,16 +1451,23 @@ const SelfAppraisal = () => {
       const type = (r.activityType || '').toLowerCase().trim();
       const org = (r.organizingInstitutionCategory || '').toLowerCase().trim();
       const days = Number(r.daysParticipated) || Number(r.duration) || 0;
-      return cat === 'fdp' && type === 'fdp participant' && days >= 5 && allowedOrg.includes(org);
+      if (cat === 'fdp' && type === 'fdp participant' && days >= 5 && allowedOrg.includes(org)) {
+        if (org.includes("nirf")) {
+          const rank = Number(r.nirfRank);
+          return !isNaN(rank) && rank > 0 && rank < 200;
+        }
+        return true;
+      }
+      return false;
     });
 
-    const hasValidNptelOrCoursera = contributionDetails.some(c => {
+    const hasValidCoursera40Hours = contributionDetails.some(c => {
       if (c.status === 'Rejected') return false;
       const cat = parseInt(c.category);
-      return cat === 11 || cat === 12;
+      return cat === 12 && Number(c.courseHours) >= 40;
     });
 
-    return hasValidFdp || hasValidNptelOrCoursera;
+    return hasValidFdp || hasValidCoursera40Hours;
   };
 
   const getMetric21Score = () => {
@@ -1553,8 +1579,8 @@ const SelfAppraisal = () => {
       canSubmit,
       checklist: {
         fdpCoursera: {
-          label: "FDP / NPTEL / Coursera",
-          desc: "FDP of min 5 days by allowed organizers OR NPTEL course OR Coursera course completed",
+          label: "FDP / Coursera",
+          desc: "FDP of min 5 days by allowed organizers OR Coursera course (min 40 Hours) completed",
           passed: fdpCourseraPassed,
           isGating: true
         },
@@ -4913,7 +4939,7 @@ const SelfAppraisal = () => {
                 case 11:
                   return (
                     <>
-                      <Box>
+                      <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
                         <Typography sx={labelStyle}>Course Name: *</Typography>
                         <TextField size="small" fullWidth value={contForm.courseName} onChange={(e) => setContForm(p => ({ ...p, courseName: e.target.value }))} />
                       </Box>
@@ -4932,6 +4958,10 @@ const SelfAppraisal = () => {
                           <MenuItem value="4 Weeks">4 Weeks</MenuItem>
                         </Select>
                       </Box>
+                      <Box>
+                        <Typography sx={labelStyle}>Certificate Number (Optional):</Typography>
+                        <TextField size="small" fullWidth value={contForm.certificateNumber || ""} onChange={(e) => setContForm(p => ({ ...p, certificateNumber: e.target.value }))} placeholder="Enter Certificate Number (if available)" />
+                      </Box>
                       <Box sx={{ gridColumn: { sm: "1 / -1" }, mt: 2, p: 2, bgcolor: "rgba(232, 160, 0, 0.08)", border: "1px solid rgba(232, 160, 0, 0.3)", borderRadius: "8px" }}>
                         <Typography variant="body2" sx={{ color: "#e8a000", fontWeight: 700 }}>
                           Note: Certificate will be considered only in one metric, either 3.1 or 3.2.
@@ -4945,6 +4975,14 @@ const SelfAppraisal = () => {
                       <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
                         <Typography sx={labelStyle}>Course Name (Coursera): *</Typography>
                         <TextField size="small" fullWidth value={contForm.courseName} onChange={(e) => setContForm(p => ({ ...p, courseName: e.target.value }))} />
+                      </Box>
+                      <Box>
+                        <Typography sx={labelStyle}>Course Duration (Hours): *</Typography>
+                        <TextField type="number" size="small" fullWidth value={contForm.courseHours || ""} onChange={(e) => setContForm(p => ({ ...p, courseHours: e.target.value }))} placeholder="e.g. 40" />
+                      </Box>
+                      <Box>
+                        <Typography sx={labelStyle}>Certificate Number (Optional):</Typography>
+                        <TextField size="small" fullWidth value={contForm.certificateNumber || ""} onChange={(e) => setContForm(p => ({ ...p, certificateNumber: e.target.value }))} placeholder="Enter Certificate Number (if available)" />
                       </Box>
                       {renderDateFields()}
                     </>

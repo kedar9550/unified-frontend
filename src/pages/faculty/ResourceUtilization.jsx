@@ -106,7 +106,8 @@ export default function ResourceUtilization() {
     labName: "",
     universityName: "",
     instituteName: "",
-    nirfRank: ""
+    nirfRank: "",
+    certificateNumber: ""
   });
   
   const [proofFile, setProofFile] = useState(null);
@@ -170,7 +171,8 @@ export default function ResourceUtilization() {
       labName: "",
       universityName: "",
       instituteName: "",
-      nirfRank: ""
+      nirfRank: "",
+      certificateNumber: ""
     }));
   };
 
@@ -187,7 +189,8 @@ export default function ResourceUtilization() {
       labName: "",
       universityName: "",
       instituteName: "",
-      nirfRank: ""
+      nirfRank: "",
+      certificateNumber: ""
     }));
   };
 
@@ -213,7 +216,8 @@ export default function ResourceUtilization() {
       labName: "",
       universityName: "",
       instituteName: "",
-      nirfRank: ""
+      nirfRank: "",
+      certificateNumber: ""
     });
     setProofFile(null);
     setOpenFormModal(true);
@@ -238,7 +242,8 @@ export default function ResourceUtilization() {
       labName: activity.labName || "",
       universityName: activity.universityName || "",
       instituteName: activity.instituteName || "",
-      nirfRank: activity.nirfRank !== undefined ? String(activity.nirfRank) : ""
+      nirfRank: activity.nirfRank !== undefined ? String(activity.nirfRank) : "",
+      certificateNumber: activity.certificateNumber || ""
     });
     setProofFile(null);
     setOpenFormModal(true);
@@ -353,6 +358,8 @@ export default function ResourceUtilization() {
         } else if (form.organizingInstitutionCategory === "NIRF Ranked Institute (Below 200)") {
           fd.append("instituteName", form.instituteName);
           fd.append("nirfRank", form.nirfRank);
+        } else if (form.organizingInstitutionCategory === "NPTEL" && form.certificateNumber) {
+          fd.append("certificateNumber", form.certificateNumber);
         }
       } else {
         fd.append("organizationName", form.organizationName);
@@ -701,6 +708,14 @@ export default function ResourceUtilization() {
                     </Grid>
                   </>
                 )}
+                {data.organizingInstitutionCategory === "NPTEL" && data.certificateNumber && (
+                  <Grid item xs={12} sm={4}>
+                    <Box sx={{ p: 1.5, borderRadius: "10px", background: "rgba(255,255,255,0.02)" }}>
+                      <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", fontWeight: 800, fontSize: "0.65rem" }}>Certificate Number</Typography>
+                      <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>{data.certificateNumber}</Typography>
+                    </Box>
+                  </Grid>
+                )}
               </>
             )}
 
@@ -971,6 +986,20 @@ export default function ResourceUtilization() {
                     />
                   </Box>
                 </>
+              )}
+
+              {form.organizingInstitutionCategory === "NPTEL" && (
+                <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
+                  <Typography sx={labelStyle}>NPTEL Certificate Number: *</Typography>
+                  <TextField
+                    size="small"
+                    fullWidth
+                    value={form.certificateNumber}
+                    onChange={setVal("certificateNumber")}
+                    placeholder="e.g. NPTEL24CS01S1234"
+                    helperText="Required to prevent duplicate claims in Metric 3.2 (Contribution)"
+                  />
+                </Box>
               )}
             </>
           ) : (
