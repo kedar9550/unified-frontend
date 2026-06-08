@@ -586,12 +586,6 @@ const AcademicStructure = () => {
                                                         <Edit sx={{ fontSize: 16 }} />
                                                     </IconButton>
                                                 </Box>
- 
-                                                <Box sx={{ mt: 'auto', pt: 1 }}>
-                                                    <Typography variant="caption" sx={{ color: '#10B981', fontWeight: 700, fontSize: '0.75rem', textTransform: 'none' }}>
-                                                        Specializations
-                                                    </Typography>
-                                                </Box>
                                             </CardContent>
                                         </Card>
                                     </Grid>
@@ -1004,11 +998,6 @@ const AcademicStructure = () => {
                                                     >
                                                         <Edit sx={{ fontSize: 16 }} />
                                                     </IconButton>
-                                                </Box>
-                                                <Box sx={{ mt: 'auto', pt: 1 }}>
-                                                    <Typography variant="caption" sx={{ color: 'var(--color-primary)', fontWeight: 700, fontSize: '0.75rem', textTransform: 'none' }}>
-                                                        Specializations
-                                                    </Typography>
                                                 </Box>
                                             </CardContent>
                                         </Card>
