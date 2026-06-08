@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Box, Typography, Grid, Card, Button, TextField, Chip, IconButton, Stack,
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper,
@@ -17,53 +17,33 @@ export default function ResourceUtilizationApproval() {
   const [academicYears, setAcademicYears] = useState([]);
   const [selectedYear, setSelectedYear] = useState("");
   const [data, setData] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true); // Default to true to prevent layout shift
   const [statusFilter, setStatusFilter] = useState("Pending at HOD");
   const [searchQuery, setSearchQuery] = useState("");
 
-  const [selectedIds, setSelectedIds] = useState([]); // Array of checked entry IDs
-  const [bulkActionType, setBulkActionType] = useState(null); // 'Approve' or 'Reject'
+  const [selectedIds, setSelectedIds] = useState([]);
+  const [bulkActionType, setBulkActionType] = useState(null);
   const [openBulkRemarksDialog, setOpenBulkRemarksDialog] = useState(false);
   const [bulkRemarks, setBulkRemarks] = useState("");
   const [actionLoading, setActionLoading] = useState(false);
 
-  // For individual action dialogs if needed, but we can do inline + simple prompts
   const [individualRejectId, setIndividualRejectId] = useState(null);
   const [individualRemarks, setIndividualRemarks] = useState("");
   const [openIndividualRemarksDialog, setOpenIndividualRemarksDialog] = useState(false);
 
-  // Fetch academic years
-  useEffect(() => {
-    API.get("/api/academic-years")
-      .then(res => {
-        const years = res.data?.years || res.data?.data || [];
-        setAcademicYears(years);
-        if (years.length > 0) {
-          // Set to current year or first year in list
-          setSelectedYear(years[0]._id);
-        }
-      })
-      .catch(err => console.log("Failed to fetch academic years", err));
-  }, []);
-
-  // Fetch submitted requests when selected academic year or status changes
-  useEffect(() => {
-    if (selectedYear) {
-      fetchRequests();
-    }
-  }, [selectedYear, statusFilter]);
-
-  const fetchRequests = async () => {
+  // Wrapped in useCallback to prevent re-creation loops
+  const fetchRequests = useCallback(async (yearId, status) => {
+    if (!yearId) return;
     setLoading(true);
     try {
       const params = {
-        status: statusFilter,
-        academicYear: selectedYear
+        status: status,
+        academicYear: yearId
       };
       const res = await API.get("/api/value-addition/resource-utilization/pending-hod", { params });
       if (res.data?.success) {
         setData(res.data.data);
-        setSelectedIds([]); // Reset checklist on load
+        setSelectedIds([]);
       }
     } catch (err) {
       console.error("Failed to fetch approvals:", err);
@@ -71,13 +51,59 @@ export default function ResourceUtilizationApproval() {
     } finally {
       setLoading(false);
     }
+  }, []);
+
+  // Orchestrated single initialization effect
+  useEffect(() => {
+    let isMounted = true;
+
+    const initializeDashboard = async () => {
+      try {
+        const res = await API.get("/api/academic-years");
+        const years = res.data?.years || res.data?.data || [];
+
+        if (!isMounted) return;
+        setAcademicYears(years);
+
+        if (years.length > 0) {
+          const defaultYearId = years[0]._id;
+          setSelectedYear(defaultYearId);
+          // Directly fetch using the fresh ID instead of waiting for a re-render cycle
+          await fetchRequests(defaultYearId, statusFilter);
+        } else {
+          setLoading(false);
+        }
+      } catch (err) {
+        console.error("Failed to fetch academic years", err);
+        if (isMounted) setLoading(false);
+      }
+    };
+
+    initializeDashboard();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [fetchRequests]);
+
+  // Handles subsequent standard user filter alterations cleanly
+  const handleYearChange = (e) => {
+    const nextYear = e.target.value;
+    setSelectedYear(nextYear);
+    fetchRequests(nextYear, statusFilter);
+  };
+
+  const handleStatusChange = (e) => {
+    const nextStatus = e.target.value;
+    setStatusFilter(nextStatus);
+    fetchRequests(selectedYear, nextStatus);
   };
 
   // Group data by faculty
   const groupedData = data.reduce((groups, item) => {
     const facultyId = item.facultyId?._id;
     if (!facultyId) return groups;
-    
+
     if (!groups[facultyId]) {
       groups[facultyId] = {
         faculty: item.facultyId,
@@ -95,7 +121,7 @@ export default function ResourceUtilizationApproval() {
     const facName = group.faculty?.name?.toLowerCase() || "";
     const empId = group.faculty?.institutionId?.toLowerCase() || "";
     const term = searchQuery.toLowerCase();
-    
+
     return facName.includes(term) || empId.includes(term);
   });
 
@@ -130,7 +156,7 @@ export default function ResourceUtilizationApproval() {
       });
       toast.success(`Request successfully ${action === 'Approve' ? 'Approved' : 'Rejected'}.`);
       setOpenIndividualRemarksDialog(false);
-      fetchRequests();
+      fetchRequests(selectedYear, statusFilter);
     } catch (err) {
       toast.error(err?.response?.data?.message || "Action failed.");
     } finally {
@@ -163,7 +189,7 @@ export default function ResourceUtilizationApproval() {
       });
       toast.success(`Successfully ${bulkActionType === 'Approve' ? 'approved' : 'rejected'} ${selectedIds.length} entries.`);
       setOpenBulkRemarksDialog(false);
-      fetchRequests();
+      fetchRequests(selectedYear, statusFilter);
     } catch (err) {
       toast.error(err?.response?.data?.message || "Bulk action failed.");
     } finally {
@@ -175,7 +201,7 @@ export default function ResourceUtilizationApproval() {
     if (status === 'Approved') return { bg: "rgba(16, 185, 129, 0.1)", color: "#10b981" };
     if (status === 'Rejected') return { bg: "rgba(239, 68, 68, 0.1)", color: "#ef4444" };
     if (status === 'Pending at HOD') return { bg: "rgba(245, 158, 11, 0.1)", color: "#f59e0b" };
-    return { bg: "rgba(100, 116, 139, 0.1)", color: "#64748b" }; // Draft
+    return { bg: "rgba(100, 116, 139, 0.1)", color: "#64748b" };
   };
 
   const getFileLink = (filepath) => {
@@ -195,7 +221,7 @@ export default function ResourceUtilizationApproval() {
         <SectionHeader title="Tabular Review Screen" />
 
         {/* Global Toolbar & Filters */}
-        <Box sx={{ 
+        <Box sx={{
           p: 2.5, mb: 4, background: "var(--bg-panel)", borderRadius: "16px",
           border: "1px solid var(--border-color)", boxShadow: "0 4px 24px rgba(0,0,0,0.02)"
         }}>
@@ -206,10 +232,10 @@ export default function ResourceUtilizationApproval() {
                 <Select
                   value={statusFilter}
                   label="Status"
-                  onChange={e => setStatusFilter(e.target.value)}
+                  onChange={handleStatusChange}
                   sx={{ borderRadius: "12px", background: "var(--bg-glass)" }}
                 >
-                  <MenuItem value="All">All Proccessed & Submitted</MenuItem>
+                  <MenuItem value="All">All Processed & Submitted</MenuItem>
                   <MenuItem value="Pending at HOD">Pending at HOD</MenuItem>
                   <MenuItem value="Approved">Approved</MenuItem>
                   <MenuItem value="Rejected">Rejected</MenuItem>
@@ -223,7 +249,7 @@ export default function ResourceUtilizationApproval() {
                 <Select
                   value={selectedYear}
                   label="Academic Year"
-                  onChange={e => setSelectedYear(e.target.value)}
+                  onChange={handleYearChange}
                   sx={{ borderRadius: "12px", background: "var(--bg-glass)" }}
                 >
                   {academicYears.map(y => (
@@ -285,32 +311,20 @@ export default function ResourceUtilizationApproval() {
             const group = groupedData[facId];
             const fac = group.faculty;
             const entries = group.entries;
-            
-            // Check if all pending entries for this faculty are checked
+
             const pendingEntries = entries.filter(e => e.status === 'Pending at HOD');
             const allChecked = pendingEntries.length > 0 && pendingEntries.every(e => selectedIds.includes(e._id));
             const someChecked = pendingEntries.some(e => selectedIds.includes(e._id)) && !allChecked;
 
             return (
               <Card key={facId} sx={{
-                mb: 4.5,
-                borderRadius: "20px",
-                border: "1px solid var(--border-color)",
-                background: "var(--bg-glass)",
-                backdropFilter: "blur(10px)",
-                boxShadow: "var(--shadow-premium)",
-                overflow: "hidden"
+                mb: 4.5, borderRadius: "20px", border: "1px solid var(--border-color)",
+                background: "var(--bg-glass)", backdropFilter: "blur(10px)",
+                boxShadow: "var(--shadow-premium)", overflow: "hidden"
               }}>
-                {/* Group Header Card */}
                 <Box sx={{
-                  p: 2.5,
-                  bgcolor: "var(--bg-panel)",
-                  borderBottom: "1px solid var(--border-color)",
-                  display: "flex",
-                  justifyContent: "space-between",
-                  flexWrap: "wrap",
-                  alignItems: "center",
-                  gap: 2
+                  p: 2.5, bgcolor: "var(--bg-panel)", borderBottom: "1px solid var(--border-color)",
+                  display: "flex", justifyContent: "space-between", flexWrap: "wrap", alignItems: "center", gap: 2
                 }}>
                   <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
                     <Person sx={{ color: "var(--color-primary)", fontSize: "1.6rem" }} />
@@ -336,7 +350,6 @@ export default function ResourceUtilizationApproval() {
                   </Box>
                 </Box>
 
-                {/* Submissions Table */}
                 <TableContainer>
                   <Table size="small">
                     <TableHead sx={{ bgcolor: "rgba(0,0,0,0.01)" }}>
@@ -403,8 +416,8 @@ export default function ResourceUtilizationApproval() {
                               {act.sessionsConducted !== undefined && act.sessionsConducted !== null
                                 ? `${act.sessionsConducted} Sessions`
                                 : act.daysParticipated !== undefined && act.daysParticipated !== null
-                                ? `${act.daysParticipated} Days`
-                                : "-"}
+                                  ? `${act.daysParticipated} Days`
+                                  : "-"}
                             </TableCell>
                             <TableCell sx={{ color: "var(--text-secondary)" }}>
                               <Typography variant="caption" sx={{ fontWeight: 700, display: "block" }}>{act.duration} Days</Typography>
@@ -428,11 +441,8 @@ export default function ResourceUtilizationApproval() {
                                 label={act.status}
                                 size="small"
                                 sx={{
-                                  bgcolor: statusStyle.bg,
-                                  color: statusStyle.color,
-                                  fontWeight: 700,
-                                  borderRadius: "6px",
-                                  fontSize: "0.7rem"
+                                  bgcolor: statusStyle.bg, color: statusStyle.color,
+                                  fontWeight: 700, borderRadius: "6px", fontSize: "0.7rem"
                                 }}
                               />
                             </TableCell>
@@ -493,7 +503,7 @@ export default function ResourceUtilizationApproval() {
         )}
       </Box>
 
-      {/* Bulk Action Dialog for Comments */}
+      {/* Bulk Action Dialog */}
       <Dialog
         open={openBulkRemarksDialog}
         onClose={() => setOpenBulkRemarksDialog(false)}
@@ -535,7 +545,7 @@ export default function ResourceUtilizationApproval() {
         </DialogActions>
       </Dialog>
 
-      {/* Individual Action Dialog for Rejections (when remarks not entered inline) */}
+      {/* Individual Action Dialog */}
       <Dialog
         open={openIndividualRemarksDialog}
         onClose={() => setOpenIndividualRemarksDialog(false)}
