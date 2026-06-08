@@ -321,7 +321,7 @@ const AppraisalResearchScoring = () => {
               </Typography>
             </Box>
 
-            <DataTable 
+            <DataTable
               columns={["Faculty Name", "Employee ID", "Department", "Academic Year", "Status", "Action"]}
               rows={filteredList.map((appr) => {
                 const name = appr.personalInfoSnapshot?.name || appr.facultyId?.name || "N/A";
@@ -330,7 +330,7 @@ const AppraisalResearchScoring = () => {
                 const year = appr.academicYearId?.year || "N/A";
                 const status = appr.status;
                 const statusVal = status === "Pending Research Admin" ? "Pending" : status === "Completed" ? "Approved" : status;
-                
+
                 const getStatusColor = (statusVal) => {
                   if (statusVal === 'Completed') return { bg: "rgba(16, 185, 129, 0.1)", color: "#10b981" };
                   if (statusVal === 'Pending Research Admin') return { bg: "rgba(232, 160, 0, 0.1)", color: "#e8a000" };
@@ -343,23 +343,23 @@ const AppraisalResearchScoring = () => {
                   { value: empId, display: empId },
                   { value: dept, display: dept },
                   { value: year, display: year },
-                  { 
-                    value: statusVal, 
+                  {
+                    value: statusVal,
                     display: (
-                      <Chip 
-                        label={statusVal} 
-                        size="small" 
-                        sx={{ 
-                          bgcolor: statusColor.bg, 
-                          color: statusColor.color, 
-                          fontWeight: 800, 
-                          borderRadius: "6px" 
-                        }} 
+                      <Chip
+                        label={statusVal}
+                        size="small"
+                        sx={{
+                          bgcolor: statusColor.bg,
+                          color: statusColor.color,
+                          fontWeight: 800,
+                          borderRadius: "6px"
+                        }}
                       />
-                    ) 
+                    )
                   },
-                  { 
-                    value: "", 
+                  {
+                    value: "",
                     display: (
                       <Button
                         variant={status === "Completed" ? "outlined" : "contained"}
@@ -378,16 +378,16 @@ const AppraisalResearchScoring = () => {
                           color: status === "Completed" ? "var(--text-primary)" : "#fff",
                           borderColor: status === "Completed" ? "var(--border-color)" : "transparent",
                           boxShadow: "none",
-                          "&:hover": { 
-                            bgcolor: status === "Completed" ? "var(--bg-panel)" : "#2563eb", 
+                          "&:hover": {
+                            bgcolor: status === "Completed" ? "var(--bg-panel)" : "#2563eb",
                             borderColor: status === "Completed" ? "var(--text-secondary)" : "transparent",
-                            boxShadow: status === "Completed" ? "none" : "0 4px 12px rgba(59,130,246,0.25)" 
+                            boxShadow: status === "Completed" ? "none" : "0 4px 12px rgba(59,130,246,0.25)"
                           }
                         }}
                       >
                         {status === "Completed" ? "View Details" : "Score Research"}
                       </Button>
-                    ) 
+                    )
                   }
                 ];
               })}
@@ -618,8 +618,8 @@ const AppraisalResearchScoring = () => {
                       {selectedAppraisal.personalInfoSnapshot?.name || selectedAppraisal.facultyId?.name}
                     </Typography>
                     <Box sx={{
-                      bgcolor: "rgba(245, 158, 11, 0.08)",
-                      color: "#f59e0b",
+                      bgcolor: selectedAppraisal.status === "Completed" ? "rgba(16, 185, 129, 0.08)" : "rgba(245, 158, 11, 0.08)",
+                      color: selectedAppraisal.status === "Completed" ? "#10b981" : "#f59e0b",
                       px: 1,
                       py: 0.25,
                       borderRadius: "4px",
@@ -627,7 +627,7 @@ const AppraisalResearchScoring = () => {
                       fontWeight: 800,
                       textTransform: "uppercase"
                     }}>
-                      Pending Review
+                      {selectedAppraisal.status === "Completed" ? "Approved" : "Pending Review"}
                     </Box>
                   </Box>
 
