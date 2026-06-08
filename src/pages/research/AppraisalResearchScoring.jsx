@@ -1001,7 +1001,7 @@ const AppraisalResearchScoring = () => {
 
                     <Divider />
 
-                    <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                    {/* <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                       <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
                         <Box sx={{
                           display: "flex",
@@ -1018,7 +1018,7 @@ const AppraisalResearchScoring = () => {
                         <Typography sx={{ fontWeight: 700, color: "var(--text-primary)", fontSize: "0.85rem" }}>Maximum Possible</Typography>
                       </Box>
                       <Typography sx={{ fontWeight: 850, color: "var(--text-primary)", fontSize: "0.95rem" }}>100.00 pts</Typography>
-                    </Box>
+                    </Box> */}
                   </Stack>
                 </Card>
 

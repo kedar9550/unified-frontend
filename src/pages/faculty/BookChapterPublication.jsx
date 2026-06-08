@@ -28,6 +28,7 @@ export default function BookChapterPublication() {
     textBookName: "", chapterTitle: "", yearOfPublication: "",
     chaptersContributed: "", publisher: "", month: "", year: "",
     applyIncentive: "", publicationType: "", customPublisher: "", applyingSeedGrant: "",
+    isbnNumber: "",
     totalAuthors: 1, userAuthorPosition: 1, otherAuthors: []
   });
   const [files, setFiles] = useState({ coverPage: null, authorAffiliation: null, index: null, softCopy: null });
@@ -493,6 +494,7 @@ export default function BookChapterPublication() {
       fd.append("authorPosition", authPos);
       fd.append("chaptersContributed", form.chaptersContributed || "");
       fd.append("publisher", form.publisher === "Others" ? form.customPublisher : form.publisher);
+      fd.append("isbnNumber", form.isbnNumber || "");
       fd.append("coAuthors", JSON.stringify(coAuthorsList));
       fd.append("month", form.month);
       fd.append("year", form.year);
@@ -513,6 +515,7 @@ export default function BookChapterPublication() {
         textBookName: "", chapterTitle: "", yearOfPublication: "",
         chaptersContributed: "", publisher: "", month: "", year: "",
         applyIncentive: "", publicationType: "", customPublisher: "", applyingSeedGrant: "",
+        isbnNumber: "",
         totalAuthors: 1, userAuthorPosition: 1, otherAuthors: []
       });
       setFiles({ coverPage: null, authorAffiliation: null, index: null, softCopy: null });
@@ -837,6 +840,20 @@ export default function BookChapterPublication() {
               onChange={(e) => setForm(p => ({ ...p, customPublisher: e.target.value }))}
             />
           )}
+        </Box>
+        <Box>
+          <Typography sx={labelStyle}>ISBN Number :</Typography>
+          <TextField
+            size="small"
+            fullWidth
+            placeholder="e.g. 9780590353427"
+            value={form.isbnNumber}
+            onChange={(e) => {
+              const val = e.target.value;
+              if (/^[0-9-]*$/.test(val)) setForm(p => ({ ...p, isbnNumber: val }));
+            }}
+            inputProps={{ inputMode: 'numeric' }}
+          />
         </Box>
         <Box>
           <Typography sx={labelStyle}>Total Number of Authors : *</Typography>

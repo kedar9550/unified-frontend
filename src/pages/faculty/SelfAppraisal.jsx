@@ -2969,9 +2969,11 @@ const SelfAppraisal = () => {
                         {appraisal.research.booksChapters.items.map((b, i) => (
                           <TableRow key={i} sx={{ "&:hover": { bgcolor: "rgba(0, 0, 0, 0.015)" }, "body.dark-mode &:hover": { bgcolor: "rgba(255, 255, 255, 0.015)" } }}>
                             <TableCell align="center" sx={{ color: "var(--text-primary)" }}>{i + 1}</TableCell>
-                            <TableCell sx={{ fontWeight: 600, color: "var(--text-primary)" }}>{b.title} {b.isbn && b.isbn !== "N/A" ? `(${b.isbn})` : ""}</TableCell>
-                            <TableCell sx={{ color: "var(--text-primary)" }}>{b.itemType}</TableCell>
-                            <TableCell sx={{ color: "var(--text-primary)" }}>{b.publisher}</TableCell>
+                            <TableCell sx={{ fontWeight: 600, color: "var(--text-primary)" }}>{b.title}</TableCell>
+                            <TableCell sx={{ color: "var(--text-primary)" }}>
+                              {b.itemType === 'Textbook' ? 'Book' : b.itemType === 'BookChapter' ? 'Book Chapter' : 'Conference Proceedings'}
+                            </TableCell>
+                            <TableCell sx={{ color: "var(--text-primary)" }}>{b.publisher || "—"}</TableCell>
                             <TableCell align="center" sx={{ fontWeight: 800, color: "var(--color-primary)" }}>{b.pointsClaimed}</TableCell>
                           </TableRow>
                         ))}

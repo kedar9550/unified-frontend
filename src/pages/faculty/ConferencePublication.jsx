@@ -24,6 +24,7 @@ export default function ConferencePublication() {
   const [form, setForm] = useState({
     title: "", conferenceName: "", level: "", indexing: "",
     presentationType: "", month: "", year: "",
+    publisher: "", issnIsbn: "",
     applyIncentive: "", applyingSeedGrant: "",
     totalAuthors: 1, userAuthorPosition: 1, otherAuthors: []
   });
@@ -175,7 +176,7 @@ export default function ConferencePublication() {
   };
 
   const handleSubmit = async () => {
-    if (!form.title || !form.conferenceName || !form.level || !form.indexing || !form.applyingSeedGrant || !form.applyIncentive) {
+    if (!form.title || !form.conferenceName || !form.level || !form.indexing || !form.publisher || !form.applyingSeedGrant || !form.applyIncentive) {
       toast.error("Please fill all required fields");
       return;
     }
@@ -226,6 +227,8 @@ export default function ConferencePublication() {
       fd.append("conferenceName", form.conferenceName);
       fd.append("level", form.level);
       fd.append("indexing", form.indexing);
+      fd.append("publisher", form.publisher);
+      fd.append("issnIsbn", form.issnIsbn || "");
       fd.append("presentationType", form.presentationType);
       fd.append("totalAuthors", String(total));
       fd.append("userAuthorPosition", String(form.userAuthorPosition));
@@ -246,6 +249,7 @@ export default function ConferencePublication() {
       setForm({
         title: "", conferenceName: "", level: "", indexing: "",
         presentationType: "", month: "", year: "",
+        publisher: "", issnIsbn: "",
         applyIncentive: "", applyingSeedGrant: "",
         totalAuthors: 1, userAuthorPosition: 1, otherAuthors: []
       });
@@ -494,6 +498,24 @@ export default function ConferencePublication() {
             <MenuItem value="Poster">Poster</MenuItem>
             <MenuItem value="Keynote">Keynote</MenuItem>
           </Select>
+        </Box>
+        <Box>
+          <Typography sx={labelStyle}>Publisher : *</Typography>
+          <TextField size="small" fullWidth value={form.publisher} onChange={set("publisher")} placeholder="e.g. Springer, IEEE" />
+        </Box>
+        <Box>
+          <Typography sx={labelStyle}>ISSN / ISBN Number :</Typography>
+          <TextField
+            size="small"
+            fullWidth
+            placeholder="e.g. 12345678"
+            value={form.issnIsbn}
+            onChange={(e) => {
+              const val = e.target.value;
+              if (/^[0-9-]*$/.test(val)) setForm(p => ({ ...p, issnIsbn: val }));
+            }}
+            inputProps={{ inputMode: 'numeric' }}
+          />
         </Box>
       </Grid2>
 
