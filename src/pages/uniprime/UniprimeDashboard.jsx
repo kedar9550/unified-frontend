@@ -37,6 +37,7 @@ import {
   PeopleAlt,
   Security,
   AutoFixHigh as AutoFixHighIcon,
+  Share,
 } from "@mui/icons-material";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import MenuBook from "@mui/icons-material/MenuBook";
@@ -50,6 +51,9 @@ const UniprimeDashboard = () => {
     activeYear: "N/A",
     activeSemester: "N/A",
     departmentsCount: 0,
+    schoolsCount: 0,
+    programsCount: 0,
+    branchesCount: 0,
     usersCount: 0,
     rolesCount: 0,
     departmentsList: [],
@@ -71,6 +75,9 @@ const UniprimeDashboard = () => {
             activeYear: res.data.data.activeYear || "N/A",
             activeSemester: res.data.data.activeSemester || "N/A",
             departmentsCount: res.data.data.departmentsCount || 0,
+            schoolsCount: res.data.data.schoolsCount || 0,
+            programsCount: res.data.data.programsCount || 0,
+            branchesCount: res.data.data.branchesCount || 0,
             usersCount: res.data.data.usersCount || 0,
             rolesCount: res.data.data.rolesCount || 0,
             departmentsList: res.data.data.departmentsList || [],
@@ -92,7 +99,7 @@ const UniprimeDashboard = () => {
     fetchDashboardData();
   }, []);
 
-  const COLORS = ["#2196f3", "#4caf50", "#ff9800", "#f44336", "#9c27b0"];
+  const COLORS = ["#2196f3", "#4caf50", "#ff9800", "#f44336", "#9c27b0", "#00bcd4"];
 
   // Top Row Cards Data
   const topCards = [
@@ -154,7 +161,6 @@ const UniprimeDashboard = () => {
     { title: "Add Department", desc: "Create new department", icon: <DomainAdd color="success" />, path: "/academics/department" },
     { title: "Add Program / Branch", desc: "Add program or branch", icon: <AccountTree color="secondary" />, path: "/academics/programs" },
     { title: "Add User", desc: "Register new user", icon: <PersonAdd sx={{ color: "#00b0ff" }} />, path: "/student/student-uploads" },
-    { title: "Create Role", desc: "Define new role", icon: <VpnKey color="error" />, path: "/academics/roles" },
     { title: "Assign Role", desc: "Assign role to user", icon: <AssignmentInd color="warning" />, path: "/academics/roles" },
     { title: "Manage SDGs", desc: "Manage SDG keywords", icon: <AutoFixHighIcon sx={{ color: "#9c27b0" }} />, path: "/uniprime/sdg-management" },
   ];
@@ -162,10 +168,30 @@ const UniprimeDashboard = () => {
   const recentUsers = dashboardData.recentUsers || [];
 
   const recentActivity = [
-    { title: "Academic Year 2024-25 activated", by: "UniPrime", time: "10 min ago", icon: <CalendarMonth color="success" /> },
-    { title: "Department 'Computer Science' added", by: "UniPrime", time: "25 min ago", icon: <AccountBalance color="primary" /> },
-    { title: "12 new users registered", by: "UniPrime", time: "1 hour ago", icon: <PeopleAlt color="info" /> },
-    { title: "Role 'HOD' updated", by: "UniPrime", time: "2 hours ago", icon: <Security color="warning" /> },
+    { 
+      title: dashboardData.activeYear !== "N/A" ? `Academic Year ${dashboardData.activeYear} is active` : "Academic Configurations loaded", 
+      by: "System", 
+      time: "Just now", 
+      icon: <CalendarMonth color="success" /> 
+    },
+    { 
+      title: dashboardData.departmentsList[0]?.departmentName ? `Department '${dashboardData.departmentsList[0].departmentName}' onboarded` : "Academic structure updated", 
+      by: "Super Admin", 
+      time: "Today", 
+      icon: <AccountBalance color="primary" /> 
+    },
+    { 
+      title: dashboardData.usersCount > 0 ? `University records sync completed (${dashboardData.usersCount} users active)` : "User database initialized", 
+      by: "System Cron", 
+      time: "Recently", 
+      icon: <PeopleAlt color="info" /> 
+    },
+    { 
+      title: dashboardData.rolesCount > 0 ? `Access control configurations loaded (${dashboardData.rolesCount} active roles)` : "Access control synchronized", 
+      by: "Security Admin", 
+      time: "Yesterday", 
+      icon: <Security color="warning" /> 
+    },
   ];
 
   return (
@@ -320,58 +346,157 @@ const UniprimeDashboard = () => {
             <Box sx={{ width: { xs: "100%", lg: "50%" }, display: "flex" }}>
               <Card
                 sx={{
-                  borderRadius: 1,
-                  boxShadow: "0 6px 20px rgba(0,0,0,0.06)",
-                  p: 2.5,
+                  borderRadius: "16px",
+                  boxShadow: "var(--shadow-premium)",
+                  p: 3,
                   height: "100%",
                   display: "flex",
                   flexDirection: "column",
                   width: "100%",
                   border: "1px solid var(--border-color)",
-                  background: "var(--bg-panel)",
+                  position: "relative",
+                  background: `linear-gradient(to bottom, var(--bg-panel), var(--bg-panel)), url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 320'><path fill='%23818cf8' fill-opacity='0.08' d='M0,224L120,202.7C240,181,480,139,720,138.7C960,139,1200,181,1320,202.7L1440,224L1440,320L1320,320C1200,320,960,320,720,320C480,320,240,320,120,320L0,320Z'></path></svg>")`,
+                  backgroundPosition: "bottom",
+                  backgroundSize: "cover",
+                  backgroundRepeat: "no-repeat",
+                  overflow: "hidden"
                 }}
               >
                 {/* Header */}
-                <Box sx={{ display: "flex", justifyContent: "space-between", mb: 3 }}>
-                  <Typography sx={{ fontWeight: 700 }}>
+                <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 4, position: "relative", zIndex: 1 }}>
+                  <Typography sx={{ fontWeight: 800, fontSize: "1.1rem", color: "var(--text-primary)" }}>
                     Academic Structure Overview
                   </Typography>
                   <Button
                     size="small"
-                    sx={{ textTransform: "none", fontSize: "0.8rem", color: "var(--color-primary)" }}
+                    onClick={() => navigate("/academics/department")}
+                    sx={{
+                      textTransform: "none",
+                      fontSize: "0.8rem",
+                      fontWeight: 700,
+                      color: "#3b82f6",
+                      bgcolor: "rgba(59, 130, 246, 0.06)",
+                      px: 2,
+                      py: 0.5,
+                      borderRadius: "20px",
+                      "&:hover": { bgcolor: "rgba(59, 130, 246, 0.12)" }
+                    }}
                   >
-                    View Full Structure →
+                    View All
                   </Button>
                 </Box>
 
-                {/* 3 Column Layout */}
-                <Box sx={{ display: "flex", flexDirection: { xs: 'column', lg: 'row' }, gap: 2 }}>
-
-                  {/* Departments */}
-                  <Box sx={columnCard("var(--bg-accent-1)")}>
-                    <TopBlock icon={<AccountBalance color="primary" />} title="Departments" value={dashboardData.departmentsCount} />
-                    <Divider sx={{ my: 1 }} />
-                    {dashboardData.departmentsList.slice(0, 5).map((dept, idx) => (
-                      <RowItem key={dept._id || idx} label={dept.departmentName || `Dept ${idx + 1}`} value={dept.departmentCode || ""} />
-                    ))}
+                {/* Hierarchical Tree Content */}
+                <Box sx={{ display: "flex", flexDirection: "column", gap: 3, position: "relative", zIndex: 1, pb: 2 }}>
+                  
+                  {/* Row 1: Schools */}
+                  <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", position: "relative" }}>
+                    {/* Vertical Connector Line (down to Branches) */}
+                    <Box sx={{ position: "absolute", left: 22, top: 22, bottom: -24, borderLeft: "2.5px dotted #818cf8", opacity: 0.8, zIndex: 0 }} />
+                    
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 2, zIndex: 1 }}>
+                      <Box sx={{ 
+                        width: 44, 
+                        height: 44, 
+                        borderRadius: "50%", 
+                        bgcolor: "rgba(129, 140, 248, 0.12)", 
+                        display: "flex", 
+                        alignItems: "center", 
+                        justifyContent: "center",
+                        border: "1.5px solid rgba(129, 140, 248, 0.25)"
+                      }}>
+                        <School sx={{ color: "#4f46e5", fontSize: 22 }} />
+                      </Box>
+                      <Typography sx={{ fontWeight: 700, color: "var(--text-primary)", fontSize: "0.95rem" }}>Schools</Typography>
+                    </Box>
+                    <Box sx={{ bgcolor: "rgba(129, 140, 248, 0.1)", px: 2, py: 0.5, borderRadius: "20px" }}>
+                      <Typography sx={{ fontWeight: 800, color: "#4f46e5", fontSize: "0.85rem" }}>{dashboardData.schoolsCount}</Typography>
+                    </Box>
                   </Box>
 
-                  {/* Programs */}
-                  <Box sx={columnCard("var(--bg-accent-2)")}>
-                    <TopBlock icon={<School color="success" />} title="Programs" value={dashboardData.programsList.length} />
-                    <Divider sx={{ my: 1 }} />
-                    {dashboardData.programsList.slice(0, 5).map((prog, idx) => (
-                      <RowItem key={prog._id || idx} label={prog.programName || `Program ${idx + 1}`} value={prog.programCode || ""} />
-                    ))}
+                  {/* Row 2: Departments */}
+                  <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", pl: 5, position: "relative" }}>
+                    {/* Horizontal Connector Branch (from Schools vertical line) */}
+                    <Box sx={{ position: "absolute", left: 22, top: 22, width: 18, borderTop: "2.5px dotted #818cf8", opacity: 0.8, zIndex: 0 }} />
+                    {/* Vertical Connector Line (from Schools down to Branches/Specializations) */}
+                    <Box sx={{ position: "absolute", left: 22, top: -24, bottom: -24, borderLeft: "2.5px dotted #818cf8", opacity: 0.8, zIndex: 0 }} />
+                    {/* Vertical Connector Line (from Departments down to Programs) */}
+                    <Box sx={{ position: "absolute", left: 62, top: 22, bottom: -24, borderLeft: "2.5px dotted #3b82f6", opacity: 0.8, zIndex: 0 }} />
+                    
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 2, zIndex: 1 }}>
+                      <Box sx={{ 
+                        width: 44, 
+                        height: 44, 
+                        borderRadius: "50%", 
+                        bgcolor: "rgba(59, 130, 246, 0.12)", 
+                        display: "flex", 
+                        alignItems: "center", 
+                        justifyContent: "center",
+                        border: "1.5px solid rgba(59, 130, 246, 0.25)"
+                      }}>
+                        <AccountBalance sx={{ color: "#2563eb", fontSize: 22 }} />
+                      </Box>
+                      <Typography sx={{ fontWeight: 700, color: "var(--text-primary)", fontSize: "0.95rem" }}>Departments</Typography>
+                    </Box>
+                    <Box sx={{ bgcolor: "rgba(59, 130, 246, 0.1)", px: 2, py: 0.5, borderRadius: "20px" }}>
+                      <Typography sx={{ fontWeight: 800, color: "#2563eb", fontSize: "0.85rem" }}>{dashboardData.departmentsCount}</Typography>
+                    </Box>
                   </Box>
 
-                  {/* Branches */}
-                  <Box sx={columnCard("var(--bg-accent-3)")}>
-                    <TopBlock icon={<AccountTree color="secondary" />} title="Branches" value={dashboardData.branchesList.length} />
-                    <Divider sx={{ my: 1 }} />
-                    {dashboardData.branchesList.slice(0, 5).map((branch, idx) => (
-                      <RowItem key={branch._id || idx} label={branch.branchName || `Branch ${idx + 1}`} value={branch.branchCode || ""} />
-                    ))}
+                  {/* Row 3: Programs */}
+                  <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", pl: 10, position: "relative" }}>
+                    {/* Horizontal Connector Branch (from Departments vertical line) */}
+                    <Box sx={{ position: "absolute", left: 62, top: 22, width: 18, borderTop: "2.5px dotted #3b82f6", opacity: 0.8, zIndex: 0 }} />
+                    {/* Vertical Connector Line segment (Departments to Programs) */}
+                    <Box sx={{ position: "absolute", left: 62, top: -24, height: 46, borderLeft: "2.5px dotted #3b82f6", opacity: 0.8, zIndex: 0 }} />
+                    {/* Vertical Connector Line (from Schools down to Branches/Specializations) */}
+                    <Box sx={{ position: "absolute", left: 22, top: -24, bottom: -24, borderLeft: "2.5px dotted #818cf8", opacity: 0.8, zIndex: 0 }} />
+                    
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 2, zIndex: 1 }}>
+                      <Box sx={{ 
+                        width: 44, 
+                        height: 44, 
+                        borderRadius: "50%", 
+                        bgcolor: "rgba(16, 185, 129, 0.12)", 
+                        display: "flex", 
+                        alignItems: "center", 
+                        justifyContent: "center",
+                        border: "1.5px solid rgba(16, 185, 129, 0.25)"
+                      }}>
+                        <School sx={{ color: "#10b981", fontSize: 20 }} />
+                      </Box>
+                      <Typography sx={{ fontWeight: 700, color: "var(--text-primary)", fontSize: "0.95rem" }}>Programs</Typography>
+                    </Box>
+                    <Box sx={{ bgcolor: "rgba(16, 185, 129, 0.1)", px: 2, py: 0.5, borderRadius: "20px" }}>
+                      <Typography sx={{ fontWeight: 800, color: "#10b981", fontSize: "0.85rem" }}>{dashboardData.programsCount}</Typography>
+                    </Box>
+                  </Box>
+
+                  {/* Row 4: Branches / Specializations */}
+                  <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", pl: 5, position: "relative" }}>
+                    {/* Horizontal Connector Branch (from Schools vertical line) */}
+                    <Box sx={{ position: "absolute", left: 22, top: 22, width: 18, borderTop: "2.5px dotted #818cf8", opacity: 0.8, zIndex: 0 }} />
+                    {/* Vertical Connector Line segment (stopping at row center) */}
+                    <Box sx={{ position: "absolute", left: 22, top: -24, height: 46, borderLeft: "2.5px dotted #818cf8", opacity: 0.8, zIndex: 0 }} />
+                    
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 2, zIndex: 1 }}>
+                      <Box sx={{ 
+                        width: 44, 
+                        height: 44, 
+                        borderRadius: "50%", 
+                        bgcolor: "rgba(239, 68, 68, 0.12)", 
+                        display: "flex", 
+                        alignItems: "center", 
+                        justifyContent: "center",
+                        border: "1.5px solid rgba(239, 68, 68, 0.25)"
+                      }}>
+                        <Share sx={{ color: "#ef4444", fontSize: 20 }} />
+                      </Box>
+                      <Typography sx={{ fontWeight: 700, color: "var(--text-primary)", fontSize: "0.95rem" }}>Branches / Specializations</Typography>
+                    </Box>
+                    <Box sx={{ bgcolor: "rgba(239, 68, 68, 0.1)", px: 2, py: 0.5, borderRadius: "20px" }}>
+                      <Typography sx={{ fontWeight: 800, color: "#ef4444", fontSize: "0.85rem" }}>{dashboardData.branchesCount}</Typography>
+                    </Box>
                   </Box>
 
                 </Box>
@@ -499,8 +624,8 @@ const UniprimeDashboard = () => {
             {/* User & Role Overview */}
             <Box sx={{ width: { xs: "100%", lg: "50%" }, display: "flex" }}>
               <Card sx={{
-                borderRadius: 1, 
-                boxShadow: "0 2px 10px rgba(0,0,0,0.05)", 
+                borderRadius: "16px", 
+                boxShadow: "var(--shadow-premium)", 
                 height: "100%", 
                 width: "100%",
                 display: "flex",
@@ -508,16 +633,28 @@ const UniprimeDashboard = () => {
                 border: "1px solid var(--border-color)",
                 background: "var(--bg-panel)",
               }}>
-                <CardContent sx={{ flexGrow: 1 }}>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
-                    <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>User & Role Overview</Typography>
-                    <Button size="small" sx={{ textTransform: "none", fontSize: "0.75rem", color: "var(--color-primary)" }}>View All Users &gt;</Button>
+                <CardContent sx={{ flexGrow: 1, p: 3 }}>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+                    <Typography variant="subtitle1" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>User & Role Overview</Typography>
+                    <Button 
+                      onClick={() => navigate("/role-management", { state: { activeTab: 1 } })}
+                      sx={{ 
+                        textTransform: "none", 
+                        fontSize: "0.8rem", 
+                        fontWeight: 700, 
+                        color: "#1d4ed8",
+                        p: 0,
+                        "&:hover": { background: "transparent", opacity: 0.8 }
+                      }}
+                    >
+                      View All Users &gt;
+                    </Button>
                   </Box>
 
                   <Box sx={{
                     display: "flex",
                     flexDirection: { xs: 'column', md: 'row' },
-                    alignItems: { xs: 'stretch', md: 'center' },
+                    alignItems: "center",
                     justifyContent: "space-between",
                     gap: 3
                   }}>
@@ -551,23 +688,29 @@ const UniprimeDashboard = () => {
                           textAlign: "center",
                         }}
                       >
-                        <Typography sx={{ fontSize: 28, fontWeight: 800, color: "var(--text-primary)" }}>
+                        <Typography sx={{ fontSize: 28, fontWeight: 800, color: "var(--text-primary)", lineHeight: 1.1 }}>
                           {dashboardData.usersCount}
                         </Typography>
 
-                        <Typography sx={{ fontSize: 12, color: "var(--text-secondary)", fontWeight: 600 }}>
+                        <Typography sx={{ fontSize: 11, color: "var(--text-secondary)", fontWeight: 600 }}>
                           Total Users
                         </Typography>
                       </Box>
                     </Box>
+
+                    {/* Stats table */}
                     <Box
                       sx={{
-                        p: 2,
-                        borderRadius: 2,
-                        border: "1px solid #E5E7EB",
+                        p: 2.5,
+                        borderRadius: "16px",
+                        border: "1px solid #e2e8f0",
+                        bgcolor: "var(--bg-glass)",
                         width: { xs: '100%', md: 'auto' },
-                        minWidth: { md: 150 },
+                        minWidth: { md: 260 },
                         flexGrow: 1,
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: 1.5
                       }}
                     >
                       {dashboardData.roleDistribution.map((role, idx) => {
@@ -583,10 +726,9 @@ const UniprimeDashboard = () => {
                               display: "flex",
                               justifyContent: "space-between",
                               alignItems: "center",
-                              mb: 1.5,
                             }}
                           >
-                            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                            <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
                               <Box
                                 sx={{
                                   width: 8,
@@ -595,16 +737,16 @@ const UniprimeDashboard = () => {
                                   bgcolor: COLORS[idx % COLORS.length],
                                 }}
                               />
-                              <Typography sx={{ fontSize: 13 }}>
+                              <Typography sx={{ fontSize: "0.825rem", fontWeight: 700, color: "var(--text-primary)", textTransform: "uppercase" }}>
                                 {role.label}
                               </Typography>
                             </Box>
 
-                            <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-                              <Typography sx={{ fontSize: 13, fontWeight: 700, minWidth: 25, textAlign: "right", color: "var(--text-primary)" }}>
+                            <Box sx={{ display: "flex", alignItems: "center", gap: 3 }}>
+                              <Typography sx={{ fontSize: "0.85rem", fontWeight: 800, minWidth: 20, textAlign: "right", color: "var(--text-primary)" }}>
                                 {role.value}
                               </Typography>
-                              <Typography sx={{ fontSize: 12, color: "var(--text-secondary)", fontWeight: 500, minWidth: 45, textAlign: "right" }}>
+                              <Typography sx={{ fontSize: "0.75rem", color: "var(--text-secondary)", fontWeight: 600, minWidth: 40, textAlign: "right" }}>
                                 {percent}%
                               </Typography>
                             </Box>
@@ -708,6 +850,131 @@ const UniprimeDashboard = () => {
 
 
 
+          </Box>
+
+          {/* Row 4: Recent Users & Recent Activities */}
+          <Box sx={{ display: "flex", gap: { xs: 2, md: 3 }, mt: 3, flexWrap: { xs: "wrap", lg: "nowrap" } }}>
+            {/* Recently Onboarded Employees */}
+            <Box sx={{ width: { xs: "100%", lg: "50%" }, display: "flex" }}>
+              <Card sx={{
+                borderRadius: "16px",
+                boxShadow: "var(--shadow-premium)",
+                height: "100%",
+                width: "100%",
+                display: "flex",
+                flexDirection: "column",
+                border: "1px solid var(--border-color)",
+                background: "var(--bg-panel)",
+              }}>
+                <CardContent sx={{ flexGrow: 1, p: 3 }}>
+                  <Typography variant="subtitle1" sx={{ fontWeight: 800, color: "var(--text-primary)", mb: 2 }}>
+                    Recently Onboarded Employees
+                  </Typography>
+                  <List sx={{ p: 0 }}>
+                    {recentUsers.length > 0 ? (
+                      recentUsers.map((user, idx) => (
+                        <React.Fragment key={idx}>
+                          <ListItem alignItems="flex-start" sx={{ px: 0, py: 1 }}>
+                            <ListItemAvatar>
+                              <Avatar sx={{ bgcolor: 'var(--bg-accent-2)', color: 'var(--color-primary)', fontWeight: 700 }}>
+                                {user.name?.charAt(0)}
+                              </Avatar>
+                            </ListItemAvatar>
+                            <ListItemText
+                              primary={
+                                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                  <Typography variant="body2" fontWeight={700} color="var(--text-primary)">
+                                    {user.name}
+                                  </Typography>
+                                  <Chip
+                                    label={user.role}
+                                    size="small"
+                                    sx={{
+                                      height: 20,
+                                      fontSize: '10px',
+                                      background: "var(--gradient-primary)",
+                                      color: '#fff',
+                                      fontWeight: 700,
+                                      borderRadius: '50px'
+                                    }}
+                                  />
+                                </Box>
+                              }
+                              secondary={
+                                <Box sx={{ mt: 0.5, display: 'flex', justifyContent: 'space-between' }}>
+                                  <Typography variant="caption" color="textSecondary">
+                                    {user.email}
+                                  </Typography>
+                                  <Typography variant="caption" color="textSecondary" sx={{ fontStyle: 'italic' }}>
+                                    {new Date(user.time).toLocaleDateString()}
+                                  </Typography>
+                                </Box>
+                              }
+                            />
+                          </ListItem>
+                          {idx < recentUsers.length - 1 && <Divider variant="inset" component="li" />}
+                        </React.Fragment>
+                      ))
+                    ) : (
+                      <Box sx={{ textAlign: 'center', py: 4, color: 'text.disabled' }}>
+                        <Typography variant="body2">No recently onboarded employees.</Typography>
+                      </Box>
+                    )}
+                  </List>
+                </CardContent>
+              </Card>
+            </Box>
+
+            {/* System Activity Log */}
+            <Box sx={{ width: { xs: "100%", lg: "50%" }, display: "flex" }}>
+              <Card sx={{
+                borderRadius: "16px",
+                boxShadow: "var(--shadow-premium)",
+                height: "100%",
+                width: "100%",
+                display: "flex",
+                flexDirection: "column",
+                border: "1px solid var(--border-color)",
+                background: "var(--bg-panel)",
+              }}>
+                <CardContent sx={{ flexGrow: 1, p: 3 }}>
+                  <Typography variant="subtitle1" sx={{ fontWeight: 800, color: "var(--text-primary)", mb: 2 }}>
+                    System Activity Log
+                  </Typography>
+                  <List sx={{ p: 0 }}>
+                    {recentActivity.map((activity, idx) => (
+                      <React.Fragment key={idx}>
+                        <ListItem alignItems="flex-start" sx={{ px: 0, py: 1 }}>
+                          <ListItemAvatar>
+                            <Avatar sx={{ bgcolor: 'var(--bg-accent-1)', color: 'var(--color-primary)' }}>
+                              {activity.icon}
+                            </Avatar>
+                          </ListItemAvatar>
+                          <ListItemText
+                            primary={
+                              <Typography variant="body2" fontWeight={700} color="var(--text-primary)">
+                                {activity.title}
+                              </Typography>
+                            }
+                            secondary={
+                              <Box sx={{ mt: 0.5, display: 'flex', justifyContent: 'space-between' }}>
+                                <Typography variant="caption" color="textSecondary">
+                                  Action by {activity.by}
+                                </Typography>
+                                <Typography variant="caption" color="textSecondary" sx={{ fontStyle: 'italic' }}>
+                                  {activity.time}
+                                </Typography>
+                              </Box>
+                            }
+                          />
+                        </ListItem>
+                        {idx < recentActivity.length - 1 && <Divider variant="inset" component="li" />}
+                      </React.Fragment>
+                    ))}
+                  </List>
+                </CardContent>
+              </Card>
+            </Box>
           </Box>
         </>
     </Box >

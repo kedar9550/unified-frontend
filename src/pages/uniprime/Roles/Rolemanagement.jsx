@@ -9,7 +9,8 @@ import {
     CircularProgress, Collapse,
     List, ListItem, ListItemText, ListItemSecondaryAction,
     Divider, Avatar, Checkbox, FormControlLabel, FormGroup,
-    ListItemButton, Menu, MenuItem, ListItemIcon, Grid
+    ListItemButton, Menu, MenuItem, ListItemIcon, Grid,
+    Tabs, Tab, TablePagination
 } from "@mui/material";
 import { toast } from "sonner";
 import {
@@ -21,8 +22,21 @@ import {
 } from "@mui/icons-material";
 import PageHeader from "../../../components/common/PageHeader";
 import API from "../../../api/axios";
+import { useLocation } from "react-router-dom";
 
 const RoleManagement = () => {
+    const location = useLocation();
+    const [activeTab, setActiveTab] = useState(0);
+    const [allEmployees, setAllEmployees] = useState([]);
+    const [loadingEmployees, setLoadingEmployees] = useState(false);
+    const [employeesSearchQuery, setEmployeesSearchQuery] = useState("");
+    const [page, setPage] = useState(0);
+    const [rowsPerPage, setRowsPerPage] = useState(10);
+
+    useEffect(() => {
+        setPage(0);
+    }, [employeesSearchQuery]);
+
     // Roles State
     const [roles, setRoles] = useState([]);
     const [loadingRoles, setLoadingRoles] = useState(true);
@@ -126,6 +140,19 @@ const RoleManagement = () => {
         }
     };
 
+    const fetchAllEmployees = async () => {
+        setLoadingEmployees(true);
+        try {
+            const res = await API.get("/api/employees");
+            setAllEmployees(Array.isArray(res.data) ? res.data : []);
+        } catch (error) {
+            console.error("Failed to fetch employees", error);
+            toast.error("Failed to fetch employee list");
+        } finally {
+            setLoadingEmployees(false);
+        }
+    };
+
     const fetchDepartments = async () => {
         try {
             const res = await API.get("/api/academics/departments");
@@ -141,6 +168,18 @@ const RoleManagement = () => {
         fetchRoles();
         fetchDepartments();
     }, []);
+
+    useEffect(() => {
+        if (location.state?.activeTab !== undefined) {
+            setActiveTab(location.state.activeTab);
+        }
+    }, [location]);
+
+    useEffect(() => {
+        if (activeTab === 1) {
+            fetchAllEmployees();
+        }
+    }, [activeTab]);
 
 
     // Create Menu Handlers
@@ -172,6 +211,7 @@ const RoleManagement = () => {
                     toast.info("Data is up-to-date. No changes needed.");
                 }
                 if (userSearchQuery) handleUserSearch();
+                fetchAllEmployees();
             } else {
                 toast.warning(response.data.message || 'Sync completed with some errors.');
             }
@@ -239,6 +279,7 @@ const RoleManagement = () => {
                 setEditingEmployee(null);
                 setInlineSearchResults([]);
                 setInlineSearchQuery("");
+                fetchAllEmployees();
             }
         } catch (error) {
             toast.error(error.response?.data?.message || "Failed to update employee");
@@ -281,6 +322,7 @@ const RoleManagement = () => {
                 setBulkResults(res.data);
                 toast.success(`Bulk registration complete! ${res.data.successCount} users added.`);
                 fetchRoles(); // Refresh to ensure roles are synced
+                fetchAllEmployees();
             }
         } catch (error) {
             toast.error(error.response?.data?.message || "Bulk upload failed");
@@ -426,6 +468,7 @@ const RoleManagement = () => {
                 setCreateIndividualQuery("");
                 setShowCreateIndividualSearch(false);
                 if (userSearchQuery) handleUserSearch();
+                fetchAllEmployees();
             } else {
                 toast.error(res.data.message || "Registration failed");
             }
@@ -472,6 +515,7 @@ const RoleManagement = () => {
                     email: '', phone: '', password: 'Aditya@123', confirmPassword: 'Aditya@123', role: 'Employee',
                 });
                 fetchRoles();
+                fetchAllEmployees();
             }
         } catch (error) {
             setSignupError(error.response?.data?.message || "Registration failed");
@@ -608,6 +652,7 @@ const RoleManagement = () => {
                 setUserSearchQuery("");
                 setUserSearchResults([]);
                 setSelectedHodDepts([]);
+                fetchAllEmployees();
             }
         } catch (error) {
             toast.error(error.response?.data?.message || "Failed to update roles");
@@ -630,11 +675,25 @@ const RoleManagement = () => {
                 toast.success("Role removed successfully");
                 setDeleteConfirm({ ...deleteConfirm, open: false });
                 handleUserSearch();
+                fetchAllEmployees();
             }
         } catch (error) {
             toast.error("Failed to remove role");
         }
     };
+
+    const filteredEmployees = allEmployees.filter(emp => {
+        const query = employeesSearchQuery.toLowerCase().trim();
+        if (!query) return true;
+        return (
+            emp.name.toLowerCase().includes(query) ||
+            emp.institutionId.toLowerCase().includes(query) ||
+            emp.email.toLowerCase().includes(query) ||
+            (emp.designation && emp.designation.toLowerCase().includes(query))
+        );
+    });
+
+    const paginatedEmployees = filteredEmployees.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
 
     return (
         <Box sx={{ p: 0 }}>
@@ -666,7 +725,37 @@ const RoleManagement = () => {
                 }
             />
 
-            <Grid container spacing={3} sx={{ mt: 2, width: '100%', ml: 0 }}>
+            <Tabs 
+                value={activeTab} 
+                onChange={(e, newValue) => setActiveTab(newValue)} 
+                sx={{ 
+                    mt: 3, 
+                    mb: 2,
+                    borderBottom: '1px solid var(--border-color)',
+                    '& .MuiTab-root': {
+                        textTransform: 'none',
+                        fontWeight: 700,
+                        fontSize: '0.95rem',
+                        color: 'var(--text-secondary)',
+                        pb: 1.5,
+                        '&.Mui-selected': {
+                            color: 'var(--color-primary)'
+                        }
+                    },
+                    '& .MuiTabs-indicator': {
+                        backgroundColor: 'var(--color-primary)',
+                        height: '3px',
+                        borderRadius: '3px'
+                    }
+                }}
+            >
+                <Tab label="Assign & Create Roles" icon={<Security />} iconPosition="start" />
+                <Tab label="All Users" icon={<People />} iconPosition="start" />
+            </Tabs>
+
+            {activeTab === 0 && (
+                <>
+                    <Grid container spacing={3} sx={{ mt: 1, width: '100%', ml: 0 }}>
                 <Grid size={{ xs: 12, lg: 12 }}>
                     {/* Create Roles Section */}
                     <Paper elevation={0} sx={{ p: 3, height: '100%', borderRadius: "20px", background: "var(--bg-glass)", backdropFilter: "blur(10px) saturate(150%)", border: "1px solid var(--border-color)", boxShadow: "0 4px 20px rgba(0,0,0,0.02)" }}>
@@ -1464,6 +1553,180 @@ const RoleManagement = () => {
                     </CardContent>
                 </Card>
             </Collapse>
+                </>
+            )}
+
+            {activeTab === 1 && (
+                <Box sx={{ mt: 3 }}>
+                    <Paper elevation={0} sx={{ p: 3, borderRadius: "20px", background: "var(--bg-glass)", backdropFilter: "blur(10px) saturate(150%)", border: "1px solid var(--border-color)", boxShadow: "0 4px 20px rgba(0,0,0,0.02)" }}>
+                        <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, justifyContent: 'space-between', alignItems: { xs: 'stretch', sm: 'center' }, gap: 2, mb: 3 }}>
+                            <Box>
+                                <Typography variant="h6" fontWeight={800} color="var(--text-primary)">All Registered Employees</Typography>
+                                <Typography variant="body2" color="textSecondary" fontWeight={500}>
+                                    Total: {allEmployees.length} employees
+                                </Typography>
+                            </Box>
+                            <TextField
+                                placeholder="Search by name, ID, or email..."
+                                size="small"
+                                value={employeesSearchQuery}
+                                onChange={(e) => setEmployeesSearchQuery(e.target.value)}
+                                sx={{
+                                    width: { xs: '100%', sm: '320px' },
+                                    "& .MuiOutlinedInput-root": {
+                                        borderRadius: "10px",
+                                        background: "var(--bg-glass)",
+                                        backdropFilter: "blur(5px)"
+                                    }
+                                }}
+                                slotProps={{
+                                    input: {
+                                        startAdornment: (
+                                            <InputAdornment position="start">
+                                                <Search fontSize="small" sx={{ color: 'var(--color-primary)' }} />
+                                            </InputAdornment>
+                                        )
+                                    }
+                                }}
+                            />
+                        </Box>
+
+                        {loadingEmployees ? (
+                            <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+                                <CircularProgress />
+                            </Box>
+                        ) : (
+                            <>
+                                <TableContainer component={Paper} elevation={0} sx={{ background: 'transparent', border: '1px solid var(--border-color)', borderRadius: '15px', overflow: 'hidden' }}>
+                                    <Table>
+                                        <TableHead sx={{ bgcolor: 'var(--bg-accent-1)' }}>
+                                            <TableRow>
+                                                <TableCell sx={{ fontWeight: 800, color: 'var(--text-primary)' }}>Name</TableCell>
+                                                <TableCell sx={{ fontWeight: 800, color: 'var(--text-primary)' }}>Institution ID</TableCell>
+                                                <TableCell sx={{ fontWeight: 800, color: 'var(--text-primary)' }}>Email</TableCell>
+                                                <TableCell sx={{ fontWeight: 800, color: 'var(--text-primary)' }}>Department</TableCell>
+                                                <TableCell sx={{ fontWeight: 800, color: 'var(--text-primary)' }}>Designation</TableCell>
+                                                <TableCell sx={{ fontWeight: 800, color: 'var(--text-primary)' }}>Assigned Roles</TableCell>
+                                                <TableCell align="right" sx={{ fontWeight: 800, color: 'var(--text-primary)', pr: 3 }}>Actions</TableCell>
+                                            </TableRow>
+                                        </TableHead>
+                                        <TableBody>
+                                            {paginatedEmployees.length > 0 ? (
+                                                paginatedEmployees.map((emp) => {
+                                                    const deptName = allDepartments.find(d => d._id === emp.coreDepartment || d._id === emp.department)?.name || emp.department || "N/A";
+                                                    return (
+                                                        <TableRow key={emp._id} hover sx={{ '&:last-child td, &:last-child th': { border: 0 } }}>
+                                                            <TableCell sx={{ fontWeight: 700, color: 'var(--text-primary)' }}>
+                                                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                                                                    <Avatar sx={{ width: 32, height: 32, bgcolor: 'var(--bg-accent-2)', color: 'var(--color-primary)', fontSize: '0.85rem', fontWeight: 800 }}>
+                                                                        {emp.name.charAt(0)}
+                                                                    </Avatar>
+                                                                    {emp.name}
+                                                                </Box>
+                                                            </TableCell>
+                                                            <TableCell sx={{ fontWeight: 600, color: 'var(--text-primary)' }}>{emp.institutionId}</TableCell>
+                                                            <TableCell sx={{ fontWeight: 500 }}>{emp.email}</TableCell>
+                                                            <TableCell sx={{ fontWeight: 500 }}>{deptName}</TableCell>
+                                                            <TableCell sx={{ fontWeight: 500 }}>{emp.designation || 'N/A'}</TableCell>
+                                                            <TableCell>
+                                                                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                                                                    {emp.roles && emp.roles.length > 0 ? (
+                                                                        emp.roles.map(r => (
+                                                                            <Chip 
+                                                                                key={r._id} 
+                                                                                label={r.name} 
+                                                                                size="small" 
+                                                                                sx={{ 
+                                                                                    height: 20, 
+                                                                                    fontSize: '10px', 
+                                                                                    background: "var(--gradient-primary)", 
+                                                                                    color: '#fff', 
+                                                                                    fontWeight: 700, 
+                                                                                    borderRadius: '50px' 
+                                                                                }} 
+                                                                            />
+                                                                        ))
+                                                                    ) : (
+                                                                        <Typography variant="caption" fontStyle="italic" color="textSecondary">None</Typography>
+                                                                    )}
+                                                                </Box>
+                                                            </TableCell>
+                                                            <TableCell align="right" sx={{ pr: 2 }}>
+                                                                <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
+                                                                    <Tooltip title="Assign Roles">
+                                                                        <IconButton 
+                                                                            size="small" 
+                                                                            color="primary"
+                                                                            onClick={() => {
+                                                                                setActiveTab(0);
+                                                                                selectUser(emp);
+                                                                                setUserSearchQuery(emp.name);
+                                                                                setUserSearchResults([emp]);
+                                                                                setHasTypedSearch(true);
+                                                                            }}
+                                                                            sx={{ border: '1.5px solid var(--border-color)', borderRadius: '10px' }}
+                                                                        >
+                                                                            <Security fontSize="small" />
+                                                                        </IconButton>
+                                                                    </Tooltip>
+                                                                    <Tooltip title="Edit Details">
+                                                                        <IconButton 
+                                                                            size="small" 
+                                                                            color="secondary"
+                                                                            onClick={() => {
+                                                                                setEditingEmployee(emp);
+                                                                                setEditableEmail(emp.email || "");
+                                                                                setEditableCoreDept(emp.coreDepartment || emp.department || "");
+                                                                                setShowUpdateOptions(true);
+                                                                                setShowCreateOptions(false);
+                                                                                window.scrollTo({ top: 0, behavior: 'smooth' });
+                                                                            }}
+                                                                            sx={{ border: '1.5px solid var(--border-color)', borderRadius: '10px' }}
+                                                                        >
+                                                                            <Edit fontSize="small" />
+                                                                        </IconButton>
+                                                                    </Tooltip>
+                                                                </Box>
+                                                            </TableCell>
+                                                        </TableRow>
+                                                    );
+                                                })
+                                            ) : (
+                                                <TableRow>
+                                                    <TableCell colSpan={7} align="center" sx={{ py: 6 }}>
+                                                        <People sx={{ fontSize: 40, color: 'text.disabled', mb: 1, opacity: 0.5 }} />
+                                                        <Typography variant="body2" color="textSecondary">No employees found matching the criteria.</Typography>
+                                                    </TableCell>
+                                                </TableRow>
+                                            )}
+                                        </TableBody>
+                                    </Table>
+                                </TableContainer>
+                                <TablePagination
+                                    rowsPerPageOptions={[5, 10, 20]}
+                                    component="div"
+                                    count={filteredEmployees.length}
+                                    rowsPerPage={rowsPerPage}
+                                    page={page}
+                                    onPageChange={(event, newPage) => setPage(newPage)}
+                                    onRowsPerPageChange={(event) => {
+                                        setRowsPerPage(parseInt(event.target.value, 10));
+                                        setPage(0);
+                                    }}
+                                    sx={{
+                                        borderTop: '1px solid var(--border-color)',
+                                        color: 'var(--text-secondary)',
+                                        fontWeight: 600,
+                                        '& .MuiTablePagination-selectLabel, & .MuiTablePagination-displayedRows': {
+                                            fontWeight: 600,
+                                        }
+                                    }}
+                                />
+                            </>
+                        )}
+                    </Paper>
+                </Box>
+            )}
 
             {/* Create Role Modal */}
             <Dialog open={isRoleModalOpen} onClose={handleCloseRoleModal} maxWidth="xs" fullWidth PaperProps={{ sx: { borderRadius: "16px", p: 1 } }}>
