@@ -19,7 +19,10 @@ import {
   Avatar,
   Chip,
   Stack,
-  IconButton
+  IconButton,
+  FormControl,
+  Select,
+  MenuItem
 } from "@mui/material";
 import {
   Science,
@@ -48,7 +51,9 @@ import {
   ShowChart,
   Shield,
   AccessTime,
-  East
+  East,
+  Search,
+  Visibility
 } from "@mui/icons-material";
 import axiosInstance from "../../api/axios";
 import { toast } from "sonner";
@@ -108,6 +113,8 @@ const AppraisalResearchScoring = () => {
   const [carouselIndex, setCarouselIndex] = useState(0);
   // Two-stage view: "list" shows the pending table, "detail" shows the evaluation UI
   const [view, setView] = useState("list");
+  const [statusFilter, setStatusFilter] = useState("Pending");
+  const [searchTerm, setSearchTerm] = useState("");
 
   // Scoring States
   const [citations, setCitations] = useState("");
@@ -276,6 +283,23 @@ const AppraisalResearchScoring = () => {
     }
   };
 
+  const filteredList = pendingList.filter(appr => {
+    // 1. Status Filter
+    const matchesStatus = (() => {
+      if (statusFilter === "Pending") return appr.status === "Pending Research Admin";
+      if (statusFilter === "Approved") return appr.status === "Completed";
+      return true; // "All"
+    })();
+
+    // 2. Search Term Filter
+    const name = (appr.personalInfoSnapshot?.name || appr.facultyId?.name || "").toLowerCase();
+    const empId = (appr.personalInfoSnapshot?.institutionId || appr.facultyId?.institutionId || "").toLowerCase();
+    const dept = (appr.personalInfoSnapshot?.departmentName || "").toLowerCase();
+    const query = searchTerm.toLowerCase();
+    
+    return matchesStatus && (name.includes(query) || empId.includes(query) || dept.includes(query));
+  });
+
   return (
     <Box p={{ xs: 2, md: 4 }} sx={{ maxWidth: 1200, margin: "0 auto", animation: "fadeIn 0.5s ease", pb: { xs: "80px !important", md: "100px !important" } }}>
 
@@ -292,52 +316,98 @@ const AppraisalResearchScoring = () => {
       {/* ─── LIST VIEW ─── */}
       {view === "list" && (
         <>
-          {pendingList.length === 0 ? (
-            <Card sx={{ borderRadius: "20px", background: "var(--bg-panel)", border: "1px solid var(--border-color)", p: 4, textAlign: "center" }}>
-              <Science sx={{ fontSize: "3rem", color: "var(--text-secondary)", mb: 2, opacity: 0.7 }} />
-              <Typography variant="h6" sx={{ fontWeight: 700, color: "var(--text-primary)", mb: 1 }}>
-                No Appraisals Pending
+          {/* Filters Block */}
+          <Box sx={{ display: "flex", gap: 3, mb: 4, flexWrap: "wrap", alignItems: "center", justifyContent: "space-between" }}>
+            <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
+              <FormControl size="small" sx={{ minWidth: 200 }}>
+                <Typography variant="caption" sx={{ fontWeight: 700, mb: 0.5, color: "var(--text-secondary)" }}>Status</Typography>
+                <Select
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value)}
+                  sx={{
+                    borderRadius: "10px",
+                    background: "var(--bg-paper)",
+                    "& .MuiOutlinedInput-notchedOutline": { borderColor: "var(--border-color)" }
+                  }}
+                >
+                  <MenuItem value="Pending">Pending Evaluation</MenuItem>
+                  <MenuItem value="Approved">Approved / Completed</MenuItem>
+                  <MenuItem value="All">All Requests</MenuItem>
+                </Select>
+              </FormControl>
+            </Box>
+
+            <Box sx={{ width: { xs: "100%", sm: 320 } }}>
+              <Typography variant="caption" sx={{ fontWeight: 700, mb: 0.5, color: "var(--text-secondary)", display: "block" }}>Search</Typography>
+              <TextField
+                size="small"
+                fullWidth
+                placeholder="Search by name, Emp ID..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                sx={{
+                  "& .MuiOutlinedInput-root": {
+                    borderRadius: "10px",
+                    background: "var(--bg-paper)",
+                    borderColor: "var(--border-color)"
+                  }
+                }}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <Search sx={{ color: "var(--text-secondary)", fontSize: "1.2rem" }} />
+                    </InputAdornment>
+                  )
+                }}
+              />
+            </Box>
+          </Box>
+
+          <Card sx={{
+            borderRadius: "16px",
+            background: "var(--bg-panel)",
+            border: "1px solid var(--border-color)",
+            boxShadow: "var(--shadow-premium)",
+            overflow: "hidden"
+          }}>
+            <Box sx={{ px: 3, py: 2.5, borderBottom: "1px solid var(--border-color)" }}>
+              <Typography variant="subtitle1" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>
+                Faculty Appraisals List
               </Typography>
-              <Typography variant="body2" sx={{ color: "var(--text-secondary)" }}>
-                There are currently no research appraisals awaiting your evaluation.
-              </Typography>
-            </Card>
-          ) : (
-            <Card sx={{
-              borderRadius: "16px",
-              background: "var(--bg-panel)",
-              border: "1px solid var(--border-color)",
-              boxShadow: "var(--shadow-premium)",
-              overflow: "hidden"
-            }}>
-              <Box sx={{ px: 3, py: 2.5, borderBottom: "1px solid var(--border-color)" }}>
-                <Typography variant="subtitle1" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>
-                  Appraisals Pending R&amp;D Evaluation
-                </Typography>
-              </Box>
-              <TableContainer>
-                <Table>
-                  <TableHead>
-                    <TableRow sx={{ bgcolor: "var(--bg-paper)" }}>
-                      {["Faculty Name", "Employee ID", "Department", "Academic Year", "Action"].map((col) => (
-                        <TableCell key={col} sx={{
-                          fontWeight: 700,
-                          fontSize: "0.82rem",
-                          color: "var(--text-secondary)",
-                          py: 1.5,
-                          borderBottom: "1px solid var(--border-color)"
-                        }}>
-                          {col}
-                        </TableCell>
-                      ))}
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {pendingList.map((appr) => {
+            </Box>
+            <TableContainer>
+              <Table>
+                <TableHead>
+                  <TableRow sx={{ bgcolor: "var(--bg-paper)" }}>
+                    {["Faculty Name", "Employee ID", "Department", "Academic Year", "Status", "Action"].map((col) => (
+                      <TableCell key={col} sx={{
+                        fontWeight: 700,
+                        fontSize: "0.82rem",
+                        color: "var(--text-secondary)",
+                        py: 1.5,
+                        borderBottom: "1px solid var(--border-color)"
+                      }}>
+                        {col}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {filteredList.length > 0 ? (
+                    filteredList.map((appr) => {
                       const name = appr.personalInfoSnapshot?.name || appr.facultyId?.name || "N/A";
                       const empId = appr.personalInfoSnapshot?.institutionId || appr.facultyId?.institutionId || "N/A";
                       const dept = appr.personalInfoSnapshot?.departmentName || "N/A";
                       const year = appr.academicYearId?.year || "N/A";
+                      const status = appr.status;
+                      
+                      const getStatusColor = (statusVal) => {
+                        if (statusVal === 'Completed') return { bg: "rgba(16, 185, 129, 0.1)", color: "#10b981" };
+                        if (statusVal === 'Pending Research Admin') return { bg: "rgba(232, 160, 0, 0.1)", color: "#e8a000" };
+                        return { bg: "rgba(100, 116, 139, 0.1)", color: "#64748b" };
+                      };
+                      const statusColor = getStatusColor(status);
+
                       return (
                         <TableRow
                           key={appr._id}
@@ -348,10 +418,22 @@ const AppraisalResearchScoring = () => {
                           <TableCell sx={{ color: "var(--text-secondary)", fontSize: "0.85rem", py: 2 }}>{dept}</TableCell>
                           <TableCell sx={{ color: "var(--text-secondary)", fontSize: "0.85rem", py: 2 }}>{year}</TableCell>
                           <TableCell sx={{ py: 2 }}>
+                            <Chip 
+                              label={status === "Pending Research Admin" ? "Pending" : status === "Completed" ? "Approved" : status} 
+                              size="small" 
+                              sx={{ 
+                                bgcolor: statusColor.bg, 
+                                color: statusColor.color, 
+                                fontWeight: 800, 
+                                borderRadius: "6px" 
+                              }} 
+                            />
+                          </TableCell>
+                          <TableCell sx={{ py: 2 }}>
                             <Button
-                              variant="contained"
+                              variant={status === "Completed" ? "outlined" : "contained"}
                               size="small"
-                              startIcon={<Person sx={{ fontSize: "1rem" }} />}
+                              startIcon={status === "Completed" ? <Visibility sx={{ fontSize: "1rem" }} /> : <Person sx={{ fontSize: "1rem" }} />}
                               onClick={() => handleScoreResearch(appr)}
                               disabled={loading}
                               sx={{
@@ -361,23 +443,34 @@ const AppraisalResearchScoring = () => {
                                 borderRadius: "8px",
                                 px: 2,
                                 py: 0.8,
-                                bgcolor: "#1e3a5f",
-                                color: "#fff",
+                                bgcolor: status === "Completed" ? "transparent" : "#1e3a5f",
+                                color: status === "Completed" ? "var(--text-primary)" : "#fff",
+                                borderColor: status === "Completed" ? "var(--border-color)" : "transparent",
                                 boxShadow: "none",
-                                "&:hover": { bgcolor: "#2563eb", boxShadow: "0 4px 12px rgba(59,130,246,0.25)" }
+                                "&:hover": { 
+                                  bgcolor: status === "Completed" ? "var(--bg-panel)" : "#2563eb", 
+                                  borderColor: status === "Completed" ? "var(--text-secondary)" : "transparent",
+                                  boxShadow: status === "Completed" ? "none" : "0 4px 12px rgba(59,130,246,0.25)" 
+                                }
                               }}
                             >
-                              Score Research
+                              {status === "Completed" ? "View Details" : "Score Research"}
                             </Button>
                           </TableCell>
                         </TableRow>
                       );
-                    })}
-                  </TableBody>
-                </Table>
-              </TableContainer>
-            </Card>
-          )}
+                    })
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={6} align="center" sx={{ py: 4, color: "var(--text-secondary)", fontWeight: 600 }}>
+                        No appraisals found matching the filters.
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          </Card>
         </>
       )}
 
@@ -729,6 +822,7 @@ const AppraisalResearchScoring = () => {
                       type="number"
                       value={citations}
                       onChange={(e) => setCitations(e.target.value)}
+                      disabled={selectedAppraisal.status === "Completed"}
                       fullWidth
                       InputProps={{
                         endAdornment: (
@@ -780,6 +874,7 @@ const AppraisalResearchScoring = () => {
                           type="number"
                           value={hIndex2024}
                           onChange={(e) => setHIndex2024(e.target.value)}
+                          disabled={selectedAppraisal.status === "Completed"}
                           fullWidth
                           InputProps={{ sx: { borderRadius: "10px", fontWeight: 750, background: "var(--bg-paper)" } }}
                         />
@@ -793,6 +888,7 @@ const AppraisalResearchScoring = () => {
                           type="number"
                           value={hIndex2025}
                           onChange={(e) => setHIndex2025(e.target.value)}
+                          disabled={selectedAppraisal.status === "Completed"}
                           fullWidth
                           InputProps={{ sx: { borderRadius: "10px", fontWeight: 750, background: "var(--bg-paper)" } }}
                         />
@@ -870,6 +966,7 @@ const AppraisalResearchScoring = () => {
                         fullWidth
                         value={comments}
                         onChange={(e) => setComments(e.target.value.slice(0, 1000))}
+                        disabled={selectedAppraisal.status === "Completed"}
                         InputProps={{
                           sx: {
                             borderRadius: "12px",
@@ -1171,53 +1268,71 @@ const AppraisalResearchScoring = () => {
               </Box>
             </Box>
 
-            <Box sx={{ display: "flex", gap: 2 }}>
-              <Button
-                variant="outlined"
-                startIcon={<Save sx={{ fontSize: "1.1rem" }} />}
-                onClick={() => handleSaveScoring(true)}
-                disabled={loading}
-                sx={{
-                  textTransform: "none",
-                  fontWeight: 700,
-                  borderRadius: "10px",
-                  px: 3.5,
-                  py: 1.2,
-                  borderColor: "var(--border-color)",
-                  color: "var(--text-primary)",
-                  fontSize: "0.85rem",
-                  "&:hover": {
-                    borderColor: "var(--text-secondary)",
-                    bgcolor: "var(--bg-panel)"
-                  }
-                }}
-              >
-                Save as Draft
-              </Button>
-              <Button
-                variant="contained"
-                startIcon={<CheckCircle sx={{ fontSize: "1.1rem" }} />}
-                onClick={() => handleSaveScoring(false)}
-                disabled={loading}
-                sx={{
-                  textTransform: "none",
-                  fontWeight: 700,
-                  borderRadius: "10px",
-                  px: 3.5,
-                  py: 1.2,
-                  color: "#fff",
-                  bgcolor: "#3b82f6",
-                  fontSize: "0.85rem",
-                  boxShadow: "0 4px 12px rgba(59, 130, 246, 0.2)",
-                  "&:hover": {
-                    bgcolor: "#2563eb",
-                    boxShadow: "0 6px 16px rgba(59, 130, 246, 0.3)"
-                  }
-                }}
-              >
-                Finalize Evaluation
-              </Button>
-            </Box>
+            {selectedAppraisal.status !== "Completed" ? (
+              <Box sx={{ display: "flex", gap: 2 }}>
+                <Button
+                  variant="outlined"
+                  startIcon={<Save sx={{ fontSize: "1.1rem" }} />}
+                  onClick={() => handleSaveScoring(true)}
+                  disabled={loading}
+                  sx={{
+                    textTransform: "none",
+                    fontWeight: 700,
+                    borderRadius: "10px",
+                    px: 3.5,
+                    py: 1.2,
+                    borderColor: "var(--border-color)",
+                    color: "var(--text-primary)",
+                    fontSize: "0.85rem",
+                    "&:hover": {
+                      borderColor: "var(--text-secondary)",
+                      bgcolor: "var(--bg-panel)"
+                    }
+                  }}
+                >
+                  Save as Draft
+                </Button>
+                <Button
+                  variant="contained"
+                  startIcon={<CheckCircle sx={{ fontSize: "1.1rem" }} />}
+                  onClick={() => handleSaveScoring(false)}
+                  disabled={loading}
+                  sx={{
+                    textTransform: "none",
+                    fontWeight: 700,
+                    borderRadius: "10px",
+                    px: 3.5,
+                    py: 1.2,
+                    color: "#fff",
+                    bgcolor: "#3b82f6",
+                    fontSize: "0.85rem",
+                    boxShadow: "0 4px 12px rgba(59, 130, 246, 0.2)",
+                    "&:hover": {
+                      bgcolor: "#2563eb",
+                      boxShadow: "0 6px 16px rgba(59, 130, 246, 0.3)"
+                    }
+                  }}
+                >
+                  Finalize Evaluation
+                </Button>
+              </Box>
+            ) : (
+              <Box sx={{
+                bgcolor: "rgba(16, 185, 129, 0.08)",
+                color: "#10b981",
+                px: 2,
+                py: 1,
+                borderRadius: "8px",
+                fontWeight: 800,
+                fontSize: "0.85rem",
+                display: "flex",
+                alignItems: "center",
+                gap: 1
+              }}>
+                <CheckCircle sx={{ fontSize: "1.2rem" }} />
+                This appraisal has been finalized and is read-only.
+              </Box>
+            )}
           </Box>
         </Stack>
       )}
