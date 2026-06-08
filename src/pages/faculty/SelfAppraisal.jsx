@@ -642,7 +642,7 @@ const SelfAppraisal = () => {
 
     const updatedForm = { ...adminRolesForm };
     const roleId = roleConfig ? roleConfig.id : null;
-    
+
     if (roleId) {
       updatedForm[roleId] = {
         roleName: adminForm.roleName,
@@ -679,7 +679,7 @@ const SelfAppraisal = () => {
 
   const handleAdminDelete = async (roleName) => {
     if (!window.confirm("Are you sure you want to delete this administrative role?")) return;
-    
+
     const roleId = ADMINISTRATIVE_ROLES_LIST.find((r) => r.label === roleName)?.id;
     const updatedForm = { ...adminRolesForm };
     if (roleId && updatedForm[roleId]) {
@@ -1476,21 +1476,21 @@ const SelfAppraisal = () => {
     const fdpProgress = fdpCourseraPassed ? 100 : 0;
 
     // 3. Teaching: Current / Min Threshold
-    const teachingProgress = thresholds.teaching > 0 
-      ? Math.min(100, Math.round((scores.T / thresholds.teaching) * 100)) 
+    const teachingProgress = thresholds.teaching > 0
+      ? Math.min(100, Math.round((scores.T / thresholds.teaching) * 100))
       : 100;
 
     // 4. Research 2.1 (Papers): Current / Min Threshold
     const metric21Score = getMetric21Score();
-    const metric21Progress = thresholds.metric21 > 0 
-      ? Math.min(100, Math.round((metric21Score / thresholds.metric21) * 100)) 
+    const metric21Progress = thresholds.metric21 > 0
+      ? Math.min(100, Math.round((metric21Score / thresholds.metric21) * 100))
       : 100;
 
     // 5. Research 2.2 to 2.8: Min Doctorates 10, others 0
     const r22To28Threshold = category === "Doctorate Faculty" ? 10 : 0;
     const r22To28Score = scores.R_sum - metric21Score;
-    const r22To28Progress = r22To28Threshold > 0 
-      ? Math.min(100, Math.round((r22To28Score / r22To28Threshold) * 100)) 
+    const r22To28Progress = r22To28Threshold > 0
+      ? Math.min(100, Math.round((r22To28Score / r22To28Threshold) * 100))
       : 100;
 
     // 6. Value Addition: Min 20
@@ -1498,33 +1498,33 @@ const SelfAppraisal = () => {
 
     // 7. Administration: Doctorate 15, Leadership 20, Non-Doctorate 10
     const adminThreshold = category === "Doctorate Faculty" ? 15 : (category === "Leadership Team" ? 20 : 10);
-    const adminProgress = adminThreshold > 0 
-      ? Math.min(100, Math.round((scores.A / adminThreshold) * 100)) 
+    const adminProgress = adminThreshold > 0
+      ? Math.min(100, Math.round((scores.A / adminThreshold) * 100))
       : 100;
 
     // 8. Total 1-4: Doctorate 135, Leadership 110, Non-Doctorate 110
-    const total1to4Progress = thresholds.total1to4 > 0 
-      ? Math.min(100, Math.round((scores.total1to4 / thresholds.total1to4) * 100)) 
+    const total1to4Progress = thresholds.total1to4 > 0
+      ? Math.min(100, Math.round((scores.total1to4 / thresholds.total1to4) * 100))
       : 100;
 
     // 9. Interpersonal Skills: Min 30
     const interpersonalProgress = Math.min(100, Math.round((scores.I / 30) * 100));
 
     // 10. Grand Total: Doctorate 165, Leadership 140, Non-Doctorate 140
-    const grandTotalProgress = thresholds.grandTotal > 0 
-      ? Math.min(100, Math.round((scores.grandTotal / thresholds.grandTotal) * 100)) 
+    const grandTotalProgress = thresholds.grandTotal > 0
+      ? Math.min(100, Math.round((scores.grandTotal / thresholds.grandTotal) * 100))
       : 100;
 
-    const total = 
-      profileProgress + 
-      fdpProgress + 
-      teachingProgress + 
-      metric21Progress + 
-      r22To28Progress + 
-      valueAdditionProgress + 
-      adminProgress + 
-      total1to4Progress + 
-      interpersonalProgress + 
+    const total =
+      profileProgress +
+      fdpProgress +
+      teachingProgress +
+      metric21Progress +
+      r22To28Progress +
+      valueAdditionProgress +
+      adminProgress +
+      total1to4Progress +
+      interpersonalProgress +
       grandTotalProgress;
 
     return Math.min(100, Math.max(0, Math.round(total / 10)));
@@ -1653,7 +1653,7 @@ const SelfAppraisal = () => {
             Below are co-authored publications for this academic year where the appraisal claimant has not been selected.
             <strong> Applicants</strong> must select who will claim the points. <strong>Co-authors</strong> must wait for the applicant to resolve.
           </Typography>
-          
+
           <TableContainer component={Paper} elevation={0} sx={{ borderRadius: "12px", background: "var(--bg-paper)", border: "1px solid var(--border-color)", overflowX: "auto", boxShadow: "none", maxWidth: "100%", mx: "auto" }}>
             <Table size="small" sx={{ minWidth: 650, mx: "auto" }}>
               <TableHead sx={{ background: "var(--gradient-primary)" }}>
@@ -1688,7 +1688,7 @@ const SelfAppraisal = () => {
                             disabled={resolvingClaimId === claim._id}
                           >
                             <MenuItem value="" disabled>Select Claimant</MenuItem>
-                             {claim.eligibleClaimants.map((el) => (
+                            {claim.eligibleClaimants.map((el) => (
                               <MenuItem key={el.institutionId || el._id} value={el.institutionId || el._id}>
                                 {el.name} ({el.institutionId})
                               </MenuItem>
@@ -1824,9 +1824,9 @@ const SelfAppraisal = () => {
             <Typography variant="body2" sx={{ color: "var(--text-secondary)", mb: 4 }}>
               You have pending co-authored publications for the selected academic year. You must designate the appraisal claimant before you can proceed to your self-appraisal form.
             </Typography>
-            
-            <Button 
-              variant="contained" 
+
+            <Button
+              variant="contained"
               onClick={() => setShowGatekeeperModal(true)}
               sx={{ background: "var(--gradient-primary)", color: "#fff", fontWeight: 700, borderRadius: "10px", px: 4, py: 1.5 }}
             >
@@ -1901,11 +1901,11 @@ const SelfAppraisal = () => {
             <Chip
               label={`Status: ${appraisal.status}`}
               icon={<AssignmentTurnedIn sx={{ color: "#fff !important" }} />}
-              sx={{ 
-                fontWeight: 800, 
-                px: 2.5, 
-                py: 2.5, 
-                borderRadius: "20px", 
+              sx={{
+                fontWeight: 800,
+                px: 2.5,
+                py: 2.5,
+                borderRadius: "20px",
                 whiteSpace: "nowrap",
                 background: "var(--gradient-primary)",
                 color: "#fff",
@@ -2028,7 +2028,7 @@ const SelfAppraisal = () => {
                 <Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)", display: "flex", alignItems: "center", gap: 1.5 }}>
                   <Person sx={{ color: "#e8a000" }} /> PART-A: Personal Information
                 </Typography>
-                
+
                 {profileComplete ? (
                   <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, bgcolor: "rgba(16, 185, 129, 0.1)", color: "#10b981", px: 2, py: 0.5, borderRadius: "20px", border: "1px solid rgba(16, 185, 129, 0.2)" }}>
                     <CheckCircle sx={{ fontSize: 16 }} />
@@ -2042,46 +2042,46 @@ const SelfAppraisal = () => {
                 )}
               </Box>
               <Divider sx={{ mb: 3 }} />
-              
+
               <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2.5 }}>
                 {[
-                  { 
-                    label: "Name with Emp ID", 
+                  {
+                    label: "Name with Emp ID",
                     val: `${appraisal.personalInfoSnapshot?.name || "N/A"} (${appraisal.personalInfoSnapshot?.institutionId || "N/A"})`,
                     icon: <Badge sx={{ fontSize: 22 }} />,
                     iconBg: "rgba(59, 130, 246, 0.12)",
                     iconColor: "#3b82f6"
                   },
-                  { 
-                    label: "Designation & Dept", 
+                  {
+                    label: "Designation & Dept",
                     val: `${appraisal.personalInfoSnapshot?.designation || "N/A"} - ${appraisal.personalInfoSnapshot?.departmentName || "N/A"}`,
                     icon: <Work sx={{ fontSize: 22 }} />,
                     iconBg: "rgba(168, 85, 247, 0.12)",
                     iconColor: "#a855f7"
                   },
-                  { 
-                    label: "Qualification", 
+                  {
+                    label: "Qualification",
                     val: appraisal.personalInfoSnapshot?.qualification || "N/A",
                     icon: <School sx={{ fontSize: 22 }} />,
                     iconBg: "rgba(16, 185, 129, 0.12)",
                     iconColor: "#10b981"
                   },
-                  { 
-                    label: "Scopus ID", 
+                  {
+                    label: "Scopus ID",
                     val: appraisal.personalInfoSnapshot?.scopusId || "N/A",
                     icon: <Description sx={{ fontSize: 22 }} />,
                     iconBg: "rgba(234, 179, 8, 0.12)",
                     iconColor: "#e8a000"
                   },
-                  { 
-                    label: "Web of Science ID", 
+                  {
+                    label: "Web of Science ID",
                     val: appraisal.personalInfoSnapshot?.wosId || "N/A",
                     icon: <Public sx={{ fontSize: 22 }} />,
                     iconBg: "rgba(244, 63, 94, 0.12)",
                     iconColor: "#f43f5e"
                   },
-                  { 
-                    label: "ORCID ID", 
+                  {
+                    label: "ORCID ID",
                     val: appraisal.personalInfoSnapshot?.orcidId || "N/A",
                     icon: <Fingerprint sx={{ fontSize: 22 }} />,
                     iconBg: "rgba(6, 182, 212, 0.12)",
@@ -2174,7 +2174,7 @@ const SelfAppraisal = () => {
             <Typography variant="h6" sx={{ fontWeight: 900, color: "var(--text-primary)", display: "flex", alignItems: "center", gap: 1.5, letterSpacing: "-0.02em" }}>
               <AssignmentTurnedIn sx={{ color: "#e8a000" }} /> PART-B: Performance Details
             </Typography>
-            <Divider sx={{ flexGrow: 1, borderColor: "var(--border-color)" }} />
+            <Divider sx={{ borderColor: "var(--border-color)" }} />
           </Box>
 
           {/* 1. Teaching & Learning */}
@@ -2370,81 +2370,81 @@ const SelfAppraisal = () => {
                                 <TableCell sx={{ fontWeight: 600, color: "var(--text-primary)" }}>{e.programCode || "—"}</TableCell>
                                 <TableCell sx={{ color: "var(--text-primary)" }}>{semYrBranchSec}</TableCell>
                                 <TableCell align="right" sx={{ color: "var(--text-primary)" }}>{e.totalStudents}</TableCell>
-                                    <TableCell align="right" sx={{ color: "#8B5CF6", fontWeight: 600 }}>{e.appeared}</TableCell>
-                                    <TableCell align="right" sx={{ color: "#10B981", fontWeight: 600 }}>{e.passed}</TableCell>
-                                    <TableCell align="right" sx={{ color: "var(--text-primary)" }}>{e.percentage.toFixed(2)}%</TableCell>
-                                    <TableCell align="right" sx={{ fontWeight: 800, color: "var(--color-primary)" }}>{e.pointsClaimed}</TableCell>
-                                    <TableCell align="center">
-                                      {originalEntry ? (
-                                        <Chip
-                                          label={originalEntry.status}
-                                          size="small"
-                                          sx={{
-                                            fontWeight: 700,
-                                            fontSize: 9,
-                                            borderRadius: "6px",
-                                            bgcolor:
-                                              originalEntry.status === "Approved" ? "rgba(16, 185, 129, 0.12)" :
-                                                originalEntry.status === "Rejected" ? "rgba(239, 68, 68, 0.12)" :
-                                                  "rgba(245, 158, 11, 0.12)",
-                                            color:
-                                              originalEntry.status === "Approved" ? "#10B981" :
-                                                originalEntry.status === "Rejected" ? "#EF4444" :
-                                                  "#D97706"
-                                          }}
-                                        />
-                                      ) : "—"}
-                                    </TableCell>
-                                    <TableCell align="center">
-                                      {originalEntry && originalEntry.status !== "Approved" && (appraisal.status === "Draft" || appraisal.status === "Rejected by HOD") ? (
-                                        <Box sx={{ display: "flex", justifyContent: "center" }}>
-                                          <IconButton size="small" onClick={() => handleOpenEditModal(originalEntry)} sx={{ color: "var(--color-primary)" }}>
-                                            <Edit sx={{ fontSize: 16 }} />
-                                          </IconButton>
-                                          <IconButton size="small" onClick={() => handleDeleteEntry(originalEntry._id)} sx={{ color: "#EF4444" }}>
-                                            <Delete sx={{ fontSize: 16 }} />
-                                          </IconButton>
-                                        </Box>
-                                      ) : (
-                                        <Typography sx={{ fontSize: 11, color: "var(--text-secondary)", fontStyle: "italic" }}>Locked</Typography>
-                                      )}
-                                    </TableCell>
-                                  </TableRow>
-                                );
-                              })}
-                              {/* Summary / Average Row */}
-                              {(() => {
-                                const totalAppeared = appraisal.teaching.proctoring.entries.reduce((sum, e) => sum + (Number(e.appeared) || 0), 0);
-                                const totalPassed = appraisal.teaching.proctoring.entries.reduce((sum, e) => sum + (Number(e.passed) || 0), 0);
-                                const overallPassPct = totalAppeared > 0 ? ((totalPassed / totalAppeared) * 100).toFixed(2) : "0.00";
-                                return (
-                                  <TableRow sx={{ background: "rgba(0, 78, 146, 0.04)", "&:hover": { bgcolor: "rgba(0, 78, 146, 0.06) !important" } }}>
-                                    <TableCell colSpan={2} sx={{ fontWeight: 800, color: "var(--text-primary)", pl: 2 }}>
-                                      <Box component="span" sx={{ display: "inline-block", whiteSpace: "nowrap" }}>
-                                        Overall Performance (Average Points)
-                                      </Box>
-                                    </TableCell>
-                                    <TableCell align="right" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>{appraisal.teaching.proctoring.entries.reduce((sum, e) => sum + (Number(e.totalStudents) || 0), 0)}</TableCell>
-                                    <TableCell align="right" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>{totalAppeared}</TableCell>
-                                    <TableCell align="right" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>{totalPassed}</TableCell>
-                                    <TableCell align="right" sx={{ fontWeight: 900, color: "var(--color-primary)" }}>{overallPassPct}%</TableCell>
-                                    <TableCell align="right" sx={{ fontWeight: 900, color: "var(--color-primary)", fontSize: "0.95rem" }} colSpan={3}>
-                                      {appraisal.teaching.proctoring.averagePoints} Points
-                                    </TableCell>
-                                  </TableRow>
-                                );
-                              })()}
-                            </>
-                          ) : (
-                            <TableRow>
-                              <TableCell colSpan={9} align="center" sx={{ py: 3, color: "var(--text-secondary)", fontStyle: "italic" }}>
-                                No proctoring records found. Click "Add Record" to submit details.
-                              </TableCell>
-                            </TableRow>
-                          )}
-                        </TableBody>
-                      </Table>
-                    </TableContainer>
+                                <TableCell align="right" sx={{ color: "#8B5CF6", fontWeight: 600 }}>{e.appeared}</TableCell>
+                                <TableCell align="right" sx={{ color: "#10B981", fontWeight: 600 }}>{e.passed}</TableCell>
+                                <TableCell align="right" sx={{ color: "var(--text-primary)" }}>{e.percentage.toFixed(2)}%</TableCell>
+                                <TableCell align="right" sx={{ fontWeight: 800, color: "var(--color-primary)" }}>{e.pointsClaimed}</TableCell>
+                                <TableCell align="center">
+                                  {originalEntry ? (
+                                    <Chip
+                                      label={originalEntry.status}
+                                      size="small"
+                                      sx={{
+                                        fontWeight: 700,
+                                        fontSize: 9,
+                                        borderRadius: "6px",
+                                        bgcolor:
+                                          originalEntry.status === "Approved" ? "rgba(16, 185, 129, 0.12)" :
+                                            originalEntry.status === "Rejected" ? "rgba(239, 68, 68, 0.12)" :
+                                              "rgba(245, 158, 11, 0.12)",
+                                        color:
+                                          originalEntry.status === "Approved" ? "#10B981" :
+                                            originalEntry.status === "Rejected" ? "#EF4444" :
+                                              "#D97706"
+                                      }}
+                                    />
+                                  ) : "—"}
+                                </TableCell>
+                                <TableCell align="center">
+                                  {originalEntry && originalEntry.status !== "Approved" && (appraisal.status === "Draft" || appraisal.status === "Rejected by HOD") ? (
+                                    <Box sx={{ display: "flex", justifyContent: "center" }}>
+                                      <IconButton size="small" onClick={() => handleOpenEditModal(originalEntry)} sx={{ color: "var(--color-primary)" }}>
+                                        <Edit sx={{ fontSize: 16 }} />
+                                      </IconButton>
+                                      <IconButton size="small" onClick={() => handleDeleteEntry(originalEntry._id)} sx={{ color: "#EF4444" }}>
+                                        <Delete sx={{ fontSize: 16 }} />
+                                      </IconButton>
+                                    </Box>
+                                  ) : (
+                                    <Typography sx={{ fontSize: 11, color: "var(--text-secondary)", fontStyle: "italic" }}>Locked</Typography>
+                                  )}
+                                </TableCell>
+                              </TableRow>
+                            );
+                          })}
+                          {/* Summary / Average Row */}
+                          {(() => {
+                            const totalAppeared = appraisal.teaching.proctoring.entries.reduce((sum, e) => sum + (Number(e.appeared) || 0), 0);
+                            const totalPassed = appraisal.teaching.proctoring.entries.reduce((sum, e) => sum + (Number(e.passed) || 0), 0);
+                            const overallPassPct = totalAppeared > 0 ? ((totalPassed / totalAppeared) * 100).toFixed(2) : "0.00";
+                            return (
+                              <TableRow sx={{ background: "rgba(0, 78, 146, 0.04)", "&:hover": { bgcolor: "rgba(0, 78, 146, 0.06) !important" } }}>
+                                <TableCell colSpan={2} sx={{ fontWeight: 800, color: "var(--text-primary)", pl: 2 }}>
+                                  <Box component="span" sx={{ display: "inline-block", whiteSpace: "nowrap" }}>
+                                    Overall Performance (Average Points)
+                                  </Box>
+                                </TableCell>
+                                <TableCell align="right" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>{appraisal.teaching.proctoring.entries.reduce((sum, e) => sum + (Number(e.totalStudents) || 0), 0)}</TableCell>
+                                <TableCell align="right" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>{totalAppeared}</TableCell>
+                                <TableCell align="right" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>{totalPassed}</TableCell>
+                                <TableCell align="right" sx={{ fontWeight: 900, color: "var(--color-primary)" }}>{overallPassPct}%</TableCell>
+                                <TableCell align="right" sx={{ fontWeight: 900, color: "var(--color-primary)", fontSize: "0.95rem" }} colSpan={3}>
+                                  {appraisal.teaching.proctoring.averagePoints} Points
+                                </TableCell>
+                              </TableRow>
+                            );
+                          })()}
+                        </>
+                      ) : (
+                        <TableRow>
+                          <TableCell colSpan={9} align="center" sx={{ py: 3, color: "var(--text-secondary)", fontStyle: "italic" }}>
+                            No proctoring records found. Click "Add Record" to submit details.
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
               </Box>
 
               {/* Self Appraisal Proctoring Form CRUD Dialog Modal */}
@@ -3644,12 +3644,12 @@ const SelfAppraisal = () => {
       </Grid>
 
       {/* Points Scorecard & Eligibility Checklist Section */}
-      <Box 
-        sx={{ 
-          mt: 5, 
-          mb: 5, 
-          display: "grid", 
-          gridTemplateColumns: { xs: "1fr", md: "7fr 3fr" }, 
+      <Box
+        sx={{
+          mt: 5,
+          mb: 5,
+          display: "grid",
+          gridTemplateColumns: { xs: "1fr", md: "7fr 3fr" },
           gap: 4,
           alignItems: "stretch",
           width: "100%"
@@ -3695,10 +3695,10 @@ const SelfAppraisal = () => {
           </Box>
 
           {/* 5 Category Cards Grid using CSS Grid */}
-          <Box 
-            sx={{ 
-              display: "grid", 
-              gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, 
+          <Box
+            sx={{
+              display: "grid",
+              gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" },
               gap: 2.5,
               mt: 3
             }}
@@ -3760,10 +3760,10 @@ const SelfAppraisal = () => {
                 percent: Math.min(100, Math.round((eligibility.scores.I / 50) * 100))
               }
             ].map((card, idx) => (
-              <Box 
+              <Box
                 key={idx}
-                sx={{ 
-                  gridColumn: { xs: "span 1", sm: idx === 4 ? "span 2" : "span 1" } 
+                sx={{
+                  gridColumn: { xs: "span 1", sm: idx === 4 ? "span 2" : "span 1" }
                 }}
               >
                 <Card
@@ -3884,10 +3884,10 @@ const SelfAppraisal = () => {
           </Box>
 
           {/* Totals Linear Progress Bars Container using CSS Grid */}
-          <Box 
-            sx={{ 
-              display: "grid", 
-              gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, 
+          <Box
+            sx={{
+              display: "grid",
+              gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" },
               gap: 2.5,
               mt: 3.5
             }}
@@ -3999,8 +3999,8 @@ const SelfAppraisal = () => {
         </Card>
 
         {/* Right Column: Eligibility Checklist */}
-        <Box 
-          sx={{ 
+        <Box
+          sx={{
             minWidth: 0,
             width: "100%",
             height: "100%"
