@@ -259,6 +259,7 @@ const AppraisalResearchScoring = () => {
         toast.success(isDraft ? "Appraisal draft saved successfully!" : "Appraisal finalized and completed successfully!");
         if (!isDraft) {
           setSelectedAppraisal(null);
+          setView("list");
           fetchPending();
         } else {
           // Update local selectedAppraisal with saved values so UI stays synced
