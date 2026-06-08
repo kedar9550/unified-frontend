@@ -3013,7 +3013,7 @@ const SelfAppraisal = () => {
                       <TableBody>
                         {appraisal.research.patents.items.map((p, i) => {
                           const dateObj = new Date(p.dateOfFiling);
-                          const dateString = !isNaN(dateObj) ? dateObj.toLocaleDateString() : "N/A";
+                          const dateString = !isNaN(dateObj) ? dateObj.toLocaleDateString("en-GB") : "N/A";
                           return (
                             <TableRow key={i} sx={{ "&:hover": { bgcolor: "rgba(0, 0, 0, 0.015)" }, "body.dark-mode &:hover": { bgcolor: "rgba(255, 255, 255, 0.015)" } }}>
                               <TableCell align="center" sx={{ color: "var(--text-primary)" }}>{i + 1}</TableCell>
