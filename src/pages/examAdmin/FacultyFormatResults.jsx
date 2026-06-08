@@ -678,7 +678,7 @@ export default function FacultyFormatResults() {
 
               {
                 value: r.updatedAt,
-                display: <Box sx={{ fontSize: 12 }}>{new Date(r.updatedAt).toLocaleDateString()}</Box>,
+                display: <Box sx={{ fontSize: 12 }}>{new Date(r.updatedAt).toLocaleDateString("en-GB")}</Box>,
               },
               {
                 value: "action",

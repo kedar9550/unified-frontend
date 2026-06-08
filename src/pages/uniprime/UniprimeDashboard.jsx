@@ -230,7 +230,7 @@ const UniprimeDashboard = () => {
                 <Card
                   sx={{
                     position: "relative",
-                    borderRadius: 1,
+                    borderRadius: "16px",
                     boxShadow: "var(--shadow-premium)",
                     transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
                     "&:hover": {
@@ -509,9 +509,9 @@ const UniprimeDashboard = () => {
 
               <Card
                 sx={{
-                  borderRadius: 1,
-                  boxShadow: "0 6px 20px rgba(0,0,0,0.06)",
-                  p: 2.5,
+                  borderRadius: "16px",
+                  boxShadow: "var(--shadow-premium)",
+                  p: 3,
                   height: "100%",
                   width: "100%",
                   border: "1px solid var(--border-color)",
@@ -764,8 +764,8 @@ const UniprimeDashboard = () => {
             {/* Quick Actions */}
             <Box sx={{ width: { xs: "100%", lg: "50%" }, display: "flex" }}>
               <Card sx={{
-                borderRadius: 1, 
-                boxShadow: "0 2px 10px rgba(0,0,0,0.05)", 
+                borderRadius: "16px", 
+                boxShadow: "var(--shadow-premium)", 
                 height: "100%", 
                 width: "100%",
                 display: "flex",
@@ -773,8 +773,8 @@ const UniprimeDashboard = () => {
                 border: "1px solid var(--border-color)",
                 background: "var(--bg-panel)",
               }}>
-                <CardContent sx={{ flexGrow: 1 }}>
-                  <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 2 }}>Quick Actions</Typography>
+                <CardContent sx={{ flexGrow: 1, p: 3 }}>
+                  <Typography variant="subtitle1" sx={{ fontWeight: 800, color: "var(--text-primary)", mb: 2 }}>Quick Actions</Typography>
                   <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2 }}>
                     {quickActions.map((action, i) => (
                       <Box key={i} sx={{ flex: { xs: "1 1 100%", sm: "1 1 calc(50% - 8px)" }, display: 'flex' }}>
@@ -783,7 +783,7 @@ const UniprimeDashboard = () => {
                           onClick={() => navigate(action.path)}
                           sx={{
                             p: 2.2,
-                            borderRadius: 1,
+                            borderRadius: "12px",
                             display: "flex",
                             alignItems: "center",
                             gap: 2,
@@ -792,13 +792,13 @@ const UniprimeDashboard = () => {
                             width: "100%",
                             border: "1px solid var(--border-color)",
                             backgroundColor: "var(--bg-paper)",
-                            transition: "all 0.25s ease",
+                            transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
 
                             "&:hover": {
                               borderColor: "var(--color-primary)",
                               backgroundColor: "var(--bg-panel)",
-                              transform: "translateY(-2px)",
-                              boxShadow: "0 6px 16px rgba(0,0,0,0.06)",
+                              transform: "translateY(-4px)",
+                              boxShadow: "0 10px 25px rgba(59, 130, 246, 0.12)",
                             },
                           }}
                         >
@@ -807,7 +807,7 @@ const UniprimeDashboard = () => {
                             sx={{
                               width: 42,
                               height: 42,
-                              borderRadius: 1,
+                              borderRadius: "10px",
                               display: "flex",
                               alignItems: "center",
                               justifyContent: "center",
@@ -855,7 +855,7 @@ const UniprimeDashboard = () => {
           {/* Row 4: Recent Users & Recent Activities */}
           <Box sx={{ display: "flex", gap: { xs: 2, md: 3 }, mt: 3, flexWrap: { xs: "wrap", lg: "nowrap" } }}>
             {/* Recently Onboarded Employees */}
-            <Box sx={{ width: { xs: "100%", lg: "50%" }, display: "flex" }}>
+            {/* <Box sx={{ width: { xs: "100%", lg: "50%" }, display: "flex" }}>
               <Card sx={{
                 borderRadius: "16px",
                 boxShadow: "var(--shadow-premium)",
@@ -906,7 +906,7 @@ const UniprimeDashboard = () => {
                                     {user.email}
                                   </Typography>
                                   <Typography variant="caption" color="textSecondary" sx={{ fontStyle: 'italic' }}>
-                                    {new Date(user.time).toLocaleDateString()}
+                                    {new Date(user.time).toLocaleDateString("en-GB")}
                                   </Typography>
                                 </Box>
                               }
@@ -923,58 +923,7 @@ const UniprimeDashboard = () => {
                   </List>
                 </CardContent>
               </Card>
-            </Box>
-
-            {/* System Activity Log */}
-            <Box sx={{ width: { xs: "100%", lg: "50%" }, display: "flex" }}>
-              <Card sx={{
-                borderRadius: "16px",
-                boxShadow: "var(--shadow-premium)",
-                height: "100%",
-                width: "100%",
-                display: "flex",
-                flexDirection: "column",
-                border: "1px solid var(--border-color)",
-                background: "var(--bg-panel)",
-              }}>
-                <CardContent sx={{ flexGrow: 1, p: 3 }}>
-                  <Typography variant="subtitle1" sx={{ fontWeight: 800, color: "var(--text-primary)", mb: 2 }}>
-                    System Activity Log
-                  </Typography>
-                  <List sx={{ p: 0 }}>
-                    {recentActivity.map((activity, idx) => (
-                      <React.Fragment key={idx}>
-                        <ListItem alignItems="flex-start" sx={{ px: 0, py: 1 }}>
-                          <ListItemAvatar>
-                            <Avatar sx={{ bgcolor: 'var(--bg-accent-1)', color: 'var(--color-primary)' }}>
-                              {activity.icon}
-                            </Avatar>
-                          </ListItemAvatar>
-                          <ListItemText
-                            primary={
-                              <Typography variant="body2" fontWeight={700} color="var(--text-primary)">
-                                {activity.title}
-                              </Typography>
-                            }
-                            secondary={
-                              <Box sx={{ mt: 0.5, display: 'flex', justifyContent: 'space-between' }}>
-                                <Typography variant="caption" color="textSecondary">
-                                  Action by {activity.by}
-                                </Typography>
-                                <Typography variant="caption" color="textSecondary" sx={{ fontStyle: 'italic' }}>
-                                  {activity.time}
-                                </Typography>
-                              </Box>
-                            }
-                          />
-                        </ListItem>
-                        {idx < recentActivity.length - 1 && <Divider variant="inset" component="li" />}
-                      </React.Fragment>
-                    ))}
-                  </List>
-                </CardContent>
-              </Card>
-            </Box>
+            </Box> */}
           </Box>
         </>
     </Box >
@@ -1027,7 +976,7 @@ const configBox = {
   alignItems: "center",
   p: 2,
   mb: 2,
-  borderRadius: 1,
+  borderRadius: "12px",
   border: "1px solid var(--border-color)",
   background: "var(--bg-panel)",
 };
@@ -1035,7 +984,7 @@ const configBox = {
 const iconBox = (bg) => ({
   width: 48,
   height: 48,
-  borderRadius: 1,
+  borderRadius: "10px",
   background: bg,
   display: "flex",
   alignItems: "center",
@@ -1054,34 +1003,35 @@ const valueStyle = {
 };
 
 const activeChip = {
-  bgcolor: "#DCFCE7",
-  color: "#16A34A",
+  bgcolor: "rgba(16, 185, 129, 0.12)",
+  color: "#10B981",
   fontSize: "0.65rem",
   height: 20,
-  borderRadius: 1,
+  borderRadius: "6px",
+  fontWeight: 700,
 };
 
 const roleChip = (role) => {
   const styles = {
     Faculty: {
-      bgcolor: "#E0ECFF",
+      bgcolor: "rgba(37, 99, 235, 0.12)",
       color: "#2563EB",
     },
     Staff: {
-      bgcolor: "#DCFCE7",
-      color: "#16A34A",
+      bgcolor: "rgba(16, 185, 129, 0.12)",
+      color: "#10B981",
     },
     Technician: {
-      bgcolor: "#F3E8FF",
+      bgcolor: "rgba(124, 58, 237, 0.12)",
       color: "#7C3AED",
     },
   };
 
   return {
-    ...styles[role],
+    ...styles[role] || { bgcolor: "rgba(156, 163, 175, 0.12)", color: "#9CA3AF" },
     fontSize: "0.65rem",
     height: 20,
-    borderRadius: 1,
-    fontWeight: 600,
+    borderRadius: "6px",
+    fontWeight: 700,
   };
 };
