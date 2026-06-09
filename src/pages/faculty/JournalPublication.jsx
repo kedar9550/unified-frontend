@@ -434,8 +434,9 @@ export default function JournalPublication() {
           if (kw.length > 2) {
             const escapedKw = kw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
             const regex = new RegExp(`\\b${escapedKw}\\b`, "gi");
-            if (regex.test(text)) {
-              matchCount++;
+            const matches = text.match(regex);
+            if (matches) {
+              matchCount += matches.length;
             }
           }
         });
