@@ -25,7 +25,9 @@ import {
   Tabs,
   Tab,
   InputAdornment,
-  Paper
+  Paper,
+  useTheme,
+  useMediaQuery
 } from "@mui/material";
 import {
   Save,
@@ -57,11 +59,13 @@ import { toast } from "sonner";
 import PageHeader from "../../components/common/PageHeader";
 
 const AppraisalSettings = () => {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [academicYears, setAcademicYears] = useState([]);
   const [selectedYear, setSelectedYear] = useState("");
   const [loading, setLoading] = useState(false);
   const [config, setConfig] = useState(null);
-  
+
   // Tab control state
   const [activeTab, setActiveTab] = useState(0);
 
@@ -230,7 +234,7 @@ const AppraisalSettings = () => {
   ];
 
   // Filtered admin roles based on search
-  const filteredAdminRoles = adminRolesSchema.filter(role => 
+  const filteredAdminRoles = adminRolesSchema.filter(role =>
     role.name.toLowerCase().includes(adminSearch.toLowerCase())
   );
 
@@ -272,10 +276,10 @@ const AppraisalSettings = () => {
   const horizontalTabStyle = {
     textTransform: "none",
     fontWeight: 700,
-    fontSize: "0.92rem",
-    py: 1.5,
-    px: 2.5,
-    minHeight: "48px",
+    fontSize: { xs: "0.8rem", sm: "0.92rem" },
+    py: { xs: 1, sm: 1.5 },
+    px: { xs: 1.5, sm: 2.5 },
+    minHeight: { xs: "40px", sm: "48px" },
     color: "var(--text-secondary)",
     transition: "all 0.2s ease-in-out",
     "&.Mui-selected": {
@@ -389,9 +393,9 @@ const AppraisalSettings = () => {
               }}>
                 {/* Header row */}
                 <Box sx={{
-                  display: "flex",
+                  display: (!isEditing) ? "flex" : { xs: "none", sm: "flex" },
                   justifyContent: "space-between",
-                  px: 2,
+                  px: { xs: 1, sm: 2 },
                   py: 1,
                   backgroundColor: "rgba(0, 0, 0, 0.015)",
                   borderBottom: "1px solid var(--border-color)"
@@ -403,36 +407,121 @@ const AppraisalSettings = () => {
                 </Box>
 
                 {/* Rows */}
-                <Box sx={{ px: 2, py: 1, display: "flex", flexDirection: "column", gap: 1 }}>
+                <Box sx={{ px: { xs: 1, sm: 2 }, py: 1, display: "flex", flexDirection: "column", gap: 1 }}>
                   {items.map((range, idx) => (
-                    <Box key={idx} sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", py: 0.3 }}>
+                    <Box 
+                      key={idx} 
+                      sx={{ 
+                        display: "flex", 
+                        flexDirection: "row",
+                        justifyContent: "space-between", 
+                        alignItems: "center", 
+                        py: 0.5,
+                        width: "100%"
+                      }}
+                    >
                       {isEditing ? (
-                        <>
-                          <TextField
-                            type="number"
-                            size="small"
-                            value={range.min}
-                            onChange={(e) => onAdd(idx, "min", e.target.value)}
-                            sx={{ ...cellInputStyle, width: "28%", "& .MuiInputBase-input": { textAlign: "center" } }}
-                          />
-                          <TextField
-                            type="number"
-                            size="small"
-                            value={range.max}
-                            onChange={(e) => onAdd(idx, "max", e.target.value)}
-                            sx={{ ...cellInputStyle, width: "28%", "& .MuiInputBase-input": { textAlign: "center" } }}
-                          />
-                          <TextField
-                            type="number"
-                            size="small"
-                            value={range.points}
-                            onChange={(e) => onAdd(idx, "points", e.target.value)}
-                            sx={{ ...cellInputStyle, width: "28%" }}
-                          />
-                          <IconButton color="error" size="small" onClick={() => onDelete(idx)}>
-                            <Delete fontSize="small" />
-                          </IconButton>
-                        </>
+                        isMobile ? (
+                          <Box sx={{
+                            display: "flex",
+                            flexDirection: "column",
+                            gap: 1.5,
+                            width: "100%",
+                            p: 1.5,
+                            border: "1px dashed var(--border-color)",
+                            borderRadius: "10px",
+                            backgroundColor: "rgba(0, 0, 0, 0.01)"
+                          }}>
+                            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                              <Typography sx={{ fontSize: "0.78rem", fontWeight: 800, color: accentColor }}>
+                                Range #{idx + 1}
+                              </Typography>
+                              <IconButton color="error" size="small" onClick={() => onDelete(idx)} sx={{ p: 0.5 }}>
+                                <Delete sx={{ fontSize: 18 }} />
+                              </IconButton>
+                            </Box>
+                            <Box sx={{ display: "flex", gap: 1 }}>
+                              <TextField
+                                type="number"
+                                size="small"
+                                label="Min (%)"
+                                value={range.min}
+                                onChange={(e) => onAdd(idx, "min", e.target.value)}
+                                sx={{
+                                  flex: 1,
+                                  "& .MuiOutlinedInput-root": {
+                                    borderRadius: "8px",
+                                    backgroundColor: "var(--bg-paper)"
+                                  },
+                                  "& .MuiInputBase-input": {
+                                    fontWeight: 700
+                                  }
+                                }}
+                              />
+                              <TextField
+                                type="number"
+                                size="small"
+                                label="Max (%)"
+                                value={range.max}
+                                onChange={(e) => onAdd(idx, "max", e.target.value)}
+                                sx={{
+                                  flex: 1,
+                                  "& .MuiOutlinedInput-root": {
+                                    borderRadius: "8px",
+                                    backgroundColor: "var(--bg-paper)"
+                                  },
+                                  "& .MuiInputBase-input": {
+                                    fontWeight: 700
+                                  }
+                                }}
+                              />
+                              <TextField
+                                type="number"
+                                size="small"
+                                label="Points"
+                                value={range.points}
+                                onChange={(e) => onAdd(idx, "points", e.target.value)}
+                                sx={{
+                                  flex: 1,
+                                  "& .MuiOutlinedInput-root": {
+                                    borderRadius: "8px",
+                                    backgroundColor: "var(--bg-paper)"
+                                  },
+                                  "& .MuiInputBase-input": {
+                                    fontWeight: 700
+                                  }
+                                }}
+                              />
+                            </Box>
+                          </Box>
+                        ) : (
+                          <>
+                            <TextField
+                              type="number"
+                              size="small"
+                              value={range.min}
+                              onChange={(e) => onAdd(idx, "min", e.target.value)}
+                              sx={{ ...cellInputStyle, width: "28%", "& .MuiInputBase-input": { textAlign: "center" } }}
+                            />
+                            <TextField
+                              type="number"
+                              size="small"
+                              value={range.max}
+                              onChange={(e) => onAdd(idx, "max", e.target.value)}
+                              sx={{ ...cellInputStyle, width: "28%", "& .MuiInputBase-input": { textAlign: "center" } }}
+                            />
+                            <TextField
+                              type="number"
+                              size="small"
+                              value={range.points}
+                              onChange={(e) => onAdd(idx, "points", e.target.value)}
+                              sx={{ ...cellInputStyle, width: "28%" }}
+                            />
+                            <IconButton color="error" size="small" onClick={() => onDelete(idx)}>
+                              <Delete fontSize="small" />
+                            </IconButton>
+                          </>
+                        )
                       ) : (
                         <>
                           <Typography sx={{ fontSize: "0.8rem", color: "var(--text-secondary)", width: "30%", pl: 1 }}>{range.min}%</Typography>
@@ -495,8 +584,10 @@ const AppraisalSettings = () => {
                       key={idx}
                       sx={{
                         display: "flex",
+                        flexDirection: "row",
                         justifyContent: "space-between",
                         alignItems: "center",
+                        gap: 2,
                         py: 1.2,
                         px: isCapRow ? 1.5 : 0,
                         borderRadius: isCapRow ? "8px" : 0,
@@ -506,23 +597,25 @@ const AppraisalSettings = () => {
                         borderBottom: (isCapRow || idx === items.length - 1) ? "none" : "1px solid var(--border-color)"
                       }}
                     >
-                      <Typography variant="body2" sx={{ fontWeight: isCapRow ? 800 : 500, color: isCapRow ? accentColor : "var(--text-secondary)", fontSize: "0.82rem", pr: 2 }}>
+                      <Typography variant="body2" sx={{ flex: 1, fontWeight: isCapRow ? 800 : 500, color: isCapRow ? accentColor : "var(--text-secondary)", fontSize: "0.82rem", pr: 2 }}>
                         {item.label}
                       </Typography>
 
-                      {isEditing ? (
-                        <TextField
-                          type="number"
-                          size="small"
-                          value={item.value}
-                          onChange={(e) => item.setter(e.target.value)}
-                          sx={cellInputStyle}
-                        />
-                      ) : (
-                        <Typography variant="body2" sx={{ fontWeight: 800, color: isCapRow ? accentColor : "#10b981", whiteSpace: "nowrap" }}>
-                          {item.value} pts
-                        </Typography>
-                      )}
+                      <Box sx={{ flexShrink: 0 }}>
+                        {isEditing ? (
+                          <TextField
+                            type="number"
+                            size="small"
+                            value={item.value}
+                            onChange={(e) => item.setter(e.target.value)}
+                            sx={cellInputStyle}
+                          />
+                        ) : (
+                          <Typography variant="body2" sx={{ fontWeight: 800, color: isCapRow ? accentColor : "#10b981", whiteSpace: "nowrap" }}>
+                            {item.value} pts
+                          </Typography>
+                        )}
+                      </Box>
                     </Box>
                   );
                 })}
@@ -623,7 +716,7 @@ const AppraisalSettings = () => {
               setter: (val) => setConfig(prev => ({ ...prev, research: { ...prev.research, hIndexRateHigh: Number(val) } }))
             }
           ].map((item, idx) => (
-            <Grid item xs={12} sm={6} md={3} key={idx}>
+            <Grid size={{ xs: 12, sm: 6, md: 3 }} key={idx}>
               <Box
                 sx={{
                   p: 2,
@@ -640,7 +733,7 @@ const AppraisalSettings = () => {
                 <Typography sx={{ fontSize: "0.72rem", fontWeight: 700, color: "var(--text-secondary)" }}>
                   {item.label}
                 </Typography>
-                
+
                 {isEditing ? (
                   <TextField
                     type="number"
@@ -739,17 +832,19 @@ const AppraisalSettings = () => {
               size="small"
               value={adminSearch}
               onChange={(e) => setAdminSearch(e.target.value)}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <Search fontSize="small" />
-                  </InputAdornment>
-                ),
-                endAdornment: adminSearch && (
-                  <InputAdornment position="end">
-                    <IconButton size="small" onClick={() => setAdminSearch("")}><Close fontSize="small" /></IconButton>
-                  </InputAdornment>
-                )
+              slotProps={{
+                input: {
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <Search fontSize="small" />
+                    </InputAdornment>
+                  ),
+                  endAdornment: adminSearch && (
+                    <InputAdornment position="end">
+                      <IconButton size="small" onClick={() => setAdminSearch("")}><Close fontSize="small" /></IconButton>
+                    </InputAdornment>
+                  )
+                }
               }}
               sx={{
                 width: { xs: "100%", sm: "280px" },
@@ -843,7 +938,7 @@ const AppraisalSettings = () => {
                 Maximum allowable points count for section 4.
               </Typography>
             </Box>
-            
+
             {isEditing ? (
               <TextField
                 type="number"
@@ -875,58 +970,75 @@ const AppraisalSettings = () => {
         title="Appraisal Points Settings"
         subtitle="Manage points mapping, caps, and weightage rules for self appraisal configurations."
         action={
-          <Box sx={{ display: "flex", alignItems: "center", gap: 2, flexWrap: "wrap", justifyContent: { xs: "stretch", md: "flex-end" } }}>
-            <FormControlLabel
-              control={
-                <Switch
-                  checked={config.isActive || false}
-                  onChange={(e) => setConfig(prev => ({ ...prev, isActive: e.target.checked }))}
-                  color="primary"
+          <Box sx={{
+            display: "flex",
+            flexDirection: { xs: "column", sm: "row" },
+            alignItems: { xs: "stretch", sm: "center" },
+            gap: 2,
+            width: { xs: "100%", sm: "auto" }
+          }}>
+            {/* Group Switch and Academic Year Select side-by-side on mobile */}
+            <Box sx={{
+              display: "flex",
+              flexDirection: "row",
+              alignItems: "center",
+              gap: 2,
+              width: { xs: "100%", sm: "auto" },
+              justifyContent: "space-between"
+            }}>
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={config.isActive || false}
+                    onChange={(e) => setConfig(prev => ({ ...prev, isActive: e.target.checked }))}
+                    color="primary"
+                    sx={{
+                      "& .MuiSwitch-switchBase.Mui-checked": {
+                        color: "var(--color-primary)"
+                      },
+                      "& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track": {
+                        backgroundColor: "var(--color-primary)"
+                      }
+                    }}
+                  />
+                }
+                label={
+                  <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)" }}>
+                    Active Config
+                  </Typography>
+                }
+                sx={{ m: 0 }}
+              />
+
+              <FormControl variant="outlined" size="small" sx={{ minWidth: { xs: 120, sm: 160 }, flex: { xs: 1, sm: "none" } }}>
+                <InputLabel id="academic-year-select-label">Academic Year</InputLabel>
+                <Select
+                  labelId="academic-year-select-label"
+                  value={selectedYear}
+                  onChange={(e) => setSelectedYear(e.target.value)}
+                  label="Academic Year"
                   sx={{
-                    "& .MuiSwitch-switchBase.Mui-checked": {
-                      color: "var(--color-primary)"
+                    borderRadius: "10px",
+                    backgroundColor: "var(--bg-paper)",
+                    "& .MuiOutlinedInput-notchedOutline": {
+                      borderColor: "var(--border-color)"
                     },
-                    "& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track": {
-                      backgroundColor: "var(--color-primary)"
+                    "&:hover .MuiOutlinedInput-notchedOutline": {
+                      borderColor: "var(--color-primary)"
+                    },
+                    "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                      borderColor: "var(--color-primary)"
                     }
                   }}
-                />
-              }
-              label={
-                <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)" }}>
-                  Active Config
-                </Typography>
-              }
-            />
-
-            <FormControl variant="outlined" size="small" sx={{ minWidth: 160 }}>
-              <InputLabel id="academic-year-select-label">Academic Year</InputLabel>
-              <Select
-                labelId="academic-year-select-label"
-                value={selectedYear}
-                onChange={(e) => setSelectedYear(e.target.value)}
-                label="Academic Year"
-                sx={{
-                  borderRadius: "10px",
-                  backgroundColor: "var(--bg-paper)",
-                  "& .MuiOutlinedInput-notchedOutline": {
-                    borderColor: "var(--border-color)"
-                  },
-                  "&:hover .MuiOutlinedInput-notchedOutline": {
-                    borderColor: "var(--color-primary)"
-                  },
-                  "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
-                    borderColor: "var(--color-primary)"
-                  }
-                }}
-              >
-                {academicYears.map((ay) => (
-                  <MenuItem key={ay._id} value={ay._id}>
-                    {ay.year}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
+                >
+                  {academicYears.map((ay) => (
+                    <MenuItem key={ay._id} value={ay._id}>
+                      {ay.year}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Box>
 
             <Button
               variant="contained"
@@ -939,9 +1051,11 @@ const AppraisalSettings = () => {
                 textTransform: "none",
                 fontWeight: 700,
                 px: 3,
+                py: 1,
                 boxShadow: "0 4px 14px rgba(59, 130, 246, 0.4)",
                 background: "var(--gradient-primary)",
                 color: "#fff",
+                width: { xs: "100%", sm: "auto" },
                 "&:hover": {
                   background: "var(--gradient-primary-hover)"
                 }
@@ -971,6 +1085,7 @@ const AppraisalSettings = () => {
             onChange={(e, newTab) => setActiveTab(newTab)}
             variant="scrollable"
             scrollButtons="auto"
+            allowScrollButtonsMobile
             sx={{
               "& .MuiTabs-indicator": {
                 backgroundColor: "var(--color-primary)",
