@@ -447,8 +447,7 @@ const SDG = () => {
 
                     fullText += content.items
                         .map(item => item.str)
-                        .join(" ")
-                        .replace(/([a-zA-Z])\s+([a-zA-Z])/g, '$1$2') + " ";
+                        .join(" ") + " ";
                 }
 
                 text = fullText;
@@ -483,6 +482,7 @@ const SDG = () => {
             const results = {};
             let totalMatches = 0;
             let matchedKeywordsSet = new Set();
+            const matchedKeywordsPerSdg = {};
 
             const escapeRegExp = (string) => {
                 return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -491,6 +491,7 @@ const SDG = () => {
             Object.entries(sdgData).forEach(([id, data]) => {
 
                 let matchCount = 0;
+                matchedKeywordsPerSdg[id] = [];
 
                 data.keywords.forEach((keyword) => {
 
@@ -502,11 +503,16 @@ const SDG = () => {
 
                         // Using standard word boundaries for better accuracy
                         const regex = new RegExp(`\\b${escapedKw}\\b`, "gi");
-
-                        if (regex.test(text)) {
-                            matchCount++;
-                            totalMatches++;
+                        const matches = text.match(regex);
+                        if (matches) {
+                            const occurrences = matches.length;
+                            matchCount += occurrences;
+                            totalMatches += occurrences;
                             matchedKeywordsSet.add(kw);
+                            matchedKeywordsPerSdg[id].push({
+                                keyword,
+                                count: occurrences
+                            });
                         }
                     }
                 });
@@ -531,6 +537,7 @@ const SDG = () => {
             // =========================
             setMatchedResults({
                 counts: results,
+                matchedKeywords: matchedKeywordsPerSdg,
                 stats: {
                     fileName: file.name,
                     totalMatches,
@@ -716,6 +723,29 @@ const SDG = () => {
                                             background: SDG_COLOR_MAP[id],
                                             borderRadius: '3px'
                                         }} />
+                                    </Box>
+
+                                    {/* Matched Keywords */}
+                                    <Box sx={{ mt: 2, display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                                        {results.matchedKeywords?.[id]?.map((item, idx) => (
+                                            <Tooltip key={idx} title={`Matched ${item.count} time(s)`} arrow>
+                                                <Chip
+                                                    label={`${item.keyword} (${item.count})`}
+                                                    size="small"
+                                                    sx={{
+                                                        background: 'var(--bg-accent-4)',
+                                                        color: 'var(--text-secondary)',
+                                                        border: '1px solid var(--border-color)',
+                                                        fontSize: '0.65rem',
+                                                        height: '20px',
+                                                        '&:hover': {
+                                                            background: 'var(--bg-accent-1)',
+                                                            color: 'var(--text-primary)',
+                                                        }
+                                                    }}
+                                                />
+                                            </Tooltip>
+                                        ))}
                                     </Box>
                                 </Paper>
                             );
