@@ -1590,12 +1590,12 @@ const SelfAppraisal = () => {
           passed: metric21Passed,
           isGating: true
         },
-        teaching: {
-          label: `Teaching Score (Min ${thresholds.teaching})`,
-          desc: `Current: ${scores.T} / 80`,
-          passed: teachingPassed,
-          isGating: false
-        },
+        // teaching: {
+        //   label: `Teaching Score (Min ${thresholds.teaching})`,
+        //   desc: `Current: ${scores.T} / 80`,
+        //   passed: teachingPassed,
+        //   isGating: false
+        // },
         total1to4: {
           label: `Total (1-4) Score (Min ${thresholds.total1to4})`,
           desc: `Current: ${scores.total1to4} / 200`,
