@@ -375,7 +375,6 @@ export default function FeedbackManagement() {
               "PHASE",
               "COUNT (G/T)",
               "PERCENTAGE",
-              "OVERALL %",
               "ACTIONS"
             ]}
             rows={results.map((r) => [
@@ -441,10 +440,6 @@ export default function FeedbackManagement() {
                          <Typography sx={{ color: "var(--color-primary)", fontWeight: 800, fontSize: 15 }}>{r.percentage}%</Typography>
                     </Box>
                 ),
-              },
-              {
-                value: r.overallPercentage,
-                display: <Typography sx={{ color: "#10b981", fontWeight: 800, fontSize: 15 }}>{r.overallPercentage}%</Typography>,
               },
               {
                 value: "delete",

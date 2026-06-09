@@ -179,7 +179,6 @@ export default function FeedbackDiscrepancies() {
         totalStudents:  0,
         givenStudents:  0,
         percentage:     0,
-        overallPercentage: 0,
         semesterNumber: selected.semester || "",
         yearNumber:     selected.semester || "", 
       },
@@ -215,7 +214,6 @@ export default function FeedbackDiscrepancies() {
           totalStudents:     Number(row.totalStudents),
           givenStudents:     Number(row.givenStudents),
           percentage:        Number(row.percentage),
-          overallPercentage: Number(row.overallPercentage),
         });
       }
 
@@ -239,7 +237,6 @@ export default function FeedbackDiscrepancies() {
           totalStudents:     Number(row.totalStudents),
           givenStudents:     Number(row.givenStudents),
           percentage:        Number(row.percentage),
-          overallPercentage: Number(row.overallPercentage),
         });
       }
 
@@ -624,7 +621,7 @@ export default function FeedbackDiscrepancies() {
                     <Table size="small" sx={{ minWidth: 1000 }}>
                       <TableHead sx={{ background: "var(--bg-accent-1)" }}>
                         <TableRow>
-                          {["#", "Subject", "Code", "Prog", "Branch", "Sec", "Ph", "G/T", "%", "Ovr %", ""].map(h => (
+                          {["#", "Subject", "Code", "Prog", "Branch", "Sec", "Ph", "G/T", "%", ""].map(h => (
                             <TableCell key={h} sx={{ fontWeight: 800, fontSize: 12, color: "var(--text-primary)", py: 1.5 }}>{h}</TableCell>
                           ))}
                         </TableRow>
@@ -669,7 +666,6 @@ export default function FeedbackDiscrepancies() {
                                 </Box>
                             </TableCell>
                             <TableCell><TextField variant="standard" type="number" value={row.percentage} onChange={e => handleResultEdit(idx, "percentage", e.target.value)} sx={{ width: 45 }} InputProps={{ sx: { fontSize: 13, fontWeight: 800, color: "var(--color-primary)" } }} /></TableCell>
-                            <TableCell><TextField variant="standard" type="number" value={row.overallPercentage} onChange={e => handleResultEdit(idx, "overallPercentage", e.target.value)} sx={{ width: 45 }} InputProps={{ sx: { fontSize: 13, fontWeight: 800, color: "#10b981" } }} /></TableCell>
                             <TableCell>
                                 {row._isNew && <IconButton size="small" onClick={() => handleRemoveRow(idx)} sx={{ color: "#ef4444" }}><CloseIcon fontSize="small" /></IconButton>}
                             </TableCell>
