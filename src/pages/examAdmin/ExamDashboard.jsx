@@ -87,13 +87,13 @@ const ExamDashboard = () => {
     return `${day}/${month}/${year}`;
   };
 
-  if (loading) {
-    return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '60vh' }}>
-        <Loader />
-      </Box>
-    );
-  }
+  // if (loading) {
+  //   return (
+  //     <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '60vh' }}>
+  //       <Loader />
+  //     </Box>
+  //   );
+  // }
 
   // Top Cards Data
   const topCards = [
@@ -307,7 +307,7 @@ const ExamDashboard = () => {
                 <Typography variant="body2" sx={{ color: "var(--text-secondary)", fontSize: "0.75rem", fontWeight: 600 }}>Progress</Typography>
                 <Typography variant="body2" sx={{ color: "var(--color-primary)", fontSize: "0.75rem", fontWeight: 800 }}>{data.submittedFaculties} / {data.totalFaculties}</Typography>
               </Box>
-              <Loader
+              <LinearProgress
                 variant="determinate"
                 value={donePercentage}
                 sx={{
