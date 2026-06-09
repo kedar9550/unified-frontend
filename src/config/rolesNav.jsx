@@ -130,11 +130,7 @@ export const ROLE_ROUTES = {
           path: "/hod/proctoring-approvals",
           icon: <SupervisorAccount />
         },
-        {
-          text: "Administration Verification",
-          path: "/hod/administration-approvals",
-          icon: <AccountBalance />
-        },
+
         {
           text: "Resource Utilization",
           path: "/hod/value-addition/resource-utilization",
@@ -144,6 +140,11 @@ export const ROLE_ROUTES = {
           text: "Contribution",
           path: "/hod/value-addition/contribution",
           icon: <WorkspacePremium />
+        },
+        {
+          text: "Administration Verification",
+          path: "/hod/administration-approvals",
+          icon: <AccountBalance />
         },
         {
           text: "Appraisal Verification",
