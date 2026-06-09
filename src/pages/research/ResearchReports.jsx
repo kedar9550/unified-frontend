@@ -424,7 +424,7 @@ export default function ResearchReports() {
                                 <Tab icon={<JournalIcon sx={{ fontSize: 20 }} />} iconPosition="start" label="Journals" />
                                 <Tab icon={<BookIcon sx={{ fontSize: 20 }} />} iconPosition="start" label="Text Books" />
                                 <Tab icon={<BookIcon sx={{ fontSize: 20 }} />} iconPosition="start" label="Book Chapters" />
-                                <Tab icon={<AnalyticsIcon sx={{ fontSize: 20 }} />} iconPosition="start" label="Consolidated" />
+                                <Tab icon={<AnalyticsIcon sx={{ fontSize: 20 }} />} iconPosition="start" label="Consolidated Report" />
                             </Tabs>
 
                             <Box sx={{ flexGrow: 1 }} />
