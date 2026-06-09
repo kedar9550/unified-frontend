@@ -4,7 +4,8 @@ import {
     DialogContent, DialogActions, TextField, CircularProgress, IconButton,
     Tooltip, Divider, List, ListItem, ListItemText, ListItemSecondaryAction,
     Fade, Chip, MenuItem, Select, FormControl, InputLabel,
-    Tabs, Tab, Paper, Switch, FormControlLabel, FormHelperText
+    Tabs, Tab, Paper, Switch, FormControlLabel, FormHelperText,
+    useTheme, useMediaQuery
 } from "@mui/material";
 import { toast } from "sonner";
 import {
@@ -27,26 +28,25 @@ const GridConnector = ({ activeIndex, itemsCount, color = "var(--color-primary)"
 
     if (noWrap) {
         return (
-            <Grid 
-                container 
-                spacing={3} 
-                sx={{ 
-                    mt: -2, 
-                    mb: 1, 
-                    pointerEvents: 'none', 
-                    flexWrap: 'nowrap', 
+            <Grid
+                container
+                spacing={3}
+                sx={{
+                    mt: -2,
+                    mb: 1,
+                    pointerEvents: 'none',
+                    flexWrap: 'nowrap',
                     display: { xs: 'none', sm: 'flex' },
-                    ...sx 
+                    ...sx
                 }}
             >
                 {Array.from({ length: itemsCount }).map((_, idx) => {
                     const isConnector = idx === activeIndex;
                     return (
-                        <Grid 
-                            item 
-                            xs={true} 
-                            key={idx} 
-                            sx={{ 
+                        <Grid
+                            size="grow"
+                            key={idx}
+                            sx={{
                                 display: 'flex',
                                 justifyContent: 'center',
                                 flex: '1 1 0px',
@@ -75,11 +75,11 @@ const GridConnector = ({ activeIndex, itemsCount, color = "var(--color-primary)"
     const lgCols = cols.lg || mdCols;
 
     return (
-        <Box 
-            sx={{ 
-                mt: -2, 
-                mb: 1, 
-                pointerEvents: 'none', 
+        <Box
+            sx={{
+                mt: -2,
+                mb: 1,
+                pointerEvents: 'none',
                 display: { xs: 'none', sm: 'grid' },
                 gridTemplateColumns: {
                     sm: `repeat(${smCols}, 1fr)`,
@@ -88,7 +88,7 @@ const GridConnector = ({ activeIndex, itemsCount, color = "var(--color-primary)"
                 },
                 gap: 3,
                 width: '100%',
-                ...sx 
+                ...sx
             }}
         >
             {/* Large Desktop Connector (lg) */}
@@ -143,6 +143,8 @@ const GridConnector = ({ activeIndex, itemsCount, color = "var(--color-primary)"
 };
 
 const AcademicStructure = () => {
+    const theme = useTheme();
+    const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
     const [activeTab, setActiveTab] = useState(0);
     const [selectedSchool, setSelectedSchool] = useState(null);
     const [selectedDepartment, setSelectedDepartment] = useState(null);
@@ -272,12 +274,12 @@ const AcademicStructure = () => {
         const centralDepts = departments.filter(d => d.type === 'Central');
 
         // School departments (if a school is selected)
-        const schoolDepts = selectedSchool 
-            ? departments.filter(d => 
+        const schoolDepts = selectedSchool
+            ? departments.filter(d =>
                 (d.schoolIds && d.schoolIds.some(id => (id?._id || id) === selectedSchool._id)) ||
-                d.schoolId?._id === selectedSchool._id || 
+                d.schoolId?._id === selectedSchool._id ||
                 d.schoolId === selectedSchool._id
-              )
+            )
             : [];
 
         // Programs for the selected department
@@ -306,18 +308,18 @@ const AcademicStructure = () => {
 
         // Specializations for the selected department and program
         const programBranches = (selectedDepartment && selectedProgram)
-            ? branches.filter(b => 
+            ? branches.filter(b =>
                 (b.departmentId?._id === selectedDepartment._id || b.departmentId === selectedDepartment._id) &&
                 (b.programId?._id === selectedProgram._id || b.programId === selectedProgram._id) &&
                 (!selectedSchool || !b.schoolId || (b.schoolId?._id === selectedSchool._id || b.schoolId === selectedSchool._id))
-              )
+            )
             : [];
 
         return (
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
                 {/* SCHOOLS ROW */}
                 <Box>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                    <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, justifyContent: 'space-between', alignItems: { xs: 'stretch', sm: 'center' }, gap: 2, mb: 2 }}>
                         <Box>
                             <Typography variant="h6" fontWeight={800} sx={{ display: 'flex', alignItems: 'center', gap: 1.5, color: 'var(--text-primary)' }}>
                                 <School sx={{ color: 'var(--color-primary)' }} /> Schools
@@ -326,30 +328,30 @@ const AcademicStructure = () => {
                                 Schools are the major academic divisions in the university. Click to explore.
                             </Typography>
                         </Box>
-                        <Button variant="contained" startIcon={<Add />} onClick={() => openModal('school', 'add')} 
-                            sx={{ borderRadius: '50px', background: "var(--gradient-primary)", textTransform: 'none', fontWeight: 700 }}>
+                        <Button variant="contained" startIcon={<Add />} onClick={() => openModal('school', 'add')}
+                            sx={{ borderRadius: '50px', background: "var(--gradient-primary)", textTransform: 'none', fontWeight: 700, width: { xs: '100%', sm: 'auto' } }}>
                             Create School
                         </Button>
                     </Box>
-                    
+
                     <Grid container spacing={3} sx={{ mb: 2 }}>
                         {schools.map(school => {
-                            const sDepts = departments.filter(d => 
+                            const sDepts = departments.filter(d =>
                                 (d.schoolIds && d.schoolIds.some(id => (id?._id || id) === school._id)) ||
-                                d.schoolId?._id === school._id || 
+                                d.schoolId?._id === school._id ||
                                 d.schoolId === school._id
                             );
-                            const sBranches = branches.filter(b => 
+                            const sBranches = branches.filter(b =>
                                 b.schoolId?._id === school._id || b.schoolId === school._id ||
                                 (!b.schoolId && sDepts.some(d => d._id === b.departmentId?._id || d._id === b.departmentId))
                             );
                             const sProgs = programs.filter(p => p.schoolId?._id === school._id || p.schoolId === school._id);
                             const isSelected = selectedSchool?._id === school._id;
-                            
+
                             return (
-                                <Grid item xs={12} sm={6} md={6} lg={3} key={school._id} sx={{ display: 'flex', flexDirection: 'column' }}>
-                                    <Card 
-                                        sx={{ 
+                                <Grid size={{ xs: 12, sm: 6, md: 3, lg: 3 }} key={school._id} sx={{ display: 'flex', flexDirection: 'column' }}>
+                                    <Card
+                                        sx={{
                                             height: '100%',
                                             display: 'flex',
                                             flexDirection: 'column',
@@ -365,7 +367,7 @@ const AcademicStructure = () => {
                                                 boxShadow: '0 4px 12px rgba(0, 0, 0, 0.05)',
                                                 '& .edit-school-btn': { opacity: 1, visibility: 'visible' }
                                             }
-                                        }} 
+                                        }}
                                         onClick={() => {
                                             if (isSelected) {
                                                 setSelectedSchool(null);
@@ -381,13 +383,13 @@ const AcademicStructure = () => {
                                         <CardContent sx={{ p: '20px !important', display: 'flex', flexDirection: 'column', height: '100%', flexGrow: 1 }}>
                                             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1.5 }}>
                                                 <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'center' }}>
-                                                    <Box sx={{ 
-                                                        width: 40, 
-                                                        height: 40, 
-                                                        borderRadius: '50%', 
-                                                        background: 'var(--color-primary)', 
-                                                        display: 'flex', 
-                                                        alignItems: 'center', 
+                                                    <Box sx={{
+                                                        width: 40,
+                                                        height: 40,
+                                                        borderRadius: '50%',
+                                                        background: 'var(--color-primary)',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
                                                         justifyContent: 'center',
                                                         flexShrink: 0
                                                     }}>
@@ -402,19 +404,19 @@ const AcademicStructure = () => {
                                                         </Typography>
                                                     </Box>
                                                 </Box>
-                                                
+
                                                 <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center', mt: -0.5, mr: -1 }}>
-                                                    <IconButton 
-                                                        size="small" 
+                                                    <IconButton
+                                                        size="small"
                                                         className="edit-school-btn"
                                                         onClick={(e) => { e.stopPropagation(); openModal('school', 'edit', school); }}
-                                                        sx={{ 
-                                                            color: 'text.secondary', 
-                                                            p: 0.5, 
-                                                            opacity: 0, 
-                                                            visibility: 'hidden', 
+                                                        sx={{
+                                                            color: 'text.secondary',
+                                                            p: 0.5,
+                                                            opacity: 0,
+                                                            visibility: 'hidden',
                                                             transition: 'all 0.2s ease',
-                                                            '&:hover': { color: 'var(--color-primary)', background: 'rgba(37, 99, 235, 0.08)' } 
+                                                            '&:hover': { color: 'var(--color-primary)', background: 'rgba(37, 99, 235, 0.08)' }
                                                         }}
                                                     >
                                                         <Edit sx={{ fontSize: 16 }} />
@@ -464,11 +466,11 @@ const AcademicStructure = () => {
                 {/* SCHOOL TO DEPARTMENTS CONNECTOR */}
                 {selectedSchool && (
                     <>
-                        <GridConnector 
-                            activeIndex={schools.findIndex(s => s._id === selectedSchool._id)} 
-                            itemsCount={schools.length} 
-                            color="#10B981" 
-                            cols={{ sm: 2, md: 2, lg: 4 }}
+                        <GridConnector
+                            activeIndex={schools.findIndex(s => s._id === selectedSchool._id)}
+                            itemsCount={schools.length}
+                            color="#10B981"
+                            cols={{ sm: 2, md: 4, lg: 4 }}
                         />
                         <Box sx={{ display: { xs: 'flex', sm: 'none' }, justifyContent: 'center', mt: -1, mb: 1 }}>
                             <ConnectorLine color="#10B981" />
@@ -478,17 +480,17 @@ const AcademicStructure = () => {
 
                 {/* DEPARTMENTS SECTION */}
                 {selectedSchool && (
-                    <Box sx={{ p: 2.5, borderRadius: '16px', background: '#f4fbf7', border: '1px solid #d1f2e1', mb: 2, ml: { xs: 1.5, sm: 3, md: 4 } }}>
+                    <Box sx={{ p: { xs: 1.5, sm: 2.5 }, borderRadius: '16px', background: '#f4fbf7', border: '1px solid #d1f2e1', mb: 2, ml: { xs: 0, sm: 3, md: 4 } }}>
                         {/* Header */}
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2.5 }}>
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                                <Box sx={{ 
-                                    width: 32, 
-                                    height: 32, 
-                                    borderRadius: '50%', 
-                                    background: '#10B981', 
-                                    display: 'flex', 
-                                    alignItems: 'center', 
+                        <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, justifyContent: 'space-between', alignItems: { xs: 'flex-start', sm: 'center' }, gap: 1.5, mb: 2.5 }}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flexWrap: 'wrap' }}>
+                                <Box sx={{
+                                    width: 32,
+                                    height: 32,
+                                    borderRadius: '50%',
+                                    background: '#10B981',
+                                    display: 'flex',
+                                    alignItems: 'center',
                                     justifyContent: 'center',
                                     boxShadow: '0 4px 10px rgba(16, 185, 129, 0.2)'
                                 }}>
@@ -513,9 +515,9 @@ const AcademicStructure = () => {
                             {schoolDepts.map(dept => {
                                 const isSelected = selectedDepartment?._id === dept._id;
                                 return (
-                                    <Grid item xs={12} sm={6} md={3} key={dept._id} sx={{ display: 'flex', flexDirection: 'column' }}>
-                                        <Card 
-                                            sx={{ 
+                                    <Grid size={{ xs: 12, sm: 6, md: 3 }} key={dept._id} sx={{ display: 'flex', flexDirection: 'column' }}>
+                                        <Card
+                                            sx={{
                                                 height: '100%',
                                                 display: 'flex',
                                                 flexDirection: 'column',
@@ -532,7 +534,7 @@ const AcademicStructure = () => {
                                                     boxShadow: '0 4px 12px rgba(0, 0, 0, 0.05)',
                                                     '& .edit-dept-btn': { opacity: 1, visibility: 'visible' }
                                                 }
-                                            }} 
+                                            }}
                                             onClick={() => {
                                                 if (isSelected) {
                                                     setSelectedDepartment(null);
@@ -546,13 +548,13 @@ const AcademicStructure = () => {
                                             <CardContent sx={{ p: '16px !important', display: 'flex', flexDirection: 'column', height: '100%', flexGrow: 1 }}>
                                                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
                                                     <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'center' }}>
-                                                        <Box sx={{ 
-                                                            width: 32, 
-                                                            height: 32, 
-                                                            borderRadius: '50%', 
-                                                            background: '#10B981', 
-                                                            display: 'flex', 
-                                                            alignItems: 'center', 
+                                                        <Box sx={{
+                                                            width: 32,
+                                                            height: 32,
+                                                            borderRadius: '50%',
+                                                            background: '#10B981',
+                                                            display: 'flex',
+                                                            alignItems: 'center',
                                                             justifyContent: 'center',
                                                             flexShrink: 0
                                                         }}>
@@ -567,20 +569,20 @@ const AcademicStructure = () => {
                                                             </Typography>
                                                         </Box>
                                                     </Box>
-                                                    
-                                                    <IconButton 
-                                                        size="small" 
+
+                                                    <IconButton
+                                                        size="small"
                                                         className="edit-dept-btn"
                                                         onClick={(e) => { e.stopPropagation(); openModal('department', 'edit', dept); }}
-                                                        sx={{ 
-                                                            color: 'text.secondary', 
-                                                            p: 0.5, 
-                                                            opacity: 0, 
-                                                            visibility: 'hidden', 
+                                                        sx={{
+                                                            color: 'text.secondary',
+                                                            p: 0.5,
+                                                            opacity: 0,
+                                                            visibility: 'hidden',
                                                             transition: 'all 0.2s ease',
-                                                            mt: -0.5, 
-                                                            mr: -1, 
-                                                            '&:hover': { color: '#10B981', background: 'rgba(16, 185, 129, 0.08)' } 
+                                                            mt: -0.5,
+                                                            mr: -1,
+                                                            '&:hover': { color: '#10B981', background: 'rgba(16, 185, 129, 0.08)' }
                                                         }}
                                                     >
                                                         <Edit sx={{ fontSize: 16 }} />
@@ -591,18 +593,18 @@ const AcademicStructure = () => {
                                     </Grid>
                                 );
                             })}
-                            
+
                             {/* Add Department card */}
-                            <Grid item xs={12} sm={6} md={3}>
+                            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                                 <Card
-                                    sx={{ 
-                                        border: "1.5px dashed #10B981", 
-                                        background: "rgba(16,185,129,0.02)", 
-                                        display: "flex", 
-                                        alignItems: "center", 
-                                        justifyContent: "center", 
+                                    sx={{
+                                        border: "1.5px dashed #10B981",
+                                        background: "rgba(16,185,129,0.02)",
+                                        display: "flex",
+                                        alignItems: "center",
+                                        justifyContent: "center",
                                         borderRadius: "12px",
-                                        minHeight: "100px", 
+                                        minHeight: "100px",
                                         boxShadow: 'none',
                                         cursor: 'pointer',
                                         transition: 'all 0.3s ease-in-out',
@@ -627,10 +629,10 @@ const AcademicStructure = () => {
                 {/* DEPARTMENTS TO PROGRAMS CONNECTOR */}
                 {selectedSchool && selectedDepartment && (
                     <>
-                        <GridConnector 
-                            activeIndex={schoolDepts.findIndex(d => d._id === selectedDepartment._id)} 
-                            itemsCount={schoolDepts.length + 1} 
-                            color="#10B981" 
+                        <GridConnector
+                            activeIndex={schoolDepts.findIndex(d => d._id === selectedDepartment._id)}
+                            itemsCount={schoolDepts.length + 1}
+                            color="#10B981"
                             sx={{ ml: { xs: 1.5, sm: 3, md: 4 }, px: 2.5 }}
                         />
                         <Box sx={{ display: { xs: 'flex', sm: 'none' }, justifyContent: 'center', mt: -1, mb: 1, ml: { xs: 1.5, sm: 3, md: 4 } }}>
@@ -641,16 +643,16 @@ const AcademicStructure = () => {
 
                 {/* PROGRAMS SECTION */}
                 {selectedDepartment && (
-                    <Box sx={{ p: 2, borderRadius: '12px', background: '#f0f9ff', border: '1px solid #bae6fd', mb: 2, ml: { xs: 2.5, sm: 5, md: 8 } }}>
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                                <Box sx={{ 
-                                    width: 28, 
-                                    height: 28, 
-                                    borderRadius: '50%', 
-                                    background: 'var(--color-primary)', 
-                                    display: 'flex', 
-                                    alignItems: 'center', 
+                    <Box sx={{ p: { xs: 1.5, sm: 2 }, borderRadius: '12px', background: '#f0f9ff', border: '1px solid #bae6fd', mb: 2, ml: { xs: 0, sm: 5, md: 8 } }}>
+                        <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, justifyContent: 'space-between', alignItems: { xs: 'flex-start', sm: 'center' }, gap: 1.5, mb: 2 }}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flexWrap: 'wrap' }}>
+                                <Box sx={{
+                                    width: 28,
+                                    height: 28,
+                                    borderRadius: '50%',
+                                    background: 'var(--color-primary)',
+                                    display: 'flex',
+                                    alignItems: 'center',
                                     justifyContent: 'center',
                                     boxShadow: '0 4px 10px rgba(2, 132, 199, 0.2)'
                                 }}>
@@ -669,14 +671,14 @@ const AcademicStructure = () => {
                                 {deptPrograms.length} Programs
                             </Typography>
                         </Box>
- 
+
                         <Grid container spacing={3}>
                             {deptPrograms.map(prog => {
                                 const isSelected = selectedProgram?._id === prog._id;
                                 return (
-                                    <Grid item xs={12} sm={6} md={3} key={prog._id} sx={{ display: 'flex', flexDirection: 'column' }}>
-                                        <Card 
-                                            sx={{ 
+                                    <Grid size={{ xs: 12, sm: 6, md: 3 }} key={prog._id} sx={{ display: 'flex', flexDirection: 'column' }}>
+                                        <Card
+                                            sx={{
                                                 height: '100%',
                                                 display: 'flex',
                                                 flexDirection: 'column',
@@ -693,7 +695,7 @@ const AcademicStructure = () => {
                                                     boxShadow: '0 4px 12px rgba(0, 0, 0, 0.05)',
                                                     '& .edit-prog-btn': { opacity: 1, visibility: 'visible' }
                                                 }
-                                            }} 
+                                            }}
                                             onClick={() => {
                                                 if (isSelected) {
                                                     setSelectedProgram(null);
@@ -712,38 +714,38 @@ const AcademicStructure = () => {
                                                             {prog.type} · {prog.durationYears || 4} Years
                                                         </Typography>
                                                     </Box>
-                                                    
-                                                    <IconButton 
-                                                        size="small" 
+
+                                                    <IconButton
+                                                        size="small"
                                                         className="edit-prog-btn"
                                                         onClick={(e) => { e.stopPropagation(); openModal('program', 'edit', prog); }}
-                                                        sx={{ 
-                                                            color: 'text.secondary', 
-                                                            p: 0.5, 
-                                                            opacity: 0, 
-                                                            visibility: 'hidden', 
+                                                        sx={{
+                                                            color: 'text.secondary',
+                                                            p: 0.5,
+                                                            opacity: 0,
+                                                            visibility: 'hidden',
                                                             transition: 'all 0.2s ease',
-                                                            mt: -0.5, 
-                                                            mr: -1, 
-                                                            '&:hover': { color: 'var(--color-primary)', background: 'rgba(37, 99, 235, 0.08)' } 
+                                                            mt: -0.5,
+                                                            mr: -1,
+                                                            '&:hover': { color: 'var(--color-primary)', background: 'rgba(37, 99, 235, 0.08)' }
                                                         }}
                                                     >
                                                         <Edit sx={{ fontSize: 14 }} />
                                                     </IconButton>
                                                 </Box>
- 
+
                                                 <Box sx={{ mt: 'auto', display: 'flex', gap: 1, alignItems: 'center', pt: 1 }}>
-                                                    <Chip 
-                                                        label={prog.programPattern === 'YEAR' ? 'YEAR WISE' : 'SEMESTER WISE'} 
-                                                        size="small" 
-                                                        sx={{ 
-                                                            fontWeight: 700, 
-                                                            height: 18, 
-                                                            fontSize: '0.6rem', 
-                                                            borderRadius: '4px', 
-                                                            bgcolor: 'rgba(37, 99, 235, 0.08)', 
-                                                            color: 'var(--color-primary)' 
-                                                        }} 
+                                                    <Chip
+                                                        label={prog.programPattern === 'YEAR' ? 'YEAR WISE' : 'SEMESTER WISE'}
+                                                        size="small"
+                                                        sx={{
+                                                            fontWeight: 700,
+                                                            height: 18,
+                                                            fontSize: '0.6rem',
+                                                            borderRadius: '4px',
+                                                            bgcolor: 'rgba(37, 99, 235, 0.08)',
+                                                            color: 'var(--color-primary)'
+                                                        }}
                                                     />
                                                 </Box>
                                             </CardContent>
@@ -751,18 +753,18 @@ const AcademicStructure = () => {
                                     </Grid>
                                 );
                             })}
- 
+
                             {/* Add Program card */}
-                            <Grid item xs={12} sm={6} md={3}>
+                            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                                 <Card
-                                    sx={{ 
-                                        border: "1.5px dashed var(--color-primary)", 
-                                        background: "rgba(37,99,235,0.02)", 
-                                        display: "flex", 
-                                        alignItems: "center", 
-                                        justifyContent: "center", 
+                                    sx={{
+                                        border: "1.5px dashed var(--color-primary)",
+                                        background: "rgba(37,99,235,0.02)",
+                                        display: "flex",
+                                        alignItems: "center",
+                                        justifyContent: "center",
                                         borderRadius: "10px",
-                                        minHeight: "85px", 
+                                        minHeight: "85px",
                                         boxShadow: 'none',
                                         cursor: 'pointer',
                                         transition: 'all 0.2s ease-in-out',
@@ -787,10 +789,10 @@ const AcademicStructure = () => {
                 {/* PROGRAMS TO SPECIALIZATIONS CONNECTOR */}
                 {selectedDepartment && selectedProgram && (
                     <>
-                        <GridConnector 
-                            activeIndex={deptPrograms.findIndex(p => p._id === selectedProgram._id)} 
-                            itemsCount={deptPrograms.length + 1} 
-                            color="var(--color-primary)" 
+                        <GridConnector
+                            activeIndex={deptPrograms.findIndex(p => p._id === selectedProgram._id)}
+                            itemsCount={deptPrograms.length + 1}
+                            color="var(--color-primary)"
                             sx={{ ml: { xs: 2.5, sm: 5, md: 8 }, px: 2 }}
                         />
                         <Box sx={{ display: { xs: 'flex', sm: 'none' }, justifyContent: 'center', mt: -1, mb: 1, ml: { xs: 2.5, sm: 5, md: 8 } }}>
@@ -801,16 +803,16 @@ const AcademicStructure = () => {
 
                 {/* SPECIALIZATIONS SECTION */}
                 {selectedProgram && (
-                    <Box sx={{ p: 1.5, borderRadius: '10px', background: '#faf5ff', border: '1px solid #f3e8ff', mb: 2, ml: { xs: 3.5, sm: 7, md: 12 } }}>
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5 }}>
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                                <Box sx={{ 
-                                    width: 24, 
-                                    height: 24, 
-                                    borderRadius: '50%', 
-                                    background: '#8b5cf6', 
-                                    display: 'flex', 
-                                    alignItems: 'center', 
+                    <Box sx={{ p: { xs: 1.25, sm: 1.5 }, borderRadius: '10px', background: '#faf5ff', border: '1px solid #f3e8ff', mb: 2, ml: { xs: 0, sm: 7, md: 12 } }}>
+                        <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, justifyContent: 'space-between', alignItems: { xs: 'flex-start', sm: 'center' }, gap: 1.5, mb: 1.5 }}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flexWrap: 'wrap' }}>
+                                <Box sx={{
+                                    width: 24,
+                                    height: 24,
+                                    borderRadius: '50%',
+                                    background: '#8b5cf6',
+                                    display: 'flex',
+                                    alignItems: 'center',
                                     justifyContent: 'center',
                                     boxShadow: '0 4px 10px rgba(139, 92, 246, 0.2)'
                                 }}>
@@ -832,9 +834,9 @@ const AcademicStructure = () => {
 
                         <Grid container spacing={2}>
                             {programBranches.map(spec => (
-                                <Grid item xs={12} sm={6} md={3} key={spec._id} sx={{ display: 'flex', flexDirection: 'column' }}>
-                                    <Card 
-                                        sx={{ 
+                                <Grid size={{ xs: 12, sm: 6, md: 3 }} key={spec._id} sx={{ display: 'flex', flexDirection: 'column' }}>
+                                    <Card
+                                        sx={{
                                             borderRadius: "8px",
                                             background: "#ffffff",
                                             border: '1px solid rgba(0, 0, 0, 0.08)',
@@ -859,17 +861,17 @@ const AcademicStructure = () => {
                                                         CODE: {spec.code}
                                                     </Typography>
                                                 </Box>
-                                                
+
                                                 <Box sx={{ display: 'flex', gap: 0.25, mt: -0.5, mr: -0.5 }}>
-                                                    <IconButton 
-                                                        size="small" 
+                                                    <IconButton
+                                                        size="small"
                                                         onClick={() => openModal('branch', 'edit', spec)}
                                                         sx={{ color: 'text.secondary', p: 0.25, '&:hover': { color: 'var(--color-primary)', background: 'rgba(2, 132, 199, 0.08)' } }}
                                                     >
                                                         <Edit sx={{ fontSize: 14 }} />
                                                     </IconButton>
-                                                    <IconButton 
-                                                        size="small" 
+                                                    <IconButton
+                                                        size="small"
                                                         onClick={() => setDeleteConfirm({ open: true, type: 'branch', id: spec._id, name: spec.name })}
                                                         sx={{ color: 'error.main', p: 0.25, '&:hover': { background: 'rgba(239, 68, 68, 0.08)' } }}
                                                     >
@@ -883,16 +885,16 @@ const AcademicStructure = () => {
                             ))}
 
                             {/* Add Specialization card */}
-                            <Grid item xs={12} sm={6} md={3}>
+                            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                                 <Card
-                                    sx={{ 
-                                        border: "1.5px dashed #8b5cf6", 
-                                        background: "rgba(139,92,246,0.02)", 
-                                        display: "flex", 
-                                        alignItems: "center", 
-                                        justifyContent: "center", 
+                                    sx={{
+                                        border: "1.5px dashed #8b5cf6",
+                                        background: "rgba(139,92,246,0.02)",
+                                        display: "flex",
+                                        alignItems: "center",
+                                        justifyContent: "center",
                                         borderRadius: "8px",
-                                        minHeight: "70px", 
+                                        minHeight: "70px",
                                         boxShadow: 'none',
                                         cursor: 'pointer',
                                         transition: 'all 0.3s ease',
@@ -917,7 +919,7 @@ const AcademicStructure = () => {
                 {/* CENTRAL LEVEL DEPARTMENTS */}
                 {(!selectedSchool || selectedDepartment?.type === 'Central') && (
                     <Box sx={{ mt: 4 }}>
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                        <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, justifyContent: 'space-between', alignItems: { xs: 'stretch', sm: 'center' }, gap: 2, mb: 2 }}>
                             <Box>
                                 <Typography variant="h6" fontWeight={800} sx={{ display: 'flex', alignItems: 'center', gap: 1.5, color: 'var(--text-primary)' }}>
                                     <Business sx={{ color: 'var(--color-primary)' }} /> Central Level Departments
@@ -926,8 +928,8 @@ const AcademicStructure = () => {
                                     Departments operating at the central level. Click to explore.
                                 </Typography>
                             </Box>
-                            <Button variant="contained" startIcon={<Add />} onClick={() => openModal('department', 'add', { type: 'Central' })} 
-                                sx={{ borderRadius: '50px', background: "var(--gradient-primary)", textTransform: 'none', fontWeight: 700 }}>
+                            <Button variant="contained" startIcon={<Add />} onClick={() => openModal('department', 'add', { type: 'Central' })}
+                                sx={{ borderRadius: '50px', background: "var(--gradient-primary)", textTransform: 'none', fontWeight: 700, width: { xs: '100%', sm: 'auto' } }}>
                                 Add Central Department
                             </Button>
                         </Box>
@@ -936,9 +938,9 @@ const AcademicStructure = () => {
                             {centralDepts.map(dept => {
                                 const isSelected = selectedDepartment?._id === dept._id;
                                 return (
-                                    <Grid item xs={12} sm={6} md={3} key={dept._id} sx={{ display: 'flex', flexDirection: 'column' }}>
-                                        <Card 
-                                            sx={{ 
+                                    <Grid size={{ xs: 12, sm: 6, md: 3 }} key={dept._id} sx={{ display: 'flex', flexDirection: 'column' }}>
+                                        <Card
+                                            sx={{
                                                 height: '100%',
                                                 display: 'flex',
                                                 flexDirection: 'column',
@@ -954,7 +956,7 @@ const AcademicStructure = () => {
                                                     transform: 'translateY(-2px)',
                                                     boxShadow: '0 8px 24px rgba(0, 0, 0, 0.08)'
                                                 }
-                                            }} 
+                                            }}
                                             onClick={() => {
                                                 if (isSelected) {
                                                     setSelectedDepartment(null);
@@ -969,13 +971,13 @@ const AcademicStructure = () => {
                                             <CardContent sx={{ p: '16px !important', display: 'flex', flexDirection: 'column', height: '100%', flexGrow: 1 }}>
                                                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
                                                     <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'center' }}>
-                                                        <Box sx={{ 
-                                                            width: 32, 
-                                                            height: 32, 
-                                                            borderRadius: '50%', 
-                                                            background: 'var(--color-primary)', 
-                                                            display: 'flex', 
-                                                            alignItems: 'center', 
+                                                        <Box sx={{
+                                                            width: 32,
+                                                            height: 32,
+                                                            borderRadius: '50%',
+                                                            background: 'var(--color-primary)',
+                                                            display: 'flex',
+                                                            alignItems: 'center',
                                                             justifyContent: 'center',
                                                             flexShrink: 0
                                                         }}>
@@ -990,9 +992,9 @@ const AcademicStructure = () => {
                                                             </Typography>
                                                         </Box>
                                                     </Box>
-                                                    
-                                                    <IconButton 
-                                                        size="small" 
+
+                                                    <IconButton
+                                                        size="small"
                                                         onClick={(e) => { e.stopPropagation(); openModal('department', 'edit', dept); }}
                                                         sx={{ color: 'text.secondary', p: 0.5, mt: -0.5, mr: -1, '&:hover': { color: 'var(--color-primary)', background: 'rgba(2, 132, 199, 0.08)' } }}
                                                     >
@@ -1131,14 +1133,14 @@ const AcademicStructure = () => {
                 <Tabs
                     value={activeTab}
                     onChange={(_, val) => setActiveTab(val)}
-                    variant={window.innerWidth < 600 ? "fullWidth" : "standard"}
+                    variant={isMobile ? "fullWidth" : "standard"}
                     scrollButtons="auto"
                     allowScrollButtonsMobile
                     sx={{
                         '& .MuiTabs-flexContainer': { gap: { xs: 0, sm: 1 } },
-                        '& .MuiTab-root': { 
-                            color: 'var(--text-secondary)', 
-                            fontWeight: 700, 
+                        '& .MuiTab-root': {
+                            color: 'var(--text-secondary)',
+                            fontWeight: 700,
                             minHeight: '48px',
                             borderRadius: '12px',
                             transition: 'all 0.3s ease',
@@ -1146,11 +1148,11 @@ const AcademicStructure = () => {
                             px: { xs: 1, sm: 3 },
                             fontSize: { xs: '0.85rem', sm: '1rem' }
                         },
-                        '& .Mui-selected': { 
+                        '& .Mui-selected': {
                             color: 'var(--color-primary) !important',
                             background: 'rgba(0, 78, 146, 0.08) !important',
                         },
-                        '& .MuiTabs-indicator': { 
+                        '& .MuiTabs-indicator': {
                             backgroundColor: 'var(--color-primary)',
                             height: '3px',
                             borderRadius: '3px 3px 0 0'
@@ -1172,9 +1174,9 @@ const AcademicStructure = () => {
             {/* Entity Dialog */}
             <Dialog open={modal.open} onClose={() => setModal({ ...modal, open: false })} maxWidth="xs" fullWidth>
                 <DialogTitle sx={{ fontWeight: 700 }}>
-                    {modal.mode === 'add' 
-                        ? (modal.type === 'branch' 
-                            ? (modal.data.lockProgram 
+                    {modal.mode === 'add'
+                        ? (modal.type === 'branch'
+                            ? (modal.data.lockProgram
                                 ? `Add Specialization for ${programs.find(p => p._id === (modal.data.programId?._id || modal.data.programId))?.name || ''}`
                                 : `Add Program for ${selectedDepartment?.name || ''}`)
                             : `Add ${modal.type?.toUpperCase()}`)
@@ -1212,7 +1214,7 @@ const AcademicStructure = () => {
                                         <MenuItem value="CERTIFICATE">Certificate</MenuItem>
                                     </Select>
                                 </FormControl>
-                                
+
                                 <TextField
                                     label="Duration (Years)"
                                     fullWidth
@@ -1221,7 +1223,7 @@ const AcademicStructure = () => {
                                     onChange={(e) => setModal({ ...modal, data: { ...modal.data, durationYears: parseInt(e.target.value) || '' } })}
                                     InputProps={{ inputProps: { min: 1, max: 10 } }}
                                 />
-                                
+
                                 <FormControl fullWidth>
                                     <InputLabel>Program Pattern</InputLabel>
                                     <Select
@@ -1269,15 +1271,15 @@ const AcademicStructure = () => {
                                         <MenuItem value="Central">Central Level</MenuItem>
                                     </Select>
                                 </FormControl>
-                                
+
                                 {(!modal.data.type || modal.data.type === 'Academic') && (
                                     <FormControl fullWidth>
                                         <InputLabel>Schools</InputLabel>
                                         <Select
                                             multiple
                                             value={
-                                                modal.data.schoolIds 
-                                                    ? modal.data.schoolIds.map(s => typeof s === 'object' ? s._id : s) 
+                                                modal.data.schoolIds
+                                                    ? modal.data.schoolIds.map(s => typeof s === 'object' ? s._id : s)
                                                     : (modal.data.schoolId ? [typeof modal.data.schoolId === 'object' ? modal.data.schoolId._id : modal.data.schoolId] : [])
                                             }
                                             onChange={(e) => setModal({ ...modal, data: { ...modal.data, schoolIds: e.target.value } })}
@@ -1318,9 +1320,9 @@ const AcademicStructure = () => {
                                 onChange={(e) => setModal({ ...modal, data: { ...modal.data, code: e.target.value.toUpperCase() } })}
                                 helperText={
                                     modal.type === 'school' ? "e.g., SOE" :
-                                    modal.type === 'department' ? "e.g., CSE" :
-                                    modal.type === 'program' ? "e.g., BTECH" :
-                                    (selectedProgram ? "e.g., SE" : `e.g., ${selectedDepartment?.code || "CE"}`)
+                                        modal.type === 'department' ? "e.g., CSE" :
+                                            modal.type === 'program' ? "e.g., BTECH" :
+                                                (selectedProgram ? "e.g., SE" : `e.g., ${selectedDepartment?.code || "CE"}`)
                                 }
                             />
                         )}
@@ -1345,7 +1347,7 @@ const AcademicStructure = () => {
                 </DialogActions>
             </Dialog>
 
-            <Dialog open={deleteConfirm.open} onClose={() => setDeleteConfirm({ ...deleteConfirm, open: false })}>
+            <Dialog open={deleteConfirm.open} onClose={() => setDeleteConfirm({ ...deleteConfirm, open: false })} maxWidth="xs" fullWidth>
                 <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                     <Warning color="error" /> Confirm Deletion
                 </DialogTitle>

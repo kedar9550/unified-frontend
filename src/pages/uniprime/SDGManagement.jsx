@@ -2,13 +2,6 @@ import React, { useState, useEffect } from "react";
 import {
   Box,
   Typography,
-  Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
   Button,
   IconButton,
   Dialog,
@@ -34,6 +27,8 @@ import {
   AutoFixHigh as AutoFixHighIcon,
   Settings as SettingsIcon,
   Check as CheckIcon,
+  ExpandMore as ExpandMoreIcon,
+  ExpandLess as ExpandLessIcon,
 } from "@mui/icons-material";
 import API from "../../api/axios";
 import PageHeader from "../../components/common/PageHeader";
@@ -298,12 +293,13 @@ const SDGManagement = () => {
         breadcrumbs={["Home", "Academics", "SDG Management"]}
       />
 
-      <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 3, mt: 1 }}>
+      <Box sx={{ display: 'flex', justifyContent: { xs: 'stretch', sm: 'flex-end' }, mb: 3, mt: 1 }}>
         <Button
           variant="contained"
           startIcon={<AddIcon />}
           onClick={() => handleOpenDialog()}
           sx={{
+            width: { xs: '100%', sm: 'auto' },
             borderRadius: "10px",
             px: 3,
             background: 'var(--gradient-primary)',
@@ -370,7 +366,7 @@ const SDGManagement = () => {
                 {/* Left Color Section */}
                 <Box sx={{
                   width: { xs: '100%', md: 200 },
-                  minHeight: { xs: 60, md: 'auto' },
+                  height: { xs: 120, md: 'auto' },
                   background: brandColor,
                   display: 'flex',
                   alignItems: 'center',
@@ -385,9 +381,8 @@ const SDGManagement = () => {
                     src={imageUrl}
                     alt={sdg.sdgTitle}
                     sx={{
-                      width: '100%',
                       height: '100%',
-                      maxHeight: { xs: 80, md: '100%' },
+                      maxWidth: '100%',
                       objectFit: 'contain',
                       filter: 'none'
                     }}
@@ -395,7 +390,7 @@ const SDGManagement = () => {
                 </Box>
 
                 {/* Content Section */}
-                <Box sx={{ flexGrow: 1, p: 3, position: 'relative' }}>
+                <Box sx={{ flexGrow: 1, p: { xs: 2, sm: 3 }, position: 'relative' }}>
                   <Box sx={{
                     display: 'flex',
                     justifyContent: 'space-between',
@@ -404,7 +399,7 @@ const SDGManagement = () => {
                     position: 'relative',
                     transition: 'margin 0.3s ease'
                   }}>
-                    <Box>
+                    <Box sx={{ flex: 1, pr: 2 }}>
                       <Typography variant="h5" sx={{ fontWeight: 900, color: 'var(--text-primary)', lineHeight: 1.2 }}>
                         {sdg.sdgNumber}
                       </Typography>
@@ -427,9 +422,11 @@ const SDGManagement = () => {
                       position: { xs: "static", md: "absolute" },
                       top: 0,
                       right: 0,
-                      zIndex: 2
+                      zIndex: 2,
+                      alignItems: 'center'
                     }}>
-                      <Tooltip title={editingSdgId === sdg._id ? "Done Editing" : "Edit SDG"}>
+                      {/* Manage Keywords Inline Toggle */}
+                      <Tooltip title={editingSdgId === sdg._id ? "Done Managing Keywords" : "Manage Keywords"}>
                         <IconButton
                           onClick={(e) => {
                             e.stopPropagation();
@@ -447,9 +444,62 @@ const SDGManagement = () => {
                             }
                           }}
                         >
-                          {editingSdgId === sdg._id ? <CheckIcon fontSize="small" /> : <EditIcon fontSize="small" />}
+                          {editingSdgId === sdg._id ? <CheckIcon fontSize="small" /> : <SettingsIcon fontSize="small" />}
                         </IconButton>
                       </Tooltip>
+
+                      {/* Edit SDG Details */}
+                      <Tooltip title="Edit SDG Details">
+                        <IconButton
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleOpenDialog(sdg);
+                          }}
+                          sx={{
+                            color: "var(--text-secondary)",
+                            background: "var(--bg-accent-4)",
+                            "&:hover": {
+                              color: "var(--color-primary)",
+                              background: "var(--bg-panel)"
+                            }
+                          }}
+                        >
+                          <EditIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+
+                      {/* Delete SDG */}
+                      <Tooltip title="Delete SDG">
+                        <IconButton
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDelete(sdg._id);
+                          }}
+                          sx={{
+                            color: "var(--text-secondary)",
+                            background: "var(--bg-accent-4)",
+                            "&:hover": {
+                              color: "#ef4444",
+                              background: "rgba(239, 68, 68, 0.1)"
+                            }
+                          }}
+                        >
+                          <DeleteIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+
+                      {/* Mobile Expand Indicator */}
+                      {isMobile && (
+                        <IconButton
+                          sx={{
+                            color: "var(--text-secondary)",
+                            background: "var(--bg-accent-4)",
+                            pointerEvents: 'none'
+                          }}
+                        >
+                          {isExpanded ? <ExpandLessIcon fontSize="small" /> : <ExpandMoreIcon fontSize="small" />}
+                        </IconButton>
+                      )}
                     </Box>
                   </Box>
 
@@ -573,7 +623,7 @@ const SDGManagement = () => {
         </DialogTitle>
         <DialogContent dividers sx={{ borderColor: 'var(--border-color)' }}>
           <Grid container spacing={3} sx={{ mt: 0.5 }}>
-            <Grid size={{ xs: 4 }}>
+            <Grid size={{ xs: 12, sm: 4 }}>
               <TextField
                 fullWidth
                 label="SDG Number"
@@ -584,7 +634,7 @@ const SDGManagement = () => {
                 variant="outlined"
               />
             </Grid>
-            <Grid size={{ xs: 8 }}>
+            <Grid size={{ xs: 12, sm: 8 }}>
               <TextField
                 fullWidth
                 label="SDG Title"

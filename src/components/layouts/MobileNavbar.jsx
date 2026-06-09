@@ -403,9 +403,18 @@ const MobileNavbar = () => {
                         minWidth: 0,
                         display: 'flex',
                         overflowX: 'auto',
-                        '&::-webkit-scrollbar': { display: 'none' },
-                        msOverflowStyle: 'none',
-                        scrollbarWidth: 'none',
+                        '&::-webkit-scrollbar': {
+                            height: '3px',
+                        },
+                        '&::-webkit-scrollbar-track': {
+                            background: 'rgba(0, 0, 0, 0.02)',
+                        },
+                        '&::-webkit-scrollbar-thumb': {
+                            background: 'var(--color-primary-alpha, rgba(37, 99, 235, 0.25))',
+                            borderRadius: '10px',
+                        },
+                        scrollbarWidth: 'thin',
+                        scrollbarColor: 'var(--color-primary-alpha, rgba(37, 99, 235, 0.25)) transparent',
                         height: '100%',
                         background: 'var(--bg-nav-special)'
                     }}>
@@ -423,9 +432,9 @@ const MobileNavbar = () => {
                                 gap: '4px',
                                 px: '6px',
                                 '& .MuiBottomNavigationAction-root': {
-                                    minWidth: '76px',
+                                    minWidth: 'auto',
                                     flexShrink: 0,
-                                    padding: '6px 10px',
+                                    padding: '6px 12px',
                                     borderRadius: '12px',
                                     color: 'var(--text-secondary)',
                                     transition: 'all 0.25s ease',
@@ -435,6 +444,7 @@ const MobileNavbar = () => {
                                         fontWeight: 600,
                                         whiteSpace: 'nowrap',
                                         overflow: 'visible',
+                                        textOverflow: 'unset',
                                         mt: 0.3,
                                     },
                                     '&.Mui-selected': {
@@ -449,6 +459,7 @@ const MobileNavbar = () => {
                                             WebkitTextFillColor: 'transparent',
                                             whiteSpace: 'nowrap',
                                             overflow: 'visible',
+                                            textOverflow: 'unset',
                                         },
                                         '& .MuiSvgIcon-root': {
                                             fontSize: '1.5rem',
