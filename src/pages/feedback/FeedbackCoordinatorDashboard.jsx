@@ -270,7 +270,7 @@ const FeedbackCoordinatorDashboard = () => {
                   <Typography variant="body2" sx={{ color: "var(--text-secondary)", fontSize: "0.75rem", fontWeight: 600 }}>Progress</Typography>
                   <Typography variant="body2" sx={{ color: "var(--color-primary)", fontSize: "0.75rem", fontWeight: 800 }}>{dashboardData.processedFeedbacks} / {dashboardData.totalFaculties}</Typography>
                 </Box>
-                <Loader
+                <LinearProgress
                   variant="determinate"
                   value={dashboardData.totalFaculties > 0 ? (dashboardData.processedFeedbacks / dashboardData.totalFaculties) * 100 : 0}
                   sx={{
