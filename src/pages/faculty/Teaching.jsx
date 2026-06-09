@@ -570,27 +570,9 @@ export default function Teaching() {
     "PHASE",
     "GIVEN / TOTAL",
     "PERCENTAGE",
-    "OVERALL %",
   ];
 
   const feedbackRows = feedbackResults.map((r, i) => {
-    const feedbackPercent = Number(r.overallPercentage);
-    const color = feedbackPercent >= 90 ? "#10B981" : feedbackPercent >= 75 ? "#3B82F6" : feedbackPercent >= 60 ? "#F59E0B" : "#EF4444";
-    const gradient = feedbackPercent >= 90
-      ? "linear-gradient(90deg, #10B981 0%, #059669 100%)"
-      : feedbackPercent >= 75
-        ? "linear-gradient(90deg, #3B82F6 0%, #2563EB 100%)"
-        : feedbackPercent >= 60
-          ? "linear-gradient(90deg, #F59E0B 0%, #D97706 100%)"
-          : "linear-gradient(90deg, #EF4444 0%, #B91C1C 100%)";
-    const textGradient = feedbackPercent >= 90
-      ? "linear-gradient(135deg, #10B981 0%, #059669 100%)"
-      : feedbackPercent >= 75
-        ? "linear-gradient(135deg, #3B82F6 0%, #2563EB 100%)"
-        : feedbackPercent >= 60
-          ? "linear-gradient(135deg, #F59E0B 0%, #D97706 100%)"
-          : "linear-gradient(135deg, #EF4444 0%, #B91C1C 100%)";
-
     return [
       {
         value: i + 1,
@@ -642,26 +624,6 @@ export default function Teaching() {
         display: (
           <Box sx={{ textAlign: 'center' }}>
             <Typography sx={{ fontSize: 16, fontWeight: 800, color: "var(--text-secondary)" }}>{Number(r.percentage).toFixed(1)}%</Typography>
-          </Box>
-        ),
-      },
-      {
-        value: feedbackPercent,
-        display: (
-          <Box sx={{ textAlign: 'center', minWidth: 100 }}>
-            <Typography sx={{
-              fontSize: 20, fontWeight: 900,
-              background: textGradient,
-              WebkitBackgroundClip: "text",
-              WebkitTextFillColor: "transparent",
-              lineHeight: 1
-            }}>
-              {feedbackPercent.toFixed(1)}%
-            </Typography>
-            <Box sx={{ mt: 1, height: 8, bgcolor: 'var(--border-color)', borderRadius: 4, overflow: 'hidden', border: '1px solid var(--border-color)', position: 'relative' }}>
-              <Box sx={{ width: `${feedbackPercent}%`, height: '100%', background: gradient, borderRadius: 4, transition: 'width 1s ease-in-out' }} />
-              <Box sx={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '50%', background: 'linear-gradient(180deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 100%)' }} />
-            </Box>
           </Box>
         ),
       },
