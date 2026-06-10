@@ -176,6 +176,22 @@ const SelfAppraisal = () => {
   const [faculty, setFaculty] = useState(null);
   const [profileComplete, setProfileComplete] = useState(true);
   const [missingFields, setMissingFields] = useState([]);
+
+  const blurActiveElement = () => {
+    if (document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur();
+    }
+  };
+
+  const selectMenuProps = {
+    onClose: blurActiveElement,
+    disableAutoFocusItem: true,
+    slotProps: {
+      list: {
+        onMouseDown: blurActiveElement
+      }
+    }
+  };
   const [appraisalConfig, setAppraisalConfig] = useState(null);
 
   // Claim research publication modal states
@@ -1777,7 +1793,11 @@ const SelfAppraisal = () => {
               <InputLabel>Academic Year</InputLabel>
               <Select
                 value={selectedYear}
-                onChange={(e) => setSelectedYear(e.target.value)}
+                onChange={(e) => {
+                  setSelectedYear(e.target.value);
+                  blurActiveElement();
+                }}
+                MenuProps={selectMenuProps}
                 label="Academic Year"
               >
                 {academicYears.map((ay) => (
@@ -1834,7 +1854,11 @@ const SelfAppraisal = () => {
               <InputLabel>Academic Year</InputLabel>
               <Select
                 value={selectedYear}
-                onChange={(e) => setSelectedYear(e.target.value)}
+                onChange={(e) => {
+                  setSelectedYear(e.target.value);
+                  blurActiveElement();
+                }}
+                MenuProps={selectMenuProps}
                 label="Academic Year"
               >
                 {academicYears.map((ay) => (
@@ -1961,7 +1985,11 @@ const SelfAppraisal = () => {
             <InputLabel>Academic Year</InputLabel>
             <Select
               value={selectedYear}
-              onChange={(e) => setSelectedYear(e.target.value)}
+              onChange={(e) => {
+                setSelectedYear(e.target.value);
+                blurActiveElement();
+              }}
+              MenuProps={selectMenuProps}
               label="Academic Year"
             >
               {academicYears.map((ay) => (

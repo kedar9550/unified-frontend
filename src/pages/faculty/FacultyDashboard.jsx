@@ -49,6 +49,22 @@ const FacultyDashboard = () => {
   const [dashboardData, setDashboardData] = useState(null);
   const [loadingDashboard, setLoadingDashboard] = useState(true);
 
+  const blurActiveElement = () => {
+    if (document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur();
+    }
+  };
+
+  const selectMenuProps = {
+    onClose: blurActiveElement,
+    disableAutoFocusItem: true,
+    slotProps: {
+      list: {
+        onMouseDown: blurActiveElement,
+      },
+    },
+  };
+
   // Fetch academic years for the year dropdown
   useEffect(() => {
     const fetchYears = async () => {
@@ -209,7 +225,11 @@ const FacultyDashboard = () => {
           <Select
             size="small"
             value={selectedYear}
-            onChange={(e) => setSelectedYear(e.target.value)}
+            onChange={(e) => {
+              setSelectedYear(e.target.value);
+              blurActiveElement();
+            }}
+            MenuProps={selectMenuProps}
             sx={{
               borderRadius: "12px",
               borderColor: "var(--border-color)",
