@@ -365,7 +365,7 @@ export default function FacultyAdministration() {
 
                   if (activeRoles.length === 0) {
                     return (
-                      <Grid item xs={12}>
+                      <Grid size={{ xs: 12 }}>
                         <Card
                           sx={{
                             p: 3,
@@ -404,7 +404,7 @@ export default function FacultyAdministration() {
                         : "rgba(245, 158, 11, 0.25)";
 
                     return (
-                      <Grid item xs={12} sm={6} md={4} key={idx}>
+                      <Grid size={{ xs: 12, sm: 6, md: 4 }} key={idx}>
                         <Card
                           sx={{
                             p: 2.5,
@@ -512,7 +512,7 @@ export default function FacultyAdministration() {
                   const isCardDisabled = isPreExistingActive(role.label);
 
                   return (
-                    <Grid item xs={12} key={role.id}>
+                    <Grid size={{ xs: 12 }} key={role.id}>
                       <Card
                         sx={{
                           p: 3,
