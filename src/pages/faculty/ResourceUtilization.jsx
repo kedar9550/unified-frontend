@@ -113,6 +113,22 @@ export default function ResourceUtilization() {
   const [proofFile, setProofFile] = useState(null);
   const [loading, setLoading] = useState(false);
 
+  const blurActiveElement = () => {
+    if (document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur();
+    }
+  };
+
+  const selectMenuProps = {
+    onClose: blurActiveElement,
+    disableAutoFocusItem: true,
+    slotProps: {
+      list: {
+        onMouseDown: blurActiveElement
+      }
+    }
+  };
+
   // Fetch academic years on load
   useEffect(() => {
     API.get("/api/academic-years")
@@ -475,8 +491,12 @@ export default function ResourceUtilization() {
             <Select
               size="small"
               value={selectedYear}
-              onChange={(e) => setSelectedYear(e.target.value)}
+              onChange={(e) => {
+                setSelectedYear(e.target.value);
+                blurActiveElement();
+              }}
               displayEmpty
+              MenuProps={selectMenuProps}
               sx={{ width: { xs: "100%", sm: "auto" }, minWidth: { xs: "100%", sm: 180 }, borderRadius: "8px", background: "var(--bg-glass)" }}
             >
               <MenuItem value="">All Academic Years</MenuItem>
@@ -842,6 +862,7 @@ export default function ResourceUtilization() {
               displayEmpty
               value={form.academicYear}
               onChange={setVal("academicYear")}
+              MenuProps={selectMenuProps}
             >
               <MenuItem value="" disabled>--Select Academic Year--</MenuItem>
               {academicYears.map(y => (
@@ -858,6 +879,7 @@ export default function ResourceUtilization() {
               displayEmpty
               value={form.activityCategory}
               onChange={handleCategoryChange}
+              MenuProps={selectMenuProps}
             >
               <MenuItem value="" disabled>--Select Category--</MenuItem>
               {ACTIVITY_CATEGORIES.map(cat => (
@@ -875,6 +897,7 @@ export default function ResourceUtilization() {
               value={form.activityType}
               onChange={handleRoleChange}
               disabled={!form.activityCategory}
+              MenuProps={selectMenuProps}
             >
               <MenuItem value="" disabled>--Select Role--</MenuItem>
               {form.activityCategory && ROLES_BY_CATEGORY[form.activityCategory]?.map(role => (
@@ -904,6 +927,7 @@ export default function ResourceUtilization() {
                   displayEmpty
                   value={form.organizingInstitutionCategory}
                   onChange={setVal("organizingInstitutionCategory")}
+                  MenuProps={selectMenuProps}
                 >
                   <MenuItem value="" disabled>--Select Category--</MenuItem>
                   {[

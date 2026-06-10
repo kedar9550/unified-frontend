@@ -50,6 +50,22 @@ export default function FacultyAdministration() {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [allEntries, setAllEntries] = useState([]);
+
+  const blurActiveElement = () => {
+    if (document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur();
+    }
+  };
+
+  const selectMenuProps = {
+    onClose: blurActiveElement,
+    disableAutoFocusItem: true,
+    slotProps: {
+      list: {
+        onMouseDown: blurActiveElement
+      }
+    }
+  };
   const [currentEntry, setCurrentEntry] = useState(null);
   const [isAddingRole, setIsAddingRole] = useState(false);
 
@@ -274,7 +290,11 @@ export default function FacultyAdministration() {
         </Typography>
         <Select
           value={selectedYearLabel}
-          onChange={(e) => setSelectedYearLabel(e.target.value)}
+          onChange={(e) => {
+            setSelectedYearLabel(e.target.value);
+            blurActiveElement();
+          }}
+          MenuProps={selectMenuProps}
           disabled={loading || saving}
           size="small"
           sx={{

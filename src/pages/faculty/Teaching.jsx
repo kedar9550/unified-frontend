@@ -53,6 +53,22 @@ export default function Teaching() {
   const [selectedYearLabel, setSelectedYearLabel] = useState("");
   const [selectedSemester, setSelectedSemester] = useState("ALL");
 
+  const blurActiveElement = () => {
+    if (document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur();
+    }
+  };
+
+  const selectMenuProps = {
+    onClose: blurActiveElement,
+    disableAutoFocusItem: true,
+    slotProps: {
+      list: {
+        onMouseDown: blurActiveElement
+      }
+    }
+  };
+
   // ── Results state ────────────────────────────────────────────────
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -975,7 +991,11 @@ export default function Teaching() {
             variant="standard"
             disableUnderline
             value={selectedYearLabel}
-            onChange={(e) => setSelectedYearLabel(e.target.value)}
+            onChange={(e) => {
+              setSelectedYearLabel(e.target.value);
+              blurActiveElement();
+            }}
+            MenuProps={selectMenuProps}
             sx={{ minWidth: 120, fontSize: 14, color: "var(--text-primary)", fontWeight: 600, "& .MuiSelect-icon": { color: "var(--text-secondary)" } }}
           >
             {[...new Set(academicYears.map(y => y.year))].map((year) => (
@@ -1154,7 +1174,11 @@ export default function Teaching() {
                   <Select
                     value={selectedProgramId}
                     label="Program"
-                    onChange={(e) => setSelectedProgramId(e.target.value)}
+                    onChange={(e) => {
+                      setSelectedProgramId(e.target.value);
+                      blurActiveElement();
+                    }}
+                    MenuProps={selectMenuProps}
                     displayEmpty
                     fullWidth
                     sx={{ borderRadius: "10px", color: "var(--text-primary)", bgcolor: "rgba(255,255,255,0.01)" }}
@@ -1178,7 +1202,11 @@ export default function Teaching() {
                   <Select
                     value={selectedBranchId}
                     label="Branch Code"
-                    onChange={(e) => setSelectedBranchId(e.target.value)}
+                    onChange={(e) => {
+                      setSelectedBranchId(e.target.value);
+                      blurActiveElement();
+                    }}
+                    MenuProps={selectMenuProps}
                     displayEmpty
                     fullWidth
                     sx={{ borderRadius: "10px", color: "var(--text-primary)", bgcolor: "rgba(255,255,255,0.01)" }}

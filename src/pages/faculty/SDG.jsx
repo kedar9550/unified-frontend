@@ -356,6 +356,12 @@ const SDG = () => {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
+        if (showDevPopup && document.activeElement instanceof HTMLElement) {
+            document.activeElement.blur();
+        }
+    }, [showDevPopup]);
+
+    useEffect(() => {
         const fetchSdgData = async () => {
             try {
                 setLoading(true);

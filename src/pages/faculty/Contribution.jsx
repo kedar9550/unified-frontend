@@ -70,6 +70,22 @@ export default function Contribution() {
   const [proofFile, setProofFile] = useState(null);
   const [loading, setLoading] = useState(false);
 
+  const blurActiveElement = () => {
+    if (document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur();
+    }
+  };
+
+  const selectMenuProps = {
+    onClose: blurActiveElement,
+    disableAutoFocusItem: true,
+    slotProps: {
+      list: {
+        onMouseDown: blurActiveElement
+      }
+    }
+  };
+
   // Fetch academic years on load
   useEffect(() => {
     API.get("/api/academic-years")
@@ -733,7 +749,11 @@ export default function Contribution() {
             <Select
               size="small"
               value={selectedYear}
-              onChange={(e) => setSelectedYear(e.target.value)}
+              onChange={(e) => {
+                setSelectedYear(e.target.value);
+                blurActiveElement();
+              }}
+              MenuProps={selectMenuProps}
               displayEmpty
               sx={{ width: { xs: "100%", sm: "auto" }, minWidth: { xs: "100%", sm: 180 }, borderRadius: "8px", background: "var(--bg-glass)" }}
             >
@@ -1199,7 +1219,11 @@ export default function Contribution() {
             size="small"
             fullWidth
             value={form.academicYear}
-            onChange={setVal("academicYear")}
+            onChange={(e) => {
+              setVal("academicYear")(e);
+              blurActiveElement();
+            }}
+            MenuProps={selectMenuProps}
             displayEmpty
           >
             <MenuItem value="" disabled>--Select Academic Year--</MenuItem>
