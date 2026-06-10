@@ -726,7 +726,7 @@ export default function Contribution() {
     return (
       <Box>
         <Box sx={{ display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 2, alignItems: "center", mb: 3 }}>
-          <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+          <Box sx={{ display: "flex", flexDirection: { xs: "column", sm: "row" }, alignItems: { xs: "stretch", sm: "center" }, gap: 2, width: { xs: "100%", sm: "auto" } }}>
             <Typography variant="h6" sx={{ color: "var(--text-primary)", fontWeight: 800 }}>
               Expertise / Contribution Records
             </Typography>
@@ -735,7 +735,7 @@ export default function Contribution() {
               value={selectedYear}
               onChange={(e) => setSelectedYear(e.target.value)}
               displayEmpty
-              sx={{ minWidth: 180, borderRadius: "8px", background: "var(--bg-glass)" }}
+              sx={{ width: { xs: "100%", sm: "auto" }, minWidth: { xs: "100%", sm: 180 }, borderRadius: "8px", background: "var(--bg-glass)" }}
             >
               <MenuItem value="">All Academic Years</MenuItem>
               {academicYears.map(y => (

@@ -1749,8 +1749,9 @@ const SelfAppraisal = () => {
           <Box
             sx={{
               display: "flex",
+              flexDirection: { xs: "column", sm: "row" },
               justifyContent: "space-between",
-              alignItems: "center",
+              alignItems: { xs: "stretch", sm: "center" },
               mb: 4,
               p: 3,
               borderRadius: "20px",
@@ -1805,8 +1806,9 @@ const SelfAppraisal = () => {
           <Box
             sx={{
               display: "flex",
+              flexDirection: { xs: "column", sm: "row" },
               justifyContent: "space-between",
-              alignItems: "center",
+              alignItems: { xs: "stretch", sm: "center" },
               mb: 4,
               p: 3,
               borderRadius: "20px",
