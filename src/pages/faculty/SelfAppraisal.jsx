@@ -309,7 +309,7 @@ const SelfAppraisal = () => {
         console.error("Failed to load appraisal config:", configErr);
       }
 
-      // Fetch/Initiate Appraisal. This will return a 403 status code if appraisal is not active for this academic year.
+      // Fetch/Initiate Appraisal.
       const res = await axiosInstance.get(`/api/appraisal/initiate/${selectedYear}`);
       if (res.data && res.data.success) {
         const appraisalData = res.data.data;
@@ -341,6 +341,10 @@ const SelfAppraisal = () => {
         setResourceUtilizationDetails(res.data.resourceUtilizationDetails || []);
         setContributionDetails(res.data.contributionDetails || []);
         setAdministrationDetail(res.data.administrationDetail || null);
+      } else {
+        setAppraisalError(res.data?.message || "Self-appraisal is not active for this academic year.");
+        setAppraisal(null);
+        setFaculty(null);
       }
     } catch (err) {
       if (err.response?.status === 403) {
@@ -1865,8 +1869,18 @@ const SelfAppraisal = () => {
     }
 
     return (
-      <Box p={4} display="flex" justifyContent="center" alignItems="center" minHeight="50vh">
-        <Typography color="var(--text-secondary)">Loading appraisal details...</Typography>
+      <Box
+        sx={{
+          p: 4,
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          minHeight: "50vh",
+        }}
+      >
+        <Typography color="var(--text-secondary)">
+          Loading appraisal details...
+        </Typography>
       </Box>
     );
   }
@@ -2046,7 +2060,7 @@ const SelfAppraisal = () => {
       <Grid container spacing={4}>
 
         {/* Left Side: Detail Sheets - NOW SPANNING FULL WIDTH (xs={12}) */}
-        <Grid item xs={12}>
+        <Grid size={{ xs: 12 }}>
           {/* PART-A: Personal Information */}
           <Card sx={{ borderRadius: "20px", background: "var(--bg-panel)", border: "1px solid var(--border-color)", mb: 4, boxShadow: "var(--shadow-premium)" }}>
             <CardContent sx={{ p: 3.5 }}>
@@ -2220,7 +2234,7 @@ const SelfAppraisal = () => {
                     <Typography variant="caption" sx={{ color: "var(--text-secondary)", fontWeight: 700, display: "block", fontSize: "0.7rem", textTransform: "uppercase" }}>
                       Total Points Earned
                     </Typography>
-                    <Box display="flex" alignItems="baseline" gap={0.5}>
+                    <Box sx={{ display: "flex", alignItems: "baseline", gap: 0.5 }}>
                       <Typography variant="h6" sx={{ fontWeight: 900, color: "var(--color-primary)" }}>
                         {eligibility.scores.T}
                       </Typography>
@@ -2322,14 +2336,14 @@ const SelfAppraisal = () => {
 
               {/* 1.2 Proctoring Students' Average Pass Percentage */}
               <Box sx={{ mb: 4 }}>
-                <Box display="flex" alignItems="center" gap={1.5} mb={2}>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 2 }}>
                   <Typography variant="subtitle1" sx={{ fontWeight: 700, color: "var(--color-primary)" }}>
                     1.2 Proctoring Students' Average Pass Percentage
                   </Typography>
                 </Box>
 
                 <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
-                  <Box display="flex" alignItems="center" gap={1.5}>
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
                     <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-secondary)" }}>
                       Proctoring Records for this cycle:
                     </Typography>
@@ -2498,7 +2512,7 @@ const SelfAppraisal = () => {
                   <DialogContent>
                     <Grid container spacing={2.5} sx={{ mt: 0.5 }}>
                       {/* Program selection */}
-                      <Grid item xs={12} sm={6}>
+                      <Grid size={{ xs: 12, sm: 6 }}>
                         <FormControl fullWidth size="small">
                           <InputLabel shrink sx={{ color: "var(--text-secondary)" }}>Program</InputLabel>
                           <Select
@@ -2522,7 +2536,7 @@ const SelfAppraisal = () => {
                       </Grid>
 
                       {/* Branch selection */}
-                      <Grid item xs={12} sm={6}>
+                      <Grid size={{ xs: 12, sm: 6 }}>
                         <FormControl fullWidth size="small" disabled={!selectedProgramId}>
                           <InputLabel shrink sx={{ color: "var(--text-secondary)" }}>Branch Code</InputLabel>
                           <Select
@@ -2546,7 +2560,7 @@ const SelfAppraisal = () => {
                       </Grid>
 
                       {/* Sem/Year numeric input based on Program Pattern */}
-                      <Grid item xs={12} sm={6}>
+                      <Grid size={{ xs: 12, sm: 6 }}>
                         {(() => {
                           const program = programs.find((p) => p._id === selectedProgramId);
                           const isYearPattern = program?.programPattern === "YEAR";
@@ -2583,7 +2597,7 @@ const SelfAppraisal = () => {
                       </Grid>
 
                       {/* Section - numeric only */}
-                      <Grid item xs={12} sm={6}>
+                      <Grid size={{ xs: 12, sm: 6 }}>
                         <TextField
                           label="Section (Numeric Only)"
                           type="number"
@@ -2598,7 +2612,7 @@ const SelfAppraisal = () => {
                       </Grid>
 
                       {/* Student counts inputs */}
-                      <Grid item xs={12} sm={4}>
+                      <Grid size={{ xs: 12, sm: 4 }}>
                         <TextField
                           label="Total Allotted"
                           type="number"
@@ -2612,7 +2626,7 @@ const SelfAppraisal = () => {
                         />
                       </Grid>
 
-                      <Grid item xs={12} sm={4}>
+                      <Grid size={{ xs: 12, sm: 4 }}>
                         <TextField
                           label="Eligible for End Exams (A)"
                           type="number"
@@ -2626,7 +2640,7 @@ const SelfAppraisal = () => {
                         />
                       </Grid>
 
-                      <Grid item xs={12} sm={4}>
+                      <Grid size={{ xs: 12, sm: 4 }}>
                         <TextField
                           label="Passed Students (B)"
                           type="number"
@@ -2641,7 +2655,7 @@ const SelfAppraisal = () => {
                       </Grid>
 
                       {/* Calculated Pass Percentage display */}
-                      <Grid item xs={12}>
+                      <Grid size={{ xs: 12 }}>
                         <Box
                           sx={{
                             p: 2,
@@ -2836,7 +2850,7 @@ const SelfAppraisal = () => {
                     <Typography variant="caption" sx={{ color: "var(--text-secondary)", fontWeight: 700, display: "block", fontSize: "0.7rem", textTransform: "uppercase" }}>
                       Total Points Earned
                     </Typography>
-                    <Box display="flex" alignItems="baseline" gap={0.5}>
+                    <Box sx={{ display: "flex", alignItems: "baseline", gap: 0.5 }}>
                       <Typography variant="h6" sx={{ fontWeight: 900, color: "#a855f7" }}>
                         {eligibility.scores.R_sum}
                       </Typography>
@@ -3228,7 +3242,7 @@ const SelfAppraisal = () => {
                     <Typography variant="caption" sx={{ color: "var(--text-secondary)", fontWeight: 700, display: "block", fontSize: "0.7rem", textTransform: "uppercase" }}>
                       Total Points Earned
                     </Typography>
-                    <Box display="flex" alignItems="baseline" gap={0.5}>
+                    <Box sx={{ display: "flex", alignItems: "baseline", gap: 0.5 }}>
                       <Typography variant="h6" sx={{ fontWeight: 900, color: "#10b981" }}>
                         {eligibility.scores.V}
                       </Typography>
@@ -3335,7 +3349,7 @@ const SelfAppraisal = () => {
                                 />
                               </TableCell>
                               <TableCell align="center">
-                                <Stack direction="row" spacing={1} justifyContent="center">
+                                <Stack direction="row" spacing={1} sx={{ justifyContent: "center" }}>
                                   <IconButton
                                     size="small"
                                     onClick={() => setSelectedResUtDetails(activity)}
@@ -3453,7 +3467,7 @@ const SelfAppraisal = () => {
                                 />
                               </TableCell>
                               <TableCell align="center">
-                                <Stack direction="row" spacing={1} justifyContent="center">
+                                <Stack direction="row" spacing={1} sx={{ justifyContent: "center" }}>
                                   <IconButton
                                     size="small"
                                     onClick={() => setSelectedContDetails(item)}
@@ -3539,7 +3553,7 @@ const SelfAppraisal = () => {
                       <Typography variant="caption" sx={{ color: "var(--text-secondary)", fontWeight: 700, display: "block", fontSize: "0.7rem", textTransform: "uppercase" }}>
                         Total Points Earned
                       </Typography>
-                      <Box display="flex" alignItems="baseline" gap={0.5}>
+                      <Box sx={{ display: "flex", alignItems: "baseline", gap: 0.5 }}>
                         <Typography variant="h6" sx={{ fontWeight: 900, color: "#f97316" }}>
                           {eligibility.scores.A}
                         </Typography>
@@ -3624,7 +3638,7 @@ const SelfAppraisal = () => {
                                 />
                               </TableCell>
                               <TableCell align="center">
-                                <Stack direction="row" spacing={1} justifyContent="center">
+                                <Stack direction="row" spacing={1} sx={{ justifyContent: "center" }}>
                                   {isEditable && (appraisal.status === "Draft" || appraisal.status === "Rejected by HOD") && (
                                     <>
                                       <IconButton size="small" color="info" onClick={() => openAdminModalEdit(role)}>
@@ -3695,7 +3709,7 @@ const SelfAppraisal = () => {
             height: "100%"
           }}
         >
-          <Box display="flex" alignItems="center" gap={1.5} mb={0}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 0 }}>
             <Box
               sx={{
                 width: 44,
@@ -3835,7 +3849,7 @@ const SelfAppraisal = () => {
                   {/* Row 2: Score (65 / 80) and Circular progress bar on one line */}
                   <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
                     {/* Score (65 / 80) */}
-                    <Box display="flex" alignItems="baseline" gap={0.5} sx={{ whiteSpace: "nowrap" }}>
+                    <Box sx={{ display: "flex", alignItems: "baseline", gap: 0.5, whiteSpace: "nowrap" }}>
                       <Typography variant="h4" sx={{ fontWeight: 900, color: "var(--text-primary)" }}>
                         {card.score}
                       </Typography>
@@ -3930,8 +3944,8 @@ const SelfAppraisal = () => {
                   "&:hover": { transform: "translateY(-2px)" }
                 }}
               >
-                <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-                  <Box display="flex" alignItems="center" gap={1.25}>
+                <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 2 }}>
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 1.25 }}>
                     <Box sx={{ display: "flex", color: "var(--color-blue)" }}>
                       <Description sx={{ fontSize: 20 }} />
                     </Box>
@@ -3939,7 +3953,7 @@ const SelfAppraisal = () => {
                       Total (1-4)
                     </Typography>
                   </Box>
-                  <Box display="flex" alignItems="baseline" gap={0.5}>
+                  <Box sx={{ display: "flex", alignItems: "baseline", gap: 0.5 }}>
                     <Typography variant="h5" sx={{ fontWeight: 900, color: "var(--text-primary)" }}>
                       {eligibility.scores.total1to4}
                     </Typography>
@@ -3948,7 +3962,7 @@ const SelfAppraisal = () => {
                     </Typography>
                   </Box>
                 </Box>
-                <Box display="flex" alignItems="center" gap={2}>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
                   <Box sx={{ flexGrow: 1 }}>
                     <Box sx={{ width: "100%", height: 10, bgcolor: "var(--border-color)", borderRadius: "5px", overflow: "hidden", position: "relative" }}>
                       <Box
@@ -3980,8 +3994,8 @@ const SelfAppraisal = () => {
                   "&:hover": { transform: "translateY(-2px)" }
                 }}
               >
-                <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-                  <Box display="flex" alignItems="center" gap={1.25}>
+                <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 2 }}>
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 1.25 }}>
                     <Box sx={{ display: "flex", color: "#BE9337" }}>
                       <EmojiEvents sx={{ fontSize: 20 }} />
                     </Box>
@@ -3989,7 +4003,7 @@ const SelfAppraisal = () => {
                       Grand Total
                     </Typography>
                   </Box>
-                  <Box display="flex" alignItems="baseline" gap={0.5}>
+                  <Box sx={{ display: "flex", alignItems: "baseline", gap: 0.5 }}>
                     <Typography variant="h5" sx={{ fontWeight: 900, color: "var(--text-primary)" }}>
                       {eligibility.scores.grandTotal}
                     </Typography>
@@ -3998,7 +4012,7 @@ const SelfAppraisal = () => {
                     </Typography>
                   </Box>
                 </Box>
-                <Box display="flex" alignItems="center" gap={2}>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
                   <Box sx={{ flexGrow: 1 }}>
                     <Box sx={{ width: "100%", height: 10, bgcolor: "var(--border-color)", borderRadius: "5px", overflow: "hidden", position: "relative" }}>
                       <Box
@@ -4580,20 +4594,20 @@ const SelfAppraisal = () => {
               <Grid container spacing={2}>
                 {data.activityCategory === "FDP" && data.activityType === "FDP Participant" && (
                   <>
-                    <Grid item xs={12} sm={4}>
+                    <Grid size={{ xs: 12, sm: 4 }}>
                       <Box sx={{ p: 1.5, borderRadius: "10px", background: "var(--bg-paper)", border: "1px solid var(--border-color)" }}>
                         <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", fontWeight: 800 }}>Organizing Category</Typography>
                         <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>{data.organizingInstitutionCategory}</Typography>
                       </Box>
                     </Grid>
-                    <Grid item xs={12} sm={4}>
+                    <Grid size={{ xs: 12, sm: 4 }}>
                       <Box sx={{ p: 1.5, borderRadius: "10px", background: "var(--bg-paper)", border: "1px solid var(--border-color)" }}>
                         <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", fontWeight: 800 }}>Location</Typography>
                         <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>{data.location}</Typography>
                       </Box>
                     </Grid>
                     {data.organizingInstitutionCategory === "MHRD R&D Lab" && (
-                      <Grid item xs={12} sm={4}>
+                      <Grid size={{ xs: 12, sm: 4 }}>
                         <Box sx={{ p: 1.5, borderRadius: "10px", background: "var(--bg-paper)", border: "1px solid var(--border-color)" }}>
                           <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", fontWeight: 800 }}>Lab Name</Typography>
                           <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>{data.labName}</Typography>
@@ -4601,7 +4615,7 @@ const SelfAppraisal = () => {
                       </Grid>
                     )}
                     {data.organizingInstitutionCategory === "Govt. University" && (
-                      <Grid item xs={12} sm={4}>
+                      <Grid size={{ xs: 12, sm: 4 }}>
                         <Box sx={{ p: 1.5, borderRadius: "10px", background: "var(--bg-paper)", border: "1px solid var(--border-color)" }}>
                           <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", fontWeight: 800 }}>University Name</Typography>
                           <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>{data.universityName}</Typography>
@@ -4610,13 +4624,13 @@ const SelfAppraisal = () => {
                     )}
                     {data.organizingInstitutionCategory === "NIRF Ranked Institute (Below 200)" && (
                       <>
-                        <Grid item xs={12} sm={4}>
+                        <Grid size={{ xs: 12, sm: 4 }}>
                           <Box sx={{ p: 1.5, borderRadius: "10px", background: "var(--bg-paper)", border: "1px solid var(--border-color)" }}>
                             <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", fontWeight: 800 }}>Institute Name</Typography>
                             <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>{data.instituteName}</Typography>
                           </Box>
                         </Grid>
-                        <Grid item xs={12} sm={4}>
+                        <Grid size={{ xs: 12, sm: 4 }}>
                           <Box sx={{ p: 1.5, borderRadius: "10px", background: "var(--bg-paper)", border: "1px solid var(--border-color)" }}>
                             <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", fontWeight: 800 }}>NIRF Rank</Typography>
                             <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>{data.nirfRank}</Typography>
@@ -4627,7 +4641,7 @@ const SelfAppraisal = () => {
                   </>
                 )}
 
-                <Grid item xs={12} sm={4}>
+                <Grid size={{ xs: 12, sm: 4 }}>
                   <Box sx={{ p: 1.5, borderRadius: "10px", background: "var(--bg-paper)", border: "1px solid var(--border-color)" }}>
                     <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", fontWeight: 800 }}>Dates</Typography>
                     <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>
@@ -4635,13 +4649,13 @@ const SelfAppraisal = () => {
                     </Typography>
                   </Box>
                 </Grid>
-                <Grid item xs={12} sm={4}>
+                <Grid size={{ xs: 12, sm: 4 }}>
                   <Box sx={{ p: 1.5, borderRadius: "10px", background: "var(--bg-paper)", border: "1px solid var(--border-color)" }}>
                     <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", fontWeight: 800 }}>Duration</Typography>
                     <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>{data.duration} Days</Typography>
                   </Box>
                 </Grid>
-                <Grid item xs={12} sm={4}>
+                <Grid size={{ xs: 12, sm: 4 }}>
                   <Box sx={{ p: 1.5, borderRadius: "10px", background: "var(--bg-paper)", border: "1px solid var(--border-color)" }}>
                     <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", fontWeight: 800 }}>Status</Typography>
                     <Box sx={{ mt: 0.5 }}>
@@ -4660,7 +4674,7 @@ const SelfAppraisal = () => {
                 </Grid>
 
                 {data.sessionsConducted !== undefined && (
-                  <Grid item xs={12} sm={4}>
+                  <Grid size={{ xs: 12, sm: 4 }}>
                     <Box sx={{ p: 1.5, borderRadius: "10px", background: "var(--bg-paper)", border: "1px solid var(--border-color)" }}>
                       <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", fontWeight: 800 }}>Sessions Conducted</Typography>
                       <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>{data.sessionsConducted}</Typography>
@@ -4669,7 +4683,7 @@ const SelfAppraisal = () => {
                 )}
 
                 {data.daysParticipated !== undefined && (
-                  <Grid item xs={12} sm={4}>
+                  <Grid size={{ xs: 12, sm: 4 }}>
                     <Box sx={{ p: 1.5, borderRadius: "10px", background: "var(--bg-paper)", border: "1px solid var(--border-color)" }}>
                       <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", fontWeight: 800 }}>Days Participated</Typography>
                       <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>{data.daysParticipated}</Typography>
@@ -4678,7 +4692,7 @@ const SelfAppraisal = () => {
                 )}
 
                 {data.remarks && (
-                  <Grid item xs={12}>
+                  <Grid size={{ xs: 12 }}>
                     <Box sx={{ p: 1.5, borderRadius: "10px", background: "var(--bg-paper)", border: "1px solid var(--border-color)" }}>
                       <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", fontWeight: 800 }}>Remarks</Typography>
                       <Typography variant="body2" sx={{ color: "var(--text-primary)", mt: 0.5 }}>{data.remarks}</Typography>
@@ -4687,7 +4701,7 @@ const SelfAppraisal = () => {
                 )}
 
                 {data.hodComment && (
-                  <Grid item xs={12}>
+                  <Grid size={{ xs: 12 }}>
                     <Box sx={{ p: 2, bgcolor: "rgba(239, 68, 68, 0.05)", borderRadius: "10px", border: "1px solid rgba(239, 68, 68, 0.2)" }}>
                       <Typography variant="caption" sx={{ fontWeight: 900, color: "#ef4444", textTransform: "uppercase" }}>HOD Feedback</Typography>
                       <Typography variant="body2" sx={{ fontStyle: "italic", mt: 0.5, color: "var(--text-primary)" }}>"{data.hodComment}"</Typography>
@@ -5068,7 +5082,7 @@ const SelfAppraisal = () => {
               <Grid container spacing={2}>
                 {[1, 2, 3, 7, 10, 12, 13].includes(data.category) && (
                   <>
-                    <Grid item xs={12} sm={4}>
+                    <Grid size={{ xs: 12, sm: 4 }}>
                       <Box sx={{ p: 1.5, borderRadius: "10px", background: "var(--bg-paper)", border: "1px solid var(--border-color)" }}>
                         <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", fontWeight: 800 }}>Dates</Typography>
                         <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>
@@ -5076,7 +5090,7 @@ const SelfAppraisal = () => {
                         </Typography>
                       </Box>
                     </Grid>
-                    <Grid item xs={12} sm={4}>
+                    <Grid size={{ xs: 12, sm: 4 }}>
                       <Box sx={{ p: 1.5, borderRadius: "10px", background: "var(--bg-paper)", border: "1px solid var(--border-color)" }}>
                         <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", fontWeight: 800 }}>Duration</Typography>
                         <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>{data.duration}</Typography>
@@ -5086,7 +5100,7 @@ const SelfAppraisal = () => {
                 )}
 
                 {data.awardDate && (
-                  <Grid item xs={12} sm={4}>
+                  <Grid size={{ xs: 12, sm: 4 }}>
                     <Box sx={{ p: 1.5, borderRadius: "10px", background: "var(--bg-paper)", border: "1px solid var(--border-color)" }}>
                       <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", fontWeight: 800 }}>Award Date</Typography>
                       <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>
@@ -5097,7 +5111,7 @@ const SelfAppraisal = () => {
                 )}
 
                 {data.eventDate && (
-                  <Grid item xs={12} sm={4}>
+                  <Grid size={{ xs: 12, sm: 4 }}>
                     <Box sx={{ p: 1.5, borderRadius: "10px", background: "var(--bg-paper)", border: "1px solid var(--border-color)" }}>
                       <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", fontWeight: 800 }}>Event Date</Typography>
                       <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>
@@ -5108,7 +5122,7 @@ const SelfAppraisal = () => {
                 )}
 
                 {data.publicationDate && (
-                  <Grid item xs={12} sm={4}>
+                  <Grid size={{ xs: 12, sm: 4 }}>
                     <Box sx={{ p: 1.5, borderRadius: "10px", background: "var(--bg-paper)", border: "1px solid var(--border-color)" }}>
                       <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", fontWeight: 800 }}>Publication Date</Typography>
                       <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>
@@ -5119,7 +5133,7 @@ const SelfAppraisal = () => {
                 )}
 
                 {data.url && (
-                  <Grid item xs={12}>
+                  <Grid size={{ xs: 12 }}>
                     <Box sx={{ p: 1.5, borderRadius: "10px", background: "var(--bg-paper)", border: "1px solid var(--border-color)" }}>
                       <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", fontWeight: 800 }}>URL / Reference Link</Typography>
                       <Typography variant="body2" sx={{ fontWeight: 700, mt: 0.5 }}>
@@ -5129,7 +5143,7 @@ const SelfAppraisal = () => {
                   </Grid>
                 )}
 
-                <Grid item xs={12} sm={4}>
+                <Grid size={{ xs: 12, sm: 4 }}>
                   <Box sx={{ p: 1.5, borderRadius: "10px", background: "var(--bg-paper)", border: "1px solid var(--border-color)" }}>
                     <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", fontWeight: 800 }}>Status</Typography>
                     <Box sx={{ mt: 0.5 }}>
@@ -5148,7 +5162,7 @@ const SelfAppraisal = () => {
                 </Grid>
 
                 {data.hodComment && (
-                  <Grid item xs={12}>
+                  <Grid size={{ xs: 12 }}>
                     <Box sx={{ p: 2, bgcolor: "rgba(239, 68, 68, 0.05)", borderRadius: "10px", border: "1px solid rgba(239, 68, 68, 0.2)" }}>
                       <Typography variant="caption" sx={{ fontWeight: 900, color: "#ef4444", textTransform: "uppercase" }}>HOD Feedback</Typography>
                       <Typography variant="body2" sx={{ fontStyle: "italic", mt: 0.5, color: "var(--text-primary)" }}>"{data.hodComment}"</Typography>

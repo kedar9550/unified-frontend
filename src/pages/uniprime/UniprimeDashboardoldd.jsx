@@ -286,9 +286,9 @@ const UniprimeDashboard = () => (
                     <Loader
                       value={(item.value / 182) * 100} // Relative to max value
                       variant="determinate"
-                      sx={{ 
-                        height: 6, 
-                        borderRadius: 3, 
+                      sx={{
+                        height: 6,
+                        borderRadius: 3,
                         bgcolor: '#f1f5f9',
                         '& .MuiLinearProgress-bar': { bgcolor: item.color }
                       }}

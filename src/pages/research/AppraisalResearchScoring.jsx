@@ -590,7 +590,7 @@ const AppraisalResearchScoring = () => {
             p: 3
           }}>
             <Grid container spacing={3} alignItems="center">
-              <Grid item xs={12} md={8} sx={{ display: "flex", gap: 3, alignItems: "center", flexWrap: { xs: "wrap", sm: "nowrap" } }}>
+              <Grid xs={12} md={8} sx={{ display: "flex", gap: 3, alignItems: "center", flexWrap: { xs: "wrap", sm: "nowrap" } }}>
                 <Avatar
                   src={getFacultyImage()}
                   imgProps={{
@@ -665,7 +665,7 @@ const AppraisalResearchScoring = () => {
               </Grid>
 
               {/* Contact/Metadata Grid Section */}
-              <Grid item xs={12} sx={{ width: "100%" }}>
+              <Grid xs={12} sx={{ width: "100%" }}>
                 <Divider sx={{ my: 1 }} />
                 <Grid container spacing={2} sx={{ pt: 1.5 }}>
                   {[
@@ -678,7 +678,7 @@ const AppraisalResearchScoring = () => {
                     { icon: <Public sx={{ color: "#ef4444" }} />, val: selectedAppraisal.personalInfoSnapshot?.wosId || "N/A", label: "Web of Science ID" },
                     { icon: <School sx={{ color: "#3b82f6" }} />, val: selectedAppraisal.personalInfoSnapshot?.qualification || "N/A", label: "Qualification" }
                   ].map((item, idx) => (
-                    <Grid item xs={12} sm={6} md={3} key={idx}>
+                    <Grid xs={12} sm={6} md={3} key={idx}>
                       <Box sx={{
                         display: "flex",
                         alignItems: "center",
@@ -721,7 +721,7 @@ const AppraisalResearchScoring = () => {
           <Grid container spacing={3}>
 
             {/* Left Column: Evaluation Inputs */}
-            <Grid item xs={12} md={7.2}>
+            <Grid xs={12} md={7.2}>
               <Card sx={{
                 borderRadius: "20px",
                 background: "var(--bg-panel)",
@@ -809,7 +809,7 @@ const AppraisalResearchScoring = () => {
                     </Typography>
 
                     <Grid container spacing={2} alignItems="center" sx={{ mt: 1 }}>
-                      <Grid item xs={5}>
+                      <Grid xs={5}>
                         <Typography variant="caption" sx={{ fontWeight: 700, color: "var(--text-secondary)", display: "block", mb: 0.8 }}>H-Index 2024</Typography>
                         <TextField
                           type="number"
@@ -820,10 +820,10 @@ const AppraisalResearchScoring = () => {
                           InputProps={{ sx: { borderRadius: "10px", fontWeight: 750, background: "var(--bg-paper)" } }}
                         />
                       </Grid>
-                      <Grid item xs={2} sx={{ display: "flex", justifyContent: "center", pt: "28px !important" }}>
+                      <Grid xs={2} sx={{ display: "flex", justifyContent: "center", pt: "28px !important" }}>
                         <East sx={{ color: "var(--text-secondary)", fontSize: 20 }} />
                       </Grid>
-                      <Grid item xs={5}>
+                      <Grid xs={5}>
                         <Typography variant="caption" sx={{ fontWeight: 700, color: "var(--text-secondary)", display: "block", mb: 0.8 }}>H-Index 2025</Typography>
                         <TextField
                           type="number"
@@ -935,7 +935,7 @@ const AppraisalResearchScoring = () => {
             </Grid>
 
             {/* Right Column: Score Summary & Scoring Rules */}
-            <Grid item xs={12} md={4.8}>
+            <Grid xs={12} md={4.8}>
               <Stack spacing={3} sx={{ height: "100%" }}>
 
                 {/* Score Summary */}

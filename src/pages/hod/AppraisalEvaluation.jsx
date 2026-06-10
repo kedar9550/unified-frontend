@@ -669,7 +669,7 @@ const AppraisalEvaluation = () => {
         <Grid container spacing={4}>
           
           {/* Left Column: Full Appraisal Preview (xs={12} lg={7.5}) */}
-          <Grid item xs={12} lg={7.5}>
+          <Grid xs={12} lg={7.5}>
             {/* PART-A: Personal Information */}
             <Card sx={{ borderRadius: "20px", background: "var(--bg-panel)", border: "1px solid var(--border-color)", mb: 4, boxShadow: "var(--shadow-premium)" }}>
               <CardContent sx={{ p: 3 }}>
@@ -691,7 +691,7 @@ const AppraisalEvaluation = () => {
                     { label: "Web of Science ID", val: selectedAppraisal.personalInfoSnapshot?.wosId || "N/A", icon: <Public fontSize="small" />, iconColor: "#f43f5e" },
                     { label: "ORCID ID", val: selectedAppraisal.personalInfoSnapshot?.orcidId || "N/A", icon: <Fingerprint fontSize="small" />, iconColor: "#06b6d4" }
                   ].map((item, idx) => (
-                    <Grid item xs={12} sm={6} key={idx}>
+                    <Grid xs={12} sm={6} key={idx}>
                       <Box sx={{ p: 1.5, display: "flex", alignItems: "center", gap: 1.5, borderRadius: "12px", border: "1px solid var(--border-color)", background: "var(--bg-paper)" }}>
                         <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", color: item.iconColor }}>{item.icon}</Box>
                         <Box>
@@ -1340,7 +1340,7 @@ const AppraisalEvaluation = () => {
                     Research & Development Admin Verified Scores:
                   </Typography>
                   <Grid container spacing={2}>
-                    <Grid item xs={12} sm={6}>
+                    <Grid xs={12} sm={6}>
                       <Box sx={{ p: 1.5, display: "flex", alignItems: "center", gap: 1.5, bgcolor: "var(--bg-paper)", borderRadius: "8px", border: "1px solid var(--border-color)" }}>
                         <Box sx={{ width: 32, height: 32, display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "50%", bgcolor: "rgba(124, 58, 237, 0.1)", color: "#7c3aed" }}><Description fontSize="small" /></Box>
                         <Box>
@@ -1349,7 +1349,7 @@ const AppraisalEvaluation = () => {
                         </Box>
                       </Box>
                     </Grid>
-                    <Grid item xs={12} sm={6}>
+                    <Grid xs={12} sm={6}>
                       <Box sx={{ p: 1.5, display: "flex", alignItems: "center", gap: 1.5, bgcolor: "var(--bg-paper)", borderRadius: "8px", border: "1px solid var(--border-color)" }}>
                         <Box sx={{ width: 32, height: 32, display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "50%", bgcolor: "rgba(124, 58, 237, 0.1)", color: "#7c3aed" }}><BarChart fontSize="small" /></Box>
                         <Box>
@@ -1807,7 +1807,7 @@ const AppraisalEvaluation = () => {
           </Grid>
 
           {/* Right Column: Scorecard & II. Interpersonal Skills (xs={12} lg={4.5}) */}
-          <Grid item xs={12} lg={4.5}>
+          <Grid xs={12} lg={4.5}>
             {/* 5. HOD Interpersonal Skills */}
             <Card sx={{ borderRadius: "16px", background: "var(--bg-panel)", border: "1px solid var(--border-color)", boxShadow: "var(--shadow-premium)" }}>
               <CardContent sx={{ p: 3 }}>
