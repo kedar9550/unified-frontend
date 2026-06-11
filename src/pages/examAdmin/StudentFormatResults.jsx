@@ -630,24 +630,26 @@ export default function StudentFormatResults() {
                   "&.Mui-focused fieldset": { borderColor: "var(--color-primary)" },
                 }
               }}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <SearchIcon sx={{ fontSize: 20, color: "var(--color-primary)", opacity: 0.8 }} />
-                  </InputAdornment>
-                ),
-                endAdornment: bulkStudentId && (
-                  <InputAdornment position="end">
-                    <IconButton size="small" onClick={() => setBulkStudentId("")} sx={{ mr: 0.5, opacity: 0.6 }}>
-                      <CloseIcon sx={{ fontSize: 16 }} />
-                    </IconButton>
-                    <Tooltip title="Wipe ALL records for this student">
-                      <IconButton size="small" onClick={() => handleBulkDelete("STUDENT")} sx={{ color: "#EF4444", background: "rgba(239, 68, 68, 0.1)", "&:hover": { background: "rgba(239, 68, 68, 0.2)" } }}>
-                        <DeleteIcon fontSize="small" />
+              slotProps={{
+                input: {
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <SearchIcon sx={{ fontSize: 20, color: "var(--color-primary)", opacity: 0.8 }} />
+                    </InputAdornment>
+                  ),
+                  endAdornment: bulkStudentId && (
+                    <InputAdornment position="end">
+                      <IconButton size="small" onClick={() => setBulkStudentId("")} sx={{ mr: 0.5, opacity: 0.6 }}>
+                        <CloseIcon sx={{ fontSize: 16 }} />
                       </IconButton>
-                    </Tooltip>
-                  </InputAdornment>
-                )
+                      <Tooltip title="Wipe ALL records for this student">
+                        <IconButton size="small" onClick={() => handleBulkDelete("STUDENT")} sx={{ color: "#EF4444", background: "rgba(239, 68, 68, 0.1)", "&:hover": { background: "rgba(239, 68, 68, 0.2)" } }}>
+                          <DeleteIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                    </InputAdornment>
+                  )
+                }
               }}
             />
 

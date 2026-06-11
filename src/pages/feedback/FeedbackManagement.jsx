@@ -38,6 +38,22 @@ export default function FeedbackManagement() {
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef(null);
 
+  const blurActiveElement = () => {
+    if (document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur();
+    }
+  };
+
+  const selectMenuProps = {
+    disableAutoFocusItem: true,
+    slotProps: {
+      list: {
+        autoFocus: false,
+        onMouseDown: blurActiveElement,
+      },
+    },
+  };
+
   // 1. Fetch Academic Years on Mount
   useEffect(() => {
     const fetchYears = async () => {
@@ -330,7 +346,13 @@ export default function FeedbackManagement() {
                         variant="standard"
                         disableUnderline
                         value={selectedYearId}
-                        onChange={(e) => setSelectedYearId(e.target.value)}
+                        onChange={(e) => {
+                            setSelectedYearId(e.target.value);
+                            blurActiveElement();
+                        }}
+                        onOpen={blurActiveElement}
+                        onClose={blurActiveElement}
+                        MenuProps={selectMenuProps}
                         sx={{ minWidth: 120, fontSize: 14, fontWeight: 700, color: "var(--text-primary)" }}
                     >
                         {academicYears.map((year) => (
@@ -345,7 +367,13 @@ export default function FeedbackManagement() {
                         variant="standard"
                         disableUnderline
                         value={selectedPhase}
-                        onChange={(e) => setSelectedPhase(e.target.value)}
+                        onChange={(e) => {
+                            setSelectedPhase(e.target.value);
+                            blurActiveElement();
+                        }}
+                        onOpen={blurActiveElement}
+                        onClose={blurActiveElement}
+                        MenuProps={selectMenuProps}
                         sx={{ minWidth: 100, fontSize: 14, fontWeight: 700, color: "var(--text-primary)" }}
                     >
                         <MenuItem value="">All Phases</MenuItem>
