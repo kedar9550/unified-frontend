@@ -582,6 +582,7 @@ export default function Teaching() {
   const feedbackColumns = [
     "S.NO",
     "COURSE NAME",
+    "TYPE",
     "SEM - BRANCH - SEC",
     "PHASE",
     "GIVEN / TOTAL",
@@ -600,6 +601,25 @@ export default function Teaching() {
           <Box sx={{ textAlign: "start" }}>
             <Typography sx={{ fontWeight: 700, fontSize: 14, color: "var(--text-primary)" }}>{r.subjectName}</Typography>
             <Typography sx={{ fontSize: 11, color: "var(--text-secondary)", fontWeight: 500 }}>{r.subjectCode}</Typography>
+          </Box>
+        ),
+      },
+      {
+        value: r.subjectType || "—",
+        display: (
+          <Box sx={{
+            px: 1.2,
+            py: 0.5,
+            borderRadius: '8px',
+            bgcolor: 'var(--bg-glass)',
+            border: '1px solid var(--border-color)',
+            fontSize: 10,
+            fontWeight: 800,
+            color: "var(--text-primary)",
+            display: 'inline-block',
+            textTransform: 'capitalize'
+          }}>
+            {r.subjectType || "—"}
           </Box>
         ),
       },
