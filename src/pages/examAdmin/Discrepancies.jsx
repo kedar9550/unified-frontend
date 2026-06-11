@@ -704,7 +704,7 @@ export default function Discrepancies() {
                                   variant="standard"
                                   value={row.subjectName || ""}
                                   onChange={e => handleResultEdit(idx, "subjectName", e.target.value)}
-                                  InputProps={{ disableUnderline: !row._edited, sx: { fontSize: 13 } }}
+                                  slotProps={{ input: { disableUnderline: !row._edited, sx: { fontSize: 13 } } }}
                                   placeholder={row._isNew ? "Subject Name" : ""}
                                   fullWidth
                                 />
@@ -715,7 +715,7 @@ export default function Discrepancies() {
                                   variant="standard"
                                   value={row.subjectCode || ""}
                                   onChange={e => handleResultEdit(idx, "subjectCode", e.target.value)}
-                                  InputProps={{ disableUnderline: !row._edited, sx: { fontSize: 13 } }}
+                                  slotProps={{ input: { disableUnderline: !row._edited, sx: { fontSize: 13 } } }}
                                   placeholder={row._isNew ? "Code" : ""}
                                   sx={{ width: 80 }}
                                 />
@@ -726,7 +726,7 @@ export default function Discrepancies() {
                                   variant="standard"
                                   value={row.branch || ""}
                                   onChange={e => handleResultEdit(idx, "branch", e.target.value)}
-                                  InputProps={{ disableUnderline: !row._edited, sx: { fontSize: 13 } }}
+                                  slotProps={{ input: { disableUnderline: !row._edited, sx: { fontSize: 13 } } }}
                                   placeholder={row._isNew ? "Branch" : ""}
                                   sx={{ width: 80 }}
                                 />
@@ -738,7 +738,7 @@ export default function Discrepancies() {
                                   type="number"
                                   value={row.appeared ?? ""}
                                   onChange={e => handleResultEdit(idx, "appeared", e.target.value)}
-                                  InputProps={{ sx: { fontSize: 13, fontWeight: 600 } }}
+                                  slotProps={{ input: { sx: { fontSize: 13, fontWeight: 600 } } }}
                                   sx={{ width: 70 }}
                                 />
                               </TableCell>
@@ -749,7 +749,7 @@ export default function Discrepancies() {
                                   type="number"
                                   value={row.passed ?? ""}
                                   onChange={e => handleResultEdit(idx, "passed", e.target.value)}
-                                  InputProps={{ sx: { fontSize: 13, fontWeight: 600 } }}
+                                  slotProps={{ input: { sx: { fontSize: 13, fontWeight: 600 } } }}
                                   sx={{ width: 70 }}
                                 />
                               </TableCell>

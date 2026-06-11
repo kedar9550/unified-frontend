@@ -430,19 +430,21 @@ export default function FacultyFormatResults() {
                   "&.Mui-focused fieldset": { borderColor: "var(--color-primary)" },
                 }
               }}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <SearchIcon sx={{ fontSize: 20, color: "var(--color-primary)", opacity: 0.8 }} />
-                  </InputAdornment>
-                ),
-                endAdornment: searchFacultyId && (
-                  <InputAdornment position="end">
-                    <IconButton size="small" onClick={() => setSearchFacultyId("")} sx={{ mr: 0.5, opacity: 0.6 }}>
-                      <CloseIcon sx={{ fontSize: 16 }} />
-                    </IconButton>
-                  </InputAdornment>
-                )
+              slotProps={{
+                input: {
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <SearchIcon sx={{ fontSize: 20, color: "var(--color-primary)", opacity: 0.8 }} />
+                    </InputAdornment>
+                  ),
+                  endAdornment: searchFacultyId && (
+                    <InputAdornment position="end">
+                      <IconButton size="small" onClick={() => setSearchFacultyId("")} sx={{ mr: 0.5, opacity: 0.6 }}>
+                        <CloseIcon sx={{ fontSize: 16 }} />
+                      </IconButton>
+                    </InputAdornment>
+                  )
+                }
               }}
             />
 
