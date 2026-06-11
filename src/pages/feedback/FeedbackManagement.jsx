@@ -173,6 +173,7 @@ export default function FeedbackManagement() {
       "branch",
       "subjectName",
       "subjectCode",
+      "subjectType",
       "section",
       "phase",
       "semester_or_year",
@@ -181,7 +182,7 @@ export default function FeedbackManagement() {
       "percentage",
     ];
     const sampleRows = [
-        ["FAC123", "2024-2025", "B.Tech", "CSE", "Mathematics", "MA101", "A", "1", "3", "60", "55", "91.6"],
+        ["FAC123", "2024-2025", "B.Tech", "CSE", "Mathematics", "MA101", "T", "A", "1", "3", "60", "55", "91.6"],
     ];
     const csvContent = headers.join(",") + "\n" + sampleRows.map(row => row.join(",")).join("\n") + "\n";
     const blob = new Blob([csvContent], { type: "text/csv" });
@@ -427,6 +428,12 @@ export default function FeedbackManagement() {
                             <Typography sx={{ fontSize: 11, color: "var(--text-secondary)" }}>{r.subjectCode}</Typography>
                             <Box sx={{ width: 4, height: 4, borderRadius: "50%", bgcolor: "var(--border-color)" }} />
                             <Typography sx={{ fontSize: 11, color: "var(--color-primary)", fontWeight: 700 }}>Sec {r.section || "-"}</Typography>
+                            {r.subjectType && (
+                              <>
+                                <Box sx={{ width: 4, height: 4, borderRadius: "50%", bgcolor: "var(--border-color)" }} />
+                                <Typography sx={{ fontSize: 11, color: "var(--text-secondary)", fontWeight: 600, textTransform: "capitalize" }}>{r.subjectType}</Typography>
+                              </>
+                            )}
                         </Box>
                     </Box>
                 ),

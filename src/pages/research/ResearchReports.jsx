@@ -434,7 +434,7 @@ export default function ResearchReports() {
                                 <Select
                                     labelId="academic-year-label"
                                     value={selectedYear}
-                                    label="Academic Year"
+                                    label="Academic Year" 
                                     onChange={(e) => setSelectedYear(e.target.value)}
                                     sx={{ borderRadius: "12px", background: "var(--bg-glass)" }}
                                 >

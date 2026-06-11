@@ -171,6 +171,7 @@ export default function FeedbackDiscrepancies() {
         _edited:        true,
         subjectName:    "",
         subjectCode:    "",
+        subjectType:    "theory",
         programId:      "",
         branchId:       "",
         branch:         "",
@@ -204,6 +205,7 @@ export default function FeedbackDiscrepancies() {
         await API.put(`/api/faculty-feedback-results/${row._id}`, {
           subjectName:       row.subjectName,
           subjectCode:       row.subjectCode,
+          subjectType:       row.subjectType,
           branch:            row.branch,
           programId:         row.programId,
           branchId:          row.branchId,
@@ -225,6 +227,7 @@ export default function FeedbackDiscrepancies() {
           facultyName:       selected.facultyName || selected.raisedBy?.name,
           subjectName:       row.subjectName,
           subjectCode:       row.subjectCode,
+          subjectType:       row.subjectType,
           programId:         row.programId,
           branchId:          row.branchId,
           branch:            branchName,
@@ -621,7 +624,7 @@ export default function FeedbackDiscrepancies() {
                     <Table size="small" sx={{ minWidth: 1000 }}>
                       <TableHead sx={{ background: "var(--bg-accent-1)" }}>
                         <TableRow>
-                          {["#", "Subject", "Code", "Prog", "Branch", "Sec", "Ph", "G/T", "%", ""].map(h => (
+                          {["#", "Subject", "Code", "Type", "Prog", "Branch", "Sec", "Ph", "G/T", "%", ""].map(h => (
                             <TableCell key={h} sx={{ fontWeight: 800, fontSize: 12, color: "var(--text-primary)", py: 1.5 }}>{h}</TableCell>
                           ))}
                         </TableRow>
@@ -632,6 +635,19 @@ export default function FeedbackDiscrepancies() {
                             <TableCell sx={{ fontWeight: 700, fontSize: 12 }}>{idx + 1}</TableCell>
                             <TableCell><TextField variant="standard" value={row.subjectName} onChange={e => handleResultEdit(idx, "subjectName", e.target.value)} InputProps={{ disableUnderline: !row._edited, sx: { fontSize: 13, fontWeight: 600 } }} fullWidth /></TableCell>
                             <TableCell><TextField variant="standard" value={row.subjectCode} onChange={e => handleResultEdit(idx, "subjectCode", e.target.value)} InputProps={{ disableUnderline: !row._edited, sx: { fontSize: 13, fontWeight: 600 } }} sx={{ width: 70 }} /></TableCell>
+                            <TableCell>
+                                <Select 
+                                    variant="standard" 
+                                    value={row.subjectType || "Theory"} 
+                                    onChange={e => handleResultEdit(idx, "subjectType", e.target.value)}
+                                    sx={{ fontSize: 12, fontWeight: 600, minWidth: 80 }}
+                                    disableUnderline={!row._edited}
+                                >
+                                    <MenuItem value="Theory">Theory</MenuItem>
+                                    <MenuItem value="Practical">Practical</MenuItem>
+                                    <MenuItem value="Integrated">Integrated</MenuItem>
+                                </Select>
+                            </TableCell>
                             <TableCell>
                                 <Select 
                                     variant="standard" 
