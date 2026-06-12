@@ -1117,9 +1117,7 @@ const AcademicStructure = () => {
         <Box>
             <PageHeader
                 title="Academic Structure"
-                subtitle="Configure Departments, Programs, and Specializations for the University"
-                breadcrumbs={["Home", "UniPrime", "Academics", "Structure"]}
-            />
+                subtitle="Configure Departments, Programs, and Specializations for the University" />
 
             <Paper sx={{
                 mb: 4,

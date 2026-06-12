@@ -1425,7 +1425,7 @@ export default function JournalPublication() {
 
   return (
     <Box>
-      <PageHeader title="Journal" subtitle="Manage and submit your journal publications" breadcrumbs={["Home", "Publications", "Journal"]} />
+      <PageHeader title="Journal Publications" subtitle="Manage and submit your journal publications" />
       {viewMode === "list" && renderList()}
       {viewMode === "select-year" && renderSelectYear()}
       {viewMode === "form" && renderForm()}

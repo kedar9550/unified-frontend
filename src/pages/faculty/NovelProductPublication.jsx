@@ -998,10 +998,8 @@ export default function NovelProductPublication() {
   return (
     <Box sx={{ width: "100%", pb: 5 }}>
       <PageHeader 
-        title="Novel Products / Technology (Developed or Implemented)" 
-        subtitle="Manage and submit details of novel products, software, or technologies you developed or implemented" 
-        breadcrumbs={["Home", "Research", "Novel Products"]}
-      />
+        title="Novel Products & Technologies" 
+        subtitle="Manage and submit your novel products and technologies" />
       <Box sx={{ mt: 3 }}>
         {viewMode === "list" && renderList()}
         {viewMode === "select-year" && renderSelectYear()}

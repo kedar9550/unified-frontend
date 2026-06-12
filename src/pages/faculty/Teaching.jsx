@@ -963,9 +963,7 @@ export default function Teaching() {
       {/* ── PAGE HEADER ────────────────────────────────────── */}
       <PageHeader
         title="Teaching Dashboard"
-        subtitle="Manage courses, performance, and student outcomes"
-        breadcrumbs={["Home", "Faculty", "Teaching"]}
-        action={
+        subtitle="Manage courses, performance, and student outcomes" action={
           <Button
  onClick={() => setDiscOpen(true)}
  startIcon={<FlagIcon />}

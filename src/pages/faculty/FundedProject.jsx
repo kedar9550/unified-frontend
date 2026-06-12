@@ -1068,7 +1068,7 @@ export default function FundedProject() {
 
   return (
     <>
-      <PageHeader title="Funded Projects" subtitle="Manage and submit your funded project details" breadcrumbs={["Home", "Publications", "Funded Project"]} />
+      <PageHeader title="Funded Projects" subtitle="Manage and submit your funded projects" />
 
       {viewMode === "list" && renderList()}
       {viewMode === "select-year" && renderSelectYear()}

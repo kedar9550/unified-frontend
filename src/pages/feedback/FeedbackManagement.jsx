@@ -251,9 +251,7 @@ export default function FeedbackManagement() {
 
       <PageHeader
         title="Feedback Admin"
-        subtitle="Coordinate student feedback data and institutional reports"
-        breadcrumbs={["Home", "Feedback", "Management"]}
-        action={
+        subtitle="Coordinate student feedback data and institutional reports" action={
           <Box sx={{ display: "flex", gap: 2 }}>
             {results.length > 0 && (
               <ActionButton

@@ -1239,7 +1239,7 @@ export default function TextbookPublication() {
 
   return (
     <Box>
-      <PageHeader title="Text Book" subtitle="Manage and submit your textbook publication details" breadcrumbs={["Home", "Publications", "Text Book"]} />
+      <PageHeader title="Textbook Publications" subtitle="Manage and submit your textbook publications" />
       {viewMode === "list" && renderList()}
       {viewMode === "select-year" && renderSelectYear()}
       {viewMode === "form" && renderForm()}

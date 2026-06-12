@@ -208,9 +208,7 @@ export default function HODDiscrepancies() {
     <>
       <PageHeader
         title="Department Discrepancies"
-        subtitle="Review and resolve proctoring discrepancies"
-        breadcrumbs={["Home", "HOD", "Discrepancies"]}
-      />
+        subtitle="Review and resolve proctoring discrepancies" />
 
       {/* ── STAT PILLS ────────────────────── */}
       <Box

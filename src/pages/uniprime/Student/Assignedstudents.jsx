@@ -277,9 +277,7 @@ const Assignedstudents = () => {
         <Box sx={{ p: 3 }}>
             <PageHeader
                 title="Assigned Students"
-                subtitle="View and manage students assigned to departments"
-                breadcrumbs={["Home", "Student Management", "Assigned Students"]}
-            />
+                subtitle="View and manage students assigned to departments" />
 
 
             {/* TABLE CARD with inline filter toolbar */}

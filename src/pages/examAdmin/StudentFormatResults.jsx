@@ -461,12 +461,9 @@ export default function StudentFormatResults() {
         onChange={handleFileChange}
       />
 
-      {/* HEADER */}
       <PageHeader
-        title="Exam Section"
-        subtitle="Manage and upload student performance results"
-        breadcrumbs={["Home", "Exam Cell", "Results Upload", "Student Format"]}
-      />
+        title="Exam Results (Student Format)"
+        subtitle="Upload and manage student exam results and performance" />
 
       {/* DATA MANAGEMENT CONTROL CENTER */}
       <Box sx={{ 

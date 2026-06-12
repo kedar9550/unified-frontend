@@ -950,9 +950,7 @@ export default function PhdScholarPublication() {
     <Box sx={{ width: "100%", pb: 5 }}>
       <PageHeader 
         title="Guided Ph.D. Scholars" 
-        subtitle="Manage and submit details of your guided scholars for annual appraisal cycles" 
-        breadcrumbs={["Home", "Research", "Guided Ph.D. Scholars"]}
-      />
+        subtitle="Manage and submit details of your guided scholars for annual appraisal cycles" />
       <Box sx={{ mt: 3 }}>
         {viewMode === "list" && renderList()}
         {viewMode === "select-year" && renderSelectYear()}
