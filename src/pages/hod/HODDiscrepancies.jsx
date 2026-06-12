@@ -116,7 +116,7 @@ export default function HODDiscrepancies() {
 
   // ── Handle resolve submit ──────────────────────────────────────────
   const handleResolve = async () => {
-    if (!proofFile) return toast.warning("Please upload a proof document before submitting.");
+    if (!proofFile) return toast.warning("Please upload a proof document before submitting");
 
     setSubmitting(true);
     try {
@@ -157,7 +157,7 @@ export default function HODDiscrepancies() {
 
   // ── Handle reject submit ───────────────────────────────────────────
   const handleReject = async () => {
-    if (!rejectNote.trim()) return toast.warning("Please provide a rejection note.");
+    if (!rejectNote.trim()) return toast.warning("Please provide a rejection note");
 
     setRejecting(true);
     try {

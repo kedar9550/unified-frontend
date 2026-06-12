@@ -497,7 +497,7 @@ const Studentuploads = () => {
             }
         } catch (error) {
             console.error("Assignment failed", error);
-            toast.error("Assignment failed");
+            toast.error(error.response?.data?.message || "Assignment failed. Please try again.");
         }
     };
 

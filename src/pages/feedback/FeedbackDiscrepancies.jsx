@@ -194,7 +194,7 @@ export default function FeedbackDiscrepancies() {
   // ── Handle resolve submit ──────────────────────────────────────────
   const handleResolve = async () => {
     if (!proofFile) {
-      toast.warning("Please upload a proof document before submitting.");
+      toast.warning("Please upload a proof document before submitting");
       return;
     }
 
@@ -280,7 +280,7 @@ export default function FeedbackDiscrepancies() {
   // ── Handle reject submit ───────────────────────────────────────────
   const handleReject = async () => {
     if (!rejectNote.trim()) {
-      toast.warning("Please provide a rejection note.");
+      toast.warning("Please provide a rejection note");
       return;
     }
 

@@ -55,7 +55,7 @@ export default function AdministrationApprovalList() {
       }
     } catch (error) {
       console.error("Failed to fetch administration entries:", error);
-      toast.error("Failed to load administration data.");
+      toast.error(error.response?.data?.message || "Failed to load administration data.");
     } finally {
       setLoading(false);
     }

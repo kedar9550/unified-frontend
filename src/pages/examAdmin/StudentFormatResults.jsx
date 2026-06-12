@@ -126,28 +126,28 @@ export default function StudentFormatResults() {
 
     if (type === "PROGRAM") {
       if (!selectedProgramId) {
-        toast.warning("Please select a program first.");
+        toast.warning("Please select a program first");
         return;
       }
       confirmMsg = `Are you sure you want to delete ALL results for ${selectedProgram?.name}?`;
       params.programId = selectedProgramId;
     } else if (type === "STUDENT") {
       if (!bulkStudentId.trim()) {
-        toast.warning("Please enter a Student ID.");
+        toast.warning("Please enter a Student ID");
         return;
       }
       confirmMsg = `Are you sure you want to delete ALL results for Student ID: ${bulkStudentId}?`;
       params.studentId = bulkStudentId.trim();
     } else if (type === "SELECTED") {
       if (selectedIds.length === 0) {
-        toast.warning("Please select at least one record.");
+        toast.warning("Please select at least one record");
         return;
       }
       confirmMsg = `Are you sure you want to delete ${selectedIds.length} selected record(s)?`;
       params.ids = selectedIds;
     } else if (type === "YEAR") {
       if (!selectedExamYear) {
-        toast.warning("Please select an Exam Year first.");
+        toast.warning("Please select an Exam Year first");
         return;
       }
       confirmMsg = `Are you sure you want to delete ALL results for Exam Year: ${selectedExamYear}?`;

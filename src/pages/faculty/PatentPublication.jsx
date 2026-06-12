@@ -152,7 +152,7 @@ export default function PatentPublication() {
       return;
     }
     if (!form.applyingSeedGrant) {
-      toast.error("Please select whether applying as a Seed Grant Work.");
+      toast.error("Please select whether applying as a Seed Grant Work");
       return;
     }
 

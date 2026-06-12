@@ -417,7 +417,7 @@ export default function ResourceUtilization() {
   const handleBulkSubmit = async () => {
     const activeDrafts = activitiesList.filter(a => a.status === 'Draft');
     if (activeDrafts.length === 0) {
-      toast.error("No draft entries found.");
+      toast.error("No draft entries found");
       return;
     }
 

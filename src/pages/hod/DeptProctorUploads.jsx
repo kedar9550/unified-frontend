@@ -309,7 +309,7 @@ const DeptProctorUploads = () => {
   };
 
   const downloadTemplate = () => {
-    if (students.length === 0) return toast.info("Please fetch students first.");
+    if (students.length === 0) return toast.info("Please fetch students first");
     const acYearStr = activeYear || `${new Date().getFullYear()}-${new Date().getFullYear() + 1}`;
 
     if (isYearBased) {

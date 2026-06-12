@@ -129,11 +129,11 @@ export default function TextbookPublication() {
     if (!file) return true;
     const allowed = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png'];
     if (!allowed.includes(file.type)) {
-      toast.error("Only PDF, JPG, and PNG files are allowed.");
+      toast.error("Only PDF, JPG, and PNG files are allowed");
       return false;
     }
     if (file.size > 500 * 1024) {
-      toast.error("File size exceeds 500KB limit.");
+      toast.error("File size exceeds 500KB limit");
       return false;
     }
     return true;
@@ -150,7 +150,7 @@ export default function TextbookPublication() {
 
   const fetchISBNData = async () => {
     if (!form.isbn) {
-      toast.warning("Please enter an ISBN first.");
+      toast.warning("Please enter an ISBN first");
       return;
     }
     setIsbnFetching(true);
@@ -158,6 +158,9 @@ export default function TextbookPublication() {
       const res = await API.get(`/api/research/textbook/isbn/${form.isbn}`);
       if (res.data?.success) {
         const data = res.data.data;
+        if (!data || !data.title) {
+          throw new Error("ISBN details not found. Please fill fields manually");
+        }
         let newMonth = form.month;
         let newYear = form.year;
 
@@ -189,9 +192,11 @@ export default function TextbookPublication() {
           publisher: !!data.publisher
         });
         toast.success("Book details fetched successfully!");
+      } else {
+        throw new Error(res.data?.message || "ISBN details not found. Please fill fields manually");
       }
     } catch (err) {
-      toast.error(err?.response?.data?.message || "Failed to fetch ISBN details.");
+      toast.error(err?.response?.data?.message || err.message || "Failed to fetch ISBN details");
     } finally {
       setIsbnFetching(false);
     }
@@ -253,7 +258,7 @@ export default function TextbookPublication() {
 
   const handleSubmit = async () => {
     if (!user?.panNumber || user?.panNumber === "Not Set" || !user?.college || user?.college === "Not Set") {
-      toast.error("Please update your profile with PAN Number and College before submitting.");
+      toast.error("Please update your profile with PAN Number and College before submitting");
       return;
     }
 
@@ -303,7 +308,7 @@ export default function TextbookPublication() {
 
     // Check mandatory file uploads
     if (!files.coverPage || !files.authorAffiliation || !files.index) {
-      toast.error("Please attach all the required documents (Cover Page, Author Affiliation, Index).");
+      toast.error("Please attach all the required documents (Cover Page, Author Affiliation, Index)");
       return;
     }
 

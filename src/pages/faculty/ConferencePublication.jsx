@@ -66,11 +66,11 @@ export default function ConferencePublication() {
     if (!file) return true;
     const allowed = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png'];
     if (!allowed.includes(file.type)) {
-      toast.error("Only PDF, JPG, and PNG files are allowed.");
+      toast.error("Only PDF, JPG, and PNG files are allowed");
       return false;
     }
     if (file.size > 1024 * 1024) { // 1MB limit from multer config
-      toast.error("File size exceeds 1MB limit.");
+      toast.error("File size exceeds 1MB limit");
       return false;
     }
     return true;
@@ -210,7 +210,7 @@ export default function ConferencePublication() {
     }
 
     if (!files.certificate) {
-      toast.error("Please attach the presentation certificate.");
+      toast.error("Please attach the presentation certificate");
       return;
     }
 

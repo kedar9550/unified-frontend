@@ -134,7 +134,7 @@ const RoleManagement = () => {
                 setRoles(res.data.data);
             }
         } catch (error) {
-            toast.error("Failed to fetch roles");
+            toast.error(error.response?.data?.message || "Failed to fetch roles");
         } finally {
             setLoadingRoles(false);
         }
@@ -147,7 +147,7 @@ const RoleManagement = () => {
             setAllEmployees(Array.isArray(res.data) ? res.data : []);
         } catch (error) {
             console.error("Failed to fetch employees", error);
-            toast.error("Failed to fetch employee list");
+            toast.error(error.response?.data?.message || "Failed to fetch employee list");
         } finally {
             setLoadingEmployees(false);
         }
@@ -424,7 +424,7 @@ const RoleManagement = () => {
                 toast.error(res.data?.error || "Employee not found in ECAP");
             }
         } catch (error) {
-            toast.error("Verification failed");
+            toast.error(error.response?.data?.message || "Verification failed");
         } finally {
             setIsVerifyingCreate(false);
         }
@@ -544,7 +544,7 @@ const RoleManagement = () => {
     const handleDeleteRole = async (id) => {
         const role = roles.find(r => r._id === id);
         if (role?.defaultRole) {
-            toast.warning("System Default roles cannot be deleted from here.");
+            toast.warning("System Default roles cannot be deleted from here");
             return;
         }
         if (!window.confirm("Are you sure? This will remove the role from ALL users.")) return;
@@ -556,7 +556,7 @@ const RoleManagement = () => {
                 if (selectedUser) handleUserSearch();
             }
         } catch (error) {
-            toast.error("Failed to delete role");
+            toast.error(error.response?.data?.message || "Failed to delete role");
         }
     };
 
@@ -575,7 +575,7 @@ const RoleManagement = () => {
                 if (updated) setSelectedUser(updated);
             }
         } catch (error) {
-            toast.error("User search failed");
+            toast.error(error.response?.data?.message || "User search failed");
             setUserSearchResults([]);
         } finally {
             setSearchingUsers(false);
@@ -620,7 +620,7 @@ const RoleManagement = () => {
             if (isCurrentlySelected && role?.defaultRole) {
                 const otherSelectedDefaultRoles = roles.filter(r => r.defaultRole && r._id !== id && prev.includes(r._id));
                 if (otherSelectedDefaultRoles.length === 0) {
-                    toast.info("Users must have at least one default role based on their identity.");
+                    toast.info("Users must have at least one default role based on their identity");
                     return prev;
                 }
             }
@@ -678,7 +678,7 @@ const RoleManagement = () => {
                 fetchAllEmployees();
             }
         } catch (error) {
-            toast.error("Failed to remove role");
+            toast.error(error.response?.data?.message || "Failed to remove role");
         }
     };
 

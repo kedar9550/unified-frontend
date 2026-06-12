@@ -239,7 +239,7 @@ const AppraisalEvaluation = () => {
   // HOD actions on individual sections
   const handleProctoringHODBulkAction = async (action, remarks) => {
     if (action === "Reject" && (!remarks || !remarks.trim())) {
-      toast.warning("Please provide a rejection reason/remarks.");
+      toast.warning("Please provide a rejection reason/remarks");
       return;
     }
     const facultyId = selectedAppraisal.facultyId?._id || selectedAppraisal.facultyId;
@@ -253,7 +253,8 @@ const AppraisalEvaluation = () => {
         remarks
       });
       if (res.data?.success) {
-        toast.success(`Proctoring entries ${action.toLowerCase()}d successfully.`);
+        const actionText = action === "Approve" ? "approved" : "rejected";
+        toast.success(`Proctoring entries ${actionText} successfully.`);
         
         // Update local selectedAppraisal state
         setSelectedAppraisal(prev => {
@@ -277,13 +278,14 @@ const AppraisalEvaluation = () => {
 
   const handleResUtHODAction = async (id, action, comment) => {
     if (action === "Reject" && (!comment || !comment.trim())) {
-      toast.warning("Please provide a rejection reason/remarks.");
+      toast.warning("Please provide a rejection reason/remarks");
       return;
     }
     try {
       const res = await axiosInstance.put(`/api/value-addition/resource-utilization/hod-action/${id}`, { action, comment });
       if (res.data?.success) {
-        toast.success(`Resource Utilization entry ${action.toLowerCase()}d successfully.`);
+        const actionText = action === "Approve" ? "approved" : "rejected";
+        toast.success(`Resource Utilization entry ${actionText} successfully.`);
         if (action === "Reject") {
           await handleSubmitEvaluation("Reject", `Resource Utilization entry rejected: ${comment}`);
         } else {
@@ -302,13 +304,14 @@ const AppraisalEvaluation = () => {
 
   const handleContHODAction = async (id, action, comment) => {
     if (action === "Reject" && (!comment || !comment.trim())) {
-      toast.warning("Please provide a rejection reason/remarks.");
+      toast.warning("Please provide a rejection reason/remarks");
       return;
     }
     try {
       const res = await axiosInstance.put(`/api/value-addition/contribution/hod-action/${id}`, { action, comment });
       if (res.data?.success) {
-        toast.success(`Expertise / Contribution entry ${action.toLowerCase()}d successfully.`);
+        const actionText = action === "Approve" ? "approved" : "rejected";
+        toast.success(`Expertise / Contribution entry ${actionText} successfully.`);
         if (action === "Reject") {
           await handleSubmitEvaluation("Reject", `Expertise / Contribution entry rejected: ${comment}`);
         } else {
@@ -327,13 +330,14 @@ const AppraisalEvaluation = () => {
 
   const handleAdminHODAction = async (id, roleName, action, remarks) => {
     if (action === "Reject" && (!remarks || !remarks.trim())) {
-      toast.warning("Please provide a rejection reason/remarks.");
+      toast.warning("Please provide a rejection reason/remarks");
       return;
     }
     try {
       const res = await axiosInstance.put(`/api/faculty-administration/hod-action-role/${id}`, { roleName, action, remarks });
       if (res.data?.success) {
-        toast.success(`Administrative role '${roleName}' ${action.toLowerCase()}d successfully.`);
+        const actionText = action === "Approve" ? "approved" : "rejected";
+        toast.success(`Administrative role '${roleName}' ${actionText} successfully.`);
         if (action === "Reject") {
           await handleSubmitEvaluation("Reject", `Administrative role '${roleName}' rejected: ${remarks}`);
         } else {
@@ -427,7 +431,7 @@ const AppraisalEvaluation = () => {
         setPendingList(res.data.data);
       }
     } catch (err) {
-      toast.error("Failed to fetch pending appraisals.");
+      toast.error(err.response?.data?.message || "Failed to fetch pending appraisals.");
     } finally {
       setLoading(false);
     }
@@ -510,7 +514,7 @@ const AppraisalEvaluation = () => {
         fetchPending();
       }
     } catch (err) {
-      toast.error("Failed to process appraisal action.");
+      toast.error(err.response?.data?.message || "Failed to process appraisal action.");
     } finally {
       setLoading(false);
     }

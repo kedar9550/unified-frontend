@@ -214,7 +214,7 @@ export default function FeedbackManagement() {
     
     const ids = results.map(r => r._id);
     if (ids.length === 0) {
-        toast.info("No records to delete.");
+        toast.info("No records to delete");
         return;
     }
 

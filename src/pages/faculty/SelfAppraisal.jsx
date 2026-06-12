@@ -298,7 +298,7 @@ const SelfAppraisal = () => {
           setSelectedYear(yearsList[0]._id);
         }
       } catch (err) {
-        toast.error("Failed to load academic years.");
+        toast.error("Failed to load academic years");
       }
     };
     fetchYears();
@@ -367,7 +367,7 @@ const SelfAppraisal = () => {
       if (err.response?.status === 403) {
         setAppraisalError(err.response?.data?.message || "Self-appraisal is not active for this academic year.");
       } else {
-        toast.error("Failed to fetch or calculate self appraisal.");
+        toast.error("Failed to fetch or calculate self appraisal");
       }
       setAppraisal(null);
       setFaculty(null);
@@ -403,7 +403,7 @@ const SelfAppraisal = () => {
   // Submit Appraisal
   const handleSubmit = async () => {
     if (!profileComplete) {
-      toast.error("Please complete your faculty profile details before submitting.");
+      toast.error("Please complete your faculty profile details before submitting");
       return;
     }
 
@@ -652,12 +652,12 @@ const SelfAppraisal = () => {
   const handleAdminSave = async (e) => {
     e.preventDefault();
     if (!adminForm.roleName) {
-      toast.error("Please select an administrative role.");
+      toast.error("Please select an administrative role");
       return;
     }
     const roleConfig = ADMINISTRATIVE_ROLES_LIST.find((r) => r.label === adminForm.roleName);
     if (roleConfig && roleConfig.hasDetails && !adminForm.details.trim()) {
-      toast.error("Please specify the event/activity name.");
+      toast.error("Please specify the event/activity name");
       return;
     }
 
@@ -724,7 +724,7 @@ const SelfAppraisal = () => {
         fetchAppraisal();
       }
     } catch (err) {
-      toast.error("Failed to delete administrative role.");
+      toast.error("Failed to delete administrative role");
     }
   };
 

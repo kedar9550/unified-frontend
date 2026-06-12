@@ -146,7 +146,7 @@ const ReferenceJournalManagement = () => {
         }
       }
     } catch (err) {
-      toast.error("Failed to retrieve reference journals.");
+      toast.error(err.response?.data?.message || "Failed to retrieve reference journals.");
       console.error(err);
     } finally {
       setLoading(false);
@@ -168,7 +168,7 @@ const ReferenceJournalManagement = () => {
         setJifTotalRows(res.data.pagination.total);
       }
     } catch (err) {
-      toast.error("Failed to retrieve journal impact factors.");
+      toast.error(err.response?.data?.message || "Failed to retrieve journal impact factors.");
       console.error(err);
     } finally {
       setJifLoading(false);
@@ -204,7 +204,7 @@ const ReferenceJournalManagement = () => {
         fetchJournals();
       }
     } catch (err) {
-      toast.error("Failed to delete journal.");
+      toast.error(err.response?.data?.message || "Failed to delete journal.");
     }
   };
 
@@ -291,7 +291,7 @@ const ReferenceJournalManagement = () => {
         fetchJifs();
       }
     } catch (err) {
-      toast.error("Failed to delete journal impact factor entry.");
+      toast.error(err.response?.data?.message || "Failed to delete journal impact factor entry.");
     }
   };
 
@@ -361,7 +361,7 @@ const ReferenceJournalManagement = () => {
         setCsvFile(file);
         setUploadResult(null);
       } else {
-        toast.error("Please drop a valid CSV file.");
+        toast.error("Please drop a valid CSV file");
       }
     }
   };
@@ -371,7 +371,7 @@ const ReferenceJournalManagement = () => {
   };
 
   const handleBulkUpload = async () => {
-    if (!csvFile) return toast.error("Please choose or drag a CSV file first.");
+    if (!csvFile) return toast.error("Please choose or drag a CSV file first");
     const formData = new FormData();
     formData.append("file", csvFile);
     formData.append("defaultType", form.type === "Other" ? form.customType : form.type);

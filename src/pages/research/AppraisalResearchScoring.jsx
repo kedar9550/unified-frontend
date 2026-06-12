@@ -133,7 +133,7 @@ const AppraisalResearchScoring = () => {
         setPendingList(res.data.data);
       }
     } catch (err) {
-      toast.error("Failed to fetch pending appraisals.");
+      toast.error(err.response?.data?.message || "Failed to fetch pending appraisals");
     } finally {
       setLoading(false);
     }
@@ -278,7 +278,7 @@ const AppraisalResearchScoring = () => {
         }
       }
     } catch (err) {
-      toast.error(isDraft ? "Failed to save draft." : "Failed to finalize appraisal.");
+      toast.error(isDraft ? (err.response?.data?.message || "Failed to save draft") : (err.response?.data?.message || "Failed to finalize appraisal"));
     } finally {
       setLoading(false);
     }

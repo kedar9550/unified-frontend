@@ -184,7 +184,7 @@ export default function FacultyFormatResults() {
       confirmMsg = "CRITICAL: This will PERMANENTLY DELETE ALL records for the selected academic year. Continue?";
     } else if (mode === "PROGRAM") {
       if (!selectedProgramId) {
-        toast.warning("Please select a program first.");
+        toast.warning("Please select a program first");
         return;
       }
       const progName = programs.find(p => p._id === selectedProgramId)?.name;
@@ -192,7 +192,7 @@ export default function FacultyFormatResults() {
       params.programId = selectedProgramId;
     } else if (mode === "FACULTY") {
       if (!searchFacultyId) {
-        toast.warning("Please enter a Faculty ID in the filter first.");
+        toast.warning("Please enter a Faculty ID in the filter first");
         return;
       }
       confirmMsg = `This will delete ALL records for Faculty ID: ${searchFacultyId} in the selected year. Continue?`;
@@ -204,7 +204,7 @@ export default function FacultyFormatResults() {
     setLoading(true);
     try {
       await API.delete("/api/faculty-subject-results/semester", { params, skipGlobalLoader: true });
-      toast.success("Records cleared successfully.");
+      toast.success("Records cleared successfully");
       setDeleteMenuAnchor(null);
       fetchResults();
     } catch (err) {
