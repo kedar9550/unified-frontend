@@ -122,22 +122,22 @@ const RnDDeanDashboard = () => {
           <Box key={index} sx={{ flex: { xs: "1 1 100%", sm: "1 1 calc(50% - 16px)", lg: 1 }, minWidth: 0 }}>
             <Card sx={{
               p: 2.5,
-              borderRadius: '24px',
+              borderRadius: '16px',
               background: 'var(--bg-panel)',
               border: '1px solid var(--border-color)',
-              transition: 'all 0.3s ease',
+              transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
               display: 'flex',
               flexDirection: 'column',
               justifyContent: 'space-between',
-              height: '100%',
+              height: '160px',
+              boxSizing: 'border-box',
               gap: 2,
               position: 'relative',
               overflow: 'hidden',
               cursor: card.path ? 'pointer' : 'default',
               '&:hover': {
                 transform: card.path ? 'translateY(-5px)' : 'none',
-                boxShadow: 'var(--shadow-premium)',
-                borderColor: card.color
+                boxShadow: '0 12px 40px rgba(0,0,0,0.12)',
               },
               '&::after': {
                 content: '""',

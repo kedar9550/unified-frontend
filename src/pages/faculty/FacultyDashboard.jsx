@@ -274,18 +274,17 @@ const FacultyDashboard = () => {
             <Card
               sx={{
                 position: "relative",
-                borderRadius: 2,
+                borderRadius: "16px",
                 background: "var(--bg-panel)",
                 border: "1px solid var(--border-color)",
                 boxShadow: "var(--shadow-premium)",
                 transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
                 overflow: "hidden",
                 "&:hover": {
-                  transform: "translateY(-6px)",
-                  boxShadow: "0 20px 40px rgba(0,0,0,0.12)",
-                  borderColor: "var(--color-primary)",
+                  transform: "translateY(-5px)",
+                  boxShadow: "0 12px 40px rgba(0,0,0,0.12)",
                 },
-                height: "100%",
+                height: "160px",
                 display: "flex",
                 flexDirection: "column",
                 justifyContent: "space-between",

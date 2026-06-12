@@ -576,22 +576,37 @@ const SDG = () => {
     const StatCard = ({ label, value, subtext, icon: Icon, color }) => (
         <Paper sx={{
             p: 2.5,
-            borderRadius: '20px',
-            background: 'var(--bg-glass)',
+            borderRadius: '16px',
+            background: 'var(--bg-panel)',
             border: '1px solid var(--border-color)',
             display: 'flex',
             flexDirection: 'column',
             gap: 1,
             flex: 1,
             minWidth: '200px',
-            transition: 'all 0.3s ease',
+            height: '160px',
+            boxSizing: 'border-box',
+            justifyContent: 'space-between',
+            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+            position: 'relative',
+            overflow: 'hidden',
             '&:hover': {
-                transform: 'translateY(-4px)',
-                borderColor: color,
-                boxShadow: `0 10px 30px ${color}15`
+                transform: 'translateY(-5px)',
+                boxShadow: '0 12px 40px rgba(0,0,0,0.12)'
+            },
+            '&::after': {
+                content: '""',
+                position: 'absolute',
+                top: 0,
+                right: 0,
+                width: '120px',
+                height: '120px',
+                background: `radial-gradient(circle at top right, ${color}25, transparent 70%)`,
+                zIndex: 0,
+                pointerEvents: 'none'
             }
         }}>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'relative', zIndex: 1 }}>
                 <Typography sx={{ color: 'var(--text-secondary)', fontSize: '0.85rem', fontWeight: 600 }}>
                     {label}
                 </Typography>
@@ -599,12 +614,14 @@ const SDG = () => {
                     <Icon sx={{ fontSize: 20 }} />
                 </Box>
             </Box>
-            <Typography sx={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--text-primary)' }}>
-                {value}
-            </Typography>
-            <Typography sx={{ color: 'var(--text-secondary)', fontSize: '0.75rem' }}>
-                {subtext}
-            </Typography>
+            <Box sx={{ position: 'relative', zIndex: 1 }}>
+                <Typography sx={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+                    {value}
+                </Typography>
+                <Typography sx={{ color: 'var(--text-secondary)', fontSize: '0.75rem', mt: 0.5 }}>
+                    {subtext}
+                </Typography>
+            </Box>
         </Paper>
     );
 
