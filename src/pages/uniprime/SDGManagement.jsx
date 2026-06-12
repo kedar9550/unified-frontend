@@ -289,9 +289,7 @@ const SDGManagement = () => {
     <Box>
       <PageHeader
         title="SDG Keywords Management"
-        subtitle="Manage Sustainable Development Goals and their associated keywords for document analysis."
-        breadcrumbs={["Home", "Academics", "SDG Management"]}
-      />
+        subtitle="Manage Sustainable Development Goals and their associated keywords for document analysis." />
 
       <Box sx={{ display: 'flex', justifyContent: { xs: 'stretch', sm: 'flex-end' }, mb: 3, mt: 1 }}>
         <Button

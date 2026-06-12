@@ -316,9 +316,7 @@ export default function FeedbackDiscrepancies() {
     <>
       <PageHeader
         title="Feedback Discrepancies"
-        subtitle="Review and resolve faculty-raised feedback discrepancies"
-        breadcrumbs={["Home", "Feedback", "Discrepancies"]}
-      />
+        subtitle="Review and resolve faculty-raised feedback discrepancies" />
 
       {/* ── STAT PILLS ────────────────────────────────────── */}
       <Box sx={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 2, mb: 4 }}>

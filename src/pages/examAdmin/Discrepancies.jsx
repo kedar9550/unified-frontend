@@ -271,9 +271,7 @@ export default function Discrepancies() {
     <>
       <PageHeader
         title="Discrepancies"
-        subtitle="Review and resolve faculty-raised discrepancies"
-        breadcrumbs={["Home", "Exam Cell", "Discrepancies"]}
-      />
+        subtitle="Review and resolve faculty-raised discrepancies" />
 
       {/* ── STAT PILLS (Responsive Grid) ────────────────────── */}
       <Box

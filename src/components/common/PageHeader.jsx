@@ -3,7 +3,6 @@ import { Box, Typography } from "@mui/material";
 export default function PageHeader({
   title,
   subtitle,
-  breadcrumbs = [],
   action,
 }) {
   return (

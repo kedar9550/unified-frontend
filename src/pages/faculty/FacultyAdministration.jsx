@@ -266,9 +266,7 @@ export default function FacultyAdministration() {
     <Box sx={{ width: "100%", pb: 5 }}>
       <PageHeader
         title="Administrative Responsibilities"
-        subtitle="Declare your administrative roles at Institute and Department levels for HOD verification."
-        breadcrumbs={["Home", "Faculty", "Administration"]}
-      />
+        subtitle="Declare your administrative roles at Institute and Department levels for HOD verification." />
 
       {/* Select Academic Year */}
       <Box

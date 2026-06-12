@@ -917,7 +917,7 @@ export default function ConsultancyPublication() {
 
   return (
     <>
-      <PageHeader title="Consultancy" subtitle="Manage and submit your consultancy work details" breadcrumbs={["Home", "Publications", "Consultancy"]} />
+      <PageHeader title="Consultancy Projects" subtitle="Manage and submit your consultancy projects" />
 
       {viewMode === "list" && renderList()}
       {viewMode === "select-year" && renderSelectYear()}

@@ -264,10 +264,8 @@ export default function FacultyFormatResults() {
       />
 
       <PageHeader
-        title="Exam Section"
-        subtitle="Upload and manage results based on faculty and course"
-        breadcrumbs={["Home", "Exam Cell", "Results Upload"]}
-      />
+        title="Exam Results (Faculty Format)"
+        subtitle="Upload and manage exam results formatted by faculty and courses" />
 
       <Box sx={{ 
         mt: 3, 

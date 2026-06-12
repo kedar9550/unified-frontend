@@ -980,7 +980,7 @@ export default function ConferencePublication() {
 
   return (
     <Box>
-      <PageHeader title="Conference" subtitle="Manage and submit your conference research paper details" breadcrumbs={["Home", "Publications", "Conference"]} />
+      <PageHeader title="Conference Publications" subtitle="Manage and submit your conference publications" />
 
       {viewMode === "list" && renderList()}
       {viewMode === "select-year" && renderSelectYear()}

@@ -593,10 +593,8 @@ const Studentuploads = () => {
             <input type="file" ref={fileInputRef} style={{ display: "none" }} accept=".csv,.xlsx" onChange={handleFileChange} />
 
             <PageHeader
-                title="Student Management"
-                subtitle="Upload and manage student records"
-                breadcrumbs={["Home", "Student Management", "Student Upload"]}
-                action={null}
+                title="Student Imports & Uploads"
+                subtitle="Upload and manage student record imports" action={null}
             />
 
             {/* Quick Action Cards (Box System) */}

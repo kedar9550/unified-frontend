@@ -313,7 +313,7 @@ export default function ContributionApproval() {
     <Box sx={{ width: "100%", pb: 5 }}>
       <PageHeader
         title="Contribution / Expertise Approvals"
-        subtitle="Consolidated tabular HOD review screen for awards, certifications, e-content, and certifications."
+        subtitle="Consolidated HOD review screen for awards, e-content, course completions, and certifications."
       />
 
       <Box sx={{ mt: 4 }}>

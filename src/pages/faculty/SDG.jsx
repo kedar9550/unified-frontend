@@ -808,9 +808,7 @@ const SDG = () => {
                     />
                     <PageHeader
                         title="Sustainable Development Goals"
-                        subtitle="Track and manage contributions towards global sustainability targets"
-                        breadcrumbs={["Home", "Research", "SDG's"]}
-                    />
+                        subtitle="Track and manage contributions towards global sustainability targets" />
 
                     <Paper
                         elevation={0}
