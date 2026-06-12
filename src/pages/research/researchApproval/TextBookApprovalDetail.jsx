@@ -564,41 +564,12 @@ const TextBookApprovalDetail = ({ id, onBack, role }) => {
 
                             <Box sx={{ display: "flex", gap: 3, justifyContent: "flex-end" }}>
                                 <Button
-                                    variant="outlined"
-                                    disabled={actionLoading}
-                                    onClick={() => handleAction('Reject')}
-                                    startIcon={<CloseIcon />}
-                                    sx={{
-                                        color: "#ef4444",
-                                        borderColor: "#ef4444",
-                                        fontWeight: 700,
-                                        px: 4,
-                                        py: 1.5,
-                                        borderRadius: "10px",
-                                        textTransform: "none",
-                                        fontSize: "0.95rem",
-                                        "&:hover": { bgcolor: "rgba(239, 68, 68, 0.05)", borderColor: "#dc2626" }
-                                    }}
+                                    variant="outlined" color="error" disabled={actionLoading} onClick={() => handleAction('Reject')} startIcon={<CloseIcon />}
                                 >
                                     Reject Application
                                 </Button>
                                 <Button
-                                    variant="contained"
-                                    disabled={actionLoading}
-                                    onClick={() => handleAction('Approve')}
-                                    startIcon={<CheckIcon />}
-                                    sx={{
-                                        bgcolor: "#10b981",
-                                        color: "#fff",
-                                        fontWeight: 700,
-                                        px: 5,
-                                        py: 1.5,
-                                        borderRadius: "10px",
-                                        textTransform: "none",
-                                        fontSize: "0.95rem",
-                                        boxShadow: "0 8px 16px rgba(16, 185, 129, 0.2)",
-                                        "&:hover": { bgcolor: "#059669", boxShadow: "0 10px 20px rgba(16, 185, 129, 0.3)" }
-                                    }}
+                                    variant="contained" color="success" disabled={actionLoading} onClick={() => handleAction('Approve')} startIcon={<CheckIcon />}
                                 >
                                     {isHOD ? "Approve & Forward" : "Final Approve"}
                                 </Button>

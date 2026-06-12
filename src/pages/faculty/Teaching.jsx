@@ -967,23 +967,21 @@ export default function Teaching() {
         breadcrumbs={["Home", "Faculty", "Teaching"]}
         action={
           <Button
-            onClick={() => setDiscOpen(true)}
-            startIcon={<FlagIcon />}
-            sx={{
-              borderRadius: "20px",
-              px: 3,
-              py: 1,
-              textTransform: "none",
-              fontWeight: 600,
-              fontSize: 14,
-              background: "linear-gradient(135deg,#e53935,#ff7043)",
-              color: "#fff",
-              boxShadow: "0 4px 15px rgba(229,57,53,0.3)",
-              "&:hover": {
-                background: "linear-gradient(135deg,#c62828,#e64a19)",
-              },
-            }}
-          >
+ onClick={() => setDiscOpen(true)}
+ startIcon={<FlagIcon />}
+ sx={{
+ 
+ px: 3,
+ py: 1,
+ textTransform: "none",
+ fontWeight: 600,
+ fontSize: 14,
+ background: "linear-gradient(135deg,#e53935,#ff7043)",
+ color: "#fff",
+ boxShadow: "0 4px 15px rgba(229,57,53,0.3)",
+ "&:hover": {
+ background: "linear-gradient(135deg,#c62828,#e64a19)" } }}
+ >
             Raise Discrepancy
           </Button>
         }
@@ -1117,23 +1115,23 @@ export default function Teaching() {
           title="SECTION : Proctoring Students' Average Pass Percentage"
           action={
             <Button
-              variant="contained"
-              startIcon={<AddIcon />}
-              onClick={handleOpenAddModal}
-              sx={{
-                borderRadius: "10px",
-                textTransform: "none",
-                fontWeight: 700,
-                px: 3,
-                background: "var(--gradient-primary)",
-                color: "#fff",
-                boxShadow: "0 4px 15px rgba(0, 78, 146, 0.2)",
-                "&:hover": {
-                  background: "var(--gradient-primary)",
-                  opacity: 0.95
-                }
-              }}
-            >
+ variant="contained"
+ startIcon={<AddIcon />}
+ onClick={handleOpenAddModal}
+ sx={{
+ 
+ textTransform: "none",
+ fontWeight: 700,
+ px: 3,
+ background: "var(--gradient-primary)",
+ color: "#fff",
+ boxShadow: "0 4px 15px rgba(0, 78, 146, 0.2)",
+ "&:hover": {
+ background: "var(--gradient-primary)",
+ opacity: 0.95
+ }
+ }}
+ >
               Add Record
             </Button>
           }
@@ -1368,30 +1366,30 @@ export default function Teaching() {
           </DialogContent>
           <DialogActions sx={{ px: 3, pb: 2.5, gap: 1 }}>
             <Button
-              onClick={() => setIsProctorModalOpen(false)}
-              disabled={submittingManual}
-              sx={{ textTransform: "none", fontWeight: 700, borderRadius: "10px", color: "var(--text-secondary)" }}
-            >
+ onClick={() => setIsProctorModalOpen(false)}
+ disabled={submittingManual}
+ sx={{ textTransform: "none", fontWeight: 700, color: "var(--text-secondary)" }}
+ >
               Cancel
             </Button>
             <Button
-              type="submit"
-              variant="contained"
-              disabled={submittingManual}
-              sx={{
-                textTransform: "none",
-                fontWeight: 700,
-                borderRadius: "10px",
-                px: 3,
-                background: "var(--gradient-primary)",
-                color: "#fff",
-                boxShadow: "0 4px 15px rgba(0, 78, 146, 0.2)",
-                "&:hover": {
-                  background: "var(--gradient-primary)",
-                  opacity: 0.95
-                }
-              }}
-            >
+ type="submit"
+ variant="contained"
+ disabled={submittingManual}
+ sx={{
+ textTransform: "none",
+ fontWeight: 700,
+ 
+ px: 3,
+ background: "var(--gradient-primary)",
+ color: "#fff",
+ boxShadow: "0 4px 15px rgba(0, 78, 146, 0.2)",
+ "&:hover": {
+ background: "var(--gradient-primary)",
+ opacity: 0.95
+ }
+ }}
+ >
               {submittingManual ? <CircularProgress size={16} sx={{ color: "#fff" }} /> : editingEntry ? "Save Changes" : "Add Record"}
             </Button>
           </DialogActions>

@@ -493,66 +493,66 @@ const RnDDeanDashboard = () => {
           <Typography variant="h6" sx={{ fontWeight: 700, mb: 3 }}>Research & Development Actions</Typography>
           <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2.5 }}>
             <Button
-              variant="contained"
-              onClick={() => navigate("/research-dean/approvals")}
-              sx={{
-                flex: 1,
-                minWidth: "220px",
-                background: "rgba(255,255,255,0.15)",
-                backdropFilter: "blur(12px)",
-                textTransform: "none",
-                py: 2,
-                borderRadius: "16px",
-                fontWeight: 700,
-                border: '1px solid rgba(255,255,255,0.2)',
-                "&:hover": {
-                  background: "rgba(255,255,255,0.25)",
-                  transform: 'scale(1.02)'
-                }
-              }}
-            >
+ variant="contained"
+ onClick={() => navigate("/research-dean/approvals")}
+ sx={{
+ flex: 1,
+ minWidth: "220px",
+ background: "rgba(255,255,255,0.15)",
+ backdropFilter: "blur(12px)",
+ textTransform: "none",
+ py: 2,
+ 
+ fontWeight: 700,
+ border: '1px solid rgba(255,255,255,0.2)',
+ "&:hover": {
+ background: "rgba(255,255,255,0.25)",
+ transform: 'scale(1.02)'
+ }
+ }}
+ >
               Pending Approvals
             </Button>
             <Button
-              variant="contained"
-              onClick={() => navigate("/research-dean/reports")}
-              sx={{
-                flex: 1,
-                minWidth: "220px",
-                background: "rgba(255,255,255,0.15)",
-                backdropFilter: "blur(12px)",
-                textTransform: "none",
-                py: 2,
-                borderRadius: "16px",
-                fontWeight: 700,
-                border: '1px solid rgba(255,255,255,0.2)',
-                "&:hover": {
-                  background: "rgba(255,255,255,0.25)",
-                  transform: 'scale(1.02)'
-                }
-              }}
-            >
+ variant="contained"
+ onClick={() => navigate("/research-dean/reports")}
+ sx={{
+ flex: 1,
+ minWidth: "220px",
+ background: "rgba(255,255,255,0.15)",
+ backdropFilter: "blur(12px)",
+ textTransform: "none",
+ py: 2,
+ 
+ fontWeight: 700,
+ border: '1px solid rgba(255,255,255,0.2)',
+ "&:hover": {
+ background: "rgba(255,255,255,0.25)",
+ transform: 'scale(1.02)'
+ }
+ }}
+ >
               Publication Reports
             </Button>
             <Button
-              variant="contained"
-              onClick={() => navigate("/research-dean/reports")}
-              sx={{
-                flex: 1,
-                minWidth: "220px",
-                background: "rgba(255,255,255,0.15)",
-                backdropFilter: "blur(12px)",
-                textTransform: "none",
-                py: 2,
-                borderRadius: "16px",
-                fontWeight: 700,
-                border: '1px solid rgba(255,255,255,0.2)',
-                "&:hover": {
-                  background: "rgba(255,255,255,0.25)",
-                  transform: 'scale(1.02)'
-                }
-              }}
-            >
+ variant="contained"
+ onClick={() => navigate("/research-dean/reports")}
+ sx={{
+ flex: 1,
+ minWidth: "220px",
+ background: "rgba(255,255,255,0.15)",
+ backdropFilter: "blur(12px)",
+ textTransform: "none",
+ py: 2,
+ 
+ fontWeight: 700,
+ border: '1px solid rgba(255,255,255,0.2)',
+ "&:hover": {
+ background: "rgba(255,255,255,0.25)",
+ transform: 'scale(1.02)'
+ }
+ }}
+ >
               Research Analytics
             </Button>
           </Box>

@@ -528,24 +528,14 @@ export default function Discrepancies() {
                               size="small"
                               variant="contained"
                               onClick={() => openResolve(item)}
-                              sx={{
-                                borderRadius: "10px", textTransform: "none",
-                                fontSize: 11, px: 1.5, py: 0.4, minWidth: 0,
-                                background: "linear-gradient(135deg,#0b5299,#1c6ed5)",
-                              }}
                             >
                               ✓ Resolve
                             </Button>
                             <Button
                               size="small"
                               variant="outlined"
+                              color="error"
                               onClick={() => openReject(item)}
-                              sx={{
-                                borderRadius: "10px", textTransform: "none",
-                                fontSize: 11, px: 1.5, py: 0.3, minWidth: 0,
-                                color: "#b71c1c", borderColor: "#b71c1c",
-                                "&:hover": { background: "#ffebee", borderColor: "#b71c1c" },
-                              }}
                             >
                               ✕ Reject
                             </Button>
@@ -787,12 +777,6 @@ export default function Discrepancies() {
                       size="small"
                       variant="outlined"
                       onClick={handleAddRow}
-                      sx={{
-                        mt: 1.5, borderRadius: "10px", textTransform: "none",
-                        fontSize: 12, borderStyle: "dashed",
-                        color: "#1565c0", borderColor: "#90caf9",
-                        "&:hover": { background: "#e3f2fd", borderColor: "#1565c0" },
-                      }}
                     >
                       + Add New Row
                     </Button>
@@ -837,9 +821,10 @@ export default function Discrepancies() {
         {!success && selected && (
           <DialogActions sx={{ px: 3, pb: 3 }}>
             <Button
+              variant="text"
               onClick={() => setSelected(null)}
               disabled={submitting}
-              sx={{ borderRadius: "20px", textTransform: "none", color: "#666" }}
+              sx={{ color: "var(--text-secondary)" }}
             >
               Cancel
             </Button>
@@ -847,12 +832,6 @@ export default function Discrepancies() {
               variant="contained"
               onClick={handleResolve}
               disabled={submitting || !proofFile}
-              sx={{
-                borderRadius: "20px", px: 4, textTransform: "none",
-                fontWeight: 600,
-                background: "linear-gradient(135deg,#0b5299,#1c6ed5)",
-                boxShadow: "0 4px 15px rgba(11,82,153,0.3)",
-              }}
             >
               ✓ Submit & Resolve
             </Button>
@@ -943,23 +922,18 @@ export default function Discrepancies() {
         {!rejectDone && rejectItem && (
           <DialogActions sx={{ px: 3, pb: 3 }}>
             <Button
+              variant="text"
               onClick={() => setRejectItem(null)}
               disabled={rejecting}
-              sx={{ borderRadius: "20px", textTransform: "none", color: "#666" }}
+              sx={{ color: "var(--text-secondary)" }}
             >
               Cancel
             </Button>
             <Button
               variant="contained"
+              color="error"
               onClick={handleReject}
               disabled={rejecting || !rejectNote.trim()}
-              sx={{
-                borderRadius: "20px", px: 4, textTransform: "none",
-                fontWeight: 600,
-                background: "linear-gradient(135deg,#c62828,#e53935)",
-                boxShadow: "0 4px 15px rgba(183,28,28,0.3)",
-                "&:hover": { background: "linear-gradient(135deg,#b71c1c,#c62828)" },
-              }}
             >
               {rejecting ? <Loader size={20} color="inherit" /> : "✕ Reject with Note"}
             </Button>

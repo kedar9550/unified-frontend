@@ -737,27 +737,27 @@ export default function RaiseDiscrepancyModal({
       {activeTab === 1 && !success && (
         <DialogActions sx={{ px: 4, pb: 4, pt: 0 }}>
           <Button
-            onClick={() => onClose(false)}
-            sx={{ borderRadius: "12px", textTransform: "none", color: "#888", fontWeight: 600 }}
-          >
+ onClick={() => onClose(false)}
+ sx={{ textTransform: "none", color: "#888", fontWeight: 600 }}
+ >
             Cancel
           </Button>
           <Button
-            variant="contained"
-            onClick={handleSubmit}
-            disabled={saving || !note.trim() || !yearId || !semesterNo || (section === "PROCTORING" && proctoringType === "ASSIGNED_COUNT" && !studentDeptId)}
-            sx={{
-              borderRadius: "14px",
-              px: 4,
-              py: 1,
-              textTransform: "none",
-              fontWeight: 800,
-              background: "var(--gradient-primary)",
-              boxShadow: "0 8px 20px rgba(11, 82, 153, 0.2)",
-              "&:hover": { background: "var(--gradient-primary)", opacity: 0.9 },
-              "&.Mui-disabled": { background: "#eee", color: "#aaa" }
-            }}
-          >
+ variant="contained"
+ onClick={handleSubmit}
+ disabled={saving || !note.trim() || !yearId || !semesterNo || (section === "PROCTORING" && proctoringType === "ASSIGNED_COUNT" && !studentDeptId)}
+ sx={{
+ 
+ px: 4,
+ py: 1,
+ textTransform: "none",
+ fontWeight: 800,
+ background: "var(--gradient-primary)",
+ boxShadow: "0 8px 20px rgba(11, 82, 153, 0.2)",
+ "&:hover": { background: "var(--gradient-primary)", opacity: 0.9 },
+ "&.Mui-disabled": { background: "#eee", color: "#aaa" }
+ }}
+ >
             {saving ? <Loader size={20} color="inherit" /> : "Submit Discrepancy"}
           </Button>
         </DialogActions>

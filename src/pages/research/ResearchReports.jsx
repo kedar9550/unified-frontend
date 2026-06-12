@@ -281,21 +281,21 @@ export default function ResearchReports() {
         return (
             <DataTable columns={columns} rows={rows} toolbarLeft={
                 <Button
-                    variant="contained"
-                    startIcon={<DownloadIcon />}
-                    onClick={() => downloadCSV("journals")}
-                    sx={{
-                        borderRadius: "12px",
-                        textTransform: "none",
-                        background: "var(--gradient-primary)",
-                        boxShadow: "0 4px 12px rgba(190, 147, 55, 0.2)",
-                        "&:hover": {
-                            background: "var(--gradient-primary)",
-                            opacity: 0.9,
-                            boxShadow: "0 6px 16px rgba(190, 147, 55, 0.3)"
-                        }
-                    }}
-                >
+ variant="contained"
+ startIcon={<DownloadIcon />}
+ onClick={() => downloadCSV("journals")}
+ sx={{
+ 
+ textTransform: "none",
+ background: "var(--gradient-primary)",
+ boxShadow: "0 4px 12px rgba(190, 147, 55, 0.2)",
+ "&:hover": {
+ background: "var(--gradient-primary)",
+ opacity: 0.9,
+ boxShadow: "0 6px 16px rgba(190, 147, 55, 0.3)"
+ }
+ }}
+ >
                     Export to Excel
                 </Button>
             } />
@@ -316,21 +316,21 @@ export default function ResearchReports() {
         return (
             <DataTable columns={columns} rows={rows} toolbarLeft={
                 <Button
-                    variant="contained"
-                    startIcon={<DownloadIcon />}
-                    onClick={() => downloadCSV("textbooks")}
-                    sx={{
-                        borderRadius: "12px",
-                        textTransform: "none",
-                        background: "var(--gradient-primary)",
-                        boxShadow: "0 4px 12px rgba(190, 147, 55, 0.2)",
-                        "&:hover": {
-                            background: "var(--gradient-primary)",
-                            opacity: 0.9,
-                            boxShadow: "0 6px 16px rgba(190, 147, 55, 0.3)"
-                        }
-                    }}
-                >
+ variant="contained"
+ startIcon={<DownloadIcon />}
+ onClick={() => downloadCSV("textbooks")}
+ sx={{
+ 
+ textTransform: "none",
+ background: "var(--gradient-primary)",
+ boxShadow: "0 4px 12px rgba(190, 147, 55, 0.2)",
+ "&:hover": {
+ background: "var(--gradient-primary)",
+ opacity: 0.9,
+ boxShadow: "0 6px 16px rgba(190, 147, 55, 0.3)"
+ }
+ }}
+ >
                     Export to Excel
                 </Button>
             } />
@@ -351,21 +351,21 @@ export default function ResearchReports() {
         return (
             <DataTable columns={columns} rows={rows} toolbarLeft={
                 <Button
-                    variant="contained"
-                    startIcon={<DownloadIcon />}
-                    onClick={() => downloadCSV("chapters")}
-                    sx={{
-                        borderRadius: "12px",
-                        textTransform: "none",
-                        background: "var(--gradient-primary)",
-                        boxShadow: "0 4px 12px rgba(190, 147, 55, 0.2)",
-                        "&:hover": {
-                            background: "var(--gradient-primary)",
-                            opacity: 0.9,
-                            boxShadow: "0 6px 16px rgba(190, 147, 55, 0.3)"
-                        }
-                    }}
-                >
+ variant="contained"
+ startIcon={<DownloadIcon />}
+ onClick={() => downloadCSV("chapters")}
+ sx={{
+ 
+ textTransform: "none",
+ background: "var(--gradient-primary)",
+ boxShadow: "0 4px 12px rgba(190, 147, 55, 0.2)",
+ "&:hover": {
+ background: "var(--gradient-primary)",
+ opacity: 0.9,
+ boxShadow: "0 6px 16px rgba(190, 147, 55, 0.3)"
+ }
+ }}
+ >
                     Export to Excel
                 </Button>
             } />
@@ -467,24 +467,24 @@ export default function ResearchReports() {
                                         This will generate a single file containing all research categories.
                                     </Typography>
                                     <Button
-                                        variant="contained"
-                                        size="large"
-                                        startIcon={<DownloadIcon />}
-                                        onClick={() => downloadCSV("consolidated")}
-                                        sx={{
-                                            borderRadius: "12px",
-                                            textTransform: "none",
-                                            px: 4,
-                                            py: 1.5,
-                                            background: "var(--gradient-primary)",
-                                            boxShadow: "0 4px 12px rgba(190, 147, 55, 0.2)",
-                                            "&:hover": {
-                                                background: "var(--gradient-primary)",
-                                                opacity: 0.9,
-                                                boxShadow: "0 6px 16px rgba(190, 147, 55, 0.3)"
-                                            }
-                                        }}
-                                    >
+ variant="contained"
+ size="large"
+ startIcon={<DownloadIcon />}
+ onClick={() => downloadCSV("consolidated")}
+ sx={{
+ 
+ textTransform: "none",
+ px: 4,
+ py: 1.5,
+ background: "var(--gradient-primary)",
+ boxShadow: "0 4px 12px rgba(190, 147, 55, 0.2)",
+ "&:hover": {
+ background: "var(--gradient-primary)",
+ opacity: 0.9,
+ boxShadow: "0 6px 16px rgba(190, 147, 55, 0.3)"
+ }
+ }}
+ >
                                         Download Consolidated Report (.csv)
                                     </Button>
                                 </Box>

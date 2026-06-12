@@ -221,7 +221,6 @@ const PhdScholarFacultyDetail = ({ facultyId, onBack, role }) => {
                                             download
                                             target="_blank"
                                             fullWidth
-                                            sx={{ borderRadius: "10px", color: "var(--color-primary)", borderColor: "var(--border-color)", textTransform: "none", fontWeight: 700 }}
                                         >
                                             View Document
                                         </Button>
@@ -229,7 +228,7 @@ const PhdScholarFacultyDetail = ({ facultyId, onBack, role }) => {
                                         <Typography variant="body2" sx={{ color: "var(--text-secondary)" }}>No document attached</Typography>
                                     )}
                                 </Box>
-
+ 
                                 {isPending && (
                                     <Box sx={{ mt: 3, display: "flex", gap: 2, flexDirection: "column" }}>
                                         <Typography variant="caption" sx={{ fontWeight: 800, color: "var(--text-secondary)", mb: -1 }}>ACTIONS</Typography>
@@ -241,7 +240,6 @@ const PhdScholarFacultyDetail = ({ facultyId, onBack, role }) => {
                                                 startIcon={actionLoadingId === app._id ? <CircularProgress size={16} color="inherit" /> : <CheckIcon />}
                                                 disabled={actionLoadingId !== null}
                                                 onClick={() => handleAction(app._id, 'Approve')}
-                                                sx={{ borderRadius: "10px", textTransform: "none", fontWeight: 700 }}
                                             >
                                                 Approve
                                             </Button>
@@ -252,7 +250,6 @@ const PhdScholarFacultyDetail = ({ facultyId, onBack, role }) => {
                                                 startIcon={actionLoadingId === app._id ? <CircularProgress size={16} color="inherit" /> : <CloseIcon />}
                                                 disabled={actionLoadingId !== null}
                                                 onClick={() => handleAction(app._id, 'Reject')}
-                                                sx={{ borderRadius: "10px", textTransform: "none", fontWeight: 700 }}
                                             >
                                                 Reject
                                             </Button>

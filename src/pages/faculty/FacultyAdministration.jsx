@@ -332,23 +332,23 @@ export default function FacultyAdministration() {
                 action={
                   selectedYearLabel !== "all" && !isAddingRole && hasActiveRoles && (
                     <Button
-                      variant="contained"
-                      onClick={() => setIsAddingRole(true)}
-                      sx={{
-                        borderRadius: "12px",
-                        px: 3,
-                        py: 1,
-                        textTransform: "none",
-                        fontWeight: 700,
-                        fontSize: "0.85rem",
-                        background: "linear-gradient(135deg, var(--color-primary) 0%, #2563eb 100%)",
-                        boxShadow: "0 4px 15px rgba(59, 130, 246, 0.2)",
-                        color: "#fff",
-                        "&:hover": {
-                          opacity: 0.95
-                        }
-                      }}
-                    >
+ variant="contained"
+ onClick={() => setIsAddingRole(true)}
+ sx={{
+ 
+ px: 3,
+ py: 1,
+ textTransform: "none",
+ fontWeight: 700,
+ fontSize: "0.85rem",
+ background: "linear-gradient(135deg, var(--color-primary) 0%, #2563eb 100%)",
+ boxShadow: "0 4px 15px rgba(59, 130, 246, 0.2)",
+ color: "#fff",
+ "&:hover": {
+ opacity: 0.95
+ }
+ }}
+ >
                       Add Another Role
                     </Button>
                   )
@@ -665,47 +665,47 @@ export default function FacultyAdministration() {
               >
                 {hasActiveRoles && (
                   <Button
-                    variant="outlined"
-                    onClick={() => setIsAddingRole(false)}
-                    disabled={saving}
-                    sx={{
-                      borderRadius: "12px",
-                      px: 4,
-                      py: 1.5,
-                      textTransform: "none",
-                      fontWeight: 700,
-                      fontSize: "0.95rem",
-                      borderColor: "var(--border-color)",
-                      color: "var(--text-secondary)",
-                      "&:hover": {
-                        borderColor: "var(--text-primary)",
-                        color: "var(--text-primary)",
-                        background: "rgba(255, 255, 255, 0.05)"
-                      }
-                    }}
-                  >
+ variant="outlined"
+ onClick={() => setIsAddingRole(false)}
+ disabled={saving}
+ sx={{
+ 
+ px: 4,
+ py: 1.5,
+ textTransform: "none",
+ fontWeight: 700,
+ fontSize: "0.95rem",
+ borderColor: "var(--border-color)",
+ color: "var(--text-secondary)",
+ "&:hover": {
+ borderColor: "var(--text-primary)",
+ color: "var(--text-primary)",
+ background: "rgba(255, 255, 255, 0.05)"
+ }
+ }}
+ >
                     Cancel
                   </Button>
                 )}
                 <Button
-                  type="submit"
-                  disabled={saving}
-                  startIcon={saving ? <CircularProgress size={18} sx={{ color: "#fff" }} /> : <Save />}
-                  sx={{
-                    borderRadius: "12px",
-                    px: 4,
-                    py: 1.5,
-                    textTransform: "none",
-                    fontWeight: 700,
-                    fontSize: "0.95rem",
-                    background: "linear-gradient(135deg, var(--color-primary) 0%, #2563eb 100%)",
-                    boxShadow: "0 4px 15px rgba(59, 130, 246, 0.2)",
-                    color: "#fff",
-                    "&:hover": {
-                      opacity: 0.95
-                    }
-                  }}
-                >
+ type="submit"
+ disabled={saving}
+ startIcon={saving ? <CircularProgress size={18} sx={{ color: "#fff" }} /> : <Save />}
+ sx={{
+ 
+ px: 4,
+ py: 1.5,
+ textTransform: "none",
+ fontWeight: 700,
+ fontSize: "0.95rem",
+ background: "linear-gradient(135deg, var(--color-primary) 0%, #2563eb 100%)",
+ boxShadow: "0 4px 15px rgba(59, 130, 246, 0.2)",
+ color: "#fff",
+ "&:hover": {
+ opacity: 0.95
+ }
+ }}
+ >
                   {saving ? "Saving Changes..." : "Submit to HOD for Approval"}
                 </Button>
               </Box>

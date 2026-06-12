@@ -190,15 +190,14 @@ export default function PerformanceTable({ title }) {
           }}
         >
           <Button
-            variant="contained"
-            sx={{
-              borderRadius: "30px",
-              px: 4,
-              background: "linear-gradient(135deg, #0b5299, #1c6ed5)",
-              textTransform: "none",
-              fontWeight: 600,
-            }}
-          >
+ variant="contained"
+ sx={{
+ 
+ px: 4,
+ background: "linear-gradient(135deg, #0b5299, #1c6ed5)",
+ textTransform: "none",
+ fontWeight: 600 }}
+ >
             ✓ Save Section
           </Button>
         </Box>

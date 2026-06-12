@@ -900,26 +900,25 @@ const SDG = () => {
 
                                                 <Box sx={{ mt: 2, width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                                                     <Button
-                                                        variant="contained"
-                                                        startIcon={<CloudUpload />}
-                                                        onClick={handleUploadClick}
-                                                        sx={{
-                                                            background: 'var(--gradient-primary)',
-                                                            color: '#fff',
-                                                            px: 6,
-                                                            py: 1,
-                                                            borderRadius: '100px',
-                                                            fontSize: '1rem',
-                                                            fontWeight: 700,
-                                                            textTransform: 'none',
-                                                            boxShadow: '0 10px 30px var(--color-primary-alpha)',
-                                                            transition: 'all 0.3s ease',
-                                                            '&:hover': {
-                                                                transform: 'translateY(-2px)',
-                                                                boxShadow: '0 15px 40px var(--color-primary-alpha)',
-                                                            }
-                                                        }}
-                                                    >
+ variant="contained"
+ startIcon={<CloudUpload />}
+ onClick={handleUploadClick}
+ sx={{
+ background: 'var(--gradient-primary)',
+ color: '#fff',
+ px: 6,
+ py: 1,
+ 
+ fontSize: '1rem',
+ fontWeight: 700,
+ textTransform: 'none',
+ boxShadow: '0 10px 30px var(--color-primary-alpha)',
+ transition: 'all 0.3s ease',
+ '&:hover': {
+ transform: 'translateY(-2px)',
+ boxShadow: '0 15px 40px var(--color-primary-alpha)' }
+ }}
+ >
                                                         Upload File
                                                     </Button>
 

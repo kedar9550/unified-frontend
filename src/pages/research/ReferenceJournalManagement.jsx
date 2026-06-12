@@ -822,42 +822,42 @@ const ReferenceJournalManagement = () => {
 
             <Stack direction="row" spacing={2} sx={{ mb: 3 }}>
               <Button
-                fullWidth
-                variant="outlined"
-                size="medium"
-                startIcon={<DownloadIcon />}
-                onClick={downloadSampleTemplate}
-                sx={{
-                  textTransform: "none",
-                  borderRadius: "12px",
-                  fontWeight: 700,
-                  borderColor: "var(--border-color)",
-                  color: "var(--text-primary)",
-                  "&:hover": {
-                    borderColor: "var(--color-primary)",
-                    background: "var(--bg-glass)"
-                  }
-                }}
-              >
+ fullWidth
+ variant="outlined"
+ size="medium"
+ startIcon={<DownloadIcon />}
+ onClick={downloadSampleTemplate}
+ sx={{
+ textTransform: "none",
+ 
+ fontWeight: 700,
+ borderColor: "var(--border-color)",
+ color: "var(--text-primary)",
+ "&:hover": {
+ borderColor: "var(--color-primary)",
+ background: "var(--bg-glass)"
+ }
+ }}
+ >
                 Download Template
               </Button>
               <Button
-                fullWidth
-                variant="contained"
-                disabled={!csvFile || uploading}
-                onClick={handleBulkUpload}
-                startIcon={uploading ? <CircularProgress size={18} color="inherit" /> : <UploadIcon />}
-                sx={{
-                  borderRadius: "12px",
-                  textTransform: "none",
-                  fontWeight: 700,
-                  background: "var(--gradient-primary)",
-                  color: "#fff",
-                  "&:hover": {
-                    background: "var(--gradient-primary-hover)"
-                  }
-                }}
-              >
+ fullWidth
+ variant="contained"
+ disabled={!csvFile || uploading}
+ onClick={handleBulkUpload}
+ startIcon={uploading ? <CircularProgress size={18} color="inherit" /> : <UploadIcon />}
+ sx={{
+ 
+ textTransform: "none",
+ fontWeight: 700,
+ background: "var(--gradient-primary)",
+ color: "#fff",
+ "&:hover": {
+ background: "var(--gradient-primary-hover)"
+ }
+ }}
+ >
                 {uploading ? "Importing..." : "Upload CSV"}
               </Button>
             </Stack>
@@ -971,23 +971,23 @@ const ReferenceJournalManagement = () => {
 
               <Box sx={{ mt: "auto", pt: 2 }}>
                 <Button
-                  fullWidth
-                  type="submit"
-                  variant="contained"
-                  size="large"
-                  startIcon={<AddIcon />}
-                  sx={{
-                    borderRadius: "12px",
-                    textTransform: "none",
-                    fontWeight: 700,
-                    py: 1.5,
-                    background: "var(--gradient-primary)",
-                    color: "#fff",
-                    "&:hover": {
-                      background: "var(--gradient-primary-hover)"
-                    }
-                  }}
-                >
+ fullWidth
+ type="submit"
+ variant="contained"
+ size="large"
+ startIcon={<AddIcon />}
+ sx={{
+ 
+ textTransform: "none",
+ fontWeight: 700,
+ py: 1.5,
+ background: "var(--gradient-primary)",
+ color: "#fff",
+ "&:hover": {
+ background: "var(--gradient-primary-hover)"
+ }
+ }}
+ >
                   Save Journal
                 </Button>
               </Box>
@@ -1282,30 +1282,30 @@ const ReferenceJournalManagement = () => {
             </DialogContent>
             <DialogActions sx={{ px: 3, pb: 2 }}>
               <Button
-                onClick={() => setEditingJournal(null)}
-                sx={{
-                  textTransform: "none",
-                  fontWeight: 700,
-                  borderRadius: "10px",
-                  color: "var(--text-secondary)"
-                }}
-              >
+ onClick={() => setEditingJournal(null)}
+ sx={{
+ textTransform: "none",
+ fontWeight: 700,
+ 
+ color: "var(--text-secondary)"
+ }}
+ >
                 Cancel
               </Button>
               <Button
-                type="submit"
-                variant="contained"
-                sx={{
-                  textTransform: "none",
-                  fontWeight: 700,
-                  borderRadius: "10px",
-                  background: "var(--gradient-primary)",
-                  color: "#fff",
-                  "&:hover": {
-                    background: "var(--gradient-primary-hover)"
-                  }
-                }}
-              >
+ type="submit"
+ variant="contained"
+ sx={{
+ textTransform: "none",
+ fontWeight: 700,
+ 
+ background: "var(--gradient-primary)",
+ color: "#fff",
+ "&:hover": {
+ background: "var(--gradient-primary-hover)"
+ }
+ }}
+ >
                 Update Journal
               </Button>
             </DialogActions>
@@ -1408,30 +1408,30 @@ const ReferenceJournalManagement = () => {
             </DialogContent>
             <DialogActions sx={{ px: 3, pb: 2 }}>
               <Button
-                onClick={() => setEditingJif(null)}
-                sx={{
-                  textTransform: "none",
-                  fontWeight: 700,
-                  borderRadius: "10px",
-                  color: "var(--text-secondary)"
-                }}
-              >
+ onClick={() => setEditingJif(null)}
+ sx={{
+ textTransform: "none",
+ fontWeight: 700,
+ 
+ color: "var(--text-secondary)"
+ }}
+ >
                 Cancel
               </Button>
               <Button
-                type="submit"
-                variant="contained"
-                sx={{
-                  textTransform: "none",
-                  fontWeight: 700,
-                  borderRadius: "10px",
-                  background: "var(--gradient-primary)",
-                  color: "#fff",
-                  "&:hover": {
-                    background: "var(--gradient-primary-hover)"
-                  }
-                }}
-              >
+ type="submit"
+ variant="contained"
+ sx={{
+ textTransform: "none",
+ fontWeight: 700,
+ 
+ background: "var(--gradient-primary)",
+ color: "#fff",
+ "&:hover": {
+ background: "var(--gradient-primary-hover)"
+ }
+ }}
+ >
                 Update JIF Entry
               </Button>
             </DialogActions>

@@ -51,42 +51,7 @@ export function FacultyInfoRow() {
   );
 }
 
-// Styled label
-export const labelStyle = { 
-  fontSize: 11, 
-  color: "var(--color-primary)", 
-  fontWeight: 800, 
-  mb: 0.8, 
-  textTransform: "uppercase", 
-  letterSpacing: "0.05em",
-  opacity: 0.9
-};
-
-// Disabled TextField style
-export const disabledField = {
-  "& .MuiInputBase-root": {
-    background: "rgba(0,0,0,0.02)",
-  },
-  "& .MuiInputBase-input.Mui-disabled": { 
-    WebkitTextFillColor: "var(--text-secondary)", 
-    background: "transparent", 
-    opacity: 0.8,
-    fontWeight: 600
-  },
-  "& .MuiOutlinedInput-root.Mui-disabled .MuiOutlinedInput-notchedOutline": { 
-    borderColor: "var(--border-color)",
-    opacity: 0.5
-  },
-  "body.dark-mode & .MuiInputBase-root": {
-    background: "rgba(255,255,255,0.03)",
-  }
-};
-
-// Month options
-export const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-
-// Year options (last 10 years)
-export const YEARS = Array.from({ length: 2 }, (_, i) => String(new Date().getFullYear() - i));
+import { labelStyle, disabledField, MONTHS, YEARS } from "./publicationConstants";
 
 // NoteBox
 export function NoteBox() {
@@ -188,23 +153,23 @@ export function FileField({ label, name, onChange, error, onError }) {
         position: "relative"
       }}>
         <Button
-          component="label"
-          variant="contained"
-          sx={{
-            background: "var(--gradient-primary)",
-            borderRadius: "30px",
-            textTransform: "none",
-            fontWeight: 700,
-            fontSize: 11,
-            px: 2.5,
-            height: "32px",
-            boxShadow: "none",
-            whiteSpace: "nowrap",
-            flexShrink: 0,
-            "&:hover": { opacity: 0.9, transform: "translateY(-1px)" },
-            transition: "all 0.2s ease"
-          }}
-        >
+ component="label"
+ variant="contained"
+ sx={{
+ background: "var(--gradient-primary)",
+ 
+ textTransform: "none",
+ fontWeight: 700,
+ fontSize: 11,
+ px: 2.5,
+ height: "32px",
+ boxShadow: "none",
+ whiteSpace: "nowrap",
+ flexShrink: 0,
+ "&:hover": { opacity: 0.9, transform: "translateY(-1px)" },
+ transition: "all 0.2s ease"
+ }}
+ >
           Choose file
           <input type="file" hidden accept=".png,.jpg,.jpeg,.pdf" name={name} onChange={handleFileChange} ref={fileInputRef} />
         </Button>
@@ -278,26 +243,26 @@ export function FileField({ label, name, onChange, error, onError }) {
 export function SubmitBtn({ onClick, loading }) {
   return (
     <Button
-      variant="contained"
-      onClick={onClick}
-      disabled={loading}
-      sx={{
-        background: "var(--gradient-primary)",
-        borderRadius: "12px",
-        px: 6,
-        height: "44px", // Fixed height for alignment
-        textTransform: "none",
-        fontWeight: 800,
-        fontSize: 15,
-        boxShadow: "0 8px 20px rgba(0, 0, 0, 0.1)",
-        "&:hover": {
-          background: "var(--gradient-primary)",
-          opacity: 0.9,
-          transform: "translateY(-2px)",
-          boxShadow: "0 10px 25px rgba(0, 0, 0, 0.15)"
-        },
-        transition: "all 0.3s ease"
-      }}>
+ variant="contained"
+ onClick={onClick}
+ disabled={loading}
+ sx={{
+ background: "var(--gradient-primary)",
+ 
+ px: 6,
+ height: "44px", // Fixed height for alignment
+ textTransform: "none",
+ fontWeight: 800,
+ fontSize: 15,
+ boxShadow: "0 8px 20px rgba(0, 0, 0, 0.1)",
+ "&:hover": {
+ background: "var(--gradient-primary)",
+ opacity: 0.9,
+ transform: "translateY(-2px)",
+ boxShadow: "0 10px 25px rgba(0, 0, 0, 0.15)"
+ },
+ transition: "all 0.3s ease"
+ }}>
       {loading ? "Submitting..." : "Submit"}
     </Button>
   );

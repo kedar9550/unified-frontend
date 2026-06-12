@@ -68,7 +68,8 @@ import {
 } from "@mui/icons-material";
 import axiosInstance from "../../api/axios";
 import { toast } from "sonner";
-import { SubLabel, Grid2, labelStyle, NoteBox, FileField } from "../../components/faculty/PublicationFormFields";
+import { SubLabel, Grid2, NoteBox, FileField } from "../../components/faculty/PublicationFormFields";
+import { labelStyle } from "../../components/faculty/publicationConstants";
 
 const ADMINISTRATIVE_ROLES_LIST = [
   { id: "dean", label: "Deans / Assoc Deans / CoE" },
@@ -1882,10 +1883,10 @@ const SelfAppraisal = () => {
             </Typography>
 
             <Button
-              variant="contained"
-              onClick={() => setShowGatekeeperModal(true)}
-              sx={{ background: "var(--gradient-primary)", color: "#fff", fontWeight: 700, borderRadius: "10px", px: 4, py: 1.5 }}
-            >
+ variant="contained"
+ onClick={() => setShowGatekeeperModal(true)}
+ sx={{ background: "var(--gradient-primary)", color: "#fff", fontWeight: 700, px: 4, py: 1.5 }}
+ >
               Resolve Pending Claims
             </Button>
           </Card>
@@ -1935,32 +1936,32 @@ const SelfAppraisal = () => {
         <Box sx={{ display: "flex", flexDirection: { xs: "column", md: "row" }, gap: 3, alignItems: { xs: "stretch", md: "center" }, justifyContent: "space-between", width: "100%" }}>
           {appraisal.status === "Draft" || appraisal.status === "Rejected by HOD" ? (
             <Button
-              variant="contained"
-              startIcon={<Send />}
-              onClick={handleSubmit}
-              disabled={loading || !eligibility.canSubmit || !profileComplete}
-              sx={{
-                whiteSpace: "nowrap",
-                borderRadius: "20px",
-                textTransform: "none",
-                fontWeight: 800,
-                px: 4,
-                py: 1.2,
-                boxShadow: "0 4px 14px rgba(0, 78, 146, 0.3)",
-                background: "var(--color-primary)",
-                color: "var(--bg-paper)",
-                transition: "all 0.3s ease",
-                "&:hover": {
-                  background: "var(--gradient-primary-hover)",
-                  transform: "translateY(-1px)",
-                  boxShadow: "0 6px 20px rgba(0, 78, 146, 0.4)"
-                },
-                "&.Mui-disabled": {
-                  background: "var(--border-color)",
-                  color: "var(--text-secondary)"
-                }
-              }}
-            >
+ variant="contained"
+ startIcon={<Send />}
+ onClick={handleSubmit}
+ disabled={loading || !eligibility.canSubmit || !profileComplete}
+ sx={{
+ whiteSpace: "nowrap",
+ 
+ textTransform: "none",
+ fontWeight: 800,
+ px: 4,
+ py: 1.2,
+ boxShadow: "0 4px 14px rgba(0, 78, 146, 0.3)",
+ background: "var(--color-primary)",
+ color: "var(--bg-paper)",
+ transition: "all 0.3s ease",
+ "&:hover": {
+ background: "var(--gradient-primary-hover)",
+ transform: "translateY(-1px)",
+ boxShadow: "0 6px 20px rgba(0, 78, 146, 0.4)"
+ },
+ "&.Mui-disabled": {
+ background: "var(--border-color)",
+ color: "var(--text-secondary)"
+ }
+ }}
+ >
               Submit to HOD
             </Button>
           ) : (
@@ -2380,18 +2381,18 @@ const SelfAppraisal = () => {
                   </Box>
                   {(appraisal.status === "Draft" || appraisal.status === "Rejected by HOD") && (
                     <Button
-                      variant="contained"
-                      size="small"
-                      startIcon={<AddCircle />}
-                      onClick={handleOpenAddModal}
-                      sx={{
-                        borderRadius: "8px",
-                        textTransform: "none",
-                        fontWeight: 700,
-                        background: "var(--gradient-primary)",
-                        color: "#fff"
-                      }}
-                    >
+ variant="contained"
+ size="small"
+ startIcon={<AddCircle />}
+ onClick={handleOpenAddModal}
+ sx={{
+ 
+ textTransform: "none",
+ fontWeight: 700,
+ background: "var(--gradient-primary)",
+ color: "#fff"
+ }}
+ >
                       Add Record
                     </Button>
                   )}
@@ -2714,30 +2715,30 @@ const SelfAppraisal = () => {
                   </DialogContent>
                   <DialogActions sx={{ px: 3, pb: 2.5, gap: 1 }}>
                     <Button
-                      onClick={() => setIsProctorModalOpen(false)}
-                      disabled={submittingProctoring}
-                      sx={{ textTransform: "none", fontWeight: 700, borderRadius: "10px", color: "var(--text-secondary)" }}
-                    >
+ onClick={() => setIsProctorModalOpen(false)}
+ disabled={submittingProctoring}
+ sx={{ textTransform: "none", fontWeight: 700, color: "var(--text-secondary)" }}
+ >
                       Cancel
                     </Button>
                     <Button
-                      type="submit"
-                      variant="contained"
-                      disabled={submittingProctoring}
-                      sx={{
-                        textTransform: "none",
-                        fontWeight: 700,
-                        borderRadius: "10px",
-                        px: 3,
-                        background: "var(--gradient-primary)",
-                        color: "#fff",
-                        boxShadow: "0 4px 15px rgba(0, 78, 146, 0.2)",
-                        "&:hover": {
-                          background: "var(--gradient-primary)",
-                          opacity: 0.95
-                        }
-                      }}
-                    >
+ type="submit"
+ variant="contained"
+ disabled={submittingProctoring}
+ sx={{
+ textTransform: "none",
+ fontWeight: 700,
+ 
+ px: 3,
+ background: "var(--gradient-primary)",
+ color: "#fff",
+ boxShadow: "0 4px 15px rgba(0, 78, 146, 0.2)",
+ "&:hover": {
+ background: "var(--gradient-primary)",
+ opacity: 0.95
+ }
+ }}
+ >
                       {submittingProctoring ? <CircularProgress size={16} sx={{ color: "#fff" }} /> : editingEntry ? "Save Changes" : "Add Record"}
                     </Button>
                   </DialogActions>
