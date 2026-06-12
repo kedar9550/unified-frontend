@@ -222,9 +222,9 @@ export default function DOIFetcher() {
         const json = await res.json();
         const entry = json?.["search-results"]?.entry?.[0];
 
-        if (!entry) {
+        if (!entry || entry.error || (!entry["dc:title"] && !entry["prism:publicationName"])) {
           doneStep("error", "DOI not found in Scopus search.");
-          setErrorMessage("This DOI was not found in the Scopus registry. Please double-check it.");
+          setErrorMessage(entry?.error ? `Scopus returned an error: ${entry.error}` : "This DOI was not found or lacks critical metadata in the Scopus registry. Please double-check it.");
           setBusy(false);
           setData(R);
           return;

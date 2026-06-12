@@ -41,7 +41,7 @@ const PhdScholarApprovalDetail = ({ id, onBack, role }) => {
                 }
             } catch (error) {
                 console.error("Failed to fetch Ph.D. details", error);
-                toast.error("Failed to load details");
+                toast.error(error.response?.data?.message || "Failed to load details");
             } finally {
                 setLoading(false);
             }
@@ -51,7 +51,7 @@ const PhdScholarApprovalDetail = ({ id, onBack, role }) => {
 
     const handleAction = async (action) => {
         if (!remarks && action === 'Reject') {
-            toast.error('Remarks are required for rejection.');
+            toast.error('Remarks are required for rejection');
             return;
         }
 

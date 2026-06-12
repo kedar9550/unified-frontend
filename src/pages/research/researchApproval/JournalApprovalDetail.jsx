@@ -94,7 +94,7 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
                 }
             } catch (error) {
                 console.error("Failed to fetch journal details", error);
-                toast.error("Failed to load details");
+                toast.error(error.response?.data?.message || "Failed to load details");
             } finally {
                 setLoading(false);
             }
@@ -104,18 +104,18 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
 
     const handleAction = async (action) => {
         if (!remarks && action === 'Reject') {
-            toast.error('Remarks are required for rejection.');
+            toast.error('Remarks are required for rejection');
             return;
         }
 
         if (action === 'Approve') {
             if (isResearchAdmin) {
                 if (!jcrImpactFactor) {
-                    toast.error('Please enter the Impact Factor (JCR).');
+                    toast.error('Please enter the Impact Factor (JCR)');
                     return;
                 }
                 if (data.applyIncentive === 'Yes' && !approvedAmount) {
-                    toast.error('Please enter the approved incentive amount.');
+                    toast.error('Please enter the approved incentive amount');
                     return;
                 }
             }

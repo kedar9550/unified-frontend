@@ -97,7 +97,7 @@ const AppraisalSettings = () => {
           setSelectedYear(yearsList[0]._id);
         }
       } catch (err) {
-        toast.error("Failed to load academic years.");
+        toast.error(err.response?.data?.message || "Failed to load academic years");
       }
     };
     fetchYears();
@@ -114,7 +114,7 @@ const AppraisalSettings = () => {
           setConfig(res.data.data);
         }
       } catch (err) {
-        toast.error("Failed to fetch points configurations.");
+        toast.error(err.response?.data?.message || "Failed to fetch points configurations");
       } finally {
         setLoading(false);
       }
@@ -138,7 +138,7 @@ const AppraisalSettings = () => {
         toast.success("Points configurations saved successfully!");
       }
     } catch (err) {
-      toast.error(err.response?.data?.message || "Failed to save configurations.");
+      toast.error(err.response?.data?.message || "Failed to save configurations");
     } finally {
       setLoading(false);
     }

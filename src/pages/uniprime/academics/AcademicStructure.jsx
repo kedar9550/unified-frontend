@@ -178,7 +178,7 @@ const AcademicStructure = () => {
             setPrograms(progRes.data.data || []);
             setBranches(branchRes.data.data || []);
         } catch (error) {
-            toast.error("Failed to load academic data.");
+            toast.error(error.response?.data?.message || "Failed to load academic data.");
         } finally {
             setLoading(false);
         }

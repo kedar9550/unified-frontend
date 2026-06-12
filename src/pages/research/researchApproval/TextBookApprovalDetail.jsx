@@ -42,6 +42,7 @@ const TextBookApprovalDetail = ({ id, onBack, role }) => {
                 }
             } catch (error) {
                 console.error("Failed to fetch textbook details", error);
+                toast.error(error.response?.data?.message || "Failed to load details");
             } finally {
                 setLoading(false);
             }
@@ -51,14 +52,14 @@ const TextBookApprovalDetail = ({ id, onBack, role }) => {
 
     const handleAction = async (action) => {
         if (!remarks && action === 'Reject') {
-            toast.error('Remarks are required for rejection.');
+            toast.error('Remarks are required for rejection');
             return;
         }
 
         // Incentive validation for Dean
         if (action === 'Approve' && isResearchAdmin && data.applyIncentive === 'Yes') {
             if (!approvedAmount) {
-                toast.error('Please enter the approved incentive amount.');
+                toast.error('Please enter the approved incentive amount');
                 return;
             }
         }
@@ -76,7 +77,7 @@ const TextBookApprovalDetail = ({ id, onBack, role }) => {
             }
         } catch (error) {
             console.error("Action failed", error);
-            toast.error("Action failed. Please try again.");
+            toast.error(error.response?.data?.message || "Action failed. Please try again.");
         } finally {
             setActionLoading(false);
         }

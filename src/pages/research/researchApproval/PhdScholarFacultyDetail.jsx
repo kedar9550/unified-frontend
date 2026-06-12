@@ -36,7 +36,7 @@ const PhdScholarFacultyDetail = ({ facultyId, onBack, role }) => {
             }
         } catch (error) {
             console.error("Failed to fetch Ph.D. scholars for faculty", error);
-            toast.error("Failed to load details");
+            toast.error(error.response?.data?.message || "Failed to load details");
         } finally {
             setLoading(false);
         }
@@ -55,7 +55,7 @@ const PhdScholarFacultyDetail = ({ facultyId, onBack, role }) => {
         if (action === 'Reject') {
             remarks = window.prompt("Please enter rejection remarks (Required):");
             if (!remarks) {
-                toast.error('Remarks are required for rejection.');
+                toast.error('Remarks are required for rejection');
                 return;
             }
         } else {

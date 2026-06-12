@@ -435,7 +435,7 @@ export default function Contribution() {
   const handleBulkSubmit = async () => {
     const activeDrafts = contributionsList.filter(a => a.status === 'Draft');
     if (activeDrafts.length === 0) {
-      toast.error("No draft entries found.");
+      toast.error("No draft entries found");
       return;
     }
 

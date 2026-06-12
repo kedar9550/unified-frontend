@@ -47,7 +47,7 @@ export default function ResourceUtilizationApproval() {
       }
     } catch (err) {
       console.error("Failed to fetch approvals:", err);
-      toast.error("Failed to load approvals.");
+      toast.error(err.response?.data?.message || "Failed to load approvals");
     } finally {
       setLoading(false);
     }
@@ -154,11 +154,11 @@ export default function ResourceUtilizationApproval() {
         action,
         comment: remarksText
       });
-      toast.success(`Request successfully ${action === 'Approve' ? 'Approved' : 'Rejected'}.`);
+      toast.success(`Request successfully ${action === 'Approve' ? 'approved' : 'rejected'}`);
       setOpenIndividualRemarksDialog(false);
       fetchRequests(selectedYear, statusFilter);
     } catch (err) {
-      toast.error(err?.response?.data?.message || "Action failed.");
+      toast.error(err?.response?.data?.message || "Action failed");
     } finally {
       setActionLoading(false);
     }
@@ -166,7 +166,7 @@ export default function ResourceUtilizationApproval() {
 
   const handleBulkActionTrigger = (action) => {
     if (selectedIds.length === 0) {
-      toast.error("Please select at least one entry using the checkboxes.");
+      toast.error("Please select at least one entry using the checkboxes");
       return;
     }
     setBulkActionType(action);
@@ -176,7 +176,7 @@ export default function ResourceUtilizationApproval() {
 
   const handleBulkActionSubmit = async () => {
     if (bulkActionType === 'Reject' && !bulkRemarks) {
-      toast.error("Rejection remarks are mandatory.");
+      toast.error("Rejection remarks are mandatory");
       return;
     }
 
@@ -187,11 +187,11 @@ export default function ResourceUtilizationApproval() {
         action: bulkActionType,
         comment: bulkRemarks
       });
-      toast.success(`Successfully ${bulkActionType === 'Approve' ? 'approved' : 'rejected'} ${selectedIds.length} entries.`);
+      toast.success(`Successfully ${bulkActionType === 'Approve' ? 'approved' : 'rejected'} ${selectedIds.length} entries`);
       setOpenBulkRemarksDialog(false);
       fetchRequests(selectedYear, statusFilter);
     } catch (err) {
-      toast.error(err?.response?.data?.message || "Bulk action failed.");
+      toast.error(err?.response?.data?.message || "Bulk action failed");
     } finally {
       setActionLoading(false);
     }

@@ -70,6 +70,9 @@ export default function PhdScholarPublication() {
       const res = await API.get(`/api/research/phd-scholar/validate/${rollNo}`);
       if (res.data?.success) {
         const student = res.data.data;
+        if (!student || !student.studentName) {
+          throw new Error("Scholar details not found");
+        }
         setForm(prev => ({
           ...prev,
           rollNumber: rollNo,
@@ -79,9 +82,11 @@ export default function PhdScholarPublication() {
         }));
         setIsVerified(true);
         toast.success(`Scholar ${rollNo} verified successfully!`);
+      } else {
+        throw new Error(res.data?.message || "Verification failed");
       }
     } catch (err) {
-      const errMsg = err?.response?.data?.message || "Verification failed. Student not found or not a Ph.D. Scholar.";
+      const errMsg = err?.response?.data?.message || err.message || "Verification failed. Student not found or not a Ph.D. Scholar.";
       toast.error(errMsg);
       setForm(prev => ({
         ...prev,
@@ -101,44 +106,44 @@ export default function PhdScholarPublication() {
       : form.universityText.trim();
 
     if (!finalUniversity) {
-      toast.error("Please specify the University.");
+      toast.error("Please specify the University");
       return;
     }
 
     if (form.universitySelect === "Aditya University") {
       if (!isVerified || !form.rollNumber) {
-        toast.error("Please verify a valid scholar roll number first.");
+        toast.error("Please verify a valid scholar roll number first");
         return;
       }
     } else {
       if (!form.rollNumber.trim()) {
-        toast.error("Please enter the student Roll Number/ID.");
+        toast.error("Please enter the student Roll Number/ID");
         return;
       }
       if (!form.studentName.trim()) {
-        toast.error("Please enter the student Name.");
+        toast.error("Please enter the student Name");
         return;
       }
       if (!form.course.trim()) {
-        toast.error("Please enter the course name.");
+        toast.error("Please enter the course name");
         return;
       }
     }
 
     if (!form.scholarType) {
-      toast.error("Please select the scholar type (Full-Time / Part-Time).");
+      toast.error("Please select the scholar type (Full-Time / Part-Time)");
       return;
     }
     if (!form.scholarStatus) {
-      toast.error("Please select the scholar status.");
+      toast.error("Please select the scholar status");
       return;
     }
     if (!form.admissionOrAwardDate) {
-      toast.error("Please specify the Admission/Award Date.");
+      toast.error("Please specify the Admission/Award Date");
       return;
     }
     if (!files.document) {
-      toast.error("At least one supporting document/proof is mandatory.");
+      toast.error("At least one supporting document/proof is mandatory");
       return;
     }
 
@@ -219,7 +224,7 @@ export default function PhdScholarPublication() {
     }
 
     if (finalStudents.length === 0) {
-      toast.error("Please fill, verify and add at least one student record first.");
+      toast.error("Please fill, verify and add at least one student record first");
       return;
     }
 
@@ -718,7 +723,7 @@ export default function PhdScholarPublication() {
                         color="error"
                         onClick={() => {
                           setStudentsList(prev => prev.filter((_, i) => i !== idx));
-                          toast.success("Student removed from list.");
+                          toast.success("Student removed from list");
                         }}
                       >
                         <Delete fontSize="small" />

@@ -71,7 +71,7 @@ export default function ContributionApproval() {
       }
     } catch (err) {
       console.error("Failed to fetch approvals:", err);
-      toast.error("Failed to load approvals.");
+      toast.error(err.response?.data?.message || "Failed to load approvals.");
     } finally {
       setLoading(false);
     }
@@ -197,7 +197,7 @@ export default function ContributionApproval() {
 
   const handleBulkActionTrigger = (action) => {
     if (selectedIds.length === 0) {
-      toast.error("Please select at least one entry using the checkboxes.");
+      toast.error("Please select at least one entry using the checkboxes");
       return;
     }
     setBulkActionType(action);
@@ -207,7 +207,7 @@ export default function ContributionApproval() {
 
   const handleBulkActionSubmit = async () => {
     if (bulkActionType === 'Reject' && !bulkRemarks) {
-      toast.error("Rejection remarks are mandatory.");
+      toast.error("Rejection remarks are mandatory");
       return;
     }
 

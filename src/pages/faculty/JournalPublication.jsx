@@ -82,8 +82,8 @@ async function fetchJournalDataByDOI(doi) {
   }
   const abstractJson = await abstractRes.json();
   const entry = abstractJson?.["search-results"]?.entry?.[0];
-  if (!entry) {
-    throw new Error("DOI not found in Scopus. Please fill fields manually.");
+  if (!entry || entry.error || (!entry["dc:title"] && !entry["prism:publicationName"])) {
+    throw new Error("DOI not found in Scopus. Please fill fields manually");
   }
 
   const title = entry["dc:title"] || "";
@@ -345,8 +345,8 @@ export default function JournalPublication() {
   const validateFile = (file) => {
     if (!file) return true;
     const allowed = ["application/pdf", "image/jpeg", "image/jpg", "image/png"];
-    if (!allowed.includes(file.type)) { toast.error("Only PDF, JPG, and PNG files are allowed."); return false; }
-    if (file.size > 500 * 1024) { toast.error("File size exceeds 500KB limit."); return false; }
+    if (!allowed.includes(file.type)) { toast.error("Only PDF, JPG, and PNG files are allowed"); return false; }
+    if (file.size > 500 * 1024) { toast.error("File size exceeds 500KB limit"); return false; }
     return true;
   };
 
@@ -364,13 +364,13 @@ export default function JournalPublication() {
     const fileName = file.name.toLowerCase();
     const isValidExtension = allowedExtensions.some(ext => fileName.endsWith(ext));
     if (!isValidExtension) {
-      toast.error("Please upload only PDF or DOCX files for the Complete Journal.");
+      toast.error("Please upload only PDF or DOCX files for the Complete Journal");
       e.target.value = null;
       return;
     }
 
     if (file.size > 500 * 1024) {
-      toast.error("Complete Journal file size exceeds 500KB limit.");
+      toast.error("Complete Journal file size exceeds 500KB limit");
       e.target.value = null;
       return;
     }
@@ -452,7 +452,7 @@ export default function JournalPublication() {
       toast.success(`SDG keyword scanning completed! Matched: ${matchedList.length > 0 ? matchedStr : "None"}`);
     } catch (err) {
       console.error("SDG scan error:", err);
-      toast.error("Failed to dynamically scan SDG keywords, but file was attached.");
+      toast.error("Failed to dynamically scan SDG keywords, but file was attached");
     } finally {
       setScanningSdg(false);
     }
@@ -474,7 +474,7 @@ export default function JournalPublication() {
 
   // ── DOI Fetch ────────────────────────────────────────────────────────────────
   const fetchDOIData = async () => {
-    if (!form.doi.trim()) { toast.warning("Please enter a DOI first."); return; }
+    if (!form.doi.trim()) { toast.warning("Please enter a DOI first"); return; }
     setDoiFetching(true);
     try {
       const data = await fetchJournalDataByDOI(form.doi.trim());
@@ -500,12 +500,16 @@ export default function JournalPublication() {
         if (v) { patch[k] = v; fetched[k] = true; }
       });
 
+      if (Object.keys(patch).length === 0) {
+        throw new Error("No metadata found for this DOI. Please fill fields manually");
+      }
+
       setForm(p => ({ ...p, ...patch }));
       setDoiFetched(true);
       setDoiFetchedFields(fetched);
       toast.success("Journal details fetched successfully!");
     } catch (err) {
-      toast.error(err.message || "Failed to fetch DOI details.");
+      toast.error(err.message || "Failed to fetch DOI details");
     } finally {
       setDoiFetching(false);
     }
@@ -555,11 +559,11 @@ export default function JournalPublication() {
   // ── Submit ───────────────────────────────────────────────────────────────────
   const handleSubmit = async () => {
     if (!user?.panNumber || user?.panNumber === "Not Set" || !user?.college || user?.college === "Not Set") {
-      toast.error("Please update your profile with PAN Number and College before submitting.");
+      toast.error("Please update your profile with PAN Number and College before submitting");
       return;
     }
     if (!form.doi || !form.paperTitle || !form.journalName || !form.vol || !form.issue || !form.month || !form.year) {
-      toast.error("Please fill all required fields.");
+      toast.error("Please fill all required fields");
       return;
     }
 
@@ -574,15 +578,15 @@ export default function JournalPublication() {
       }
     }
     if (!form.applyingSeedGrant) {
-      toast.error("Please select whether applying as a Seed Grant Work.");
+      toast.error("Please select whether applying as a Seed Grant Work");
       return;
     }
     if (!form.applyIncentive) {
-      toast.error("Please select whether you want to apply for an incentive.");
+      toast.error("Please select whether you want to apply for an incentive");
       return;
     }
     if (form.applyIncentive === "Yes" && !form.publicationScope) {
-      toast.error("Please select National or International for Publication Scope.");
+      toast.error("Please select National or International for Publication Scope");
       return;
     }
 
@@ -606,7 +610,7 @@ export default function JournalPublication() {
     }
 
     if (!files.publishedPaper || !files.referencePages || !files.completeJournal) {
-      toast.error("Please attach all required documents.");
+      toast.error("Please attach all required documents");
       return;
     }
 

@@ -98,7 +98,7 @@ export default function FacultyAdministration() {
         }
       } catch (err) {
         console.error("Error fetching academic years:", err);
-        toast.error("Failed to load academic years.");
+        toast.error("Failed to load academic years");
       } finally {
         setLoading(false);
       }
@@ -218,7 +218,7 @@ export default function FacultyAdministration() {
     // Verify at least one responsibility is selected
     const hasSelectedRole = Object.values(rolesFormData).some((role) => role.isResponsible);
     if (!hasSelectedRole) {
-      toast.error("Please select at least one administrative responsibility before submitting.");
+      toast.error("Please select at least one administrative responsibility before submitting");
       return;
     }
 

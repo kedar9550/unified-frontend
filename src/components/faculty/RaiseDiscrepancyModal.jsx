@@ -203,7 +203,7 @@ export default function RaiseDiscrepancyModal({
     try {
       await API.delete(`/api/discrepancies/${id}`);
       setDiscrepancies(prev => prev.filter(d => d._id !== id));
-      toast.success("Discrepancy deleted successfully.");
+      toast.success("Discrepancy deleted successfully");
     } catch (err) {
       toast.error(err.response?.data?.message || "Failed to delete discrepancy.");
     }

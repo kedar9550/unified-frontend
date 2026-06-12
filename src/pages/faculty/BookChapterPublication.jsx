@@ -77,7 +77,7 @@ export default function BookChapterPublication() {
 
   const fetchScopusDetails = async () => {
     if (!form.chapterTitle.trim()) {
-      toast.error("Please enter the Title of the Chapter first.");
+      toast.error("Please enter the Title of the Chapter first");
       return;
     }
     setScopusFetching(true);
@@ -105,7 +105,7 @@ export default function BookChapterPublication() {
 
       if (entries.length === 0 || entries[0]?.error) {
         setScopusIndexed(false);
-        toast.error("This book chapter is not indexed in Scopus.");
+        toast.error("This book chapter is not indexed in Scopus");
         return;
       }
 
@@ -149,7 +149,7 @@ export default function BookChapterPublication() {
 
       if (!scopusId) {
         setScopusIndexed(false);
-        toast.error("Could not parse Scopus ID for this chapter.");
+        toast.error("Could not parse Scopus ID for this chapter");
         return;
       }
 

@@ -51,7 +51,7 @@ const ProctoringApprovalList = () => {
             }
         } catch (error) {
             console.error("Failed to fetch proctoring entries:", error);
-            toast.error("Failed to load proctoring data.");
+            toast.error(error.response?.data?.message || "Failed to load proctoring data");
         } finally {
             setLoading(false);
         }
@@ -82,13 +82,13 @@ const ProctoringApprovalList = () => {
             });
 
             if (res.data?.success) {
-                toast.success(`Statistics ${action === "Approve" ? "Approved" : "Rejected"} successfully!`);
+                toast.success(`Statistics ${action === "Approve" ? "approved" : "rejected"} successfully!`);
                 fetchEntries();
                 handleCloseReview();
             }
         } catch (error) {
             console.error("HOD Action error:", error);
-            toast.error(error.response?.data?.message || "Failed to process approval action.");
+            toast.error(error.response?.data?.message || "Failed to process approval action");
         } finally {
             setActionLoading(false);
         }
