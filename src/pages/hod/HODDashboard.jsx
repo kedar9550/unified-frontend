@@ -312,24 +312,24 @@ const HODDashboard = () => {
                       }}
                     />
                     <Button
-                      variant="contained"
-                      onClick={() => navigate(action.path)}
-                      endIcon={<ArrowForward sx={{ fontSize: 16 }} />}
-                      sx={{
-                        borderRadius: "12px",
-                        textTransform: "none",
-                        fontWeight: 700,
-                        px: 2.5,
-                        py: 1,
-                        bgcolor: action.count > 0 ? action.color : "var(--text-secondary)",
-                        color: "#fff",
-                        boxShadow: "none",
-                        "&:hover": {
-                          bgcolor: action.count > 0 ? `${action.color}dd` : "var(--text-primary)",
-                          boxShadow: "none"
-                        }
-                      }}
-                    >
+ variant="contained"
+ onClick={() => navigate(action.path)}
+ endIcon={<ArrowForward sx={{ fontSize: 16 }} />}
+ sx={{
+ 
+ textTransform: "none",
+ fontWeight: 700,
+ px: 2.5,
+ py: 1,
+ bgcolor: action.count > 0 ? action.color : "var(--text-secondary)",
+ color: "#fff",
+ boxShadow: "none",
+ "&:hover": {
+ bgcolor: action.count > 0 ? `${action.color}dd` : "var(--text-primary)",
+ boxShadow: "none"
+ }
+ }}
+ >
                       Review
                     </Button>
                   </Box>

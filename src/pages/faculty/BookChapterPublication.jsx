@@ -6,10 +6,11 @@ import { toast } from "sonner";
 import { AddCircle, Delete, Search, Close, Description, Download, AttachFile, Groups, Book, Visibility } from "@mui/icons-material";
 import PageHeader from "../../components/common/PageHeader";
 import {
-  FacultyInfoRow, FormCard, Grid2, SubLabel, NoteBox, FileField, SubmitBtn,
-  labelStyle, MONTHS, YEARS, disabledField
+  FacultyInfoRow, FormCard, Grid2, SubLabel, NoteBox, FileField, SubmitBtn
 } from "../../components/faculty/PublicationFormFields";
-import API from "../../api/axios";
+import {
+  labelStyle, disabledField, MONTHS, YEARS
+} from "../../components/faculty/publicationConstants";import API from "../../api/axios";
 
 const ELSEVIER_API_KEY = "0436d4fe788649172354545ceca9e650";
 
@@ -535,22 +536,22 @@ export default function BookChapterPublication() {
       <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
         <Typography variant="h6" sx={{ color: "var(--text-primary)", fontWeight: 800 }}>My Book Chapter Publications</Typography>
         <Button
-          variant="contained"
-          onClick={() => setViewMode("select-year")}
-          sx={{
-            background: "var(--gradient-primary)",
-            borderRadius: "12px",
-            px: 3,
-            fontWeight: 700,
-            textTransform: "none",
-            "&:hover": {
-              opacity: 0.9,
-              transform: "translateY(-1px)",
-              boxShadow: "0 4px 12px rgba(0,0,0,0.1)"
-            },
-            transition: "all 0.2s ease"
-          }}
-        >
+ variant="contained"
+ onClick={() => setViewMode("select-year")}
+ sx={{
+ background: "var(--gradient-primary)",
+ 
+ px: 3,
+ fontWeight: 700,
+ textTransform: "none",
+ "&:hover": {
+ opacity: 0.9,
+ transform: "translateY(-1px)",
+ boxShadow: "0 4px 12px rgba(0,0,0,0.1)"
+ },
+ transition: "all 0.2s ease"
+ }}
+ >
           Apply New
         </Button>
       </Box>
@@ -677,45 +678,45 @@ export default function BookChapterPublication() {
         </Select>
         <Box sx={{ display: "flex", gap: 2, mt: 4, justifyContent: "flex-end" }}>
           <Button
-            variant="outlined"
-            onClick={() => setViewMode("list")}
-            sx={{
-              borderRadius: "12px",
-              textTransform: "none",
-              fontWeight: 600,
-              color: "var(--text-primary)",
-              borderColor: "var(--border-color)",
-              "&:hover": {
-                borderColor: "var(--color-primary)",
-                background: "rgba(0,0,0,0.02)"
-              }
-            }}
-          >
+ variant="outlined"
+ onClick={() => setViewMode("list")}
+ sx={{
+ 
+ textTransform: "none",
+ fontWeight: 600,
+ color: "var(--text-primary)",
+ borderColor: "var(--border-color)",
+ "&:hover": {
+ borderColor: "var(--color-primary)",
+ background: "rgba(0,0,0,0.02)"
+ }
+ }}
+ >
             Cancel
           </Button>
           <Button
-            variant="contained"
-            disabled={!selectedYear}
-            onClick={() => setViewMode("form")}
-            sx={{
-              background: "var(--gradient-primary)",
-              borderRadius: "12px",
-              px: 4,
-              fontWeight: 700,
-              textTransform: "none",
-              "&:hover": {
-                opacity: 0.9,
-                transform: "translateY(-1px)",
-                boxShadow: "0 4px 12px rgba(0,0,0,0.1)"
-              },
-              "&.Mui-disabled": {
-                background: "var(--bg-panel)",
-                color: "var(--text-secondary)",
-                opacity: 0.5
-              },
-              transition: "all 0.2s ease"
-            }}
-          >
+ variant="contained"
+ disabled={!selectedYear}
+ onClick={() => setViewMode("form")}
+ sx={{
+ background: "var(--gradient-primary)",
+ 
+ px: 4,
+ fontWeight: 700,
+ textTransform: "none",
+ "&:hover": {
+ opacity: 0.9,
+ transform: "translateY(-1px)",
+ boxShadow: "0 4px 12px rgba(0,0,0,0.1)"
+ },
+ "&.Mui-disabled": {
+ background: "var(--bg-panel)",
+ color: "var(--text-secondary)",
+ opacity: 0.5
+ },
+ transition: "all 0.2s ease"
+ }}
+ >
             Proceed
           </Button>
         </Box>
@@ -768,21 +769,21 @@ export default function BookChapterPublication() {
               helperText={errors.chapterTitle ? "Title is required" : ""}
             />
             <Button
-              variant="contained"
-              onClick={fetchScopusDetails}
-              disabled={!form.chapterTitle || scopusFetching}
-              startIcon={scopusFetching ? <CircularProgress size={16} color="inherit" /> : <Search />}
-              sx={{
-                minWidth: "140px",
-                height: "40px",
-                textTransform: "none",
-                borderRadius: "8px",
-                fontWeight: 700,
-                background: "var(--color-primary)",
-                whiteSpace: "nowrap",
-                "&:hover": { background: "var(--color-primary-dark)" }
-              }}
-            >
+ variant="contained"
+ onClick={fetchScopusDetails}
+ disabled={!form.chapterTitle || scopusFetching}
+ startIcon={scopusFetching ? <CircularProgress size={16} color="inherit" /> : <Search />}
+ sx={{
+ minWidth: "140px",
+ height: "40px",
+ textTransform: "none",
+ 
+ fontWeight: 700,
+ background: "var(--color-primary)",
+ whiteSpace: "nowrap",
+ "&:hover": { background: "var(--color-primary-dark)" }
+ }}
+ >
               {scopusFetching ? "Fetching..." : "Fetch Details"}
             </Button>
           </Box>
@@ -1000,24 +1001,24 @@ export default function BookChapterPublication() {
 
       <Box sx={{ display: "flex", gap: 2, justifyContent: "center", mt: 4 }}>
         <Button
-          variant="outlined"
-          onClick={() => setViewMode("list")}
-          sx={{
-            px: 4,
-            height: "44px",
-            borderRadius: "12px",
-            textTransform: "none",
-            fontWeight: 600,
-            color: "var(--text-primary)",
-            borderColor: "var(--border-color)",
-            "&:hover": {
-              borderColor: "#ef4444",
-              color: "#ef4444",
-              background: "rgba(239, 68, 68, 0.05)"
-            },
-            transition: "all 0.3s ease"
-          }}
-        >
+ variant="outlined"
+ onClick={() => setViewMode("list")}
+ sx={{
+ px: 4,
+ height: "44px",
+ 
+ textTransform: "none",
+ fontWeight: 600,
+ color: "var(--text-primary)",
+ borderColor: "var(--border-color)",
+ "&:hover": {
+ borderColor: "#ef4444",
+ color: "#ef4444",
+ background: "rgba(239, 68, 68, 0.05)"
+ },
+ transition: "all 0.3s ease"
+ }}
+ >
           Cancel
         </Button>
         <SubmitBtn onClick={handleSubmit} loading={loading} />

@@ -128,7 +128,6 @@ const ExamDashboard = () => {
           <Button
             variant="outlined"
             sx={{
-              borderRadius: "12px",
               borderColor: 'var(--border-color)',
               color: 'var(--text-primary)',
               textTransform: 'none',
@@ -144,7 +143,6 @@ const ExamDashboard = () => {
           <Button
             variant="outlined"
             sx={{
-              borderRadius: "12px",
               borderColor: 'var(--border-color)',
               color: 'var(--text-primary)',
               textTransform: 'none',

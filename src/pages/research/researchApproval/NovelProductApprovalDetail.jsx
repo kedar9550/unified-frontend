@@ -273,8 +273,8 @@ const NovelProductApprovalDetail = ({ id, onBack, role }) => {
                             <TextField fullWidth multiline rows={3} placeholder="Provide your review comments..." value={remarks} onChange={e => setRemarks(e.target.value)} sx={{ mb: 3, "& .MuiOutlinedInput-root": { borderRadius: "12px", bgcolor: "var(--bg-panel)" } }} />
 
                             <Box sx={{ display: "flex", gap: 2, justifyContent: "flex-end" }}>
-                                <Button variant="outlined" disabled={actionLoading} onClick={() => handleAction('Reject')} sx={{ color: "#ef4444", borderColor: "#ef4444", fontWeight: 800, borderRadius: "10px", textTransform: "none", px: 3 }}>Reject</Button>
-                                <Button variant="contained" disabled={actionLoading} onClick={() => handleAction('Approve')} sx={{ bgcolor: "#10b981", color: "#fff", fontWeight: 800, borderRadius: "10px", textTransform: "none", px: 4, "&:hover": { bgcolor: "#059669" } }}>{isHOD ? "Approve & Forward" : "Final Approve"}</Button>
+                                <Button variant="outlined" color="error" disabled={actionLoading} onClick={() => handleAction('Reject')} sx={{ px: 3 }}>Reject</Button>
+                                <Button variant="contained" color="success" disabled={actionLoading} onClick={() => handleAction('Approve')} sx={{ px: 4 }}>{isHOD ? "Approve & Forward" : "Final Approve"}</Button>
                             </Box>
                         </Card>
                     ) : (

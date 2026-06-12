@@ -319,8 +319,8 @@ export default function HODDiscrepancies() {
                       <TableCell>
                         {item.status === "PENDING" ? (
                           <Box sx={{ display: "flex", gap: 1 }}>
-                            <Button size="small" variant="contained" onClick={() => openResolve(item)} sx={{ borderRadius: "8px" }}>Resolve</Button>
-                            <Button size="small" variant="outlined" color="error" onClick={() => openReject(item)} sx={{ borderRadius: "8px" }}>Reject</Button>
+                            <Button size="small" variant="contained" onClick={() => openResolve(item)}>Resolve</Button>
+                            <Button size="small" variant="outlined" color="error" onClick={() => openReject(item)}>Reject</Button>
                           </Box>
                         ) : (
                           item.proofDocument && (
@@ -385,7 +385,7 @@ export default function HODDiscrepancies() {
               <Box>
                 <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 700 }}>Upload Proof Document (Required):</Typography>
                 <input type="file" ref={fileRef} style={{ display: "none" }} onChange={e => setProofFile(e.target.files[0])} />
-                <Button variant="outlined" fullWidth onClick={() => fileRef.current?.click()} sx={{ height: 60, borderStyle: "dashed", borderRadius: "12px" }}>
+                <Button variant="outlined" fullWidth onClick={() => fileRef.current?.click()} sx={{ height: 60, borderStyle: "dashed" }}>
                   {proofFile ? `Selected: ${proofFile.name}` : "Click to select proof document"}
                 </Button>
               </Box>

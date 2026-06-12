@@ -21,7 +21,25 @@ import {
 } from '@mui/material';
 import { Visibility as ViewIcon, Check as ApproveIcon, Close as RejectIcon } from '@mui/icons-material';
 import DataTable from '../../components/data/DataTable';
-import { LabelValueDetails } from '../../components/faculty/PublicationFormFields'; // shared component
+const LabelValueDetails = ({ label, value, chip, horizontal = false }) => (
+  <Box sx={{
+    p: horizontal ? "10px 16px" : 1.5,
+    borderRadius: "10px",
+    background: horizontal ? "transparent" : "rgba(255,255,255,0.02)",
+    display: "flex",
+    flexDirection: horizontal ? "row" : "column",
+    alignItems: horizontal ? "center" : "flex-start",
+    justifyContent: horizontal ? "flex-start" : "center",
+    gap: horizontal ? 2 : 0.5,
+    borderBottom: horizontal ? "1px solid var(--border-color)" : "1px solid transparent",
+    "&:last-child": { borderBottom: "none" },
+  }}>
+    <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", letterSpacing: "0.05em", fontWeight: 800, fontSize: "0.65rem", mb: horizontal ? 0 : 0.5 }}>{label}</Typography>
+    <Box sx={{ flex: horizontal ? 1 : "none" }}>
+      {chip ? chip : <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", fontSize: "0.85rem" }}>{value || "-"}</Typography>}
+    </Box>
+  </Box>
+);
 
 // Helper to format dates consistently
 const formatDate = (dateStr) => {

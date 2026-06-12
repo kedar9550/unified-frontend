@@ -279,19 +279,19 @@ export default function ResourceUtilizationApproval() {
               </Typography>
               <Stack direction="row" spacing={2}>
                 <Button
-                  variant="contained"
-                  color="success"
-                  onClick={() => handleBulkActionTrigger('Approve')}
-                  sx={{ borderRadius: "8px", textTransform: "none", fontWeight: 700, bgcolor: "#10b981", "&:hover": { bgcolor: "#059669" } }}
-                >
+ variant="contained"
+ color="success"
+ onClick={() => handleBulkActionTrigger('Approve')}
+ sx={{ textTransform: "none", fontWeight: 700, bgcolor: "#10b981", "&:hover": { bgcolor: "#059669" } }}
+ >
                   Approve Selected
                 </Button>
                 <Button
-                  variant="outlined"
-                  color="error"
-                  onClick={() => handleBulkActionTrigger('Reject')}
-                  sx={{ borderRadius: "8px", textTransform: "none", fontWeight: 700 }}
-                >
+ variant="outlined"
+ color="error"
+ onClick={() => handleBulkActionTrigger('Reject')}
+ sx={{ textTransform: "none", fontWeight: 700 }}
+ >
                   Reject Selected
                 </Button>
               </Stack>
@@ -534,12 +534,12 @@ export default function ResourceUtilizationApproval() {
             Cancel
           </Button>
           <Button
-            variant="contained"
-            color={bulkActionType === 'Approve' ? 'success' : 'error'}
-            disabled={actionLoading}
-            onClick={handleBulkActionSubmit}
-            sx={{ borderRadius: "8px", textTransform: "none", fontWeight: 800, bgcolor: bulkActionType === 'Approve' ? "#10b981" : "#ef4444" }}
-          >
+ variant="contained"
+ color={bulkActionType === 'Approve' ? 'success' : 'error'}
+ disabled={actionLoading}
+ onClick={handleBulkActionSubmit}
+ sx={{ textTransform: "none", fontWeight: 800, bgcolor: bulkActionType === 'Approve' ? "#10b981" : "#ef4444" }}
+ >
             {bulkActionType === 'Approve' ? 'Bulk Approve' : 'Bulk Reject'}
           </Button>
         </DialogActions>
@@ -575,12 +575,12 @@ export default function ResourceUtilizationApproval() {
             Cancel
           </Button>
           <Button
-            variant="contained"
-            color="error"
-            disabled={actionLoading || !individualRemarks}
-            onClick={() => handleIndividualAction(individualRejectId, 'Reject', individualRemarks)}
-            sx={{ borderRadius: "8px", textTransform: "none", fontWeight: 800 }}
-          >
+ variant="contained"
+ color="error"
+ disabled={actionLoading || !individualRemarks}
+ onClick={() => handleIndividualAction(individualRejectId, 'Reject', individualRemarks)}
+ sx={{ textTransform: "none", fontWeight: 800 }}
+ >
             Reject Entry
           </Button>
         </DialogActions>

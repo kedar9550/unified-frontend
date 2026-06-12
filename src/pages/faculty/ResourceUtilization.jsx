@@ -8,8 +8,9 @@ import { toast } from "sonner";
 import { Description, WorkspacePremium, Close, AddCircle, Edit, Delete, Visibility } from "@mui/icons-material";
 import PageHeader from "../../components/common/PageHeader";
 import {
-  FormCard, Grid2, SubLabel, NoteBox, FileField, SubmitBtn, labelStyle
+  FormCard, Grid2, SubLabel, NoteBox, FileField, SubmitBtn
 } from "../../components/faculty/PublicationFormFields";
+import { labelStyle } from "../../components/faculty/publicationConstants";
 import { useAuth } from "../../context/AuthContext";
 import API from "../../api/axios";
 
@@ -507,28 +508,28 @@ export default function ResourceUtilization() {
           </Box>
           <Stack direction="row" spacing={2}>
             <Button
-              variant="outlined"
-              color="primary"
-              onClick={handleOpenAddModal}
-              startIcon={<AddCircle />}
-              sx={{ borderRadius: "12px", textTransform: "none", fontWeight: 700 }}
-            >
+ variant="outlined"
+ color="primary"
+ onClick={handleOpenAddModal}
+ startIcon={<AddCircle />}
+ sx={{ textTransform: "none", fontWeight: 700 }}
+ >
               Add Resource Utilization
             </Button>
             <Button
-              variant="contained"
-              color="success"
-              disabled={activeDrafts.length === 0 || loading}
-              onClick={handleBulkSubmit}
-              sx={{
-                background: activeDrafts.length > 0 ? "var(--gradient-primary)" : "rgba(0,0,0,0.1)",
-                borderRadius: "12px",
-                px: 3,
-                fontWeight: 800,
-                textTransform: "none",
-                "&:hover": { opacity: 0.9 }
-              }}
-            >
+ variant="contained"
+ color="success"
+ disabled={activeDrafts.length === 0 || loading}
+ onClick={handleBulkSubmit}
+ sx={{
+ background: activeDrafts.length > 0 ? "var(--gradient-primary)" : "rgba(0,0,0,0.1)",
+ 
+ px: 3,
+ fontWeight: 800,
+ textTransform: "none",
+ "&:hover": { opacity: 0.9 }
+ }}
+ >
               Submit Academic Year Data ({activeDrafts.length} Drafts)
             </Button>
           </Stack>
@@ -1130,10 +1131,10 @@ export default function ResourceUtilization() {
       </DialogContent>
       <DialogActions sx={{ p: 2.5, borderTop: "1px solid var(--border-color)" }}>
         <Button
-          variant="outlined"
-          onClick={() => setOpenFormModal(false)}
-          sx={{ borderRadius: "10px", textTransform: "none", fontWeight: 700 }}
-        >
+ variant="outlined"
+ onClick={() => setOpenFormModal(false)}
+ sx={{ textTransform: "none", fontWeight: 700 }}
+ >
           Cancel
         </Button>
         <SubmitBtn onClick={handleSaveDraft} loading={loading} />
