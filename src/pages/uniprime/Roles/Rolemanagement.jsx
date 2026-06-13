@@ -390,6 +390,7 @@ const RoleManagement = () => {
                 setSignupError(`User not found in ECAP for ${signupData.role}.`);
             }
         } catch (err) {
+            console.error(err);
             setDisabledFields({}); setIsEcapVerified(false);
             setSignupError('Error verifying user against ECAP.');
         } finally { setIsVerifying(false); }
@@ -538,25 +539,6 @@ const RoleManagement = () => {
             toast.error(error.response?.data?.message || "Failed to create role");
         } finally {
             setSubmitting(false);
-        }
-    };
-
-    const handleDeleteRole = async (id) => {
-        const role = roles.find(r => r._id === id);
-        if (role?.defaultRole) {
-            toast.warning("System Default roles cannot be deleted from here");
-            return;
-        }
-        if (!window.confirm("Are you sure? This will remove the role from ALL users.")) return;
-        try {
-            const res = await API.delete(`/api/roles/${id}`);
-            if (res.data.success) {
-                toast.success("Role deleted successfully!");
-                fetchRoles();
-                if (selectedUser) handleUserSearch();
-            }
-        } catch (error) {
-            toast.error(error.response?.data?.message || "Failed to delete role");
         }
     };
 
@@ -844,7 +826,7 @@ const RoleManagement = () => {
 
                         {/* Create Options Card */}
                         <Collapse in={showCreateOptions}>
-                            <Box sx={{ mt: 3, p: 2, borderRadius: '15px', background: 'rgba(255, 255, 255, 0.15)', border: '1px solid rgba(255, 255, 255, 0.2)', backdropFilter: 'blur(5px)' }}>
+                            <Box sx={{ mt: 3, p: 2, borderRadius: '15px', background: 'var(--bg-glass)', border: '1px solid var(--border-color)', backdropFilter: 'blur(5px)' }}>
                                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
                                     <Typography variant="subtitle2" fontWeight={800} color="var(--text-primary)">Create Options</Typography>
                                     <IconButton onClick={() => setShowCreateOptions(false)} size="small"><Close sx={{ fontSize: 18 }} /></IconButton>
@@ -931,7 +913,7 @@ const RoleManagement = () => {
                                                 borderRadius: '15px',
                                                 background: 'var(--border-color)',
                                                 backdropFilter: 'blur(10px)',
-                                                border: '1px solid rgba(255, 255, 255, 0.3)',
+                                                border: '1px solid var(--border-color)',
                                                 px: 3,
                                                 py: 1.5,
                                                 display: 'flex',
@@ -1032,7 +1014,7 @@ const RoleManagement = () => {
                         </Collapse>
 
                         <Collapse in={showUpdateOptions}>
-                            <Box sx={{ mt: 3, p: 2, borderRadius: '15px', background: 'rgba(255, 255, 255, 0.15)', border: '1px solid rgba(255, 255, 255, 0.2)', backdropFilter: 'blur(5px)' }}>
+                            <Box sx={{ mt: 3, p: 2, borderRadius: '15px', background: 'var(--bg-glass)', border: '1px solid var(--border-color)', backdropFilter: 'blur(5px)' }}>
                                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
                                     <Typography variant="subtitle2" fontWeight={800} color="var(--text-primary)">Update Options</Typography>
                                     <IconButton onClick={() => {
@@ -1122,7 +1104,7 @@ const RoleManagement = () => {
                                                         borderRadius: '15px',
                                                         background: 'var(--border-color)',
                                                         backdropFilter: 'blur(10px)',
-                                                        border: '1px solid rgba(255, 255, 255, 0.3)',
+                                                        border: '1px solid var(--border-color)',
                                                         overflow: 'hidden'
                                                     }}
                                                 >
@@ -1139,7 +1121,7 @@ const RoleManagement = () => {
                                                                     gap: { xs: 2, sm: 0 },
                                                                     px: 3,
                                                                     py: 1.5,
-                                                                    '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.3)' },
+                                                                    '&:hover': { bgcolor: 'var(--bg-glass)' },
                                                                     transition: '0.2s'
                                                                 }}
                                                             >
@@ -1178,7 +1160,7 @@ const RoleManagement = () => {
                                                 </Paper>
                                             ) : (
                                                 inlineSearchQuery.length >= 2 && (
-                                                    <Box sx={{ p: 2, textAlign: 'center', background: 'rgba(255, 255, 255, 0.2)', borderRadius: '12px', border: '1px solid rgba(255, 255, 255, 0.3)' }}>
+                                                    <Box sx={{ p: 2, textAlign: 'center', background: 'var(--bg-glass)', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
                                                         <Typography variant="body2" fontWeight={700} color="textSecondary">No Data Found</Typography>
                                                     </Box>
                                                 )
@@ -1189,7 +1171,7 @@ const RoleManagement = () => {
 
                                 {/* Employee Edit Form */}
                                 <Collapse in={!!editingEmployee}>
-                                    <Box sx={{ mt: 3, p: 3, borderRadius: '15px', background: 'var(--border-color)', border: '1px solid rgba(255, 255, 255, 0.3)' }}>
+                                    <Box sx={{ mt: 3, p: 3, borderRadius: '15px', background: 'var(--border-color)', border: '1px solid var(--border-color)' }}>
                                         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
                                             <Typography variant="subtitle2" fontWeight={800} color="var(--text-primary)">Employee Details</Typography>
                                             <IconButton onClick={() => setEditingEmployee(null)} size="small"><Close sx={{ fontSize: 18 }} /></IconButton>
@@ -1245,7 +1227,7 @@ const RoleManagement = () => {
                                                     size="small"
                                                     placeholder="Enter new email..."
                                                     sx={{
-                                                        bgcolor: 'rgba(255, 255, 255, 0.6)',
+                                                        bgcolor: 'var(--bg-glass)',
                                                         borderRadius: '10px',
                                                         "& .MuiOutlinedInput-root": { borderRadius: '10px' }
                                                     }}
@@ -1261,7 +1243,7 @@ const RoleManagement = () => {
                                                     size="small"
                                                     slotProps={{ select: { native: false } }}
                                                     sx={{
-                                                        bgcolor: 'rgba(255, 255, 255, 0.6)',
+                                                        bgcolor: 'var(--bg-glass)',
                                                         borderRadius: '10px',
                                                         "& .MuiOutlinedInput-root": { borderRadius: '10px' }
                                                     }}

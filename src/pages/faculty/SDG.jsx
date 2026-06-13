@@ -91,7 +91,7 @@ const SDGCard = ({ id, sdg, imageUrl, isExpanded, toggleExpand }) => {
                 overflow: 'hidden',
                 transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
                 '&:hover': {
-                    background: 'rgba(255, 255, 255, 0.04)',
+                    background: 'var(--bg-accent-1)',
                     transform: isMobile ? 'none' : 'translateX(4px)'
                 }
             }}
@@ -149,7 +149,7 @@ const SDGCard = ({ id, sdg, imageUrl, isExpanded, toggleExpand }) => {
                                 color: '#fff',
                                 transition: 'transform 0.3s ease',
                                 transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
-                                border: '1px solid rgba(255, 255, 255, 0.2)',
+                                border: '1px solid var(--border-color)',
                                 pointerEvents: 'none'
                             }}
                         >
@@ -697,7 +697,7 @@ const SDG = () => {
                                     '&:hover': {
                                         transform: 'translateY(-5px)',
                                         borderColor: SDG_COLOR_MAP[id],
-                                        background: 'rgba(255, 255, 255, 0.05)'
+                                        background: 'var(--bg-accent-1)'
                                     }
                                 }}>
                                     <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', mb: 2 }}>

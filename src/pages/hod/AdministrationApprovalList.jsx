@@ -369,7 +369,7 @@ export default function AdministrationApprovalList() {
                   </Box>
 
                   {selectedRole.details && (
-                    <Box sx={{ mt: 0.5, px: 1.5, py: 1, borderRadius: "8px", bgcolor: "rgba(255, 255, 255, 0.02)", border: "1px solid var(--border-color)", width: "100%" }}>
+                    <Box sx={{ mt: 0.5, px: 1.5, py: 1, borderRadius: "8px", bgcolor: "var(--bg-glass)", border: "1px solid var(--border-color)", width: "100%" }}>
                       <Typography sx={{ fontSize: "0.85rem", color: "var(--text-secondary)", fontWeight: 500 }}>
                         <strong>Event/Activity Details:</strong> {selectedRole.details}
                       </Typography>
@@ -393,7 +393,7 @@ export default function AdministrationApprovalList() {
                     sx={{
                       "& .MuiOutlinedInput-root": {
                         borderRadius: "12px",
-                        bgcolor: "rgba(255,255,255,0.01)"
+                        bgcolor: "var(--bg-glass)"
                       },
                       "& .MuiInputBase-input.Mui-disabled": {
                         WebkitTextFillColor: "var(--text-secondary)",

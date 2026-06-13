@@ -5,9 +5,9 @@ import { KeyboardArrowRight } from "@mui/icons-material";
 const DashboardCard = ({ title, value, icon, color, subtitle, actionText }) => (
   <Card sx={{ 
     borderRadius: '20px', 
-    background: 'rgba(255, 255, 255, 0.55)', 
+    background: 'var(--bg-glass)', 
     backdropFilter: 'blur(10px) saturate(150%)', 
-    border: '1px solid rgba(255, 255, 255, 0.4)',
+    border: '1px solid var(--border-color)',
     boxShadow: '0 8px 32px rgba(31, 38, 135, 0.05)',
     transition: 'transform 0.2s, box-shadow 0.2s',
     height: '100%',
@@ -25,7 +25,7 @@ const DashboardCard = ({ title, value, icon, color, subtitle, actionText }) => (
         </Box>
         <Box>
           <Typography variant="subtitle2" color="textSecondary" fontWeight={600} sx={{ lineHeight: 1.2 }}>{title}</Typography>
-          <Typography variant="h4" fontWeight={800} color="#1a237e" mt={0.5}>{value}</Typography>
+          <Typography variant="h4" fontWeight={800} color="var(--text-primary)" mt={0.5}>{value}</Typography>
           {subtitle && (
             <Typography variant="caption" color="textSecondary" sx={{ mt: 0.5, display: 'block' }}>{subtitle}</Typography>
           )}

@@ -678,7 +678,7 @@ export default function FacultyAdministration() {
  "&:hover": {
  borderColor: "var(--text-primary)",
  color: "var(--text-primary)",
- background: "rgba(255, 255, 255, 0.05)"
+ background: "var(--bg-glass)"
  }
  }}
  >
