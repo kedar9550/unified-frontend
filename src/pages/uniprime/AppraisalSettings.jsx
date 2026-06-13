@@ -75,15 +75,8 @@ const AppraisalSettings = () => {
   // Per-card editing states
   const [editingCard, setEditingCard] = useState({});
 
-  // Expand/collapse states for lists inside cards
-  const [expandedCard, setExpandedCard] = useState({});
-
   const toggleEditCard = (cardId) => {
     setEditingCard(prev => ({ ...prev, [cardId]: !prev[cardId] }));
-  };
-
-  const toggleExpandCard = (cardId) => {
-    setExpandedCard(prev => ({ ...prev, [cardId]: !prev[cardId] }));
   };
 
   // Load academic years

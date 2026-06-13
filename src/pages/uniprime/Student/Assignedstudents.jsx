@@ -14,7 +14,6 @@ const Assignedstudents = () => {
     const location = useLocation();
     const [students, setStudents] = useState([]);
     const [filteredStudents, setFilteredStudents] = useState([]);
-    const [loading, setLoading] = useState(false);
     const [hierarchy, setHierarchy] = useState({
         program: "",
         programName: "",
@@ -39,7 +38,6 @@ const Assignedstudents = () => {
         const controller = new AbortController();
 
         const fetchAssignedStudents = async () => {
-            setLoading(true);
             try {
                 const res = await API.get("/api/student-data/assigned", {
                     signal: controller.signal,
@@ -52,10 +50,6 @@ const Assignedstudents = () => {
             } catch (error) {
                 if (error.name !== "CanceledError" && error.code !== "ERR_CANCELED") {
                     console.error("Failed to fetch assigned students", error);
-                }
-            } finally {
-                if (!controller.signal.aborted) {
-                    setLoading(false);
                 }
             }
         };

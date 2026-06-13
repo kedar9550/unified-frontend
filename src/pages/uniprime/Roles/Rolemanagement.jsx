@@ -390,6 +390,7 @@ const RoleManagement = () => {
                 setSignupError(`User not found in ECAP for ${signupData.role}.`);
             }
         } catch (err) {
+            console.error(err);
             setDisabledFields({}); setIsEcapVerified(false);
             setSignupError('Error verifying user against ECAP.');
         } finally { setIsVerifying(false); }
@@ -538,25 +539,6 @@ const RoleManagement = () => {
             toast.error(error.response?.data?.message || "Failed to create role");
         } finally {
             setSubmitting(false);
-        }
-    };
-
-    const handleDeleteRole = async (id) => {
-        const role = roles.find(r => r._id === id);
-        if (role?.defaultRole) {
-            toast.warning("System Default roles cannot be deleted from here");
-            return;
-        }
-        if (!window.confirm("Are you sure? This will remove the role from ALL users.")) return;
-        try {
-            const res = await API.delete(`/api/roles/${id}`);
-            if (res.data.success) {
-                toast.success("Role deleted successfully!");
-                fetchRoles();
-                if (selectedUser) handleUserSearch();
-            }
-        } catch (error) {
-            toast.error(error.response?.data?.message || "Failed to delete role");
         }
     };
 
