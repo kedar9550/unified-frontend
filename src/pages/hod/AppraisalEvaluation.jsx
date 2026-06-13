@@ -1338,31 +1338,108 @@ const AppraisalEvaluation = () => {
                   </>
                 )}
 
-                {/* R&D Admin scores */}
-                <Box sx={{ p: 2, bgcolor: "rgba(124, 58, 237, 0.03)", borderRadius: "12px", border: "1px dashed rgba(124, 58, 237, 0.2)" }}>
-                  <Typography variant="caption" sx={{ fontWeight: 800, display: "block", color: "var(--text-primary)", mb: 1 }}>
-                    Research & Development Admin Verified Scores:
+                {/* 2.7 & 2.8 — Scopus API Verified Metrics */}
+                <Box sx={{ mt: 3 }}>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 2, color: "var(--color-primary)", display: "flex", alignItems: "center", gap: 1 }}>
+                    <Description fontSize="small" /> 2.7 &amp; 2.8 — Scopus Verified Metrics (R&amp;D Admin)
                   </Typography>
-                  <Grid container spacing={2}>
-                    <Grid xs={12} sm={6}>
-                      <Box sx={{ p: 1.5, display: "flex", alignItems: "center", gap: 1.5, bgcolor: "var(--bg-paper)", borderRadius: "8px", border: "1px solid var(--border-color)" }}>
-                        <Box sx={{ width: 32, height: 32, display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "50%", bgcolor: "rgba(124, 58, 237, 0.1)", color: "#7c3aed" }}><Description fontSize="small" /></Box>
-                        <Box>
-                          <Typography variant="caption" color="var(--text-secondary)" sx={{ fontSize: "0.65rem", display: "block", fontWeight: 700 }}>2.7 Scopus Citation Score</Typography>
-                          <Typography variant="body2" sx={{ fontWeight: 800, color: "var(--color-primary)" }}>{selectedAppraisal.research?.scopusCitationScore || 0} pts</Typography>
+
+                  {/* 2.7 Citation score in 2025 */}
+                  {(() => {
+                    const status = selectedAppraisal.research?.scopusCitationStatus || "Pending";
+                    const remarks = selectedAppraisal.research?.scopusCitationRemarks || "";
+                    const citations = selectedAppraisal.research?.scopusCitations;
+                    const score = selectedAppraisal.research?.scopusCitationScore || 0;
+                    const chipColor = status === "Approved" ? { bg: "rgba(16,185,129,0.1)", color: "#10b981" } : status === "Rejected" ? { bg: "rgba(239,68,68,0.1)", color: "#ef4444" } : { bg: "rgba(232,160,0,0.1)", color: "#e8a000" };
+                    return (
+                      <Box sx={{ p: 2, mb: 2, borderRadius: "10px", border: "1px solid var(--border-color)", bgcolor: "var(--bg-paper)" }}>
+                        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 1 }}>
+                          <Box>
+                            <Typography variant="caption" sx={{ fontWeight: 700, color: "var(--text-secondary)", fontSize: "0.7rem", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+                              2.7 Citation Score in 2025
+                            </Typography>
+                            <Typography variant="body1" sx={{ fontWeight: 800, color: "var(--text-primary)", mt: 0.3 }}>
+                              {citations !== null && citations !== undefined ? `${citations} Citations` : "Not fetched yet"}
+                            </Typography>
+                            <Typography variant="caption" sx={{ color: "#7c3aed", fontWeight: 700 }}>
+                              Score: {status === "Approved" ? score : 0} pts
+                            </Typography>
+                          </Box>
+                          <Chip
+                            label={status === "Pending" ? "Pending Verification" : status}
+                            size="small"
+                            sx={{ bgcolor: chipColor.bg, color: chipColor.color, fontWeight: 800, borderRadius: "6px" }}
+                          />
                         </Box>
+                        {remarks && (
+                          <Box sx={{ mt: 1.5, p: 1, bgcolor: "rgba(239,68,68,0.04)", borderRadius: "6px", border: "1px solid rgba(239,68,68,0.1)" }}>
+                            <Typography variant="caption" sx={{ fontWeight: 700, color: "#ef4444", fontSize: "0.72rem" }}>
+                              R&amp;D Remarks: {remarks}
+                            </Typography>
+                          </Box>
+                        )}
                       </Box>
-                    </Grid>
-                    <Grid xs={12} sm={6}>
-                      <Box sx={{ p: 1.5, display: "flex", alignItems: "center", gap: 1.5, bgcolor: "var(--bg-paper)", borderRadius: "8px", border: "1px solid var(--border-color)" }}>
-                        <Box sx={{ width: 32, height: 32, display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "50%", bgcolor: "rgba(124, 58, 237, 0.1)", color: "#7c3aed" }}><BarChart fontSize="small" /></Box>
-                        <Box>
-                          <Typography variant="caption" color="var(--text-secondary)" sx={{ fontSize: "0.65rem", display: "block", fontWeight: 700 }}>2.8 Scopus h-index Score</Typography>
-                          <Typography variant="body2" sx={{ fontWeight: 800, color: "var(--color-primary)" }}>{selectedAppraisal.research?.scopusHIndexScore || 0} pts</Typography>
+                    );
+                  })()}
+
+                  {/* 2.8 H-Index in 2024 & 2025 */}
+                  {(() => {
+                    const status = selectedAppraisal.research?.scopusHIndexStatus || "Pending";
+                    const remarks = selectedAppraisal.research?.scopusHIndexRemarks || "";
+                    const h2024 = selectedAppraisal.research?.hIndex2024;
+                    const h2025 = selectedAppraisal.research?.hIndex2025;
+                    const score = selectedAppraisal.research?.scopusHIndexScore || 0;
+                    const chipColor = status === "Approved" ? { bg: "rgba(16,185,129,0.1)", color: "#10b981" } : status === "Rejected" ? { bg: "rgba(239,68,68,0.1)", color: "#ef4444" } : { bg: "rgba(232,160,0,0.1)", color: "#e8a000" };
+                    const raise = (h2024 !== null && h2024 !== undefined && h2025 !== null && h2025 !== undefined) ? (h2025 - h2024) : null;
+                    return (
+                      <Box sx={{ p: 2, borderRadius: "10px", border: "1px solid var(--border-color)", bgcolor: "var(--bg-paper)" }}>
+                        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 1 }}>
+                          <Box>
+                            <Typography variant="caption" sx={{ fontWeight: 700, color: "var(--text-secondary)", fontSize: "0.7rem", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+                              2.8 H-Index in 2024 &amp; 2025
+                            </Typography>
+                            <Box sx={{ display: "flex", gap: 3, mt: 0.5 }}>
+                              <Box>
+                                <Typography variant="caption" sx={{ color: "var(--text-secondary)", fontWeight: 600, fontSize: "0.68rem" }}>2024</Typography>
+                                <Typography variant="body1" sx={{ fontWeight: 800, color: "var(--text-primary)", lineHeight: 1.2 }}>
+                                  {h2024 !== null && h2024 !== undefined ? h2024 : "—"}
+                                </Typography>
+                              </Box>
+                              <Box>
+                                <Typography variant="caption" sx={{ color: "var(--text-secondary)", fontWeight: 600, fontSize: "0.68rem" }}>2025</Typography>
+                                <Typography variant="body1" sx={{ fontWeight: 800, color: "var(--text-primary)", lineHeight: 1.2 }}>
+                                  {h2025 !== null && h2025 !== undefined ? h2025 : "—"}
+                                </Typography>
+                              </Box>
+                              {raise !== null && (
+                                <Box>
+                                  <Typography variant="caption" sx={{ color: "var(--text-secondary)", fontWeight: 600, fontSize: "0.68rem" }}>Raise</Typography>
+                                  <Typography variant="body1" sx={{ fontWeight: 800, color: raise > 0 ? "#10b981" : "var(--text-secondary)", lineHeight: 1.2 }}>
+                                    {raise > 0 ? `+${raise}` : raise}
+                                  </Typography>
+                                </Box>
+                              )}
+                            </Box>
+                            <Typography variant="caption" sx={{ color: "#7c3aed", fontWeight: 700 }}>
+                              Score: {status === "Approved" ? score : 0} pts
+                            </Typography>
+                          </Box>
+                          <Chip
+                            label={status === "Pending" ? "Pending Verification" : status}
+                            size="small"
+                            sx={{ bgcolor: chipColor.bg, color: chipColor.color, fontWeight: 800, borderRadius: "6px" }}
+                          />
                         </Box>
+                        {remarks && (
+                          <Box sx={{ mt: 1.5, p: 1, bgcolor: "rgba(239,68,68,0.04)", borderRadius: "6px", border: "1px solid rgba(239,68,68,0.1)" }}>
+                            <Typography variant="caption" sx={{ fontWeight: 700, color: "#ef4444", fontSize: "0.72rem" }}>
+                              R&amp;D Remarks: {remarks}
+                            </Typography>
+                          </Box>
+                        )}
                       </Box>
-                    </Grid>
-                  </Grid>
+                    );
+                  })()}
                 </Box>
               </CardContent>
             </Card>

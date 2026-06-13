@@ -184,40 +184,6 @@ const SelfAppraisal = () => {
     }
   };
 
-  const getStatusChip = (status) => {
-    let bg = "rgba(100, 116, 139, 0.08)";
-    let color = "#64748b";
-    let label = status || "Pending";
-
-    if (status === "Approved") {
-      bg = "rgba(16, 185, 129, 0.08)";
-      color = "#10b981";
-    } else if (status === "Rejected") {
-      bg = "rgba(239, 68, 68, 0.08)";
-      color = "#ef4444";
-    } else if (status === "Pending") {
-      bg = "rgba(245, 158, 11, 0.08)";
-      color = "#f59e0b";
-      label = "Pending Verification";
-    }
-
-    return (
-      <Chip
-        label={label}
-        size="small"
-        sx={{
-          bgcolor: bg,
-          color: color,
-          fontWeight: 800,
-          borderRadius: "6px",
-          height: "20px",
-          fontSize: "0.65rem",
-          ml: 1
-        }}
-      />
-    );
-  };
-
   const selectMenuProps = {
     onClose: blurActiveElement,
     disableAutoFocusItem: true,
@@ -239,10 +205,6 @@ const SelfAppraisal = () => {
   const [resourceUtilizationDetails, setResourceUtilizationDetails] = useState([]);
   const [contributionDetails, setContributionDetails] = useState([]);
   const [administrationDetail, setAdministrationDetail] = useState(null);
-
-  // Scopus fetch states
-  const [scopusFetching, setScopusFetching] = useState(false);
-  const [scopusData, setScopusData] = useState(null);
 
   // Proctoring Form States
   const [programs, setPrograms] = useState([]);
@@ -396,30 +358,6 @@ const SelfAppraisal = () => {
         setResourceUtilizationDetails(res.data.resourceUtilizationDetails || []);
         setContributionDetails(res.data.contributionDetails || []);
         setAdministrationDetail(res.data.administrationDetail || null);
-
-        // Seed scopus display data only if Scopus was genuinely fetched before
-        const rd = appraisalData.research || {};
-        const wasFetched = (rd.hIndex2024 !== undefined && rd.hIndex2024 !== null)
-          || (rd.hIndex2025 !== undefined && rd.hIndex2025 !== null);
-        if (wasFetched) {
-          setScopusData({
-            citations2025: rd.scopusCitations ?? 0,
-            hIndex2024: rd.hIndex2024 ?? 0,
-            hIndex2025: rd.hIndex2025 ?? 0,
-            hIndexRaise: (rd.hIndex2025 != null && rd.hIndex2024 != null)
-              ? Math.max(0, rd.hIndex2025 - rd.hIndex2024) : 0,
-            scopusCitationStatus: rd.scopusCitationStatus || "Pending",
-            scopusHIndexStatus: rd.scopusHIndexStatus || "Pending",
-            scopusCitationRemarks: rd.scopusCitationRemarks || "",
-            scopusHIndexRemarks: rd.scopusHIndexRemarks || "",
-            scores: {
-              citationScore: rd.scopusCitationScore ?? 0,
-              hIndexPoints: rd.scopusHIndexScore ?? 0
-            }
-          });
-        } else {
-          setScopusData(null);
-        }
       } else {
         setAppraisalError(res.data?.message || "Self-appraisal is not active for this academic year.");
         setAppraisal(null);
@@ -492,25 +430,6 @@ const SelfAppraisal = () => {
       toast.error(err.response?.data?.message || "Failed to submit appraisal.");
     } finally {
       setLoading(false);
-    }
-  };
-
-  // Fetch Scopus citation & h-index data
-  const handleFetchScopus = async () => {
-    if (!selectedYear) return;
-    setScopusFetching(true);
-    try {
-      const res = await axiosInstance.get(`/api/appraisal/scopus-data/${selectedYear}`);
-      if (res.data && res.data.success) {
-        setScopusData(res.data.data);
-        // Refresh appraisal so scores update everywhere
-        fetchAppraisal();
-        toast.success("Scopus data fetched and saved successfully!");
-      }
-    } catch (err) {
-      toast.error(err.response?.data?.message || "Failed to fetch Scopus data.");
-    } finally {
-      setScopusFetching(false);
     }
   };
 
@@ -3278,78 +3197,11 @@ const SelfAppraisal = () => {
                 </>
               )}
 
-              {/* R&D Admin Provided Scores + Scopus Fetch */}
+              {/* R&D Admin Provided Scores */}
               <Box sx={{ mt: 4, p: 2.5, background: "rgba(124, 58, 237, 0.03)", borderRadius: "16px", border: "1px dashed rgba(124, 58, 237, 0.2)" }}>
-                <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2, flexWrap: "wrap", gap: 1.5 }}>
-                  <Typography variant="subtitle2" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>
-                    2.7 &amp; 2.8 — Scopus Citations &amp; h-index
-                  </Typography>
-                  <Button
-                    variant="outlined"
-                    size="small"
-                    startIcon={scopusFetching ? <CircularProgress size={14} color="inherit" /> : <Public />}
-                    onClick={handleFetchScopus}
-                    disabled={scopusFetching || !(appraisal.status === "Draft" || appraisal.status === "Rejected by HOD")}
-                    sx={{ textTransform: "none", fontWeight: 700, borderRadius: "10px" }}
-                  >
-                    {scopusFetching ? "Fetching…" : scopusData ? "Re-fetch from Scopus" : "Fetch from Scopus"}
-                  </Button>
-                </Box>
-
-                {/* Raw Scopus data rows */}
-                {scopusData ? (
-                  <Box sx={{ mb: 2.5 }}>
-                    <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1.5, mb: 1.5 }}>
-                      {/* Citation count 2025 */}
-                      <Box sx={{ flex: "1 1 calc(33% - 8px)", minWidth: 140, p: 1.5, borderRadius: "10px", background: "var(--bg-paper)", border: "1px solid var(--border-color)" }}>
-                        <Typography variant="caption" sx={{ fontWeight: 700, color: "var(--text-secondary)", display: "block", fontSize: "0.72rem", textTransform: "uppercase" }}>
-                          Citations in 2025
-                        </Typography>
-                        <Typography variant="h6" sx={{ fontWeight: 900, color: "var(--color-primary)", mt: 0.25 }}>
-                          {scopusData.citations2025 ?? "—"}
-                        </Typography>
-                      </Box>
-                      {/* h-index 2025 (up to end of 2024) */}
-                      <Box sx={{ flex: "1 1 calc(33% - 8px)", minWidth: 140, p: 1.5, borderRadius: "10px", background: "var(--bg-paper)", border: "1px solid var(--border-color)" }}>
-                        <Typography variant="caption" sx={{ fontWeight: 700, color: "var(--text-secondary)", display: "block", fontSize: "0.72rem", textTransform: "uppercase" }}>
-                          h-index (up to 2024)
-                        </Typography>
-                        <Typography variant="h6" sx={{ fontWeight: 900, color: "var(--color-primary)", mt: 0.25 }}>
-                          {scopusData.hIndex2024 ?? "—"}
-                        </Typography>
-                      </Box>
-                      {/* h-index 2026 (up to end of 2025) */}
-                      <Box sx={{ flex: "1 1 calc(33% - 8px)", minWidth: 140, p: 1.5, borderRadius: "10px", background: "var(--bg-paper)", border: "1px solid var(--border-color)" }}>
-                        <Typography variant="caption" sx={{ fontWeight: 700, color: "var(--text-secondary)", display: "block", fontSize: "0.72rem", textTransform: "uppercase" }}>
-                          h-index (up to 2025)
-                        </Typography>
-                        <Typography variant="h6" sx={{ fontWeight: 900, color: "var(--color-primary)", mt: 0.25 }}>
-                          {scopusData.hIndex2025 ?? "—"}
-                          {scopusData.hIndexRaise > 0 && (
-                            <Typography component="span" variant="caption" sx={{ ml: 0.75, color: "#10b981", fontWeight: 800 }}>
-                              +{scopusData.hIndexRaise}
-                            </Typography>
-                          )}
-                        </Typography>
-                      </Box>
-                    </Box>
-                  </Box>
-                ) : (
-                  <Alert
-                    severity={appraisal.personalInfoSnapshot?.scopusId ? "info" : "warning"}
-                    sx={{ mb: 2, borderRadius: "10px" }}
-                  >
-                    <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                      {appraisal.personalInfoSnapshot?.scopusId ? (
-                        <>No Scopus data fetched yet. Click <strong>"Fetch from Scopus"</strong> to automatically load your citations (2025) and h-index data.</>
-                      ) : (
-                        <>Scopus ID not found in your profile. Please update your faculty profile with your Scopus Author ID first, then click <strong>"Fetch from Scopus"</strong>.</>
-                      )}
-                    </Typography>
-                  </Alert>
-                )}
-
-                {/* Score boxes (2.7 and 2.8) */}
+                <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 2, color: "var(--text-primary)" }}>
+                  Research & Development Admin Verified Scores
+                </Typography>
                 <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2 }}>
                   <Box
                     sx={{
@@ -3366,25 +3218,12 @@ const SelfAppraisal = () => {
                         <Description fontSize="small" />
                       </Box>
                       <Box>
-                        <Box sx={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 0.5 }}>
-                          <Typography variant="caption" sx={{ fontWeight: 700, color: "var(--text-secondary)", display: "block", fontSize: "0.75rem" }}>
-                            2.7 Citation score in 2025
-                          </Typography>
-                          {scopusData && getStatusChip(scopusData.scopusCitationStatus)}
-                        </Box>
-                        <Typography variant="caption" sx={{ color: "var(--text-secondary)", display: "block", fontSize: "0.68rem" }}>
-                          {scopusData?.citations2025 != null
-                            ? `${scopusData.citations2025} citations × rate`
-                            : "Fetch to calculate"}
+                        <Typography variant="caption" sx={{ fontWeight: 700, color: "var(--text-secondary)", display: "block", fontSize: "0.75rem" }}>
+                          2.7 Scopus Citation Score
                         </Typography>
                         <Typography variant="body1" sx={{ fontWeight: 800, color: "var(--color-primary)", mt: 0.25 }}>
                           {appraisal.research.scopusCitationScore || 0} pts
                         </Typography>
-                        {scopusData?.scopusCitationStatus === "Rejected" && scopusData?.scopusCitationRemarks && (
-                          <Typography variant="caption" sx={{ color: "#ef4444", display: "block", fontSize: "0.68rem", mt: 0.5, fontWeight: 600 }}>
-                            Reason: {scopusData.scopusCitationRemarks}
-                          </Typography>
-                        )}
                       </Box>
                     </Box>
                   </Box>
@@ -3403,25 +3242,12 @@ const SelfAppraisal = () => {
                         <BarChart fontSize="small" />
                       </Box>
                       <Box>
-                        <Box sx={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 0.5 }}>
-                          <Typography variant="caption" sx={{ fontWeight: 700, color: "var(--text-secondary)", display: "block", fontSize: "0.75rem" }}>
-                            2.8 Scopus h-index Score
-                          </Typography>
-                          {scopusData && getStatusChip(scopusData.scopusHIndexStatus)}
-                        </Box>
-                        <Typography variant="caption" sx={{ color: "var(--text-secondary)", display: "block", fontSize: "0.68rem" }}>
-                          {scopusData?.hIndex2024 != null && scopusData?.hIndex2025 != null
-                            ? `h-index in 2024: ${scopusData.hIndex2024}, h-index in 2025: ${scopusData.hIndex2025} (raise: ${scopusData.hIndexRaise ?? 0})`
-                            : "Fetch to calculate"}
+                        <Typography variant="caption" sx={{ fontWeight: 700, color: "var(--text-secondary)", display: "block", fontSize: "0.75rem" }}>
+                          2.8 Scopus h-index Score
                         </Typography>
                         <Typography variant="body1" sx={{ fontWeight: 800, color: "var(--color-primary)", mt: 0.25 }}>
                           {appraisal.research.scopusHIndexScore || 0} pts
                         </Typography>
-                        {scopusData?.scopusHIndexStatus === "Rejected" && scopusData?.scopusHIndexRemarks && (
-                          <Typography variant="caption" sx={{ color: "#ef4444", display: "block", fontSize: "0.68rem", mt: 0.5, fontWeight: 600 }}>
-                            Reason: {scopusData.scopusHIndexRemarks}
-                          </Typography>
-                        )}
                       </Box>
                     </Box>
                   </Box>
