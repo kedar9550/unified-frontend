@@ -70,7 +70,6 @@ const SDG_COLOR_MAP = {
 
 const SDGManagement = () => {
   const [sdgs, setSdgs] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [expandedId, setExpandedId] = useState(null);
 
   const [editingSdgId, setEditingSdgId] = useState(null);
@@ -109,7 +108,6 @@ const SDGManagement = () => {
 
   const fetchSdgs = async () => {
     try {
-      setLoading(true);
       const res = await API.get("/api/sdgs");
       if (res.data && res.data.success) {
         setSdgs(res.data.data);
@@ -117,8 +115,6 @@ const SDGManagement = () => {
     } catch (err) {
       toast.error("Failed to fetch SDGs");
       console.error(err);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -280,6 +276,7 @@ const SDGManagement = () => {
         toast.success("SDG deleted successfully");
         fetchSdgs();
       } catch (err) {
+        console.error(err);
         toast.error("Failed to delete SDG");
       }
     }

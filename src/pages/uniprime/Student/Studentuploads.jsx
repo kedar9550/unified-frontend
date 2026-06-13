@@ -48,7 +48,6 @@ import SectionHeader from "../../../components/common/SectionHeader";
 import ActionButton from "../../../components/common/ActionButton";
 import DataTable from "../../../components/data/DataTable";
 import API from "../../../api/axios";
-import HelpOutlinedIcon from "@mui/icons-material/HelpOutlined";
 
 // Upload progress steps config
 const UPLOAD_STEPS = [
@@ -65,7 +64,7 @@ const formatElapsed = (seconds) => {
 };
 
 // ── Upload Progress Tracker Component ──
-const UploadProgressTracker = ({ activeStep, stepTimers, isComplete, hasError }) => {
+const UploadProgressTracker = ({ activeStep, stepTimers, isComplete }) => {
     const totalSteps = UPLOAD_STEPS.length;
     const progressPercent = isComplete
         ? 100
@@ -228,10 +227,8 @@ const UploadProgressTracker = ({ activeStep, stepTimers, isComplete, hasError })
 const Studentuploads = () => {
     const fileInputRef = useRef(null);
     const [selectedIds, setSelectedIds] = useState([]);
-    const [isProceeding, setIsProceeding] = useState(false);
     const [allDepartments, setAllDepartments] = useState([]);
     const [selectedDept, setSelectedDept] = useState("");
-    const [loadingDepts, setLoadingDepts] = useState(false);
     const [students, setStudents] = useState([]);
     const [loadingStudents, setLoadingStudents] = useState(false);
     const [uploading, setUploading] = useState(false);

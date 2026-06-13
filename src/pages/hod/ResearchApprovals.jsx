@@ -194,67 +194,70 @@ const ResearchApprovals = () => {
   // ---------------------------------------------------------------------
   // Detail dialog for a single request
   // ---------------------------------------------------------------------
-  const DetailDialog = () => (
-    <Dialog open={!!selected} onClose={() => setSelected(null)} maxWidth="md" fullWidth sx={{
-      '& .MuiPaper-root': { borderRadius: '16px', background: 'var(--bg-panel)' },
-    }}>
-      <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Typography variant="h6" sx={{ fontWeight: 800, color: 'var(--color-primary)' }}>
-          Research Request Details
-        </Typography>
-        <IconButton onClick={() => setSelected(null)} sx={{ color: 'var(--text-secondary)' }}>
-          <Close />
-        </IconButton>
-      </DialogTitle>
-      <DialogContent sx={{ p: 3 }}>
-        {selected && (
-          <Grid container spacing={2}>
-            <LabelValueDetails label="Faculty" value={selected.faculty?.name || 'N/A'} horizontal />
-            <LabelValueDetails label="Employee ID" value={selected.faculty?.institutionId || 'N/A'} horizontal />
-            <LabelValueDetails label="Title" value={selected.title} horizontal />
-            <LabelValueDetails label="Type" value={selected.type} horizontal />
-            <LabelValueDetails label="Submitted" value={formatDate(selected.createdAt)} horizontal />
-            <LabelValueDetails
-              label="Status"
-              chip={
-                <Chip
-                  label={selected.status}
-                  size="small"
-                  sx={{ bgcolor: statusStyle.bg, color: statusStyle.color, fontWeight: 600, borderRadius: '6px' }}
-                />
-              }
-              horizontal
-            />
-            {/* Additional fields (e.g., abstract, documents) can be added here */}
-          </Grid>
-        )}
-      </DialogContent>
-      <DialogActions sx={{ p: 2, justifyContent: 'flex-end' }}>
-        <Button
-          variant="contained"
-          color="success"
-          startIcon={<ApproveIcon />}
-          onClick={handleApprove}
-          disabled={actionLoading || (selected && selected.status.toLowerCase() !== 'pending')}
-          sx={{ mr: 1 }}
-        >
-          Approve
-        </Button>
-        <Button
-          variant="contained"
-          color="error"
-          startIcon={<RejectIcon />}
-          onClick={handleReject}
-          disabled={actionLoading || (selected && selected.status.toLowerCase() !== 'pending')}
-        >
-          Reject
-        </Button>
-        <Button onClick={() => setSelected(null)} sx={{ textTransform: 'none' }}>
-          Close
-        </Button>
-      </DialogActions>
-    </Dialog>
-  );
+  const DetailDialog = () => {
+    const statusStyle = selected ? getStatusStyle(selected.status) : { bg: 'var(--bg-glass)', color: 'var(--text-secondary)' };
+    return (
+      <Dialog open={!!selected} onClose={() => setSelected(null)} maxWidth="md" fullWidth sx={{
+        '& .MuiPaper-root': { borderRadius: '16px', background: 'var(--bg-panel)' },
+      }}>
+        <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Typography variant="h6" sx={{ fontWeight: 800, color: 'var(--color-primary)' }}>
+            Research Request Details
+          </Typography>
+          <IconButton onClick={() => setSelected(null)} sx={{ color: 'var(--text-secondary)' }}>
+            <Close />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent sx={{ p: 3 }}>
+          {selected && (
+            <Grid container spacing={2}>
+              <LabelValueDetails label="Faculty" value={selected.faculty?.name || 'N/A'} horizontal />
+              <LabelValueDetails label="Employee ID" value={selected.faculty?.institutionId || 'N/A'} horizontal />
+              <LabelValueDetails label="Title" value={selected.title} horizontal />
+              <LabelValueDetails label="Type" value={selected.type} horizontal />
+              <LabelValueDetails label="Submitted" value={formatDate(selected.createdAt)} horizontal />
+              <LabelValueDetails
+                label="Status"
+                chip={
+                  <Chip
+                    label={selected.status}
+                    size="small"
+                    sx={{ bgcolor: statusStyle.bg, color: statusStyle.color, fontWeight: 600, borderRadius: '6px' }}
+                  />
+                }
+                horizontal
+              />
+              {/* Additional fields (e.g., abstract, documents) can be added here */}
+            </Grid>
+          )}
+        </DialogContent>
+        <DialogActions sx={{ p: 2, justifyContent: 'flex-end' }}>
+          <Button
+            variant="contained"
+            color="success"
+            startIcon={<ApproveIcon />}
+            onClick={handleApprove}
+            disabled={actionLoading || (selected && selected.status.toLowerCase() !== 'pending')}
+            sx={{ mr: 1 }}
+          >
+            Approve
+          </Button>
+          <Button
+            variant="contained"
+            color="error"
+            startIcon={<RejectIcon />}
+            onClick={handleReject}
+            disabled={actionLoading || (selected && selected.status.toLowerCase() !== 'pending')}
+          >
+            Reject
+          </Button>
+          <Button onClick={() => setSelected(null)} sx={{ textTransform: 'none' }}>
+            Close
+          </Button>
+        </DialogActions>
+      </Dialog>
+    );
+  };
 
   // ---------------------------------------------------------------------
   // Render component

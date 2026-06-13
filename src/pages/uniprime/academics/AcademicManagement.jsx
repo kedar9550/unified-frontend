@@ -30,12 +30,6 @@ const AcademicManagement = () => {
   const toggleCard = (key) => setExpandedCards(prev => ({ ...prev, [key]: !prev[key] }));
   const toggleYearExpand = (yearId) => setExpandedYears(prev => ({ ...prev, [yearId]: !prev[yearId] }));
 
-  useEffect(() => {
-    fetchYears();
-    fetchSemesterTypes();
-    fetchAllPrograms();
-  }, []);
-
   const fetchSemesterTypes = async () => {
     try {
       const res = await API.get("/api/semester-types");
@@ -56,6 +50,12 @@ const AcademicManagement = () => {
       setYears(res.data.years || []);
     } catch (err) { console.error(err); }
   };
+
+  useEffect(() => {
+    fetchYears();
+    fetchSemesterTypes();
+    fetchAllPrograms();
+  }, []);
 
   const handleStartYearChange = (e) => {
     const val = parseInt(e.target.value) || "";
@@ -102,14 +102,6 @@ const AcademicManagement = () => {
     } catch (err) { toast.error(err.response?.data?.message || "Failed to update semester"); }
   };
 
-  // Remove a program from a year
-  const removeProgram = async (yearId, programId, programCode) => {
-    if (!window.confirm(`Remove ${programCode} from this academic year?`)) return;
-    try {
-      await API.delete(`/api/academic-years/${yearId}/program/${programId}`);
-      fetchYears();
-    } catch (err) { toast.error(err.response?.data?.message || "Failed to remove"); }
-  };
 
   const handleOpenMenu = (event, yearDoc) => {
     setAnchorEl(event.currentTarget);
