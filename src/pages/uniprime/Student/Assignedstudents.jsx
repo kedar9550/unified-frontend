@@ -436,8 +436,8 @@ const Assignedstudents = () => {
                                     textTransform: "none", 
                                     fontWeight: 800, 
                                     background: "var(--gradient-primary)", 
-                                    color: (!selectedDept || movingDept) ? "rgba(255, 255, 255, 0.4)" : "#ffffff",
-                                    opacity: (!selectedDept || movingDept) ? 0.6 : 1,
+                                    color: "#ffffff",
+                                    opacity: (!selectedDept || movingDept) ? 0.45 : 1,
                                     cursor: (!selectedDept || movingDept) ? "not-allowed" : "pointer",
                                     pointerEvents: "auto",
                                     "&:hover": { 

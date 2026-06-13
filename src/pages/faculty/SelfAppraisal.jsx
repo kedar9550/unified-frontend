@@ -2323,7 +2323,7 @@ const SelfAppraisal = () => {
                     {appraisal.teaching.passPercentage.courses.length > 0 ? (
                       <>
                         {appraisal.teaching.passPercentage.courses.map((c, i) => (
-                          <TableRow key={i} sx={{ "&:hover": { bgcolor: "rgba(0, 0, 0, 0.015)" }, "body.dark-mode &:hover": { bgcolor: "rgba(255, 255, 255, 0.015)" } }}>
+                          <TableRow key={i} sx={{ "&:hover": { bgcolor: "var(--bg-hover)" } }}>
                             <TableCell sx={{ fontWeight: 600, color: "var(--text-primary)" }}>{c.courseName}</TableCell>
                             <TableCell sx={{ color: "var(--text-primary)" }}>{c.secBranchSem}</TableCell>
                             <TableCell align="center" sx={{ color: "var(--text-primary)" }}>{c.appeared}</TableCell>
@@ -2434,8 +2434,7 @@ const SelfAppraisal = () => {
                             );
                             return (
                               <TableRow key={i} sx={{
-                                "&:hover": { bgcolor: "rgba(0, 0, 0, 0.015)" },
-                                "body.dark-mode &:hover": { bgcolor: "rgba(255, 255, 255, 0.015)" },
+                                "&:hover": { bgcolor: "var(--bg-hover)" },
                                 bgcolor: originalEntry?.status === "Rejected" ? "rgba(239, 68, 68, 0.04)" : "inherit"
                               }}>
                                 <TableCell sx={{ fontWeight: 600, color: "var(--text-primary)" }}>{e.programCode || "—"}</TableCell>
@@ -2764,7 +2763,7 @@ const SelfAppraisal = () => {
                     {appraisal.teaching.feedback.courses.length > 0 ? (
                       <>
                         {appraisal.teaching.feedback.courses.map((c, i) => (
-                          <TableRow key={i} sx={{ "&:hover": { bgcolor: "rgba(0, 0, 0, 0.015)" }, "body.dark-mode &:hover": { bgcolor: "rgba(255, 255, 255, 0.015)" } }}>
+                          <TableRow key={i} sx={{ "&:hover": { bgcolor: "var(--bg-hover)" } }}>
                             <TableCell sx={{ fontWeight: 600, color: "var(--text-primary)" }}>{c.courseName}</TableCell>
                             <TableCell sx={{ color: "var(--text-primary)" }}>{c.secBranchSem}</TableCell>
                             <TableCell align="center" sx={{ color: "var(--text-primary)" }}>{c.noOfStudents}</TableCell>
@@ -2823,7 +2822,7 @@ const SelfAppraisal = () => {
                     {appraisal.teaching.coAttainment.courses.length > 0 ? (
                       <>
                         {appraisal.teaching.coAttainment.courses.map((c, i) => (
-                          <TableRow key={i} sx={{ "&:hover": { bgcolor: "rgba(0, 0, 0, 0.015)" }, "body.dark-mode &:hover": { bgcolor: "rgba(255, 255, 255, 0.015)" } }}>
+                          <TableRow key={i} sx={{ "&:hover": { bgcolor: "var(--bg-hover)" } }}>
                             <TableCell sx={{ fontWeight: 600, color: "var(--text-primary)" }}>{c.courseName}</TableCell>
                             <TableCell sx={{ color: "var(--text-primary)" }}>{c.secBranchSem}</TableCell>
                             <TableCell align="center" sx={{ color: "var(--text-primary)" }}>{c.noOfCos}</TableCell>
@@ -2938,7 +2937,7 @@ const SelfAppraisal = () => {
                     {appraisal.research.papers.items.length > 0 ? (
                       <>
                         {appraisal.research.papers.items.map((p, i) => (
-                          <TableRow key={i} sx={{ "&:hover": { bgcolor: "rgba(0, 0, 0, 0.015)" }, "body.dark-mode &:hover": { bgcolor: "rgba(255, 255, 255, 0.015)" } }}>
+                          <TableRow key={i} sx={{ "&:hover": { bgcolor: "var(--bg-hover)" } }}>
                             <TableCell align="center" sx={{ color: "var(--text-primary)" }}>{i + 1}</TableCell>
                             <TableCell sx={{ fontWeight: 600, color: "var(--text-primary)" }}>{p.title}</TableCell>
                             <TableCell align="center" sx={{ color: "var(--text-primary)" }}>{p.scope}</TableCell>
@@ -2990,7 +2989,7 @@ const SelfAppraisal = () => {
                       </TableHead>
                       <TableBody>
                         {appraisal.research.phdGuiding.items.map((p, i) => (
-                          <TableRow key={i} sx={{ "&:hover": { bgcolor: "rgba(0, 0, 0, 0.015)" }, "body.dark-mode &:hover": { bgcolor: "rgba(255, 255, 255, 0.015)" } }}>
+                          <TableRow key={i} sx={{ "&:hover": { bgcolor: "var(--bg-hover)" } }}>
                             <TableCell align="center" sx={{ color: "var(--text-primary)" }}>{i + 1}</TableCell>
                             <TableCell sx={{ fontWeight: 600, color: "var(--text-primary)" }}>
                               {p.name} ({p.scholarType === 'Part-Time' ? 'PT' : 'FT'})
@@ -3038,7 +3037,7 @@ const SelfAppraisal = () => {
                       </TableHead>
                       <TableBody>
                         {appraisal.research.booksChapters.items.map((b, i) => (
-                          <TableRow key={i} sx={{ "&:hover": { bgcolor: "rgba(0, 0, 0, 0.015)" }, "body.dark-mode &:hover": { bgcolor: "rgba(255, 255, 255, 0.015)" } }}>
+                          <TableRow key={i} sx={{ "&:hover": { bgcolor: "var(--bg-hover)" } }}>
                             <TableCell align="center" sx={{ color: "var(--text-primary)" }}>{i + 1}</TableCell>
                             <TableCell sx={{ fontWeight: 600, color: "var(--text-primary)" }}>{b.title}</TableCell>
                             <TableCell sx={{ color: "var(--text-primary)" }}>
@@ -3086,7 +3085,7 @@ const SelfAppraisal = () => {
                           const dateObj = new Date(p.dateOfFiling);
                           const dateString = !isNaN(dateObj) ? dateObj.toLocaleDateString("en-GB") : "N/A";
                           return (
-                            <TableRow key={i} sx={{ "&:hover": { bgcolor: "rgba(0, 0, 0, 0.015)" }, "body.dark-mode &:hover": { bgcolor: "rgba(255, 255, 255, 0.015)" } }}>
+                            <TableRow key={i} sx={{ "&:hover": { bgcolor: "var(--bg-hover)" } }}>
                               <TableCell align="center" sx={{ color: "var(--text-primary)" }}>{i + 1}</TableCell>
                               <TableCell sx={{ fontWeight: 600, color: "var(--text-primary)" }}>{p.title} - {p.filingNo} - {dateString}</TableCell>
                               <TableCell sx={{ color: "var(--text-primary)" }}>{p.country}</TableCell>
@@ -3129,7 +3128,7 @@ const SelfAppraisal = () => {
                       </TableHead>
                       <TableBody>
                         {appraisal.research.novelProducts.items.map((p, i) => (
-                          <TableRow key={i} sx={{ "&:hover": { bgcolor: "rgba(0, 0, 0, 0.015)" }, "body.dark-mode &:hover": { bgcolor: "rgba(255, 255, 255, 0.015)" } }}>
+                          <TableRow key={i} sx={{ "&:hover": { bgcolor: "var(--bg-hover)" } }}>
                             <TableCell align="center" sx={{ color: "var(--text-primary)" }}>{i + 1}</TableCell>
                             <TableCell sx={{ fontWeight: 600, color: "var(--text-primary)" }}>{p.title} ({p.status})</TableCell>
                             <TableCell sx={{ color: "var(--text-primary)" }}>{p.organizationName}</TableCell>
@@ -3171,7 +3170,7 @@ const SelfAppraisal = () => {
                       </TableHead>
                       <TableBody>
                         {appraisal.research.projectsConsultancies.items.map((p, i) => (
-                          <TableRow key={i} sx={{ "&:hover": { bgcolor: "rgba(0, 0, 0, 0.015)" }, "body.dark-mode &:hover": { bgcolor: "rgba(255, 255, 255, 0.015)" } }}>
+                          <TableRow key={i} sx={{ "&:hover": { bgcolor: "var(--bg-hover)" } }}>
                             <TableCell align="center" sx={{ color: "var(--text-primary)" }}>{i + 1}</TableCell>
                             <TableCell sx={{ fontWeight: 600, color: "var(--text-primary)" }}>
                               {p.title} ({p.projectType === 'FundedProject' ? 'Funded Project' : 'Consultancy'} - {p.status})
@@ -3352,7 +3351,7 @@ const SelfAppraisal = () => {
                           const toDateFormatted = activity.toDate ? new Date(activity.toDate).toLocaleDateString("en-IN", { day: '2-digit', month: '2-digit', year: 'numeric' }) : "";
 
                           return (
-                            <TableRow key={activity._id || i} sx={{ "&:hover": { bgcolor: "rgba(0, 0, 0, 0.015)" }, "body.dark-mode &:hover": { bgcolor: "rgba(255, 255, 255, 0.015)" } }}>
+                            <TableRow key={activity._id || i} sx={{ "&:hover": { bgcolor: "var(--bg-hover)" } }}>
                               <TableCell sx={{ color: "var(--text-primary)" }}>{i + 1}</TableCell>
                               <TableCell sx={{ fontWeight: 600, color: "var(--text-primary)" }}>
                                 {activity.organizationName} {fromDateFormatted && toDateFormatted ? `(${fromDateFormatted} - ${toDateFormatted})` : ""}
@@ -3472,7 +3471,7 @@ const SelfAppraisal = () => {
                           const isEditable = item.status === 'Draft' || item.status === 'Rejected';
                           const { value } = getContributionNameField(item.category, item);
                           return (
-                            <TableRow key={item._id || i} sx={{ "&:hover": { bgcolor: "rgba(0, 0, 0, 0.015)" }, "body.dark-mode &:hover": { bgcolor: "rgba(255, 255, 255, 0.015)" } }}>
+                            <TableRow key={item._id || i} sx={{ "&:hover": { bgcolor: "var(--bg-hover)" } }}>
                               <TableCell sx={{ color: "var(--text-primary)" }}>{i + 1}</TableCell>
                               <TableCell sx={{ fontWeight: 600, color: "var(--text-primary)" }}>
                                 {getCategoryName(item.category)} - {value || "N/A"}
@@ -3642,7 +3641,7 @@ const SelfAppraisal = () => {
                           const assignedByText = role.level && (role.level.toLowerCase().includes("central") || role.level.toLowerCase().includes("institute")) ? "Central" : "Dept";
                           const isEditable = role.status === 'Pending' || role.status === 'Rejected';
                           return (
-                            <TableRow key={i} sx={{ "&:hover": { bgcolor: "rgba(0, 0, 0, 0.015)" }, "body.dark-mode &:hover": { bgcolor: "rgba(255, 255, 255, 0.015)" } }}>
+                            <TableRow key={i} sx={{ "&:hover": { bgcolor: "var(--bg-hover)" } }}>
                               <TableCell sx={{ color: "var(--text-primary)" }}>{i + 1}</TableCell>
                               <TableCell sx={{ fontWeight: 600, color: "var(--text-primary)" }}>
                                 {role.roleName} {role.details ? `(${role.details})` : ""}
@@ -4083,11 +4082,8 @@ const SelfAppraisal = () => {
               borderRadius: "24px",
               border: "1px solid var(--border-color)",
               boxShadow: "var(--shadow-premium)",
-              background: "rgba(255, 255, 255, 0.8)",
+              background: "var(--bg-glass)",
               backdropFilter: "blur(20px)",
-              "body.dark-mode &": {
-                background: "rgba(15, 23, 42, 0.8)",
-              },
               display: "flex",
               flexDirection: "column",
               height: "100%"

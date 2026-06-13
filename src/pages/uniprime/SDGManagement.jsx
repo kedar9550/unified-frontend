@@ -684,7 +684,10 @@ const SDGManagement = () => {
                 transform: 'translateY(-1px)'
               },
               '&.Mui-disabled': {
-                background: 'rgba(255, 255, 255, 0.05)',
+                background: 'rgba(0, 0, 0, 0.08)',
+                'body.dark-mode &': {
+                  background: 'rgba(255, 255, 255, 0.05)',
+                },
                 color: 'var(--text-secondary)',
                 boxShadow: 'none'
               },
@@ -795,7 +798,10 @@ const SDGManagement = () => {
                 }
               },
               '&.Mui-disabled': {
-                background: 'rgba(255, 255, 255, 0.05)',
+                background: 'rgba(0, 0, 0, 0.08)',
+                'body.dark-mode &': {
+                  background: 'rgba(255, 255, 255, 0.05)',
+                },
                 color: 'var(--text-secondary)',
                 boxShadow: 'none',
                 '&::after': {
@@ -908,7 +914,10 @@ const SDGManagement = () => {
                 }
               },
               '&.Mui-disabled': {
-                background: 'rgba(255, 255, 255, 0.05)',
+                background: 'rgba(0, 0, 0, 0.08)',
+                'body.dark-mode &': {
+                  background: 'rgba(255, 255, 255, 0.05)',
+                },
                 color: 'var(--text-secondary)',
                 boxShadow: 'none',
                 '&::after': {

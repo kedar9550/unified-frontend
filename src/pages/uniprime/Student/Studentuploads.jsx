@@ -1038,8 +1038,7 @@ const Studentuploads = () => {
                             borderRadius: "14px",
                             px: 3,
                             "&:hover": {
-                                background: "var(--bg-accent-1)",
-                                "body.dark-mode &": { background: "rgba(255, 255, 255, 0.1)" }
+                                background: "var(--bg-accent-1)"
                             }
                         }}
                     >
