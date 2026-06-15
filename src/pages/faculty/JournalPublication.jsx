@@ -94,16 +94,24 @@ async function fetchJournalDataByDOI(doi) {
   const coverDisplayDate = entry["prism:coverDisplayDate"] || "";
   
   // Clean ISSN
-  const rawIssn = entry["prism:issn"] || entry["prism:eIssn"] || "";
-  const issn = rawIssn.split(" ")[0].replace(/-/g, "");
+  const rawIssn = entry["prism:issn"] || "";
+  const rawEissn = entry["prism:eIssn"] || "";
   
+  let extractedIssn = null;
+  let extractedEissn = null;
+
+  if (rawIssn) extractedIssn = rawIssn.split(" ")[0].replace(/-/g, "");
+  if (rawEissn) extractedEissn = rawEissn.split(" ")[0].replace(/-/g, "");
+  
+  const activeIssn = extractedIssn || extractedEissn;
+
   // Format ISSN with hyphen for WoS check
-  let issnWoS = "";
-  if (issn.length === 8) {
-    issnWoS = issn.slice(0, 4) + "-" + issn.slice(4);
-  } else {
-    issnWoS = rawIssn.split(" ")[0];
-  }
+  const formatISSNWithHyphen = (raw) => {
+    if (!raw) return "";
+    const digits = raw.split(" ")[0].replace(/-/g, "");
+    if (digits.length === 8) return digits.slice(0, 4) + "-" + digits.slice(4);
+    return raw.split(" ")[0];
+  };
 
   // Parse month/year from coverDisplayDate e.g. "January 2024" or "2024-01-15"
   let month = "";
@@ -135,15 +143,36 @@ async function fetchJournalDataByDOI(doi) {
   let quartile = "N/A";
   let journalType = "SCOPUS";
 
-  if (issn) {
+  if (activeIssn) {
     try {
-      const serialRes = await fetch(
-        `https://api.elsevier.com/content/serial/title/issn/${issn}?view=CITESCORE`,
-        { method: "GET", headers }
-      );
-      if (serialRes.ok) {
-        const serialJson = await serialRes.json();
-        const entry = serialJson?.["serial-metadata-response"]?.entry?.[0] || {};
+      let serialDataFetched = false;
+      let entry = {};
+
+      if (extractedIssn) {
+        const serialRes = await fetch(
+          `https://api.elsevier.com/content/serial/title/issn/${extractedIssn}?view=CITESCORE`,
+          { method: "GET", headers }
+        );
+        if (serialRes.ok) {
+          const serialJson = await serialRes.json();
+          entry = serialJson?.["serial-metadata-response"]?.entry?.[0] || {};
+          serialDataFetched = true;
+        }
+      }
+
+      if (!serialDataFetched && extractedEissn) {
+        const serialRes = await fetch(
+          `https://api.elsevier.com/content/serial/title/issn/${extractedEissn}?view=CITESCORE`,
+          { method: "GET", headers }
+        );
+        if (serialRes.ok) {
+          const serialJson = await serialRes.json();
+          entry = serialJson?.["serial-metadata-response"]?.entry?.[0] || {};
+          serialDataFetched = true;
+        }
+      }
+
+      if (serialDataFetched) {
         
         // H-Index and Impact Factor are NOT fetched from API to prevent wrong/incorrect values
         hIndex = "";
@@ -188,18 +217,29 @@ async function fetchJournalDataByDOI(doi) {
 
     // 3. Clarivate WoS proxy check for SCI / SCIE / ESCI / WoS flags
     try {
-      const wosRes = await API.post("/api/research/journal/wos-type", { issn: issnWoS || issn });
-      if (wosRes.data?.success && wosRes.data?.inWoS) {
-        const typesStr = wosRes.data.journalType || "";
-        if (typesStr.includes("SCIE")) journalType = "SCIE";
-        else if (typesStr.includes("SCI")) journalType = "SCI";
-        else if (typesStr.includes("ESCI")) journalType = "ESCI";
-        else if (typesStr.includes("WoS")) journalType = "WoS";
+      let clarivateSuccess = false;
+
+      if (extractedIssn) {
+        const wosIssn = formatISSNWithHyphen(extractedIssn);
+        const wosRes = await API.post("/api/research/journal/wos-type", { issn: wosIssn });
+        if (wosRes.data?.success && wosRes.data?.journalType) {
+          journalType = wosRes.data.journalType;
+          clarivateSuccess = true;
+        }
+      }
+
+      if (!clarivateSuccess && extractedEissn) {
+        const wosEissn = formatISSNWithHyphen(extractedEissn);
+        const wosRes = await API.post("/api/research/journal/wos-type", { issn: wosEissn });
+        if (wosRes.data?.success && wosRes.data?.journalType) {
+          journalType = wosRes.data.journalType;
+          clarivateSuccess = true;
+        }
       }
     } catch (_) { /* ignore WoS proxy errors */ }
   }
 
-  return { title, journalName, vol, issue, pageRange, month, year, hIndex, jcrImpactFactor, quartile, journalType, issn };
+  return { title, journalName, vol, issue, pageRange, month, year, hIndex, jcrImpactFactor, quartile, journalType, issn: activeIssn };
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -887,9 +927,12 @@ export default function JournalPublication() {
         {/* Journal Type */}
         <Box>
           <Typography sx={labelStyle}>Type of Journal :</Typography>
-          <Select size="small" fullWidth displayEmpty value={form.journalType} onChange={set("journalType")} disabled={isFetched("journalType")} sx={isFetched("journalType") ? disabledField : {}}>
+          <Select size="small" fullWidth displayEmpty value={form.journalType || ""} onChange={set("journalType")} disabled={isFetched("journalType")} sx={isFetched("journalType") ? disabledField : {}}>
             <MenuItem value="">Select</MenuItem>
-            {JOURNAL_TYPES.map(t => <MenuItem key={t} value={t}>{t}</MenuItem>)}
+            {(form.journalType && !JOURNAL_TYPES.includes(form.journalType) 
+              ? [...JOURNAL_TYPES, form.journalType] 
+              : JOURNAL_TYPES
+            ).map(t => <MenuItem key={t} value={t}>{t}</MenuItem>)}
           </Select>
         </Box>
 
