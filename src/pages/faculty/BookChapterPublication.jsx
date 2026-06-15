@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../../context/AuthContext";
 
-import { Box, TextField, MenuItem, Select, Typography, Button, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, IconButton, Autocomplete, CircularProgress, Dialog, DialogTitle, DialogContent, DialogActions, Stack, Grid, Card, Chip, Divider, Tooltip, TablePagination } from "@mui/material";
+import { Box, TextField, MenuItem, Select, Typography, Button, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, IconButton, CircularProgress, Dialog, DialogTitle, DialogContent, DialogActions, Stack, Grid, Card, Chip, Divider, Tooltip, TablePagination } from "@mui/material";
 import { toast } from "sonner";
-import { AddCircle, Delete, Search, Close, Description, Download, AttachFile, Groups, Book, Visibility } from "@mui/icons-material";
+import { Close, Description, AttachFile, Groups, Book, Visibility } from "@mui/icons-material";
 import PageHeader from "../../components/common/PageHeader";
 import {
   FacultyInfoRow, FormCard, Grid2, SubLabel, NoteBox, FileField, SubmitBtn
@@ -20,25 +20,26 @@ export default function BookChapterPublication() {
   const [academicYears, setAcademicYears] = useState([]);
   const [selectedYear, setSelectedYear] = useState("");
   const [publicationsList, setPublicationsList] = useState([]);
-  const [publishers, setPublishers] = useState([]);
   const [selectedPubDetails, setSelectedPubDetails] = useState(null);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
 
   const [form, setForm] = useState({
+    doi: "",
     textBookName: "", chapterTitle: "", yearOfPublication: "",
     chaptersContributed: "", publisher: "", month: "", year: "",
-    applyIncentive: "", publicationType: "", customPublisher: "", applyingSeedGrant: "",
+    applyIncentive: "", publicationType: "", applyingSeedGrant: "",
     isbnNumber: "",
     totalAuthors: 1, userAuthorPosition: 1, otherAuthors: []
   });
   const [files, setFiles] = useState({ coverPage: null, authorAffiliation: null, index: null, softCopy: null });
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
-  const [snack, setSnack] = useState({ open: false, msg: "", severity: "success" });
 
   const [scopusIndexed, setScopusIndexed] = useState(false);
-  const [scopusFetching, setScopusFetching] = useState(false);
+  const [doiFetching, setDoiFetching] = useState(false);
+  const [doiFetched, setDoiFetched] = useState(false);
+  const [isbnFetching, setIsbnFetching] = useState(false);
 
   useEffect(() => {
     API.get("/api/research/book-chapter").then(res => {
@@ -48,10 +49,6 @@ export default function BookChapterPublication() {
     API.get("/api/academic-years").then(res => {
       setAcademicYears(res.data?.years || res.data?.data || []);
     }).catch(err => console.log("Failed to fetch academic years", err));
-
-    API.get("/api/publishers").then(res => {
-      setPublishers(res.data?.data || []);
-    }).catch(err => console.log("Failed to fetch publishers", err));
   }, [viewMode]);
 
   const set = (k) => (e) => setForm((p) => ({ ...p, [k]: e.target.value }));
@@ -75,6 +72,124 @@ export default function BookChapterPublication() {
     return MONTHS;
   };
 
+  // ── DOI → Scopus fetch (same approach as ConferencePublication) ──────────────
+  const parseDateStr = (str) => {
+    if (!str) return { year: "", month: "" };
+    const monthNames = ["January","February","March","April","May","June",
+                        "July","August","September","October","November","December"];
+    const shortNames = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+    let year = "", month = "";
+    const yMatch = str.match(/\b(19|20)\d{2}\b/);
+    if (yMatch) year = yMatch[0];
+    for (let i = 0; i < 12; i++) {
+      if (str.toLowerCase().includes(monthNames[i].toLowerCase()) ||
+          str.toLowerCase().includes(shortNames[i].toLowerCase())) {
+        month = monthNames[i]; break;
+      }
+    }
+    if (!month) {
+      const iso = str.match(/\d{4}-(\d{2})/);
+      if (iso) month = monthNames[parseInt(iso[1], 10) - 1] || "";
+    }
+    return { year, month };
+  };
+
+  const fetchDOIData = async () => {
+    const cleanDoi = form.doi.trim().replace(/^https?:\/\/doi\.org\//i, "");
+    if (!cleanDoi) { toast.error("Please enter a DOI"); return; }
+    setDoiFetching(true);
+    setDoiFetched(false);
+    setScopusIndexed(false);
+    try {
+      const scopusRes = await fetch(
+        `https://api.elsevier.com/content/search/scopus?query=DOI(${encodeURIComponent(cleanDoi)})`,
+        { headers: { "X-ELS-APIKey": ELSEVIER_API_KEY, Accept: "application/json" } }
+      );
+      if (!scopusRes.ok) {
+        if (scopusRes.status === 401) toast.error("Scopus API key unauthorized. Please contact admin.");
+        else if (scopusRes.status === 429) toast.error("Scopus API rate limit exceeded. Try again later.");
+        else toast.error(`Scopus API error (HTTP ${scopusRes.status}). Please fill manually.`);
+        return;
+      }
+      const scopusJson = await scopusRes.json();
+      const entry = scopusJson?.["search-results"]?.entry?.[0];
+
+      if (!entry || entry.error || (!entry["dc:title"] && !entry["prism:publicationName"])) {
+        toast.warning("This DOI was not found in Scopus. Please fill details manually.");
+        setScopusIndexed(false);
+        return;
+      }
+
+      // Extract all fields from Scopus entry
+      const chapterTitle  = entry["dc:title"] || "";
+      const publisher     = entry["prism:publisher"] || entry["dc:publisher"] || "";
+      const dateRaw       = entry["prism:coverDisplayDate"] || entry["prism:coverDate"] || "";
+      const { year, month } = parseDateStr(dateRaw);
+
+      toast.success("Chapter found in Scopus! Details fetched successfully.");
+      setDoiFetched(true);
+      setScopusIndexed(true);
+
+      setForm(prev => ({
+        ...prev,
+        chapterTitle: chapterTitle || prev.chapterTitle,
+        // textBookName intentionally NOT set from DOI — use ISBN to fetch Book Title
+        publisher:    publisher    || prev.publisher,
+        year:         year         || prev.year,
+        month:        month        || prev.month,
+      }));
+    } catch (err) {
+      toast.error("Network error connecting to Scopus. Please fill the fields manually.");
+    } finally {
+      setDoiFetching(false);
+    }
+  };
+
+  // ── ISBN → Open Library book title fetch ─────────────────────────────────────
+  const fetchISBNData = async () => {
+    const isbn = form.isbnNumber.trim().replace(/-/g, "");
+    if (!isbn) { toast.error("Please enter an ISBN"); return; }
+    if (isbn.length !== 10 && isbn.length !== 13) {
+      toast.error("ISBN must be 10 or 13 digits"); return;
+    }
+    setIsbnFetching(true);
+    try {
+      // Try Open Library first
+      const olRes = await fetch(
+        `https://openlibrary.org/api/books?bibkeys=ISBN:${isbn}&format=json&jscmd=data`
+      );
+      if (olRes.ok) {
+        const olJson = await olRes.json();
+        const bookData = olJson[`ISBN:${isbn}`];
+        if (bookData && bookData.title) {
+          setForm(prev => ({ ...prev, textBookName: bookData.title }));
+          toast.success(`Book title fetched: "${bookData.title}"`);
+          return;
+        }
+      }
+      // Fallback: Google Books API
+      const gbRes = await fetch(
+        `https://www.googleapis.com/books/v1/volumes?q=isbn:${isbn}`
+      );
+      if (gbRes.ok) {
+        const gbJson = await gbRes.json();
+        const item = gbJson?.items?.[0];
+        const title = item?.volumeInfo?.title;
+        if (title) {
+          setForm(prev => ({ ...prev, textBookName: title }));
+          toast.success(`Book title fetched: "${title}"`);
+          return;
+        }
+      }
+      toast.warning("Book title not found for this ISBN. Please enter it manually.");
+    } catch (err) {
+      toast.error("Error fetching book title. Please enter it manually.");
+    } finally {
+      setIsbnFetching(false);
+    }
+  };
+
+  // ── Old title-based Scopus fetch (kept stub to prevent breaking)
   const fetchScopusDetails = async () => {
     if (!form.chapterTitle.trim()) {
       toast.error("Please enter the Title of the Chapter first");
@@ -427,6 +542,10 @@ export default function BookChapterPublication() {
   };
 
   const handleSubmit = async () => {
+    if (!form.doi.trim()) {
+      toast.error("DOI is mandatory. Please enter the DOI.");
+      return;
+    }
     const newErrors = {};
     if (!form.textBookName) newErrors.textBookName = true;
     if (!form.chapterTitle) newErrors.chapterTitle = true;
@@ -488,13 +607,14 @@ export default function BookChapterPublication() {
         employeeId: a.affiliationType === "Aditya University" ? a.empId : null
       })).filter(ca => ca.name && ca.affiliation);
 
+      fd.append("doi", form.doi || "");
       fd.append("textBookName", form.textBookName);
       fd.append("chapterTitle", form.chapterTitle);
       fd.append("yearOfPublication", form.year);
       fd.append("firstAuthor", isFirst);
       fd.append("authorPosition", authPos);
       fd.append("chaptersContributed", form.chaptersContributed || "");
-      fd.append("publisher", form.publisher === "Others" ? form.customPublisher : form.publisher);
+      fd.append("publisher", form.publisher || "");
       fd.append("isbnNumber", form.isbnNumber || "");
       fd.append("coAuthors", JSON.stringify(coAuthorsList));
       fd.append("month", form.month);
@@ -513,9 +633,10 @@ export default function BookChapterPublication() {
       await API.post("/api/research/book-chapter", fd, { headers: { "Content-Type": "multipart/form-data" } });
       toast.success("Book Chapter submitted successfully!");
       setForm({
+        doi: "",
         textBookName: "", chapterTitle: "", yearOfPublication: "",
         chaptersContributed: "", publisher: "", month: "", year: "",
-        applyIncentive: "", publicationType: "", customPublisher: "", applyingSeedGrant: "",
+        applyIncentive: "", publicationType: "", applyingSeedGrant: "",
         isbnNumber: "",
         totalAuthors: 1, userAuthorPosition: 1, otherAuthors: []
       });
@@ -524,6 +645,7 @@ export default function BookChapterPublication() {
       setSelectedYear("");
       setViewMode("list");
       setScopusIndexed(false);
+      setDoiFetched(false);
     } catch (err) {
       toast.error(err?.response?.data?.message || "Submission failed");
     } finally {
@@ -735,74 +857,90 @@ export default function BookChapterPublication() {
 
       <FacultyInfoRow />
 
+      {/* ── DOI Field (Mandatory) ────────────────────────────────────────────── */}
+      <Box sx={{ mb: 2.5, p: 2.5, borderRadius: "12px", border: "2px solid var(--color-primary)", background: "var(--bg-accent-1)", boxShadow: "0 2px 12px rgba(var(--color-primary-rgb,99,102,241),0.08)" }}>
+        <Typography sx={{ ...labelStyle, mb: 1 }}>DOI (Digital Object Identifier) : * <span style={{ fontWeight: 400, textTransform: "none", fontSize: 10, opacity: 0.7 }}>— Enter DOI to verify Scopus indexing & auto-fill details</span></Typography>
+        <Box sx={{ display: "flex", gap: 1.5, alignItems: "flex-start" }}>
+          <TextField
+            size="small"
+            fullWidth
+            value={form.doi}
+            onChange={(e) => { setForm(p => ({ ...p, doi: e.target.value })); setDoiFetched(false); setScopusIndexed(false); }}
+            placeholder="e.g. 10.1007/978-3-031-12345-6_10"
+            onKeyDown={(e) => { if (e.key === "Enter") fetchDOIData(); }}
+            InputProps={{
+              sx: { background: "var(--bg-panel)" },
+              endAdornment: doiFetched ? (
+                <Box component="span" sx={{ display: "flex", alignItems: "center", color: "#10b981", fontSize: 18, mr: 0.5 }}>✓</Box>
+              ) : null
+            }}
+          />
+          <Button
+            variant="contained"
+            onClick={fetchDOIData}
+            disabled={doiFetching || !form.doi.trim()}
+            sx={{ minWidth: 120, height: "40px", background: "var(--gradient-primary)", textTransform: "none", fontWeight: 700, flexShrink: 0, "&:hover": { opacity: 0.9 }, "&.Mui-disabled": { opacity: 0.5 } }}
+          >
+            {doiFetching ? <><CircularProgress size={14} color="inherit" sx={{ mr: 0.8 }} />Fetching...</> : "Fetch Details"}
+          </Button>
+        </Box>
+        {scopusIndexed && (
+          <Typography sx={{ mt: 1, fontSize: 11, color: "#10b981", fontWeight: 700 }}>✓ Found in Scopus — Scopus Indexed</Typography>
+        )}
+        {doiFetched === false && form.doi && !doiFetching && !scopusIndexed && (
+          <Typography sx={{ mt: 1, fontSize: 11, color: "#f59e0b", fontWeight: 600 }}>Not Found in Scopus / Not Scopus Indexed</Typography>
+        )}
+      </Box>
+
       <Grid2 sx={{ mt: 1 }}>
         <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
-          <Typography sx={labelStyle}>Title of the Chapter: *</Typography>
+          <Typography sx={labelStyle}>Title of the Chapter : *</Typography>
+          <TextField
+            size="small"
+            fullWidth
+            placeholder="Enter the title of the chapter"
+            value={form.chapterTitle}
+            onChange={set("chapterTitle")}
+            error={!!errors.chapterTitle}
+            helperText={errors.chapterTitle ? "Title is required" : ""}
+          />
+        </Box>
+
+        {/* ISBN + Book Title fetch */}
+        <Box>
+          <Typography sx={labelStyle}>ISBN Number :</Typography>
           <Box sx={{ display: "flex", gap: 1 }}>
             <TextField
               size="small"
               fullWidth
-              placeholder="Enter the Title of the Chapter to fetch details from Scopus (e.g. Machine Learning in Healthcare)"
-              value={form.chapterTitle}
+              placeholder="e.g. 9780590353427"
+              value={form.isbnNumber}
               onChange={(e) => {
-                const newTitle = e.target.value;
-                setForm({
-                  chapterTitle: newTitle,
-                  textBookName: "",
-                  yearOfPublication: "",
-                  chaptersContributed: "",
-                  publisher: "",
-                  customPublisher: "",
-                  month: "",
-                  year: "",
-                  applyIncentive: "",
-                  publicationType: "",
-                  applyingSeedGrant: "",
-                  totalAuthors: 1,
-                  userAuthorPosition: 1,
-                  otherAuthors: []
-                });
-                setFiles({ coverPage: null, authorAffiliation: null, index: null, softCopy: null });
-                setScopusIndexed(false);
+                const val = e.target.value;
+                if (/^[0-9-]*$/.test(val)) setForm(p => ({ ...p, isbnNumber: val }));
               }}
-              error={!!errors.chapterTitle}
-              helperText={errors.chapterTitle ? "Title is required" : ""}
+              inputProps={{ inputMode: "numeric" }}
             />
             <Button
- variant="contained"
- onClick={fetchScopusDetails}
- disabled={!form.chapterTitle || scopusFetching}
- startIcon={scopusFetching ? <CircularProgress size={16} color="inherit" /> : <Search />}
- sx={{
- minWidth: "140px",
- height: "40px",
- textTransform: "none",
- 
- fontWeight: 700,
- background: "var(--color-primary)",
- whiteSpace: "nowrap",
- "&:hover": { background: "var(--color-primary-dark)" }
- }}
- >
-              {scopusFetching ? "Fetching..." : "Fetch Details"}
+              variant="outlined"
+              onClick={fetchISBNData}
+              disabled={isbnFetching || !form.isbnNumber.trim()}
+              sx={{ minWidth: 90, height: "40px", textTransform: "none", fontWeight: 700, flexShrink: 0, borderColor: "var(--color-primary)", color: "var(--color-primary)", "&:hover": { background: "var(--bg-accent-1)" }, "&.Mui-disabled": { opacity: 0.5 } }}
+            >
+              {isbnFetching ? <CircularProgress size={14} color="inherit" /> : "Fetch Title"}
             </Button>
           </Box>
-          {scopusIndexed && (
-            <Typography variant="caption" sx={{ color: "#10b981", fontWeight: 700, mt: 0.5, display: "block" }}>
-              ✓ Scopus Indexing Verified! Details auto-filled below.
-            </Typography>
-          )}
         </Box>
+
         <Box>
-          <Typography sx={labelStyle}>Title of the Book:</Typography>
-          <TextField size="small" fullWidth value={form.textBookName} onChange={set("textBookName")} error={!!errors.textBookName} />
+          <Typography sx={labelStyle}>Title of the Book : *</Typography>
+          <TextField size="small" fullWidth value={form.textBookName} onChange={set("textBookName")} placeholder="Auto-filled from ISBN or enter manually" error={!!errors.textBookName} helperText={errors.textBookName ? "Book title is required" : ""} />
         </Box>
+
         <Box>
-          <Typography sx={labelStyle}>Publication Type:</Typography>
+          <Typography sx={labelStyle}>Publication Scope : *</Typography>
           <Select
-            fullWidth
-            size="small"
-            displayEmpty
+            fullWidth size="small" displayEmpty
             value={form.publicationType}
             onChange={(e) => setForm(p => ({ ...p, publicationType: e.target.value }))}
             error={!!errors.publicationType}
@@ -812,48 +950,17 @@ export default function BookChapterPublication() {
             <MenuItem value="International">International</MenuItem>
           </Select>
         </Box>
+
         <Box>
-          <Typography sx={labelStyle}>Name of the Publisher :</Typography>
-          <Autocomplete
-            options={[...publishers.filter(p => p.type === form.publicationType), { name: "Others", type: form.publicationType }]}
-            groupBy={(option) => option.type}
-            getOptionLabel={(option) => option.name || ""}
-            value={publishers.find(p => p.name === form.publisher) || (form.publisher === "Others" ? { name: "Others", type: form.publicationType } : (form.publisher ? { name: form.publisher, type: form.publicationType || "Unknown" } : null))}
-            isOptionEqualToValue={(option, value) => option.name === value.name}
-            onChange={(e, newValue) => setForm(p => ({ ...p, publisher: newValue ? newValue.name : "" }))}
-            freeSolo
-            onInputChange={(e, newInputValue) => {
-              if (e?.type === "change") {
-                setForm(p => ({ ...p, publisher: newInputValue }));
-              }
-            }}
-            renderInput={(params) => (
-              <TextField {...params} size="small" fullWidth placeholder="Select or search publisher" error={!!errors.publisher} />
-            )}
-          />
-          {form.publisher === "Others" && (
-            <TextField
-              size="small"
-              fullWidth
-              sx={{ mt: 1.5 }}
-              placeholder="Enter Publisher Name"
-              value={form.customPublisher}
-              onChange={(e) => setForm(p => ({ ...p, customPublisher: e.target.value }))}
-            />
-          )}
-        </Box>
-        <Box>
-          <Typography sx={labelStyle}>ISBN Number :</Typography>
+          <Typography sx={labelStyle}>Name of the Publisher : *</Typography>
           <TextField
             size="small"
             fullWidth
-            placeholder="e.g. 9780590353427"
-            value={form.isbnNumber}
-            onChange={(e) => {
-              const val = e.target.value;
-              if (/^[0-9-]*$/.test(val)) setForm(p => ({ ...p, isbnNumber: val }));
-            }}
-            inputProps={{ inputMode: 'numeric' }}
+            placeholder="e.g. Springer, Elsevier, IEEE (auto-filled from DOI if available)"
+            value={form.publisher}
+            onChange={(e) => setForm(p => ({ ...p, publisher: e.target.value }))}
+            error={!!errors.publisher}
+            helperText={errors.publisher ? "Publisher is required" : ""}
           />
         </Box>
         <Box>

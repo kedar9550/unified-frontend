@@ -10,7 +10,8 @@ import {
 } from "../../components/faculty/PublicationFormFields";
 import {
   labelStyle, disabledField, MONTHS, YEARS
-} from "../../components/faculty/publicationConstants";import API from "../../api/axios";
+} from "../../components/faculty/publicationConstants";
+import API from "../../api/axios";
 
 export default function ConferencePublication() {
   const { user } = useAuth();
@@ -23,6 +24,7 @@ export default function ConferencePublication() {
   const [rowsPerPage, setRowsPerPage] = useState(10);
 
   const [form, setForm] = useState({
+    doi: "",
     title: "", conferenceName: "", level: "", indexing: "",
     presentationType: "", month: "", year: "",
     publisher: "", issnIsbn: "",
@@ -31,6 +33,8 @@ export default function ConferencePublication() {
   });
   const [files, setFiles] = useState({ certificate: null, proceedings: null });
   const [loading, setLoading] = useState(false);
+  const [doiFetching, setDoiFetching] = useState(false);
+  const [doiFetched, setDoiFetched] = useState(false);
 
   useEffect(() => {
     API.get("/api/research/conference").then(res => {
@@ -43,6 +47,72 @@ export default function ConferencePublication() {
   }, [viewMode]);
 
   const set = (k) => (e) => setForm((p) => ({ ...p, [k]: e.target.value }));
+
+  // ── DOI Fetch via Backend (POST /api/research/conference/validate-doi) ───────
+  // Backend calls Scopus, checks subtype === 'cp', returns structured data
+  // This avoids exposing the Scopus API key in the frontend
+  const fetchDOIData = async () => {
+    const cleanDoi = form.doi.trim().replace(/^https?:\/\/doi\.org\//i, "");
+    if (!cleanDoi) {
+      toast.error("Please enter a DOI");
+      return;
+    }
+
+    setDoiFetching(true);
+    setDoiFetched(false);
+
+    try {
+      // Single call to backend — backend handles Scopus Search + Abstract Retrieval
+      const res = await API.post("/api/research/conference/validate-doi", { doi: cleanDoi });
+      const { data } = res.data;
+
+      // Populate form fields from backend response
+      setForm(prev => ({
+        ...prev,
+        title:          data.title          || prev.title,
+        publisher:      data.publisher      || prev.publisher,
+        conferenceName: data.conferenceName || prev.conferenceName,
+        issnIsbn:       data.issnIsbn       || prev.issnIsbn,
+        year:           data.year           || prev.year,
+        month:          data.month          || prev.month,
+        indexing:       "Scopus Indexed",   // confirmed in Scopus as conference paper
+      }));
+
+      setDoiFetched(true);
+
+      // Warn user if mandatory fields couldn't be auto-filled (rare, but possible)
+      const missing = [];
+      if (!data.publisher)      missing.push("Publisher");
+      if (!data.conferenceName) missing.push("Conference Name");
+
+      if (missing.length > 0) {
+        toast.warning(`Details fetched! Please fill in manually: ${missing.join(", ")}`);
+      } else {
+        toast.success("Conference paper verified! Details fetched successfully.");
+      }
+
+    } catch (err) {
+      const status  = err?.response?.status;
+      const message = err?.response?.data?.message;
+
+      if (status === 422) {
+        // Journal article / non-conference paper
+        toast.error(message || "Only conference papers are allowed. Journal publications are not accepted.", { duration: 7000 });
+      } else if (status === 404) {
+        // Not in Scopus
+        toast.warning(message || "This DOI was not found in Scopus. Please fill details manually.");
+        setForm(prev => ({ ...prev, indexing: prev.indexing || "Not Scopus Indexed" }));
+      } else if (status === 401) {
+        toast.error("Scopus API key issue. Please contact admin.");
+      } else if (status === 429) {
+        toast.error("Scopus rate limit exceeded. Try again in a few minutes.");
+      } else {
+        toast.error("Failed to fetch DOI details. Please fill manually.");
+      }
+    } finally {
+      setDoiFetching(false);
+    }
+  };
 
   const handleNumericChange = (key, allowDecimal = true) => (e) => {
     const val = e.target.value;
@@ -61,7 +131,7 @@ export default function ConferencePublication() {
     }
     return MONTHS;
   };
-  
+
   const validateFile = (file) => {
     if (!file) return true;
     const allowed = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png'];
@@ -69,7 +139,7 @@ export default function ConferencePublication() {
       toast.error("Only PDF, JPG, and PNG files are allowed");
       return false;
     }
-    if (file.size > 1024 * 1024) { // 1MB limit from multer config
+    if (file.size > 1024 * 1024) {
       toast.error("File size exceeds 1MB limit");
       return false;
     }
@@ -81,7 +151,7 @@ export default function ConferencePublication() {
     if (file && validateFile(file)) {
       setFiles((p) => ({ ...p, [k]: file }));
     } else {
-      e.target.value = null; // reset
+      e.target.value = null;
     }
   };
 
@@ -96,7 +166,6 @@ export default function ConferencePublication() {
     }
     const pos = parseInt(form.userAuthorPosition) || 1;
 
-    // Auto-adjust if position is greater than total
     if (pos > total) {
       setForm(p => ({ ...p, userAuthorPosition: total }));
       return;
@@ -110,7 +179,6 @@ export default function ConferencePublication() {
     let newOtherAuthors = [];
     for (let i = 1; i <= total; i++) {
       if (i !== pos) {
-        // Keep existing data if available
         const existing = form.otherAuthors.find(a => a.authorPosition === i);
         newOtherAuthors.push(existing || {
           authorPosition: i,
@@ -130,7 +198,6 @@ export default function ConferencePublication() {
       if (res.data && res.data.success) {
         const staff = res.data.data;
         const name = staff.employeename || staff.EmployeeName || "";
-
         setForm(prev => {
           const updated = prev.otherAuthors.map(a => {
             if (a.authorPosition === pos) {
@@ -153,7 +220,7 @@ export default function ConferencePublication() {
         if (field === "affiliationType") {
           if (value === "Aditya University") {
             newA.affiliationName = "Aditya University";
-            newA.authorName = ""; // clear name so it can be fetched
+            newA.authorName = "";
           } else {
             newA.affiliationName = "";
             newA.empId = "";
@@ -167,7 +234,6 @@ export default function ConferencePublication() {
 
     setForm(p => ({ ...p, otherAuthors: updated }));
 
-    // Fetch name if Aditya University and Employee ID is entered (length >= 3)
     if (field === "empId" && value.length >= 3) {
       const author = updated.find(a => a.authorPosition === pos);
       if (author && author.affiliationType === "Aditya University") {
@@ -177,6 +243,10 @@ export default function ConferencePublication() {
   };
 
   const handleSubmit = async () => {
+    if (!form.doi) {
+      toast.error("DOI is mandatory. Please enter the DOI.");
+      return;
+    }
     if (!form.title || !form.conferenceName || !form.level || !form.indexing || !form.publisher || !form.applyingSeedGrant || !form.applyIncentive) {
       toast.error("Please fill all required fields");
       return;
@@ -198,8 +268,7 @@ export default function ConferencePublication() {
       toast.error("Total number of authors must be at least 1");
       return;
     }
-    
-    // Validate co-authors dynamically
+
     if (total > 1) {
       for (const a of form.otherAuthors) {
         if (!a.affiliationType || (a.affiliationType === 'Others' && (!a.authorName || !a.affiliationName)) || (a.affiliationType === 'Aditya University' && (!a.empId || !a.authorName))) {
@@ -217,13 +286,14 @@ export default function ConferencePublication() {
     setLoading(true);
     try {
       const fd = new FormData();
-      
+
       const coAuthorsList = form.otherAuthors.map(a => ({
         name: a.authorName || "",
         affiliation: a.affiliationType === "Aditya University" ? "Aditya University" : (a.affiliationName || ""),
         employeeId: a.affiliationType === "Aditya University" ? a.empId : null
       })).filter(ca => ca.name && ca.affiliation);
 
+      fd.append("doi", form.doi || "");
       fd.append("title", form.title);
       fd.append("conferenceName", form.conferenceName);
       fd.append("level", form.level);
@@ -248,12 +318,14 @@ export default function ConferencePublication() {
       await API.post("/api/research/conference", fd, { headers: { "Content-Type": "multipart/form-data" } });
       toast.success("Conference paper submitted successfully!");
       setForm({
+        doi: "",
         title: "", conferenceName: "", level: "", indexing: "",
         presentationType: "", month: "", year: "",
         publisher: "", issnIsbn: "",
         applyIncentive: "", applyingSeedGrant: "",
         totalAuthors: 1, userAuthorPosition: 1, otherAuthors: []
       });
+      setDoiFetched(false);
       setFiles({ certificate: null, proceedings: null });
       setSelectedYear("");
       setViewMode("list");
@@ -268,23 +340,22 @@ export default function ConferencePublication() {
     <Box sx={{ p: 2 }}>
       <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
         <Typography variant="h6" sx={{ color: "var(--text-primary)", fontWeight: 800 }}>My Conference Publications</Typography>
-        <Button 
- variant="contained" 
- onClick={() => setViewMode("select-year")} 
- sx={{ 
- background: "var(--gradient-primary)", 
- 
- px: 3, 
- fontWeight: 700, 
- textTransform: "none", 
- "&:hover": { 
- opacity: 0.9,
- transform: "translateY(-1px)",
- boxShadow: "0 4px 12px rgba(0,0,0,0.1)"
- },
- transition: "all 0.2s ease"
- }}
- >
+        <Button
+          variant="contained"
+          onClick={() => setViewMode("select-year")}
+          sx={{
+            background: "var(--gradient-primary)",
+            px: 3,
+            fontWeight: 700,
+            textTransform: "none",
+            "&:hover": {
+              opacity: 0.9,
+              transform: "translateY(-1px)",
+              boxShadow: "0 4px 12px rgba(0,0,0,0.1)"
+            },
+            transition: "all 0.2s ease"
+          }}
+        >
           Apply New
         </Button>
       </Box>
@@ -346,7 +417,7 @@ export default function ConferencePublication() {
                   </TableCell>
                   <TableCell sx={{ color: "var(--text-secondary)", py: 2 }}>{pub.academicYear?.year || "N/A"}</TableCell>
                   <TableCell sx={{ py: 2 }}>
-                    <Typography variant="body2" sx={{ 
+                    <Typography variant="body2" sx={{
                       color: pub.status?.includes("Rejected") ? "#ef4444" : pub.status === "Approved" ? "#10b981" : "#e8a000",
                       fontWeight: 700,
                       background: pub.status?.includes("Rejected") ? "rgba(239,68,68,0.1)" : pub.status === "Approved" ? "rgba(16,185,129,0.1)" : "rgba(232,160,0,0.1)",
@@ -393,11 +464,11 @@ export default function ConferencePublication() {
     <Box sx={{ maxWidth: 500, mx: "auto", mt: 5 }}>
       <FormCard title="Select Academic Year">
         <Typography sx={{ mb: 2, color: "var(--text-secondary)", fontWeight: 500 }}>Please select the academic year for this conference submission:</Typography>
-        <Select 
-          fullWidth 
-          size="small" 
-          displayEmpty 
-          value={selectedYear} 
+        <Select
+          fullWidth
+          size="small"
+          displayEmpty
+          value={selectedYear}
           onChange={(e) => setSelectedYear(e.target.value)}
         >
           <MenuItem value="" disabled>Select Academic Year</MenuItem>
@@ -406,46 +477,44 @@ export default function ConferencePublication() {
           ))}
         </Select>
         <Box sx={{ display: "flex", gap: 2, mt: 4, justifyContent: "flex-end" }}>
-          <Button 
- variant="outlined" 
- onClick={() => setViewMode("list")} 
- sx={{ 
- 
- textTransform: "none", 
- fontWeight: 600,
- color: "var(--text-primary)",
- borderColor: "var(--border-color)",
- "&:hover": {
- borderColor: "var(--color-primary)",
- background: "rgba(0,0,0,0.02)"
- }
- }}
- >
+          <Button
+            variant="outlined"
+            onClick={() => setViewMode("list")}
+            sx={{
+              textTransform: "none",
+              fontWeight: 600,
+              color: "var(--text-primary)",
+              borderColor: "var(--border-color)",
+              "&:hover": {
+                borderColor: "var(--color-primary)",
+                background: "rgba(0,0,0,0.02)"
+              }
+            }}
+          >
             Cancel
           </Button>
-          <Button 
- variant="contained" 
- disabled={!selectedYear} 
- onClick={() => setViewMode("form")} 
- sx={{ 
- background: "var(--gradient-primary)", 
- 
- px: 4, 
- fontWeight: 700, 
- textTransform: "none", 
- "&:hover": { 
- opacity: 0.9,
- transform: "translateY(-1px)",
- boxShadow: "0 4px 12px rgba(0,0,0,0.1)"
- },
- "&.Mui-disabled": {
- background: "var(--bg-panel)",
- color: "var(--text-secondary)",
- opacity: 0.5
- },
- transition: "all 0.2s ease"
- }}
- >
+          <Button
+            variant="contained"
+            disabled={!selectedYear}
+            onClick={() => setViewMode("form")}
+            sx={{
+              background: "var(--gradient-primary)",
+              px: 4,
+              fontWeight: 700,
+              textTransform: "none",
+              "&:hover": {
+                opacity: 0.9,
+                transform: "translateY(-1px)",
+                boxShadow: "0 4px 12px rgba(0,0,0,0.1)"
+              },
+              "&.Mui-disabled": {
+                background: "var(--bg-panel)",
+                color: "var(--text-secondary)",
+                opacity: 0.5
+              },
+              transition: "all 0.2s ease"
+            }}
+          >
             Proceed
           </Button>
         </Box>
@@ -465,10 +534,91 @@ export default function ConferencePublication() {
       <FacultyInfoRow />
 
       <SubLabel text="Details of the Conference Research Paper:" />
+
+      {/* DOI Field */}
+      <Box sx={{ mb: 2.5, p: 2.5, borderRadius: "12px", border: "2px solid var(--color-primary)", background: "var(--bg-accent-1)", boxShadow: "0 2px 12px rgba(var(--color-primary-rgb,99,102,241),0.08)" }}>
+        <Typography sx={{ ...labelStyle, color: "var(--color-primary)", mb: 1 }}>
+          DOI (Digital Object Identifier) : *
+          <span style={{ fontWeight: 400, textTransform: "none", fontSize: 10, opacity: 0.7 }}> — Enter DOI to auto-fill details (only conference papers accepted)</span>
+        </Typography>
+        <Box sx={{ display: "flex", gap: 1.5, alignItems: "flex-start" }}>
+          <TextField
+            size="small"
+            fullWidth
+            value={form.doi}
+            onChange={(e) => { setForm(p => ({ ...p, doi: e.target.value })); setDoiFetched(false); }}
+            placeholder="e.g. 10.1109/ACCESS.2024.123456"
+            onKeyDown={(e) => { if (e.key === "Enter") fetchDOIData(); }}
+            InputProps={{
+              sx: { background: "var(--bg-panel)" },
+              endAdornment: doiFetched ? (
+                <Box component="span" sx={{ display: "flex", alignItems: "center", color: "#10b981", fontSize: 18, mr: 0.5 }}>✓</Box>
+              ) : null
+            }}
+          />
+          <Button
+            variant="contained"
+            onClick={fetchDOIData}
+            disabled={doiFetching || !form.doi.trim()}
+            sx={{
+              minWidth: 110,
+              height: "40px",
+              background: "var(--gradient-primary)",
+              textTransform: "none",
+              fontWeight: 700,
+              flexShrink: 0,
+              "&:hover": { opacity: 0.9 },
+              "&.Mui-disabled": { opacity: 0.5 }
+            }}
+          >
+            {doiFetching ? "Fetching..." : "Fetch Details"}
+          </Button>
+        </Box>
+        {doiFetched && (
+          <Typography sx={{ mt: 1, fontSize: 11, color: "#10b981", fontWeight: 700 }}>
+            ✓ Details fetched successfully! Review and correct if needed.
+          </Typography>
+        )}
+      </Box>
+
       <Grid2>
         <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
           <Typography sx={labelStyle}>Title of the Research Paper : *</Typography>
           <TextField size="small" fullWidth value={form.title} onChange={set("title")} placeholder="Enter research paper title" />
+        </Box>
+        <Box>
+          <Typography sx={labelStyle}>Publisher : *</Typography>
+          <TextField size="small" fullWidth value={form.publisher} onChange={set("publisher")} placeholder="e.g. Springer, IEEE" />
+        </Box>
+        <Box>
+          <Typography sx={labelStyle}>ISSN / ISBN Number :</Typography>
+          <TextField
+            size="small"
+            fullWidth
+            placeholder="e.g. 1234-5678"
+            value={form.issnIsbn}
+            onChange={(e) => {
+              const val = e.target.value;
+              if (/^[0-9X-]*$/i.test(val)) setForm(p => ({ ...p, issnIsbn: val }));
+            }}
+            inputProps={{ inputMode: 'numeric' }}
+          />
+        </Box>
+        <Box>
+          <Typography sx={labelStyle}>Year :</Typography>
+          <Select size="small" fullWidth displayEmpty value={form.year} onChange={(e) => {
+            setForm(p => ({ ...p, year: e.target.value, month: "" }));
+          }}>
+            <MenuItem value="">Select Year</MenuItem>
+            {YEARS.map((y) => <MenuItem key={y} value={y}>{y}</MenuItem>)}
+          </Select>
+        </Box>
+        <Box>
+          <Typography sx={labelStyle}>Month :</Typography>
+          <Select size="small" fullWidth displayEmpty value={form.month} onChange={set("month")} disabled={!form.year}>
+            <MenuItem value="">Select Month</MenuItem>
+            {getAvailableMonths().map((m) => <MenuItem key={m} value={m}>{m}</MenuItem>)}
+          </Select>
         </Box>
         <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
           <Typography sx={labelStyle}>Name of the Conference : *</Typography>
@@ -500,24 +650,6 @@ export default function ConferencePublication() {
             <MenuItem value="Keynote">Keynote</MenuItem>
           </Select>
         </Box>
-        <Box>
-          <Typography sx={labelStyle}>Publisher : *</Typography>
-          <TextField size="small" fullWidth value={form.publisher} onChange={set("publisher")} placeholder="e.g. Springer, IEEE" />
-        </Box>
-        <Box>
-          <Typography sx={labelStyle}>ISSN / ISBN Number :</Typography>
-          <TextField
-            size="small"
-            fullWidth
-            placeholder="e.g. 12345678"
-            value={form.issnIsbn}
-            onChange={(e) => {
-              const val = e.target.value;
-              if (/^[0-9-]*$/.test(val)) setForm(p => ({ ...p, issnIsbn: val }));
-            }}
-            inputProps={{ inputMode: 'numeric' }}
-          />
-        </Box>
       </Grid2>
 
       {/* Dynamic Author Details Block */}
@@ -544,7 +676,7 @@ export default function ConferencePublication() {
           <Box sx={{ mt: 3 }}>
             <Typography sx={{ ...labelStyle, mb: 1 }}>Name & Affiliation of Co-Author(s) :</Typography>
             {form.otherAuthors.map((ca) => (
-              <Box 
+              <Box
                 key={ca.authorPosition}
                 sx={{ display: "flex", flexDirection: "column", gap: 2, mb: 2, p: 2, borderRadius: "12px", border: "1px dashed var(--border-color)", background: "var(--bg-accent-1)" }}
               >
@@ -622,26 +754,6 @@ export default function ConferencePublication() {
         )}
       </Box>
 
-      <SubLabel text="Date of Publishing:" />
-      <Grid2>
-        <Box>
-          <Typography sx={labelStyle}>Year :</Typography>
-          <Select size="small" fullWidth displayEmpty value={form.year} onChange={(e) => {
-            setForm(p => ({ ...p, year: e.target.value, month: "" }));
-          }}>
-            <MenuItem value="">Select Year</MenuItem>
-            {YEARS.map((y) => <MenuItem key={y} value={y}>{y}</MenuItem>)}
-          </Select>
-        </Box>
-        <Box>
-          <Typography sx={labelStyle}>Month :</Typography>
-          <Select size="small" fullWidth displayEmpty value={form.month} onChange={set("month")} disabled={!form.year}>
-            <MenuItem value="">Select Month</MenuItem>
-            {getAvailableMonths().map((m) => <MenuItem key={m} value={m}>{m}</MenuItem>)}
-          </Select>
-        </Box>
-      </Grid2>
-
       <SubLabel text="Incentives & Grants:" />
       <Grid2>
         <Box>
@@ -670,25 +782,24 @@ export default function ConferencePublication() {
       </Grid2>
 
       <Box sx={{ display: "flex", gap: 2, justifyContent: "center", mt: 4 }}>
-        <Button 
- variant="outlined" 
- onClick={() => setViewMode("list")} 
- sx={{ 
- px: 4, 
- height: "44px", 
- 
- textTransform: "none", 
- fontWeight: 600,
- color: "var(--text-primary)",
- borderColor: "var(--border-color)",
- "&:hover": { 
- borderColor: "#ef4444", 
- color: "#ef4444",
- background: "rgba(239, 68, 68, 0.05)" 
- },
- transition: "all 0.3s ease"
- }}
- >
+        <Button
+          variant="outlined"
+          onClick={() => setViewMode("list")}
+          sx={{
+            px: 4,
+            height: "44px",
+            textTransform: "none",
+            fontWeight: 600,
+            color: "var(--text-primary)",
+            borderColor: "var(--border-color)",
+            "&:hover": {
+              borderColor: "#ef4444",
+              color: "#ef4444",
+              background: "rgba(239, 68, 68, 0.05)"
+            },
+            transition: "all 0.3s ease"
+          }}
+        >
           Cancel
         </Button>
         <SubmitBtn onClick={handleSubmit} loading={loading} />
@@ -766,8 +877,8 @@ export default function ConferencePublication() {
     };
 
     return (
-      <Dialog 
-        open={!!selectedPubDetails} 
+      <Dialog
+        open={!!selectedPubDetails}
         onClose={handleCloseDetails}
         maxWidth="md"
         fullWidth
@@ -791,27 +902,27 @@ export default function ConferencePublication() {
         <DialogContent sx={{ p: 3, mt: 1 }}>
           <Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)", mb: 1 }}>{data.title}</Typography>
           <Typography variant="body2" sx={{ color: "var(--text-secondary)", mb: 3, fontWeight: 600 }}>Conference: {data.conferenceName}</Typography>
-          
+
           <Grid container spacing={2}>
             <Grid item xs={12} sm={3}><LabelValueDetails label="Academic Year" value={data.academicYear?.year || "N/A"} /></Grid>
             <Grid item xs={12} sm={3}><LabelValueDetails label="Level" value={data.level} /></Grid>
             <Grid item xs={12} sm={3}><LabelValueDetails label="Role" value={data.visibilityRole || "Applicant"} /></Grid>
             <Grid item xs={12} sm={3}>
-              <LabelValueDetails 
-                label="Status" 
+              <LabelValueDetails
+                label="Status"
                 chip={
-                  <Chip 
-                    label={data.status} 
-                    size="small" 
-                    sx={{ 
-                      bgcolor: `${statusColor}15`, 
-                      color: statusColor, 
-                      fontWeight: 800, 
+                  <Chip
+                    label={data.status}
+                    size="small"
+                    sx={{
+                      bgcolor: `${statusColor}15`,
+                      color: statusColor,
+                      fontWeight: 800,
                       border: `1px solid ${statusColor}44`,
-                      borderRadius: "6px" 
-                    }} 
+                      borderRadius: "6px"
+                    }}
                   />
-                } 
+                }
               />
             </Grid>
 
@@ -826,9 +937,9 @@ export default function ConferencePublication() {
 
             {data.status === "Approved" && data.approvedAmount && (
               <Grid item xs={12} sm={6}>
-                <LabelValueDetails 
-                  label="Approved Incentive" 
-                  value={`₹${data.approvedAmount}`} 
+                <LabelValueDetails
+                  label="Approved Incentive"
+                  value={`₹${data.approvedAmount}`}
                   chip={<Chip label={`₹${data.approvedAmount}`} size="small" sx={{ bgcolor: "rgba(76, 175, 80, 0.1)", color: "#4caf50", fontWeight: 800 }} />}
                 />
               </Grid>
@@ -836,7 +947,7 @@ export default function ConferencePublication() {
 
             {/* Appraisal Claimant Selector */}
             <Grid item xs={12} sm={6}>
-              <LabelValueDetails 
+              <LabelValueDetails
                 label="Appraisal Claimant"
                 chip={
                   (() => {
@@ -863,39 +974,40 @@ export default function ConferencePublication() {
 
                     if (isApplicant) {
                       return (
-                        <FormControl size="small" fullWidth sx={{ mt: 0.5 }}>
-                          <Select
-                            value={data.appraisalClaimant?.institutionId || data.appraisalClaimant || ""}
-                            onChange={async (e) => {
-                              const selectedVal = e.target.value;
-                              try {
-                                const res = await API.post("/api/appraisal/resolve-claim", {
-                                  researchId: data._id,
-                                  researchType: "Conference",
-                                  claimantId: selectedVal
-                                });
-                                if (res.data?.success) {
-                                  toast.success("Claimant resolved successfully!");
-                                  setPublicationsList(prev => prev.map(p => p._id === data._id ? { ...p, appraisalClaimant: selectedVal } : p));
-                                  setSelectedPubDetails(prev => ({ ...prev, appraisalClaimant: selectedVal }));
-                                }
-                              } catch (err) {
-                                toast.error(err.response?.data?.message || "Failed to resolve claim.");
+                        <Select
+                          size="small"
+                          fullWidth
+                          sx={{ mt: 0.5 }}
+                          value={data.appraisalClaimant?.institutionId || data.appraisalClaimant || ""}
+                          onChange={async (e) => {
+                            const selectedVal = e.target.value;
+                            try {
+                              const res = await API.post("/api/appraisal/resolve-claim", {
+                                researchId: data._id,
+                                researchType: "Conference",
+                                claimantId: selectedVal
+                              });
+                              if (res.data?.success) {
+                                toast.success("Claimant resolved successfully!");
+                                setPublicationsList(prev => prev.map(p => p._id === data._id ? { ...p, appraisalClaimant: selectedVal } : p));
+                                setSelectedPubDetails(prev => ({ ...prev, appraisalClaimant: selectedVal }));
                               }
-                            }}
-                            displayEmpty
-                          >
-                            <MenuItem value="" disabled>--Select Claimant--</MenuItem>
-                            {uniqueClaimants.map(c => (
-                              <MenuItem key={c.institutionId || c._id} value={c.institutionId || c._id}>
-                                {c.name} {c.institutionId ? `(${c.institutionId})` : ""}
-                              </MenuItem>
-                            ))}
-                          </Select>
-                        </FormControl>
+                            } catch (err) {
+                              toast.error(err.response?.data?.message || "Failed to resolve claim.");
+                            }
+                          }}
+                          displayEmpty
+                        >
+                          <MenuItem value="" disabled>--Select Claimant--</MenuItem>
+                          {uniqueClaimants.map(c => (
+                            <MenuItem key={c.institutionId || c._id} value={c.institutionId || c._id}>
+                              {c.name} {c.institutionId ? `(${c.institutionId})` : ""}
+                            </MenuItem>
+                          ))}
+                        </Select>
                       );
                     } else {
-                      const currentClaimantObj = uniqueClaimants.find(c => 
+                      const currentClaimantObj = uniqueClaimants.find(c =>
                         (c.institutionId && c.institutionId === (data.appraisalClaimant?.institutionId || data.appraisalClaimant || "").toString()) ||
                         (c._id && c._id.toString() === (data.appraisalClaimant?._id || data.appraisalClaimant || "").toString())
                       );
@@ -913,7 +1025,6 @@ export default function ConferencePublication() {
 
           <Divider sx={{ my: 3 }} />
 
-          {/* Co-Authors detail list */}
           {data.coAuthors && data.coAuthors.length > 0 && (
             <Card sx={{ p: 0, overflow: "hidden", mb: 3, border: "1px solid var(--border-color)", background: "rgba(255,255,255,0.01)" }}>
               <Box sx={{ p: 2, display: "flex", alignItems: "center", gap: 1.5, borderBottom: "1px solid var(--border-color)" }}>
@@ -941,7 +1052,6 @@ export default function ConferencePublication() {
             </Card>
           )}
 
-          {/* Attached Files previews */}
           <Box sx={{ mt: 3 }}>
             <Box sx={{ display: "flex", gap: 1.5, alignItems: "center", mb: 2 }}>
               <AttachFile sx={{ color: "var(--color-primary)" }} />
@@ -953,7 +1063,6 @@ export default function ConferencePublication() {
             </Stack>
           </Box>
 
-          {/* Remarks/Comments if available */}
           {(data.hodComment || data.rndComment) && (
             <Box sx={{ mt: 4, display: "flex", flexDirection: "column", gap: 2 }}>
               {data.hodComment && (
