@@ -107,6 +107,11 @@ export const ROLE_ROUTES = {
       icon: <Public />
     },
     {
+      text: "Proctoring Upload",
+      path: "/uniprime/proctoring-upload",
+      icon: <Assignment />
+    },
+    {
       text: "Appraisal Settings",
       path: "/uniprime/appraisal-settings",
       icon: <ManageAccounts />

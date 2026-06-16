@@ -871,7 +871,7 @@ export default function Teaching() {
   const selectedYearDocForProctoring = academicYears.find((y) => y.year === selectedYearLabel);
   const filteredManualProctoringEntries = selectedYearDocForProctoring
     ? manualEntries.filter(
-      (entry) => entry.academicYear?._id === selectedYearDocForProctoring._id || entry.academicYear === selectedYearDocForProctoring._id
+      (entry) => String(entry.academicYear?._id || entry.academicYear) === String(selectedYearDocForProctoring._id)
     )
     : [];
 
@@ -883,8 +883,6 @@ export default function Teaching() {
     "ELIGIBLE (A)",
     "PASSED (B)",
     "PASS %",
-    "STATUS",
-    "REMARKS",
   ];
 
   const manualProctorRows = filteredManualProctoringEntries.map((entry, i) => {
@@ -924,36 +922,6 @@ export default function Teaching() {
       {
         value: parseFloat(passPct),
         display: <Box sx={{ color: "var(--color-primary)", fontWeight: 800 }}>{passPct}%</Box>,
-      },
-      {
-        value: entry.status,
-        display: (
-          <Chip
-            label={entry.status}
-            size="small"
-            sx={{
-              fontWeight: 700,
-              fontSize: 10,
-              borderRadius: "6px",
-              bgcolor:
-                entry.status === "Approved" ? "rgba(16, 185, 129, 0.15)" :
-                  entry.status === "Rejected" ? "rgba(239, 68, 68, 0.15)" :
-                    "rgba(245, 158, 11, 0.15)",
-              color:
-                entry.status === "Approved" ? "#10B981" :
-                  entry.status === "Rejected" ? "#EF4444" :
-                    "#D97706",
-            }}
-          />
-        ),
-      },
-      {
-        value: entry.remarks || "—",
-        display: (
-          <Box sx={{ color: "var(--text-secondary)", fontSize: 12, fontStyle: "italic" }}>
-            {entry.remarks || "—"}
-          </Box>
-        ),
       },
     ];
   });
@@ -1111,28 +1079,6 @@ export default function Teaching() {
       <Box sx={sectionCard}>
         <SectionHeader
           title="SECTION : Proctoring Students' Average Pass Percentage"
-          action={
-            <Button
- variant="contained"
- startIcon={<AddIcon />}
- onClick={handleOpenAddModal}
- sx={{
- 
- textTransform: "none",
- fontWeight: 700,
- px: 3,
- background: "var(--gradient-primary)",
- color: "#fff",
- boxShadow: "0 4px 15px rgba(0, 78, 146, 0.2)",
- "&:hover": {
- background: "var(--gradient-primary)",
- opacity: 0.95
- }
- }}
- >
-              Add Record
-            </Button>
-          }
         />
 
         {manualLoading ? (
@@ -1152,247 +1098,14 @@ export default function Teaching() {
               mb: 3
             }}
           >
-            No proctoring records found for this academic cycle. Click "Add Record" to enter proctoring details.
+            No proctoring records found for this academic cycle.
           </Box>
         ) : (
           <DataTable columns={manualProctorColumns} rows={manualProctorRows} defaultRowsPerPage={5} />
         )}
       </Box>
 
-      {/* Proctoring Form Add/Edit Modal */}
-      <Dialog
-        open={isProctorModalOpen}
-        onClose={() => setIsProctorModalOpen(false)}
-        maxWidth="sm"
-        fullWidth
-        slotProps={{
-          paper: {
-            sx: {
-              borderRadius: "20px",
-              bgcolor: "var(--bg-panel)",
-              border: "1px solid var(--border-color)",
-              backgroundImage: "none",
-              p: 1
-            }
-          }
-        }}
-      >
-        <DialogTitle sx={{ fontWeight: 800, fontSize: 18, color: "var(--text-primary)", pb: 1 }}>
-          {editingEntry ? "Edit Proctoring Record" : "Add Proctoring Record"}
-        </DialogTitle>
-        <form onSubmit={handleProctorModalSubmit}>
-          <DialogContent>
-            <Grid container spacing={2.5} sx={{ mt: 0.5 }}>
-              {/* Program selection */}
-              <Grid item xs={12} sm={6}>
-                <FormControl fullWidth size="small">
-                  <InputLabel shrink sx={{ color: "var(--text-secondary)" }}>Program</InputLabel>
-                  <Select
-                    value={selectedProgramId}
-                    label="Program"
-                    onChange={(e) => {
-                      setSelectedProgramId(e.target.value);
-                      blurActiveElement();
-                    }}
-                    MenuProps={selectMenuProps}
-                    displayEmpty
-                    fullWidth
-                    sx={{ borderRadius: "10px", color: "var(--text-primary)", bgcolor: "rgba(255,255,255,0.01)" }}
-                  >
-                    <MenuItem value="" disabled sx={{ fontStyle: "italic", color: "var(--text-secondary)" }}>
-                      Select Program
-                    </MenuItem>
-                    {programs.map((p) => (
-                      <MenuItem key={p._id} value={p._id}>
-                        {p.name} ({p.code})
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-              </Grid>
 
-              {/* Branch selection */}
-              <Grid item xs={12} sm={6}>
-                <FormControl fullWidth size="small" disabled={!selectedProgramId}>
-                  <InputLabel shrink sx={{ color: "var(--text-secondary)" }}>Branch Code</InputLabel>
-                  <Select
-                    value={selectedBranchId}
-                    label="Branch Code"
-                    onChange={(e) => {
-                      setSelectedBranchId(e.target.value);
-                      blurActiveElement();
-                    }}
-                    MenuProps={selectMenuProps}
-                    displayEmpty
-                    fullWidth
-                    sx={{ borderRadius: "10px", color: "var(--text-primary)", bgcolor: "rgba(255,255,255,0.01)" }}
-                  >
-                    <MenuItem value="" disabled sx={{ fontStyle: "italic", color: "var(--text-secondary)" }}>
-                      Select Branch
-                    </MenuItem>
-                    {branches.map((b) => (
-                      <MenuItem key={b._id} value={b._id}>
-                        {b.name} ({b.code})
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-              </Grid>
-
-              {/* Sem/Year numeric input based on Program Pattern */}
-              <Grid item xs={12} sm={6}>
-                {(() => {
-                  const program = programs.find((p) => p._id === selectedProgramId);
-                  const isYearPattern = program?.programPattern === "YEAR";
-                  if (isYearPattern) {
-                    return (
-                      <TextField
-                        label="Year Number"
-                        type="number"
-                        fullWidth
-                        size="small"
-                        required
-                        value={yearNumber}
-                        onChange={(e) => setYearNumber(e.target.value)}
-                        slotProps={{ htmlInput: { min: 1, step: 1 } }}
-                        sx={{ "& .MuiOutlinedInput-root": { borderRadius: "10px" } }}
-                      />
-                    );
-                  } else {
-                    return (
-                      <TextField
-                        label="Semester Number"
-                        type="number"
-                        fullWidth
-                        size="small"
-                        required
-                        value={semesterNumber}
-                        onChange={(e) => setSemesterNumber(e.target.value)}
-                        slotProps={{ htmlInput: { min: 1, step: 1 } }}
-                        sx={{ "& .MuiOutlinedInput-root": { borderRadius: "10px" } }}
-                      />
-                    );
-                  }
-                })()}
-              </Grid>
-
-              {/* Section - numeric only */}
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  label="Section (Numeric Only)"
-                  type="number"
-                  fullWidth
-                  size="small"
-                  required
-                  value={section}
-                  onChange={(e) => setSection(e.target.value)}
-                  slotProps={{ htmlInput: { min: 1, step: 1 } }}
-                  sx={{ "& .MuiOutlinedInput-root": { borderRadius: "10px" } }}
-                />
-              </Grid>
-
-              {/* Student counts inputs */}
-              <Grid item xs={12} sm={4}>
-                <TextField
-                  label="Total Allotted"
-                  type="number"
-                  fullWidth
-                  size="small"
-                  required
-                  value={totalStudents}
-                  onChange={(e) => setTotalStudents(e.target.value)}
-                  slotProps={{ htmlInput: { min: 0, step: 1 } }}
-                  sx={{ "& .MuiOutlinedInput-root": { borderRadius: "10px" } }}
-                />
-              </Grid>
-
-              <Grid item xs={12} sm={4}>
-                <TextField
-                  label="Eligible for End Exams (A)"
-                  type="number"
-                  fullWidth
-                  size="small"
-                  required
-                  value={eligibleStudents}
-                  onChange={(e) => setEligibleStudents(e.target.value)}
-                  slotProps={{ htmlInput: { min: 0, step: 1 } }}
-                  sx={{ "& .MuiOutlinedInput-root": { borderRadius: "10px" } }}
-                />
-              </Grid>
-
-              <Grid item xs={12} sm={4}>
-                <TextField
-                  label="Passed Students (B)"
-                  type="number"
-                  fullWidth
-                  size="small"
-                  required
-                  value={passedStudents}
-                  onChange={(e) => setPassedStudents(e.target.value)}
-                  slotProps={{ htmlInput: { min: 0, step: 1 } }}
-                  sx={{ "& .MuiOutlinedInput-root": { borderRadius: "10px" } }}
-                />
-              </Grid>
-
-              {/* Calculated Pass Percentage display */}
-              <Grid item xs={12}>
-                <Box
-                  sx={{
-                    p: 2,
-                    borderRadius: "12px",
-                    bgcolor: "rgba(2, 132, 199, 0.05)",
-                    border: "1px solid rgba(2, 132, 199, 0.15)",
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center"
-                  }}
-                >
-                  <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-secondary)" }}>
-                    Calculated Pass Percentage:
-                  </Typography>
-                  <Typography variant="subtitle1" sx={{ fontWeight: 800, color: "var(--color-primary)" }}>
-                    {(() => {
-                      const elg = parseInt(eligibleStudents);
-                      const pass = parseInt(passedStudents);
-                      if (isNaN(elg) || isNaN(pass) || elg <= 0 || pass < 0 || pass > elg) return "0.00%";
-                      return `${((pass / elg) * 100).toFixed(2)}%`;
-                    })()}
-                  </Typography>
-                </Box>
-              </Grid>
-            </Grid>
-          </DialogContent>
-          <DialogActions sx={{ px: 3, pb: 2.5, gap: 1 }}>
-            <Button
- onClick={() => setIsProctorModalOpen(false)}
- disabled={submittingManual}
- sx={{ textTransform: "none", fontWeight: 700, color: "var(--text-secondary)" }}
- >
-              Cancel
-            </Button>
-            <Button
- type="submit"
- variant="contained"
- disabled={submittingManual}
- sx={{
- textTransform: "none",
- fontWeight: 700,
- 
- px: 3,
- background: "var(--gradient-primary)",
- color: "#fff",
- boxShadow: "0 4px 15px rgba(0, 78, 146, 0.2)",
- "&:hover": {
- background: "var(--gradient-primary)",
- opacity: 0.95
- }
- }}
- >
-              {submittingManual ? <CircularProgress size={16} sx={{ color: "#fff" }} /> : editingEntry ? "Save Changes" : "Add Record"}
-            </Button>
-          </DialogActions>
-        </form>
-      </Dialog>
 
 
       {/* ── SECTION : Feedback ────────────────────────────── */}

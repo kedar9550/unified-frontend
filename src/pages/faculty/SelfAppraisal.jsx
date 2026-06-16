@@ -2417,30 +2417,7 @@ const SelfAppraisal = () => {
                       Proctoring Records for this cycle:
                     </Typography>
                   </Box>
-                  {(appraisal.status === "Draft" || appraisal.status === "Rejected by HOD") && (
-                    <Button
- variant="contained"
- size="small"
- startIcon={<AddCircle />}
- onClick={handleOpenAddModal}
- sx={{
- 
- textTransform: "none",
- fontWeight: 700,
- background: "var(--gradient-primary)",
- color: "#fff"
- }}
- >
-                      Add Record
-                    </Button>
-                  )}
                 </Box>
-
-                {proctoringDetail && proctoringDetail.some(e => e.status === "Rejected") && (
-                  <Alert severity="error" sx={{ mb: 2, borderRadius: "12px" }}>
-                    <strong>Rejected Records:</strong> You have proctoring records rejected by HOD. Please edit or delete them before submitting your appraisal.
-                  </Alert>
-                )}
 
                 <TableContainer component={Paper} elevation={0} sx={{ mb: 3.5, borderRadius: "16px", background: "var(--bg-paper)", border: "1px solid var(--border-color)", overflowX: "auto", boxShadow: "none", maxWidth: { xs: "100%", md: "100%", lg: 1000, xl: 1100 }, mx: "auto" }}>
                   <Table size="small" sx={{ minWidth: 650, mx: "auto" }}>
@@ -2453,8 +2430,6 @@ const SelfAppraisal = () => {
                         <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }} align="right">Passed (B)</TableCell>
                         <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }} align="right">Pass % (B/A)</TableCell>
                         <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }} align="right">Points</TableCell>
-                        <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }} align="center">Status</TableCell>
-                        <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }} align="center">Actions</TableCell>
                       </TableRow>
                     </TableHead>
                     <TableBody>
@@ -2465,15 +2440,9 @@ const SelfAppraisal = () => {
                             const semYrBranchSec = isYearProg
                               ? `YEAR-${e.yearNumber} ${e.branchCode || "—"} - SEC ${e.section}`
                               : `SEM-${e.semesterNumber} ${e.branchCode || "—"} - SEC ${e.section}`;
-                            const originalEntry = proctoringDetail.find(
-                              (pd) => pd.section === e.section &&
-                                (pd.semesterNumber === e.semesterNumber || pd.yearNumber === e.yearNumber) &&
-                                (pd.programId?._id === e.programId || pd.programId === e.programId)
-                            );
                             return (
                               <TableRow key={i} sx={{
-                                "&:hover": { bgcolor: "var(--bg-hover)" },
-                                bgcolor: originalEntry?.status === "Rejected" ? "rgba(239, 68, 68, 0.04)" : "inherit"
+                                "&:hover": { bgcolor: "var(--bg-hover)" }
                               }}>
                                 <TableCell sx={{ fontWeight: 600, color: "var(--text-primary)" }}>{e.programCode || "—"}</TableCell>
                                 <TableCell sx={{ color: "var(--text-primary)" }}>{semYrBranchSec}</TableCell>
@@ -2482,41 +2451,6 @@ const SelfAppraisal = () => {
                                 <TableCell align="right" sx={{ color: "#10B981", fontWeight: 600 }}>{e.passed}</TableCell>
                                 <TableCell align="right" sx={{ color: "var(--text-primary)" }}>{e.percentage.toFixed(2)}%</TableCell>
                                 <TableCell align="right" sx={{ fontWeight: 800, color: "var(--color-primary)" }}>{e.pointsClaimed}</TableCell>
-                                <TableCell align="center">
-                                  {originalEntry ? (
-                                    <Chip
-                                      label={originalEntry.status}
-                                      size="small"
-                                      sx={{
-                                        fontWeight: 700,
-                                        fontSize: 9,
-                                        borderRadius: "6px",
-                                        bgcolor:
-                                          originalEntry.status === "Approved" ? "rgba(16, 185, 129, 0.12)" :
-                                            originalEntry.status === "Rejected" ? "rgba(239, 68, 68, 0.12)" :
-                                              "rgba(245, 158, 11, 0.12)",
-                                        color:
-                                          originalEntry.status === "Approved" ? "#10B981" :
-                                            originalEntry.status === "Rejected" ? "#EF4444" :
-                                              "#D97706"
-                                      }}
-                                    />
-                                  ) : "—"}
-                                </TableCell>
-                                <TableCell align="center">
-                                  {originalEntry && originalEntry.status !== "Approved" && (appraisal.status === "Draft" || appraisal.status === "Rejected by HOD") ? (
-                                    <Box sx={{ display: "flex", justifyContent: "center" }}>
-                                      <IconButton size="small" onClick={() => handleOpenEditModal(originalEntry)} sx={{ color: "var(--color-primary)" }}>
-                                        <Edit sx={{ fontSize: 16 }} />
-                                      </IconButton>
-                                      <IconButton size="small" onClick={() => handleDeleteEntry(originalEntry._id)} sx={{ color: "#EF4444" }}>
-                                        <Delete sx={{ fontSize: 16 }} />
-                                      </IconButton>
-                                    </Box>
-                                  ) : (
-                                    <Typography sx={{ fontSize: 11, color: "var(--text-secondary)", fontStyle: "italic" }}>Locked</Typography>
-                                  )}
-                                </TableCell>
                               </TableRow>
                             );
                           })}
@@ -2536,7 +2470,7 @@ const SelfAppraisal = () => {
                                 <TableCell align="right" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>{totalAppeared}</TableCell>
                                 <TableCell align="right" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>{totalPassed}</TableCell>
                                 <TableCell align="right" sx={{ fontWeight: 900, color: "var(--color-primary)" }}>{overallPassPct}%</TableCell>
-                                <TableCell align="right" sx={{ fontWeight: 900, color: "var(--color-primary)", fontSize: "0.95rem" }} colSpan={3}>
+                                <TableCell align="right" sx={{ fontWeight: 900, color: "var(--color-primary)", fontSize: "0.95rem" }}>
                                   {appraisal.teaching.proctoring.averagePoints} Points
                                 </TableCell>
                               </TableRow>
@@ -2545,8 +2479,8 @@ const SelfAppraisal = () => {
                         </>
                       ) : (
                         <TableRow>
-                          <TableCell colSpan={9} align="center" sx={{ py: 3, color: "var(--text-secondary)", fontStyle: "italic" }}>
-                            No proctoring records found. Click "Add Record" to submit details.
+                          <TableCell colSpan={7} align="center" sx={{ py: 3, color: "var(--text-secondary)", fontStyle: "italic" }}>
+                            No proctoring records found.
                           </TableCell>
                         </TableRow>
                       )}
