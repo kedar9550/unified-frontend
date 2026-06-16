@@ -41,6 +41,7 @@ import { useAuth } from "../../context/AuthContext";
 import { ROLE_ROUTES } from "../../config/rolesNav";
 import { useNavigate, useLocation } from "react-router-dom";
 import universityLogoGold from "../../assets/Aditya University Gold Logo.png";
+import universityShortLogoGold from "../../assets/Logo_Dark_theme.svg"
 import {
   AutoStories,
   AccountTree,
@@ -308,7 +309,11 @@ const Sidebar = ({ mobileOpen, onDrawerToggle, isCollapsed, onToggleSidebar }) =
             sx={{ height: 65, width: "auto", objectFit: "contain" }}
           />
         ) : (
-          <School sx={{ fontSize: "2.5rem", color: "var(--color-primary)" }} />
+          <Box
+            component="img"
+            src={universityShortLogoGold}
+            sx={{ height: 60, width: "auto", objectFit: "contain" }}
+          />
         )}
       </Box>
 
