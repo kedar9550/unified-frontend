@@ -124,11 +124,6 @@ const AppraisalResearchScoring = () => {
   const [hIndex2024, setHIndex2024] = useState("");
   const [hIndex2025, setHIndex2025] = useState("");
   const [hIndexPoints, setHIndexPoints] = useState(0);
-  const [scopusCitationStatus, setScopusCitationStatus] = useState("Pending");
-  const [scopusHIndexStatus, setScopusHIndexStatus] = useState("Pending");
-  const [scopusCitationRemarks, setScopusCitationRemarks] = useState("");
-  const [scopusHIndexRemarks, setScopusHIndexRemarks] = useState("");
-  const [scopusFetching, setScopusFetching] = useState(false);
   const [comments, setComments] = useState("");
   const [activeConfig, setActiveConfig] = useState(null);
 
@@ -176,10 +171,6 @@ const AppraisalResearchScoring = () => {
     setCitations(appr.research.scopusCitations !== undefined && appr.research.scopusCitations !== null ? String(appr.research.scopusCitations) : "");
     setHIndex2024(appr.research.hIndex2024 !== undefined && appr.research.hIndex2024 !== null ? String(appr.research.hIndex2024) : "");
     setHIndex2025(appr.research.hIndex2025 !== undefined && appr.research.hIndex2025 !== null ? String(appr.research.hIndex2025) : "");
-    setScopusCitationStatus(appr.research.scopusCitationStatus || "Pending");
-    setScopusHIndexStatus(appr.research.scopusHIndexStatus || "Pending");
-    setScopusCitationRemarks(appr.research.scopusCitationRemarks || "");
-    setScopusHIndexRemarks(appr.research.scopusHIndexRemarks || "");
 
     setCitationPoints(appr.research.scopusCitationScore || 0);
     setHIndexPoints(appr.research.scopusHIndexScore || 0);
@@ -210,28 +201,6 @@ const AppraisalResearchScoring = () => {
     fetchPending();
   };
 
-  const handleFetchScopus = async () => {
-    if (!selectedAppraisal) return;
-    setScopusFetching(true);
-    try {
-      const yearId = selectedAppraisal.academicYearId?._id || selectedAppraisal.academicYearId;
-      const facultyId = selectedAppraisal.facultyId?._id || selectedAppraisal.facultyId;
-      const res = await axiosInstance.get(`/api/appraisal/scopus-data/${yearId}?facultyId=${facultyId}`);
-      if (res.data && res.data.success) {
-        const data = res.data.data;
-        setCitations(data.citations2025 !== undefined && data.citations2025 !== null ? String(data.citations2025) : "0");
-        setHIndex2024(data.hIndex2024 !== undefined && data.hIndex2024 !== null ? String(data.hIndex2024) : "0");
-        setHIndex2025(data.hIndex2025 !== undefined && data.hIndex2025 !== null ? String(data.hIndex2025) : "0");
-        setCitationPoints(data.scores?.citationScore || 0);
-        setHIndexPoints(data.scores?.hIndexPoints || 0);
-        toast.success("Scopus data fetched successfully!");
-      }
-    } catch (err) {
-      toast.error(err.response?.data?.message || "Failed to fetch Scopus data.");
-    } finally {
-      setScopusFetching(false);
-    }
-  };
 
   // Dynamic Citation calculation
   useEffect(() => {
@@ -286,10 +255,10 @@ const AppraisalResearchScoring = () => {
         hIndex2025: hIndex2025 === "" ? null : Number(hIndex2025),
         scopusCitationScore: citationPoints,
         scopusHIndexScore: hIndexPoints,
-        scopusCitationStatus,
-        scopusHIndexStatus,
-        scopusCitationRemarks,
-        scopusHIndexRemarks,
+        scopusCitationStatus: "Approved",
+        scopusHIndexStatus: "Approved",
+        scopusCitationRemarks: "",
+        scopusHIndexRemarks: "",
         comments,
         isDraft
       });
@@ -309,10 +278,10 @@ const AppraisalResearchScoring = () => {
             updated.research.hIndex2025 = hIndex2025 === "" ? null : Number(hIndex2025);
             updated.research.scopusCitationScore = citationPoints;
             updated.research.scopusHIndexScore = hIndexPoints;
-            updated.research.scopusCitationStatus = scopusCitationStatus;
-            updated.research.scopusHIndexStatus = scopusHIndexStatus;
-            updated.research.scopusCitationRemarks = scopusCitationRemarks;
-            updated.research.scopusHIndexRemarks = scopusHIndexRemarks;
+            updated.research.scopusCitationStatus = "Approved";
+            updated.research.scopusHIndexStatus = "Approved";
+            updated.research.scopusCitationRemarks = "";
+            updated.research.scopusHIndexRemarks = "";
             if (!updated.rndEvaluation) updated.rndEvaluation = {};
             updated.rndEvaluation.comments = comments;
             return updated;
@@ -791,16 +760,6 @@ const AppraisalResearchScoring = () => {
                       Evaluation Inputs
                     </Typography>
                   </Box>
-                  <Button
-                    variant="outlined"
-                    size="small"
-                    startIcon={scopusFetching ? <CircularProgress size={14} color="inherit" /> : <Public />}
-                    onClick={handleFetchScopus}
-                    disabled={scopusFetching || selectedAppraisal?.status === "Completed"}
-                    sx={{ textTransform: "none", fontWeight: 700, borderRadius: "10px" }}
-                  >
-                    {scopusFetching ? "Fetching…" : "Fetch from Scopus"}
-                  </Button>
                 </Box>
 
                 {/* Citations */}
@@ -810,14 +769,16 @@ const AppraisalResearchScoring = () => {
                       1. Scopus Citations
                     </Typography>
                     <Typography variant="caption" sx={{ color: "var(--text-secondary)", display: "block", mb: 2, fontWeight: 500 }}>
-                      Total citations from Scopus (Provided from API)
+                      Enter total Scopus citations manually
                     </Typography>
 
                     <TextField
                       type="number"
                       value={citations}
-                      disabled={true}
+                      onChange={(e) => setCitations(e.target.value)}
+                      disabled={selectedAppraisal?.status === "Completed"}
                       fullWidth
+                      placeholder="e.g. 120"
                       InputProps={{
                         endAdornment: (
                           <InputAdornment position="end" sx={{ pl: 1.5, borderLeft: "1px solid var(--border-color)", height: "30px" }}>
@@ -847,60 +808,11 @@ const AppraisalResearchScoring = () => {
                       Rate: {(activeConfig?.research?.citationRate ?? 0.2).toFixed(2)} points per citation
                     </Box>
 
-                    {/* 2.7 Approval Status */}
-                    <Box sx={{ mt: 2, mb: 2 }}>
-                      <FormLabel sx={{ fontWeight: 850, fontSize: "0.82rem", color: "var(--text-secondary)", mb: 1, display: "block" }}>
-                        2.7 Citation Approval Status
-                      </FormLabel>
-                      <Stack direction="row" spacing={1.5}>
-                        {[
-                          { value: "Approved", label: "Approve", color: "success" },
-                          { value: "Rejected", label: "Reject", color: "error" },
-                          { value: "Pending", label: "Pending", color: "warning" }
-                        ].map((opt) => {
-                          const isSel = scopusCitationStatus === opt.value;
-                          return (
-                            <Button
-                              key={opt.value}
-                              size="small"
-                              variant={isSel ? "contained" : "outlined"}
-                              color={opt.color}
-                              disabled={selectedAppraisal.status === "Completed"}
-                              onClick={() => setScopusCitationStatus(opt.value)}
-                              sx={{
-                                textTransform: "none",
-                                fontWeight: 700,
-                                borderRadius: "8px",
-                                px: 2,
-                                ...(isSel && { color: "#fff" })
-                              }}
-                            >
-                              {opt.label}
-                            </Button>
-                          );
-                        })}
-                      </Stack>
-                    </Box>
-
-                    {/* 2.7 Remarks */}
-                    <Box sx={{ mt: 2, mb: 2 }}>
-                      <TextField
-                        size="small"
-                        placeholder="Citation Verification Remarks..."
-                        fullWidth
-                        value={scopusCitationRemarks}
-                        onChange={(e) => setScopusCitationRemarks(e.target.value)}
-                        disabled={selectedAppraisal.status === "Completed"}
-                        label="Citation Remarks"
-                        InputLabelProps={{ shrink: true }}
-                        sx={{ background: "var(--bg-paper)", borderRadius: "8px" }}
-                      />
-                    </Box>
 
                     <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", py: 1.2, px: 0.5 }}>
                       <Typography sx={{ fontWeight: 700, color: "#7c3aed", fontSize: "0.95rem" }}>Citation Points</Typography>
                       <Typography sx={{ fontWeight: 850, color: "#7c3aed", fontSize: "1.15rem" }}>
-                        {scopusCitationStatus === "Approved" ? citationPoints.toFixed(2) : "0.00"} pts
+                        {citationPoints.toFixed(2)} pts
                       </Typography>
                     </Box>
                   </Box>
@@ -913,7 +825,7 @@ const AppraisalResearchScoring = () => {
                       2. H-Index (Scopus)
                     </Typography>
                     <Typography variant="caption" sx={{ color: "var(--text-secondary)", display: "block", mb: 2, fontWeight: 500 }}>
-                      H-Index values from Scopus (Provided from API)
+                      Enter H-Index values manually for both years
                     </Typography>
 
                     <Grid container spacing={2} alignItems="center" sx={{ mt: 1 }}>
@@ -922,8 +834,10 @@ const AppraisalResearchScoring = () => {
                         <TextField
                           type="number"
                           value={hIndex2024}
-                          disabled={true}
+                          onChange={(e) => setHIndex2024(e.target.value)}
+                          disabled={selectedAppraisal?.status === "Completed"}
                           fullWidth
+                          placeholder="e.g. 8"
                           InputProps={{ sx: { borderRadius: "10px", fontWeight: 750, background: "var(--bg-paper)" } }}
                         />
                       </Grid>
@@ -935,8 +849,10 @@ const AppraisalResearchScoring = () => {
                         <TextField
                           type="number"
                           value={hIndex2025}
-                          disabled={true}
+                          onChange={(e) => setHIndex2025(e.target.value)}
+                          disabled={selectedAppraisal?.status === "Completed"}
                           fullWidth
+                          placeholder="e.g. 10"
                           InputProps={{ sx: { borderRadius: "10px", fontWeight: 750, background: "var(--bg-paper)" } }}
                         />
                       </Grid>
@@ -988,60 +904,11 @@ const AppraisalResearchScoring = () => {
                       );
                     })()}
 
-                    {/* 2.8 Approval Status */}
-                    <Box sx={{ mt: 2, mb: 2 }}>
-                      <FormLabel sx={{ fontWeight: 850, fontSize: "0.82rem", color: "var(--text-secondary)", mb: 1, display: "block" }}>
-                        2.8 H-Index Approval Status
-                      </FormLabel>
-                      <Stack direction="row" spacing={1.5}>
-                        {[
-                          { value: "Approved", label: "Approve", color: "success" },
-                          { value: "Rejected", label: "Reject", color: "error" },
-                          { value: "Pending", label: "Pending", color: "warning" }
-                        ].map((opt) => {
-                          const isSel = scopusHIndexStatus === opt.value;
-                          return (
-                            <Button
-                              key={opt.value}
-                              size="small"
-                              variant={isSel ? "contained" : "outlined"}
-                              color={opt.color}
-                              disabled={selectedAppraisal.status === "Completed"}
-                              onClick={() => setScopusHIndexStatus(opt.value)}
-                              sx={{
-                                textTransform: "none",
-                                fontWeight: 700,
-                                borderRadius: "8px",
-                                px: 2,
-                                ...(isSel && { color: "#fff" })
-                              }}
-                            >
-                              {opt.label}
-                            </Button>
-                          );
-                        })}
-                      </Stack>
-                    </Box>
-
-                    {/* 2.8 Remarks */}
-                    <Box sx={{ mt: 2, mb: 2 }}>
-                      <TextField
-                        size="small"
-                        placeholder="H-Index Verification Remarks..."
-                        fullWidth
-                        value={scopusHIndexRemarks}
-                        onChange={(e) => setScopusHIndexRemarks(e.target.value)}
-                        disabled={selectedAppraisal.status === "Completed"}
-                        label="H-Index Remarks"
-                        InputLabelProps={{ shrink: true }}
-                        sx={{ background: "var(--bg-paper)", borderRadius: "8px" }}
-                      />
-                    </Box>
 
                     <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", py: 1.2, px: 0.5 }}>
                       <Typography sx={{ fontWeight: 700, color: "#7c3aed", fontSize: "0.95rem" }}>H-Index Points</Typography>
                       <Typography sx={{ fontWeight: 850, color: "#7c3aed", fontSize: "1.15rem" }}>
-                        {scopusHIndexStatus === "Approved" ? hIndexPoints.toFixed(2) : "0.00"} pts
+                        {hIndexPoints.toFixed(2)} pts
                       </Typography>
                     </Box>
                   </Box>
@@ -1147,7 +1014,7 @@ const AppraisalResearchScoring = () => {
                         Total Research Score
                       </Typography>
                       <Typography variant="h3" sx={{ fontWeight: 900, my: 1, letterSpacing: "-1px" }}>
-                        {((scopusCitationStatus === "Approved" ? citationPoints : 0) + (scopusHIndexStatus === "Approved" ? hIndexPoints : 0)).toFixed(2)}
+                        {(citationPoints + hIndexPoints).toFixed(2)}
                       </Typography>
                       <Typography variant="caption" sx={{ fontWeight: 700, opacity: 0.9, fontSize: "0.7rem" }}>
                         Total Points Earned
@@ -1174,7 +1041,7 @@ const AppraisalResearchScoring = () => {
                         <Typography sx={{ fontWeight: 600, color: "var(--text-secondary)", fontSize: "0.85rem" }}>Citation Points</Typography>
                       </Box>
                       <Typography sx={{ fontWeight: 800, color: "#3b82f6", fontSize: "0.95rem" }}>
-                        {scopusCitationStatus === "Approved" ? citationPoints.toFixed(2) : "0.00"} pts
+                        {citationPoints.toFixed(2)} pts
                       </Typography>
                     </Box>
 
@@ -1195,7 +1062,7 @@ const AppraisalResearchScoring = () => {
                         <Typography sx={{ fontWeight: 600, color: "var(--text-secondary)", fontSize: "0.85rem" }}>H-Index Points</Typography>
                       </Box>
                       <Typography sx={{ fontWeight: 800, color: "#3b82f6", fontSize: "0.95rem" }}>
-                        {scopusHIndexStatus === "Approved" ? hIndexPoints.toFixed(2) : "0.00"} pts
+                        {hIndexPoints.toFixed(2)} pts
                       </Typography>
                     </Box>
 
@@ -1363,38 +1230,13 @@ const AppraisalResearchScoring = () => {
               </Typography>
               <Box sx={{ display: "flex", alignItems: "baseline", gap: 0.5 }}>
                 <Typography variant="h5" sx={{ fontWeight: 900, color: "var(--text-primary)" }}>
-                  {((scopusCitationStatus === "Approved" ? citationPoints : 0) + (scopusHIndexStatus === "Approved" ? hIndexPoints : 0)).toFixed(2)}
-                </Typography>
-                <Typography variant="body2" sx={{ color: "var(--text-secondary)", fontWeight: 600, fontSize: "0.85rem" }}>
-                  / 100.00 pts
+                  {(citationPoints + hIndexPoints).toFixed(2)}
                 </Typography>
               </Box>
             </Box>
 
             {selectedAppraisal.status !== "Completed" ? (
               <Box sx={{ display: "flex", gap: 2 }}>
-                <Button
- variant="outlined"
- startIcon={<Save sx={{ fontSize: "1.1rem" }} />}
- onClick={() => handleSaveScoring(true)}
- disabled={loading}
- sx={{
- textTransform: "none",
- fontWeight: 700,
- 
- px: 3.5,
- py: 1.2,
- borderColor: "var(--border-color)",
- color: "var(--text-primary)",
- fontSize: "0.85rem",
- "&:hover": {
- borderColor: "var(--text-secondary)",
- bgcolor: "var(--bg-panel)"
- }
- }}
- >
-                  Save as Draft
-                </Button>
                 <Button
  variant="contained"
  startIcon={<CheckCircle sx={{ fontSize: "1.1rem" }} />}

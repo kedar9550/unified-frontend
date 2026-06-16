@@ -972,51 +972,15 @@ export default function ConferencePublication() {
                       );
                     }
 
-                    if (isApplicant) {
-                      return (
-                        <Select
-                          size="small"
-                          fullWidth
-                          sx={{ mt: 0.5 }}
-                          value={data.appraisalClaimant?.institutionId || data.appraisalClaimant || ""}
-                          onChange={async (e) => {
-                            const selectedVal = e.target.value;
-                            try {
-                              const res = await API.post("/api/appraisal/resolve-claim", {
-                                researchId: data._id,
-                                researchType: "Conference",
-                                claimantId: selectedVal
-                              });
-                              if (res.data?.success) {
-                                toast.success("Claimant resolved successfully!");
-                                setPublicationsList(prev => prev.map(p => p._id === data._id ? { ...p, appraisalClaimant: selectedVal } : p));
-                                setSelectedPubDetails(prev => ({ ...prev, appraisalClaimant: selectedVal }));
-                              }
-                            } catch (err) {
-                              toast.error(err.response?.data?.message || "Failed to resolve claim.");
-                            }
-                          }}
-                          displayEmpty
-                        >
-                          <MenuItem value="" disabled>--Select Claimant--</MenuItem>
-                          {uniqueClaimants.map(c => (
-                            <MenuItem key={c.institutionId || c._id} value={c.institutionId || c._id}>
-                              {c.name} {c.institutionId ? `(${c.institutionId})` : ""}
-                            </MenuItem>
-                          ))}
-                        </Select>
-                      );
-                    } else {
-                      const currentClaimantObj = uniqueClaimants.find(c =>
-                        (c.institutionId && c.institutionId === (data.appraisalClaimant?.institutionId || data.appraisalClaimant || "").toString()) ||
-                        (c._id && c._id.toString() === (data.appraisalClaimant?._id || data.appraisalClaimant || "").toString())
-                      );
-                      return (
-                        <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>
-                          {currentClaimantObj ? `${currentClaimantObj.name} (${currentClaimantObj.institutionId})` : "Not Yet Designated"}
-                        </Typography>
-                      );
-                    }
+                    const currentClaimantObj = uniqueClaimants.find(c =>
+                      (c.institutionId && c.institutionId === (data.appraisalClaimant?.institutionId || data.appraisalClaimant || "").toString()) ||
+                      (c._id && c._id.toString() === (data.appraisalClaimant?._id || data.appraisalClaimant || "").toString())
+                    );
+                    return (
+                      <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>
+                        {currentClaimantObj ? `${currentClaimantObj.name} (${currentClaimantObj.institutionId})` : "Not Yet Designated"}
+                      </Typography>
+                    );
                   })()
                 }
               />
