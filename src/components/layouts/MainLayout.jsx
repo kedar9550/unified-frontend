@@ -11,14 +11,27 @@ import MobileNavbar from "../layouts/MobileNavbar";
 const MainLayout = ({ children }) => {
   const { user } = useAuth();
   const location = useLocation();
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = React.useState(() => {
+    return localStorage.getItem("sidebar-collapsed") === "true";
+  });
+
+  const handleToggleSidebar = () => {
+    setIsSidebarCollapsed((prev) => {
+      const next = !prev;
+      localStorage.setItem("sidebar-collapsed", String(next));
+      return next;
+    });
+  };
 
   if (!user) {
     return <Navigate to="/" replace />;
   }
 
+  const sidebarWidth = isSidebarCollapsed ? 85 : 270;
+
   return (
     <>
-      <Header />
+      <Header isSidebarCollapsed={isSidebarCollapsed} />
 
       <Box
         sx={{
@@ -27,7 +40,7 @@ const MainLayout = ({ children }) => {
           backgroundColor: "var(--bg-main)",
         }}
       >
-        <Sidebar />
+        <Sidebar isCollapsed={isSidebarCollapsed} onToggleSidebar={handleToggleSidebar} />
 
         <Box
           sx={{
@@ -39,7 +52,7 @@ const MainLayout = ({ children }) => {
             py: { xs: 1.5, md: 3 },
             pt: { xs: "70px", md: "88px" },
             pb: { xs: "80px", md: 3 }, /* Space for bottom navbar */
-            transition: "all 0.3s ease",
+            transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
             overflow: "hidden",
           }}
         >
