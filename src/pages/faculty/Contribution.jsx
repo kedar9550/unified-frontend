@@ -765,30 +765,34 @@ export default function Contribution() {
             </Select>
           </Box>
 
-          <Stack direction="row" spacing={2}>
+          <Stack direction={{ xs: "column", sm: "row" }} spacing={2} sx={{ width: { xs: "100%", sm: "auto" } }}>
             <Button
- variant="outlined"
- color="primary"
- onClick={handleOpenAddModal}
- startIcon={<AddCircle />}
- sx={{ textTransform: "none", fontWeight: 700 }}
- >
+              variant="outlined"
+              color="primary"
+              onClick={handleOpenAddModal}
+              startIcon={<AddCircle />}
+              sx={{ textTransform: "none", fontWeight: 700, width: { xs: "100%", sm: "auto" } }}
+            >
               Add Contribution
             </Button>
             <Button
- variant="contained"
- color="success"
- disabled={activeDrafts.length === 0 || loading}
- onClick={handleBulkSubmit}
- sx={{
- background: activeDrafts.length > 0 ? "var(--gradient-primary)" : "rgba(0,0,0,0.1)",
- 
- px: 3,
- fontWeight: 800,
- textTransform: "none",
- "&:hover": { opacity: 0.9 }
- }}
- >
+              variant="contained"
+              color="success"
+              disabled={activeDrafts.length === 0 || loading}
+              onClick={handleBulkSubmit}
+              sx={{
+                background: "var(--gradient-primary)",
+                px: 3,
+                fontWeight: 800,
+                textTransform: "none",
+                width: { xs: "100%", sm: "auto" },
+                "&:hover": { opacity: 0.9 },
+                "&.Mui-disabled": {
+                  background: "var(--disabled-bg)",
+                  color: "var(--disabled-text)",
+                }
+              }}
+            >
               Submit Academic Year Data ({activeDrafts.length} Drafts)
             </Button>
           </Stack>
