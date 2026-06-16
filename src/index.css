@@ -43,7 +43,8 @@ html,
   transition: background-color 0.3s ease, color 0.3s ease;
   font-optical-sizing: auto;
   letter-spacing: -0.01em;
-  overflow-x: hidden; /* Prevent horizontal scroll when using 100vw */
+  overflow-x: hidden;
+  /* Prevent horizontal scroll when using 100vw */
 }
 
 /* =========================================
