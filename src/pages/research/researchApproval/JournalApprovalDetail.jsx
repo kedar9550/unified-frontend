@@ -3,7 +3,7 @@ import React, { useState, useEffect } from "react";
 import {
     Box, Typography, Grid, Card, Button, TextField,
     Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
-    CircularProgress, Chip, IconButton, Stack
+    CircularProgress, Chip, IconButton, Stack, Select, MenuItem
 } from "@mui/material";
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import MenuBookIcon from '@mui/icons-material/MenuBook';
@@ -55,6 +55,7 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
     const [hIndex, setHIndex] = useState("");
     const [jcrImpactFactor, setJcrImpactFactor] = useState("");
     const [citations, setCitations] = useState("");
+    const [quartile, setQuartile] = useState("");
     const [actionLoading, setActionLoading] = useState(false);
     const [imgError, setImgError] = useState(false);
 
@@ -75,6 +76,8 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
                     if (journal.approvedAmount) setApprovedAmount(journal.approvedAmount);
                     if (journal.hIndex) setHIndex(journal.hIndex);
                     if (journal.citations) setCitations(journal.citations);
+                    if (journal.journalQuartile) setQuartile(journal.journalQuartile);
+                    else if (journal.categoryOfJournal) setQuartile(journal.categoryOfJournal);
 
                     const jcrIFValue = journal.jcrImpactFactor || journal.impactFactor;
                     if (jcrIFValue) {
@@ -130,7 +133,8 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
                 approvedAmount: isResearchAdmin && data.applyIncentive === 'Yes' ? approvedAmount : undefined,
                 hIndex: isResearchAdmin ? hIndex : undefined,
                 jcrImpactFactor: isResearchAdmin ? jcrImpactFactor : undefined,
-                citations: isResearchAdmin ? citations : undefined
+                citations: isResearchAdmin ? citations : undefined,
+                journalQuartile: isResearchAdmin ? quartile : undefined
             };
             const res = await API.put(endpoint, payload);
             if (res.data?.success) {
@@ -151,7 +155,8 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
             const res = await API.put(`/api/research/journal/update-metrics/${id}`, {
                 hIndex,
                 jcrImpactFactor,
-                citations
+                citations,
+                journalQuartile: quartile
             });
             if (res.data?.success) {
                 toast.success("Journal metrics updated successfully");
@@ -160,6 +165,7 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
                 const updatedIF = res.data.data.jcrImpactFactor || res.data.data.impactFactor;
                 if (updatedIF) setJcrImpactFactor(updatedIF);
                 if (res.data.data.citations) setCitations(res.data.data.citations);
+                if (res.data.data.journalQuartile) setQuartile(res.data.data.journalQuartile);
             }
         } catch (error) {
             console.error("Update metrics failed", error);
@@ -281,73 +287,95 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
                 </Box>
             </Card>
 
-            <Box sx={{ display: "flex", flexWrap: "wrap", gap: 3, mb: 3 }}>
+            <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", lg: "repeat(2, 1fr)" }, gap: 3, mb: 3 }}>
                 {/* Applicant Info */}
-                <Card sx={{ ...cardStyle, flex: { xs: "1 1 100%", lg: "1 1 48%" }, mb: 0 }}>
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 3 }}><PersonIcon sx={{ color: "var(--color-primary)" }} /><Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>Applicant Information</Typography></Box>
-                    <Box sx={{ display: "flex", flexDirection: "column", gap: 3, alignItems: "center" }}>
-                        <Box sx={{ width: 100, height: 100, borderRadius: "50%", background: "var(--bg-panel)", border: "2px solid var(--border-color)", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "var(--shadow-premium)" }}>
-                            {(() => {
-                                const backendURL = (import.meta.env.VITE_BACKEND_URL || "http://localhost:9000").replace(/\/$/, "");
-                                const portalImg = facultyId?.profileImage ? (facultyId.profileImage.startsWith('http') ? facultyId.profileImage : `${backendURL}${facultyId.profileImage.startsWith('/') ? facultyId.profileImage : `/${facultyId.profileImage}`}`) : null;
-                                const ecapImg = facultyId?.institutionId ? `https://info.aec.edu.in/aus/employeephotos/${facultyId.institutionId}.jpg` : null;
-                                const src = portalImg || ecapImg;
+                    <Card sx={{ ...cardStyle, height: "100%", mb: 0 }}>
+                        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 3 }}><PersonIcon sx={{ color: "var(--color-primary)" }} /><Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>Applicant Information</Typography></Box>
+                        <Box sx={{ display: "flex", flexDirection: "column", gap: 3, alignItems: "center" }}>
+                            <Box sx={{ width: 100, height: 100, borderRadius: "50%", background: "var(--bg-panel)", border: "2px solid var(--border-color)", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "var(--shadow-premium)" }}>
+                                {(() => {
+                                    const backendURL = (import.meta.env.VITE_BACKEND_URL || "http://localhost:9000").replace(/\/$/, "");
+                                    const portalImg = facultyId?.profileImage ? (facultyId.profileImage.startsWith('http') ? facultyId.profileImage : `${backendURL}${facultyId.profileImage.startsWith('/') ? facultyId.profileImage : `/${facultyId.profileImage}`}`) : null;
+                                    const ecapImg = facultyId?.institutionId ? `https://info.aec.edu.in/aus/employeephotos/${facultyId.institutionId}.jpg` : null;
+                                    const src = portalImg || ecapImg;
 
-                                if (src && !imgError) {
-                                    return (
-                                        <img 
-                                            src={src} 
-                                            alt={facultyId?.name} 
-                                            style={{ width: "100%", height: "100%", objectFit: "cover" }} 
-                                            onError={() => setImgError(true)}
-                                        />
-                                    );
-                                }
-                                return <Typography sx={{ fontSize: 36, fontWeight: 800, color: "var(--text-secondary)" }}>{facultyId?.name?.charAt(0).toUpperCase() || "F"}</Typography>;
-                            })()}
+                                    if (src && !imgError) {
+                                        return (
+                                            <img 
+                                                src={src} 
+                                                alt={facultyId?.name} 
+                                                style={{ width: "100%", height: "100%", objectFit: "cover" }} 
+                                                onError={() => setImgError(true)}
+                                            />
+                                        );
+                                    }
+                                    return <Typography sx={{ fontSize: 36, fontWeight: 800, color: "var(--text-secondary)" }}>{facultyId?.name?.charAt(0).toUpperCase() || "F"}</Typography>;
+                                })()}
+                            </Box>
+                            <Box sx={{ width: "100%" }}>
+                                <LabelValue label="Name" value={facultyId?.name} horizontal />
+                                <LabelValue label="Designation" value={facultyId?.designation} horizontal />
+                                <LabelValue label="Department" value={facultyId?.coreDepartment?.name} horizontal />
+                                <LabelValue label="Emp ID" value={facultyId?.institutionId} horizontal />
+                                <LabelValue label="Contact" value={facultyId?.phone} horizontal />
+                                <LabelValue label="College" value={facultyId?.college || "Aditya University"} horizontal />
+                            </Box>
                         </Box>
-                        <Box sx={{ width: "100%" }}>
-                            <LabelValue label="Name" value={facultyId?.name} horizontal />
-                            <LabelValue label="Designation" value={facultyId?.designation} horizontal />
-                            <LabelValue label="Department" value={facultyId?.coreDepartment?.name} horizontal />
-                            <LabelValue label="Emp ID" value={facultyId?.institutionId} horizontal />
-                            <LabelValue label="Contact" value={facultyId?.phone} horizontal />
-                            <LabelValue label="College" value={facultyId?.college || "Aditya University"} horizontal />
-                        </Box>
-                    </Box>
-                </Card>
+                    </Card>
 
-                {/* Journal Details */}
-                <Card sx={{ ...cardStyle, flex: { xs: "1 1 100%", lg: "1 1 48%" }, mb: 0 }}>
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 3 }}><ArticleIcon sx={{ color: "var(--color-primary)" }} /><Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>Journal Details</Typography></Box>
-                    <Box sx={{ display: "flex", flexDirection: "column" }}>
-                        <LabelValue label="DOI" value={data.doi || "-"} horizontal />
-                        <LabelValue label="Journal Name" value={data.journalName || "-"} horizontal />
-                        <LabelValue label="Journal Quartile" value={data.journalQuartile || data.categoryOfJournal || "-"} horizontal />
-                        <LabelValue label="Journal Type" value={data.journalType || "-"} horizontal />
-                        <LabelValue label="Publication Scope" value={data.publicationScope || data.incentiveApplied} horizontal />
-                        <LabelValue 
-                            label="Applicant Author Position" 
-                            value={data.userAuthorPosition ? `${data.userAuthorPosition} / ${data.totalAuthors}` : (data.firstAuthor === "Yes" ? "1" : data.authorPosition || "-")} 
-                            horizontal 
-                        />
-                        <LabelValue label="Volume" value={data.vol || "-"} horizontal />
-                        <LabelValue label="Issue" value={data.issue || "-"} horizontal />
-                        <LabelValue 
-                            label="Month/Year" 
-                            value={`${data.publishedMonth || data.month || "-"} ${data.publishedYear || data.year || "-"}`} 
-                            horizontal 
-                        />
-                        <LabelValue label="H-Index" value={data.hIndex || "-"} horizontal />
-                        <LabelValue label="Impact Factor (JCR)" value={data.jcrImpactFactor || data.impactFactor || "-"} horizontal />
-                        <LabelValue label="Citations" value={data.citations || "-"} horizontal />
-                        <LabelValue label="AGEC Referencing Numbers" value={data.agecReferencingNumbers || data.referencingNos || "-"} horizontal />
-                        <LabelValue label="Number of References Belonging to AGEC" value={data.numberOfReferencesBelongingToAGEC !== undefined ? data.numberOfReferencesBelongingToAGEC : (data.papersCited !== undefined ? data.papersCited : "-")} horizontal />
-                        <LabelValue label="SDGS" value={data.sdgs ? data.sdgs.split(', ').map(getSdgName).join(', ') : "-"} horizontal />
-                        <LabelValue label="Seed Grant Work" value={data.applyingSeedGrant || "No"} horizontal />
-                        <LabelValue label="Incentive" horizontal chip={<Chip label={data.applyIncentive} size="small" sx={{ bgcolor: data.applyIncentive === 'Yes' ? "rgba(76, 175, 80, 0.1)" : "var(--bg-panel)", color: data.applyIncentive === 'Yes' ? "#4caf50" : "var(--text-secondary)", fontWeight: 800, border: "1px solid", borderColor: data.applyIncentive === 'Yes' ? "#4caf5044" : "var(--border-color)" }} />} />
-                    </Box>
-                </Card>
+                {/* Article Info */}
+                    <Card sx={{ ...cardStyle, height: "100%", mb: 0 }}>
+                        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 3 }}><ArticleIcon sx={{ color: "var(--color-primary)" }} /><Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>Article Information</Typography></Box>
+                        <Box sx={{ display: "flex", flexDirection: "column" }}>
+                            <LabelValue label="Article Title" value={data.paperTitle || "-"} horizontal />
+                            <LabelValue label="DOI" value={data.doi || "-"} horizontal />
+                            <LabelValue 
+                                label="Applicant Author Position" 
+                                value={data.userAuthorPosition ? `${data.userAuthorPosition} / ${data.totalAuthors}` : (data.firstAuthor === "Yes" ? "1" : data.authorPosition || "-")} 
+                                horizontal 
+                            />
+                            <LabelValue label="SDGS" value={data.sdgs ? data.sdgs.split(', ').map(getSdgName).join(', ') : "-"} horizontal />
+                            <LabelValue label="Seed Grant Work" value={data.applyingSeedGrant || "No"} horizontal />
+                            <LabelValue label="Incentive Applied" horizontal chip={
+                                <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+                                    <Chip label={data.applyIncentive} size="small" sx={{ bgcolor: data.applyIncentive === 'Yes' ? "rgba(76, 175, 80, 0.1)" : "var(--bg-panel)", color: data.applyIncentive === 'Yes' ? "#4caf50" : "var(--text-secondary)", fontWeight: 800, border: "1px solid", borderColor: data.applyIncentive === 'Yes' ? "#4caf5044" : "var(--border-color)" }} />
+                                    {data.applyIncentive === 'Yes' && data.status === 'Approved' && data.approvedAmount && (
+                                        <Typography variant="body2" sx={{ fontWeight: 800, color: "#4caf50" }}>₹{data.approvedAmount}</Typography>
+                                    )}
+                                </Box>
+                            } />
+                        </Box>
+                    </Card>
+
+                {/* Journal Information */}
+                    <Card sx={{ ...cardStyle, height: "100%", mb: 0 }}>
+                        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 3 }}><MenuBookIcon sx={{ color: "var(--color-primary)" }} /><Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>Journal Information</Typography></Box>
+                        <Box sx={{ display: "flex", flexDirection: "column" }}>
+                            <LabelValue label="Journal Name" value={data.journalName || "-"} horizontal />
+                            <LabelValue label="Journal Type" value={data.journalType || "-"} horizontal />
+                            <LabelValue label="Publication Scope" value={data.publicationScope || "-"} horizontal />
+                            <LabelValue 
+                                label="Month/Year" 
+                                value={`${data.publishedMonth || data.month || "-"} ${data.publishedYear || data.year || "-"}`} 
+                                horizontal 
+                            />
+                            <LabelValue label="Volume" value={data.vol || "-"} horizontal />
+                            <LabelValue label="Issue" value={data.issue || "-"} horizontal />
+                        </Box>
+                    </Card>
+
+                {/* Journal and Article Metrics */}
+                    <Card sx={{ ...cardStyle, height: "100%", mb: 0 }}>
+                        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 3 }}><HistoryIcon sx={{ color: "var(--color-primary)" }} /><Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>Journal and Article Metrics</Typography></Box>
+                        <Box sx={{ display: "flex", flexDirection: "column" }}>
+                            <LabelValue label="Quartile" value={data.journalQuartile || data.categoryOfJournal || "-"} horizontal />
+                            <LabelValue label="Journal H-Index" value={data.hIndex || "-"} horizontal />
+                            <LabelValue label="Impact Factor (JCR)" value={data.jcrImpactFactor || data.impactFactor || "-"} horizontal />
+                            <LabelValue label="Citations" value={data.citations || "-"} horizontal />
+                            <LabelValue label="AGEC Referencing Numbers" value={data.agecReferencingNumbers || data.referencingNos || "-"} horizontal />
+                            <LabelValue label="Number of References Belonging to AGEC" value={data.numberOfReferencesBelongingToAGEC !== undefined ? data.numberOfReferencesBelongingToAGEC : (data.papersCited !== undefined ? data.papersCited : "-")} horizontal />
+                        </Box>
+                    </Card>
             </Box>
 
             {/* Co-Authors */}
@@ -411,7 +439,17 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
                             
                             {isResearchAdmin && (
                                 <Box sx={{ display: "flex", gap: 3, mb: 3, flexWrap: "wrap" }}>
-                                    <Box sx={{ flex: "1 1 200px" }}>
+                                    <Box sx={{ flex: "1 1 150px" }}>
+                                        <Typography variant="subtitle2" sx={{ fontWeight: 900, mb: 1, color: "var(--color-primary)", fontSize: "0.75rem" }}>QUARTILE</Typography>
+                                        <Select fullWidth size="small" value={quartile} onChange={e => setQuartile(e.target.value)} displayEmpty sx={{ borderRadius: "10px", bgcolor: "var(--bg-panel)" }}>
+                                            <MenuItem value="" disabled>Select Quartile</MenuItem>
+                                            <MenuItem value="Q1">Q1</MenuItem>
+                                            <MenuItem value="Q2">Q2</MenuItem>
+                                            <MenuItem value="Q3">Q3</MenuItem>
+                                            <MenuItem value="Q4">Q4</MenuItem>
+                                        </Select>
+                                    </Box>
+                                    <Box sx={{ flex: "1 1 150px" }}>
                                         <Typography variant="subtitle2" sx={{ fontWeight: 900, mb: 1, color: "var(--color-primary)", fontSize: "0.75rem" }}>JOURNAL H-INDEX</Typography>
                                         <TextField 
                                             fullWidth size="small" 
@@ -421,7 +459,7 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
                                             sx={{ "& .MuiOutlinedInput-root": { borderRadius: "10px", bgcolor: "var(--bg-panel)" } }} 
                                         />
                                     </Box>
-                                    <Box sx={{ flex: "1 1 200px" }}>
+                                    <Box sx={{ flex: "1 1 150px" }}>
                                         <Typography variant="subtitle2" sx={{ fontWeight: 900, mb: 1, color: "var(--color-primary)", fontSize: "0.75rem" }}>IMPACT FACTOR (JCR) *</Typography>
                                         <TextField 
                                             fullWidth size="small" 
@@ -431,7 +469,7 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
                                             sx={{ "& .MuiOutlinedInput-root": { borderRadius: "10px", bgcolor: "var(--bg-panel)" } }} 
                                         />
                                     </Box>
-                                    <Box sx={{ flex: "1 1 200px" }}>
+                                    <Box sx={{ flex: "1 1 150px" }}>
                                         <Typography variant="subtitle2" sx={{ fontWeight: 900, mb: 1, color: "var(--color-primary)", fontSize: "0.75rem" }}>CITATIONS</Typography>
                                         <TextField 
                                             fullWidth size="small" 
@@ -486,7 +524,17 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
                                     </Box>
                                     
                                     <Box sx={{ display: "flex", gap: 3, mb: 3, flexWrap: "wrap" }}>
-                                        <Box sx={{ flex: "1 1 200px" }}>
+                                        <Box sx={{ flex: "1 1 150px" }}>
+                                            <Typography variant="subtitle2" sx={{ fontWeight: 900, mb: 1, color: "var(--color-primary)", fontSize: "0.75rem" }}>QUARTILE</Typography>
+                                            <Select fullWidth size="small" value={quartile} onChange={e => setQuartile(e.target.value)} displayEmpty sx={{ borderRadius: "10px", bgcolor: "var(--bg-panel)" }}>
+                                                <MenuItem value="" disabled>Select Quartile</MenuItem>
+                                                <MenuItem value="Q1">Q1</MenuItem>
+                                                <MenuItem value="Q2">Q2</MenuItem>
+                                                <MenuItem value="Q3">Q3</MenuItem>
+                                                <MenuItem value="Q4">Q4</MenuItem>
+                                            </Select>
+                                        </Box>
+                                        <Box sx={{ flex: "1 1 150px" }}>
                                             <Typography variant="subtitle2" sx={{ fontWeight: 900, mb: 1, color: "var(--color-primary)", fontSize: "0.75rem" }}>JOURNAL H-INDEX</Typography>
                                             <TextField 
                                                 fullWidth size="small" 
@@ -496,7 +544,7 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
                                                 sx={{ "& .MuiOutlinedInput-root": { borderRadius: "10px", bgcolor: "var(--bg-panel)" } }} 
                                             />
                                         </Box>
-                                        <Box sx={{ flex: "1 1 200px" }}>
+                                        <Box sx={{ flex: "1 1 150px" }}>
                                             <Typography variant="subtitle2" sx={{ fontWeight: 900, mb: 1, color: "var(--color-primary)", fontSize: "0.75rem" }}>IMPACT FACTOR (JCR)</Typography>
                                             <TextField 
                                                 fullWidth size="small" 
@@ -506,7 +554,7 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
                                                 sx={{ "& .MuiOutlinedInput-root": { borderRadius: "10px", bgcolor: "var(--bg-panel)" } }} 
                                             />
                                         </Box>
-                                        <Box sx={{ flex: "1 1 200px" }}>
+                                        <Box sx={{ flex: "1 1 150px" }}>
                                             <Typography variant="subtitle2" sx={{ fontWeight: 900, mb: 1, color: "var(--color-primary)", fontSize: "0.75rem" }}>CITATIONS</Typography>
                                             <TextField 
                                                 fullWidth size="small" 
