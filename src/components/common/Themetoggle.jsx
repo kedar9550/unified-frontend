@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Box } from "@mui/material";
 import { LightMode, DarkMode } from "@mui/icons-material";
 
-export default function ThemeToggle() {
+export default function ThemeToggle({ onToggle }) {
   const [isDark, setIsDark] = useState(() => {
     return localStorage.getItem("theme") === "dark";
   });
@@ -18,26 +18,36 @@ export default function ThemeToggle() {
     }
   }, [isDark]);
 
-  const handleToggle = () => {
-    const nextDark = !isDark;
-    
-    // Fallback for browsers that don't support View Transition API
-    if (!document.startViewTransition) {
-      setIsDark(nextDark);
-      return;
+  const handleToggle = (e) => {
+    if (e) {
+      e.stopPropagation();
+      e.preventDefault();
     }
+    const nextDark = !isDark;
 
-    // Prepare transition classes
-    const transitionClass = nextDark ? 'theme-transition-expand' : 'theme-transition-collapse';
-    document.documentElement.classList.add(transitionClass);
+    console.log("ThemeToggle: handleToggle clicked. nextDark:", nextDark, "has onToggle:", !!onToggle);
+    if (onToggle) onToggle();
 
-    const transition = document.startViewTransition(() => {
-      setIsDark(nextDark);
-    });
+    // Delay the theme toggle transition slightly to allow the menu close animation to execute
+    setTimeout(() => {
+      // Fallback for browsers that don't support View Transition API
+      if (!document.startViewTransition) {
+        setIsDark(nextDark);
+        return;
+      }
 
-    transition.finished.finally(() => {
-      document.documentElement.classList.remove(transitionClass);
-    });
+      // Prepare transition classes
+      const transitionClass = nextDark ? 'theme-transition-expand' : 'theme-transition-collapse';
+      document.documentElement.classList.add(transitionClass);
+
+      const transition = document.startViewTransition(() => {
+        setIsDark(nextDark);
+      });
+
+      transition.finished.finally(() => {
+        document.documentElement.classList.remove(transitionClass);
+      });
+    }, 250);
   };
 
   return (
@@ -47,40 +57,40 @@ export default function ThemeToggle() {
         width: 64,
         height: 32,
         borderRadius: "16px",
-        background: isDark 
-          ? "linear-gradient(135deg, #1e293b, #0f172a)" 
+        background: isDark
+          ? "linear-gradient(135deg, #1e293b, #0f172a)"
           : "linear-gradient(135deg, #f1f5f9, #e2e8f0)",
         display: "flex",
         alignItems: "center",
         padding: "4px",
         cursor: "pointer",
         position: "relative",
-        boxShadow: isDark 
-          ? "inset 0 2px 6px rgba(0,0,0,0.6)" 
+        boxShadow: isDark
+          ? "inset 0 2px 6px rgba(0,0,0,0.6)"
           : "inset 0 2px 4px rgba(0,0,0,0.1)",
         transition: "background 0.3s ease, box-shadow 0.3s ease",
       }}
     >
       {/* Background Icons (visible when thumb is on the other side) */}
-      <LightMode 
-        sx={{ 
-          fontSize: 16, 
-          color: "#94a3b8", 
-          position: "absolute", 
+      <LightMode
+        sx={{
+          fontSize: 16,
+          color: "#94a3b8",
+          position: "absolute",
           left: 8,
           opacity: isDark ? 0.7 : 0,
           transition: "opacity 0.3s ease"
-        }} 
+        }}
       />
-      <DarkMode 
-        sx={{ 
-          fontSize: 16, 
-          color: "#94a3b8", 
-          position: "absolute", 
+      <DarkMode
+        sx={{
+          fontSize: 16,
+          color: "#94a3b8",
+          position: "absolute",
           right: 8,
           opacity: isDark ? 0 : 0.7,
           transition: "opacity 0.3s ease"
-        }} 
+        }}
       />
 
       {/* Sliding Thumb */}
@@ -90,8 +100,8 @@ export default function ThemeToggle() {
           height: 24,
           borderRadius: "50%",
           background: "#ffffff",
-          boxShadow: isDark 
-            ? "0 2px 8px rgba(0,0,0,0.4)" 
+          boxShadow: isDark
+            ? "0 2px 8px rgba(0,0,0,0.4)"
             : "0 2px 6px rgba(0,0,0,0.15)",
           position: "absolute",
           left: isDark ? "calc(100% - 28px)" : "4px",

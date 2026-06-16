@@ -45,6 +45,7 @@ const Header = ({ onMenuClick }) => {
   };
 
   const handleClose = () => {
+    console.log("Header: handleClose called, setting anchorEl to null");
     setAnchorEl(null);
     // Remove focus from the active element (e.g., clicked MenuItem) before the menu hides
     // This prevents the "Blocked aria-hidden on an element because its descendant retained focus" warning.
@@ -390,7 +391,7 @@ const Header = ({ onMenuClick }) => {
                 <Brightness4 fontSize="small" sx={{ color: "var(--text-secondary)" }} />
                 Appearance
               </Box>
-              <ThemeToggle />
+              <ThemeToggle onToggle={handleClose} />
             </MenuItem>
 
             <Box sx={{ my: 2, mx: 2, height: "1px", background: "var(--border-color)" }} />
