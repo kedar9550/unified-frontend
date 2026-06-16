@@ -57,8 +57,8 @@ const theme = createTheme({
             boxShadow: "0 6px 16px rgba(0, 78, 146, 0.4)",
           },
           "&.Mui-disabled": {
-            background: "rgba(0, 0, 0, 0.12)",
-            color: "rgba(0, 0, 0, 0.26)",
+            background: "var(--disabled-bg)",
+            color: "var(--disabled-text)",
             boxShadow: "none",
           },
           "&.MuiButton-containedSecondary": {

@@ -62,7 +62,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import Footer from '../../components/Footer';
-import loginLogo from '../../assets/loginlogo.png';
+import loginLogo from '../../assets/Aditya University Gold Logo.png';
 import './Login.css';
 
 // ── Password Eye Icons ──
