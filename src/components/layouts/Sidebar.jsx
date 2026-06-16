@@ -9,6 +9,9 @@ import {
   Typography,
   Drawer,
   IconButton,
+  Tooltip,
+  Menu,
+  MenuItem,
 } from "@mui/material";
 import {
   ExpandLess,
@@ -30,7 +33,9 @@ import {
   AccountBalance,
   Assessment,
   WorkspacePremium,
-  SupervisorAccount
+  SupervisorAccount,
+  ChevronLeft,
+  ChevronRight
 } from "@mui/icons-material";
 import { useAuth } from "../../context/AuthContext";
 import { ROLE_ROUTES } from "../../config/rolesNav";
@@ -102,10 +107,12 @@ const ITEM_METADATA = {
 
 const drawerWidth = 270;
 
-const Sidebar = ({ mobileOpen, onDrawerToggle }) => {
+const Sidebar = ({ mobileOpen, onDrawerToggle, isCollapsed, onToggleSidebar }) => {
   const { user, activeRole, logout } = useAuth();
   const [openStates, setOpenStates] = useState({});
   const [active, setActive] = useState("Dashboard");
+  const [submenuAnchor, setSubmenuAnchor] = useState(null);
+  const [activeSubmenuItem, setActiveSubmenuItem] = useState(null);
   const navigate = useNavigate();
   const location = useLocation();
   const [weather, setWeather] = useState({ temp: "--", icon: null, desc: "Loading...", hourly: [] });
@@ -227,12 +234,43 @@ const Sidebar = ({ mobileOpen, onDrawerToggle }) => {
         flexDirection: "column",
         background: "var(--bg-paper)",
         color: "var(--text-primary)",
-        p: 2.5,
+        p: isCollapsed ? 1.5 : 2.5,
         position: "relative",
-        overflow: "hidden",
+        overflow: "visible",
         borderRight: "1px solid var(--border-color)",
+        transition: "padding 0.3s ease",
       }}
     >
+      {/* Floating Arrow Toggle Button for Desktop */}
+      <IconButton
+        onClick={onToggleSidebar}
+        sx={{
+          display: { xs: "none", md: "flex" },
+          position: "absolute",
+          right: "-14px", // Sits exactly on the sidebar border line
+          top: "33px", // Centered vertically relative to the brand logo
+          width: "28px",
+          height: "28px",
+          borderRadius: "50%",
+          background: "var(--bg-paper)",
+          border: "1px solid var(--border-color)",
+          boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+          zIndex: 1210,
+          color: "var(--text-secondary)",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: 0,
+          "&:hover": {
+            background: "var(--bg-panel)",
+            color: "var(--color-primary)",
+            borderColor: "var(--color-primary)",
+            boxShadow: "0 2px 12px var(--color-primary-alpha)",
+          },
+          transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
+        }}
+      >
+        {isCollapsed ? <ChevronRight sx={{ fontSize: 18 }} /> : <ChevronLeft sx={{ fontSize: 18 }} />}
+      </IconButton>
       <IconButton
         onClick={onDrawerToggle}
         sx={{
@@ -260,12 +298,18 @@ const Sidebar = ({ mobileOpen, onDrawerToggle }) => {
         justifyContent: "center",
         mb: 4,
         mt: 1,
+        height: 65,
+        transition: "all 0.3s ease",
       }}>
-        <Box
-          component="img"
-          src={universityLogoGold}
-          sx={{ height: 65, width: "auto", objectFit: "contain" }}
-        />
+        {!isCollapsed ? (
+          <Box
+            component="img"
+            src={universityLogoGold}
+            sx={{ height: 65, width: "auto", objectFit: "contain" }}
+          />
+        ) : (
+          <School sx={{ fontSize: "2.5rem", color: "var(--color-primary)" }} />
+        )}
       </Box>
 
       {/* Role Badge Section */}
@@ -285,28 +329,34 @@ const Sidebar = ({ mobileOpen, onDrawerToggle }) => {
           }[roleUpper] || <AccountCircle sx={{ fontSize: "2rem" }} />;
 
           return (
-            <Box
-              sx={{
-                display: "inline-flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: 1.2,
-                px: 2.5,
-                py: 1,
-                borderRadius: "999px",
-                background: "var(--bg-panel)",
-                border: "1px solid var(--border-color)",
-                color: "var(--text-primary)",
-                width: "90%",
-                boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
-                mb: 1,
-              }}
-            >
-              <Box sx={{ display: "flex", color: "var(--color-primary)" }}>{roleIcon}</Box>
-              <Typography sx={{ fontSize: "0.85rem", fontWeight: 700, letterSpacing: "0.5px" }}>
-                {capitalizeRole(displayedRole)}
-              </Typography>
-            </Box>
+            <Tooltip title={capitalizeRole(displayedRole)} disableHoverListener={!isCollapsed} placement="right" arrow>
+              <Box
+                sx={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: isCollapsed ? 0 : 1.2,
+                  px: isCollapsed ? 1 : 2.5,
+                  py: isCollapsed ? 1 : 1,
+                  borderRadius: "999px",
+                  background: "var(--bg-panel)",
+                  border: "1px solid var(--border-color)",
+                  color: "var(--text-primary)",
+                  width: isCollapsed ? "44px" : "90%",
+                  height: isCollapsed ? "44px" : "auto",
+                  boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
+                  mb: 1,
+                  transition: "all 0.3s ease",
+                }}
+              >
+                <Box sx={{ display: "flex", color: "var(--color-primary)" }}>{roleIcon}</Box>
+                {!isCollapsed && (
+                  <Typography sx={{ fontSize: "0.85rem", fontWeight: 700, letterSpacing: "0.5px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                    {capitalizeRole(displayedRole)}
+                  </Typography>
+                )}
+              </Box>
+            </Tooltip>
           );
         })()}
       </Box>
@@ -327,15 +377,23 @@ const Sidebar = ({ mobileOpen, onDrawerToggle }) => {
               <>
                 {(() => {
                   const isParentActive = item.nested.some(sub => active === sub.text);
-                  return (
+                  const parentButton = (
                     <ListItemButton
-                      onClick={() => handleToggle(item.text)}
+                      onClick={(e) => {
+                        if (isCollapsed) {
+                          setSubmenuAnchor(e.currentTarget);
+                          setActiveSubmenuItem(item);
+                        } else {
+                          handleToggle(item.text);
+                        }
+                      }}
                       disableRipple
                       sx={{
                         borderRadius: "12px",
                         mb: 0.8,
                         mx: 0,
-                        pl: 1.2,
+                        pl: isCollapsed ? 1.5 : 1.2,
+                        justifyContent: isCollapsed ? "center" : "flex-start",
                         position: 'relative',
                         transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
                         overflow: "hidden",
@@ -346,7 +404,7 @@ const Sidebar = ({ mobileOpen, onDrawerToggle }) => {
                         }
                       }}
                     >
-                      {active === item.text && (
+                      {(active === item.text || isParentActive) && (
                         <Box
                           sx={{
                             position: "absolute",
@@ -360,7 +418,7 @@ const Sidebar = ({ mobileOpen, onDrawerToggle }) => {
                           }}
                         />
                       )}
-                      <ListItemIcon sx={{ minWidth: 42 }}>
+                      <ListItemIcon sx={{ minWidth: isCollapsed ? 0 : 42 }}>
                         <Box sx={{
                           width: 32,
                           height: 32,
@@ -376,38 +434,51 @@ const Sidebar = ({ mobileOpen, onDrawerToggle }) => {
                           {React.cloneElement(item.icon, { sx: { fontSize: 18 } })}
                         </Box>
                       </ListItemIcon>
-                      <ListItemText
-                        primary={
-                          <Typography sx={{
-                            fontSize: "0.875rem",
-                            fontWeight: (active === item.text || isParentActive) ? 700 : 500,
-                            color: (active === item.text || isParentActive) ? "var(--color-primary)" : "var(--text-secondary)"
-                          }}>
-                            {item.text}
-                          </Typography>
-                        }
-                      />
-                      {openStates[item.text] ? <ExpandLess sx={{ color: "var(--color-primary)", fontSize: 18 }} /> : <ExpandMore sx={{ color: "#94a3b8", fontSize: 18 }} />}
+                      {!isCollapsed && (
+                        <>
+                          <ListItemText
+                            primary={
+                              <Typography sx={{
+                                fontSize: "0.875rem",
+                                fontWeight: (active === item.text || isParentActive) ? 700 : 500,
+                                color: (active === item.text || isParentActive) ? "var(--color-primary)" : "var(--text-secondary)"
+                              }}>
+                                {item.text}
+                              </Typography>
+                            }
+                          />
+                          {openStates[item.text] ? <ExpandLess sx={{ color: "var(--color-primary)", fontSize: 18 }} /> : <ExpandMore sx={{ color: "#94a3b8", fontSize: 18 }} />}
+                        </>
+                      )}
                     </ListItemButton>
                   );
+
+                  return isCollapsed ? (
+                    <Tooltip title={item.text} placement="right" arrow key={item.text}>
+                      {parentButton}
+                    </Tooltip>
+                  ) : parentButton;
                 })()}
-                <Collapse in={!!openStates[item.text]} timeout="auto" unmountOnExit sx={{ overflow: 'hidden' }}>
-                  <List component="div" disablePadding>
-                    {item.nested.map((subItem) => (
-                      <Item
-                        key={`${item.text}-${subItem.text}`}
-                        nested
-                        icon={subItem.icon || ITEM_METADATA[subItem.text]?.icon || null}
-                        text={subItem.text}
-                        active={active}
-                        onClick={() => navigateTo(subItem.path, subItem.text, true)}
-                      />
-                    ))}
-                  </List>
-                </Collapse>
+                {!isCollapsed && (
+                  <Collapse in={!!openStates[item.text]} timeout="auto" unmountOnExit sx={{ overflow: 'hidden' }}>
+                    <List component="div" disablePadding>
+                      {item.nested.map((subItem) => (
+                        <Item
+                          key={`${item.text}-${subItem.text}`}
+                          nested
+                          icon={subItem.icon || ITEM_METADATA[subItem.text]?.icon || null}
+                          text={subItem.text}
+                          active={active}
+                          isCollapsed={isCollapsed}
+                          onClick={() => navigateTo(subItem.path, subItem.text, true)}
+                        />
+                      ))}
+                    </List>
+                  </Collapse>
+                )}
               </>
             ) : (
-              <Item icon={item.icon} text={item.text} active={active} onClick={() => navigateTo(item.path, item.text)} />
+              <Item icon={item.icon} text={item.text} active={active} isCollapsed={isCollapsed} onClick={() => navigateTo(item.path, item.text)} />
             )}
           </React.Fragment>
         ))}
@@ -417,82 +488,157 @@ const Sidebar = ({ mobileOpen, onDrawerToggle }) => {
 
       {/* Weather Widget */}
       <Box
-        onClick={() => setWeatherExpanded(!weatherExpanded)}
+        onClick={() => !isCollapsed && setWeatherExpanded(!weatherExpanded)}
         sx={{
           mt: 2.5,
-          p: 1.5,
+          p: isCollapsed ? 1 : 1.5,
           borderRadius: "16px",
           background: "var(--bg-panel)",
           border: "1px solid var(--border-color)",
           display: "flex",
           flexDirection: "column",
+          alignItems: "center",
           gap: 1.5,
           transition: "all 0.4s cubic-bezier(0.4, 0, 0.2, 1)",
-          cursor: "pointer",
+          cursor: isCollapsed ? "default" : "pointer",
           "&:hover": {
-            background: "linear-gradient(var(--bg-panel), var(--bg-panel)) padding-box, var(--gradient-primary) border-box",
-            borderColor: "transparent",
-            boxShadow: "var(--shadow-premium)"
+            background: isCollapsed ? "var(--bg-panel)" : "linear-gradient(var(--bg-panel), var(--bg-panel)) padding-box, var(--gradient-primary) border-box",
+            borderColor: isCollapsed ? "var(--border-color)" : "transparent",
+            boxShadow: isCollapsed ? "none" : "var(--shadow-premium)"
           }
         }}
       >
-        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%" }}>
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+        <Box sx={{ display: "flex", alignItems: "center", justifyContent: isCollapsed ? "center" : "space-between", width: "100%" }}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: isCollapsed ? 0 : 1.5 }}>
             <Box
               component="img"
               src={weather.icon}
               onError={(e) => { e.target.src = "https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Travel%20and%20places/Sun.png"; }}
               sx={{ width: 34, height: 34, objectFit: 'contain' }}
             />
-            <Box>
-              <Typography sx={{ fontSize: "0.95rem", fontWeight: 700, lineHeight: 1.1, color: "var(--text-primary)" }}>
-                {weather.temp}
-              </Typography>
-              <Typography sx={{ fontSize: "0.7rem", color: "var(--text-secondary)", fontWeight: 500, mt: 0.2, textTransform: "capitalize" }}>
-                {weather.desc}
-              </Typography>
-            </Box>
+            {!isCollapsed && (
+              <Box>
+                <Typography sx={{ fontSize: "0.95rem", fontWeight: 700, lineHeight: 1.1, color: "var(--text-primary)" }}>
+                  {weather.temp}
+                </Typography>
+                <Typography sx={{ fontSize: "0.7rem", color: "var(--text-secondary)", fontWeight: 500, mt: 0.2, textTransform: "capitalize" }}>
+                  {weather.desc}
+                </Typography>
+              </Box>
+            )}
           </Box>
-          <KeyboardArrowDown sx={{
-            color: "#94a3b8",
-            fontSize: 16,
-            transition: "transform 0.4s ease",
-            transform: weatherExpanded ? "rotate(180deg)" : "rotate(0deg)"
-          }} />
+          {!isCollapsed && (
+            <KeyboardArrowDown sx={{
+              color: "#94a3b8",
+              fontSize: 16,
+              transition: "transform 0.4s ease",
+              transform: weatherExpanded ? "rotate(180deg)" : "rotate(0deg)"
+            }} />
+          )}
         </Box>
 
-        <Collapse in={weatherExpanded} timeout="auto" unmountOnExit>
-          <Box sx={{
-            pt: 1.5,
-            borderTop: "1px solid var(--border-color)",
-            display: "grid",
-            gridTemplateColumns: "repeat(4, 1fr)",
-            gap: 1,
-            textAlign: "center"
-          }}>
-            {weather.hourly?.map((h, i) => (
-              <Box key={i}>
-                <Typography sx={{ fontSize: "0.6rem", color: "var(--text-secondary)", fontWeight: 600 }}>{h.time}</Typography>
-                <Typography sx={{ fontSize: "0.75rem", color: "var(--text-primary)", fontWeight: 700, mt: 0.2 }}>{h.temp}°</Typography>
-              </Box>
-            ))}
-          </Box>
-        </Collapse>
+        {!isCollapsed && (
+          <Collapse in={weatherExpanded} timeout="auto" unmountOnExit>
+            <Box sx={{
+              pt: 1.5,
+              borderTop: "1px solid var(--border-color)",
+              display: "grid",
+              gridTemplateColumns: "repeat(4, 1fr)",
+              gap: 1,
+              textAlign: "center"
+            }}>
+              {weather.hourly?.map((h, i) => (
+                <Box key={i}>
+                  <Typography sx={{ fontSize: "0.6rem", color: "var(--text-secondary)", fontWeight: 600 }}>{h.time}</Typography>
+                  <Typography sx={{ fontSize: "0.75rem", color: "var(--text-primary)", fontWeight: 700, mt: 0.2 }}>{h.temp}°</Typography>
+                </Box>
+              ))}
+            </Box>
+          </Collapse>
+        )}
       </Box>
+
+      {/* Floating submenu popup for collapsed state */}
+      <Menu
+        anchorEl={submenuAnchor}
+        open={Boolean(submenuAnchor)}
+        onClose={() => { setSubmenuAnchor(null); setActiveSubmenuItem(null); }}
+        anchorOrigin={{
+          vertical: 'top',
+          horizontal: 'right',
+        }}
+        transformOrigin={{
+          vertical: 'top',
+          horizontal: 'left',
+        }}
+        disableScrollLock={true}
+        slotProps={{
+          paper: {
+            sx: {
+              ml: 1,
+              minWidth: 200,
+              borderRadius: "16px",
+              border: "1px solid var(--border-color)",
+              background: "var(--bg-paper)",
+              boxShadow: "0 10px 30px rgba(0,0,0,0.15)",
+              p: 0.5
+            }
+          }
+        }}
+      >
+        <Box sx={{ px: 2, py: 1, borderBottom: "1px solid var(--border-color)", mb: 0.5 }}>
+          <Typography sx={{ fontSize: "0.75rem", fontWeight: 800, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+            {activeSubmenuItem?.text}
+          </Typography>
+        </Box>
+        {activeSubmenuItem?.nested?.map((subItem) => {
+          const isActive = active === subItem.text;
+          return (
+            <MenuItem
+              key={subItem.text}
+              onClick={() => {
+                navigateTo(subItem.path, subItem.text, true);
+                setSubmenuAnchor(null);
+                setActiveSubmenuItem(null);
+              }}
+              selected={isActive}
+              sx={{
+                borderRadius: "10px",
+                fontSize: "0.85rem",
+                fontWeight: isActive ? 700 : 500,
+                color: isActive ? "var(--color-primary)" : "var(--text-secondary)",
+                background: isActive ? "var(--bg-accent-4) !important" : "transparent",
+                py: 1,
+                px: 2,
+                mb: 0.5,
+                "&:hover": {
+                  background: "var(--bg-panel)",
+                },
+                "&:last-child": { mb: 0 }
+              }}
+            >
+              {subItem.text}
+            </MenuItem>
+          );
+        })}
+      </Menu>
     </Box>
   );
 
+  const sidebarWidth = isCollapsed ? 85 : 270;
+
   return (
-    <Box component="nav" sx={{ width: { md: drawerWidth }, flexShrink: { md: 0 }, display: { xs: "none", md: "block" } }}>
+    <Box component="nav" sx={{ width: { md: sidebarWidth }, flexShrink: { md: 0 }, display: { xs: "none", md: "block" }, transition: "width 0.3s cubic-bezier(0.4, 0, 0.2, 1)", overflow: "visible" }}>
       <Drawer
         variant="permanent"
         sx={{
           "& .MuiDrawer-paper": {
             boxSizing: "border-box",
-            width: drawerWidth,
+            width: sidebarWidth,
             borderRight: "none",
             background: "var(--bg-paper)",
-            overflow: "hidden",
+            overflow: "visible",
+            transition: "width 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
           },
         }}
         open
@@ -503,69 +649,83 @@ const Sidebar = ({ mobileOpen, onDrawerToggle }) => {
   );
 };
 
-const Item = ({ icon, text, active, onClick, nested }) => (
-  <ListItemButton
-    onClick={onClick}
-    disableRipple
-    sx={{
-      pl: nested ? 5 : 1.2,
-      position: "relative",
-      borderRadius: "12px",
-      mb: 0.8,
-      mx: 0,
-      transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-      overflow: "hidden",
-      background: active === text ? "var(--bg-accent-4)" : "transparent",
-      border: active === text ? "1px solid var(--border-color)" : "1px solid transparent",
-      "&:hover": {
-        background: "var(--bg-panel)",
-      },
-    }}
-  >
-    {active === text && (
-      <Box
-        sx={{
-          position: "absolute",
-          left: 0,
-          top: "25%",
-          height: "50%",
-          width: 4,
-          borderRadius: "0 4px 4px 0",
-          background: "var(--color-primary)",
-          boxShadow: '0 0 8px var(--color-primary-alpha)'
-        }}
-      />
-    )}
-    {icon && (
-      <ListItemIcon sx={{ minWidth: 42 }}>
-        <Box sx={{
-          width: 32,
-          height: 32,
-          borderRadius: '8px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          background: ITEM_METADATA[text]?.color || 'rgba(148, 163, 184, 0.1)',
-          color: ITEM_METADATA[text]?.iconColor || 'var(--text-secondary)',
-          transition: 'all 0.3s ease'
-        }}>
-          {React.cloneElement(icon, { sx: { fontSize: 18 } })}
-        </Box>
-      </ListItemIcon>
-    )}
-    <ListItemText
-      primary={
-        <Typography sx={{
-          fontSize: "0.875rem",
-          fontWeight: active === text ? 700 : 500,
-          color: active === text ? "var(--color-primary)" : "var(--text-secondary)",
-          transition: 'all 0.2s ease'
-        }}>
-          {text}
-        </Typography>
-      }
-    />
-  </ListItemButton>
-);
+const Item = ({ icon, text, active, onClick, nested, isCollapsed }) => {
+  const button = (
+    <ListItemButton
+      onClick={onClick}
+      disableRipple
+      sx={{
+        pl: nested ? (isCollapsed ? 1.5 : 5) : 1.2,
+        justifyContent: isCollapsed ? "center" : "flex-start",
+        position: "relative",
+        borderRadius: "12px",
+        mb: 0.8,
+        mx: 0,
+        transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+        overflow: "hidden",
+        background: active === text ? "var(--bg-accent-4)" : "transparent",
+        border: active === text ? "1px solid var(--border-color)" : "1px solid transparent",
+        "&:hover": {
+          background: "var(--bg-panel)",
+        },
+      }}
+    >
+      {active === text && (
+        <Box
+          sx={{
+            position: "absolute",
+            left: 0,
+            top: "25%",
+            height: "50%",
+            width: 4,
+            borderRadius: "0 4px 4px 0",
+            background: "var(--color-primary)",
+            boxShadow: '0 0 8px var(--color-primary-alpha)'
+          }}
+        />
+      )}
+      {icon && (
+        <ListItemIcon sx={{ minWidth: isCollapsed ? 0 : 42 }}>
+          <Box sx={{
+            width: 32,
+            height: 32,
+            borderRadius: '8px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: ITEM_METADATA[text]?.color || 'rgba(148, 163, 184, 0.1)',
+            color: ITEM_METADATA[text]?.iconColor || 'var(--text-secondary)',
+            transition: 'all 0.3s ease'
+          }}>
+            {React.cloneElement(icon, { sx: { fontSize: 18 } })}
+          </Box>
+        </ListItemIcon>
+      )}
+      {!isCollapsed && (
+        <ListItemText
+          primary={
+            <Typography sx={{
+              fontSize: "0.875rem",
+              fontWeight: active === text ? 700 : 500,
+              color: active === text ? "var(--color-primary)" : "var(--text-secondary)",
+              transition: 'all 0.2s ease'
+            }}>
+              {text}
+            </Typography>
+          }
+        />
+      )}
+    </ListItemButton>
+  );
+
+  if (isCollapsed) {
+    return (
+      <Tooltip title={text} placement="right" arrow>
+        {button}
+      </Tooltip>
+    );
+  }
+  return button;
+};
 
 export default Sidebar;
