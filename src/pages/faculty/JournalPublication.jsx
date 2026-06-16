@@ -662,7 +662,8 @@ export default function JournalPublication() {
       const coAuthorsList = form.otherAuthors.map(a => ({
         name: a.authorName || "",
         affiliation: a.affiliationType === "Aditya University" ? "Aditya University" : (a.affiliationName || ""),
-        employeeId: a.affiliationType === "Aditya University" ? a.empId : null
+        employeeId: a.affiliationType === "Aditya University" ? a.empId : null,
+        authorPosition: a.authorPosition
       })).filter(ca => ca.name && ca.affiliation);
 
       const fields = [
@@ -1389,19 +1390,40 @@ export default function JournalPublication() {
                 <Table size="small">
                   <TableHead sx={{ bgcolor: "var(--bg-panel)" }}>
                     <TableRow>
-                      <TableCell sx={{ fontWeight: 700, color: "var(--text-secondary)" }}>#</TableCell>
+                      <TableCell sx={{ fontWeight: 700, color: "var(--text-secondary)", width: 80 }}>AUTHOR NO</TableCell>
                       <TableCell sx={{ fontWeight: 700, color: "var(--text-secondary)" }}>NAME</TableCell>
                       <TableCell sx={{ fontWeight: 700, color: "var(--text-secondary)" }}>AFFILIATION</TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {data.coAuthors.map((ca, idx) => (
-                      <TableRow key={idx}>
-                        <TableCell sx={{ fontWeight: 800, color: "var(--color-primary)" }}>{idx + 1}</TableCell>
-                        <TableCell sx={{ fontWeight: 700, color: "var(--text-primary)" }}>{ca.name}</TableCell>
-                        <TableCell sx={{ color: "var(--text-secondary)" }}>{ca.affiliation}</TableCell>
-                      </TableRow>
-                    ))}
+                    {(() => {
+                      // Derive correct author positions for co-authors:
+                      // Skip the applicant's position from the full 1..totalAuthors range.
+                      const total = parseInt(data.totalAuthors) || 0;
+                      const applicantPos = parseInt(data.userAuthorPosition) || 0;
+                      const derivedPositions = total > 0
+                        ? Array.from({ length: total }, (_, i) => i + 1).filter(p => p !== applicantPos)
+                        : [];
+                      return data.coAuthors.map((ca, idx) => {
+                        const pos = ca.authorPosition || derivedPositions[idx] || (idx + 1);
+                        return (
+                          <TableRow key={idx} sx={{ '&:hover': { bgcolor: 'rgba(190,147,55,0.04)' } }}>
+                            <TableCell>
+                              <Box sx={{
+                                display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                                width: 30, height: 30, borderRadius: '50%',
+                                bgcolor: 'rgba(190, 147, 55, 0.12)', border: '1.5px solid var(--color-primary)',
+                                color: 'var(--color-primary)', fontWeight: 900, fontSize: '0.82rem'
+                              }}>
+                                {pos}
+                              </Box>
+                            </TableCell>
+                            <TableCell sx={{ fontWeight: 700, color: "var(--text-primary)" }}>{ca.name}</TableCell>
+                            <TableCell sx={{ color: "var(--text-secondary)" }}>{ca.affiliation || "-"}</TableCell>
+                          </TableRow>
+                        );
+                      });
+                    })()}
                   </TableBody>
                 </Table>
               </TableContainer>

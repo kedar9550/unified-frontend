@@ -331,8 +331,39 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
                             <LabelValue label="DOI" value={data.doi || "-"} horizontal />
                             <LabelValue 
                                 label="Applicant Author Position" 
-                                value={data.userAuthorPosition ? `${data.userAuthorPosition} / ${data.totalAuthors}` : (data.firstAuthor === "Yes" ? "1" : data.authorPosition || "-")} 
-                                horizontal 
+                                horizontal
+                                chip={
+                                    (() => {
+                                        const pos = data.userAuthorPosition || (data.firstAuthor === "Yes" ? "1" : data.authorPosition);
+                                        const total = data.totalAuthors;
+                                        if (!pos) return <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)" }}>-</Typography>;
+                                        return (
+                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                <Box sx={{
+                                                    display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                                                    width: 36, height: 36, borderRadius: '50%',
+                                                    bgcolor: 'rgba(190, 147, 55, 0.15)', border: '2px solid var(--color-primary)',
+                                                    color: 'var(--color-primary)', fontWeight: 900, fontSize: '1rem'
+                                                }}>
+                                                    {pos}
+                                                </Box>
+                                                {total && (
+                                                    <>
+                                                        <Typography sx={{ color: 'var(--text-secondary)', fontWeight: 700, fontSize: '1rem' }}>of</Typography>
+                                                        <Box sx={{
+                                                            display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                                                            px: 1.5, height: 32, borderRadius: '8px',
+                                                            bgcolor: 'var(--bg-panel)', border: '1px solid var(--border-color)',
+                                                            color: 'var(--text-primary)', fontWeight: 900, fontSize: '0.95rem'
+                                                        }}>
+                                                            {total} Authors
+                                                        </Box>
+                                                    </>
+                                                )}
+                                            </Box>
+                                        );
+                                    })()
+                                }
                             />
                             <LabelValue label="SDGS" value={data.sdgs ? data.sdgs.split(', ').map(getSdgName).join(', ') : "-"} horizontal />
                             <LabelValue label="Seed Grant Work" value={data.applyingSeedGrant || "No"} horizontal />
@@ -378,19 +409,49 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
                     </Card>
             </Box>
 
-            {/* Co-Authors */}
+            {/* Co-Authors - shown above Attached Documents */}
             {data.coAuthors?.length > 0 && (
                 <Card sx={{ ...cardStyle, p: 0, overflow: "hidden" }}>
-                    <Box sx={{ p: 3, pb: 2 }}><Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 1 }}><GroupsIcon sx={{ color: "var(--color-primary)" }} /><Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>Co-Authors</Typography></Box></Box>
-                    <TableContainer><Table><TableHead sx={{ bgcolor: "var(--bg-panel)" }}><TableRow>
-                        <TableCell sx={{ color: "var(--text-secondary)", fontWeight: 800, fontSize: "0.7rem", textTransform: "uppercase" }}>#</TableCell>
-                        <TableCell sx={{ color: "var(--text-secondary)", fontWeight: 800, fontSize: "0.7rem", textTransform: "uppercase" }}>NAME</TableCell>
-                        <TableCell sx={{ color: "var(--text-secondary)", fontWeight: 800, fontSize: "0.7rem", textTransform: "uppercase" }}>AFFILIATION</TableCell>
-                    </TableRow></TableHead><TableBody>
-                        {data.coAuthors.map((ca, i) => (
-                            <TableRow key={i}><TableCell sx={{ fontWeight: 800, color: "var(--color-primary)" }}>{i + 1}</TableCell><TableCell sx={{ fontWeight: 700, color: "var(--text-primary)" }}>{ca.name}</TableCell><TableCell sx={{ fontWeight: 600, color: "var(--text-secondary)" }}>{ca.affiliation}</TableCell></TableRow>
-                        ))}
-                    </TableBody></Table></TableContainer>
+                    <Box sx={{ p: 3, pb: 2 }}>
+                        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                            <GroupsIcon sx={{ color: "var(--color-primary)" }} />
+                            <Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>Co-Author Details</Typography>
+                            <Box sx={{ ml: 'auto', px: 1.5, py: 0.5, borderRadius: '20px', bgcolor: 'rgba(190,147,55,0.12)', border: '1px solid rgba(190,147,55,0.3)' }}>
+                                <Typography variant="caption" sx={{ fontWeight: 900, color: 'var(--color-primary)', fontSize: '0.7rem' }}>
+                                    Total: {data.coAuthors.length} Co-Author{data.coAuthors.length > 1 ? 's' : ''}
+                                </Typography>
+                            </Box>
+                        </Box>
+                    </Box>
+                    <TableContainer>
+                        <Table>
+                            <TableHead sx={{ bgcolor: "var(--bg-panel)" }}>
+                                <TableRow>
+                                    <TableCell sx={{ color: "var(--text-secondary)", fontWeight: 800, fontSize: "0.7rem", textTransform: "uppercase", width: 60 }}>POSITION</TableCell>
+                                    <TableCell sx={{ color: "var(--text-secondary)", fontWeight: 800, fontSize: "0.7rem", textTransform: "uppercase" }}>NAME</TableCell>
+                                    <TableCell sx={{ color: "var(--text-secondary)", fontWeight: 800, fontSize: "0.7rem", textTransform: "uppercase" }}>AFFILIATION</TableCell>
+                                </TableRow>
+                            </TableHead>
+                            <TableBody>
+                                {data.coAuthors.map((ca, i) => (
+                                    <TableRow key={i} sx={{ '&:hover': { bgcolor: 'rgba(190,147,55,0.04)' } }}>
+                                        <TableCell>
+                                            <Box sx={{
+                                                display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                                                width: 32, height: 32, borderRadius: '50%',
+                                                bgcolor: 'rgba(190, 147, 55, 0.12)', border: '1.5px solid var(--color-primary)',
+                                                color: 'var(--color-primary)', fontWeight: 900, fontSize: '0.85rem'
+                                            }}>
+                                                {ca.authorPosition || (i + 1)}
+                                            </Box>
+                                        </TableCell>
+                                        <TableCell sx={{ fontWeight: 700, color: "var(--text-primary)" }}>{ca.name}</TableCell>
+                                        <TableCell sx={{ fontWeight: 600, color: "var(--text-secondary)" }}>{ca.affiliation || "-"}</TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </TableContainer>
                 </Card>
             )}
 
