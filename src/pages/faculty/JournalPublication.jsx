@@ -1,6 +1,7 @@
 import Loader from "../../components/common/Loader";
 import { useState, useEffect } from "react";
 import { useAuth } from "../../context/AuthContext";
+import { useLoading } from "../../context/LoadingContext";
 
 import {
   Box, TextField, MenuItem, Select, Typography, Button, Table, TableBody,
@@ -84,6 +85,10 @@ async function fetchJournalDataByDOI(doi) {
   const entry = abstractJson?.["search-results"]?.entry?.[0];
   if (!entry || entry.error || (!entry["dc:title"] && !entry["prism:publicationName"])) {
     throw new Error("DOI not found in Scopus. Please fill fields manually");
+  }
+
+  if (entry.subtype === "cp" || entry["prism:aggregationType"] === "Conference Proceeding") {
+    throw new Error("Only journal papers are allowed. Conference papers are not accepted.");
   }
 
   const title = entry["dc:title"] || "";
@@ -245,6 +250,7 @@ async function fetchJournalDataByDOI(doi) {
 // ─── Component ────────────────────────────────────────────────────────────────
 export default function JournalPublication() {
   const { user } = useAuth();
+  const { startLoading, stopLoading } = useLoading();
   const [viewMode, setViewMode] = useState("list"); // 'list' | 'select-year' | 'form'
   const [academicYears, setAcademicYears] = useState([]);
   const [selectedYear, setSelectedYear] = useState("");
@@ -516,6 +522,7 @@ export default function JournalPublication() {
   const fetchDOIData = async () => {
     if (!form.doi.trim()) { toast.warning("Please enter a DOI first"); return; }
     setDoiFetching(true);
+    startLoading();
     try {
       const data = await fetchJournalDataByDOI(form.doi.trim());
 
@@ -552,6 +559,7 @@ export default function JournalPublication() {
       toast.error(err.message || "Failed to fetch DOI details");
     } finally {
       setDoiFetching(false);
+      stopLoading();
     }
   };
 
@@ -873,33 +881,50 @@ export default function JournalPublication() {
       <FacultyInfoRow />
 
       {/* ── DOI Section ── */}
-      <SubLabel text="DOI Lookup: *" />
-      <Box sx={{ display: "flex", gap: 1, mb: 3 }}>
-        <TextField
-          size="small"
-          fullWidth
-          placeholder="Enter DOI (e.g. 10.1038/s41598-024-12345-y)"
-          value={form.doi}
-          onChange={set("doi")}
-        />
-        <Button
- variant="contained"
- onClick={fetchDOIData}
- disabled={!form.doi || doiFetching}
- startIcon={doiFetching ? <Loader size={16} color="inherit" /> : <Search />}
- sx={{ minWidth: "130px", textTransform: "none", fontWeight: 700, background: "var(--color-primary)", whiteSpace: "nowrap" }}
- >
-          {doiFetching ? "Fetching…" : "Fetch Data"}
-        </Button>
-      </Box>
-
-      {doiFetched && (
-        <Box sx={{ mb: 2, p: 1.5, borderRadius: "8px", background: "rgba(16,185,129,0.08)", border: "1px solid rgba(16,185,129,0.3)" }}>
-          <Typography sx={{ fontSize: 12, color: "#10b981", fontWeight: 700 }}>
+      <Box sx={{ mb: 2.5, p: 2.5, borderRadius: "12px", border: "2px solid var(--color-primary)", background: "var(--bg-accent-1)", boxShadow: "0 2px 12px rgba(var(--color-primary-rgb,99,102,241),0.08)" }}>
+        <Typography sx={{ ...labelStyle, color: "var(--color-primary)", mb: 1 }}>
+          DOI (Digital Object Identifier) : *
+          <span style={{ fontWeight: 400, textTransform: "none", fontSize: 10, opacity: 0.7 }}> — Enter DOI to auto-fill details (only journal papers accepted)</span>
+        </Typography>
+        <Box sx={{ display: "flex", gap: 1.5, alignItems: "flex-start" }}>
+          <TextField
+            size="small"
+            fullWidth
+            value={form.doi}
+            onChange={set("doi")}
+            placeholder="e.g. 10.1038/s41598-024-12345-y"
+            onKeyDown={(e) => { if (e.key === "Enter") fetchDOIData(); }}
+            InputProps={{
+              sx: { background: "var(--bg-panel)" },
+              endAdornment: doiFetched ? (
+                <Box component="span" sx={{ display: "flex", alignItems: "center", color: "#10b981", fontSize: 18, mr: 0.5 }}>✓</Box>
+              ) : null
+            }}
+          />
+          <Button
+            variant="contained"
+            onClick={fetchDOIData}
+            disabled={doiFetching || !form.doi.trim()}
+            sx={{
+              minWidth: 110,
+              height: "40px",
+              background: "var(--gradient-primary)",
+              textTransform: "none",
+              fontWeight: 700,
+              flexShrink: 0,
+              "&:hover": { opacity: 0.9 },
+              "&.Mui-disabled": { opacity: 0.5 }
+            }}
+          >
+            {doiFetching ? "Fetching..." : "Fetch Details"}
+          </Button>
+        </Box>
+        {doiFetched && (
+          <Typography sx={{ mt: 1, fontSize: 11, color: "#10b981", fontWeight: 700 }}>
             ✓ Details auto-filled from Scopus. Review and complete any remaining fields below.
           </Typography>
-        </Box>
-      )}
+        )}
+      </Box>
 
       {/* ── Article Details ── */}
       <SubLabel text="Details of the Journal Article:" />
