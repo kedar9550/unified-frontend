@@ -1271,6 +1271,12 @@ export default function JournalPublication() {
             <Grid item xs={12} sm={4}><LabelValue label="Journal Quartile" value={data.journalQuartile || data.categoryOfJournal} /></Grid>
             <Grid item xs={12} sm={4}><LabelValue label="Journal Type" value={data.journalType || "-"} /></Grid>
 
+            {/* Volume, Issue, Published Year, Published Month */}
+            <Grid item xs={12} sm={3}><LabelValue label="Volume" value={data.vol || "-"} /></Grid>
+            <Grid item xs={12} sm={3}><LabelValue label="Issue" value={data.issue || "-"} /></Grid>
+            <Grid item xs={12} sm={3}><LabelValue label="Published Year" value={data.publishedYear || data.year || "-"} /></Grid>
+            <Grid item xs={12} sm={3}><LabelValue label="Published Month" value={data.publishedMonth || data.month || "-"} /></Grid>
+
             {/* H-Index, Impact Factor, Citations, SDGS */}
             <Grid item xs={12} sm={4}><LabelValue label="H-Index" value={data.hIndex || "-"} /></Grid>
             <Grid item xs={12} sm={4}><LabelValue label="Impact Factor" value={data.jcrImpactFactor || data.impactFactor || "-"} /></Grid>
