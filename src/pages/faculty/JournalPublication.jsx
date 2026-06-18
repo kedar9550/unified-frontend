@@ -17,7 +17,7 @@ import {
 } from "../../components/faculty/PublicationFormFields";
 import {
   labelStyle, disabledField, MONTHS, YEARS
-} from "../../components/faculty/publicationConstants";import API from "../../api/axios";
+} from "../../components/faculty/publicationConstants"; import API from "../../api/axios";
 import mammoth from "mammoth";
 import * as pdfjsLib from "pdfjs-dist";
 import pdfWorker from "pdfjs-dist/build/pdf.worker.min.mjs?url";
@@ -27,7 +27,7 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorker;
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 const JOURNAL_TYPES = ["SCI", "SCIE", "ESCI", "WoS", "SCOPUS"];
-const QUARTILE_OPTIONS = ["Q1", "Q2", "Q3", "Q4", "N/A"];
+const QUARTILE_OPTIONS = ["Q1", "Q2", "Q3", "Q4"];
 const INCENTIVE_OPTIONS = ["National", "International"];
 
 const getSdgName = (sdgCode) => {
@@ -58,7 +58,7 @@ const getSdgName = (sdgCode) => {
 };
 
 // ─── Scopus / Elsevier API keys ───────────────────────────────────────────────
-const ELSEVIER_API_KEY = "0436d4fe788649172354545ceca9e650";
+const ELSEVIER_API_KEY = import.meta.env.VITE_ELSEVIER_API_KEY;
 
 // ─── DOI Fetch Helper ─────────────────────────────────────────────────────────
 async function fetchJournalDataByDOI(doi) {
@@ -97,17 +97,17 @@ async function fetchJournalDataByDOI(doi) {
   const issue = entry["prism:issueIdentifier"] || "";
   const pageRange = entry["prism:pageRange"] || "";
   const coverDisplayDate = entry["prism:coverDisplayDate"] || "";
-  
+
   // Clean ISSN
   const rawIssn = entry["prism:issn"] || "";
   const rawEissn = entry["prism:eIssn"] || "";
-  
+
   let extractedIssn = null;
   let extractedEissn = null;
 
   if (rawIssn) extractedIssn = rawIssn.split(" ")[0].replace(/-/g, "");
   if (rawEissn) extractedEissn = rawEissn.split(" ")[0].replace(/-/g, "");
-  
+
   const activeIssn = extractedIssn || extractedEissn;
 
   // Format ISSN with hyphen for WoS check
@@ -122,8 +122,8 @@ async function fetchJournalDataByDOI(doi) {
   let month = "";
   let year = "";
   if (coverDisplayDate) {
-    const monthNames = ["January","February","March","April","May","June","July","August","September","October","November","December"];
-    const shortMonths = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+    const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+    const shortMonths = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
     const yearMatch = coverDisplayDate.match(/\b(19|20)\d{2}\b/);
     if (yearMatch) year = yearMatch[0];
     for (let i = 0; i < 12; i++) {
@@ -178,7 +178,7 @@ async function fetchJournalDataByDOI(doi) {
       }
 
       if (serialDataFetched) {
-        
+
         // H-Index and Impact Factor are NOT fetched from API to prevent wrong/incorrect values
         hIndex = "";
         jcrImpactFactor = "";
@@ -190,7 +190,7 @@ async function fetchJournalDataByDOI(doi) {
         if (Array.isArray(csYearInfo) && csYearInfo.length > 0) {
           const sortedYears = [...csYearInfo].sort((a, b) => parseInt(b["@year"] || 0) - parseInt(a["@year"] || 0));
           const latestYearInfo = sortedYears[0];
-          
+
           const infoList = latestYearInfo.citeScoreInformationList || [];
           let percentiles = [];
           infoList.forEach(info => {
@@ -205,7 +205,7 @@ async function fetchJournalDataByDOI(doi) {
               });
             });
           });
-          
+
           if (percentiles.length > 0) {
             highestPercentile = Math.max(...percentiles);
           }
@@ -337,10 +337,10 @@ export default function JournalPublication() {
   useEffect(() => {
     API.get("/api/research/journal")
       .then(res => setPublicationsList(res.data?.data || res.data || []))
-      .catch(() => {});
+      .catch(() => { });
     API.get("/api/academic-years")
       .then(res => setAcademicYears(res.data?.years || res.data?.data || []))
-      .catch(() => {});
+      .catch(() => { });
   }, [viewMode]);
 
   // ── Field setters ────────────────────────────────────────────────────────────
@@ -510,7 +510,7 @@ export default function JournalPublication() {
     const filteredValue = value.replace(/[^0-9,]/g, "");
     // Split values using comma, trim spaces, ignore empty values, and count total valid entries
     const count = filteredValue.split(',').map(s => s.trim()).filter(Boolean).length;
-    
+
     setForm(p => ({
       ...p,
       agecReferencingNumbers: filteredValue,
@@ -544,7 +544,13 @@ export default function JournalPublication() {
       };
 
       Object.entries(map).forEach(([k, v]) => {
-        if (v) { patch[k] = v; fetched[k] = true; }
+        if (v) {
+          patch[k] = v;
+          // Don't lock the quartile field when API returns "N/A" — let user select manually
+          if (!(k === "journalQuartile" && v === "N/A")) {
+            fetched[k] = true;
+          }
+        }
       });
 
       if (Object.keys(patch).length === 0) {
@@ -576,7 +582,7 @@ export default function JournalPublication() {
           ),
         }));
       }
-    } catch (_) {}
+    } catch (_) { }
   };
 
   const handleCoAuthorChange = (pos, field, value) => {
@@ -665,7 +671,7 @@ export default function JournalPublication() {
     setLoading(true);
     try {
       const fd = new FormData();
-      
+
       // Map coAuthors array matching CoAuthorSchema
       const coAuthorsList = form.otherAuthors.map(a => ({
         name: a.authorName || "",
@@ -675,9 +681,9 @@ export default function JournalPublication() {
       })).filter(ca => ca.name && ca.affiliation);
 
       const fields = [
-        "doi","paperTitle","journalName","journalType",
-        "vol","issue","agecReferencingNumbers","applyIncentive","publicationScope",
-        "totalAuthors","userAuthorPosition","hIndex","jcrImpactFactor",
+        "doi", "paperTitle", "journalName", "journalType",
+        "vol", "issue", "agecReferencingNumbers", "applyIncentive", "publicationScope",
+        "totalAuthors", "userAuthorPosition", "hIndex", "jcrImpactFactor",
       ];
       fields.forEach(k => {
         if (k === "publicationScope" && form.applyIncentive === "No") {
@@ -686,7 +692,7 @@ export default function JournalPublication() {
           fd.append(k, form[k] ?? "");
         }
       });
-      
+
       fd.append("numberOfReferencesBelongingToAGEC", form.numberOfReferencesBelongingToAGEC || 0);
 
       fd.append("publishedMonth", form.month);
@@ -726,10 +732,10 @@ export default function JournalPublication() {
       <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
         <Typography variant="h6" sx={{ color: "var(--text-primary)", fontWeight: 800 }}>My Journal Publications</Typography>
         <Button
- variant="contained"
- onClick={() => setViewMode("select-year")}
- sx={{ background: "var(--gradient-primary)", px: 3, fontWeight: 700, textTransform: "none", "&:hover": { opacity: 0.9, transform: "translateY(-1px)", boxShadow: "0 4px 12px rgba(0,0,0,0.1)" }, transition: "all 0.2s ease" }}
- >
+          variant="contained"
+          onClick={() => setViewMode("select-year")}
+          sx={{ background: "var(--gradient-primary)", px: 3, fontWeight: 700, textTransform: "none", "&:hover": { opacity: 0.9, transform: "translateY(-1px)", boxShadow: "0 4px 12px rgba(0,0,0,0.1)" }, transition: "all 0.2s ease" }}
+        >
           Apply New
         </Button>
       </Box>
@@ -781,10 +787,10 @@ export default function JournalPublication() {
                   <TableCell sx={{ color: "var(--text-secondary)", py: 2, maxWidth: 160 }}>
                     {pub.coAuthors && pub.coAuthors.length > 0
                       ? <Tooltip title={pub.coAuthors.map(ca => ca.name).join(", ")} arrow>
-                          <Typography variant="body2" sx={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 150, cursor: "default" }}>
-                            {pub.coAuthors.map(ca => ca.name).join(", ")}
-                          </Typography>
-                        </Tooltip>
+                        <Typography variant="body2" sx={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 150, cursor: "default" }}>
+                          {pub.coAuthors.map(ca => ca.name).join(", ")}
+                        </Typography>
+                      </Tooltip>
                       : <Typography variant="body2" sx={{ color: "var(--text-secondary)" }}>—</Typography>}
                   </TableCell>
                   <TableCell sx={{ py: 2 }}>
@@ -955,8 +961,8 @@ export default function JournalPublication() {
           <Typography sx={labelStyle}>Type of Journal :</Typography>
           <Select size="small" fullWidth displayEmpty value={form.journalType || ""} onChange={set("journalType")} disabled={isFetched("journalType")} sx={isFetched("journalType") ? disabledField : {}}>
             <MenuItem value="">Select</MenuItem>
-            {(form.journalType && !JOURNAL_TYPES.includes(form.journalType) 
-              ? [...JOURNAL_TYPES, form.journalType] 
+            {(form.journalType && !JOURNAL_TYPES.includes(form.journalType)
+              ? [...JOURNAL_TYPES, form.journalType]
               : JOURNAL_TYPES
             ).map(t => <MenuItem key={t} value={t}>{t}</MenuItem>)}
           </Select>
@@ -1172,10 +1178,10 @@ export default function JournalPublication() {
       {/* ── Actions ── */}
       <Box sx={{ display: "flex", gap: 2, justifyContent: "center", mt: 4 }}>
         <Button
- variant="outlined"
- onClick={() => setViewMode("list")}
- sx={{ px: 4, height: "44px", textTransform: "none", fontWeight: 600, color: "var(--text-primary)", borderColor: "var(--border-color)", "&:hover": { borderColor: "#ef4444", color: "#ef4444", background: "rgba(239,68,68,0.05)" }, transition: "all 0.3s ease" }}
- >
+          variant="outlined"
+          onClick={() => setViewMode("list")}
+          sx={{ px: 4, height: "44px", textTransform: "none", fontWeight: 600, color: "var(--text-primary)", borderColor: "var(--border-color)", "&:hover": { borderColor: "#ef4444", color: "#ef4444", background: "rgba(239,68,68,0.05)" }, transition: "all 0.3s ease" }}
+        >
           Cancel
         </Button>
         <SubmitBtn onClick={handleSubmit} loading={loading} />
@@ -1238,8 +1244,8 @@ export default function JournalPublication() {
     })();
 
     return (
-      <Dialog 
-        open={!!selectedPubDetails} 
+      <Dialog
+        open={!!selectedPubDetails}
         onClose={handleCloseDetails}
         maxWidth="md"
         fullWidth
@@ -1263,34 +1269,34 @@ export default function JournalPublication() {
         <DialogContent sx={{ p: 3, mt: 1 }}>
           <Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)", mb: 1 }}>{data.paperTitle}</Typography>
           <Typography variant="body2" sx={{ color: "var(--text-secondary)", mb: 3, fontWeight: 600 }}>Journal: {data.journalName}</Typography>
-          
+
           <Grid container spacing={2.5}>
             <Grid item xs={12} sm={3}><LabelValue label="Academic Year" value={data.academicYear?.year || "-"} /></Grid>
             <Grid item xs={12} sm={6}><LabelValue label="DOI" value={data.doi || "-"} /></Grid>
             <Grid item xs={12} sm={3}>
-              <LabelValue 
-                label="Status" 
+              <LabelValue
+                label="Status"
                 chip={
-                  <Chip 
-                    label={data.status} 
-                    size="small" 
-                    sx={{ 
-                      bgcolor: `${statusColor}15`, 
-                      color: statusColor, 
-                      fontWeight: 800, 
+                  <Chip
+                    label={data.status}
+                    size="small"
+                    sx={{
+                      bgcolor: `${statusColor}15`,
+                      color: statusColor,
+                      fontWeight: 800,
                       border: `1px solid ${statusColor}44`,
-                      borderRadius: "6px" 
-                    }} 
+                      borderRadius: "6px"
+                    }}
                   />
-                } 
+                }
               />
             </Grid>
 
             {/* Author position, Quartile, type */}
             <Grid item xs={12} sm={4}>
-              <LabelValue 
-                label="Applicant Author Position" 
-                value={data.userAuthorPosition ? `${data.userAuthorPosition} / ${data.totalAuthors}` : (data.firstAuthor === "Yes" ? "1" : data.authorPosition || "-")} 
+              <LabelValue
+                label="Applicant Author Position"
+                value={data.userAuthorPosition ? `${data.userAuthorPosition} / ${data.totalAuthors}` : (data.firstAuthor === "Yes" ? "1" : data.authorPosition || "-")}
               />
             </Grid>
             <Grid item xs={12} sm={4}><LabelValue label="Journal Quartile" value={data.journalQuartile || data.categoryOfJournal} /></Grid>
@@ -1306,26 +1312,26 @@ export default function JournalPublication() {
             <Grid item xs={12} sm={4}><LabelValue label="H-Index" value={data.hIndex || "-"} /></Grid>
             <Grid item xs={12} sm={4}><LabelValue label="Impact Factor" value={data.jcrImpactFactor || data.impactFactor || "-"} /></Grid>
             <Grid item xs={12} sm={4}><LabelValue label="Citations" value={data.citations || "-"} /></Grid>
-            
+
             <Grid item xs={12} sm={6}><LabelValue label="AGEC Referencing Numbers" value={data.agecReferencingNumbers || data.referencingNos || "-"} /></Grid>
             <Grid item xs={12} sm={6}><LabelValue label="Number of References Belonging to AGEC" value={data.numberOfReferencesBelongingToAGEC !== undefined ? data.numberOfReferencesBelongingToAGEC : (data.papersCited !== undefined ? data.papersCited : "-")} /></Grid>
-            
+
             {/* Seed Grant Work & SDGS */}
             <Grid item xs={12} sm={6}><LabelValue label="Seed Grant Work" value={data.applyingSeedGrant || "No"} /></Grid>
             <Grid item xs={12} sm={6}><LabelValue label="SDGS Matched" value={data.sdgs ? data.sdgs.split(', ').map(getSdgName).join(', ') : "None"} /></Grid>
 
             {/* Publication Scope information */}
             <Grid item xs={12} sm={6}>
-              <LabelValue 
-                label="Publication Scope" 
-                value={data.publicationScope || data.incentiveApplied || "-"} 
+              <LabelValue
+                label="Publication Scope"
+                value={data.publicationScope || data.incentiveApplied || "-"}
               />
             </Grid>
             {data.status === "Approved" && data.approvedAmount && (
               <Grid item xs={12} sm={6}>
-                <LabelValue 
-                  label="Approved Incentive" 
-                  value={`₹${data.approvedAmount}`} 
+                <LabelValue
+                  label="Approved Incentive"
+                  value={`₹${data.approvedAmount}`}
                   chip={<Chip label={`₹${data.approvedAmount}`} size="small" sx={{ bgcolor: "rgba(76, 175, 80, 0.1)", color: "#4caf50", fontWeight: 800 }} />}
                 />
               </Grid>
@@ -1333,7 +1339,7 @@ export default function JournalPublication() {
 
             {/* Appraisal Claimant Selector */}
             <Grid item xs={12} sm={6}>
-              <LabelValue 
+              <LabelValue
                 label="Appraisal Claimant"
                 chip={
                   (() => {
@@ -1358,7 +1364,7 @@ export default function JournalPublication() {
                       );
                     }
 
-                    const currentClaimantObj = uniqueClaimants.find(c => 
+                    const currentClaimantObj = uniqueClaimants.find(c =>
                       (c.institutionId && c.institutionId === (data.appraisalClaimant?.institutionId || data.appraisalClaimant || "").toString()) ||
                       (c._id && c._id.toString() === (data.appraisalClaimant?._id || data.appraisalClaimant || "").toString())
                     );
