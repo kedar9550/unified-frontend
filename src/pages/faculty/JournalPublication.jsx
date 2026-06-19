@@ -809,22 +809,11 @@ export default function JournalPublication() {
                     </Typography>
                   </TableCell>
                   <TableCell sx={{ py: 2, textAlign: "center" }}>
-                    <Tooltip title="View Details" arrow>
+                    <Tooltip title="View Details">
                       <IconButton
                         size="small"
                         onClick={() => setSelectedPubDetails(pub)}
-                        sx={{
-                          color: "var(--color-primary)",
-                          border: "1px solid var(--color-primary)",
-                          borderRadius: "8px",
-                          p: "5px",
-                          transition: "all 0.2s ease",
-                          "&:hover": {
-                            background: "var(--bg-accent-1)",
-                            transform: "scale(1.1)",
-                            boxShadow: "0 2px 8px rgba(0,0,0,0.15)"
-                          }
-                        }}
+                        sx={{ color: "var(--color-primary)" }}
                       >
                         <Visibility fontSize="small" />
                       </IconButton>
@@ -1002,7 +991,10 @@ export default function JournalPublication() {
             setForm(p => ({ ...p, year: e.target.value, month: "" }));
           }} disabled={isFetched("year")} sx={isFetched("year") ? disabledField : {}}>
             <MenuItem value="">Select Year</MenuItem>
-            {YEARS.map(y => <MenuItem key={y} value={y}>{y}</MenuItem>)}
+            {(form.year && !YEARS.includes(String(form.year))
+              ? [...YEARS, String(form.year)].sort((a, b) => Number(b) - Number(a))
+              : YEARS
+            ).map(y => <MenuItem key={y} value={y}>{y}</MenuItem>)}
           </Select>
         </Box>
         <Box>

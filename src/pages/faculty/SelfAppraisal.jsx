@@ -1773,9 +1773,9 @@ const SelfAppraisal = () => {
                             disabled={resolvingClaimId === claim._id}
                           >
                             <MenuItem value="" disabled>Select Claimant</MenuItem>
-                            {claim.eligibleClaimants.map((el) => (
-                              <MenuItem key={el.institutionId || el._id} value={el.institutionId || el._id}>
-                                {el.name} ({el.institutionId})
+                            {claim.eligibleClaimants.map((el, idx) => (
+                              <MenuItem key={el.institutionId || el.name || idx} value={el.institutionId || el.name}>
+                                {el.name}{el.institutionId ? ` (${el.institutionId})` : ""}
                               </MenuItem>
                             ))}
                           </Select>
