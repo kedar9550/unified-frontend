@@ -1,17 +1,17 @@
 import React, { useState, useEffect, useCallback } from "react";
 import {
   Box, Typography, Grid, Card, Button, TextField, Chip, IconButton, Stack,
-  Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper,
   FormControl, InputLabel, Select, MenuItem, Checkbox, Dialog, DialogTitle,
-  DialogContent, DialogActions, Divider
+  DialogContent, DialogActions
 } from "@mui/material";
 import {
-  WorkspacePremium, Close, Description, Download, Person, CalendarToday, CheckCircle, Cancel
+  Description, Person, CheckCircle, Cancel
 } from "@mui/icons-material";
 import { toast } from "sonner";
 import PageHeader from "../../components/common/PageHeader";
 import SectionHeader from "../../components/common/SectionHeader";
 import API from "../../api/axios";
+import DataTable from "../../components/data/DataTable";
 
 // 13 Categories definitions
 const CONTRIBUTION_CATEGORIES = [
@@ -34,8 +34,6 @@ export default function ContributionApproval() {
   const [academicYears, setAcademicYears] = useState([]);
   const [selectedYear, setSelectedYear] = useState("");
   const [data, setData] = useState([]);
-
-  // FIX 1: Default loading to true to prevent "No submitted entries found" layout flash
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState("Pending at HOD");
   const [categoryFilter, setCategoryFilter] = useState("All");
@@ -51,19 +49,12 @@ export default function ContributionApproval() {
   const [individualRemarks, setIndividualRemarks] = useState("");
   const [openIndividualRemarksDialog, setOpenIndividualRemarksDialog] = useState(false);
 
-  // FIX 2: Memoize fetchRequests and allow it to accept targeted arguments
   const fetchRequests = useCallback(async (yearId, status, category) => {
     if (!yearId) return;
     setLoading(true);
     try {
-      const params = {
-        status: status,
-        academicYear: yearId
-      };
-      if (category !== 'All') {
-        params.category = category;
-      }
-
+      const params = { status, academicYear: yearId };
+      if (category !== "All") params.category = category;
       const res = await API.get("/api/value-addition/contribution/pending-hod", { params });
       if (res.data?.success) {
         setData(res.data.data);
@@ -77,22 +68,17 @@ export default function ContributionApproval() {
     }
   }, []);
 
-  // FIX 3: Consolidated single initialization effect orchestration
   useEffect(() => {
     let isMounted = true;
-
     const initializeDashboard = async () => {
       try {
         const res = await API.get("/api/academic-years");
         const years = res.data?.years || res.data?.data || [];
-
         if (!isMounted) return;
         setAcademicYears(years);
-
         if (years.length > 0) {
           const defaultYearId = years[0]._id;
           setSelectedYear(defaultYearId);
-          // Fetch immediately with the newly acquired ID instead of waiting on a re-render cycle
           await fetchRequests(defaultYearId, statusFilter, categoryFilter);
         } else {
           setLoading(false);
@@ -102,15 +88,10 @@ export default function ContributionApproval() {
         if (isMounted) setLoading(false);
       }
     };
-
     initializeDashboard();
+    return () => { isMounted = false; };
+  }, [fetchRequests]);
 
-    return () => {
-      isMounted = false;
-    };
-  }, [fetchRequests]); // Status and category removed here; handled directly via interactive onChange handlers
-
-  // FIX 4: Explicit, immediate filter change handlers
   const handleYearChange = (e) => {
     const nextYear = e.target.value;
     setSelectedYear(nextYear);
@@ -129,41 +110,32 @@ export default function ContributionApproval() {
     fetchRequests(selectedYear, statusFilter, nextCategory);
   };
 
-
   // Group data by faculty
   const groupedData = data.reduce((groups, item) => {
     const facultyId = item.facultyId?._id;
     if (!facultyId) return groups;
-
     if (!groups[facultyId]) {
-      groups[facultyId] = {
-        faculty: item.facultyId,
-        academicYear: item.academicYear?.year || "N/A",
-        entries: []
-      };
+      groups[facultyId] = { faculty: item.facultyId, academicYear: item.academicYear?.year || "N/A", entries: [] };
     }
     groups[facultyId].entries.push(item);
     return groups;
   }, {});
 
-  // Apply search query to filtered grouped keys
+  // Apply search query
   const groupedFacultyIds = Object.keys(groupedData).filter(facId => {
     const group = groupedData[facId];
     const facName = group.faculty?.name?.toLowerCase() || "";
     const empId = group.faculty?.institutionId?.toLowerCase() || "";
     const term = searchQuery.toLowerCase();
-
     return facName.includes(term) || empId.includes(term);
   });
 
   const handleSelectEntry = (id) => {
-    setSelectedIds(prev =>
-      prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
-    );
+    setSelectedIds(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
   };
 
   const handleSelectAllForFaculty = (entries, isChecked) => {
-    const pendingIds = entries.filter(e => e.status === 'Pending at HOD').map(e => e._id);
+    const pendingIds = entries.filter(e => e.status === "Pending at HOD").map(e => e._id);
     if (isChecked) {
       setSelectedIds(prev => [...new Set([...prev, ...pendingIds])]);
     } else {
@@ -172,20 +144,16 @@ export default function ContributionApproval() {
   };
 
   const handleIndividualAction = async (id, action, remarksText = "") => {
-    if (action === 'Reject' && !remarksText) {
+    if (action === "Reject" && !remarksText) {
       setIndividualRejectId(id);
       setIndividualRemarks("");
       setOpenIndividualRemarksDialog(true);
       return;
     }
-
     setActionLoading(true);
     try {
-      await API.put(`/api/value-addition/contribution/hod-action/${id}`, {
-        action,
-        comment: remarksText
-      });
-      toast.success(`Request successfully ${action === 'Approve' ? 'Approved' : 'Rejected'}.`);
+      await API.put(`/api/value-addition/contribution/hod-action/${id}`, { action, comment: remarksText });
+      toast.success(`Request successfully ${action === "Approve" ? "Approved" : "Rejected"}.`);
       setOpenIndividualRemarksDialog(false);
       fetchRequests(selectedYear, statusFilter, categoryFilter);
     } catch (err) {
@@ -206,19 +174,16 @@ export default function ContributionApproval() {
   };
 
   const handleBulkActionSubmit = async () => {
-    if (bulkActionType === 'Reject' && !bulkRemarks) {
+    if (bulkActionType === "Reject" && !bulkRemarks) {
       toast.error("Rejection remarks are mandatory");
       return;
     }
-
     setActionLoading(true);
     try {
       await API.post("/api/value-addition/contribution/hod-bulk-action", {
-        ids: selectedIds,
-        action: bulkActionType,
-        comment: bulkRemarks
+        ids: selectedIds, action: bulkActionType, comment: bulkRemarks
       });
-      toast.success(`Successfully ${bulkActionType === 'Approve' ? 'approved' : 'rejected'} ${selectedIds.length} entries.`);
+      toast.success(`Successfully ${bulkActionType === "Approve" ? "approved" : "rejected"} ${selectedIds.length} entries.`);
       setOpenBulkRemarksDialog(false);
       fetchRequests(selectedYear, statusFilter, categoryFilter);
     } catch (err) {
@@ -229,9 +194,9 @@ export default function ContributionApproval() {
   };
 
   const getStatusColor = (status) => {
-    if (status === 'Approved') return { bg: "rgba(16, 185, 129, 0.1)", color: "#10b981" };
-    if (status === 'Rejected') return { bg: "rgba(239, 68, 68, 0.1)", color: "#ef4444" };
-    if (status === 'Pending at HOD') return { bg: "rgba(245, 158, 11, 0.1)", color: "#f59e0b" };
+    if (status === "Approved") return { bg: "rgba(16, 185, 129, 0.1)", color: "#10b981" };
+    if (status === "Rejected") return { bg: "rgba(239, 68, 68, 0.1)", color: "#ef4444" };
+    if (status === "Pending at HOD") return { bg: "rgba(245, 158, 11, 0.1)", color: "#f59e0b" };
     return { bg: "rgba(100, 116, 139, 0.1)", color: "#64748b" };
   };
 
@@ -243,7 +208,7 @@ export default function ContributionApproval() {
   const getFileLink = (filepath) => {
     if (!filepath) return "#";
     const backendURL = (import.meta.env.VITE_BACKEND_URL || "http://localhost:9000").replace(/\/$/, "");
-    return filepath.startsWith('http') ? filepath : `${backendURL}${filepath}`;
+    return filepath.startsWith("http") ? filepath : `${backendURL}${filepath}`;
   };
 
   const formatDate = (dateStr) => {
@@ -260,8 +225,7 @@ export default function ContributionApproval() {
       }
       if (item.duration) {
         return item.duration.includes("Days") || item.duration.includes("Hours") || item.duration.includes("Weeks")
-          ? item.duration
-          : `${item.duration} Days`;
+          ? item.duration : `${item.duration} Days`;
       }
     }
     if (cat === 11) return item.duration || "-";
@@ -296,9 +260,7 @@ export default function ContributionApproval() {
         return (
           <Box>
             <Typography variant="body2" sx={{ fontWeight: 600 }}>{item.articleTitle}</Typography>
-            <Typography sx={{ fontSize: 10, color: "var(--color-primary)", fontWeight: 700 }}>
-              Publication: {item.publicationName}
-            </Typography>
+            <Typography sx={{ fontSize: 10, color: "var(--color-primary)", fontWeight: 700 }}>Publication: {item.publicationName}</Typography>
           </Box>
         );
       case 10: return <Typography variant="body2" sx={{ fontWeight: 600 }}>{item.facilityName}</Typography>;
@@ -308,6 +270,124 @@ export default function ContributionApproval() {
       default: return null;
     }
   };
+
+  const showCheckbox = statusFilter === "Pending at HOD" || statusFilter === "All";
+
+  // Build DataTable rows for a faculty group
+  const buildRows = (entries) =>
+    entries.map((item, idx) => {
+      const isPending = item.status === "Pending at HOD";
+      const statusStyle = getStatusColor(item.status);
+      const categoryName = getCategoryName(item.category);
+      const durationText = renderDurationPeriod(item);
+
+      return [
+        // 0 – Checkbox or S.No (non-sortable)
+        showCheckbox
+          ? {
+              value: selectedIds.includes(item._id) ? 1 : 0,
+              display: (
+                <Checkbox
+                  checked={selectedIds.includes(item._id)}
+                  onChange={() => handleSelectEntry(item._id)}
+                  disabled={!isPending}
+                  size="small"
+                />
+              ),
+            }
+          : {
+              value: idx + 1,
+              display: (
+                <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-secondary)", textAlign: "center" }}>
+                  {idx + 1}
+                </Typography>
+              ),
+            },
+        // 1 – Category
+        { value: categoryName, display: categoryName },
+        // 2 – Contribution Details (non-sortable)
+        {
+          value: categoryName,
+          display: renderDynamicTextDetails(item),
+        },
+        // 3 – Duration / Period
+        { value: durationText, display: durationText },
+        // 4 – Proof (non-sortable)
+        {
+          value: item.proof ? 1 : 0,
+          display: item.proof ? (
+            <IconButton size="small" onClick={() => window.open(getFileLink(item.proof), "_blank")} sx={{ color: "var(--color-primary)" }}>
+              <Description fontSize="small" />
+            </IconButton>
+          ) : null,
+        },
+        // 5 – Status
+        {
+          value: item.status,
+          display: (
+            <Chip
+              label={item.status}
+              size="small"
+              sx={{ bgcolor: statusStyle.bg, color: statusStyle.color, fontWeight: 700, borderRadius: "6px", fontSize: "0.7rem" }}
+            />
+          ),
+        },
+        // 6 – HOD Remarks (non-sortable)
+        {
+          value: item.hodComment ?? "",
+          display: isPending ? (
+            <TextField
+              fullWidth size="small"
+              placeholder="Add comments..."
+              id={`remarks-${item._id}`}
+              sx={{ "& .MuiOutlinedInput-root": { borderRadius: "8px", bgcolor: "var(--bg-panel)", fontSize: "0.8rem" } }}
+            />
+          ) : (
+            <Typography variant="body2" sx={{ color: "var(--text-secondary)", fontStyle: "italic", fontSize: "0.8rem" }}>
+              {item.hodComment || "-"}
+            </Typography>
+          ),
+        },
+        // 7 – Actions (non-sortable, only shown for pending view)
+        ...(showCheckbox
+          ? [{
+              value: isPending ? 0 : 1,
+              display: isPending ? (
+                <Stack direction="row" spacing={1} justifyContent="center">
+                  <IconButton
+                    size="small" color="success"
+                    onClick={() => {
+                      const remVal = document.getElementById(`remarks-${item._id}`)?.value || "";
+                      handleIndividualAction(item._id, "Approve", remVal);
+                    }}
+                  >
+                    <CheckCircle fontSize="small" />
+                  </IconButton>
+                  <IconButton
+                    size="small" color="error"
+                    onClick={() => {
+                      const remVal = document.getElementById(`remarks-${item._id}`)?.value || "";
+                      handleIndividualAction(item._id, "Reject", remVal);
+                    }}
+                  >
+                    <Cancel fontSize="small" />
+                  </IconButton>
+                </Stack>
+              ) : (
+                <Typography variant="caption" sx={{ color: "text.disabled", display: "block", textAlign: "center" }}>
+                  Processed
+                </Typography>
+              ),
+            }]
+          : []),
+      ];
+    });
+
+  const TABLE_COLUMNS = showCheckbox
+    ? ["", "Category", "Contribution Details", "Duration / Period", "Proof", "Status", "HOD Remarks", "Actions"]
+    : ["S.No", "Category", "Contribution Details", "Duration / Period", "Proof", "Status", "HOD Remarks"];
+  // Non-sortable: checkbox/sno(0), Contribution Details(2), Proof(4), HOD Remarks(6), Actions(7)
+  const NON_SORTABLE = showCheckbox ? [0, 2, 4, 6, 7] : [0, 2, 4, 6];
 
   return (
     <Box sx={{ width: "100%", pb: 5 }}>
@@ -320,21 +400,13 @@ export default function ContributionApproval() {
         <SectionHeader title="Tabular Review Screen" />
 
         {/* Global Toolbar & Filters */}
-        <Box sx={{
-          p: 2.5, mb: 4, background: "var(--bg-panel)", borderRadius: "16px",
-          border: "1px solid var(--border-color)", boxShadow: "0 4px 24px rgba(0,0,0,0.02)"
-        }}>
+        <Box sx={{ p: 2.5, mb: 4, background: "var(--bg-panel)", borderRadius: "16px", border: "1px solid var(--border-color)", boxShadow: "0 4px 24px rgba(0,0,0,0.02)" }}>
           <Grid container spacing={2} sx={{ alignItems: "center" }}>
-            <Grid item xs={12} sm={4}>
+            <Grid item xs={12} sm={3}>
               <FormControl fullWidth size="small">
                 <InputLabel>Status</InputLabel>
-                <Select
-                  value={statusFilter}
-                  label="Status"
-                  onChange={handleStatusChange} // FIX 5: Use explicit handler
-                  sx={{ borderRadius: "12px", background: "var(--bg-glass)" }}
-                >
-                  <MenuItem value="All">All Processed & Submitted</MenuItem>
+                <Select value={statusFilter} label="Status" onChange={handleStatusChange} sx={{ borderRadius: "12px", background: "var(--bg-glass)" }}>
+                  <MenuItem value="All">All Processed &amp; Submitted</MenuItem>
                   <MenuItem value="Pending at HOD">Pending at HOD</MenuItem>
                   <MenuItem value="Approved">Approved</MenuItem>
                   <MenuItem value="Rejected">Rejected</MenuItem>
@@ -342,27 +414,28 @@ export default function ContributionApproval() {
               </FormControl>
             </Grid>
 
-            <Grid item xs={12} sm={4}>
+            <Grid item xs={12} sm={3}>
               <FormControl fullWidth size="small">
                 <InputLabel>Academic Year</InputLabel>
-                <Select
-                  value={selectedYear}
-                  label="Academic Year"
-                  onChange={handleYearChange} // FIX 5: Use explicit handler
-                  sx={{ borderRadius: "12px", background: "var(--bg-glass)" }}
-                >
-                  {academicYears.map(y => (
-                    <MenuItem key={y._id} value={y._id}>{y.year}</MenuItem>
-                  ))}
+                <Select value={selectedYear} label="Academic Year" onChange={handleYearChange} sx={{ borderRadius: "12px", background: "var(--bg-glass)" }}>
+                  {academicYears.map(y => <MenuItem key={y._id} value={y._id}>{y.year}</MenuItem>)}
                 </Select>
               </FormControl>
             </Grid>
 
-            {/* Added Category Dropdown if you want it explicitly interactable, or kept it working internally */}
-            <Grid item xs={12} sm={4}>
+            <Grid item xs={12} sm={3}>
+              <FormControl fullWidth size="small">
+                <InputLabel>Category</InputLabel>
+                <Select value={categoryFilter} label="Category" onChange={handleCategoryChange} sx={{ borderRadius: "12px", background: "var(--bg-glass)" }}>
+                  <MenuItem value="All">All Categories</MenuItem>
+                  {CONTRIBUTION_CATEGORIES.map(c => <MenuItem key={c.id} value={String(c.id)}>{c.name}</MenuItem>)}
+                </Select>
+              </FormControl>
+            </Grid>
+
+            <Grid item xs={12} sm={3}>
               <TextField
-                fullWidth
-                size="small"
+                fullWidth size="small"
                 placeholder="Search faculty name, emp ID..."
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
@@ -379,19 +452,17 @@ export default function ContributionApproval() {
               </Typography>
               <Stack direction="row" spacing={2}>
                 <Button
- variant="contained"
- color="success"
- onClick={() => handleBulkActionTrigger('Approve')}
- sx={{ textTransform: "none", fontWeight: 700, bgcolor: "#10b981", "&:hover": { bgcolor: "#059669" } }}
- >
+                  variant="contained" color="success"
+                  onClick={() => handleBulkActionTrigger("Approve")}
+                  sx={{ textTransform: "none", fontWeight: 700, bgcolor: "#10b981", "&:hover": { bgcolor: "#059669" } }}
+                >
                   Approve Selected
                 </Button>
                 <Button
- variant="outlined"
- color="error"
- onClick={() => handleBulkActionTrigger('Reject')}
- sx={{ textTransform: "none", fontWeight: 700 }}
- >
+                  variant="outlined" color="error"
+                  onClick={() => handleBulkActionTrigger("Reject")}
+                  sx={{ textTransform: "none", fontWeight: 700 }}
+                >
                   Reject Selected
                 </Button>
               </Stack>
@@ -399,7 +470,7 @@ export default function ContributionApproval() {
           )}
         </Box>
 
-        {/* Tabular Group Cards */}
+        {/* Faculty Group Cards with DataTable */}
         {loading ? (
           <Typography sx={{ textAlign: "center", py: 5 }}>Loading entries...</Typography>
         ) : groupedFacultyIds.length === 0 ? (
@@ -412,27 +483,18 @@ export default function ContributionApproval() {
             const fac = group.faculty;
             const entries = group.entries;
 
-            const pendingEntries = entries.filter(e => e.status === 'Pending at HOD');
+            const pendingEntries = entries.filter(e => e.status === "Pending at HOD");
             const allChecked = pendingEntries.length > 0 && pendingEntries.every(e => selectedIds.includes(e._id));
             const someChecked = pendingEntries.some(e => selectedIds.includes(e._id)) && !allChecked;
 
             return (
-              <Card key={facId} sx={{
-                mb: 4.5, borderRadius: "20px", border: "1px solid var(--border-color)",
-                background: "var(--bg-glass)", backdropFilter: "blur(10px)",
-                boxShadow: "var(--shadow-premium)", overflow: "hidden"
-              }}>
+              <Card key={facId} sx={{ mb: 4.5, borderRadius: "20px", border: "1px solid var(--border-color)", background: "var(--bg-glass)", backdropFilter: "blur(10px)", boxShadow: "var(--shadow-premium)", overflow: "hidden" }}>
                 {/* Group Header */}
-                <Box sx={{
-                  p: 2.5, bgcolor: "var(--bg-panel)", borderBottom: "1px solid var(--border-color)",
-                  display: "flex", justifyContent: "space-between", flexWrap: "wrap", alignItems: "center", gap: 2
-                }}>
+                <Box sx={{ p: 2.5, bgcolor: "var(--bg-panel)", borderBottom: "1px solid var(--border-color)", display: "flex", justifyContent: "space-between", flexWrap: "wrap", alignItems: "center", gap: 2 }}>
                   <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
                     <Person sx={{ color: "var(--color-primary)", fontSize: "1.6rem" }} />
                     <Box>
-                      <Typography sx={{ fontWeight: 800, color: "var(--text-primary)", fontSize: "1.05rem" }}>
-                        {fac?.name}
-                      </Typography>
+                      <Typography sx={{ fontWeight: 800, color: "var(--text-primary)", fontSize: "1.05rem" }}>{fac?.name}</Typography>
                       <Typography sx={{ color: "var(--text-secondary)", fontSize: "0.75rem", fontWeight: 600 }}>
                         Emp ID: {fac?.institutionId} | Department: {fac?.coreDepartment?.name || fac?.department?.name}
                       </Typography>
@@ -440,127 +502,32 @@ export default function ContributionApproval() {
                   </Box>
                   <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
                     <Chip label={`Academic Year: ${group.academicYear}`} size="small" sx={{ bgcolor: "rgba(190, 147, 55, 0.1)", color: "var(--color-primary)", fontWeight: 800 }} />
-                    <Checkbox
-                      checked={allChecked}
-                      indeterminate={someChecked}
-                      disabled={pendingEntries.length === 0}
-                      onChange={(e) => handleSelectAllForFaculty(entries, e.target.checked)}
-                      sx={{ color: "var(--color-primary)" }}
-                    />
-                    <Typography variant="caption" sx={{ color: pendingEntries.length === 0 ? "text.disabled" : "var(--text-secondary)", fontWeight: 700 }}>Select All</Typography>
+                    {showCheckbox && (
+                      <>
+                        <Checkbox
+                          checked={allChecked}
+                          indeterminate={someChecked}
+                          disabled={pendingEntries.length === 0}
+                          onChange={(e) => handleSelectAllForFaculty(entries, e.target.checked)}
+                          sx={{ color: "var(--color-primary)" }}
+                        />
+                        <Typography variant="caption" sx={{ color: pendingEntries.length === 0 ? "text.disabled" : "var(--text-secondary)", fontWeight: 700 }}>
+                          Select All
+                        </Typography>
+                      </>
+                    )}
                   </Box>
                 </Box>
 
-                {/* Submissions Table */}
-                <TableContainer>
-                  <Table size="small">
-                    <TableHead sx={{ bgcolor: "rgba(0,0,0,0.01)" }}>
-                      <TableRow>
-                        <TableCell sx={{ width: "40px" }}></TableCell>
-                        <TableCell sx={{ fontWeight: 800, color: "var(--text-secondary)", py: 1.5 }}>Category</TableCell>
-                        <TableCell sx={{ fontWeight: 800, color: "var(--text-secondary)", py: 1.5 }}>Contribution Details</TableCell>
-                        <TableCell sx={{ fontWeight: 800, color: "var(--text-secondary)", py: 1.5 }}>Duration / Period</TableCell>
-                        <TableCell sx={{ fontWeight: 800, color: "var(--text-secondary)", py: 1.5 }}>Proof</TableCell>
-                        <TableCell sx={{ fontWeight: 800, color: "var(--text-secondary)", py: 1.5 }}>Status</TableCell>
-                        <TableCell sx={{ fontWeight: 800, color: "var(--text-secondary)", py: 1.5 }}>HOD Remarks</TableCell>
-                        <TableCell sx={{ fontWeight: 800, color: "var(--text-secondary)", py: 1.5, textAlign: "center" }}>Actions</TableCell>
-                      </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      {entries.map(item => {
-                        const statusStyle = getStatusColor(item.status);
-                        const isPending = item.status === 'Pending at HOD';
-
-                        return (
-                          <TableRow key={item._id} sx={{ "&:hover": { bgcolor: "rgba(255,255,255,0.01)" } }}>
-                            <TableCell>
-                              <Checkbox
-                                checked={selectedIds.includes(item._id)}
-                                onChange={() => handleSelectEntry(item._id)}
-                                disabled={!isPending}
-                              />
-                            </TableCell>
-                            <TableCell sx={{ color: "var(--text-primary)", fontWeight: 700, maxWidth: 220, overflow: "hidden", textOverflow: "ellipsis" }}>
-                              {getCategoryName(item.category)}
-                            </TableCell>
-                            <TableCell sx={{ color: "var(--text-secondary)" }}>
-                              {renderDynamicTextDetails(item)}
-                            </TableCell>
-                            <TableCell sx={{ color: "var(--text-secondary)", fontWeight: 600 }}>
-                              {renderDurationPeriod(item)}
-                            </TableCell>
-                            <TableCell>
-                              {item.proof && (
-                                <IconButton
-                                  size="small"
-                                  onClick={() => window.open(getFileLink(item.proof), '_blank')}
-                                  sx={{ color: "var(--color-primary)" }}
-                                >
-                                  <Description fontSize="small" />
-                                </IconButton>
-                              )}
-                            </TableCell>
-                            <TableCell>
-                              <Chip
-                                label={item.status}
-                                size="small"
-                                sx={{
-                                  bgcolor: statusStyle.bg, color: statusStyle.color,
-                                  fontWeight: 700, borderRadius: "6px", fontSize: "0.7rem"
-                                }}
-                              />
-                            </TableCell>
-                            <TableCell sx={{ py: 1, minWidth: 150 }}>
-                              {isPending ? (
-                                <TextField
-                                  fullWidth
-                                  size="small"
-                                  placeholder="Add comments..."
-                                  id={`remarks-${item._id}`}
-                                  sx={{ "& .MuiOutlinedInput-root": { borderRadius: "8px", bgcolor: "var(--bg-panel)", fontSize: "0.8rem" } }}
-                                />
-                              ) : (
-                                <Typography variant="body2" sx={{ color: "var(--text-secondary)", fontStyle: "italic", fontSize: "0.8rem" }}>
-                                  {item.hodComment || "-"}
-                                </Typography>
-                              )}
-                            </TableCell>
-                            <TableCell sx={{ py: 1 }}>
-                              {isPending ? (
-                                <Stack direction="row" spacing={1} sx={{ justifyContent: "center" }}>
-                                  <IconButton
-                                    size="small"
-                                    color="success"
-                                    onClick={() => {
-                                      const remVal = document.getElementById(`remarks-${item._id}`)?.value || "";
-                                      handleIndividualAction(item._id, 'Approve', remVal);
-                                    }}
-                                  >
-                                    <CheckCircle fontSize="small" />
-                                  </IconButton>
-                                  <IconButton
-                                    size="small"
-                                    color="error"
-                                    onClick={() => {
-                                      const remVal = document.getElementById(`remarks-${item._id}`)?.value || "";
-                                      handleIndividualAction(item._id, 'Reject', remVal);
-                                    }}
-                                  >
-                                    <Cancel fontSize="small" />
-                                  </IconButton>
-                                </Stack>
-                              ) : (
-                                <Typography variant="caption" sx={{ color: "text.disabled", display: "block", textAlign: "center" }}>
-                                  Processed
-                                </Typography>
-                              )}
-                            </TableCell>
-                          </TableRow>
-                        );
-                      })}
-                    </TableBody>
-                  </Table>
-                </TableContainer>
+                {/* DataTable */}
+                <Box sx={{ p: 2 }}>
+                  <DataTable
+                    columns={TABLE_COLUMNS}
+                    rows={buildRows(entries)}
+                    nonSortableColumns={NON_SORTABLE}
+                    defaultRowsPerPage={10}
+                  />
+                </Box>
               </Card>
             );
           })
@@ -568,83 +535,58 @@ export default function ContributionApproval() {
       </Box>
 
       {/* Bulk Remarks Dialog */}
-      <Dialog
-        open={openBulkRemarksDialog}
-        onClose={() => setOpenBulkRemarksDialog(false)}
-        PaperProps={{ sx: { borderRadius: "16px", p: 1 } }}
-      >
+      <Dialog open={openBulkRemarksDialog} onClose={() => setOpenBulkRemarksDialog(false)} PaperProps={{ sx: { borderRadius: "16px", p: 1 } }}>
         <DialogTitle>
-          <Typography variant="h6" sx={{ fontWeight: 800 }}>
-            Bulk {bulkActionType} Decisions
-          </Typography>
+          <Typography variant="h6" sx={{ fontWeight: 800 }}>Bulk {bulkActionType} Decisions</Typography>
         </DialogTitle>
         <DialogContent>
           <Typography sx={{ mb: 2, color: "var(--text-secondary)" }}>
             Provide comments for processing the selected {selectedIds.length} contribution entries:
-            {bulkActionType === 'Reject' && <strong style={{ color: "#ef4444" }}> (Remarks are mandatory for rejection)</strong>}
+            {bulkActionType === "Reject" && <strong style={{ color: "#ef4444" }}> (Remarks are mandatory for rejection)</strong>}
           </Typography>
           <TextField
-            fullWidth
-            multiline
-            rows={3}
-            placeholder="Type comments here..."
-            value={bulkRemarks}
-            onChange={e => setBulkRemarks(e.target.value)}
+            fullWidth multiline rows={3} placeholder="Type comments here..."
+            value={bulkRemarks} onChange={e => setBulkRemarks(e.target.value)}
             sx={{ "& .MuiOutlinedInput-root": { borderRadius: "12px", bgcolor: "var(--bg-panel)" } }}
           />
         </DialogContent>
         <DialogActions sx={{ p: 2 }}>
-          <Button onClick={() => setOpenBulkRemarksDialog(false)} sx={{ textTransform: "none", fontWeight: 700 }}>
-            Cancel
-          </Button>
+          <Button onClick={() => setOpenBulkRemarksDialog(false)} sx={{ textTransform: "none", fontWeight: 700 }}>Cancel</Button>
           <Button
- variant="contained"
- color={bulkActionType === 'Approve' ? 'success' : 'error'}
- disabled={actionLoading}
- onClick={handleBulkActionSubmit}
- sx={{ textTransform: "none", fontWeight: 800, bgcolor: bulkActionType === 'Approve' ? "#10b981" : "#ef4444" }}
- >
-            {bulkActionType === 'Approve' ? 'Bulk Approve' : 'Bulk Reject'}
+            variant="contained"
+            color={bulkActionType === "Approve" ? "success" : "error"}
+            disabled={actionLoading}
+            onClick={handleBulkActionSubmit}
+            sx={{ textTransform: "none", fontWeight: 800, bgcolor: bulkActionType === "Approve" ? "#10b981" : "#ef4444" }}
+          >
+            {bulkActionType === "Approve" ? "Bulk Approve" : "Bulk Reject"}
           </Button>
         </DialogActions>
       </Dialog>
 
-      {/* Individual Remarks Dialog for Rejection */}
-      <Dialog
-        open={openIndividualRemarksDialog}
-        onClose={() => setOpenIndividualRemarksDialog(false)}
-        PaperProps={{ sx: { borderRadius: "16px", p: 1 } }}
-      >
+      {/* Individual Rejection Dialog */}
+      <Dialog open={openIndividualRemarksDialog} onClose={() => setOpenIndividualRemarksDialog(false)} PaperProps={{ sx: { borderRadius: "16px", p: 1 } }}>
         <DialogTitle>
-          <Typography variant="h6" sx={{ fontWeight: 800, color: "#ef4444" }}>
-            Rejection Comments Mandatory
-          </Typography>
+          <Typography variant="h6" sx={{ fontWeight: 800, color: "#ef4444" }}>Rejection Comments Mandatory</Typography>
         </DialogTitle>
         <DialogContent>
           <Typography sx={{ mb: 2, color: "var(--text-secondary)" }}>
             Please enter comments detailing the reason for rejecting this faculty contribution:
           </Typography>
           <TextField
-            fullWidth
-            multiline
-            rows={3}
-            placeholder="Type comments here..."
-            value={individualRemarks}
-            onChange={e => setIndividualRemarks(e.target.value)}
+            fullWidth multiline rows={3} placeholder="Type comments here..."
+            value={individualRemarks} onChange={e => setIndividualRemarks(e.target.value)}
             sx={{ "& .MuiOutlinedInput-root": { borderRadius: "12px", bgcolor: "var(--bg-panel)" } }}
           />
         </DialogContent>
         <DialogActions sx={{ p: 2 }}>
-          <Button onClick={() => setOpenIndividualRemarksDialog(false)} sx={{ textTransform: "none", fontWeight: 700 }}>
-            Cancel
-          </Button>
+          <Button onClick={() => setOpenIndividualRemarksDialog(false)} sx={{ textTransform: "none", fontWeight: 700 }}>Cancel</Button>
           <Button
- variant="contained"
- color="error"
- disabled={actionLoading || !individualRemarks}
- onClick={() => handleIndividualAction(individualRejectId, 'Reject', individualRemarks)}
- sx={{ textTransform: "none", fontWeight: 800 }}
- >
+            variant="contained" color="error"
+            disabled={actionLoading || !individualRemarks}
+            onClick={() => handleIndividualAction(individualRejectId, "Reject", individualRemarks)}
+            sx={{ textTransform: "none", fontWeight: 800 }}
+          >
             Reject Entry
           </Button>
         </DialogActions>
