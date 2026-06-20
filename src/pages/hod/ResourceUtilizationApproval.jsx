@@ -237,12 +237,14 @@ export default function ResourceUtilizationApproval() {
         },
         // 4 – No. of Sessions / Days
         {
-          value: act.sessionsConducted ?? act.daysParticipated ?? 0,
+          value: act.sessionsConducted ?? act.duration ?? act.daysParticipated ?? 0,
           display:
             act.sessionsConducted !== undefined && act.sessionsConducted !== null
               ? `${act.sessionsConducted} Sessions`
+              : act.duration !== undefined && act.duration !== null
+              ? `${act.duration} Days`   // use server-auto-calculated duration (matches faculty view)
               : act.daysParticipated !== undefined && act.daysParticipated !== null
-              ? `${act.daysParticipated} Days`
+              ? `${act.daysParticipated} Days`   // fallback to manual entry
               : "-",
         },
         // 5 – Duration / Dates

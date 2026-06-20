@@ -58,7 +58,6 @@ export default function FacultyAdministration() {
   };
 
   const selectMenuProps = {
-    onClose: blurActiveElement,
     disableAutoFocusItem: true,
     slotProps: {
       list: {
@@ -292,6 +291,7 @@ export default function FacultyAdministration() {
             setSelectedYearLabel(e.target.value);
             blurActiveElement();
           }}
+          onClose={blurActiveElement}
           MenuProps={selectMenuProps}
           disabled={loading || saving}
           size="small"

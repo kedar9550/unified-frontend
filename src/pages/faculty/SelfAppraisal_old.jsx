@@ -185,7 +185,6 @@ const SelfAppraisal = () => {
   };
 
   const selectMenuProps = {
-    onClose: blurActiveElement,
     disableAutoFocusItem: true,
     slotProps: {
       list: {
@@ -1798,6 +1797,7 @@ const SelfAppraisal = () => {
                   setSelectedYear(e.target.value);
                   blurActiveElement();
                 }}
+                onClose={blurActiveElement}
                 MenuProps={selectMenuProps}
                 label="Academic Year"
               >
@@ -1859,6 +1859,7 @@ const SelfAppraisal = () => {
                   setSelectedYear(e.target.value);
                   blurActiveElement();
                 }}
+                onClose={blurActiveElement}
                 MenuProps={selectMenuProps}
                 label="Academic Year"
               >
@@ -1990,6 +1991,7 @@ const SelfAppraisal = () => {
                 setSelectedYear(e.target.value);
                 blurActiveElement();
               }}
+              onClose={blurActiveElement}
               MenuProps={selectMenuProps}
               label="Academic Year"
             >

@@ -60,7 +60,6 @@ export default function Teaching() {
   };
 
   const selectMenuProps = {
-    onClose: blurActiveElement,
     disableAutoFocusItem: true,
     slotProps: {
       list: {
@@ -979,6 +978,7 @@ export default function Teaching() {
               setSelectedYearLabel(e.target.value);
               blurActiveElement();
             }}
+            onClose={blurActiveElement}
             MenuProps={selectMenuProps}
             sx={{ minWidth: 120, fontSize: 14, color: "var(--text-primary)", fontWeight: 600, "& .MuiSelect-icon": { color: "var(--text-secondary)" } }}
           >

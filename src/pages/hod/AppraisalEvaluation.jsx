@@ -538,6 +538,15 @@ const AppraisalEvaluation = () => {
     return matchesStatus && matchesSearch;
   });
 
+  // Live calculations for Section 3 & 4 points in HOD Appraisal Evaluation
+  const liveResUtilPoints = selectedAppraisal?.resourceUtilizationDetails?.reduce((sum, r) => r.status !== 'Rejected' ? sum + calculateResourceUtilizationPoints(r, appraisalConfig) : sum, 0) || 0;
+  const liveContPoints = selectedAppraisal?.contributionDetails?.reduce((sum, r) => r.status !== 'Rejected' ? sum + calculateContributionPoints(r, appraisalConfig) : sum, 0) || 0;
+  const liveValueAdditionPoints = Math.min(10, liveResUtilPoints) + Math.min(10, liveContPoints);
+
+  const liveAdminRoles = selectedAppraisal?.administrationDetail?.roles?.filter(r => r.isResponsible) || [];
+  const liveAdminPointsRaw = liveAdminRoles.reduce((sum, r) => r.status !== 'Rejected' ? sum + calculateAdministrativePoints(r, appraisalConfig) : sum, 0);
+  const liveAdminPoints = Math.min(20, liveAdminPointsRaw);
+
   return (
     <Box p={4} sx={{ maxWidth: 1200, margin: "0 auto", animation: "fadeIn 0.5s ease" }}>
       
@@ -1463,7 +1472,7 @@ const AppraisalEvaluation = () => {
                       </Typography>
                       <Box display="flex" alignItems="baseline" gap={0.5}>
                         <Typography variant="h6" sx={{ fontWeight: 900, color: "#10b981" }}>
-                          {selectedAppraisal.valueAddition?.totalClaimed || 0}
+                          {liveValueAdditionPoints}
                         </Typography>
                         <Typography variant="body2" sx={{ color: "var(--text-secondary)", fontWeight: 700 }}>
                           / 20
@@ -1480,7 +1489,7 @@ const AppraisalEvaluation = () => {
                       />
                       <CircularProgress
                         variant="determinate"
-                        value={Math.min(100, Math.round(((selectedAppraisal.valueAddition?.totalClaimed || 0) / 20) * 100))}
+                        value={Math.min(100, Math.round((liveValueAdditionPoints / 20) * 100))}
                         size={40}
                         thickness={4}
                         sx={{
@@ -1491,7 +1500,7 @@ const AppraisalEvaluation = () => {
                       />
                       <Box sx={{ top: 0, left: 0, bottom: 0, right: 0, position: "absolute", display: "flex", alignItems: "center", justifyContent: "center" }}>
                         <Typography variant="caption" sx={{ fontWeight: 800, color: "var(--text-primary)", fontSize: "0.7rem" }}>
-                          {Math.min(100, Math.round(((selectedAppraisal.valueAddition?.totalClaimed || 0) / 20) * 100))}%
+                          {Math.min(100, Math.round((liveValueAdditionPoints / 20) * 100))}%
                         </Typography>
                       </Box>
                     </Box>
@@ -1762,7 +1771,7 @@ const AppraisalEvaluation = () => {
                       </Typography>
                       <Box display="flex" alignItems="baseline" gap={0.5}>
                         <Typography variant="h6" sx={{ fontWeight: 900, color: "#f97316" }}>
-                          {selectedAppraisal.administration?.totalClaimed || 0}
+                          {liveAdminPoints}
                         </Typography>
                         <Typography variant="body2" sx={{ color: "var(--text-secondary)", fontWeight: 700 }}>
                           / 20
@@ -1779,7 +1788,7 @@ const AppraisalEvaluation = () => {
                       />
                       <CircularProgress
                         variant="determinate"
-                        value={Math.min(100, Math.round(((selectedAppraisal.administration?.totalClaimed || 0) / 20) * 100))}
+                        value={Math.min(100, Math.round((liveAdminPoints / 20) * 100))}
                         size={40}
                         thickness={4}
                         sx={{
@@ -1790,7 +1799,7 @@ const AppraisalEvaluation = () => {
                       />
                       <Box sx={{ top: 0, left: 0, bottom: 0, right: 0, position: "absolute", display: "flex", alignItems: "center", justifyContent: "center" }}>
                         <Typography variant="caption" sx={{ fontWeight: 800, color: "var(--text-primary)", fontSize: "0.7rem" }}>
-                          {Math.min(100, Math.round(((selectedAppraisal.administration?.totalClaimed || 0) / 20) * 100))}%
+                          {Math.min(100, Math.round((liveAdminPoints / 20) * 100))}%
                         </Typography>
                       </Box>
                     </Box>
