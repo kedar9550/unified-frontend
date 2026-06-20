@@ -130,11 +130,11 @@ export const ROLE_ROUTES = {
           path: "/hod/research-approvals",
           icon: <Science />
         },
-        {
-          text: "Proctoring Verification",
-          path: "/hod/proctoring-approvals",
-          icon: <SupervisorAccount />
-        },
+        // {
+        //   text: "Proctoring Verification",
+        //   path: "/hod/proctoring-approvals",
+        //   icon: <SupervisorAccount />
+        // },
 
         {
           text: "Resource Utilization",

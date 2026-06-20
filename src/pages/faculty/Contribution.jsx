@@ -78,7 +78,6 @@ export default function Contribution() {
   };
 
   const selectMenuProps = {
-    onClose: blurActiveElement,
     disableAutoFocusItem: true,
     slotProps: {
       list: {
@@ -502,6 +501,26 @@ export default function Contribution() {
     return found ? found.name : `Category ${catId}`;
   };
 
+  const getContributionNameField = (category, data) => {
+    const cat = parseInt(category);
+    switch (cat) {
+      case 1: return { field: 'organizationName', value: data.organizationName };
+      case 2: return { field: 'journalName', value: data.journalName };
+      case 3: return { field: 'journalConferenceName', value: data.journalConferenceName };
+      case 4:
+      case 5: return { field: 'awardName', value: data.awardName };
+      case 6: return { field: 'courseName', value: data.courseName };
+      case 7: return { field: 'certificationName', value: data.certificationName };
+      case 8: return { field: 'eventName', value: data.eventName };
+      case 9: return { field: 'articleTitle', value: data.articleTitle };
+      case 10: return { field: 'facilityName', value: data.facilityName };
+      case 11:
+      case 12: return { field: 'courseName', value: data.courseName };
+      case 13: return { field: 'grantName', value: data.grantName };
+      default: return { field: '', value: '' };
+    }
+  };
+
   const renderDateFields = () => {
     const isFutureAllowed = [1, 2, 3].includes(parseInt(form.category));
     const todayStr = new Date().toISOString().split("T")[0];
@@ -754,6 +773,7 @@ export default function Contribution() {
                 setSelectedYear(e.target.value);
                 blurActiveElement();
               }}
+              onClose={blurActiveElement}
               MenuProps={selectMenuProps}
               displayEmpty
               sx={{ width: { xs: "100%", sm: "auto" }, minWidth: { xs: "100%", sm: 180 }, borderRadius: "8px", background: "var(--bg-glass)" }}
@@ -907,6 +927,7 @@ export default function Contribution() {
     const data = selectedContributionDetails;
     const cat = parseInt(data.category);
     const statusStyle = getStatusColor(data.status);
+    const { value } = getContributionNameField(data.category, data);
 
     const backendURL = (import.meta.env.VITE_BACKEND_URL || "http://localhost:9000").replace(/\/$/, "");
     const fileUrl = data.proof ? (data.proof.startsWith('http') ? data.proof : `${backendURL}${data.proof}`) : null;
@@ -915,188 +936,6 @@ export default function Contribution() {
     const formatDate = (dateStr) => {
       if (!dateStr) return "-";
       return new Date(dateStr).toLocaleDateString("en-IN", { day: "2-digit", month: "2-digit", year: "numeric" });
-    };
-
-    const renderDetailDates = () => (
-      <>
-        <Grid item xs={12} sm={6}>
-          <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", fontWeight: 800, fontSize: "0.65rem", display: "block" }}>Dates</Typography>
-          <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>
-            {formatDate(data.fromDate)} to {formatDate(data.toDate)}
-          </Typography>
-        </Grid>
-        <Grid item xs={12} sm={6}>
-          <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", fontWeight: 800, fontSize: "0.65rem", display: "block" }}>Duration</Typography>
-          <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>{data.duration || "-"}</Typography>
-        </Grid>
-      </>
-    );
-
-    const renderDynamicDetailGrid = () => {
-      switch (cat) {
-        case 1:
-          return (
-            <>
-              <Grid item xs={12} sm={12}>
-                <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", fontWeight: 800, fontSize: "0.65rem", display: "block" }}>Organization Name</Typography>
-                <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>{data.organizationName || "-"}</Typography>
-              </Grid>
-              {renderDetailDates()}
-            </>
-          );
-        case 2:
-          return (
-            <>
-              <Grid item xs={12} sm={12}>
-                <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", fontWeight: 800, fontSize: "0.65rem", display: "block" }}>Journal Name (SCIE / Q1 / Q2)</Typography>
-                <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>{data.journalName || "-"}</Typography>
-              </Grid>
-              {renderDetailDates()}
-            </>
-          );
-        case 3:
-          return (
-            <>
-              <Grid item xs={12} sm={12}>
-                <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", fontWeight: 800, fontSize: "0.65rem", display: "block" }}>Journal / Conference Name</Typography>
-                <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>{data.journalConferenceName || "-"}</Typography>
-              </Grid>
-              {renderDetailDates()}
-            </>
-          );
-        case 4:
-        case 5:
-          return (
-            <>
-              <Grid item xs={12} sm={6}>
-                <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", fontWeight: 800, fontSize: "0.65rem", display: "block" }}>Award Name</Typography>
-                <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>{data.awardName || "-"}</Typography>
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", fontWeight: 800, fontSize: "0.65rem", display: "block" }}>Award Date</Typography>
-                <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>{formatDate(data.awardDate)}</Typography>
-              </Grid>
-            </>
-          );
-        case 6:
-          return (
-            <>
-              <Grid item xs={12} sm={6}>
-                <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", fontWeight: 800, fontSize: "0.65rem", display: "block" }}>Course Name</Typography>
-                <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>{data.courseName || "-"}</Typography>
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", fontWeight: 800, fontSize: "0.65rem", display: "block" }}>URL</Typography>
-                <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>
-                  <a href={data.url} target="_blank" rel="noreferrer" style={{ color: "var(--color-primary)" }}>{data.url}</a>
-                </Typography>
-              </Grid>
-            </>
-          );
-        case 7:
-          return (
-            <>
-              <Grid item xs={12} sm={12}>
-                <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", fontWeight: 800, fontSize: "0.65rem", display: "block" }}>Certification Name</Typography>
-                <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>{data.certificationName || "-"}</Typography>
-              </Grid>
-              {renderDetailDates()}
-            </>
-          );
-        case 8:
-          return (
-            <>
-              <Grid item xs={12} sm={6}>
-                <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", fontWeight: 800, fontSize: "0.65rem", display: "block" }}>Event Name</Typography>
-                <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>{data.eventName || "-"}</Typography>
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", fontWeight: 800, fontSize: "0.65rem", display: "block" }}>Event Date</Typography>
-                <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>{formatDate(data.eventDate)}</Typography>
-              </Grid>
-            </>
-          );
-        case 9:
-          return (
-            <>
-              <Grid item xs={12} sm={4}>
-                <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", fontWeight: 800, fontSize: "0.65rem", display: "block" }}>Article Title</Typography>
-                <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>{data.articleTitle || "-"}</Typography>
-              </Grid>
-              <Grid item xs={12} sm={4}>
-                <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", fontWeight: 800, fontSize: "0.65rem", display: "block" }}>Publication Name</Typography>
-                <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>{data.publicationName || "-"}</Typography>
-              </Grid>
-              <Grid item xs={12} sm={4}>
-                <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", fontWeight: 800, fontSize: "0.65rem", display: "block" }}>Publication Date</Typography>
-                <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>{formatDate(data.publicationDate)}</Typography>
-              </Grid>
-            </>
-          );
-        case 10:
-          return (
-            <>
-              <Grid item xs={12} sm={12}>
-                <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", fontWeight: 800, fontSize: "0.65rem", display: "block" }}>Facility Name</Typography>
-                <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>{data.facilityName || "-"}</Typography>
-              </Grid>
-              {renderDetailDates()}
-            </>
-          );
-        case 11:
-          return (
-            <>
-              <Grid item xs={12} sm={6}>
-                <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", fontWeight: 800, fontSize: "0.65rem", display: "block" }}>Course Name (NPTEL)</Typography>
-                <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>{data.courseName || "-"}</Typography>
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", fontWeight: 800, fontSize: "0.65rem", display: "block" }}>Duration</Typography>
-                <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>{data.duration || "-"}</Typography>
-              </Grid>
-              {data.certificateNumber && (
-                <Grid item xs={12} sm={6}>
-                  <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", fontWeight: 800, fontSize: "0.65rem", display: "block" }}>Certificate Number</Typography>
-                  <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>{data.certificateNumber}</Typography>
-                </Grid>
-              )}
-            </>
-          );
-        case 12:
-          return (
-            <>
-              <Grid item xs={12} sm={6}>
-                <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", fontWeight: 800, fontSize: "0.65rem", display: "block" }}>Course Name (Coursera)</Typography>
-                <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>{data.courseName || "-"}</Typography>
-              </Grid>
-              {data.courseHours !== undefined && data.courseHours !== null && (
-                <Grid item xs={12} sm={6}>
-                  <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", fontWeight: 800, fontSize: "0.65rem", display: "block" }}>Course Hours</Typography>
-                  <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>{data.courseHours} hrs</Typography>
-                </Grid>
-              )}
-              {data.certificateNumber && (
-                <Grid item xs={12} sm={6}>
-                  <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", fontWeight: 800, fontSize: "0.65rem", display: "block" }}>Certificate Number</Typography>
-                  <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>{data.certificateNumber}</Typography>
-                </Grid>
-              )}
-              {renderDetailDates()}
-            </>
-          );
-        case 13:
-          return (
-            <>
-              <Grid item xs={12} sm={12}>
-                <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", fontWeight: 800, fontSize: "0.65rem", display: "block" }}>Grant Name</Typography>
-                <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>{data.grantName || "-"}</Typography>
-              </Grid>
-              {renderDetailDates()}
-            </>
-          );
-        default:
-          return null;
-      }
     };
 
     return (
@@ -1122,21 +961,26 @@ export default function Contribution() {
           </Box>
           <IconButton onClick={() => setSelectedContributionDetails(null)} sx={{ color: "#fff" }}><Close /></IconButton>
         </DialogTitle>
-        <DialogContent sx={{ p: 3, mt: 1 }}>
-          <Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)", mb: 3 }}>
+        <DialogContent sx={{ pt: 2, px: 3, pb: 3, mt: 2 }}>
+          <Typography variant="subtitle2" color="var(--color-primary)" sx={{ fontWeight: 800, textTransform: "uppercase" }}>
             {getCategoryName(data.category)}
           </Typography>
+          {value && (
+            <Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)", mb: 3, mt: 0.5 }}>
+              {value}
+            </Typography>
+          )}
 
-          <Grid container spacing={2}>
-            <Grid item xs={12} sm={6}>
-              <Box sx={{ p: 1.5, borderRadius: "10px", background: "rgba(255,255,255,0.02)" }}>
+          <Grid container spacing={2} sx={{ mt: value ? 0 : 2 }}>
+            <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+              <Box sx={{ p: 1.5, borderRadius: "10px", background: "var(--bg-paper)", border: "1px solid var(--border-color)", height: "100%" }}>
                 <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", fontWeight: 800, fontSize: "0.65rem" }}>Academic Year</Typography>
                 <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>{data.academicYear?.year || "N/A"}</Typography>
               </Box>
             </Grid>
 
-            <Grid item xs={12} sm={6}>
-              <Box sx={{ p: 1.5, borderRadius: "10px", background: "rgba(255,255,255,0.02)" }}>
+            <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+              <Box sx={{ p: 1.5, borderRadius: "10px", background: "var(--bg-paper)", border: "1px solid var(--border-color)", height: "100%" }}>
                 <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", fontWeight: 800, fontSize: "0.65rem" }}>Status</Typography>
                 <Box sx={{ mt: 0.5 }}>
                   <Chip
@@ -1153,20 +997,98 @@ export default function Contribution() {
               </Box>
             </Grid>
 
-            <Grid item xs={12}>
-              <Box sx={{ p: 2, background: "rgba(0,0,0,0.01)", border: "1px dashed var(--border-color)", borderRadius: "12px", mt: 2 }}>
-                <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 2, color: "var(--color-primary)" }}>Category Parameters:</Typography>
-                <Grid container spacing={3}>
-                  {renderDynamicDetailGrid()}
-                </Grid>
-              </Box>
-            </Grid>
+            {/* Category specific fields */}
+            {data.fromDate && data.toDate && (
+              <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+                <Box sx={{ p: 1.5, borderRadius: "10px", background: "var(--bg-paper)", border: "1px solid var(--border-color)", height: "100%" }}>
+                  <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", fontWeight: 800, fontSize: "0.65rem" }}>Dates</Typography>
+                  <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>
+                    {formatDate(data.fromDate)} to {formatDate(data.toDate)}
+                  </Typography>
+                </Box>
+              </Grid>
+            )}
 
+            {data.duration && (
+              <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+                <Box sx={{ p: 1.5, borderRadius: "10px", background: "var(--bg-paper)", border: "1px solid var(--border-color)", height: "100%" }}>
+                  <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", fontWeight: 800, fontSize: "0.65rem" }}>Duration</Typography>
+                  <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>{data.duration}</Typography>
+                </Box>
+              </Grid>
+            )}
+
+            {data.awardDate && (
+              <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+                <Box sx={{ p: 1.5, borderRadius: "10px", background: "var(--bg-paper)", border: "1px solid var(--border-color)", height: "100%" }}>
+                  <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", fontWeight: 800, fontSize: "0.65rem" }}>Award Date</Typography>
+                  <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>{formatDate(data.awardDate)}</Typography>
+                </Box>
+              </Grid>
+            )}
+
+            {data.eventDate && (
+              <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+                <Box sx={{ p: 1.5, borderRadius: "10px", background: "var(--bg-paper)", border: "1px solid var(--border-color)", height: "100%" }}>
+                  <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", fontWeight: 800, fontSize: "0.65rem" }}>Event Date</Typography>
+                  <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>{formatDate(data.eventDate)}</Typography>
+                </Box>
+              </Grid>
+            )}
+
+            {data.publicationName && (
+              <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+                <Box sx={{ p: 1.5, borderRadius: "10px", background: "var(--bg-paper)", border: "1px solid var(--border-color)", height: "100%" }}>
+                  <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", fontWeight: 800, fontSize: "0.65rem" }}>Publication Name</Typography>
+                  <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>{data.publicationName}</Typography>
+                </Box>
+              </Grid>
+            )}
+
+            {data.publicationDate && (
+              <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+                <Box sx={{ p: 1.5, borderRadius: "10px", background: "var(--bg-paper)", border: "1px solid var(--border-color)", height: "100%" }}>
+                  <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", fontWeight: 800, fontSize: "0.65rem" }}>Publication Date</Typography>
+                  <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>{formatDate(data.publicationDate)}</Typography>
+                </Box>
+              </Grid>
+            )}
+
+            {data.certificateNumber && (
+              <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+                <Box sx={{ p: 1.5, borderRadius: "10px", background: "var(--bg-paper)", border: "1px solid var(--border-color)", height: "100%" }}>
+                  <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", fontWeight: 800, fontSize: "0.65rem" }}>Certificate Number</Typography>
+                  <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>{data.certificateNumber}</Typography>
+                </Box>
+              </Grid>
+            )}
+
+            {(data.courseHours !== undefined && data.courseHours !== null) && (
+              <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+                <Box sx={{ p: 1.5, borderRadius: "10px", background: "var(--bg-paper)", border: "1px solid var(--border-color)", height: "100%" }}>
+                  <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", fontWeight: 800, fontSize: "0.65rem" }}>Course Hours</Typography>
+                  <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>{data.courseHours} hrs</Typography>
+                </Box>
+              </Grid>
+            )}
+
+            {data.url && (
+              <Grid size={{ xs: 12 }}>
+                <Box sx={{ p: 1.5, borderRadius: "10px", background: "var(--bg-paper)", border: "1px solid var(--border-color)", height: "100%" }}>
+                  <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", fontWeight: 800, fontSize: "0.65rem" }}>URL / Reference Link</Typography>
+                  <Typography variant="body2" sx={{ fontWeight: 700, mt: 0.5 }}>
+                    <a href={data.url} target="_blank" rel="noopener noreferrer" style={{ color: "var(--color-primary)", textDecoration: "none" }}>{data.url}</a>
+                  </Typography>
+                </Box>
+              </Grid>
+            )}
+
+            {/* HOD Feedback / Remarks */}
             {data.hodComment && (
-              <Grid item xs={12}>
-                <Box sx={{ p: 2, bgcolor: "rgba(255, 193, 7, 0.05)", borderRadius: "10px", border: "1px solid rgba(255, 193, 7, 0.2)" }}>
-                  <Typography variant="caption" sx={{ fontWeight: 900, color: "#ff9800", textTransform: "uppercase" }}>HOD Remarks</Typography>
-                  <Typography variant="body2" sx={{ fontStyle: "italic", mt: 0.5, color: "var(--text-secondary)" }}>"{data.hodComment}"</Typography>
+              <Grid size={{ xs: 12 }}>
+                <Box sx={{ p: 2, bgcolor: "rgba(232, 160, 0, 0.05)", borderRadius: "12px", border: "1px solid rgba(232, 160, 0, 0.2)" }}>
+                  <Typography variant="caption" sx={{ fontWeight: 900, color: "#e8a000", textTransform: "uppercase", letterSpacing: "0.05em" }}>HOD Remarks</Typography>
+                  <Typography variant="body2" sx={{ fontStyle: "italic", mt: 0.5, color: "var(--text-primary)" }}>&quot;{data.hodComment}&quot;</Typography>
                 </Box>
               </Grid>
             )}
@@ -1202,6 +1124,7 @@ export default function Contribution() {
     );
   };
 
+
   const renderFormModal = () => (
     <Dialog
       open={openFormModal}
@@ -1228,6 +1151,7 @@ export default function Contribution() {
               setVal("academicYear")(e);
               blurActiveElement();
             }}
+            onClose={blurActiveElement}
             MenuProps={selectMenuProps}
             displayEmpty
           >
@@ -1276,10 +1200,10 @@ export default function Contribution() {
       </DialogContent>
       <DialogActions sx={{ p: 2.5, borderTop: "1px solid var(--border-color)" }}>
         <Button
- variant="outlined"
- onClick={() => setOpenFormModal(false)}
- sx={{ textTransform: "none", fontWeight: 700 }}
- >
+          variant="outlined"
+          onClick={() => setOpenFormModal(false)}
+          sx={{ textTransform: "none", fontWeight: 700 }}
+        >
           Cancel
         </Button>
         <SubmitBtn onClick={handleSaveDraft} loading={loading} />
