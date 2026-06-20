@@ -251,7 +251,8 @@ const BookChapterApprovalDetail = ({ id, onBack, role }) => {
                     <Box sx={{ display: "flex", flexDirection: "column" }}>
                         <LabelValue label="Publisher" value={data.publisher} horizontal />
                         <LabelValue label="Pub Year" value={data.yearOfPublication} horizontal />
-                        <LabelValue label="First Author" value={data.firstAuthor} horizontal />
+                        <LabelValue label="DOI" value={data.doi || "-"} horizontal />
+                        <LabelValue label="Publication Scope" value={data.publicationScope || "National"} horizontal />
                         <LabelValue 
                             label="Applicant Position" 
                             horizontal
@@ -263,7 +264,7 @@ const BookChapterApprovalDetail = ({ id, onBack, role }) => {
                                         bgcolor: 'rgba(190, 147, 55, 0.15)', border: '2px solid var(--color-primary)',
                                         color: 'var(--color-primary)', fontWeight: 900, fontSize: '1rem'
                                     }}>
-                                        {data.authorPosition || 1}
+                                        {data.userAuthorPosition || 1}
                                     </Box>
                                 </Box>
                             }
@@ -300,8 +301,8 @@ const BookChapterApprovalDetail = ({ id, onBack, role }) => {
                             </TableHead>
                             <TableBody>
                                 {(() => {
-                                    const total = parseInt(data.totalAuthors) || 0;
-                                    const applicantPos = parseInt(data.userAuthorPosition) || parseInt(data.authorPosition) || 0;
+                                    const total = parseInt(data.totalAuthors) || (data.coAuthors ? data.coAuthors.length + 1 : 0);
+                                    const applicantPos = parseInt(data.userAuthorPosition) || 0;
                                     const derivedPositions = total > 0
                                         ? Array.from({ length: total }, (_, i) => i + 1).filter(p => p !== applicantPos)
                                         : [];

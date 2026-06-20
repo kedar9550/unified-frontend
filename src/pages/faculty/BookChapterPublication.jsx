@@ -28,7 +28,7 @@ export default function BookChapterPublication() {
     doi: "",
     textBookName: "", chapterTitle: "", yearOfPublication: "",
     chaptersContributed: "", publisher: "", month: "", year: "",
-    applyIncentive: "", publicationType: "", applyingSeedGrant: "",
+    applyIncentive: "", publicationScope: "", applyingSeedGrant: "",
     isbnNumber: "",
     totalAuthors: 1, userAuthorPosition: 1, otherAuthors: []
   });
@@ -38,7 +38,7 @@ export default function BookChapterPublication() {
 
   const [scopusIndexed, setScopusIndexed] = useState(false);
   const [doiFetching, setDoiFetching] = useState(false);
-  const [doiFetched, setDoiFetched] = useState(false);
+  const [doiFetched, setDoiFetched] = useState(null);
   const [isbnFetching, setIsbnFetching] = useState(false);
 
   useEffect(() => {
@@ -51,7 +51,24 @@ export default function BookChapterPublication() {
     }).catch(err => console.log("Failed to fetch academic years", err));
   }, [viewMode]);
 
-  const set = (k) => (e) => setForm((p) => ({ ...p, [k]: e.target.value }));
+  const set = (k) => (e) => {
+    const val = e.target.value;
+    setForm(p => {
+      const newForm = { ...p, [k]: val };
+      if (k === "doi") {
+        newForm.textBookName = "";
+        newForm.chapterTitle = "";
+        newForm.publisher = "";
+        newForm.publicationScope = "";
+        newForm.month = "";
+        newForm.year = "";
+        setScopusIndexed(false);
+        setDoiFetching(false);
+        setDoiFetched(null);
+      }
+      return newForm;
+    });
+  };
   const setFile = (k) => (e) => setFiles((p) => ({ ...p, [k]: e.target.files[0] }));
 
   const handleNumericChange = (key, allowDecimal = true) => (e) => {
@@ -98,7 +115,7 @@ export default function BookChapterPublication() {
     const cleanDoi = form.doi.trim().replace(/^https?:\/\/doi\.org\//i, "");
     if (!cleanDoi) { toast.error("Please enter a DOI"); return; }
     setDoiFetching(true);
-    setDoiFetched(false);
+    setDoiFetched(null);
     setScopusIndexed(false);
     try {
       const scopusRes = await fetch(
@@ -109,6 +126,7 @@ export default function BookChapterPublication() {
         if (scopusRes.status === 401) toast.error("Scopus API key unauthorized. Please contact admin.");
         else if (scopusRes.status === 429) toast.error("Scopus API rate limit exceeded. Try again later.");
         else toast.error(`Scopus API error (HTTP ${scopusRes.status}). Please fill manually.`);
+        setDoiFetched(false);
         return;
       }
       const scopusJson = await scopusRes.json();
@@ -117,6 +135,7 @@ export default function BookChapterPublication() {
       if (!entry || entry.error || (!entry["dc:title"] && !entry["prism:publicationName"])) {
         toast.warning("This DOI was not found in Scopus. Please fill details manually.");
         setScopusIndexed(false);
+        setDoiFetched(false);
         return;
       }
 
@@ -140,6 +159,7 @@ export default function BookChapterPublication() {
       }));
     } catch (err) {
       toast.error("Network error connecting to Scopus. Please fill the fields manually.");
+      setDoiFetched(false);
     } finally {
       setDoiFetching(false);
     }
@@ -427,11 +447,11 @@ export default function BookChapterPublication() {
 
         if (matchedPublisher) {
           newState.publisher = matchedPublisher.name;
-          newState.publicationType = matchedPublisher.type; // Auto-preselect National / International
+          newState.publicationScope = matchedPublisher.type;
         } else if (rawPublisher) {
           newState.publisher = "Others";
           newState.customPublisher = rawPublisher;
-          newState.publicationType = "International"; // Default fallback for scopus indexed book chapters
+          newState.publicationScope = "International";
         } else {
           newState.publisher = prev.publisher;
         }
@@ -554,7 +574,7 @@ export default function BookChapterPublication() {
     if (!form.year) newErrors.year = true;
     if (!form.applyIncentive) newErrors.applyIncentive = true;
     if (!form.applyingSeedGrant) newErrors.applyingSeedGrant = true;
-    if (!form.publicationType) newErrors.publicationType = true;
+    if (!form.publicationScope) newErrors.publicationScope = true;
 
     if (!files.authorAffiliation) newErrors.authorAffiliation = true;
 
@@ -596,34 +616,30 @@ export default function BookChapterPublication() {
     try {
       const fd = new FormData();
 
-      // Calculate firstAuthor and authorPosition
-      const isFirst = (parseInt(form.userAuthorPosition) === 1) ? "Yes" : "No";
-      const authPos = (isFirst === "Yes") ? "" : String(form.userAuthorPosition);
-
       // Map coAuthors array matching CoAuthorSchema
       const coAuthorsList = form.otherAuthors.map(a => ({
         name: a.authorName || "",
         affiliation: a.affiliationType === "Aditya University" ? "Aditya University" : (a.affiliationName || ""),
-        employeeId: a.affiliationType === "Aditya University" ? a.empId : null
+        employeeId: a.affiliationType === "Aditya University" ? a.empId : null,
+        authorPosition: String(a.authorPosition)
       })).filter(ca => ca.name && ca.affiliation);
 
       fd.append("doi", form.doi || "");
       fd.append("textBookName", form.textBookName);
       fd.append("chapterTitle", form.chapterTitle);
       fd.append("yearOfPublication", form.year);
-      fd.append("firstAuthor", isFirst);
-      fd.append("authorPosition", authPos);
+      fd.append("userAuthorPosition", String(form.userAuthorPosition));
+
+      fd.append("totalAuthors", String(form.totalAuthors));
       fd.append("chaptersContributed", form.chaptersContributed || "");
       fd.append("publisher", form.publisher || "");
       fd.append("isbnNumber", form.isbnNumber || "");
+      fd.append("publicationScope", form.publicationScope);
       fd.append("coAuthors", JSON.stringify(coAuthorsList));
       fd.append("month", form.month);
       fd.append("year", form.year);
       fd.append("applyIncentive", form.applyIncentive);
-      fd.append("publicationType", form.publicationType);
       fd.append("applyingSeedGrant", form.applyingSeedGrant);
-      fd.append("totalAuthors", String(total));
-      fd.append("userAuthorPosition", String(form.userAuthorPosition));
 
       Object.entries(files).forEach(([k, v]) => { if (v) fd.append(k, v); });
       fd.append("academicYear", selectedYear);
@@ -636,7 +652,7 @@ export default function BookChapterPublication() {
         doi: "",
         textBookName: "", chapterTitle: "", yearOfPublication: "",
         chaptersContributed: "", publisher: "", month: "", year: "",
-        applyIncentive: "", publicationType: "", applyingSeedGrant: "",
+        applyIncentive: "", publicationScope: "", applyingSeedGrant: "",
         isbnNumber: "",
         totalAuthors: 1, userAuthorPosition: 1, otherAuthors: []
       });
@@ -706,6 +722,7 @@ export default function BookChapterPublication() {
                 <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Text Book Name</TableCell>
                 <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Chapter Title</TableCell>
                 <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Publisher</TableCell>
+                <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>DOI</TableCell>
                 <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Applicant</TableCell>
                 <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Role</TableCell>
                 <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Co-Authors</TableCell>
@@ -719,6 +736,7 @@ export default function BookChapterPublication() {
                   <TableCell sx={{ color: "var(--text-primary)", fontWeight: 500, py: 2 }}>{pub.textBookName || "N/A"}</TableCell>
                   <TableCell sx={{ color: "var(--text-secondary)", py: 2 }}>{pub.chapterTitle || "N/A"}</TableCell>
                   <TableCell sx={{ color: "var(--text-secondary)", py: 2 }}>{pub.publisher || "N/A"}</TableCell>
+                  <TableCell sx={{ color: "var(--text-secondary)", py: 2 }}>{pub.doi || "N/A"}</TableCell>
                   <TableCell sx={{ color: "var(--text-secondary)", py: 2 }}>
                     <Typography variant="body2" sx={{ fontWeight: 600 }}>
                       {pub.facultyId?.name || "N/A"}
@@ -869,7 +887,7 @@ export default function BookChapterPublication() {
             size="small"
             fullWidth
             value={form.doi}
-            onChange={(e) => { setForm(p => ({ ...p, doi: e.target.value })); setDoiFetched(false); setScopusIndexed(false); }}
+            onChange={set("doi")}
             placeholder="e.g. 10.1007/978-3-031-12345-6_10"
             onKeyDown={(e) => { if (e.key === "Enter") fetchDOIData(); }}
             InputProps={{
@@ -944,12 +962,14 @@ export default function BookChapterPublication() {
         <Box>
           <Typography sx={labelStyle}>Publication Scope : *</Typography>
           <Select
-            fullWidth size="small" displayEmpty
-            value={form.publicationType}
-            onChange={(e) => setForm(p => ({ ...p, publicationType: e.target.value }))}
-            error={!!errors.publicationType}
+            size="small"
+            fullWidth
+            value={form.publicationScope}
+            onChange={(e) => setForm(p => ({ ...p, publicationScope: e.target.value }))}
+            error={!!errors.publicationScope}
+            displayEmpty
           >
-            <MenuItem value="" disabled>Select</MenuItem>
+            <MenuItem value="" disabled>Select Scope</MenuItem>
             <MenuItem value="National">National</MenuItem>
             <MenuItem value="International">International</MenuItem>
           </Select>
@@ -1076,12 +1096,15 @@ export default function BookChapterPublication() {
             setForm(p => ({ ...p, year: e.target.value, month: "" }));
           }} error={!!errors.year}>
             <MenuItem value="">Select Year</MenuItem>
-            {YEARS.map((y) => <MenuItem key={y} value={y}>{y}</MenuItem>)}
+            {(form.year && !YEARS.includes(String(form.year))
+              ? [...YEARS, String(form.year)].sort((a, b) => Number(b) - Number(a))
+              : YEARS
+            ).map((y) => <MenuItem key={y} value={y}>{y}</MenuItem>)}
           </Select>
         </Box>
         <Box>
           <Typography sx={labelStyle}>Month:</Typography>
-          <Select size="small" fullWidth displayEmpty value={form.month} onChange={set("month")} disabled={!form.year || (scopusIndexed && !!form.month)} sx={(scopusIndexed && !!form.month) ? disabledField : {}} error={!!errors.month}>
+          <Select size="small" fullWidth displayEmpty value={form.month} onChange={set("month")} disabled={!form.year} error={!!errors.month}>
             <MenuItem value="">Select Month</MenuItem>
             {getAvailableMonths().map((m) => <MenuItem key={m} value={m}>{m}</MenuItem>)}
           </Select>
@@ -1246,10 +1269,11 @@ export default function BookChapterPublication() {
               />
             </Grid>
 
-            <Grid item xs={12} sm={3}><LabelValueDetails label="Publication Type" value={data.publicationType || "National"} /></Grid>
+            <Grid item xs={12} sm={3}><LabelValueDetails label="DOI" value={data.doi || "-"} /></Grid>
+            <Grid item xs={12} sm={3}><LabelValueDetails label="Publication Scope" value={data.publicationScope || "National"} /></Grid>
             <Grid item xs={12} sm={3}><LabelValueDetails label="Month/Year" value={`${data.month || ""} ${data.year || ""}`} /></Grid>
-            <Grid item xs={12} sm={3}><LabelValueDetails label="First Author?" value={data.firstAuthor} /></Grid>
-            <Grid item xs={12} sm={3}><LabelValueDetails label="Author Position" value={data.userAuthorPosition || data.authorPosition || "1"} /></Grid>
+
+            <Grid item xs={12} sm={3}><LabelValueDetails label="Author Position" value={data.userAuthorPosition || "1"} /></Grid>
 
             <Grid item xs={12} sm={6}><LabelValueDetails label="Applying Seed Grant?" value={data.applyingSeedGrant === "Yes" ? "Yes" : "No"} /></Grid>
             <Grid item xs={12} sm={6}><LabelValueDetails label="Apply Incentive?" value={data.applyIncentive === "Yes" ? "Yes" : "No"} /></Grid>
@@ -1291,50 +1315,15 @@ export default function BookChapterPublication() {
                       );
                     }
 
-                    if (isApplicant) {
-                      return (
-                        <FormControl size="small" fullWidth sx={{ mt: 0.5 }}>
-                          <Select
-                            value={data.appraisalClaimant?.institutionId || data.appraisalClaimant || ""}
-                            onChange={async (e) => {
-                              const selectedVal = e.target.value;
-                              try {
-                                const res = await API.post("/api/appraisal/resolve-claim", {
-                                  researchId: data._id,
-                                  researchType: "BookChapter",
-                                  claimantId: selectedVal
-                                });
-                                if (res.data?.success) {
-                                  toast.success("Claimant resolved successfully!");
-                                  setPublicationsList(prev => prev.map(p => p._id === data._id ? { ...p, appraisalClaimant: selectedVal } : p));
-                                  setSelectedPubDetails(prev => ({ ...prev, appraisalClaimant: selectedVal }));
-                                }
-                              } catch (err) {
-                                toast.error(err.response?.data?.message || "Failed to resolve claim.");
-                              }
-                            }}
-                            displayEmpty
-                          >
-                            <MenuItem value="" disabled>--Select Claimant--</MenuItem>
-                            {uniqueClaimants.map(c => (
-                              <MenuItem key={c.institutionId || c._id} value={c.institutionId || c._id}>
-                                {c.name} {c.institutionId ? `(${c.institutionId})` : ""}
-                              </MenuItem>
-                            ))}
-                          </Select>
-                        </FormControl>
-                      );
-                    } else {
-                      const currentClaimantObj = uniqueClaimants.find(c => 
-                        (c.institutionId && c.institutionId === (data.appraisalClaimant?.institutionId || data.appraisalClaimant || "").toString()) ||
-                        (c._id && c._id.toString() === (data.appraisalClaimant?._id || data.appraisalClaimant || "").toString())
-                      );
-                      return (
-                        <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>
-                          {currentClaimantObj ? `${currentClaimantObj.name} (${currentClaimantObj.institutionId})` : "Not Yet Designated"}
-                        </Typography>
-                      );
-                    }
+                    const currentClaimantObj = uniqueClaimants.find(c => 
+                      (c.institutionId && c.institutionId === (data.appraisalClaimant?.institutionId || data.appraisalClaimant || "").toString()) ||
+                      (c._id && c._id.toString() === (data.appraisalClaimant?._id || data.appraisalClaimant || "").toString())
+                    );
+                    return (
+                      <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>
+                        {currentClaimantObj ? `${currentClaimantObj.name} (${currentClaimantObj.institutionId})` : "Not Yet Designated"}
+                      </Typography>
+                    );
                   })()
                 }
               />
@@ -1361,8 +1350,8 @@ export default function BookChapterPublication() {
                   </TableHead>
                   <TableBody>
                     {(() => {
-                      const total = parseInt(data.totalAuthors) || 0;
-                      const applicantPos = parseInt(data.userAuthorPosition) || parseInt(data.authorPosition) || 0;
+                      const total = parseInt(data.totalAuthors) || (data.coAuthors ? data.coAuthors.length + 1 : 0);
+                      const applicantPos = parseInt(data.userAuthorPosition) || 0;
                       const derivedPositions = total > 0
                         ? Array.from({ length: total }, (_, i) => i + 1).filter(p => p !== applicantPos)
                         : [];

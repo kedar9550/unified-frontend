@@ -407,6 +407,7 @@ const TextBookApprovalDetail = ({ id, onBack, role }) => {
                     <Box sx={{ display: "flex", flexDirection: "column" }}>
                         <LabelValue label="Publisher" value={data.publisher} horizontal />
                         <LabelValue label="ISBN" value={data.isbn} horizontal />
+                        <LabelValue label="Publication Scope" value={data.publicationScope || "National"} horizontal />
                         <LabelValue label="Edition" value={data.edition} horizontal />
                         <LabelValue label="Year" value={data.year} horizontal />
                         <LabelValue label="Total Authors" value={data.totalAuthors} horizontal />
@@ -459,30 +460,40 @@ const TextBookApprovalDetail = ({ id, onBack, role }) => {
                             </TableRow>
                         </TableHead>
                         <TableBody>
-                            {data.authors?.map((author, idx) => (
-                                <TableRow key={idx} sx={{ '&:hover': { bgcolor: 'rgba(190,147,55,0.04)' } }}>
-                                    <TableCell>
-                                        <Box sx={{
-                                            display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                                            width: 32, height: 32, borderRadius: '50%',
-                                            bgcolor: 'rgba(190, 147, 55, 0.12)', border: '1.5px solid var(--color-primary)',
-                                            color: 'var(--color-primary)', fontWeight: 900, fontSize: '0.85rem'
-                                        }}>
-                                            {author.authorPosition}
-                                        </Box>
-                                    </TableCell>
-                                    <TableCell sx={{ fontWeight: 700, color: "var(--text-primary)" }}>{author.authorName}</TableCell>
-                                    <TableCell sx={{ fontWeight: 600, color: "var(--text-secondary)" }}>{author.affiliationName}</TableCell>
-                                    <TableCell sx={{ fontWeight: 600, color: "var(--text-secondary)" }}>{author.employeeId || "-"}</TableCell>
-                                    <TableCell>
-                                        {author.isIncentiveApplicant ? (
-                                            <Chip label="Incentive Applicant" size="small" sx={{ bgcolor: "rgba(76, 175, 80, 0.1)", color: "#4caf50", fontWeight: 800, border: "1px solid #4caf5044", fontSize: '0.7rem' }} />
-                                        ) : (
-                                            <Chip label="Contributor" size="small" sx={{ bgcolor: "rgba(25, 118, 210, 0.1)", color: "var(--color-primary)", fontWeight: 800, border: "1px solid rgba(25,118,210,0.3)", fontSize: '0.7rem' }} />
-                                        )}
-                                    </TableCell>
-                                </TableRow>
-                            ))}
+                            {(() => {
+                                const total = parseInt(data.totalAuthors) || (data.authors ? data.authors.length + 1 : 0);
+                                const applicantPos = parseInt(data.userAuthorPosition) || 0;
+                                const derivedPositions = total > 0
+                                    ? Array.from({ length: total }, (_, i) => i + 1).filter(p => p !== applicantPos)
+                                    : [];
+                                return data.authors?.map((author, idx) => {
+                                    const pos = author.authorPosition || derivedPositions[idx] || (idx + 1);
+                                    return (
+                                        <TableRow key={idx} sx={{ '&:hover': { bgcolor: 'rgba(190,147,55,0.04)' } }}>
+                                            <TableCell>
+                                                <Box sx={{
+                                                    display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                                                    width: 32, height: 32, borderRadius: '50%',
+                                                    bgcolor: 'rgba(190, 147, 55, 0.12)', border: '1.5px solid var(--color-primary)',
+                                                    color: 'var(--color-primary)', fontWeight: 900, fontSize: '0.85rem'
+                                                }}>
+                                                    {pos}
+                                                </Box>
+                                            </TableCell>
+                                            <TableCell sx={{ fontWeight: 700, color: "var(--text-primary)" }}>{author.authorName}</TableCell>
+                                            <TableCell sx={{ fontWeight: 600, color: "var(--text-secondary)" }}>{author.affiliationName}</TableCell>
+                                            <TableCell sx={{ fontWeight: 600, color: "var(--text-secondary)" }}>{author.employeeId || "-"}</TableCell>
+                                            <TableCell>
+                                                {author.isIncentiveApplicant ? (
+                                                    <Chip label="Incentive Applicant" size="small" sx={{ bgcolor: "rgba(76, 175, 80, 0.1)", color: "#4caf50", fontWeight: 800, border: "1px solid #4caf5044", fontSize: '0.7rem' }} />
+                                                ) : (
+                                                    <Chip label="Contributor" size="small" sx={{ bgcolor: "rgba(25, 118, 210, 0.1)", color: "var(--color-primary)", fontWeight: 800, border: "1px solid rgba(25,118,210,0.3)", fontSize: '0.7rem' }} />
+                                                )}
+                                            </TableCell>
+                                        </TableRow>
+                                    );
+                                });
+                            })()}
                             {(!data.authors || data.authors.length === 0) && (
                                 <TableRow>
                                     <TableCell colSpan={5} align="center" sx={{ py: 4, color: "var(--text-secondary)", fontWeight: 600 }}>No authors found.</TableCell>

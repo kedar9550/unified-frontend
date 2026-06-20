@@ -35,7 +35,7 @@ export default function TextbookPublication() {
     edition: "", cost: "", month: "", year: "",
     applyIncentive: "",
     otherAuthors: [],
-    publicationType: "National",
+    publicationScope: "National",
     customPublisher: "",
     currencySymbol: "₹"
   });
@@ -100,11 +100,19 @@ export default function TextbookPublication() {
   }, [form.totalAuthors, form.userAuthorPosition]);
 
   const set = (k) => (e) => {
-    setForm((p) => ({ ...p, [k]: e.target.value }));
-    if (k === "isbn") {
-      setIsbnFetched(false);
-      setIsbnFetchedFields({ title: false, publisher: false });
-    }
+    const val = e.target.value;
+    setForm((p) => {
+      const newForm = { ...p, [k]: val };
+      if (k === "isbn") {
+        newForm.title = "";
+        newForm.publisher = "";
+        newForm.month = "";
+        newForm.year = "";
+        setIsbnFetched(false);
+        setIsbnFetchedFields({ title: false, publisher: false });
+      }
+      return newForm;
+    });
   };
 
   const handleNumericChange = (key, allowDecimal = true) => (e) => {
@@ -349,7 +357,7 @@ export default function TextbookPublication() {
       fd.append("cost", submissionForm.cost);
       fd.append("month", submissionForm.month);
       fd.append("year", submissionForm.year);
-      fd.append("publicationType", submissionForm.publicationType);
+      fd.append("publicationScope", submissionForm.publicationScope);
       fd.append("publisher", submissionForm.publisher === "Others" ? submissionForm.customPublisher : submissionForm.publisher);
       fd.append("applyIncentive", submissionForm.applyIncentive);
       fd.append("authors", JSON.stringify(allAuthors));
@@ -365,7 +373,7 @@ export default function TextbookPublication() {
       toast.success("Textbook submitted successfully!");
 
       // Reset form
-      setForm({ title: "", publisher: "", isbn: "", yearOfPublication: "", totalAuthors: 1, userAuthorPosition: 1, edition: "", cost: "", month: "", year: "", applyIncentive: "", otherAuthors: [], publicationType: "National", currencySymbol: "₹" });
+      setForm({ title: "", publisher: "", isbn: "", yearOfPublication: "", totalAuthors: 1, userAuthorPosition: 1, edition: "", cost: "", month: "", year: "", applyIncentive: "", otherAuthors: [], publicationScope: "National", currencySymbol: "₹" });
       setFiles({ coverPage: null, authorAffiliation: null, index: null });
       setSelectedYear("");
       setViewMode("list");
@@ -585,18 +593,20 @@ export default function TextbookPublication() {
       <SubLabel text="Details of the Text Book:" />
       <Grid2>
         <Box>
-          <Typography sx={labelStyle}>Publication Type :</Typography>
+          <Typography sx={labelStyle}>Publication Scope :</Typography>
           <Select
             fullWidth
             size="small"
-            value={form.publicationType}
+            value={form.publicationScope}
             onChange={(e) => {
                 const val = e.target.value;
-                setForm(p => ({ 
-                    ...p, 
-                    publicationType: val,
-                    currencySymbol: val === "International" ? "$" : "₹"
-                }));
+                  setForm(prev => ({
+                    ...prev,
+                    publisher: val,
+                    publicationScope: val,
+                    customPublisher: "",
+                    currencySymbol: val === "National" ? "₹" : "$"
+                  }));
             }}
           >
             <MenuItem value="National">National</MenuItem>
@@ -630,11 +640,10 @@ export default function TextbookPublication() {
         <Box>
           <Typography sx={labelStyle}>Name of the Publisher :</Typography>
           <Autocomplete
-            options={[...publishers.filter(p => p.type === form.publicationType), { name: "Others", type: form.publicationType }]}
-            groupBy={(option) => option.type}
-            getOptionLabel={(option) => option.name || ""}
-            value={publishers.find(p => p.name === form.publisher) || (form.publisher === "Others" ? { name: "Others", type: form.publicationType } : (form.publisher ? { name: form.publisher, type: form.publicationType || "Unknown" } : null))}
-            isOptionEqualToValue={(option, value) => option.name === value.name}
+            options={[...publishers.filter(p => p.type === form.publicationScope), { name: "Others", type: form.publicationScope }]}
+            getOptionLabel={(option) => option.name}
+            isOptionEqualToValue={(option, value) => option.name === value?.name}
+            value={publishers.find(p => p.name === form.publisher) || (form.publisher === "Others" ? { name: "Others", type: form.publicationScope } : (form.publisher ? { name: form.publisher, type: form.publicationScope || "Unknown" } : null))}
             onChange={(e, newValue) => {
                 const val = newValue ? newValue.name : "";
                 setForm(p => ({ ...p, publisher: val }));
@@ -869,7 +878,10 @@ export default function TextbookPublication() {
             setForm(p => ({ ...p, year: e.target.value, month: "" }));
           }}>
             <MenuItem value="">Select Year</MenuItem>
-            {YEARS.map((y) => <MenuItem key={y} value={y}>{y}</MenuItem>)}
+            {(form.year && !YEARS.includes(String(form.year))
+              ? [...YEARS, String(form.year)].sort((a, b) => Number(b) - Number(a))
+              : YEARS
+            ).map((y) => <MenuItem key={y} value={y}>{y}</MenuItem>)}
           </Select>
           {isbnFetched && !form.year && (
             <Typography variant="caption" sx={{ color: "#e8a000", fontWeight: 600, mt: 0.5, display: "block" }}>
@@ -880,7 +892,7 @@ export default function TextbookPublication() {
         {form.year ? (
           <Box>
             <Typography sx={labelStyle}>Month:</Typography>
-            <Select size="small" fullWidth displayEmpty value={form.month} onChange={set("month")}>
+            <Select size="small" fullWidth displayEmpty value={form.month} onChange={set("month")} disabled={!form.year}>
               <MenuItem value="">Select Month</MenuItem>
               {getAvailableMonths().map((m) => <MenuItem key={m} value={m}>{m}</MenuItem>)}
             </Select>
@@ -1052,7 +1064,7 @@ export default function TextbookPublication() {
             {/* Edition, cost, type, month/year */}
             <Grid item xs={12} sm={3}><LabelValueDetails label="Edition" value={data.edition || "-"} /></Grid>
             <Grid item xs={12} sm={3}><LabelValueDetails label="Cost" value={data.cost || "-"} /></Grid>
-            <Grid item xs={12} sm={3}><LabelValueDetails label="Publication Type" value={data.publicationType || "National"} /></Grid>
+            <Grid item xs={12} sm={3}><LabelValueDetails label="Publication Scope" value={data.publicationScope || "National"} /></Grid>
             <Grid item xs={12} sm={3}><LabelValueDetails label="Month/Year" value={`${data.month || ""} ${data.year || ""}`} /></Grid>
 
             {/* Author details */}
@@ -1103,50 +1115,15 @@ export default function TextbookPublication() {
                       );
                     }
 
-                    if (isApplicant) {
-                      return (
-                        <FormControl size="small" fullWidth sx={{ mt: 0.5 }}>
-                          <Select
-                            value={data.appraisalClaimant?.institutionId || data.appraisalClaimant || ""}
-                            onChange={async (e) => {
-                              const selectedVal = e.target.value;
-                              try {
-                                const res = await API.post("/api/appraisal/resolve-claim", {
-                                  researchId: data._id,
-                                  researchType: "Textbook",
-                                  claimantId: selectedVal
-                                });
-                                if (res.data?.success) {
-                                  toast.success("Claimant resolved successfully!");
-                                  setPublicationsList(prev => prev.map(p => p._id === data._id ? { ...p, appraisalClaimant: selectedVal } : p));
-                                  setSelectedPubDetails(prev => ({ ...prev, appraisalClaimant: selectedVal }));
-                                }
-                              } catch (err) {
-                                toast.error(err.response?.data?.message || "Failed to resolve claim.");
-                              }
-                            }}
-                            displayEmpty
-                          >
-                            <MenuItem value="" disabled>--Select Claimant--</MenuItem>
-                            {uniqueClaimants.map(c => (
-                              <MenuItem key={c.institutionId || c._id} value={c.institutionId || c._id}>
-                                {c.name} {c.institutionId ? `(${c.institutionId})` : ""}
-                              </MenuItem>
-                            ))}
-                          </Select>
-                        </FormControl>
-                      );
-                    } else {
-                      const currentClaimantObj = uniqueClaimants.find(c => 
-                        (c.institutionId && c.institutionId === (data.appraisalClaimant?.institutionId || data.appraisalClaimant || "").toString()) ||
-                        (c._id && c._id.toString() === (data.appraisalClaimant?._id || data.appraisalClaimant || "").toString())
-                      );
-                      return (
-                        <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>
-                          {currentClaimantObj ? `${currentClaimantObj.name} (${currentClaimantObj.institutionId})` : "Not Yet Designated"}
-                        </Typography>
-                      );
-                    }
+                    const currentClaimantObj = uniqueClaimants.find(c => 
+                      (c.institutionId && c.institutionId === (data.appraisalClaimant?.institutionId || data.appraisalClaimant || "").toString()) ||
+                      (c._id && c._id.toString() === (data.appraisalClaimant?._id || data.appraisalClaimant || "").toString())
+                    );
+                    return (
+                      <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>
+                        {currentClaimantObj ? `${currentClaimantObj.name} (${currentClaimantObj.institutionId})` : "Not Yet Designated"}
+                      </Typography>
+                    );
                   })()
                 }
               />
