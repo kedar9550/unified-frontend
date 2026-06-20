@@ -708,7 +708,7 @@ export default function BookChapterPublication() {
                 <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Publisher</TableCell>
                 <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Applicant</TableCell>
                 <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Role</TableCell>
-                <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Academic Year</TableCell>
+                <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Co-Authors</TableCell>
                 <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Status</TableCell>
                 <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Actions</TableCell>
               </TableRow>
@@ -719,19 +719,23 @@ export default function BookChapterPublication() {
                   <TableCell sx={{ color: "var(--text-primary)", fontWeight: 500, py: 2 }}>{pub.textBookName || "N/A"}</TableCell>
                   <TableCell sx={{ color: "var(--text-secondary)", py: 2 }}>{pub.chapterTitle || "N/A"}</TableCell>
                   <TableCell sx={{ color: "var(--text-secondary)", py: 2 }}>{pub.publisher || "N/A"}</TableCell>
-                  <TableCell sx={{ color: "var(--text-secondary)", py: 2, maxWidth: 160 }}>
-                    <Tooltip title={pub.facultyId?.name || "N/A"} arrow>
-                      <Typography variant="body2" sx={{ fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 150 }}>
-                        {pub.facultyId?.name || "N/A"}
-                      </Typography>
-                    </Tooltip>
+                  <TableCell sx={{ color: "var(--text-secondary)", py: 2 }}>
+                    <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                      {pub.facultyId?.name || "N/A"}
+                    </Typography>
                   </TableCell>
                   <TableCell sx={{ py: 2 }}>
                     <Typography variant="body2" sx={{ fontWeight: 600, color: pub.visibilityRole === "Applicant" ? "var(--color-primary)" : "text.secondary" }}>
                       {pub.visibilityRole || "Applicant"}
                     </Typography>
                   </TableCell>
-                  <TableCell sx={{ color: "var(--text-secondary)", py: 2 }}>{pub.academicYear?.year || "N/A"}</TableCell>
+                  <TableCell sx={{ color: "var(--text-secondary)", py: 2 }}>
+                    {pub.coAuthors && pub.coAuthors.length > 0
+                      ? <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                          {pub.coAuthors.map(ca => ca.name).join(", ")}
+                        </Typography>
+                      : <Typography variant="body2" sx={{ color: "var(--text-secondary)" }}>None</Typography>}
+                  </TableCell>
                   <TableCell sx={{ py: 2 }}>
                     <Typography
                       variant="body2"
@@ -1350,17 +1354,38 @@ export default function BookChapterPublication() {
                 <Table size="small">
                   <TableHead sx={{ bgcolor: "var(--bg-panel)" }}>
                     <TableRow>
+                      <TableCell sx={{ fontWeight: 700, color: "var(--text-secondary)", width: 80 }}>POSITION</TableCell>
                       <TableCell sx={{ fontWeight: 700, color: "var(--text-secondary)" }}>NAME</TableCell>
                       <TableCell sx={{ fontWeight: 700, color: "var(--text-secondary)" }}>AFFILIATION</TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {data.coAuthors.map((author, idx) => (
-                      <TableRow key={idx}>
-                        <TableCell sx={{ fontWeight: 700, color: "var(--text-primary)" }}>{author.name}</TableCell>
-                        <TableCell sx={{ color: "var(--text-secondary)" }}>{author.affiliation}</TableCell>
-                      </TableRow>
-                    ))}
+                    {(() => {
+                      const total = parseInt(data.totalAuthors) || 0;
+                      const applicantPos = parseInt(data.userAuthorPosition) || parseInt(data.authorPosition) || 0;
+                      const derivedPositions = total > 0
+                        ? Array.from({ length: total }, (_, i) => i + 1).filter(p => p !== applicantPos)
+                        : [];
+                      return data.coAuthors.map((author, idx) => {
+                        const pos = author.authorPosition || derivedPositions[idx] || (idx + 1);
+                        return (
+                          <TableRow key={idx}>
+                            <TableCell>
+                                <Box sx={{
+                                    display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                                    width: 30, height: 30, borderRadius: '50%',
+                                    bgcolor: 'rgba(190, 147, 55, 0.12)', border: '1.5px solid var(--color-primary)',
+                                    color: 'var(--color-primary)', fontWeight: 900, fontSize: '0.85rem'
+                                }}>
+                                    {pos}
+                                </Box>
+                            </TableCell>
+                            <TableCell sx={{ fontWeight: 700, color: "var(--text-primary)" }}>{author.name}</TableCell>
+                            <TableCell sx={{ color: "var(--text-secondary)" }}>{author.affiliation}</TableCell>
+                          </TableRow>
+                        );
+                      });
+                    })()}
                   </TableBody>
                 </Table>
               </TableContainer>

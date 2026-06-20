@@ -435,50 +435,57 @@ const TextBookApprovalDetail = ({ id, onBack, role }) => {
             </Box>
 
             {/* Authors & Affiliations */}
-            <Card sx={{ ...cardStyle, p: 0, overflow: "hidden" }}>
+            <Card sx={{ ...cardStyle, p: 0, overflow: "hidden", mb: 3 }}>
                 <Box sx={{ p: 3, pb: 2 }}>
-                    <SectionHeader icon={<GroupsIcon />} title="Authors & Affiliations" />
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                        <GroupsIcon sx={{ color: "var(--color-primary)" }} />
+                        <Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>Authors & Affiliations</Typography>
+                        <Box sx={{ ml: 'auto', px: 1.5, py: 0.5, borderRadius: '20px', bgcolor: 'rgba(190,147,55,0.12)', border: '1px solid rgba(190,147,55,0.3)' }}>
+                            <Typography variant="caption" sx={{ fontWeight: 900, color: 'var(--color-primary)', fontSize: '0.7rem' }}>
+                                Total: {data.authors?.length || 0} Author{(data.authors?.length || 0) !== 1 ? 's' : ''}
+                            </Typography>
+                        </Box>
+                    </Box>
                 </Box>
                 <TableContainer>
                     <Table>
                         <TableHead sx={{ bgcolor: "var(--bg-panel)" }}>
                             <TableRow>
-                                <TableCell sx={{ color: "var(--text-secondary)", fontWeight: 700, fontSize: "0.75rem", borderBottom: "1px solid var(--border-color)" }}>AUTHOR POSITION</TableCell>
-                                <TableCell sx={{ color: "var(--text-secondary)", fontWeight: 700, fontSize: "0.75rem", borderBottom: "1px solid var(--border-color)" }}>AUTHOR NAME</TableCell>
-                                <TableCell sx={{ color: "var(--text-secondary)", fontWeight: 700, fontSize: "0.75rem", borderBottom: "1px solid var(--border-color)" }}>AFFILIATION</TableCell>
-                                <TableCell sx={{ color: "var(--text-secondary)", fontWeight: 700, fontSize: "0.75rem", borderBottom: "1px solid var(--border-color)" }}>EMPLOYEE ID</TableCell>
-                                <TableCell sx={{ color: "var(--text-secondary)", fontWeight: 700, fontSize: "0.75rem", borderBottom: "1px solid var(--border-color)" }}>ROLE</TableCell>
+                                <TableCell sx={{ color: "var(--text-secondary)", fontWeight: 800, fontSize: "0.7rem", textTransform: "uppercase", width: 80 }}>POSITION</TableCell>
+                                <TableCell sx={{ color: "var(--text-secondary)", fontWeight: 800, fontSize: "0.7rem", textTransform: "uppercase" }}>AUTHOR NAME</TableCell>
+                                <TableCell sx={{ color: "var(--text-secondary)", fontWeight: 800, fontSize: "0.7rem", textTransform: "uppercase" }}>AFFILIATION</TableCell>
+                                <TableCell sx={{ color: "var(--text-secondary)", fontWeight: 800, fontSize: "0.7rem", textTransform: "uppercase" }}>EMPLOYEE ID</TableCell>
+                                <TableCell sx={{ color: "var(--text-secondary)", fontWeight: 800, fontSize: "0.7rem", textTransform: "uppercase" }}>ROLE</TableCell>
                             </TableRow>
                         </TableHead>
                         <TableBody>
                             {data.authors?.map((author, idx) => (
-                                <TableRow key={idx} sx={{ "&:last-child td": { borderBottom: 0 } }}>
-                                    <TableCell sx={{ borderBottom: "1px solid var(--border-color)" }}>
+                                <TableRow key={idx} sx={{ '&:hover': { bgcolor: 'rgba(190,147,55,0.04)' } }}>
+                                    <TableCell>
                                         <Box sx={{
-                                            width: 28, height: 28, borderRadius: "50%",
-                                            bgcolor: "var(--color-primary)", color: "#fff",
-                                            display: "flex", alignItems: "center", justifyContent: "center",
-                                            fontSize: "0.85rem", fontWeight: 800,
-                                            boxShadow: "0 4px 10px rgba(0, 78, 146, 0.3)"
+                                            display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                                            width: 32, height: 32, borderRadius: '50%',
+                                            bgcolor: 'rgba(190, 147, 55, 0.12)', border: '1.5px solid var(--color-primary)',
+                                            color: 'var(--color-primary)', fontWeight: 900, fontSize: '0.85rem'
                                         }}>
                                             {author.authorPosition}
                                         </Box>
                                     </TableCell>
-                                    <TableCell sx={{ fontWeight: 700, color: "var(--text-primary)", borderBottom: "1px solid var(--border-color)" }}>{author.authorName}</TableCell>
-                                    <TableCell sx={{ color: "var(--text-secondary)", fontWeight: 600, borderBottom: "1px solid var(--border-color)" }}>{author.affiliationName}</TableCell>
-                                    <TableCell sx={{ color: "var(--text-secondary)", fontWeight: 600, borderBottom: "1px solid var(--border-color)" }}>{author.employeeId || "-"}</TableCell>
-                                    <TableCell sx={{ borderBottom: "1px solid var(--border-color)" }}>
+                                    <TableCell sx={{ fontWeight: 700, color: "var(--text-primary)" }}>{author.authorName}</TableCell>
+                                    <TableCell sx={{ fontWeight: 600, color: "var(--text-secondary)" }}>{author.affiliationName}</TableCell>
+                                    <TableCell sx={{ fontWeight: 600, color: "var(--text-secondary)" }}>{author.employeeId || "-"}</TableCell>
+                                    <TableCell>
                                         {author.isIncentiveApplicant ? (
-                                            <Chip label="Incentive Applicant" size="small" sx={{ bgcolor: "rgba(76, 175, 80, 0.1)", color: "#4caf50", fontWeight: 700, border: "1px solid rgba(76, 175, 80, 0.2)" }} />
+                                            <Chip label="Incentive Applicant" size="small" sx={{ bgcolor: "rgba(76, 175, 80, 0.1)", color: "#4caf50", fontWeight: 800, border: "1px solid #4caf5044", fontSize: '0.7rem' }} />
                                         ) : (
-                                            <Chip label="Contributor Only" size="small" sx={{ bgcolor: "rgba(25, 118, 210, 0.05)", color: "var(--color-primary)", fontWeight: 700, border: "1px solid rgba(25, 118, 210, 0.2)" }} />
+                                            <Chip label="Contributor" size="small" sx={{ bgcolor: "rgba(25, 118, 210, 0.1)", color: "var(--color-primary)", fontWeight: 800, border: "1px solid rgba(25,118,210,0.3)", fontSize: '0.7rem' }} />
                                         )}
                                     </TableCell>
                                 </TableRow>
                             ))}
                             {(!data.authors || data.authors.length === 0) && (
                                 <TableRow>
-                                    <TableCell colSpan={5} align="center" sx={{ py: 4, color: "var(--text-secondary)", borderBottom: "1px solid var(--border-color)" }}>No authors found.</TableCell>
+                                    <TableCell colSpan={5} align="center" sx={{ py: 4, color: "var(--text-secondary)", fontWeight: 600 }}>No authors found.</TableCell>
                                 </TableRow>
                             )}
                         </TableBody>

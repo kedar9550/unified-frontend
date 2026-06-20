@@ -404,19 +404,24 @@ export default function JournalPublication() {
 
   const handleCompleteJournalChange = async (e) => {
     const file = e.target.files[0];
-    if (!file) return;
+    if (!file) {
+      setFiles(p => ({ ...p, completeJournal: null }));
+      setForm(p => ({ ...p, completeJournalName: "", sdgs: "" }));
+      setScannedSdgResults(null);
+      return;
+    }
 
-    const allowedExtensions = ['.pdf', '.docx'];
+    const allowedExtensions = ['.pdf'];
     const fileName = file.name.toLowerCase();
     const isValidExtension = allowedExtensions.some(ext => fileName.endsWith(ext));
     if (!isValidExtension) {
-      toast.error("Please upload only PDF or DOCX files for the Complete Journal");
+      toast.error("Please upload only PDF files for the Complete Journal");
       e.target.value = null;
       return;
     }
 
-    if (file.size > 500 * 1024) {
-      toast.error("Complete Journal file size exceeds 500KB limit");
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Complete Journal file size exceeds 5MB limit");
       e.target.value = null;
       return;
     }
@@ -639,7 +644,7 @@ export default function JournalPublication() {
       toast.error("Please select whether you want to apply for an incentive");
       return;
     }
-    if (form.applyIncentive === "Yes" && !form.publicationScope) {
+    if (!form.publicationScope) {
       toast.error("Please select National or International for Publication Scope");
       return;
     }
@@ -686,11 +691,7 @@ export default function JournalPublication() {
         "totalAuthors", "userAuthorPosition", "hIndex", "jcrImpactFactor",
       ];
       fields.forEach(k => {
-        if (k === "publicationScope" && form.applyIncentive === "No") {
-          fd.append(k, "N/A");
-        } else {
-          fd.append(k, form[k] ?? "");
-        }
+        fd.append(k, form[k] ?? "");
       });
 
       fd.append("numberOfReferencesBelongingToAGEC", form.numberOfReferencesBelongingToAGEC || 0);
@@ -783,14 +784,16 @@ export default function JournalPublication() {
                   <TableCell sx={{ color: "var(--text-primary)", fontWeight: 500, py: 2, maxWidth: 200 }}>{pub.paperTitle || "N/A"}</TableCell>
                   <TableCell sx={{ color: "var(--text-secondary)", py: 2 }}>{pub.journalName || "N/A"}</TableCell>
                   <TableCell sx={{ color: "var(--text-secondary)", py: 2 }}>{pub.journalQuartile || pub.categoryOfJournal || "N/A"}</TableCell>
-                  <TableCell sx={{ color: "var(--text-secondary)", py: 2 }}>{pub.facultyId?.name || "N/A"}</TableCell>
-                  <TableCell sx={{ color: "var(--text-secondary)", py: 2, maxWidth: 160 }}>
+                  <TableCell sx={{ color: "var(--text-secondary)", py: 2 }}>
+                    <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                      {pub.facultyId?.name || "N/A"}
+                    </Typography>
+                  </TableCell>
+                  <TableCell sx={{ color: "var(--text-secondary)", py: 2 }}>
                     {pub.coAuthors && pub.coAuthors.length > 0
-                      ? <Tooltip title={pub.coAuthors.map(ca => ca.name).join(", ")} arrow>
-                        <Typography variant="body2" sx={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 150, cursor: "default" }}>
+                      ? <Typography variant="body2" sx={{ fontWeight: 500 }}>
                           {pub.coAuthors.map(ca => ca.name).join(", ")}
                         </Typography>
-                      </Tooltip>
                       : <Typography variant="body2" sx={{ color: "var(--text-secondary)" }}>—</Typography>}
                   </TableCell>
                   <TableCell sx={{ py: 2 }}>
@@ -1118,7 +1121,7 @@ export default function JournalPublication() {
         <FileField label="Published Paper – 1st Page *" name="publishedPaper" onChange={setFile("publishedPaper")} />
         <FileField label="Reference Pages (with tick mark) *" name="referencePages" onChange={setFile("referencePages")} />
         <Box>
-          <FileField label="Complete Journal *" name="completeJournal" onChange={handleCompleteJournalChange} accept=".pdf,.docx" />
+          <FileField label="Complete Journal *" name="completeJournal" onChange={handleCompleteJournalChange} accept=".pdf" maxSize={5 * 1024 * 1024} />
           {scanningSdg && (
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mt: 1, p: 1.5, borderRadius: '8px', bgcolor: 'rgba(25, 118, 210, 0.05)', border: '1px solid rgba(25, 118, 210, 0.2)' }}>
               <CircularProgress size={16} />
@@ -1156,15 +1159,13 @@ export default function JournalPublication() {
             <MenuItem value="No">No</MenuItem>
           </Select>
         </Box>
-        {form.applyIncentive === "Yes" && (
-          <Box>
-            <Typography sx={labelStyle}>Publication Scope : *</Typography>
-            <Select size="small" fullWidth displayEmpty value={form.publicationScope} onChange={set("publicationScope")}>
-              <MenuItem value="">Select</MenuItem>
-              {INCENTIVE_OPTIONS.map(o => <MenuItem key={o} value={o}>{o}</MenuItem>)}
-            </Select>
-          </Box>
-        )}
+        <Box>
+          <Typography sx={labelStyle}>Publication Scope : *</Typography>
+          <Select size="small" fullWidth displayEmpty value={form.publicationScope} onChange={set("publicationScope")}>
+            <MenuItem value="">Select</MenuItem>
+            {INCENTIVE_OPTIONS.map(o => <MenuItem key={o} value={o}>{o}</MenuItem>)}
+          </Select>
+        </Box>
       </Grid2>
 
       {/* ── Actions ── */}

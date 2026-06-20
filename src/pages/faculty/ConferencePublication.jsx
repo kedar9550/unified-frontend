@@ -25,7 +25,7 @@ export default function ConferencePublication() {
 
   const [form, setForm] = useState({
     doi: "",
-    title: "", conferenceName: "", level: "", indexing: "",
+    title: "", conferenceName: "", scope: "", indexing: "",
     presentationType: "", month: "", year: "",
     publisher: "", issnIsbn: "",
     applyIncentive: "", applyingSeedGrant: "",
@@ -46,7 +46,23 @@ export default function ConferencePublication() {
     }).catch(err => console.log("Failed to fetch academic years", err));
   }, [viewMode]);
 
-  const set = (k) => (e) => setForm((p) => ({ ...p, [k]: e.target.value }));
+  const set = (k) => (e) => {
+    const val = e.target.value;
+    setForm(p => {
+      const newForm = { ...p, [k]: val };
+      if (k === "doi") {
+        newForm.title = "";
+        newForm.publisher = "";
+        newForm.conferenceName = "";
+        newForm.issnIsbn = "";
+        newForm.year = "";
+        newForm.month = "";
+        newForm.indexing = "";
+        setDoiFetched(false);
+      }
+      return newForm;
+    });
+  };
 
   // ── DOI Fetch via Backend (POST /api/research/conference/validate-doi) ───────
   // Backend calls Scopus, checks subtype === 'cp', returns structured data
@@ -247,7 +263,7 @@ export default function ConferencePublication() {
       toast.error("DOI is mandatory. Please enter the DOI.");
       return;
     }
-    if (!form.title || !form.conferenceName || !form.level || !form.indexing || !form.publisher || !form.applyingSeedGrant || !form.applyIncentive) {
+    if (!form.title || !form.conferenceName || !form.scope || !form.indexing || !form.publisher || !form.applyingSeedGrant || !form.applyIncentive) {
       toast.error("Please fill all required fields");
       return;
     }
@@ -296,7 +312,7 @@ export default function ConferencePublication() {
       fd.append("doi", form.doi || "");
       fd.append("title", form.title);
       fd.append("conferenceName", form.conferenceName);
-      fd.append("level", form.level);
+      fd.append("scope", form.scope);
       fd.append("indexing", form.indexing);
       fd.append("publisher", form.publisher);
       fd.append("issnIsbn", form.issnIsbn || "");
@@ -319,7 +335,7 @@ export default function ConferencePublication() {
       toast.success("Conference paper submitted successfully!");
       setForm({
         doi: "",
-        title: "", conferenceName: "", level: "", indexing: "",
+        title: "", conferenceName: "", scope: "", indexing: "",
         presentationType: "", month: "", year: "",
         publisher: "", issnIsbn: "",
         applyIncentive: "", applyingSeedGrant: "",
@@ -387,11 +403,11 @@ export default function ConferencePublication() {
               <TableRow>
                 <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Paper Title</TableCell>
                 <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Conference Name</TableCell>
-                <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Level</TableCell>
+                <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Scope</TableCell>
                 <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Indexing</TableCell>
                 <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Applicant</TableCell>
                 <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Role</TableCell>
-                <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Academic Year</TableCell>
+                <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Co-Authors</TableCell>
                 <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Status</TableCell>
                 <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Actions</TableCell>
               </TableRow>
@@ -401,21 +417,27 @@ export default function ConferencePublication() {
                 <TableRow key={pub._id || i} sx={{ "&:hover": { background: "rgba(var(--color-primary-rgb, 99,102,241), 0.04)", transition: "background 0.2s" } }}>
                   <TableCell sx={{ color: "var(--text-primary)", fontWeight: 500, py: 2 }}>{pub.title || "N/A"}</TableCell>
                   <TableCell sx={{ color: "var(--text-secondary)", py: 2 }}>{pub.conferenceName || "N/A"}</TableCell>
-                  <TableCell sx={{ color: "var(--text-secondary)", py: 2 }}>{pub.level || "N/A"}</TableCell>
+                  <TableCell sx={{ color: "var(--text-secondary)", py: 2 }}>{pub.scope || pub.level || "N/A"}</TableCell>
                   <TableCell sx={{ color: "var(--text-secondary)", py: 2 }}>{pub.indexing || "N/A"}</TableCell>
-                  <TableCell sx={{ color: "var(--text-secondary)", py: 2, maxWidth: 160 }}>
-                    <Tooltip title={pub.facultyId?.name || "N/A"} arrow>
-                      <Typography variant="body2" sx={{ fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 150 }}>
-                        {pub.facultyId?.name || "N/A"}
-                      </Typography>
-                    </Tooltip>
+                  <TableCell sx={{ color: "var(--text-secondary)", py: 2 }}>
+                    <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                      {pub.facultyId?.name || "N/A"}
+                    </Typography>
                   </TableCell>
                   <TableCell sx={{ py: 2 }}>
                     <Typography variant="body2" sx={{ fontWeight: 600, color: pub.visibilityRole === "Applicant" ? "var(--color-primary)" : "text.secondary" }}>
                       {pub.visibilityRole || "Applicant"}
                     </Typography>
                   </TableCell>
-                  <TableCell sx={{ color: "var(--text-secondary)", py: 2 }}>{pub.academicYear?.year || "N/A"}</TableCell>
+                  <TableCell sx={{ color: "var(--text-secondary)", py: 2 }}>
+                    {pub.coAuthors?.length > 0 ? (
+                      <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                        {pub.coAuthors.map(a => a.name).join(", ")}
+                      </Typography>
+                    ) : (
+                      <Typography variant="body2" sx={{ fontWeight: 500, color: "text.secondary" }}>None</Typography>
+                    )}
+                  </TableCell>
                   <TableCell sx={{ py: 2 }}>
                     <Typography variant="body2" sx={{
                       color: pub.status?.includes("Rejected") ? "#ef4444" : pub.status === "Approved" ? "#10b981" : "#e8a000",
@@ -546,7 +568,7 @@ export default function ConferencePublication() {
             size="small"
             fullWidth
             value={form.doi}
-            onChange={(e) => { setForm(p => ({ ...p, doi: e.target.value })); setDoiFetched(false); }}
+            onChange={set("doi")}
             placeholder="e.g. 10.1109/ACCESS.2024.123456"
             onKeyDown={(e) => { if (e.key === "Enter") fetchDOIData(); }}
             InputProps={{
@@ -610,14 +632,20 @@ export default function ConferencePublication() {
             setForm(p => ({ ...p, year: e.target.value, month: "" }));
           }}>
             <MenuItem value="">Select Year</MenuItem>
-            {YEARS.map((y) => <MenuItem key={y} value={y}>{y}</MenuItem>)}
+            {(form.year && !YEARS.includes(String(form.year))
+              ? [...YEARS, String(form.year)].sort((a, b) => Number(b) - Number(a))
+              : YEARS
+            ).map((y) => <MenuItem key={y} value={y}>{y}</MenuItem>)}
           </Select>
         </Box>
         <Box>
           <Typography sx={labelStyle}>Month :</Typography>
           <Select size="small" fullWidth displayEmpty value={form.month} onChange={set("month")} disabled={!form.year}>
             <MenuItem value="">Select Month</MenuItem>
-            {getAvailableMonths().map((m) => <MenuItem key={m} value={m}>{m}</MenuItem>)}
+            {(form.month && !getAvailableMonths().includes(form.month)
+              ? [...getAvailableMonths(), form.month]
+              : getAvailableMonths()
+            ).map((m) => <MenuItem key={m} value={m}>{m}</MenuItem>)}
           </Select>
         </Box>
         <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
@@ -625,9 +653,9 @@ export default function ConferencePublication() {
           <TextField size="small" fullWidth value={form.conferenceName} onChange={set("conferenceName")} placeholder="Enter conference name" />
         </Box>
         <Box>
-          <Typography sx={labelStyle}>Conference Type / Level : *</Typography>
-          <Select size="small" fullWidth displayEmpty value={form.level} onChange={set("level")}>
-            <MenuItem value="" disabled>Select Type</MenuItem>
+          <Typography sx={labelStyle}>Conference Scope : *</Typography>
+          <Select size="small" fullWidth displayEmpty value={form.scope} onChange={set("scope")}>
+            <MenuItem value="" disabled>Select Scope</MenuItem>
             <MenuItem value="National">National</MenuItem>
             <MenuItem value="International">International</MenuItem>
           </Select>
@@ -905,7 +933,7 @@ export default function ConferencePublication() {
 
           <Grid container spacing={2}>
             <Grid item xs={12} sm={3}><LabelValueDetails label="Academic Year" value={data.academicYear?.year || "N/A"} /></Grid>
-            <Grid item xs={12} sm={3}><LabelValueDetails label="Level" value={data.level} /></Grid>
+            <Grid item xs={12} sm={3}><LabelValueDetails label="Scope" value={data.scope || data.level || "-"} /></Grid>
             <Grid item xs={12} sm={3}><LabelValueDetails label="Role" value={data.visibilityRole || "Applicant"} /></Grid>
             <Grid item xs={12} sm={3}>
               <LabelValueDetails
@@ -928,7 +956,9 @@ export default function ConferencePublication() {
 
             <Grid item xs={12} sm={3}><LabelValueDetails label="Indexing" value={data.indexing} /></Grid>
             <Grid item xs={12} sm={3}><LabelValueDetails label="Presentation Type" value={data.presentationType || "-"} /></Grid>
-            <Grid item xs={12} sm={3}><LabelValueDetails label="First Author?" value={data.firstAuthor} /></Grid>
+            <Grid item xs={12} sm={3}><LabelValueDetails label="DOI" value={data.doi || "N/A"} /></Grid>
+            <Grid item xs={12} sm={3}><LabelValueDetails label="Publisher" value={data.publisher || "N/A"} /></Grid>
+            <Grid item xs={12} sm={3}><LabelValueDetails label="ISSN/ISBN" value={data.issnIsbn || "N/A"} /></Grid>
             <Grid item xs={12} sm={3}><LabelValueDetails label="Author Position" value={data.userAuthorPosition || "1"} /></Grid>
 
             <Grid item xs={12} sm={4}><LabelValueDetails label="Month/Year" value={`${data.month || ""} ${data.year || ""}`} /></Grid>
@@ -999,17 +1029,38 @@ export default function ConferencePublication() {
                 <Table size="small">
                   <TableHead sx={{ bgcolor: "var(--bg-panel)" }}>
                     <TableRow>
+                      <TableCell sx={{ fontWeight: 700, color: "var(--text-secondary)", width: 80 }}>POSITION</TableCell>
                       <TableCell sx={{ fontWeight: 700, color: "var(--text-secondary)" }}>NAME</TableCell>
                       <TableCell sx={{ fontWeight: 700, color: "var(--text-secondary)" }}>AFFILIATION</TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {data.coAuthors.map((author, idx) => (
-                      <TableRow key={idx}>
-                        <TableCell sx={{ fontWeight: 700, color: "var(--text-primary)" }}>{author.name}</TableCell>
-                        <TableCell sx={{ color: "var(--text-secondary)" }}>{author.affiliation}</TableCell>
-                      </TableRow>
-                    ))}
+                    {(() => {
+                      const total = parseInt(data.totalAuthors) || 0;
+                      const applicantPos = parseInt(data.userAuthorPosition) || 0;
+                      const derivedPositions = total > 0
+                        ? Array.from({ length: total }, (_, i) => i + 1).filter(p => p !== applicantPos)
+                        : [];
+                      return data.coAuthors.map((author, idx) => {
+                        const pos = author.authorPosition || derivedPositions[idx] || (idx + 1);
+                        return (
+                          <TableRow key={idx}>
+                            <TableCell>
+                                <Box sx={{
+                                    display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                                    width: 30, height: 30, borderRadius: '50%',
+                                    bgcolor: 'rgba(190, 147, 55, 0.12)', border: '1.5px solid var(--color-primary)',
+                                    color: 'var(--color-primary)', fontWeight: 900, fontSize: '0.85rem'
+                                }}>
+                                    {pos}
+                                </Box>
+                            </TableCell>
+                            <TableCell sx={{ fontWeight: 700, color: "var(--text-primary)" }}>{author.name}</TableCell>
+                            <TableCell sx={{ color: "var(--text-secondary)" }}>{author.affiliation}</TableCell>
+                          </TableRow>
+                        );
+                      });
+                    })()}
                   </TableBody>
                 </Table>
               </TableContainer>
@@ -1041,6 +1092,7 @@ export default function ConferencePublication() {
                   <Typography variant="body2" sx={{ fontStyle: "italic", mt: 0.5, color: "var(--text-secondary)" }}>"{data.rndComment}"</Typography>
                 </Box>
               )}
+
             </Box>
           )}
         </DialogContent>

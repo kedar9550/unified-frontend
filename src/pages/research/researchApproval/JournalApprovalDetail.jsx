@@ -433,8 +433,16 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
                                 </TableRow>
                             </TableHead>
                             <TableBody>
-                                {data.coAuthors.map((ca, i) => (
-                                    <TableRow key={i} sx={{ '&:hover': { bgcolor: 'rgba(190,147,55,0.04)' } }}>
+                                {(() => {
+                                    const total = parseInt(data.totalAuthors) || 0;
+                                    const applicantPos = parseInt(data.userAuthorPosition) || (data.firstAuthor === "Yes" ? 1 : parseInt(data.authorPosition)) || 0;
+                                    const derivedPositions = total > 0
+                                        ? Array.from({ length: total }, (_, i) => i + 1).filter(p => p !== applicantPos)
+                                        : [];
+                                    return data.coAuthors.map((ca, i) => {
+                                        const pos = ca.authorPosition || derivedPositions[i] || (i + 1);
+                                        return (
+                                            <TableRow key={i} sx={{ '&:hover': { bgcolor: 'rgba(190,147,55,0.04)' } }}>
                                         <TableCell>
                                             <Box sx={{
                                                 display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
@@ -442,13 +450,15 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
                                                 bgcolor: 'rgba(190, 147, 55, 0.12)', border: '1.5px solid var(--color-primary)',
                                                 color: 'var(--color-primary)', fontWeight: 900, fontSize: '0.85rem'
                                             }}>
-                                                {ca.authorPosition || (i + 1)}
+                                                {pos}
                                             </Box>
                                         </TableCell>
                                         <TableCell sx={{ fontWeight: 700, color: "var(--text-primary)" }}>{ca.name}</TableCell>
                                         <TableCell sx={{ fontWeight: 600, color: "var(--text-secondary)" }}>{ca.affiliation || "-"}</TableCell>
                                     </TableRow>
-                                ))}
+                                    );
+                                    });
+                                })()}
                             </TableBody>
                         </Table>
                     </TableContainer>
