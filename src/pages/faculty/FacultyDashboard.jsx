@@ -56,7 +56,6 @@ const FacultyDashboard = () => {
   };
 
   const selectMenuProps = {
-    onClose: blurActiveElement,
     disableAutoFocusItem: true,
     slotProps: {
       list: {
@@ -229,6 +228,7 @@ const FacultyDashboard = () => {
               setSelectedYear(e.target.value);
               blurActiveElement();
             }}
+            onClose={blurActiveElement}
             MenuProps={selectMenuProps}
             sx={{
               borderRadius: "12px",

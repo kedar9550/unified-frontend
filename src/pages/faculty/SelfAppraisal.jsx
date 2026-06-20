@@ -219,7 +219,6 @@ const SelfAppraisal = () => {
   };
 
   const selectMenuProps = {
-    onClose: blurActiveElement,
     disableAutoFocusItem: true,
     slotProps: {
       list: {
@@ -1343,7 +1342,9 @@ const SelfAppraisal = () => {
     if (activityRole.includes('resource person') || activityRole.includes('resourceperson')) {
       pts = (parseInt(r.sessionsConducted) || 1) * (resourceUtConf.resourcePerson ?? 2);
     } else if (activityRole.includes('participant') || activityRole.includes('participated')) {
-      pts = (parseInt(r.daysParticipated) || 1) * (resourceUtConf.participated ?? 1);
+      // Use server-auto-calculated duration as authoritative; daysParticipated is manually entered fallback
+      const participantDays = Number(r.duration) || parseInt(r.daysParticipated) || 1;
+      pts = participantDays * (resourceUtConf.participated ?? 1);
     } else if (activityRole.includes('guest lecture') || activityRole.includes('workshop') || activityRole.includes('event')) {
       pts = resourceUtConf.guestLecture ?? 2;
     } else {
@@ -1456,8 +1457,8 @@ const SelfAppraisal = () => {
     } else if (name.includes('course coordinator')) {
       pts = adminConf.courseDept ?? 5;
     } else if (name.includes('website')) {
-      pts = adminConf.websiteCentral ?? 10;
-    } else if (name.includes('nss') || name.includes('professional chapter')) {
+      pts = isCentral ? (adminConf.websiteCentral ?? 10) : 0; // Central only per form
+    } else if (name.includes('nss') || name.includes('club') || name.includes('professional chapter')) {
       pts = isCentral ? (adminConf.nssCentral ?? 10) : (adminConf.nssDept ?? 5);
     } else if (name.includes('training')) {
       pts = isCentral ? (adminConf.trainingCentral ?? 10) : (adminConf.trainingDept ?? 5);
@@ -1537,8 +1538,19 @@ const SelfAppraisal = () => {
     if (!appraisal) return { total1to4: 0, grandTotal: 0, T: 0, R_sum: 0, V: 0, A: 0, I: 0 };
     const T = Number(appraisal.teaching?.totalClaimed) || 0;
     const R_sum = Number(appraisal.research?.totalClaimed) || 0;
-    const V = Number(appraisal.valueAddition?.totalClaimed) || 0;
-    const A = Number(appraisal.administration?.totalClaimed) || 0;
+
+    // Compute V live from sub-sections (each capped at 10) so it always reflects latest calculations
+    const resUtilTotal = resourceUtilizationDetails?.reduce((sum, r) => r.status !== 'Rejected' ? sum + calculateResourceUtilizationPoints(r, appraisalConfig) : sum, 0) || 0;
+    const contribTotal = contributionDetails?.reduce((sum, r) => r.status !== 'Rejected' ? sum + calculateContributionPoints(r, appraisalConfig) : sum, 0) || 0;
+    const cappedResUtil = Math.min(10, resUtilTotal);
+    const cappedContrib = Math.min(10, contribTotal);
+    const V = cappedResUtil + cappedContrib;
+
+    // Compute A live from administrationDetail.roles list
+    const adminRolesList = administrationDetail?.roles?.filter(r => r.isResponsible) || [];
+    const adminRaw = adminRolesList.reduce((sum, r) => r.status !== 'Rejected' ? sum + calculateAdministrativePoints(r, appraisalConfig) : sum, 0);
+    const A = Math.min(20, adminRaw);
+
     const I = Number(appraisal.hodEvaluation?.totalInterpersonalPoints) || 0;
 
     const total1to4 = Math.min(200, T + R_sum + V + A);
@@ -1836,6 +1848,7 @@ const SelfAppraisal = () => {
                   setSelectedYear(e.target.value);
                   blurActiveElement();
                 }}
+                onClose={blurActiveElement}
                 MenuProps={selectMenuProps}
                 label="Academic Year"
               >
@@ -1897,6 +1910,7 @@ const SelfAppraisal = () => {
                   setSelectedYear(e.target.value);
                   blurActiveElement();
                 }}
+                onClose={blurActiveElement}
                 MenuProps={selectMenuProps}
                 label="Academic Year"
               >
@@ -2028,6 +2042,7 @@ const SelfAppraisal = () => {
                 setSelectedYear(e.target.value);
                 blurActiveElement();
               }}
+              onClose={blurActiveElement}
               MenuProps={selectMenuProps}
               label="Academic Year"
             >
@@ -5126,7 +5141,7 @@ const SelfAppraisal = () => {
               </Box>
               <IconButton onClick={() => setSelectedContDetails(null)}><Close /></IconButton>
             </DialogTitle>
-            <DialogContent sx={{ p: 3, mt: 1 }}>
+            <DialogContent sx={{ pt: 2, px: 3, pb: 3, mt: 2 }}>
               <Typography variant="subtitle2" color="var(--color-primary)" sx={{ fontWeight: 800, textTransform: "uppercase" }}>
                 {getCategoryName(data.category)}
               </Typography>
@@ -5135,23 +5150,23 @@ const SelfAppraisal = () => {
               </Typography>
 
               <Grid container spacing={2}>
-                {[1, 2, 3, 7, 10, 12, 13].includes(data.category) && (
-                  <>
-                    <Grid size={{ xs: 12, sm: 4 }}>
-                      <Box sx={{ p: 1.5, borderRadius: "10px", background: "var(--bg-paper)", border: "1px solid var(--border-color)" }}>
-                        <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", fontWeight: 800 }}>Dates</Typography>
-                        <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>
-                          {new Date(data.fromDate).toLocaleDateString("en-IN")} to {new Date(data.toDate).toLocaleDateString("en-IN")}
-                        </Typography>
-                      </Box>
-                    </Grid>
-                    <Grid size={{ xs: 12, sm: 4 }}>
-                      <Box sx={{ p: 1.5, borderRadius: "10px", background: "var(--bg-paper)", border: "1px solid var(--border-color)" }}>
-                        <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", fontWeight: 800 }}>Duration</Typography>
-                        <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>{data.duration}</Typography>
-                      </Box>
-                    </Grid>
-                  </>
+                {data.fromDate && data.toDate && (
+                  <Grid size={{ xs: 12, sm: 4 }}>
+                    <Box sx={{ p: 1.5, borderRadius: "10px", background: "var(--bg-paper)", border: "1px solid var(--border-color)" }}>
+                      <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", fontWeight: 800 }}>Dates</Typography>
+                      <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>
+                        {new Date(data.fromDate).toLocaleDateString("en-IN")} to {new Date(data.toDate).toLocaleDateString("en-IN")}
+                      </Typography>
+                    </Box>
+                  </Grid>
+                )}
+                {data.duration && (
+                  <Grid size={{ xs: 12, sm: 4 }}>
+                    <Box sx={{ p: 1.5, borderRadius: "10px", background: "var(--bg-paper)", border: "1px solid var(--border-color)" }}>
+                      <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", fontWeight: 800 }}>Duration</Typography>
+                      <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>{data.duration}</Typography>
+                    </Box>
+                  </Grid>
                 )}
 
                 {data.awardDate && (
