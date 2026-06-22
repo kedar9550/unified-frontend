@@ -136,7 +136,7 @@ const ConsultancyApprovalDetail = ({ id, onBack, role }) => {
                         <Box sx={{ width: 50, height: 50, borderRadius: "50%", bgcolor: "rgba(190, 147, 55, 0.1)", color: "var(--color-primary)", display: "flex", alignItems: "center", justifyContent: "center" }}><BusinessCenterIcon /></Box>
                         <Box>
                             <Typography variant="h5" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>{data.title}</Typography>
-                            <Typography variant="body2" sx={{ color: "var(--text-secondary)", fontWeight: 600 }}>Client: {data.organization}</Typography>
+                            <Typography variant="body2" sx={{ color: "var(--text-secondary)", fontWeight: 600 }}>Funding Agency: {data.fundingAgency}</Typography>
                         </Box>
                     </Box>
                     <Box sx={{ textAlign: { xs: "center", sm: "right" } }}>
@@ -212,7 +212,8 @@ const ConsultancyApprovalDetail = ({ id, onBack, role }) => {
                     <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 3 }}><BusinessCenterIcon sx={{ color: "var(--color-primary)" }} /><Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>Consultancy Details</Typography></Box>
                     <Box sx={{ display: "flex", flexDirection: "column" }}>
                         <LabelValue label="Title of Work" value={data.title} horizontal />
-                        <LabelValue label="Organization / Client" value={data.organization} horizontal />
+                        <LabelValue label="Funding Agency" value={data.fundingAgency} horizontal />
+                        <LabelValue label="Internal Funding (AUS)" value={data.fundingAdityaUniversity} horizontal />
                         <LabelValue label="Consultancy Amount" value={`₹${data.amount}`} horizontal />
                         <LabelValue label="Duration" value={data.duration} horizontal />
                         <LabelValue label="Commencement Month" value={data.month} horizontal />

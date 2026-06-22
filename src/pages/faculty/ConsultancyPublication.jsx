@@ -23,7 +23,7 @@ export default function ConsultancyPublication() {
   const [rowsPerPage, setRowsPerPage] = useState(10);
 
   const [form, setForm] = useState({
-    title: "", organization: "", amount: "", duration: "", month: "", year: "",
+    title: "", fundingAgency: "", fundingAdityaUniversity: "", amount: "", duration: "", month: "", year: "",
     applyingSeedGrant: "",
     investigatorType: "",
     principalInvestigator: "",
@@ -181,8 +181,13 @@ export default function ConsultancyPublication() {
   };
 
   const handleSubmit = async () => {
-    if (!form.title || !form.organization || !form.applyingSeedGrant || !form.amount) {
+    if (!form.title || !form.fundingAdityaUniversity || !form.applyingSeedGrant || !form.amount) {
       toast.error("Please fill all required fields");
+      return;
+    }
+
+    if (form.fundingAdityaUniversity === 'No' && (!form.fundingAgency || !form.fundingAgency.trim())) {
+      toast.error("Please specify the Funding Agency");
       return;
     }
 
@@ -276,7 +281,7 @@ export default function ConsultancyPublication() {
       await API.post("/api/research/consultancy", payload);
       toast.success("Consultancy submitted successfully!");
       setForm({
-        title: "", organization: "", amount: "", duration: "", month: "", year: "", applyingSeedGrant: "",
+        title: "", fundingAgency: "", fundingAdityaUniversity: "", amount: "", duration: "", month: "", year: "", applyingSeedGrant: "",
         investigatorType: "", principalInvestigator: "", coPrincipalInvestigator: "", applyIncentive: "No", projectStatus: "Sanctioned",
         totalInvestigators: 1, otherInvestigatorsList: []
       });
@@ -340,7 +345,7 @@ export default function ConsultancyPublication() {
             <TableHead sx={{ background: "var(--gradient-primary)" }}>
               <TableRow>
                 <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Title</TableCell>
-                <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Organization</TableCell>
+                <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Funding Agency</TableCell>
                 <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Amount</TableCell>
                 <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Applicant</TableCell>
                 <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Role</TableCell>
@@ -353,7 +358,7 @@ export default function ConsultancyPublication() {
               {publicationsList.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((pub, i) => (
                 <TableRow key={pub._id || i} sx={{ "&:hover": { background: "rgba(var(--color-primary-rgb, 99,102,241), 0.04)", transition: "background 0.2s" } }}>
                   <TableCell sx={{ color: "var(--text-primary)", fontWeight: 500, py: 2 }}>{pub.title || "N/A"}</TableCell>
-                  <TableCell sx={{ color: "var(--text-secondary)", py: 2 }}>{pub.organization || "N/A"}</TableCell>
+                  <TableCell sx={{ color: "var(--text-secondary)", py: 2 }}>{pub.fundingAgency || "N/A"}</TableCell>
                   <TableCell sx={{ color: "var(--text-secondary)", py: 2 }}>{pub.amount || "N/A"}</TableCell>
                   <TableCell sx={{ color: "var(--text-secondary)", py: 2 }}>
                     <Typography variant="body2" sx={{ fontWeight: 600 }}>
@@ -500,9 +505,25 @@ export default function ConsultancyPublication() {
             <TextField size="small" fullWidth value={form.title} onChange={set("title")} />
           </Box>
           <Box>
-            <Typography sx={labelStyle}>Organization/client :</Typography>
-            <TextField size="small" fullWidth value={form.organization} onChange={set("organization")} />
+            <Typography sx={labelStyle}>Funding Agency : *</Typography>
+            <Select 
+              size="small" 
+              fullWidth 
+              displayEmpty 
+              value={form.fundingAdityaUniversity} 
+              onChange={(e) => setForm(p => ({ ...p, fundingAdityaUniversity: e.target.value, fundingAgency: e.target.value === "Yes" ? "Aditya University" : "" }))}
+            >
+              <MenuItem value="" disabled>--Select--</MenuItem>
+              <MenuItem value="Yes">Aditya University</MenuItem>
+              <MenuItem value="No">Others</MenuItem>
+            </Select>
           </Box>
+          {form.fundingAdityaUniversity === "No" && (
+            <Box>
+              <Typography sx={labelStyle}>Please Specify Funding Agency : *</Typography>
+              <TextField size="small" fullWidth value={form.fundingAgency} onChange={set("fundingAgency")} />
+            </Box>
+          )}
           <Box>
             <Typography sx={labelStyle}>Consultancy Amount :</Typography>
             <TextField size="small" fullWidth value={form.amount} onChange={handleNumericChange("amount")} placeholder="Amount" />
