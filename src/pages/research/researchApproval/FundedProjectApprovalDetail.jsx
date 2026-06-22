@@ -245,9 +245,7 @@ const FundedProjectApprovalDetail = ({ id, onBack, role }) => {
                     <Box sx={{ display: "flex", flexDirection: "column" }}>
                         <LabelValue label="Funding Agency" value={data.fundingAgency} horizontal />
                         <LabelValue label="Scheme" value={data.scheme} horizontal />
-                        <LabelValue label="Duration" value={data.duration} horizontal />
-                        <LabelValue label="Principal Inv" value={data.principalInvestigator} horizontal />
-                        <LabelValue label="Co-Principal Inv" value={data.coPrincipalInvestigator} horizontal />
+                        <LabelValue label="Investigator Type" value={data.investigatorType || (data.principalInvestigator === "Yes" ? "Principal Investigator (PI)" : "Co-Principal Investigator (Co-PI)")} horizontal />
                         <LabelValue label="Date of Sanction" value={new Date(data.sanctionDate).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })} horizontal />
                         <LabelValue label="Sanctioned Amt" value={`₹${data.sanctionedAmount}`} horizontal />
                         <LabelValue label="Recurring" value={`₹${data.recurring || "0"}`} horizontal />
@@ -266,7 +264,7 @@ const FundedProjectApprovalDetail = ({ id, onBack, role }) => {
                             <Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>Co-Investigators Details</Typography>
                             <Box sx={{ ml: 'auto', px: 1.5, py: 0.5, borderRadius: '20px', bgcolor: 'rgba(190,147,55,0.12)', border: '1px solid rgba(190,147,55,0.3)' }}>
                                 <Typography variant="caption" sx={{ fontWeight: 900, color: 'var(--color-primary)', fontSize: '0.7rem' }}>
-                                    Total: {data.coInvestigators.length} Co-Investigator{data.coInvestigators.length > 1 ? 's' : ''}
+                                    Total: {data.coInvestigators.length} Investigator{data.coInvestigators.length > 1 ? 's' : ''}
                                 </Typography>
                             </Box>
                         </Box>
@@ -277,26 +275,50 @@ const FundedProjectApprovalDetail = ({ id, onBack, role }) => {
                                 <TableRow>
                                     <TableCell sx={{ color: "var(--text-secondary)", fontWeight: 800, fontSize: "0.7rem", textTransform: "uppercase", width: 60 }}>#</TableCell>
                                     <TableCell sx={{ color: "var(--text-secondary)", fontWeight: 800, fontSize: "0.7rem", textTransform: "uppercase" }}>NAME</TableCell>
-                                    <TableCell sx={{ color: "var(--text-secondary)", fontWeight: 800, fontSize: "0.7rem", textTransform: "uppercase" }}>AFFILIATION</TableCell>
+                                    <TableCell sx={{ color: "var(--text-secondary)", fontWeight: 800, fontSize: "0.7rem", textTransform: "uppercase" }}>ROLE</TableCell>
+                                    <TableCell sx={{ color: "var(--text-secondary)", fontWeight: 800, fontSize: "0.7rem", textTransform: "uppercase" }}>AFFILIATION & DETAILS</TableCell>
                                 </TableRow>
                             </TableHead>
                             <TableBody>
-                                {data.coInvestigators.map((ca, i) => (
-                                    <TableRow key={i} sx={{ '&:hover': { bgcolor: 'rgba(190,147,55,0.04)' } }}>
-                                        <TableCell>
-                                            <Box sx={{
-                                                display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                                                width: 32, height: 32, borderRadius: '50%',
-                                                bgcolor: 'rgba(190, 147, 55, 0.12)', border: '1.5px solid var(--color-primary)',
-                                                color: 'var(--color-primary)', fontWeight: 900, fontSize: '0.85rem'
-                                            }}>
-                                                {i + 1}
-                                            </Box>
-                                        </TableCell>
-                                        <TableCell sx={{ fontWeight: 700, color: "var(--text-primary)" }}>{ca.name}</TableCell>
-                                        <TableCell sx={{ fontWeight: 600, color: "var(--text-secondary)" }}>{ca.affiliation || "-"}</TableCell>
-                                    </TableRow>
-                                ))}
+                                {data.coInvestigators.map((ca, i) => {
+                                    const roleText = ca.role || (ca.principalInvestigator === "Yes" ? "Principal Investigator" : "Co-Investigator");
+                                    return (
+                                        <TableRow key={i} sx={{ '&:hover': { bgcolor: 'rgba(190,147,55,0.04)' } }}>
+                                            <TableCell>
+                                                <Box sx={{
+                                                    display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                                                    width: 32, height: 32, borderRadius: '50%',
+                                                    bgcolor: 'rgba(190, 147, 55, 0.12)', border: '1.5px solid var(--color-primary)',
+                                                    color: 'var(--color-primary)', fontWeight: 900, fontSize: '0.85rem'
+                                                }}>
+                                                    {i + 1}
+                                                </Box>
+                                            </TableCell>
+                                            <TableCell sx={{ fontWeight: 700, color: "var(--text-primary)" }}>
+                                                {ca.name} {ca.employeeId ? `(Code: ${ca.employeeId})` : ""}
+                                            </TableCell>
+                                            <TableCell sx={{ fontWeight: 600 }}>
+                                                <Chip 
+                                                    size="small" 
+                                                    label={roleText} 
+                                                    color={roleText.includes("Principal") ? "primary" : "secondary"} 
+                                                    variant="outlined"
+                                                    sx={{ fontWeight: 700, borderRadius: "6px" }} 
+                                                />
+                                            </TableCell>
+                                            <TableCell sx={{ fontWeight: 600, color: "var(--text-secondary)" }}>
+                                                <Typography variant="body2" sx={{ fontWeight: 600, color: "var(--text-secondary)" }}>
+                                                    {ca.affiliation || "Aditya University"}
+                                                </Typography>
+                                                {(ca.department || ca.designation) && (
+                                                    <Typography variant="caption" sx={{ color: "text.secondary", display: "block" }}>
+                                                        {ca.department ? `Dept: ${ca.department}` : ""} {ca.designation ? `| Desig: ${ca.designation}` : ""}
+                                                    </Typography>
+                                                )}
+                                            </TableCell>
+                                        </TableRow>
+                                    );
+                                })}
                             </TableBody>
                         </Table>
                     </TableContainer>

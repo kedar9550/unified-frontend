@@ -243,7 +243,6 @@ const PatentApprovalDetail = ({ id, onBack, role }) => {
                         <LabelValue label="Filing No" value={data.filingNo} horizontal />
                         <LabelValue label="Date of Filing" value={new Date(data.dateOfFiling).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })} horizontal />
                         <LabelValue label="Patent Status" value={data.patentStatus} horizontal />
-                        <LabelValue label="Month / Year" value={`${data.month} ${data.year}`} horizontal />
                         <LabelValue label="Incentive" horizontal chip={<Chip label={data.applyIncentive} size="small" sx={{ bgcolor: data.applyIncentive === 'Yes' ? "rgba(76, 175, 80, 0.1)" : "var(--bg-panel)", color: data.applyIncentive === 'Yes' ? "#4caf50" : "var(--text-secondary)", fontWeight: 800, border: "1px solid", borderColor: data.applyIncentive === 'Yes' ? "#4caf5044" : "var(--border-color)" }} />} />
                         <LabelValue label="Seed Grant Work" value={data.applyingSeedGrant} horizontal />
                     </Box>

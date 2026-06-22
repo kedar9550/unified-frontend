@@ -176,7 +176,7 @@ export function FileField({ label, name, onChange, error, onError, accept = ".pn
           <input type="file" hidden accept={accept} name={name} onChange={handleFileChange} ref={fileInputRef} />
         </Button>
 
-        <Typography sx={{ fontSize: 14, color: "var(--text-secondary)", fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", flexGrow: 1 }}>
+        <Typography sx={{ fontSize: 14, color: "var(--text-secondary)", fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flexGrow: 1, minWidth: 0 }}>
           {fileName || "No file chosen"}
         </Typography>
 

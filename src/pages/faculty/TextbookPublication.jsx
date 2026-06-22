@@ -1098,11 +1098,11 @@ export default function TextbookPublication() {
                     const eligibleClaimants = [
                       { _id: data.facultyId?._id, name: data.facultyId?.name, institutionId: data.facultyId?.institutionId },
                       ...((data.authors || [])
-                        .filter(a => a.employeeObjectId)
+                        .filter(a => a.employeeId)
                         .map(a => ({
-                          _id: a.employeeObjectId?._id || a.employeeObjectId,
-                          name: a.employeeObjectId?.name || a.authorName,
-                          institutionId: a.employeeObjectId?.institutionId || ""
+                          _id: a.employeeId?._id || a.employeeId,
+                          name: a.employeeId?.name || a.authorName,
+                          institutionId: a.employeeId?.institutionId || a.employeeId || ""
                         })))
                     ];
                     const uniqueClaimants = eligibleClaimants.filter((v, i, a) => v._id && a.findIndex(t => t._id.toString() === v._id.toString()) === i);
@@ -1137,35 +1137,38 @@ export default function TextbookPublication() {
             <Card sx={{ p: 0, overflow: "hidden", mb: 3, border: "1px solid var(--border-color)", background: "rgba(255,255,255,0.01)" }}>
               <Box sx={{ p: 2, display: "flex", alignItems: "center", gap: 1.5, borderBottom: "1px solid var(--border-color)" }}>
                 <Groups sx={{ color: "var(--color-primary)" }} />
-                <Typography sx={{ fontWeight: 800, color: "var(--text-primary)" }}>Authors & Affiliations</Typography>
+                <Typography sx={{ fontWeight: 800, color: "var(--text-primary)" }}>Co-Authors & Affiliations</Typography>
               </Box>
               <TableContainer>
                 <Table size="small">
                   <TableHead sx={{ bgcolor: "var(--bg-panel)" }}>
                     <TableRow>
-                      <TableCell sx={{ fontWeight: 700, color: "var(--text-secondary)" }}>POSITION</TableCell>
+                      <TableCell sx={{ fontWeight: 700, color: "var(--text-secondary)", width: 80 }}>AUTHOR NO</TableCell>
                       <TableCell sx={{ fontWeight: 700, color: "var(--text-secondary)" }}>NAME</TableCell>
                       <TableCell sx={{ fontWeight: 700, color: "var(--text-secondary)" }}>AFFILIATION</TableCell>
-                      <TableCell sx={{ fontWeight: 700, color: "var(--text-secondary)" }}>EMPLOYEE ID</TableCell>
-                      <TableCell sx={{ fontWeight: 700, color: "var(--text-secondary)" }}>ROLE</TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {data.authors.map((author, idx) => (
-                      <TableRow key={idx}>
-                        <TableCell sx={{ fontWeight: 800, color: "var(--color-primary)" }}>{author.authorPosition}</TableCell>
-                        <TableCell sx={{ fontWeight: 700, color: "var(--text-primary)" }}>{author.authorName}</TableCell>
-                        <TableCell sx={{ color: "var(--text-secondary)" }}>{author.affiliationName}</TableCell>
-                        <TableCell sx={{ color: "var(--text-secondary)" }}>{author.employeeId || "-"}</TableCell>
-                        <TableCell>
-                          {author.isIncentiveApplicant ? (
-                            <Chip label="Incentive Applicant" size="small" sx={{ bgcolor: "rgba(76, 175, 80, 0.1)", color: "#4caf50", fontWeight: 700 }} />
-                          ) : (
-                            <Chip label="Contributor" size="small" sx={{ bgcolor: "rgba(25, 118, 210, 0.05)", color: "var(--color-primary)", fontWeight: 700 }} />
-                          )}
-                        </TableCell>
-                      </TableRow>
-                    ))}
+                    {(() => {
+                      const applicantPos = parseInt(data.userAuthorPosition) || 0;
+                      const coAuthors = data.authors ? data.authors.filter(a => parseInt(a.authorPosition) !== applicantPos) : [];
+                      return coAuthors.map((author, idx) => (
+                        <TableRow key={idx} sx={{ '&:hover': { bgcolor: 'rgba(190,147,55,0.04)' } }}>
+                          <TableCell>
+                            <Box sx={{
+                              display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                              width: 30, height: 30, borderRadius: '50%',
+                              bgcolor: 'rgba(190, 147, 55, 0.12)', border: '1.5px solid var(--color-primary)',
+                              color: 'var(--color-primary)', fontWeight: 900, fontSize: '0.82rem'
+                            }}>
+                              {author.authorPosition}
+                            </Box>
+                          </TableCell>
+                          <TableCell sx={{ fontWeight: 700, color: "var(--text-primary)" }}>{author.authorName}</TableCell>
+                          <TableCell sx={{ color: "var(--text-secondary)" }}>{author.affiliationName || "-"}</TableCell>
+                        </TableRow>
+                      ));
+                    })()}
                   </TableBody>
                 </Table>
               </TableContainer>

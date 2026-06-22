@@ -1344,7 +1344,7 @@ export default function JournalPublication() {
                         .map(ca => ({
                           _id: ca.employeeId?._id || ca.employeeId,
                           name: ca.employeeId?.name || ca.name,
-                          institutionId: ca.employeeId?.institutionId || ""
+                          institutionId: ca.employeeId?.institutionId || ca.employeeId || ""
                         })))
                     ];
                     const uniqueClaimants = eligibleClaimants.filter((v, i, a) => v._id && a.findIndex(t => t._id.toString() === v._id.toString()) === i);
