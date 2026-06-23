@@ -231,7 +231,7 @@ const ConsultancyApprovalDetail = ({ id, onBack, role }) => {
                         <Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>Investigators & Roles</Typography>
                         <Box sx={{ ml: 'auto', px: 1.5, py: 0.5, borderRadius: '20px', bgcolor: 'rgba(190,147,55,0.12)', border: '1px solid rgba(190,147,55,0.3)' }}>
                             <Typography variant="caption" sx={{ fontWeight: 900, color: 'var(--color-primary)', fontSize: '0.7rem' }}>
-                                Total: {(data.coInvestigators?.length || 0) + 1} Investigator{(data.coInvestigators?.length || 0) > 0 ? 's' : ''}
+                                Total: {(data.coInvestigators?.length || 0) + 1} Co-Investigator{(data.coInvestigators?.length || 0) > 0 ? 's' : ''}
                             </Typography>
                         </Box>
                     </Box>
@@ -240,7 +240,7 @@ const ConsultancyApprovalDetail = ({ id, onBack, role }) => {
                     <Table>
                         <TableHead sx={{ bgcolor: "var(--bg-panel)" }}>
                             <TableRow>
-                                <TableCell sx={{ color: "var(--text-secondary)", fontWeight: 800, fontSize: "0.7rem", textTransform: "uppercase", width: 60 }}>#</TableCell>
+                                <TableCell sx={{ color: "var(--text-secondary)", fontWeight: 800, fontSize: "0.7rem", textTransform: "uppercase", width: 60 }}>S.No</TableCell>
                                 <TableCell sx={{ color: "var(--text-secondary)", fontWeight: 800, fontSize: "0.7rem", textTransform: "uppercase" }}>NAME</TableCell>
                                 <TableCell sx={{ color: "var(--text-secondary)", fontWeight: 800, fontSize: "0.7rem", textTransform: "uppercase" }}>ROLE</TableCell>
                                 <TableCell sx={{ color: "var(--text-secondary)", fontWeight: 800, fontSize: "0.7rem", textTransform: "uppercase" }}>AFFILIATION</TableCell>

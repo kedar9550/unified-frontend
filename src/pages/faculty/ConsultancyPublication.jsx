@@ -825,49 +825,53 @@ export default function ConsultancyPublication() {
                 />
               </Grid>
             )}
-            <Grid item xs={12} sm={12}>
-              <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", letterSpacing: "0.05em", fontWeight: 800, fontSize: "0.65rem", display: "block", mb: 1.5 }}>
-                Investigators & Roles List
-              </Typography>
-              <Stack spacing={1.5}>
-                <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", p: 2, bgcolor: "rgba(255,255,255,0.03)", borderRadius: "12px", border: "1px solid var(--border-color)" }}>
-                  <Box>
-                    <Typography variant="body2" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>{data.facultyId?.name} (Applicant)</Typography>
-                    <Typography variant="caption" sx={{ color: "var(--text-secondary)", display: "block" }}>
-                      Aditya University {data.facultyId?.department?.name ? `| ${data.facultyId.department.name}` : ""} {data.facultyId?.designation ? `| ${data.facultyId.designation}` : ""}
+            {data.coInvestigators && data.coInvestigators.length > 0 && (
+              <Grid item xs={12} sm={12}>
+                <Box sx={{ border: "1px solid var(--border-color)", borderRadius: "8px", overflow: "hidden", width: "100%" }}>
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 1, p: 2, bgcolor: "rgba(0, 0, 0, 0.02)", borderBottom: "1px solid var(--border-color)" }}>
+                    <Groups sx={{ color: "var(--color-primary)", fontSize: 20 }} />
+                    <Typography variant="subtitle2" sx={{ fontWeight: 800, color: "var(--color-primary)", textTransform: "uppercase" }}>
+                      Co-Investigators
                     </Typography>
                   </Box>
-                  <Chip 
-                    size="small" 
-                    label={data.investigatorType || (data.principalInvestigator === "Yes" ? "Principal Investigator (PI)" : "Co-Principal Investigator (Co-PI)")} 
-                    color="primary" 
-                    sx={{ fontWeight: 700, borderRadius: "6px" }} 
-                  />
-                </Box>
-                {(data.coInvestigators || []).map((co, idx) => {
-                  const roleText = co.role || (co.principalInvestigator === "Yes" ? "Principal Investigator" : "Co-Investigator");
-                  return (
-                    <Box key={idx} sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", p: 2, bgcolor: "rgba(255,255,255,0.01)", borderRadius: "12px", border: "1px dashed var(--border-color)" }}>
-                      <Box>
-                        <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)" }}>
-                          {co.name} {co.employeeId ? `(Staff Code: ${co.employeeId})` : ""}
-                        </Typography>
-                        <Typography variant="caption" sx={{ color: "var(--text-secondary)", display: "block" }}>
-                          {co.affiliation || "Aditya University"} {co.department ? `| ${co.department}` : ""} {co.designation ? `| ${co.designation}` : ""}
-                        </Typography>
-                      </Box>
-                      <Chip 
-                        size="small" 
-                        label={roleText} 
-                        color={roleText.includes("Principal") ? "primary" : "secondary"} 
-                        variant="outlined"
-                        sx={{ fontWeight: 700, borderRadius: "6px" }} 
-                      />
+                  <Box sx={{ width: "100%" }}>
+                    {/* Header Row */}
+                    <Box sx={{ display: "grid", gridTemplateColumns: "70px 1fr 220px 180px", alignItems: "center", px: 2, py: 1.5, bgcolor: "rgba(0,0,0,0.01)", borderBottom: "1px solid var(--border-color)" }}>
+                      <Typography variant="caption" sx={{ fontWeight: 800, color: "var(--text-secondary)" }}>S.No</Typography>
+                      <Typography variant="caption" sx={{ fontWeight: 800, color: "var(--text-secondary)" }}>NAME</Typography>
+                      <Typography variant="caption" sx={{ fontWeight: 800, color: "var(--text-secondary)" }}>AFFILIATION</Typography>
+                      <Typography variant="caption" sx={{ fontWeight: 800, color: "var(--text-secondary)", textAlign: "right" }}>ROLE</Typography>
                     </Box>
-                  );
-                })}
-              </Stack>
-            </Grid>
+                    {/* Data Rows */}
+                    {data.coInvestigators.map((co, idx) => {
+                      const roleText = co.role || (co.principalInvestigator === "Yes" ? "Principal Investigator" : "Co-Investigator");
+                      return (
+                        <Box key={idx} sx={{ display: "grid", gridTemplateColumns: "70px 1fr 220px 180px", alignItems: "center", px: 2, py: 2, borderBottom: idx < data.coInvestigators.length - 1 ? "1px dashed var(--border-color)" : "none" }}>
+                          <Box sx={{ width: 28, height: 28, borderRadius: "50%", border: "1px solid var(--color-primary)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--color-primary)", fontWeight: 700, fontSize: "0.8rem" }}>
+                            {idx + 1}
+                          </Box>
+                          <Typography variant="body2" sx={{ fontWeight: 800, color: "var(--text-primary)", pr: 2 }}>
+                            {co.name} {co.employeeId ? `(Staff Code: ${co.employeeId})` : ""}
+                          </Typography>
+                          <Typography variant="body2" sx={{ color: "var(--text-secondary)", pr: 2 }}>
+                            {co.affiliation || "Aditya University"}
+                          </Typography>
+                          <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
+                            <Chip 
+                              size="small" 
+                              label={roleText} 
+                              color={roleText.includes("Principal") ? "primary" : "warning"} 
+                              variant="outlined"
+                              sx={{ fontWeight: 700, borderRadius: "6px" }} 
+                            />
+                          </Box>
+                        </Box>
+                      );
+                    })}
+                  </Box>
+                </Box>
+              </Grid>
+            )}
           </Grid>
 
           {/* Remarks/Comments if available */}

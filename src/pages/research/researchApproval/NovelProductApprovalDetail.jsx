@@ -266,7 +266,7 @@ const NovelProductApprovalDetail = ({ id, onBack, role }) => {
                         <Table>
                             <TableHead sx={{ bgcolor: "var(--bg-panel)" }}>
                                 <TableRow>
-                                    <TableCell sx={{ color: "var(--text-secondary)", fontWeight: 800, fontSize: "0.7rem", textTransform: "uppercase", width: 60 }}>#</TableCell>
+                                <TableCell sx={{ color: "var(--text-secondary)", fontWeight: 800, fontSize: "0.7rem", textTransform: "uppercase", width: 60 }}>S.No</TableCell>
                                     <TableCell sx={{ color: "var(--text-secondary)", fontWeight: 800, fontSize: "0.7rem", textTransform: "uppercase" }}>NAME</TableCell>
                                     <TableCell sx={{ color: "var(--text-secondary)", fontWeight: 800, fontSize: "0.7rem", textTransform: "uppercase" }}>AFFILIATION</TableCell>
                                 </TableRow>
