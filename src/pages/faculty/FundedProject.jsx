@@ -36,7 +36,7 @@ export default function FundedProject() {
         .then(res => {
           setColleagueResults(res.data || []);
         })
-        .catch(() => {})
+        .catch(() => { })
         .finally(() => setColleagueLoading(false));
     }, 400);
 
@@ -148,9 +148,9 @@ export default function FundedProject() {
         setForm(prev => {
           const updated = prev.otherInvestigatorsList.map(a => {
             if (a.investigatorPosition === pos) {
-              return { 
-                ...a, 
-                name: name, 
+              return {
+                ...a,
+                name: name,
                 affiliation: "Aditya University",
                 department: dept,
                 designation: desig
@@ -357,23 +357,23 @@ export default function FundedProject() {
     <Box sx={{ p: 2 }}>
       <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
         <Typography variant="h6" sx={{ color: "var(--text-primary)", fontWeight: 800 }}>My Funded Projects</Typography>
-        <Button 
- variant="contained" 
- onClick={() => setViewMode("select-year")} 
- sx={{ 
- background: "var(--gradient-primary)", 
- 
- px: 3, 
- fontWeight: 700, 
- textTransform: "none", 
- "&:hover": { 
- opacity: 0.9,
- transform: "translateY(-1px)",
- boxShadow: "0 4px 12px rgba(0,0,0,0.1)"
- },
- transition: "all 0.2s ease"
- }}
- >
+        <Button
+          variant="contained"
+          onClick={() => setViewMode("select-year")}
+          sx={{
+            background: "var(--gradient-primary)",
+
+            px: 3,
+            fontWeight: 700,
+            textTransform: "none",
+            "&:hover": {
+              opacity: 0.9,
+              transform: "translateY(-1px)",
+              boxShadow: "0 4px 12px rgba(0,0,0,0.1)"
+            },
+            transition: "all 0.2s ease"
+          }}
+        >
           Apply New
         </Button>
       </Box>
@@ -434,8 +434,8 @@ export default function FundedProject() {
                   <TableCell sx={{ color: "var(--text-secondary)", py: 2 }}>
                     {pub.coInvestigators && pub.coInvestigators.length > 0
                       ? <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                          {pub.coInvestigators.map(ca => ca.name).join(", ")}
-                        </Typography>
+                        {pub.coInvestigators.map(ca => ca.name).join(", ")}
+                      </Typography>
                       : <Typography variant="body2" sx={{ color: "var(--text-secondary)" }}>None</Typography>}
                   </TableCell>
                   <TableCell sx={{ py: 2 }}>
@@ -492,11 +492,11 @@ export default function FundedProject() {
     <Box sx={{ maxWidth: 500, mx: "auto", mt: 5 }}>
       <FormCard title="Select Academic Year">
         <Typography sx={{ mb: 2, color: "var(--text-secondary)", fontWeight: 500 }}>Please select the academic year for this project submission:</Typography>
-        <Select 
-          fullWidth 
-          size="small" 
-          displayEmpty 
-          value={selectedYear} 
+        <Select
+          fullWidth
+          size="small"
+          displayEmpty
+          value={selectedYear}
           onChange={(e) => setSelectedYear(e.target.value)}
         >
           <MenuItem value="" disabled>Select Academic Year</MenuItem>
@@ -505,46 +505,46 @@ export default function FundedProject() {
           ))}
         </Select>
         <Box sx={{ display: "flex", gap: 2, mt: 4, justifyContent: "flex-end" }}>
-          <Button 
- variant="outlined" 
- onClick={() => setViewMode("list")} 
- sx={{ 
- 
- textTransform: "none", 
- fontWeight: 600,
- color: "var(--text-primary)",
- borderColor: "var(--border-color)",
- "&:hover": {
- borderColor: "var(--color-primary)",
- background: "rgba(0,0,0,0.02)"
- }
- }}
- >
+          <Button
+            variant="outlined"
+            onClick={() => setViewMode("list")}
+            sx={{
+
+              textTransform: "none",
+              fontWeight: 600,
+              color: "var(--text-primary)",
+              borderColor: "var(--border-color)",
+              "&:hover": {
+                borderColor: "var(--color-primary)",
+                background: "rgba(0,0,0,0.02)"
+              }
+            }}
+          >
             Cancel
           </Button>
-          <Button 
- variant="contained" 
- disabled={!selectedYear} 
- onClick={() => setViewMode("form")} 
- sx={{ 
- background: "var(--gradient-primary)", 
- 
- px: 4, 
- fontWeight: 700, 
- textTransform: "none", 
- "&:hover": { 
- opacity: 0.9,
- transform: "translateY(-1px)",
- boxShadow: "0 4px 12px rgba(0,0,0,0.1)"
- },
- "&.Mui-disabled": {
- background: "var(--bg-panel)",
- color: "var(--text-secondary)",
- opacity: 0.5
- },
- transition: "all 0.2s ease"
- }}
- >
+          <Button
+            variant="contained"
+            disabled={!selectedYear}
+            onClick={() => setViewMode("form")}
+            sx={{
+              background: "var(--gradient-primary)",
+
+              px: 4,
+              fontWeight: 700,
+              textTransform: "none",
+              "&:hover": {
+                opacity: 0.9,
+                transform: "translateY(-1px)",
+                boxShadow: "0 4px 12px rgba(0,0,0,0.1)"
+              },
+              "&.Mui-disabled": {
+                background: "var(--bg-panel)",
+                color: "var(--text-secondary)",
+                opacity: 0.5
+              },
+              transition: "all 0.2s ease"
+            }}
+          >
             Proceed
           </Button>
         </Box>
@@ -725,77 +725,77 @@ export default function FundedProject() {
               })}
             </Box>
           )}
-        <Box>
-          <Typography sx={labelStyle}>Recurring :</Typography>
-          <TextField size="small" fullWidth value={form.recurring} onChange={handleNumericChange("recurring")} placeholder="Amount" />
-        </Box>
-        <Box>
-          <Typography sx={labelStyle}>Non-Recurring :</Typography>
-          <TextField size="small" fullWidth value={form.nonRecurring} onChange={handleNumericChange("nonRecurring")} placeholder="Amount" />
-        </Box>
-        <Box>
-          <Typography sx={labelStyle}>Sanctioned Amount :</Typography>
-          <TextField size="small" fullWidth value={form.sanctionedAmount} onChange={handleNumericChange("sanctionedAmount")} placeholder="Amount" />
-        </Box>
-        <Box>
-          <Typography sx={labelStyle}>Date of Sanction :</Typography>
-          <TextField size="small" fullWidth type="date" value={form.sanctionDate} onChange={set("sanctionDate")} InputLabelProps={{ shrink: true }} inputProps={{ max: new Date().toISOString().split("T")[0] }} />
-        </Box>
-        <Box>
-          <Typography sx={labelStyle}>Applying as a Seed Grant Work? *</Typography>
-          <Select size="small" fullWidth displayEmpty value={form.applyingSeedGrant} onChange={set("applyingSeedGrant")}>
-            <MenuItem value="">Select</MenuItem>
-            <MenuItem value="Yes">Yes</MenuItem>
-            <MenuItem value="No">No</MenuItem>
-          </Select>
-        </Box>
-        <Box>
-          <Typography sx={labelStyle}>Applying for Incentive? *</Typography>
-          <Select size="small" fullWidth displayEmpty value={form.applyIncentive} onChange={set("applyIncentive")}>
-            <MenuItem value="Yes">Yes</MenuItem>
-            <MenuItem value="No">No</MenuItem>
-          </Select>
-        </Box>
-        <Box>
-          <Typography sx={labelStyle}>Project Status *</Typography>
-          <Select size="small" fullWidth displayEmpty value={form.projectStatus} onChange={set("projectStatus")}>
-            <MenuItem value="Shortlisted">Shortlisted</MenuItem>
-            <MenuItem value="Sanctioned">Sanctioned</MenuItem>
-          </Select>
-        </Box>
-      </Grid2>
+          <Box>
+            <Typography sx={labelStyle}>Recurring :</Typography>
+            <TextField size="small" fullWidth value={form.recurring} onChange={handleNumericChange("recurring")} placeholder="Amount" />
+          </Box>
+          <Box>
+            <Typography sx={labelStyle}>Non-Recurring :</Typography>
+            <TextField size="small" fullWidth value={form.nonRecurring} onChange={handleNumericChange("nonRecurring")} placeholder="Amount" />
+          </Box>
+          <Box>
+            <Typography sx={labelStyle}>Sanctioned Amount :</Typography>
+            <TextField size="small" fullWidth value={form.sanctionedAmount} onChange={handleNumericChange("sanctionedAmount")} placeholder="Amount" />
+          </Box>
+          <Box>
+            <Typography sx={labelStyle}>Date of Sanction :</Typography>
+            <TextField size="small" fullWidth type="date" value={form.sanctionDate} onChange={set("sanctionDate")} InputLabelProps={{ shrink: true }} inputProps={{ max: new Date().toISOString().split("T")[0] }} />
+          </Box>
+          <Box>
+            <Typography sx={labelStyle}>Applying as a Seed Grant Work? *</Typography>
+            <Select size="small" fullWidth displayEmpty value={form.applyingSeedGrant} onChange={set("applyingSeedGrant")}>
+              <MenuItem value="">Select</MenuItem>
+              <MenuItem value="Yes">Yes</MenuItem>
+              <MenuItem value="No">No</MenuItem>
+            </Select>
+          </Box>
+          <Box>
+            <Typography sx={labelStyle}>Applying for Incentive? *</Typography>
+            <Select size="small" fullWidth displayEmpty value={form.applyIncentive} onChange={set("applyIncentive")}>
+              <MenuItem value="Yes">Yes</MenuItem>
+              <MenuItem value="No">No</MenuItem>
+            </Select>
+          </Box>
+          <Box>
+            <Typography sx={labelStyle}>Project Status *</Typography>
+            <Select size="small" fullWidth displayEmpty value={form.projectStatus} onChange={set("projectStatus")}>
+              <MenuItem value="Shortlisted">Shortlisted</MenuItem>
+              <MenuItem value="Sanctioned">Sanctioned</MenuItem>
+            </Select>
+          </Box>
+        </Grid2>
 
-      <NoteBox />
+        <NoteBox />
 
-      <Box sx={{ mt: 1, maxWidth: 350 }}>
-        <FileField label="Sanction Order:" name="sanctionOrder" onChange={setFile("sanctionOrder")} />
-      </Box>
+        <Box sx={{ mt: 1, maxWidth: 350 }}>
+          <FileField label="Sanction Order:" name="sanctionOrder" onChange={setFile("sanctionOrder")} />
+        </Box>
 
-      <Box sx={{ display: "flex", gap: 2, justifyContent: "center", mt: 4 }}>
-        <Button 
- variant="outlined" 
- onClick={() => setViewMode("list")} 
- sx={{ 
- px: 4, 
- height: "44px", 
- 
- textTransform: "none", 
- fontWeight: 600,
- color: "var(--text-primary)",
- borderColor: "var(--border-color)",
- "&:hover": { 
- borderColor: "#ef4444", 
- color: "#ef4444",
- background: "rgba(239, 68, 68, 0.05)" 
- },
- transition: "all 0.3s ease"
- }}
- >
-          Cancel
-        </Button>
-        <SubmitBtn onClick={handleSubmit} loading={loading} />
-      </Box>
-    </FormCard>
+        <Box sx={{ display: "flex", gap: 2, justifyContent: "center", mt: 4 }}>
+          <Button
+            variant="outlined"
+            onClick={() => setViewMode("list")}
+            sx={{
+              px: 4,
+              height: "44px",
+
+              textTransform: "none",
+              fontWeight: 600,
+              color: "var(--text-primary)",
+              borderColor: "var(--border-color)",
+              "&:hover": {
+                borderColor: "#ef4444",
+                color: "#ef4444",
+                background: "rgba(239, 68, 68, 0.05)"
+              },
+              transition: "all 0.3s ease"
+            }}
+          >
+            Cancel
+          </Button>
+          <SubmitBtn onClick={handleSubmit} loading={loading} />
+        </Box>
+      </FormCard>
     );
   };
 
@@ -869,8 +869,8 @@ export default function FundedProject() {
     };
 
     return (
-      <Dialog 
-        open={!!selectedPubDetails} 
+      <Dialog
+        open={!!selectedPubDetails}
         onClose={handleCloseDetails}
         maxWidth="md"
         fullWidth
@@ -894,27 +894,27 @@ export default function FundedProject() {
         <DialogContent sx={{ p: 3, mt: 1 }}>
           <Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)", mb: 1 }}>{data.title}</Typography>
           <Typography variant="body2" sx={{ color: "var(--text-secondary)", mb: 3, fontWeight: 600 }}>Funding Agency: {data.fundingAgency}</Typography>
-          
+
           <Grid container spacing={2}>
             <Grid item xs={12} sm={3}><LabelValueDetails label="Academic Year" value={data.academicYear?.year || "N/A"} /></Grid>
             <Grid item xs={12} sm={3}><LabelValueDetails label="Duration (Years)" value={data.duration} /></Grid>
             <Grid item xs={12} sm={3}><LabelValueDetails label="Role" value={data.visibilityRole || "Applicant"} /></Grid>
             <Grid item xs={12} sm={3}>
-              <LabelValueDetails 
-                label="Status" 
+              <LabelValueDetails
+                label="Status"
                 chip={
-                  <Chip 
-                    label={data.status} 
-                    size="small" 
-                    sx={{ 
-                      bgcolor: `${statusColor}15`, 
-                      color: statusColor, 
-                      fontWeight: 800, 
+                  <Chip
+                    label={data.status}
+                    size="small"
+                    sx={{
+                      bgcolor: `${statusColor}15`,
+                      color: statusColor,
+                      fontWeight: 800,
                       border: `1px solid ${statusColor}44`,
-                      borderRadius: "6px" 
-                    }} 
+                      borderRadius: "6px"
+                    }}
                   />
-                } 
+                }
               />
             </Grid>
 
@@ -927,55 +927,59 @@ export default function FundedProject() {
             <Grid item xs={12} sm={4}><LabelValueDetails label="Non-Recurring Amount" value={data.nonRecurring ? `₹${data.nonRecurring}` : "-"} /></Grid>
             <Grid item xs={12} sm={4}><LabelValueDetails label="Applying Seed Grant?" value={data.applyingSeedGrant === "Yes" ? "Yes" : "No"} /></Grid>
 
-            <Grid item xs={12} sm={12}>
-              <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", letterSpacing: "0.05em", fontWeight: 800, fontSize: "0.65rem", display: "block", mb: 1.5 }}>
-                Investigators & Roles List
-              </Typography>
-              <Stack spacing={1.5}>
-                <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", p: 2, bgcolor: "rgba(255,255,255,0.03)", borderRadius: "12px", border: "1px solid var(--border-color)" }}>
-                  <Box>
-                    <Typography variant="body2" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>{data.facultyId?.name} (Applicant)</Typography>
-                    <Typography variant="caption" sx={{ color: "var(--text-secondary)", display: "block" }}>
-                      Aditya University {data.facultyId?.department?.name ? `| ${data.facultyId.department.name}` : ""} {data.facultyId?.designation ? `| ${data.facultyId.designation}` : ""}
+            {data.coInvestigators && data.coInvestigators.length > 0 && (
+              <Grid item xs={12} sm={12}>
+                <Box sx={{ border: "1px solid var(--border-color)", borderRadius: "8px", overflow: "hidden", width: "100%" }}>
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 1, p: 2, bgcolor: "rgba(0, 0, 0, 0.02)", borderBottom: "1px solid var(--border-color)" }}>
+                    <Groups sx={{ color: "var(--color-primary)", fontSize: 20 }} />
+                    <Typography variant="subtitle2" sx={{ fontWeight: 800, color: "var(--color-primary)", textTransform: "uppercase" }}>
+                      Co-Investigators
                     </Typography>
                   </Box>
-                  <Chip 
-                    size="small" 
-                    label={data.investigatorType || (data.principalInvestigator === "Yes" ? "Principal Investigator (PI)" : "Co-Principal Investigator (Co-PI)")} 
-                    color="primary" 
-                    sx={{ fontWeight: 700, borderRadius: "6px" }} 
-                  />
-                </Box>
-                {(data.coInvestigators || []).map((co, idx) => {
-                  const roleText = co.role || (co.principalInvestigator === "Yes" ? "Principal Investigator" : "Co-Investigator");
-                  return (
-                    <Box key={idx} sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", p: 2, bgcolor: "rgba(255,255,255,0.01)", borderRadius: "12px", border: "1px dashed var(--border-color)" }}>
-                      <Box>
-                        <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)" }}>
-                          {co.name} {co.employeeId ? `(Staff Code: ${co.employeeId})` : ""}
-                        </Typography>
-                        <Typography variant="caption" sx={{ color: "var(--text-secondary)", display: "block" }}>
-                          {co.affiliation || "Aditya University"} {co.department ? `| ${co.department}` : ""} {co.designation ? `| ${co.designation}` : ""}
-                        </Typography>
-                      </Box>
-                      <Chip 
-                        size="small" 
-                        label={roleText} 
-                        color={roleText.includes("Principal") ? "primary" : "secondary"} 
-                        variant="outlined"
-                        sx={{ fontWeight: 700, borderRadius: "6px" }} 
-                      />
+                  <Box sx={{ width: "100%" }}>
+                    {/* Header Row */}
+                    <Box sx={{ display: "grid", gridTemplateColumns: "70px 1fr 220px 180px", alignItems: "center", px: 2, py: 1.5, bgcolor: "rgba(0,0,0,0.01)", borderBottom: "1px solid var(--border-color)" }}>
+                      <Typography variant="caption" sx={{ fontWeight: 800, color: "var(--text-secondary)" }}>S.No</Typography>
+                      <Typography variant="caption" sx={{ fontWeight: 800, color: "var(--text-secondary)" }}>NAME</Typography>
+                      <Typography variant="caption" sx={{ fontWeight: 800, color: "var(--text-secondary)" }}>AFFILIATION</Typography>
+                      <Typography variant="caption" sx={{ fontWeight: 800, color: "var(--text-secondary)", textAlign: "right" }}>ROLE</Typography>
                     </Box>
-                  );
-                })}
-              </Stack>
-            </Grid>
+                    {/* Data Rows */}
+                    {data.coInvestigators.map((co, idx) => {
+                      const roleText = co.role || (co.principalInvestigator === "Yes" ? "Principal Investigator" : "Co-Investigator");
+                      return (
+                        <Box key={idx} sx={{ display: "grid", gridTemplateColumns: "70px 1fr 220px 180px", alignItems: "center", px: 2, py: 2, borderBottom: idx < data.coInvestigators.length - 1 ? "1px dashed var(--border-color)" : "none" }}>
+                          <Box sx={{ width: 28, height: 28, borderRadius: "50%", border: "1px solid var(--color-primary)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--color-primary)", fontWeight: 700, fontSize: "0.8rem" }}>
+                            {idx + 1}
+                          </Box>
+                          <Typography variant="body2" sx={{ fontWeight: 800, color: "var(--text-primary)", pr: 2 }}>
+                            {co.name} {co.employeeId ? `(Staff Code: ${co.employeeId})` : ""}
+                          </Typography>
+                          <Typography variant="body2" sx={{ color: "var(--text-secondary)", pr: 2 }}>
+                            {co.affiliation || "Aditya University"}
+                          </Typography>
+                          <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
+                            <Chip
+                              size="small"
+                              label={roleText}
+                              color={roleText.includes("Principal") ? "primary" : "warning"}
+                              variant="outlined"
+                              sx={{ fontWeight: 700, borderRadius: "6px" }}
+                            />
+                          </Box>
+                        </Box>
+                      );
+                    })}
+                  </Box>
+                </Box>
+              </Grid>
+            )}
 
             {data.status === "Approved" && data.approvedAmount && (
               <Grid item xs={12} sm={6}>
-                <LabelValueDetails 
-                  label="Approved Incentive" 
-                  value={`₹${data.approvedAmount}`} 
+                <LabelValueDetails
+                  label="Approved Incentive"
+                  value={`₹${data.approvedAmount}`}
                   chip={<Chip label={`₹${data.approvedAmount}`} size="small" sx={{ bgcolor: "rgba(76, 175, 80, 0.1)", color: "#4caf50", fontWeight: 800 }} />}
                 />
               </Grid>
