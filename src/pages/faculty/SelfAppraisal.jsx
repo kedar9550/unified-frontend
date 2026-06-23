@@ -321,21 +321,23 @@ const SelfAppraisal = () => {
   const [contLoading, setContLoading] = useState(false);
   const [selectedContDetails, setSelectedContDetails] = useState(null);
 
-  // Fetch Academic Years
+  // Fetch Active Appraisal Academic Year
   useEffect(() => {
-    const fetchYears = async () => {
+    const fetchActiveAppraisalYear = async () => {
       try {
-        const res = await axiosInstance.get("/api/academic-years");
-        const yearsList = res.data?.years || [];
-        setAcademicYears(yearsList);
-        if (yearsList.length > 0) {
-          setSelectedYear(yearsList[0]._id);
+        const res = await axiosInstance.get("/api/appraisal/active-year");
+        if (res.data && res.data.success && res.data.data) {
+          const activeYear = res.data.data;
+          setAcademicYears([activeYear]);
+          setSelectedYear(activeYear._id);
+        } else {
+          setAppraisalError("No active appraisal year is configured in Prime.");
         }
       } catch (err) {
-        toast.error("Failed to load academic years");
+        setAppraisalError(err.response?.data?.message || "Failed to load active appraisal year");
       }
     };
-    fetchYears();
+    fetchActiveAppraisalYear();
   }, []);
 
   // Unresolved co-authored claims state variables
@@ -1837,28 +1839,16 @@ const SelfAppraisal = () => {
                 Faculty Self Appraisal Portal
               </Typography>
               <Typography variant="body2" color="var(--text-secondary)">
-                Academic Year Selection
+                Appraisal Academic Year
               </Typography>
             </Box>
-            <FormControl variant="outlined" size="small" sx={{ minWidth: 200, background: "var(--bg-paper)", borderRadius: "8px" }}>
-              <InputLabel>Academic Year</InputLabel>
-              <Select
-                value={selectedYear}
-                onChange={(e) => {
-                  setSelectedYear(e.target.value);
-                  blurActiveElement();
-                }}
-                onClose={blurActiveElement}
-                MenuProps={selectMenuProps}
-                label="Academic Year"
-              >
-                {academicYears.map((ay) => (
-                  <MenuItem key={ay._id} value={ay._id}>
-                    {ay.year}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
+            {selectedYear && (
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, p: 1.2, px: 2.5, borderRadius: "10px", background: "rgba(59, 130, 246, 0.08)", border: "1px solid rgba(59, 130, 246, 0.2)" }}>
+                <Typography variant="body2" sx={{ fontWeight: 800, color: "var(--color-primary)" }}>
+                  Appraisal Year: {academicYears.find(y => y._id === selectedYear)?.year || "Loading..."}
+                </Typography>
+              </Box>
+            )}
           </Box>
 
           <Card sx={{ p: 4, borderRadius: "20px", border: "1px solid var(--border-color)", background: "var(--bg-panel)", boxShadow: "var(--shadow-premium)" }}>
@@ -1899,28 +1889,16 @@ const SelfAppraisal = () => {
                 Faculty Self Appraisal Portal
               </Typography>
               <Typography variant="body2" color="var(--text-secondary)">
-                Action Required: Unresolved Co-authored claims
+                Appraisal Academic Year
               </Typography>
             </Box>
-            <FormControl variant="outlined" size="small" sx={{ minWidth: 200, background: "var(--bg-paper)", borderRadius: "8px" }}>
-              <InputLabel>Academic Year</InputLabel>
-              <Select
-                value={selectedYear}
-                onChange={(e) => {
-                  setSelectedYear(e.target.value);
-                  blurActiveElement();
-                }}
-                onClose={blurActiveElement}
-                MenuProps={selectMenuProps}
-                label="Academic Year"
-              >
-                {academicYears.map((ay) => (
-                  <MenuItem key={ay._id} value={ay._id}>
-                    {ay.year}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
+            {selectedYear && (
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, p: 1.2, px: 2.5, borderRadius: "10px", background: "rgba(59, 130, 246, 0.08)", border: "1px solid rgba(59, 130, 246, 0.2)" }}>
+                <Typography variant="body2" sx={{ fontWeight: 800, color: "var(--color-primary)" }}>
+                  Appraisal Year: {academicYears.find(y => y._id === selectedYear)?.year || "Loading..."}
+                </Typography>
+              </Box>
+            )}
           </Box>
 
           <Card sx={{ p: 4, borderRadius: "20px", border: "1px solid var(--border-color)", background: "var(--bg-panel)", boxShadow: "var(--shadow-premium)" }}>
@@ -2034,25 +2012,13 @@ const SelfAppraisal = () => {
             />
           )}
 
-          <FormControl variant="outlined" size="small" sx={{ minWidth: 200, background: "var(--bg-paper)", borderRadius: "10px", "& .MuiOutlinedInput-root": { borderRadius: "10px" } }}>
-            <InputLabel>Academic Year</InputLabel>
-            <Select
-              value={selectedYear}
-              onChange={(e) => {
-                setSelectedYear(e.target.value);
-                blurActiveElement();
-              }}
-              onClose={blurActiveElement}
-              MenuProps={selectMenuProps}
-              label="Academic Year"
-            >
-              {academicYears.map((ay) => (
-                <MenuItem key={ay._id} value={ay._id}>
-                  {ay.year}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
+          {selectedYear && (
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, p: 1.2, px: 2.5, borderRadius: "10px", background: "rgba(59, 130, 246, 0.08)", border: "1px solid rgba(59, 130, 246, 0.2)", minWidth: 200, justifyContent: "center" }}>
+              <Typography variant="body2" sx={{ fontWeight: 800, color: "var(--color-primary)" }}>
+                Appraisal Year: {academicYears.find(y => y._id === selectedYear)?.year || "Loading..."}
+              </Typography>
+            </Box>
+          )}
         </Box>
 
         {/* Bottom Row: Avatar and Title */}
