@@ -507,32 +507,32 @@ export default function NovelProductPublication() {
         <FacultyInfoRow />
 
         <SubLabel text="Product / Technology Details:" />
-        <Grid container spacing={3}>
-          <Grid item xs={12} sm={6}>
+        <Grid2>
+          <Box>
             <Typography sx={labelStyle}>Product / Technology Name : *</Typography>
             <TextField size="small" fullWidth value={form.productName} onChange={set("productName")} placeholder="e.g. Smart IoT Agri-Device" />
-          </Grid>
-          <Grid item xs={12} sm={6}>
+          </Box>
+          <Box>
             <Typography sx={labelStyle}>Category : *</Typography>
             <Select size="small" fullWidth displayEmpty value={form.category} onChange={set("category")}>
               <MenuItem value="" disabled>--Select Category--</MenuItem>
               {CATEGORIES.map((c) => <MenuItem key={c} value={c}>{c}</MenuItem>)}
             </Select>
-          </Grid>
+          </Box>
 
           {form.category === "Implemented" && (
-            <Grid item xs={12}>
+            <Box sx={{ gridColumn: "1 / -1" }}>
               <Typography sx={labelStyle}>Organization Name (where Implemented) : *</Typography>
               <TextField size="small" fullWidth value={form.organizationName} onChange={set("organizationName")} placeholder="Name of company or community center" />
-            </Grid>
+            </Box>
           )}
 
-          <Grid item xs={12}>
+          <Box sx={{ gridColumn: "1 / -1" }}>
             <Typography sx={labelStyle}>Description of Novel Product / Technology : *</Typography>
             <TextField size="small" fullWidth multiline rows={6} value={form.description} onChange={set("description")} placeholder="Provide detailed specifications, utility, and outcomes of the product..." />
-          </Grid>
+          </Box>
 
-          <Grid item xs={12} sm={6}>
+          <Box>
             <Typography sx={labelStyle}>Total Number of Developers : *</Typography>
             <TextField
               size="small"
@@ -542,8 +542,8 @@ export default function NovelProductPublication() {
               onChange={set("totalDevelopers")}
               inputProps={{ min: 1 }}
             />
-          </Grid>
-          <Grid item xs={12} sm={6}>
+          </Box>
+          <Box>
             <Typography sx={labelStyle}>Developer Type : *</Typography>
             <Select
               size="small"
@@ -556,111 +556,109 @@ export default function NovelProductPublication() {
               <MenuItem value="Principal Investigator (PI)">Principal Investigator (PI)</MenuItem>
               <MenuItem value="Co-Principal Investigator (Co-PI)">Co-Principal Investigator (Co-PI)</MenuItem>
             </Select>
-          </Grid>
+          </Box>
 
           {parseInt(form.totalDevelopers) > 1 && form.investigatorType && (
-            <Grid item xs={12}>
-              <Box sx={{ mt: 2, background: "var(--bg-panel)", p: 2, borderRadius: "12px", border: "1px solid var(--border-color)" }}>
-                <Typography sx={{ ...labelStyle, mb: 1.5, fontWeight: 700 }}>Name & affiliation of Developer(s) :</Typography>
-                {form.otherDevelopersList.map((ca, index) => {
-                  return (
-                    <Box key={index} sx={{ display: "flex", flexDirection: "column", gap: 2, mb: 2, p: 2.5, borderRadius: "12px", border: "1px dashed var(--border-color)", background: "var(--bg-accent-1)" }}>
-                      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1, borderBottom: "1px solid var(--border-color)", pb: 1 }}>
-                        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                          <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", width: "24px", height: "24px", background: "var(--color-primary)", color: "#fff", borderRadius: "50%", fontWeight: 700, fontSize: "0.8rem" }}>
-                            {index + 1}
-                          </Box>
-                          <Typography sx={{ fontWeight: 700, fontSize: "0.9rem", color: "var(--text-primary)" }}>Developer Details</Typography>
+            <Box sx={{ gridColumn: { xs: "1", md: "1 / -1" }, mt: 2, background: "var(--bg-panel)", p: 2, borderRadius: "12px", border: "1px solid var(--border-color)" }}>
+              <Typography sx={{ ...labelStyle, mb: 1.5, fontWeight: 700 }}>Name & affiliation of Developer(s) :</Typography>
+              {form.otherDevelopersList.map((ca, index) => {
+                return (
+                  <Box key={index} sx={{ display: "flex", flexDirection: "column", gap: 2, mb: 2, p: 2.5, borderRadius: "12px", border: "1px dashed var(--border-color)", background: "var(--bg-accent-1)" }}>
+                    <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1, borderBottom: "1px solid var(--border-color)", pb: 1 }}>
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", width: "24px", height: "24px", background: "var(--color-primary)", color: "#fff", borderRadius: "50%", fontWeight: 700, fontSize: "0.8rem" }}>
+                          {index + 1}
                         </Box>
-                        <Chip label={ca.role} size="small" color={ca.role === "Principal Investigator" ? "primary" : "secondary"} sx={{ fontWeight: 700, borderRadius: "6px" }} />
+                        <Typography sx={{ fontWeight: 700, fontSize: "0.9rem", color: "var(--text-primary)" }}>Developer Details</Typography>
                       </Box>
-                      <Grid container spacing={2}>
-                        <Grid item xs={12} sm={4}>
-                          <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>AFFILIATION TYPE *</Typography>
-                          <Select
-                            size="small"
-                            fullWidth
-                            value={ca.affiliationType}
-                            onChange={(e) => handleCoDeveloperChange(ca.developerPosition, "affiliationType", e.target.value)}
-                            displayEmpty
-                          >
-                            <MenuItem value="" disabled>Select Affiliation</MenuItem>
-                            <MenuItem value="AUS">Aditya University</MenuItem>
-                            <MenuItem value="Others">Others</MenuItem>
-                          </Select>
-                        </Grid>
-
-                        {ca.affiliationType === "AUS" && (
-                          <>
-                            <Grid item xs={12} sm={4}>
-                              <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>EMPLOYEE ID *</Typography>
-                              <TextField
-                                size="small"
-                                fullWidth
-                                value={ca.empId}
-                                onChange={(e) => handleCoDeveloperChange(ca.developerPosition, "empId", e.target.value)}
-                                placeholder="e.g. 5741"
-                              />
-                            </Grid>
-                            <Grid item xs={12} sm={4}>
-                              <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>NAME</Typography>
-                              <TextField
-                                size="small"
-                                fullWidth
-                                value={ca.name}
-                                disabled
-                                placeholder="Auto-fetched"
-                                sx={{ background: "rgba(0,0,0,0.02)" }}
-                              />
-                            </Grid>
-                          </>
-                        )}
-
-                        {ca.affiliationType === "Others" && (
-                          <>
-                            <Grid item xs={12} sm={4}>
-                              <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>NAME *</Typography>
-                              <TextField
-                                size="small"
-                                fullWidth
-                                value={ca.name}
-                                onChange={(e) => handleCoDeveloperChange(ca.developerPosition, "name", e.target.value)}
-                                placeholder="Full Name"
-                              />
-                            </Grid>
-                            <Grid item xs={12} sm={4}>
-                              <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>AFFILIATION / ORG *</Typography>
-                              <TextField
-                                size="small"
-                                fullWidth
-                                value={ca.affiliation}
-                                onChange={(e) => handleCoDeveloperChange(ca.developerPosition, "affiliation", e.target.value)}
-                                placeholder="College / Organization"
-                              />
-                            </Grid>
-                          </>
-                        )}
-                      </Grid>
+                      <Chip label={ca.role} size="small" color={ca.role === "Principal Investigator" ? "primary" : "secondary"} sx={{ fontWeight: 700, borderRadius: "6px" }} />
                     </Box>
-                  );
-                })}
-              </Box>
-            </Grid>
+                    <Grid container spacing={2}>
+                      <Grid item xs={12} sm={4}>
+                        <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>AFFILIATION TYPE *</Typography>
+                        <Select
+                          size="small"
+                          fullWidth
+                          value={ca.affiliationType}
+                          onChange={(e) => handleCoDeveloperChange(ca.developerPosition, "affiliationType", e.target.value)}
+                          displayEmpty
+                        >
+                          <MenuItem value="" disabled>Select Affiliation</MenuItem>
+                          <MenuItem value="AUS">Aditya University</MenuItem>
+                          <MenuItem value="Others">Others</MenuItem>
+                        </Select>
+                      </Grid>
+
+                      {ca.affiliationType === "AUS" && (
+                        <>
+                          <Grid item xs={12} sm={4}>
+                            <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>EMPLOYEE ID *</Typography>
+                            <TextField
+                              size="small"
+                              fullWidth
+                              value={ca.empId}
+                              onChange={(e) => handleCoDeveloperChange(ca.developerPosition, "empId", e.target.value)}
+                              placeholder="e.g. 5741"
+                            />
+                          </Grid>
+                          <Grid item xs={12} sm={4}>
+                            <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>NAME</Typography>
+                            <TextField
+                              size="small"
+                              fullWidth
+                              value={ca.name}
+                              disabled
+                              placeholder="Auto-fetched"
+                              sx={{ background: "rgba(0,0,0,0.02)" }}
+                            />
+                          </Grid>
+                        </>
+                      )}
+
+                      {ca.affiliationType === "Others" && (
+                        <>
+                          <Grid item xs={12} sm={4}>
+                            <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>NAME *</Typography>
+                            <TextField
+                              size="small"
+                              fullWidth
+                              value={ca.name}
+                              onChange={(e) => handleCoDeveloperChange(ca.developerPosition, "name", e.target.value)}
+                              placeholder="Full Name"
+                            />
+                          </Grid>
+                          <Grid item xs={12} sm={4}>
+                            <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>AFFILIATION / ORG *</Typography>
+                            <TextField
+                              size="small"
+                              fullWidth
+                              value={ca.affiliation}
+                              onChange={(e) => handleCoDeveloperChange(ca.developerPosition, "affiliation", e.target.value)}
+                              placeholder="College / Organization"
+                            />
+                          </Grid>
+                        </>
+                      )}
+                    </Grid>
+                  </Box>
+                );
+              })}
+            </Box>
           )}
 
-          <Grid item xs={12} sm={6}>
+          <Box>
             <Typography sx={labelStyle}>Applying for Incentive : *</Typography>
             <Select size="small" fullWidth displayEmpty value={form.applyIncentive} onChange={set("applyIncentive")}>
               <MenuItem value="Yes">Yes</MenuItem>
               <MenuItem value="No">No</MenuItem>
             </Select>
-          </Grid>
+          </Box>
 
-          <Grid item xs={12}>
+          <Box sx={{ gridColumn: "1 / -1" }}>
             <Typography sx={labelStyle}>Additional remarks (Optional) :</Typography>
             <TextField size="small" fullWidth multiline rows={2} value={form.remarks} onChange={set("remarks")} placeholder="Optional details..." />
-          </Grid>
-        </Grid>
+          </Box>
+        </Grid2>
 
       <NoteBox />
 
