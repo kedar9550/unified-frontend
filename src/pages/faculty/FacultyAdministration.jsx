@@ -46,7 +46,7 @@ const ADMINISTRATIVE_ROLES_LIST = [
 export default function FacultyAdministration() {
   // ── States ────────────────────────────────────────────────────────
   const [academicYears, setAcademicYears] = useState([]);
-  const [selectedYearLabel, setSelectedYearLabel] = useState("all");
+  const [selectedYearLabel, setSelectedYearLabel] = useState("");
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [allEntries, setAllEntries] = useState([]);
@@ -93,7 +93,8 @@ export default function FacultyAdministration() {
         setAcademicYears(years);
 
         if (years.length > 0 && (!selectedYearLabel || selectedYearLabel === "")) {
-          setSelectedYearLabel("all");
+          const active = years.find(y => y.isGlobalActive);
+          setSelectedYearLabel(active ? active.year : "all");
         }
       } catch (err) {
         console.error("Error fetching academic years:", err);

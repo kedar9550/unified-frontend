@@ -57,7 +57,8 @@ export default function ResourceUtilizationApproval() {
         if (!isMounted) return;
         setAcademicYears(years);
         if (years.length > 0) {
-          const defaultYearId = years[0]._id;
+          const active = years.find(y => y.isGlobalActive);
+          const defaultYearId = active ? active._id : years[0]._id;
           setSelectedYear(defaultYearId);
           await fetchRequests(defaultYearId, statusFilter);
         } else {

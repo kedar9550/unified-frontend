@@ -87,7 +87,8 @@ const AppraisalSettings = () => {
         const yearsList = res.data?.years || [];
         setAcademicYears(yearsList);
         if (yearsList.length > 0) {
-          setSelectedYear(yearsList[0]._id);
+          const active = yearsList.find((y) => y.isGlobalActive);
+          setSelectedYear(active ? active._id : yearsList[0]._id);
         }
       } catch (err) {
         toast.error(err.response?.data?.message || "Failed to load academic years");

@@ -94,7 +94,7 @@ const FacultyDashboard = () => {
         setAcademicYears(sortedUniqueYears);
 
         // Default to the active year if available
-        const active = sortedUniqueYears.find((y) => y.isActive);
+        const active = sortedUniqueYears.find((y) => y.isGlobalActive);
         if (active) setSelectedYear(active.year);
         else if (sortedUniqueYears.length > 0) setSelectedYear(sortedUniqueYears[0].year);
       } catch (err) {

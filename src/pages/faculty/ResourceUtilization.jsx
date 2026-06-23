@@ -134,7 +134,13 @@ export default function ResourceUtilization() {
   useEffect(() => {
     API.get("/api/academic-years")
       .then(res => {
-        setAcademicYears(res.data?.years || res.data?.data || []);
+        const years = res.data?.years || res.data?.data || [];
+        setAcademicYears(years);
+        const active = years.find(y => y.isGlobalActive);
+        if (active) {
+          setSelectedYear(active._id);
+          setForm(p => ({ ...p, academicYear: active._id }));
+        }
       })
       .catch(err => console.log("Failed to fetch academic years", err));
   }, []);

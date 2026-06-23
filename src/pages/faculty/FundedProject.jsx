@@ -5,6 +5,7 @@ import { Box, TextField, MenuItem, Select, Typography, Button, Table, TableBody,
 import { toast } from "sonner";
 import { Close, Description, Download, AttachFile, Groups, AccountBalanceWallet, Visibility } from "@mui/icons-material";
 import PageHeader from "../../components/common/PageHeader";
+import NoActiveYearDialog from "../../components/common/NoActiveYearDialog";
 import {
   FacultyInfoRow, FormCard, Grid2, SubLabel, NoteBox, FileField, SubmitBtn
 } from "../../components/faculty/PublicationFormFields";
@@ -15,6 +16,7 @@ export default function FundedProject() {
   const { user } = useAuth();
   const [viewMode, setViewMode] = useState("list"); // 'list', 'select-year', 'form'
   const [academicYears, setAcademicYears] = useState([]);
+  const [noActiveYearAlertOpen, setNoActiveYearAlertOpen] = useState(false);
   const [selectedYear, setSelectedYear] = useState("");
   const [publicationsList, setPublicationsList] = useState([]);
   const [selectedPubDetails, setSelectedPubDetails] = useState(null);
@@ -359,7 +361,15 @@ export default function FundedProject() {
         <Typography variant="h6" sx={{ color: "var(--text-primary)", fontWeight: 800 }}>My Funded Projects</Typography>
         <Button
           variant="contained"
-          onClick={() => setViewMode("select-year")}
+          onClick={() => {
+            const activeYear = academicYears.find(y => y.isGlobalActive);
+            if (activeYear) {
+              setSelectedYear(activeYear._id);
+              setViewMode("form");
+            } else {
+              setNoActiveYearAlertOpen(true);
+            }
+          }}
           sx={{
             background: "var(--gradient-primary)",
 
@@ -556,11 +566,10 @@ export default function FundedProject() {
     const hasPI = form.principalInvestigator === "Yes" || form.otherInvestigatorsList.some(d => d.principalInvestigator === "Yes");
     return (
       <FormCard title="Funded Projects Submission">
-        <Box sx={{ mb: 3, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <Box sx={{ mb: 3, display: "flex", alignItems: "center" }}>
           <Typography variant="body2" sx={{ background: "var(--bg-accent-1)", color: "var(--color-primary)", px: 2, py: 0.8, borderRadius: "8px", fontWeight: 700, border: "1px solid var(--border-color)" }}>
             Academic Year: {academicYears.find(y => y._id === selectedYear)?.year || "Selected"}
           </Typography>
-          <Button size="small" variant="text" onClick={() => setViewMode("select-year")} sx={{ fontWeight: 700, textTransform: "none", color: "var(--color-primary)" }}>Change Year</Button>
         </Box>
 
         <FacultyInfoRow />
@@ -1034,6 +1043,10 @@ export default function FundedProject() {
       {viewMode === "select-year" && renderSelectYear()}
       {viewMode === "form" && renderForm()}
       {renderDetailsDialog()}
+      <NoActiveYearDialog
+        open={noActiveYearAlertOpen}
+        onClose={() => setNoActiveYearAlertOpen(false)}
+      />
     </>
   );
 }
