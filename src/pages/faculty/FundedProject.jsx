@@ -897,6 +897,7 @@ export default function FundedProject() {
 
           <Grid container spacing={2}>
             <Grid item xs={12} sm={3}><LabelValueDetails label="Academic Year" value={data.academicYear?.year || "N/A"} /></Grid>
+            <Grid item xs={12} sm={3}><LabelValueDetails label="Funding Agency" value={data.fundingAgency} /></Grid>
             <Grid item xs={12} sm={3}><LabelValueDetails label="Duration (Years)" value={data.duration} /></Grid>
             <Grid item xs={12} sm={3}><LabelValueDetails label="Role" value={data.visibilityRole || "Applicant"} /></Grid>
             <Grid item xs={12} sm={3}>

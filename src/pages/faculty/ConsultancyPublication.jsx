@@ -782,10 +782,11 @@ export default function ConsultancyPublication() {
         </DialogTitle>
         <DialogContent sx={{ p: 3, mt: 1 }}>
           <Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)", mb: 1 }}>{data.title}</Typography>
-          <Typography variant="body2" sx={{ color: "var(--text-secondary)", mb: 3, fontWeight: 600 }}>Organization / Client: {data.organization}</Typography>
+          <Typography variant="body2" sx={{ color: "var(--text-secondary)", mb: 3, fontWeight: 600 }}>Funding Agency: {data.fundingAgency}</Typography>
 
           <Grid container spacing={2}>
             <Grid item xs={12} sm={3}><LabelValueDetails label="Academic Year" value={data.academicYear?.year || "N/A"} /></Grid>
+            <Grid item xs={12} sm={3}><LabelValueDetails label="Funding Agency" value={data.fundingAgency} /></Grid>
             <Grid item xs={12} sm={3}><LabelValueDetails label="Amount" value={`₹${data.amount}`} /></Grid>
             <Grid item xs={12} sm={3}><LabelValueDetails label="Duration (Years)" value={data.duration || "-"} /></Grid>
             <Grid item xs={12} sm={3}>

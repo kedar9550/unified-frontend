@@ -242,22 +242,28 @@ const NovelProductApprovalDetail = ({ id, onBack, role }) => {
                                 />
                             } 
                         />
-                        {data.category === 'Implemented' && <LabelValue label="Organization Name" value={data.organizationName || "—"} horizontal />}
+                        {data.category === 'Developed' && data.developedOrganization && <LabelValue label="Developed Organization" value={data.developedOrganization} horizontal />}
+                        {data.category === 'Implemented' && data.implementedOrganization && <LabelValue label="Implemented Organization" value={data.implementedOrganization} horizontal />}
+                        <LabelValue label="Investigator Type" value={data.investigatorType || (data.principalInvestigator === "Yes" ? "Principal Investigator (PI)" : "Co-Principal Investigator (Co-PI)")} horizontal />
+                        <LabelValue label="Applying for Incentive" value={data.applyIncentive || "No"} horizontal />
                         {data.remarks && <LabelValue label="Faculty Submission Remarks" value={data.remarks} horizontal />}
+                        <Box sx={{ mt: 1 }}>
+                            <LabelValue label="Description & Specifications" value={data.description} />
+                        </Box>
                     </Box>
                 </Card>
             </Box>
 
-            {/* Co-Developers */}
+            {/* Co-Investigators */}
             {data.coDevelopers?.length > 0 && (
                 <Card sx={{ ...cardStyle, p: 0, overflow: "hidden", mb: 3 }}>
                     <Box sx={{ p: 3, pb: 2 }}>
                         <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
                             <GroupsIcon sx={{ color: "var(--color-primary)" }} />
-                            <Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>Co-Developers Details</Typography>
+                            <Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>Co-Investigators Details</Typography>
                             <Box sx={{ ml: 'auto', px: 1.5, py: 0.5, borderRadius: '20px', bgcolor: 'rgba(190,147,55,0.12)', border: '1px solid rgba(190,147,55,0.3)' }}>
                                 <Typography variant="caption" sx={{ fontWeight: 900, color: 'var(--color-primary)', fontSize: '0.7rem' }}>
-                                    Total: {data.coDevelopers.length} Co-Developer{data.coDevelopers.length > 1 ? 's' : ''}
+                                    Total: {data.coDevelopers.length} Co-Investigator{data.coDevelopers.length > 1 ? 's' : ''}
                                 </Typography>
                             </Box>
                         </Box>
@@ -294,11 +300,6 @@ const NovelProductApprovalDetail = ({ id, onBack, role }) => {
                 </Card>
             )}
 
-            {/* Product Description */}
-            <Card sx={cardStyle}>
-                <Typography variant="subtitle2" sx={{ fontWeight: 900, color: "var(--color-primary)", textTransform: "uppercase", fontSize: "0.75rem", mb: 1.5 }}>Description & Specifications</Typography>
-                <Typography variant="body2" sx={{ color: "var(--text-primary)", lineHeight: 1.7, whiteSpace: "pre-wrap" }}>{data.description}</Typography>
-            </Card>
 
             {/* Document proof */}
             <Card sx={cardStyle}>
