@@ -26,7 +26,8 @@ export default function NovelProductPublication() {
     productName: "",
     description: "",
     category: "",
-    organizationName: "",
+    developedOrganization: "",
+    implementedOrganization: "",
     remarks: "",
     investigatorType: "",
     principalInvestigator: "",
@@ -193,15 +194,15 @@ export default function NovelProductPublication() {
 
     const total = parseInt(form.totalDevelopers) || 1;
     if (total < 1) {
-      toast.error("Total number of developers must be at least 1");
+      toast.error("Total number of investigators must be at least 1");
       return;
     }
     if (!form.investigatorType) {
-      toast.error("Please select Developer Type");
+      toast.error("Please select Investigator Type");
       return;
     }
     if (form.investigatorType === "Co-Principal Investigator (Co-PI)" && total < 2) {
-      toast.error("Total number of developers must be at least 2 when you are Co-PI");
+      toast.error("Total number of investigators must be at least 2 when you are Co-PI");
       return;
     }
 
@@ -209,15 +210,15 @@ export default function NovelProductPublication() {
       for (let i = 0; i < form.otherDevelopersList.length; i++) {
         const a = form.otherDevelopersList[i];
         if (!a.affiliationType) {
-          toast.error(`Please select affiliation type for Developer row ${i + 1}`);
+          toast.error(`Please select affiliation type for Investigator row ${i + 1}`);
           return;
         }
         if (a.affiliationType === 'Others' && (!a.name || !a.affiliation)) {
-          toast.error(`Please complete Name and Affiliation for Developer row ${i + 1}`);
+          toast.error(`Please complete Name and Affiliation for Investigator row ${i + 1}`);
           return;
         }
         if (a.affiliationType === 'AUS' && (!a.empId || !a.name)) {
-          toast.error(`Please complete Employee ID for Developer row ${i + 1}`);
+          toast.error(`Please complete Employee ID for Investigator row ${i + 1}`);
           return;
         }
       }
@@ -246,8 +247,11 @@ export default function NovelProductPublication() {
       fd.append("productName", form.productName);
       fd.append("description", form.description);
       fd.append("category", form.category);
-      if (form.category === "Implemented") {
-        fd.append("organizationName", form.organizationName);
+      if (form.category === 'Developed' && form.developedOrganization) {
+        fd.append("developedOrganization", form.developedOrganization);
+      }
+      if (form.category === 'Implemented' && form.implementedOrganization) {
+        fd.append("implementedOrganization", form.implementedOrganization);
       }
       fd.append("remarks", form.remarks);
       fd.append("document", files.document);
@@ -266,7 +270,8 @@ export default function NovelProductPublication() {
         productName: "",
         description: "",
         category: "",
-        organizationName: "",
+        developedOrganization: "",
+        implementedOrganization: "",
         remarks: "",
         investigatorType: "",
         principalInvestigator: "",
@@ -340,7 +345,7 @@ export default function NovelProductPublication() {
                 <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Organization Name</TableCell>
                 <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Applicant</TableCell>
                 <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Role</TableCell>
-                <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Co-Developers</TableCell>
+                <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Co-Investigators</TableCell>
                 <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Approval Status</TableCell>
                 <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Actions</TableCell>
               </TableRow>
@@ -361,7 +366,7 @@ export default function NovelProductPublication() {
                       }} 
                     />
                   </TableCell>
-                  <TableCell sx={{ color: "var(--text-secondary)", py: 2 }}>{pub.organizationName || "—"}</TableCell>
+                  <TableCell sx={{ color: "var(--text-secondary)", py: 2 }}>{pub.category === 'Developed' ? pub.developedOrganization || "—" : pub.implementedOrganization || "—"}</TableCell>
                   <TableCell sx={{ color: "var(--text-secondary)", py: 2 }}>
                     <Typography variant="body2" sx={{ fontWeight: 600 }}>
                       {pub.facultyId?.name || "N/A"}
@@ -520,10 +525,17 @@ export default function NovelProductPublication() {
             </Select>
           </Box>
 
+          {form.category === "Developed" && (
+            <Box sx={{ gridColumn: "1 / -1" }}>
+              <Typography sx={labelStyle}>Developed Organization : *</Typography>
+              <TextField size="small" fullWidth value={form.developedOrganization} onChange={set("developedOrganization")} placeholder="Name of organization where product was developed" />
+            </Box>
+          )}
+
           {form.category === "Implemented" && (
             <Box sx={{ gridColumn: "1 / -1" }}>
-              <Typography sx={labelStyle}>Organization Name (where Implemented) : *</Typography>
-              <TextField size="small" fullWidth value={form.organizationName} onChange={set("organizationName")} placeholder="Name of company or community center" />
+              <Typography sx={labelStyle}>Implemented Organization : *</Typography>
+              <TextField size="small" fullWidth value={form.implementedOrganization} onChange={set("implementedOrganization")} placeholder="Name of organization where product was implemented" />
             </Box>
           )}
 
@@ -533,7 +545,7 @@ export default function NovelProductPublication() {
           </Box>
 
           <Box>
-            <Typography sx={labelStyle}>Total Number of Developers : *</Typography>
+            <Typography sx={labelStyle}>Total Number of Investigators : *</Typography>
             <TextField
               size="small"
               type="number"
@@ -544,7 +556,7 @@ export default function NovelProductPublication() {
             />
           </Box>
           <Box>
-            <Typography sx={labelStyle}>Developer Type : *</Typography>
+            <Typography sx={labelStyle}>Investigator Type : *</Typography>
             <Select
               size="small"
               fullWidth
@@ -552,7 +564,7 @@ export default function NovelProductPublication() {
               value={form.investigatorType}
               onChange={(e) => setForm(p => ({ ...p, investigatorType: e.target.value }))}
             >
-              <MenuItem value="" disabled>Select Developer Type</MenuItem>
+              <MenuItem value="" disabled>Select Investigator Type</MenuItem>
               <MenuItem value="Principal Investigator (PI)">Principal Investigator (PI)</MenuItem>
               <MenuItem value="Co-Principal Investigator (Co-PI)">Co-Principal Investigator (Co-PI)</MenuItem>
             </Select>
@@ -560,7 +572,7 @@ export default function NovelProductPublication() {
 
           {parseInt(form.totalDevelopers) > 1 && form.investigatorType && (
             <Box sx={{ gridColumn: { xs: "1", md: "1 / -1" }, mt: 2, background: "var(--bg-panel)", p: 2, borderRadius: "12px", border: "1px solid var(--border-color)" }}>
-              <Typography sx={{ ...labelStyle, mb: 1.5, fontWeight: 700 }}>Name & affiliation of Developer(s) :</Typography>
+              <Typography sx={{ ...labelStyle, mb: 1.5, fontWeight: 700 }}>Name & affiliation of Investigator(s) :</Typography>
               {form.otherDevelopersList.map((ca, index) => {
                 return (
                   <Box key={index} sx={{ display: "flex", flexDirection: "column", gap: 2, mb: 2, p: 2.5, borderRadius: "12px", border: "1px dashed var(--border-color)", background: "var(--bg-accent-1)" }}>
@@ -569,7 +581,7 @@ export default function NovelProductPublication() {
                         <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", width: "24px", height: "24px", background: "var(--color-primary)", color: "#fff", borderRadius: "50%", fontWeight: 700, fontSize: "0.8rem" }}>
                           {index + 1}
                         </Box>
-                        <Typography sx={{ fontWeight: 700, fontSize: "0.9rem", color: "var(--text-primary)" }}>Developer Details</Typography>
+                        <Typography sx={{ fontWeight: 700, fontSize: "0.9rem", color: "var(--text-primary)" }}>Investigator Details</Typography>
                       </Box>
                       <Chip label={ca.role} size="small" color={ca.role === "Principal Investigator" ? "primary" : "secondary"} sx={{ fontWeight: 700, borderRadius: "6px" }} />
                     </Box>
@@ -798,7 +810,7 @@ export default function NovelProductPublication() {
                 } 
               />
             </Grid>
-            <Grid item xs={12} sm={3}><LabelValueDetails label="Organization Name" value={data.organizationName || "—"} /></Grid>
+            <Grid item xs={12} sm={3}><LabelValueDetails label={data.category === 'Developed' ? 'Developed Organization' : 'Implemented Organization'} value={data.category === 'Developed' ? (data.developedOrganization || "—") : (data.implementedOrganization || "—")} /></Grid>
             <Grid item xs={12} sm={3}>
               <LabelValueDetails 
                 label="Approval Status" 
@@ -831,7 +843,7 @@ export default function NovelProductPublication() {
                   <Box sx={{ display: "flex", alignItems: "center", gap: 1, p: 2, bgcolor: "rgba(0, 0, 0, 0.02)", borderBottom: "1px solid var(--border-color)" }}>
                     <Groups sx={{ color: "var(--color-primary)", fontSize: 20 }} />
                     <Typography variant="subtitle2" sx={{ fontWeight: 800, color: "var(--color-primary)", textTransform: "uppercase" }}>
-                      Co-Developers
+                      Co-Investigators
                     </Typography>
                   </Box>
                   <Box sx={{ width: "100%" }}>

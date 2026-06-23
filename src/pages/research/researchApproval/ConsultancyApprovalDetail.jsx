@@ -224,14 +224,15 @@ const ConsultancyApprovalDetail = ({ id, onBack, role }) => {
                 </Card>
             </Box>
 
+            {data.coInvestigators?.length > 0 && (
             <Card sx={{ ...cardStyle, p: 0, overflow: "hidden", mb: 3 }}>
                 <Box sx={{ p: 3, pb: 2 }}>
                     <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
                         <GroupsIcon sx={{ color: "var(--color-primary)" }} />
-                        <Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>Investigators & Roles</Typography>
+                        <Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>Co-Investigators Details</Typography>
                         <Box sx={{ ml: 'auto', px: 1.5, py: 0.5, borderRadius: '20px', bgcolor: 'rgba(190,147,55,0.12)', border: '1px solid rgba(190,147,55,0.3)' }}>
                             <Typography variant="caption" sx={{ fontWeight: 900, color: 'var(--color-primary)', fontSize: '0.7rem' }}>
-                                Total: {(data.coInvestigators?.length || 0) + 1} Co-Investigator{(data.coInvestigators?.length || 0) > 0 ? 's' : ''}
+                                Total: {data.coInvestigators.length} Co-Investigator{data.coInvestigators.length !== 1 ? 's' : ''}
                             </Typography>
                         </Box>
                     </Box>
@@ -247,25 +248,12 @@ const ConsultancyApprovalDetail = ({ id, onBack, role }) => {
                             </TableRow>
                         </TableHead>
                         <TableBody>
-                            <TableRow sx={{ '&:hover': { bgcolor: 'rgba(190,147,55,0.04)' } }}>
-                                <TableCell>
-                                    <Box sx={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 32, height: 32, borderRadius: '50%', bgcolor: 'rgba(190,147,55,0.12)', border: '1.5px solid var(--color-primary)', color: 'var(--color-primary)', fontWeight: 900, fontSize: '0.85rem' }}>1</Box>
-                                </TableCell>
-                                <TableCell sx={{ fontWeight: 700, color: "var(--text-primary)" }}>
-                                    {data.facultyId?.name}
-                                    <Chip label="Applicant" size="small" sx={{ ml: 1, fontSize: '0.65rem', height: 18 }} />
-                                </TableCell>
-                                <TableCell>
-                                    <Chip label={data.investigatorType || (data.principalInvestigator === 'Yes' ? 'Principal Investigator (PI)' : 'Co-Principal Investigator (Co-PI)')} size="small" color="primary" sx={{ fontWeight: 700, borderRadius: '6px', fontSize: '0.7rem' }} />
-                                </TableCell>
-                                <TableCell sx={{ fontWeight: 600, color: "var(--text-secondary)" }}>Aditya University</TableCell>
-                            </TableRow>
-                            {(data.coInvestigators || []).map((ca, i) => {
+                            {data.coInvestigators.map((ca, i) => {
                                 const roleLabel = ca.role || (ca.principalInvestigator === 'Yes' ? 'Principal Investigator' : 'Co-Investigator');
                                 return (
                                     <TableRow key={i} sx={{ '&:hover': { bgcolor: 'rgba(190,147,55,0.04)' } }}>
                                         <TableCell>
-                                            <Box sx={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 32, height: 32, borderRadius: '50%', bgcolor: 'rgba(190,147,55,0.12)', border: '1.5px solid var(--color-primary)', color: 'var(--color-primary)', fontWeight: 900, fontSize: '0.85rem' }}>{i + 2}</Box>
+                                            <Box sx={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 32, height: 32, borderRadius: '50%', bgcolor: 'rgba(190,147,55,0.12)', border: '1.5px solid var(--color-primary)', color: 'var(--color-primary)', fontWeight: 900, fontSize: '0.85rem' }}>{i + 1}</Box>
                                         </TableCell>
                                         <TableCell sx={{ fontWeight: 700, color: "var(--text-primary)" }}>
                                             {ca.name}
@@ -282,6 +270,7 @@ const ConsultancyApprovalDetail = ({ id, onBack, role }) => {
                     </Table>
                 </TableContainer>
             </Card>
+            )}
 
             <Box sx={{ display: "flex", flexWrap: "wrap", gap: 3, mt: 3 }}>
                 {data.hodComment && <Box sx={{ flex: 1, minWidth: 300 }}><Card sx={{ ...cardStyle, borderLeft: "4px solid #ffc107", height: "100%", mb: 0 }}><Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 2 }}><HistoryIcon sx={{ color: "#ffc107" }} /><Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>HOD Review</Typography></Box><Box sx={{ p: 2, bgcolor: "rgba(255, 193, 7, 0.05)", borderRadius: "10px", border: "1px solid #ffc10733" }}><Typography variant="body2" sx={{ fontStyle: "italic", fontWeight: 600 }}>"{data.hodComment}"</Typography></Box></Card></Box>}
