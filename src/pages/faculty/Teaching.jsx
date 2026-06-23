@@ -589,6 +589,19 @@ export default function Teaching() {
   ];
 
   const feedbackRows = feedbackResults.map((r, i) => {
+    const fbPercent = Number(r.percentage) || 0;
+    const color = fbPercent >= 80 ? "#10B981" : fbPercent >= 60 ? "#F59E0B" : "#EF4444";
+    const gradient = fbPercent >= 80
+      ? "linear-gradient(90deg, #10B981 0%, #059669 100%)"
+      : fbPercent >= 60
+        ? "linear-gradient(90deg, #F59E0B 0%, #D97706 100%)"
+        : "linear-gradient(90deg, #EF4444 0%, #B91C1C 100%)";
+    const textGradient = fbPercent >= 80
+      ? "linear-gradient(135deg, #10B981 0%, #059669 100%)"
+      : fbPercent >= 60
+        ? "linear-gradient(135deg, #F59E0B 0%, #D97706 100%)"
+        : "linear-gradient(135deg, #EF4444 0%, #B91C1C 100%)";
+
     return [
       {
         value: i + 1,
@@ -655,10 +668,22 @@ export default function Teaching() {
         ),
       },
       {
-        value: r.percentage,
+        value: fbPercent,
         display: (
-          <Box sx={{ textAlign: 'center' }}>
-            <Typography sx={{ fontSize: 16, fontWeight: 800, color: "var(--text-secondary)" }}>{Number(r.percentage).toFixed(1)}%</Typography>
+          <Box sx={{ textAlign: 'center', minWidth: 100 }}>
+            <Typography sx={{
+              fontSize: 18, fontWeight: 900,
+              background: textGradient,
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+              lineHeight: 1
+            }}>
+              {fbPercent.toFixed(1)}%
+            </Typography>
+            <Box sx={{ mt: 1, height: 8, bgcolor: 'var(--border-color)', borderRadius: 4, overflow: 'hidden', border: '1px solid var(--border-color)', position: 'relative' }}>
+              <Box sx={{ width: `${fbPercent}%`, height: '100%', background: gradient, borderRadius: 4, transition: 'width 1s ease-in-out' }} />
+              <Box sx={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '50%', background: 'linear-gradient(180deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0) 100%)' }} />
+            </Box>
           </Box>
         ),
       },
@@ -891,7 +916,19 @@ export default function Teaching() {
     const semYrBranchSec = isYearProg
       ? `YEAR-${entry.yearNumber || "—"} ${branchDisplay} - SEC ${entry.section}`
       : `SEM-${entry.semesterNumber || "—"} ${branchDisplay} - SEC ${entry.section}`;
-    const passPct = entry.passPercentage !== undefined ? entry.passPercentage.toFixed(2) : "0.00";
+    const passPercentVal = entry.passPercentage !== undefined ? entry.passPercentage : 0;
+
+    const color = passPercentVal >= 80 ? "#10B981" : passPercentVal >= 60 ? "#F59E0B" : "#EF4444";
+    const gradient = passPercentVal >= 80
+      ? "linear-gradient(90deg, #10B981 0%, #059669 100%)"
+      : passPercentVal >= 60
+        ? "linear-gradient(90deg, #F59E0B 0%, #D97706 100%)"
+        : "linear-gradient(90deg, #EF4444 0%, #B91C1C 100%)";
+    const textGradient = passPercentVal >= 80
+      ? "linear-gradient(135deg, #10B981 0%, #059669 100%)"
+      : passPercentVal >= 60
+        ? "linear-gradient(135deg, #F59E0B 0%, #D97706 100%)"
+        : "linear-gradient(135deg, #EF4444 0%, #B91C1C 100%)";
 
     return [
       {
@@ -919,8 +956,24 @@ export default function Teaching() {
         display: <Box sx={{ color: "#10B981", fontWeight: 600 }}>{entry.passedStudents}</Box>,
       },
       {
-        value: parseFloat(passPct),
-        display: <Box sx={{ color: "var(--color-primary)", fontWeight: 800 }}>{passPct}%</Box>,
+        value: passPercentVal,
+        display: (
+          <Box sx={{ textAlign: 'center', minWidth: 100 }}>
+            <Typography sx={{
+              fontSize: 18, fontWeight: 900,
+              background: textGradient,
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+              lineHeight: 1
+            }}>
+              {passPercentVal.toFixed(1)}%
+            </Typography>
+            <Box sx={{ mt: 1, height: 8, bgcolor: 'var(--border-color)', borderRadius: 4, overflow: 'hidden', border: '1px solid var(--border-color)', position: 'relative' }}>
+              <Box sx={{ width: `${passPercentVal}%`, height: '100%', background: gradient, borderRadius: 4, transition: 'width 1s ease-in-out' }} />
+              <Box sx={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '50%', background: 'linear-gradient(180deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0) 100%)' }} />
+            </Box>
+          </Box>
+        ),
       },
     ];
   });
