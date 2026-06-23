@@ -921,8 +921,7 @@ export default function FundedProject() {
             <Grid item xs={12} sm={3}><LabelValueDetails label="Scheme" value={data.scheme || "-"} /></Grid>
             <Grid item xs={12} sm={3}><LabelValueDetails label="Sanctioned Amount" value={`₹${data.sanctionedAmount}`} /></Grid>
             <Grid item xs={12} sm={3}><LabelValueDetails label="Date of Sanction" value={formatDate(data.sanctionDate)} /></Grid>
-            <Grid item xs={12} sm={3}><LabelValueDetails label="Is PI?" value={data.principalInvestigator || "No"} /></Grid>
-            <Grid item xs={12} sm={3}><LabelValueDetails label="Is Co-PI?" value={data.coPrincipalInvestigator || "No"} /></Grid>
+            <Grid item xs={12} sm={6}><LabelValueDetails label="Type of Investigator" value={data.investigatorType || "N/A"} /></Grid>
 
             <Grid item xs={12} sm={4}><LabelValueDetails label="Recurring Amount" value={data.recurring ? `₹${data.recurring}` : "-"} /></Grid>
             <Grid item xs={12} sm={4}><LabelValueDetails label="Non-Recurring Amount" value={data.nonRecurring ? `₹${data.nonRecurring}` : "-"} /></Grid>
@@ -982,81 +981,7 @@ export default function FundedProject() {
               </Grid>
             )}
 
-            {/* Appraisal Claimant Selector */}
-            <Grid item xs={12} sm={6}>
-              <LabelValueDetails 
-                label="Appraisal Claimant"
-                chip={
-                  (() => {
-                    const isApplicant = data.visibilityRole === "Applicant";
-                    const eligibleClaimants = [
-                      { _id: data.facultyId?._id, name: data.facultyId?.name, institutionId: data.facultyId?.institutionId },
-                      ...((data.coInvestigators || [])
-                        .filter(ca => ca.employeeId)
-                        .map(ca => ({
-                          _id: ca.employeeId?._id || ca.employeeId,
-                          name: ca.employeeId?.name || ca.name,
-                          institutionId: ca.employeeId?.institutionId || ca.employeeId || ""
-                        })))
-                    ];
-                    const uniqueClaimants = eligibleClaimants.filter((v, i, a) => v._id && a.findIndex(t => t._id.toString() === v._id.toString()) === i);
 
-                    if (uniqueClaimants.length <= 1) {
-                      return (
-                        <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>
-                          {data.facultyId?.name || "-"} (Auto-assigned)
-                        </Typography>
-                      );
-                    }
-
-                    if (isApplicant) {
-                      return (
-                        <FormControl size="small" fullWidth sx={{ mt: 0.5 }}>
-                          <Select
-                            value={data.appraisalClaimant?.institutionId || data.appraisalClaimant || ""}
-                            onChange={async (e) => {
-                              const selectedVal = e.target.value;
-                              try {
-                                const res = await API.post("/api/appraisal/resolve-claim", {
-                                  researchId: data._id,
-                                  researchType: "FundedProject",
-                                  claimantId: selectedVal
-                                });
-                                if (res.data?.success) {
-                                  toast.success("Claimant resolved successfully!");
-                                  setPublicationsList(prev => prev.map(p => p._id === data._id ? { ...p, appraisalClaimant: selectedVal } : p));
-                                  setSelectedPubDetails(prev => ({ ...prev, appraisalClaimant: selectedVal }));
-                                }
-                              } catch (err) {
-                                toast.error(err.response?.data?.message || "Failed to resolve claim.");
-                              }
-                            }}
-                            displayEmpty
-                          >
-                            <MenuItem value="" disabled>--Select Claimant--</MenuItem>
-                            {uniqueClaimants.map(c => (
-                              <MenuItem key={c.institutionId || c._id} value={c.institutionId || c._id}>
-                                {c.name} {c.institutionId ? `(${c.institutionId})` : ""}
-                              </MenuItem>
-                            ))}
-                          </Select>
-                        </FormControl>
-                      );
-                    } else {
-                      const currentClaimantObj = uniqueClaimants.find(c => 
-                        (c.institutionId && c.institutionId === (data.appraisalClaimant?.institutionId || data.appraisalClaimant || "").toString()) ||
-                        (c._id && c._id.toString() === (data.appraisalClaimant?._id || data.appraisalClaimant || "").toString())
-                      );
-                      return (
-                        <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>
-                          {currentClaimantObj ? `${currentClaimantObj.name} (${currentClaimantObj.institutionId})` : "Not Yet Designated"}
-                        </Typography>
-                      );
-                    }
-                  })()
-                }
-              />
-            </Grid>
           </Grid>
 
           <Divider sx={{ my: 3 }} />

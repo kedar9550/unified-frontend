@@ -811,83 +811,10 @@ export default function ConsultancyPublication() {
             <Grid item xs={12} sm={4}><LabelValueDetails label="Applying Seed Grant?" value={data.applyingSeedGrant === "Yes" ? "Yes" : "No"} /></Grid>
             <Grid item xs={12} sm={4}><LabelValueDetails label="Applicant Faculty" value={data.facultyId?.name || "N/A"} /></Grid>
             <Grid item xs={12} sm={3}><LabelValueDetails label="Role" value={data.visibilityRole || "Applicant"} /></Grid>
-            <Grid item xs={12} sm={3}><LabelValueDetails label="Is PI?" value={data.principalInvestigator || "Yes"} /></Grid>
+            <Grid item xs={12} sm={3}><LabelValueDetails label="Type of Investigator" value={data.investigatorType || "N/A"} /></Grid>
             <Grid item xs={12} sm={3}><LabelValueDetails label="Applying Incentive?" value={data.applyIncentive || "No"} /></Grid>
             <Grid item xs={12} sm={3}><LabelValueDetails label="Project Status" value={data.projectStatus || "Sanctioned"} /></Grid>
-            <Grid item xs={12} sm={6}>
-              <LabelValueDetails
-                label="Appraisal Claimant"
-                chip={
-                  (() => {
-                    const isApplicant = data.visibilityRole === "Applicant";
-                    const eligibleClaimants = [
-                      { _id: data.facultyId?._id, name: data.facultyId?.name, institutionId: data.facultyId?.institutionId },
-                      ...((data.coInvestigators || [])
-                        .filter(ca => ca.employeeId)
-                        .map(ca => ({
-                          _id: ca.employeeId?._id || ca.employeeId,
-                          name: ca.employeeId?.name || ca.name,
-                          institutionId: ca.employeeId?.institutionId || ca.employeeId || ""
-                        })))
-                    ];
-                    const uniqueClaimants = eligibleClaimants.filter((v, i, a) => v._id && a.findIndex(t => t._id.toString() === v._id.toString()) === i);
 
-                    if (uniqueClaimants.length <= 1) {
-                      return (
-                        <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>
-                          {data.facultyId?.name || "-"} (Auto-assigned)
-                        </Typography>
-                      );
-                    }
-
-                    if (isApplicant) {
-                      return (
-                        <FormControl size="small" fullWidth sx={{ mt: 0.5 }}>
-                          <Select
-                            value={data.appraisalClaimant?.institutionId || data.appraisalClaimant || ""}
-                            onChange={async (e) => {
-                              const selectedVal = e.target.value;
-                              try {
-                                const res = await API.post("/api/appraisal/resolve-claim", {
-                                  researchId: data._id,
-                                  researchType: "Consultancy",
-                                  claimantId: selectedVal
-                                });
-                                if (res.data?.success) {
-                                  toast.success("Claimant resolved successfully!");
-                                  setPublicationsList(prev => prev.map(p => p._id === data._id ? { ...p, appraisalClaimant: selectedVal } : p));
-                                  setSelectedPubDetails(prev => ({ ...prev, appraisalClaimant: selectedVal }));
-                                }
-                              } catch (err) {
-                                toast.error(err.response?.data?.message || "Failed to resolve claim.");
-                              }
-                            }}
-                            displayEmpty
-                          >
-                            <MenuItem value="" disabled>--Select Claimant--</MenuItem>
-                            {uniqueClaimants.map(c => (
-                              <MenuItem key={c.institutionId || c._id} value={c.institutionId || c._id}>
-                                {c.name} {c.institutionId ? `(${c.institutionId})` : ""}
-                              </MenuItem>
-                            ))}
-                          </Select>
-                        </FormControl>
-                      );
-                    } else {
-                      const currentClaimantObj = uniqueClaimants.find(c =>
-                        (c.institutionId && c.institutionId === (data.appraisalClaimant?.institutionId || data.appraisalClaimant || "").toString()) ||
-                        (c._id && c._id.toString() === (data.appraisalClaimant?._id || data.appraisalClaimant || "").toString())
-                      );
-                      return (
-                        <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>
-                          {currentClaimantObj ? `${currentClaimantObj.name} (${currentClaimantObj.institutionId})` : "Not Yet Designated"}
-                        </Typography>
-                      );
-                    }
-                  })()
-                }
-              />
-            </Grid>
 
             {data.status === "Approved" && data.approvedAmount && (
               <Grid item xs={12} sm={6}>
