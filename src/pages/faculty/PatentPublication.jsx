@@ -3,6 +3,7 @@ import { Box, TextField, MenuItem, Select, Typography, Button, Table, TableBody,
 import { toast } from "sonner";
 import { AddCircle, Delete, Close, Description, Download, AttachFile, Groups, WorkspacePremium, Visibility } from "@mui/icons-material";
 import PageHeader from "../../components/common/PageHeader";
+import NoActiveYearDialog from "../../components/common/NoActiveYearDialog";
 import {
   FacultyInfoRow, FormCard, Grid2, SubLabel, NoteBox, FileField, SubmitBtn
 } from "../../components/faculty/PublicationFormFields";
@@ -19,6 +20,7 @@ export default function PatentPublication() {
   const [viewMode, setViewMode] = useState("list"); // 'list', 'select-year', 'form'
   const [academicYears, setAcademicYears] = useState([]);
   const [selectedYear, setSelectedYear] = useState("");
+  const [noActiveYearAlertOpen, setNoActiveYearAlertOpen] = useState(false);
   const [publicationsList, setPublicationsList] = useState([]);
   const [selectedPubDetails, setSelectedPubDetails] = useState(null);
   const [page, setPage] = useState(0);
@@ -233,7 +235,15 @@ export default function PatentPublication() {
         <Typography variant="h6" sx={{ color: "var(--text-primary)", fontWeight: 800 }}>My Patent Publications</Typography>
         <Button
           variant="contained"
-          onClick={() => setViewMode("select-year")}
+          onClick={() => {
+            const activeYear = academicYears.find(y => y.isGlobalActive);
+            if (activeYear) {
+              setSelectedYear(activeYear._id);
+              setViewMode("form");
+            } else {
+              setNoActiveYearAlertOpen(true);
+            }
+          }}
           sx={{
             background: "var(--gradient-primary)",
 
@@ -426,11 +436,10 @@ export default function PatentPublication() {
 
   const renderForm = () => (
     <FormCard title="Patent Submission">
-      <Box sx={{ mb: 3, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+      <Box sx={{ mb: 3, display: "flex", alignItems: "center" }}>
         <Typography variant="body2" sx={{ background: "var(--bg-accent-1)", color: "var(--color-primary)", px: 2, py: 0.8, borderRadius: "8px", fontWeight: 700, border: "1px solid var(--border-color)" }}>
           Academic Year: {academicYears.find(y => y._id === selectedYear)?.year || "Selected"}
         </Typography>
-        <Button size="small" variant="text" onClick={() => setViewMode("select-year")} sx={{ fontWeight: 700, textTransform: "none", color: "var(--color-primary)" }}>Change Year</Button>
       </Box>
 
       <FacultyInfoRow />
@@ -888,6 +897,10 @@ export default function PatentPublication() {
       {viewMode === "select-year" && renderSelectYear()}
       {viewMode === "form" && renderForm()}
       {renderDetailsDialog()}
+      <NoActiveYearDialog
+        open={noActiveYearAlertOpen}
+        onClose={() => setNoActiveYearAlertOpen(false)}
+      />
     </Box>
   );
 }

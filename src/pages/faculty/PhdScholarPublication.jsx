@@ -3,6 +3,7 @@ import { Box, TextField, MenuItem, Select, Typography, Button, Table, TableBody,
 import { toast } from "sonner";
 import { AddCircle, Delete, Close, Description, Download, AttachFile, Groups, WorkspacePremium, CheckCircle, Visibility } from "@mui/icons-material";
 import PageHeader from "../../components/common/PageHeader";
+import NoActiveYearDialog from "../../components/common/NoActiveYearDialog";
 import {
   FacultyInfoRow, FormCard, Grid2, SubLabel, NoteBox, FileField, SubmitBtn
 } from "../../components/faculty/PublicationFormFields";
@@ -16,6 +17,7 @@ export default function PhdScholarPublication() {
   const { user } = useAuth();
   const [viewMode, setViewMode] = useState("list"); // 'list', 'select-year', 'form'
   const [academicYears, setAcademicYears] = useState([]);
+  const [noActiveYearAlertOpen, setNoActiveYearAlertOpen] = useState(false);
   const [selectedYear, setSelectedYear] = useState("");
   const [publicationsList, setPublicationsList] = useState([]);
   const [selectedPubDetails, setSelectedPubDetails] = useState(null);
@@ -268,22 +270,30 @@ export default function PhdScholarPublication() {
       <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
         <Typography variant="h6" sx={{ color: "var(--text-primary)", fontWeight: 800 }}>My Guided Ph.D. Scholars</Typography>
         <Button
- variant="contained"
- onClick={() => setViewMode("select-year")}
- sx={{
- background: "var(--gradient-primary)",
- 
- px: 3,
- fontWeight: 700,
- textTransform: "none",
- "&:hover": {
- opacity: 0.9,
- transform: "translateY(-1px)",
- boxShadow: "0 4px 12px rgba(0,0,0,0.1)"
- },
- transition: "all 0.2s ease"
- }}
- >
+          variant="contained"
+          onClick={() => {
+            const activeYear = academicYears.find(y => y.isGlobalActive);
+            if (activeYear) {
+              setSelectedYear(activeYear._id);
+              setViewMode("form");
+            } else {
+              setNoActiveYearAlertOpen(true);
+            }
+          }}
+          sx={{
+            background: "var(--gradient-primary)",
+            
+            px: 3,
+            fontWeight: 700,
+            textTransform: "none",
+            "&:hover": {
+              opacity: 0.9,
+              transform: "translateY(-1px)",
+              boxShadow: "0 4px 12px rgba(0,0,0,0.1)"
+            },
+            transition: "all 0.2s ease"
+          }}
+        >
           Add Student
         </Button>
       </Box>
@@ -476,11 +486,10 @@ export default function PhdScholarPublication() {
 
   const renderForm = () => (
     <FormCard title="Ph.D. Scholar Appraisal Entry">
-      <Box sx={{ mb: 3, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+      <Box sx={{ mb: 3, display: "flex", alignItems: "center" }}>
         <Typography variant="body2" sx={{ background: "var(--bg-accent-1)", color: "var(--color-primary)", px: 2, py: 0.8, borderRadius: "8px", fontWeight: 700, border: "1px solid var(--border-color)" }}>
           Academic Year: {academicYears.find(y => y._id === selectedYear)?.year || "Selected"}
         </Typography>
-        <Button size="small" variant="text" onClick={() => setViewMode("select-year")} sx={{ fontWeight: 700, textTransform: "none", color: "var(--color-primary)" }}>Change Year</Button>
       </Box>
 
       <FacultyInfoRow />
@@ -957,6 +966,10 @@ export default function PhdScholarPublication() {
         {viewMode === "form" && renderForm()}
       </Box>
       {renderDetailsDialog()}
+      <NoActiveYearDialog
+        open={noActiveYearAlertOpen}
+        onClose={() => setNoActiveYearAlertOpen(false)}
+      />
     </Box>
   );
 }

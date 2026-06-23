@@ -66,7 +66,7 @@ export default function FeedbackManagement() {
 
         setAcademicYears(uniqueYears);
         if (uniqueYears.length > 0) {
-          const active = uniqueYears.find((y) => y.isActive) || uniqueYears[0];
+          const active = uniqueYears.find((y) => y.isGlobalActive) || uniqueYears[0];
           setSelectedYearId(active._id);
         }
       } catch (err) {

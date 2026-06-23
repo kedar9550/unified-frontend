@@ -29,17 +29,27 @@ import { toast } from "sonner";
 export default function ResearchReports() {
     const [activeTab, setActiveTab] = useState(0);
     const [academicYears, setAcademicYears] = useState([]);
-    const [selectedYear, setSelectedYear] = useState("All");
+    const [selectedYear, setSelectedYear] = useState("");
     const [loading, setLoading] = useState(false);
     const [data, setData] = useState({ journals: [], textbooks: [], chapters: [] });
 
     useEffect(() => {
         // Fetch Academic Years
         API.get("/api/academic-years").then(res => {
-            setAcademicYears(res.data?.years || res.data?.data || []);
-        }).catch(err => console.log("Failed to fetch academic years", err));
+            const yearsList = res.data?.years || res.data?.data || [];
+            setAcademicYears(yearsList);
+            const active = yearsList.find(y => y.isGlobalActive);
+            setSelectedYear(active ? active._id : "All");
+        }).catch(err => {
+            console.log("Failed to fetch academic years", err);
+            setSelectedYear("All");
+        });
+    }, []);
 
-        fetchReportData();
+    useEffect(() => {
+        if (selectedYear) {
+            fetchReportData();
+        }
     }, [selectedYear]);
 
     const fetchReportData = async () => {

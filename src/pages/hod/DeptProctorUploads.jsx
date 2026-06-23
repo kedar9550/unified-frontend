@@ -81,7 +81,7 @@ const DeptProctorUploads = () => {
         const years = yearRes.data?.years || yearRes.data?.data || [];
         // Try to find program-specific active year later (when program is selected)
         // For now just store all years
-        const active = years.find(y => y.isActive && !y.program);
+        const active = years.find(y => y.isGlobalActive);
         if (active) {
           setActiveYear(active.year);
           setActiveSemesterType(active.activeSemesterTypeId?.name || "");
