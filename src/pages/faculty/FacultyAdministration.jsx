@@ -24,6 +24,7 @@ import {
 } from "@mui/icons-material";
 import PageHeader from "../../components/common/PageHeader";
 import SectionHeader from "../../components/common/SectionHeader";
+import NoActiveYearDialog from "../../components/common/NoActiveYearDialog";
 import API from "../../api/axios";
 
 const ADMINISTRATIVE_ROLES_LIST = [
@@ -50,6 +51,7 @@ export default function FacultyAdministration() {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [allEntries, setAllEntries] = useState([]);
+  const [noActiveYearAlertOpen, setNoActiveYearAlertOpen] = useState(false);
 
   const blurActiveElement = () => {
     if (document.activeElement instanceof HTMLElement) {
@@ -70,6 +72,8 @@ export default function FacultyAdministration() {
 
   // Form representation
   const [rolesFormData, setRolesFormData] = useState({});
+
+  const activeYear = academicYears.find((y) => y.isGlobalActive);
 
   // Helper to check if role is already submitted and active
   const isPreExistingActive = (roleLabel) => {
@@ -329,15 +333,12 @@ export default function FacultyAdministration() {
               <SectionHeader
                 title="Current Administrative Roles Summary"
                 action={
-                  selectedYearLabel !== "all" && !isAddingRole && hasActiveRoles && (
+                  selectedYearLabel !== "all" && selectedYearLabel === activeYear?.year && !isAddingRole && hasActiveRoles && (
                     <Button
- variant="contained"
- onClick={() => setIsAddingRole(true)}
- sx={{
+                      variant="contained"
+                      onClick={() => setIsAddingRole(true)}
+                      sx={{
  
- px: 3,
- py: 1,
- textTransform: "none",
  fontWeight: 700,
  fontSize: "0.85rem",
  background: "linear-gradient(135deg, var(--color-primary) 0%, #2563eb 100%)",
@@ -511,13 +512,57 @@ export default function FacultyAdministration() {
               <Typography sx={{ color: "var(--text-secondary)", fontWeight: 600, fontSize: "1rem", mb: 1 }}>
                 Want to declare new roles or update existing ones?
               </Typography>
-              <Typography sx={{ color: "var(--text-secondary)", fontSize: "0.88rem", opacity: 0.8 }}>
-                Please select a specific Academic Cycle from the dropdown at the top of the page.
+              <Typography sx={{ color: "var(--text-secondary)", fontSize: "0.88rem", opacity: 0.8, mb: 2 }}>
+                Please select the active Academic Cycle or click below to declare roles for the active academic year directly.
+              </Typography>
+              <Button
+                variant="contained"
+                onClick={() => {
+                  if (activeYear) {
+                    setSelectedYearLabel(activeYear.year);
+                    setIsAddingRole(true);
+                  } else {
+                    setNoActiveYearAlertOpen(true);
+                  }
+                }}
+                sx={{
+                  px: 3,
+                  py: 1,
+                  textTransform: "none",
+                  fontWeight: 700,
+                  fontSize: "0.85rem",
+                  background: "linear-gradient(135deg, var(--color-primary) 0%, #2563eb 100%)",
+                  boxShadow: "0 4px 15px rgba(59, 130, 246, 0.2)",
+                  color: "#fff",
+                  "&:hover": {
+                    opacity: 0.95
+                  }
+                }}
+              >
+                Declare / Update Roles
+              </Button>
+            </Card>
+          )}
+
+          {selectedYearLabel !== "all" && selectedYearLabel !== activeYear?.year && !hasActiveRoles && (
+            <Card
+              sx={{
+                p: 4,
+                textAlign: "center",
+                background: "var(--bg-panel)",
+                border: "1px dashed var(--border-color)",
+                borderRadius: "20px",
+                mt: 4,
+                boxShadow: "var(--shadow-premium)"
+              }}
+            >
+              <Typography sx={{ color: "var(--text-secondary)", fontWeight: 600, fontSize: "1rem" }}>
+                No administrative roles declared for this academic cycle.
               </Typography>
             </Card>
           )}
 
-          {selectedYearLabel !== "all" && (!hasActiveRoles || isAddingRole) && (
+          {selectedYearLabel !== "all" && selectedYearLabel === activeYear?.year && (!hasActiveRoles || isAddingRole) && (
             <form onSubmit={handleSubmit}>
               {hasActiveRoles && (
                 <Divider sx={{ my: 4, borderColor: "var(--border-color)" }} />
@@ -712,6 +757,10 @@ export default function FacultyAdministration() {
           )}
         </Box>
       )}
+      <NoActiveYearDialog
+        open={noActiveYearAlertOpen}
+        onClose={() => setNoActiveYearAlertOpen(false)}
+      />
     </Box>
   );
 }
