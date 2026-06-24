@@ -549,7 +549,10 @@ export default function PatentPublication() {
                           size="small"
                           fullWidth
                           value={ca.empId}
-                          onChange={(e) => handleCoInventorChange(ca.inventorPosition, "empId", e.target.value)}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            if (/^\d*$/.test(val)) handleCoInventorChange(ca.inventorPosition, "empId", val);
+                          }}
                           placeholder="e.g. 5741"
                         />
                       </Box>
@@ -573,7 +576,10 @@ export default function PatentPublication() {
                           size="small"
                           fullWidth
                           value={ca.name}
-                          onChange={(e) => handleCoInventorChange(ca.inventorPosition, "name", e.target.value)}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            if (!/\d/.test(val)) handleCoInventorChange(ca.inventorPosition, "name", val);
+                          }}
                           placeholder="Full Name"
                         />
                       </Box>
@@ -583,7 +589,10 @@ export default function PatentPublication() {
                           size="small"
                           fullWidth
                           value={ca.affiliation}
-                          onChange={(e) => handleCoInventorChange(ca.inventorPosition, "affiliation", e.target.value)}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            if (!/\d/.test(val)) handleCoInventorChange(ca.inventorPosition, "affiliation", val);
+                          }}
                           placeholder="College / Organization"
                         />
                       </Box>

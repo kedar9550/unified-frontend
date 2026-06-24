@@ -744,7 +744,10 @@ export default function ConferencePublication() {
                           size="small"
                           fullWidth
                           value={ca.empId}
-                          onChange={(e) => handleCoAuthorChange(ca.authorPosition, "empId", e.target.value)}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            if (/^\d*$/.test(val)) handleCoAuthorChange(ca.authorPosition, "empId", val);
+                          }}
                           placeholder="e.g. 5741"
                         />
                       </Box>
@@ -768,7 +771,10 @@ export default function ConferencePublication() {
                           size="small"
                           fullWidth
                           value={ca.authorName}
-                          onChange={(e) => handleCoAuthorChange(ca.authorPosition, "authorName", e.target.value)}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            if (!/\d/.test(val)) handleCoAuthorChange(ca.authorPosition, "authorName", val);
+                          }}
                           placeholder="Full Name"
                         />
                       </Box>
@@ -778,7 +784,10 @@ export default function ConferencePublication() {
                           size="small"
                           fullWidth
                           value={ca.affiliationName}
-                          onChange={(e) => handleCoAuthorChange(ca.authorPosition, "affiliationName", e.target.value)}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            if (!/\d/.test(val)) handleCoAuthorChange(ca.authorPosition, "affiliationName", val);
+                          }}
                           placeholder="College / Organization"
                         />
                       </Box>
