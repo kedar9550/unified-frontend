@@ -608,7 +608,10 @@ export default function ConsultancyPublication() {
                           size="small"
                           fullWidth
                           value={ca.empId}
-                          onChange={(e) => handleCoInvestigatorChange(ca.investigatorPosition, "empId", e.target.value)}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            if (/^\d*$/.test(val)) handleCoInvestigatorChange(ca.investigatorPosition, "empId", val);
+                          }}
                           placeholder="e.g. 5741"
                         />
                       </Grid>
@@ -634,7 +637,10 @@ export default function ConsultancyPublication() {
                           size="small"
                           fullWidth
                           value={ca.name}
-                          onChange={(e) => handleCoInvestigatorChange(ca.investigatorPosition, "name", e.target.value)}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            if (!/\d/.test(val)) handleCoInvestigatorChange(ca.investigatorPosition, "name", val);
+                          }}
                           placeholder="Full Name"
                         />
                       </Grid>
@@ -644,7 +650,10 @@ export default function ConsultancyPublication() {
                           size="small"
                           fullWidth
                           value={ca.affiliation}
-                          onChange={(e) => handleCoInvestigatorChange(ca.investigatorPosition, "affiliation", e.target.value)}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            if (!/\d/.test(val)) handleCoInvestigatorChange(ca.investigatorPosition, "affiliation", val);
+                          }}
                           placeholder="College / Organization"
                         />
                       </Grid>

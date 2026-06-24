@@ -618,7 +618,10 @@ export default function NovelProductPublication() {
                               size="small"
                               fullWidth
                               value={ca.empId}
-                              onChange={(e) => handleCoDeveloperChange(ca.developerPosition, "empId", e.target.value)}
+                              onChange={(e) => {
+                            const val = e.target.value;
+                            if (/^\d*$/.test(val)) handleCoDeveloperChange(ca.developerPosition, "empId", val);
+                          }}
                               placeholder="e.g. 5741"
                             />
                           </Grid>
@@ -644,7 +647,10 @@ export default function NovelProductPublication() {
                               size="small"
                               fullWidth
                               value={ca.name}
-                              onChange={(e) => handleCoDeveloperChange(ca.developerPosition, "name", e.target.value)}
+                              onChange={(e) => {
+                            const val = e.target.value;
+                            if (!/\d/.test(val)) handleCoDeveloperChange(ca.developerPosition, "name", val);
+                          }}
                               placeholder="Full Name"
                             />
                           </Grid>
@@ -654,7 +660,10 @@ export default function NovelProductPublication() {
                               size="small"
                               fullWidth
                               value={ca.affiliation}
-                              onChange={(e) => handleCoDeveloperChange(ca.developerPosition, "affiliation", e.target.value)}
+                              onChange={(e) => {
+                            const val = e.target.value;
+                            if (!/\d/.test(val)) handleCoDeveloperChange(ca.developerPosition, "affiliation", val);
+                          }}
                               placeholder="College / Organization"
                             />
                           </Grid>
