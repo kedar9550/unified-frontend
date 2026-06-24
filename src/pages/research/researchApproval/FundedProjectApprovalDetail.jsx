@@ -64,8 +64,7 @@ const FundedProjectApprovalDetail = ({ id, onBack, role }) => {
             const endpoint = isResearchAdmin ? `/api/research/funded-project/rnd-action/${id}` : `/api/research/funded-project/hod-action/${id}`;
             const res = await API.put(endpoint, {
                 action,
-                comment: remarks,
-                approvedAmount: isResearchAdmin && data.applyIncentive === 'Yes' ? approvedAmount : undefined
+                comment: remarks
             });
             if (res.data?.success) {
                 toast.success(`Request ${action === 'Approve' ? 'Approved' : 'Rejected'} successfully`);
@@ -342,18 +341,7 @@ const FundedProjectApprovalDetail = ({ id, onBack, role }) => {
                         <Card sx={{ ...cardStyle, borderTop: "4px solid var(--color-primary)", mb: 0 }}>
                             <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 3 }}><GavelIcon sx={{ color: "var(--color-primary)" }} /><Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>Review Decision</Typography></Box>
                             
-                            {isResearchAdmin && data.applyIncentive === 'Yes' && (
-                                <Box sx={{ mb: 3 }}>
-                                    <Typography variant="subtitle2" sx={{ fontWeight: 900, mb: 1, color: "var(--color-primary)", fontSize: "0.75rem" }}>APPROVED AMOUNT (₹)</Typography>
-                                    <TextField 
-                                        fullWidth size="small" type="number" 
-                                        placeholder="Enter approved amount" 
-                                        value={approvedAmount} 
-                                        onChange={e => setApprovedAmount(e.target.value)} 
-                                        sx={{ maxWidth: 250, "& .MuiOutlinedInput-root": { borderRadius: "10px", bgcolor: "var(--bg-panel)" } }} 
-                                    />
-                                </Box>
-                            )}
+                            {/* Incentive input removed as there is no incentive for Funded Project */}
                             <TextField fullWidth multiline rows={3} placeholder="Provide your review comments..." value={remarks} onChange={e => setRemarks(e.target.value)} sx={{ mb: 3, "& .MuiOutlinedInput-root": { borderRadius: "12px", bgcolor: "var(--bg-panel)" } }} />
 
                             <Box sx={{ display: "flex", gap: 2, justifyContent: "flex-end" }}>

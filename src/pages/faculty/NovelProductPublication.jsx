@@ -678,7 +678,7 @@ export default function NovelProductPublication() {
 
           <Box>
             <Typography sx={labelStyle}>Applying for Incentive : *</Typography>
-            <Select size="small" fullWidth displayEmpty value={form.applyIncentive} onChange={set("applyIncentive")}>
+            <Select size="small" fullWidth displayEmpty value={form.applyIncentive} disabled>
               <MenuItem value="Yes">Yes</MenuItem>
               <MenuItem value="No">No</MenuItem>
             </Select>
