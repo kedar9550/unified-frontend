@@ -121,8 +121,8 @@ const AppraisalResearchScoring = () => {
   // Scoring States
   const [citations, setCitations] = useState("");
   const [citationPoints, setCitationPoints] = useState(0);
-  const [hIndex2024, setHIndex2024] = useState("");
-  const [hIndex2025, setHIndex2025] = useState("");
+  const [hIndexPrevYear, setHIndexPrevYear] = useState("");
+  const [hIndexCurrentYear, setHIndexCurrentYear] = useState("");
   const [hIndexPoints, setHIndexPoints] = useState(0);
   const [comments, setComments] = useState("");
   const [activeConfig, setActiveConfig] = useState(null);
@@ -169,8 +169,8 @@ const AppraisalResearchScoring = () => {
 
     // Load saved inputs
     setCitations(appr.research.scopusCitations !== undefined && appr.research.scopusCitations !== null ? String(appr.research.scopusCitations) : "");
-    setHIndex2024(appr.research.hIndex2024 !== undefined && appr.research.hIndex2024 !== null ? String(appr.research.hIndex2024) : "");
-    setHIndex2025(appr.research.hIndex2025 !== undefined && appr.research.hIndex2025 !== null ? String(appr.research.hIndex2025) : "");
+    setHIndexPrevYear(appr.research.hIndexPrevYear !== undefined && appr.research.hIndexPrevYear !== null ? String(appr.research.hIndexPrevYear) : "");
+    setHIndexCurrentYear(appr.research.hIndexCurrentYear !== undefined && appr.research.hIndexCurrentYear !== null ? String(appr.research.hIndexCurrentYear) : "");
 
     setCitationPoints(appr.research.scopusCitationScore || 0);
     setHIndexPoints(appr.research.scopusHIndexScore || 0);
@@ -214,8 +214,8 @@ const AppraisalResearchScoring = () => {
   // Dynamic H-Index calculation
   useEffect(() => {
     if (!activeConfig) return;
-    const h24 = Number(hIndex2024) || 0;
-    const h25 = Number(hIndex2025) || 0;
+    const h24 = Number(hIndexPrevYear) || 0;
+    const h25 = Number(hIndexCurrentYear) || 0;
     const raise = h25 - h24;
 
     if (raise <= 0) {
@@ -235,11 +235,15 @@ const AppraisalResearchScoring = () => {
     }
 
     setHIndexPoints(raise * rate);
-  }, [hIndex2024, hIndex2025, activeConfig]);
+  }, [hIndexPrevYear, hIndexCurrentYear, activeConfig]);
+
+  const startYear = selectedAppraisal?.academicYearId?.year ? Number(selectedAppraisal.academicYearId.year.split('-')[0]) : 2025;
+  const prevYearLabel = startYear - 1;
+  const currentYearLabel = startYear;
 
   const hIndexRaise = (() => {
-    const h24 = Number(hIndex2024) || 0;
-    const h25 = Number(hIndex2025) || 0;
+    const h24 = Number(hIndexPrevYear) || 0;
+    const h25 = Number(hIndexCurrentYear) || 0;
     const diff = h25 - h24;
     return diff > 0 ? `+${diff}` : String(diff);
   })();
@@ -251,8 +255,8 @@ const AppraisalResearchScoring = () => {
     try {
       const res = await axiosInstance.put(`/api/appraisal/rnd-evaluate/${selectedAppraisal._id}`, {
         scopusCitations: citations === "" ? null : Number(citations),
-        hIndex2024: hIndex2024 === "" ? null : Number(hIndex2024),
-        hIndex2025: hIndex2025 === "" ? null : Number(hIndex2025),
+        hIndexPrevYear: hIndexPrevYear === "" ? null : Number(hIndexPrevYear),
+        hIndexCurrentYear: hIndexCurrentYear === "" ? null : Number(hIndexCurrentYear),
         scopusCitationScore: citationPoints,
         scopusHIndexScore: hIndexPoints,
         scopusCitationStatus: "Approved",
@@ -274,8 +278,8 @@ const AppraisalResearchScoring = () => {
             const updated = { ...prev };
             if (!updated.research) updated.research = {};
             updated.research.scopusCitations = citations === "" ? null : Number(citations);
-            updated.research.hIndex2024 = hIndex2024 === "" ? null : Number(hIndex2024);
-            updated.research.hIndex2025 = hIndex2025 === "" ? null : Number(hIndex2025);
+            updated.research.hIndexPrevYear = hIndexPrevYear === "" ? null : Number(hIndexPrevYear);
+            updated.research.hIndexCurrentYear = hIndexCurrentYear === "" ? null : Number(hIndexCurrentYear);
             updated.research.scopusCitationScore = citationPoints;
             updated.research.scopusHIndexScore = hIndexPoints;
             updated.research.scopusCitationStatus = "Approved";
@@ -830,11 +834,11 @@ const AppraisalResearchScoring = () => {
 
                     <Grid container spacing={2} alignItems="center" sx={{ mt: 1 }}>
                       <Grid xs={5}>
-                        <Typography variant="caption" sx={{ fontWeight: 700, color: "var(--text-secondary)", display: "block", mb: 0.8 }}>H-Index 2024</Typography>
+                        <Typography variant="caption" sx={{ fontWeight: 700, color: "var(--text-secondary)", display: "block", mb: 0.8 }}>H-Index {prevYearLabel}</Typography>
                         <TextField
                           type="number"
-                          value={hIndex2024}
-                          onChange={(e) => setHIndex2024(e.target.value)}
+                          value={hIndexPrevYear}
+                          onChange={(e) => setHIndexPrevYear(e.target.value)}
                           disabled={selectedAppraisal?.status === "Completed"}
                           fullWidth
                           placeholder="e.g. 8"
@@ -845,11 +849,11 @@ const AppraisalResearchScoring = () => {
                         <East sx={{ color: "var(--text-secondary)", fontSize: 20 }} />
                       </Grid>
                       <Grid xs={5}>
-                        <Typography variant="caption" sx={{ fontWeight: 700, color: "var(--text-secondary)", display: "block", mb: 0.8 }}>H-Index 2025</Typography>
+                        <Typography variant="caption" sx={{ fontWeight: 700, color: "var(--text-secondary)", display: "block", mb: 0.8 }}>H-Index {currentYearLabel}</Typography>
                         <TextField
                           type="number"
-                          value={hIndex2025}
-                          onChange={(e) => setHIndex2025(e.target.value)}
+                          value={hIndexCurrentYear}
+                          onChange={(e) => setHIndexCurrentYear(e.target.value)}
                           disabled={selectedAppraisal?.status === "Completed"}
                           fullWidth
                           placeholder="e.g. 10"
@@ -875,18 +879,18 @@ const AppraisalResearchScoring = () => {
 
                     {/* Rate dynamic text */}
                     {(() => {
-                      const h24 = Number(hIndex2024) || 0;
+                      const h24 = Number(hIndexPrevYear) || 0;
                       const lowRate = activeConfig?.research?.hIndexRateLow ?? 1;
                       const midRate = activeConfig?.research?.hIndexRateMid ?? 2;
                       const highRate = activeConfig?.research?.hIndexRateHigh ?? 4;
 
                       let dynamicRateText = "";
                       if (h24 >= 5 && h24 <= 10) {
-                        dynamicRateText = `Rate: ${midRate} points per index (Based on 2024 H-Index range 5-10)`;
+                        dynamicRateText = `Rate: ${midRate} points per index (Based on ${prevYearLabel} H-Index range 5-10)`;
                       } else if (h24 > 10) {
-                        dynamicRateText = `Rate: ${highRate} points per index (Based on 2024 H-Index range >10)`;
+                        dynamicRateText = `Rate: ${highRate} points per index (Based on ${prevYearLabel} H-Index range >10)`;
                       } else {
-                        dynamicRateText = `Rate: ${lowRate} points per index (Based on 2024 H-Index range 0-4)`;
+                        dynamicRateText = `Rate: ${lowRate} points per index (Based on ${prevYearLabel} H-Index range 0-4)`;
                       }
 
                       return (
@@ -1143,12 +1147,12 @@ const AppraisalResearchScoring = () => {
                   {/* H-Index Rule & Table */}
                   <Box>
                     <Typography variant="subtitle2" sx={{ fontWeight: 800, color: "var(--text-primary)", mb: 0.5, fontSize: "0.85rem" }}>
-                      H-Index Scoring <Typography component="span" sx={{ fontSize: "0.75rem", color: "var(--text-secondary)", fontWeight: 600 }}>(Based on 2024 H-Index)</Typography>
+                      H-Index Scoring <Typography component="span" sx={{ fontSize: "0.75rem", color: "var(--text-secondary)", fontWeight: 600 }}>(Based on {prevYearLabel} H-Index)</Typography>
                     </Typography>
 
                     {/* Rules table */}
                     {(() => {
-                      const h24Val = Number(hIndex2024) || 0;
+                      const h24Val = Number(hIndexPrevYear) || 0;
                       const rowStyle = (rangeType) => {
                         let isActive = false;
                         if (rangeType === "low" && h24Val < 5) isActive = true;
@@ -1174,7 +1178,7 @@ const AppraisalResearchScoring = () => {
                           <Table size="small">
                             <TableHead>
                               <TableRow sx={{ bgcolor: "var(--bg-panel)" }}>
-                                <TableCell sx={{ fontWeight: 700, fontSize: "0.75rem", color: "var(--text-secondary)" }}>2024 H-Index Range</TableCell>
+                                <TableCell sx={{ fontWeight: 700, fontSize: "0.75rem", color: "var(--text-secondary)" }}>{prevYearLabel} H-Index Range</TableCell>
                                 <TableCell sx={{ fontWeight: 700, fontSize: "0.75rem", color: "var(--text-secondary)" }}>Points per Index Raise</TableCell>
                               </TableRow>
                             </TableHead>

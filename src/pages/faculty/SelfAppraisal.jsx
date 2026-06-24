@@ -178,6 +178,10 @@ const SelfAppraisal = () => {
   const [profileComplete, setProfileComplete] = useState(true);
   const [missingFields, setMissingFields] = useState([]);
 
+  const [citationYear, setCitationYear] = useState("");
+  const [previousHIndexYear, setPreviousHIndexYear] = useState("");
+  const [currentHIndexYear, setCurrentHIndexYear] = useState("");
+
   const blurActiveElement = () => {
     if (document.activeElement instanceof HTMLElement) {
       document.activeElement.blur();
@@ -387,6 +391,10 @@ const SelfAppraisal = () => {
         setFaculty(res.data.faculty || null);
         setProfileComplete(res.data.isProfileComplete);
         setMissingFields(res.data.missingProfileFields || []);
+
+        setCitationYear(res.data.citationYear || "2025");
+        setPreviousHIndexYear(res.data.previousHIndexYear || "2024");
+        setCurrentHIndexYear(res.data.currentHIndexYear || "2025");
 
         // Populating extra states
         const proc = res.data.proctoringDetail || [];
@@ -3150,117 +3158,85 @@ const SelfAppraisal = () => {
               )}
 
               {/* 2.7 & 2.8 — R&D Admin Provided Scores */}
-              <Box sx={{ mt: 4, p: 2.5, background: "rgba(124, 58, 237, 0.03)", borderRadius: "16px", border: "1px dashed rgba(124, 58, 237, 0.2)" }}>
-                <Typography variant="subtitle2" sx={{ fontWeight: 800, color: "var(--text-primary)", mb: 2.5 }}>
-                  2.7 &amp; 2.8 — Scopus Citations &amp; h-index
+              <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 1.5, mt: 4, color: "var(--color-primary)" }}>
+                2.7 &amp; 2.8 Scopus Citations &amp; h-index
+              </Typography>
+              <Alert severity="info" sx={{ mb: 2, borderRadius: "10px", "& .MuiAlert-message": { width: "100%" } }}>
+                <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                  Scopus Citations &amp; h-index data will be entered by the Research Admin during evaluation. No action required from your side.
                 </Typography>
+              </Alert>
 
-                {/* Raw data tiles */}
-                <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1.5, mb: 2.5 }}>
-                  <Box sx={{ flex: "1 1 140px", p: 1.5, borderRadius: "10px", background: "var(--bg-paper)", border: "1px solid var(--border-color)" }}>
-                    <Typography variant="caption" sx={{ fontWeight: 700, color: "var(--text-secondary)", display: "block", fontSize: "0.72rem", textTransform: "uppercase" }}>
-                      Scopus Citations
-                    </Typography>
-                    <Typography variant="h6" sx={{ fontWeight: 900, color: "var(--color-primary)", mt: 0.25 }}>
-                      {appraisal.research.scopusCitations != null ? appraisal.research.scopusCitations : "—"}
-                    </Typography>
-                  </Box>
-                  <Box sx={{ flex: "1 1 140px", p: 1.5, borderRadius: "10px", background: "var(--bg-paper)", border: "1px solid var(--border-color)" }}>
-                    <Typography variant="caption" sx={{ fontWeight: 700, color: "var(--text-secondary)", display: "block", fontSize: "0.72rem", textTransform: "uppercase" }}>
-                      h-index (prev year)
-                    </Typography>
-                    <Typography variant="h6" sx={{ fontWeight: 900, color: "var(--color-primary)", mt: 0.25 }}>
-                      {appraisal.research.hIndex2024 != null ? appraisal.research.hIndex2024 : "—"}
-                    </Typography>
-                  </Box>
-                  <Box sx={{ flex: "1 1 140px", p: 1.5, borderRadius: "10px", background: "var(--bg-paper)", border: "1px solid var(--border-color)" }}>
-                    <Typography variant="caption" sx={{ fontWeight: 700, color: "var(--text-secondary)", display: "block", fontSize: "0.72rem", textTransform: "uppercase" }}>
-                      h-index (current year)
-                    </Typography>
-                    <Typography variant="h6" sx={{ fontWeight: 900, color: "var(--color-primary)", mt: 0.25 }}>
-                      {appraisal.research.hIndex2025 != null ? (
-                        <>
-                          {appraisal.research.hIndex2025}
-                          {appraisal.research.hIndex2024 != null && appraisal.research.hIndex2025 > appraisal.research.hIndex2024 && (
-                            <Typography component="span" variant="caption" sx={{ ml: 0.75, color: "#10b981", fontWeight: 800 }}>
-                              +{appraisal.research.hIndex2025 - appraisal.research.hIndex2024}
-                            </Typography>
-                          )}
-                        </>
-                      ) : "—"}
-                    </Typography>
-                  </Box>
-                </Box>
+              <TableContainer component={Paper} elevation={0} sx={{ mb: 4, borderRadius: "16px", background: "var(--bg-paper)", border: "1px solid var(--border-color)", overflowX: "auto", boxShadow: "none", maxWidth: { xs: "100%", md: "100%", lg: 1000, xl: 1100 }, mx: "auto" }}>
+                <Table size="small" sx={{ minWidth: 800, mx: "auto" }}>
+                  <TableHead sx={{ background: "var(--gradient-primary)" }}>
+                    <TableRow>
+                      <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2, width: "80px", whiteSpace: "nowrap" }} align="center">S. No</TableCell>
+                      <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }}>Metric Details</TableCell>
+                      <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }}>Scopus Value</TableCell>
+                      <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }}>Verification Status</TableCell>
+                      <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }} align="center">Evaluated Points</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    <TableRow sx={{ "&:hover": { bgcolor: "var(--bg-hover)" } }}>
+                      <TableCell align="center" sx={{ color: "var(--text-primary)" }}>1</TableCell>
+                      <TableCell sx={{ fontWeight: 600, color: "var(--text-primary)" }}>Scopus Citations ({citationYear})</TableCell>
+                      <TableCell sx={{ color: "var(--text-primary)", fontWeight: 700 }}>{appraisal.research.scopusCitations != null ? appraisal.research.scopusCitations : "—"}</TableCell>
+                      <TableCell sx={{ color: "var(--text-primary)" }}>
+                        {appraisal.research.scopusCitationStatus ? (
+                           <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5, alignItems: "flex-start" }}>
+                             {getStatusChip(appraisal.research.scopusCitationStatus)}
+                             {appraisal.research.scopusCitationStatus === "Rejected" && appraisal.research.scopusCitationRemarks && (
+                               <Typography variant="caption" sx={{ color: "#ef4444", fontWeight: 600 }}>Reason: {appraisal.research.scopusCitationRemarks}</Typography>
+                             )}
+                           </Box>
+                        ) : "Pending"}
+                      </TableCell>
+                      <TableCell align="center" sx={{ fontWeight: 800, color: "var(--color-primary)" }}>{appraisal.research.scopusCitationScore || 0}</TableCell>
+                    </TableRow>
+                    
+                    <TableRow sx={{ "&:hover": { bgcolor: "var(--bg-hover)" } }}>
+                      <TableCell align="center" sx={{ color: "var(--text-primary)" }}>2</TableCell>
+                      <TableCell sx={{ fontWeight: 600, color: "var(--text-primary)" }}>Scopus h-index ({previousHIndexYear} ➔ {currentHIndexYear})</TableCell>
+                      <TableCell sx={{ color: "var(--text-primary)", fontWeight: 700 }}>
+                        {appraisal.research.hIndexPrevYear != null && appraisal.research.hIndexCurrentYear != null ? (
+                          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                            {appraisal.research.hIndexPrevYear} ➔ {appraisal.research.hIndexCurrentYear}
+                            {appraisal.research.hIndexCurrentYear > appraisal.research.hIndexPrevYear && (
+                              <Typography component="span" variant="caption" sx={{ color: "#10b981", fontWeight: 800, bgcolor: "rgba(16,185,129,0.1)", px: 1, py: 0.2, borderRadius: "4px" }}>
+                                +{appraisal.research.hIndexCurrentYear - appraisal.research.hIndexPrevYear}
+                              </Typography>
+                            )}
+                          </Box>
+                        ) : "—"}
+                      </TableCell>
+                      <TableCell sx={{ color: "var(--text-primary)" }}>
+                        {appraisal.research.scopusHIndexStatus ? (
+                           <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5, alignItems: "flex-start" }}>
+                             {getStatusChip(appraisal.research.scopusHIndexStatus)}
+                             {appraisal.research.scopusHIndexStatus === "Rejected" && appraisal.research.scopusHIndexRemarks && (
+                               <Typography variant="caption" sx={{ color: "#ef4444", fontWeight: 600 }}>Reason: {appraisal.research.scopusHIndexRemarks}</Typography>
+                             )}
+                           </Box>
+                        ) : "Pending"}
+                      </TableCell>
+                      <TableCell align="center" sx={{ fontWeight: 800, color: "var(--color-primary)" }}>{appraisal.research.scopusHIndexScore || 0}</TableCell>
+                    </TableRow>
 
-                {/* No data notice */}
-                {appraisal.research.scopusCitations == null && appraisal.research.hIndex2024 == null && appraisal.research.hIndex2025 == null && (
-                  <Alert severity="info" sx={{ mb: 2, borderRadius: "10px" }}>
-                    <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                      Scopus Citations &amp; h-index data will be entered by the Research Admin during evaluation. No action required from your side.
-                    </Typography>
-                  </Alert>
-                )}
-
-                {/* Score boxes (2.7 and 2.8) */}
-                <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2 }}>
-                  <Box sx={{ flex: { xs: "1 1 100%", sm: "1 1 calc(50% - 8px)" }, minWidth: 0, display: "flex" }}>
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 2, p: 2, background: "var(--bg-paper)", borderRadius: "12px", border: "1px solid var(--border-color)", boxShadow: "0 2px 8px rgba(0,0,0,0.02)", width: "100%" }}>
-                      <Box sx={{ width: 40, height: 40, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", bgcolor: "rgba(124, 58, 237, 0.1)", color: "#7c3aed", flexShrink: 0 }}>
-                        <Description fontSize="small" />
-                      </Box>
-                      <Box>
-                        <Box sx={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 0.5 }}>
-                          <Typography variant="caption" sx={{ fontWeight: 700, color: "var(--text-secondary)", display: "block", fontSize: "0.75rem" }}>
-                            2.7 Citation Score
-                          </Typography>
-                          {appraisal.research.scopusCitationStatus && getStatusChip(appraisal.research.scopusCitationStatus)}
+                    <TableRow sx={{ background: "rgba(0, 78, 146, 0.04)", "&:hover": { bgcolor: "rgba(0, 78, 146, 0.06) !important" } }}>
+                      <TableCell colSpan={4} sx={{ fontWeight: 800, color: "var(--text-primary)", pl: 2 }}>
+                        <Box component="span" sx={{ position: "sticky", left: 16, display: "inline-block", whiteSpace: "nowrap" }}>
+                          Total Evaluated Points
                         </Box>
-                        <Typography variant="caption" sx={{ color: "var(--text-secondary)", display: "block", fontSize: "0.68rem" }}>
-                          {appraisal.research.scopusCitations != null
-                            ? `${appraisal.research.scopusCitations} citations × rate`
-                            : "Pending — to be filled by Research Admin"}
-                        </Typography>
-                        <Typography variant="body1" sx={{ fontWeight: 800, color: "var(--color-primary)", mt: 0.25 }}>
-                          {appraisal.research.scopusCitationScore || 0} pts
-                        </Typography>
-                        {appraisal.research.scopusCitationStatus === "Rejected" && appraisal.research.scopusCitationRemarks && (
-                          <Typography variant="caption" sx={{ color: "#ef4444", display: "block", fontSize: "0.68rem", mt: 0.5, fontWeight: 600 }}>
-                            Reason: {appraisal.research.scopusCitationRemarks}
-                          </Typography>
-                        )}
-                      </Box>
-                    </Box>
-                  </Box>
-                  <Box sx={{ flex: { xs: "1 1 100%", sm: "1 1 calc(50% - 8px)" }, minWidth: 0, display: "flex" }}>
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 2, p: 2, background: "var(--bg-paper)", borderRadius: "12px", border: "1px solid var(--border-color)", boxShadow: "0 2px 8px rgba(0,0,0,0.02)", width: "100%" }}>
-                      <Box sx={{ width: 40, height: 40, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", bgcolor: "rgba(124, 58, 237, 0.1)", color: "#7c3aed", flexShrink: 0 }}>
-                        <BarChart fontSize="small" />
-                      </Box>
-                      <Box>
-                        <Box sx={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 0.5 }}>
-                          <Typography variant="caption" sx={{ fontWeight: 700, color: "var(--text-secondary)", display: "block", fontSize: "0.75rem" }}>
-                            2.8 Scopus h-index Score
-                          </Typography>
-                          {appraisal.research.scopusHIndexStatus && getStatusChip(appraisal.research.scopusHIndexStatus)}
-                        </Box>
-                        <Typography variant="caption" sx={{ color: "var(--text-secondary)", display: "block", fontSize: "0.68rem" }}>
-                          {appraisal.research.hIndex2024 != null && appraisal.research.hIndex2025 != null
-                            ? `h-index prev: ${appraisal.research.hIndex2024}, current: ${appraisal.research.hIndex2025} (raise: ${Math.max(0, (appraisal.research.hIndex2025 - appraisal.research.hIndex2024))})`
-                            : "Pending — to be filled by Research Admin"}
-                        </Typography>
-                        <Typography variant="body1" sx={{ fontWeight: 800, color: "var(--color-primary)", mt: 0.25 }}>
-                          {appraisal.research.scopusHIndexScore || 0} pts
-                        </Typography>
-                        {appraisal.research.scopusHIndexStatus === "Rejected" && appraisal.research.scopusHIndexRemarks && (
-                          <Typography variant="caption" sx={{ color: "#ef4444", display: "block", fontSize: "0.68rem", mt: 0.5, fontWeight: 600 }}>
-                            Reason: {appraisal.research.scopusHIndexRemarks}
-                          </Typography>
-                        )}
-                      </Box>
-                    </Box>
-                  </Box>
-                </Box>
-              </Box>
+                      </TableCell>
+                      <TableCell align="center" sx={{ fontWeight: 900, color: "var(--color-primary)", fontSize: "0.95rem" }}>
+                        {(appraisal.research.scopusCitationScore || 0) + (appraisal.research.scopusHIndexScore || 0)}
+                      </TableCell>
+                    </TableRow>
+                  </TableBody>
+                </Table>
+              </TableContainer>
             </CardContent>
           </Card>
 

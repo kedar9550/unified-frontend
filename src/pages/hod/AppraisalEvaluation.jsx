@@ -1353,8 +1353,10 @@ const AppraisalEvaluation = () => {
                     <Description fontSize="small" /> 2.7 &amp; 2.8 — Scopus Verified Metrics (R&amp;D Admin)
                   </Typography>
 
-                  {/* 2.7 Citation score in 2025 */}
+                  {/* 2.7 Citation score */}
                   {(() => {
+                    const startYear = selectedAppraisal?.academicYearId?.year ? Number(selectedAppraisal.academicYearId.year.split('-')[0]) : 2025;
+                    const citationYear = startYear;
                     const status = selectedAppraisal.research?.scopusCitationStatus || "Pending";
                     const remarks = selectedAppraisal.research?.scopusCitationRemarks || "";
                     const citations = selectedAppraisal.research?.scopusCitations;
@@ -1365,7 +1367,7 @@ const AppraisalEvaluation = () => {
                         <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 1 }}>
                           <Box>
                             <Typography variant="caption" sx={{ fontWeight: 700, color: "var(--text-secondary)", fontSize: "0.7rem", textTransform: "uppercase", letterSpacing: "0.5px" }}>
-                              2.7 Citation Score in 2025
+                              2.7 Citation Score in {citationYear}
                             </Typography>
                             <Typography variant="body1" sx={{ fontWeight: 800, color: "var(--text-primary)", mt: 0.3 }}>
                               {citations !== null && citations !== undefined ? `${citations} Citations` : "Not fetched yet"}
@@ -1391,33 +1393,36 @@ const AppraisalEvaluation = () => {
                     );
                   })()}
 
-                  {/* 2.8 H-Index in 2024 & 2025 */}
+                  {/* 2.8 H-Index */}
                   {(() => {
+                    const startYear = selectedAppraisal?.academicYearId?.year ? Number(selectedAppraisal.academicYearId.year.split('-')[0]) : 2025;
+                    const prevYear = startYear - 1;
+                    const currentYear = startYear;
                     const status = selectedAppraisal.research?.scopusHIndexStatus || "Pending";
                     const remarks = selectedAppraisal.research?.scopusHIndexRemarks || "";
-                    const h2024 = selectedAppraisal.research?.hIndex2024;
-                    const h2025 = selectedAppraisal.research?.hIndex2025;
+                    const hPrev = selectedAppraisal.research?.hIndexPrevYear;
+                    const hCurr = selectedAppraisal.research?.hIndexCurrentYear;
                     const score = selectedAppraisal.research?.scopusHIndexScore || 0;
                     const chipColor = status === "Approved" ? { bg: "rgba(16,185,129,0.1)", color: "#10b981" } : status === "Rejected" ? { bg: "rgba(239,68,68,0.1)", color: "#ef4444" } : { bg: "rgba(232,160,0,0.1)", color: "#e8a000" };
-                    const raise = (h2024 !== null && h2024 !== undefined && h2025 !== null && h2025 !== undefined) ? (h2025 - h2024) : null;
+                    const raise = (hPrev !== null && hPrev !== undefined && hCurr !== null && hCurr !== undefined) ? (hCurr - hPrev) : null;
                     return (
                       <Box sx={{ p: 2, borderRadius: "10px", border: "1px solid var(--border-color)", bgcolor: "var(--bg-paper)" }}>
                         <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 1 }}>
                           <Box>
                             <Typography variant="caption" sx={{ fontWeight: 700, color: "var(--text-secondary)", fontSize: "0.7rem", textTransform: "uppercase", letterSpacing: "0.5px" }}>
-                              2.8 H-Index in 2024 &amp; 2025
+                              2.8 H-Index in {prevYear} &amp; {currentYear}
                             </Typography>
                             <Box sx={{ display: "flex", gap: 3, mt: 0.5 }}>
                               <Box>
-                                <Typography variant="caption" sx={{ color: "var(--text-secondary)", fontWeight: 600, fontSize: "0.68rem" }}>2024</Typography>
+                                <Typography variant="caption" sx={{ color: "var(--text-secondary)", fontWeight: 600, fontSize: "0.68rem" }}>{prevYear}</Typography>
                                 <Typography variant="body1" sx={{ fontWeight: 800, color: "var(--text-primary)", lineHeight: 1.2 }}>
-                                  {h2024 !== null && h2024 !== undefined ? h2024 : "—"}
+                                  {hPrev !== null && hPrev !== undefined ? hPrev : "—"}
                                 </Typography>
                               </Box>
                               <Box>
-                                <Typography variant="caption" sx={{ color: "var(--text-secondary)", fontWeight: 600, fontSize: "0.68rem" }}>2025</Typography>
+                                <Typography variant="caption" sx={{ color: "var(--text-secondary)", fontWeight: 600, fontSize: "0.68rem" }}>{currentYear}</Typography>
                                 <Typography variant="body1" sx={{ fontWeight: 800, color: "var(--text-primary)", lineHeight: 1.2 }}>
-                                  {h2025 !== null && h2025 !== undefined ? h2025 : "—"}
+                                  {hCurr !== null && hCurr !== undefined ? hCurr : "—"}
                                 </Typography>
                               </Box>
                               {raise !== null && (
