@@ -58,7 +58,7 @@ export const ROLE_ROUTES = {
         { text: "Contribution", path: "/value-addition/contribution", icon: <WorkspacePremium /> },
       ],
     },
-    { text: "Administration", path: "/faculty/administration", icon: <AccountBalance /> },
+    // { text: "Administration", path: "/faculty/administration", icon: <AccountBalance /> },
     { text: "Self Appraisal", path: "/faculty/appraisal", icon: <Description /> },
   ],
 

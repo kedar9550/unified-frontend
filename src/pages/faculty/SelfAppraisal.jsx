@@ -2331,6 +2331,8 @@ const SelfAppraisal = () => {
               <Divider sx={{ mb: 3 }} />
 
               {/* 1.1 Course pass percentage */}
+              {!(appraisal.status === "Completed" && (!appraisal.teaching.passPercentage?.courses || appraisal.teaching.passPercentage.courses.length === 0)) && (
+              <>
               <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 1, color: "var(--color-primary)" }}>
                 1.1 Course Average Pass Percentage (Theory only)
               </Typography>
@@ -2391,8 +2393,11 @@ const SelfAppraisal = () => {
                   </TableBody>
                 </Table>
               </TableContainer>
+              </>
+              )}
 
               {/* 1.2 Proctoring Students' Average Pass Percentage */}
+              {!(appraisal.status === "Completed" && (!appraisal.teaching.proctoring?.entries || appraisal.teaching.proctoring.entries.length === 0)) && (
               <Box sx={{ mb: 4 }}>
                 <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 2 }}>
                   <Typography variant="subtitle1" sx={{ fontWeight: 700, color: "var(--color-primary)" }}>
@@ -2477,6 +2482,7 @@ const SelfAppraisal = () => {
                   </Table>
                 </TableContainer>
               </Box>
+              )}
 
               {/* Self Appraisal Proctoring Form CRUD Dialog Modal */}
               <Dialog
@@ -2706,6 +2712,8 @@ const SelfAppraisal = () => {
               </Dialog>
 
               {/* 1.3 Course Feedback */}
+              {!(appraisal.status === "Completed" && (!appraisal.teaching.feedback?.courses || appraisal.teaching.feedback.courses.length === 0)) && (
+              <>
               <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 1.5, color: "var(--color-primary)" }}>
                 1.3 Course Feedback
               </Typography>
@@ -2763,8 +2771,12 @@ const SelfAppraisal = () => {
                   </TableBody>
                 </Table>
               </TableContainer>
+              </>
+              )}
 
               {/* 1.4 CO Attainment */}
+              {!(appraisal.status === "Completed" && (!appraisal.teaching.coAttainment?.courses || appraisal.teaching.coAttainment.courses.length === 0)) && (
+              <>
               <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 1.5, color: "var(--color-primary)" }}>
                 1.4 CO Attainment (Theory only)
               </Typography>
@@ -2821,6 +2833,8 @@ const SelfAppraisal = () => {
                   </TableBody>
                 </Table>
               </TableContainer>
+              </>
+              )}
             </CardContent>
           </Card>
 
@@ -2880,6 +2894,8 @@ const SelfAppraisal = () => {
               <Divider sx={{ mb: 3 }} />
 
               {/* 2.1 Papers Publication with Claims Coordination */}
+              {!(appraisal.status === "Completed" && (!appraisal.research.papers?.items || appraisal.research.papers.items.length === 0)) && (
+              <>
               <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 1.5, color: "var(--color-primary)" }}>
                 2.1 Paper Publication: (only for one Aditya author)
               </Typography>
@@ -2928,6 +2944,8 @@ const SelfAppraisal = () => {
                   </TableBody>
                 </Table>
               </TableContainer>
+              </>
+              )}
 
               {/* PhD, Books, Patents */}
               {/* 2.2 Guiding Ph. D Scholars */}
@@ -3157,15 +3175,17 @@ const SelfAppraisal = () => {
                 </>
               )}
 
-              {/* 2.7 & 2.8 — R&D Admin Provided Scores */}
+              {/* 2.7 — Scopus Citations */}
               <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 1.5, mt: 4, color: "var(--color-primary)" }}>
-                2.7 &amp; 2.8 Scopus Citations &amp; h-index
+                2.7 Scopus Citations
               </Typography>
+              {appraisal.status !== "Completed" && (
               <Alert severity="info" sx={{ mb: 2, borderRadius: "10px", "& .MuiAlert-message": { width: "100%" } }}>
                 <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                  Scopus Citations &amp; h-index data will be entered by the Research Admin during evaluation. No action required from your side.
+                  Scopus Citations data will be entered by the Research Admin during evaluation. No action required from your side.
                 </Typography>
               </Alert>
+              )}
 
               <TableContainer component={Paper} elevation={0} sx={{ mb: 4, borderRadius: "16px", background: "var(--bg-paper)", border: "1px solid var(--border-color)", overflowX: "auto", boxShadow: "none", maxWidth: { xs: "100%", md: "100%", lg: 1000, xl: 1100 }, mx: "auto" }}>
                 <Table size="small" sx={{ minWidth: 800, mx: "auto" }}>
@@ -3173,7 +3193,7 @@ const SelfAppraisal = () => {
                     <TableRow>
                       <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2, width: "80px", whiteSpace: "nowrap" }} align="center">S. No</TableCell>
                       <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }}>Metric Details</TableCell>
-                      <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }}>Scopus Value</TableCell>
+                      <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }}>Citations ({citationYear})</TableCell>
                       <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }}>Verification Status</TableCell>
                       <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }} align="center">Evaluated Points</TableCell>
                     </TableRow>
@@ -3181,7 +3201,7 @@ const SelfAppraisal = () => {
                   <TableBody>
                     <TableRow sx={{ "&:hover": { bgcolor: "var(--bg-hover)" } }}>
                       <TableCell align="center" sx={{ color: "var(--text-primary)" }}>1</TableCell>
-                      <TableCell sx={{ fontWeight: 600, color: "var(--text-primary)" }}>Scopus Citations ({citationYear})</TableCell>
+                      <TableCell sx={{ fontWeight: 600, color: "var(--text-primary)" }}>Scopus Citations</TableCell>
                       <TableCell sx={{ color: "var(--text-primary)", fontWeight: 700 }}>{appraisal.research.scopusCitations != null ? appraisal.research.scopusCitations : "—"}</TableCell>
                       <TableCell sx={{ color: "var(--text-primary)" }}>
                         {appraisal.research.scopusCitationStatus ? (
@@ -3195,18 +3215,65 @@ const SelfAppraisal = () => {
                       </TableCell>
                       <TableCell align="center" sx={{ fontWeight: 800, color: "var(--color-primary)" }}>{appraisal.research.scopusCitationScore || 0}</TableCell>
                     </TableRow>
-                    
+
+                    <TableRow sx={{ background: "rgba(0, 78, 146, 0.04)", "&:hover": { bgcolor: "rgba(0, 78, 146, 0.06) !important" } }}>
+                      <TableCell colSpan={4} sx={{ fontWeight: 800, color: "var(--text-primary)", pl: 2 }}>
+                        <Box component="span" sx={{ position: "sticky", left: 16, display: "inline-block", whiteSpace: "nowrap" }}>
+                          Total Evaluated Points
+                        </Box>
+                      </TableCell>
+                      <TableCell align="center" sx={{ fontWeight: 900, color: "var(--color-primary)", fontSize: "0.95rem" }}>
+                        {appraisal.research.scopusCitationScore || 0}
+                      </TableCell>
+                    </TableRow>
+                  </TableBody>
+                </Table>
+              </TableContainer>
+
+              {/* 2.8 — Scopus h-index */}
+              <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 1.5, mt: 4, color: "var(--color-primary)" }}>
+                2.8 Scopus h-index
+              </Typography>
+              {appraisal.status !== "Completed" && (
+              <Alert severity="info" sx={{ mb: 2, borderRadius: "10px", "& .MuiAlert-message": { width: "100%" } }}>
+                <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                  Scopus h-index data will be entered by the Research Admin during evaluation. No action required from your side.
+                </Typography>
+              </Alert>
+              )}
+
+              <TableContainer component={Paper} elevation={0} sx={{ mb: 4, borderRadius: "16px", background: "var(--bg-paper)", border: "1px solid var(--border-color)", overflowX: "auto", boxShadow: "none", maxWidth: { xs: "100%", md: "100%", lg: 1000, xl: 1100 }, mx: "auto" }}>
+                <Table size="small" sx={{ minWidth: 800, mx: "auto" }}>
+                  <TableHead sx={{ background: "var(--gradient-primary)" }}>
+                    <TableRow>
+                      <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2, width: "80px", whiteSpace: "nowrap" }} align="center">S. No</TableCell>
+                      <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }}>Metric Details</TableCell>
+                      <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }}>h-index in {previousHIndexYear}</TableCell>
+                      <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }}>h-index in {currentHIndexYear}</TableCell>
+                      <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }}>Raise (Diff)</TableCell>
+                      <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }}>Verification Status</TableCell>
+                      <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }} align="center">Evaluated Points</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
                     <TableRow sx={{ "&:hover": { bgcolor: "var(--bg-hover)" } }}>
-                      <TableCell align="center" sx={{ color: "var(--text-primary)" }}>2</TableCell>
-                      <TableCell sx={{ fontWeight: 600, color: "var(--text-primary)" }}>Scopus h-index ({previousHIndexYear} ➔ {currentHIndexYear})</TableCell>
+                      <TableCell align="center" sx={{ color: "var(--text-primary)" }}>1</TableCell>
+                      <TableCell sx={{ fontWeight: 600, color: "var(--text-primary)" }}>Scopus h-index</TableCell>
+                      <TableCell sx={{ color: "var(--text-primary)", fontWeight: 700 }}>
+                        {appraisal.research.hIndexPrevYear != null ? appraisal.research.hIndexPrevYear : "—"}
+                      </TableCell>
+                      <TableCell sx={{ color: "var(--text-primary)", fontWeight: 700 }}>
+                        {appraisal.research.hIndexCurrentYear != null ? appraisal.research.hIndexCurrentYear : "—"}
+                      </TableCell>
                       <TableCell sx={{ color: "var(--text-primary)", fontWeight: 700 }}>
                         {appraisal.research.hIndexPrevYear != null && appraisal.research.hIndexCurrentYear != null ? (
                           <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                            {appraisal.research.hIndexPrevYear} ➔ {appraisal.research.hIndexCurrentYear}
-                            {appraisal.research.hIndexCurrentYear > appraisal.research.hIndexPrevYear && (
+                            {appraisal.research.hIndexCurrentYear - appraisal.research.hIndexPrevYear > 0 ? (
                               <Typography component="span" variant="caption" sx={{ color: "#10b981", fontWeight: 800, bgcolor: "rgba(16,185,129,0.1)", px: 1, py: 0.2, borderRadius: "4px" }}>
                                 +{appraisal.research.hIndexCurrentYear - appraisal.research.hIndexPrevYear}
                               </Typography>
+                            ) : (
+                              appraisal.research.hIndexCurrentYear - appraisal.research.hIndexPrevYear
                             )}
                           </Box>
                         ) : "—"}
@@ -3225,13 +3292,13 @@ const SelfAppraisal = () => {
                     </TableRow>
 
                     <TableRow sx={{ background: "rgba(0, 78, 146, 0.04)", "&:hover": { bgcolor: "rgba(0, 78, 146, 0.06) !important" } }}>
-                      <TableCell colSpan={4} sx={{ fontWeight: 800, color: "var(--text-primary)", pl: 2 }}>
+                      <TableCell colSpan={6} sx={{ fontWeight: 800, color: "var(--text-primary)", pl: 2 }}>
                         <Box component="span" sx={{ position: "sticky", left: 16, display: "inline-block", whiteSpace: "nowrap" }}>
                           Total Evaluated Points
                         </Box>
                       </TableCell>
                       <TableCell align="center" sx={{ fontWeight: 900, color: "var(--color-primary)", fontSize: "0.95rem" }}>
-                        {(appraisal.research.scopusCitationScore || 0) + (appraisal.research.scopusHIndexScore || 0)}
+                        {appraisal.research.scopusHIndexScore || 0}
                       </TableCell>
                     </TableRow>
                   </TableBody>
@@ -3296,6 +3363,8 @@ const SelfAppraisal = () => {
               <Divider sx={{ mb: 3 }} />
 
               {/* 3.1 Resource Utilization */}
+              {!(appraisal.status === "Completed" && (!resourceUtilizationDetails || resourceUtilizationDetails.length === 0)) && (
+              <>
               <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
                 <Typography variant="subtitle1" sx={{ fontWeight: 700, color: "var(--color-primary)" }}>
                   3.1 Resource Utilization (Max 10 points)
@@ -3418,8 +3487,12 @@ const SelfAppraisal = () => {
                   </TableBody>
                 </Table>
               </TableContainer>
+              </>
+              )}
 
               {/* 3.2 Expertise / Contribution */}
+              {!(appraisal.status === "Completed" && (!appraisal.extension?.contributions || appraisal.extension.contributions.length === 0)) && (
+              <>
               <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
                 <Typography variant="subtitle1" sx={{ fontWeight: 700, color: "var(--color-primary)" }}>
                   3.2 Expertise / Contribution (Max 10 points)
@@ -3536,10 +3609,13 @@ const SelfAppraisal = () => {
                   </TableBody>
                 </Table>
               </TableContainer>
+              </>
+              )}
             </CardContent>
           </Card>
 
           {/* 4. Administrative Responsibilities */}
+          {!(appraisal.status === "Completed" && (!administrationDetail?.roles || administrationDetail.roles.length === 0)) && (
           <Card sx={{ borderRadius: "20px", background: "var(--bg-panel)", border: "1px solid var(--border-color)", mb: 4, boxShadow: "var(--shadow-premium)" }}>
             <CardContent sx={{ p: 3.5 }}>
               <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3, flexWrap: "wrap", gap: 2 }}>
@@ -3693,6 +3769,7 @@ const SelfAppraisal = () => {
               </TableContainer>
             </CardContent>
           </Card>
+          )}
         </Grid>
 
         {/* Right Side Panel Removed - Scorecard is now rendered at the bottom */}

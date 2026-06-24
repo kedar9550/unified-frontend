@@ -13,7 +13,7 @@ import { useState, useMemo, useEffect } from "react";
 import { InputAdornment } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 
-export default function DataTable({ columns, rows, toolbarLeft, nonSortableColumns = [], defaultRowsPerPage = 10 }) {
+export default function DataTable({ columns, rows, toolbarLeft, nonSortableColumns = [], alignments = [], defaultRowsPerPage = 10 }) {
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(defaultRowsPerPage);
   const [search, setSearch] = useState("");
@@ -153,9 +153,9 @@ export default function DataTable({ columns, rows, toolbarLeft, nonSortableColum
                   <TableCell
                     key={index}
                     onClick={() => isSortable && handleSort(index)}
-                    align="center"
+                    align={alignments[index] || "center"}
                     sx={{
-                      textAlign: "center",
+                      textAlign: alignments[index] || "center",
                       cursor: isSortable ? "pointer" : "default",
                       "&:first-of-type": {
                         borderTopLeftRadius: "12px",
@@ -169,7 +169,7 @@ export default function DataTable({ columns, rows, toolbarLeft, nonSortableColum
                       },
                     }}
                   >
-                    <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 0.5 }}>
+                    <Box sx={{ display: "flex", alignItems: "center", justifyContent: alignments[index] === "left" || alignments[index] === "start" ? "flex-start" : "center", gap: 0.5 }}>
                       {col}
                       {isSortable && (
                         <Box
@@ -217,8 +217,9 @@ export default function DataTable({ columns, rows, toolbarLeft, nonSortableColum
                   {row.map((cell, j) => (
                     <TableCell
                       key={j}
-                      align="center"
+                      align={alignments[j] || "center"}
                       sx={{
+                        textAlign: alignments[j] || "center",
                         py: 2,
                         px: 3,
                         color: "var(--text-primary)",

@@ -35,6 +35,7 @@ import {
 import { RateReview, CheckCircle, Reply, Visibility, OpenInNew, School, Science, CardMembership, Work, Groups, Person, MenuBook, Badge, Description, Public, Fingerprint, Cancel, BarChart, Close, Search } from "@mui/icons-material";
 import axiosInstance from "../../api/axios";
 import { toast } from "sonner";
+import DataTable from "../../components/data/DataTable";
 
 const PARAMETERS = [
   { id: 1, text: "Commitment- Unwavering dedication to student growth and institutional progress, consistently completing all work with diligence." },
@@ -216,7 +217,7 @@ const AppraisalEvaluation = () => {
   const [selectedAppraisal, setSelectedAppraisal] = useState(null);
   const [loading, setLoading] = useState(false);
   const [appraisalConfig, setAppraisalConfig] = useState(null);
-  
+
   // Evaluation States
   const [ratings, setRatings] = useState({});
   const [comments, setComments] = useState("");
@@ -255,7 +256,7 @@ const AppraisalEvaluation = () => {
       if (res.data?.success) {
         const actionText = action === "Approve" ? "approved" : "rejected";
         toast.success(`Proctoring entries ${actionText} successfully.`);
-        
+
         // Update local selectedAppraisal state
         setSelectedAppraisal(prev => {
           const updatedDetail = Array.isArray(prev.proctoringDetail)
@@ -499,7 +500,7 @@ const AppraisalEvaluation = () => {
       rating: ratings[p.id] || 5
     }));
 
-    const finalComment = customComment || comments || "Appraisal sent back by HOD.";
+    const finalComment = customComment || comments || (action === "Approve" ? "Appraisal approved by HOD." : "Appraisal sent back by HOD.");
 
     setLoading(true);
     try {
@@ -519,23 +520,11 @@ const AppraisalEvaluation = () => {
       setLoading(false);
     }
   };
-    const filteredList = pendingList.filter(appr => {
-    // 1. Status Filter
-    const matchesStatus = (() => {
-      if (statusFilter === "Pending") return appr.status === "Submitted to HOD";
-      if (statusFilter === "Approved") return appr.status === "Pending Research Admin" || appr.status === "Completed";
-      if (statusFilter === "Rejected") return appr.status === "Rejected by HOD";
-      return true; // "All"
-    })();
-
-    // 2. Search Term Filter
-    const name = appr.facultyId?.name?.toLowerCase() || "";
-    const empId = appr.facultyId?.institutionId?.toLowerCase() || "";
-    const dept = appr.personalInfoSnapshot?.departmentName?.toLowerCase() || "";
-    const query = searchTerm.toLowerCase();
-    const matchesSearch = name.includes(query) || empId.includes(query) || dept.includes(query);
-
-    return matchesStatus && matchesSearch;
+  const filteredList = pendingList.filter(appr => {
+    if (statusFilter === "Pending") return appr.status === "Submitted to HOD";
+    if (statusFilter === "Approved") return appr.status === "Pending Research Admin" || appr.status === "Completed";
+    if (statusFilter === "Rejected") return appr.status === "Rejected by HOD";
+    return true; // "All"
   });
 
   // Live calculations for Section 3 & 4 points in HOD Appraisal Evaluation
@@ -549,138 +538,105 @@ const AppraisalEvaluation = () => {
 
   return (
     <Box p={4} sx={{ maxWidth: 1200, margin: "0 auto", animation: "fadeIn 0.5s ease" }}>
-      
+
       <Typography variant="h5" sx={{ fontWeight: 800, mb: 4, color: "var(--text-primary)" }}>
         HOD Appraisal Verification Desk
       </Typography>
 
       {!selectedAppraisal ? (
         <Box>
-          {/* Filters Block */}
-          <Box sx={{ display: "flex", gap: 3, mb: 4, flexWrap: "wrap", alignItems: "center", justifyContent: "space-between" }}>
-            <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
-              <FormControl size="small" sx={{ minWidth: 200 }}>
-                <Typography variant="caption" sx={{ fontWeight: 700, mb: 0.5, color: "var(--text-secondary)" }}>Status</Typography>
-                <Select
-                  value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value)}
-                  sx={{
-                    borderRadius: "10px",
-                    background: "var(--bg-paper)",
-                    "& .MuiOutlinedInput-notchedOutline": { borderColor: "var(--border-color)" }
-                  }}
-                >
-                  <MenuItem value="Pending">Pending Verification</MenuItem>
-                  <MenuItem value="Approved">Approved / Forwarded</MenuItem>
-                  <MenuItem value="Rejected">Rejected by HOD</MenuItem>
-                  <MenuItem value="All">All Requests</MenuItem>
-                </Select>
-              </FormControl>
-            </Box>
-
-            <Box sx={{ width: { xs: "100%", sm: 320 } }}>
-              <Typography variant="caption" sx={{ fontWeight: 700, mb: 0.5, color: "var(--text-secondary)", display: "block" }}>Search</Typography>
-              <TextField
-                size="small"
-                fullWidth
-                placeholder="Search by name, Emp ID..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                sx={{
-                  "& .MuiOutlinedInput-root": {
-                    borderRadius: "10px",
-                    background: "var(--bg-paper)",
-                    borderColor: "var(--border-color)"
-                  }
-                }}
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <Search sx={{ color: "var(--text-secondary)", fontSize: "1.2rem" }} />
-                    </InputAdornment>
-                  )
-                }}
-              />
-            </Box>
-          </Box>
-
-          <Card sx={{ borderRadius: "16px", background: "var(--bg-panel)", border: "1px solid var(--border-color)", boxShadow: "var(--shadow-premium)" }}>
-            <CardContent sx={{ p: 3 }}>
-              <Typography variant="subtitle1" sx={{ fontWeight: 800, mb: 3, color: "var(--text-primary)" }}>
+          <Card sx={{ borderRadius: "16px", background: "var(--bg-panel)", border: "1px solid var(--border-color)", boxShadow: "var(--shadow-premium)", p: 3 }}>
+            <Box sx={{ px: 0, pb: 2.5, borderBottom: "1px solid var(--border-color)", mb: 2 }}>
+              <Typography variant="subtitle1" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>
                 Faculty Appraisals List
               </Typography>
+            </Box>
 
-              <TableContainer component={Paper} sx={{ borderRadius: "12px", background: "var(--bg-paper)", border: "1px solid var(--border-color)", overflow: "hidden" }}>
-                <Table size="small">
-                  <TableHead sx={{ background: "linear-gradient(to right, #003366, #004E92)" }}>
-                    <TableRow>
-                      <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 1.5, width: "60px" }}>#</TableCell>
-                      <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 1.5 }}>FACULTY NAME</TableCell>
-                      <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 1.5, width: "130px" }}>EMPLOYEE ID</TableCell>
-                      <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 1.5 }}>DEPARTMENT</TableCell>
-                      <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 1.5, width: "150px" }}>ACADEMIC YEAR</TableCell>
-                      <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 1.5, width: "150px" }}>STATUS</TableCell>
-                      <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 1.5, width: "120px" }} align="center">ACTION</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {filteredList.length > 0 ? (
-                      filteredList.map((appr, idx) => {
-                        const displayStatus = appr.status === "Submitted to HOD" 
-                          ? "Pending" 
-                          : (appr.status === "Pending Research Admin" || appr.status === "Completed" ? "Approved" : "Rejected");
-                        const statusColor = getStatusColor(displayStatus === "Pending" ? "Pending at HOD" : displayStatus);
+            <DataTable
+              columns={["FACULTY NAME", "EMPLOYEE ID", "DEPARTMENT", "ACADEMIC YEAR", "STATUS", "ACTION"]}
+              rows={filteredList.map((appr) => {
+                const displayStatus = appr.status === "Submitted to HOD"
+                  ? "Pending"
+                  : (appr.status === "Pending Research Admin" || appr.status === "Completed" ? "Approved" : "Rejected");
+                const statusColor = getStatusColor(displayStatus === "Pending" ? "Pending at HOD" : displayStatus);
+                const name = appr.facultyId?.name || "N/A";
+                const empId = appr.facultyId?.institutionId || "N/A";
+                const dept = appr.personalInfoSnapshot?.departmentName || "N/A";
+                const year = appr.academicYearId?.year || "N/A";
 
-                        return (
-                          <TableRow key={appr._id} sx={{ "&:hover": { bgcolor: "rgba(0,0,0,0.015)" } }}>
-                            <TableCell sx={{ fontWeight: 600 }}>{idx + 1}</TableCell>
-                            <TableCell sx={{ fontWeight: 700, color: "var(--text-primary)" }}>{appr.facultyId?.name}</TableCell>
-                            <TableCell sx={{ fontWeight: 600 }}>{appr.facultyId?.institutionId}</TableCell>
-                            <TableCell>{appr.personalInfoSnapshot?.departmentName}</TableCell>
-                            <TableCell sx={{ fontWeight: 600 }}>{appr.academicYearId?.year}</TableCell>
-                            <TableCell>
-                              <Chip 
-                                label={displayStatus === "Pending" ? "Pending at HOD" : displayStatus} 
-                                size="small" 
-                                sx={{ 
-                                  bgcolor: statusColor.bg, 
-                                  color: statusColor.color, 
-                                  fontWeight: 800, 
-                                  borderRadius: "6px" 
-                                }} 
-                              />
-                            </TableCell>
-                            <TableCell align="center">
-                              <Button 
-                                variant={appr.status === "Submitted to HOD" ? "contained" : "outlined"}
-                                size="small" 
-                                startIcon={appr.status === "Submitted to HOD" ? <RateReview /> : <Visibility />}
-                                onClick={() => handleSelectAppraisal(appr)}
-                                color={appr.status === "Submitted to HOD" ? "primary" : "secondary"}
-                                sx={{ textTransform: "none", fontWeight: 700 }}
-                              >
-                                {appr.status === "Submitted to HOD" ? "Evaluate" : "View"}
-                              </Button>
-                            </TableCell>
-                          </TableRow>
-                        );
-                      })
+                return [
+                  { value: name, display: <Typography sx={{ fontWeight: 700, color: "var(--text-primary)", fontSize: "0.88rem" }}>{name}</Typography> },
+                  { value: empId, display: <Typography sx={{ fontWeight: 600 }}>{empId}</Typography> },
+                  { value: dept, display: dept },
+                  { value: year, display: <Typography sx={{ fontWeight: 600 }}>{year}</Typography> },
+                  {
+                    value: displayStatus,
+                    display: (
+                      <Chip
+                        label={displayStatus === "Pending" ? "Pending at HOD" : displayStatus}
+                        size="small"
+                        sx={{
+                          bgcolor: statusColor.bg,
+                          color: statusColor.color,
+                          fontWeight: 800,
+                          borderRadius: "6px"
+                        }}
+                      />
+                    )
+                  },
+                  {
+                    value: "",
+                    display: appr.status === "Submitted to HOD" ? (
+                      <Button
+                        variant="contained"
+                        size="small"
+                        startIcon={<RateReview />}
+                        onClick={() => handleSelectAppraisal(appr)}
+                        color="primary"
+                        sx={{ textTransform: "none", fontWeight: 700 }}
+                      >
+                        Evaluate
+                      </Button>
                     ) : (
-                      <TableRow>
-                        <TableCell colSpan={7} align="center" sx={{ py: 4, color: "var(--text-secondary)" }}>
-                          No appraisals found matching the filters.
-                        </TableCell>
-                      </TableRow>
-                    )}
-                </TableBody>
-              </Table>
-            </TableContainer>
-          </CardContent>
-        </Card>
-      </Box>
+                      <IconButton
+                        onClick={() => handleSelectAppraisal(appr)}
+                        color="secondary"
+                        size="small"
+                        title="View"
+                      >
+                        <Visibility fontSize="small" />
+                      </IconButton>
+                    )
+                  }
+                ];
+              })}
+              alignments={["left", "center", "left", "center", "center", "center"]}
+              nonSortableColumns={[5]}
+              toolbarLeft={(
+                <FormControl size="small" sx={{ minWidth: 200 }}>
+                  <Typography variant="caption" sx={{ fontWeight: 700, mb: 0.5, color: "var(--text-secondary)" }}>Status</Typography>
+                  <Select
+                    value={statusFilter}
+                    onChange={(e) => setStatusFilter(e.target.value)}
+                    sx={{
+                      borderRadius: "10px",
+                      background: "var(--bg-paper)",
+                      "& .MuiOutlinedInput-notchedOutline": { borderColor: "var(--border-color)" }
+                    }}
+                  >
+                    <MenuItem value="Pending">Pending Verification</MenuItem>
+                    <MenuItem value="Approved">Approved / Forwarded</MenuItem>
+                    <MenuItem value="Rejected">Rejected by HOD</MenuItem>
+                    <MenuItem value="All">All Requests</MenuItem>
+                  </Select>
+                </FormControl>
+              )}
+            />
+          </Card>
+        </Box>
       ) : (
         <Grid container spacing={4}>
-          
+
           {/* Left Column: Full Appraisal Preview (xs={12} lg={7.5}) */}
           <Grid xs={12} lg={7.5}>
             {/* PART-A: Personal Information */}
@@ -774,6 +730,8 @@ const AppraisalEvaluation = () => {
                 <Divider sx={{ mb: 2.5 }} />
 
                 {/* 1.1 Theory Pass Percentage Table */}
+                {!(selectedAppraisal.status === "Completed" && (!selectedAppraisal.teaching?.passPercentage?.courses || selectedAppraisal.teaching.passPercentage.courses.length === 0)) && (
+                <>
                 <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 1, color: "var(--color-primary)", display: "block" }}>
                   1.1 Course Average Pass Percentage (Theory only)
                 </Typography>
@@ -811,7 +769,7 @@ const AppraisalEvaluation = () => {
                             <TableCell align="center" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>{selectedAppraisal.teaching.passPercentage.courses.reduce((sum, c) => sum + (Number(c.appeared) || 0), 0)}</TableCell>
                             <TableCell align="center" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>{selectedAppraisal.teaching.passPercentage.courses.reduce((sum, c) => sum + (Number(c.passed) || 0), 0)}</TableCell>
                             <TableCell align="center" sx={{ fontWeight: 900, color: "var(--color-primary)" }}>
-                              {(selectedAppraisal.teaching.passPercentage.courses.reduce((sum, c) => sum + (Number(c.appeared) || 0), 0) > 0 
+                              {(selectedAppraisal.teaching.passPercentage.courses.reduce((sum, c) => sum + (Number(c.appeared) || 0), 0) > 0
                                 ? ((selectedAppraisal.teaching.passPercentage.courses.reduce((sum, c) => sum + (Number(c.passed) || 0), 0) / selectedAppraisal.teaching.passPercentage.courses.reduce((sum, c) => sum + (Number(c.appeared) || 0), 0)) * 100).toFixed(2)
                                 : "0.00")}%
                             </TableCell>
@@ -826,117 +784,125 @@ const AppraisalEvaluation = () => {
                     </TableBody>
                   </Table>
                 </TableContainer>
+                </>
+                )}
 
                 {/* 1.2 Proctoring Students' average Pass percentage */}
-                 <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 1, color: "var(--color-primary)", display: "block" }}>
-                   1.2 Proctoring Students' Average Pass Percentage
-                 </Typography>
-                 <TableContainer component={Paper} sx={{ mb: 2, borderRadius: "12px", background: "var(--bg-paper)", border: "1px solid var(--border-color)", overflowX: "auto", maxWidth: { xs: "100%", md: "100%", lg: 1000, xl: 1100 }, mx: "auto" }}>
-                   <Table size="small" sx={{ minWidth: 650, mx: "auto" }}>
-                     <TableHead sx={{ background: "var(--gradient-primary)" }}>
-                       <TableRow>
-                         <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 1 }}>Program</TableCell>
-                         <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 1 }}>Sem/Yr - Branch - Sec</TableCell>
-                         <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 1 }} align="right">Total Allotted</TableCell>
-                         <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 1 }} align="right">Eligible (A)</TableCell>
-                         <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 1 }} align="right">Passed (B)</TableCell>
-                         <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 1 }} align="right">Pass % (B/A)</TableCell>
-                         <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 1 }} align="right">Points claimed</TableCell>
-                       </TableRow>
-                     </TableHead>
-                     <TableBody>
-                       {selectedAppraisal.teaching?.proctoring?.entries?.length > 0 ? (
-                         <>
-                           {selectedAppraisal.teaching.proctoring.entries.map((e, i) => {
-                             const isYearProg = e.yearNumber !== null && e.yearNumber !== undefined && e.yearNumber !== 0;
-                             const semYrBranchSec = isYearProg
-                               ? `YEAR-${e.yearNumber} ${e.branchCode || "—"} - SEC ${e.section}`
-                               : `SEM-${e.semesterNumber} ${e.branchCode || "—"} - SEC ${e.section}`;
-                             return (
-                               <TableRow key={i}>
-                                 <TableCell sx={{ fontWeight: 600, color: "var(--text-primary)" }}>{e.programCode || "—"}</TableCell>
-                                 <TableCell sx={{ color: "var(--text-primary)" }}>{semYrBranchSec}</TableCell>
-                                 <TableCell align="right" sx={{ color: "var(--text-primary)" }}>{e.totalStudents}</TableCell>
-                                 <TableCell align="right" sx={{ color: "#8B5CF6", fontWeight: 600 }}>{e.appeared}</TableCell>
-                                 <TableCell align="right" sx={{ color: "#10B981", fontWeight: 600 }}>{e.passed}</TableCell>
-                                 <TableCell align="right" sx={{ color: "var(--text-primary)" }}>{Number(e.percentage || 0).toFixed(2)}%</TableCell>
-                                 <TableCell align="right" sx={{ fontWeight: 800, color: "var(--color-primary)" }}>{e.pointsClaimed}</TableCell>
-                               </TableRow>
-                             );
-                           })}
-                           <TableRow sx={{ background: "rgba(0, 78, 146, 0.04)" }}>
-                             <TableCell colSpan={2} sx={{ fontWeight: 800, color: "var(--text-primary)", pl: 2 }}>
-                               <Box component="span" sx={{ display: "inline-block", whiteSpace: "nowrap" }}>
-                                 Overall Performance (Average Points)
-                               </Box>
-                             </TableCell>
-                             <TableCell align="right" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>
-                               {selectedAppraisal.teaching.proctoring.entries.reduce((sum, e) => sum + (Number(e.totalStudents) || 0), 0)}
-                             </TableCell>
-                             <TableCell align="right" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>
-                               {selectedAppraisal.teaching.proctoring.entries.reduce((sum, e) => sum + (Number(e.appeared) || 0), 0)}
-                             </TableCell>
-                             <TableCell align="right" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>
-                               {selectedAppraisal.teaching.proctoring.entries.reduce((sum, e) => sum + (Number(e.passed) || 0), 0)}
-                             </TableCell>
-                             <TableCell align="right" sx={{ fontWeight: 900, color: "var(--color-primary)" }}>
-                               {(() => {
-                                 const totalAppeared = selectedAppraisal.teaching.proctoring.entries.reduce((sum, e) => sum + (Number(e.appeared) || 0), 0);
-                                 const totalPassed = selectedAppraisal.teaching.proctoring.entries.reduce((sum, e) => sum + (Number(e.passed) || 0), 0);
-                                 return totalAppeared > 0 ? ((totalPassed / totalAppeared) * 100).toFixed(2) : "0.00";
-                               })()}%
-                             </TableCell>
-                             <TableCell align="right" sx={{ fontWeight: 900, color: "var(--color-primary)" }}>
-                               {selectedAppraisal.teaching.proctoring.averagePoints}
-                             </TableCell>
-                           </TableRow>
-                         </>
-                       ) : (
-                         <TableRow>
-                           <TableCell colSpan={7} align="center" sx={{ py: 2, color: "var(--text-secondary)", fontStyle: "italic" }}>No proctoring entries found.</TableCell>
-                         </TableRow>
-                       )}
-                     </TableBody>
-                   </Table>
-                 </TableContainer>
+                {!(selectedAppraisal.status === "Completed" && (!selectedAppraisal.teaching?.proctoring?.entries || selectedAppraisal.teaching.proctoring.entries.length === 0)) && (
+                <>
+                <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 1, color: "var(--color-primary)", display: "block" }}>
+                  1.2 Proctoring Students' Average Pass Percentage
+                </Typography>
+                <TableContainer component={Paper} sx={{ mb: 2, borderRadius: "12px", background: "var(--bg-paper)", border: "1px solid var(--border-color)", overflowX: "auto", maxWidth: { xs: "100%", md: "100%", lg: 1000, xl: 1100 }, mx: "auto" }}>
+                  <Table size="small" sx={{ minWidth: 650, mx: "auto" }}>
+                    <TableHead sx={{ background: "var(--gradient-primary)" }}>
+                      <TableRow>
+                        <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 1 }}>Program</TableCell>
+                        <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 1 }}>Sem/Yr - Branch - Sec</TableCell>
+                        <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 1 }} align="right">Total Allotted</TableCell>
+                        <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 1 }} align="right">Eligible (A)</TableCell>
+                        <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 1 }} align="right">Passed (B)</TableCell>
+                        <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 1 }} align="right">Pass % (B/A)</TableCell>
+                        <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 1 }} align="right">Points claimed</TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {selectedAppraisal.teaching?.proctoring?.entries?.length > 0 ? (
+                        <>
+                          {selectedAppraisal.teaching.proctoring.entries.map((e, i) => {
+                            const isYearProg = e.yearNumber !== null && e.yearNumber !== undefined && e.yearNumber !== 0;
+                            const semYrBranchSec = isYearProg
+                              ? `YEAR-${e.yearNumber} ${e.branchCode || "—"} - SEC ${e.section}`
+                              : `SEM-${e.semesterNumber} ${e.branchCode || "—"} - SEC ${e.section}`;
+                            return (
+                              <TableRow key={i}>
+                                <TableCell sx={{ fontWeight: 600, color: "var(--text-primary)" }}>{e.programCode || "—"}</TableCell>
+                                <TableCell sx={{ color: "var(--text-primary)" }}>{semYrBranchSec}</TableCell>
+                                <TableCell align="right" sx={{ color: "var(--text-primary)" }}>{e.totalStudents}</TableCell>
+                                <TableCell align="right" sx={{ color: "#8B5CF6", fontWeight: 600 }}>{e.appeared}</TableCell>
+                                <TableCell align="right" sx={{ color: "#10B981", fontWeight: 600 }}>{e.passed}</TableCell>
+                                <TableCell align="right" sx={{ color: "var(--text-primary)" }}>{Number(e.percentage || 0).toFixed(2)}%</TableCell>
+                                <TableCell align="right" sx={{ fontWeight: 800, color: "var(--color-primary)" }}>{e.pointsClaimed}</TableCell>
+                              </TableRow>
+                            );
+                          })}
+                          <TableRow sx={{ background: "rgba(0, 78, 146, 0.04)" }}>
+                            <TableCell colSpan={2} sx={{ fontWeight: 800, color: "var(--text-primary)", pl: 2 }}>
+                              <Box component="span" sx={{ display: "inline-block", whiteSpace: "nowrap" }}>
+                                Overall Performance (Average Points)
+                              </Box>
+                            </TableCell>
+                            <TableCell align="right" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>
+                              {selectedAppraisal.teaching.proctoring.entries.reduce((sum, e) => sum + (Number(e.totalStudents) || 0), 0)}
+                            </TableCell>
+                            <TableCell align="right" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>
+                              {selectedAppraisal.teaching.proctoring.entries.reduce((sum, e) => sum + (Number(e.appeared) || 0), 0)}
+                            </TableCell>
+                            <TableCell align="right" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>
+                              {selectedAppraisal.teaching.proctoring.entries.reduce((sum, e) => sum + (Number(e.passed) || 0), 0)}
+                            </TableCell>
+                            <TableCell align="right" sx={{ fontWeight: 900, color: "var(--color-primary)" }}>
+                              {(() => {
+                                const totalAppeared = selectedAppraisal.teaching.proctoring.entries.reduce((sum, e) => sum + (Number(e.appeared) || 0), 0);
+                                const totalPassed = selectedAppraisal.teaching.proctoring.entries.reduce((sum, e) => sum + (Number(e.passed) || 0), 0);
+                                return totalAppeared > 0 ? ((totalPassed / totalAppeared) * 100).toFixed(2) : "0.00";
+                              })()}%
+                            </TableCell>
+                            <TableCell align="right" sx={{ fontWeight: 900, color: "var(--color-primary)" }}>
+                              {selectedAppraisal.teaching.proctoring.averagePoints}
+                            </TableCell>
+                          </TableRow>
+                        </>
+                      ) : (
+                        <TableRow>
+                          <TableCell colSpan={7} align="center" sx={{ py: 2, color: "var(--text-secondary)", fontStyle: "italic" }}>No proctoring entries found.</TableCell>
+                        </TableRow>
+                      )}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
 
-                    {/* Inline HOD Actions for Proctoring */}
-                    {(() => {
-                      const pendingProcEntries = Array.isArray(selectedAppraisal.proctoringDetail)
-                        ? selectedAppraisal.proctoringDetail.filter(e => e.status === "Pending" || e.status === "Pending at HOD")
-                        : (selectedAppraisal.proctoringDetail?.status === "Pending" || selectedAppraisal.proctoringDetail?.status === "Pending at HOD" ? [selectedAppraisal.proctoringDetail] : []);
+                {/* Inline HOD Actions for Proctoring */}
+                {(() => {
+                  const pendingProcEntries = Array.isArray(selectedAppraisal.proctoringDetail)
+                    ? selectedAppraisal.proctoringDetail.filter(e => e.status === "Pending" || e.status === "Pending at HOD")
+                    : (selectedAppraisal.proctoringDetail?.status === "Pending" || selectedAppraisal.proctoringDetail?.status === "Pending at HOD" ? [selectedAppraisal.proctoringDetail] : []);
 
-                      if (pendingProcEntries.length === 0) {
-                        return null;
-                      }
+                  if (pendingProcEntries.length === 0) {
+                    return null;
+                  }
 
-                      return (
-                        <Box sx={{ p: 2, mb: 3, borderRadius: "10px", background: "var(--bg-paper)", border: "1px solid var(--border-color)" }}>
-                          <Box display="flex" justifyContent="space-between" alignItems="center" mb={1.5}>
-                            <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)" }}>
-                              Proctoring HOD Action Required (Bulk):
-                            </Typography>
-                            <Chip label="Pending Review" size="small" sx={{ bgcolor: "rgba(232, 160, 0, 0.1)", color: "#e8a000", fontWeight: 800, borderRadius: "6px" }} />
-                          </Box>
-                          <Box>
-                            <TextField
-                              size="small"
-                              fullWidth
-                              placeholder="Provide rejection reason or approval remarks for all pending proctoring entries..."
-                              value={proctoringRemarks}
-                              onChange={(e) => setProctoringRemarks(e.target.value)}
-                              sx={{ mb: 1.5 }}
-                            />
-                            <Stack direction="row" spacing={2} justifyContent="flex-end">
-                              <Button size="small" variant="outlined" color="error" onClick={() => handleProctoringHODBulkAction("Reject", proctoringRemarks)}>Reject All</Button>
-                              <Button size="small" variant="contained" color="success" sx={{ color: "#fff" }} onClick={() => handleProctoringHODBulkAction("Approve", proctoringRemarks)}>Approve All</Button>
-                            </Stack>
-                          </Box>
-                        </Box>
-                      );
-                    })()}
+                  return (
+                    <Box sx={{ p: 2, mb: 3, borderRadius: "10px", background: "var(--bg-paper)", border: "1px solid var(--border-color)" }}>
+                      <Box display="flex" justifyContent="space-between" alignItems="center" mb={1.5}>
+                        <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)" }}>
+                          Proctoring HOD Action Required (Bulk):
+                        </Typography>
+                        <Chip label="Pending Review" size="small" sx={{ bgcolor: "rgba(232, 160, 0, 0.1)", color: "#e8a000", fontWeight: 800, borderRadius: "6px" }} />
+                      </Box>
+                      <Box>
+                        <TextField
+                          size="small"
+                          fullWidth
+                          placeholder="Provide rejection reason or approval remarks for all pending proctoring entries..."
+                          value={proctoringRemarks}
+                          onChange={(e) => setProctoringRemarks(e.target.value)}
+                          sx={{ mb: 1.5 }}
+                        />
+                        <Stack direction="row" spacing={2} justifyContent="flex-end">
+                          <Button size="small" variant="outlined" color="error" onClick={() => handleProctoringHODBulkAction("Reject", proctoringRemarks)}>Reject All</Button>
+                          <Button size="small" variant="contained" color="success" sx={{ color: "#fff" }} onClick={() => handleProctoringHODBulkAction("Approve", proctoringRemarks)}>Approve All</Button>
+                        </Stack>
+                      </Box>
+                    </Box>
+                  );
+                })()}
+                </>
+                )}
 
                 {/* 1.3 Subject Feedback Table */}
+                {!(selectedAppraisal.status === "Completed" && (!selectedAppraisal.teaching?.feedback?.courses || selectedAppraisal.teaching.feedback.courses.length === 0)) && (
+                <>
                 <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 1, color: "var(--color-primary)", display: "block" }}>
                   1.3 Course Student Feedback Points
                 </Typography>
@@ -986,8 +952,12 @@ const AppraisalEvaluation = () => {
                     </TableBody>
                   </Table>
                 </TableContainer>
+                </>
+                )}
 
                 {/* 1.4 Theory Courses CO Attainment Table */}
+                {!(selectedAppraisal.status === "Completed" && (!selectedAppraisal.teaching?.coAttainment?.courses || selectedAppraisal.teaching.coAttainment.courses.length === 0)) && (
+                <>
                 <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 1, color: "var(--color-primary)", display: "block" }}>
                   1.4 Course CO Attainment Points
                 </Typography>
@@ -1033,6 +1003,8 @@ const AppraisalEvaluation = () => {
                     </TableBody>
                   </Table>
                 </TableContainer>
+                </>
+                )}
               </CardContent>
             </Card>
 
@@ -1092,6 +1064,8 @@ const AppraisalEvaluation = () => {
                 <Divider sx={{ mb: 2.5 }} />
 
                 {/* 2.1 Journals/Conferences */}
+                {!(selectedAppraisal.status === "Completed" && (!selectedAppraisal.research?.papers?.items || selectedAppraisal.research.papers.items.length === 0)) && (
+                <>
                 <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 1, color: "var(--color-primary)", display: "block" }}>
                   2.1 Journal / Conference Publications
                 </Typography>
@@ -1135,6 +1109,8 @@ const AppraisalEvaluation = () => {
                     </TableBody>
                   </Table>
                 </TableContainer>
+                </>
+                )}
 
                 {/* 2.2 PhD Guiding */}
                 {selectedAppraisal.research?.phdGuiding?.items?.length > 0 && (
@@ -1348,113 +1324,141 @@ const AppraisalEvaluation = () => {
                 )}
 
                 {/* 2.7 & 2.8 — Scopus API Verified Metrics */}
-                <Box sx={{ mt: 3 }}>
-                  <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 2, color: "var(--color-primary)", display: "flex", alignItems: "center", gap: 1 }}>
-                    <Description fontSize="small" /> 2.7 &amp; 2.8 — Scopus Verified Metrics (R&amp;D Admin)
-                  </Typography>
+                {(() => {
+                  const startYear = selectedAppraisal?.academicYearId?.year ? Number(selectedAppraisal.academicYearId.year.split('-')[0]) : 2025;
+                  const citationYear = startYear;
+                  const previousHIndexYear = startYear - 1;
+                  const currentHIndexYear = startYear;
 
-                  {/* 2.7 Citation score */}
-                  {(() => {
-                    const startYear = selectedAppraisal?.academicYearId?.year ? Number(selectedAppraisal.academicYearId.year.split('-')[0]) : 2025;
-                    const citationYear = startYear;
-                    const status = selectedAppraisal.research?.scopusCitationStatus || "Pending";
-                    const remarks = selectedAppraisal.research?.scopusCitationRemarks || "";
-                    const citations = selectedAppraisal.research?.scopusCitations;
-                    const score = selectedAppraisal.research?.scopusCitationScore || 0;
+                  const getStatusChip = (status) => {
                     const chipColor = status === "Approved" ? { bg: "rgba(16,185,129,0.1)", color: "#10b981" } : status === "Rejected" ? { bg: "rgba(239,68,68,0.1)", color: "#ef4444" } : { bg: "rgba(232,160,0,0.1)", color: "#e8a000" };
                     return (
-                      <Box sx={{ p: 2, mb: 2, borderRadius: "10px", border: "1px solid var(--border-color)", bgcolor: "var(--bg-paper)" }}>
-                        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 1 }}>
-                          <Box>
-                            <Typography variant="caption" sx={{ fontWeight: 700, color: "var(--text-secondary)", fontSize: "0.7rem", textTransform: "uppercase", letterSpacing: "0.5px" }}>
-                              2.7 Citation Score in {citationYear}
-                            </Typography>
-                            <Typography variant="body1" sx={{ fontWeight: 800, color: "var(--text-primary)", mt: 0.3 }}>
-                              {citations !== null && citations !== undefined ? `${citations} Citations` : "Not fetched yet"}
-                            </Typography>
-                            <Typography variant="caption" sx={{ color: "#7c3aed", fontWeight: 700 }}>
-                              Score: {status === "Approved" ? score : 0} pts
-                            </Typography>
-                          </Box>
-                          <Chip
-                            label={status === "Pending" ? "Pending Verification" : status}
-                            size="small"
-                            sx={{ bgcolor: chipColor.bg, color: chipColor.color, fontWeight: 800, borderRadius: "6px" }}
-                          />
-                        </Box>
-                        {remarks && (
-                          <Box sx={{ mt: 1.5, p: 1, bgcolor: "rgba(239,68,68,0.04)", borderRadius: "6px", border: "1px solid rgba(239,68,68,0.1)" }}>
-                            <Typography variant="caption" sx={{ fontWeight: 700, color: "#ef4444", fontSize: "0.72rem" }}>
-                              R&amp;D Remarks: {remarks}
-                            </Typography>
-                          </Box>
-                        )}
-                      </Box>
+                      <Chip
+                        label={status === "Pending" ? "Pending Verification" : status}
+                        size="small"
+                        sx={{ bgcolor: chipColor.bg, color: chipColor.color, fontWeight: 800, borderRadius: "6px" }}
+                      />
                     );
-                  })()}
+                  };
 
-                  {/* 2.8 H-Index */}
-                  {(() => {
-                    const startYear = selectedAppraisal?.academicYearId?.year ? Number(selectedAppraisal.academicYearId.year.split('-')[0]) : 2025;
-                    const prevYear = startYear - 1;
-                    const currentYear = startYear;
-                    const status = selectedAppraisal.research?.scopusHIndexStatus || "Pending";
-                    const remarks = selectedAppraisal.research?.scopusHIndexRemarks || "";
-                    const hPrev = selectedAppraisal.research?.hIndexPrevYear;
-                    const hCurr = selectedAppraisal.research?.hIndexCurrentYear;
-                    const score = selectedAppraisal.research?.scopusHIndexScore || 0;
-                    const chipColor = status === "Approved" ? { bg: "rgba(16,185,129,0.1)", color: "#10b981" } : status === "Rejected" ? { bg: "rgba(239,68,68,0.1)", color: "#ef4444" } : { bg: "rgba(232,160,0,0.1)", color: "#e8a000" };
-                    const raise = (hPrev !== null && hPrev !== undefined && hCurr !== null && hCurr !== undefined) ? (hCurr - hPrev) : null;
-                    return (
-                      <Box sx={{ p: 2, borderRadius: "10px", border: "1px solid var(--border-color)", bgcolor: "var(--bg-paper)" }}>
-                        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 1 }}>
-                          <Box>
-                            <Typography variant="caption" sx={{ fontWeight: 700, color: "var(--text-secondary)", fontSize: "0.7rem", textTransform: "uppercase", letterSpacing: "0.5px" }}>
-                              2.8 H-Index in {prevYear} &amp; {currentYear}
-                            </Typography>
-                            <Box sx={{ display: "flex", gap: 3, mt: 0.5 }}>
-                              <Box>
-                                <Typography variant="caption" sx={{ color: "var(--text-secondary)", fontWeight: 600, fontSize: "0.68rem" }}>{prevYear}</Typography>
-                                <Typography variant="body1" sx={{ fontWeight: 800, color: "var(--text-primary)", lineHeight: 1.2 }}>
-                                  {hPrev !== null && hPrev !== undefined ? hPrev : "—"}
-                                </Typography>
-                              </Box>
-                              <Box>
-                                <Typography variant="caption" sx={{ color: "var(--text-secondary)", fontWeight: 600, fontSize: "0.68rem" }}>{currentYear}</Typography>
-                                <Typography variant="body1" sx={{ fontWeight: 800, color: "var(--text-primary)", lineHeight: 1.2 }}>
-                                  {hCurr !== null && hCurr !== undefined ? hCurr : "—"}
-                                </Typography>
-                              </Box>
-                              {raise !== null && (
-                                <Box>
-                                  <Typography variant="caption" sx={{ color: "var(--text-secondary)", fontWeight: 600, fontSize: "0.68rem" }}>Raise</Typography>
-                                  <Typography variant="body1" sx={{ fontWeight: 800, color: raise > 0 ? "#10b981" : "var(--text-secondary)", lineHeight: 1.2 }}>
-                                    {raise > 0 ? `+${raise}` : raise}
-                                  </Typography>
+                  return (
+                    <Box sx={{ mt: 4 }}>
+                      <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 1.5, color: "var(--color-primary)", display: "flex", alignItems: "center", gap: 1 }}>
+                        <Description fontSize="small" /> 2.7 Scopus Citations
+                      </Typography>
+                      
+                      <TableContainer component={Paper} elevation={0} sx={{ mb: 4, borderRadius: "16px", background: "var(--bg-paper)", border: "1px solid var(--border-color)", overflowX: "auto", boxShadow: "none", maxWidth: { xs: "100%", md: "100%", lg: 1000, xl: 1100 }, mx: "auto" }}>
+                        <Table size="small" sx={{ minWidth: 800, mx: "auto" }}>
+                          <TableHead sx={{ background: "var(--gradient-primary)" }}>
+                            <TableRow>
+                              <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2, width: "80px", whiteSpace: "nowrap" }} align="center">S. No</TableCell>
+                              <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }}>Metric Details</TableCell>
+                              <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }}>Citations ({citationYear})</TableCell>
+                              <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }}>Verification Status</TableCell>
+                              <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }} align="center">Evaluated Points</TableCell>
+                            </TableRow>
+                          </TableHead>
+                          <TableBody>
+                            <TableRow sx={{ "&:hover": { bgcolor: "var(--bg-hover)" } }}>
+                              <TableCell align="center" sx={{ color: "var(--text-primary)" }}>1</TableCell>
+                              <TableCell sx={{ fontWeight: 600, color: "var(--text-primary)" }}>Scopus Citations</TableCell>
+                              <TableCell sx={{ color: "var(--text-primary)", fontWeight: 700 }}>{selectedAppraisal.research?.scopusCitations != null ? selectedAppraisal.research.scopusCitations : "—"}</TableCell>
+                              <TableCell sx={{ color: "var(--text-primary)" }}>
+                                {selectedAppraisal.research?.scopusCitationStatus ? (
+                                  <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5, alignItems: "flex-start" }}>
+                                    {getStatusChip(selectedAppraisal.research.scopusCitationStatus)}
+                                    {selectedAppraisal.research.scopusCitationStatus === "Rejected" && selectedAppraisal.research.scopusCitationRemarks && (
+                                      <Typography variant="caption" sx={{ color: "#ef4444", fontWeight: 600 }}>Reason: {selectedAppraisal.research.scopusCitationRemarks}</Typography>
+                                    )}
+                                  </Box>
+                                ) : "Pending"}
+                              </TableCell>
+                              <TableCell align="center" sx={{ fontWeight: 800, color: "var(--color-primary)" }}>{selectedAppraisal.research?.scopusCitationScore || 0}</TableCell>
+                            </TableRow>
+
+                            <TableRow sx={{ background: "rgba(0, 78, 146, 0.04)", "&:hover": { bgcolor: "rgba(0, 78, 146, 0.06) !important" } }}>
+                              <TableCell colSpan={4} sx={{ fontWeight: 800, color: "var(--text-primary)", pl: 2 }}>
+                                <Box component="span" sx={{ position: "sticky", left: 16, display: "inline-block", whiteSpace: "nowrap" }}>
+                                  Total Evaluated Points
                                 </Box>
-                              )}
-                            </Box>
-                            <Typography variant="caption" sx={{ color: "#7c3aed", fontWeight: 700 }}>
-                              Score: {status === "Approved" ? score : 0} pts
-                            </Typography>
-                          </Box>
-                          <Chip
-                            label={status === "Pending" ? "Pending Verification" : status}
-                            size="small"
-                            sx={{ bgcolor: chipColor.bg, color: chipColor.color, fontWeight: 800, borderRadius: "6px" }}
-                          />
-                        </Box>
-                        {remarks && (
-                          <Box sx={{ mt: 1.5, p: 1, bgcolor: "rgba(239,68,68,0.04)", borderRadius: "6px", border: "1px solid rgba(239,68,68,0.1)" }}>
-                            <Typography variant="caption" sx={{ fontWeight: 700, color: "#ef4444", fontSize: "0.72rem" }}>
-                              R&amp;D Remarks: {remarks}
-                            </Typography>
-                          </Box>
-                        )}
-                      </Box>
-                    );
-                  })()}
-                </Box>
+                              </TableCell>
+                              <TableCell align="center" sx={{ fontWeight: 900, color: "var(--color-primary)", fontSize: "0.95rem" }}>
+                                {selectedAppraisal.research?.scopusCitationScore || 0}
+                              </TableCell>
+                            </TableRow>
+                          </TableBody>
+                        </Table>
+                      </TableContainer>
+
+                      <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 1.5, mt: 4, color: "var(--color-primary)", display: "flex", alignItems: "center", gap: 1 }}>
+                        <Description fontSize="small" /> 2.8 Scopus h-index
+                      </Typography>
+
+                      <TableContainer component={Paper} elevation={0} sx={{ mb: 4, borderRadius: "16px", background: "var(--bg-paper)", border: "1px solid var(--border-color)", overflowX: "auto", boxShadow: "none", maxWidth: { xs: "100%", md: "100%", lg: 1000, xl: 1100 }, mx: "auto" }}>
+                        <Table size="small" sx={{ minWidth: 800, mx: "auto" }}>
+                          <TableHead sx={{ background: "var(--gradient-primary)" }}>
+                            <TableRow>
+                              <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2, width: "80px", whiteSpace: "nowrap" }} align="center">S. No</TableCell>
+                              <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }}>Metric Details</TableCell>
+                              <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }}>h-index in {previousHIndexYear}</TableCell>
+                              <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }}>h-index in {currentHIndexYear}</TableCell>
+                              <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }}>Raise (Diff)</TableCell>
+                              <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }}>Verification Status</TableCell>
+                              <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }} align="center">Evaluated Points</TableCell>
+                            </TableRow>
+                          </TableHead>
+                          <TableBody>
+                            <TableRow sx={{ "&:hover": { bgcolor: "var(--bg-hover)" } }}>
+                              <TableCell align="center" sx={{ color: "var(--text-primary)" }}>1</TableCell>
+                              <TableCell sx={{ fontWeight: 600, color: "var(--text-primary)" }}>Scopus h-index</TableCell>
+                              <TableCell sx={{ color: "var(--text-primary)", fontWeight: 700 }}>
+                                {selectedAppraisal.research?.hIndexPrevYear != null ? selectedAppraisal.research.hIndexPrevYear : "—"}
+                              </TableCell>
+                              <TableCell sx={{ color: "var(--text-primary)", fontWeight: 700 }}>
+                                {selectedAppraisal.research?.hIndexCurrentYear != null ? selectedAppraisal.research.hIndexCurrentYear : "—"}
+                              </TableCell>
+                              <TableCell sx={{ color: "var(--text-primary)", fontWeight: 700 }}>
+                                {selectedAppraisal.research?.hIndexPrevYear != null && selectedAppraisal.research?.hIndexCurrentYear != null ? (
+                                  <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                                    {selectedAppraisal.research.hIndexCurrentYear - selectedAppraisal.research.hIndexPrevYear > 0 ? (
+                                      <Typography component="span" variant="caption" sx={{ color: "#10b981", fontWeight: 800, bgcolor: "rgba(16,185,129,0.1)", px: 1, py: 0.2, borderRadius: "4px" }}>
+                                        +{selectedAppraisal.research.hIndexCurrentYear - selectedAppraisal.research.hIndexPrevYear}
+                                      </Typography>
+                                    ) : (
+                                      selectedAppraisal.research.hIndexCurrentYear - selectedAppraisal.research.hIndexPrevYear
+                                    )}
+                                  </Box>
+                                ) : "—"}
+                              </TableCell>
+                              <TableCell sx={{ color: "var(--text-primary)" }}>
+                                {selectedAppraisal.research?.scopusHIndexStatus ? (
+                                  <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5, alignItems: "flex-start" }}>
+                                    {getStatusChip(selectedAppraisal.research.scopusHIndexStatus)}
+                                    {selectedAppraisal.research.scopusHIndexStatus === "Rejected" && selectedAppraisal.research.scopusHIndexRemarks && (
+                                      <Typography variant="caption" sx={{ color: "#ef4444", fontWeight: 600 }}>Reason: {selectedAppraisal.research.scopusHIndexRemarks}</Typography>
+                                    )}
+                                  </Box>
+                                ) : "Pending"}
+                              </TableCell>
+                              <TableCell align="center" sx={{ fontWeight: 800, color: "var(--color-primary)" }}>{selectedAppraisal.research?.scopusHIndexScore || 0}</TableCell>
+                            </TableRow>
+
+                            <TableRow sx={{ background: "rgba(0, 78, 146, 0.04)", "&:hover": { bgcolor: "rgba(0, 78, 146, 0.06) !important" } }}>
+                              <TableCell colSpan={6} sx={{ fontWeight: 800, color: "var(--text-primary)", pl: 2 }}>
+                                <Box component="span" sx={{ position: "sticky", left: 16, display: "inline-block", whiteSpace: "nowrap" }}>
+                                  Total Evaluated Points
+                                </Box>
+                              </TableCell>
+                              <TableCell align="center" sx={{ fontWeight: 900, color: "var(--color-primary)", fontSize: "0.95rem" }}>
+                                {selectedAppraisal.research?.scopusHIndexScore || 0}
+                              </TableCell>
+                            </TableRow>
+                          </TableBody>
+                        </Table>
+                      </TableContainer>
+                    </Box>
+                  );
+                })()}
               </CardContent>
             </Card>
 
@@ -1514,6 +1518,8 @@ const AppraisalEvaluation = () => {
                 <Divider sx={{ mb: 2.5 }} />
 
                 {/* 3.1 Resource Utilization */}
+                {!(selectedAppraisal.status === "Completed" && (!selectedAppraisal.resourceUtilizationDetails || selectedAppraisal.resourceUtilizationDetails.length === 0)) && (
+                <>
                 <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 1, color: "var(--color-primary)", display: "block" }}>
                   3.1 Resource Utilization (Max 10 points)
                 </Typography>
@@ -1641,10 +1647,14 @@ const AppraisalEvaluation = () => {
                     </TableBody>
                   </Table>
                 </TableContainer>
+                </>
+                )}
 
                 <Divider sx={{ my: 3 }} />
 
                 {/* 3.2 Expertise / Contribution */}
+                {!(selectedAppraisal.status === "Completed" && (!selectedAppraisal.contributionDetails || selectedAppraisal.contributionDetails.length === 0)) && (
+                <>
                 <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 1, color: "var(--color-primary)", display: "block" }}>
                   3.2 Expertise / Contribution (Max 10 points)
                 </Typography>
@@ -1754,10 +1764,13 @@ const AppraisalEvaluation = () => {
                     </TableBody>
                   </Table>
                 </TableContainer>
+                </>
+                )}
               </CardContent>
             </Card>
 
             {/* 4. Administrative Responsibilities */}
+            {!(selectedAppraisal.status === "Completed" && (!selectedAppraisal.administrationDetail || !selectedAppraisal.administrationDetail.roles?.some(r => r.isResponsible))) && (
             <Card sx={{ borderRadius: "20px", background: "var(--bg-panel)", border: "1px solid var(--border-color)", mb: 4, boxShadow: "var(--shadow-premium)" }}>
               <CardContent sx={{ p: 3 }}>
                 <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3, flexWrap: "wrap", gap: 2 }}>
@@ -1899,6 +1912,7 @@ const AppraisalEvaluation = () => {
                 </TableContainer>
               </CardContent>
             </Card>
+            )}
           </Grid>
 
           {/* Right Column: Scorecard & II. Interpersonal Skills (xs={12} lg={4.5}) */}
@@ -1920,18 +1934,17 @@ const AppraisalEvaluation = () => {
                       <Typography variant="body2" sx={{ fontWeight: 700, mb: 0.5, color: "var(--text-primary)", fontSize: "0.8rem", lineHeight: 1.3 }}>
                         {p.id}. {p.text}
                       </Typography>
-                      <FormControl component="fieldset">
+                      <FormControl component="fieldset" disabled={selectedAppraisal.status !== "Submitted to HOD"}>
                         <RadioGroup
                           row
                           value={ratings[p.id] !== undefined && ratings[p.id] !== null ? ratings[p.id] : ""}
                           onChange={(e) => handleRatingChange(p.id, e.target.value)}
-                          disabled={selectedAppraisal.status !== "Submitted to HOD"}
                         >
                           {[1, 2, 3, 4, 5].map((val) => (
-                            <FormControlLabel 
-                              key={val} 
-                              value={val} 
-                              control={<Radio size="small" />} 
+                            <FormControlLabel
+                              key={val}
+                              value={val}
+                              control={<Radio size="small" />}
                               label={<Typography sx={{ fontSize: "0.78rem", fontWeight: 700 }}>{val}</Typography>}
                               sx={{ mr: 2 }}
                             />
@@ -1955,17 +1968,18 @@ const AppraisalEvaluation = () => {
                   fullWidth
                   value={comments}
                   onChange={(e) => setComments(e.target.value)}
+                  disabled={selectedAppraisal.status !== "Submitted to HOD"}
                   InputProps={{ readOnly: selectedAppraisal.status !== "Submitted to HOD" }}
                   sx={{ mb: 2 }}
                 />
 
                 {selectedAppraisal.status !== "Submitted to HOD" ? (
-                  <Alert 
+                  <Alert
                     severity={selectedAppraisal.status === "Rejected by HOD" ? "error" : "success"}
                     sx={{ mb: 2, borderRadius: "10px", py: 1 }}
                   >
                     <Typography variant="body2" sx={{ fontWeight: 700 }}>
-                      {selectedAppraisal.status === "Rejected by HOD" 
+                      {selectedAppraisal.status === "Rejected by HOD"
                         ? `This appraisal was rejected and sent back to the faculty member.`
                         : `This appraisal has been verified and forwarded to R&D Admin.`}
                     </Typography>
@@ -1991,7 +2005,7 @@ const AppraisalEvaluation = () => {
                         {!allRatingsProvided && (
                           <Alert severity="warning" sx={{ mb: 2, borderRadius: "10px", py: 0.5 }}>
                             <Typography variant="caption" sx={{ fontWeight: 700 }}>
-                              Please rate all 10 HOD Interpersonal Skills parameters.
+                              Please rate all 10 Interpersonal Skills parameters.
                             </Typography>
                           </Alert>
                         )}
@@ -2003,9 +2017,9 @@ const AppraisalEvaluation = () => {
                           </Alert>
                         )}
                         <Box display="flex" gap={1.5} justifyContent="flex-end">
-                          <Button 
-                            variant="outlined" 
-                            color="error" 
+                          <Button
+                            variant="outlined"
+                            color="error"
                             size="small"
                             onClick={() => handleSubmitEvaluation("Reject")}
                             disabled={loading}
@@ -2013,9 +2027,9 @@ const AppraisalEvaluation = () => {
                           >
                             Send Back for Corrections
                           </Button>
-                          <Button 
-                            variant="contained" 
-                            color="success" 
+                          <Button
+                            variant="contained"
+                            color="success"
                             size="small"
                             startIcon={<CheckCircle />}
                             onClick={() => handleSubmitEvaluation("Approve")}
