@@ -228,9 +228,9 @@ const AppraisalResearchScoring = () => {
     const highRate = activeConfig.research?.hIndexRateHigh ?? 4;
 
     let rate = lowRate;
-    if (h24 >= 5 && h24 <= 10) {
+    if (h25 >= 5 && h25 <= 10) {
       rate = midRate;
-    } else if (h24 > 10) {
+    } else if (h25 > 10) {
       rate = highRate;
     }
 
@@ -238,6 +238,7 @@ const AppraisalResearchScoring = () => {
   }, [hIndexPrevYear, hIndexCurrentYear, activeConfig]);
 
   const startYear = selectedAppraisal?.academicYearId?.year ? Number(selectedAppraisal.academicYearId.year.split('-')[0]) : 2025;
+  const citationYear = startYear;
   const prevYearLabel = startYear - 1;
   const currentYearLabel = startYear;
 
@@ -770,7 +771,7 @@ const AppraisalResearchScoring = () => {
                 <Stack spacing={3}>
                   <Box>
                     <Typography variant="subtitle2" sx={{ fontWeight: 800, color: "var(--text-primary)", mb: 0.5 }}>
-                      1. Scopus Citations
+                      1. Scopus Citations ({citationYear})
                     </Typography>
                     <Typography variant="caption" sx={{ color: "var(--text-secondary)", display: "block", mb: 2, fontWeight: 500 }}>
                       Enter total Scopus citations manually
@@ -879,18 +880,18 @@ const AppraisalResearchScoring = () => {
 
                     {/* Rate dynamic text */}
                     {(() => {
-                      const h24 = Number(hIndexPrevYear) || 0;
+                      const h25 = Number(hIndexCurrentYear) || 0;
                       const lowRate = activeConfig?.research?.hIndexRateLow ?? 1;
                       const midRate = activeConfig?.research?.hIndexRateMid ?? 2;
                       const highRate = activeConfig?.research?.hIndexRateHigh ?? 4;
 
                       let dynamicRateText = "";
-                      if (h24 >= 5 && h24 <= 10) {
-                        dynamicRateText = `Rate: ${midRate} points per index (Based on ${prevYearLabel} H-Index range 5-10)`;
-                      } else if (h24 > 10) {
-                        dynamicRateText = `Rate: ${highRate} points per index (Based on ${prevYearLabel} H-Index range >10)`;
+                      if (h25 >= 5 && h25 <= 10) {
+                        dynamicRateText = `Rate: ${midRate} points per index (Based on ${currentYearLabel} H-Index range 5-10)`;
+                      } else if (h25 > 10) {
+                        dynamicRateText = `Rate: ${highRate} points per index (Based on ${currentYearLabel} H-Index range >10)`;
                       } else {
-                        dynamicRateText = `Rate: ${lowRate} points per index (Based on ${prevYearLabel} H-Index range 0-4)`;
+                        dynamicRateText = `Rate: ${lowRate} points per index (Based on ${currentYearLabel} H-Index range 0-4)`;
                       }
 
                       return (
@@ -1147,17 +1148,17 @@ const AppraisalResearchScoring = () => {
                   {/* H-Index Rule & Table */}
                   <Box>
                     <Typography variant="subtitle2" sx={{ fontWeight: 800, color: "var(--text-primary)", mb: 0.5, fontSize: "0.85rem" }}>
-                      H-Index Scoring <Typography component="span" sx={{ fontSize: "0.75rem", color: "var(--text-secondary)", fontWeight: 600 }}>(Based on {prevYearLabel} H-Index)</Typography>
+                      H-Index Scoring <Typography component="span" sx={{ fontSize: "0.75rem", color: "var(--text-secondary)", fontWeight: 600 }}>(Based on {currentYearLabel} H-Index)</Typography>
                     </Typography>
 
                     {/* Rules table */}
                     {(() => {
-                      const h24Val = Number(hIndexPrevYear) || 0;
+                      const h25Val = Number(hIndexCurrentYear) || 0;
                       const rowStyle = (rangeType) => {
                         let isActive = false;
-                        if (rangeType === "low" && h24Val < 5) isActive = true;
-                        if (rangeType === "mid" && h24Val >= 5 && h24Val <= 10) isActive = true;
-                        if (rangeType === "high" && h24Val > 10) isActive = true;
+                        if (rangeType === "low" && h25Val < 5) isActive = true;
+                        if (rangeType === "mid" && h25Val >= 5 && h25Val <= 10) isActive = true;
+                        if (rangeType === "high" && h25Val > 10) isActive = true;
 
                         return isActive ? {
                           bgcolor: "rgba(59, 130, 246, 0.06)",
@@ -1178,7 +1179,7 @@ const AppraisalResearchScoring = () => {
                           <Table size="small">
                             <TableHead>
                               <TableRow sx={{ bgcolor: "var(--bg-panel)" }}>
-                                <TableCell sx={{ fontWeight: 700, fontSize: "0.75rem", color: "var(--text-secondary)" }}>{prevYearLabel} H-Index Range</TableCell>
+                                <TableCell sx={{ fontWeight: 700, fontSize: "0.75rem", color: "var(--text-secondary)" }}>{currentYearLabel} H-Index Range</TableCell>
                                 <TableCell sx={{ fontWeight: 700, fontSize: "0.75rem", color: "var(--text-secondary)" }}>Points per Index Raise</TableCell>
                               </TableRow>
                             </TableHead>
