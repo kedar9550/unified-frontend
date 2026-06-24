@@ -7,6 +7,7 @@ import {
 import { toast } from "sonner";
 import { Description, WorkspacePremium, Close, AddCircle, Edit, Delete, Visibility } from "@mui/icons-material";
 import PageHeader from "../../components/common/PageHeader";
+import NoActiveYearDialog from "../../components/common/NoActiveYearDialog";
 import {
   FormCard, Grid2, SubLabel, NoteBox, FileField, SubmitBtn
 } from "../../components/faculty/PublicationFormFields";
@@ -38,6 +39,7 @@ export default function Contribution() {
   const [contributionsList, setContributionsList] = useState([]);
 
   const [openFormModal, setOpenFormModal] = useState(false);
+  const [noActiveYearAlertOpen, setNoActiveYearAlertOpen] = useState(false);
   const [selectedContributionDetails, setSelectedContributionDetails] = useState(null);
 
   const [editingId, setEditingId] = useState(null);
@@ -167,9 +169,14 @@ export default function Contribution() {
   };
 
   const handleOpenAddModal = () => {
+    const activeYear = academicYears.find(y => y.isGlobalActive);
+    if (!activeYear) {
+      setNoActiveYearAlertOpen(true);
+      return;
+    }
     setEditingId(null);
     setForm({
-      academicYear: selectedYear || "",
+      academicYear: activeYear._id,
       category: "",
       organizationName: "",
       fromDate: "",
@@ -1144,28 +1151,25 @@ export default function Contribution() {
           {editingId ? "Edit Contribution Entry" : "Add Contribution Entry"}
         </Typography>
       </DialogTitle>
-      <DialogContent sx={{ p: 3, pt: 4 }}>
-        <SubLabel text="Details of the Contribution:" />
-
-        <Box sx={{ mb: 2, maxWidth: 500 }}>
-          <Typography sx={labelStyle}>Academic Year: *</Typography>
-          <Select
-            size="small"
-            fullWidth
-            value={form.academicYear}
-            onChange={(e) => {
-              setVal("academicYear")(e);
-              blurActiveElement();
-            }}
-            onClose={blurActiveElement}
-            MenuProps={selectMenuProps}
-            displayEmpty
-          >
-            <MenuItem value="" disabled>--Select Academic Year--</MenuItem>
-            {academicYears.map(y => (
-              <MenuItem key={y._id} value={y._id}>{y.year}</MenuItem>
-            ))}
-          </Select>
+      <DialogContent sx={{ p: 3, pt: 2 }}>
+        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mt: 2, mb: 3, flexWrap: "wrap", gap: 2 }}>
+          <Typography sx={{ 
+            fontSize: 13, 
+            fontWeight: 800, 
+            color: "var(--text-primary)", 
+            background: "var(--bg-accent-1)", 
+            px: 2, 
+            py: 1.2, 
+            borderRadius: "12px", 
+            borderLeft: "5px solid var(--color-primary)",
+            textTransform: "uppercase",
+            letterSpacing: "0.03em"
+          }}>
+            Details of the Contribution:
+          </Typography>
+          <Box sx={{ background: "var(--bg-accent-1)", color: "var(--color-primary)", px: 2, py: 1, borderRadius: "12px", fontWeight: 800, border: "1px solid var(--border-color)", fontSize: "0.85rem" }}>
+            Academic Year: {academicYears.find(y => y._id === form.academicYear)?.year || "N/A"}
+          </Box>
         </Box>
 
         <Box sx={{ mb: 4, maxWidth: 500 }}>
@@ -1228,6 +1232,10 @@ export default function Contribution() {
         {renderDetailsDialog()}
         {renderFormModal()}
       </Box>
+      <NoActiveYearDialog
+        open={noActiveYearAlertOpen}
+        onClose={() => setNoActiveYearAlertOpen(false)}
+      />
     </Box>
   );
 }

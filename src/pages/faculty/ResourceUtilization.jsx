@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { Description, WorkspacePremium, Close, AddCircle, Edit, Delete, Visibility, School, LocationOn, FilePresent, CalendarToday, Download, Info, DateRange } from "@mui/icons-material";
 import FileDownloadIcon from "@mui/icons-material/FileDownload";
 import PageHeader from "../../components/common/PageHeader";
+import NoActiveYearDialog from "../../components/common/NoActiveYearDialog";
 import {
   FormCard, Grid2, SubLabel, NoteBox, FileField, SubmitBtn
 } from "../../components/faculty/PublicationFormFields";
@@ -88,6 +89,7 @@ export default function ResourceUtilization() {
   const [activitiesList, setActivitiesList] = useState([]);
   
   const [openFormModal, setOpenFormModal] = useState(false);
+  const [noActiveYearAlertOpen, setNoActiveYearAlertOpen] = useState(false);
   const [selectedActivityDetails, setSelectedActivityDetails] = useState(null);
   
   const [editingId, setEditingId] = useState(null); // stores ID when editing
@@ -221,9 +223,14 @@ export default function ResourceUtilization() {
   const showDaysField = form.activityType?.includes("Participant");
 
   const handleOpenAddModal = () => {
+    const activeYear = academicYears.find(y => y.isGlobalActive);
+    if (!activeYear) {
+      setNoActiveYearAlertOpen(true);
+      return;
+    }
     setEditingId(null);
     setForm({
-      academicYear: selectedYear || "",
+      academicYear: activeYear._id,
       activityCategory: "",
       activityType: "",
       organizationName: "",
@@ -1031,26 +1038,27 @@ export default function ResourceUtilization() {
           {editingId ? "Edit Resource Utilization Entry" : "Add Resource Utilization Entry"}
         </Typography>
       </DialogTitle>
-      <DialogContent sx={{ p: 3, pt: 4 }}>
-        <SubLabel text="Details of the Activity:" />
-        <Grid2>
-          <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
-            <Typography sx={labelStyle}>Academic Year: *</Typography>
-            <Select
-              size="small"
-              fullWidth
-              displayEmpty
-              value={form.academicYear}
-              onChange={setVal("academicYear")}
-              onClose={blurActiveElement}
-              MenuProps={selectMenuProps}
-            >
-              <MenuItem value="" disabled>--Select Academic Year--</MenuItem>
-              {academicYears.map(y => (
-                <MenuItem key={y._id} value={y._id}>{y.year}</MenuItem>
-              ))}
-            </Select>
+      <DialogContent sx={{ p: 3, pt: 2 }}>
+        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mt: 2, mb: 3, flexWrap: "wrap", gap: 2 }}>
+          <Typography sx={{ 
+            fontSize: 13, 
+            fontWeight: 800, 
+            color: "var(--text-primary)", 
+            background: "var(--bg-accent-1)", 
+            px: 2, 
+            py: 1.2, 
+            borderRadius: "12px", 
+            borderLeft: "5px solid var(--color-primary)",
+            textTransform: "uppercase",
+            letterSpacing: "0.03em"
+          }}>
+            Details of the Activity:
+          </Typography>
+          <Box sx={{ background: "var(--bg-accent-1)", color: "var(--color-primary)", px: 2, py: 1, borderRadius: "12px", fontWeight: 800, border: "1px solid var(--border-color)", fontSize: "0.85rem" }}>
+            Academic Year: {academicYears.find(y => y._id === form.academicYear)?.year || "N/A"}
           </Box>
+        </Box>
+        <Grid2>
 
           <Box>
             <Typography sx={labelStyle}>Activity Category: *</Typography>
@@ -1336,6 +1344,10 @@ export default function ResourceUtilization() {
         {renderDetailsDialog()}
         {renderFormModal()}
       </Box>
+      <NoActiveYearDialog
+        open={noActiveYearAlertOpen}
+        onClose={() => setNoActiveYearAlertOpen(false)}
+      />
     </Box>
   );
 }
