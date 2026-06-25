@@ -82,10 +82,10 @@ export default function Discrepancies() {
       const res = await API.get("/api/discrepancies", {
         params: { role: activeRole }
       });
-      
+
       // Filter for Exam Section: TEACHING, PROCTORING (PASS_COUNT only), CO_ATTAINMENT, and OTHER
-      const filtered = (res.data || []).filter(item => 
-        item.section === "TEACHING" || 
+      const filtered = (res.data || []).filter(item =>
+        item.section === "TEACHING" ||
         (item.section === "PROCTORING" && item.proctoringType === "PASS_COUNT") ||
         item.section === "CO_ATTAINMENT" ||
         item.section === "OTHER"
@@ -208,27 +208,6 @@ export default function Discrepancies() {
           passPercentage: "0.00",
         }
       ]);
-    } else if (selected?.section === "CO_ATTAINMENT") {
-      setResultData(prev => [
-        ...prev,
-        {
-          _tempId: `new-${Date.now()}`,
-          _isNew: true,
-          _edited: true,
-          courseName: "",
-          subjectName: "",
-          courseCode: "",
-          subjectCode: "",
-          courseType: "THEORY",
-          programId: "",
-          branchId: "",
-          branch: "",
-          semesterNumber: "",
-          section: "",
-          noOfCos: 0,
-          noOfCosAttained: 0,
-        }
-      ]);
     } else {
       setResultData(prev => [
         ...prev,
@@ -249,6 +228,8 @@ export default function Discrepancies() {
           appeared: 0,
           passed: 0,
           passPercentage: "0.00",
+          noOfCos: 0,
+          noOfCosAttained: 0,
         },
       ]);
     }
@@ -288,21 +269,8 @@ export default function Discrepancies() {
             eligibleStudents: Number(row.eligibleStudents),
             passedStudents: Number(row.passedStudents),
           });
-        } else if (selected.section === "CO_ATTAINMENT") {
-          await API.put(`/api/faculty-subject-results/${row._id}`, {
-            courseName: row.courseName || row.subjectName,
-            courseCode: row.courseCode || row.subjectCode,
-            courseType: row.courseType,
-            programId: row.programId,
-            branchId: row.branchId,
-            branch: branchName,
-            semesterNumber: row.semesterNumber,
-            section: row.section,
-            noOfCos: Number(row.noOfCos),
-            noOfCosAttained: Number(row.noOfCosAttained),
-          });
         } else {
-          // TEACHING
+          // Both TEACHING and CO_ATTAINMENT
           await API.put(`/api/faculty-subject-results/${row._id}`, {
             courseName: row.courseName || row.subjectName,
             courseCode: row.courseCode || row.subjectCode,
@@ -315,6 +283,8 @@ export default function Discrepancies() {
             appeared: Number(row.appeared),
             passed: Number(row.passed),
             passPercentage: Number(row.passPercentage),
+            noOfCos: Number(row.noOfCos),
+            noOfCosAttained: Number(row.noOfCosAttained),
           });
         }
       }
@@ -338,25 +308,8 @@ export default function Discrepancies() {
             eligibleStudents: Number(row.eligibleStudents),
             passedStudents: Number(row.passedStudents),
           });
-        } else if (selected.section === "CO_ATTAINMENT") {
-          await API.post("/api/faculty-subject-results", {
-            facultyId: selected.facultyInstitutionId,
-            facultyName: selected.facultyName,
-            courseName: row.courseName || row.subjectName,
-            courseCode: row.courseCode || row.subjectCode,
-            courseType: row.courseType,
-            programId: row.programId,
-            branchId: row.branchId,
-            branch: branchName,
-            semesterNumber: row.semesterNumber,
-            section: row.section,
-            academicYearId: selected.academicYearId?._id,
-            semesterTypeId: selected.semesterTypeId?._id,
-            noOfCos: Number(row.noOfCos),
-            noOfCosAttained: Number(row.noOfCosAttained),
-          });
         } else {
-          // TEACHING
+          // Both TEACHING and CO_ATTAINMENT
           await API.post("/api/faculty-subject-results", {
             facultyId: selected.facultyInstitutionId,
             facultyName: selected.facultyName,
@@ -372,6 +325,8 @@ export default function Discrepancies() {
             semesterTypeId: selected.semesterTypeId?._id,
             appeared: Number(row.appeared),
             passed: Number(row.passed),
+            noOfCos: Number(row.noOfCos),
+            noOfCosAttained: Number(row.noOfCosAttained),
           });
         }
       }
@@ -381,7 +336,7 @@ export default function Discrepancies() {
       formData.append("proof", proofFile);
       formData.append("status", "RESOLVED");
       formData.append("resolutionNote", `Edited ${editedRows.length} record(s), added ${newRows.length} new record(s).`);
-      
+
       // Ensure academic identifiers are passed to satisfy backend validation
       const yearId = selected.academicYearId?._id || selected.academicYearId;
       const semId = selected.semesterTypeId?._id || selected.semesterTypeId;
@@ -422,7 +377,7 @@ export default function Discrepancies() {
     try {
       const yearId = rejectItem.academicYearId?._id || rejectItem.academicYearId;
       const semId = rejectItem.semesterTypeId?._id || rejectItem.semesterTypeId;
-      
+
       await API.put(`/api/discrepancies/${rejectItem._id}`, {
         status: "REJECTED",
         rejectionNote: rejectNote.trim(),
@@ -552,10 +507,10 @@ export default function Discrepancies() {
             <Typography fontSize={13} sx={{ opacity: 0.8 }}>All clear!</Typography>
           </Box>
         ) : (
-          <Paper 
-            sx={{ 
-              borderRadius: "18px", 
-              overflow: "hidden", 
+          <Paper
+            sx={{
+              borderRadius: "18px",
+              overflow: "hidden",
               boxShadow: "none",
               background: "transparent",
               border: "1px solid var(--border-color)"
@@ -566,11 +521,11 @@ export default function Discrepancies() {
                 <TableHead sx={{ background: "var(--gradient-primary)" }}>
                   <TableRow>
                     {["#", "Faculty", "Year / Sem", "Section", "Note", "Raised At", "Status", "Action"].map(col => (
-                      <TableCell 
-                        key={col} 
-                        sx={{ 
-                          color: "#fff", 
-                          fontWeight: 700, 
+                      <TableCell
+                        key={col}
+                        sx={{
+                          color: "#fff",
+                          fontWeight: 700,
                           fontSize: { xs: 11, md: 13 },
                           py: 2,
                           whiteSpace: "nowrap"
@@ -581,164 +536,164 @@ export default function Discrepancies() {
                     ))}
                   </TableRow>
                 </TableHead>
-              <TableBody>
-                {items.map((item, i) => {
-                  const cfg = STATUS_CONFIG[item.status] || STATUS_CONFIG.PENDING;
-                  return (
-                    <TableRow
-                      key={item._id}
-                      sx={{ 
-                        background: i % 2 === 0 ? "var(--bg-accent-1)" : "transparent", 
-                        height: 70,
-                        "&:hover": { background: "var(--bg-accent-2)" }
-                      }}
-                    >
-                      <TableCell sx={{ fontWeight: 600 }}>{i + 1}</TableCell>
+                <TableBody>
+                  {items.map((item, i) => {
+                    const cfg = STATUS_CONFIG[item.status] || STATUS_CONFIG.PENDING;
+                    return (
+                      <TableRow
+                        key={item._id}
+                        sx={{
+                          background: i % 2 === 0 ? "var(--bg-accent-1)" : "transparent",
+                          height: 70,
+                          "&:hover": { background: "var(--bg-accent-2)" }
+                        }}
+                      >
+                        <TableCell sx={{ fontWeight: 600 }}>{i + 1}</TableCell>
 
-                      {/* Faculty */}
-                      <TableCell>
-                        <Typography fontWeight={700} fontSize={14} sx={{ color: "var(--text-primary)" }}>
-                          {item.facultyName || item.raisedBy?.name || "—"}
-                        </Typography>
-                        <Typography fontSize={12} sx={{ color: "var(--text-secondary)", opacity: 0.8 }}>
-                          {item.facultyInstitutionId || item.raisedBy?.institutionId}
-                        </Typography>
-                      </TableCell>
+                        {/* Faculty */}
+                        <TableCell>
+                          <Typography fontWeight={700} fontSize={14} sx={{ color: "var(--text-primary)" }}>
+                            {item.facultyName || item.raisedBy?.name || "—"}
+                          </Typography>
+                          <Typography fontSize={12} sx={{ color: "var(--text-secondary)", opacity: 0.8 }}>
+                            {item.facultyInstitutionId || item.raisedBy?.institutionId}
+                          </Typography>
+                        </TableCell>
 
-                      {/* Year / Sem */}
-                      <TableCell>
-                        <Typography fontSize={13} fontWeight={700} sx={{ color: "var(--text-primary)" }}>
-                          {item.academicYearId?.year || "—"}
-                        </Typography>
-                        <Chip
-                          label={item.semesterTypeId?.name || "—"}
-                          size="small"
-                          sx={{ 
-                            fontSize: 10, 
-                            height: 20, 
-                            mt: 0.5, 
-                            fontWeight: 700,
-                            background: "var(--bg-glass)",
-                            border: "1px solid var(--border-color)",
-                            color: "var(--text-primary)"
-                          }}
-                        />
-                      </TableCell>
-
-                      {/* Section */}
-                      <TableCell>
-                        <Box
-                          sx={{
-                            px: 1.5, py: 0.4, borderRadius: "10px",
-                            background: "var(--bg-glass)", 
-                            border: "1px solid var(--border-color)",
-                            fontSize: 12, fontWeight: 700,
-                            color: "var(--text-primary)",
-                            display: "inline-block",
-                          }}
-                        >
-                          {SECTION_LABEL[item.section] || item.section}
-                        </Box>
-                      </TableCell>
-
-                      {/* Note */}
-                      <TableCell sx={{ maxWidth: 220 }}>
-                        <Tooltip title={item.note} placement="top">
-                          <Typography
-                            fontSize={13}
+                        {/* Year / Sem */}
+                        <TableCell>
+                          <Typography fontSize={13} fontWeight={700} sx={{ color: "var(--text-primary)" }}>
+                            {item.academicYearId?.year || "—"}
+                          </Typography>
+                          <Chip
+                            label={item.semesterTypeId?.name || "—"}
+                            size="small"
                             sx={{
+                              fontSize: 10,
+                              height: 20,
+                              mt: 0.5,
+                              fontWeight: 700,
+                              background: "var(--bg-glass)",
+                              border: "1px solid var(--border-color)",
+                              color: "var(--text-primary)"
+                            }}
+                          />
+                        </TableCell>
+
+                        {/* Section */}
+                        <TableCell>
+                          <Box
+                            sx={{
+                              px: 1.5, py: 0.4, borderRadius: "10px",
+                              background: "var(--bg-glass)",
+                              border: "1px solid var(--border-color)",
+                              fontSize: 12, fontWeight: 700,
                               color: "var(--text-primary)",
-                              fontWeight: 500,
-                              overflow: "hidden", textOverflow: "ellipsis",
-                              display: "-webkit-box", WebkitLineClamp: 2,
-                              WebkitBoxOrient: "vertical",
+                              display: "inline-block",
                             }}
                           >
-                            {item.note}
-                          </Typography>
-                        </Tooltip>
-                      </TableCell>
+                            {SECTION_LABEL[item.section] || item.section}
+                          </Box>
+                        </TableCell>
 
-                      {/* Raised At */}
-                      <TableCell>
-                        <Typography fontSize={12} sx={{ color: "var(--text-primary)", fontWeight: 600 }}>
-                          {new Date(item.createdAt).toLocaleDateString("en-IN", { day: '2-digit', month: 'short', year: 'numeric' })}
-                        </Typography>
-                        <Typography fontSize={11} sx={{ color: "var(--text-secondary)", opacity: 0.8 }}>
-                          {new Date(item.createdAt).toLocaleTimeString()}
-                        </Typography>
-                      </TableCell>
-
-                      {/* Status */}
-                      <TableCell>
-                        <Chip
-                          icon={cfg.icon}
-                          label={cfg.label}
-                          size="small"
-                          sx={{
-                            background: cfg.bg, color: cfg.color,
-                            fontWeight: 600, fontSize: 12,
-                            border: `1px solid ${cfg.color}33`,
-                            "& .MuiChip-icon": { color: cfg.color },
-                          }}
-                        />
-                        {item.status === "REJECTED" && item.rejectionNote && (
-                          <Tooltip title={item.rejectionNote} placement="top">
+                        {/* Note */}
+                        <TableCell sx={{ maxWidth: 220 }}>
+                          <Tooltip title={item.note} placement="top">
                             <Typography
-                              fontSize={11} color="#b71c1c" mt={0.3}
+                              fontSize={13}
                               sx={{
+                                color: "var(--text-primary)",
+                                fontWeight: 500,
                                 overflow: "hidden", textOverflow: "ellipsis",
-                                whiteSpace: "nowrap", maxWidth: 120,
-                                fontStyle: "italic",
+                                display: "-webkit-box", WebkitLineClamp: 2,
+                                WebkitBoxOrient: "vertical",
                               }}
                             >
-                              {item.rejectionNote}
+                              {item.note}
                             </Typography>
                           </Tooltip>
-                        )}
-                      </TableCell>
+                        </TableCell>
 
-                      {/* Action */}
-                      <TableCell>
-                        {item.status === "PENDING" ? (
-                          <Box sx={{ display: "flex", gap: 1, flexDirection: "column" }}>
-                            <Button
-                              size="small"
-                              variant="contained"
-                              onClick={() => openResolve(item)}
-                            >
-                              ✓ Resolve
-                            </Button>
-                            <Button
-                              size="small"
-                              variant="outlined"
-                              color="error"
-                              onClick={() => openReject(item)}
-                            >
-                              ✕ Reject
-                            </Button>
-                          </Box>
-                        ) : (
-                          item.proofDocument && (
-                            <Tooltip title="Download Proof">
-                              <IconButton
-                                size="small"
-                                href={`${import.meta.env.VITE_BACKEND_URL}/uploads/discrepancies/${item.proofDocument}`}
-                                target="_blank"
+                        {/* Raised At */}
+                        <TableCell>
+                          <Typography fontSize={12} sx={{ color: "var(--text-primary)", fontWeight: 600 }}>
+                            {new Date(item.createdAt).toLocaleDateString("en-IN", { day: '2-digit', month: 'short', year: 'numeric' })}
+                          </Typography>
+                          <Typography fontSize={11} sx={{ color: "var(--text-secondary)", opacity: 0.8 }}>
+                            {new Date(item.createdAt).toLocaleTimeString()}
+                          </Typography>
+                        </TableCell>
+
+                        {/* Status */}
+                        <TableCell>
+                          <Chip
+                            icon={cfg.icon}
+                            label={cfg.label}
+                            size="small"
+                            sx={{
+                              background: cfg.bg, color: cfg.color,
+                              fontWeight: 600, fontSize: 12,
+                              border: `1px solid ${cfg.color}33`,
+                              "& .MuiChip-icon": { color: cfg.color },
+                            }}
+                          />
+                          {item.status === "REJECTED" && item.rejectionNote && (
+                            <Tooltip title={item.rejectionNote} placement="top">
+                              <Typography
+                                fontSize={11} color="#b71c1c" mt={0.3}
+                                sx={{
+                                  overflow: "hidden", textOverflow: "ellipsis",
+                                  whiteSpace: "nowrap", maxWidth: 120,
+                                  fontStyle: "italic",
+                                }}
                               >
-                                <DownloadIcon fontSize="small" sx={{ color: "#2e7d32" }} />
-                              </IconButton>
+                                {item.rejectionNote}
+                              </Typography>
                             </Tooltip>
-                          )
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
-          </Box>
-        </Paper>
+                          )}
+                        </TableCell>
+
+                        {/* Action */}
+                        <TableCell>
+                          {item.status === "PENDING" ? (
+                            <Box sx={{ display: "flex", gap: 1, flexDirection: "column" }}>
+                              <Button
+                                size="small"
+                                variant="contained"
+                                onClick={() => openResolve(item)}
+                              >
+                                ✓ Resolve
+                              </Button>
+                              <Button
+                                size="small"
+                                variant="outlined"
+                                color="error"
+                                onClick={() => openReject(item)}
+                              >
+                                ✕ Reject
+                              </Button>
+                            </Box>
+                          ) : (
+                            item.proofDocument && (
+                              <Tooltip title="Download Proof">
+                                <IconButton
+                                  size="small"
+                                  href={`${import.meta.env.VITE_BACKEND_URL}/uploads/discrepancies/${item.proofDocument}`}
+                                  target="_blank"
+                                >
+                                  <DownloadIcon fontSize="small" sx={{ color: "#2e7d32" }} />
+                                </IconButton>
+                              </Tooltip>
+                            )
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </Box>
+          </Paper>
         )}
       </Box>
 
@@ -860,12 +815,8 @@ export default function Discrepancies() {
                                 ["#", "Program", "Branch", "Sem", "Yr", "Sec", "Total Allotted", "Eligible (A)", "Passed (B)", "Pass %", ""].map(h => (
                                   <TableCell key={h} sx={{ fontWeight: 600, fontSize: 12, color: "#444" }}>{h}</TableCell>
                                 ))
-                              ) : selected.section === "CO_ATTAINMENT" ? (
-                                ["#", "Subject", "Code", "Type", "Prog", "Branch", "Sem", "Sec", "No. of COs", "COs Attained", "Attainment %", ""].map(h => (
-                                  <TableCell key={h} sx={{ fontWeight: 600, fontSize: 12, color: "#444" }}>{h}</TableCell>
-                                ))
                               ) : (
-                                ["#", "Subject", "Code", "Type", "Prog", "Branch", "Sem", "Sec", "Appeared", "Passed", "Pass %", ""].map(h => (
+                                ["#", "Subject", "Code", "Type", "Prog", "Branch", "Sem", "Sec", "Appeared", "Passed", "Pass %", "No. of COs", "COs Attained", "Attainment %", ""].map(h => (
                                   <TableCell key={h} sx={{ fontWeight: 600, fontSize: 12, color: "#444" }}>{h}</TableCell>
                                 ))
                               )}
@@ -901,7 +852,7 @@ export default function Discrepancies() {
                                         {programs.map(p => <MenuItem key={p._id} value={p._id}>{p.code}</MenuItem>)}
                                       </Select>
                                     </TableCell>
-                                    
+
                                     <TableCell>
                                       <Select
                                         variant="standard"
@@ -1079,63 +1030,67 @@ export default function Discrepancies() {
                                       />
                                     </TableCell>
 
-                                    {selected.section === "CO_ATTAINMENT" ? (
-                                      <>
-                                        <TableCell>
-                                          <TextField
-                                            variant="standard"
-                                            type="number"
-                                            value={row.noOfCos ?? ""}
-                                            onChange={e => handleResultEdit(idx, "noOfCos", e.target.value)}
-                                            slotProps={{ input: { sx: { fontSize: 13, fontWeight: 600 } } }}
-                                            sx={{ width: 55 }}
-                                          />
-                                        </TableCell>
-                                        <TableCell>
-                                          <TextField
-                                            variant="standard"
-                                            type="number"
-                                            value={row.noOfCosAttained ?? ""}
-                                            onChange={e => handleResultEdit(idx, "noOfCosAttained", e.target.value)}
-                                            slotProps={{ input: { sx: { fontSize: 13, fontWeight: 600 } } }}
-                                            sx={{ width: 55 }}
-                                          />
-                                        </TableCell>
-                                        <TableCell>
-                                          <Typography fontSize={13} fontWeight={700} color={row.noOfCos > 0 && (row.noOfCosAttained / row.noOfCos * 100) >= 80 ? "#2e7d32" : "#e65100"}>
-                                            {row.noOfCos > 0 ? ((row.noOfCosAttained / row.noOfCos) * 100).toFixed(1) : "0.0"}%
-                                          </Typography>
-                                        </TableCell>
-                                      </>
-                                    ) : (
-                                      <>
-                                        <TableCell>
-                                          <TextField
-                                            variant="standard"
-                                            type="number"
-                                            value={row.appeared ?? ""}
-                                            onChange={e => handleResultEdit(idx, "appeared", e.target.value)}
-                                            slotProps={{ input: { sx: { fontSize: 13, fontWeight: 600 } } }}
-                                            sx={{ width: 65 }}
-                                          />
-                                        </TableCell>
-                                        <TableCell>
-                                          <TextField
-                                            variant="standard"
-                                            type="number"
-                                            value={row.passed ?? ""}
-                                            onChange={e => handleResultEdit(idx, "passed", e.target.value)}
-                                            slotProps={{ input: { sx: { fontSize: 13, fontWeight: 600 } } }}
-                                            sx={{ width: 65 }}
-                                          />
-                                        </TableCell>
-                                        <TableCell>
-                                          <Typography fontSize={13} fontWeight={700} color={Number(row.passPercentage) >= 80 ? "#2e7d32" : "#e65100"}>
-                                            {Number(row.passPercentage || 0).toFixed(1)}%
-                                          </Typography>
-                                        </TableCell>
-                                      </>
-                                    )}
+                                    {/* Appeared */}
+                                    <TableCell>
+                                      <TextField
+                                        variant="standard"
+                                        type="number"
+                                        value={row.appeared ?? ""}
+                                        onChange={e => handleResultEdit(idx, "appeared", e.target.value)}
+                                        slotProps={{ input: { sx: { fontSize: 13, fontWeight: 600 } } }}
+                                        sx={{ width: 65 }}
+                                      />
+                                    </TableCell>
+
+                                    {/* Passed */}
+                                    <TableCell>
+                                      <TextField
+                                        variant="standard"
+                                        type="number"
+                                        value={row.passed ?? ""}
+                                        onChange={e => handleResultEdit(idx, "passed", e.target.value)}
+                                        slotProps={{ input: { sx: { fontSize: 13, fontWeight: 600 } } }}
+                                        sx={{ width: 65 }}
+                                      />
+                                    </TableCell>
+
+                                    {/* Pass % */}
+                                    <TableCell>
+                                      <Typography fontSize={13} fontWeight={700} color={Number(row.passPercentage) >= 80 ? "#2e7d32" : "#e65100"}>
+                                        {Number(row.passPercentage || 0).toFixed(1)}%
+                                      </Typography>
+                                    </TableCell>
+
+                                    {/* No. of COs */}
+                                    <TableCell>
+                                      <TextField
+                                        variant="standard"
+                                        type="number"
+                                        value={row.noOfCos ?? ""}
+                                        onChange={e => handleResultEdit(idx, "noOfCos", e.target.value)}
+                                        slotProps={{ input: { sx: { fontSize: 13, fontWeight: 600 } } }}
+                                        sx={{ width: 55 }}
+                                      />
+                                    </TableCell>
+
+                                    {/* COs Attained */}
+                                    <TableCell>
+                                      <TextField
+                                        variant="standard"
+                                        type="number"
+                                        value={row.noOfCosAttained ?? ""}
+                                        onChange={e => handleResultEdit(idx, "noOfCosAttained", e.target.value)}
+                                        slotProps={{ input: { sx: { fontSize: 13, fontWeight: 600 } } }}
+                                        sx={{ width: 55 }}
+                                      />
+                                    </TableCell>
+
+                                    {/* Attainment % */}
+                                    <TableCell>
+                                      <Typography fontSize={13} fontWeight={700} color={row.noOfCos > 0 && (row.noOfCosAttained / row.noOfCos * 100) >= 80 ? "#2e7d32" : "#e65100"}>
+                                        {row.noOfCos > 0 ? ((row.noOfCosAttained / row.noOfCos) * 100).toFixed(1) : "0.0"}%
+                                      </Typography>
+                                    </TableCell>
                                   </>
                                 )}
 
