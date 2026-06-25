@@ -47,7 +47,7 @@ const STATUS_CONFIG = {
 };
 
 const SECTION_LABEL = {
-  FEEDBACK:   "💬 Feedback",
+  FEEDBACK:   "Feedback",
 };
 
 export default function FeedbackDiscrepancies() {
@@ -611,7 +611,7 @@ export default function FeedbackDiscrepancies() {
                     <Table size="small" sx={{ minWidth: 1000 }}>
                       <TableHead sx={{ background: "var(--bg-accent-1)" }}>
                         <TableRow>
-                          {["#", "Subject", "Code", "Type", "Prog", "Branch", "Sec", "Ph", "G/T", "%", ""].map(h => (
+                          {["#", "Subject", "Code", "Type", "Prog", "Branch", "Sem", "Sec", "Ph", "G/T", "%", ""].map(h => (
                             <TableCell key={h} sx={{ fontWeight: 800, fontSize: 12, color: "var(--text-primary)", py: 1.5 }}>{h}</TableCell>
                           ))}
                         </TableRow>
@@ -658,6 +658,25 @@ export default function FeedbackDiscrepancies() {
                                     <MenuItem value="">—</MenuItem>
                                     {branches.filter(b => !row.programId || b.programId?._id === row.programId || b.programId === row.programId).map(b => <MenuItem key={b._id} value={b._id}>{b.name}</MenuItem>)}
                                 </Select>
+                            </TableCell>
+                            <TableCell>
+                                <TextField 
+                                    variant="standard" 
+                                    value={row.semesterNumber || row.yearNumber || ""} 
+                                    onChange={e => {
+                                        const progObj = programs.find(p => p._id === row.programId);
+                                        const isYearPattern = progObj ? progObj.programPattern === "YEAR" : false;
+                                        if (isYearPattern) {
+                                            handleResultEdit(idx, "yearNumber", e.target.value);
+                                            handleResultEdit(idx, "semesterNumber", "");
+                                        } else {
+                                            handleResultEdit(idx, "semesterNumber", e.target.value);
+                                            handleResultEdit(idx, "yearNumber", "");
+                                        }
+                                    }} 
+                                    InputProps={{ disableUnderline: !row._edited, sx: { fontSize: 13, fontWeight: 600 } }} 
+                                    sx={{ width: 40 }} 
+                                />
                             </TableCell>
                             <TableCell><TextField variant="standard" value={row.section} onChange={e => handleResultEdit(idx, "section", e.target.value)} InputProps={{ disableUnderline: !row._edited, sx: { fontSize: 13, fontWeight: 600 } }} sx={{ width: 40 }} /></TableCell>
                             <TableCell><TextField variant="standard" type="number" value={row.phase} onChange={e => handleResultEdit(idx, "phase", e.target.value)} InputProps={{ disableUnderline: !row._edited, sx: { fontSize: 13, fontWeight: 600 } }} sx={{ width: 35 }} /></TableCell>

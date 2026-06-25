@@ -20,6 +20,8 @@ import {
   TableCell,
   TableBody,
   Tooltip,
+  Select,
+  MenuItem,
 } from "@mui/material";
 import {
   Close as CloseIcon,
@@ -43,15 +45,20 @@ const STATUS_CONFIG = {
 };
 
 const SECTION_LABEL = {
-  TEACHING: "📚 Teaching",
-  PROCTORING: "👁️ Proctoring",
-  OTHER: "📎 Other",
+  TEACHING: "Course Average Pass Percentage",
+  PROCTORING: "Proctoring Students' Average Pass Percentage",
+  CO_ATTAINMENT: "CO Attainment",
+  OTHER: "Other",
 };
 
 export default function Discrepancies() {
   const { activeRole } = useAuth();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(false);
+
+  // ── Programs & Branches State ──────────────────────────────────────
+  const [programs, setPrograms] = useState([]);
+  const [branches, setBranches] = useState([]);
 
   // ── Resolve dialog state ───────────────────────────────────────────
   const [selected, setSelected] = useState(null);   // the discrepancy item
@@ -76,10 +83,11 @@ export default function Discrepancies() {
         params: { role: activeRole }
       });
       
-      // Filter for Exam Section: TEACHING, PROCTORING (PASS_COUNT only), and OTHER
+      // Filter for Exam Section: TEACHING, PROCTORING (PASS_COUNT only), CO_ATTAINMENT, and OTHER
       const filtered = (res.data || []).filter(item => 
         item.section === "TEACHING" || 
         (item.section === "PROCTORING" && item.proctoringType === "PASS_COUNT") ||
+        item.section === "CO_ATTAINMENT" ||
         item.section === "OTHER"
       );
       setItems(filtered);
@@ -88,6 +96,23 @@ export default function Discrepancies() {
     } finally {
       setLoading(false);
     }
+  }, []);
+
+  // ── Fetch programs & branches ────────────────────────────────────────
+  useEffect(() => {
+    const fetchAcademics = async () => {
+      try {
+        const [progRes, branchRes] = await Promise.all([
+          API.get("/api/academics/programs"),
+          API.get("/api/academics/branches")
+        ]);
+        setPrograms(progRes.data?.data || progRes.data || []);
+        setBranches(branchRes.data?.data || branchRes.data || []);
+      } catch (err) {
+        console.error("Failed to fetch programs/branches:", err);
+      }
+    };
+    fetchAcademics();
   }, []);
 
   useEffect(() => { fetchItems(); }, [fetchItems]);
@@ -101,16 +126,35 @@ export default function Discrepancies() {
     setResultLoading(true);
 
     try {
-      // Fetch faculty subject results for this emp + year + sem
-      const res = await API.get("/api/faculty-subject-results", {
-        params: {
-          facultyId: item.facultyInstitutionId,
-          academicYear: item.academicYearId?._id,
-          semester: item.semesterTypeId?._id,
-        },
-      });
-      // Make each row editable — clone the data
-      const rows = (res.data || []).map(r => ({ ...r, _edited: false }));
+      let rows = [];
+      if (item.section === "PROCTORING") {
+        const res = await API.get("/api/faculty-proctoring/all", {
+          params: {
+            facultyId: item.facultyInstitutionId,
+            academicYearId: item.academicYearId?._id,
+          },
+        });
+        rows = (res.data?.data || []).map(r => ({
+          ...r,
+          _edited: false,
+          programId: r.programId?._id || r.programId || "",
+          branchId: r.branchId?._id || r.branchId || ""
+        }));
+      } else {
+        // Fetch faculty subject results for this emp + year
+        const res = await API.get("/api/faculty-subject-results", {
+          params: {
+            facultyId: item.facultyInstitutionId,
+            academicYear: item.academicYearId?._id,
+          },
+        });
+        rows = (res.data || []).map(r => ({
+          ...r,
+          _edited: false,
+          programId: r.programId?._id || r.programId || "",
+          branchId: r.branchId?._id || r.branchId || ""
+        }));
+      }
       setResultData(rows);
     } catch (err) {
       console.error("Failed to fetch faculty results:", err);
@@ -125,32 +169,89 @@ export default function Discrepancies() {
       const updated = [...prev];
       updated[index] = { ...updated[index], [field]: value, _edited: true };
 
-      // Auto-recalculate pass %
+      // Auto-recalculate pass % for TEACHING
       if (field === "appeared" || field === "passed") {
         const app = Number(field === "appeared" ? value : updated[index].appeared) || 0;
         const pas = Number(field === "passed" ? value : updated[index].passed) || 0;
         updated[index].passPercentage = app > 0 ? ((pas / app) * 100).toFixed(2) : "0.00";
       }
+
+      // Auto-recalculate pass % for PROCTORING
+      if (field === "eligibleStudents" || field === "passedStudents") {
+        const eligible = Number(field === "eligibleStudents" ? value : updated[index].eligibleStudents) || 0;
+        const passed = Number(field === "passedStudents" ? value : updated[index].passedStudents) || 0;
+        updated[index].passPercentage = eligible > 0 ? ((passed / eligible) * 100).toFixed(2) : "0.00";
+      }
+
       return updated;
     });
   };
 
   // ── Add a new empty row ─────────────────────────────────────────────
   const handleAddRow = () => {
-    setResultData(prev => [
-      ...prev,
-      {
-        _tempId: `new-${Date.now()}`,
-        _isNew: true,
-        _edited: true,
-        subjectName: "",
-        subjectCode: "",
-        branch: "",
-        appeared: 0,
-        passed: 0,
-        passPercentage: "0.00",
-      },
-    ]);
+    if (selected?.section === "PROCTORING") {
+      setResultData(prev => [
+        ...prev,
+        {
+          _tempId: `new-${Date.now()}`,
+          _isNew: true,
+          _edited: true,
+          programId: "",
+          branchId: "",
+          branch: "",
+          semesterNumber: "",
+          yearNumber: "",
+          section: "",
+          totalStudents: 0,
+          eligibleStudents: 0,
+          passedStudents: 0,
+          passPercentage: "0.00",
+        }
+      ]);
+    } else if (selected?.section === "CO_ATTAINMENT") {
+      setResultData(prev => [
+        ...prev,
+        {
+          _tempId: `new-${Date.now()}`,
+          _isNew: true,
+          _edited: true,
+          courseName: "",
+          subjectName: "",
+          courseCode: "",
+          subjectCode: "",
+          courseType: "THEORY",
+          programId: "",
+          branchId: "",
+          branch: "",
+          semesterNumber: "",
+          section: "",
+          noOfCos: 0,
+          noOfCosAttained: 0,
+        }
+      ]);
+    } else {
+      setResultData(prev => [
+        ...prev,
+        {
+          _tempId: `new-${Date.now()}`,
+          _isNew: true,
+          _edited: true,
+          courseName: "",
+          subjectName: "",
+          courseCode: "",
+          subjectCode: "",
+          courseType: "THEORY",
+          programId: "",
+          branchId: "",
+          branch: "",
+          semesterNumber: "",
+          section: "",
+          appeared: 0,
+          passed: 0,
+          passPercentage: "0.00",
+        },
+      ]);
+    }
   };
 
   // ── Remove a new (unsaved) row ─────────────────────────────────────
@@ -164,36 +265,115 @@ export default function Discrepancies() {
       toast.warning("Please upload a proof document before submitting");
       return;
     }
+    if (proofFile.size > 500 * 1024) {
+      toast.error("Proof document must be under 500kb");
+      return;
+    }
 
     setSubmitting(true);
     try {
       // 1. Update existing edited rows
       const editedRows = resultData.filter(r => r._edited && !r._isNew);
       for (const row of editedRows) {
-        await API.put(`/api/faculty-subject-results/${row._id}`, {
-          appeared: Number(row.appeared),
-          passed: Number(row.passed),
-          passPercentage: Number(row.passPercentage),
-          subjectName: row.subjectName,
-          subjectCode: row.subjectCode,
-          branch: row.branch,
-        });
+        const branchName = branches.find(b => b._id === row.branchId)?.name || row.branch || "";
+        if (selected.section === "PROCTORING") {
+          await API.put(`/api/faculty-proctoring/${row._id}`, {
+            programId: row.programId,
+            branchId: row.branchId,
+            branch: branchName,
+            semesterNumber: row.semesterNumber ? Number(row.semesterNumber) : null,
+            yearNumber: row.yearNumber ? Number(row.yearNumber) : null,
+            section: row.section,
+            totalStudents: Number(row.totalStudents),
+            eligibleStudents: Number(row.eligibleStudents),
+            passedStudents: Number(row.passedStudents),
+          });
+        } else if (selected.section === "CO_ATTAINMENT") {
+          await API.put(`/api/faculty-subject-results/${row._id}`, {
+            courseName: row.courseName || row.subjectName,
+            courseCode: row.courseCode || row.subjectCode,
+            courseType: row.courseType,
+            programId: row.programId,
+            branchId: row.branchId,
+            branch: branchName,
+            semesterNumber: row.semesterNumber,
+            section: row.section,
+            noOfCos: Number(row.noOfCos),
+            noOfCosAttained: Number(row.noOfCosAttained),
+          });
+        } else {
+          // TEACHING
+          await API.put(`/api/faculty-subject-results/${row._id}`, {
+            courseName: row.courseName || row.subjectName,
+            courseCode: row.courseCode || row.subjectCode,
+            courseType: row.courseType,
+            programId: row.programId,
+            branchId: row.branchId,
+            branch: branchName,
+            semesterNumber: row.semesterNumber,
+            section: row.section,
+            appeared: Number(row.appeared),
+            passed: Number(row.passed),
+            passPercentage: Number(row.passPercentage),
+          });
+        }
       }
 
       // 2. Create new rows
-      const newRows = resultData.filter(r => r._isNew && r.subjectName?.trim());
+      const newRows = resultData.filter(r => r._isNew && (selected.section === "PROCTORING" || r.subjectName?.trim() || r.courseName?.trim()));
       for (const row of newRows) {
-        await API.post("/api/faculty-subject-results", {
-          facultyId: selected.facultyInstitutionId,
-          facultyName: selected.facultyName,
-          subjectName: row.subjectName,
-          subjectCode: row.subjectCode,
-          branch: row.branch,
-          academicYearId: selected.academicYearId?._id,
-          semesterTypeId: selected.semesterTypeId?._id,
-          appeared: Number(row.appeared),
-          passed: Number(row.passed),
-        });
+        const branchName = branches.find(b => b._id === row.branchId)?.name || row.branch || "";
+        if (selected.section === "PROCTORING") {
+          await API.post("/api/faculty-proctoring", {
+            facultyId: selected.raisedBy?._id || selected.raisedBy,
+            empId: selected.facultyInstitutionId,
+            facultyName: selected.facultyName,
+            academicYear: selected.academicYearId?._id || selected.academicYearId,
+            programId: row.programId,
+            branchId: row.branchId,
+            semesterNumber: row.semesterNumber ? Number(row.semesterNumber) : null,
+            yearNumber: row.yearNumber ? Number(row.yearNumber) : null,
+            section: row.section,
+            totalStudents: Number(row.totalStudents),
+            eligibleStudents: Number(row.eligibleStudents),
+            passedStudents: Number(row.passedStudents),
+          });
+        } else if (selected.section === "CO_ATTAINMENT") {
+          await API.post("/api/faculty-subject-results", {
+            facultyId: selected.facultyInstitutionId,
+            facultyName: selected.facultyName,
+            courseName: row.courseName || row.subjectName,
+            courseCode: row.courseCode || row.subjectCode,
+            courseType: row.courseType,
+            programId: row.programId,
+            branchId: row.branchId,
+            branch: branchName,
+            semesterNumber: row.semesterNumber,
+            section: row.section,
+            academicYearId: selected.academicYearId?._id,
+            semesterTypeId: selected.semesterTypeId?._id,
+            noOfCos: Number(row.noOfCos),
+            noOfCosAttained: Number(row.noOfCosAttained),
+          });
+        } else {
+          // TEACHING
+          await API.post("/api/faculty-subject-results", {
+            facultyId: selected.facultyInstitutionId,
+            facultyName: selected.facultyName,
+            courseName: row.courseName || row.subjectName,
+            courseCode: row.courseCode || row.subjectCode,
+            courseType: row.courseType,
+            programId: row.programId,
+            branchId: row.branchId,
+            branch: branchName,
+            semesterNumber: row.semesterNumber,
+            section: row.section,
+            academicYearId: selected.academicYearId?._id,
+            semesterTypeId: selected.semesterTypeId?._id,
+            appeared: Number(row.appeared),
+            passed: Number(row.passed),
+          });
+        }
       }
 
       // 3. Resolve the discrepancy with proof document
@@ -568,7 +748,7 @@ export default function Discrepancies() {
       <Dialog
         open={Boolean(selected)}
         onClose={() => !submitting && setSelected(null)}
-        maxWidth="md"
+        maxWidth="lg"
         fullWidth
         PaperProps={{
           sx: {
@@ -640,146 +820,344 @@ export default function Discrepancies() {
                 </Box>
 
                 {/* ── Faculty Result Data (editable table) ── */}
-                <Box>
-                  <Typography sx={{ fontSize: 14, fontWeight: 700, color: "#333", mb: 1 }}>
-                    📊 Faculty Result Data
-                    <span style={{ fontSize: 12, fontWeight: 400, color: "#888", marginLeft: 8 }}>
-                      (Edit values below, then upload proof and submit)
-                    </span>
-                  </Typography>
-
-                  {resultLoading ? null : resultData.length === 0 ? (
-                    <Box
-                      sx={{
-                        p: 3, borderRadius: "14px", background: "#fff8e1",
-                        border: "1px solid #ffe082", textAlign: "center",
-                      }}
-                    >
-                      <Typography fontSize={13} color="#f57f17">
-                        ⚠️ No result records found for this faculty / year / semester combination.
+                {selected.section !== "OTHER" && (
+                  <Box>
+                    <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1 }}>
+                      <Typography sx={{ fontSize: 14, fontWeight: 700, color: "#333" }}>
+                        📊 Faculty Result Data
+                        <span style={{ fontSize: 12, fontWeight: 400, color: "#888", marginLeft: 8 }}>
+                          (Edit values below, then upload proof and submit)
+                        </span>
                       </Typography>
+                      {!resultLoading && (
+                        <Button
+                          size="small"
+                          variant="outlined"
+                          onClick={handleAddRow}
+                        >
+                          + Add New Row
+                        </Button>
+                      )}
                     </Box>
-                  ) : (
-                    <Paper sx={{ borderRadius: "14px", overflow: "hidden", boxShadow: "0 2px 10px rgba(0,0,0,0.06)" }}>
-                      <Table size="small">
-                        <TableHead sx={{ background: "#f0f4fb" }}>
-                          <TableRow>
-                            {["#", "Subject", "Code", "Branch", "Appeared", "Passed", "Pass %"].map(h => (
-                              <TableCell key={h} sx={{ fontWeight: 600, fontSize: 12, color: "#444" }}>
-                                {h}
-                              </TableCell>
-                            ))}
-                          </TableRow>
-                        </TableHead>
-                        <TableBody>
-                          {resultData.map((row, idx) => (
-                            <TableRow
-                              key={row._id || row._tempId}
-                              sx={{
-                                background: row._isNew ? "#fff8e1" : row._edited ? "#e3f2fd" : (idx % 2 === 0 ? "#fafcff" : "#fff"),
-                                transition: "background 0.2s",
-                              }}
-                            >
-                              <TableCell sx={{ fontWeight: 600, fontSize: 12, width: 30 }}>
-                                {idx + 1}
-                                {row._isNew && (
-                                  <Typography fontSize={9} color="#e65100" fontWeight={700}>NEW</Typography>
+
+                    {resultLoading ? null : resultData.length === 0 ? (
+                      <Box
+                        sx={{
+                          p: 3, borderRadius: "14px", background: "#fff8e1",
+                          border: "1px solid #ffe082", textAlign: "center",
+                        }}
+                      >
+                        <Typography fontSize={13} color="#f57f17">
+                          ⚠️ No result records found for this faculty / year / semester combination.
+                        </Typography>
+                      </Box>
+                    ) : (
+                      <Paper sx={{ borderRadius: "14px", overflow: "hidden", boxShadow: "0 2px 10px rgba(0,0,0,0.06)", overflowX: "auto" }}>
+                        <Table size="small">
+                          <TableHead sx={{ background: "#f0f4fb" }}>
+                            <TableRow>
+                              {selected.section === "PROCTORING" ? (
+                                ["#", "Program", "Branch", "Sem", "Yr", "Sec", "Total Allotted", "Eligible (A)", "Passed (B)", "Pass %", ""].map(h => (
+                                  <TableCell key={h} sx={{ fontWeight: 600, fontSize: 12, color: "#444" }}>{h}</TableCell>
+                                ))
+                              ) : selected.section === "CO_ATTAINMENT" ? (
+                                ["#", "Subject", "Code", "Type", "Prog", "Branch", "Sem", "Sec", "No. of COs", "COs Attained", "Attainment %", ""].map(h => (
+                                  <TableCell key={h} sx={{ fontWeight: 600, fontSize: 12, color: "#444" }}>{h}</TableCell>
+                                ))
+                              ) : (
+                                ["#", "Subject", "Code", "Type", "Prog", "Branch", "Sem", "Sec", "Appeared", "Passed", "Pass %", ""].map(h => (
+                                  <TableCell key={h} sx={{ fontWeight: 600, fontSize: 12, color: "#444" }}>{h}</TableCell>
+                                ))
+                              )}
+                            </TableRow>
+                          </TableHead>
+                          <TableBody>
+                            {resultData.map((row, idx) => (
+                              <TableRow
+                                key={row._id || row._tempId}
+                                sx={{
+                                  background: row._isNew ? "#fff8e1" : row._edited ? "#e3f2fd" : (idx % 2 === 0 ? "#fafcff" : "#fff"),
+                                  transition: "background 0.2s",
+                                }}
+                              >
+                                <TableCell sx={{ fontWeight: 600, fontSize: 12, width: 30 }}>
+                                  {idx + 1}
+                                  {row._isNew && (
+                                    <Typography fontSize={9} color="#e65100" fontWeight={700}>NEW</Typography>
+                                  )}
+                                </TableCell>
+
+                                {selected.section === "PROCTORING" ? (
+                                  <>
+                                    <TableCell>
+                                      <Select
+                                        variant="standard"
+                                        value={row.programId || ""}
+                                        onChange={e => handleResultEdit(idx, "programId", e.target.value)}
+                                        sx={{ fontSize: 13, fontWeight: 600, minWidth: 80 }}
+                                        disableUnderline={!row._edited}
+                                      >
+                                        <MenuItem value="">—</MenuItem>
+                                        {programs.map(p => <MenuItem key={p._id} value={p._id}>{p.code}</MenuItem>)}
+                                      </Select>
+                                    </TableCell>
+                                    
+                                    <TableCell>
+                                      <Select
+                                        variant="standard"
+                                        value={row.branchId || ""}
+                                        onChange={e => handleResultEdit(idx, "branchId", e.target.value)}
+                                        sx={{ fontSize: 13, fontWeight: 600, minWidth: 80 }}
+                                        disableUnderline={!row._edited}
+                                      >
+                                        <MenuItem value="">—</MenuItem>
+                                        {branches.filter(b => !row.programId || b.programId?._id === row.programId || b.programId === row.programId).map(b => (
+                                          <MenuItem key={b._id} value={b._id}>{b.code}</MenuItem>
+                                        ))}
+                                      </Select>
+                                    </TableCell>
+
+                                    <TableCell>
+                                      <TextField
+                                        variant="standard"
+                                        type="number"
+                                        value={row.semesterNumber ?? ""}
+                                        onChange={e => handleResultEdit(idx, "semesterNumber", e.target.value)}
+                                        slotProps={{ input: { disableUnderline: !row._edited, sx: { fontSize: 13 } } }}
+                                        placeholder="Sem"
+                                        sx={{ width: 45 }}
+                                      />
+                                    </TableCell>
+
+                                    <TableCell>
+                                      <TextField
+                                        variant="standard"
+                                        type="number"
+                                        value={row.yearNumber ?? ""}
+                                        onChange={e => handleResultEdit(idx, "yearNumber", e.target.value)}
+                                        slotProps={{ input: { disableUnderline: !row._edited, sx: { fontSize: 13 } } }}
+                                        placeholder="Yr"
+                                        sx={{ width: 45 }}
+                                      />
+                                    </TableCell>
+
+                                    <TableCell>
+                                      <TextField
+                                        variant="standard"
+                                        value={row.section || ""}
+                                        onChange={e => handleResultEdit(idx, "section", e.target.value)}
+                                        slotProps={{ input: { disableUnderline: !row._edited, sx: { fontSize: 13 } } }}
+                                        placeholder="Sec"
+                                        sx={{ width: 45 }}
+                                      />
+                                    </TableCell>
+
+                                    <TableCell>
+                                      <TextField
+                                        variant="standard"
+                                        type="number"
+                                        value={row.totalStudents ?? ""}
+                                        onChange={e => handleResultEdit(idx, "totalStudents", e.target.value)}
+                                        slotProps={{ input: { sx: { fontSize: 13, fontWeight: 600 } } }}
+                                        sx={{ width: 65 }}
+                                      />
+                                    </TableCell>
+
+                                    <TableCell>
+                                      <TextField
+                                        variant="standard"
+                                        type="number"
+                                        value={row.eligibleStudents ?? ""}
+                                        onChange={e => handleResultEdit(idx, "eligibleStudents", e.target.value)}
+                                        slotProps={{ input: { sx: { fontSize: 13, fontWeight: 600 } } }}
+                                        sx={{ width: 65 }}
+                                      />
+                                    </TableCell>
+
+                                    <TableCell>
+                                      <TextField
+                                        variant="standard"
+                                        type="number"
+                                        value={row.passedStudents ?? ""}
+                                        onChange={e => handleResultEdit(idx, "passedStudents", e.target.value)}
+                                        slotProps={{ input: { sx: { fontSize: 13, fontWeight: 600 } } }}
+                                        sx={{ width: 65 }}
+                                      />
+                                    </TableCell>
+
+                                    <TableCell>
+                                      <Typography fontSize={13} fontWeight={700} color={Number(row.passPercentage) >= 80 ? "#2e7d32" : "#e65100"}>
+                                        {Number(row.passPercentage || 0).toFixed(1)}%
+                                      </Typography>
+                                    </TableCell>
+                                  </>
+                                ) : (
+                                  <>
+                                    <TableCell>
+                                      <TextField
+                                        variant="standard"
+                                        value={row.courseName || row.subjectName || ""}
+                                        onChange={e => handleResultEdit(idx, "courseName", e.target.value)}
+                                        slotProps={{ input: { disableUnderline: !row._edited, sx: { fontSize: 13 } } }}
+                                        placeholder="Course Name"
+                                        fullWidth
+                                      />
+                                    </TableCell>
+
+                                    <TableCell>
+                                      <TextField
+                                        variant="standard"
+                                        value={row.courseCode || row.subjectCode || ""}
+                                        onChange={e => handleResultEdit(idx, "courseCode", e.target.value)}
+                                        slotProps={{ input: { disableUnderline: !row._edited, sx: { fontSize: 13 } } }}
+                                        placeholder="Code"
+                                        sx={{ width: 80 }}
+                                      />
+                                    </TableCell>
+
+                                    <TableCell>
+                                      <Select
+                                        variant="standard"
+                                        value={row.courseType || "THEORY"}
+                                        onChange={e => handleResultEdit(idx, "courseType", e.target.value)}
+                                        sx={{ fontSize: 13, fontWeight: 600 }}
+                                        disableUnderline={!row._edited}
+                                      >
+                                        <MenuItem value="THEORY">Theory</MenuItem>
+                                        <MenuItem value="PRACTICAL">Practical</MenuItem>
+                                        <MenuItem value="INTEGRATED">Integrated</MenuItem>
+                                      </Select>
+                                    </TableCell>
+
+                                    <TableCell>
+                                      <Select
+                                        variant="standard"
+                                        value={row.programId || ""}
+                                        onChange={e => handleResultEdit(idx, "programId", e.target.value)}
+                                        sx={{ fontSize: 13, fontWeight: 600, minWidth: 80 }}
+                                        disableUnderline={!row._edited}
+                                      >
+                                        <MenuItem value="">—</MenuItem>
+                                        {programs.map(p => <MenuItem key={p._id} value={p._id}>{p.code}</MenuItem>)}
+                                      </Select>
+                                    </TableCell>
+
+                                    <TableCell>
+                                      <Select
+                                        variant="standard"
+                                        value={row.branchId || ""}
+                                        onChange={e => handleResultEdit(idx, "branchId", e.target.value)}
+                                        sx={{ fontSize: 13, fontWeight: 600, minWidth: 80 }}
+                                        disableUnderline={!row._edited}
+                                      >
+                                        <MenuItem value="">—</MenuItem>
+                                        {branches.filter(b => !row.programId || b.programId?._id === row.programId || b.programId === row.programId).map(b => (
+                                          <MenuItem key={b._id} value={b._id}>{b.code}</MenuItem>
+                                        ))}
+                                      </Select>
+                                    </TableCell>
+
+                                    <TableCell>
+                                      <TextField
+                                        variant="standard"
+                                        value={row.semesterNumber || ""}
+                                        onChange={e => handleResultEdit(idx, "semesterNumber", e.target.value)}
+                                        slotProps={{ input: { disableUnderline: !row._edited, sx: { fontSize: 13 } } }}
+                                        placeholder="Sem"
+                                        sx={{ width: 45 }}
+                                      />
+                                    </TableCell>
+
+                                    <TableCell>
+                                      <TextField
+                                        variant="standard"
+                                        value={row.section || ""}
+                                        onChange={e => handleResultEdit(idx, "section", e.target.value)}
+                                        slotProps={{ input: { disableUnderline: !row._edited, sx: { fontSize: 13 } } }}
+                                        placeholder="Sec"
+                                        sx={{ width: 45 }}
+                                      />
+                                    </TableCell>
+
+                                    {selected.section === "CO_ATTAINMENT" ? (
+                                      <>
+                                        <TableCell>
+                                          <TextField
+                                            variant="standard"
+                                            type="number"
+                                            value={row.noOfCos ?? ""}
+                                            onChange={e => handleResultEdit(idx, "noOfCos", e.target.value)}
+                                            slotProps={{ input: { sx: { fontSize: 13, fontWeight: 600 } } }}
+                                            sx={{ width: 55 }}
+                                          />
+                                        </TableCell>
+                                        <TableCell>
+                                          <TextField
+                                            variant="standard"
+                                            type="number"
+                                            value={row.noOfCosAttained ?? ""}
+                                            onChange={e => handleResultEdit(idx, "noOfCosAttained", e.target.value)}
+                                            slotProps={{ input: { sx: { fontSize: 13, fontWeight: 600 } } }}
+                                            sx={{ width: 55 }}
+                                          />
+                                        </TableCell>
+                                        <TableCell>
+                                          <Typography fontSize={13} fontWeight={700} color={row.noOfCos > 0 && (row.noOfCosAttained / row.noOfCos * 100) >= 80 ? "#2e7d32" : "#e65100"}>
+                                            {row.noOfCos > 0 ? ((row.noOfCosAttained / row.noOfCos) * 100).toFixed(1) : "0.0"}%
+                                          </Typography>
+                                        </TableCell>
+                                      </>
+                                    ) : (
+                                      <>
+                                        <TableCell>
+                                          <TextField
+                                            variant="standard"
+                                            type="number"
+                                            value={row.appeared ?? ""}
+                                            onChange={e => handleResultEdit(idx, "appeared", e.target.value)}
+                                            slotProps={{ input: { sx: { fontSize: 13, fontWeight: 600 } } }}
+                                            sx={{ width: 65 }}
+                                          />
+                                        </TableCell>
+                                        <TableCell>
+                                          <TextField
+                                            variant="standard"
+                                            type="number"
+                                            value={row.passed ?? ""}
+                                            onChange={e => handleResultEdit(idx, "passed", e.target.value)}
+                                            slotProps={{ input: { sx: { fontSize: 13, fontWeight: 600 } } }}
+                                            sx={{ width: 65 }}
+                                          />
+                                        </TableCell>
+                                        <TableCell>
+                                          <Typography fontSize={13} fontWeight={700} color={Number(row.passPercentage) >= 80 ? "#2e7d32" : "#e65100"}>
+                                            {Number(row.passPercentage || 0).toFixed(1)}%
+                                          </Typography>
+                                        </TableCell>
+                                      </>
+                                    )}
+                                  </>
                                 )}
-                              </TableCell>
 
-                              <TableCell>
-                                <TextField
-                                  variant="standard"
-                                  value={row.subjectName || ""}
-                                  onChange={e => handleResultEdit(idx, "subjectName", e.target.value)}
-                                  slotProps={{ input: { disableUnderline: !row._edited, sx: { fontSize: 13 } } }}
-                                  placeholder={row._isNew ? "Subject Name" : ""}
-                                  fullWidth
-                                />
-                              </TableCell>
-
-                              <TableCell>
-                                <TextField
-                                  variant="standard"
-                                  value={row.subjectCode || ""}
-                                  onChange={e => handleResultEdit(idx, "subjectCode", e.target.value)}
-                                  slotProps={{ input: { disableUnderline: !row._edited, sx: { fontSize: 13 } } }}
-                                  placeholder={row._isNew ? "Code" : ""}
-                                  sx={{ width: 80 }}
-                                />
-                              </TableCell>
-
-                              <TableCell>
-                                <TextField
-                                  variant="standard"
-                                  value={row.branch || ""}
-                                  onChange={e => handleResultEdit(idx, "branch", e.target.value)}
-                                  slotProps={{ input: { disableUnderline: !row._edited, sx: { fontSize: 13 } } }}
-                                  placeholder={row._isNew ? "Branch" : ""}
-                                  sx={{ width: 80 }}
-                                />
-                              </TableCell>
-
-                              <TableCell>
-                                <TextField
-                                  variant="standard"
-                                  type="number"
-                                  value={row.appeared ?? ""}
-                                  onChange={e => handleResultEdit(idx, "appeared", e.target.value)}
-                                  slotProps={{ input: { sx: { fontSize: 13, fontWeight: 600 } } }}
-                                  sx={{ width: 70 }}
-                                />
-                              </TableCell>
-
-                              <TableCell>
-                                <TextField
-                                  variant="standard"
-                                  type="number"
-                                  value={row.passed ?? ""}
-                                  onChange={e => handleResultEdit(idx, "passed", e.target.value)}
-                                  slotProps={{ input: { sx: { fontSize: 13, fontWeight: 600 } } }}
-                                  sx={{ width: 70 }}
-                                />
-                              </TableCell>
-
-                              <TableCell>
-                                <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-                                  <Typography
-                                    fontSize={13}
-                                    fontWeight={700}
-                                    color={Number(row.passPercentage) >= 50 ? "#2e7d32" : "#e65100"}
-                                  >
-                                    {row.passPercentage}%
-                                  </Typography>
+                                <TableCell>
                                   {row._isNew && (
                                     <IconButton
                                       size="small"
                                       onClick={() => handleRemoveRow(idx)}
-                                      sx={{ color: "#b71c1c", ml: 0.5, p: 0.3 }}
+                                      sx={{ color: "#b71c1c", p: 0.3 }}
                                     >
                                       <CloseIcon sx={{ fontSize: 16 }} />
                                     </IconButton>
                                   )}
-                                </Box>
-                              </TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                    </Paper>
-                  )}
-
-                  {/* ── Add Row Button ── */}
-                  {!resultLoading && (
-                    <Button
-                      size="small"
-                      variant="outlined"
-                      onClick={handleAddRow}
-                    >
-                      + Add New Row
-                    </Button>
-                  )}
-                </Box>
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </Paper>
+                    )}
+                  </Box>
+                )}
 
                 {/* ── Proof Upload (required) ── */}
                 <Box>
@@ -791,7 +1169,15 @@ export default function Discrepancies() {
                     ref={fileRef}
                     style={{ display: "none" }}
                     accept=".pdf,.jpg,.jpeg,.png,.webp"
-                    onChange={e => setProofFile(e.target.files[0])}
+                    onChange={e => {
+                      const file = e.target.files[0];
+                      if (file && file.size > 500 * 1024) {
+                        toast.error("Proof document must be under 500kb");
+                        e.target.value = null; // Reset selection
+                        return;
+                      }
+                      setProofFile(file);
+                    }}
                   />
                   <Box
                     onClick={() => fileRef.current?.click()}
@@ -808,7 +1194,7 @@ export default function Discrepancies() {
                     <Typography fontSize={13} mt={0.5} color={proofFile ? "#2e7d32" : "#888"}>
                       {proofFile ? `✅ ${proofFile.name}` : "Click to upload PDF or image (required)"}
                     </Typography>
-                    <Typography fontSize={11} color="#aaa">Max 10MB</Typography>
+                    <Typography fontSize={11} color="#aaa">Max 500KB</Typography>
                   </Box>
                 </Box>
               </Box>
