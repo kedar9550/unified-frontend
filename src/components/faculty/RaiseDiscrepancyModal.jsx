@@ -42,23 +42,25 @@ import { useAuth } from "../../context/AuthContext";
 import { toast } from "sonner";
 
 const SECTIONS = [
-  { value: "TEACHING",   label: "📚 Teaching" },
-  { value: "PROCTORING", label: "👁️ Proctoring" },
-  { value: "FEEDBACK",   label: "💬 Feedback" },
-  { value: "OTHER",      label: "📎 Other" },
+  { value: "TEACHING",   label: "Course Average Pass Percentage" },
+  { value: "PROCTORING", label: "Proctoring Students' Average Pass Percentage" },
+  { value: "FEEDBACK",   label: "Feedback" },
+  { value: "CO_ATTAINMENT", label: "CO Attainment" },
 ];
 
 const SECTION_LABELS = {
-  TEACHING:   "📚 Teaching",
-  PROCTORING: "👁️ Proctoring",
-  FEEDBACK:   "💬 Feedback",
-  OTHER:      "📎 Other",
+  TEACHING:   "Course Average Pass Percentage",
+  PROCTORING: "Proctoring Students' Average Pass Percentage",
+  FEEDBACK:   "Feedback",
+  CO_ATTAINMENT: "CO Attainment",
+  OTHER:      "Other",
 };
 
 const ROLE_LABEL = {
   TEACHING:   "Exam Section",
   PROCTORING: "Exam Section",
   FEEDBACK:   "Feedback Coordinator",
+  CO_ATTAINMENT: "Exam Section",
   OTHER:      "Admin",
 };
 
@@ -210,13 +212,11 @@ export default function RaiseDiscrepancyModal({
   };
 
   const handleSubmit = async () => {
-    if (!yearId || !semTypeId || !note.trim()) return;
+    if (!yearId || !note.trim()) return;
     setSaving(true);
     try {
       await API.post("/api/discrepancies", {
         academicYearId:       yearId,
-        semesterTypeId:       semTypeId,
-        semester:             semesterNo,
         section,
         proctoringType:       section === "PROCTORING" ? proctoringType : undefined,
         note:                 note.trim(),
@@ -605,61 +605,7 @@ export default function RaiseDiscrepancyModal({
                   </Select>
                 </Box>
 
-                {/* ── Semester / Year Number ── */}
-                <Box>
-                  <Typography sx={label}>
-                    {semesterNo && (String(semesterNo).includes('Year') || Number(semesterNo) < 6 && section === "PROCTORING" && !semesterNumbers.includes(String(semesterNo))) 
-                      ? "Academic Period (Year/Sem)" 
-                      : "Semester / Year"}
-                  </Typography>
-                  <Select
-                    fullWidth
-                    size="small"
-                    value={semesterNo}
-                    onChange={e => {
-                      const val = e.target.value;
-                      setSemesterNo(val);
-                      
-                      // Extract number and type
-                      const isSem = val.startsWith("Sem-");
-                      const isYear = val.startsWith("Year-") || val.includes("Year");
-                      const numPart = val.replace("Sem-", "").replace("Year-", "");
-                      const num = parseInt(numPart);
 
-                      if (isSem && !isNaN(num)) {
-                        const typeName = num % 2 === 0 ? "EVEN" : "ODD";
-                        const type = localSemesterTypes.find(t => t.name === typeName);
-                        if (type) setSemTypeId(type._id);
-                      } else if (isYear) {
-                        const yearType = localSemesterTypes.find(t => t.name === "YEAR");
-                        if (yearType) setSemTypeId(yearType._id);
-                      } else if (val && val.includes('-S')) {
-                        const summer = localSemesterTypes.find(t => t.name === "SUMMER");
-                        if (summer) setSemTypeId(summer._id);
-                      }
-                    }}
-
-                    displayEmpty
-                    sx={selectSx}
-                    disabled={loadingSems}
-                  >
-                    <MenuItem value="" disabled>Select Period</MenuItem>
-                    {semesterNumbers.map(n => (
-                      <MenuItem key={n} value={n}>
-                        {n}
-                      </MenuItem>
-                    ))}
-                    {semesterNumbers.length === 0 && !loadingSems && (
-                      <MenuItem value="" disabled>No data found for this year</MenuItem>
-                    )}
-                  </Select>
-                  {loadingSems && (
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 1, mt: 1 }}>
-                        <Loader size={12} />
-                        <Typography fontSize={11} color="text.secondary">Fetching available periods...</Typography>
-                    </Box>
-                  )}
-                </Box>
 
                 {/* ── Section ── */}
                 <Box>
@@ -743,9 +689,9 @@ export default function RaiseDiscrepancyModal({
             Cancel
           </Button>
           <Button
- variant="contained"
- onClick={handleSubmit}
- disabled={saving || !note.trim() || !yearId || !semesterNo || (section === "PROCTORING" && proctoringType === "ASSIGNED_COUNT" && !studentDeptId)}
+            variant="contained"
+            onClick={handleSubmit}
+            disabled={saving || !note.trim() || !yearId || (section === "PROCTORING" && proctoringType === "ASSIGNED_COUNT" && !studentDeptId)}
  sx={{
  
  px: 4,

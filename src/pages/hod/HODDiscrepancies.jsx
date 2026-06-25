@@ -43,7 +43,7 @@ const STATUS_CONFIG = {
 };
 
 const SECTION_LABEL = {
-  PROCTORING: "👁️ Proctoring",
+  PROCTORING: "Proctoring Students' Average Pass Percentage",
 };
 
 export default function HODDiscrepancies() {
