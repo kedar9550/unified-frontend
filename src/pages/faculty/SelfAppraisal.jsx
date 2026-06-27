@@ -453,6 +453,11 @@ const SelfAppraisal = () => {
       return;
     }
 
+    if (appraisal?.research?.scopusCitations === null || appraisal?.research?.scopusCitations === undefined) {
+      toast.error("Scopus Citations and H-Index data not found. Please contact the Research Team to update your records before submitting.");
+      return;
+    }
+
     // Check for rejected items in proctoring, resource utilization, contributions, and administrative responsibilities
     const hasRejectedProc = proctoringDetail?.status === "Rejected";
     const hasRejectedResUt = resourceUtilizationDetails?.some(r => r.status === "Rejected");
@@ -1977,7 +1982,7 @@ const SelfAppraisal = () => {
  variant="contained"
  startIcon={<Send />}
  onClick={handleSubmit}
- disabled={loading || !eligibility.canSubmit || !profileComplete}
+ disabled={loading || !eligibility.canSubmit || !profileComplete || appraisal.research.scopusCitations === null || appraisal.research.scopusCitations === undefined}
  sx={{
  whiteSpace: "nowrap",
  
