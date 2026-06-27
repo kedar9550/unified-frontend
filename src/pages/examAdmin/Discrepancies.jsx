@@ -519,7 +519,7 @@ export default function Discrepancies() {
               <Table sx={{ minWidth: { xs: 800, md: 1000 } }}>
                 <TableHead sx={{ background: "var(--gradient-primary)" }}>
                   <TableRow>
-                    {["#", "Faculty", "Year", "Section", "Note", "Raised At", "Status", "Action"].map(col => (
+                    {["#", "Faculty", "Year / Sem", "Section", "Note", "Raised At", "Status", "Action"].map(col => (
                       <TableCell
                         key={col}
                         sx={{
@@ -577,17 +577,6 @@ export default function Discrepancies() {
                               color: "var(--text-primary)"
                             }}
                           />
-                        </TableCell>
-
-                        {/* Section */}
-                        <TableCell>
-                          <Box
-                            sx={{
-                        {/* Year */}
-                        <TableCell>
-                          <Typography fontSize={13} fontWeight={700} sx={{ color: "var(--text-primary)" }}>
-                            {item.academicYearId?.year || "—"}
-                          </Typography>
                         </TableCell>
 
                         {/* Section */}
