@@ -35,6 +35,16 @@ import SectionHeader from "../../components/common/SectionHeader";
 import API from "../../api/axios";
 import { toast } from "sonner";
 
+const formatSemText = (sem) => {
+  if (!sem) return "";
+  const str = String(sem);
+  const numMatch = str.match(/\d+/);
+  if (str.toLowerCase().includes("year")) {
+    return numMatch ? `Year ${numMatch[0]}` : str;
+  }
+  return numMatch ? `Sem ${numMatch[0]}` : str;
+};
+
 // ── Status config ─────────────────────────────────────────────────────
 const STATUS_CONFIG = {
   PENDING: { label: "Pending", color: "#F59E0B", bg: "rgba(245, 158, 11, 0.1)", icon: <PendingIcon fontSize="small" /> },
@@ -73,10 +83,10 @@ export default function HODDiscrepancies() {
       const res = await API.get("/api/discrepancies", {
         params: { role: activeRole }
       });
-      
+
       // Filter discrepancies for HOD: only PROCTORING where subtype is ASSIGNED_COUNT
-      const filtered = (res.data || []).filter(item => 
-        item.section === "PROCTORING" && 
+      const filtered = (res.data || []).filter(item =>
+        item.section === "PROCTORING" &&
         item.proctoringType === "ASSIGNED_COUNT"
       );
       setItems(filtered);
@@ -163,7 +173,7 @@ export default function HODDiscrepancies() {
     try {
       const yearId = rejectItem.academicYearId?._id || rejectItem.academicYearId;
       const semId = rejectItem.semesterTypeId?._id || rejectItem.semesterTypeId;
-      
+
       await API.put(`/api/discrepancies/${rejectItem._id}`, {
         status: "REJECTED",
         rejectionNote: rejectNote.trim(),
@@ -297,8 +307,16 @@ export default function HODDiscrepancies() {
                         </Typography>
                       </TableCell>
                       <TableCell>
-                        <Typography fontSize={13}>{item.academicYearId?.year}</Typography>
-                        <Chip label={item.semesterTypeId?.name} size="small" sx={{ fontSize: 10, height: 20 }} />
+                        <Typography fontSize={13}>{item.academicYearId?.year || "—"}</Typography>
+                        <Chip
+                          label={
+                            item.semester
+                              ? formatSemText(item.semester)
+                              : item.semesterTypeId?.name || "—"
+                          }
+                          size="small"
+                          sx={{ fontSize: 10, height: 20 }}
+                        />
                       </TableCell>
                       <TableCell>
                         <Typography fontSize={13} fontWeight={700}>
