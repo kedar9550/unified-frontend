@@ -3179,10 +3179,10 @@ const SelfAppraisal = () => {
               <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 1.5, mt: 4, color: "var(--color-primary)" }}>
                 2.7 Scopus Citations
               </Typography>
-              {appraisal.status !== "Completed" && (
-              <Alert severity="info" sx={{ mb: 2, borderRadius: "10px", "& .MuiAlert-message": { width: "100%" } }}>
+              {appraisal.status !== "Completed" && (appraisal.research.scopusCitations === null || appraisal.research.scopusCitations === undefined) && (
+              <Alert severity="warning" sx={{ mb: 2, borderRadius: "10px", "& .MuiAlert-message": { width: "100%" } }}>
                 <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                  Scopus Citations data will be entered by the Research Admin during evaluation. No action required from your side.
+                  Scopus Citations and H-Index data not found. Please contact the Research Team to update your records.
                 </Typography>
               </Alert>
               )}
@@ -3194,7 +3194,6 @@ const SelfAppraisal = () => {
                       <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2, width: "80px", whiteSpace: "nowrap" }} align="center">S. No</TableCell>
                       <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }}>Metric Details</TableCell>
                       <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }}>Citations ({citationYear})</TableCell>
-                      <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }}>Verification Status</TableCell>
                       <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }} align="center">Evaluated Points</TableCell>
                     </TableRow>
                   </TableHead>
@@ -3203,21 +3202,11 @@ const SelfAppraisal = () => {
                       <TableCell align="center" sx={{ color: "var(--text-primary)" }}>1</TableCell>
                       <TableCell sx={{ fontWeight: 600, color: "var(--text-primary)" }}>Scopus Citations</TableCell>
                       <TableCell sx={{ color: "var(--text-primary)", fontWeight: 700 }}>{appraisal.research.scopusCitations != null ? appraisal.research.scopusCitations : "—"}</TableCell>
-                      <TableCell sx={{ color: "var(--text-primary)" }}>
-                        {appraisal.research.scopusCitationStatus ? (
-                           <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5, alignItems: "flex-start" }}>
-                             {getStatusChip(appraisal.research.scopusCitationStatus)}
-                             {appraisal.research.scopusCitationStatus === "Rejected" && appraisal.research.scopusCitationRemarks && (
-                               <Typography variant="caption" sx={{ color: "#ef4444", fontWeight: 600 }}>Reason: {appraisal.research.scopusCitationRemarks}</Typography>
-                             )}
-                           </Box>
-                        ) : "Pending"}
-                      </TableCell>
                       <TableCell align="center" sx={{ fontWeight: 800, color: "var(--color-primary)" }}>{appraisal.research.scopusCitationScore || 0}</TableCell>
                     </TableRow>
 
                     <TableRow sx={{ background: "rgba(0, 78, 146, 0.04)", "&:hover": { bgcolor: "rgba(0, 78, 146, 0.06) !important" } }}>
-                      <TableCell colSpan={4} sx={{ fontWeight: 800, color: "var(--text-primary)", pl: 2 }}>
+                      <TableCell colSpan={3} sx={{ fontWeight: 800, color: "var(--text-primary)", pl: 2 }}>
                         <Box component="span" sx={{ position: "sticky", left: 16, display: "inline-block", whiteSpace: "nowrap" }}>
                           Total Evaluated Points
                         </Box>
@@ -3234,13 +3223,7 @@ const SelfAppraisal = () => {
               <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 1.5, mt: 4, color: "var(--color-primary)" }}>
                 2.8 Scopus h-index
               </Typography>
-              {appraisal.status !== "Completed" && (
-              <Alert severity="info" sx={{ mb: 2, borderRadius: "10px", "& .MuiAlert-message": { width: "100%" } }}>
-                <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                  Scopus h-index data will be entered by the Research Admin during evaluation. No action required from your side.
-                </Typography>
-              </Alert>
-              )}
+
 
               <TableContainer component={Paper} elevation={0} sx={{ mb: 4, borderRadius: "16px", background: "var(--bg-paper)", border: "1px solid var(--border-color)", overflowX: "auto", boxShadow: "none", maxWidth: { xs: "100%", md: "100%", lg: 1000, xl: 1100 }, mx: "auto" }}>
                 <Table size="small" sx={{ minWidth: 800, mx: "auto" }}>
@@ -3251,7 +3234,6 @@ const SelfAppraisal = () => {
                       <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }}>h-index in {previousHIndexYear}</TableCell>
                       <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }}>h-index in {currentHIndexYear}</TableCell>
                       <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }}>Raise (Diff)</TableCell>
-                      <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }}>Verification Status</TableCell>
                       <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }} align="center">Evaluated Points</TableCell>
                     </TableRow>
                   </TableHead>
@@ -3278,21 +3260,11 @@ const SelfAppraisal = () => {
                           </Box>
                         ) : "—"}
                       </TableCell>
-                      <TableCell sx={{ color: "var(--text-primary)" }}>
-                        {appraisal.research.scopusHIndexStatus ? (
-                           <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5, alignItems: "flex-start" }}>
-                             {getStatusChip(appraisal.research.scopusHIndexStatus)}
-                             {appraisal.research.scopusHIndexStatus === "Rejected" && appraisal.research.scopusHIndexRemarks && (
-                               <Typography variant="caption" sx={{ color: "#ef4444", fontWeight: 600 }}>Reason: {appraisal.research.scopusHIndexRemarks}</Typography>
-                             )}
-                           </Box>
-                        ) : "Pending"}
-                      </TableCell>
                       <TableCell align="center" sx={{ fontWeight: 800, color: "var(--color-primary)" }}>{appraisal.research.scopusHIndexScore || 0}</TableCell>
                     </TableRow>
 
                     <TableRow sx={{ background: "rgba(0, 78, 146, 0.04)", "&:hover": { bgcolor: "rgba(0, 78, 146, 0.06) !important" } }}>
-                      <TableCell colSpan={6} sx={{ fontWeight: 800, color: "var(--text-primary)", pl: 2 }}>
+                      <TableCell colSpan={5} sx={{ fontWeight: 800, color: "var(--text-primary)", pl: 2 }}>
                         <Box component="span" sx={{ position: "sticky", left: 16, display: "inline-block", whiteSpace: "nowrap" }}>
                           Total Evaluated Points
                         </Box>
