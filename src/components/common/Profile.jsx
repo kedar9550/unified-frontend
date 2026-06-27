@@ -139,6 +139,16 @@ const Profile = () => {
   const [showPwd, setShowPwd] = React.useState({ old: false, new: false, confirm: false });
   const [pwdLoading, setPwdLoading] = React.useState(false);
   const [doj, setDoj] = React.useState(null);
+  
+  const pwdFormRef = React.useRef(null);
+
+  React.useEffect(() => {
+    if (showPwdForm) {
+      setTimeout(() => {
+        pwdFormRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+      }, 150);
+    }
+  }, [showPwdForm]);
 
   // Validation rules for each field (pattern + maxLength)
   const validationRules = {
@@ -630,7 +640,7 @@ const Profile = () => {
 
         {/* Expandable password fields */}
         <Collapse in={showPwdForm} timeout={300}>
-          <Box sx={{
+          <Box ref={pwdFormRef} sx={{
             display: "grid",
             gridTemplateColumns: { xs: "1fr", sm: "repeat(3, 1fr)" },
             gap: 2,
@@ -641,6 +651,7 @@ const Profile = () => {
               <Typography sx={{ fontSize: "0.7rem", color: "var(--text-secondary)", fontWeight: 500, mb: 0.5, textTransform: "uppercase" }}>Old Password</Typography>
               <Box sx={{ position: "relative", display: "flex", alignItems: "center" }}>
                 <TextField
+                  autoFocus={showPwdForm}
                   size="small" fullWidth placeholder="Enter old password"
                   type={showPwd.old ? "text" : "password"}
                   value={pwdForm.oldPassword}
