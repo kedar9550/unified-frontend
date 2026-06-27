@@ -374,7 +374,7 @@ export default function FeedbackDiscrepancies() {
             <Table sx={{ minWidth: 900 }}>
               <TableHead sx={{ background: "var(--gradient-primary)" }}>
                 <TableRow>
-                  {["#", "Faculty", "Year / Period", "Note", "Raised At", "Status", "Action"].map(col => (
+                  {["#", "Faculty", "Year", "Note", "Raised At", "Status", "Action"].map(col => (
                     <TableCell key={col} sx={{ color: "#fff", fontWeight: 700, fontSize: 13, py: 2 }}>
                       {col}
                     </TableCell>
@@ -409,11 +409,6 @@ export default function FeedbackDiscrepancies() {
                         <Typography fontSize={13} fontWeight={700} color="var(--text-primary)">
                           {item.academicYearId?.year || "—"}
                         </Typography>
-                        <Chip
-                          label={item.semester ? `Sem/Year ${item.semester}` : item.semesterTypeId?.name || "—"}
-                          size="small"
-                          sx={{ fontSize: 10, fontWeight: 700, height: 20, mt: 0.5, background: "var(--bg-glass)", border: "1px solid var(--border-color)" }}
-                        />
                       </TableCell>
 
                       <TableCell sx={{ maxWidth: 300 }}>

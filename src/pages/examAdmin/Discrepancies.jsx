@@ -387,12 +387,21 @@ export default function Discrepancies() {
               <Table sx={{ minWidth: { xs: 800, md: 1000 } }}>
                 <TableHead sx={{ background: "var(--gradient-primary)" }}>
                   <TableRow>
+<<<<<<< refs/remotes/origin/first
                     {["#", "Faculty", "Year / Sem", "Section", "Note", "Raised At", "Status", "Action"].map(col => (
                       <TableCell 
                         key={col} 
                         sx={{ 
                           color: "#fff", 
                           fontWeight: 700, 
+=======
+                    {["#", "Faculty", "Year", "Section", "Note", "Raised At", "Status", "Action"].map(col => (
+                      <TableCell
+                        key={col}
+                        sx={{
+                          color: "#fff",
+                          fontWeight: 700,
+>>>>>>> local
                           fontSize: { xs: 11, md: 13 },
                           py: 2,
                           whiteSpace: "nowrap"
@@ -427,6 +436,7 @@ export default function Discrepancies() {
                         </Typography>
                       </TableCell>
 
+<<<<<<< refs/remotes/origin/first
                       {/* Year / Sem */}
                       <TableCell>
                         <Typography fontSize={13} fontWeight={700} sx={{ color: "var(--text-primary)" }}>
@@ -469,6 +479,23 @@ export default function Discrepancies() {
                           <Typography
                             fontSize={13}
                             sx={{
+=======
+                        {/* Year */}
+                        <TableCell>
+                          <Typography fontSize={13} fontWeight={700} sx={{ color: "var(--text-primary)" }}>
+                            {item.academicYearId?.year || "—"}
+                          </Typography>
+                        </TableCell>
+
+                        {/* Section */}
+                        <TableCell>
+                          <Box
+                            sx={{
+                              px: 1.5, py: 0.4, borderRadius: "10px",
+                              background: "var(--bg-glass)",
+                              border: "1px solid var(--border-color)",
+                              fontSize: 12, fontWeight: 700,
+>>>>>>> local
                               color: "var(--text-primary)",
                               fontWeight: 500,
                               overflow: "hidden", textOverflow: "ellipsis",
