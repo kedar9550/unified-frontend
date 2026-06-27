@@ -41,37 +41,27 @@ import API from "../../api/axios";
 import { useAuth } from "../../context/AuthContext";
 import { toast } from "sonner";
 
-const formatSemText = (sem) => {
-  if (!sem) return "";
-  const str = String(sem);
-  const numMatch = str.match(/\d+/);
-  if (str.toLowerCase().includes("year")) {
-    return numMatch ? `Year ${numMatch[0]}` : str;
-  }
-  return numMatch ? `Sem ${numMatch[0]}` : str;
-};
-
 const SECTIONS = [
-  { value: "TEACHING", label: "Course Average Pass Percentage" },
+  { value: "TEACHING",   label: "Course Average Pass Percentage" },
   { value: "PROCTORING", label: "Proctoring Students' Average Pass Percentage" },
-  { value: "FEEDBACK", label: "Feedback" },
+  { value: "FEEDBACK",   label: "Feedback" },
   { value: "CO_ATTAINMENT", label: "CO Attainment" },
 ];
 
 const SECTION_LABELS = {
-  TEACHING: "Course Average Pass Percentage",
+  TEACHING:   "Course Average Pass Percentage",
   PROCTORING: "Proctoring Students' Average Pass Percentage",
-  FEEDBACK: "Feedback",
+  FEEDBACK:   "Feedback",
   CO_ATTAINMENT: "CO Attainment",
-  OTHER: "Other",
+  OTHER:      "Other",
 };
 
 const ROLE_LABEL = {
-  TEACHING: "Exam Section",
+  TEACHING:   "Exam Section",
   PROCTORING: "Uniprime",
-  FEEDBACK: "Feedback Coordinator",
+  FEEDBACK:   "Feedback Coordinator",
   CO_ATTAINMENT: "Exam Section",
-  OTHER: "Admin",
+  OTHER:      "Admin",
 };
 
 const STATUS_CONFIG = {
@@ -101,8 +91,7 @@ export default function RaiseDiscrepancyModal({
   academicYears = [],
   semesterTypes = [],
   defaultYearId = "",
-  defaultSemesterTypeId = "",
-  defaultSemester = "",
+  defaultSemesterTypeId  = "",
 }) {
   const { user } = useAuth();
 
@@ -111,7 +100,7 @@ export default function RaiseDiscrepancyModal({
 
   // ── Previous discrepancies state ──────────────────────────────────
   const [discrepancies, setDiscrepancies] = useState([]);
-  const [loadingDisc, setLoadingDisc] = useState(false);
+  const [loadingDisc, setLoadingDisc]     = useState(false);
 
   // ── Semester types state ──────────────────────────────────────────
   const [localSemesterTypes, setLocalSemesterTypes] = useState(semesterTypes);
@@ -129,32 +118,32 @@ export default function RaiseDiscrepancyModal({
   }, [open, semesterTypes?.length]);
 
   // ── Raise form state ──────────────────────────────────────────────
-  const [yearId, setYearId] = useState(defaultYearId);
+  const [yearId,   setYearId]   = useState(defaultYearId);
   const [semTypeId, setSemTypeId] = useState(defaultSemesterTypeId);
-  const [section, setSection] = useState("TEACHING");
+  const [section,  setSection]  = useState("TEACHING");
   const [proctoringType, setProctoringType] = useState("PASS_COUNT");
-  const [note, setNote] = useState("");
+  const [note,     setNote]     = useState("");
   const [studentDeptId, setStudentDeptId] = useState("");
   const [departments, setDepartments] = useState([]);
   const [loadingDepts, setLoadingDepts] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [success, setSuccess] = useState(false);
-
+  const [saving,   setSaving]   = useState(false);
+  const [success,  setSuccess]  = useState(false);
+  
   // ── Global Snackbar ──────────────────────────────────────────────
 
 
 
   // ── Available Semester Numbers state ──────────────────────────────
   const [semesterNumbers, setSemesterNumbers] = useState([]);
-  const [semesterNo, setSemesterNo] = useState("");
-  const [loadingSems, setLoadingSems] = useState(false);
+  const [semesterNo,      setSemesterNo]      = useState("");
+  const [loadingSems,    setLoadingSems]     = useState(false);
 
   // Sync defaults when modal opens
   useEffect(() => {
     if (open) {
       setYearId(defaultYearId);
       setSemTypeId(defaultSemesterTypeId);
-      setSemesterNo(defaultSemester || "");
+      setSemesterNo("");
       setActiveTab(0);
       setSuccess(false);
       setNote("");
@@ -162,7 +151,7 @@ export default function RaiseDiscrepancyModal({
       setProctoringType("PASS_COUNT");
       setStudentDeptId("");
     }
-  }, [open, defaultYearId, defaultSemesterTypeId, defaultSemester]);
+  }, [open, defaultYearId, defaultSemesterTypeId]);
 
   // Fetch available semester numbers when yearId changes
   useEffect(() => {
@@ -227,15 +216,12 @@ export default function RaiseDiscrepancyModal({
     setSaving(true);
     try {
       await API.post("/api/discrepancies", {
-        academicYearId: yearId,
-        semesterTypeId: semTypeId || undefined,
-        semester: semesterNo || undefined,
+        academicYearId:       yearId,
         section,
-        proctoringType: section === "PROCTORING" ? proctoringType : undefined,
-        note: note.trim(),
+        proctoringType:       section === "PROCTORING" ? proctoringType : undefined,
+        note:                 note.trim(),
         facultyInstitutionId: user?.institutionId || "",
-        facultyName: user?.name || "",
-        studentDepartmentId: (section === "PROCTORING" && proctoringType === "ASSIGNED_COUNT") ? studentDeptId || undefined : undefined,
+        facultyName:          user?.name           || "",
       });
       setSuccess(true);
       toast.success("Discrepancy raised successfully!");
@@ -340,9 +326,24 @@ export default function RaiseDiscrepancyModal({
             sx={tabSx}
           />
         </Tabs>
-
+        
         {activeTab === 0 && (
-          <></>
+          <Box sx={{ position: "absolute", right: 24, bottom: 16 }}>
+             <Tooltip title="Refresh History">
+               <IconButton 
+                 size="small" 
+                 onClick={fetchDiscrepancies} 
+                 disabled={loadingDisc}
+                 sx={{ 
+                   color: "var(--color-primary)",
+                   bgcolor: "rgba(11, 82, 153, 0.05)",
+                   "&:hover": { bgcolor: "rgba(11, 82, 153, 0.1)" }
+                 }}
+               >
+                 <RefreshIcon fontSize="small" sx={{ animation: loadingDisc ? "spin 1s linear infinite" : "none" }} />
+               </IconButton>
+             </Tooltip>
+          </Box>
         )}
       </DialogTitle>
 
@@ -459,7 +460,7 @@ export default function RaiseDiscrepancyModal({
                                 {d.academicYearId?.year || "—"}
                               </Box>
                               <Box sx={{ fontSize: 11, color: "#555", fontWeight: 600 }}>
-                                {d.semester ? formatSemText(d.semester) : d.semesterTypeId?.name || "—"}
+                                {d.semester ? `Sem ${d.semester}` : d.semesterTypeId?.name || "—"}
                               </Box>
                             </TableCell>
 
@@ -518,17 +519,14 @@ export default function RaiseDiscrepancyModal({
                                   —
                                 </Typography>
                               )}
-                            </TableCell>
-
-                            {/* Action: delete for pending */}
                             <TableCell>
-                              {d.status === "PENDING" ? (
+                              {d.status === "PENDING" && (
                                 <Tooltip title="Delete Discrepancy" arrow>
-                                  <IconButton
-                                    size="small"
+                                  <IconButton 
+                                    size="small" 
                                     onClick={() => handleDelete(d._id)}
-                                    sx={{
-                                      color: "#ef5350",
+                                    sx={{ 
+                                      color: "#ef5350", 
                                       background: "rgba(239, 83, 80, 0.08)",
                                       "&:hover": { background: "rgba(239, 83, 80, 0.15)" }
                                     }}
@@ -536,10 +534,8 @@ export default function RaiseDiscrepancyModal({
                                     <DeleteIcon fontSize="small" />
                                   </IconButton>
                                 </Tooltip>
-                              ) : (
-                                <Typography fontSize={12} color="#bbb">—</Typography>
                               )}
-                            </TableCell>
+                            </TableCell></TableCell>
                           </TableRow>
                         );
                       })}
@@ -557,37 +553,18 @@ export default function RaiseDiscrepancyModal({
                     gap: 2,
                     justifyContent: "flex-end",
                     flexWrap: "wrap",
-                    alignItems: "center",
                   }}
                 >
-
                   {["PENDING", "RESOLVED", "REJECTED"].map((s) => {
                     const cfg = STATUS_CONFIG[s];
                     const count = discrepancies.filter((d) => d.status === s).length;
                     if (count === 0) return null;
                     return (
-                      <Typography key={s} fontSize={12} fontWeight={600} color={cfg.color} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Typography key={s} fontSize={12} fontWeight={600} color={cfg.color}>
                         {cfg.icon} {count} {cfg.label}
                       </Typography>
                     );
                   })}
-
-                  <Box sx={{ ml: 2 }}>
-                    <Tooltip title="Refresh History">
-                      <IconButton
-                        size="small"
-                        onClick={fetchDiscrepancies}
-                        disabled={loadingDisc}
-                        sx={{
-                          color: "var(--color-primary)",
-                          bgcolor: "rgba(11, 82, 153, 0.05)",
-                          "&:hover": { bgcolor: "rgba(11, 82, 153, 0.1)" }
-                        }}
-                      >
-                        <RefreshIcon fontSize="small" sx={{ animation: loadingDisc ? "spin 1s linear infinite" : "none" }} />
-                      </IconButton>
-                    </Tooltip>
-                  </Box>
                 </Box>
               </Paper>
             )}
@@ -628,55 +605,7 @@ export default function RaiseDiscrepancyModal({
                   </Select>
                 </Box>
 
-                {/* ── Semester ── */}
-                <Box>
-                  <Typography sx={label}>Semester</Typography>
-                  <Select
-                    fullWidth
-                    size="small"
-                    value={semesterNo}
-                    onChange={e => setSemesterNo(e.target.value)}
-                    displayEmpty
-                    sx={selectSx}
-                  >
-                    <MenuItem value="">-- Select Semester --</MenuItem>
-                    {(semesterNumbers.length > 0
-                      ? semesterNumbers
-                      : ["Sem-1", "Sem-2", "Sem-3", "Sem-4", "Sem-5", "Sem-6", "Sem-7", "Sem-8"]
-                    ).map(sem => {
-                      const semStr = String(sem);
-                      const val = semStr.replace("Sem-", "").replace("Year-", "");
-                      const displayLabel = semStr.startsWith("Sem-")
-                        ? `Sem ${semStr.replace("Sem-", "")}`
-                        : semStr.startsWith("Year-")
-                        ? `Year ${semStr.replace("Year-", "")}`
-                        : semStr;
-                      return (
-                        <MenuItem key={semStr} value={val}>
-                          {displayLabel}
-                        </MenuItem>
-                      );
-                    })}
-                  </Select>
-                </Box>
 
-                {/* ── Semester Type ── */}
-                <Box>
-                  <Typography sx={label}>Semester Type</Typography>
-                  <Select
-                    fullWidth
-                    size="small"
-                    value={semTypeId}
-                    onChange={e => setSemTypeId(e.target.value)}
-                    displayEmpty
-                    sx={selectSx}
-                  >
-                    <MenuItem value="">-- Select Semester Type --</MenuItem>
-                    {localSemesterTypes.map(st => (
-                      <MenuItem key={st._id} value={st._id}>{st.name}</MenuItem>
-                    ))}
-                  </Select>
-                </Box>
 
                 {/* ── Section ── */}
                 <Box>
@@ -692,7 +621,7 @@ export default function RaiseDiscrepancyModal({
                       <MenuItem key={s.value} value={s.value}>{s.label}</MenuItem>
                     ))}
                   </Select>
-
+                  
 
 
                   <Box sx={{ mt: 1.5 }}>
@@ -750,27 +679,27 @@ export default function RaiseDiscrepancyModal({
       {activeTab === 1 && !success && (
         <DialogActions sx={{ px: 4, pb: 4, pt: 0 }}>
           <Button
-            onClick={() => onClose(false)}
-            sx={{ textTransform: "none", color: "#888", fontWeight: 600 }}
-          >
+ onClick={() => onClose(false)}
+ sx={{ textTransform: "none", color: "#888", fontWeight: 600 }}
+ >
             Cancel
           </Button>
           <Button
             variant="contained"
             onClick={handleSubmit}
             disabled={saving || !note.trim() || !yearId || (section === "PROCTORING" && proctoringType === "ASSIGNED_COUNT" && !studentDeptId)}
-            sx={{
-
-              px: 4,
-              py: 1,
-              textTransform: "none",
-              fontWeight: 800,
-              background: "var(--gradient-primary)",
-              boxShadow: "0 8px 20px rgba(11, 82, 153, 0.2)",
-              "&:hover": { background: "var(--gradient-primary)", opacity: 0.9 },
-              "&.Mui-disabled": { background: "#eee", color: "#aaa" }
-            }}
-          >
+ sx={{
+ 
+ px: 4,
+ py: 1,
+ textTransform: "none",
+ fontWeight: 800,
+ background: "var(--gradient-primary)",
+ boxShadow: "0 8px 20px rgba(11, 82, 153, 0.2)",
+ "&:hover": { background: "var(--gradient-primary)", opacity: 0.9 },
+ "&.Mui-disabled": { background: "#eee", color: "#aaa" }
+ }}
+ >
             {saving ? <Loader size={20} color="inherit" /> : "Submit Discrepancy"}
           </Button>
         </DialogActions>

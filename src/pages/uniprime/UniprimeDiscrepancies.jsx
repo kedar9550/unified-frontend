@@ -37,16 +37,6 @@ import API from "../../api/axios";
 import { useAuth } from "../../context/AuthContext";
 import { toast } from "sonner";
 
-const formatSemText = (sem) => {
-  if (!sem) return "";
-  const str = String(sem);
-  const numMatch = str.match(/\d+/);
-  if (str.toLowerCase().includes("year")) {
-    return numMatch ? `Year ${numMatch[0]}` : str;
-  }
-  return numMatch ? `Sem ${numMatch[0]}` : str;
-};
-
 // ── Status config ─────────────────────────────────────────────────────
 const STATUS_CONFIG = {
   PENDING: { label: "Pending", color: "#F59E0B", bg: "rgba(245, 158, 11, 0.1)", icon: <PendingIcon fontSize="small" /> },
@@ -487,23 +477,19 @@ export default function UniprimeDiscrepancies() {
                               <Typography fontSize={13} fontWeight={700} sx={{ color: "var(--text-primary)" }}>
                                 {item.academicYearId?.year || "—"}
                               </Typography>
-                               <Chip
-                                 label={
-                                   item.semester
-                                     ? formatSemText(item.semester)
-                                     : item.semesterTypeId?.name || "—"
-                                 }
-                                 size="small"
-                                 sx={{
-                                   fontSize: 10,
-                                   height: 20,
-                                   mt: 0.5,
-                                   fontWeight: 700,
-                                   background: "var(--bg-glass)",
-                                   border: "1px solid var(--border-color)",
-                                   color: "var(--text-primary)"
-                                 }}
-                               />
+                              <Chip
+                                label={item.semesterTypeId?.name || "—"}
+                                size="small"
+                                sx={{
+                                  fontSize: 10,
+                                  height: 20,
+                                  mt: 0.5,
+                                  fontWeight: 700,
+                                  background: "var(--bg-glass)",
+                                  border: "1px solid var(--border-color)",
+                                  color: "var(--text-primary)"
+                                }}
+                              />
                             </TableCell>
 
                             {/* Section */}
@@ -661,7 +647,7 @@ export default function UniprimeDiscrepancies() {
                     <Box sx={{ textAlign: "right" }}>
                       <Typography fontSize={12} color="text.secondary">Period</Typography>
                       <Typography fontWeight={600} fontSize={14} sx={{ color: "var(--text-primary)" }}>
-                        {selected.academicYearId?.year || "—"} — {selected.semester ? formatSemText(selected.semester) : selected.semesterTypeId?.name || "—"}
+                        {selected.academicYearId?.year} — {selected.semesterTypeId?.name}
                       </Typography>
                       <Box
                         sx={{
