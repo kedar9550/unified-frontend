@@ -317,7 +317,7 @@ const AuthorCitationsManagement = () => {
       <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 4 }}>
         <Box>
           <Typography variant="h4" sx={{ fontWeight: 850, color: "var(--text-primary)", display: "flex", alignItems: "center", gap: 1.5 }}>
-            <Science sx={{ fontSize: "2.5rem", color: "var(--color-primary)" }} />
+            <Assignment sx={{ fontSize: "2.5rem", color: "var(--color-primary)" }} />
             Author Citations & H-Index
           </Typography>
           <Typography variant="subtitle1" sx={{ color: "var(--text-secondary)", mt: 0.5, fontWeight: 550 }}>

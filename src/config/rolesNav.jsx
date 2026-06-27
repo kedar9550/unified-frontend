@@ -205,11 +205,11 @@ export const ROLE_ROUTES = {
           text: "Research",
           path: "/research-dean/approvals"
         },
-        {
-          text: "Appraisal Finalization",
-          path: "/research-dean/appraisal-finalization",
-          icon: <Description />
-        },
+        // {
+        //   text: "Appraisal Finalization",
+        //   path: "/research-dean/appraisal-finalization",
+        //   icon: <Description />
+        // },
         {
           text: "Reports",
           path: "/research-dean/reports"

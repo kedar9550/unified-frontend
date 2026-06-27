@@ -510,7 +510,7 @@ const AppraisalEvaluation = () => {
         action // 'Approve' or 'Reject'
       });
       if (res.data && res.data.success) {
-        toast.success(action === "Approve" ? "Appraisal approved and forwarded to R&D!" : "Appraisal sent back to faculty for corrections.");
+        toast.success(action === "Approve" ? "Appraisal approved and finalized successfully!" : "Appraisal sent back to faculty for corrections.");
         setSelectedAppraisal(null);
         fetchPending();
       }
@@ -625,7 +625,7 @@ const AppraisalEvaluation = () => {
                     }}
                   >
                     <MenuItem value="Pending">Pending Verification</MenuItem>
-                    <MenuItem value="Approved">Approved / Forwarded</MenuItem>
+                    <MenuItem value="Approved">Approved & Finalized</MenuItem>
                     <MenuItem value="Rejected">Rejected by HOD</MenuItem>
                     <MenuItem value="All">All Requests</MenuItem>
                   </Select>
@@ -1981,7 +1981,7 @@ const AppraisalEvaluation = () => {
                     <Typography variant="body2" sx={{ fontWeight: 700 }}>
                       {selectedAppraisal.status === "Rejected by HOD"
                         ? `This appraisal was rejected and sent back to the faculty member.`
-                        : `This appraisal has been verified and forwarded to R&D Admin.`}
+                        : `This appraisal has been verified and finalized.`}
                     </Typography>
                     {selectedAppraisal.hodEvaluation?.evaluationDate && (
                       <Typography variant="caption" sx={{ color: "text.secondary", display: "block", mt: 0.5 }}>
@@ -2036,7 +2036,7 @@ const AppraisalEvaluation = () => {
                             disabled={loading || validationStatus.hasPending || validationStatus.hasRejected || !allRatingsProvided}
                             sx={{ textTransform: "none", fontWeight: 700, color: "#fff" }}
                           >
-                            Approve & Forward
+                            Approve
                           </Button>
                         </Box>
                       </>
