@@ -17,6 +17,7 @@ import {
   Chip,
   MenuItem,
   Select,
+  Tooltip as MuiTooltip,
 } from "@mui/material";
 import {
   MenuBook,
@@ -776,8 +777,29 @@ const FacultyDashboard = () => {
 
         <DataTable
           columns={["TITLE / NAME", "TYPE", "ACADEMIC YEAR", "STATUS", "DATE SUBMITTED"]}
+          alignments={["left", "center", "center", "center", "center"]}
           rows={(dashboardData?.recentResearchList || []).map(item => [
-            item.title,
+            {
+              display: (
+                <MuiTooltip title={item.title} arrow placement="top">
+                  <Typography
+                    sx={{
+                      maxWidth: { xs: "180px", sm: "300px", md: "450px" },
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
+                      fontSize: "0.875rem",
+                      fontWeight: 600,
+                      color: "var(--text-primary)",
+                      textAlign: "left"
+                    }}
+                  >
+                    {item.title}
+                  </Typography>
+                </MuiTooltip>
+              ),
+              value: item.title
+            },
             item.type,
             item.year,
             {
