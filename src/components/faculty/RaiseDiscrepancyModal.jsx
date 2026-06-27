@@ -402,10 +402,11 @@ export default function RaiseDiscrepancyModal({
                         {[
                           "#",
                           "Section",
-                          "Year",
+                          "Year / Sem",
                           "Issue",
                           "Status",
                           "Raised On",
+                          "Response",
                           "Action",
                         ].map((col) => (
                           <TableCell
@@ -427,6 +428,12 @@ export default function RaiseDiscrepancyModal({
                     <TableBody>
                       {discrepancies.map((d, i) => {
                         const status = STATUS_CONFIG[d.status] || STATUS_CONFIG.PENDING;
+                        const responseNote =
+                          d.status === "RESOLVED"
+                            ? d.resolutionNote
+                            : d.status === "REJECTED"
+                              ? d.rejectionNote
+                              : null;
 
                         return (
                           <TableRow
@@ -447,9 +454,14 @@ export default function RaiseDiscrepancyModal({
                               {SECTION_LABELS[d.section] || d.section}
                             </TableCell>
 
-                            {/* Year */}
-                            <TableCell sx={{ fontSize: 13, color: "#555", whiteSpace: "nowrap" }}>
-                              {d.academicYearId?.year || "—"}
+                            {/* Year / Sem */}
+                            <TableCell sx={{ fontSize: 12, color: "#555", whiteSpace: "nowrap" }}>
+                              <Box>
+                                {d.academicYearId?.year || "—"}
+                              </Box>
+                              <Box sx={{ fontSize: 11, color: "#555", fontWeight: 600 }}>
+                                {d.semester ? `Sem ${d.semester}` : d.semesterTypeId?.name || "—"}
+                              </Box>
                             </TableCell>
 
                             {/* Issue note — truncated */}
@@ -486,9 +498,29 @@ export default function RaiseDiscrepancyModal({
                               {formatDate(d.createdAt)}
                             </TableCell>
 
-                            {/* Action: delete for pending */}
+                            {/* Response note */}
+                            <TableCell sx={{ maxWidth: 180 }}>
+                              {responseNote ? (
+                                <Tooltip title={responseNote} arrow placement="top">
+                                  <Typography
+                                    noWrap
+                                    fontSize={12}
+                                    sx={{
+                                      maxWidth: 180,
+                                      color: d.status === "REJECTED" ? "#c62828" : "#2e7d32",
+                                      fontStyle: "italic",
+                                    }}
+                                  >
+                                    {responseNote}
+                                  </Typography>
+                                </Tooltip>
+                              ) : (
+                                <Typography fontSize={12} color="#bbb">
+                                  —
+                                </Typography>
+                              )}
                             <TableCell>
-                              {d.status === "PENDING" ? (
+                              {d.status === "PENDING" && (
                                 <Tooltip title="Delete Discrepancy" arrow>
                                   <IconButton 
                                     size="small" 
@@ -502,10 +534,8 @@ export default function RaiseDiscrepancyModal({
                                     <DeleteIcon fontSize="small" />
                                   </IconButton>
                                 </Tooltip>
-                              ) : (
-                                <Typography fontSize={12} color="#bbb">—</Typography>
                               )}
-                            </TableCell>
+                            </TableCell></TableCell>
                           </TableRow>
                         );
                       })}
