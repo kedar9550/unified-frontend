@@ -70,7 +70,6 @@ const SDG_COLOR_MAP = {
 
 const SDGManagement = () => {
   const [sdgs, setSdgs] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [expandedId, setExpandedId] = useState(null);
 
   const [editingSdgId, setEditingSdgId] = useState(null);
@@ -109,7 +108,6 @@ const SDGManagement = () => {
 
   const fetchSdgs = async () => {
     try {
-      setLoading(true);
       const res = await API.get("/api/sdgs");
       if (res.data && res.data.success) {
         setSdgs(res.data.data);
@@ -117,8 +115,6 @@ const SDGManagement = () => {
     } catch (err) {
       toast.error("Failed to fetch SDGs");
       console.error(err);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -280,6 +276,7 @@ const SDGManagement = () => {
         toast.success("SDG deleted successfully");
         fetchSdgs();
       } catch (err) {
+        console.error(err);
         toast.error("Failed to delete SDG");
       }
     }
@@ -289,9 +286,7 @@ const SDGManagement = () => {
     <Box>
       <PageHeader
         title="SDG Keywords Management"
-        subtitle="Manage Sustainable Development Goals and their associated keywords for document analysis."
-        breadcrumbs={["Home", "Academics", "SDG Management"]}
-      />
+        subtitle="Manage Sustainable Development Goals and their associated keywords for document analysis." />
 
       <Box sx={{ display: 'flex', justifyContent: { xs: 'stretch', sm: 'flex-end' }, mb: 3, mt: 1 }}>
         <Button
@@ -686,7 +681,10 @@ const SDGManagement = () => {
                 transform: 'translateY(-1px)'
               },
               '&.Mui-disabled': {
-                background: 'rgba(255, 255, 255, 0.05)',
+                background: 'rgba(0, 0, 0, 0.08)',
+                'body.dark-mode &': {
+                  background: 'rgba(255, 255, 255, 0.05)',
+                },
                 color: 'var(--text-secondary)',
                 boxShadow: 'none'
               },
@@ -797,7 +795,10 @@ const SDGManagement = () => {
                 }
               },
               '&.Mui-disabled': {
-                background: 'rgba(255, 255, 255, 0.05)',
+                background: 'rgba(0, 0, 0, 0.08)',
+                'body.dark-mode &': {
+                  background: 'rgba(255, 255, 255, 0.05)',
+                },
                 color: 'var(--text-secondary)',
                 boxShadow: 'none',
                 '&::after': {
@@ -910,7 +911,10 @@ const SDGManagement = () => {
                 }
               },
               '&.Mui-disabled': {
-                background: 'rgba(255, 255, 255, 0.05)',
+                background: 'rgba(0, 0, 0, 0.08)',
+                'body.dark-mode &': {
+                  background: 'rgba(255, 255, 255, 0.05)',
+                },
                 color: 'var(--text-secondary)',
                 boxShadow: 'none',
                 '&::after': {

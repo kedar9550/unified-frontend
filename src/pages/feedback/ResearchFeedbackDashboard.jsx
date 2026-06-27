@@ -4,10 +4,10 @@ import { Box, Typography } from "@mui/material";
 const ResearchFeedbackDashboard = () => (
   <Box sx={{ 
     p: 4, 
-    bgcolor: 'rgba(255, 255, 255, 0.55)', 
+    bgcolor: 'var(--bg-glass)', 
     backdropFilter: 'blur(10px)', 
     borderRadius: '20px', 
-    border: '1px solid rgba(255, 255, 255, 0.4)',
+    border: '1px solid var(--border-color)',
     position: "relative",
     overflow: "hidden",
     "&::after": {
@@ -22,7 +22,7 @@ const ResearchFeedbackDashboard = () => (
     }
   }}>
     <Box sx={{ position: "relative", zIndex: 1 }}>
-      <Typography variant="h5" color="#1a237e" fontWeight={800}>Research Feedback Overview</Typography>
+      <Typography variant="h5" color="var(--text-primary)" fontWeight={800}>Research Feedback Overview</Typography>
       <Typography color="textSecondary" mt={1}>Access feedback reports from the sidebar.</Typography>
     </Box>
   </Box>

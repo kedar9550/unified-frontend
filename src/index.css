@@ -29,6 +29,9 @@
   --gradient-end: #000428;
   --gradient-primary-hover: linear-gradient(90deg, #003a6d, #000214);
   --header-svg: url('./assets/Circle_Orange.svg');
+  --bg-hover: rgba(0, 0, 0, 0.015);
+  --disabled-bg: rgba(0, 0, 0, 0.08);
+  --disabled-text: rgba(0, 0, 0, 0.38);
 }
 
 body,
@@ -40,7 +43,8 @@ html,
   transition: background-color 0.3s ease, color 0.3s ease;
   font-optical-sizing: auto;
   letter-spacing: -0.01em;
-  overflow-x: hidden; /* Prevent horizontal scroll when using 100vw */
+  overflow-x: hidden;
+  /* Prevent horizontal scroll when using 100vw */
 }
 
 /* =========================================
@@ -69,6 +73,9 @@ body.dark-mode {
   --gradient-end: #705000;
   --gradient-primary-hover: linear-gradient(90deg, #D4AF37, #996515);
   --header-svg: url('./assets/Circle_Gold.svg');
+  --bg-hover: rgba(255, 255, 255, 0.015);
+  --disabled-bg: rgba(255, 255, 255, 0.08);
+  --disabled-text: rgba(255, 255, 255, 0.38);
 
   background-color: var(--bg-main) !important;
   color: var(--text-primary) !important;

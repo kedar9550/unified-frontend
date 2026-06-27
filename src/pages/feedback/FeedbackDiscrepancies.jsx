@@ -47,7 +47,7 @@ const STATUS_CONFIG = {
 };
 
 const SECTION_LABEL = {
-  FEEDBACK:   "💬 Feedback",
+  FEEDBACK:   "Feedback",
 };
 
 export default function FeedbackDiscrepancies() {
@@ -171,6 +171,7 @@ export default function FeedbackDiscrepancies() {
         _edited:        true,
         subjectName:    "",
         subjectCode:    "",
+        subjectType:    "theory",
         programId:      "",
         branchId:       "",
         branch:         "",
@@ -193,7 +194,7 @@ export default function FeedbackDiscrepancies() {
   // ── Handle resolve submit ──────────────────────────────────────────
   const handleResolve = async () => {
     if (!proofFile) {
-      toast.warning("Please upload a proof document before submitting.");
+      toast.warning("Please upload a proof document before submitting");
       return;
     }
 
@@ -204,6 +205,7 @@ export default function FeedbackDiscrepancies() {
         await API.put(`/api/faculty-feedback-results/${row._id}`, {
           subjectName:       row.subjectName,
           subjectCode:       row.subjectCode,
+          subjectType:       row.subjectType,
           branch:            row.branch,
           programId:         row.programId,
           branchId:          row.branchId,
@@ -225,6 +227,7 @@ export default function FeedbackDiscrepancies() {
           facultyName:       selected.facultyName || selected.raisedBy?.name,
           subjectName:       row.subjectName,
           subjectCode:       row.subjectCode,
+          subjectType:       row.subjectType,
           programId:         row.programId,
           branchId:          row.branchId,
           branch:            branchName,
@@ -277,7 +280,7 @@ export default function FeedbackDiscrepancies() {
   // ── Handle reject submit ───────────────────────────────────────────
   const handleReject = async () => {
     if (!rejectNote.trim()) {
-      toast.warning("Please provide a rejection note.");
+      toast.warning("Please provide a rejection note");
       return;
     }
 
@@ -313,9 +316,7 @@ export default function FeedbackDiscrepancies() {
     <>
       <PageHeader
         title="Feedback Discrepancies"
-        subtitle="Review and resolve faculty-raised feedback discrepancies"
-        breadcrumbs={["Home", "Feedback", "Discrepancies"]}
-      />
+        subtitle="Review and resolve faculty-raised feedback discrepancies" />
 
       {/* ── STAT PILLS ────────────────────────────────────── */}
       <Box sx={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 2, mb: 4 }}>
@@ -472,25 +473,14 @@ export default function FeedbackDiscrepancies() {
                               size="small"
                               variant="contained"
                               onClick={() => openResolve(item)}
-                              sx={{
-                                borderRadius: "10px", textTransform: "none",
-                                fontSize: 11, px: 1.5, py: 0.5, minWidth: 0,
-                                background: "var(--gradient-primary)",
-                                boxShadow: "var(--shadow-premium)",
-                              }}
                             >
                               ✓ Resolve
                             </Button>
                             <Button
                               size="small"
                               variant="outlined"
+                              color="error"
                               onClick={() => openReject(item)}
-                              sx={{
-                                borderRadius: "10px", textTransform: "none",
-                                fontSize: 11, px: 1.5, py: 0.4, minWidth: 0,
-                                color: "#EF4444", borderColor: "#EF444433",
-                                "&:hover": { background: "rgba(239, 68, 68, 0.05)", borderColor: "#EF4444" },
-                              }}
                             >
                               ✕ Reject
                             </Button>
@@ -597,9 +587,9 @@ export default function FeedbackDiscrepancies() {
                     </Typography>
                     <Button
                         size="small"
+                        variant="outlined"
                         startIcon={<AddIcon />}
                         onClick={handleAddRow}
-                        sx={{ borderRadius: "10px", textTransform: "none", fontWeight: 700, background: "var(--bg-glass)", border: "1px solid var(--border-color)" }}
                     >
                         Add Record
                     </Button>
@@ -616,7 +606,7 @@ export default function FeedbackDiscrepancies() {
                     <Table size="small" sx={{ minWidth: 1000 }}>
                       <TableHead sx={{ background: "var(--bg-accent-1)" }}>
                         <TableRow>
-                          {["#", "Subject", "Code", "Prog", "Branch", "Sec", "Ph", "G/T", "%", ""].map(h => (
+                          {["#", "Subject", "Code", "Type", "Prog", "Branch", "Sem", "Sec", "Ph", "G/T", "%", ""].map(h => (
                             <TableCell key={h} sx={{ fontWeight: 800, fontSize: 12, color: "var(--text-primary)", py: 1.5 }}>{h}</TableCell>
                           ))}
                         </TableRow>
@@ -627,6 +617,19 @@ export default function FeedbackDiscrepancies() {
                             <TableCell sx={{ fontWeight: 700, fontSize: 12 }}>{idx + 1}</TableCell>
                             <TableCell><TextField variant="standard" value={row.subjectName} onChange={e => handleResultEdit(idx, "subjectName", e.target.value)} InputProps={{ disableUnderline: !row._edited, sx: { fontSize: 13, fontWeight: 600 } }} fullWidth /></TableCell>
                             <TableCell><TextField variant="standard" value={row.subjectCode} onChange={e => handleResultEdit(idx, "subjectCode", e.target.value)} InputProps={{ disableUnderline: !row._edited, sx: { fontSize: 13, fontWeight: 600 } }} sx={{ width: 70 }} /></TableCell>
+                            <TableCell>
+                                <Select 
+                                    variant="standard" 
+                                    value={row.subjectType || "Theory"} 
+                                    onChange={e => handleResultEdit(idx, "subjectType", e.target.value)}
+                                    sx={{ fontSize: 12, fontWeight: 600, minWidth: 80 }}
+                                    disableUnderline={!row._edited}
+                                >
+                                    <MenuItem value="Theory">Theory</MenuItem>
+                                    <MenuItem value="Practical">Practical</MenuItem>
+                                    <MenuItem value="Integrated">Integrated</MenuItem>
+                                </Select>
+                            </TableCell>
                             <TableCell>
                                 <Select 
                                     variant="standard" 
@@ -650,6 +653,25 @@ export default function FeedbackDiscrepancies() {
                                     <MenuItem value="">—</MenuItem>
                                     {branches.filter(b => !row.programId || b.programId?._id === row.programId || b.programId === row.programId).map(b => <MenuItem key={b._id} value={b._id}>{b.name}</MenuItem>)}
                                 </Select>
+                            </TableCell>
+                            <TableCell>
+                                <TextField 
+                                    variant="standard" 
+                                    value={row.semesterNumber || row.yearNumber || ""} 
+                                    onChange={e => {
+                                        const progObj = programs.find(p => p._id === row.programId);
+                                        const isYearPattern = progObj ? progObj.programPattern === "YEAR" : false;
+                                        if (isYearPattern) {
+                                            handleResultEdit(idx, "yearNumber", e.target.value);
+                                            handleResultEdit(idx, "semesterNumber", "");
+                                        } else {
+                                            handleResultEdit(idx, "semesterNumber", e.target.value);
+                                            handleResultEdit(idx, "yearNumber", "");
+                                        }
+                                    }} 
+                                    InputProps={{ disableUnderline: !row._edited, sx: { fontSize: 13, fontWeight: 600 } }} 
+                                    sx={{ width: 40 }} 
+                                />
                             </TableCell>
                             <TableCell><TextField variant="standard" value={row.section} onChange={e => handleResultEdit(idx, "section", e.target.value)} InputProps={{ disableUnderline: !row._edited, sx: { fontSize: 13, fontWeight: 600 } }} sx={{ width: 40 }} /></TableCell>
                             <TableCell><TextField variant="standard" type="number" value={row.phase} onChange={e => handleResultEdit(idx, "phase", e.target.value)} InputProps={{ disableUnderline: !row._edited, sx: { fontSize: 13, fontWeight: 600 } }} sx={{ width: 35 }} /></TableCell>
@@ -702,9 +724,10 @@ export default function FeedbackDiscrepancies() {
         {!success && selected && (
           <DialogActions sx={{ px: 4, pb: 4, pt: 1 }}>
             <Button 
+              variant="text"
               onClick={() => setSelected(null)} 
               disabled={submitting} 
-              sx={{ borderRadius: "12px", textTransform: "none", fontWeight: 700, color: "var(--text-secondary)", px: 3 }}
+              sx={{ color: "var(--text-secondary)" }}
             >
               Cancel
             </Button>
@@ -712,11 +735,6 @@ export default function FeedbackDiscrepancies() {
               variant="contained"
               onClick={handleResolve}
               disabled={submitting || !proofFile}
-              sx={{
-                borderRadius: "14px", px: 4, py: 1.2, textTransform: "none",
-                fontWeight: 800, background: "var(--gradient-primary)",
-                boxShadow: "var(--shadow-premium)",
-              }}
             >
               {submitting ? <Loader size={20} color="inherit" /> : "✓ Submit & Resolve"}
             </Button>
@@ -808,9 +826,10 @@ export default function FeedbackDiscrepancies() {
         {!rejectDone && rejectItem && (
           <DialogActions sx={{ px: 4, pb: 4, pt: 1 }}>
             <Button
+              variant="text"
               onClick={() => setRejectItem(null)}
               disabled={rejecting}
-              sx={{ borderRadius: "12px", textTransform: "none", fontWeight: 700, color: "var(--text-secondary)", px: 3 }}
+              sx={{ color: "var(--text-secondary)" }}
             >
               Cancel
             </Button>
@@ -819,12 +838,6 @@ export default function FeedbackDiscrepancies() {
               color="error"
               onClick={handleReject}
               disabled={rejecting || !rejectNote.trim()}
-              sx={{
-                borderRadius: "14px", px: 4, py: 1.2, textTransform: "none",
-                fontWeight: 800, background: "#EF4444",
-                boxShadow: "0 8px 20px rgba(239, 68, 68, 0.25)",
-                "&:hover": { background: "#DC2626" }
-              }}
             >
               {rejecting ? <Loader size={20} color="inherit" /> : "✕ Confirm Reject"}
             </Button>

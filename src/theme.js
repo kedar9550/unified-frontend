@@ -30,8 +30,158 @@ const theme = createTheme({
     MuiButton: {
       styleOverrides: {
         root: {
-          textTransform: "none", // Ensure buttons don't use all-caps
+          textTransform: "none",
+          borderRadius: "50px",
+          fontWeight: 700,
+          transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
         },
+        sizeSmall: {
+          padding: "5px 16px",
+          fontSize: "0.78rem",
+        },
+        sizeMedium: {
+          padding: "8px 24px",
+          fontSize: "0.875rem",
+        },
+        sizeLarge: {
+          padding: "12px 32px",
+          fontSize: "0.95rem",
+        },
+        contained: {
+          background: "var(--gradient-primary)",
+          color: "#ffffff",
+          boxShadow: "0 4px 12px rgba(0, 78, 146, 0.3)",
+          border: "none",
+          "&:hover": {
+            background: "var(--gradient-primary-hover)",
+            boxShadow: "0 6px 16px rgba(0, 78, 146, 0.4)",
+          },
+          "&.Mui-disabled": {
+            background: "var(--disabled-bg)",
+            color: "var(--disabled-text)",
+            boxShadow: "none",
+          },
+          "&.MuiButton-containedSecondary": {
+            background: "linear-gradient(135deg, #d06c38, #b05325)",
+            boxShadow: "0 4px 12px rgba(208, 108, 56, 0.3)",
+            "&:hover": {
+              background: "linear-gradient(135deg, #b05325, #903c15)",
+              boxShadow: "0 6px 16px rgba(208, 108, 56, 0.4)",
+            }
+          },
+          "&.MuiButton-containedSuccess": {
+            background: "linear-gradient(135deg, #10B981, #059669)",
+            boxShadow: "0 4px 12px rgba(16, 185, 129, 0.3)",
+            "&:hover": {
+              background: "linear-gradient(135deg, #059669, #047857)",
+              boxShadow: "0 6px 16px rgba(16, 185, 129, 0.4)",
+            }
+          },
+          "&.MuiButton-containedError": {
+            background: "linear-gradient(135deg, #EF4444, #DC2626)",
+            boxShadow: "0 4px 12px rgba(239, 68, 68, 0.3)",
+            "&:hover": {
+              background: "linear-gradient(135deg, #DC2626, #B91C1C)",
+              boxShadow: "0 6px 16px rgba(239, 68, 68, 0.4)",
+            }
+          },
+          "&.MuiButton-containedWarning": {
+            background: "linear-gradient(135deg, #F59E0B, #D97706)",
+            boxShadow: "0 4px 12px rgba(245, 158, 11, 0.3)",
+            "&:hover": {
+              background: "linear-gradient(135deg, #D97706, #B45309)",
+              boxShadow: "0 6px 16px rgba(245, 158, 11, 0.4)",
+            }
+          },
+          "&.MuiButton-containedInfo": {
+            background: "linear-gradient(135deg, #3B82F6, #2563EB)",
+            boxShadow: "0 4px 12px rgba(59, 130, 246, 0.3)",
+            "&:hover": {
+              background: "linear-gradient(135deg, #2563EB, #1D4ED8)",
+              boxShadow: "0 6px 16px rgba(59, 130, 246, 0.4)",
+            }
+          }
+        },
+        outlined: {
+          border: "1.5px solid var(--color-primary)",
+          borderColor: "var(--color-primary)",
+          color: "var(--color-primary)",
+          background: "transparent",
+          "&:hover": {
+            border: "1.5px solid var(--color-primary)",
+            borderColor: "var(--color-primary)",
+            background: "var(--bg-accent-1)",
+          },
+          "&.MuiButton-outlinedSecondary": {
+            border: "1.5px solid #d06c38",
+            borderColor: "#d06c38",
+            color: "#d06c38",
+            "&:hover": {
+              border: "1.5px solid #d06c38",
+              background: "rgba(208, 108, 56, 0.08)",
+            }
+          },
+          "&.MuiButton-outlinedSuccess": {
+            border: "1.5px solid #10B981",
+            borderColor: "#10B981",
+            color: "#10B981",
+            "&:hover": {
+              border: "1.5px solid #10B981",
+              background: "rgba(16, 185, 129, 0.08)",
+            }
+          },
+          "&.MuiButton-outlinedError": {
+            border: "1.5px solid #EF4444",
+            borderColor: "#EF4444",
+            color: "#EF4444",
+            "&:hover": {
+              border: "1.5px solid #EF4444",
+              background: "rgba(239, 68, 68, 0.08)",
+            }
+          },
+          "&.MuiButton-outlinedWarning": {
+            border: "1.5px solid #F59E0B",
+            borderColor: "#F59E0B",
+            color: "#F59E0B",
+            "&:hover": {
+              border: "1.5px solid #F59E0B",
+              background: "rgba(245, 158, 11, 0.08)",
+            }
+          },
+          "&.MuiButton-outlinedInfo": {
+            border: "1.5px solid #3B82F6",
+            borderColor: "#3B82F6",
+            color: "#3B82F6",
+            "&:hover": {
+              border: "1.5px solid #3B82F6",
+              background: "rgba(59, 130, 246, 0.08)",
+            }
+          }
+        },
+        text: {
+          color: "var(--color-primary)",
+          "&:hover": {
+            background: "var(--bg-accent-1)",
+          },
+          "&.MuiButton-textSecondary": {
+            color: "#d06c38",
+            "&:hover": {
+              background: "rgba(208, 108, 56, 0.08)",
+            }
+          },
+          "&.MuiButton-textSuccess": {
+            color: "#10B981",
+            "&:hover": {
+              background: "rgba(16, 185, 129, 0.08)",
+            }
+          },
+          "&.MuiButton-textError": {
+            color: "#EF4444",
+            "&:hover": {
+              background: "rgba(239, 68, 68, 0.08)",
+            }
+          }
+        }
       },
     },
     MuiMenu: {

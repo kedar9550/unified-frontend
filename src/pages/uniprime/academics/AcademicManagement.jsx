@@ -30,12 +30,6 @@ const AcademicManagement = () => {
   const toggleCard = (key) => setExpandedCards(prev => ({ ...prev, [key]: !prev[key] }));
   const toggleYearExpand = (yearId) => setExpandedYears(prev => ({ ...prev, [yearId]: !prev[yearId] }));
 
-  useEffect(() => {
-    fetchYears();
-    fetchSemesterTypes();
-    fetchAllPrograms();
-  }, []);
-
   const fetchSemesterTypes = async () => {
     try {
       const res = await API.get("/api/semester-types");
@@ -56,6 +50,12 @@ const AcademicManagement = () => {
       setYears(res.data.years || []);
     } catch (err) { console.error(err); }
   };
+
+  useEffect(() => {
+    fetchYears();
+    fetchSemesterTypes();
+    fetchAllPrograms();
+  }, []);
 
   const handleStartYearChange = (e) => {
     const val = parseInt(e.target.value) || "";
@@ -94,6 +94,17 @@ const AcademicManagement = () => {
     } catch (err) { console.error(err); }
   };
 
+  // Set active academic year globally
+  const activateAcademicYearGlobal = async (yearId) => {
+    try {
+      await API.put(`/api/academic-years/${yearId}/activate`);
+      toast.success("Academic year activated globally!");
+      fetchYears();
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to activate academic year");
+    }
+  };
+
   // Set activeSemesterType for one program inside a year doc
   const setProgramSemester = async (yearId, programId, semesterTypeId) => {
     try {
@@ -102,14 +113,6 @@ const AcademicManagement = () => {
     } catch (err) { toast.error(err.response?.data?.message || "Failed to update semester"); }
   };
 
-  // Remove a program from a year
-  const removeProgram = async (yearId, programId, programCode) => {
-    if (!window.confirm(`Remove ${programCode} from this academic year?`)) return;
-    try {
-      await API.delete(`/api/academic-years/${yearId}/program/${programId}`);
-      fetchYears();
-    } catch (err) { toast.error(err.response?.data?.message || "Failed to remove"); }
-  };
 
   const handleOpenMenu = (event, yearDoc) => {
     setAnchorEl(event.currentTarget);
@@ -122,7 +125,9 @@ const AcademicManagement = () => {
     setProgramSearch("");
   };
 
-  const renderSemesters = (yearId, programEntry, programPattern, durationYears) => {
+  const renderSemesters = (yearDoc, programEntry, programPattern, durationYears) => {
+    const yearId = yearDoc._id;
+    const isGlobalActive = yearDoc.isGlobalActive;
     const programId = programEntry.programId?._id || programEntry.programId;
     let availableSemesters = [];
     if (programPattern === "YEAR") {
@@ -146,15 +151,15 @@ const AcademicManagement = () => {
                   <Paper variant="outlined" sx={{
                     p: 1.2, textAlign: "left",
                     display: "flex", justifyContent: "space-between", alignItems: "center",
-                    background: isActive && programEntry.isActive ? "rgba(16,185,129,0.15)" : "var(--bg-glass)",
-                    borderColor: isActive && programEntry.isActive ? "var(--color-success, #10B981)" : "var(--border-color)",
-                    opacity: programEntry.isActive ? 1 : 0.6
+                    background: isActive && isGlobalActive ? "rgba(16,185,129,0.15)" : "var(--bg-glass)",
+                    borderColor: isActive && isGlobalActive ? "var(--color-success, #10B981)" : "var(--border-color)",
+                    opacity: isGlobalActive ? 1 : 0.6
                   }}>
                     <Typography variant="body2" sx={{ fontWeight: 600, color: "var(--text-primary)" }}>Year {idx + 1}</Typography>
                     {isActive ? (
                       <Chip size="small" icon={<CheckCircle />} label="Active" color="success" sx={{ fontWeight: 700 }} />
                     ) : (
-                      <Button size="small" variant="text" disabled={!programEntry.isActive}
+                      <Button size="small" variant="text" disabled={!isGlobalActive}
                         onClick={() => setProgramSemester(yearId, programId, st._id)}
                         sx={{ textTransform: "none", fontWeight: 700, fontSize: "0.7rem", color: "var(--color-primary)",
                           "&:hover": { background: "transparent", opacity: 0.8 },
@@ -194,9 +199,9 @@ const AcademicManagement = () => {
                   justifyContent: "space-between", 
                   alignItems: { xs: "flex-start", lg: "center" },
                   gap: { xs: 1.5, lg: 0 },
-                  background: isActive && programEntry.isActive ? "rgba(16,185,129,0.15)" : "var(--bg-glass)",
-                  borderColor: isActive && programEntry.isActive ? "var(--color-success, #10B981)" : "var(--border-color)",
-                  opacity: programEntry.isActive ? 1 : 0.6
+                  background: isActive && isGlobalActive ? "rgba(16,185,129,0.15)" : "var(--bg-glass)",
+                  borderColor: isActive && isGlobalActive ? "var(--color-success, #10B981)" : "var(--border-color)",
+                  opacity: isGlobalActive ? 1 : 0.6
                 }}>
                   <Box>
                     <Typography variant="body2" sx={{ fontWeight: 600, color: "var(--text-primary)" }}>{title}</Typography>
@@ -206,7 +211,7 @@ const AcademicManagement = () => {
                     {isActive ? (
                       <Chip size="small" icon={<CheckCircle />} label="Active" color="success" sx={{ fontWeight: 700 }} />
                     ) : (
-                      <Button size="small" variant="text" disabled={!programEntry.isActive}
+                      <Button size="small" variant="text" disabled={!isGlobalActive}
                         onClick={() => setProgramSemester(yearId, programId, st._id)}
                         sx={{ 
                           textTransform: "none", fontWeight: 700, fontSize: "0.8rem", 
@@ -294,10 +299,23 @@ const AcademicManagement = () => {
               cursor: "pointer", borderBottom: isYearExpanded ? "1px solid var(--border-color)" : "none",
               transition: "background 0.2s", "&:hover": { background: "var(--bg-glass)" }
             }}>
-              <Box sx={{ display: "flex", alignItems: "center", gap: 2, width: { xs: "100%", sm: "auto" }, justifyContent: "space-between" }}>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 2, flexWrap: "wrap", width: { xs: "100%", sm: "auto" } }}>
                 <Typography variant="h6" sx={{ fontWeight: 700, color: "var(--text-primary)", fontSize: { xs: "1.1rem", sm: "1.25rem" } }}>
                   Academic Year {yearDoc.year}
                 </Typography>
+                {yearDoc.isGlobalActive ? (
+                  <Chip size="small" icon={<CheckCircle />} label="Active" color="success" sx={{ fontWeight: 700 }} />
+                ) : (
+                  <Chip size="small" label="Set Active" variant="outlined"
+                    onClick={(e) => { e.stopPropagation(); activateAcademicYearGlobal(yearDoc._id); }}
+                    sx={{ 
+                      cursor: "pointer", 
+                      borderColor: "var(--color-primary)", 
+                      color: "var(--color-primary)", 
+                      fontWeight: 700,
+                      "&:hover": { background: "rgba(0,0,0,0.05)" }
+                    }} />
+                )}
                 <Chip size="small" label={`${yearDoc.programs.length} Programs`}
                   sx={{ bgcolor: "var(--bg-accent-1)", color: "var(--color-primary)", fontWeight: 600 }} />
               </Box>
@@ -387,37 +405,32 @@ const AcademicManagement = () => {
                               </Box>
                             </Box>
                             <Box sx={{ width: { xs: "100%", sm: "auto" } }}>
-                              <Tooltip title="Activates/deactivates this program for this academic year">
-                                <Box sx={{ display: "flex", alignItems: "center", gap: 1, justifyContent: { xs: "space-between", sm: "flex-start" }, width: "100%" }}>
-                                  <Typography variant="caption" sx={{ color: "var(--text-secondary)" }}>Program Status</Typography>
-                                  {entry.isActive ? (
-                                    <Chip size="small" icon={<CheckCircle sx={{ color: "white !important" }} />} label="Active" 
-                                      onClick={(e) => { e.stopPropagation(); toggleProgramStatus(yearDoc._id, progId, true); }}
-                                      sx={{ 
-                                        cursor: "pointer", height: 26, 
-                                        background: "var(--gradient-primary)", 
-                                        color: "white", fontWeight: 700,
-                                        border: "none",
-                                        boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
-                                        "& .MuiChip-label": { px: 1.5 }
-                                      }} />
-                                  ) : (
-                                    <Chip size="small" icon={<RadioButtonUnchecked />} label="Set Active" variant="outlined"
-                                      onClick={(e) => { e.stopPropagation(); toggleProgramStatus(yearDoc._id, progId, false); }}
-                                      sx={{ 
-                                        cursor: "pointer", height: 26, 
-                                        borderColor: "var(--color-primary)",
-                                        color: "var(--color-primary)", 
-                                        fontWeight: 700,
-                                        "&:hover": { background: "rgba(0,0,0,0.05)" },
-                                        "& .MuiChip-label": { px: 1.5 }
-                                      }} />
-                                  )}
-                                </Box>
-                              </Tooltip>
+                              <Box sx={{ display: "flex", alignItems: "center", gap: 1, justifyContent: { xs: "space-between", sm: "flex-start" }, width: "100%" }}>
+                                <Typography variant="caption" sx={{ color: "var(--text-secondary)" }}>Program Status</Typography>
+                                {yearDoc.isGlobalActive ? (
+                                  <Chip size="small" icon={<CheckCircle sx={{ color: "white !important" }} />} label="Active" 
+                                    sx={{ 
+                                      height: 26, 
+                                      background: "var(--gradient-primary)", 
+                                      color: "white", fontWeight: 700,
+                                      border: "none",
+                                      boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+                                      "& .MuiChip-label": { px: 1.5 }
+                                    }} />
+                                ) : (
+                                  <Chip size="small" icon={<RadioButtonUnchecked />} label="Inactive" variant="outlined"
+                                    sx={{ 
+                                      height: 26, 
+                                      borderColor: "var(--text-secondary)",
+                                      color: "var(--text-secondary)", 
+                                      fontWeight: 700,
+                                      "& .MuiChip-label": { px: 1.5 }
+                                    }} />
+                                )}
+                              </Box>
                             </Box>
                           </Box>
-                          {renderSemesters(yearDoc._id, entry, pattern, prog?.durationYears)}
+                          {renderSemesters(yearDoc, entry, pattern, prog?.durationYears)}
                         </CardContent>
                       </Collapse>
                     </Card>

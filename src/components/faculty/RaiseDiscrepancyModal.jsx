@@ -42,23 +42,25 @@ import { useAuth } from "../../context/AuthContext";
 import { toast } from "sonner";
 
 const SECTIONS = [
-  { value: "TEACHING",   label: "📚 Teaching" },
-  { value: "PROCTORING", label: "👁️ Proctoring" },
-  { value: "FEEDBACK",   label: "💬 Feedback" },
-  { value: "OTHER",      label: "📎 Other" },
+  { value: "TEACHING",   label: "Course Average Pass Percentage" },
+  { value: "PROCTORING", label: "Proctoring Students' Average Pass Percentage" },
+  { value: "FEEDBACK",   label: "Feedback" },
+  { value: "CO_ATTAINMENT", label: "CO Attainment" },
 ];
 
 const SECTION_LABELS = {
-  TEACHING:   "📚 Teaching",
-  PROCTORING: "👁️ Proctoring",
-  FEEDBACK:   "💬 Feedback",
-  OTHER:      "📎 Other",
+  TEACHING:   "Course Average Pass Percentage",
+  PROCTORING: "Proctoring Students' Average Pass Percentage",
+  FEEDBACK:   "Feedback",
+  CO_ATTAINMENT: "CO Attainment",
+  OTHER:      "Other",
 };
 
 const ROLE_LABEL = {
   TEACHING:   "Exam Section",
-  PROCTORING: "Exam Section",
+  PROCTORING: "Uniprime",
   FEEDBACK:   "Feedback Coordinator",
+  CO_ATTAINMENT: "Exam Section",
   OTHER:      "Admin",
 };
 
@@ -203,20 +205,18 @@ export default function RaiseDiscrepancyModal({
     try {
       await API.delete(`/api/discrepancies/${id}`);
       setDiscrepancies(prev => prev.filter(d => d._id !== id));
-      toast.success("Discrepancy deleted successfully.");
+      toast.success("Discrepancy deleted successfully");
     } catch (err) {
       toast.error(err.response?.data?.message || "Failed to delete discrepancy.");
     }
   };
 
   const handleSubmit = async () => {
-    if (!yearId || !semTypeId || !note.trim()) return;
+    if (!yearId || !note.trim()) return;
     setSaving(true);
     try {
       await API.post("/api/discrepancies", {
         academicYearId:       yearId,
-        semesterTypeId:       semTypeId,
-        semester:             semesterNo,
         section,
         proctoringType:       section === "PROCTORING" ? proctoringType : undefined,
         note:                 note.trim(),
@@ -575,61 +575,7 @@ export default function RaiseDiscrepancyModal({
                   </Select>
                 </Box>
 
-                {/* ── Semester / Year Number ── */}
-                <Box>
-                  <Typography sx={label}>
-                    {semesterNo && (String(semesterNo).includes('Year') || Number(semesterNo) < 6 && section === "PROCTORING" && !semesterNumbers.includes(String(semesterNo))) 
-                      ? "Academic Period (Year/Sem)" 
-                      : "Semester / Year"}
-                  </Typography>
-                  <Select
-                    fullWidth
-                    size="small"
-                    value={semesterNo}
-                    onChange={e => {
-                      const val = e.target.value;
-                      setSemesterNo(val);
-                      
-                      // Extract number and type
-                      const isSem = val.startsWith("Sem-");
-                      const isYear = val.startsWith("Year-") || val.includes("Year");
-                      const numPart = val.replace("Sem-", "").replace("Year-", "");
-                      const num = parseInt(numPart);
 
-                      if (isSem && !isNaN(num)) {
-                        const typeName = num % 2 === 0 ? "EVEN" : "ODD";
-                        const type = localSemesterTypes.find(t => t.name === typeName);
-                        if (type) setSemTypeId(type._id);
-                      } else if (isYear) {
-                        const yearType = localSemesterTypes.find(t => t.name === "YEAR");
-                        if (yearType) setSemTypeId(yearType._id);
-                      } else if (val && val.includes('-S')) {
-                        const summer = localSemesterTypes.find(t => t.name === "SUMMER");
-                        if (summer) setSemTypeId(summer._id);
-                      }
-                    }}
-
-                    displayEmpty
-                    sx={selectSx}
-                    disabled={loadingSems}
-                  >
-                    <MenuItem value="" disabled>Select Period</MenuItem>
-                    {semesterNumbers.map(n => (
-                      <MenuItem key={n} value={n}>
-                        {n}
-                      </MenuItem>
-                    ))}
-                    {semesterNumbers.length === 0 && !loadingSems && (
-                      <MenuItem value="" disabled>No data found for this year</MenuItem>
-                    )}
-                  </Select>
-                  {loadingSems && (
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 1, mt: 1 }}>
-                        <Loader size={12} />
-                        <Typography fontSize={11} color="text.secondary">Fetching available periods...</Typography>
-                    </Box>
-                  )}
-                </Box>
 
                 {/* ── Section ── */}
                 <Box>
@@ -652,11 +598,7 @@ export default function RaiseDiscrepancyModal({
                     <Typography fontSize={12} color="#888" sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                       Issue will be routed to:{" "}
                       <Chip
-                        label={
-                          section === "PROCTORING" 
-                            ? "Exam Section"
-                            : ROLE_LABEL[section]
-                        }
+                        label={ROLE_LABEL[section]}
                         size="small"
                         sx={{
                           fontSize: 10,
@@ -707,27 +649,27 @@ export default function RaiseDiscrepancyModal({
       {activeTab === 1 && !success && (
         <DialogActions sx={{ px: 4, pb: 4, pt: 0 }}>
           <Button
-            onClick={() => onClose(false)}
-            sx={{ borderRadius: "12px", textTransform: "none", color: "#888", fontWeight: 600 }}
-          >
+ onClick={() => onClose(false)}
+ sx={{ textTransform: "none", color: "#888", fontWeight: 600 }}
+ >
             Cancel
           </Button>
           <Button
             variant="contained"
             onClick={handleSubmit}
-            disabled={saving || !note.trim() || !yearId || !semesterNo || (section === "PROCTORING" && proctoringType === "ASSIGNED_COUNT" && !studentDeptId)}
-            sx={{
-              borderRadius: "14px",
-              px: 4,
-              py: 1,
-              textTransform: "none",
-              fontWeight: 800,
-              background: "var(--gradient-primary)",
-              boxShadow: "0 8px 20px rgba(11, 82, 153, 0.2)",
-              "&:hover": { background: "var(--gradient-primary)", opacity: 0.9 },
-              "&.Mui-disabled": { background: "#eee", color: "#aaa" }
-            }}
-          >
+            disabled={saving || !note.trim() || !yearId || (section === "PROCTORING" && proctoringType === "ASSIGNED_COUNT" && !studentDeptId)}
+ sx={{
+ 
+ px: 4,
+ py: 1,
+ textTransform: "none",
+ fontWeight: 800,
+ background: "var(--gradient-primary)",
+ boxShadow: "0 8px 20px rgba(11, 82, 153, 0.2)",
+ "&:hover": { background: "var(--gradient-primary)", opacity: 0.9 },
+ "&.Mui-disabled": { background: "#eee", color: "#aaa" }
+ }}
+ >
             {saving ? <Loader size={20} color="inherit" /> : "Submit Discrepancy"}
           </Button>
         </DialogActions>

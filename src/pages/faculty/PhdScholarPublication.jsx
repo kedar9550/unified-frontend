@@ -3,10 +3,11 @@ import { Box, TextField, MenuItem, Select, Typography, Button, Table, TableBody,
 import { toast } from "sonner";
 import { AddCircle, Delete, Close, Description, Download, AttachFile, Groups, WorkspacePremium, CheckCircle, Visibility } from "@mui/icons-material";
 import PageHeader from "../../components/common/PageHeader";
+import NoActiveYearDialog from "../../components/common/NoActiveYearDialog";
 import {
-  FacultyInfoRow, FormCard, Grid2, SubLabel, NoteBox, FileField, SubmitBtn,
-  labelStyle
+  FacultyInfoRow, FormCard, Grid2, SubLabel, NoteBox, FileField, SubmitBtn
 } from "../../components/faculty/PublicationFormFields";
+import { labelStyle } from "../../components/faculty/publicationConstants";
 import { useAuth } from "../../context/AuthContext";
 import API from "../../api/axios";
 
@@ -16,6 +17,7 @@ export default function PhdScholarPublication() {
   const { user } = useAuth();
   const [viewMode, setViewMode] = useState("list"); // 'list', 'select-year', 'form'
   const [academicYears, setAcademicYears] = useState([]);
+  const [noActiveYearAlertOpen, setNoActiveYearAlertOpen] = useState(false);
   const [selectedYear, setSelectedYear] = useState("");
   const [publicationsList, setPublicationsList] = useState([]);
   const [selectedPubDetails, setSelectedPubDetails] = useState(null);
@@ -70,6 +72,9 @@ export default function PhdScholarPublication() {
       const res = await API.get(`/api/research/phd-scholar/validate/${rollNo}`);
       if (res.data?.success) {
         const student = res.data.data;
+        if (!student || !student.studentName) {
+          throw new Error("Scholar details not found");
+        }
         setForm(prev => ({
           ...prev,
           rollNumber: rollNo,
@@ -79,9 +84,11 @@ export default function PhdScholarPublication() {
         }));
         setIsVerified(true);
         toast.success(`Scholar ${rollNo} verified successfully!`);
+      } else {
+        throw new Error(res.data?.message || "Verification failed");
       }
     } catch (err) {
-      const errMsg = err?.response?.data?.message || "Verification failed. Student not found or not a Ph.D. Scholar.";
+      const errMsg = err?.response?.data?.message || err.message || "Verification failed. Student not found or not a Ph.D. Scholar.";
       toast.error(errMsg);
       setForm(prev => ({
         ...prev,
@@ -101,44 +108,44 @@ export default function PhdScholarPublication() {
       : form.universityText.trim();
 
     if (!finalUniversity) {
-      toast.error("Please specify the University.");
+      toast.error("Please specify the University");
       return;
     }
 
     if (form.universitySelect === "Aditya University") {
       if (!isVerified || !form.rollNumber) {
-        toast.error("Please verify a valid scholar roll number first.");
+        toast.error("Please verify a valid scholar roll number first");
         return;
       }
     } else {
       if (!form.rollNumber.trim()) {
-        toast.error("Please enter the student Roll Number/ID.");
+        toast.error("Please enter the student Roll Number/ID");
         return;
       }
       if (!form.studentName.trim()) {
-        toast.error("Please enter the student Name.");
+        toast.error("Please enter the student Name");
         return;
       }
       if (!form.course.trim()) {
-        toast.error("Please enter the course name.");
+        toast.error("Please enter the course name");
         return;
       }
     }
 
     if (!form.scholarType) {
-      toast.error("Please select the scholar type (Full-Time / Part-Time).");
+      toast.error("Please select the scholar type (Full-Time / Part-Time)");
       return;
     }
     if (!form.scholarStatus) {
-      toast.error("Please select the scholar status.");
+      toast.error("Please select the scholar status");
       return;
     }
     if (!form.admissionOrAwardDate) {
-      toast.error("Please specify the Admission/Award Date.");
+      toast.error("Please specify the Admission/Award Date");
       return;
     }
     if (!files.document) {
-      toast.error("At least one supporting document/proof is mandatory.");
+      toast.error("At least one supporting document/proof is mandatory");
       return;
     }
 
@@ -219,7 +226,7 @@ export default function PhdScholarPublication() {
     }
 
     if (finalStudents.length === 0) {
-      toast.error("Please fill, verify and add at least one student record first.");
+      toast.error("Please fill, verify and add at least one student record first");
       return;
     }
 
@@ -264,10 +271,18 @@ export default function PhdScholarPublication() {
         <Typography variant="h6" sx={{ color: "var(--text-primary)", fontWeight: 800 }}>My Guided Ph.D. Scholars</Typography>
         <Button
           variant="contained"
-          onClick={() => setViewMode("select-year")}
+          onClick={() => {
+            const activeYear = academicYears.find(y => y.isGlobalActive);
+            if (activeYear) {
+              setSelectedYear(activeYear._id);
+              setViewMode("form");
+            } else {
+              setNoActiveYearAlertOpen(true);
+            }
+          }}
           sx={{
             background: "var(--gradient-primary)",
-            borderRadius: "12px",
+            
             px: 3,
             fontWeight: 700,
             textTransform: "none",
@@ -420,48 +435,48 @@ export default function PhdScholarPublication() {
         </Select>
         <Box sx={{ display: "flex", gap: 2, mt: 4, justifyContent: "flex-end" }}>
           <Button
-            variant="outlined"
-            onClick={() => {
-              setViewMode("list");
-              setStudentsList([]);
-            }}
-            sx={{
-              borderRadius: "12px",
-              textTransform: "none",
-              fontWeight: 600,
-              color: "var(--text-primary)",
-              borderColor: "var(--border-color)",
-              "&:hover": {
-                borderColor: "var(--color-primary)",
-                background: "rgba(0,0,0,0.02)"
-              }
-            }}
-          >
+ variant="outlined"
+ onClick={() => {
+ setViewMode("list");
+ setStudentsList([]);
+ }}
+ sx={{
+ 
+ textTransform: "none",
+ fontWeight: 600,
+ color: "var(--text-primary)",
+ borderColor: "var(--border-color)",
+ "&:hover": {
+ borderColor: "var(--color-primary)",
+ background: "rgba(0,0,0,0.02)"
+ }
+ }}
+ >
             Cancel
           </Button>
           <Button
-            variant="contained"
-            disabled={!selectedYear}
-            onClick={() => setViewMode("form")}
-            sx={{
-              background: "var(--gradient-primary)",
-              borderRadius: "12px",
-              px: 4,
-              fontWeight: 700,
-              textTransform: "none",
-              "&:hover": {
-                opacity: 0.9,
-                transform: "translateY(-1px)",
-                boxShadow: "0 4px 12px rgba(0,0,0,0.1)"
-              },
-              "&.Mui-disabled": {
-                background: "var(--bg-panel)",
-                color: "var(--text-secondary)",
-                opacity: 0.5
-              },
-              transition: "all 0.2s ease"
-            }}
-          >
+ variant="contained"
+ disabled={!selectedYear}
+ onClick={() => setViewMode("form")}
+ sx={{
+ background: "var(--gradient-primary)",
+ 
+ px: 4,
+ fontWeight: 700,
+ textTransform: "none",
+ "&:hover": {
+ opacity: 0.9,
+ transform: "translateY(-1px)",
+ boxShadow: "0 4px 12px rgba(0,0,0,0.1)"
+ },
+ "&.Mui-disabled": {
+ background: "var(--bg-panel)",
+ color: "var(--text-secondary)",
+ opacity: 0.5
+ },
+ transition: "all 0.2s ease"
+ }}
+ >
             Proceed
           </Button>
         </Box>
@@ -471,11 +486,10 @@ export default function PhdScholarPublication() {
 
   const renderForm = () => (
     <FormCard title="Ph.D. Scholar Appraisal Entry">
-      <Box sx={{ mb: 3, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+      <Box sx={{ mb: 3, display: "flex", alignItems: "center" }}>
         <Typography variant="body2" sx={{ background: "var(--bg-accent-1)", color: "var(--color-primary)", px: 2, py: 0.8, borderRadius: "8px", fontWeight: 700, border: "1px solid var(--border-color)" }}>
           Academic Year: {academicYears.find(y => y._id === selectedYear)?.year || "Selected"}
         </Typography>
-        <Button size="small" variant="text" onClick={() => setViewMode("select-year")} sx={{ fontWeight: 700, textTransform: "none", color: "var(--color-primary)" }}>Change Year</Button>
       </Box>
 
       <FacultyInfoRow />
@@ -527,19 +541,19 @@ export default function PhdScholarPublication() {
                 placeholder="e.g. 21A91A0501"
               />
               <Button
-                variant="contained"
-                onClick={handleVerifyRollNumber}
-                disabled={isVerifying || !rollNumberInput.trim() || loading}
-                startIcon={isVerifying ? <CircularProgress size={16} color="inherit" /> : <CheckCircle />}
-                sx={{
-                  background: "linear-gradient(135deg, #10B981 0%, #059669 100%)",
-                  borderRadius: "10px",
-                  px: 3,
-                  fontWeight: 700,
-                  textTransform: "none",
-                  color: "#fff"
-                }}
-              >
+ variant="contained"
+ onClick={handleVerifyRollNumber}
+ disabled={isVerifying || !rollNumberInput.trim() || loading}
+ startIcon={isVerifying ? <CircularProgress size={16} color="inherit" /> : <CheckCircle />}
+ sx={{
+ background: "linear-gradient(135deg, #10B981 0%, #059669 100%)",
+ 
+ px: 3,
+ fontWeight: 700,
+ textTransform: "none",
+ color: "#fff"
+ }}
+ >
                 Verify
               </Button>
             </Stack>
@@ -658,18 +672,18 @@ export default function PhdScholarPublication() {
           
           <Box sx={{ mt: 3, display: "flex", justifyContent: "flex-end" }}>
             <Button
-              variant="contained"
-              onClick={handleAddStudentToList}
-              startIcon={<AddCircle />}
-              sx={{
-                background: "var(--gradient-primary)",
-                borderRadius: "10px",
-                px: 3,
-                fontWeight: 700,
-                textTransform: "none",
-                "&:hover": { opacity: 0.9 }
-              }}
-            >
+ variant="contained"
+ onClick={handleAddStudentToList}
+ startIcon={<AddCircle />}
+ sx={{
+ background: "var(--gradient-primary)",
+ 
+ px: 3,
+ fontWeight: 700,
+ textTransform: "none",
+ "&:hover": { opacity: 0.9 }
+ }}
+ >
               Add Student
             </Button>
           </Box>
@@ -718,7 +732,7 @@ export default function PhdScholarPublication() {
                         color="error"
                         onClick={() => {
                           setStudentsList(prev => prev.filter((_, i) => i !== idx));
-                          toast.success("Student removed from list.");
+                          toast.success("Student removed from list");
                         }}
                       >
                         <Delete fontSize="small" />
@@ -734,24 +748,24 @@ export default function PhdScholarPublication() {
 
       <Box sx={{ display: "flex", gap: 2, justifyContent: "center", mt: 5 }}>
         <Button
-          variant="outlined"
-          onClick={() => setViewMode("list")}
-          sx={{
-            px: 4,
-            height: "44px",
-            borderRadius: "12px",
-            textTransform: "none",
-            fontWeight: 600,
-            color: "var(--text-primary)",
-            borderColor: "var(--border-color)",
-            "&:hover": {
-              borderColor: "#ef4444",
-              color: "#ef4444",
-              background: "rgba(239, 68, 68, 0.05)"
-            },
-            transition: "all 0.3s ease"
-          }}
-        >
+ variant="outlined"
+ onClick={() => setViewMode("list")}
+ sx={{
+ px: 4,
+ height: "44px",
+ 
+ textTransform: "none",
+ fontWeight: 600,
+ color: "var(--text-primary)",
+ borderColor: "var(--border-color)",
+ "&:hover": {
+ borderColor: "#ef4444",
+ color: "#ef4444",
+ background: "rgba(239, 68, 68, 0.05)"
+ },
+ transition: "all 0.3s ease"
+ }}
+ >
           Cancel
         </Button>
         {(studentsList.length > 0 || isVerified) && <SubmitBtn onClick={handleSubmit} loading={loading} />}
@@ -945,15 +959,17 @@ export default function PhdScholarPublication() {
     <Box sx={{ width: "100%", pb: 5 }}>
       <PageHeader 
         title="Guided Ph.D. Scholars" 
-        subtitle="Manage and submit details of your guided scholars for annual appraisal cycles" 
-        breadcrumbs={["Home", "Research", "Guided Ph.D. Scholars"]}
-      />
+        subtitle="Manage and submit details of your guided scholars for annual appraisal cycles" />
       <Box sx={{ mt: 3 }}>
         {viewMode === "list" && renderList()}
         {viewMode === "select-year" && renderSelectYear()}
         {viewMode === "form" && renderForm()}
       </Box>
       {renderDetailsDialog()}
+      <NoActiveYearDialog
+        open={noActiveYearAlertOpen}
+        onClose={() => setNoActiveYearAlertOpen(false)}
+      />
     </Box>
   );
 }

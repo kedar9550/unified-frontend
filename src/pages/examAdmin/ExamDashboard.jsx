@@ -128,7 +128,6 @@ const ExamDashboard = () => {
           <Button
             variant="outlined"
             sx={{
-              borderRadius: "12px",
               borderColor: 'var(--border-color)',
               color: 'var(--text-primary)',
               textTransform: 'none',
@@ -144,7 +143,6 @@ const ExamDashboard = () => {
           <Button
             variant="outlined"
             sx={{
-              borderRadius: "12px",
               borderColor: 'var(--border-color)',
               color: 'var(--text-primary)',
               textTransform: 'none',
@@ -171,18 +169,19 @@ const ExamDashboard = () => {
                 background: "var(--bg-panel)",
                 boxShadow: "var(--shadow-premium)",
                 p: 2.5,
-                height: "100%",
+                height: "160px",
+                boxSizing: "border-box",
                 display: "flex",
                 flexDirection: "column",
                 justifyContent: "space-between",
                 gap: 2,
-                transition: "all 0.3s ease",
+                transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
                 cursor: card.path ? "pointer" : "default",
                 position: "relative",
                 overflow: "hidden",
                 "&:hover": {
-                  transform: card.path ? "translateY(-4px)" : "none",
-                  borderColor: card.color
+                  transform: card.path ? "translateY(-5px)" : "none",
+                  boxShadow: "0 12px 40px rgba(0,0,0,0.12)",
                 },
                 "&::after": {
                   content: '""',

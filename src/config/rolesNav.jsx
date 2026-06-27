@@ -58,7 +58,7 @@ export const ROLE_ROUTES = {
         { text: "Contribution", path: "/value-addition/contribution", icon: <WorkspacePremium /> },
       ],
     },
-    { text: "Administration", path: "/faculty/administration", icon: <AccountBalance /> },
+    // { text: "Administration", path: "/faculty/administration", icon: <AccountBalance /> },
     { text: "Self Appraisal", path: "/faculty/appraisal", icon: <Description /> },
   ],
 
@@ -107,9 +107,19 @@ export const ROLE_ROUTES = {
       icon: <Public />
     },
     {
+      text: "Proctoring Upload",
+      path: "/uniprime/proctoring-upload",
+      icon: <Assignment />
+    },
+    {
       text: "Appraisal Settings",
       path: "/uniprime/appraisal-settings",
       icon: <ManageAccounts />
+    },
+    {
+      text: "Discrepancies",
+      path: "/uniprime/discrepancies",
+      icon: <Flag />
     },
   ],
 
@@ -125,11 +135,11 @@ export const ROLE_ROUTES = {
           path: "/hod/research-approvals",
           icon: <Science />
         },
-        {
-          text: "Proctoring Verification",
-          path: "/hod/proctoring-approvals",
-          icon: <SupervisorAccount />
-        },
+        // {
+        //   text: "Proctoring Verification",
+        //   path: "/hod/proctoring-approvals",
+        //   icon: <SupervisorAccount />
+        // },
 
         {
           text: "Resource Utilization",
@@ -206,7 +216,8 @@ export const ROLE_ROUTES = {
         }
       ]
     },
-    { text: "Reference Journals", path: "/research-dean/reference-journals", icon: <LibraryBooks /> }
+    { text: "Reference Journals", path: "/research-dean/reference-journals", icon: <LibraryBooks /> },
+    { text: "Author Citations", path: "/research-dean/author-citations", icon: <Assignment /> }
   ],
 
   "RESEARCH_COORDINATOR": [

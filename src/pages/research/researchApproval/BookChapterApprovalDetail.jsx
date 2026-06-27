@@ -44,7 +44,7 @@ const BookChapterApprovalDetail = ({ id, onBack, role }) => {
                 }
             } catch (error) {
                 console.error("Failed to fetch book chapter details", error);
-                toast.error("Failed to load details");
+                toast.error(error.response?.data?.message || "Failed to load details");
             } finally {
                 setLoading(false);
             }
@@ -54,13 +54,13 @@ const BookChapterApprovalDetail = ({ id, onBack, role }) => {
 
     const handleAction = async (action) => {
         if (!remarks && action === 'Reject') {
-            toast.error('Remarks are required for rejection.');
+            toast.error('Remarks are required for rejection');
             return;
         }
 
         if (action === 'Approve' && isResearchAdmin && data.applyIncentive === 'Yes') {
             if (!approvedAmount) {
-                toast.error('Please enter the approved incentive amount.');
+                toast.error('Please enter the approved incentive amount');
                 return;
             }
         }
@@ -251,8 +251,24 @@ const BookChapterApprovalDetail = ({ id, onBack, role }) => {
                     <Box sx={{ display: "flex", flexDirection: "column" }}>
                         <LabelValue label="Publisher" value={data.publisher} horizontal />
                         <LabelValue label="Pub Year" value={data.yearOfPublication} horizontal />
-                        <LabelValue label="First Author" value={data.firstAuthor} horizontal />
-                        <LabelValue label="Your Position" value={data.authorPosition} horizontal />
+                        <LabelValue label="DOI" value={data.doi || "-"} horizontal />
+                        <LabelValue label="Publication Scope" value={data.publicationScope || "National"} horizontal />
+                        <LabelValue 
+                            label="Applicant Position" 
+                            horizontal
+                            chip={
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                    <Box sx={{
+                                        display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                                        width: 36, height: 36, borderRadius: '50%',
+                                        bgcolor: 'rgba(190, 147, 55, 0.15)', border: '2px solid var(--color-primary)',
+                                        color: 'var(--color-primary)', fontWeight: 900, fontSize: '1rem'
+                                    }}>
+                                        {data.userAuthorPosition || 1}
+                                    </Box>
+                                </Box>
+                            }
+                        />
                         <LabelValue label="Month/Year" value={`${data.month} ${data.year}`} horizontal />
                         <LabelValue label="Incentive" horizontal chip={<Chip label={data.applyIncentive} size="small" sx={{ bgcolor: data.applyIncentive === 'Yes' ? "rgba(76, 175, 80, 0.1)" : "var(--bg-panel)", color: data.applyIncentive === 'Yes' ? "#4caf50" : "var(--text-secondary)", fontWeight: 800, border: "1px solid", borderColor: data.applyIncentive === 'Yes' ? "#4caf5044" : "var(--border-color)" }} />} />
                         <LabelValue label="Seed Grant Work" value={data.applyingSeedGrant} horizontal />
@@ -262,17 +278,57 @@ const BookChapterApprovalDetail = ({ id, onBack, role }) => {
 
             {/* Co-Authors */}
             {data.coAuthors?.length > 0 && (
-                <Card sx={{ ...cardStyle, p: 0, overflow: "hidden" }}>
-                    <Box sx={{ p: 3, pb: 2 }}><Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 1 }}><GroupsIcon sx={{ color: "var(--color-primary)" }} /><Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>Co-Authors</Typography></Box></Box>
-                    <TableContainer><Table><TableHead sx={{ bgcolor: "var(--bg-panel)" }}><TableRow>
-                        <TableCell sx={{ color: "var(--text-secondary)", fontWeight: 800, fontSize: "0.7rem", textTransform: "uppercase" }}>#</TableCell>
-                        <TableCell sx={{ color: "var(--text-secondary)", fontWeight: 800, fontSize: "0.7rem", textTransform: "uppercase" }}>NAME</TableCell>
-                        <TableCell sx={{ color: "var(--text-secondary)", fontWeight: 800, fontSize: "0.7rem", textTransform: "uppercase" }}>AFFILIATION</TableCell>
-                    </TableRow></TableHead><TableBody>
-                        {data.coAuthors.map((ca, i) => (
-                            <TableRow key={i}><TableCell sx={{ fontWeight: 800, color: "var(--color-primary)" }}>{i + 1}</TableCell><TableCell sx={{ fontWeight: 700, color: "var(--text-primary)" }}>{ca.name}</TableCell><TableCell sx={{ fontWeight: 600, color: "var(--text-secondary)" }}>{ca.affiliation}</TableCell></TableRow>
-                        ))}
-                    </TableBody></Table></TableContainer>
+                <Card sx={{ ...cardStyle, p: 0, overflow: "hidden", mb: 3 }}>
+                    <Box sx={{ p: 3, pb: 2 }}>
+                        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                            <GroupsIcon sx={{ color: "var(--color-primary)" }} />
+                            <Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>Co-Author Details</Typography>
+                            <Box sx={{ ml: 'auto', px: 1.5, py: 0.5, borderRadius: '20px', bgcolor: 'rgba(190,147,55,0.12)', border: '1px solid rgba(190,147,55,0.3)' }}>
+                                <Typography variant="caption" sx={{ fontWeight: 900, color: 'var(--color-primary)', fontSize: '0.7rem' }}>
+                                    Total: {data.coAuthors.length} Co-Author{data.coAuthors.length > 1 ? 's' : ''}
+                                </Typography>
+                            </Box>
+                        </Box>
+                    </Box>
+                    <TableContainer>
+                        <Table>
+                            <TableHead sx={{ bgcolor: "var(--bg-panel)" }}>
+                                <TableRow>
+                                    <TableCell sx={{ color: "var(--text-secondary)", fontWeight: 800, fontSize: "0.7rem", textTransform: "uppercase", width: 60 }}>POSITION</TableCell>
+                                    <TableCell sx={{ color: "var(--text-secondary)", fontWeight: 800, fontSize: "0.7rem", textTransform: "uppercase" }}>NAME</TableCell>
+                                    <TableCell sx={{ color: "var(--text-secondary)", fontWeight: 800, fontSize: "0.7rem", textTransform: "uppercase" }}>AFFILIATION</TableCell>
+                                </TableRow>
+                            </TableHead>
+                            <TableBody>
+                                {(() => {
+                                    const total = parseInt(data.totalAuthors) || (data.coAuthors ? data.coAuthors.length + 1 : 0);
+                                    const applicantPos = parseInt(data.userAuthorPosition) || 0;
+                                    const derivedPositions = total > 0
+                                        ? Array.from({ length: total }, (_, i) => i + 1).filter(p => p !== applicantPos)
+                                        : [];
+                                    return data.coAuthors.map((ca, i) => {
+                                        const pos = ca.authorPosition || derivedPositions[i] || (i + 1);
+                                        return (
+                                            <TableRow key={i} sx={{ '&:hover': { bgcolor: 'rgba(190,147,55,0.04)' } }}>
+                                        <TableCell>
+                                            <Box sx={{
+                                                display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                                                width: 32, height: 32, borderRadius: '50%',
+                                                bgcolor: 'rgba(190, 147, 55, 0.12)', border: '1.5px solid var(--color-primary)',
+                                                color: 'var(--color-primary)', fontWeight: 900, fontSize: '0.85rem'
+                                            }}>
+                                                {pos}
+                                            </Box>
+                                        </TableCell>
+                                        <TableCell sx={{ fontWeight: 700, color: "var(--text-primary)" }}>{ca.name}</TableCell>
+                                        <TableCell sx={{ fontWeight: 600, color: "var(--text-secondary)" }}>{ca.affiliation || "-"}</TableCell>
+                                    </TableRow>
+                                    );
+                                    });
+                                })()}
+                            </TableBody>
+                        </Table>
+                    </TableContainer>
                 </Card>
             )}
 
@@ -308,8 +364,8 @@ const BookChapterApprovalDetail = ({ id, onBack, role }) => {
                             <TextField fullWidth multiline rows={3} placeholder="Provide your review comments..." value={remarks} onChange={e => setRemarks(e.target.value)} sx={{ mb: 3, "& .MuiOutlinedInput-root": { borderRadius: "12px", bgcolor: "var(--bg-panel)" } }} />
 
                             <Box sx={{ display: "flex", gap: 2, justifyContent: "flex-end" }}>
-                                <Button variant="outlined" disabled={actionLoading} onClick={() => handleAction('Reject')} sx={{ color: "#ef4444", borderColor: "#ef4444", fontWeight: 800, borderRadius: "10px", textTransform: "none", px: 3 }}>Reject</Button>
-                                <Button variant="contained" disabled={actionLoading} onClick={() => handleAction('Approve')} sx={{ bgcolor: "#10b981", color: "#fff", fontWeight: 800, borderRadius: "10px", textTransform: "none", px: 4, "&:hover": { bgcolor: "#059669" } }}>{isHOD ? "Approve & Forward" : "Final Approve"}</Button>
+                                <Button variant="outlined" color="error" disabled={actionLoading} onClick={() => handleAction('Reject')} sx={{ px: 3 }}>Reject</Button>
+                                <Button variant="contained" color="success" disabled={actionLoading} onClick={() => handleAction('Approve')} sx={{ px: 4 }}>{isHOD ? "Approve & Forward" : "Final Approve"}</Button>
                             </Box>
                         </Card>
                     ) : (

@@ -51,7 +51,7 @@ const ProctoringApprovalList = () => {
             }
         } catch (error) {
             console.error("Failed to fetch proctoring entries:", error);
-            toast.error("Failed to load proctoring data.");
+            toast.error(error.response?.data?.message || "Failed to load proctoring data");
         } finally {
             setLoading(false);
         }
@@ -82,13 +82,13 @@ const ProctoringApprovalList = () => {
             });
 
             if (res.data?.success) {
-                toast.success(`Statistics ${action === "Approve" ? "Approved" : "Rejected"} successfully!`);
+                toast.success(`Statistics ${action === "Approve" ? "approved" : "rejected"} successfully!`);
                 fetchEntries();
                 handleCloseReview();
             }
         } catch (error) {
             console.error("HOD Action error:", error);
-            toast.error(error.response?.data?.message || "Failed to process approval action.");
+            toast.error(error.response?.data?.message || "Failed to process approval action");
         } finally {
             setActionLoading(false);
         }
@@ -488,41 +488,41 @@ const ProctoringApprovalList = () => {
                         </DialogContent>
                         <DialogActions sx={{ px: 3, pb: 2.5, gap: 1 }}>
                             <Button
-                                onClick={handleCloseReview}
-                                disabled={actionLoading}
-                                sx={{ textTransform: "none", fontWeight: 700, borderRadius: "10px", color: "var(--text-secondary)" }}
-                            >
+ onClick={handleCloseReview}
+ disabled={actionLoading}
+ sx={{ textTransform: "none", fontWeight: 700, color: "var(--text-secondary)" }}
+ >
                                 Cancel
                             </Button>
                             {selectedEntry.status === "Pending" && (
                                 <>
                                     <Button
-                                        variant="outlined"
-                                        color="error"
-                                        disabled={actionLoading}
-                                        startIcon={actionLoading ? <CircularProgress size={16} /> : <CancelIcon />}
-                                        onClick={() => handleHODAction("Reject")}
-                                        sx={{ textTransform: "none", fontWeight: 700, borderRadius: "10px", borderColor: "rgba(239, 68, 68, 0.4)", color: "#EF4444" }}
-                                    >
+ variant="outlined"
+ color="error"
+ disabled={actionLoading}
+ startIcon={actionLoading ? <CircularProgress size={16} /> : <CancelIcon />}
+ onClick={() => handleHODAction("Reject")}
+ sx={{ textTransform: "none", fontWeight: 700, borderColor: "rgba(239, 68, 68, 0.4)", color: "#EF4444" }}
+ >
                                         Reject
                                     </Button>
                                     <Button
-                                        variant="contained"
-                                        disabled={actionLoading}
-                                        startIcon={actionLoading ? <CircularProgress size={16} /> : <CheckCircleIcon />}
-                                        onClick={() => handleHODAction("Approve")}
-                                        sx={{
-                                            textTransform: "none",
-                                            fontWeight: 700,
-                                            borderRadius: "10px",
-                                            background: "linear-gradient(135deg, #10B981 0%, #059669 100%)",
-                                            color: "#fff",
-                                            boxShadow: "0 4px 15px rgba(16, 185, 129, 0.2)",
-                                            "&:hover": {
-                                                opacity: 0.95
-                                            }
-                                        }}
-                                    >
+ variant="contained"
+ disabled={actionLoading}
+ startIcon={actionLoading ? <CircularProgress size={16} /> : <CheckCircleIcon />}
+ onClick={() => handleHODAction("Approve")}
+ sx={{
+ textTransform: "none",
+ fontWeight: 700,
+ 
+ background: "linear-gradient(135deg, #10B981 0%, #059669 100%)",
+ color: "#fff",
+ boxShadow: "0 4px 15px rgba(16, 185, 129, 0.2)",
+ "&:hover": {
+ opacity: 0.95
+ }
+ }}
+ >
                                         Approve
                                     </Button>
                                 </>

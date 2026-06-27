@@ -14,7 +14,6 @@ const Assignedstudents = () => {
     const location = useLocation();
     const [students, setStudents] = useState([]);
     const [filteredStudents, setFilteredStudents] = useState([]);
-    const [loading, setLoading] = useState(false);
     const [hierarchy, setHierarchy] = useState({
         program: "",
         programName: "",
@@ -39,7 +38,6 @@ const Assignedstudents = () => {
         const controller = new AbortController();
 
         const fetchAssignedStudents = async () => {
-            setLoading(true);
             try {
                 const res = await API.get("/api/student-data/assigned", {
                     signal: controller.signal,
@@ -52,10 +50,6 @@ const Assignedstudents = () => {
             } catch (error) {
                 if (error.name !== "CanceledError" && error.code !== "ERR_CANCELED") {
                     console.error("Failed to fetch assigned students", error);
-                }
-            } finally {
-                if (!controller.signal.aborted) {
-                    setLoading(false);
                 }
             }
         };
@@ -277,9 +271,7 @@ const Assignedstudents = () => {
         <Box sx={{ p: 3 }}>
             <PageHeader
                 title="Assigned Students"
-                subtitle="View and manage students assigned to departments"
-                breadcrumbs={["Home", "Student Management", "Assigned Students"]}
-            />
+                subtitle="View and manage students assigned to departments" />
 
 
             {/* TABLE CARD with inline filter toolbar */}
@@ -438,8 +430,8 @@ const Assignedstudents = () => {
                                     textTransform: "none", 
                                     fontWeight: 800, 
                                     background: "var(--gradient-primary)", 
-                                    color: (!selectedDept || movingDept) ? "rgba(255, 255, 255, 0.4)" : "#ffffff",
-                                    opacity: (!selectedDept || movingDept) ? 0.6 : 1,
+                                    color: "#ffffff",
+                                    opacity: (!selectedDept || movingDept) ? 0.45 : 1,
                                     cursor: (!selectedDept || movingDept) ? "not-allowed" : "pointer",
                                     pointerEvents: "auto",
                                     "&:hover": { 

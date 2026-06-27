@@ -38,6 +38,22 @@ export default function FeedbackManagement() {
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef(null);
 
+  const blurActiveElement = () => {
+    if (document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur();
+    }
+  };
+
+  const selectMenuProps = {
+    disableAutoFocusItem: true,
+    slotProps: {
+      list: {
+        autoFocus: false,
+        onMouseDown: blurActiveElement,
+      },
+    },
+  };
+
   // 1. Fetch Academic Years on Mount
   useEffect(() => {
     const fetchYears = async () => {
@@ -50,7 +66,7 @@ export default function FeedbackManagement() {
 
         setAcademicYears(uniqueYears);
         if (uniqueYears.length > 0) {
-          const active = uniqueYears.find((y) => y.isActive) || uniqueYears[0];
+          const active = uniqueYears.find((y) => y.isGlobalActive) || uniqueYears[0];
           setSelectedYearId(active._id);
         }
       } catch (err) {
@@ -157,6 +173,7 @@ export default function FeedbackManagement() {
       "branch",
       "subjectName",
       "subjectCode",
+      "subjectType",
       "section",
       "phase",
       "semester_or_year",
@@ -165,7 +182,7 @@ export default function FeedbackManagement() {
       "percentage",
     ];
     const sampleRows = [
-        ["FAC123", "2024-2025", "B.Tech", "CSE", "Mathematics", "MA101", "A", "1", "3", "60", "55", "91.6"],
+        ["FAC123", "2024-2025", "B.Tech", "CSE", "Mathematics", "MA101", "T", "A", "1", "3", "60", "55", "91.6"],
     ];
     const csvContent = headers.join(",") + "\n" + sampleRows.map(row => row.join(",")).join("\n") + "\n";
     const blob = new Blob([csvContent], { type: "text/csv" });
@@ -197,7 +214,7 @@ export default function FeedbackManagement() {
     
     const ids = results.map(r => r._id);
     if (ids.length === 0) {
-        toast.info("No records to delete.");
+        toast.info("No records to delete");
         return;
     }
 
@@ -234,9 +251,7 @@ export default function FeedbackManagement() {
 
       <PageHeader
         title="Feedback Admin"
-        subtitle="Coordinate student feedback data and institutional reports"
-        breadcrumbs={["Home", "Feedback", "Management"]}
-        action={
+        subtitle="Coordinate student feedback data and institutional reports" action={
           <Box sx={{ display: "flex", gap: 2 }}>
             {results.length > 0 && (
               <ActionButton
@@ -330,7 +345,13 @@ export default function FeedbackManagement() {
                         variant="standard"
                         disableUnderline
                         value={selectedYearId}
-                        onChange={(e) => setSelectedYearId(e.target.value)}
+                        onChange={(e) => {
+                            setSelectedYearId(e.target.value);
+                            blurActiveElement();
+                        }}
+                        onOpen={blurActiveElement}
+                        onClose={blurActiveElement}
+                        MenuProps={selectMenuProps}
                         sx={{ minWidth: 120, fontSize: 14, fontWeight: 700, color: "var(--text-primary)" }}
                     >
                         {academicYears.map((year) => (
@@ -345,7 +366,13 @@ export default function FeedbackManagement() {
                         variant="standard"
                         disableUnderline
                         value={selectedPhase}
-                        onChange={(e) => setSelectedPhase(e.target.value)}
+                        onChange={(e) => {
+                            setSelectedPhase(e.target.value);
+                            blurActiveElement();
+                        }}
+                        onOpen={blurActiveElement}
+                        onClose={blurActiveElement}
+                        MenuProps={selectMenuProps}
                         sx={{ minWidth: 100, fontSize: 14, fontWeight: 700, color: "var(--text-primary)" }}
                     >
                         <MenuItem value="">All Phases</MenuItem>
@@ -399,6 +426,12 @@ export default function FeedbackManagement() {
                             <Typography sx={{ fontSize: 11, color: "var(--text-secondary)" }}>{r.subjectCode}</Typography>
                             <Box sx={{ width: 4, height: 4, borderRadius: "50%", bgcolor: "var(--border-color)" }} />
                             <Typography sx={{ fontSize: 11, color: "var(--color-primary)", fontWeight: 700 }}>Sec {r.section || "-"}</Typography>
+                            {r.subjectType && (
+                              <>
+                                <Box sx={{ width: 4, height: 4, borderRadius: "50%", bgcolor: "var(--border-color)" }} />
+                                <Typography sx={{ fontSize: 11, color: "var(--text-secondary)", fontWeight: 600, textTransform: "capitalize" }}>{r.subjectType}</Typography>
+                              </>
+                            )}
                         </Box>
                     </Box>
                 ),

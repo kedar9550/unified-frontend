@@ -30,12 +30,13 @@ const RoleManagement = () => {
     const [allEmployees, setAllEmployees] = useState([]);
     const [loadingEmployees, setLoadingEmployees] = useState(false);
     const [employeesSearchQuery, setEmployeesSearchQuery] = useState("");
+    const [selectedDepartment, setSelectedDepartment] = useState("");
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(10);
 
     useEffect(() => {
         setPage(0);
-    }, [employeesSearchQuery]);
+    }, [employeesSearchQuery, selectedDepartment]);
 
     // Roles State
     const [roles, setRoles] = useState([]);
@@ -134,7 +135,7 @@ const RoleManagement = () => {
                 setRoles(res.data.data);
             }
         } catch (error) {
-            toast.error("Failed to fetch roles");
+            toast.error(error.response?.data?.message || "Failed to fetch roles");
         } finally {
             setLoadingRoles(false);
         }
@@ -147,7 +148,7 @@ const RoleManagement = () => {
             setAllEmployees(Array.isArray(res.data) ? res.data : []);
         } catch (error) {
             console.error("Failed to fetch employees", error);
-            toast.error("Failed to fetch employee list");
+            toast.error(error.response?.data?.message || "Failed to fetch employee list");
         } finally {
             setLoadingEmployees(false);
         }
@@ -247,7 +248,7 @@ const RoleManagement = () => {
 
     const handleUpdateEmployeeAdmin = async () => {
         if (!editingEmployee) return;
-        
+
         const updates = {};
         if (editableEmail && editableEmail !== editingEmployee.email) {
             if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(editableEmail)) {
@@ -390,6 +391,7 @@ const RoleManagement = () => {
                 setSignupError(`User not found in ECAP for ${signupData.role}.`);
             }
         } catch (err) {
+            console.error(err);
             setDisabledFields({}); setIsEcapVerified(false);
             setSignupError('Error verifying user against ECAP.');
         } finally { setIsVerifying(false); }
@@ -424,7 +426,7 @@ const RoleManagement = () => {
                 toast.error(res.data?.error || "Employee not found in ECAP");
             }
         } catch (error) {
-            toast.error("Verification failed");
+            toast.error(error.response?.data?.message || "Verification failed");
         } finally {
             setIsVerifyingCreate(false);
         }
@@ -541,25 +543,6 @@ const RoleManagement = () => {
         }
     };
 
-    const handleDeleteRole = async (id) => {
-        const role = roles.find(r => r._id === id);
-        if (role?.defaultRole) {
-            toast.warning("System Default roles cannot be deleted from here.");
-            return;
-        }
-        if (!window.confirm("Are you sure? This will remove the role from ALL users.")) return;
-        try {
-            const res = await API.delete(`/api/roles/${id}`);
-            if (res.data.success) {
-                toast.success("Role deleted successfully!");
-                fetchRoles();
-                if (selectedUser) handleUserSearch();
-            }
-        } catch (error) {
-            toast.error("Failed to delete role");
-        }
-    };
-
     // User Search Logic
     const handleUserSearch = async () => {
         if (!userSearchQuery) return;
@@ -575,7 +558,7 @@ const RoleManagement = () => {
                 if (updated) setSelectedUser(updated);
             }
         } catch (error) {
-            toast.error("User search failed");
+            toast.error(error.response?.data?.message || "User search failed");
             setUserSearchResults([]);
         } finally {
             setSearchingUsers(false);
@@ -620,7 +603,7 @@ const RoleManagement = () => {
             if (isCurrentlySelected && role?.defaultRole) {
                 const otherSelectedDefaultRoles = roles.filter(r => r.defaultRole && r._id !== id && prev.includes(r._id));
                 if (otherSelectedDefaultRoles.length === 0) {
-                    toast.info("Users must have at least one default role based on their identity.");
+                    toast.info("Users must have at least one default role based on their identity");
                     return prev;
                 }
             }
@@ -678,11 +661,22 @@ const RoleManagement = () => {
                 fetchAllEmployees();
             }
         } catch (error) {
-            toast.error("Failed to remove role");
+            toast.error(error.response?.data?.message || "Failed to remove role");
         }
     };
 
     const filteredEmployees = allEmployees.filter(emp => {
+        if (selectedDepartment) {
+            const empDeptId = emp.coreDepartment || emp.department;
+            const selectedDeptObj = allDepartments.find(d => d._id === selectedDepartment);
+            const selectedDeptName = selectedDeptObj ? selectedDeptObj.name.toLowerCase() : "";
+            const empDeptStr = (emp.coreDepartment || emp.department || "").toString().toLowerCase();
+            const matchesId = empDeptId === selectedDepartment;
+            const matchesName = selectedDeptName && empDeptStr === selectedDeptName;
+            if (!matchesId && !matchesName) {
+                return false;
+            }
+        }
         const query = employeesSearchQuery.toLowerCase().trim();
         if (!query) return true;
         return (
@@ -725,11 +719,11 @@ const RoleManagement = () => {
                 }
             />
 
-            <Tabs 
-                value={activeTab} 
-                onChange={(e, newValue) => setActiveTab(newValue)} 
-                sx={{ 
-                    mt: 3, 
+            <Tabs
+                value={activeTab}
+                onChange={(e, newValue) => setActiveTab(newValue)}
+                sx={{
+                    mt: 3,
                     mb: 2,
                     borderBottom: '1px solid var(--border-color)',
                     '& .MuiTab-root': {
@@ -756,803 +750,803 @@ const RoleManagement = () => {
             {activeTab === 0 && (
                 <>
                     <Grid container spacing={3} sx={{ mt: 1, width: '100%', ml: 0 }}>
-                <Grid size={{ xs: 12, lg: 12 }}>
-                    {/* Create Roles Section */}
-                    <Paper elevation={0} sx={{ p: 3, height: '100%', borderRadius: "20px", background: "var(--bg-glass)", backdropFilter: "blur(10px) saturate(150%)", border: "1px solid var(--border-color)", boxShadow: "0 4px 20px rgba(0,0,0,0.02)" }}>
-                        <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, justifyContent: 'space-between', alignItems: { xs: 'stretch', sm: 'flex-start' }, gap: 2 }}>
-                            <Box>
-                                <Typography variant="h6" fontWeight={800} color="var(--text-primary)">Add Employee</Typography>
-                                <Typography variant="body2" color="textSecondary" fontWeight={500}>
-                                    Create and update data
-                                </Typography>
-                            </Box>
-                            <Button
-                                onClick={handleDownloadTemplate}
-                                variant="outlined"
-                                size="small"
-                                startIcon={<UploadFile />}
-                                sx={{
-                                    textTransform: 'none',
-                                    borderRadius: '50px',
-                                    fontWeight: 700,
-                                    border: '1.5px solid var(--color-primary)',
-                                    background: 'transparent',
-                                    color: 'var(--color-primary)',
-                                    width: { xs: '100%', sm: 'auto' },
-                                    transition: '0.3s',
-                                    '&:hover': {
-                                        background: 'rgba(0, 78, 146, 0.05)',
-                                        borderColor: 'var(--color-primary)',
-                                        boxShadow: '0 4px 12px rgba(0, 78, 146, 0.1)'
-                                    }
-                                }}
-                            >
-                                Download Template
-                            </Button>
-                        </Box>
-                        <Box sx={{ mt: 3, display: 'flex', gap: 2 }}>
-                            <Button
-                                variant="contained"
-                                startIcon={<Add />}
-                                onClick={handleCreateClick}
-                                sx={{
-                                    flex: 1,
-                                    background: "var(--gradient-primary)",
-                                    borderRadius: "50px",
-                                    textTransform: "none",
-                                    px: { xs: 1, sm: 4 },
-                                    fontWeight: 700,
-                                    fontSize: { xs: '0.85rem', sm: '0.9rem' },
-                                    boxShadow: "0 4px 12px rgba(0, 78, 146, 0.3)",
-                                    transition: '0.3s',
-                                    '&:hover': {
-                                        background: "var(--gradient-primary-hover)",
-                                        boxShadow: "0 6px 16px rgba(0, 78, 146, 0.4)",
-                                        transform: 'translateY(-1px)'
-                                    }
-                                }}
-                            >
-                                Create
-                            </Button>
-                            <Button
-                                variant="contained"
-                                startIcon={<Sync />}
-                                onClick={() => {
-                                    setShowUpdateOptions(!showUpdateOptions);
-                                    setShowCreateOptions(false);
-                                }}
-                                sx={{
-                                    flex: 1,
-                                    background: "var(--gradient-primary)",
-                                    borderRadius: "50px",
-                                    textTransform: "none",
-                                    px: { xs: 1, sm: 4 },
-                                    fontWeight: 700,
-                                    fontSize: { xs: '0.85rem', sm: '0.9rem' },
-                                    boxShadow: "0 4px 12px rgba(0, 78, 146, 0.3)",
-                                    transition: '0.3s',
-                                    '&:hover': {
-                                        background: "var(--gradient-primary-hover)",
-                                        boxShadow: "0 6px 16px rgba(0, 78, 146, 0.4)",
-                                        transform: 'translateY(-1px)'
-                                    }
-                                }}
-                            >
-                                Update
-                            </Button>
-                        </Box>
-
-                        {/* Create Options Card */}
-                        <Collapse in={showCreateOptions}>
-                            <Box sx={{ mt: 3, p: 2, borderRadius: '15px', background: 'rgba(255, 255, 255, 0.15)', border: '1px solid rgba(255, 255, 255, 0.2)', backdropFilter: 'blur(5px)' }}>
-                                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                                    <Typography variant="subtitle2" fontWeight={800} color="var(--text-primary)">Create Options</Typography>
-                                    <IconButton onClick={() => setShowCreateOptions(false)} size="small"><Close sx={{ fontSize: 18 }} /></IconButton>
-                                </Box>
-                                <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 2, alignItems: { xs: 'stretch', sm: 'center' }, justifyContent: 'space-between', width: '100%' }}>
-                                    <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 2, flex: 1 }}>
-                                        <Button
-                                            variant="outlined"
-                                            size="small"
-                                            startIcon={uploadingBulk ? <Loader size={16} color="inherit" /> : <UploadFile />}
-                                            onClick={() => fileInputRef.current.click()}
-                                            disabled={uploadingBulk}
-                                            sx={{ width: { xs: '100%', sm: 'auto' }, borderRadius: '50px', textTransform: 'none', fontWeight: 700, border: '1.5px solid var(--color-primary)', background: 'transparent', color: 'var(--color-primary)', py: { xs: 1.2, sm: 0.5 }, transition: '0.3s', '&:hover': { background: 'rgba(0, 78, 146, 0.05)', boxShadow: '0 4px 10px rgba(0, 78, 146, 0.1)' } }}
-                                        >
-                                            {uploadingBulk ? 'Uploading...' : 'Bulk Upload'}
-                                        </Button>
-                                        <Button
-                                            variant="outlined"
-                                            size="small"
-                                            startIcon={<PersonAdd />}
-                                            onClick={() => {
-                                                if (showCreateIndividualSearch) {
-                                                    setCreateIndividualQuery("");
-                                                }
-                                                setShowCreateIndividualSearch(!showCreateIndividualSearch);
-                                            }}
-                                            sx={{ width: { xs: '100%', sm: 'auto' }, borderRadius: '50px', textTransform: 'none', fontWeight: 700, border: '1.5px solid var(--color-primary)', background: showCreateIndividualSearch ? 'rgba(0, 78, 146, 0.1)' : 'transparent', color: 'var(--color-primary)', transition: '0.3s', py: { xs: 1.2, sm: 0.5 }, '&:hover': { background: 'rgba(0, 78, 146, 0.05)' } }}
-                                        >
-                                            Create Individual
-                                        </Button>
+                        <Grid size={{ xs: 12, lg: 12 }}>
+                            {/* Create Roles Section */}
+                            <Paper elevation={0} sx={{ p: 3, height: '100%', borderRadius: "20px", background: "var(--bg-glass)", backdropFilter: "blur(10px) saturate(150%)", border: "1px solid var(--border-color)", boxShadow: "0 4px 20px rgba(0,0,0,0.02)" }}>
+                                <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, justifyContent: 'space-between', alignItems: { xs: 'stretch', sm: 'flex-start' }, gap: 2 }}>
+                                    <Box>
+                                        <Typography variant="h6" fontWeight={800} color="var(--text-primary)">Add Employee</Typography>
+                                        <Typography variant="body2" color="textSecondary" fontWeight={500}>
+                                            Create and update data
+                                        </Typography>
                                     </Box>
-
-                                    <Collapse in={showCreateIndividualSearch} orientation={window.innerWidth < 600 ? "vertical" : "horizontal"} sx={{ width: { xs: '100%', sm: 'auto' }, mt: { xs: 2, sm: 0 } }}>
-                                        <TextField
-                                            placeholder="Enter ID to verify..."
-                                            size="small"
-                                            fullWidth={window.innerWidth < 600}
-                                            value={createIndividualQuery}
-                                            onChange={(e) => setCreateIndividualQuery(e.target.value)}
-                                            onKeyPress={(e) => {
-                                                if (e.key === "Enter") {
-                                                    handleVerifyCreate();
-                                                }
-                                            }}
-                                            sx={{
-                                                width: { xs: '100%', sm: '280px' },
-                                                "& .MuiOutlinedInput-root": {
-                                                    borderRadius: "10px",
-                                                    background: "var(--bg-glass)",
-                                                    backdropFilter: "blur(5px)"
-                                                }
-                                            }}
-                                            slotProps={{
-                                                input: {
-                                                    startAdornment: (
-                                                        <InputAdornment position="start">
-                                                            <Search fontSize="small" />
-                                                        </InputAdornment>
-                                                    ),
-                                                    endAdornment: (
-                                                        <InputAdornment position="end">
-                                                            <IconButton
-                                                                size="small"
-                                                                onClick={handleVerifyCreate}
-                                                                disabled={isVerifyingCreate || !createIndividualQuery.trim()}
-                                                            >
-                                                                {isVerifyingCreate ? <Loader size={16} /> : <ArrowForward fontSize="small" />}
-                                                            </IconButton>
-                                                            <IconButton size="small" onClick={() => { setShowCreateIndividualSearch(false); setCreateIndividualQuery(""); setCreateIndividualPreview(null); setIsShowingSignupForm(false); }}><Close fontSize="small" /></IconButton>
-                                                        </InputAdornment>
-                                                    )
-                                                }
-                                            }}
-                                        />
-                                    </Collapse>
+                                    <Button
+                                        onClick={handleDownloadTemplate}
+                                        variant="outlined"
+                                        size="small"
+                                        startIcon={<UploadFile />}
+                                        sx={{
+                                            textTransform: 'none',
+                                            borderRadius: '50px',
+                                            fontWeight: 700,
+                                            border: '1.5px solid var(--color-primary)',
+                                            background: 'transparent',
+                                            color: 'var(--color-primary)',
+                                            width: { xs: '100%', sm: 'auto' },
+                                            transition: '0.3s',
+                                            '&:hover': {
+                                                background: 'rgba(0, 78, 146, 0.05)',
+                                                borderColor: 'var(--color-primary)',
+                                                boxShadow: '0 4px 12px rgba(0, 78, 146, 0.1)'
+                                            }
+                                        }}
+                                    >
+                                        Download Template
+                                    </Button>
+                                </Box>
+                                <Box sx={{ mt: 3, display: 'flex', gap: 2 }}>
+                                    <Button
+                                        variant="contained"
+                                        startIcon={<Add />}
+                                        onClick={handleCreateClick}
+                                        sx={{
+                                            flex: 1,
+                                            background: "var(--gradient-primary)",
+                                            borderRadius: "50px",
+                                            textTransform: "none",
+                                            px: { xs: 1, sm: 4 },
+                                            fontWeight: 700,
+                                            fontSize: { xs: '0.85rem', sm: '0.9rem' },
+                                            boxShadow: "0 4px 12px rgba(0, 78, 146, 0.3)",
+                                            transition: '0.3s',
+                                            '&:hover': {
+                                                background: "var(--gradient-primary-hover)",
+                                                boxShadow: "0 6px 16px rgba(0, 78, 146, 0.4)",
+                                                transform: 'translateY(-1px)'
+                                            }
+                                        }}
+                                    >
+                                        Create
+                                    </Button>
+                                    <Button
+                                        variant="contained"
+                                        startIcon={<Sync />}
+                                        onClick={() => {
+                                            setShowUpdateOptions(!showUpdateOptions);
+                                            setShowCreateOptions(false);
+                                        }}
+                                        sx={{
+                                            flex: 1,
+                                            background: "var(--gradient-primary)",
+                                            borderRadius: "50px",
+                                            textTransform: "none",
+                                            px: { xs: 1, sm: 4 },
+                                            fontWeight: 700,
+                                            fontSize: { xs: '0.85rem', sm: '0.9rem' },
+                                            boxShadow: "0 4px 12px rgba(0, 78, 146, 0.3)",
+                                            transition: '0.3s',
+                                            '&:hover': {
+                                                background: "var(--gradient-primary-hover)",
+                                                boxShadow: "0 6px 16px rgba(0, 78, 146, 0.4)",
+                                                transform: 'translateY(-1px)'
+                                            }
+                                        }}
+                                    >
+                                        Update
+                                    </Button>
                                 </Box>
 
-                                {/* Verification Preview Row */}
-                                <Collapse in={!!createIndividualPreview && !isShowingSignupForm}>
-                                    <Box sx={{ mt: 2 }}>
-                                        <Paper
-                                            elevation={0}
-                                            sx={{
-                                                borderRadius: '15px',
-                                                background: 'var(--border-color)',
-                                                backdropFilter: 'blur(10px)',
-                                                border: '1px solid rgba(255, 255, 255, 0.3)',
-                                                px: 3,
-                                                py: 1.5,
-                                                display: 'flex',
-                                                flexDirection: { xs: 'column', sm: 'row' },
-                                                justifyContent: 'space-between',
-                                                alignItems: { xs: 'stretch', sm: 'center' },
-                                                gap: { xs: 2, sm: 0 }
-                                            }}
-                                        >
-                                            <Box>
-                                                <Typography variant="body2" fontWeight={800} sx={{ color: 'var(--text-primary)' }}>{createIndividualPreview?.name}</Typography>
-                                                <Typography variant="caption" sx={{ fontWeight: 700, color: 'text.secondary' }}>ID: {createIndividualPreview?.id}</Typography>
-                                            </Box>
-                                            <Button
-                                                variant="contained"
-                                                size="small"
-                                                onClick={handleStartSignup}
-                                                sx={{
-                                                    textTransform: 'none',
-                                                    borderRadius: '50px',
-                                                    background: "var(--gradient-primary)",
-                                                    boxShadow: "0 4px 12px rgba(0, 78, 146, 0.3)",
-                                                    px: 4,
-                                                    width: { xs: '100%', sm: 'auto' },
-                                                    transition: '0.3s',
-                                                    '&:hover': {
-                                                        background: "var(--gradient-primary-hover)",
-                                                        boxShadow: "0 6px 16px rgba(0, 78, 146, 0.4)",
-                                                    }
-                                                }}
-                                            >
-                                                Create
-                                            </Button>
-                                        </Paper>
-                                    </Box>
-                                </Collapse>
-
-                                {/* Inline Signup Form */}
-                                <Collapse in={isShowingSignupForm}>
-                                    <Box sx={{ mt: 3, p: 3, borderRadius: '20px', background: 'var(--bg-glass)', border: '1px solid var(--border-color)', backdropFilter: 'blur(10px)' }}>
-                                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-                                            <Typography variant="subtitle1" fontWeight={800} color="var(--text-primary)">Complete Registration</Typography>
-                                            <IconButton size="small" onClick={() => setIsShowingSignupForm(false)}><Close /></IconButton>
+                                {/* Create Options Card */}
+                                <Collapse in={showCreateOptions}>
+                                    <Box sx={{ mt: 3, p: 2, borderRadius: '15px', background: 'var(--bg-glass)', border: '1px solid var(--border-color)', backdropFilter: 'blur(5px)' }}>
+                                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                                            <Typography variant="subtitle2" fontWeight={800} color="var(--text-primary)">Create Options</Typography>
+                                            <IconButton onClick={() => setShowCreateOptions(false)} size="small"><Close sx={{ fontSize: 18 }} /></IconButton>
                                         </Box>
-
-                                        <Grid container spacing={3}>
-                                            <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-                                                <TextField label="Name" fullWidth value={signupData.fullname} slotProps={{ input: { readOnly: true } }} size="small" variant="filled" sx={{ "& .MuiInputBase-input": { fontWeight: 700, color: 'var(--text-primary)' } }} />
-                                            </Grid>
-                                            <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-                                                <TextField label="Employee ID" fullWidth value={signupData.id} slotProps={{ input: { readOnly: true } }} size="small" variant="filled" sx={{ "& .MuiInputBase-input": { fontWeight: 700, color: 'var(--text-primary)' } }} />
-                                            </Grid>
-                                            <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-                                                <TextField
-                                                    label="Email Address"
-                                                    fullWidth
-                                                    required
-                                                    value={signupData.email}
-                                                    onChange={(e) => setSignupData({ ...signupData, email: e.target.value })}
-                                                    placeholder="Enter official email"
-                                                    size="small"
-                                                    sx={{ "& .MuiOutlinedInput-root": { borderRadius: "10px", background: "white" } }}
-                                                />
-                                            </Grid>
-                                            <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-                                                <TextField label="Department" fullWidth value={signupData.department} slotProps={{ input: { readOnly: true } }} size="small" variant="filled" sx={{ "& .MuiInputBase-input": { fontWeight: 700 } }} />
-                                            </Grid>
-                                            <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-                                                <TextField label="Phone" fullWidth value={signupData.phone} slotProps={{ input: { readOnly: true } }} size="small" variant="filled" sx={{ "& .MuiInputBase-input": { fontWeight: 700 } }} />
-                                            </Grid>
-                                            <Grid size={{ xs: 12, sm: 6, md: 4 }} sx={{ display: 'flex', alignItems: 'flex-end', justifyContent: { xs: 'center', sm: 'flex-end' } }}>
+                                        <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 2, alignItems: { xs: 'stretch', sm: 'center' }, justifyContent: 'space-between', width: '100%' }}>
+                                            <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 2, flex: 1 }}>
                                                 <Button
-                                                    variant="contained"
-                                                    disabled={isIndividualSubmitting}
-                                                    onClick={handleIndividualSignupSubmit}
-                                                    sx={{
-                                                        borderRadius: '50px',
-                                                        textTransform: 'none',
-                                                        fontWeight: 800,
-                                                        px: 5,
-                                                        py: 1.2,
-                                                        background: "var(--gradient-primary)",
-                                                        boxShadow: "0 4px 15px rgba(0, 78, 146, 0.3)",
-                                                        transition: '0.3s',
-                                                        '&:hover': {
-                                                            background: "var(--gradient-primary-hover)",
-                                                            boxShadow: "0 6px 16px rgba(0, 78, 146, 0.4)",
+                                                    variant="outlined"
+                                                    size="small"
+                                                    startIcon={uploadingBulk ? <Loader size={16} color="inherit" /> : <UploadFile />}
+                                                    onClick={() => fileInputRef.current.click()}
+                                                    disabled={uploadingBulk}
+                                                    sx={{ width: { xs: '100%', sm: 'auto' }, borderRadius: '50px', textTransform: 'none', fontWeight: 700, border: '1.5px solid var(--color-primary)', background: 'transparent', color: 'var(--color-primary)', py: { xs: 1.2, sm: 0.5 }, transition: '0.3s', '&:hover': { background: 'rgba(0, 78, 146, 0.05)', boxShadow: '0 4px 10px rgba(0, 78, 146, 0.1)' } }}
+                                                >
+                                                    {uploadingBulk ? 'Uploading...' : 'Bulk Upload'}
+                                                </Button>
+                                                <Button
+                                                    variant="outlined"
+                                                    size="small"
+                                                    startIcon={<PersonAdd />}
+                                                    onClick={() => {
+                                                        if (showCreateIndividualSearch) {
+                                                            setCreateIndividualQuery("");
+                                                        }
+                                                        setShowCreateIndividualSearch(!showCreateIndividualSearch);
+                                                    }}
+                                                    sx={{ width: { xs: '100%', sm: 'auto' }, borderRadius: '50px', textTransform: 'none', fontWeight: 700, border: '1.5px solid var(--color-primary)', background: showCreateIndividualSearch ? 'rgba(0, 78, 146, 0.1)' : 'transparent', color: 'var(--color-primary)', transition: '0.3s', py: { xs: 1.2, sm: 0.5 }, '&:hover': { background: 'rgba(0, 78, 146, 0.05)' } }}
+                                                >
+                                                    Create Individual
+                                                </Button>
+                                            </Box>
+
+                                            <Collapse in={showCreateIndividualSearch} orientation={window.innerWidth < 600 ? "vertical" : "horizontal"} sx={{ width: { xs: '100%', sm: 'auto' }, mt: { xs: 2, sm: 0 } }}>
+                                                <TextField
+                                                    placeholder="Enter ID to verify..."
+                                                    size="small"
+                                                    fullWidth={window.innerWidth < 600}
+                                                    value={createIndividualQuery}
+                                                    onChange={(e) => setCreateIndividualQuery(e.target.value)}
+                                                    onKeyPress={(e) => {
+                                                        if (e.key === "Enter") {
+                                                            handleVerifyCreate();
                                                         }
                                                     }}
-                                                >
-                                                    {isIndividualSubmitting ? <Loader size={20} color="inherit" /> : 'Register'}
-                                                </Button>
-                                            </Grid>
-                                        </Grid>
-                                    </Box>
-                                </Collapse>
-                            </Box>
-                        </Collapse>
-
-                        <Collapse in={showUpdateOptions}>
-                            <Box sx={{ mt: 3, p: 2, borderRadius: '15px', background: 'rgba(255, 255, 255, 0.15)', border: '1px solid rgba(255, 255, 255, 0.2)', backdropFilter: 'blur(5px)' }}>
-                                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                                    <Typography variant="subtitle2" fontWeight={800} color="var(--text-primary)">Update Options</Typography>
-                                    <IconButton onClick={() => {
-                                        setShowUpdateOptions(false);
-                                        setShowIndividualSearch(false);
-                                        setInlineSearchQuery("");
-                                        setInlineSearchResults([]);
-                                    }} size="small"><Close sx={{ fontSize: 18 }} /></IconButton>
-                                </Box>
-                                <Collapse in={!editingEmployee}>
-                                    <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 2, alignItems: { xs: 'stretch', sm: 'center' }, justifyContent: 'space-between', width: '100%' }}>
-                                        <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 2, flex: 1 }}>
-                                            <Button
-                                                variant="outlined"
-                                                size="small"
-                                                startIcon={isSyncingBulk ? <Loader size={16} color="inherit" /> : <Sync />}
-                                                onClick={handleBulkSync}
-                                                disabled={isSyncingBulk}
-                                                sx={{ width: { xs: '100%', sm: 'auto' }, borderRadius: '50px', textTransform: 'none', fontWeight: 700, border: '1.5px solid var(--color-primary)', background: 'transparent', color: 'var(--color-primary)', py: { xs: 1.2, sm: 0.5 }, transition: '0.3s', '&:hover': { background: 'rgba(0, 78, 146, 0.05)', boxShadow: '0 4px 10px rgba(0, 78, 146, 0.1)' } }}
-                                            >
-                                                {isSyncingBulk ? 'Updating...' : 'Bulk Update'}
-                                            </Button>
-                                            <Button
-                                                variant="outlined"
-                                                size="small"
-                                                startIcon={<Person />}
-                                                onClick={() => {
-                                                    if (showIndividualSearch) {
-                                                        setInlineSearchQuery("");
-                                                        setInlineSearchResults([]);
-                                                    }
-                                                    setShowIndividualSearch(!showIndividualSearch);
-                                                }}
-                                                sx={{ width: { xs: '100%', sm: 'auto' }, borderRadius: '50px', textTransform: 'none', fontWeight: 700, border: '1.5px solid var(--color-primary)', background: showIndividualSearch ? 'rgba(0, 78, 146, 0.1)' : 'transparent', color: 'var(--color-primary)', transition: '0.3s', py: { xs: 1.2, sm: 0.5 }, '&:hover': { background: 'rgba(0, 78, 146, 0.05)' } }}
-                                            >
-                                                Individual Update
-                                            </Button>
+                                                    sx={{
+                                                        width: { xs: '100%', sm: '280px' },
+                                                        "& .MuiOutlinedInput-root": {
+                                                            borderRadius: "10px",
+                                                            background: "var(--bg-glass)",
+                                                            backdropFilter: "blur(5px)"
+                                                        }
+                                                    }}
+                                                    slotProps={{
+                                                        input: {
+                                                            startAdornment: (
+                                                                <InputAdornment position="start">
+                                                                    <Search fontSize="small" />
+                                                                </InputAdornment>
+                                                            ),
+                                                            endAdornment: (
+                                                                <InputAdornment position="end">
+                                                                    <IconButton
+                                                                        size="small"
+                                                                        onClick={handleVerifyCreate}
+                                                                        disabled={isVerifyingCreate || !createIndividualQuery.trim()}
+                                                                    >
+                                                                        {isVerifyingCreate ? <Loader size={16} /> : <ArrowForward fontSize="small" />}
+                                                                    </IconButton>
+                                                                    <IconButton size="small" onClick={() => { setShowCreateIndividualSearch(false); setCreateIndividualQuery(""); setCreateIndividualPreview(null); setIsShowingSignupForm(false); }}><Close fontSize="small" /></IconButton>
+                                                                </InputAdornment>
+                                                            )
+                                                        }
+                                                    }}
+                                                />
+                                            </Collapse>
                                         </Box>
 
-                                        <Collapse in={showIndividualSearch} orientation={window.innerWidth < 600 ? "vertical" : "horizontal"} sx={{ width: { xs: '100%', sm: 'auto' }, mt: { xs: 2, sm: 0 } }}>
-                                            <TextField
-                                                placeholder="Search name or ID..."
-                                                size="small"
-                                                fullWidth={window.innerWidth < 600}
-                                                value={inlineSearchQuery}
-                                                onChange={(e) => {
-                                                    setInlineSearchQuery(e.target.value);
-                                                }}
-                                                onKeyPress={(e) => {
-                                                    if (e.key === "Enter") {
-                                                        handleInlineSearch();
-                                                    }
-                                                }}
-                                                sx={{
-                                                    width: { xs: '100%', sm: '280px' },
-                                                    "& .MuiOutlinedInput-root": {
-                                                        borderRadius: "10px",
-                                                        background: "var(--bg-glass)",
-                                                        backdropFilter: "blur(5px)"
-                                                    }
-                                                }}
-                                                slotProps={{
-                                                    input: {
-                                                        startAdornment: (
-                                                            <InputAdornment position="start">
-                                                                <Search fontSize="small" />
-                                                            </InputAdornment>
-                                                        ),
-                                                        endAdornment: (
-                                                            <InputAdornment position="end">
-                                                                <IconButton size="small" onClick={() => { setShowIndividualSearch(false); setInlineSearchQuery(""); }}><Close fontSize="small" /></IconButton>
-                                                            </InputAdornment>
-                                                        )
-                                                    }
-                                                }}
-                                            />
-                                        </Collapse>
-                                    </Box>
-
-                                    {/* Integrated search results below the action row */}
-                                    <Collapse in={!!inlineSearchQuery}>
-                                        <Box sx={{ mt: 2 }}>
-                                            {inlineSearchResults.length > 0 ? (
+                                        {/* Verification Preview Row */}
+                                        <Collapse in={!!createIndividualPreview && !isShowingSignupForm}>
+                                            <Box sx={{ mt: 2 }}>
                                                 <Paper
                                                     elevation={0}
                                                     sx={{
                                                         borderRadius: '15px',
                                                         background: 'var(--border-color)',
                                                         backdropFilter: 'blur(10px)',
-                                                        border: '1px solid rgba(255, 255, 255, 0.3)',
-                                                        overflow: 'hidden'
+                                                        border: '1px solid var(--border-color)',
+                                                        px: 3,
+                                                        py: 1.5,
+                                                        display: 'flex',
+                                                        flexDirection: { xs: 'column', sm: 'row' },
+                                                        justifyContent: 'space-between',
+                                                        alignItems: { xs: 'stretch', sm: 'center' },
+                                                        gap: { xs: 2, sm: 0 }
                                                     }}
                                                 >
-                                                    <List size="small" disablePadding>
-                                                        {inlineSearchResults.slice(0, 5).map((user) => (
-                                                            <ListItem
-                                                                key={user._id}
-                                                                divider
-                                                                sx={{
-                                                                    display: 'flex',
-                                                                    flexDirection: { xs: 'column', sm: 'row' },
-                                                                    justifyContent: 'space-between',
-                                                                    alignItems: { xs: 'stretch', sm: 'center' },
-                                                                    gap: { xs: 2, sm: 0 },
-                                                                    px: 3,
-                                                                    py: 1.5,
-                                                                    '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.3)' },
-                                                                    transition: '0.2s'
-                                                                }}
-                                                            >
-                                                                <Box sx={{ flex: 1 }}>
-                                                                    <Typography variant="body2" fontWeight={800} sx={{ color: 'var(--text-primary)', fontSize: '0.9rem' }}>{user.name}</Typography>
-                                                                    <Typography variant="caption" sx={{ fontWeight: 700, color: 'text.secondary' }}>ID: {user.institutionId}</Typography>
-                                                                </Box>
-                                                                <Button
-                                                                    size="small"
-                                                                    variant="contained"
-                                                                    startIcon={<Edit sx={{ fontSize: 14 }} />}
-                                                                    onClick={() => {
-                                                                        setEditingEmployee(user);
-                                                                        setEditableEmail(user.email || "");
-                                                                        setEditableCoreDept(user.coreDepartment || user.department || "");
-                                                                    }}
-                                                                    sx={{
-                                                                        textTransform: 'none',
-                                                                        borderRadius: '50px',
-                                                                        background: "var(--gradient-primary)",
-                                                                        px: 4,
-                                                                        width: { xs: '100%', sm: 'auto' },
-                                                                        boxShadow: '0 4px 10px rgba(0, 78, 146, 0.3)',
-                                                                        transition: '0.3s',
-                                                                        '&:hover': {
-                                                                            background: "var(--gradient-primary-hover)",
-                                                                            boxShadow: "0 6px 16px rgba(0, 78, 146, 0.4)",
-                                                                        }
-                                                                    }}
-                                                                >
-                                                                    Edit
-                                                                </Button>
-                                                            </ListItem>
-                                                        ))}
-                                                    </List>
-                                                </Paper>
-                                            ) : (
-                                                inlineSearchQuery.length >= 2 && (
-                                                    <Box sx={{ p: 2, textAlign: 'center', background: 'rgba(255, 255, 255, 0.2)', borderRadius: '12px', border: '1px solid rgba(255, 255, 255, 0.3)' }}>
-                                                        <Typography variant="body2" fontWeight={700} color="textSecondary">No Data Found</Typography>
+                                                    <Box>
+                                                        <Typography variant="body2" fontWeight={800} sx={{ color: 'var(--text-primary)' }}>{createIndividualPreview?.name}</Typography>
+                                                        <Typography variant="caption" sx={{ fontWeight: 700, color: 'text.secondary' }}>ID: {createIndividualPreview?.id}</Typography>
                                                     </Box>
-                                                )
-                                            )}
-                                        </Box>
-                                    </Collapse>
-                                </Collapse>
-
-                                {/* Employee Edit Form */}
-                                <Collapse in={!!editingEmployee}>
-                                    <Box sx={{ mt: 3, p: 3, borderRadius: '15px', background: 'var(--border-color)', border: '1px solid rgba(255, 255, 255, 0.3)' }}>
-                                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-                                            <Typography variant="subtitle2" fontWeight={800} color="var(--text-primary)">Employee Details</Typography>
-                                            <IconButton onClick={() => setEditingEmployee(null)} size="small"><Close sx={{ fontSize: 18 }} /></IconButton>
-                                        </Box>
-
-                                        <Grid container spacing={2}>
-                                            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-                                                <TextField
-                                                    fullWidth
-                                                    label="Name"
-                                                    value={editingEmployee?.name || ""}
-                                                    disabled
-                                                    size="small"
-                                                    sx={{ "& .MuiInputBase-input.Mui-disabled": { WebkitTextFillColor: "var(--text-secondary)", fontWeight: 600 } }}
-                                                />
-                                            </Grid>
-                                            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-                                                <TextField
-                                                    fullWidth
-                                                    label="ID"
-                                                    value={editingEmployee?.institutionId || ""}
-                                                    disabled
-                                                    size="small"
-                                                    sx={{ "& .MuiInputBase-input.Mui-disabled": { WebkitTextFillColor: "var(--text-secondary)", fontWeight: 600 } }}
-                                                />
-                                            </Grid>
-                                            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-                                                <TextField
-                                                    fullWidth
-                                                    label="Department"
-                                                    value={allDepartments.find(d => d._id === editingEmployee?.department)?.name || editingEmployee?.department || ""}
-                                                    disabled
-                                                    size="small"
-                                                    sx={{ "& .MuiInputBase-input.Mui-disabled": { WebkitTextFillColor: "var(--text-secondary)", fontWeight: 600 } }}
-                                                />
-                                            </Grid>
-                                            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-                                                <TextField
-                                                    fullWidth
-                                                    label="Designation"
-                                                    value={editingEmployee?.designation || ""}
-                                                    disabled
-                                                    size="small"
-                                                    sx={{ "& .MuiInputBase-input.Mui-disabled": { WebkitTextFillColor: "var(--text-secondary)", fontWeight: 600 } }}
-                                                />
-                                            </Grid>
-                                            <Grid size={{ xs: 12, sm: 6 }}>
-                                                <TextField
-                                                    fullWidth
-                                                    label="Email (Editable)"
-                                                    value={editableEmail}
-                                                    onChange={(e) => setEditableEmail(e.target.value)}
-                                                    size="small"
-                                                    placeholder="Enter new email..."
-                                                    sx={{
-                                                        bgcolor: 'rgba(255, 255, 255, 0.6)',
-                                                        borderRadius: '10px',
-                                                        "& .MuiOutlinedInput-root": { borderRadius: '10px' }
-                                                    }}
-                                                />
-                                            </Grid>
-                                            <Grid size={{ xs: 12, sm: 6 }}>
-                                                <TextField
-                                                    fullWidth
-                                                    select
-                                                    label="Core Department"
-                                                    value={editableCoreDept}
-                                                    onChange={(e) => setEditableCoreDept(e.target.value)}
-                                                    size="small"
-                                                    slotProps={{ select: { native: false } }}
-                                                    sx={{
-                                                        bgcolor: 'rgba(255, 255, 255, 0.6)',
-                                                        borderRadius: '10px',
-                                                        "& .MuiOutlinedInput-root": { borderRadius: '10px' }
-                                                    }}
-                                                >
-                                                    <MenuItem value="" disabled>Select Department</MenuItem>
-                                                    {allDepartments.map(d => (
-                                                        <MenuItem key={d._id} value={d._id}>{d.name}</MenuItem>
-                                                    ))}
-                                                </TextField>
-                                            </Grid>
-                                        </Grid>
-
-                                        <Box sx={{ display: 'flex', justifyContent: { xs: 'center', sm: 'flex-end' }, mt: 3 }}>
-                                            <Button
-                                                variant="contained"
-                                                onClick={handleUpdateEmployeeAdmin}
-                                                disabled={isUpdatingEmail || (!editableEmail && !editableCoreDept)}
-                                                startIcon={isUpdatingEmail ? <Loader size={16} color="inherit" /> : <Save />}
-                                                fullWidth={false}
-                                                sx={{
-                                                    borderRadius: '50px',
-                                                    textTransform: 'none',
-                                                    fontWeight: 700,
-                                                    background: "var(--gradient-primary)",
-                                                    px: { xs: 8, sm: 5 },
-                                                    py: 1.2,
-                                                    boxShadow: '0 4px 15px rgba(0, 78, 146, 0.3)',
-                                                    width: { xs: '100%', sm: 'auto' },
-                                                    transition: '0.3s',
-                                                    '&:hover': {
-                                                        background: "var(--gradient-primary-hover)",
-                                                        boxShadow: "0 6px 16px rgba(0, 78, 146, 0.4)",
-                                                    }
-                                                }}
-                                            >
-                                                {isUpdatingEmail ? 'Updating...' : 'Update'}
-                                            </Button>
-                                        </Box>
-                                    </Box>
-                                </Collapse>
-                            </Box>
-                        </Collapse>
-                    </Paper>
-                </Grid>
-
-                <Grid size={{ xs: 12, lg: 12 }} id="search-results-section">
-                    {/* Assign Roles to User Section */}
-                    <Paper elevation={0} sx={{ p: 3, height: '100%', borderRadius: "20px", background: "var(--bg-glass)", backdropFilter: "blur(10px) saturate(150%)", border: "1px solid var(--border-color)", boxShadow: "0 4px 20px rgba(0,0,0,0.02)" }}>
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <Box>
-                                <Typography variant="h6" fontWeight={800} color="var(--text-primary)">Assign Roles</Typography>
-                                <Typography variant="body2" color="textSecondary" fontWeight={500}>
-                                    Managing: <span style={{ color: 'var(--text-primary)', fontWeight: 700 }}>{selectedUser ? `${selectedUser.name} (${selectedUser.institutionId})` : "Please select"}</span>
-                                </Typography>
-                            </Box>
-                            <Button 
-                                variant="outlined" 
-                                size="small" 
-                                startIcon={<Add />} 
-                                onClick={() => setIsRoleModalOpen(true)}
-                                sx={{ borderRadius: '50px', textTransform: 'none', fontWeight: 700, border: '1.5px solid var(--color-primary)', color: 'var(--color-primary)', '&:hover': { border: '1.5px solid var(--color-primary)', background: 'var(--bg-accent-1)' } }}
-                            >
-                                New Role
-                            </Button>
-                        </Box>
-                        <Box sx={{ mt: 3, display: "flex", gap: 1 }}>
-                            <TextField
-                                id="employee-search-input"
-                                fullWidth
-                                placeholder="Search employee to manage..."
-                                size="small"
-                                value={userSearchQuery}
-                                onChange={(e) => setUserSearchQuery(e.target.value)}
-                                onKeyPress={(e) => e.key === "Enter" && handleUserSearch()}
-                                sx={{ "& .MuiOutlinedInput-root": { borderRadius: "10px", background: "var(--bg-glass)", backdropFilter: "blur(5px)" } }}
-                                slotProps={{
-                                    input: {
-                                        startAdornment: (<InputAdornment position="start"><Search fontSize="small" sx={{ color: 'var(--color-primary)' }} /></InputAdornment>),
-                                        endAdornment: searchingUsers && (
-                                            <InputAdornment position="end">
-                                                <Loader size={16} color="inherit" />
-                                            </InputAdornment>
-                                        )
-                                    }
-                                }}
-                            />
-                        </Box>
-                    </Paper>
-                </Grid>
-            </Grid>
-
-            <Collapse in={hasTypedSearch || searchingUsers}>
-                <Card sx={{ mt: 4, borderRadius: "20px", boxShadow: "0 8px 32px rgba(31, 38, 135, 0.05)", border: "1px solid var(--border-color)", background: "var(--bg-glass)", backdropFilter: "blur(10px) saturate(150%)" }}>
-                    <CardContent sx={{ p: 0 }}>
-                        <Box sx={{ display: 'flex', flexDirection: { xs: 'column', lg: 'row' }, minHeight: { xs: 'auto', lg: 450 } }}>
-                            <Box sx={{ flex: 1, borderRight: { xs: 'none', lg: "1px solid rgba(0,0,0,0.05)" }, borderBottom: { xs: "1px solid rgba(0,0,0,0.05)", lg: 'none' }, p: 2 }}>
-                                <Typography variant="subtitle2" fontWeight={700} gutterBottom color="textSecondary">Search Results</Typography>
-                                <List>
-                                    {userSearchResults.length > 0 ? userSearchResults.map((user) => (
-                                        <ListItem key={user._id} disablePadding sx={{
-                                            mb: 1,
-                                            borderRadius: '12px',
-                                            overflow: 'hidden',
-                                            position: 'relative',
-                                            border: '1px solid transparent',
-                                            ...(selectedUser?._id === user._id && {
-                                                '&::before': {
-                                                    content: '""',
-                                                    position: 'absolute',
-                                                    inset: 0,
-                                                    borderRadius: 'inherit',
-                                                    padding: '1.5px',
-                                                    background: 'var(--gradient-primary)',
-                                                    WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
-                                                    WebkitMaskComposite: 'xor',
-                                                    maskComposite: 'exclude',
-                                                    pointerEvents: 'none',
-                                                    zIndex: 0
-                                                }
-                                            })
-                                        }}>
-                                            <ListItemButton selected={selectedUser?._id === user._id} onClick={() => selectUser(user)} sx={{ p: 2 }}>
-                                                <Avatar sx={{ mr: 2, background: 'var(--bg-accent-1)', color: 'var(--color-primary)' }}>{user.name.charAt(0)}</Avatar>
-                                                <ListItemText
-                                                    disableTypography
-                                                    primary={<Typography variant="body1" fontWeight={700} sx={{ fontSize: '0.95rem', color: 'var(--text-primary)' }}>{user.name}</Typography>}
-                                                    secondary={
-                                                        <Box sx={{ mt: 0.5 }}>
-                                                            <Typography variant="caption" display="block" color="textPrimary" fontWeight={600}>{user.institutionId} — {user.userType}</Typography>
-                                                            <Box sx={{ mt: 1, display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                                                                <Typography variant="caption" color="textSecondary" sx={{ mr: 1, width: '100%' }}>Present Roles:</Typography>
-                                                                {user.roles && user.roles.length > 0 ? user.roles.map(r => (
-                                                                    <Chip key={r._id} label={r.name} size="small" sx={{ height: 22, fontSize: '10px', background: "var(--gradient-primary)", color: '#fff', fontWeight: 700, borderRadius: '50px' }} />
-                                                                )) : <Typography variant="caption" fontStyle="italic">None</Typography>}
-                                                            </Box>
-                                                        </Box>
-                                                    }
-                                                />
-                                                <ListItemSecondaryAction sx={{ right: 16 }}>
-                                                    <IconButton
-                                                        edge="end"
-                                                        onClick={() => selectUser(user)}
+                                                    <Button
+                                                        variant="contained"
+                                                        size="small"
+                                                        onClick={handleStartSignup}
                                                         sx={{
-                                                            color: selectedUser?._id === user._id ? 'var(--color-primary)' : 'var(--text-secondary)',
+                                                            textTransform: 'none',
+                                                            borderRadius: '50px',
+                                                            background: "var(--gradient-primary)",
+                                                            boxShadow: "0 4px 12px rgba(0, 78, 146, 0.3)",
+                                                            px: 4,
+                                                            width: { xs: '100%', sm: 'auto' },
                                                             transition: '0.3s',
-                                                            '&:hover': { color: 'var(--color-primary)', transform: 'scale(1.1)' }
+                                                            '&:hover': {
+                                                                background: "var(--gradient-primary-hover)",
+                                                                boxShadow: "0 6px 16px rgba(0, 78, 146, 0.4)",
+                                                            }
                                                         }}
                                                     >
-                                                        <PersonAdd />
-                                                    </IconButton>
-                                                </ListItemSecondaryAction>
-                                            </ListItemButton>
-                                        </ListItem>
-                                    )) : <Box sx={{ textAlign: 'center', py: 5, color: 'text.disabled' }}><People sx={{ fontSize: 40, mb: 1, opacity: 0.5 }} /><Typography variant="body2">No users found.</Typography></Box>}
-                                </List>
+                                                        Create
+                                                    </Button>
+                                                </Paper>
+                                            </Box>
+                                        </Collapse>
 
-                                {/* HOD Department Selection UI (Under User Card) */}
-                                <Collapse in={!!selectedUser && assignedRoleIds.some(rid => roles.find(r => r._id === rid)?.name === 'HOD')}>
-                                    <Box sx={{ mt: 2, p: 2, borderRadius: '15px', background: 'var(--bg-paper)', border: '1px solid var(--border-color)' }}>
-                                        <Typography variant="subtitle2" fontWeight={800} color="var(--text-primary)" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                            <Security sx={{ fontSize: 18 }} /> HOD Department Assignment
-                                        </Typography>
-                                        <Typography variant="caption" color="textSecondary" display="block" sx={{ mb: 2 }}>
-                                            Assign this HOD to multiple departments for context-aware access.
-                                        </Typography>
-
-                                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
-                                            {selectedHodDepts.map(dept => (
-                                                <Chip
-                                                    key={dept._id}
-                                                    label={dept.name}
-                                                    size="small"
-                                                    onDelete={() => setSelectedHodDepts(prev => prev.filter(d => d._id !== dept._id))}
-                                                    sx={{ background: "var(--gradient-primary)", color: '#fff', fontWeight: 700, borderRadius: '50px', '& .MuiChip-deleteIcon': { color: 'rgba(255,255,255,0.7)' } }}
-                                                />
-                                            ))}
-                                        </Box>
-
-                                        <FormControlLabel
-                                            sx={{ width: '100%', m: 0 }}
-                                            control={
-                                                <Box sx={{ width: '100%', mt: 1 }}>
-                                                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, p: 1, border: '1px dashed var(--text-secondary)', borderRadius: '10px' }}>
-                                                        {allDepartments.map(dept => {
-                                                            const isSelected = selectedHodDepts.some(d => d._id === dept._id);
-                                                            return (
-                                                                <Chip
-                                                                    key={dept._id}
-                                                                    label={dept.name}
-                                                                    onClick={() => {
-                                                                        if (isSelected) {
-                                                                            setSelectedHodDepts(prev => prev.filter(d => d._id !== dept._id));
-                                                                        } else {
-                                                                            setSelectedHodDepts(prev => [...prev, dept]);
-                                                                        }
-                                                                    }}
-                                                                    variant={isSelected ? "filled" : "outlined"}
-                                                                    size="small"
-                                                                    sx={{
-                                                                        cursor: 'pointer',
-                                                                        borderRadius: '50px',
-                                                                        fontWeight: 700,
-                                                                        border: isSelected ? 'none' : '1.5px solid var(--color-primary)',
-                                                                        background: isSelected ? "var(--gradient-primary)" : 'transparent',
-                                                                        color: isSelected ? '#fff' : 'var(--color-primary)'
-                                                                    }}
-                                                                />
-                                                            );
-                                                        })}
-                                                    </Box>
+                                        {/* Inline Signup Form */}
+                                        <Collapse in={isShowingSignupForm}>
+                                            <Box sx={{ mt: 3, p: 3, borderRadius: '20px', background: 'var(--bg-glass)', border: '1px solid var(--border-color)', backdropFilter: 'blur(10px)' }}>
+                                                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+                                                    <Typography variant="subtitle1" fontWeight={800} color="var(--text-primary)">Complete Registration</Typography>
+                                                    <IconButton size="small" onClick={() => setIsShowingSignupForm(false)}><Close /></IconButton>
                                                 </Box>
-                                            }
-                                            label=""
-                                        />
+
+                                                <Grid container spacing={3}>
+                                                    <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+                                                        <TextField label="Name" fullWidth value={signupData.fullname} slotProps={{ input: { readOnly: true } }} size="small" variant="filled" sx={{ "& .MuiInputBase-input": { fontWeight: 700, color: 'var(--text-primary)' } }} />
+                                                    </Grid>
+                                                    <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+                                                        <TextField label="Employee ID" fullWidth value={signupData.id} slotProps={{ input: { readOnly: true } }} size="small" variant="filled" sx={{ "& .MuiInputBase-input": { fontWeight: 700, color: 'var(--text-primary)' } }} />
+                                                    </Grid>
+                                                    <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+                                                        <TextField
+                                                            label="Email Address"
+                                                            fullWidth
+                                                            required
+                                                            value={signupData.email}
+                                                            onChange={(e) => setSignupData({ ...signupData, email: e.target.value })}
+                                                            placeholder="Enter official email"
+                                                            size="small"
+                                                            sx={{ "& .MuiOutlinedInput-root": { borderRadius: "10px", background: "white" } }}
+                                                        />
+                                                    </Grid>
+                                                    <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+                                                        <TextField label="Department" fullWidth value={signupData.department} slotProps={{ input: { readOnly: true } }} size="small" variant="filled" sx={{ "& .MuiInputBase-input": { fontWeight: 700 } }} />
+                                                    </Grid>
+                                                    <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+                                                        <TextField label="Phone" fullWidth value={signupData.phone} slotProps={{ input: { readOnly: true } }} size="small" variant="filled" sx={{ "& .MuiInputBase-input": { fontWeight: 700 } }} />
+                                                    </Grid>
+                                                    <Grid size={{ xs: 12, sm: 6, md: 4 }} sx={{ display: 'flex', alignItems: 'flex-end', justifyContent: { xs: 'center', sm: 'flex-end' } }}>
+                                                        <Button
+                                                            variant="contained"
+                                                            disabled={isIndividualSubmitting}
+                                                            onClick={handleIndividualSignupSubmit}
+                                                            sx={{
+                                                                borderRadius: '50px',
+                                                                textTransform: 'none',
+                                                                fontWeight: 800,
+                                                                px: 5,
+                                                                py: 1.2,
+                                                                background: "var(--gradient-primary)",
+                                                                boxShadow: "0 4px 15px rgba(0, 78, 146, 0.3)",
+                                                                transition: '0.3s',
+                                                                '&:hover': {
+                                                                    background: "var(--gradient-primary-hover)",
+                                                                    boxShadow: "0 6px 16px rgba(0, 78, 146, 0.4)",
+                                                                }
+                                                            }}
+                                                        >
+                                                            {isIndividualSubmitting ? <Loader size={20} color="inherit" /> : 'Register'}
+                                                        </Button>
+                                                    </Grid>
+                                                </Grid>
+                                            </Box>
+                                        </Collapse>
                                     </Box>
                                 </Collapse>
-                            </Box>
 
-                            <Box sx={{ flex: 1.2, p: 3, background: 'var(--bg-accent-1)', display: 'flex', flexDirection: 'column', borderLeft: '1px solid var(--border-color)' }}>
-                                <Typography variant="subtitle2" fontWeight={700} gutterBottom color="textSecondary">{selectedUser ? `Select Roles for ${selectedUser.name}` : "Available Roles"}</Typography>
-                                <Box sx={{ flex: 1, overflowY: 'auto' }}>
-                                    {loadingRoles ? null : (
-                                        <FormGroup>
-                                            {roles.length > 0 ? roles.map((role) => {
-                                                const isIdentityDefault = getSystemRoleName(selectedUser) === role.name;
-                                                const isChecked = assignedRoleIds.includes(role._id.toString()) || (selectedUser && isIdentityDefault);
-                                                return (
-                                                    <Box key={role._id} onClick={() => handleRoleToggle(role._id)} sx={{
-                                                        p: 1.5,
-                                                        mb: 1,
-                                                        borderRadius: '12px',
-                                                        background: 'var(--bg-glass)',
-                                                        position: 'relative',
-                                                        border: '1px solid transparent',
-                                                        ...(isChecked && {
-                                                            '&::before': {
-                                                                content: '""',
-                                                                position: 'absolute',
-                                                                inset: 0,
-                                                                borderRadius: 'inherit',
-                                                                padding: '1.5px',
-                                                                background: 'var(--gradient-primary)',
-                                                                WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
-                                                                WebkitMaskComposite: 'xor',
-                                                                maskComposite: 'exclude',
-                                                                pointerEvents: 'none',
-                                                                zIndex: 0
+                                <Collapse in={showUpdateOptions}>
+                                    <Box sx={{ mt: 3, p: 2, borderRadius: '15px', background: 'var(--bg-glass)', border: '1px solid var(--border-color)', backdropFilter: 'blur(5px)' }}>
+                                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                                            <Typography variant="subtitle2" fontWeight={800} color="var(--text-primary)">Update Options</Typography>
+                                            <IconButton onClick={() => {
+                                                setShowUpdateOptions(false);
+                                                setShowIndividualSearch(false);
+                                                setInlineSearchQuery("");
+                                                setInlineSearchResults([]);
+                                            }} size="small"><Close sx={{ fontSize: 18 }} /></IconButton>
+                                        </Box>
+                                        <Collapse in={!editingEmployee}>
+                                            <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 2, alignItems: { xs: 'stretch', sm: 'center' }, justifyContent: 'space-between', width: '100%' }}>
+                                                <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 2, flex: 1 }}>
+                                                    <Button
+                                                        variant="outlined"
+                                                        size="small"
+                                                        startIcon={isSyncingBulk ? <Loader size={16} color="inherit" /> : <Sync />}
+                                                        onClick={handleBulkSync}
+                                                        disabled={isSyncingBulk}
+                                                        sx={{ width: { xs: '100%', sm: 'auto' }, borderRadius: '50px', textTransform: 'none', fontWeight: 700, border: '1.5px solid var(--color-primary)', background: 'transparent', color: 'var(--color-primary)', py: { xs: 1.2, sm: 0.5 }, transition: '0.3s', '&:hover': { background: 'rgba(0, 78, 146, 0.05)', boxShadow: '0 4px 10px rgba(0, 78, 146, 0.1)' } }}
+                                                    >
+                                                        {isSyncingBulk ? 'Updating...' : 'Bulk Update'}
+                                                    </Button>
+                                                    <Button
+                                                        variant="outlined"
+                                                        size="small"
+                                                        startIcon={<Person />}
+                                                        onClick={() => {
+                                                            if (showIndividualSearch) {
+                                                                setInlineSearchQuery("");
+                                                                setInlineSearchResults([]);
                                                             }
-                                                        }),
-                                                        cursor: selectedUser ? (isIdentityDefault ? 'not-allowed' : 'pointer') : 'default',
-                                                        opacity: selectedUser ? (isIdentityDefault ? 0.75 : 1) : 0.6,
-                                                        display: 'flex',
-                                                        alignItems: 'center',
-                                                        transition: '0.2s',
-                                                        '&:hover': selectedUser && !isIdentityDefault ? { background: 'var(--bg-panel)' } : {}
-                                                    }}>
-                                                        <Box sx={{ display: 'flex', alignItems: 'center', width: '100%' }}>
-                                                            <Checkbox
-                                                                checked={isChecked}
-                                                                disabled={!selectedUser || isIdentityDefault}
-                                                                sx={{
-                                                                    p: 0,
-                                                                    mr: 2,
-                                                                    '&.Mui-checked': { color: 'var(--color-primary)' },
-                                                                    '&.MuiCheckbox-root': { color: isChecked ? 'var(--color-primary)' : 'var(--text-secondary)' }
-                                                                }}
-                                                            />
-                                                            <Box sx={{ flex: 1 }}>
-                                                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                                                    <Typography variant="body2" fontWeight={700} sx={{ color: isChecked ? 'var(--color-primary)' : 'var(--text-primary)' }}>{role.name}</Typography>
-                                                                    {role.defaultRole && <Chip label="Identity Role" size="small" color="success" sx={{ height: 16, fontSize: '0.6rem', fontWeight: 800 }} />}
-                                                                    {isIdentityDefault && <Tooltip title="Recommended Default Identity Role"><Star sx={{ fontSize: 16, color: 'var(--color-primary)' }} /></Tooltip>}
+                                                            setShowIndividualSearch(!showIndividualSearch);
+                                                        }}
+                                                        sx={{ width: { xs: '100%', sm: 'auto' }, borderRadius: '50px', textTransform: 'none', fontWeight: 700, border: '1.5px solid var(--color-primary)', background: showIndividualSearch ? 'rgba(0, 78, 146, 0.1)' : 'transparent', color: 'var(--color-primary)', transition: '0.3s', py: { xs: 1.2, sm: 0.5 }, '&:hover': { background: 'rgba(0, 78, 146, 0.05)' } }}
+                                                    >
+                                                        Individual Update
+                                                    </Button>
+                                                </Box>
+
+                                                <Collapse in={showIndividualSearch} orientation={window.innerWidth < 600 ? "vertical" : "horizontal"} sx={{ width: { xs: '100%', sm: 'auto' }, mt: { xs: 2, sm: 0 } }}>
+                                                    <TextField
+                                                        placeholder="Search name or ID..."
+                                                        size="small"
+                                                        fullWidth={window.innerWidth < 600}
+                                                        value={inlineSearchQuery}
+                                                        onChange={(e) => {
+                                                            setInlineSearchQuery(e.target.value);
+                                                        }}
+                                                        onKeyPress={(e) => {
+                                                            if (e.key === "Enter") {
+                                                                handleInlineSearch();
+                                                            }
+                                                        }}
+                                                        sx={{
+                                                            width: { xs: '100%', sm: '280px' },
+                                                            "& .MuiOutlinedInput-root": {
+                                                                borderRadius: "10px",
+                                                                background: "var(--bg-glass)",
+                                                                backdropFilter: "blur(5px)"
+                                                            }
+                                                        }}
+                                                        slotProps={{
+                                                            input: {
+                                                                startAdornment: (
+                                                                    <InputAdornment position="start">
+                                                                        <Search fontSize="small" />
+                                                                    </InputAdornment>
+                                                                ),
+                                                                endAdornment: (
+                                                                    <InputAdornment position="end">
+                                                                        <IconButton size="small" onClick={() => { setShowIndividualSearch(false); setInlineSearchQuery(""); }}><Close fontSize="small" /></IconButton>
+                                                                    </InputAdornment>
+                                                                )
+                                                            }
+                                                        }}
+                                                    />
+                                                </Collapse>
+                                            </Box>
+
+                                            {/* Integrated search results below the action row */}
+                                            <Collapse in={!!inlineSearchQuery}>
+                                                <Box sx={{ mt: 2 }}>
+                                                    {inlineSearchResults.length > 0 ? (
+                                                        <Paper
+                                                            elevation={0}
+                                                            sx={{
+                                                                borderRadius: '15px',
+                                                                background: 'var(--border-color)',
+                                                                backdropFilter: 'blur(10px)',
+                                                                border: '1px solid var(--border-color)',
+                                                                overflow: 'hidden'
+                                                            }}
+                                                        >
+                                                            <List size="small" disablePadding>
+                                                                {inlineSearchResults.slice(0, 5).map((user) => (
+                                                                    <ListItem
+                                                                        key={user._id}
+                                                                        divider
+                                                                        sx={{
+                                                                            display: 'flex',
+                                                                            flexDirection: { xs: 'column', sm: 'row' },
+                                                                            justifyContent: 'space-between',
+                                                                            alignItems: { xs: 'stretch', sm: 'center' },
+                                                                            gap: { xs: 2, sm: 0 },
+                                                                            px: 3,
+                                                                            py: 1.5,
+                                                                            '&:hover': { bgcolor: 'var(--bg-glass)' },
+                                                                            transition: '0.2s'
+                                                                        }}
+                                                                    >
+                                                                        <Box sx={{ flex: 1 }}>
+                                                                            <Typography variant="body2" fontWeight={800} sx={{ color: 'var(--text-primary)', fontSize: '0.9rem' }}>{user.name}</Typography>
+                                                                            <Typography variant="caption" sx={{ fontWeight: 700, color: 'text.secondary' }}>ID: {user.institutionId}</Typography>
+                                                                        </Box>
+                                                                        <Button
+                                                                            size="small"
+                                                                            variant="contained"
+                                                                            startIcon={<Edit sx={{ fontSize: 14 }} />}
+                                                                            onClick={() => {
+                                                                                setEditingEmployee(user);
+                                                                                setEditableEmail(user.email || "");
+                                                                                setEditableCoreDept(user.coreDepartment || user.department || "");
+                                                                            }}
+                                                                            sx={{
+                                                                                textTransform: 'none',
+                                                                                borderRadius: '50px',
+                                                                                background: "var(--gradient-primary)",
+                                                                                px: 4,
+                                                                                width: { xs: '100%', sm: 'auto' },
+                                                                                boxShadow: '0 4px 10px rgba(0, 78, 146, 0.3)',
+                                                                                transition: '0.3s',
+                                                                                '&:hover': {
+                                                                                    background: "var(--gradient-primary-hover)",
+                                                                                    boxShadow: "0 6px 16px rgba(0, 78, 146, 0.4)",
+                                                                                }
+                                                                            }}
+                                                                        >
+                                                                            Edit
+                                                                        </Button>
+                                                                    </ListItem>
+                                                                ))}
+                                                            </List>
+                                                        </Paper>
+                                                    ) : (
+                                                        inlineSearchQuery.length >= 2 && (
+                                                            <Box sx={{ p: 2, textAlign: 'center', background: 'var(--bg-glass)', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
+                                                                <Typography variant="body2" fontWeight={700} color="textSecondary">No Data Found</Typography>
+                                                            </Box>
+                                                        )
+                                                    )}
+                                                </Box>
+                                            </Collapse>
+                                        </Collapse>
+
+                                        {/* Employee Edit Form */}
+                                        <Collapse in={!!editingEmployee}>
+                                            <Box sx={{ mt: 3, p: 3, borderRadius: '15px', background: 'var(--border-color)', border: '1px solid var(--border-color)' }}>
+                                                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+                                                    <Typography variant="subtitle2" fontWeight={800} color="var(--text-primary)">Employee Details</Typography>
+                                                    <IconButton onClick={() => setEditingEmployee(null)} size="small"><Close sx={{ fontSize: 18 }} /></IconButton>
+                                                </Box>
+
+                                                <Grid container spacing={2}>
+                                                    <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+                                                        <TextField
+                                                            fullWidth
+                                                            label="Name"
+                                                            value={editingEmployee?.name || ""}
+                                                            disabled
+                                                            size="small"
+                                                            sx={{ "& .MuiInputBase-input.Mui-disabled": { WebkitTextFillColor: "var(--text-secondary)", fontWeight: 600 } }}
+                                                        />
+                                                    </Grid>
+                                                    <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+                                                        <TextField
+                                                            fullWidth
+                                                            label="ID"
+                                                            value={editingEmployee?.institutionId || ""}
+                                                            disabled
+                                                            size="small"
+                                                            sx={{ "& .MuiInputBase-input.Mui-disabled": { WebkitTextFillColor: "var(--text-secondary)", fontWeight: 600 } }}
+                                                        />
+                                                    </Grid>
+                                                    <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+                                                        <TextField
+                                                            fullWidth
+                                                            label="Department"
+                                                            value={allDepartments.find(d => d._id === editingEmployee?.department)?.name || editingEmployee?.department || ""}
+                                                            disabled
+                                                            size="small"
+                                                            sx={{ "& .MuiInputBase-input.Mui-disabled": { WebkitTextFillColor: "var(--text-secondary)", fontWeight: 600 } }}
+                                                        />
+                                                    </Grid>
+                                                    <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+                                                        <TextField
+                                                            fullWidth
+                                                            label="Designation"
+                                                            value={editingEmployee?.designation || ""}
+                                                            disabled
+                                                            size="small"
+                                                            sx={{ "& .MuiInputBase-input.Mui-disabled": { WebkitTextFillColor: "var(--text-secondary)", fontWeight: 600 } }}
+                                                        />
+                                                    </Grid>
+                                                    <Grid size={{ xs: 12, sm: 6 }}>
+                                                        <TextField
+                                                            fullWidth
+                                                            label="Email (Editable)"
+                                                            value={editableEmail}
+                                                            onChange={(e) => setEditableEmail(e.target.value)}
+                                                            size="small"
+                                                            placeholder="Enter new email..."
+                                                            sx={{
+                                                                bgcolor: 'var(--bg-glass)',
+                                                                borderRadius: '10px',
+                                                                "& .MuiOutlinedInput-root": { borderRadius: '10px' }
+                                                            }}
+                                                        />
+                                                    </Grid>
+                                                    <Grid size={{ xs: 12, sm: 6 }}>
+                                                        <TextField
+                                                            fullWidth
+                                                            select
+                                                            label="Core Department"
+                                                            value={editableCoreDept}
+                                                            onChange={(e) => setEditableCoreDept(e.target.value)}
+                                                            size="small"
+                                                            slotProps={{ select: { native: false } }}
+                                                            sx={{
+                                                                bgcolor: 'var(--bg-glass)',
+                                                                borderRadius: '10px',
+                                                                "& .MuiOutlinedInput-root": { borderRadius: '10px' }
+                                                            }}
+                                                        >
+                                                            <MenuItem value="" disabled>Select Department</MenuItem>
+                                                            {allDepartments.map(d => (
+                                                                <MenuItem key={d._id} value={d._id}>{d.name}</MenuItem>
+                                                            ))}
+                                                        </TextField>
+                                                    </Grid>
+                                                </Grid>
+
+                                                <Box sx={{ display: 'flex', justifyContent: { xs: 'center', sm: 'flex-end' }, mt: 3 }}>
+                                                    <Button
+                                                        variant="contained"
+                                                        onClick={handleUpdateEmployeeAdmin}
+                                                        disabled={isUpdatingEmail || (!editableEmail && !editableCoreDept)}
+                                                        startIcon={isUpdatingEmail ? <Loader size={16} color="inherit" /> : <Save />}
+                                                        fullWidth={false}
+                                                        sx={{
+                                                            borderRadius: '50px',
+                                                            textTransform: 'none',
+                                                            fontWeight: 700,
+                                                            background: "var(--gradient-primary)",
+                                                            px: { xs: 8, sm: 5 },
+                                                            py: 1.2,
+                                                            boxShadow: '0 4px 15px rgba(0, 78, 146, 0.3)',
+                                                            width: { xs: '100%', sm: 'auto' },
+                                                            transition: '0.3s',
+                                                            '&:hover': {
+                                                                background: "var(--gradient-primary-hover)",
+                                                                boxShadow: "0 6px 16px rgba(0, 78, 146, 0.4)",
+                                                            }
+                                                        }}
+                                                    >
+                                                        {isUpdatingEmail ? 'Updating...' : 'Update'}
+                                                    </Button>
+                                                </Box>
+                                            </Box>
+                                        </Collapse>
+                                    </Box>
+                                </Collapse>
+                            </Paper>
+                        </Grid>
+
+                        <Grid size={{ xs: 12, lg: 12 }} id="search-results-section">
+                            {/* Assign Roles to User Section */}
+                            <Paper elevation={0} sx={{ p: 3, height: '100%', borderRadius: "20px", background: "var(--bg-glass)", backdropFilter: "blur(10px) saturate(150%)", border: "1px solid var(--border-color)", boxShadow: "0 4px 20px rgba(0,0,0,0.02)" }}>
+                                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <Box>
+                                        <Typography variant="h6" fontWeight={800} color="var(--text-primary)">Assign Roles</Typography>
+                                        <Typography variant="body2" color="textSecondary" fontWeight={500}>
+                                            Managing: <span style={{ color: 'var(--text-primary)', fontWeight: 700 }}>{selectedUser ? `${selectedUser.name} (${selectedUser.institutionId})` : "Please select"}</span>
+                                        </Typography>
+                                    </Box>
+                                    <Button
+                                        variant="outlined"
+                                        size="small"
+                                        startIcon={<Add />}
+                                        onClick={() => setIsRoleModalOpen(true)}
+                                        sx={{ borderRadius: '50px', textTransform: 'none', fontWeight: 700, border: '1.5px solid var(--color-primary)', color: 'var(--color-primary)', '&:hover': { border: '1.5px solid var(--color-primary)', background: 'var(--bg-accent-1)' } }}
+                                    >
+                                        New Role
+                                    </Button>
+                                </Box>
+                                <Box sx={{ mt: 3, display: "flex", gap: 1 }}>
+                                    <TextField
+                                        id="employee-search-input"
+                                        fullWidth
+                                        placeholder="Search employee to manage..."
+                                        size="small"
+                                        value={userSearchQuery}
+                                        onChange={(e) => setUserSearchQuery(e.target.value)}
+                                        onKeyPress={(e) => e.key === "Enter" && handleUserSearch()}
+                                        sx={{ "& .MuiOutlinedInput-root": { borderRadius: "10px", background: "var(--bg-glass)", backdropFilter: "blur(5px)" } }}
+                                        slotProps={{
+                                            input: {
+                                                startAdornment: (<InputAdornment position="start"><Search fontSize="small" sx={{ color: 'var(--color-primary)' }} /></InputAdornment>),
+                                                endAdornment: searchingUsers && (
+                                                    <InputAdornment position="end">
+                                                        <Loader size={16} color="inherit" />
+                                                    </InputAdornment>
+                                                )
+                                            }
+                                        }}
+                                    />
+                                </Box>
+                            </Paper>
+                        </Grid>
+                    </Grid>
+
+                    <Collapse in={hasTypedSearch || searchingUsers}>
+                        <Card sx={{ mt: 4, borderRadius: "20px", boxShadow: "0 8px 32px rgba(31, 38, 135, 0.05)", border: "1px solid var(--border-color)", background: "var(--bg-glass)", backdropFilter: "blur(10px) saturate(150%)" }}>
+                            <CardContent sx={{ p: 0 }}>
+                                <Box sx={{ display: 'flex', flexDirection: { xs: 'column', lg: 'row' }, minHeight: { xs: 'auto', lg: 450 } }}>
+                                    <Box sx={{ flex: 1, borderRight: { xs: 'none', lg: "1px solid rgba(0,0,0,0.05)" }, borderBottom: { xs: "1px solid rgba(0,0,0,0.05)", lg: 'none' }, p: 2 }}>
+                                        <Typography variant="subtitle2" fontWeight={700} gutterBottom color="textSecondary">Search Results</Typography>
+                                        <List>
+                                            {userSearchResults.length > 0 ? userSearchResults.map((user) => (
+                                                <ListItem key={user._id} disablePadding sx={{
+                                                    mb: 1,
+                                                    borderRadius: '12px',
+                                                    overflow: 'hidden',
+                                                    position: 'relative',
+                                                    border: '1px solid transparent',
+                                                    ...(selectedUser?._id === user._id && {
+                                                        '&::before': {
+                                                            content: '""',
+                                                            position: 'absolute',
+                                                            inset: 0,
+                                                            borderRadius: 'inherit',
+                                                            padding: '1.5px',
+                                                            background: 'var(--gradient-primary)',
+                                                            WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
+                                                            WebkitMaskComposite: 'xor',
+                                                            maskComposite: 'exclude',
+                                                            pointerEvents: 'none',
+                                                            zIndex: 0
+                                                        }
+                                                    })
+                                                }}>
+                                                    <ListItemButton selected={selectedUser?._id === user._id} onClick={() => selectUser(user)} sx={{ p: 2 }}>
+                                                        <Avatar sx={{ mr: 2, background: 'var(--bg-accent-1)', color: 'var(--color-primary)' }}>{user.name.charAt(0)}</Avatar>
+                                                        <ListItemText
+                                                            disableTypography
+                                                            primary={<Typography variant="body1" fontWeight={700} sx={{ fontSize: '0.95rem', color: 'var(--text-primary)' }}>{user.name}</Typography>}
+                                                            secondary={
+                                                                <Box sx={{ mt: 0.5 }}>
+                                                                    <Typography variant="caption" display="block" color="textPrimary" fontWeight={600}>{user.institutionId} — {user.userType}</Typography>
+                                                                    <Box sx={{ mt: 1, display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                                                                        <Typography variant="caption" color="textSecondary" sx={{ mr: 1, width: '100%' }}>Present Roles:</Typography>
+                                                                        {user.roles && user.roles.length > 0 ? user.roles.map(r => (
+                                                                            <Chip key={r._id} label={r.name} size="small" sx={{ height: 22, fontSize: '10px', background: "var(--gradient-primary)", color: '#fff', fontWeight: 700, borderRadius: '50px' }} />
+                                                                        )) : <Typography variant="caption" fontStyle="italic">None</Typography>}
+                                                                    </Box>
                                                                 </Box>
+                                                            }
+                                                        />
+                                                        <ListItemSecondaryAction sx={{ right: 16 }}>
+                                                            <IconButton
+                                                                edge="end"
+                                                                onClick={() => selectUser(user)}
+                                                                sx={{
+                                                                    color: selectedUser?._id === user._id ? 'var(--color-primary)' : 'var(--text-secondary)',
+                                                                    transition: '0.3s',
+                                                                    '&:hover': { color: 'var(--color-primary)', transform: 'scale(1.1)' }
+                                                                }}
+                                                            >
+                                                                <PersonAdd />
+                                                            </IconButton>
+                                                        </ListItemSecondaryAction>
+                                                    </ListItemButton>
+                                                </ListItem>
+                                            )) : <Box sx={{ textAlign: 'center', py: 5, color: 'text.disabled' }}><People sx={{ fontSize: 40, mb: 1, opacity: 0.5 }} /><Typography variant="body2">No users found.</Typography></Box>}
+                                        </List>
+
+                                        {/* HOD Department Selection UI (Under User Card) */}
+                                        <Collapse in={!!selectedUser && assignedRoleIds.some(rid => roles.find(r => r._id === rid)?.name === 'HOD')}>
+                                            <Box sx={{ mt: 2, p: 2, borderRadius: '15px', background: 'var(--bg-paper)', border: '1px solid var(--border-color)' }}>
+                                                <Typography variant="subtitle2" fontWeight={800} color="var(--text-primary)" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                    <Security sx={{ fontSize: 18 }} /> HOD Department Assignment
+                                                </Typography>
+                                                <Typography variant="caption" color="textSecondary" display="block" sx={{ mb: 2 }}>
+                                                    Assign this HOD to multiple departments for context-aware access.
+                                                </Typography>
+
+                                                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
+                                                    {selectedHodDepts.map(dept => (
+                                                        <Chip
+                                                            key={dept._id}
+                                                            label={dept.name}
+                                                            size="small"
+                                                            onDelete={() => setSelectedHodDepts(prev => prev.filter(d => d._id !== dept._id))}
+                                                            sx={{ background: "var(--gradient-primary)", color: '#fff', fontWeight: 700, borderRadius: '50px', '& .MuiChip-deleteIcon': { color: 'rgba(255,255,255,0.7)' } }}
+                                                        />
+                                                    ))}
+                                                </Box>
+
+                                                <FormControlLabel
+                                                    sx={{ width: '100%', m: 0 }}
+                                                    control={
+                                                        <Box sx={{ width: '100%', mt: 1 }}>
+                                                            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, p: 1, border: '1px dashed var(--text-secondary)', borderRadius: '10px' }}>
+                                                                {allDepartments.map(dept => {
+                                                                    const isSelected = selectedHodDepts.some(d => d._id === dept._id);
+                                                                    return (
+                                                                        <Chip
+                                                                            key={dept._id}
+                                                                            label={dept.name}
+                                                                            onClick={() => {
+                                                                                if (isSelected) {
+                                                                                    setSelectedHodDepts(prev => prev.filter(d => d._id !== dept._id));
+                                                                                } else {
+                                                                                    setSelectedHodDepts(prev => [...prev, dept]);
+                                                                                }
+                                                                            }}
+                                                                            variant={isSelected ? "filled" : "outlined"}
+                                                                            size="small"
+                                                                            sx={{
+                                                                                cursor: 'pointer',
+                                                                                borderRadius: '50px',
+                                                                                fontWeight: 700,
+                                                                                border: isSelected ? 'none' : '1.5px solid var(--color-primary)',
+                                                                                background: isSelected ? "var(--gradient-primary)" : 'transparent',
+                                                                                color: isSelected ? '#fff' : 'var(--color-primary)'
+                                                                            }}
+                                                                        />
+                                                                    );
+                                                                })}
                                                             </Box>
                                                         </Box>
-                                                    </Box>
-                                                );
-                                            }) : <Typography variant="body2" color="textSecondary">No roles found.</Typography>}
-                                        </FormGroup>
-                                    )}
-                                </Box>
-                                {selectedUser && (
-                                    <Box sx={{ mt: 3, pt: 2, borderTop: '1px solid rgba(0,0,0,0.05)', position: 'sticky', bottom: 0, background: 'transparent', pb: 1 }}>
-                                        <Button fullWidth variant="contained" startIcon={<Save />} onClick={handleSaveAssignments} disabled={savingRoles} sx={{ borderRadius: '50px', py: 1.5, textTransform: 'none', fontWeight: 800, fontSize: '1rem', background: "var(--gradient-primary)", boxShadow: '0 4px 14px 0 rgba(0, 78, 146, 0.3)', transition: '0.3s', '&:hover': { background: "var(--gradient-primary-hover)", boxShadow: '0 6px 16px rgba(0, 78, 146, 0.4)' } }}>Save Role Assignments</Button>
+                                                    }
+                                                    label=""
+                                                />
+                                            </Box>
+                                        </Collapse>
                                     </Box>
-                                )}
-                            </Box>
-                        </Box>
-                    </CardContent>
-                </Card>
-            </Collapse>
+
+                                    <Box sx={{ flex: 1.2, p: 3, background: 'var(--bg-accent-1)', display: 'flex', flexDirection: 'column', borderLeft: '1px solid var(--border-color)' }}>
+                                        <Typography variant="subtitle2" fontWeight={700} gutterBottom color="textSecondary">{selectedUser ? `Select Roles for ${selectedUser.name}` : "Available Roles"}</Typography>
+                                        <Box sx={{ flex: 1, overflowY: 'auto' }}>
+                                            {loadingRoles ? null : (
+                                                <FormGroup>
+                                                    {roles.length > 0 ? roles.map((role) => {
+                                                        const isIdentityDefault = getSystemRoleName(selectedUser) === role.name;
+                                                        const isChecked = assignedRoleIds.includes(role._id.toString()) || (selectedUser && isIdentityDefault);
+                                                        return (
+                                                            <Box key={role._id} onClick={() => handleRoleToggle(role._id)} sx={{
+                                                                p: 1.5,
+                                                                mb: 1,
+                                                                borderRadius: '12px',
+                                                                background: 'var(--bg-glass)',
+                                                                position: 'relative',
+                                                                border: '1px solid transparent',
+                                                                ...(isChecked && {
+                                                                    '&::before': {
+                                                                        content: '""',
+                                                                        position: 'absolute',
+                                                                        inset: 0,
+                                                                        borderRadius: 'inherit',
+                                                                        padding: '1.5px',
+                                                                        background: 'var(--gradient-primary)',
+                                                                        WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
+                                                                        WebkitMaskComposite: 'xor',
+                                                                        maskComposite: 'exclude',
+                                                                        pointerEvents: 'none',
+                                                                        zIndex: 0
+                                                                    }
+                                                                }),
+                                                                cursor: selectedUser ? (isIdentityDefault ? 'not-allowed' : 'pointer') : 'default',
+                                                                opacity: selectedUser ? (isIdentityDefault ? 0.75 : 1) : 0.6,
+                                                                display: 'flex',
+                                                                alignItems: 'center',
+                                                                transition: '0.2s',
+                                                                '&:hover': selectedUser && !isIdentityDefault ? { background: 'var(--bg-panel)' } : {}
+                                                            }}>
+                                                                <Box sx={{ display: 'flex', alignItems: 'center', width: '100%' }}>
+                                                                    <Checkbox
+                                                                        checked={isChecked}
+                                                                        disabled={!selectedUser || isIdentityDefault}
+                                                                        sx={{
+                                                                            p: 0,
+                                                                            mr: 2,
+                                                                            '&.Mui-checked': { color: 'var(--color-primary)' },
+                                                                            '&.MuiCheckbox-root': { color: isChecked ? 'var(--color-primary)' : 'var(--text-secondary)' }
+                                                                        }}
+                                                                    />
+                                                                    <Box sx={{ flex: 1 }}>
+                                                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                                            <Typography variant="body2" fontWeight={700} sx={{ color: isChecked ? 'var(--color-primary)' : 'var(--text-primary)' }}>{role.name}</Typography>
+                                                                            {role.defaultRole && <Chip label="Identity Role" size="small" color="success" sx={{ height: 16, fontSize: '0.6rem', fontWeight: 800 }} />}
+                                                                            {isIdentityDefault && <Tooltip title="Recommended Default Identity Role"><Star sx={{ fontSize: 16, color: 'var(--color-primary)' }} /></Tooltip>}
+                                                                        </Box>
+                                                                    </Box>
+                                                                </Box>
+                                                            </Box>
+                                                        );
+                                                    }) : <Typography variant="body2" color="textSecondary">No roles found.</Typography>}
+                                                </FormGroup>
+                                            )}
+                                        </Box>
+                                        {selectedUser && (
+                                            <Box sx={{ mt: 3, pt: 2, borderTop: '1px solid rgba(0,0,0,0.05)', position: 'sticky', bottom: 0, background: 'transparent', pb: 1 }}>
+                                                <Button fullWidth variant="contained" startIcon={<Save />} onClick={handleSaveAssignments} disabled={savingRoles} sx={{ borderRadius: '50px', py: 1.5, textTransform: 'none', fontWeight: 800, fontSize: '1rem', background: "var(--gradient-primary)", boxShadow: '0 4px 14px 0 rgba(0, 78, 146, 0.3)', transition: '0.3s', '&:hover': { background: "var(--gradient-primary-hover)", boxShadow: '0 6px 16px rgba(0, 78, 146, 0.4)' } }}>Save Role Assignments</Button>
+                                            </Box>
+                                        )}
+                                    </Box>
+                                </Box>
+                            </CardContent>
+                        </Card>
+                    </Collapse>
                 </>
             )}
 
@@ -1566,29 +1560,51 @@ const RoleManagement = () => {
                                     Total: {allEmployees.length} employees
                                 </Typography>
                             </Box>
-                            <TextField
-                                placeholder="Search by name, ID, or email..."
-                                size="small"
-                                value={employeesSearchQuery}
-                                onChange={(e) => setEmployeesSearchQuery(e.target.value)}
-                                sx={{
-                                    width: { xs: '100%', sm: '320px' },
-                                    "& .MuiOutlinedInput-root": {
-                                        borderRadius: "10px",
-                                        background: "var(--bg-glass)",
-                                        backdropFilter: "blur(5px)"
-                                    }
-                                }}
-                                slotProps={{
-                                    input: {
-                                        startAdornment: (
-                                            <InputAdornment position="start">
-                                                <Search fontSize="small" sx={{ color: 'var(--color-primary)' }} />
-                                            </InputAdornment>
-                                        )
-                                    }
-                                }}
-                            />
+                            <Box sx={{ display: 'flex', gap: 2, flexDirection: { xs: 'column', sm: 'row' }, width: { xs: '100%', sm: 'auto' } }}>
+                                <TextField
+                                    select
+                                    value={selectedDepartment}
+                                    onChange={(e) => setSelectedDepartment(e.target.value)}
+                                    size="small"
+                                    slotProps={{ select: { displayEmpty: true } }}
+                                    sx={{
+                                        width: { xs: '100%', sm: '200px' },
+                                        "& .MuiOutlinedInput-root": {
+                                            borderRadius: "10px",
+                                            background: "var(--bg-glass)",
+                                            backdropFilter: "blur(5px)"
+                                        }
+                                    }}
+                                >
+                                    <MenuItem value="">All Departments</MenuItem>
+                                    {allDepartments.map(d => (
+                                        <MenuItem key={d._id} value={d._id}>{d.name}</MenuItem>
+                                    ))}
+                                </TextField>
+                                <TextField
+                                    placeholder="Search by name, ID, or email..."
+                                    size="small"
+                                    value={employeesSearchQuery}
+                                    onChange={(e) => setEmployeesSearchQuery(e.target.value)}
+                                    sx={{
+                                        width: { xs: '100%', sm: '320px' },
+                                        "& .MuiOutlinedInput-root": {
+                                            borderRadius: "10px",
+                                            background: "var(--bg-glass)",
+                                            backdropFilter: "blur(5px)"
+                                        }
+                                    }}
+                                    slotProps={{
+                                        input: {
+                                            startAdornment: (
+                                                <InputAdornment position="start">
+                                                    <Search fontSize="small" sx={{ color: 'var(--color-primary)' }} />
+                                                </InputAdornment>
+                                            )
+                                        }
+                                    }}
+                                />
+                            </Box>
                         </Box>
 
                         {loadingEmployees ? (
@@ -1613,7 +1629,7 @@ const RoleManagement = () => {
                                         <TableBody>
                                             {paginatedEmployees.length > 0 ? (
                                                 paginatedEmployees.map((emp) => {
-                                                    const deptName = allDepartments.find(d => d._id === emp.coreDepartment || d._id === emp.department)?.name || emp.department || "N/A";
+                                                    const deptName = allDepartments.find(d => d._id === (emp.coreDepartment || emp.department))?.name || emp.department || "N/A";
                                                     return (
                                                         <TableRow key={emp._id} hover sx={{ '&:last-child td, &:last-child th': { border: 0 } }}>
                                                             <TableCell sx={{ fontWeight: 700, color: 'var(--text-primary)' }}>
@@ -1632,18 +1648,18 @@ const RoleManagement = () => {
                                                                 <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
                                                                     {emp.roles && emp.roles.length > 0 ? (
                                                                         emp.roles.map(r => (
-                                                                            <Chip 
-                                                                                key={r._id} 
-                                                                                label={r.name} 
-                                                                                size="small" 
-                                                                                sx={{ 
-                                                                                    height: 20, 
-                                                                                    fontSize: '10px', 
-                                                                                    background: "var(--gradient-primary)", 
-                                                                                    color: '#fff', 
-                                                                                    fontWeight: 700, 
-                                                                                    borderRadius: '50px' 
-                                                                                }} 
+                                                                            <Chip
+                                                                                key={r._id}
+                                                                                label={r.name}
+                                                                                size="small"
+                                                                                sx={{
+                                                                                    height: 20,
+                                                                                    fontSize: '10px',
+                                                                                    background: "var(--gradient-primary)",
+                                                                                    color: '#fff',
+                                                                                    fontWeight: 700,
+                                                                                    borderRadius: '50px'
+                                                                                }}
                                                                             />
                                                                         ))
                                                                     ) : (
@@ -1654,8 +1670,8 @@ const RoleManagement = () => {
                                                             <TableCell align="right" sx={{ pr: 2 }}>
                                                                 <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
                                                                     <Tooltip title="Assign Roles">
-                                                                        <IconButton 
-                                                                            size="small" 
+                                                                        <IconButton
+                                                                            size="small"
                                                                             color="primary"
                                                                             onClick={() => {
                                                                                 setActiveTab(0);
@@ -1670,8 +1686,8 @@ const RoleManagement = () => {
                                                                         </IconButton>
                                                                     </Tooltip>
                                                                     <Tooltip title="Edit Details">
-                                                                        <IconButton 
-                                                                            size="small" 
+                                                                        <IconButton
+                                                                            size="small"
                                                                             color="secondary"
                                                                             onClick={() => {
                                                                                 setEditingEmployee(emp);

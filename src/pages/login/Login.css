@@ -645,7 +645,7 @@
 
 /* ─── OVERLAY CONTENT ────────────────────────────── */
 .overlay-logo {
-  width: 390px;
+  width: 500px;
   /* Reduced for better mobile/desktop balance */
   height: auto;
   object-fit: contain;
@@ -656,7 +656,7 @@
 
 @media (max-width: 768px) {
   .overlay-logo {
-    width: 260px;
+    width: 340px;
     margin-bottom: 8px;
   }
 

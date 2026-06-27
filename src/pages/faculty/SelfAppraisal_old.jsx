@@ -178,48 +178,10 @@ const SelfAppraisal = () => {
   const [profileComplete, setProfileComplete] = useState(true);
   const [missingFields, setMissingFields] = useState([]);
 
-  const [citationYear, setCitationYear] = useState("");
-  const [previousHIndexYear, setPreviousHIndexYear] = useState("");
-  const [currentHIndexYear, setCurrentHIndexYear] = useState("");
-
   const blurActiveElement = () => {
     if (document.activeElement instanceof HTMLElement) {
       document.activeElement.blur();
     }
-  };
-
-  const getStatusChip = (status) => {
-    let bg = "rgba(100, 116, 139, 0.08)";
-    let color = "#64748b";
-    let label = status || "Pending";
-
-    if (status === "Approved") {
-      bg = "rgba(16, 185, 129, 0.08)";
-      color = "#10b981";
-    } else if (status === "Rejected") {
-      bg = "rgba(239, 68, 68, 0.08)";
-      color = "#ef4444";
-    } else if (status === "Pending") {
-      bg = "rgba(245, 158, 11, 0.08)";
-      color = "#f59e0b";
-      label = "Pending Verification";
-    }
-
-    return (
-      <Chip
-        label={label}
-        size="small"
-        sx={{
-          bgcolor: bg,
-          color: color,
-          fontWeight: 800,
-          borderRadius: "6px",
-          height: "20px",
-          fontSize: "0.65rem",
-          ml: 1
-        }}
-      />
-    );
   };
 
   const selectMenuProps = {
@@ -242,7 +204,6 @@ const SelfAppraisal = () => {
   const [resourceUtilizationDetails, setResourceUtilizationDetails] = useState([]);
   const [contributionDetails, setContributionDetails] = useState([]);
   const [administrationDetail, setAdministrationDetail] = useState(null);
-
 
   // Proctoring Form States
   const [programs, setPrograms] = useState([]);
@@ -325,23 +286,21 @@ const SelfAppraisal = () => {
   const [contLoading, setContLoading] = useState(false);
   const [selectedContDetails, setSelectedContDetails] = useState(null);
 
-  // Fetch Active Appraisal Academic Year
+  // Fetch Academic Years
   useEffect(() => {
-    const fetchActiveAppraisalYear = async () => {
+    const fetchYears = async () => {
       try {
-        const res = await axiosInstance.get("/api/appraisal/active-year");
-        if (res.data && res.data.success && res.data.data) {
-          const activeYear = res.data.data;
-          setAcademicYears([activeYear]);
-          setSelectedYear(activeYear._id);
-        } else {
-          setAppraisalError("No active appraisal year is configured in Prime.");
+        const res = await axiosInstance.get("/api/academic-years");
+        const yearsList = res.data?.years || [];
+        setAcademicYears(yearsList);
+        if (yearsList.length > 0) {
+          setSelectedYear(yearsList[0]._id);
         }
       } catch (err) {
-        setAppraisalError(err.response?.data?.message || "Failed to load active appraisal year");
+        toast.error("Failed to load academic years");
       }
     };
-    fetchActiveAppraisalYear();
+    fetchYears();
   }, []);
 
   // Unresolved co-authored claims state variables
@@ -392,18 +351,12 @@ const SelfAppraisal = () => {
         setProfileComplete(res.data.isProfileComplete);
         setMissingFields(res.data.missingProfileFields || []);
 
-        setCitationYear(res.data.citationYear || "2025");
-        setPreviousHIndexYear(res.data.previousHIndexYear || "2024");
-        setCurrentHIndexYear(res.data.currentHIndexYear || "2025");
-
         // Populating extra states
         const proc = res.data.proctoringDetail || [];
         setProctoringDetail(proc);
         setResourceUtilizationDetails(res.data.resourceUtilizationDetails || []);
         setContributionDetails(res.data.contributionDetails || []);
         setAdministrationDetail(res.data.administrationDetail || null);
-
-        // No scopus state needed — data comes from appraisal.research directly
       } else {
         setAppraisalError(res.data?.message || "Self-appraisal is not active for this academic year.");
         setAppraisal(null);
@@ -478,7 +431,6 @@ const SelfAppraisal = () => {
       setLoading(false);
     }
   };
-
 
   // Fetch all active programs
   const fetchPrograms = async () => {
@@ -1352,9 +1304,7 @@ const SelfAppraisal = () => {
     if (activityRole.includes('resource person') || activityRole.includes('resourceperson')) {
       pts = (parseInt(r.sessionsConducted) || 1) * (resourceUtConf.resourcePerson ?? 2);
     } else if (activityRole.includes('participant') || activityRole.includes('participated')) {
-      // Use server-auto-calculated duration as authoritative; daysParticipated is manually entered fallback
-      const participantDays = Number(r.duration) || parseInt(r.daysParticipated) || 1;
-      pts = participantDays * (resourceUtConf.participated ?? 1);
+      pts = (parseInt(r.daysParticipated) || 1) * (resourceUtConf.participated ?? 1);
     } else if (activityRole.includes('guest lecture') || activityRole.includes('workshop') || activityRole.includes('event')) {
       pts = resourceUtConf.guestLecture ?? 2;
     } else {
@@ -1467,8 +1417,8 @@ const SelfAppraisal = () => {
     } else if (name.includes('course coordinator')) {
       pts = adminConf.courseDept ?? 5;
     } else if (name.includes('website')) {
-      pts = isCentral ? (adminConf.websiteCentral ?? 10) : 0; // Central only per form
-    } else if (name.includes('nss') || name.includes('club') || name.includes('professional chapter')) {
+      pts = adminConf.websiteCentral ?? 10;
+    } else if (name.includes('nss') || name.includes('professional chapter')) {
       pts = isCentral ? (adminConf.nssCentral ?? 10) : (adminConf.nssDept ?? 5);
     } else if (name.includes('training')) {
       pts = isCentral ? (adminConf.trainingCentral ?? 10) : (adminConf.trainingDept ?? 5);
@@ -1548,19 +1498,8 @@ const SelfAppraisal = () => {
     if (!appraisal) return { total1to4: 0, grandTotal: 0, T: 0, R_sum: 0, V: 0, A: 0, I: 0 };
     const T = Number(appraisal.teaching?.totalClaimed) || 0;
     const R_sum = Number(appraisal.research?.totalClaimed) || 0;
-
-    // Compute V live from sub-sections (each capped at 10) so it always reflects latest calculations
-    const resUtilTotal = resourceUtilizationDetails?.reduce((sum, r) => r.status !== 'Rejected' ? sum + calculateResourceUtilizationPoints(r, appraisalConfig) : sum, 0) || 0;
-    const contribTotal = contributionDetails?.reduce((sum, r) => r.status !== 'Rejected' ? sum + calculateContributionPoints(r, appraisalConfig) : sum, 0) || 0;
-    const cappedResUtil = Math.min(10, resUtilTotal);
-    const cappedContrib = Math.min(10, contribTotal);
-    const V = cappedResUtil + cappedContrib;
-
-    // Compute A live from administrationDetail.roles list
-    const adminRolesList = administrationDetail?.roles?.filter(r => r.isResponsible) || [];
-    const adminRaw = adminRolesList.reduce((sum, r) => r.status !== 'Rejected' ? sum + calculateAdministrativePoints(r, appraisalConfig) : sum, 0);
-    const A = Math.min(20, adminRaw);
-
+    const V = Number(appraisal.valueAddition?.totalClaimed) || 0;
+    const A = Number(appraisal.administration?.totalClaimed) || 0;
     const I = Number(appraisal.hodEvaluation?.totalInterpersonalPoints) || 0;
 
     const total1to4 = Math.min(200, T + R_sum + V + A);
@@ -1795,9 +1734,9 @@ const SelfAppraisal = () => {
                             disabled={resolvingClaimId === claim._id}
                           >
                             <MenuItem value="" disabled>Select Claimant</MenuItem>
-                            {claim.eligibleClaimants.map((el, idx) => (
-                              <MenuItem key={el.institutionId || el.name || idx} value={el.institutionId || el.name}>
-                                {el.name}{el.institutionId ? ` (${el.institutionId})` : ""}
+                            {claim.eligibleClaimants.map((el) => (
+                              <MenuItem key={el.institutionId || el._id} value={el.institutionId || el._id}>
+                                {el.name} ({el.institutionId})
                               </MenuItem>
                             ))}
                           </Select>
@@ -1847,16 +1786,28 @@ const SelfAppraisal = () => {
                 Faculty Self Appraisal Portal
               </Typography>
               <Typography variant="body2" color="var(--text-secondary)">
-                Appraisal Academic Year
+                Academic Year Selection
               </Typography>
             </Box>
-            {selectedYear && (
-              <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, p: 1.2, px: 2.5, borderRadius: "10px", background: "rgba(59, 130, 246, 0.08)", border: "1px solid rgba(59, 130, 246, 0.2)" }}>
-                <Typography variant="body2" sx={{ fontWeight: 800, color: "var(--color-primary)" }}>
-                  Appraisal Year: {academicYears.find(y => y._id === selectedYear)?.year || "Loading..."}
-                </Typography>
-              </Box>
-            )}
+            <FormControl variant="outlined" size="small" sx={{ minWidth: 200, background: "var(--bg-paper)", borderRadius: "8px" }}>
+              <InputLabel>Academic Year</InputLabel>
+              <Select
+                value={selectedYear}
+                onChange={(e) => {
+                  setSelectedYear(e.target.value);
+                  blurActiveElement();
+                }}
+                onClose={blurActiveElement}
+                MenuProps={selectMenuProps}
+                label="Academic Year"
+              >
+                {academicYears.map((ay) => (
+                  <MenuItem key={ay._id} value={ay._id}>
+                    {ay.year}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
           </Box>
 
           <Card sx={{ p: 4, borderRadius: "20px", border: "1px solid var(--border-color)", background: "var(--bg-panel)", boxShadow: "var(--shadow-premium)" }}>
@@ -1897,16 +1848,28 @@ const SelfAppraisal = () => {
                 Faculty Self Appraisal Portal
               </Typography>
               <Typography variant="body2" color="var(--text-secondary)">
-                Appraisal Academic Year
+                Action Required: Unresolved Co-authored claims
               </Typography>
             </Box>
-            {selectedYear && (
-              <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, p: 1.2, px: 2.5, borderRadius: "10px", background: "rgba(59, 130, 246, 0.08)", border: "1px solid rgba(59, 130, 246, 0.2)" }}>
-                <Typography variant="body2" sx={{ fontWeight: 800, color: "var(--color-primary)" }}>
-                  Appraisal Year: {academicYears.find(y => y._id === selectedYear)?.year || "Loading..."}
-                </Typography>
-              </Box>
-            )}
+            <FormControl variant="outlined" size="small" sx={{ minWidth: 200, background: "var(--bg-paper)", borderRadius: "8px" }}>
+              <InputLabel>Academic Year</InputLabel>
+              <Select
+                value={selectedYear}
+                onChange={(e) => {
+                  setSelectedYear(e.target.value);
+                  blurActiveElement();
+                }}
+                onClose={blurActiveElement}
+                MenuProps={selectMenuProps}
+                label="Academic Year"
+              >
+                {academicYears.map((ay) => (
+                  <MenuItem key={ay._id} value={ay._id}>
+                    {ay.year}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
           </Box>
 
           <Card sx={{ p: 4, borderRadius: "20px", border: "1px solid var(--border-color)", background: "var(--bg-panel)", boxShadow: "var(--shadow-premium)" }}>
@@ -2020,13 +1983,25 @@ const SelfAppraisal = () => {
             />
           )}
 
-          {selectedYear && (
-            <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, p: 1.2, px: 2.5, borderRadius: "10px", background: "rgba(59, 130, 246, 0.08)", border: "1px solid rgba(59, 130, 246, 0.2)", minWidth: 200, justifyContent: "center" }}>
-              <Typography variant="body2" sx={{ fontWeight: 800, color: "var(--color-primary)" }}>
-                Appraisal Year: {academicYears.find(y => y._id === selectedYear)?.year || "Loading..."}
-              </Typography>
-            </Box>
-          )}
+          <FormControl variant="outlined" size="small" sx={{ minWidth: 200, background: "var(--bg-paper)", borderRadius: "10px", "& .MuiOutlinedInput-root": { borderRadius: "10px" } }}>
+            <InputLabel>Academic Year</InputLabel>
+            <Select
+              value={selectedYear}
+              onChange={(e) => {
+                setSelectedYear(e.target.value);
+                blurActiveElement();
+              }}
+              onClose={blurActiveElement}
+              MenuProps={selectMenuProps}
+              label="Academic Year"
+            >
+              {academicYears.map((ay) => (
+                <MenuItem key={ay._id} value={ay._id}>
+                  {ay.year}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
         </Box>
 
         {/* Bottom Row: Avatar and Title */}
@@ -2331,8 +2306,6 @@ const SelfAppraisal = () => {
               <Divider sx={{ mb: 3 }} />
 
               {/* 1.1 Course pass percentage */}
-              {!(appraisal.status === "Completed" && (!appraisal.teaching.passPercentage?.courses || appraisal.teaching.passPercentage.courses.length === 0)) && (
-              <>
               <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 1, color: "var(--color-primary)" }}>
                 1.1 Course Average Pass Percentage (Theory only)
               </Typography>
@@ -2352,7 +2325,7 @@ const SelfAppraisal = () => {
                     {appraisal.teaching.passPercentage.courses.length > 0 ? (
                       <>
                         {appraisal.teaching.passPercentage.courses.map((c, i) => (
-                          <TableRow key={i} sx={{ "&:hover": { bgcolor: "var(--bg-hover)" } }}>
+                          <TableRow key={i} sx={{ "&:hover": { bgcolor: "rgba(0, 0, 0, 0.015)" }, "body.dark-mode &:hover": { bgcolor: "rgba(255, 255, 255, 0.015)" } }}>
                             <TableCell sx={{ fontWeight: 600, color: "var(--text-primary)" }}>{c.courseName}</TableCell>
                             <TableCell sx={{ color: "var(--text-primary)" }}>{c.secBranchSem}</TableCell>
                             <TableCell align="center" sx={{ color: "var(--text-primary)" }}>{c.appeared}</TableCell>
@@ -2393,11 +2366,8 @@ const SelfAppraisal = () => {
                   </TableBody>
                 </Table>
               </TableContainer>
-              </>
-              )}
 
               {/* 1.2 Proctoring Students' Average Pass Percentage */}
-              {!(appraisal.status === "Completed" && (!appraisal.teaching.proctoring?.entries || appraisal.teaching.proctoring.entries.length === 0)) && (
               <Box sx={{ mb: 4 }}>
                 <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 2 }}>
                   <Typography variant="subtitle1" sx={{ fontWeight: 700, color: "var(--color-primary)" }}>
@@ -2411,7 +2381,30 @@ const SelfAppraisal = () => {
                       Proctoring Records for this cycle:
                     </Typography>
                   </Box>
+                  {(appraisal.status === "Draft" || appraisal.status === "Rejected by HOD") && (
+                    <Button
+ variant="contained"
+ size="small"
+ startIcon={<AddCircle />}
+ onClick={handleOpenAddModal}
+ sx={{
+ 
+ textTransform: "none",
+ fontWeight: 700,
+ background: "var(--gradient-primary)",
+ color: "#fff"
+ }}
+ >
+                      Add Record
+                    </Button>
+                  )}
                 </Box>
+
+                {proctoringDetail && proctoringDetail.some(e => e.status === "Rejected") && (
+                  <Alert severity="error" sx={{ mb: 2, borderRadius: "12px" }}>
+                    <strong>Rejected Records:</strong> You have proctoring records rejected by HOD. Please edit or delete them before submitting your appraisal.
+                  </Alert>
+                )}
 
                 <TableContainer component={Paper} elevation={0} sx={{ mb: 3.5, borderRadius: "16px", background: "var(--bg-paper)", border: "1px solid var(--border-color)", overflowX: "auto", boxShadow: "none", maxWidth: { xs: "100%", md: "100%", lg: 1000, xl: 1100 }, mx: "auto" }}>
                   <Table size="small" sx={{ minWidth: 650, mx: "auto" }}>
@@ -2424,6 +2417,8 @@ const SelfAppraisal = () => {
                         <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }} align="right">Passed (B)</TableCell>
                         <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }} align="right">Pass % (B/A)</TableCell>
                         <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }} align="right">Points</TableCell>
+                        <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }} align="center">Status</TableCell>
+                        <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }} align="center">Actions</TableCell>
                       </TableRow>
                     </TableHead>
                     <TableBody>
@@ -2434,9 +2429,16 @@ const SelfAppraisal = () => {
                             const semYrBranchSec = isYearProg
                               ? `YEAR-${e.yearNumber} ${e.branchCode || "—"} - SEC ${e.section}`
                               : `SEM-${e.semesterNumber} ${e.branchCode || "—"} - SEC ${e.section}`;
+                            const originalEntry = proctoringDetail.find(
+                              (pd) => pd.section === e.section &&
+                                (pd.semesterNumber === e.semesterNumber || pd.yearNumber === e.yearNumber) &&
+                                (pd.programId?._id === e.programId || pd.programId === e.programId)
+                            );
                             return (
                               <TableRow key={i} sx={{
-                                "&:hover": { bgcolor: "var(--bg-hover)" }
+                                "&:hover": { bgcolor: "rgba(0, 0, 0, 0.015)" },
+                                "body.dark-mode &:hover": { bgcolor: "rgba(255, 255, 255, 0.015)" },
+                                bgcolor: originalEntry?.status === "Rejected" ? "rgba(239, 68, 68, 0.04)" : "inherit"
                               }}>
                                 <TableCell sx={{ fontWeight: 600, color: "var(--text-primary)" }}>{e.programCode || "—"}</TableCell>
                                 <TableCell sx={{ color: "var(--text-primary)" }}>{semYrBranchSec}</TableCell>
@@ -2445,6 +2447,41 @@ const SelfAppraisal = () => {
                                 <TableCell align="right" sx={{ color: "#10B981", fontWeight: 600 }}>{e.passed}</TableCell>
                                 <TableCell align="right" sx={{ color: "var(--text-primary)" }}>{e.percentage.toFixed(2)}%</TableCell>
                                 <TableCell align="right" sx={{ fontWeight: 800, color: "var(--color-primary)" }}>{e.pointsClaimed}</TableCell>
+                                <TableCell align="center">
+                                  {originalEntry ? (
+                                    <Chip
+                                      label={originalEntry.status}
+                                      size="small"
+                                      sx={{
+                                        fontWeight: 700,
+                                        fontSize: 9,
+                                        borderRadius: "6px",
+                                        bgcolor:
+                                          originalEntry.status === "Approved" ? "rgba(16, 185, 129, 0.12)" :
+                                            originalEntry.status === "Rejected" ? "rgba(239, 68, 68, 0.12)" :
+                                              "rgba(245, 158, 11, 0.12)",
+                                        color:
+                                          originalEntry.status === "Approved" ? "#10B981" :
+                                            originalEntry.status === "Rejected" ? "#EF4444" :
+                                              "#D97706"
+                                      }}
+                                    />
+                                  ) : "—"}
+                                </TableCell>
+                                <TableCell align="center">
+                                  {originalEntry && originalEntry.status !== "Approved" && (appraisal.status === "Draft" || appraisal.status === "Rejected by HOD") ? (
+                                    <Box sx={{ display: "flex", justifyContent: "center" }}>
+                                      <IconButton size="small" onClick={() => handleOpenEditModal(originalEntry)} sx={{ color: "var(--color-primary)" }}>
+                                        <Edit sx={{ fontSize: 16 }} />
+                                      </IconButton>
+                                      <IconButton size="small" onClick={() => handleDeleteEntry(originalEntry._id)} sx={{ color: "#EF4444" }}>
+                                        <Delete sx={{ fontSize: 16 }} />
+                                      </IconButton>
+                                    </Box>
+                                  ) : (
+                                    <Typography sx={{ fontSize: 11, color: "var(--text-secondary)", fontStyle: "italic" }}>Locked</Typography>
+                                  )}
+                                </TableCell>
                               </TableRow>
                             );
                           })}
@@ -2464,7 +2501,7 @@ const SelfAppraisal = () => {
                                 <TableCell align="right" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>{totalAppeared}</TableCell>
                                 <TableCell align="right" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>{totalPassed}</TableCell>
                                 <TableCell align="right" sx={{ fontWeight: 900, color: "var(--color-primary)" }}>{overallPassPct}%</TableCell>
-                                <TableCell align="right" sx={{ fontWeight: 900, color: "var(--color-primary)", fontSize: "0.95rem" }}>
+                                <TableCell align="right" sx={{ fontWeight: 900, color: "var(--color-primary)", fontSize: "0.95rem" }} colSpan={3}>
                                   {appraisal.teaching.proctoring.averagePoints} Points
                                 </TableCell>
                               </TableRow>
@@ -2473,8 +2510,8 @@ const SelfAppraisal = () => {
                         </>
                       ) : (
                         <TableRow>
-                          <TableCell colSpan={7} align="center" sx={{ py: 3, color: "var(--text-secondary)", fontStyle: "italic" }}>
-                            No proctoring records found.
+                          <TableCell colSpan={9} align="center" sx={{ py: 3, color: "var(--text-secondary)", fontStyle: "italic" }}>
+                            No proctoring records found. Click "Add Record" to submit details.
                           </TableCell>
                         </TableRow>
                       )}
@@ -2482,7 +2519,6 @@ const SelfAppraisal = () => {
                   </Table>
                 </TableContainer>
               </Box>
-              )}
 
               {/* Self Appraisal Proctoring Form CRUD Dialog Modal */}
               <Dialog
@@ -2712,8 +2748,6 @@ const SelfAppraisal = () => {
               </Dialog>
 
               {/* 1.3 Course Feedback */}
-              {!(appraisal.status === "Completed" && (!appraisal.teaching.feedback?.courses || appraisal.teaching.feedback.courses.length === 0)) && (
-              <>
               <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 1.5, color: "var(--color-primary)" }}>
                 1.3 Course Feedback
               </Typography>
@@ -2732,7 +2766,7 @@ const SelfAppraisal = () => {
                     {appraisal.teaching.feedback.courses.length > 0 ? (
                       <>
                         {appraisal.teaching.feedback.courses.map((c, i) => (
-                          <TableRow key={i} sx={{ "&:hover": { bgcolor: "var(--bg-hover)" } }}>
+                          <TableRow key={i} sx={{ "&:hover": { bgcolor: "rgba(0, 0, 0, 0.015)" }, "body.dark-mode &:hover": { bgcolor: "rgba(255, 255, 255, 0.015)" } }}>
                             <TableCell sx={{ fontWeight: 600, color: "var(--text-primary)" }}>{c.courseName}</TableCell>
                             <TableCell sx={{ color: "var(--text-primary)" }}>{c.secBranchSem}</TableCell>
                             <TableCell align="center" sx={{ color: "var(--text-primary)" }}>{c.noOfStudents}</TableCell>
@@ -2771,12 +2805,8 @@ const SelfAppraisal = () => {
                   </TableBody>
                 </Table>
               </TableContainer>
-              </>
-              )}
 
               {/* 1.4 CO Attainment */}
-              {!(appraisal.status === "Completed" && (!appraisal.teaching.coAttainment?.courses || appraisal.teaching.coAttainment.courses.length === 0)) && (
-              <>
               <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 1.5, color: "var(--color-primary)" }}>
                 1.4 CO Attainment (Theory only)
               </Typography>
@@ -2795,7 +2825,7 @@ const SelfAppraisal = () => {
                     {appraisal.teaching.coAttainment.courses.length > 0 ? (
                       <>
                         {appraisal.teaching.coAttainment.courses.map((c, i) => (
-                          <TableRow key={i} sx={{ "&:hover": { bgcolor: "var(--bg-hover)" } }}>
+                          <TableRow key={i} sx={{ "&:hover": { bgcolor: "rgba(0, 0, 0, 0.015)" }, "body.dark-mode &:hover": { bgcolor: "rgba(255, 255, 255, 0.015)" } }}>
                             <TableCell sx={{ fontWeight: 600, color: "var(--text-primary)" }}>{c.courseName}</TableCell>
                             <TableCell sx={{ color: "var(--text-primary)" }}>{c.secBranchSem}</TableCell>
                             <TableCell align="center" sx={{ color: "var(--text-primary)" }}>{c.noOfCos}</TableCell>
@@ -2833,8 +2863,6 @@ const SelfAppraisal = () => {
                   </TableBody>
                 </Table>
               </TableContainer>
-              </>
-              )}
             </CardContent>
           </Card>
 
@@ -2894,8 +2922,6 @@ const SelfAppraisal = () => {
               <Divider sx={{ mb: 3 }} />
 
               {/* 2.1 Papers Publication with Claims Coordination */}
-              {!(appraisal.status === "Completed" && (!appraisal.research.papers?.items || appraisal.research.papers.items.length === 0)) && (
-              <>
               <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 1.5, color: "var(--color-primary)" }}>
                 2.1 Paper Publication: (only for one Aditya author)
               </Typography>
@@ -2914,7 +2940,7 @@ const SelfAppraisal = () => {
                     {appraisal.research.papers.items.length > 0 ? (
                       <>
                         {appraisal.research.papers.items.map((p, i) => (
-                          <TableRow key={i} sx={{ "&:hover": { bgcolor: "var(--bg-hover)" } }}>
+                          <TableRow key={i} sx={{ "&:hover": { bgcolor: "rgba(0, 0, 0, 0.015)" }, "body.dark-mode &:hover": { bgcolor: "rgba(255, 255, 255, 0.015)" } }}>
                             <TableCell align="center" sx={{ color: "var(--text-primary)" }}>{i + 1}</TableCell>
                             <TableCell sx={{ fontWeight: 600, color: "var(--text-primary)" }}>{p.title}</TableCell>
                             <TableCell align="center" sx={{ color: "var(--text-primary)" }}>{p.scope}</TableCell>
@@ -2944,8 +2970,6 @@ const SelfAppraisal = () => {
                   </TableBody>
                 </Table>
               </TableContainer>
-              </>
-              )}
 
               {/* PhD, Books, Patents */}
               {/* 2.2 Guiding Ph. D Scholars */}
@@ -2968,7 +2992,7 @@ const SelfAppraisal = () => {
                       </TableHead>
                       <TableBody>
                         {appraisal.research.phdGuiding.items.map((p, i) => (
-                          <TableRow key={i} sx={{ "&:hover": { bgcolor: "var(--bg-hover)" } }}>
+                          <TableRow key={i} sx={{ "&:hover": { bgcolor: "rgba(0, 0, 0, 0.015)" }, "body.dark-mode &:hover": { bgcolor: "rgba(255, 255, 255, 0.015)" } }}>
                             <TableCell align="center" sx={{ color: "var(--text-primary)" }}>{i + 1}</TableCell>
                             <TableCell sx={{ fontWeight: 600, color: "var(--text-primary)" }}>
                               {p.name} ({p.scholarType === 'Part-Time' ? 'PT' : 'FT'})
@@ -3016,7 +3040,7 @@ const SelfAppraisal = () => {
                       </TableHead>
                       <TableBody>
                         {appraisal.research.booksChapters.items.map((b, i) => (
-                          <TableRow key={i} sx={{ "&:hover": { bgcolor: "var(--bg-hover)" } }}>
+                          <TableRow key={i} sx={{ "&:hover": { bgcolor: "rgba(0, 0, 0, 0.015)" }, "body.dark-mode &:hover": { bgcolor: "rgba(255, 255, 255, 0.015)" } }}>
                             <TableCell align="center" sx={{ color: "var(--text-primary)" }}>{i + 1}</TableCell>
                             <TableCell sx={{ fontWeight: 600, color: "var(--text-primary)" }}>{b.title}</TableCell>
                             <TableCell sx={{ color: "var(--text-primary)" }}>
@@ -3064,7 +3088,7 @@ const SelfAppraisal = () => {
                           const dateObj = new Date(p.dateOfFiling);
                           const dateString = !isNaN(dateObj) ? dateObj.toLocaleDateString("en-GB") : "N/A";
                           return (
-                            <TableRow key={i} sx={{ "&:hover": { bgcolor: "var(--bg-hover)" } }}>
+                            <TableRow key={i} sx={{ "&:hover": { bgcolor: "rgba(0, 0, 0, 0.015)" }, "body.dark-mode &:hover": { bgcolor: "rgba(255, 255, 255, 0.015)" } }}>
                               <TableCell align="center" sx={{ color: "var(--text-primary)" }}>{i + 1}</TableCell>
                               <TableCell sx={{ fontWeight: 600, color: "var(--text-primary)" }}>{p.title} - {p.filingNo} - {dateString}</TableCell>
                               <TableCell sx={{ color: "var(--text-primary)" }}>{p.country}</TableCell>
@@ -3107,7 +3131,7 @@ const SelfAppraisal = () => {
                       </TableHead>
                       <TableBody>
                         {appraisal.research.novelProducts.items.map((p, i) => (
-                          <TableRow key={i} sx={{ "&:hover": { bgcolor: "var(--bg-hover)" } }}>
+                          <TableRow key={i} sx={{ "&:hover": { bgcolor: "rgba(0, 0, 0, 0.015)" }, "body.dark-mode &:hover": { bgcolor: "rgba(255, 255, 255, 0.015)" } }}>
                             <TableCell align="center" sx={{ color: "var(--text-primary)" }}>{i + 1}</TableCell>
                             <TableCell sx={{ fontWeight: 600, color: "var(--text-primary)" }}>{p.title} ({p.status})</TableCell>
                             <TableCell sx={{ color: "var(--text-primary)" }}>{p.organizationName}</TableCell>
@@ -3149,7 +3173,7 @@ const SelfAppraisal = () => {
                       </TableHead>
                       <TableBody>
                         {appraisal.research.projectsConsultancies.items.map((p, i) => (
-                          <TableRow key={i} sx={{ "&:hover": { bgcolor: "var(--bg-hover)" } }}>
+                          <TableRow key={i} sx={{ "&:hover": { bgcolor: "rgba(0, 0, 0, 0.015)" }, "body.dark-mode &:hover": { bgcolor: "rgba(255, 255, 255, 0.015)" } }}>
                             <TableCell align="center" sx={{ color: "var(--text-primary)" }}>{i + 1}</TableCell>
                             <TableCell sx={{ fontWeight: 600, color: "var(--text-primary)" }}>
                               {p.title} ({p.projectType === 'FundedProject' ? 'Funded Project' : 'Consultancy'} - {p.status})
@@ -3175,107 +3199,62 @@ const SelfAppraisal = () => {
                 </>
               )}
 
-              {/* 2.7 — Scopus Citations */}
-              <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 1.5, mt: 4, color: "var(--color-primary)" }}>
-                2.7 Scopus Citations
-              </Typography>
-              {appraisal.status !== "Completed" && (appraisal.research.scopusCitations === null || appraisal.research.scopusCitations === undefined) && (
-              <Alert severity="warning" sx={{ mb: 2, borderRadius: "10px", "& .MuiAlert-message": { width: "100%" } }}>
-                <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                  Scopus Citations and H-Index data not found. Please contact the Research Team to update your records.
+              {/* R&D Admin Provided Scores */}
+              <Box sx={{ mt: 4, p: 2.5, background: "rgba(124, 58, 237, 0.03)", borderRadius: "16px", border: "1px dashed rgba(124, 58, 237, 0.2)" }}>
+                <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 2, color: "var(--text-primary)" }}>
+                  Research & Development Admin Verified Scores
                 </Typography>
-              </Alert>
-              )}
-
-              <TableContainer component={Paper} elevation={0} sx={{ mb: 4, borderRadius: "16px", background: "var(--bg-paper)", border: "1px solid var(--border-color)", overflowX: "auto", boxShadow: "none", maxWidth: { xs: "100%", md: "100%", lg: 1000, xl: 1100 }, mx: "auto" }}>
-                <Table size="small" sx={{ minWidth: 800, mx: "auto" }}>
-                  <TableHead sx={{ background: "var(--gradient-primary)" }}>
-                    <TableRow>
-                      <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2, width: "80px", whiteSpace: "nowrap" }} align="center">S. No</TableCell>
-                      <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }}>Metric Details</TableCell>
-                      <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }}>Citations ({citationYear})</TableCell>
-                      <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }} align="center">Evaluated Points</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    <TableRow sx={{ "&:hover": { bgcolor: "var(--bg-hover)" } }}>
-                      <TableCell align="center" sx={{ color: "var(--text-primary)" }}>1</TableCell>
-                      <TableCell sx={{ fontWeight: 600, color: "var(--text-primary)" }}>Scopus Citations</TableCell>
-                      <TableCell sx={{ color: "var(--text-primary)", fontWeight: 700 }}>{appraisal.research.scopusCitations != null ? appraisal.research.scopusCitations : "—"}</TableCell>
-                      <TableCell align="center" sx={{ fontWeight: 800, color: "var(--color-primary)" }}>{appraisal.research.scopusCitationScore || 0}</TableCell>
-                    </TableRow>
-
-                    <TableRow sx={{ background: "rgba(0, 78, 146, 0.04)", "&:hover": { bgcolor: "rgba(0, 78, 146, 0.06) !important" } }}>
-                      <TableCell colSpan={3} sx={{ fontWeight: 800, color: "var(--text-primary)", pl: 2 }}>
-                        <Box component="span" sx={{ position: "sticky", left: 16, display: "inline-block", whiteSpace: "nowrap" }}>
-                          Total Evaluated Points
-                        </Box>
-                      </TableCell>
-                      <TableCell align="center" sx={{ fontWeight: 900, color: "var(--color-primary)", fontSize: "0.95rem" }}>
-                        {appraisal.research.scopusCitationScore || 0}
-                      </TableCell>
-                    </TableRow>
-                  </TableBody>
-                </Table>
-              </TableContainer>
-
-              {/* 2.8 — Scopus h-index */}
-              <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 1.5, mt: 4, color: "var(--color-primary)" }}>
-                2.8 Scopus h-index
-              </Typography>
-
-
-              <TableContainer component={Paper} elevation={0} sx={{ mb: 4, borderRadius: "16px", background: "var(--bg-paper)", border: "1px solid var(--border-color)", overflowX: "auto", boxShadow: "none", maxWidth: { xs: "100%", md: "100%", lg: 1000, xl: 1100 }, mx: "auto" }}>
-                <Table size="small" sx={{ minWidth: 800, mx: "auto" }}>
-                  <TableHead sx={{ background: "var(--gradient-primary)" }}>
-                    <TableRow>
-                      <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2, width: "80px", whiteSpace: "nowrap" }} align="center">S. No</TableCell>
-                      <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }}>Metric Details</TableCell>
-                      <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }}>h-index in {previousHIndexYear}</TableCell>
-                      <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }}>h-index in {currentHIndexYear}</TableCell>
-                      <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }}>Raise (Diff)</TableCell>
-                      <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }} align="center">Evaluated Points</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    <TableRow sx={{ "&:hover": { bgcolor: "var(--bg-hover)" } }}>
-                      <TableCell align="center" sx={{ color: "var(--text-primary)" }}>1</TableCell>
-                      <TableCell sx={{ fontWeight: 600, color: "var(--text-primary)" }}>Scopus h-index</TableCell>
-                      <TableCell sx={{ color: "var(--text-primary)", fontWeight: 700 }}>
-                        {appraisal.research.hIndexPrevYear != null ? appraisal.research.hIndexPrevYear : "—"}
-                      </TableCell>
-                      <TableCell sx={{ color: "var(--text-primary)", fontWeight: 700 }}>
-                        {appraisal.research.hIndexCurrentYear != null ? appraisal.research.hIndexCurrentYear : "—"}
-                      </TableCell>
-                      <TableCell sx={{ color: "var(--text-primary)", fontWeight: 700 }}>
-                        {appraisal.research.hIndexPrevYear != null && appraisal.research.hIndexCurrentYear != null ? (
-                          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                            {appraisal.research.hIndexCurrentYear - appraisal.research.hIndexPrevYear > 0 ? (
-                              <Typography component="span" variant="caption" sx={{ color: "#10b981", fontWeight: 800, bgcolor: "rgba(16,185,129,0.1)", px: 1, py: 0.2, borderRadius: "4px" }}>
-                                +{appraisal.research.hIndexCurrentYear - appraisal.research.hIndexPrevYear}
-                              </Typography>
-                            ) : (
-                              appraisal.research.hIndexCurrentYear - appraisal.research.hIndexPrevYear
-                            )}
-                          </Box>
-                        ) : "—"}
-                      </TableCell>
-                      <TableCell align="center" sx={{ fontWeight: 800, color: "var(--color-primary)" }}>{appraisal.research.scopusHIndexScore || 0}</TableCell>
-                    </TableRow>
-
-                    <TableRow sx={{ background: "rgba(0, 78, 146, 0.04)", "&:hover": { bgcolor: "rgba(0, 78, 146, 0.06) !important" } }}>
-                      <TableCell colSpan={5} sx={{ fontWeight: 800, color: "var(--text-primary)", pl: 2 }}>
-                        <Box component="span" sx={{ position: "sticky", left: 16, display: "inline-block", whiteSpace: "nowrap" }}>
-                          Total Evaluated Points
-                        </Box>
-                      </TableCell>
-                      <TableCell align="center" sx={{ fontWeight: 900, color: "var(--color-primary)", fontSize: "0.95rem" }}>
-                        {appraisal.research.scopusHIndexScore || 0}
-                      </TableCell>
-                    </TableRow>
-                  </TableBody>
-                </Table>
-              </TableContainer>
+                <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2 }}>
+                  <Box
+                    sx={{
+                      flex: {
+                        xs: "1 1 100%",
+                        sm: "1 1 calc(50% - 8px)"
+                      },
+                      minWidth: 0,
+                      display: "flex"
+                    }}
+                  >
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 2, p: 2, background: "var(--bg-paper)", borderRadius: "12px", border: "1px solid var(--border-color)", boxShadow: "0 2px 8px rgba(0,0,0,0.02)", width: "100%" }}>
+                      <Box sx={{ width: 40, height: 40, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", bgcolor: "rgba(124, 58, 237, 0.1)", color: "#7c3aed", flexShrink: 0 }}>
+                        <Description fontSize="small" />
+                      </Box>
+                      <Box>
+                        <Typography variant="caption" sx={{ fontWeight: 700, color: "var(--text-secondary)", display: "block", fontSize: "0.75rem" }}>
+                          2.7 Scopus Citation Score
+                        </Typography>
+                        <Typography variant="body1" sx={{ fontWeight: 800, color: "var(--color-primary)", mt: 0.25 }}>
+                          {appraisal.research.scopusCitationScore || 0} pts
+                        </Typography>
+                      </Box>
+                    </Box>
+                  </Box>
+                  <Box
+                    sx={{
+                      flex: {
+                        xs: "1 1 100%",
+                        sm: "1 1 calc(50% - 8px)"
+                      },
+                      minWidth: 0,
+                      display: "flex"
+                    }}
+                  >
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 2, p: 2, background: "var(--bg-paper)", borderRadius: "12px", border: "1px solid var(--border-color)", boxShadow: "0 2px 8px rgba(0,0,0,0.02)", width: "100%" }}>
+                      <Box sx={{ width: 40, height: 40, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", bgcolor: "rgba(124, 58, 237, 0.1)", color: "#7c3aed", flexShrink: 0 }}>
+                        <BarChart fontSize="small" />
+                      </Box>
+                      <Box>
+                        <Typography variant="caption" sx={{ fontWeight: 700, color: "var(--text-secondary)", display: "block", fontSize: "0.75rem" }}>
+                          2.8 Scopus h-index Score
+                        </Typography>
+                        <Typography variant="body1" sx={{ fontWeight: 800, color: "var(--color-primary)", mt: 0.25 }}>
+                          {appraisal.research.scopusHIndexScore || 0} pts
+                        </Typography>
+                      </Box>
+                    </Box>
+                  </Box>
+                </Box>
+              </Box>
             </CardContent>
           </Card>
 
@@ -3335,8 +3314,6 @@ const SelfAppraisal = () => {
               <Divider sx={{ mb: 3 }} />
 
               {/* 3.1 Resource Utilization */}
-              {!(appraisal.status === "Completed" && (!resourceUtilizationDetails || resourceUtilizationDetails.length === 0)) && (
-              <>
               <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
                 <Typography variant="subtitle1" sx={{ fontWeight: 700, color: "var(--color-primary)" }}>
                   3.1 Resource Utilization (Max 10 points)
@@ -3377,7 +3354,7 @@ const SelfAppraisal = () => {
                           const toDateFormatted = activity.toDate ? new Date(activity.toDate).toLocaleDateString("en-IN", { day: '2-digit', month: '2-digit', year: 'numeric' }) : "";
 
                           return (
-                            <TableRow key={activity._id || i} sx={{ "&:hover": { bgcolor: "var(--bg-hover)" } }}>
+                            <TableRow key={activity._id || i} sx={{ "&:hover": { bgcolor: "rgba(0, 0, 0, 0.015)" }, "body.dark-mode &:hover": { bgcolor: "rgba(255, 255, 255, 0.015)" } }}>
                               <TableCell sx={{ color: "var(--text-primary)" }}>{i + 1}</TableCell>
                               <TableCell sx={{ fontWeight: 600, color: "var(--text-primary)" }}>
                                 {activity.organizationName} {fromDateFormatted && toDateFormatted ? `(${fromDateFormatted} - ${toDateFormatted})` : ""}
@@ -3459,12 +3436,8 @@ const SelfAppraisal = () => {
                   </TableBody>
                 </Table>
               </TableContainer>
-              </>
-              )}
 
               {/* 3.2 Expertise / Contribution */}
-              {!(appraisal.status === "Completed" && (!appraisal.extension?.contributions || appraisal.extension.contributions.length === 0)) && (
-              <>
               <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
                 <Typography variant="subtitle1" sx={{ fontWeight: 700, color: "var(--color-primary)" }}>
                   3.2 Expertise / Contribution (Max 10 points)
@@ -3501,7 +3474,7 @@ const SelfAppraisal = () => {
                           const isEditable = item.status === 'Draft' || item.status === 'Rejected';
                           const { value } = getContributionNameField(item.category, item);
                           return (
-                            <TableRow key={item._id || i} sx={{ "&:hover": { bgcolor: "var(--bg-hover)" } }}>
+                            <TableRow key={item._id || i} sx={{ "&:hover": { bgcolor: "rgba(0, 0, 0, 0.015)" }, "body.dark-mode &:hover": { bgcolor: "rgba(255, 255, 255, 0.015)" } }}>
                               <TableCell sx={{ color: "var(--text-primary)" }}>{i + 1}</TableCell>
                               <TableCell sx={{ fontWeight: 600, color: "var(--text-primary)" }}>
                                 {getCategoryName(item.category)} - {value || "N/A"}
@@ -3581,13 +3554,10 @@ const SelfAppraisal = () => {
                   </TableBody>
                 </Table>
               </TableContainer>
-              </>
-              )}
             </CardContent>
           </Card>
 
           {/* 4. Administrative Responsibilities */}
-          {!(appraisal.status === "Completed" && (!administrationDetail?.roles || administrationDetail.roles.length === 0)) && (
           <Card sx={{ borderRadius: "20px", background: "var(--bg-panel)", border: "1px solid var(--border-color)", mb: 4, boxShadow: "var(--shadow-premium)" }}>
             <CardContent sx={{ p: 3.5 }}>
               <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3, flexWrap: "wrap", gap: 2 }}>
@@ -3674,7 +3644,7 @@ const SelfAppraisal = () => {
                           const assignedByText = role.level && (role.level.toLowerCase().includes("central") || role.level.toLowerCase().includes("institute")) ? "Central" : "Dept";
                           const isEditable = role.status === 'Pending' || role.status === 'Rejected';
                           return (
-                            <TableRow key={i} sx={{ "&:hover": { bgcolor: "var(--bg-hover)" } }}>
+                            <TableRow key={i} sx={{ "&:hover": { bgcolor: "rgba(0, 0, 0, 0.015)" }, "body.dark-mode &:hover": { bgcolor: "rgba(255, 255, 255, 0.015)" } }}>
                               <TableCell sx={{ color: "var(--text-primary)" }}>{i + 1}</TableCell>
                               <TableCell sx={{ fontWeight: 600, color: "var(--text-primary)" }}>
                                 {role.roleName} {role.details ? `(${role.details})` : ""}
@@ -3741,7 +3711,6 @@ const SelfAppraisal = () => {
               </TableContainer>
             </CardContent>
           </Card>
-          )}
         </Grid>
 
         {/* Right Side Panel Removed - Scorecard is now rendered at the bottom */}
@@ -4116,8 +4085,11 @@ const SelfAppraisal = () => {
               borderRadius: "24px",
               border: "1px solid var(--border-color)",
               boxShadow: "var(--shadow-premium)",
-              background: "var(--bg-glass)",
+              background: "rgba(255, 255, 255, 0.8)",
               backdropFilter: "blur(20px)",
+              "body.dark-mode &": {
+                background: "rgba(15, 23, 42, 0.8)",
+              },
               display: "flex",
               flexDirection: "column",
               height: "100%"
@@ -5132,7 +5104,7 @@ const SelfAppraisal = () => {
               </Box>
               <IconButton onClick={() => setSelectedContDetails(null)}><Close /></IconButton>
             </DialogTitle>
-            <DialogContent sx={{ pt: 2, px: 3, pb: 3, mt: 2 }}>
+            <DialogContent sx={{ p: 3, mt: 1 }}>
               <Typography variant="subtitle2" color="var(--color-primary)" sx={{ fontWeight: 800, textTransform: "uppercase" }}>
                 {getCategoryName(data.category)}
               </Typography>
@@ -5141,23 +5113,23 @@ const SelfAppraisal = () => {
               </Typography>
 
               <Grid container spacing={2}>
-                {data.fromDate && data.toDate && (
-                  <Grid size={{ xs: 12, sm: 4 }}>
-                    <Box sx={{ p: 1.5, borderRadius: "10px", background: "var(--bg-paper)", border: "1px solid var(--border-color)" }}>
-                      <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", fontWeight: 800 }}>Dates</Typography>
-                      <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>
-                        {new Date(data.fromDate).toLocaleDateString("en-IN")} to {new Date(data.toDate).toLocaleDateString("en-IN")}
-                      </Typography>
-                    </Box>
-                  </Grid>
-                )}
-                {data.duration && (
-                  <Grid size={{ xs: 12, sm: 4 }}>
-                    <Box sx={{ p: 1.5, borderRadius: "10px", background: "var(--bg-paper)", border: "1px solid var(--border-color)" }}>
-                      <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", fontWeight: 800 }}>Duration</Typography>
-                      <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>{data.duration}</Typography>
-                    </Box>
-                  </Grid>
+                {[1, 2, 3, 7, 10, 12, 13].includes(data.category) && (
+                  <>
+                    <Grid size={{ xs: 12, sm: 4 }}>
+                      <Box sx={{ p: 1.5, borderRadius: "10px", background: "var(--bg-paper)", border: "1px solid var(--border-color)" }}>
+                        <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", fontWeight: 800 }}>Dates</Typography>
+                        <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>
+                          {new Date(data.fromDate).toLocaleDateString("en-IN")} to {new Date(data.toDate).toLocaleDateString("en-IN")}
+                        </Typography>
+                      </Box>
+                    </Grid>
+                    <Grid size={{ xs: 12, sm: 4 }}>
+                      <Box sx={{ p: 1.5, borderRadius: "10px", background: "var(--bg-paper)", border: "1px solid var(--border-color)" }}>
+                        <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", fontWeight: 800 }}>Duration</Typography>
+                        <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>{data.duration}</Typography>
+                      </Box>
+                    </Grid>
+                  </>
                 )}
 
                 {data.awardDate && (

@@ -42,6 +42,7 @@ const TextBookApprovalDetail = ({ id, onBack, role }) => {
                 }
             } catch (error) {
                 console.error("Failed to fetch textbook details", error);
+                toast.error(error.response?.data?.message || "Failed to load details");
             } finally {
                 setLoading(false);
             }
@@ -51,14 +52,14 @@ const TextBookApprovalDetail = ({ id, onBack, role }) => {
 
     const handleAction = async (action) => {
         if (!remarks && action === 'Reject') {
-            toast.error('Remarks are required for rejection.');
+            toast.error('Remarks are required for rejection');
             return;
         }
 
         // Incentive validation for Dean
         if (action === 'Approve' && isResearchAdmin && data.applyIncentive === 'Yes') {
             if (!approvedAmount) {
-                toast.error('Please enter the approved incentive amount.');
+                toast.error('Please enter the approved incentive amount');
                 return;
             }
         }
@@ -76,7 +77,7 @@ const TextBookApprovalDetail = ({ id, onBack, role }) => {
             }
         } catch (error) {
             console.error("Action failed", error);
-            toast.error("Action failed. Please try again.");
+            toast.error(error.response?.data?.message || "Action failed. Please try again.");
         } finally {
             setActionLoading(false);
         }
@@ -406,6 +407,7 @@ const TextBookApprovalDetail = ({ id, onBack, role }) => {
                     <Box sx={{ display: "flex", flexDirection: "column" }}>
                         <LabelValue label="Publisher" value={data.publisher} horizontal />
                         <LabelValue label="ISBN" value={data.isbn} horizontal />
+                        <LabelValue label="Publication Scope" value={data.publicationScope || "National"} horizontal />
                         <LabelValue label="Edition" value={data.edition} horizontal />
                         <LabelValue label="Year" value={data.year} horizontal />
                         <LabelValue label="Total Authors" value={data.totalAuthors} horizontal />
@@ -434,50 +436,52 @@ const TextBookApprovalDetail = ({ id, onBack, role }) => {
             </Box>
 
             {/* Authors & Affiliations */}
-            <Card sx={{ ...cardStyle, p: 0, overflow: "hidden" }}>
+            <Card sx={{ ...cardStyle, p: 0, overflow: "hidden", mb: 3 }}>
                 <Box sx={{ p: 3, pb: 2 }}>
-                    <SectionHeader icon={<GroupsIcon />} title="Authors & Affiliations" />
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                        <GroupsIcon sx={{ color: "var(--color-primary)" }} />
+                        <Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>Co-Authors & Affiliations</Typography>
+                        <Box sx={{ ml: 'auto', px: 1.5, py: 0.5, borderRadius: '20px', bgcolor: 'rgba(190,147,55,0.12)', border: '1px solid rgba(190,147,55,0.3)' }}>
+                            <Typography variant="caption" sx={{ fontWeight: 900, color: 'var(--color-primary)', fontSize: '0.7rem' }}>
+                                Total: {data.authors?.length || 0} Author{(data.authors?.length || 0) !== 1 ? 's' : ''}
+                            </Typography>
+                        </Box>
+                    </Box>
                 </Box>
                 <TableContainer>
                     <Table>
                         <TableHead sx={{ bgcolor: "var(--bg-panel)" }}>
                             <TableRow>
-                                <TableCell sx={{ color: "var(--text-secondary)", fontWeight: 700, fontSize: "0.75rem", borderBottom: "1px solid var(--border-color)" }}>AUTHOR POSITION</TableCell>
-                                <TableCell sx={{ color: "var(--text-secondary)", fontWeight: 700, fontSize: "0.75rem", borderBottom: "1px solid var(--border-color)" }}>AUTHOR NAME</TableCell>
-                                <TableCell sx={{ color: "var(--text-secondary)", fontWeight: 700, fontSize: "0.75rem", borderBottom: "1px solid var(--border-color)" }}>AFFILIATION</TableCell>
-                                <TableCell sx={{ color: "var(--text-secondary)", fontWeight: 700, fontSize: "0.75rem", borderBottom: "1px solid var(--border-color)" }}>EMPLOYEE ID</TableCell>
-                                <TableCell sx={{ color: "var(--text-secondary)", fontWeight: 700, fontSize: "0.75rem", borderBottom: "1px solid var(--border-color)" }}>ROLE</TableCell>
+                                <TableCell sx={{ color: "var(--text-secondary)", fontWeight: 800, fontSize: "0.7rem", textTransform: "uppercase", width: 80 }}>AUTHOR NO</TableCell>
+                                <TableCell sx={{ color: "var(--text-secondary)", fontWeight: 800, fontSize: "0.7rem", textTransform: "uppercase" }}>AUTHOR NAME</TableCell>
+                                <TableCell sx={{ color: "var(--text-secondary)", fontWeight: 800, fontSize: "0.7rem", textTransform: "uppercase" }}>AFFILIATION</TableCell>
                             </TableRow>
                         </TableHead>
                         <TableBody>
-                            {data.authors?.map((author, idx) => (
-                                <TableRow key={idx} sx={{ "&:last-child td": { borderBottom: 0 } }}>
-                                    <TableCell sx={{ borderBottom: "1px solid var(--border-color)" }}>
-                                        <Box sx={{
-                                            width: 28, height: 28, borderRadius: "50%",
-                                            bgcolor: "var(--color-primary)", color: "#fff",
-                                            display: "flex", alignItems: "center", justifyContent: "center",
-                                            fontSize: "0.85rem", fontWeight: 800,
-                                            boxShadow: "0 4px 10px rgba(0, 78, 146, 0.3)"
-                                        }}>
-                                            {author.authorPosition}
-                                        </Box>
-                                    </TableCell>
-                                    <TableCell sx={{ fontWeight: 700, color: "var(--text-primary)", borderBottom: "1px solid var(--border-color)" }}>{author.authorName}</TableCell>
-                                    <TableCell sx={{ color: "var(--text-secondary)", fontWeight: 600, borderBottom: "1px solid var(--border-color)" }}>{author.affiliationName}</TableCell>
-                                    <TableCell sx={{ color: "var(--text-secondary)", fontWeight: 600, borderBottom: "1px solid var(--border-color)" }}>{author.employeeId || "-"}</TableCell>
-                                    <TableCell sx={{ borderBottom: "1px solid var(--border-color)" }}>
-                                        {author.isIncentiveApplicant ? (
-                                            <Chip label="Incentive Applicant" size="small" sx={{ bgcolor: "rgba(76, 175, 80, 0.1)", color: "#4caf50", fontWeight: 700, border: "1px solid rgba(76, 175, 80, 0.2)" }} />
-                                        ) : (
-                                            <Chip label="Contributor Only" size="small" sx={{ bgcolor: "rgba(25, 118, 210, 0.05)", color: "var(--color-primary)", fontWeight: 700, border: "1px solid rgba(25, 118, 210, 0.2)" }} />
-                                        )}
-                                    </TableCell>
-                                </TableRow>
-                            ))}
+                            {(() => {
+                                const applicantPos = parseInt(data.userAuthorPosition) || 0;
+                                const coAuthors = data.authors ? data.authors.filter(a => parseInt(a.authorPosition) !== applicantPos) : [];
+                                
+                                return coAuthors.map((author, idx) => (
+                                    <TableRow key={idx} sx={{ '&:hover': { bgcolor: 'rgba(190,147,55,0.04)' } }}>
+                                        <TableCell>
+                                            <Box sx={{
+                                                display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                                                width: 32, height: 32, borderRadius: '50%',
+                                                bgcolor: 'rgba(190, 147, 55, 0.12)', border: '1.5px solid var(--color-primary)',
+                                                color: 'var(--color-primary)', fontWeight: 900, fontSize: '0.85rem'
+                                            }}>
+                                                {author.authorPosition}
+                                            </Box>
+                                        </TableCell>
+                                        <TableCell sx={{ fontWeight: 700, color: "var(--text-primary)" }}>{author.authorName}</TableCell>
+                                        <TableCell sx={{ fontWeight: 600, color: "var(--text-secondary)" }}>{author.affiliationName || "-"}</TableCell>
+                                    </TableRow>
+                                ));
+                            })()}
                             {(!data.authors || data.authors.length === 0) && (
                                 <TableRow>
-                                    <TableCell colSpan={5} align="center" sx={{ py: 4, color: "var(--text-secondary)", borderBottom: "1px solid var(--border-color)" }}>No authors found.</TableCell>
+                                    <TableCell colSpan={5} align="center" sx={{ py: 4, color: "var(--text-secondary)", fontWeight: 600 }}>No authors found.</TableCell>
                                 </TableRow>
                             )}
                         </TableBody>
@@ -564,41 +568,12 @@ const TextBookApprovalDetail = ({ id, onBack, role }) => {
 
                             <Box sx={{ display: "flex", gap: 3, justifyContent: "flex-end" }}>
                                 <Button
-                                    variant="outlined"
-                                    disabled={actionLoading}
-                                    onClick={() => handleAction('Reject')}
-                                    startIcon={<CloseIcon />}
-                                    sx={{
-                                        color: "#ef4444",
-                                        borderColor: "#ef4444",
-                                        fontWeight: 700,
-                                        px: 4,
-                                        py: 1.5,
-                                        borderRadius: "10px",
-                                        textTransform: "none",
-                                        fontSize: "0.95rem",
-                                        "&:hover": { bgcolor: "rgba(239, 68, 68, 0.05)", borderColor: "#dc2626" }
-                                    }}
+                                    variant="outlined" color="error" disabled={actionLoading} onClick={() => handleAction('Reject')} startIcon={<CloseIcon />}
                                 >
                                     Reject Application
                                 </Button>
                                 <Button
-                                    variant="contained"
-                                    disabled={actionLoading}
-                                    onClick={() => handleAction('Approve')}
-                                    startIcon={<CheckIcon />}
-                                    sx={{
-                                        bgcolor: "#10b981",
-                                        color: "#fff",
-                                        fontWeight: 700,
-                                        px: 5,
-                                        py: 1.5,
-                                        borderRadius: "10px",
-                                        textTransform: "none",
-                                        fontSize: "0.95rem",
-                                        boxShadow: "0 8px 16px rgba(16, 185, 129, 0.2)",
-                                        "&:hover": { bgcolor: "#059669", boxShadow: "0 10px 20px rgba(16, 185, 129, 0.3)" }
-                                    }}
+                                    variant="contained" color="success" disabled={actionLoading} onClick={() => handleAction('Approve')} startIcon={<CheckIcon />}
                                 >
                                     {isHOD ? "Approve & Forward" : "Final Approve"}
                                 </Button>

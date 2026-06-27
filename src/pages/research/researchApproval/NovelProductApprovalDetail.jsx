@@ -12,6 +12,7 @@ import AttachFileIcon from '@mui/icons-material/AttachFile';
 import HistoryIcon from '@mui/icons-material/History';
 import GavelIcon from '@mui/icons-material/Gavel';
 import DownloadIcon from '@mui/icons-material/Download';
+import GroupsIcon from '@mui/icons-material/Groups';
 import CheckIcon from '@mui/icons-material/Check';
 import CloseIcon from '@mui/icons-material/Close';
 import ArticleIcon from '@mui/icons-material/Article';
@@ -41,7 +42,7 @@ const NovelProductApprovalDetail = ({ id, onBack, role }) => {
                 }
             } catch (error) {
                 console.error("Failed to fetch novel product details", error);
-                toast.error("Failed to load details");
+                toast.error(error.response?.data?.message || "Failed to load details");
             } finally {
                 setLoading(false);
             }
@@ -51,7 +52,7 @@ const NovelProductApprovalDetail = ({ id, onBack, role }) => {
 
     const handleAction = async (action) => {
         if (!remarks && action === 'Reject') {
-            toast.error('Remarks are required for rejection.');
+            toast.error('Remarks are required for rejection');
             return;
         }
 
@@ -241,17 +242,64 @@ const NovelProductApprovalDetail = ({ id, onBack, role }) => {
                                 />
                             } 
                         />
-                        {data.category === 'Implemented' && <LabelValue label="Organization Name" value={data.organizationName || "—"} horizontal />}
+                        {data.category === 'Developed' && data.developedOrganization && <LabelValue label="Developed Organization" value={data.developedOrganization} horizontal />}
+                        {data.category === 'Implemented' && data.implementedOrganization && <LabelValue label="Implemented Organization" value={data.implementedOrganization} horizontal />}
+                        <LabelValue label="Investigator Type" value={data.investigatorType || (data.principalInvestigator === "Yes" ? "Principal Investigator (PI)" : "Co-Principal Investigator (Co-PI)")} horizontal />
+                        <LabelValue label="Applying for Incentive" value={data.applyIncentive || "No"} horizontal />
                         {data.remarks && <LabelValue label="Faculty Submission Remarks" value={data.remarks} horizontal />}
+                        <Box sx={{ mt: 1 }}>
+                            <LabelValue label="Description & Specifications" value={data.description} />
+                        </Box>
                     </Box>
                 </Card>
             </Box>
 
-            {/* Product Description */}
-            <Card sx={cardStyle}>
-                <Typography variant="subtitle2" sx={{ fontWeight: 900, color: "var(--color-primary)", textTransform: "uppercase", fontSize: "0.75rem", mb: 1.5 }}>Description & Specifications</Typography>
-                <Typography variant="body2" sx={{ color: "var(--text-primary)", lineHeight: 1.7, whiteSpace: "pre-wrap" }}>{data.description}</Typography>
-            </Card>
+            {/* Co-Investigators */}
+            {data.coDevelopers?.length > 0 && (
+                <Card sx={{ ...cardStyle, p: 0, overflow: "hidden", mb: 3 }}>
+                    <Box sx={{ p: 3, pb: 2 }}>
+                        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                            <GroupsIcon sx={{ color: "var(--color-primary)" }} />
+                            <Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>Co-Investigators Details</Typography>
+                            <Box sx={{ ml: 'auto', px: 1.5, py: 0.5, borderRadius: '20px', bgcolor: 'rgba(190,147,55,0.12)', border: '1px solid rgba(190,147,55,0.3)' }}>
+                                <Typography variant="caption" sx={{ fontWeight: 900, color: 'var(--color-primary)', fontSize: '0.7rem' }}>
+                                    Total: {data.coDevelopers.length} Co-Investigator{data.coDevelopers.length > 1 ? 's' : ''}
+                                </Typography>
+                            </Box>
+                        </Box>
+                    </Box>
+                    <TableContainer>
+                        <Table>
+                            <TableHead sx={{ bgcolor: "var(--bg-panel)" }}>
+                                <TableRow>
+                                <TableCell sx={{ color: "var(--text-secondary)", fontWeight: 800, fontSize: "0.7rem", textTransform: "uppercase", width: 60 }}>S.No</TableCell>
+                                    <TableCell sx={{ color: "var(--text-secondary)", fontWeight: 800, fontSize: "0.7rem", textTransform: "uppercase" }}>NAME</TableCell>
+                                    <TableCell sx={{ color: "var(--text-secondary)", fontWeight: 800, fontSize: "0.7rem", textTransform: "uppercase" }}>AFFILIATION</TableCell>
+                                </TableRow>
+                            </TableHead>
+                            <TableBody>
+                                {data.coDevelopers.map((ca, i) => (
+                                    <TableRow key={i} sx={{ '&:hover': { bgcolor: 'rgba(190,147,55,0.04)' } }}>
+                                        <TableCell>
+                                            <Box sx={{
+                                                display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                                                width: 32, height: 32, borderRadius: '50%',
+                                                bgcolor: 'rgba(190, 147, 55, 0.12)', border: '1.5px solid var(--color-primary)',
+                                                color: 'var(--color-primary)', fontWeight: 900, fontSize: '0.85rem'
+                                            }}>
+                                                {i + 1}
+                                            </Box>
+                                        </TableCell>
+                                        <TableCell sx={{ fontWeight: 700, color: "var(--text-primary)" }}>{ca.name}</TableCell>
+                                        <TableCell sx={{ fontWeight: 600, color: "var(--text-secondary)" }}>{ca.affiliation || "-"}</TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </TableContainer>
+                </Card>
+            )}
+
 
             {/* Document proof */}
             <Card sx={cardStyle}>
@@ -273,8 +321,8 @@ const NovelProductApprovalDetail = ({ id, onBack, role }) => {
                             <TextField fullWidth multiline rows={3} placeholder="Provide your review comments..." value={remarks} onChange={e => setRemarks(e.target.value)} sx={{ mb: 3, "& .MuiOutlinedInput-root": { borderRadius: "12px", bgcolor: "var(--bg-panel)" } }} />
 
                             <Box sx={{ display: "flex", gap: 2, justifyContent: "flex-end" }}>
-                                <Button variant="outlined" disabled={actionLoading} onClick={() => handleAction('Reject')} sx={{ color: "#ef4444", borderColor: "#ef4444", fontWeight: 800, borderRadius: "10px", textTransform: "none", px: 3 }}>Reject</Button>
-                                <Button variant="contained" disabled={actionLoading} onClick={() => handleAction('Approve')} sx={{ bgcolor: "#10b981", color: "#fff", fontWeight: 800, borderRadius: "10px", textTransform: "none", px: 4, "&:hover": { bgcolor: "#059669" } }}>{isHOD ? "Approve & Forward" : "Final Approve"}</Button>
+                                <Button variant="outlined" color="error" disabled={actionLoading} onClick={() => handleAction('Reject')} sx={{ px: 3 }}>Reject</Button>
+                                <Button variant="contained" color="success" disabled={actionLoading} onClick={() => handleAction('Approve')} sx={{ px: 4 }}>{isHOD ? "Approve & Forward" : "Final Approve"}</Button>
                             </Box>
                         </Card>
                     ) : (

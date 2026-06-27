@@ -124,17 +124,16 @@ const ProctorStudentsModal = ({ open, onClose, proctorId }) => {
         </Box>
         <Box sx={{ display: "flex", gap: 1 }}>
           <Button
-            size="small"
-            startIcon={<FileDownload />}
-            onClick={handleDownload}
-            disabled={students.length === 0}
-            sx={{
-              textTransform: "none",
-              borderRadius: "8px",
-              fontWeight: 600,
-              color: "var(--color-primary)",
-            }}
-          >
+ size="small"
+ startIcon={<FileDownload />}
+ onClick={handleDownload}
+ disabled={students.length === 0}
+ sx={{
+ textTransform: "none",
+ 
+ fontWeight: 600,
+ color: "var(--color-primary)" }}
+ >
             Export
           </Button>
           <IconButton

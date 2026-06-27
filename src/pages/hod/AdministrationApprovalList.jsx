@@ -55,7 +55,7 @@ export default function AdministrationApprovalList() {
       }
     } catch (error) {
       console.error("Failed to fetch administration entries:", error);
-      toast.error("Failed to load administration data.");
+      toast.error(error.response?.data?.message || "Failed to load administration data.");
     } finally {
       setLoading(false);
     }
@@ -369,7 +369,7 @@ export default function AdministrationApprovalList() {
                   </Box>
 
                   {selectedRole.details && (
-                    <Box sx={{ mt: 0.5, px: 1.5, py: 1, borderRadius: "8px", bgcolor: "rgba(255, 255, 255, 0.02)", border: "1px solid var(--border-color)", width: "100%" }}>
+                    <Box sx={{ mt: 0.5, px: 1.5, py: 1, borderRadius: "8px", bgcolor: "var(--bg-glass)", border: "1px solid var(--border-color)", width: "100%" }}>
                       <Typography sx={{ fontSize: "0.85rem", color: "var(--text-secondary)", fontWeight: 500 }}>
                         <strong>Event/Activity Details:</strong> {selectedRole.details}
                       </Typography>
@@ -393,7 +393,7 @@ export default function AdministrationApprovalList() {
                     sx={{
                       "& .MuiOutlinedInput-root": {
                         borderRadius: "12px",
-                        bgcolor: "rgba(255,255,255,0.01)"
+                        bgcolor: "var(--bg-glass)"
                       },
                       "& .MuiInputBase-input.Mui-disabled": {
                         WebkitTextFillColor: "var(--text-secondary)",
@@ -422,41 +422,41 @@ export default function AdministrationApprovalList() {
             </DialogContent>
             <DialogActions sx={{ px: 3, pb: 2.5, gap: 1 }}>
               <Button
-                onClick={handleCloseReview}
-                disabled={actionLoading}
-                sx={{ textTransform: "none", fontWeight: 700, borderRadius: "10px", color: "var(--text-secondary)" }}
-              >
+ onClick={handleCloseReview}
+ disabled={actionLoading}
+ sx={{ textTransform: "none", fontWeight: 700, color: "var(--text-secondary)" }}
+ >
                 Cancel
               </Button>
               {selectedRole.status === "Pending" && (
                 <>
                   <Button
-                    variant="outlined"
-                    color="error"
-                    disabled={actionLoading}
-                    startIcon={actionLoading ? <CircularProgress size={16} /> : <CancelIcon />}
-                    onClick={() => handleHODAction("Reject")}
-                    sx={{ textTransform: "none", fontWeight: 700, borderRadius: "10px", borderColor: "rgba(239, 68, 68, 0.4)", color: "#EF4444" }}
-                  >
+ variant="outlined"
+ color="error"
+ disabled={actionLoading}
+ startIcon={actionLoading ? <CircularProgress size={16} /> : <CancelIcon />}
+ onClick={() => handleHODAction("Reject")}
+ sx={{ textTransform: "none", fontWeight: 700, borderColor: "rgba(239, 68, 68, 0.4)", color: "#EF4444" }}
+ >
                     Reject
                   </Button>
                   <Button
-                    variant="contained"
-                    disabled={actionLoading}
-                    startIcon={actionLoading ? <CircularProgress size={16} /> : <CheckCircleIcon />}
-                    onClick={() => handleHODAction("Approve")}
-                    sx={{
-                      textTransform: "none",
-                      fontWeight: 700,
-                      borderRadius: "10px",
-                      background: "linear-gradient(135deg, #10B981 0%, #059669 100%)",
-                      color: "#fff",
-                      boxShadow: "0 4px 15px rgba(16, 185, 129, 0.2)",
-                      "&:hover": {
-                        opacity: 0.95
-                      }
-                    }}
-                  >
+ variant="contained"
+ disabled={actionLoading}
+ startIcon={actionLoading ? <CircularProgress size={16} /> : <CheckCircleIcon />}
+ onClick={() => handleHODAction("Approve")}
+ sx={{
+ textTransform: "none",
+ fontWeight: 700,
+ 
+ background: "linear-gradient(135deg, #10B981 0%, #059669 100%)",
+ color: "#fff",
+ boxShadow: "0 4px 15px rgba(16, 185, 129, 0.2)",
+ "&:hover": {
+ opacity: 0.95
+ }
+ }}
+ >
                     Approve
                   </Button>
                 </>

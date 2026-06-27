@@ -21,6 +21,8 @@ import {
   Stack,
   IconButton,
   FormControl,
+  FormLabel,
+  CircularProgress,
   Select,
   MenuItem
 } from "@mui/material";
@@ -119,8 +121,8 @@ const AppraisalResearchScoring = () => {
   // Scoring States
   const [citations, setCitations] = useState("");
   const [citationPoints, setCitationPoints] = useState(0);
-  const [hIndex2024, setHIndex2024] = useState("");
-  const [hIndex2025, setHIndex2025] = useState("");
+  const [hIndexPrevYear, setHIndexPrevYear] = useState("");
+  const [hIndexCurrentYear, setHIndexCurrentYear] = useState("");
   const [hIndexPoints, setHIndexPoints] = useState(0);
   const [comments, setComments] = useState("");
   const [activeConfig, setActiveConfig] = useState(null);
@@ -133,7 +135,7 @@ const AppraisalResearchScoring = () => {
         setPendingList(res.data.data);
       }
     } catch (err) {
-      toast.error("Failed to fetch pending appraisals.");
+      toast.error(err.response?.data?.message || "Failed to fetch pending appraisals");
     } finally {
       setLoading(false);
     }
@@ -166,9 +168,9 @@ const AppraisalResearchScoring = () => {
     setSelectedAppraisal(appr);
 
     // Load saved inputs
-    setCitations(appr.research.scopusCitations !== undefined ? String(appr.research.scopusCitations) : "");
-    setHIndex2024(appr.research.hIndex2024 !== undefined ? String(appr.research.hIndex2024) : "");
-    setHIndex2025(appr.research.hIndex2025 !== undefined ? String(appr.research.hIndex2025) : "");
+    setCitations(appr.research.scopusCitations !== undefined && appr.research.scopusCitations !== null ? String(appr.research.scopusCitations) : "");
+    setHIndexPrevYear(appr.research.hIndexPrevYear !== undefined && appr.research.hIndexPrevYear !== null ? String(appr.research.hIndexPrevYear) : "");
+    setHIndexCurrentYear(appr.research.hIndexCurrentYear !== undefined && appr.research.hIndexCurrentYear !== null ? String(appr.research.hIndexCurrentYear) : "");
 
     setCitationPoints(appr.research.scopusCitationScore || 0);
     setHIndexPoints(appr.research.scopusHIndexScore || 0);
@@ -199,6 +201,7 @@ const AppraisalResearchScoring = () => {
     fetchPending();
   };
 
+
   // Dynamic Citation calculation
   useEffect(() => {
     if (!activeConfig) return;
@@ -211,8 +214,8 @@ const AppraisalResearchScoring = () => {
   // Dynamic H-Index calculation
   useEffect(() => {
     if (!activeConfig) return;
-    const h24 = Number(hIndex2024) || 0;
-    const h25 = Number(hIndex2025) || 0;
+    const h24 = Number(hIndexPrevYear) || 0;
+    const h25 = Number(hIndexCurrentYear) || 0;
     const raise = h25 - h24;
 
     if (raise <= 0) {
@@ -225,18 +228,23 @@ const AppraisalResearchScoring = () => {
     const highRate = activeConfig.research?.hIndexRateHigh ?? 4;
 
     let rate = lowRate;
-    if (h24 >= 5 && h24 <= 10) {
+    if (h25 >= 5 && h25 <= 10) {
       rate = midRate;
-    } else if (h24 > 10) {
+    } else if (h25 > 10) {
       rate = highRate;
     }
 
     setHIndexPoints(raise * rate);
-  }, [hIndex2024, hIndex2025, activeConfig]);
+  }, [hIndexPrevYear, hIndexCurrentYear, activeConfig]);
+
+  const startYear = selectedAppraisal?.academicYearId?.year ? Number(selectedAppraisal.academicYearId.year.split('-')[0]) : 2025;
+  const citationYear = startYear;
+  const prevYearLabel = startYear - 1;
+  const currentYearLabel = startYear;
 
   const hIndexRaise = (() => {
-    const h24 = Number(hIndex2024) || 0;
-    const h25 = Number(hIndex2025) || 0;
+    const h24 = Number(hIndexPrevYear) || 0;
+    const h25 = Number(hIndexCurrentYear) || 0;
     const diff = h25 - h24;
     return diff > 0 ? `+${diff}` : String(diff);
   })();
@@ -247,11 +255,15 @@ const AppraisalResearchScoring = () => {
     setLoading(true);
     try {
       const res = await axiosInstance.put(`/api/appraisal/rnd-evaluate/${selectedAppraisal._id}`, {
-        scopusCitations: Number(citations) || 0,
-        hIndex2024: Number(hIndex2024) || 0,
-        hIndex2025: Number(hIndex2025) || 0,
+        scopusCitations: citations === "" ? null : Number(citations),
+        hIndexPrevYear: hIndexPrevYear === "" ? null : Number(hIndexPrevYear),
+        hIndexCurrentYear: hIndexCurrentYear === "" ? null : Number(hIndexCurrentYear),
         scopusCitationScore: citationPoints,
         scopusHIndexScore: hIndexPoints,
+        scopusCitationStatus: "Approved",
+        scopusHIndexStatus: "Approved",
+        scopusCitationRemarks: "",
+        scopusHIndexRemarks: "",
         comments,
         isDraft
       });
@@ -266,11 +278,15 @@ const AppraisalResearchScoring = () => {
           setSelectedAppraisal(prev => {
             const updated = { ...prev };
             if (!updated.research) updated.research = {};
-            updated.research.scopusCitations = Number(citations) || 0;
-            updated.research.hIndex2024 = Number(hIndex2024) || 0;
-            updated.research.hIndex2025 = Number(hIndex2025) || 0;
+            updated.research.scopusCitations = citations === "" ? null : Number(citations);
+            updated.research.hIndexPrevYear = hIndexPrevYear === "" ? null : Number(hIndexPrevYear);
+            updated.research.hIndexCurrentYear = hIndexCurrentYear === "" ? null : Number(hIndexCurrentYear);
             updated.research.scopusCitationScore = citationPoints;
             updated.research.scopusHIndexScore = hIndexPoints;
+            updated.research.scopusCitationStatus = "Approved";
+            updated.research.scopusHIndexStatus = "Approved";
+            updated.research.scopusCitationRemarks = "";
+            updated.research.scopusHIndexRemarks = "";
             if (!updated.rndEvaluation) updated.rndEvaluation = {};
             updated.rndEvaluation.comments = comments;
             return updated;
@@ -278,7 +294,7 @@ const AppraisalResearchScoring = () => {
         }
       }
     } catch (err) {
-      toast.error(isDraft ? "Failed to save draft." : "Failed to finalize appraisal.");
+      toast.error(isDraft ? (err.response?.data?.message || "Failed to save draft") : (err.response?.data?.message || "Failed to finalize appraisal"));
     } finally {
       setLoading(false);
     }
@@ -362,29 +378,29 @@ const AppraisalResearchScoring = () => {
                     value: "",
                     display: (
                       <Button
-                        variant={status === "Completed" ? "outlined" : "contained"}
-                        size="small"
-                        startIcon={status === "Completed" ? <Visibility sx={{ fontSize: "1rem" }} /> : <Person sx={{ fontSize: "1rem" }} />}
-                        onClick={() => handleScoreResearch(appr)}
-                        disabled={loading}
-                        sx={{
-                          textTransform: "none",
-                          fontWeight: 700,
-                          fontSize: "0.8rem",
-                          borderRadius: "8px",
-                          px: 2,
-                          py: 0.8,
-                          bgcolor: status === "Completed" ? "transparent" : "#1e3a5f",
-                          color: status === "Completed" ? "var(--text-primary)" : "#fff",
-                          borderColor: status === "Completed" ? "var(--border-color)" : "transparent",
-                          boxShadow: "none",
-                          "&:hover": {
-                            bgcolor: status === "Completed" ? "var(--bg-panel)" : "#2563eb",
-                            borderColor: status === "Completed" ? "var(--text-secondary)" : "transparent",
-                            boxShadow: status === "Completed" ? "none" : "0 4px 12px rgba(59,130,246,0.25)"
-                          }
-                        }}
-                      >
+ variant={status === "Completed" ? "outlined" : "contained"}
+ size="small"
+ startIcon={status === "Completed" ? <Visibility sx={{ fontSize: "1rem" }} /> : <Person sx={{ fontSize: "1rem" }} />}
+ onClick={() => handleScoreResearch(appr)}
+ disabled={loading}
+ sx={{
+ textTransform: "none",
+ fontWeight: 700,
+ fontSize: "0.8rem",
+ 
+ px: 2,
+ py: 0.8,
+ bgcolor: status === "Completed" ? "transparent" : "#1e3a5f",
+ color: status === "Completed" ? "var(--text-primary)" : "#fff",
+ borderColor: status === "Completed" ? "var(--border-color)" : "transparent",
+ boxShadow: "none",
+ "&:hover": {
+ bgcolor: status === "Completed" ? "var(--bg-panel)" : "#2563eb",
+ borderColor: status === "Completed" ? "var(--text-secondary)" : "transparent",
+ boxShadow: status === "Completed" ? "none" : "0 4px 12px rgba(59,130,246,0.25)"
+ }
+ }}
+ >
                         {status === "Completed" ? "View Details" : "Score Research"}
                       </Button>
                     )
@@ -731,40 +747,43 @@ const AppraisalResearchScoring = () => {
                 height: "100%"
               }}>
                 {/* Header */}
-                <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 4 }}>
-                  <Box sx={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    width: 34,
-                    height: 34,
-                    borderRadius: "50%",
-                    bgcolor: "rgba(124, 58, 237, 0.08)",
-                    color: "#7c3aed"
-                  }}>
-                    <Edit fontSize="small" />
+                <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 4, flexWrap: "wrap", gap: 1.5 }}>
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                    <Box sx={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      width: 34,
+                      height: 34,
+                      borderRadius: "50%",
+                      bgcolor: "rgba(124, 58, 237, 0.08)",
+                      color: "#7c3aed"
+                    }}>
+                      <Edit fontSize="small" />
+                    </Box>
+                    <Typography variant="subtitle1" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>
+                      Evaluation Inputs
+                    </Typography>
                   </Box>
-                  <Typography variant="subtitle1" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>
-                    Evaluation Inputs
-                  </Typography>
                 </Box>
 
                 {/* Citations */}
                 <Stack spacing={3}>
                   <Box>
                     <Typography variant="subtitle2" sx={{ fontWeight: 800, color: "var(--text-primary)", mb: 0.5 }}>
-                      1. Scopus Citations
+                      1. Scopus Citations ({citationYear})
                     </Typography>
                     <Typography variant="caption" sx={{ color: "var(--text-secondary)", display: "block", mb: 2, fontWeight: 500 }}>
-                      Total citations from Scopus
+                      Enter total Scopus citations manually
                     </Typography>
 
                     <TextField
                       type="number"
                       value={citations}
                       onChange={(e) => setCitations(e.target.value)}
-                      disabled={selectedAppraisal.status === "Completed"}
+                      disabled={selectedAppraisal?.status === "Completed"}
                       fullWidth
+                      placeholder="e.g. 120"
                       InputProps={{
                         endAdornment: (
                           <InputAdornment position="end" sx={{ pl: 1.5, borderLeft: "1px solid var(--border-color)", height: "30px" }}>
@@ -794,9 +813,12 @@ const AppraisalResearchScoring = () => {
                       Rate: {(activeConfig?.research?.citationRate ?? 0.2).toFixed(2)} points per citation
                     </Box>
 
+
                     <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", py: 1.2, px: 0.5 }}>
                       <Typography sx={{ fontWeight: 700, color: "#7c3aed", fontSize: "0.95rem" }}>Citation Points</Typography>
-                      <Typography sx={{ fontWeight: 850, color: "#7c3aed", fontSize: "1.15rem" }}>{citationPoints.toFixed(2)} pts</Typography>
+                      <Typography sx={{ fontWeight: 850, color: "#7c3aed", fontSize: "1.15rem" }}>
+                        {citationPoints.toFixed(2)} pts
+                      </Typography>
                     </Box>
                   </Box>
 
@@ -807,16 +829,20 @@ const AppraisalResearchScoring = () => {
                     <Typography variant="subtitle2" sx={{ fontWeight: 800, color: "var(--text-primary)", mb: 0.5 }}>
                       2. H-Index (Scopus)
                     </Typography>
+                    <Typography variant="caption" sx={{ color: "var(--text-secondary)", display: "block", mb: 2, fontWeight: 500 }}>
+                      Enter H-Index values manually for both years
+                    </Typography>
 
                     <Grid container spacing={2} alignItems="center" sx={{ mt: 1 }}>
                       <Grid xs={5}>
-                        <Typography variant="caption" sx={{ fontWeight: 700, color: "var(--text-secondary)", display: "block", mb: 0.8 }}>H-Index 2024</Typography>
+                        <Typography variant="caption" sx={{ fontWeight: 700, color: "var(--text-secondary)", display: "block", mb: 0.8 }}>H-Index {prevYearLabel}</Typography>
                         <TextField
                           type="number"
-                          value={hIndex2024}
-                          onChange={(e) => setHIndex2024(e.target.value)}
-                          disabled={selectedAppraisal.status === "Completed"}
+                          value={hIndexPrevYear}
+                          onChange={(e) => setHIndexPrevYear(e.target.value)}
+                          disabled={selectedAppraisal?.status === "Completed"}
                           fullWidth
+                          placeholder="e.g. 8"
                           InputProps={{ sx: { borderRadius: "10px", fontWeight: 750, background: "var(--bg-paper)" } }}
                         />
                       </Grid>
@@ -824,13 +850,14 @@ const AppraisalResearchScoring = () => {
                         <East sx={{ color: "var(--text-secondary)", fontSize: 20 }} />
                       </Grid>
                       <Grid xs={5}>
-                        <Typography variant="caption" sx={{ fontWeight: 700, color: "var(--text-secondary)", display: "block", mb: 0.8 }}>H-Index 2025</Typography>
+                        <Typography variant="caption" sx={{ fontWeight: 700, color: "var(--text-secondary)", display: "block", mb: 0.8 }}>H-Index {currentYearLabel}</Typography>
                         <TextField
                           type="number"
-                          value={hIndex2025}
-                          onChange={(e) => setHIndex2025(e.target.value)}
-                          disabled={selectedAppraisal.status === "Completed"}
+                          value={hIndexCurrentYear}
+                          onChange={(e) => setHIndexCurrentYear(e.target.value)}
+                          disabled={selectedAppraisal?.status === "Completed"}
                           fullWidth
+                          placeholder="e.g. 10"
                           InputProps={{ sx: { borderRadius: "10px", fontWeight: 750, background: "var(--bg-paper)" } }}
                         />
                       </Grid>
@@ -853,18 +880,18 @@ const AppraisalResearchScoring = () => {
 
                     {/* Rate dynamic text */}
                     {(() => {
-                      const h24 = Number(hIndex2024) || 0;
+                      const h25 = Number(hIndexCurrentYear) || 0;
                       const lowRate = activeConfig?.research?.hIndexRateLow ?? 1;
                       const midRate = activeConfig?.research?.hIndexRateMid ?? 2;
                       const highRate = activeConfig?.research?.hIndexRateHigh ?? 4;
 
                       let dynamicRateText = "";
-                      if (h24 >= 5 && h24 <= 10) {
-                        dynamicRateText = `Rate: ${midRate} points per index (Based on 2024 H-Index range 5-10)`;
-                      } else if (h24 > 10) {
-                        dynamicRateText = `Rate: ${highRate} points per index (Based on 2024 H-Index range >10)`;
+                      if (h25 >= 5 && h25 <= 10) {
+                        dynamicRateText = `Rate: ${midRate} points per index (Based on ${currentYearLabel} H-Index range 5-10)`;
+                      } else if (h25 > 10) {
+                        dynamicRateText = `Rate: ${highRate} points per index (Based on ${currentYearLabel} H-Index range >10)`;
                       } else {
-                        dynamicRateText = `Rate: ${lowRate} points per index (Based on 2024 H-Index range 0-4)`;
+                        dynamicRateText = `Rate: ${lowRate} points per index (Based on ${currentYearLabel} H-Index range 0-4)`;
                       }
 
                       return (
@@ -882,9 +909,12 @@ const AppraisalResearchScoring = () => {
                       );
                     })()}
 
+
                     <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", py: 1.2, px: 0.5 }}>
                       <Typography sx={{ fontWeight: 700, color: "#7c3aed", fontSize: "0.95rem" }}>H-Index Points</Typography>
-                      <Typography sx={{ fontWeight: 850, color: "#7c3aed", fontSize: "1.15rem" }}>{hIndexPoints.toFixed(2)} pts</Typography>
+                      <Typography sx={{ fontWeight: 850, color: "#7c3aed", fontSize: "1.15rem" }}>
+                        {hIndexPoints.toFixed(2)} pts
+                      </Typography>
                     </Box>
                   </Box>
 
@@ -1015,7 +1045,9 @@ const AppraisalResearchScoring = () => {
                         </Box>
                         <Typography sx={{ fontWeight: 600, color: "var(--text-secondary)", fontSize: "0.85rem" }}>Citation Points</Typography>
                       </Box>
-                      <Typography sx={{ fontWeight: 800, color: "#3b82f6", fontSize: "0.95rem" }}>{citationPoints.toFixed(2)} pts</Typography>
+                      <Typography sx={{ fontWeight: 800, color: "#3b82f6", fontSize: "0.95rem" }}>
+                        {citationPoints.toFixed(2)} pts
+                      </Typography>
                     </Box>
 
                     <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
@@ -1034,7 +1066,9 @@ const AppraisalResearchScoring = () => {
                         </Box>
                         <Typography sx={{ fontWeight: 600, color: "var(--text-secondary)", fontSize: "0.85rem" }}>H-Index Points</Typography>
                       </Box>
-                      <Typography sx={{ fontWeight: 800, color: "#3b82f6", fontSize: "0.95rem" }}>{hIndexPoints.toFixed(2)} pts</Typography>
+                      <Typography sx={{ fontWeight: 800, color: "#3b82f6", fontSize: "0.95rem" }}>
+                        {hIndexPoints.toFixed(2)} pts
+                      </Typography>
                     </Box>
 
                     <Divider />
@@ -1114,17 +1148,17 @@ const AppraisalResearchScoring = () => {
                   {/* H-Index Rule & Table */}
                   <Box>
                     <Typography variant="subtitle2" sx={{ fontWeight: 800, color: "var(--text-primary)", mb: 0.5, fontSize: "0.85rem" }}>
-                      H-Index Scoring <Typography component="span" sx={{ fontSize: "0.75rem", color: "var(--text-secondary)", fontWeight: 600 }}>(Based on 2024 H-Index)</Typography>
+                      H-Index Scoring <Typography component="span" sx={{ fontSize: "0.75rem", color: "var(--text-secondary)", fontWeight: 600 }}>(Based on {currentYearLabel} H-Index)</Typography>
                     </Typography>
 
                     {/* Rules table */}
                     {(() => {
-                      const h24Val = Number(hIndex2024) || 0;
+                      const h25Val = Number(hIndexCurrentYear) || 0;
                       const rowStyle = (rangeType) => {
                         let isActive = false;
-                        if (rangeType === "low" && h24Val < 5) isActive = true;
-                        if (rangeType === "mid" && h24Val >= 5 && h24Val <= 10) isActive = true;
-                        if (rangeType === "high" && h24Val > 10) isActive = true;
+                        if (rangeType === "low" && h25Val < 5) isActive = true;
+                        if (rangeType === "mid" && h25Val >= 5 && h25Val <= 10) isActive = true;
+                        if (rangeType === "high" && h25Val > 10) isActive = true;
 
                         return isActive ? {
                           bgcolor: "rgba(59, 130, 246, 0.06)",
@@ -1145,7 +1179,7 @@ const AppraisalResearchScoring = () => {
                           <Table size="small">
                             <TableHead>
                               <TableRow sx={{ bgcolor: "var(--bg-panel)" }}>
-                                <TableCell sx={{ fontWeight: 700, fontSize: "0.75rem", color: "var(--text-secondary)" }}>2024 H-Index Range</TableCell>
+                                <TableCell sx={{ fontWeight: 700, fontSize: "0.75rem", color: "var(--text-secondary)" }}>{currentYearLabel} H-Index Range</TableCell>
                                 <TableCell sx={{ fontWeight: 700, fontSize: "0.75rem", color: "var(--text-secondary)" }}>Points per Index Raise</TableCell>
                               </TableRow>
                             </TableHead>
@@ -1203,57 +1237,32 @@ const AppraisalResearchScoring = () => {
                 <Typography variant="h5" sx={{ fontWeight: 900, color: "var(--text-primary)" }}>
                   {(citationPoints + hIndexPoints).toFixed(2)}
                 </Typography>
-                <Typography variant="body2" sx={{ color: "var(--text-secondary)", fontWeight: 600, fontSize: "0.85rem" }}>
-                  / 100.00 pts
-                </Typography>
               </Box>
             </Box>
 
             {selectedAppraisal.status !== "Completed" ? (
               <Box sx={{ display: "flex", gap: 2 }}>
                 <Button
-                  variant="outlined"
-                  startIcon={<Save sx={{ fontSize: "1.1rem" }} />}
-                  onClick={() => handleSaveScoring(true)}
-                  disabled={loading}
-                  sx={{
-                    textTransform: "none",
-                    fontWeight: 700,
-                    borderRadius: "10px",
-                    px: 3.5,
-                    py: 1.2,
-                    borderColor: "var(--border-color)",
-                    color: "var(--text-primary)",
-                    fontSize: "0.85rem",
-                    "&:hover": {
-                      borderColor: "var(--text-secondary)",
-                      bgcolor: "var(--bg-panel)"
-                    }
-                  }}
-                >
-                  Save as Draft
-                </Button>
-                <Button
-                  variant="contained"
-                  startIcon={<CheckCircle sx={{ fontSize: "1.1rem" }} />}
-                  onClick={() => handleSaveScoring(false)}
-                  disabled={loading}
-                  sx={{
-                    textTransform: "none",
-                    fontWeight: 700,
-                    borderRadius: "10px",
-                    px: 3.5,
-                    py: 1.2,
-                    color: "#fff",
-                    bgcolor: "#3b82f6",
-                    fontSize: "0.85rem",
-                    boxShadow: "0 4px 12px rgba(59, 130, 246, 0.2)",
-                    "&:hover": {
-                      bgcolor: "#2563eb",
-                      boxShadow: "0 6px 16px rgba(59, 130, 246, 0.3)"
-                    }
-                  }}
-                >
+ variant="contained"
+ startIcon={<CheckCircle sx={{ fontSize: "1.1rem" }} />}
+ onClick={() => handleSaveScoring(false)}
+ disabled={loading}
+ sx={{
+ textTransform: "none",
+ fontWeight: 700,
+ 
+ px: 3.5,
+ py: 1.2,
+ color: "#fff",
+ bgcolor: "#3b82f6",
+ fontSize: "0.85rem",
+ boxShadow: "0 4px 12px rgba(59, 130, 246, 0.2)",
+ "&:hover": {
+ bgcolor: "#2563eb",
+ boxShadow: "0 6px 16px rgba(59, 130, 246, 0.3)"
+ }
+ }}
+ >
                   Finalize Evaluation
                 </Button>
               </Box>

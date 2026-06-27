@@ -2,15 +2,18 @@ import Loader from "../../../components/common/Loader";
 import React, { useState, useEffect } from "react";
 import {
     Box, Typography, Grid, Card, Button, TextField,
+    Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
     CircularProgress, Chip, IconButton, Stack
 } from "@mui/material";
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import SchoolIcon from '@mui/icons-material/School';
 import PersonIcon from '@mui/icons-material/Person';
 import DescriptionIcon from '@mui/icons-material/Description';
+import GroupsIcon from '@mui/icons-material/Groups';
 import HistoryIcon from '@mui/icons-material/History';
 import GavelIcon from '@mui/icons-material/Gavel';
 import AttachFileIcon from '@mui/icons-material/AttachFile';
+import DownloadIcon from '@mui/icons-material/Download';
 import { toast } from "sonner";
 import API from "../../../api/axios";
 
@@ -39,7 +42,7 @@ const ConferenceApprovalDetails = ({ id, onBack, role }) => {
                 }
             } catch (error) {
                 console.error("Failed to fetch conference details", error);
-                toast.error("Failed to load details");
+                toast.error(error.response?.data?.message || "Failed to load details");
             } finally {
                 loading && setLoading(false);
             }
@@ -49,7 +52,7 @@ const ConferenceApprovalDetails = ({ id, onBack, role }) => {
 
     const handleAction = async (action) => {
         if (!remarks && action === 'Reject') {
-            toast.error('Remarks are required for rejection.');
+            toast.error('Remarks are required for rejection');
             return;
         }
 
@@ -59,7 +62,7 @@ const ConferenceApprovalDetails = ({ id, onBack, role }) => {
             const res = await API.put(endpoint, {
                 action,
                 comment: remarks,
-                approvedAmount: isResearchAdmin ? approvedAmount : undefined
+                approvedAmount: isResearchAdmin && data.applyIncentive === 'Yes' ? approvedAmount : undefined
             });
             if (res.data?.success) {
                 toast.success(`Request ${action === 'Approve' ? 'Approved' : 'Rejected'} successfully`);
@@ -102,6 +105,32 @@ const ConferenceApprovalDetails = ({ id, onBack, role }) => {
         </Box>
     );
 
+    const renderFilePreview = (title, filepath, index) => {
+        if (!filepath) return null;
+        const backendURL = (import.meta.env.VITE_BACKEND_URL || "http://localhost:9000").replace(/\/$/, "");
+        const fileUrl = filepath.startsWith('http') ? filepath : `${backendURL}${filepath}`;
+        const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(filepath);
+
+        return (
+            <Grid key={index} item xs={12} sm={6} md={3}>
+                <Box sx={{ mb: 1, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 800, color: "var(--color-primary)", fontSize: "0.75rem", textTransform: "uppercase" }}>
+                        {index}. {title}
+                    </Typography>
+                    <IconButton size="small" href={fileUrl} download target="_blank" sx={{ color: "var(--color-primary)" }}><DownloadIcon fontSize="small" /></IconButton>
+                </Box>
+                <Box sx={{
+                    height: 180, display: "flex", alignItems: "center", justifyContent: "center",
+                    border: "1px solid var(--border-color)", background: "var(--bg-panel)", borderRadius: "12px",
+                    overflow: "hidden", cursor: "pointer", transition: "all 0.3s ease",
+                    "&:hover": { borderColor: "var(--color-primary)", transform: "translateY(-4px)", boxShadow: "var(--shadow-premium)" }
+                }} onClick={() => window.open(fileUrl, '_blank')}>
+                    {isImage ? <img src={fileUrl} alt={title} style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <Box sx={{ textAlign: "center" }}><DescriptionIcon sx={{ fontSize: 40, color: "var(--text-secondary)", mb: 1 }} /><Typography variant="body2" sx={{ color: "var(--text-secondary)", fontWeight: 700 }}>PDF View</Typography></Box>}
+                </Box>
+            </Grid>
+        );
+    };
+
     const cardStyle = {
         position: "relative",
         p: 3,
@@ -124,10 +153,7 @@ const ConferenceApprovalDetails = ({ id, onBack, role }) => {
         }
     };
 
-    // Calculate files to display
-    const filesList = [];
-    if (data.certificate) filesList.push({ label: "Presentation Certificate", path: data.certificate });
-    if (data.proceedings) filesList.push({ label: "Proceedings / Abstract Book", path: data.proceedings });
+
 
     return (
         <Box sx={{ width: "100%", pb: 5 }}>
@@ -218,19 +244,46 @@ const ConferenceApprovalDetails = ({ id, onBack, role }) => {
                     <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 3 }}><SchoolIcon sx={{ color: "var(--color-primary)" }} /><Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>Conference Paper Details</Typography></Box>
                     <Box sx={{ display: "flex", flexDirection: "column" }}>
                         <LabelValue label="Title of Research Paper" value={data.title} horizontal />
+                        <LabelValue label="DOI" value={data.doi || "-"} horizontal />
                         <LabelValue label="Name of Conference" value={data.conferenceName} horizontal />
-                        <LabelValue label="Conference Type / Level" value={data.level} horizontal />
+                        <LabelValue label="Publication Scope" value={data.level} horizontal />
                         <LabelValue label="Category of Conference" value={data.indexing} horizontal />
                         <LabelValue label="Presentation Type" value={data.presentationType || "N/A"} horizontal />
-                        <LabelValue label="Total Authors" value={data.totalAuthors || 1} horizontal />
-                        <LabelValue label="Applicant Position" value={data.userAuthorPosition || 1} horizontal />
-                        {data.coAuthors && data.coAuthors.length > 0 && (
-                            <LabelValue 
-                                label="Co-Author(s)" 
-                                value={data.coAuthors.map(ca => `${ca.name} (${ca.affiliation})`).join(", ")} 
-                                horizontal 
-                            />
-                        )}
+                        <LabelValue 
+                            label="Applicant Position" 
+                            horizontal
+                            chip={
+                                (() => {
+                                    const pos = data.userAuthorPosition || 1;
+                                    const total = data.totalAuthors || 1;
+                                    return (
+                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                            <Box sx={{
+                                                display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                                                width: 36, height: 36, borderRadius: '50%',
+                                                bgcolor: 'rgba(190, 147, 55, 0.15)', border: '2px solid var(--color-primary)',
+                                                color: 'var(--color-primary)', fontWeight: 900, fontSize: '1rem'
+                                            }}>
+                                                {pos}
+                                            </Box>
+                                            {total && (
+                                                <>
+                                                    <Typography sx={{ color: 'var(--text-secondary)', fontWeight: 700, fontSize: '1rem' }}>of</Typography>
+                                                    <Box sx={{
+                                                        display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                                                        px: 1.5, height: 32, borderRadius: '8px',
+                                                        bgcolor: 'var(--bg-panel)', border: '1px solid var(--border-color)',
+                                                        color: 'var(--text-primary)', fontWeight: 900, fontSize: '0.95rem'
+                                                    }}>
+                                                        {total} Authors
+                                                    </Box>
+                                                </>
+                                            )}
+                                        </Box>
+                                    );
+                                })()
+                            }
+                        />
                         <LabelValue label="Publishing Date" value={`${data.month || ""} ${data.year || ""}`} horizontal />
                         <LabelValue label="Seed Grant Work" value={data.applyingSeedGrant || "No"} horizontal />
                         <LabelValue label="Applied for Incentive" value={data.applyIncentive || "No"} horizontal />
@@ -238,41 +291,73 @@ const ConferenceApprovalDetails = ({ id, onBack, role }) => {
                 </Card>
             </Box>
 
-            {/* Attachments Section */}
-            {filesList.length > 0 && (
-                <Card sx={{ ...cardStyle, mb: 3 }}>
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 3 }}>
-                        <AttachFileIcon sx={{ color: "var(--color-primary)" }} />
-                        <Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>Supporting Documents</Typography>
+            {/* Co-Authors - shown above Attached Documents */}
+            {data.coAuthors?.length > 0 && (
+                <Card sx={{ ...cardStyle, p: 0, overflow: "hidden", mb: 3 }}>
+                    <Box sx={{ p: 3, pb: 2 }}>
+                        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                            <GroupsIcon sx={{ color: "var(--color-primary)" }} />
+                            <Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>Co-Author Details</Typography>
+                            <Box sx={{ ml: 'auto', px: 1.5, py: 0.5, borderRadius: '20px', bgcolor: 'rgba(190,147,55,0.12)', border: '1px solid rgba(190,147,55,0.3)' }}>
+                                <Typography variant="caption" sx={{ fontWeight: 900, color: 'var(--color-primary)', fontSize: '0.7rem' }}>
+                                    Total: {data.coAuthors.length} Co-Author{data.coAuthors.length > 1 ? 's' : ''}
+                                </Typography>
+                            </Box>
+                        </Box>
                     </Box>
-                    <Grid container spacing={2}>
-                        {filesList.map((file, index) => {
-                            const backendURL = (import.meta.env.VITE_BACKEND_URL || "http://localhost:9000").replace(/\/$/, "");
-                            const fullUrl = `${backendURL}${file.path}`;
-                            return (
-                                <Grid item xs={12} sm={6} key={index}>
-                                    <Box sx={{
-                                        p: 2, borderRadius: "12px", border: "1px dashed var(--border-color)",
-                                        display: "flex", alignItems: "center", justifyContent: "space-between",
-                                        background: "rgba(255,255,255,0.01)"
-                                    }}>
-                                        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-                                            <Typography variant="body2" sx={{ fontWeight: 700 }}>{index + 1}. {file.label}</Typography>
-                                        </Box>
-                                        <Button
-                                            variant="outlined" size="small"
-                                            onClick={() => window.open(fullUrl, '_blank')}
-                                            sx={{ borderRadius: "8px", textTransform: "none", fontWeight: 700 }}
-                                        >
-                                            View File
-                                        </Button>
-                                    </Box>
-                                </Grid>
-                            );
-                        })}
-                    </Grid>
+                    <TableContainer>
+                        <Table>
+                            <TableHead sx={{ bgcolor: "var(--bg-panel)" }}>
+                                <TableRow>
+                                    <TableCell sx={{ color: "var(--text-secondary)", fontWeight: 800, fontSize: "0.7rem", textTransform: "uppercase", width: 60 }}>POSITION</TableCell>
+                                    <TableCell sx={{ color: "var(--text-secondary)", fontWeight: 800, fontSize: "0.7rem", textTransform: "uppercase" }}>NAME</TableCell>
+                                    <TableCell sx={{ color: "var(--text-secondary)", fontWeight: 800, fontSize: "0.7rem", textTransform: "uppercase" }}>AFFILIATION</TableCell>
+                                </TableRow>
+                            </TableHead>
+                            <TableBody>
+                                {(() => {
+                                    const total = parseInt(data.totalAuthors) || 0;
+                                    const applicantPos = parseInt(data.userAuthorPosition) || 0;
+                                    const derivedPositions = total > 0
+                                        ? Array.from({ length: total }, (_, i) => i + 1).filter(p => p !== applicantPos)
+                                        : [];
+                                    return data.coAuthors.map((ca, i) => {
+                                        const pos = ca.authorPosition || derivedPositions[i] || (i + 1);
+                                        return (
+                                            <TableRow key={i} sx={{ '&:hover': { bgcolor: 'rgba(190,147,55,0.04)' } }}>
+                                        <TableCell>
+                                            <Box sx={{
+                                                display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                                                width: 32, height: 32, borderRadius: '50%',
+                                                bgcolor: 'rgba(190, 147, 55, 0.12)', border: '1.5px solid var(--color-primary)',
+                                                color: 'var(--color-primary)', fontWeight: 900, fontSize: '0.85rem'
+                                            }}>
+                                                {pos}
+                                            </Box>
+                                        </TableCell>
+                                        <TableCell sx={{ fontWeight: 700, color: "var(--text-primary)" }}>{ca.name}</TableCell>
+                                        <TableCell sx={{ fontWeight: 600, color: "var(--text-secondary)" }}>{ca.affiliation || "-"}</TableCell>
+                                    </TableRow>
+                                    );
+                                    });
+                                })()}
+                            </TableBody>
+                        </Table>
+                    </TableContainer>
                 </Card>
             )}
+
+            {/* Attachments Section */}
+            <Card sx={{ ...cardStyle, mb: 3 }}>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 3 }}>
+                    <AttachFileIcon sx={{ color: "var(--color-primary)" }} />
+                    <Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>Attached Documents</Typography>
+                </Box>
+                <Grid container spacing={3}>
+                    {renderFilePreview("Presentation Certificate", data.certificate, 1)}
+                    {renderFilePreview("Proceedings / Abstract Book", data.proceedings, 2)}
+                </Grid>
+            </Card>
 
             {/* Actions */}
             <Box sx={{ display: "flex", flexWrap: "wrap", gap: 3, mt: 3 }}>
@@ -283,7 +368,7 @@ const ConferenceApprovalDetails = ({ id, onBack, role }) => {
                         <Card sx={{ ...cardStyle, borderTop: "4px solid var(--color-primary)", mb: 0 }}>
                             <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 3 }}><GavelIcon sx={{ color: "var(--color-primary)" }} /><Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>Review Decision</Typography></Box>
                             
-                            {isResearchAdmin && (
+                            {isResearchAdmin && data.applyIncentive === 'Yes' && (
                                 <Box sx={{ mb: 3 }}>
                                     <Typography variant="subtitle2" sx={{ fontWeight: 900, mb: 1, color: "var(--color-primary)", fontSize: "0.75rem" }}>APPROVED INCENTIVE AMOUNT (₹)</Typography>
                                     <TextField 
@@ -299,8 +384,8 @@ const ConferenceApprovalDetails = ({ id, onBack, role }) => {
                             <TextField fullWidth multiline rows={3} placeholder="Provide your review comments..." value={remarks} onChange={e => setRemarks(e.target.value)} sx={{ mb: 3, "& .MuiOutlinedInput-root": { borderRadius: "12px", bgcolor: "var(--bg-panel)" } }} />
 
                             <Box sx={{ display: "flex", gap: 2, justifyContent: "flex-end" }}>
-                                <Button variant="outlined" disabled={actionLoading} onClick={() => handleAction('Reject')} sx={{ color: "#ef4444", borderColor: "#ef4444", fontWeight: 800, borderRadius: "10px", textTransform: "none", px: 3 }}>Reject</Button>
-                                <Button variant="contained" disabled={actionLoading} onClick={() => handleAction('Approve')} sx={{ bgcolor: "#10b981", color: "#fff", fontWeight: 800, borderRadius: "10px", textTransform: "none", px: 4, "&:hover": { bgcolor: "#059669" } }}>{isHOD ? "Approve & Forward" : "Final Approve"}</Button>
+                                <Button variant="outlined" color="error" disabled={actionLoading} onClick={() => handleAction('Reject')} sx={{ px: 3 }}>Reject</Button>
+                                <Button variant="contained" color="success" disabled={actionLoading} onClick={() => handleAction('Approve')} sx={{ px: 4 }}>{isHOD ? "Approve & Forward" : "Final Approve"}</Button>
                             </Box>
                         </Card>
                     ) : (

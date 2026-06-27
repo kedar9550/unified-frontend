@@ -24,6 +24,7 @@ import {
 } from "@mui/icons-material";
 import PageHeader from "../../components/common/PageHeader";
 import SectionHeader from "../../components/common/SectionHeader";
+import NoActiveYearDialog from "../../components/common/NoActiveYearDialog";
 import API from "../../api/axios";
 
 const ADMINISTRATIVE_ROLES_LIST = [
@@ -46,15 +47,33 @@ const ADMINISTRATIVE_ROLES_LIST = [
 export default function FacultyAdministration() {
   // ── States ────────────────────────────────────────────────────────
   const [academicYears, setAcademicYears] = useState([]);
-  const [selectedYearLabel, setSelectedYearLabel] = useState("all");
+  const [selectedYearLabel, setSelectedYearLabel] = useState("");
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [allEntries, setAllEntries] = useState([]);
+  const [noActiveYearAlertOpen, setNoActiveYearAlertOpen] = useState(false);
+
+  const blurActiveElement = () => {
+    if (document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur();
+    }
+  };
+
+  const selectMenuProps = {
+    disableAutoFocusItem: true,
+    slotProps: {
+      list: {
+        onMouseDown: blurActiveElement
+      }
+    }
+  };
   const [currentEntry, setCurrentEntry] = useState(null);
   const [isAddingRole, setIsAddingRole] = useState(false);
 
   // Form representation
   const [rolesFormData, setRolesFormData] = useState({});
+
+  const activeYear = academicYears.find((y) => y.isGlobalActive);
 
   // Helper to check if role is already submitted and active
   const isPreExistingActive = (roleLabel) => {
@@ -78,11 +97,12 @@ export default function FacultyAdministration() {
         setAcademicYears(years);
 
         if (years.length > 0 && (!selectedYearLabel || selectedYearLabel === "")) {
-          setSelectedYearLabel("all");
+          const active = years.find(y => y.isGlobalActive);
+          setSelectedYearLabel(active ? active.year : "all");
         }
       } catch (err) {
         console.error("Error fetching academic years:", err);
-        toast.error("Failed to load academic years.");
+        toast.error("Failed to load academic years");
       } finally {
         setLoading(false);
       }
@@ -202,7 +222,7 @@ export default function FacultyAdministration() {
     // Verify at least one responsibility is selected
     const hasSelectedRole = Object.values(rolesFormData).some((role) => role.isResponsible);
     if (!hasSelectedRole) {
-      toast.error("Please select at least one administrative responsibility before submitting.");
+      toast.error("Please select at least one administrative responsibility before submitting");
       return;
     }
 
@@ -250,9 +270,7 @@ export default function FacultyAdministration() {
     <Box sx={{ width: "100%", pb: 5 }}>
       <PageHeader
         title="Administrative Responsibilities"
-        subtitle="Declare your administrative roles at Institute and Department levels for HOD verification."
-        breadcrumbs={["Home", "Faculty", "Administration"]}
-      />
+        subtitle="Declare your administrative roles at Institute and Department levels for HOD verification." />
 
       {/* Select Academic Year */}
       <Box
@@ -274,7 +292,12 @@ export default function FacultyAdministration() {
         </Typography>
         <Select
           value={selectedYearLabel}
-          onChange={(e) => setSelectedYearLabel(e.target.value)}
+          onChange={(e) => {
+            setSelectedYearLabel(e.target.value);
+            blurActiveElement();
+          }}
+          onClose={blurActiveElement}
+          MenuProps={selectMenuProps}
           disabled={loading || saving}
           size="small"
           sx={{
@@ -310,25 +333,22 @@ export default function FacultyAdministration() {
               <SectionHeader
                 title="Current Administrative Roles Summary"
                 action={
-                  selectedYearLabel !== "all" && !isAddingRole && hasActiveRoles && (
+                  selectedYearLabel !== "all" && selectedYearLabel === activeYear?.year && !isAddingRole && hasActiveRoles && (
                     <Button
                       variant="contained"
                       onClick={() => setIsAddingRole(true)}
                       sx={{
-                        borderRadius: "12px",
-                        px: 3,
-                        py: 1,
-                        textTransform: "none",
-                        fontWeight: 700,
-                        fontSize: "0.85rem",
-                        background: "linear-gradient(135deg, var(--color-primary) 0%, #2563eb 100%)",
-                        boxShadow: "0 4px 15px rgba(59, 130, 246, 0.2)",
-                        color: "#fff",
-                        "&:hover": {
-                          opacity: 0.95
-                        }
-                      }}
-                    >
+ 
+ fontWeight: 700,
+ fontSize: "0.85rem",
+ background: "linear-gradient(135deg, var(--color-primary) 0%, #2563eb 100%)",
+ boxShadow: "0 4px 15px rgba(59, 130, 246, 0.2)",
+ color: "#fff",
+ "&:hover": {
+ opacity: 0.95
+ }
+ }}
+ >
                       Add Another Role
                     </Button>
                   )
@@ -492,13 +512,57 @@ export default function FacultyAdministration() {
               <Typography sx={{ color: "var(--text-secondary)", fontWeight: 600, fontSize: "1rem", mb: 1 }}>
                 Want to declare new roles or update existing ones?
               </Typography>
-              <Typography sx={{ color: "var(--text-secondary)", fontSize: "0.88rem", opacity: 0.8 }}>
-                Please select a specific Academic Cycle from the dropdown at the top of the page.
+              <Typography sx={{ color: "var(--text-secondary)", fontSize: "0.88rem", opacity: 0.8, mb: 2 }}>
+                Please select the active Academic Cycle or click below to declare roles for the active academic year directly.
+              </Typography>
+              <Button
+                variant="contained"
+                onClick={() => {
+                  if (activeYear) {
+                    setSelectedYearLabel(activeYear.year);
+                    setIsAddingRole(true);
+                  } else {
+                    setNoActiveYearAlertOpen(true);
+                  }
+                }}
+                sx={{
+                  px: 3,
+                  py: 1,
+                  textTransform: "none",
+                  fontWeight: 700,
+                  fontSize: "0.85rem",
+                  background: "linear-gradient(135deg, var(--color-primary) 0%, #2563eb 100%)",
+                  boxShadow: "0 4px 15px rgba(59, 130, 246, 0.2)",
+                  color: "#fff",
+                  "&:hover": {
+                    opacity: 0.95
+                  }
+                }}
+              >
+                Declare / Update Roles
+              </Button>
+            </Card>
+          )}
+
+          {selectedYearLabel !== "all" && selectedYearLabel !== activeYear?.year && !hasActiveRoles && (
+            <Card
+              sx={{
+                p: 4,
+                textAlign: "center",
+                background: "var(--bg-panel)",
+                border: "1px dashed var(--border-color)",
+                borderRadius: "20px",
+                mt: 4,
+                boxShadow: "var(--shadow-premium)"
+              }}
+            >
+              <Typography sx={{ color: "var(--text-secondary)", fontWeight: 600, fontSize: "1rem" }}>
+                No administrative roles declared for this academic cycle.
               </Typography>
             </Card>
           )}
 
-          {selectedYearLabel !== "all" && (!hasActiveRoles || isAddingRole) && (
+          {selectedYearLabel !== "all" && selectedYearLabel === activeYear?.year && (!hasActiveRoles || isAddingRole) && (
             <form onSubmit={handleSubmit}>
               {hasActiveRoles && (
                 <Divider sx={{ my: 4, borderColor: "var(--border-color)" }} />
@@ -645,47 +709,47 @@ export default function FacultyAdministration() {
               >
                 {hasActiveRoles && (
                   <Button
-                    variant="outlined"
-                    onClick={() => setIsAddingRole(false)}
-                    disabled={saving}
-                    sx={{
-                      borderRadius: "12px",
-                      px: 4,
-                      py: 1.5,
-                      textTransform: "none",
-                      fontWeight: 700,
-                      fontSize: "0.95rem",
-                      borderColor: "var(--border-color)",
-                      color: "var(--text-secondary)",
-                      "&:hover": {
-                        borderColor: "var(--text-primary)",
-                        color: "var(--text-primary)",
-                        background: "rgba(255, 255, 255, 0.05)"
-                      }
-                    }}
-                  >
+ variant="outlined"
+ onClick={() => setIsAddingRole(false)}
+ disabled={saving}
+ sx={{
+ 
+ px: 4,
+ py: 1.5,
+ textTransform: "none",
+ fontWeight: 700,
+ fontSize: "0.95rem",
+ borderColor: "var(--border-color)",
+ color: "var(--text-secondary)",
+ "&:hover": {
+ borderColor: "var(--text-primary)",
+ color: "var(--text-primary)",
+ background: "var(--bg-glass)"
+ }
+ }}
+ >
                     Cancel
                   </Button>
                 )}
                 <Button
-                  type="submit"
-                  disabled={saving}
-                  startIcon={saving ? <CircularProgress size={18} sx={{ color: "#fff" }} /> : <Save />}
-                  sx={{
-                    borderRadius: "12px",
-                    px: 4,
-                    py: 1.5,
-                    textTransform: "none",
-                    fontWeight: 700,
-                    fontSize: "0.95rem",
-                    background: "linear-gradient(135deg, var(--color-primary) 0%, #2563eb 100%)",
-                    boxShadow: "0 4px 15px rgba(59, 130, 246, 0.2)",
-                    color: "#fff",
-                    "&:hover": {
-                      opacity: 0.95
-                    }
-                  }}
-                >
+ type="submit"
+ disabled={saving}
+ startIcon={saving ? <CircularProgress size={18} sx={{ color: "#fff" }} /> : <Save />}
+ sx={{
+ 
+ px: 4,
+ py: 1.5,
+ textTransform: "none",
+ fontWeight: 700,
+ fontSize: "0.95rem",
+ background: "linear-gradient(135deg, var(--color-primary) 0%, #2563eb 100%)",
+ boxShadow: "0 4px 15px rgba(59, 130, 246, 0.2)",
+ color: "#fff",
+ "&:hover": {
+ opacity: 0.95
+ }
+ }}
+ >
                   {saving ? "Saving Changes..." : "Submit to HOD for Approval"}
                 </Button>
               </Box>
@@ -693,6 +757,10 @@ export default function FacultyAdministration() {
           )}
         </Box>
       )}
+      <NoActiveYearDialog
+        open={noActiveYearAlertOpen}
+        onClose={() => setNoActiveYearAlertOpen(false)}
+      />
     </Box>
   );
 }

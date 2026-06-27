@@ -101,20 +101,20 @@ const FeedbackCoordinatorDashboard = () => {
           </Box>
           <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
             <Button
-              variant="outlined"
-              sx={{
-                borderRadius: "12px",
-                borderColor: 'var(--border-color)',
-                color: 'var(--text-primary)',
-                textTransform: 'none',
-                px: 2, py: 1,
-                background: "var(--bg-glass)",
-                backdropFilter: "blur(10px)",
-                fontWeight: 600,
-                "&:hover": { borderColor: "var(--color-primary)", background: "var(--bg-accent-1)" }
-              }}
-              startIcon={<CalendarMonth sx={{ color: "var(--color-primary)" }} />}
-            >
+ variant="outlined"
+ sx={{
+ 
+ borderColor: 'var(--border-color)',
+ color: 'var(--text-primary)',
+ textTransform: 'none',
+ px: 2, py: 1,
+ background: "var(--bg-glass)",
+ backdropFilter: "blur(10px)",
+ fontWeight: 600,
+ "&:hover": { borderColor: "var(--color-primary)", background: "var(--bg-accent-1)" }
+ }}
+ startIcon={<CalendarMonth sx={{ color: "var(--color-primary)" }} />}
+ >
               {dashboardData.activeYear}
             </Button>
             <Chip label={dashboardData.activeSemester} variant="outlined" sx={{ fontWeight: 700, borderRadius: "12px", border: "1px solid var(--border-color)", color: "var(--color-primary)", px: 1, height: 40 }} />
@@ -131,19 +131,20 @@ const FeedbackCoordinatorDashboard = () => {
                   boxShadow: "var(--shadow-premium)",
                   border: "1px solid var(--border-color)",
                   p: 2.5,
-                  height: "100%",
+                  height: "160px",
+                  boxSizing: "border-box",
                   display: "flex",
                   flexDirection: "column",
                   justifyContent: "space-between",
                   gap: 2,
                   background: "var(--bg-panel)",
-                  transition: "all 0.3s ease",
+                  transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
                   cursor: card.path ? "pointer" : "default",
                   position: "relative",
                   overflow: "hidden",
                   "&:hover": {
-                    transform: card.path ? "translateY(-4px)" : "none",
-                    borderColor: card.color
+                    transform: card.path ? "translateY(-5px)" : "none",
+                    boxShadow: "0 12px 40px rgba(0,0,0,0.12)",
                   },
                   "&::after": {
                     content: '""',

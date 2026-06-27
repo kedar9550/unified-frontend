@@ -91,7 +91,7 @@ const SDGCard = ({ id, sdg, imageUrl, isExpanded, toggleExpand }) => {
                 overflow: 'hidden',
                 transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
                 '&:hover': {
-                    background: 'rgba(255, 255, 255, 0.04)',
+                    background: 'var(--bg-accent-1)',
                     transform: isMobile ? 'none' : 'translateX(4px)'
                 }
             }}
@@ -149,7 +149,7 @@ const SDGCard = ({ id, sdg, imageUrl, isExpanded, toggleExpand }) => {
                                 color: '#fff',
                                 transition: 'transform 0.3s ease',
                                 transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
-                                border: '1px solid rgba(255, 255, 255, 0.2)',
+                                border: '1px solid var(--border-color)',
                                 pointerEvents: 'none'
                             }}
                         >
@@ -354,6 +354,12 @@ const SDG = () => {
     const [showDevPopup, setShowDevPopup] = useState(true);
     const [sdgData, setSdgData] = useState({});
     const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        if (showDevPopup && document.activeElement instanceof HTMLElement) {
+            document.activeElement.blur();
+        }
+    }, [showDevPopup]);
 
     useEffect(() => {
         const fetchSdgData = async () => {
@@ -570,22 +576,37 @@ const SDG = () => {
     const StatCard = ({ label, value, subtext, icon: Icon, color }) => (
         <Paper sx={{
             p: 2.5,
-            borderRadius: '20px',
-            background: 'var(--bg-glass)',
+            borderRadius: '16px',
+            background: 'var(--bg-panel)',
             border: '1px solid var(--border-color)',
             display: 'flex',
             flexDirection: 'column',
             gap: 1,
             flex: 1,
             minWidth: '200px',
-            transition: 'all 0.3s ease',
+            height: '160px',
+            boxSizing: 'border-box',
+            justifyContent: 'space-between',
+            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+            position: 'relative',
+            overflow: 'hidden',
             '&:hover': {
-                transform: 'translateY(-4px)',
-                borderColor: color,
-                boxShadow: `0 10px 30px ${color}15`
+                transform: 'translateY(-5px)',
+                boxShadow: '0 12px 40px rgba(0,0,0,0.12)'
+            },
+            '&::after': {
+                content: '""',
+                position: 'absolute',
+                top: 0,
+                right: 0,
+                width: '120px',
+                height: '120px',
+                background: `radial-gradient(circle at top right, ${color}25, transparent 70%)`,
+                zIndex: 0,
+                pointerEvents: 'none'
             }
         }}>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'relative', zIndex: 1 }}>
                 <Typography sx={{ color: 'var(--text-secondary)', fontSize: '0.85rem', fontWeight: 600 }}>
                     {label}
                 </Typography>
@@ -593,12 +614,14 @@ const SDG = () => {
                     <Icon sx={{ fontSize: 20 }} />
                 </Box>
             </Box>
-            <Typography sx={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--text-primary)' }}>
-                {value}
-            </Typography>
-            <Typography sx={{ color: 'var(--text-secondary)', fontSize: '0.75rem' }}>
-                {subtext}
-            </Typography>
+            <Box sx={{ position: 'relative', zIndex: 1 }}>
+                <Typography sx={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+                    {value}
+                </Typography>
+                <Typography sx={{ color: 'var(--text-secondary)', fontSize: '0.75rem', mt: 0.5 }}>
+                    {subtext}
+                </Typography>
+            </Box>
         </Paper>
     );
 
@@ -674,7 +697,7 @@ const SDG = () => {
                                     '&:hover': {
                                         transform: 'translateY(-5px)',
                                         borderColor: SDG_COLOR_MAP[id],
-                                        background: 'rgba(255, 255, 255, 0.05)'
+                                        background: 'var(--bg-accent-1)'
                                     }
                                 }}>
                                     <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', mb: 2 }}>
@@ -785,9 +808,7 @@ const SDG = () => {
                     />
                     <PageHeader
                         title="Sustainable Development Goals"
-                        subtitle="Track and manage contributions towards global sustainability targets"
-                        breadcrumbs={["Home", "Research", "SDG's"]}
-                    />
+                        subtitle="Track and manage contributions towards global sustainability targets" />
 
                     <Paper
                         elevation={0}
@@ -894,26 +915,25 @@ const SDG = () => {
 
                                                 <Box sx={{ mt: 2, width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                                                     <Button
-                                                        variant="contained"
-                                                        startIcon={<CloudUpload />}
-                                                        onClick={handleUploadClick}
-                                                        sx={{
-                                                            background: 'var(--gradient-primary)',
-                                                            color: '#fff',
-                                                            px: 6,
-                                                            py: 1,
-                                                            borderRadius: '100px',
-                                                            fontSize: '1rem',
-                                                            fontWeight: 700,
-                                                            textTransform: 'none',
-                                                            boxShadow: '0 10px 30px var(--color-primary-alpha)',
-                                                            transition: 'all 0.3s ease',
-                                                            '&:hover': {
-                                                                transform: 'translateY(-2px)',
-                                                                boxShadow: '0 15px 40px var(--color-primary-alpha)',
-                                                            }
-                                                        }}
-                                                    >
+ variant="contained"
+ startIcon={<CloudUpload />}
+ onClick={handleUploadClick}
+ sx={{
+ background: 'var(--gradient-primary)',
+ color: '#fff',
+ px: 6,
+ py: 1,
+ 
+ fontSize: '1rem',
+ fontWeight: 700,
+ textTransform: 'none',
+ boxShadow: '0 10px 30px var(--color-primary-alpha)',
+ transition: 'all 0.3s ease',
+ '&:hover': {
+ transform: 'translateY(-2px)',
+ boxShadow: '0 15px 40px var(--color-primary-alpha)' }
+ }}
+ >
                                                         Upload File
                                                     </Button>
 

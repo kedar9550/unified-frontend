@@ -51,42 +51,7 @@ export function FacultyInfoRow() {
   );
 }
 
-// Styled label
-export const labelStyle = { 
-  fontSize: 11, 
-  color: "var(--color-primary)", 
-  fontWeight: 800, 
-  mb: 0.8, 
-  textTransform: "uppercase", 
-  letterSpacing: "0.05em",
-  opacity: 0.9
-};
-
-// Disabled TextField style
-export const disabledField = {
-  "& .MuiInputBase-root": {
-    background: "rgba(0,0,0,0.02)",
-  },
-  "& .MuiInputBase-input.Mui-disabled": { 
-    WebkitTextFillColor: "var(--text-secondary)", 
-    background: "transparent", 
-    opacity: 0.8,
-    fontWeight: 600
-  },
-  "& .MuiOutlinedInput-root.Mui-disabled .MuiOutlinedInput-notchedOutline": { 
-    borderColor: "var(--border-color)",
-    opacity: 0.5
-  },
-  "body.dark-mode & .MuiInputBase-root": {
-    background: "rgba(255,255,255,0.03)",
-  }
-};
-
-// Month options
-export const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-
-// Year options (last 10 years)
-export const YEARS = Array.from({ length: 2 }, (_, i) => String(new Date().getFullYear() - i));
+import { labelStyle, disabledField, MONTHS, YEARS } from "./publicationConstants";
 
 // NoteBox
 export function NoteBox() {
@@ -123,9 +88,10 @@ export function NoteBox() {
 }
 
 // File upload field
-export function FileField({ label, name, onChange, error, onError }) {
+export function FileField({ label, name, onChange, error, onError, accept = ".png,.jpg,.jpeg,.pdf", maxSize = 500 * 1024 }) {
   const [fileName, setFileName] = useState("");
   const [preview, setPreview] = useState(null);
+  const [fileType, setFileType] = useState("");
   const [openModal, setOpenModal] = useState(false);
   const fileInputRef = useRef(null);
 
@@ -138,26 +104,26 @@ export function FileField({ label, name, onChange, error, onError }) {
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      if (file.size > 500 * 1024) {
-        const msg = `${label} is too large (${(file.size / 1024).toFixed(1)}KB). Max size is 500KB.`;
+      if (file.size > maxSize) {
+        const sizeStr = maxSize >= 1024 * 1024 ? `${(maxSize / 1024 / 1024).toFixed(0)}MB` : `${Math.round(maxSize / 1024)}KB`;
+        const msg = `${label} is too large. Max size is ${sizeStr}.`;
         if (onError) onError(msg);
         else toast.error(msg);
         
         e.target.value = ""; // Reset input
         setFileName("");
         setPreview(null);
+        setFileType("");
         onChange({ target: { name, files: [] } });
         return;
       }
       setFileName(file.name);
-      if (file.type.startsWith("image/")) {
-        setPreview(URL.createObjectURL(file));
-      } else {
-        setPreview(null);
-      }
+      setPreview(URL.createObjectURL(file));
+      setFileType(file.type);
     } else {
       setFileName("");
       setPreview(null);
+      setFileType("");
     }
     onChange(e);
   };
@@ -165,6 +131,7 @@ export function FileField({ label, name, onChange, error, onError }) {
   const handleRemove = () => {
     setFileName("");
     setPreview(null);
+    setFileType("");
     if (fileInputRef.current) fileInputRef.current.value = "";
     onChange({ target: { name, files: [] } });
   };
@@ -188,28 +155,28 @@ export function FileField({ label, name, onChange, error, onError }) {
         position: "relative"
       }}>
         <Button
-          component="label"
-          variant="contained"
-          sx={{
-            background: "var(--gradient-primary)",
-            borderRadius: "30px",
-            textTransform: "none",
-            fontWeight: 700,
-            fontSize: 11,
-            px: 2.5,
-            height: "32px",
-            boxShadow: "none",
-            whiteSpace: "nowrap",
-            flexShrink: 0,
-            "&:hover": { opacity: 0.9, transform: "translateY(-1px)" },
-            transition: "all 0.2s ease"
-          }}
-        >
+ component="label"
+ variant="contained"
+ sx={{
+ background: "var(--gradient-primary)",
+ 
+ textTransform: "none",
+ fontWeight: 700,
+ fontSize: 11,
+ px: 2.5,
+ height: "32px",
+ boxShadow: "none",
+ whiteSpace: "nowrap",
+ flexShrink: 0,
+ "&:hover": { opacity: 0.9, transform: "translateY(-1px)" },
+ transition: "all 0.2s ease"
+ }}
+ >
           Choose file
-          <input type="file" hidden accept=".png,.jpg,.jpeg,.pdf" name={name} onChange={handleFileChange} ref={fileInputRef} />
+          <input type="file" hidden accept={accept} name={name} onChange={handleFileChange} ref={fileInputRef} />
         </Button>
 
-        <Typography sx={{ fontSize: 14, color: "var(--text-secondary)", fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", flexGrow: 1 }}>
+        <Typography sx={{ fontSize: 14, color: "var(--text-secondary)", fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flexGrow: 1, minWidth: 0 }}>
           {fileName || "No file chosen"}
         </Typography>
 
@@ -251,22 +218,28 @@ export function FileField({ label, name, onChange, error, onError }) {
           <Typography sx={{ fontWeight: 800, color: "var(--color-primary)", fontSize: 18 }}>File Preview</Typography>
           <IconButton onClick={() => setOpenModal(false)} sx={{ color: "var(--text-secondary)" }}><Close /></IconButton>
         </DialogTitle>
-        <DialogContent sx={{ p: 3, display: "flex", justifyContent: "center", alignItems: "center", background: "#f8fafc", minHeight: "300px" }}>
+        <DialogContent sx={{ p: 3, display: "flex", justifyContent: "center", alignItems: "center", background: "#f8fafc", minHeight: "300px", height: fileType === "application/pdf" ? "80vh" : "auto" }}>
           {preview ? (
-            <Box
-              component="img"
-              src={preview}
-              alt="Preview"
-              sx={{
-                maxWidth: "100%",
-                maxHeight: "70vh",
-                borderRadius: "12px",
-                boxShadow: "0 20px 50px rgba(0,0,0,0.15)",
-                border: "4px solid #fff"
-              }}
-            />
+            fileType === "application/pdf" ? (
+              <iframe src={preview} width="100%" height="100%" style={{ border: "none", borderRadius: "12px", minHeight: "60vh" }} title="PDF Preview" />
+            ) : fileType.startsWith("image/") ? (
+              <Box
+                component="img"
+                src={preview}
+                alt="Preview"
+                sx={{
+                  maxWidth: "100%",
+                  maxHeight: "70vh",
+                  borderRadius: "12px",
+                  boxShadow: "0 20px 50px rgba(0,0,0,0.15)",
+                  border: "4px solid #fff"
+                }}
+              />
+            ) : (
+              <Typography sx={{ color: "var(--text-secondary)", fontWeight: 600 }}>Preview not available for this file type.</Typography>
+            )
           ) : (
-            <Typography sx={{ color: "var(--text-secondary)", fontWeight: 600 }}>Preview not available for this file type.</Typography>
+            <Typography sx={{ color: "var(--text-secondary)", fontWeight: 600 }}>No file selected.</Typography>
           )}
         </DialogContent>
       </Dialog>
@@ -278,26 +251,26 @@ export function FileField({ label, name, onChange, error, onError }) {
 export function SubmitBtn({ onClick, loading }) {
   return (
     <Button
-      variant="contained"
-      onClick={onClick}
-      disabled={loading}
-      sx={{
-        background: "var(--gradient-primary)",
-        borderRadius: "12px",
-        px: 6,
-        height: "44px", // Fixed height for alignment
-        textTransform: "none",
-        fontWeight: 800,
-        fontSize: 15,
-        boxShadow: "0 8px 20px rgba(0, 0, 0, 0.1)",
-        "&:hover": {
-          background: "var(--gradient-primary)",
-          opacity: 0.9,
-          transform: "translateY(-2px)",
-          boxShadow: "0 10px 25px rgba(0, 0, 0, 0.15)"
-        },
-        transition: "all 0.3s ease"
-      }}>
+ variant="contained"
+ onClick={onClick}
+ disabled={loading}
+ sx={{
+ background: "var(--gradient-primary)",
+ 
+ px: 6,
+ height: "44px", // Fixed height for alignment
+ textTransform: "none",
+ fontWeight: 800,
+ fontSize: 15,
+ boxShadow: "0 8px 20px rgba(0, 0, 0, 0.1)",
+ "&:hover": {
+ background: "var(--gradient-primary)",
+ opacity: 0.9,
+ transform: "translateY(-2px)",
+ boxShadow: "0 10px 25px rgba(0, 0, 0, 0.15)"
+ },
+ transition: "all 0.3s ease"
+ }}>
       {loading ? "Submitting..." : "Submit"}
     </Button>
   );

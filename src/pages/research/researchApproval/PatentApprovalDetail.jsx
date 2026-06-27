@@ -44,7 +44,7 @@ const PatentApprovalDetail = ({ id, onBack, role }) => {
                 }
             } catch (error) {
                 console.error("Failed to fetch patent details", error);
-                toast.error("Failed to load details");
+                toast.error(error.response?.data?.message || "Failed to load details");
             } finally {
                 setLoading(false);
             }
@@ -54,13 +54,13 @@ const PatentApprovalDetail = ({ id, onBack, role }) => {
 
     const handleAction = async (action) => {
         if (!remarks && action === 'Reject') {
-            toast.error('Remarks are required for rejection.');
+            toast.error('Remarks are required for rejection');
             return;
         }
 
         if (action === 'Approve' && isResearchAdmin && data.applyIncentive === 'Yes') {
             if (!approvedAmount) {
-                toast.error('Please enter the approved incentive amount.');
+                toast.error('Please enter the approved incentive amount');
                 return;
             }
         }
@@ -243,7 +243,6 @@ const PatentApprovalDetail = ({ id, onBack, role }) => {
                         <LabelValue label="Filing No" value={data.filingNo} horizontal />
                         <LabelValue label="Date of Filing" value={new Date(data.dateOfFiling).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })} horizontal />
                         <LabelValue label="Patent Status" value={data.patentStatus} horizontal />
-                        <LabelValue label="Month / Year" value={`${data.month} ${data.year}`} horizontal />
                         <LabelValue label="Incentive" horizontal chip={<Chip label={data.applyIncentive} size="small" sx={{ bgcolor: data.applyIncentive === 'Yes' ? "rgba(76, 175, 80, 0.1)" : "var(--bg-panel)", color: data.applyIncentive === 'Yes' ? "#4caf50" : "var(--text-secondary)", fontWeight: 800, border: "1px solid", borderColor: data.applyIncentive === 'Yes' ? "#4caf5044" : "var(--border-color)" }} />} />
                         <LabelValue label="Seed Grant Work" value={data.applyingSeedGrant} horizontal />
                     </Box>
@@ -252,17 +251,47 @@ const PatentApprovalDetail = ({ id, onBack, role }) => {
 
             {/* Co-Inventors */}
             {data.coInventors?.length > 0 && (
-                <Card sx={{ ...cardStyle, p: 0, overflow: "hidden" }}>
-                    <Box sx={{ p: 3, pb: 2 }}><Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 1 }}><GroupsIcon sx={{ color: "var(--color-primary)" }} /><Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>Co-Inventors</Typography></Box></Box>
-                    <TableContainer><Table><TableHead sx={{ bgcolor: "var(--bg-panel)" }}><TableRow>
-                        <TableCell sx={{ color: "var(--text-secondary)", fontWeight: 800, fontSize: "0.7rem", textTransform: "uppercase" }}>#</TableCell>
-                        <TableCell sx={{ color: "var(--text-secondary)", fontWeight: 800, fontSize: "0.7rem", textTransform: "uppercase" }}>NAME</TableCell>
-                        <TableCell sx={{ color: "var(--text-secondary)", fontWeight: 800, fontSize: "0.7rem", textTransform: "uppercase" }}>AFFILIATION</TableCell>
-                    </TableRow></TableHead><TableBody>
-                        {data.coInventors.map((ca, i) => (
-                            <TableRow key={i}><TableCell sx={{ fontWeight: 800, color: "var(--color-primary)" }}>{i + 1}</TableCell><TableCell sx={{ fontWeight: 700, color: "var(--text-primary)" }}>{ca.name}</TableCell><TableCell sx={{ fontWeight: 600, color: "var(--text-secondary)" }}>{ca.affiliation}</TableCell></TableRow>
-                        ))}
-                    </TableBody></Table></TableContainer>
+                <Card sx={{ ...cardStyle, p: 0, overflow: "hidden", mb: 3 }}>
+                    <Box sx={{ p: 3, pb: 2 }}>
+                        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                            <GroupsIcon sx={{ color: "var(--color-primary)" }} />
+                            <Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>Co-Inventors Details</Typography>
+                            <Box sx={{ ml: 'auto', px: 1.5, py: 0.5, borderRadius: '20px', bgcolor: 'rgba(190,147,55,0.12)', border: '1px solid rgba(190,147,55,0.3)' }}>
+                                <Typography variant="caption" sx={{ fontWeight: 900, color: 'var(--color-primary)', fontSize: '0.7rem' }}>
+                                    Total: {data.coInventors.length} Co-Inventor{data.coInventors.length > 1 ? 's' : ''}
+                                </Typography>
+                            </Box>
+                        </Box>
+                    </Box>
+                    <TableContainer>
+                        <Table>
+                            <TableHead sx={{ bgcolor: "var(--bg-panel)" }}>
+                                <TableRow>
+                                    <TableCell sx={{ color: "var(--text-secondary)", fontWeight: 800, fontSize: "0.7rem", textTransform: "uppercase", width: 60 }}>#</TableCell>
+                                    <TableCell sx={{ color: "var(--text-secondary)", fontWeight: 800, fontSize: "0.7rem", textTransform: "uppercase" }}>NAME</TableCell>
+                                    <TableCell sx={{ color: "var(--text-secondary)", fontWeight: 800, fontSize: "0.7rem", textTransform: "uppercase" }}>AFFILIATION</TableCell>
+                                </TableRow>
+                            </TableHead>
+                            <TableBody>
+                                {data.coInventors.map((ca, i) => (
+                                    <TableRow key={i} sx={{ '&:hover': { bgcolor: 'rgba(190,147,55,0.04)' } }}>
+                                        <TableCell>
+                                            <Box sx={{
+                                                display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                                                width: 32, height: 32, borderRadius: '50%',
+                                                bgcolor: 'rgba(190, 147, 55, 0.12)', border: '1.5px solid var(--color-primary)',
+                                                color: 'var(--color-primary)', fontWeight: 900, fontSize: '0.85rem'
+                                            }}>
+                                                {i + 1}
+                                            </Box>
+                                        </TableCell>
+                                        <TableCell sx={{ fontWeight: 700, color: "var(--text-primary)" }}>{ca.name}</TableCell>
+                                        <TableCell sx={{ fontWeight: 600, color: "var(--text-secondary)" }}>{ca.affiliation || "-"}</TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </TableContainer>
                 </Card>
             )}
 
@@ -300,8 +329,8 @@ const PatentApprovalDetail = ({ id, onBack, role }) => {
                             <TextField fullWidth multiline rows={3} placeholder="Provide your review comments..." value={remarks} onChange={e => setRemarks(e.target.value)} sx={{ mb: 3, "& .MuiOutlinedInput-root": { borderRadius: "12px", bgcolor: "var(--bg-panel)" } }} />
 
                             <Box sx={{ display: "flex", gap: 2, justifyContent: "flex-end" }}>
-                                <Button variant="outlined" disabled={actionLoading} onClick={() => handleAction('Reject')} sx={{ color: "#ef4444", borderColor: "#ef4444", fontWeight: 800, borderRadius: "10px", textTransform: "none", px: 3 }}>Reject</Button>
-                                <Button variant="contained" disabled={actionLoading} onClick={() => handleAction('Approve')} sx={{ bgcolor: "#10b981", color: "#fff", fontWeight: 800, borderRadius: "10px", textTransform: "none", px: 4, "&:hover": { bgcolor: "#059669" } }}>{isHOD ? "Approve & Forward" : "Final Approve"}</Button>
+                                <Button variant="outlined" color="error" disabled={actionLoading} onClick={() => handleAction('Reject')} sx={{ px: 3 }}>Reject</Button>
+                                <Button variant="contained" color="success" disabled={actionLoading} onClick={() => handleAction('Approve')} sx={{ px: 4 }}>{isHOD ? "Approve & Forward" : "Final Approve"}</Button>
                             </Box>
                         </Card>
                     ) : (

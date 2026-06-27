@@ -46,7 +46,7 @@ function StepRow({ step, idx }) {
   return (
     <div style={{
       display: "flex", gap: 12, alignItems: "flex-start", padding: "12px 0",
-      animation: "fadeIn 0.3s ease", borderBottom: "1px solid rgba(255,255,255,0.03)"
+      animation: "fadeIn 0.3s ease", borderBottom: "1px solid var(--border-color)"
     }}>
       <span style={{
         width: 22, height: 22, borderRadius: "50%", display: "flex", alignItems: "center",
@@ -95,7 +95,7 @@ function ResultCard({ field, value }) {
 
   if (isNotFetched) {
     cardBg = "rgba(15, 23, 42, 0.25)";
-    borderStyle = "1px dashed rgba(255, 255, 255, 0.05)";
+    borderStyle = "1px dashed var(--border-color)";
     textColor = "#475569";
     textWeight = 400;
   } else if (isUnavailable) {
@@ -222,9 +222,9 @@ export default function DOIFetcher() {
         const json = await res.json();
         const entry = json?.["search-results"]?.entry?.[0];
 
-        if (!entry) {
+        if (!entry || entry.error || (!entry["dc:title"] && !entry["prism:publicationName"])) {
           doneStep("error", "DOI not found in Scopus search.");
-          setErrorMessage("This DOI was not found in the Scopus registry. Please double-check it.");
+          setErrorMessage(entry?.error ? `Scopus returned an error: ${entry.error}` : "This DOI was not found or lacks critical metadata in the Scopus registry. Please double-check it.");
           setBusy(false);
           setData(R);
           return;
@@ -448,7 +448,7 @@ export default function DOIFetcher() {
       <div style={{ maxWidth: 840, margin: "0 auto" }}>
 
         {/* Header */}
-        <div style={{ marginBottom: 32, paddingBottom: 24, borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
+        <div style={{ marginBottom: 32, paddingBottom: 24, borderBottom: "1px solid var(--border-color)" }}>
           <div style={{
             fontSize: 11, color: "#3b82f6", fontWeight: 700,
             letterSpacing: "0.2em", marginBottom: 10, fontFamily: "'Space Grotesk', sans-serif"
@@ -592,7 +592,7 @@ export default function DOIFetcher() {
         {!data && !busy && (
           <div style={{
             marginTop: 12, padding: "24px", background: "rgba(15, 23, 42, 0.3)",
-            border: "1px solid rgba(255, 255, 255, 0.03)", borderRadius: 12
+            border: "1px solid var(--border-color)", borderRadius: 12
           }}>
             <div style={{
               fontSize: 11, color: "#3b82f6", fontWeight: 700,

@@ -178,7 +178,7 @@ const AcademicStructure = () => {
             setPrograms(progRes.data.data || []);
             setBranches(branchRes.data.data || []);
         } catch (error) {
-            toast.error("Failed to load academic data.");
+            toast.error(error.response?.data?.message || "Failed to load academic data.");
         } finally {
             setLoading(false);
         }
@@ -1117,9 +1117,7 @@ const AcademicStructure = () => {
         <Box>
             <PageHeader
                 title="Academic Structure"
-                subtitle="Configure Departments, Programs, and Specializations for the University"
-                breadcrumbs={["Home", "UniPrime", "Academics", "Structure"]}
-            />
+                subtitle="Configure Departments, Programs, and Specializations for the University" />
 
             <Paper sx={{
                 mb: 4,

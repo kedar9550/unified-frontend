@@ -17,6 +17,7 @@ import {
   Chip,
   MenuItem,
   Select,
+  Tooltip as MuiTooltip,
 } from "@mui/material";
 import {
   MenuBook,
@@ -49,6 +50,21 @@ const FacultyDashboard = () => {
   const [dashboardData, setDashboardData] = useState(null);
   const [loadingDashboard, setLoadingDashboard] = useState(true);
 
+  const blurActiveElement = () => {
+    if (document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur();
+    }
+  };
+
+  const selectMenuProps = {
+    disableAutoFocusItem: true,
+    slotProps: {
+      list: {
+        onMouseDown: blurActiveElement,
+      },
+    },
+  };
+
   // Fetch academic years for the year dropdown
   useEffect(() => {
     const fetchYears = async () => {
@@ -79,7 +95,7 @@ const FacultyDashboard = () => {
         setAcademicYears(sortedUniqueYears);
 
         // Default to the active year if available
-        const active = sortedUniqueYears.find((y) => y.isActive);
+        const active = sortedUniqueYears.find((y) => y.isGlobalActive);
         if (active) setSelectedYear(active.year);
         else if (sortedUniqueYears.length > 0) setSelectedYear(sortedUniqueYears[0].year);
       } catch (err) {
@@ -209,7 +225,12 @@ const FacultyDashboard = () => {
           <Select
             size="small"
             value={selectedYear}
-            onChange={(e) => setSelectedYear(e.target.value)}
+            onChange={(e) => {
+              setSelectedYear(e.target.value);
+              blurActiveElement();
+            }}
+            onClose={blurActiveElement}
+            MenuProps={selectMenuProps}
             sx={{
               borderRadius: "12px",
               borderColor: "var(--border-color)",
@@ -254,18 +275,17 @@ const FacultyDashboard = () => {
             <Card
               sx={{
                 position: "relative",
-                borderRadius: 2,
+                borderRadius: "16px",
                 background: "var(--bg-panel)",
                 border: "1px solid var(--border-color)",
                 boxShadow: "var(--shadow-premium)",
                 transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
                 overflow: "hidden",
                 "&:hover": {
-                  transform: "translateY(-6px)",
-                  boxShadow: "0 20px 40px rgba(0,0,0,0.12)",
-                  borderColor: "var(--color-primary)",
+                  transform: "translateY(-5px)",
+                  boxShadow: "0 12px 40px rgba(0,0,0,0.12)",
                 },
-                height: "100%",
+                height: "160px",
                 display: "flex",
                 flexDirection: "column",
                 justifyContent: "space-between",
@@ -757,8 +777,29 @@ const FacultyDashboard = () => {
 
         <DataTable
           columns={["TITLE / NAME", "TYPE", "ACADEMIC YEAR", "STATUS", "DATE SUBMITTED"]}
+          alignments={["left", "center", "center", "center", "center"]}
           rows={(dashboardData?.recentResearchList || []).map(item => [
-            item.title,
+            {
+              display: (
+                <MuiTooltip title={item.title} arrow placement="top">
+                  <Typography
+                    sx={{
+                      maxWidth: { xs: "180px", sm: "300px", md: "450px" },
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
+                      fontSize: "0.875rem",
+                      fontWeight: 600,
+                      color: "var(--text-primary)",
+                      textAlign: "left"
+                    }}
+                  >
+                    {item.title}
+                  </Typography>
+                </MuiTooltip>
+              ),
+              value: item.title
+            },
             item.type,
             item.year,
             {

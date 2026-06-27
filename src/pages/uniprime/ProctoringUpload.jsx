@@ -1,21 +1,17 @@
 import Loader from "../../components/common/Loader";
 import PageHeader from "../../components/common/PageHeader";
 import SectionHeader from "../../components/common/SectionHeader";
-import StatCard from "../../components/common/StatCard";
 import ActionButton from "../../components/common/ActionButton";
 import DataTable from "../../components/data/DataTable";
 import {
   Box,
   MenuItem,
   Select,
-  Avatar,
-  CircularProgress,
   IconButton,
   Tooltip,
   Typography,
   Menu,
-  TextField,
-  InputAdornment,
+  Divider,
 } from "@mui/material";
 import { toast } from "sonner";
 import { useEffect, useState, useRef } from "react";
@@ -23,22 +19,15 @@ import API from "../../api/axios";
 import {
   Download as DownloadIcon,
   FileUpload as UploadIcon,
-  Delete as DeleteIcon,
   DeleteSweep as ClearIcon,
-  Search as SearchIcon,
   FilterList as FilterIcon,
   InfoOutlined as InfoIcon,
   CleaningServices as CleanIcon,
-  Close as CloseIcon,
 } from "@mui/icons-material";
-import { Divider } from "@mui/material";
 
-export default function FacultyFormatResults() {
+export default function ProctoringUpload() {
   const [academicYears, setAcademicYears] = useState([]);
-  const [programs, setPrograms] = useState([]);
   const [selectedYearId, setSelectedYearId] = useState("");
-  const [selectedProgramId, setSelectedProgramId] = useState("");
-  const [searchFacultyId, setSearchFacultyId] = useState("");
 
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -59,7 +48,6 @@ export default function FacultyFormatResults() {
           
         setAcademicYears(uniqueYears);
         if (uniqueYears.length > 0) {
-          // Find active or first
           const active = uniqueYears.find((y) => y.isGlobalActive) || uniqueYears[0];
           setSelectedYearId(active._id);
         }
@@ -68,36 +56,22 @@ export default function FacultyFormatResults() {
       }
     };
     fetchYears();
-
-    const fetchPrograms = async () => {
-      try {
-        const res = await API.get("/api/academics/programs", { skipGlobalLoader: true });
-        setPrograms(res.data.data || []);
-      } catch (err) {
-        console.error("Error fetching programs:", err);
-      }
-    };
-    fetchPrograms();
   }, []);
 
-  // 2. Removed Global Semesters fetch as per user request
-
-  // 3. Fetch Results when filters change
+  // 2. Fetch Results when year changes
   const fetchResults = async () => {
     if (!selectedYearId) return;
     setLoading(true);
     try {
-      const res = await API.get("/api/faculty-subject-results", {
+      const res = await API.get("/api/faculty-proctoring/all", {
         params: { 
           academicYearId: selectedYearId,
-          programId: selectedProgramId,
-          facultyId: searchFacultyId
         },
         skipGlobalLoader: true,
       });
-      setResults(res.data);
+      setResults(res.data.data || []);
     } catch (err) {
-      console.error("Error fetching results:", err);
+      console.error("Error fetching proctoring results:", err);
     } finally {
       setLoading(false);
     }
@@ -105,9 +79,9 @@ export default function FacultyFormatResults() {
 
   useEffect(() => {
     fetchResults();
-  }, [selectedYearId, selectedProgramId, searchFacultyId]);
+  }, [selectedYearId]);
 
-  // 4. Handle Upload
+  // 3. Handle Upload
   const handleUploadClick = () => {
     fileInputRef.current.click();
   };
@@ -116,13 +90,20 @@ export default function FacultyFormatResults() {
     const file = e.target.files[0];
     if (!file) return;
 
+    if (!selectedYearId) {
+      toast.warning("Please select an Academic Year first before uploading.");
+      e.target.value = "";
+      return;
+    }
+
     const formData = new FormData();
     formData.append("file", file);
+    formData.append("academicYear", selectedYearId);
 
     setUploading(true);
     try {
       const res = await API.post(
-        "/api/faculty-subject-results/upload-results",
+        "/api/faculty-proctoring/upload-excel",
         formData,
         {
           headers: { "Content-Type": "multipart/form-data" },
@@ -132,7 +113,7 @@ export default function FacultyFormatResults() {
 
       if (res.data.failedCount > 0) {
         const errorDetails = res.data.errors
-          .map((e) => `Row ${e.row}: ${e.message}`)
+          .map((err) => `Row ${err.row}: ${err.message}`)
           .join("\n");
         toast.error(`Uploaded ${res.data.successCount} rows. ${res.data.failedCount} rows failed.`, {
           description: errorDetails
@@ -154,23 +135,11 @@ export default function FacultyFormatResults() {
           description: errorDetails
         });
       } else {
-        toast.error(backendError || "Upload failed. Please check CSV format.");
+        toast.error(backendError || "Upload failed. Please check Excel format.");
       }
     } finally {
       setUploading(false);
       e.target.value = ""; // Reset file input
-    }
-  };
-
-  const handleDelete = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this record?")) return;
-    try {
-      await API.delete(`/api/faculty-subject-results/${id}`, { skipGlobalLoader: true });
-      setResults((prev) => prev.filter((r) => r._id !== id));
-    } catch (err) {
-      console.error("Delete failed:", err);
-      const msg = err.response?.data?.message || "Failed to delete record.";
-      toast.error(msg);
     }
   };
 
@@ -181,29 +150,14 @@ export default function FacultyFormatResults() {
     const params = { academicYearId: selectedYearId };
 
     if (mode === "ALL") {
-      confirmMsg = "CRITICAL: This will PERMANENTLY DELETE ALL records for the selected academic year. Continue?";
-    } else if (mode === "PROGRAM") {
-      if (!selectedProgramId) {
-        toast.warning("Please select a program first");
-        return;
-      }
-      const progName = programs.find(p => p._id === selectedProgramId)?.name;
-      confirmMsg = `This will delete ALL records for ${progName} in the selected year. Continue?`;
-      params.programId = selectedProgramId;
-    } else if (mode === "FACULTY") {
-      if (!searchFacultyId) {
-        toast.warning("Please enter a Faculty ID in the filter first");
-        return;
-      }
-      confirmMsg = `This will delete ALL records for Faculty ID: ${searchFacultyId} in the selected year. Continue?`;
-      params.facultyId = searchFacultyId;
+      confirmMsg = "CRITICAL: This will PERMANENTLY DELETE ALL proctoring records for the selected academic year. Continue?";
     }
 
     if (!window.confirm(confirmMsg)) return;
     
     setLoading(true);
     try {
-      await API.delete("/api/faculty-subject-results/semester", { params, skipGlobalLoader: true });
+      await API.delete("/api/faculty-proctoring/clear", { params, skipGlobalLoader: true });
       toast.success("Records cleared successfully");
       setDeleteMenuAnchor(null);
       fetchResults();
@@ -216,42 +170,33 @@ export default function FacultyFormatResults() {
     }
   };
 
-  const handleClearAll = async () => {
-    handleClear("ALL");
-  };
-
   const downloadTemplate = () => {
     const headers = [
-      "facultyId",
-      "academicYear",
-      "program",
-      "branch",
-      "courseName",
-      "courseCode",
-      "courseType",
-      "semester_or_year",
-      "appeared",
-      "passed",
-      "noOfCos",
-      "noOfCosAttained",
-      "section",
+      "S.No",
+      "Academic Year",
+      "Emp Id",
+      "Programme",
+      "Branch",
+      "Sem/Year",
+      "Sec",
+      "No. of students allotted for proctoring",
+      "No. of students eligible for end exams (A)",
+      "No. of students passed (B)"
     ];
     const sampleRows = [
-      ["FAC123", "2024-2025", "B.Tech", "CSE", "Mathematics", "MA101", "T", "3", "60", "55", "5", "4", "A"],
-      ["FAC123", "2024-2025", "B.Tech", "CSE", "Physics Lab", "PH102", "P", "3", "60", "58", "4", "4", "A"],
-      ["FAC123", "2024-2025", "B.Tech", "CSE", "Programming", "CS103", "I", "3", "60", "57", "6", "5", "A"],
+      ["1", "2025-2026", "FAC123", "B.Tech", "CSE", "5", "A", "30", "28", "25"],
+      ["2", "2025-2026", "FAC124", "B.Tech", "ECE", "3", "B", "20", "19", "18"],
+      ["3", "2025-2026", "FAC125", "M.Tech", "CSE", "1", "A", "15", "15", "14"],
     ];
-    const note = "# Result Type: Use T = Theory, P = Practical, I = Integrated.";
-    const csvContent = headers.join(",") + "\n" + sampleRows.map(row => row.join(",")).join("\n") + "\n" + note + "\n";
+    const csvContent = headers.join(",") + "\n" + sampleRows.map(row => row.join(",")).join("\n");
     const blob = new Blob([csvContent], { type: "text/csv" });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = "faculty_format_template.csv";
+    a.download = "proctoring_upload_template.csv";
     a.click();
     window.URL.revokeObjectURL(url);
   };
-
 
   return (
     <>
@@ -259,13 +204,13 @@ export default function FacultyFormatResults() {
         type="file"
         ref={fileInputRef}
         style={{ display: "none" }}
-        accept=".csv"
+        accept=".csv,.xlsx,.xls"
         onChange={handleFileChange}
       />
 
       <PageHeader
-        title="Exam Results (Faculty Format)"
-        subtitle="Upload and manage exam results formatted by faculty and courses" />
+        title="Proctoring Bulk Upload"
+        subtitle="Upload and manage proctoring data for faculty appraisal" />
 
       <Box sx={{ 
         mt: 3, 
@@ -294,10 +239,10 @@ export default function FacultyFormatResults() {
             </Box>
             <Box>
               <Typography sx={{ fontWeight: 800, fontSize: 20, color: "var(--text-primary)", lineHeight: 1.2 }}>
-                Faculty Results Management
+                Proctoring Management
               </Typography>
               <Typography sx={{ fontSize: 13, color: "var(--text-secondary)", fontWeight: 500, mt: 0.5 }}>
-                {results.length} subject records currently displayed
+                {results.length} records currently displayed
               </Typography>
             </Box>
           </Box>
@@ -330,14 +275,14 @@ export default function FacultyFormatResults() {
                 whiteSpace: "nowrap",
               }}
             >
-              {uploading ? "Uploading..." : "Upload CSV"}
+              {uploading ? "Uploading..." : "Upload Excel/CSV"}
             </ActionButton>
           </Box>
         </Box>
 
         <Divider sx={{ borderStyle: 'dashed', opacity: 0.5 }} />
 
-        {/* Info Note Banner for T/P/I */}
+        {/* Info Note Banner */}
         <Box sx={{ 
           p: 2, 
           borderRadius: "14px", 
@@ -349,7 +294,7 @@ export default function FacultyFormatResults() {
         }}>
           <InfoIcon sx={{ color: "var(--color-primary)", fontSize: 20 }} />
           <Typography sx={{ fontSize: 13, color: "var(--text-secondary)", fontWeight: 600 }}>
-            Subject Type: Use <strong>T</strong> = Theory, <strong>P</strong> = Practical, <strong>I</strong> = Integrated.
+            Upload proctoring details. Select the target <strong>Academic Year</strong> before uploading.
           </Typography>
         </Box>
 
@@ -374,27 +319,6 @@ export default function FacultyFormatResults() {
                 ))}
               </Select>
             </Box>
-
-            <Box sx={filterBox}>
-              <Box sx={{ display: 'flex', alignItems: 'center', mr: 2, opacity: 0.7 }}>
-                <Typography sx={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.05em' }}>PROGRAM</Typography>
-              </Box>
-              <Select
-                variant="standard"
-                disableUnderline
-                value={selectedProgramId}
-                onChange={(e) => setSelectedProgramId(e.target.value)}
-                sx={{ flex: 1, minWidth: 160, fontWeight: 700, fontSize: 14, color: "var(--text-primary)" }}
-                displayEmpty
-              >
-                <MenuItem value="">All Programs</MenuItem>
-                {programs.map((p) => (
-                  <MenuItem key={p._id} value={p._id}>
-                    {p.name}
-                  </MenuItem>
-                ))}
-              </Select>
-            </Box>
           </Box>
 
           <Box sx={{ 
@@ -404,42 +328,6 @@ export default function FacultyFormatResults() {
             width: { xs: '100%', sm: 'auto' },
             flexDirection: { xs: 'column', sm: 'row' }
           }}>
-            <TextField
-              placeholder="Search Faculty ID..."
-              size="small"
-              value={searchFacultyId}
-              onChange={(e) => setSearchFacultyId(e.target.value)}
-              sx={{
-                width: { xs: "100%", sm: 240 },
-                "& .MuiOutlinedInput-root": {
-                  borderRadius: "12px",
-                  fontSize: 14,
-                  height: 44,
-                  fontWeight: 600,
-                  background: "var(--bg-glass)",
-                  "& fieldset": { borderColor: "var(--border-color)" },
-                  "&:hover fieldset": { borderColor: "var(--color-primary)" },
-                  "&.Mui-focused fieldset": { borderColor: "var(--color-primary)" },
-                }
-              }}
-              slotProps={{
-                input: {
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <SearchIcon sx={{ fontSize: 20, color: "var(--color-primary)", opacity: 0.8 }} />
-                    </InputAdornment>
-                  ),
-                  endAdornment: searchFacultyId && (
-                    <InputAdornment position="end">
-                      <IconButton size="small" onClick={() => setSearchFacultyId("")} sx={{ mr: 0.5, opacity: 0.6 }}>
-                        <CloseIcon sx={{ fontSize: 16 }} />
-                      </IconButton>
-                    </InputAdornment>
-                  )
-                }
-              }}
-            />
-
             <ActionButton
               variant="outlined"
               color="error"
@@ -482,13 +370,6 @@ export default function FacultyFormatResults() {
                 }
               }}
             >
-              <MenuItem onClick={() => handleClear("PROGRAM")} disabled={!selectedProgramId}>
-                <FilterIcon fontSize="small" sx={{ opacity: 0.6 }} /> Delete by Program
-              </MenuItem>
-              <MenuItem onClick={() => handleClear("FACULTY")} disabled={!searchFacultyId}>
-                <SearchIcon fontSize="small" sx={{ opacity: 0.6 }} /> Delete by Faculty
-              </MenuItem>
-              <Divider sx={{ my: 0.5, borderStyle: 'dashed' }} />
               <MenuItem onClick={() => handleClear("ALL")} sx={{ color: "#EF4444 !important" }}>
                 <ClearIcon fontSize="small" /> Clear All (Yearly)
               </MenuItem>
@@ -510,7 +391,7 @@ export default function FacultyFormatResults() {
           minHeight: 400,
         }}
       >
-        <SectionHeader title="Faculty Results" />
+        <SectionHeader title="Proctoring Records" />
 
         {loading ? (
           <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>
@@ -537,19 +418,19 @@ export default function FacultyFormatResults() {
               filter: "drop-shadow(0 10px 15px rgba(0,0,0,0.1))",
               animation: "float 3s ease-in-out infinite"
             }}>
-              📊
+              👨‍🏫
             </Box>
             <Typography
               variant="h6"
               fontWeight={800}
               sx={{ color: "var(--text-primary)", mb: 1 }}
             >
-              No Faculty Results Found
+              No Proctoring Records Found
             </Typography>
             <Typography
               sx={{ color: "var(--text-secondary)", maxWidth: 350, fontSize: 14, opacity: 0.8, lineHeight: 1.6 }}
             >
-              We couldn't find any results matching your filters. Try selecting a different academic year, program, or faculty ID.
+              We couldn't find any proctoring records for this academic year. Try uploading a new dataset.
             </Typography>
             <ActionButton
               variant="outlined"
@@ -560,122 +441,64 @@ export default function FacultyFormatResults() {
                 px: 3,
               }}
             >
-              Upload Faculty Results
+              Upload Data
             </ActionButton>
           </Box>
         ) : (
           <DataTable
-            key={`${selectedYearId}-${selectedProgramId}-${searchFacultyId}`}
+            key={`${selectedYearId}`}
             columns={[
-              "Faculty ID",
+              "Emp ID",
               "Faculty Name",
-              "Subject Name",
-              "Course Code",
-              "Type",
-              "Section",
-              "Sem / Year",
-              "Appeared",
-              "Passed",
-              "%",
-              "Last Updated",
-              "Action",
+              "Program",
+              "Sem/Yr - Branch - Sec",
+              "Total Allotted",
+              "Eligible (A)",
+              "Passed (B)",
+              "Pass %",
             ]}
             rows={results.map((r) => [
               {
-                value: r.facultyId,
-                display: <Box sx={{ fontWeight: 600 }}>{r.facultyId}</Box>,
+                value: r.empId,
+                display: <Box sx={{ fontWeight: 600 }}>{r.empId}</Box>,
               },
-
               {
-                value: r.facultyName,
+                value: r.facultyName || r.facultyId?.name || "—",
+                display: <Box>{r.facultyName || r.facultyId?.name || "—"}</Box>,
+              },
+              {
+                value: r.programme,
+                display: <Box sx={{ fontWeight: 600 }}>{r.programme}</Box>,
+              },
+              {
+                value: `${r.semesterNumber ? 'SEM-' + r.semesterNumber : 'YEAR-' + r.yearNumber} ${r.branch} - SEC ${r.section}`,
                 display: (
-                  <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-                    <Avatar>{r.facultyName?.charAt(0)}</Avatar>
-                    <Box>
-                      <Box sx={{ fontWeight: 600 }}>{r.facultyName}</Box>
+                  <Box>
+                    <Box sx={{ fontWeight: 600 }}>
+                      {r.semesterNumber ? `SEM-${r.semesterNumber}` : `YEAR-${r.yearNumber}`} {r.branch}
                     </Box>
+                    <Box sx={{ fontSize: 11, color: "var(--text-secondary)", opacity: 0.8 }}>SEC: {r.section}</Box>
                   </Box>
                 ),
               },
-
               {
-                value: r.courseName,
-                display: (
-                  <Box>
-                    <Box>{r.courseName}</Box>
-                    {r.section && (
-                      <Box sx={{ fontSize: 11, color: "var(--text-secondary)", opacity: 0.8 }}>
-                        Sec: {r.section}
-                      </Box>
-                    )}
-                  </Box>
-                ),
+                value: r.totalStudents,
+                display: <Box>{r.totalStudents}</Box>,
               },
-
               {
-                value: r.courseCode,
-                display: <Box>{r.courseCode}</Box>,
+                value: r.eligibleStudents,
+                display: <Box sx={{ color: "#8B5CF6", fontWeight: 600 }}>{r.eligibleStudents}</Box>,
               },
-
               {
-                value: r.courseType,
-                display: (
-                  <Box sx={{ fontWeight: 600, color: "#0b5299" }}>
-                    {r.courseType}
-                  </Box>
-                ),
+                value: r.passedStudents,
+                display: <Box sx={{ color: "#10B981", fontWeight: 600 }}>{r.passedStudents}</Box>,
               },
-
-              {
-                value: r.section,
-                display: <Box>{r.section || "-"}</Box>,
-              },
-
-              {
-                value: r.semesterDisplay,
-                display: (
-                  <Box>
-                    <Box sx={{ fontWeight: 600 }}>{r.semesterDisplay}</Box>
-                    <Box sx={{ fontSize: 11, color: "var(--text-secondary)", opacity: 0.8 }}>{r.semesterType}</Box>
-                  </Box>
-                ),
-              },
-
-              {
-                value: r.appeared,
-                display: <Box>{r.appeared}</Box>,
-              },
-
-              {
-                value: r.passed,
-                display: (
-                  <Box>
-                    {r.passed} / {r.appeared}
-                  </Box>
-                ),
-              },
-
               {
                 value: r.passPercentage,
                 display: (
-                  <Box sx={{ color: "#10b981", fontWeight: 700 }}>
+                  <Box sx={{ color: "var(--color-primary)", fontWeight: 700 }}>
                     {r.passPercentage}%
                   </Box>
-                ),
-              },
-
-              {
-                value: r.updatedAt,
-                display: <Box sx={{ fontSize: 12 }}>{new Date(r.updatedAt).toLocaleDateString("en-GB")}</Box>,
-              },
-              {
-                value: "action",
-                display: (
-                  <Tooltip title="Delete">
-                    <IconButton size="small" onClick={() => handleDelete(r._id)} sx={{ color: "#EF4444" }}>
-                      <DeleteIcon fontSize="small" />
-                    </IconButton>
-                  </Tooltip>
                 ),
               },
             ])}
@@ -685,52 +508,6 @@ export default function FacultyFormatResults() {
     </>
   );
 }
-
-// ── Styled Components Logic ─────────────────────────────────────────
-
-const controlItemStyle = {
-  display: "flex",
-  alignItems: "center",
-  px: 2,
-  py: 1,
-  borderRadius: "12px",
-  background: "var(--bg-glass)",
-  border: "1px solid var(--border-color)",
-  transition: "all 0.2s ease",
-  "&:focus-within": {
-    borderColor: "var(--color-primary)",
-    boxShadow: "0 0 0 3px rgba(59, 130, 246, 0.08)"
-  }
-};
-
-const controlLabelStyle = {
-  fontSize: 10,
-  fontWeight: 800,
-  color: "var(--text-secondary)",
-  textTransform: "uppercase",
-  letterSpacing: "0.05em",
-  mr: 1.5,
-  opacity: 0.7
-};
-
-const controlSelectStyle = {
-  minWidth: 100,
-  color: "var(--text-primary)",
-  fontWeight: 700,
-  fontSize: 13,
-  '& .MuiSelect-icon': { color: 'var(--text-primary)', opacity: 0.4 }
-};
-
-const controlInputStyle = {
-  background: "transparent",
-  border: "none",
-  outline: "none",
-  color: "var(--text-primary)",
-  fontWeight: 700,
-  fontSize: 13,
-  width: "100%",
-  padding: "4px 0"
-};
 
 const filterBox = {
   display: "flex",
@@ -748,5 +525,3 @@ const filterBox = {
   height: 44,
   width: { xs: "100%", sm: "auto" }
 };
-
-

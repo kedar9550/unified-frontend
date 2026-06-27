@@ -432,7 +432,7 @@ export default function UniprimeDiscrepancies() {
                   <Table sx={{ minWidth: 800 }}>
                     <TableHead sx={{ background: "var(--gradient-primary)" }}>
                       <TableRow>
-                        {["#", "Faculty", "Year", "Section", "Note", "Raised At", "Status", "Action"].map(col => (
+                        {["#", "Faculty", "Year / Sem", "Section", "Note", "Raised At", "Status", "Action"].map(col => (
                           <TableCell
                             key={col}
                             sx={{
@@ -472,11 +472,24 @@ export default function UniprimeDiscrepancies() {
                               </Typography>
                             </TableCell>
 
-                            {/* Year */}
+                            {/* Year / Sem */}
                             <TableCell>
                               <Typography fontSize={13} fontWeight={700} sx={{ color: "var(--text-primary)" }}>
                                 {item.academicYearId?.year || "—"}
                               </Typography>
+                              <Chip
+                                label={item.semesterTypeId?.name || "—"}
+                                size="small"
+                                sx={{
+                                  fontSize: 10,
+                                  height: 20,
+                                  mt: 0.5,
+                                  fontWeight: 700,
+                                  background: "var(--bg-glass)",
+                                  border: "1px solid var(--border-color)",
+                                  color: "var(--text-primary)"
+                                }}
+                              />
                             </TableCell>
 
                             {/* Section */}

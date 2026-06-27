@@ -1,16 +1,18 @@
 import { useState, useEffect } from "react";
-import { Box, TextField, MenuItem, Select, Typography, Button, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, IconButton, Dialog, DialogTitle, DialogContent, DialogActions, Stack, Grid, Card, Chip, Divider, Tooltip, TablePagination } from "@mui/material";
+import { Box, TextField, MenuItem, Select, Typography, Button, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, IconButton, Dialog, DialogTitle, DialogContent, DialogActions, Stack, Grid, Card, Chip, Divider, Tooltip, TablePagination, FormControl } from "@mui/material";
 import { toast } from "sonner";
 import { AddCircle, Delete, Close, Description, Download, AttachFile, Groups, WorkspacePremium, Visibility } from "@mui/icons-material";
 import PageHeader from "../../components/common/PageHeader";
+import NoActiveYearDialog from "../../components/common/NoActiveYearDialog";
 import {
-  FacultyInfoRow, FormCard, Grid2, SubLabel, NoteBox, FileField, SubmitBtn,
-  labelStyle, MONTHS, YEARS
+  FacultyInfoRow, FormCard, Grid2, SubLabel, NoteBox, FileField, SubmitBtn
 } from "../../components/faculty/PublicationFormFields";
-import { useAuth } from "../../context/AuthContext";
+import {
+  labelStyle, disabledField, MONTHS, YEARS
+} from "../../components/faculty/publicationConstants"; import { useAuth } from "../../context/AuthContext";
 import API from "../../api/axios";
 
-const PATENT_STATUSES = ["Filed", "Published", "Granted", "Abandoned"];
+const PATENT_STATUSES = ["Published", "Granted"];
 const PATENT_APPLICANTS = ["Aditya University", "Aditya College of Pharmacy"];
 
 export default function PatentPublication() {
@@ -18,6 +20,7 @@ export default function PatentPublication() {
   const [viewMode, setViewMode] = useState("list"); // 'list', 'select-year', 'form'
   const [academicYears, setAcademicYears] = useState([]);
   const [selectedYear, setSelectedYear] = useState("");
+  const [noActiveYearAlertOpen, setNoActiveYearAlertOpen] = useState(false);
   const [publicationsList, setPublicationsList] = useState([]);
   const [selectedPubDetails, setSelectedPubDetails] = useState(null);
   const [page, setPage] = useState(0);
@@ -25,7 +28,7 @@ export default function PatentPublication() {
 
   const [form, setForm] = useState({
     title: "", applicantName: "", patentName: "", area: "", filingNo: "", dateOfFiling: "",
-    status: "", month: "", year: "", applyIncentive: "", applyingSeedGrant: "",
+    status: "", applyIncentive: "", applyingSeedGrant: "",
     patentFiledCountry: "", customCountryName: "",
     totalInventors: 1, otherInventors: []
   });
@@ -138,6 +141,10 @@ export default function PatentPublication() {
       toast.error("Please fill all required fields");
       return;
     }
+    if (!/^[A-Za-z0-9\/.-]+$/.test(form.filingNo)) {
+      toast.error("Patent Filing No can only contain letters, numbers, '/', '.', and '-'");
+      return;
+    }
     if (!form.patentFiledCountry) {
       toast.error("Please select the Patent Filed Country");
       return;
@@ -151,7 +158,7 @@ export default function PatentPublication() {
       return;
     }
     if (!form.applyingSeedGrant) {
-      toast.error("Please select whether applying as a Seed Grant Work.");
+      toast.error("Please select whether applying as a Seed Grant Work");
       return;
     }
 
@@ -200,8 +207,6 @@ export default function PatentPublication() {
       fd.append("status", form.status);
       fd.append("patentFiledCountry", form.patentFiledCountry === 'Others' ? form.customCountryName : form.patentFiledCountry);
       fd.append("coInventors", JSON.stringify(coInventorsList));
-      fd.append("month", form.month);
-      fd.append("year", form.year);
       fd.append("applyIncentive", form.applyIncentive);
       fd.append("applyingSeedGrant", form.applyingSeedGrant);
       fd.append("totalInventors", String(total));
@@ -213,7 +218,7 @@ export default function PatentPublication() {
 
       await API.post("/api/research/patent", fd, { headers: { "Content-Type": "multipart/form-data" } });
       toast.success("Patent submitted successfully!");
-      setForm({ title: "", applicantName: user?.name || "", patentName: "", area: "", filingNo: "", dateOfFiling: "", status: "", month: "", year: "", applyIncentive: "", applyingSeedGrant: "", patentFiledCountry: "", customCountryName: "", totalInventors: 1, otherInventors: [] });
+      setForm({ title: "", applicantName: user?.name || "", patentName: "", area: "", filingNo: "", dateOfFiling: "", status: "", applyIncentive: "", applyingSeedGrant: "", patentFiledCountry: "", customCountryName: "", totalInventors: 1, otherInventors: [] });
       setFiles({ eFilingReceipt: null, form1: null });
       setSelectedYear("");
       setViewMode("list");
@@ -230,10 +235,18 @@ export default function PatentPublication() {
         <Typography variant="h6" sx={{ color: "var(--text-primary)", fontWeight: 800 }}>My Patent Publications</Typography>
         <Button
           variant="contained"
-          onClick={() => setViewMode("select-year")}
+          onClick={() => {
+            const activeYear = academicYears.find(y => y.isGlobalActive);
+            if (activeYear) {
+              setSelectedYear(activeYear._id);
+              setViewMode("form");
+            } else {
+              setNoActiveYearAlertOpen(true);
+            }
+          }}
           sx={{
             background: "var(--gradient-primary)",
-            borderRadius: "12px",
+
             px: 3,
             fontWeight: 700,
             textTransform: "none",
@@ -279,7 +292,7 @@ export default function PatentPublication() {
                 <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Filing No</TableCell>
                 <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Applicant</TableCell>
                 <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Role</TableCell>
-                <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Academic Year</TableCell>
+                <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Co-Inventors</TableCell>
                 <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Status</TableCell>
                 <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Actions</TableCell>
               </TableRow>
@@ -290,19 +303,23 @@ export default function PatentPublication() {
                   <TableCell sx={{ color: "var(--text-primary)", fontWeight: 500, py: 2 }}>{pub.title || "N/A"}</TableCell>
                   <TableCell sx={{ color: "var(--text-secondary)", py: 2 }}>{pub.area || "N/A"}</TableCell>
                   <TableCell sx={{ color: "var(--text-secondary)", py: 2 }}>{pub.filingNo || "N/A"}</TableCell>
-                  <TableCell sx={{ color: "var(--text-secondary)", py: 2, maxWidth: 160 }}>
-                    <Tooltip title={pub.facultyId?.name || "N/A"} arrow>
-                      <Typography variant="body2" sx={{ fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 150 }}>
-                        {pub.facultyId?.name || "N/A"}
-                      </Typography>
-                    </Tooltip>
+                  <TableCell sx={{ color: "var(--text-secondary)", py: 2 }}>
+                    <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                      {pub.facultyId?.name || "N/A"}
+                    </Typography>
                   </TableCell>
                   <TableCell sx={{ py: 2 }}>
                     <Typography variant="body2" sx={{ fontWeight: 600, color: pub.visibilityRole === "Applicant" ? "var(--color-primary)" : "text.secondary" }}>
                       {pub.visibilityRole || "Applicant"}
                     </Typography>
                   </TableCell>
-                  <TableCell sx={{ color: "var(--text-secondary)", py: 2 }}>{pub.academicYear?.year || "N/A"}</TableCell>
+                  <TableCell sx={{ color: "var(--text-secondary)", py: 2 }}>
+                    {pub.coInventors && pub.coInventors.length > 0
+                      ? <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                        {pub.coInventors.map(ca => ca.name).join(", ")}
+                      </Typography>
+                      : <Typography variant="body2" sx={{ color: "var(--text-secondary)" }}>None</Typography>}
+                  </TableCell>
                   <TableCell sx={{ py: 2 }}>
                     <Typography
                       variant="body2"
@@ -374,7 +391,7 @@ export default function PatentPublication() {
             variant="outlined"
             onClick={() => setViewMode("list")}
             sx={{
-              borderRadius: "12px",
+
               textTransform: "none",
               fontWeight: 600,
               color: "var(--text-primary)",
@@ -393,7 +410,7 @@ export default function PatentPublication() {
             onClick={() => setViewMode("form")}
             sx={{
               background: "var(--gradient-primary)",
-              borderRadius: "12px",
+
               px: 4,
               fontWeight: 700,
               textTransform: "none",
@@ -419,11 +436,10 @@ export default function PatentPublication() {
 
   const renderForm = () => (
     <FormCard title="Patent Submission">
-      <Box sx={{ mb: 3, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+      <Box sx={{ mb: 3, display: "flex", alignItems: "center" }}>
         <Typography variant="body2" sx={{ background: "var(--bg-accent-1)", color: "var(--color-primary)", px: 2, py: 0.8, borderRadius: "8px", fontWeight: 700, border: "1px solid var(--border-color)" }}>
           Academic Year: {academicYears.find(y => y._id === selectedYear)?.year || "Selected"}
         </Typography>
-        <Button size="small" variant="text" onClick={() => setViewMode("select-year")} sx={{ fontWeight: 700, textTransform: "none", color: "var(--color-primary)" }}>Change Year</Button>
       </Box>
 
       <FacultyInfoRow />
@@ -449,7 +465,21 @@ export default function PatentPublication() {
         </Box>
         <Box>
           <Typography sx={labelStyle}>Patent Filing No :</Typography>
-          <TextField size="small" fullWidth value={form.filingNo} onChange={set("filingNo")} />
+          <TextField
+            size="small"
+            fullWidth
+            value={form.filingNo}
+            onChange={(e) => {
+              const val = e.target.value;
+              // Allow only letters, numbers, '/', '.', '-'
+              if (val === "" || /^[A-Za-z0-9\/.-]+$/.test(val)) {
+                setForm(p => ({ ...p, filingNo: val }));
+              }
+            }}
+            placeholder="e.g. 202341012345"
+            helperText="Allowed: letters, numbers, / . -"
+            FormHelperTextProps={{ sx: { fontSize: "0.7rem", mt: 0.3 } }}
+          />
         </Box>
         <Box>
           <Typography sx={labelStyle}>Date of filing :</Typography>
@@ -519,7 +549,10 @@ export default function PatentPublication() {
                           size="small"
                           fullWidth
                           value={ca.empId}
-                          onChange={(e) => handleCoInventorChange(ca.inventorPosition, "empId", e.target.value)}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            if (/^\d*$/.test(val)) handleCoInventorChange(ca.inventorPosition, "empId", val);
+                          }}
                           placeholder="e.g. 5741"
                         />
                       </Box>
@@ -543,7 +576,10 @@ export default function PatentPublication() {
                           size="small"
                           fullWidth
                           value={ca.name}
-                          onChange={(e) => handleCoInventorChange(ca.inventorPosition, "name", e.target.value)}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            if (!/\d/.test(val)) handleCoInventorChange(ca.inventorPosition, "name", val);
+                          }}
                           placeholder="Full Name"
                         />
                       </Box>
@@ -553,7 +589,10 @@ export default function PatentPublication() {
                           size="small"
                           fullWidth
                           value={ca.affiliation}
-                          onChange={(e) => handleCoInventorChange(ca.inventorPosition, "affiliation", e.target.value)}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            if (!/\d/.test(val)) handleCoInventorChange(ca.inventorPosition, "affiliation", val);
+                          }}
                           placeholder="College / Organization"
                         />
                       </Box>
@@ -563,32 +602,6 @@ export default function PatentPublication() {
               </Box>
             ))}
           </Box>
-        )}
-      </Grid2>
-
-      <Grid2 sx={{ mt: 2 }}>
-        <Box>
-          <Typography sx={labelStyle}>Year :</Typography>
-          <Select size="small" fullWidth displayEmpty value={form.year} onChange={(e) => {
-            setForm(p => ({ ...p, year: e.target.value, month: "" }));
-          }}>
-            <MenuItem value="">Select Year</MenuItem>
-            {YEARS.map((y) => <MenuItem key={y} value={y}>{y}</MenuItem>)}
-          </Select>
-        </Box>
-        {form.year ? (
-          <Box>
-            <Typography sx={labelStyle}>Month :</Typography>
-            <Select size="small" fullWidth displayEmpty value={form.month} onChange={set("month")}>
-              <MenuItem value="">--Select--</MenuItem>
-              {(parseInt(form.year) === new Date().getFullYear()
-                ? MONTHS.filter((_, idx) => idx <= new Date().getMonth())
-                : MONTHS
-              ).map((m) => <MenuItem key={m} value={m}>{m}</MenuItem>)}
-            </Select>
-          </Box>
-        ) : (
-          <Box />
         )}
       </Grid2>
 
@@ -622,7 +635,7 @@ export default function PatentPublication() {
           sx={{
             px: 4,
             height: "44px",
-            borderRadius: "12px",
+
             textTransform: "none",
             fontWeight: 600,
             color: "var(--text-primary)",
@@ -712,8 +725,8 @@ export default function PatentPublication() {
     };
 
     return (
-      <Dialog 
-        open={!!selectedPubDetails} 
+      <Dialog
+        open={!!selectedPubDetails}
         onClose={handleCloseDetails}
         maxWidth="md"
         fullWidth
@@ -737,34 +750,33 @@ export default function PatentPublication() {
         <DialogContent sx={{ p: 3, mt: 1 }}>
           <Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)", mb: 1 }}>{data.title}</Typography>
           <Typography variant="body2" sx={{ color: "var(--text-secondary)", mb: 3, fontWeight: 600 }}>Name of Applicant in Patent: {data.patentName}</Typography>
-          
+
           <Grid container spacing={2}>
             <Grid item xs={12} sm={3}><LabelValueDetails label="Academic Year" value={data.academicYear?.year || "N/A"} /></Grid>
             <Grid item xs={12} sm={3}><LabelValueDetails label="Area" value={data.area} /></Grid>
             <Grid item xs={12} sm={3}><LabelValueDetails label="Role" value={data.visibilityRole || "Applicant"} /></Grid>
             <Grid item xs={12} sm={3}>
-              <LabelValueDetails 
-                label="Status" 
+              <LabelValueDetails
+                label="Status"
                 chip={
-                  <Chip 
-                    label={data.status} 
-                    size="small" 
-                    sx={{ 
-                      bgcolor: `${statusColor}15`, 
-                      color: statusColor, 
-                      fontWeight: 800, 
+                  <Chip
+                    label={data.status}
+                    size="small"
+                    sx={{
+                      bgcolor: `${statusColor}15`,
+                      color: statusColor,
+                      fontWeight: 800,
                       border: `1px solid ${statusColor}44`,
-                      borderRadius: "6px" 
-                    }} 
+                      borderRadius: "6px"
+                    }}
                   />
-                } 
+                }
               />
             </Grid>
 
             <Grid item xs={12} sm={3}><LabelValueDetails label="Filing No" value={data.filingNo} /></Grid>
             <Grid item xs={12} sm={3}><LabelValueDetails label="Date of Filing" value={formatDate(data.dateOfFiling)} /></Grid>
             <Grid item xs={12} sm={3}><LabelValueDetails label="Patent Status" value={data.patentStatus} /></Grid>
-            <Grid item xs={12} sm={3}><LabelValueDetails label="Month/Year" value={`${data.month || ""} ${data.year || ""}`} /></Grid>
             <Grid item xs={12} sm={3}><LabelValueDetails label="Filed Country" value={data.patentFiledCountry || "India"} /></Grid>
 
             <Grid item xs={12} sm={6}><LabelValueDetails label="Applying Seed Grant?" value={data.applyingSeedGrant === "Yes" ? "Yes" : "No"} /></Grid>
@@ -772,87 +784,49 @@ export default function PatentPublication() {
 
             {data.status === "Approved" && data.approvedAmount && (
               <Grid item xs={12} sm={6}>
-                <LabelValueDetails 
-                  label="Approved Incentive" 
-                  value={`₹${data.approvedAmount}`} 
+                <LabelValueDetails
+                  label="Approved Incentive"
+                  value={`₹${data.approvedAmount}`}
                   chip={<Chip label={`₹${data.approvedAmount}`} size="small" sx={{ bgcolor: "rgba(76, 175, 80, 0.1)", color: "#4caf50", fontWeight: 800 }} />}
                 />
               </Grid>
             )}
 
-            {/* Appraisal Claimant Selector */}
+            {/* Appraisal Claimant - read only in faculty view */}
             <Grid item xs={12} sm={6}>
-              <LabelValueDetails 
+              <LabelValueDetails
                 label="Appraisal Claimant"
-                chip={
-                  (() => {
-                    const isApplicant = data.visibilityRole === "Applicant";
-                    const eligibleClaimants = [
-                      { _id: data.facultyId?._id, name: data.facultyId?.name, institutionId: data.facultyId?.institutionId },
-                      ...((data.coInventors || [])
-                        .filter(ca => ca.employeeId)
-                        .map(ca => ({
-                          _id: ca.employeeId?._id || ca.employeeId,
-                          name: ca.employeeId?.name || ca.name,
-                          institutionId: ca.employeeId?.institutionId || ""
-                        })))
-                    ];
-                    const uniqueClaimants = eligibleClaimants.filter((v, i, a) => v._id && a.findIndex(t => t._id.toString() === v._id.toString()) === i);
+                chip={(() => {
+                  const eligibleClaimants = [
+                    { _id: data.facultyId?._id, name: data.facultyId?.name, institutionId: data.facultyId?.institutionId },
+                    ...((data.coInventors || [])
+                      .filter(ca => ca.employeeId)
+                      .map(ca => ({
+                        _id: ca.employeeId?._id || ca.employeeId,
+                        name: ca.employeeId?.name || ca.name,
+                        institutionId: ca.employeeId?.institutionId || ca.employeeId || ""
+                      })))
+                  ];
+                  const uniqueClaimants = eligibleClaimants.filter((v, i, a) => v._id && a.findIndex(t => t._id.toString() === v._id.toString()) === i);
 
-                    if (uniqueClaimants.length <= 1) {
-                      return (
-                        <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>
-                          {data.facultyId?.name || "-"} (Auto-assigned)
-                        </Typography>
-                      );
-                    }
+                  if (uniqueClaimants.length <= 1) {
+                    return (
+                      <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>
+                        {data.facultyId?.name || "-"} (Auto-assigned)
+                      </Typography>
+                    );
+                  }
 
-                    if (isApplicant) {
-                      return (
-                        <FormControl size="small" fullWidth sx={{ mt: 0.5 }}>
-                          <Select
-                            value={data.appraisalClaimant?.institutionId || data.appraisalClaimant || ""}
-                            onChange={async (e) => {
-                              const selectedVal = e.target.value;
-                              try {
-                                const res = await API.post("/api/appraisal/resolve-claim", {
-                                  researchId: data._id,
-                                  researchType: "Patent",
-                                  claimantId: selectedVal
-                                });
-                                if (res.data?.success) {
-                                  toast.success("Claimant resolved successfully!");
-                                  setPublicationsList(prev => prev.map(p => p._id === data._id ? { ...p, appraisalClaimant: selectedVal } : p));
-                                  setSelectedPubDetails(prev => ({ ...prev, appraisalClaimant: selectedVal }));
-                                }
-                              } catch (err) {
-                                toast.error(err.response?.data?.message || "Failed to resolve claim.");
-                              }
-                            }}
-                            displayEmpty
-                          >
-                            <MenuItem value="" disabled>--Select Claimant--</MenuItem>
-                            {uniqueClaimants.map(c => (
-                              <MenuItem key={c.institutionId || c._id} value={c.institutionId || c._id}>
-                                {c.name} {c.institutionId ? `(${c.institutionId})` : ""}
-                              </MenuItem>
-                            ))}
-                          </Select>
-                        </FormControl>
-                      );
-                    } else {
-                      const currentClaimantObj = uniqueClaimants.find(c => 
-                        (c.institutionId && c.institutionId === (data.appraisalClaimant?.institutionId || data.appraisalClaimant || "").toString()) ||
-                        (c._id && c._id.toString() === (data.appraisalClaimant?._id || data.appraisalClaimant || "").toString())
-                      );
-                      return (
-                        <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>
-                          {currentClaimantObj ? `${currentClaimantObj.name} (${currentClaimantObj.institutionId})` : "Not Yet Designated"}
-                        </Typography>
-                      );
-                    }
-                  })()
-                }
+                  const currentClaimantObj = uniqueClaimants.find(c =>
+                    (c.institutionId && c.institutionId === (data.appraisalClaimant?.institutionId || data.appraisalClaimant || "").toString()) ||
+                    (c._id && c._id.toString() === (data.appraisalClaimant?._id || data.appraisalClaimant || "").toString())
+                  );
+                  return (
+                    <Typography variant="body2" sx={{ fontWeight: 700, color: currentClaimantObj ? "var(--text-primary)" : "#ff9800", mt: 0.5 }}>
+                      {currentClaimantObj ? `${currentClaimantObj.name} (${currentClaimantObj.institutionId})` : "Not Yet Designated"}
+                    </Typography>
+                  );
+                })()}
               />
             </Grid>
           </Grid>
@@ -926,12 +900,16 @@ export default function PatentPublication() {
 
   return (
     <Box>
-      <PageHeader title="Patent" subtitle="Manage and submit your patent application details" breadcrumbs={["Home", "Publications", "Patent"]} />
+      <PageHeader title="Patent Publications" subtitle="Manage and submit your patent publications" />
 
       {viewMode === "list" && renderList()}
       {viewMode === "select-year" && renderSelectYear()}
       {viewMode === "form" && renderForm()}
       {renderDetailsDialog()}
+      <NoActiveYearDialog
+        open={noActiveYearAlertOpen}
+        onClose={() => setNoActiveYearAlertOpen(false)}
+      />
     </Box>
   );
 }

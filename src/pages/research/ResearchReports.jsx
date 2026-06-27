@@ -29,17 +29,27 @@ import { toast } from "sonner";
 export default function ResearchReports() {
     const [activeTab, setActiveTab] = useState(0);
     const [academicYears, setAcademicYears] = useState([]);
-    const [selectedYear, setSelectedYear] = useState("All");
+    const [selectedYear, setSelectedYear] = useState("");
     const [loading, setLoading] = useState(false);
     const [data, setData] = useState({ journals: [], textbooks: [], chapters: [] });
 
     useEffect(() => {
         // Fetch Academic Years
         API.get("/api/academic-years").then(res => {
-            setAcademicYears(res.data?.years || res.data?.data || []);
-        }).catch(err => console.log("Failed to fetch academic years", err));
+            const yearsList = res.data?.years || res.data?.data || [];
+            setAcademicYears(yearsList);
+            const active = yearsList.find(y => y.isGlobalActive);
+            setSelectedYear(active ? active._id : "All");
+        }).catch(err => {
+            console.log("Failed to fetch academic years", err);
+            setSelectedYear("All");
+        });
+    }, []);
 
-        fetchReportData();
+    useEffect(() => {
+        if (selectedYear) {
+            fetchReportData();
+        }
     }, [selectedYear]);
 
     const fetchReportData = async () => {
@@ -281,21 +291,21 @@ export default function ResearchReports() {
         return (
             <DataTable columns={columns} rows={rows} toolbarLeft={
                 <Button
-                    variant="contained"
-                    startIcon={<DownloadIcon />}
-                    onClick={() => downloadCSV("journals")}
-                    sx={{
-                        borderRadius: "12px",
-                        textTransform: "none",
-                        background: "var(--gradient-primary)",
-                        boxShadow: "0 4px 12px rgba(190, 147, 55, 0.2)",
-                        "&:hover": {
-                            background: "var(--gradient-primary)",
-                            opacity: 0.9,
-                            boxShadow: "0 6px 16px rgba(190, 147, 55, 0.3)"
-                        }
-                    }}
-                >
+ variant="contained"
+ startIcon={<DownloadIcon />}
+ onClick={() => downloadCSV("journals")}
+ sx={{
+ 
+ textTransform: "none",
+ background: "var(--gradient-primary)",
+ boxShadow: "0 4px 12px rgba(190, 147, 55, 0.2)",
+ "&:hover": {
+ background: "var(--gradient-primary)",
+ opacity: 0.9,
+ boxShadow: "0 6px 16px rgba(190, 147, 55, 0.3)"
+ }
+ }}
+ >
                     Export to Excel
                 </Button>
             } />
@@ -316,21 +326,21 @@ export default function ResearchReports() {
         return (
             <DataTable columns={columns} rows={rows} toolbarLeft={
                 <Button
-                    variant="contained"
-                    startIcon={<DownloadIcon />}
-                    onClick={() => downloadCSV("textbooks")}
-                    sx={{
-                        borderRadius: "12px",
-                        textTransform: "none",
-                        background: "var(--gradient-primary)",
-                        boxShadow: "0 4px 12px rgba(190, 147, 55, 0.2)",
-                        "&:hover": {
-                            background: "var(--gradient-primary)",
-                            opacity: 0.9,
-                            boxShadow: "0 6px 16px rgba(190, 147, 55, 0.3)"
-                        }
-                    }}
-                >
+ variant="contained"
+ startIcon={<DownloadIcon />}
+ onClick={() => downloadCSV("textbooks")}
+ sx={{
+ 
+ textTransform: "none",
+ background: "var(--gradient-primary)",
+ boxShadow: "0 4px 12px rgba(190, 147, 55, 0.2)",
+ "&:hover": {
+ background: "var(--gradient-primary)",
+ opacity: 0.9,
+ boxShadow: "0 6px 16px rgba(190, 147, 55, 0.3)"
+ }
+ }}
+ >
                     Export to Excel
                 </Button>
             } />
@@ -351,21 +361,21 @@ export default function ResearchReports() {
         return (
             <DataTable columns={columns} rows={rows} toolbarLeft={
                 <Button
-                    variant="contained"
-                    startIcon={<DownloadIcon />}
-                    onClick={() => downloadCSV("chapters")}
-                    sx={{
-                        borderRadius: "12px",
-                        textTransform: "none",
-                        background: "var(--gradient-primary)",
-                        boxShadow: "0 4px 12px rgba(190, 147, 55, 0.2)",
-                        "&:hover": {
-                            background: "var(--gradient-primary)",
-                            opacity: 0.9,
-                            boxShadow: "0 6px 16px rgba(190, 147, 55, 0.3)"
-                        }
-                    }}
-                >
+ variant="contained"
+ startIcon={<DownloadIcon />}
+ onClick={() => downloadCSV("chapters")}
+ sx={{
+ 
+ textTransform: "none",
+ background: "var(--gradient-primary)",
+ boxShadow: "0 4px 12px rgba(190, 147, 55, 0.2)",
+ "&:hover": {
+ background: "var(--gradient-primary)",
+ opacity: 0.9,
+ boxShadow: "0 6px 16px rgba(190, 147, 55, 0.3)"
+ }
+ }}
+ >
                     Export to Excel
                 </Button>
             } />
@@ -424,7 +434,7 @@ export default function ResearchReports() {
                                 <Tab icon={<JournalIcon sx={{ fontSize: 20 }} />} iconPosition="start" label="Journals" />
                                 <Tab icon={<BookIcon sx={{ fontSize: 20 }} />} iconPosition="start" label="Text Books" />
                                 <Tab icon={<BookIcon sx={{ fontSize: 20 }} />} iconPosition="start" label="Book Chapters" />
-                                <Tab icon={<AnalyticsIcon sx={{ fontSize: 20 }} />} iconPosition="start" label="Consolidated" />
+                                <Tab icon={<AnalyticsIcon sx={{ fontSize: 20 }} />} iconPosition="start" label="Consolidated Report" />
                             </Tabs>
 
                             <Box sx={{ flexGrow: 1 }} />
@@ -434,7 +444,7 @@ export default function ResearchReports() {
                                 <Select
                                     labelId="academic-year-label"
                                     value={selectedYear}
-                                    label="Academic Year"
+                                    label="Academic Year" 
                                     onChange={(e) => setSelectedYear(e.target.value)}
                                     sx={{ borderRadius: "12px", background: "var(--bg-glass)" }}
                                 >
@@ -467,24 +477,24 @@ export default function ResearchReports() {
                                         This will generate a single file containing all research categories.
                                     </Typography>
                                     <Button
-                                        variant="contained"
-                                        size="large"
-                                        startIcon={<DownloadIcon />}
-                                        onClick={() => downloadCSV("consolidated")}
-                                        sx={{
-                                            borderRadius: "12px",
-                                            textTransform: "none",
-                                            px: 4,
-                                            py: 1.5,
-                                            background: "var(--gradient-primary)",
-                                            boxShadow: "0 4px 12px rgba(190, 147, 55, 0.2)",
-                                            "&:hover": {
-                                                background: "var(--gradient-primary)",
-                                                opacity: 0.9,
-                                                boxShadow: "0 6px 16px rgba(190, 147, 55, 0.3)"
-                                            }
-                                        }}
-                                    >
+ variant="contained"
+ size="large"
+ startIcon={<DownloadIcon />}
+ onClick={() => downloadCSV("consolidated")}
+ sx={{
+ 
+ textTransform: "none",
+ px: 4,
+ py: 1.5,
+ background: "var(--gradient-primary)",
+ boxShadow: "0 4px 12px rgba(190, 147, 55, 0.2)",
+ "&:hover": {
+ background: "var(--gradient-primary)",
+ opacity: 0.9,
+ boxShadow: "0 6px 16px rgba(190, 147, 55, 0.3)"
+ }
+ }}
+ >
                                         Download Consolidated Report (.csv)
                                     </Button>
                                 </Box>

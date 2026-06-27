@@ -182,7 +182,7 @@ const HODDashboard = () => {
         {topCards.map((card, i) => (
           <Grid item xs={12} sm={6} md={3} key={i}>
             <Card sx={{
-              borderRadius: "24px",
+              borderRadius: "16px",
               background: 'var(--bg-panel)',
               border: '1px solid var(--border-color)',
               p: 2.5,
@@ -192,12 +192,12 @@ const HODDashboard = () => {
               gap: 2,
               position: "relative",
               overflow: "hidden",
-              transition: 'all 0.3s ease',
+              height: "160px",
+              boxSizing: "border-box",
+              transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
               '&:hover': {
-                transform: 'translateY(-4px)',
-                boxShadow: 'var(--shadow-premium)',
-                borderColor: card.color,
-                background: 'var(--bg-glass)',
+                transform: 'translateY(-5px)',
+                boxShadow: '0 12px 40px rgba(0,0,0,0.12)',
               },
               '&::after': {
                 content: '""',
@@ -312,24 +312,24 @@ const HODDashboard = () => {
                       }}
                     />
                     <Button
-                      variant="contained"
-                      onClick={() => navigate(action.path)}
-                      endIcon={<ArrowForward sx={{ fontSize: 16 }} />}
-                      sx={{
-                        borderRadius: "12px",
-                        textTransform: "none",
-                        fontWeight: 700,
-                        px: 2.5,
-                        py: 1,
-                        bgcolor: action.count > 0 ? action.color : "var(--text-secondary)",
-                        color: "#fff",
-                        boxShadow: "none",
-                        "&:hover": {
-                          bgcolor: action.count > 0 ? `${action.color}dd` : "var(--text-primary)",
-                          boxShadow: "none"
-                        }
-                      }}
-                    >
+ variant="contained"
+ onClick={() => navigate(action.path)}
+ endIcon={<ArrowForward sx={{ fontSize: 16 }} />}
+ sx={{
+ 
+ textTransform: "none",
+ fontWeight: 700,
+ px: 2.5,
+ py: 1,
+ bgcolor: action.count > 0 ? action.color : "var(--text-secondary)",
+ color: "#fff",
+ boxShadow: "none",
+ "&:hover": {
+ bgcolor: action.count > 0 ? `${action.color}dd` : "var(--text-primary)",
+ boxShadow: "none"
+ }
+ }}
+ >
                       Review
                     </Button>
                   </Box>

@@ -88,6 +88,7 @@ const ReferenceJournalManagement = () => {
 
   // Edit State
   const [editingJournal, setEditingJournal] = useState(null);
+  const [openAddJournalModal, setOpenAddJournalModal] = useState(false);
 
   // JIF Tab State
   const [jifs, setJifs] = useState([]);
@@ -98,6 +99,21 @@ const ReferenceJournalManagement = () => {
   const [jifRowsPerPage, setJifRowsPerPage] = useState(10);
   const [jifTotalRows, setJifTotalRows] = useState(0);
   const [editingJif, setEditingJif] = useState(null);
+
+  // JIF Add/Upload State
+  const [openAddJifModal, setOpenAddJifModal] = useState(false);
+  const [jifForm, setJifForm] = useState({
+    rank: "",
+    journalName: "",
+    abbreviatedJournal: "",
+    publisher: "",
+    jif: ""
+  });
+  const [jifCsvFile, setJifCsvFile] = useState(null);
+  const [jifUploading, setJifUploading] = useState(false);
+  const [jifUploadResult, setJifUploadResult] = useState(null);
+  const [jifDragActive, setJifDragActive] = useState(false);
+  const jifFileInputRef = useRef(null);
 
   // Debounce search query
   useEffect(() => {
@@ -146,7 +162,7 @@ const ReferenceJournalManagement = () => {
         }
       }
     } catch (err) {
-      toast.error("Failed to retrieve reference journals.");
+      toast.error(err.response?.data?.message || "Failed to retrieve reference journals.");
       console.error(err);
     } finally {
       setLoading(false);
@@ -168,7 +184,7 @@ const ReferenceJournalManagement = () => {
         setJifTotalRows(res.data.pagination.total);
       }
     } catch (err) {
-      toast.error("Failed to retrieve journal impact factors.");
+      toast.error(err.response?.data?.message || "Failed to retrieve journal impact factors.");
       console.error(err);
     } finally {
       setJifLoading(false);
@@ -180,7 +196,7 @@ const ReferenceJournalManagement = () => {
   }, [selectedType, page, rowsPerPage, debouncedSearch]);
 
   useEffect(() => {
-    if (activeTab === 2) {
+    if (activeTab === 1) {
       fetchJifs();
     }
   }, [activeTab, jifPage, jifRowsPerPage, jifDebouncedSearch]);
@@ -204,7 +220,7 @@ const ReferenceJournalManagement = () => {
         fetchJournals();
       }
     } catch (err) {
-      toast.error("Failed to delete journal.");
+      toast.error(err.response?.data?.message || "Failed to delete journal.");
     }
   };
 
@@ -230,8 +246,7 @@ const ReferenceJournalManagement = () => {
           type: "FT50",
           customType: ""
         });
-        // Switch to the directory tab to see it
-        setActiveTab(0);
+        setOpenAddJournalModal(false);
         fetchJournals();
       }
     } catch (err) {
@@ -291,7 +306,7 @@ const ReferenceJournalManagement = () => {
         fetchJifs();
       }
     } catch (err) {
-      toast.error("Failed to delete journal impact factor entry.");
+      toast.error(err.response?.data?.message || "Failed to delete journal impact factor entry.");
     }
   };
 
@@ -361,7 +376,7 @@ const ReferenceJournalManagement = () => {
         setCsvFile(file);
         setUploadResult(null);
       } else {
-        toast.error("Please drop a valid CSV file.");
+        toast.error("Please drop a valid CSV file");
       }
     }
   };
@@ -371,7 +386,7 @@ const ReferenceJournalManagement = () => {
   };
 
   const handleBulkUpload = async () => {
-    if (!csvFile) return toast.error("Please choose or drag a CSV file first.");
+    if (!csvFile) return toast.error("Please choose or drag a CSV file first");
     const formData = new FormData();
     formData.append("file", csvFile);
     formData.append("defaultType", form.type === "Other" ? form.customType : form.type);
@@ -405,6 +420,111 @@ const ReferenceJournalManagement = () => {
     document.body.removeChild(link);
   };
 
+  // JIF upload handlers
+  const handleJifFileChange = (e) => {
+    if (e.target.files && e.target.files[0]) {
+      setJifCsvFile(e.target.files[0]);
+      setJifUploadResult(null);
+    }
+  };
+
+  const handleJifDrag = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.type === "dragenter" || e.type === "dragover") {
+      setJifDragActive(true);
+    } else if (e.type === "dragleave") {
+      setJifDragActive(false);
+    }
+  };
+
+  const handleJifDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setJifDragActive(false);
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      const file = e.dataTransfer.files[0];
+      if (file.name.toLowerCase().endsWith(".csv")) {
+        setJifCsvFile(file);
+        setJifUploadResult(null);
+      } else {
+        toast.error("Please drop a valid CSV file");
+      }
+    }
+  };
+
+  const triggerJifFileInput = () => {
+    jifFileInputRef.current.click();
+  };
+
+  const handleJifBulkUpload = async () => {
+    if (!jifCsvFile) return toast.error("Please choose or drag a CSV file first");
+    const formData = new FormData();
+    formData.append("file", jifCsvFile);
+
+    setJifUploading(true);
+    try {
+      const res = await API.post("/api/journal-impact-factors/bulk", formData, {
+        headers: { "Content-Type": "multipart/form-data" }
+      });
+      if (res.data?.success) {
+        toast.success("JIF CSV file processed successfully!");
+        setJifUploadResult(res.data);
+        setJifCsvFile(null);
+        fetchJifs();
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to process JIF bulk upload.");
+    } finally {
+      setJifUploading(false);
+    }
+  };
+
+  const handleJifFormSubmit = async (e) => {
+    e.preventDefault();
+    if (!jifForm.journalName.trim()) return toast.error("Journal name is required");
+    if (jifForm.rank === undefined || jifForm.rank === "") return toast.error("Rank is required");
+    if (jifForm.jif === undefined || jifForm.jif === "") return toast.error("JIF value is required");
+
+    const payload = {
+      rank: Number(jifForm.rank),
+      journalName: jifForm.journalName.trim(),
+      abbreviatedJournal: jifForm.abbreviatedJournal.trim(),
+      publisher: jifForm.publisher.trim(),
+      jif: Number(jifForm.jif)
+    };
+
+    try {
+      const res = await API.post("/api/journal-impact-factors", payload);
+      if (res.data?.success) {
+        toast.success("Journal impact factor entry added successfully");
+        setJifForm({
+          rank: "",
+          journalName: "",
+          abbreviatedJournal: "",
+          publisher: "",
+          jif: ""
+        });
+        setOpenAddJifModal(false);
+        fetchJifs();
+      }
+    } catch (err) {
+      const errMsg = err.response?.data?.message || "Failed to save journal impact factor.";
+      toast.error(errMsg);
+    }
+  };
+
+  const downloadJifSampleTemplate = () => {
+    const csvContent = "data:text/csv;charset=utf-8,Rank,Journal Name,Abbreviated Journal,Publisher,JIF\n1,ACADEMY OF MANAGEMENT JOURNAL,ACAD MANAGE J,ACAD MANAGEMENT,10.5\n2,ACADEMY OF MANAGEMENT REVIEW,ACAD MANAGE REV,ACAD MANAGEMENT,13.9\n3,ACCOUNTING ORGANIZATIONS AND SOCIETY,ACCT ORGAN SOC,PERGAMON-ELSEVIER SCIENCE LTD,4.0\n";
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", "journal_impact_factors_template.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   const getChipColor = (type) => {
     const cleanType = (type || "").toUpperCase().replace(/[-_ ]/g, "");
     if (cleanType.includes("FT50")) return { bg: "rgba(59, 130, 246, 0.08)", color: "#3b82f6", border: "rgba(59, 130, 246, 0.15)" };
@@ -427,6 +547,7 @@ const ReferenceJournalManagement = () => {
           onChange={(e, val) => {
             setActiveTab(val);
             setUploadResult(null);
+            setJifUploadResult(null);
           }}
           sx={{
             "& .MuiTabs-indicator": {
@@ -457,11 +578,6 @@ const ReferenceJournalManagement = () => {
             iconPosition="start"
           />
           <Tab
-            label="Add / Upload"
-            icon={<UploadIcon sx={{ fontSize: "1.2rem", mr: 0.5 }} />}
-            iconPosition="start"
-          />
-          <Tab
             label="Impact Factors"
             icon={<Assessment sx={{ fontSize: "1.2rem", mr: 0.5 }} />}
             iconPosition="start"
@@ -484,7 +600,7 @@ const ReferenceJournalManagement = () => {
             }}
           >
             <Grid container spacing={2} alignItems="center">
-              <Grid item xs={12} sm={4} md={3}>
+              <Grid item xs={12} sm={3} md={2.5}>
                 <FormControl fullWidth size="small">
                   <InputLabel sx={{ color: "var(--text-secondary)", fontWeight: 600 }}>Filter by Type</InputLabel>
                   <Select
@@ -514,7 +630,7 @@ const ReferenceJournalManagement = () => {
                   </Select>
                 </FormControl>
               </Grid>
-              <Grid item xs={12} sm={8} md={9}>
+              <Grid item xs={12} sm={6} md={7}>
                 <form onSubmit={handleSearchSubmit}>
                   <TextField
                     fullWidth
@@ -550,6 +666,31 @@ const ReferenceJournalManagement = () => {
                     }}
                   />
                 </form>
+              </Grid>
+              <Grid item xs={12} sm={3} md={2.5}>
+                <Button
+                  fullWidth
+                  variant="contained"
+                  onClick={() => {
+                    setUploadResult(null);
+                    setOpenAddJournalModal(true);
+                  }}
+                  startIcon={<AddIcon />}
+                  sx={{
+                    background: "var(--gradient-primary)",
+                    textTransform: "none",
+                    fontWeight: 700,
+                    borderRadius: "12px",
+                    height: "40px",
+                    color: "#fff",
+                    boxShadow: "0 4px 12px rgba(11, 82, 153, 0.15)",
+                    "&:hover": {
+                      background: "var(--gradient-primary-hover)"
+                    }
+                  }}
+                >
+                  Add / Upload
+                </Button>
               </Grid>
             </Grid>
           </Paper>
@@ -709,16 +850,31 @@ const ReferenceJournalManagement = () => {
         </Box>
       )}
 
-      {activeTab === 1 && (
-        <Box
-          sx={{
-            animation: "fadeIn 0.3s ease",
-            display: "flex",
-            flexDirection: { xs: "column", sm: "row" },
-            gap: 3,
-            alignItems: "stretch"
-          }}
-        >
+      {/* Add Journal Modal */}
+      <Dialog
+        open={openAddJournalModal}
+        onClose={() => setOpenAddJournalModal(false)}
+        maxWidth="md"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: "24px",
+            p: 2,
+            background: "var(--bg-paper)",
+            border: "1px solid var(--border-color)",
+            boxShadow: "var(--shadow-premium)"
+          }
+        }}
+      >
+        <DialogTitle sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", pb: 1 }}>
+          <Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>
+            Add / Upload Reference Journals
+          </Typography>
+          <IconButton onClick={() => setOpenAddJournalModal(false)}>
+            <Close />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent sx={{ display: "flex", flexDirection: { xs: "column", md: "row" }, gap: 3, pt: 3 }}>
           {/* CSV Bulk Uploader */}
           <Box
             sx={{
@@ -829,7 +985,6 @@ const ReferenceJournalManagement = () => {
                 onClick={downloadSampleTemplate}
                 sx={{
                   textTransform: "none",
-                  borderRadius: "12px",
                   fontWeight: 700,
                   borderColor: "var(--border-color)",
                   color: "var(--text-primary)",
@@ -848,7 +1003,6 @@ const ReferenceJournalManagement = () => {
                 onClick={handleBulkUpload}
                 startIcon={uploading ? <CircularProgress size={18} color="inherit" /> : <UploadIcon />}
                 sx={{
-                  borderRadius: "12px",
                   textTransform: "none",
                   fontWeight: 700,
                   background: "var(--gradient-primary)",
@@ -977,7 +1131,6 @@ const ReferenceJournalManagement = () => {
                   size="large"
                   startIcon={<AddIcon />}
                   sx={{
-                    borderRadius: "12px",
                     textTransform: "none",
                     fontWeight: 700,
                     py: 1.5,
@@ -993,10 +1146,10 @@ const ReferenceJournalManagement = () => {
               </Box>
             </Box>
           </Box>
-        </Box>
-      )}
+        </DialogContent>
+      </Dialog>
 
-      {activeTab === 2 && (
+      {activeTab === 1 && (
         <Box sx={{ animation: "fadeIn 0.3s ease" }}>
           {/* Controls Bar for JIF */}
           <Paper
@@ -1010,7 +1163,7 @@ const ReferenceJournalManagement = () => {
             }}
           >
             <Grid container spacing={2} alignItems="center">
-              <Grid item xs={12}>
+              <Grid item xs={12} sm={9}>
                 <form onSubmit={(e) => e.preventDefault()}>
                   <TextField
                     fullWidth
@@ -1046,6 +1199,31 @@ const ReferenceJournalManagement = () => {
                     }}
                   />
                 </form>
+              </Grid>
+              <Grid item xs={12} sm={3}>
+                <Button
+                  fullWidth
+                  variant="contained"
+                  onClick={() => {
+                    setJifUploadResult(null);
+                    setOpenAddJifModal(true);
+                  }}
+                  startIcon={<AddIcon />}
+                  sx={{
+                    background: "var(--gradient-primary)",
+                    textTransform: "none",
+                    fontWeight: 700,
+                    borderRadius: "12px",
+                    height: "40px",
+                    color: "#fff",
+                    boxShadow: "0 4px 12px rgba(11, 82, 153, 0.15)",
+                    "&:hover": {
+                      background: "var(--gradient-primary-hover)"
+                    }
+                  }}
+                >
+                  Add / Upload
+                </Button>
               </Grid>
             </Grid>
           </Paper>
@@ -1282,30 +1460,30 @@ const ReferenceJournalManagement = () => {
             </DialogContent>
             <DialogActions sx={{ px: 3, pb: 2 }}>
               <Button
-                onClick={() => setEditingJournal(null)}
-                sx={{
-                  textTransform: "none",
-                  fontWeight: 700,
-                  borderRadius: "10px",
-                  color: "var(--text-secondary)"
-                }}
-              >
+ onClick={() => setEditingJournal(null)}
+ sx={{
+ textTransform: "none",
+ fontWeight: 700,
+ 
+ color: "var(--text-secondary)"
+ }}
+ >
                 Cancel
               </Button>
               <Button
-                type="submit"
-                variant="contained"
-                sx={{
-                  textTransform: "none",
-                  fontWeight: 700,
-                  borderRadius: "10px",
-                  background: "var(--gradient-primary)",
-                  color: "#fff",
-                  "&:hover": {
-                    background: "var(--gradient-primary-hover)"
-                  }
-                }}
-              >
+ type="submit"
+ variant="contained"
+ sx={{
+ textTransform: "none",
+ fontWeight: 700,
+ 
+ background: "var(--gradient-primary)",
+ color: "#fff",
+ "&:hover": {
+ background: "var(--gradient-primary-hover)"
+ }
+ }}
+ >
                 Update Journal
               </Button>
             </DialogActions>
@@ -1408,23 +1586,192 @@ const ReferenceJournalManagement = () => {
             </DialogContent>
             <DialogActions sx={{ px: 3, pb: 2 }}>
               <Button
-                onClick={() => setEditingJif(null)}
-                sx={{
-                  textTransform: "none",
-                  fontWeight: 700,
-                  borderRadius: "10px",
-                  color: "var(--text-secondary)"
-                }}
-              >
+ onClick={() => setEditingJif(null)}
+ sx={{
+ textTransform: "none",
+ fontWeight: 700,
+ 
+ color: "var(--text-secondary)"
+ }}
+ >
                 Cancel
               </Button>
               <Button
-                type="submit"
-                variant="contained"
+ type="submit"
+ variant="contained"
+ sx={{
+ textTransform: "none",
+ fontWeight: 700,
+ 
+ background: "var(--gradient-primary)",
+ color: "#fff",
+ "&:hover": {
+ background: "var(--gradient-primary-hover)"
+ }
+ }}
+ >
+                Update JIF Entry
+              </Button>
+            </DialogActions>
+          </Box>
+        )}
+      </Dialog>
+
+      {/* Add JIF Modal */}
+      <Dialog
+        open={openAddJifModal}
+        onClose={() => setOpenAddJifModal(false)}
+        maxWidth="md"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: "24px",
+            p: 2,
+            background: "var(--bg-paper)",
+            border: "1px solid var(--border-color)",
+            boxShadow: "var(--shadow-premium)"
+          }
+        }}
+      >
+        <DialogTitle sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", pb: 1 }}>
+          <Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>
+            Add / Upload Journal Impact Factors
+          </Typography>
+          <IconButton onClick={() => setOpenAddJifModal(false)}>
+            <Close />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent sx={{ display: "flex", flexDirection: { xs: "column", md: "row" }, gap: 3, pt: 3 }}>
+          {/* CSV Bulk Uploader */}
+          <Box
+            sx={{
+              flex: 1,
+              borderRadius: "20px",
+              border: "1px solid var(--border-color)",
+              background: "var(--bg-panel)",
+              boxShadow: "var(--shadow-premium)",
+              p: 4,
+              display: "flex",
+              flexDirection: "column"
+            }}
+          >
+            <Typography variant="h6" sx={{ fontWeight: 800, mb: 1, color: "var(--text-primary)" }}>
+              Upload CSV File
+            </Typography>
+            <Typography variant="body2" sx={{ color: "var(--text-secondary)", mb: 3.5 }}>
+              Upload a CSV file containing columns: Rank, Journal Name, Abbreviated Journal, Publisher, JIF.
+            </Typography>
+
+            {/* Drag Drop zone */}
+            <Box
+              onDragEnter={handleJifDrag}
+              onDragOver={handleJifDrag}
+              onDragLeave={handleJifDrag}
+              onDrop={handleJifDrop}
+              onClick={triggerJifFileInput}
+              sx={{
+                border: jifDragActive
+                  ? "2px dashed var(--color-primary)"
+                  : "2px dashed var(--border-color)",
+                borderRadius: "20px",
+                p: 4,
+                textAlign: "center",
+                background: jifDragActive
+                  ? "rgba(11, 82, 153, 0.05)"
+                  : "rgba(0,0,0,0.01)",
+                cursor: "pointer",
+                mb: 3,
+                transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+                "&:hover": {
+                  borderColor: "var(--color-primary)",
+                  background: "rgba(11, 82, 153, 0.02)"
+                }
+              }}
+            >
+              <input
+                ref={jifFileInputRef}
+                type="file"
+                accept=".csv"
+                hidden
+                onChange={handleJifFileChange}
+              />
+              <UploadIcon sx={{ fontSize: 40, color: "var(--color-primary)", mb: 1.5, opacity: 0.8 }} />
+              <Typography variant="body1" sx={{ fontWeight: 800, color: "var(--text-primary)", mb: 0.5 }}>
+                {jifDragActive ? "Drop CSV file here" : "Drag and drop CSV here"}
+              </Typography>
+              <Typography variant="body2" sx={{ color: "var(--text-secondary)", mb: 1 }}>
+                or click to browse
+              </Typography>
+            </Box>
+
+            {jifCsvFile && (
+              <Paper
+                variant="outlined"
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  p: 2,
+                  borderRadius: "16px",
+                  borderColor: "rgba(11, 82, 153, 0.3)",
+                  background: "rgba(11, 82, 153, 0.02)",
+                  mb: 3
+                }}
+              >
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                  <UploadFile sx={{ color: "var(--color-primary)", fontSize: 24 }} />
+                  <Box sx={{ textAlign: "left" }}>
+                    <Typography variant="body2" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>
+                      {jifCsvFile.name}
+                    </Typography>
+                    <Typography variant="caption" sx={{ color: "var(--text-secondary)" }}>
+                      {(jifCsvFile.size / 1024).toFixed(1)} KB
+                    </Typography>
+                  </Box>
+                </Box>
+                <IconButton
+                  size="small"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setJifCsvFile(null);
+                    setJifUploadResult(null);
+                  }}
+                  sx={{ color: "var(--text-secondary)", '&:hover': { color: '#ef4444' } }}
+                >
+                  <Close sx={{ fontSize: 18 }} />
+                </IconButton>
+              </Paper>
+            )}
+
+            <Stack direction="row" spacing={2} sx={{ mb: 3 }}>
+              <Button
+                fullWidth
+                variant="outlined"
+                size="medium"
+                startIcon={<DownloadIcon />}
+                onClick={downloadJifSampleTemplate}
                 sx={{
                   textTransform: "none",
                   fontWeight: 700,
-                  borderRadius: "10px",
+                  borderColor: "var(--border-color)",
+                  color: "var(--text-primary)",
+                  "&:hover": {
+                    borderColor: "var(--color-primary)",
+                    background: "var(--bg-glass)"
+                  }
+                }}
+              >
+                Download Template
+              </Button>
+              <Button
+                fullWidth
+                variant="contained"
+                disabled={!jifCsvFile || jifUploading}
+                onClick={handleJifBulkUpload}
+                startIcon={jifUploading ? <CircularProgress size={18} color="inherit" /> : <UploadIcon />}
+                sx={{
+                  textTransform: "none",
+                  fontWeight: 700,
                   background: "var(--gradient-primary)",
                   color: "#fff",
                   "&:hover": {
@@ -1432,11 +1779,147 @@ const ReferenceJournalManagement = () => {
                   }
                 }}
               >
-                Update JIF Entry
+                {jifUploading ? "Importing..." : "Upload CSV"}
               </Button>
-            </DialogActions>
+            </Stack>
+
+            {jifUploadResult && (
+              <Alert
+                severity="success"
+                sx={{
+                  borderRadius: "16px",
+                  fontSize: "0.85rem",
+                  border: "1px solid rgba(16, 185, 129, 0.2)",
+                  background: "rgba(16, 185, 129, 0.05)"
+                }}
+              >
+                <strong>Import Successful:</strong> Added {jifUploadResult.insertedCount} JIF entries.
+                {jifUploadResult.errorCount > 0 && ` Skipped ${jifUploadResult.errorCount} invalid rows.`}
+              </Alert>
+            )}
           </Box>
-        )}
+
+          {/* Add Single JIF manually */}
+          <Box
+            sx={{
+              flex: 1,
+              borderRadius: "20px",
+              border: "1px solid var(--border-color)",
+              background: "var(--bg-panel)",
+              boxShadow: "var(--shadow-premium)",
+              p: 4,
+              display: "flex",
+              flexDirection: "column"
+            }}
+          >
+            <Typography variant="h6" sx={{ fontWeight: 800, mb: 1, color: "var(--text-primary)" }}>
+              Add Manually
+            </Typography>
+            <Typography variant="body2" sx={{ color: "var(--text-secondary)", mb: 3.5 }}>
+              Fill out the form below to add a single journal impact factor entry.
+            </Typography>
+
+            <Box component="form" onSubmit={handleJifFormSubmit} sx={{ display: "flex", flexDirection: "column", gap: 3, flexGrow: 1 }}>
+              <Box sx={{ display: "flex", gap: 2 }}>
+                <Box sx={{ flex: 1 }}>
+                  <TextField
+                    label="Rank"
+                    required
+                    type="number"
+                    fullWidth
+                    value={jifForm.rank}
+                    onChange={(e) => setJifForm({ ...jifForm, rank: e.target.value })}
+                    sx={{
+                      "& .MuiOutlinedInput-root": {
+                        borderRadius: "12px",
+                        background: "var(--bg-paper)",
+                      }
+                    }}
+                  />
+                </Box>
+                <Box sx={{ flex: 1 }}>
+                  <TextField
+                    label="JIF"
+                    required
+                    type="number"
+                    inputProps={{ step: "any" }}
+                    fullWidth
+                    value={jifForm.jif}
+                    onChange={(e) => setJifForm({ ...jifForm, jif: e.target.value })}
+                    sx={{
+                      "& .MuiOutlinedInput-root": {
+                        borderRadius: "12px",
+                        background: "var(--bg-paper)",
+                      }
+                    }}
+                  />
+                </Box>
+              </Box>
+
+              <TextField
+                label="Journal Name"
+                required
+                fullWidth
+                value={jifForm.journalName}
+                onChange={(e) => setJifForm({ ...jifForm, journalName: e.target.value })}
+                sx={{
+                  "& .MuiOutlinedInput-root": {
+                    borderRadius: "12px",
+                    background: "var(--bg-paper)",
+                  }
+                }}
+              />
+
+              <TextField
+                label="Abbreviated Journal"
+                fullWidth
+                value={jifForm.abbreviatedJournal}
+                onChange={(e) => setJifForm({ ...jifForm, abbreviatedJournal: e.target.value })}
+                sx={{
+                  "& .MuiOutlinedInput-root": {
+                    borderRadius: "12px",
+                    background: "var(--bg-paper)",
+                  }
+                }}
+              />
+
+              <TextField
+                label="Publisher"
+                fullWidth
+                value={jifForm.publisher}
+                onChange={(e) => setJifForm({ ...jifForm, publisher: e.target.value })}
+                sx={{
+                  "& .MuiOutlinedInput-root": {
+                    borderRadius: "12px",
+                    background: "var(--bg-paper)",
+                  }
+                }}
+              />
+
+              <Box sx={{ mt: "auto", pt: 2 }}>
+                <Button
+                  fullWidth
+                  type="submit"
+                  variant="contained"
+                  size="large"
+                  startIcon={<AddIcon />}
+                  sx={{
+                    textTransform: "none",
+                    fontWeight: 700,
+                    py: 1.5,
+                    background: "var(--gradient-primary)",
+                    color: "#fff",
+                    "&:hover": {
+                      background: "var(--gradient-primary-hover)"
+                    }
+                  }}
+                >
+                  Save JIF Entry
+                </Button>
+              </Box>
+            </Box>
+          </Box>
+        </DialogContent>
       </Dialog>
     </Box>
   );

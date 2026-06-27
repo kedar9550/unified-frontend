@@ -19,6 +19,18 @@ export const AuthProvider = ({ children }) => {
     return userData;
   };
 
+  const logout = async () => {
+    try {
+      await API.post("/api/employees/logout");
+    } catch (e) {
+      console.error("Logout err", e);
+    }
+    setUser(null);
+    setActiveRole(null);
+    localStorage.removeItem("user");
+    localStorage.removeItem("activeRole");
+  };
+
   // Initialize from storage on first load
   useEffect(() => {
     const savedUser = localStorage.getItem("user");
@@ -102,17 +114,6 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const logout = async () => {
-    try {
-      await API.post("/api/employees/logout");
-    } catch (e) {
-      console.error("Logout err", e);
-    }
-    setUser(null);
-    setActiveRole(null);
-    localStorage.removeItem("user");
-    localStorage.removeItem("activeRole");
-  };
 
   return (
     <AuthContext.Provider value={{ user, activeRole, switchRole, loading, login, signup, logout }}>

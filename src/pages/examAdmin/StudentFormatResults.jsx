@@ -126,28 +126,28 @@ export default function StudentFormatResults() {
 
     if (type === "PROGRAM") {
       if (!selectedProgramId) {
-        toast.warning("Please select a program first.");
+        toast.warning("Please select a program first");
         return;
       }
       confirmMsg = `Are you sure you want to delete ALL results for ${selectedProgram?.name}?`;
       params.programId = selectedProgramId;
     } else if (type === "STUDENT") {
       if (!bulkStudentId.trim()) {
-        toast.warning("Please enter a Student ID.");
+        toast.warning("Please enter a Student ID");
         return;
       }
       confirmMsg = `Are you sure you want to delete ALL results for Student ID: ${bulkStudentId}?`;
       params.studentId = bulkStudentId.trim();
     } else if (type === "SELECTED") {
       if (selectedIds.length === 0) {
-        toast.warning("Please select at least one record.");
+        toast.warning("Please select at least one record");
         return;
       }
       confirmMsg = `Are you sure you want to delete ${selectedIds.length} selected record(s)?`;
       params.ids = selectedIds;
     } else if (type === "YEAR") {
       if (!selectedExamYear) {
-        toast.warning("Please select an Exam Year first.");
+        toast.warning("Please select an Exam Year first");
         return;
       }
       confirmMsg = `Are you sure you want to delete ALL results for Exam Year: ${selectedExamYear}?`;
@@ -461,12 +461,9 @@ export default function StudentFormatResults() {
         onChange={handleFileChange}
       />
 
-      {/* HEADER */}
       <PageHeader
-        title="Exam Section"
-        subtitle="Manage and upload student performance results"
-        breadcrumbs={["Home", "Exam Cell", "Results Upload", "Student Format"]}
-      />
+        title="Exam Results (Student Format)"
+        subtitle="Upload and manage student exam results and performance" />
 
       {/* DATA MANAGEMENT CONTROL CENTER */}
       <Box sx={{ 
@@ -506,39 +503,33 @@ export default function StudentFormatResults() {
           
           <Box sx={{ display: 'flex', gap: 1.5, width: { xs: '100%', sm: 'auto' } }}>
             <ActionButton
+              variant="outlined"
               onClick={downloadTemplate}
+              startIcon={<DownloadIcon sx={{ fontSize: 18 }} />}
               sx={{
                 flex: 1,
-                background: "transparent",
-                color: "var(--text-secondary)",
-                border: "1px solid var(--border-color)",
                 fontWeight: 700,
                 px: 2.5,
                 height: 44,
-                borderRadius: "12px",
-                "&:hover": { borderColor: "var(--color-primary)", color: "var(--color-primary)", background: "rgba(59, 130, 246, 0.05)" }
+                whiteSpace: "nowrap",
               }}
             >
-              <DownloadIcon sx={{ mr: 1, fontSize: 18 }} /> Template
+              Template
             </ActionButton>
             
             <ActionButton
               onClick={handleUploadClick}
               disabled={uploading}
+              startIcon={<UploadIcon sx={{ fontSize: 18 }} />}
               sx={{
                 flex: 1,
-                background: "var(--color-primary)",
-                color: "#fff",
                 fontWeight: 800,
                 px: 3,
                 height: 44,
-                borderRadius: "12px",
-                boxShadow: "0 8px 20px rgba(59, 130, 246, 0.3)",
-                transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-                "&:hover": { transform: "translateY(-2px)", boxShadow: "0 12px 25px rgba(59, 130, 246, 0.4)" }
+                whiteSpace: "nowrap",
               }}
             >
-              <UploadIcon sx={{ mr: 1, fontSize: 18 }} /> {uploading ? "Uploading..." : "Upload CSV"}
+              {uploading ? "Uploading..." : "Upload CSV"}
             </ActionButton>
           </Box>
         </Box>
@@ -630,42 +621,41 @@ export default function StudentFormatResults() {
                   "&.Mui-focused fieldset": { borderColor: "var(--color-primary)" },
                 }
               }}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <SearchIcon sx={{ fontSize: 20, color: "var(--color-primary)", opacity: 0.8 }} />
-                  </InputAdornment>
-                ),
-                endAdornment: bulkStudentId && (
-                  <InputAdornment position="end">
-                    <IconButton size="small" onClick={() => setBulkStudentId("")} sx={{ mr: 0.5, opacity: 0.6 }}>
-                      <CloseIcon sx={{ fontSize: 16 }} />
-                    </IconButton>
-                    <Tooltip title="Wipe ALL records for this student">
-                      <IconButton size="small" onClick={() => handleBulkDelete("STUDENT")} sx={{ color: "#EF4444", background: "rgba(239, 68, 68, 0.1)", "&:hover": { background: "rgba(239, 68, 68, 0.2)" } }}>
-                        <DeleteIcon fontSize="small" />
+              slotProps={{
+                input: {
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <SearchIcon sx={{ fontSize: 20, color: "var(--color-primary)", opacity: 0.8 }} />
+                    </InputAdornment>
+                  ),
+                  endAdornment: bulkStudentId && (
+                    <InputAdornment position="end">
+                      <IconButton size="small" onClick={() => setBulkStudentId("")} sx={{ mr: 0.5, opacity: 0.6 }}>
+                        <CloseIcon sx={{ fontSize: 16 }} />
                       </IconButton>
-                    </Tooltip>
-                  </InputAdornment>
-                )
+                      <Tooltip title="Wipe ALL records for this student">
+                        <IconButton size="small" onClick={() => handleBulkDelete("STUDENT")} sx={{ color: "#EF4444", background: "rgba(239, 68, 68, 0.1)", "&:hover": { background: "rgba(239, 68, 68, 0.2)" } }}>
+                          <DeleteIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                    </InputAdornment>
+                  )
+                }
               }}
             />
 
             <ActionButton
+              variant="outlined"
+              color="error"
               onClick={(e) => setDeleteMenuAnchor(e.currentTarget)}
               sx={{
-                background: "rgba(239, 68, 68, 0.05)",
-                color: "#EF4444",
-                border: "1px solid rgba(239, 68, 68, 0.2)",
                 fontWeight: 800,
                 px: 2.5,
                 height: 44,
-                borderRadius: "12px",
                 fontSize: 13,
                 letterSpacing: '0.01em',
                 width: { xs: "100%", sm: "auto" },
                 justifyContent: "center",
-                "&:hover": { background: "rgba(239, 68, 68, 0.1)", borderColor: "#EF4444", transform: "translateY(-1px)" }
               }}
             >
               <CleanIcon sx={{ mr: 1, fontSize: 18 }} /> Bulk Actions
@@ -766,15 +756,12 @@ export default function StudentFormatResults() {
               We couldn't find any student records matching your current filters. Try adjusting your selection or uploading a new CSV.
             </Typography>
             <ActionButton
+              variant="outlined"
               onClick={handleUploadClick}
               sx={{ 
                 mt: 4, 
-                background: "rgba(59, 130, 246, 0.1)", 
-                color: "var(--color-primary)",
                 fontWeight: 700,
-                borderRadius: "10px",
                 px: 3,
-                "&:hover": { background: "rgba(59, 130, 246, 0.2)" }
               }}
             >
               Upload New Results

@@ -53,6 +53,21 @@ export default function Teaching() {
   const [selectedYearLabel, setSelectedYearLabel] = useState("");
   const [selectedSemester, setSelectedSemester] = useState("ALL");
 
+  const blurActiveElement = () => {
+    if (document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur();
+    }
+  };
+
+  const selectMenuProps = {
+    disableAutoFocusItem: true,
+    slotProps: {
+      list: {
+        onMouseDown: blurActiveElement
+      }
+    }
+  };
+
   // ── Results state ────────────────────────────────────────────────
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -105,9 +120,10 @@ export default function Teaching() {
 
         setAcademicYears(years);
 
-        // Set first year as default if selectedYearLabel is empty
+        // Set active year as default if selectedYearLabel is empty
         if (years.length > 0 && !selectedYearLabel) {
-          setSelectedYearLabel(years[0].year);
+          const active = years.find(y => y.isGlobalActive);
+          setSelectedYearLabel(active ? active.year : years[0].year);
         }
       } catch (err) {
         console.error("Error fetching academic years:", err);
@@ -566,6 +582,7 @@ export default function Teaching() {
   const feedbackColumns = [
     "S.NO",
     "COURSE NAME",
+    "TYPE",
     "SEM - BRANCH - SEC",
     "PHASE",
     "GIVEN / TOTAL",
@@ -573,6 +590,19 @@ export default function Teaching() {
   ];
 
   const feedbackRows = feedbackResults.map((r, i) => {
+    const fbPercent = Number(r.percentage) || 0;
+    const color = fbPercent >= 80 ? "#10B981" : fbPercent >= 60 ? "#F59E0B" : "#EF4444";
+    const gradient = fbPercent >= 80
+      ? "linear-gradient(90deg, #10B981 0%, #059669 100%)"
+      : fbPercent >= 60
+        ? "linear-gradient(90deg, #F59E0B 0%, #D97706 100%)"
+        : "linear-gradient(90deg, #EF4444 0%, #B91C1C 100%)";
+    const textGradient = fbPercent >= 80
+      ? "linear-gradient(135deg, #10B981 0%, #059669 100%)"
+      : fbPercent >= 60
+        ? "linear-gradient(135deg, #F59E0B 0%, #D97706 100%)"
+        : "linear-gradient(135deg, #EF4444 0%, #B91C1C 100%)";
+
     return [
       {
         value: i + 1,
@@ -584,6 +614,25 @@ export default function Teaching() {
           <Box sx={{ textAlign: "start" }}>
             <Typography sx={{ fontWeight: 700, fontSize: 14, color: "var(--text-primary)" }}>{r.subjectName}</Typography>
             <Typography sx={{ fontSize: 11, color: "var(--text-secondary)", fontWeight: 500 }}>{r.subjectCode}</Typography>
+          </Box>
+        ),
+      },
+      {
+        value: r.subjectType || "—",
+        display: (
+          <Box sx={{
+            px: 1.2,
+            py: 0.5,
+            borderRadius: '8px',
+            bgcolor: 'var(--bg-glass)',
+            border: '1px solid var(--border-color)',
+            fontSize: 10,
+            fontWeight: 800,
+            color: "var(--text-primary)",
+            display: 'inline-block',
+            textTransform: 'capitalize'
+          }}>
+            {r.subjectType || "—"}
           </Box>
         ),
       },
@@ -620,10 +669,22 @@ export default function Teaching() {
         ),
       },
       {
-        value: r.percentage,
+        value: fbPercent,
         display: (
-          <Box sx={{ textAlign: 'center' }}>
-            <Typography sx={{ fontSize: 16, fontWeight: 800, color: "var(--text-secondary)" }}>{Number(r.percentage).toFixed(1)}%</Typography>
+          <Box sx={{ textAlign: 'center', minWidth: 100 }}>
+            <Typography sx={{
+              fontSize: 18, fontWeight: 900,
+              background: textGradient,
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+              lineHeight: 1
+            }}>
+              {fbPercent.toFixed(1)}%
+            </Typography>
+            <Box sx={{ mt: 1, height: 8, bgcolor: 'var(--border-color)', borderRadius: 4, overflow: 'hidden', border: '1px solid var(--border-color)', position: 'relative' }}>
+              <Box sx={{ width: `${fbPercent}%`, height: '100%', background: gradient, borderRadius: 4, transition: 'width 1s ease-in-out' }} />
+              <Box sx={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '50%', background: 'linear-gradient(180deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0) 100%)' }} />
+            </Box>
           </Box>
         ),
       },
@@ -835,7 +896,7 @@ export default function Teaching() {
   const selectedYearDocForProctoring = academicYears.find((y) => y.year === selectedYearLabel);
   const filteredManualProctoringEntries = selectedYearDocForProctoring
     ? manualEntries.filter(
-      (entry) => entry.academicYear?._id === selectedYearDocForProctoring._id || entry.academicYear === selectedYearDocForProctoring._id
+      (entry) => String(entry.academicYear?._id || entry.academicYear) === String(selectedYearDocForProctoring._id)
     )
     : [];
 
@@ -847,8 +908,6 @@ export default function Teaching() {
     "ELIGIBLE (A)",
     "PASSED (B)",
     "PASS %",
-    "STATUS",
-    "REMARKS",
   ];
 
   const manualProctorRows = filteredManualProctoringEntries.map((entry, i) => {
@@ -858,7 +917,19 @@ export default function Teaching() {
     const semYrBranchSec = isYearProg
       ? `YEAR-${entry.yearNumber || "—"} ${branchDisplay} - SEC ${entry.section}`
       : `SEM-${entry.semesterNumber || "—"} ${branchDisplay} - SEC ${entry.section}`;
-    const passPct = entry.passPercentage !== undefined ? entry.passPercentage.toFixed(2) : "0.00";
+    const passPercentVal = entry.passPercentage !== undefined ? entry.passPercentage : 0;
+
+    const color = passPercentVal >= 80 ? "#10B981" : passPercentVal >= 60 ? "#F59E0B" : "#EF4444";
+    const gradient = passPercentVal >= 80
+      ? "linear-gradient(90deg, #10B981 0%, #059669 100%)"
+      : passPercentVal >= 60
+        ? "linear-gradient(90deg, #F59E0B 0%, #D97706 100%)"
+        : "linear-gradient(90deg, #EF4444 0%, #B91C1C 100%)";
+    const textGradient = passPercentVal >= 80
+      ? "linear-gradient(135deg, #10B981 0%, #059669 100%)"
+      : passPercentVal >= 60
+        ? "linear-gradient(135deg, #F59E0B 0%, #D97706 100%)"
+        : "linear-gradient(135deg, #EF4444 0%, #B91C1C 100%)";
 
     return [
       {
@@ -886,36 +957,22 @@ export default function Teaching() {
         display: <Box sx={{ color: "#10B981", fontWeight: 600 }}>{entry.passedStudents}</Box>,
       },
       {
-        value: parseFloat(passPct),
-        display: <Box sx={{ color: "var(--color-primary)", fontWeight: 800 }}>{passPct}%</Box>,
-      },
-      {
-        value: entry.status,
+        value: passPercentVal,
         display: (
-          <Chip
-            label={entry.status}
-            size="small"
-            sx={{
-              fontWeight: 700,
-              fontSize: 10,
-              borderRadius: "6px",
-              bgcolor:
-                entry.status === "Approved" ? "rgba(16, 185, 129, 0.15)" :
-                  entry.status === "Rejected" ? "rgba(239, 68, 68, 0.15)" :
-                    "rgba(245, 158, 11, 0.15)",
-              color:
-                entry.status === "Approved" ? "#10B981" :
-                  entry.status === "Rejected" ? "#EF4444" :
-                    "#D97706",
-            }}
-          />
-        ),
-      },
-      {
-        value: entry.remarks || "—",
-        display: (
-          <Box sx={{ color: "var(--text-secondary)", fontSize: 12, fontStyle: "italic" }}>
-            {entry.remarks || "—"}
+          <Box sx={{ textAlign: 'center', minWidth: 100 }}>
+            <Typography sx={{
+              fontSize: 18, fontWeight: 900,
+              background: textGradient,
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+              lineHeight: 1
+            }}>
+              {passPercentVal.toFixed(1)}%
+            </Typography>
+            <Box sx={{ mt: 1, height: 8, bgcolor: 'var(--border-color)', borderRadius: 4, overflow: 'hidden', border: '1px solid var(--border-color)', position: 'relative' }}>
+              <Box sx={{ width: `${passPercentVal}%`, height: '100%', background: gradient, borderRadius: 4, transition: 'width 1s ease-in-out' }} />
+              <Box sx={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '50%', background: 'linear-gradient(180deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0) 100%)' }} />
+            </Box>
           </Box>
         ),
       },
@@ -927,27 +984,23 @@ export default function Teaching() {
       {/* ── PAGE HEADER ────────────────────────────────────── */}
       <PageHeader
         title="Teaching Dashboard"
-        subtitle="Manage courses, performance, and student outcomes"
-        breadcrumbs={["Home", "Faculty", "Teaching"]}
-        action={
+        subtitle="Manage courses, performance, and student outcomes" action={
           <Button
-            onClick={() => setDiscOpen(true)}
-            startIcon={<FlagIcon />}
-            sx={{
-              borderRadius: "20px",
-              px: 3,
-              py: 1,
-              textTransform: "none",
-              fontWeight: 600,
-              fontSize: 14,
-              background: "linear-gradient(135deg,#e53935,#ff7043)",
-              color: "#fff",
-              boxShadow: "0 4px 15px rgba(229,57,53,0.3)",
-              "&:hover": {
-                background: "linear-gradient(135deg,#c62828,#e64a19)",
-              },
-            }}
-          >
+ onClick={() => setDiscOpen(true)}
+ startIcon={<FlagIcon />}
+ sx={{
+ 
+ px: 3,
+ py: 1,
+ textTransform: "none",
+ fontWeight: 600,
+ fontSize: 14,
+ background: "linear-gradient(135deg,#e53935,#ff7043)",
+ color: "#fff",
+ boxShadow: "0 4px 15px rgba(229,57,53,0.3)",
+ "&:hover": {
+ background: "linear-gradient(135deg,#c62828,#e64a19)" } }}
+ >
             Raise Discrepancy
           </Button>
         }
@@ -975,7 +1028,12 @@ export default function Teaching() {
             variant="standard"
             disableUnderline
             value={selectedYearLabel}
-            onChange={(e) => setSelectedYearLabel(e.target.value)}
+            onChange={(e) => {
+              setSelectedYearLabel(e.target.value);
+              blurActiveElement();
+            }}
+            onClose={blurActiveElement}
+            MenuProps={selectMenuProps}
             sx={{ minWidth: 120, fontSize: 14, color: "var(--text-primary)", fontWeight: 600, "& .MuiSelect-icon": { color: "var(--text-secondary)" } }}
           >
             {[...new Set(academicYears.map(y => y.year))].map((year) => (
@@ -1075,28 +1133,6 @@ export default function Teaching() {
       <Box sx={sectionCard}>
         <SectionHeader
           title="SECTION : Proctoring Students' Average Pass Percentage"
-          action={
-            <Button
-              variant="contained"
-              startIcon={<AddIcon />}
-              onClick={handleOpenAddModal}
-              sx={{
-                borderRadius: "10px",
-                textTransform: "none",
-                fontWeight: 700,
-                px: 3,
-                background: "var(--gradient-primary)",
-                color: "#fff",
-                boxShadow: "0 4px 15px rgba(0, 78, 146, 0.2)",
-                "&:hover": {
-                  background: "var(--gradient-primary)",
-                  opacity: 0.95
-                }
-              }}
-            >
-              Add Record
-            </Button>
-          }
         />
 
         {manualLoading ? (
@@ -1116,239 +1152,14 @@ export default function Teaching() {
               mb: 3
             }}
           >
-            No proctoring records found for this academic cycle. Click "Add Record" to enter proctoring details.
+            No proctoring records found for this academic cycle.
           </Box>
         ) : (
           <DataTable columns={manualProctorColumns} rows={manualProctorRows} defaultRowsPerPage={5} />
         )}
       </Box>
 
-      {/* Proctoring Form Add/Edit Modal */}
-      <Dialog
-        open={isProctorModalOpen}
-        onClose={() => setIsProctorModalOpen(false)}
-        maxWidth="sm"
-        fullWidth
-        slotProps={{
-          paper: {
-            sx: {
-              borderRadius: "20px",
-              bgcolor: "var(--bg-panel)",
-              border: "1px solid var(--border-color)",
-              backgroundImage: "none",
-              p: 1
-            }
-          }
-        }}
-      >
-        <DialogTitle sx={{ fontWeight: 800, fontSize: 18, color: "var(--text-primary)", pb: 1 }}>
-          {editingEntry ? "Edit Proctoring Record" : "Add Proctoring Record"}
-        </DialogTitle>
-        <form onSubmit={handleProctorModalSubmit}>
-          <DialogContent>
-            <Grid container spacing={2.5} sx={{ mt: 0.5 }}>
-              {/* Program selection */}
-              <Grid item xs={12} sm={6}>
-                <FormControl fullWidth size="small">
-                  <InputLabel shrink sx={{ color: "var(--text-secondary)" }}>Program</InputLabel>
-                  <Select
-                    value={selectedProgramId}
-                    label="Program"
-                    onChange={(e) => setSelectedProgramId(e.target.value)}
-                    displayEmpty
-                    fullWidth
-                    sx={{ borderRadius: "10px", color: "var(--text-primary)", bgcolor: "rgba(255,255,255,0.01)" }}
-                  >
-                    <MenuItem value="" disabled sx={{ fontStyle: "italic", color: "var(--text-secondary)" }}>
-                      Select Program
-                    </MenuItem>
-                    {programs.map((p) => (
-                      <MenuItem key={p._id} value={p._id}>
-                        {p.name} ({p.code})
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-              </Grid>
 
-              {/* Branch selection */}
-              <Grid item xs={12} sm={6}>
-                <FormControl fullWidth size="small" disabled={!selectedProgramId}>
-                  <InputLabel shrink sx={{ color: "var(--text-secondary)" }}>Branch Code</InputLabel>
-                  <Select
-                    value={selectedBranchId}
-                    label="Branch Code"
-                    onChange={(e) => setSelectedBranchId(e.target.value)}
-                    displayEmpty
-                    fullWidth
-                    sx={{ borderRadius: "10px", color: "var(--text-primary)", bgcolor: "rgba(255,255,255,0.01)" }}
-                  >
-                    <MenuItem value="" disabled sx={{ fontStyle: "italic", color: "var(--text-secondary)" }}>
-                      Select Branch
-                    </MenuItem>
-                    {branches.map((b) => (
-                      <MenuItem key={b._id} value={b._id}>
-                        {b.name} ({b.code})
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-              </Grid>
-
-              {/* Sem/Year numeric input based on Program Pattern */}
-              <Grid item xs={12} sm={6}>
-                {(() => {
-                  const program = programs.find((p) => p._id === selectedProgramId);
-                  const isYearPattern = program?.programPattern === "YEAR";
-                  if (isYearPattern) {
-                    return (
-                      <TextField
-                        label="Year Number"
-                        type="number"
-                        fullWidth
-                        size="small"
-                        required
-                        value={yearNumber}
-                        onChange={(e) => setYearNumber(e.target.value)}
-                        slotProps={{ htmlInput: { min: 1, step: 1 } }}
-                        sx={{ "& .MuiOutlinedInput-root": { borderRadius: "10px" } }}
-                      />
-                    );
-                  } else {
-                    return (
-                      <TextField
-                        label="Semester Number"
-                        type="number"
-                        fullWidth
-                        size="small"
-                        required
-                        value={semesterNumber}
-                        onChange={(e) => setSemesterNumber(e.target.value)}
-                        slotProps={{ htmlInput: { min: 1, step: 1 } }}
-                        sx={{ "& .MuiOutlinedInput-root": { borderRadius: "10px" } }}
-                      />
-                    );
-                  }
-                })()}
-              </Grid>
-
-              {/* Section - numeric only */}
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  label="Section (Numeric Only)"
-                  type="number"
-                  fullWidth
-                  size="small"
-                  required
-                  value={section}
-                  onChange={(e) => setSection(e.target.value)}
-                  slotProps={{ htmlInput: { min: 1, step: 1 } }}
-                  sx={{ "& .MuiOutlinedInput-root": { borderRadius: "10px" } }}
-                />
-              </Grid>
-
-              {/* Student counts inputs */}
-              <Grid item xs={12} sm={4}>
-                <TextField
-                  label="Total Allotted"
-                  type="number"
-                  fullWidth
-                  size="small"
-                  required
-                  value={totalStudents}
-                  onChange={(e) => setTotalStudents(e.target.value)}
-                  slotProps={{ htmlInput: { min: 0, step: 1 } }}
-                  sx={{ "& .MuiOutlinedInput-root": { borderRadius: "10px" } }}
-                />
-              </Grid>
-
-              <Grid item xs={12} sm={4}>
-                <TextField
-                  label="Eligible for End Exams (A)"
-                  type="number"
-                  fullWidth
-                  size="small"
-                  required
-                  value={eligibleStudents}
-                  onChange={(e) => setEligibleStudents(e.target.value)}
-                  slotProps={{ htmlInput: { min: 0, step: 1 } }}
-                  sx={{ "& .MuiOutlinedInput-root": { borderRadius: "10px" } }}
-                />
-              </Grid>
-
-              <Grid item xs={12} sm={4}>
-                <TextField
-                  label="Passed Students (B)"
-                  type="number"
-                  fullWidth
-                  size="small"
-                  required
-                  value={passedStudents}
-                  onChange={(e) => setPassedStudents(e.target.value)}
-                  slotProps={{ htmlInput: { min: 0, step: 1 } }}
-                  sx={{ "& .MuiOutlinedInput-root": { borderRadius: "10px" } }}
-                />
-              </Grid>
-
-              {/* Calculated Pass Percentage display */}
-              <Grid item xs={12}>
-                <Box
-                  sx={{
-                    p: 2,
-                    borderRadius: "12px",
-                    bgcolor: "rgba(2, 132, 199, 0.05)",
-                    border: "1px solid rgba(2, 132, 199, 0.15)",
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center"
-                  }}
-                >
-                  <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-secondary)" }}>
-                    Calculated Pass Percentage:
-                  </Typography>
-                  <Typography variant="subtitle1" sx={{ fontWeight: 800, color: "var(--color-primary)" }}>
-                    {(() => {
-                      const elg = parseInt(eligibleStudents);
-                      const pass = parseInt(passedStudents);
-                      if (isNaN(elg) || isNaN(pass) || elg <= 0 || pass < 0 || pass > elg) return "0.00%";
-                      return `${((pass / elg) * 100).toFixed(2)}%`;
-                    })()}
-                  </Typography>
-                </Box>
-              </Grid>
-            </Grid>
-          </DialogContent>
-          <DialogActions sx={{ px: 3, pb: 2.5, gap: 1 }}>
-            <Button
-              onClick={() => setIsProctorModalOpen(false)}
-              disabled={submittingManual}
-              sx={{ textTransform: "none", fontWeight: 700, borderRadius: "10px", color: "var(--text-secondary)" }}
-            >
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              variant="contained"
-              disabled={submittingManual}
-              sx={{
-                textTransform: "none",
-                fontWeight: 700,
-                borderRadius: "10px",
-                px: 3,
-                background: "var(--gradient-primary)",
-                color: "#fff",
-                boxShadow: "0 4px 15px rgba(0, 78, 146, 0.2)",
-                "&:hover": {
-                  background: "var(--gradient-primary)",
-                  opacity: 0.95
-                }
-              }}
-            >
-              {submittingManual ? <CircularProgress size={16} sx={{ color: "#fff" }} /> : editingEntry ? "Save Changes" : "Add Record"}
-            </Button>
-          </DialogActions>
-        </form>
-      </Dialog>
 
 
       {/* ── SECTION : Feedback ────────────────────────────── */}

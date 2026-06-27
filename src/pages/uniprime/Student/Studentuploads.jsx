@@ -48,7 +48,6 @@ import SectionHeader from "../../../components/common/SectionHeader";
 import ActionButton from "../../../components/common/ActionButton";
 import DataTable from "../../../components/data/DataTable";
 import API from "../../../api/axios";
-import HelpOutlinedIcon from "@mui/icons-material/HelpOutlined";
 
 // Upload progress steps config
 const UPLOAD_STEPS = [
@@ -65,7 +64,7 @@ const formatElapsed = (seconds) => {
 };
 
 // ── Upload Progress Tracker Component ──
-const UploadProgressTracker = ({ activeStep, stepTimers, isComplete, hasError }) => {
+const UploadProgressTracker = ({ activeStep, stepTimers, isComplete }) => {
     const totalSteps = UPLOAD_STEPS.length;
     const progressPercent = isComplete
         ? 100
@@ -228,10 +227,8 @@ const UploadProgressTracker = ({ activeStep, stepTimers, isComplete, hasError })
 const Studentuploads = () => {
     const fileInputRef = useRef(null);
     const [selectedIds, setSelectedIds] = useState([]);
-    const [isProceeding, setIsProceeding] = useState(false);
     const [allDepartments, setAllDepartments] = useState([]);
     const [selectedDept, setSelectedDept] = useState("");
-    const [loadingDepts, setLoadingDepts] = useState(false);
     const [students, setStudents] = useState([]);
     const [loadingStudents, setLoadingStudents] = useState(false);
     const [uploading, setUploading] = useState(false);
@@ -497,7 +494,7 @@ const Studentuploads = () => {
             }
         } catch (error) {
             console.error("Assignment failed", error);
-            toast.error("Assignment failed");
+            toast.error(error.response?.data?.message || "Assignment failed. Please try again.");
         }
     };
 
@@ -593,10 +590,8 @@ const Studentuploads = () => {
             <input type="file" ref={fileInputRef} style={{ display: "none" }} accept=".csv,.xlsx" onChange={handleFileChange} />
 
             <PageHeader
-                title="Student Management"
-                subtitle="Upload and manage student records"
-                breadcrumbs={["Home", "Student Management", "Student Upload"]}
-                action={null}
+                title="Student Imports & Uploads"
+                subtitle="Upload and manage student record imports" action={null}
             />
 
             {/* Quick Action Cards (Box System) */}
@@ -1040,8 +1035,7 @@ const Studentuploads = () => {
                             borderRadius: "14px",
                             px: 3,
                             "&:hover": {
-                                background: "var(--bg-accent-1)",
-                                "body.dark-mode &": { background: "rgba(255, 255, 255, 0.1)" }
+                                background: "var(--bg-accent-1)"
                             }
                         }}
                     >

@@ -45,7 +45,7 @@ const FundedProjectApprovalDetail = ({ id, onBack, role }) => {
                 }
             } catch (error) {
                 console.error("Failed to fetch funded project details", error);
-                toast.error("Failed to load details");
+                toast.error(error.response?.data?.message || "Failed to load details");
             } finally {
                 setLoading(false);
             }
@@ -55,7 +55,7 @@ const FundedProjectApprovalDetail = ({ id, onBack, role }) => {
 
     const handleAction = async (action) => {
         if (!remarks && action === 'Reject') {
-            toast.error('Remarks are required for rejection.');
+            toast.error('Remarks are required for rejection');
             return;
         }
 
@@ -64,8 +64,7 @@ const FundedProjectApprovalDetail = ({ id, onBack, role }) => {
             const endpoint = isResearchAdmin ? `/api/research/funded-project/rnd-action/${id}` : `/api/research/funded-project/hod-action/${id}`;
             const res = await API.put(endpoint, {
                 action,
-                comment: remarks,
-                approvedAmount: isResearchAdmin ? approvedAmount : undefined
+                comment: remarks
             });
             if (res.data?.success) {
                 toast.success(`Request ${action === 'Approve' ? 'Approved' : 'Rejected'} successfully`);
@@ -245,9 +244,7 @@ const FundedProjectApprovalDetail = ({ id, onBack, role }) => {
                     <Box sx={{ display: "flex", flexDirection: "column" }}>
                         <LabelValue label="Funding Agency" value={data.fundingAgency} horizontal />
                         <LabelValue label="Scheme" value={data.scheme} horizontal />
-                        <LabelValue label="Duration" value={data.duration} horizontal />
-                        <LabelValue label="Principal Inv" value={data.principalInvestigator} horizontal />
-                        <LabelValue label="Other Investigators" value={data.otherInvestigators} horizontal />
+                        <LabelValue label="Investigator Type" value={data.investigatorType || (data.principalInvestigator === "Yes" ? "Principal Investigator (PI)" : "Co-Principal Investigator (Co-PI)")} horizontal />
                         <LabelValue label="Date of Sanction" value={new Date(data.sanctionDate).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })} horizontal />
                         <LabelValue label="Sanctioned Amt" value={`₹${data.sanctionedAmount}`} horizontal />
                         <LabelValue label="Recurring" value={`₹${data.recurring || "0"}`} horizontal />
@@ -256,6 +253,76 @@ const FundedProjectApprovalDetail = ({ id, onBack, role }) => {
                     </Box>
                 </Card>
             </Box>
+
+            {/* Co-Investigators */}
+            {data.coInvestigators?.length > 0 && (
+                <Card sx={{ ...cardStyle, p: 0, overflow: "hidden", mb: 3 }}>
+                    <Box sx={{ p: 3, pb: 2 }}>
+                        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                            <GroupsIcon sx={{ color: "var(--color-primary)" }} />
+                            <Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>Co-Investigators Details</Typography>
+                            <Box sx={{ ml: 'auto', px: 1.5, py: 0.5, borderRadius: '20px', bgcolor: 'rgba(190,147,55,0.12)', border: '1px solid rgba(190,147,55,0.3)' }}>
+                                <Typography variant="caption" sx={{ fontWeight: 900, color: 'var(--color-primary)', fontSize: '0.7rem' }}>
+                                Total: {data.coInvestigators.length} Co-Investigator{data.coInvestigators.length > 1 ? 's' : ''}
+                                </Typography>
+                            </Box>
+                        </Box>
+                    </Box>
+                    <TableContainer>
+                        <Table>
+                            <TableHead sx={{ bgcolor: "var(--bg-panel)" }}>
+                                <TableRow>
+                                    <TableCell sx={{ color: "var(--text-secondary)", fontWeight: 800, fontSize: "0.7rem", textTransform: "uppercase", width: 60 }}>S.No</TableCell>
+                                    <TableCell sx={{ color: "var(--text-secondary)", fontWeight: 800, fontSize: "0.7rem", textTransform: "uppercase" }}>NAME</TableCell>
+                                    <TableCell sx={{ color: "var(--text-secondary)", fontWeight: 800, fontSize: "0.7rem", textTransform: "uppercase" }}>ROLE</TableCell>
+                                    <TableCell sx={{ color: "var(--text-secondary)", fontWeight: 800, fontSize: "0.7rem", textTransform: "uppercase" }}>AFFILIATION & DETAILS</TableCell>
+                                </TableRow>
+                            </TableHead>
+                            <TableBody>
+                                {data.coInvestigators.map((ca, i) => {
+                                    const roleText = ca.role || (ca.principalInvestigator === "Yes" ? "Principal Investigator" : "Co-Investigator");
+                                    return (
+                                        <TableRow key={i} sx={{ '&:hover': { bgcolor: 'rgba(190,147,55,0.04)' } }}>
+                                            <TableCell>
+                                                <Box sx={{
+                                                    display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                                                    width: 32, height: 32, borderRadius: '50%',
+                                                    bgcolor: 'rgba(190, 147, 55, 0.12)', border: '1.5px solid var(--color-primary)',
+                                                    color: 'var(--color-primary)', fontWeight: 900, fontSize: '0.85rem'
+                                                }}>
+                                                    {i + 1}
+                                                </Box>
+                                            </TableCell>
+                                            <TableCell sx={{ fontWeight: 700, color: "var(--text-primary)" }}>
+                                                {ca.name} {ca.employeeId ? `(Code: ${ca.employeeId})` : ""}
+                                            </TableCell>
+                                            <TableCell sx={{ fontWeight: 600 }}>
+                                                <Chip 
+                                                    size="small" 
+                                                    label={roleText} 
+                                                    color={roleText.includes("Principal") ? "primary" : "secondary"} 
+                                                    variant="outlined"
+                                                    sx={{ fontWeight: 700, borderRadius: "6px" }} 
+                                                />
+                                            </TableCell>
+                                            <TableCell sx={{ fontWeight: 600, color: "var(--text-secondary)" }}>
+                                                <Typography variant="body2" sx={{ fontWeight: 600, color: "var(--text-secondary)" }}>
+                                                    {ca.affiliation || "Aditya University"}
+                                                </Typography>
+                                                {(ca.department || ca.designation) && (
+                                                    <Typography variant="caption" sx={{ color: "text.secondary", display: "block" }}>
+                                                        {ca.department ? `Dept: ${ca.department}` : ""} {ca.designation ? `| Desig: ${ca.designation}` : ""}
+                                                    </Typography>
+                                                )}
+                                            </TableCell>
+                                        </TableRow>
+                                    );
+                                })}
+                            </TableBody>
+                        </Table>
+                    </TableContainer>
+                </Card>
+            )}
 
             {/* Documents */}
             <Card sx={cardStyle}>
@@ -274,11 +341,12 @@ const FundedProjectApprovalDetail = ({ id, onBack, role }) => {
                         <Card sx={{ ...cardStyle, borderTop: "4px solid var(--color-primary)", mb: 0 }}>
                             <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 3 }}><GavelIcon sx={{ color: "var(--color-primary)" }} /><Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>Review Decision</Typography></Box>
                             
+                            {/* Incentive input removed as there is no incentive for Funded Project */}
                             <TextField fullWidth multiline rows={3} placeholder="Provide your review comments..." value={remarks} onChange={e => setRemarks(e.target.value)} sx={{ mb: 3, "& .MuiOutlinedInput-root": { borderRadius: "12px", bgcolor: "var(--bg-panel)" } }} />
 
                             <Box sx={{ display: "flex", gap: 2, justifyContent: "flex-end" }}>
-                                <Button variant="outlined" disabled={actionLoading} onClick={() => handleAction('Reject')} sx={{ color: "#ef4444", borderColor: "#ef4444", fontWeight: 800, borderRadius: "10px", textTransform: "none", px: 3 }}>Reject</Button>
-                                <Button variant="contained" disabled={actionLoading} onClick={() => handleAction('Approve')} sx={{ bgcolor: "#10b981", color: "#fff", fontWeight: 800, borderRadius: "10px", textTransform: "none", px: 4, "&:hover": { bgcolor: "#059669" } }}>{isHOD ? "Approve & Forward" : "Final Approve"}</Button>
+                                <Button variant="outlined" color="error" disabled={actionLoading} onClick={() => handleAction('Reject')} sx={{ px: 3 }}>Reject</Button>
+                                <Button variant="contained" color="success" disabled={actionLoading} onClick={() => handleAction('Approve')} sx={{ px: 4 }}>{isHOD ? "Approve & Forward" : "Final Approve"}</Button>
                             </Box>
                         </Card>
                     ) : (
@@ -289,6 +357,7 @@ const FundedProjectApprovalDetail = ({ id, onBack, role }) => {
                                 <Box sx={{ mt: 3, textAlign: "left", p: 2, bgcolor: "rgba(16, 185, 129, 0.05)", borderRadius: "10px", border: "1px solid #10b98133" }}>
                                     <Typography variant="caption" sx={{ fontWeight: 900, color: "#10b981", textTransform: "uppercase" }}>R&D Remarks:</Typography>
                                     <Typography variant="body2" sx={{ fontWeight: 600, mt: 0.5 }}>"{data.rndComment}"</Typography>
+                                    {data.approvedAmount && <Typography variant="h6" sx={{ mt: 2, fontWeight: 900, color: "#10b981" }}>Approved Amount: ₹{data.approvedAmount}</Typography>}
                                 </Box>
                             )}
                         </Card>

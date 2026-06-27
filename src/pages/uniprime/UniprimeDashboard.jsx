@@ -38,6 +38,7 @@ import {
   Security,
   AutoFixHigh as AutoFixHighIcon,
   Share,
+  Flag,
 } from "@mui/icons-material";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import MenuBook from "@mui/icons-material/MenuBook";
@@ -56,6 +57,7 @@ const UniprimeDashboard = () => {
     branchesCount: 0,
     usersCount: 0,
     rolesCount: 0,
+    discrepanciesCount: 0,
     departmentsList: [],
     programsList: [],
     branchesList: [],
@@ -80,6 +82,7 @@ const UniprimeDashboard = () => {
             branchesCount: res.data.data.branchesCount || 0,
             usersCount: res.data.data.usersCount || 0,
             rolesCount: res.data.data.rolesCount || 0,
+            discrepanciesCount: res.data.data.discrepanciesCount || 0,
             departmentsList: res.data.data.departmentsList || [],
             programsList: res.data.data.programsList || [],
             branchesList: res.data.data.branchesList || [],
@@ -154,6 +157,16 @@ const UniprimeDashboard = () => {
       linkText: "Manage Roles",
       path: "/academics/roles",
     },
+    {
+      title: "Discrepancies",
+      value: dashboardData.discrepanciesCount,
+      icon: <Flag />,
+      gradient: "linear-gradient(135deg, #F59E0B, #D97706)",
+      color: "#F59E0B",
+      bgDark: "rgba(245, 158, 11, 0.15)",
+      linkText: "Resolve Discrepancies",
+      path: "/uniprime/discrepancies",
+    },
   ];
 
   const quickActions = [
@@ -222,7 +235,7 @@ const UniprimeDashboard = () => {
               <Box
                 key={i}
                 sx={{
-                  flex: { xs: "1 1 100%", sm: "1 1 calc(50% - 24px)", md: "1 1 calc(33.33% - 24px)", lg: "1 1 calc(20% - 24px)" },
+                  flex: { xs: "1 1 100%", sm: "1 1 calc(50% - 24px)", md: "1 1 calc(33.33% - 24px)", lg: "1 1 calc(16.66% - 24px)" },
                   display: 'flex',
                   minWidth: "200px"
                 }}

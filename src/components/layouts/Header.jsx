@@ -22,7 +22,7 @@ const capitalizeRole = (role) => {
   return role.toLowerCase().split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
 };
 
-const Header = ({ onMenuClick }) => {
+const Header = ({ isSidebarCollapsed }) => {
   const { user, activeRole, switchRole, logout } = useAuth();
   const [imgError, setImgError] = useState(false);
   const [anchorEl, setAnchorEl] = useState(null);
@@ -45,6 +45,7 @@ const Header = ({ onMenuClick }) => {
   };
 
   const handleClose = () => {
+    console.log("Header: handleClose called, setting anchorEl to null");
     setAnchorEl(null);
     // Remove focus from the active element (e.g., clicked MenuItem) before the menu hides
     // This prevents the "Blocked aria-hidden on an element because its descendant retained focus" warning.
@@ -90,41 +91,44 @@ const Header = ({ onMenuClick }) => {
       sx={{
         position: "fixed",
         top: 0,
-        left: { xs: 0, md: 270 },
+        left: { xs: 0, md: isSidebarCollapsed ? 85 : 270 },
         right: 0,
         zIndex: 1100,
         display: "flex",
         alignItems: "center",
-        justifyContent: { xs: "space-between", md: "flex-end" },
+        justifyContent: "space-between",
         gap: 2,
-        pl: { xs: 0, md: 3 },
+        pl: { xs: 1.5, md: 3 },
         pr: { xs: 1.5, md: 3 },
         py: { xs: 1.2, md: 1.2 },
-        transition: "all 0.3s ease",
+        transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
         background: "var(--bg-paper)",
         boxShadow: "0 2px 10px rgba(0,0,0,0.05)",
         borderBottom: "1px solid var(--border-color)",
       }}
     >
-      {/* MOBILE ONLY LOGO: dynamic based on theme */}
-      <Box
-        sx={{
-          display: { xs: "flex", md: "none" },
-          alignItems: "center",
-          height: { xs: 45, sm: 52 },
-          ml: -1.2, // Shift slightly left to sit perfectly flush against the edge
-        }}
-      >
+      {/* LEFT SECTION: Mobile logo (mobile only) */}
+      <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+        {/* MOBILE ONLY LOGO: dynamic based on theme */}
         <Box
-          component="img"
-          src={isDarkMode ? logoDarkTheme : logoLightTheme}
-          alt="Aditya University Logo"
           sx={{
-            height: "100%",
-            width: "auto",
-            objectFit: "contain",
+            display: { xs: "flex", md: "none" },
+            alignItems: "center",
+            height: { xs: 45, sm: 52 },
+            ml: -1.2, // Shift slightly left to sit perfectly flush against the edge
           }}
-        />
+        >
+          <Box
+            component="img"
+            src={isDarkMode ? logoDarkTheme : logoLightTheme}
+            alt="Aditya University Logo"
+            sx={{
+              height: "100%",
+              width: "auto",
+              objectFit: "contain",
+            }}
+          />
+        </Box>
       </Box>
 
       {/* RIGHT SECTION: Unified Profile & Role Pill */}
@@ -390,7 +394,7 @@ const Header = ({ onMenuClick }) => {
                 <Brightness4 fontSize="small" sx={{ color: "var(--text-secondary)" }} />
                 Appearance
               </Box>
-              <ThemeToggle />
+              <ThemeToggle onToggle={handleClose} />
             </MenuItem>
 
             <Box sx={{ my: 2, mx: 2, height: "1px", background: "var(--border-color)" }} />

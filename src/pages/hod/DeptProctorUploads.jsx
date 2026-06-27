@@ -81,7 +81,7 @@ const DeptProctorUploads = () => {
         const years = yearRes.data?.years || yearRes.data?.data || [];
         // Try to find program-specific active year later (when program is selected)
         // For now just store all years
-        const active = years.find(y => y.isActive && !y.program);
+        const active = years.find(y => y.isGlobalActive);
         if (active) {
           setActiveYear(active.year);
           setActiveSemesterType(active.activeSemesterTypeId?.name || "");
@@ -309,7 +309,7 @@ const DeptProctorUploads = () => {
   };
 
   const downloadTemplate = () => {
-    if (students.length === 0) return toast.info("Please fetch students first.");
+    if (students.length === 0) return toast.info("Please fetch students first");
     const acYearStr = activeYear || `${new Date().getFullYear()}-${new Date().getFullYear() + 1}`;
 
     if (isYearBased) {
@@ -435,29 +435,29 @@ const DeptProctorUploads = () => {
         <SectionHeader title={`Students (${students.length})`} />
         <Stack direction={{ xs: "column", sm: "row" }} spacing={2} sx={{ width: { xs: "100%", sm: "auto" } }}>
           <Button
-            variant="outlined" startIcon={<DownloadIcon />}
-            onClick={downloadTemplate} disabled={students.length === 0}
-            sx={{
-              borderRadius: "10px", textTransform: "none", whiteSpace: "nowrap",
-              borderColor: 'var(--border-color)', color: 'var(--text-primary)',
-              '&.Mui-disabled': { color: 'var(--text-secondary)', borderColor: 'var(--border-color)', opacity: 0.5 },
-              '&:hover': { borderColor: 'var(--color-primary)', background: 'var(--bg-glass)' }
-            }}
-          >
+ variant="outlined" startIcon={<DownloadIcon />}
+ onClick={downloadTemplate} disabled={students.length === 0}
+ sx={{
+ textTransform: "none", whiteSpace: "nowrap",
+ borderColor: 'var(--border-color)', color: 'var(--text-primary)',
+ '&.Mui-disabled': { color: 'var(--text-secondary)', borderColor: 'var(--border-color)', opacity: 0.5 },
+ '&:hover': { borderColor: 'var(--color-primary)', background: 'var(--bg-glass)' }
+ }}
+ >
             Download Template
           </Button>
           <Button
-            onClick={handleCSVUploadClick}
-            disabled={uploadingCSV || students.length === 0}
-            startIcon={<CloudUploadIcon />}
-            sx={{
-              borderRadius: "10px", textTransform: "none", fontWeight: 700,
-              background: 'var(--gradient-primary)', color: "#fff",
-              '&.Mui-disabled': { background: 'var(--bg-glass)', color: 'var(--text-secondary)', opacity: 0.5 },
-              "&:hover": { boxShadow: '0 4px 15px rgba(0,0,0,0.2)' },
-              whiteSpace: "nowrap"
-            }}
-          >
+ onClick={handleCSVUploadClick}
+ disabled={uploadingCSV || students.length === 0}
+ startIcon={<CloudUploadIcon />}
+ sx={{
+ textTransform: "none", fontWeight: 700,
+ background: 'var(--gradient-primary)', color: "#fff",
+ '&.Mui-disabled': { background: 'var(--bg-glass)', color: 'var(--text-secondary)', opacity: 0.5 },
+ "&:hover": { boxShadow: '0 4px 15px rgba(0,0,0,0.2)' },
+ whiteSpace: "nowrap"
+ }}
+ >
             Upload CSV
           </Button>
           <input ref={fileInputRef} type="file" accept=".csv" onChange={handleCSVFileSelect} style={{ display: "none" }} />

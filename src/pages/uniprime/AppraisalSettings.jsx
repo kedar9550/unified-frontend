@@ -75,15 +75,8 @@ const AppraisalSettings = () => {
   // Per-card editing states
   const [editingCard, setEditingCard] = useState({});
 
-  // Expand/collapse states for lists inside cards
-  const [expandedCard, setExpandedCard] = useState({});
-
   const toggleEditCard = (cardId) => {
     setEditingCard(prev => ({ ...prev, [cardId]: !prev[cardId] }));
-  };
-
-  const toggleExpandCard = (cardId) => {
-    setExpandedCard(prev => ({ ...prev, [cardId]: !prev[cardId] }));
   };
 
   // Load academic years
@@ -94,10 +87,11 @@ const AppraisalSettings = () => {
         const yearsList = res.data?.years || [];
         setAcademicYears(yearsList);
         if (yearsList.length > 0) {
-          setSelectedYear(yearsList[0]._id);
+          const active = yearsList.find((y) => y.isGlobalActive);
+          setSelectedYear(active ? active._id : yearsList[0]._id);
         }
       } catch (err) {
-        toast.error("Failed to load academic years.");
+        toast.error(err.response?.data?.message || "Failed to load academic years");
       }
     };
     fetchYears();
@@ -114,7 +108,7 @@ const AppraisalSettings = () => {
           setConfig(res.data.data);
         }
       } catch (err) {
-        toast.error("Failed to fetch points configurations.");
+        toast.error(err.response?.data?.message || "Failed to fetch points configurations");
       } finally {
         setLoading(false);
       }
@@ -138,7 +132,7 @@ const AppraisalSettings = () => {
         toast.success("Points configurations saved successfully!");
       }
     } catch (err) {
-      toast.error(err.response?.data?.message || "Failed to save configurations.");
+      toast.error(err.response?.data?.message || "Failed to save configurations");
     } finally {
       setLoading(false);
     }

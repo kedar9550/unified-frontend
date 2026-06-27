@@ -1,6 +1,7 @@
 import Loader from "../../components/common/Loader";
 import { useState, useEffect } from "react";
 import { useAuth } from "../../context/AuthContext";
+import { useLoading } from "../../context/LoadingContext";
 
 import {
   Box, TextField, MenuItem, Select, Typography, Button, Table, TableBody,
@@ -11,11 +12,13 @@ import {
 import { toast } from "sonner";
 import { Search, Close, Download, Description, Groups, Article, Person, AttachFile, Visibility } from "@mui/icons-material";
 import PageHeader from "../../components/common/PageHeader";
+import NoActiveYearDialog from "../../components/common/NoActiveYearDialog";
 import {
-  FacultyInfoRow, FormCard, Grid2, SubLabel, NoteBox, FileField, SubmitBtn,
-  labelStyle, disabledField, MONTHS, YEARS
+  FacultyInfoRow, FormCard, Grid2, SubLabel, NoteBox, FileField, SubmitBtn
 } from "../../components/faculty/PublicationFormFields";
-import API from "../../api/axios";
+import {
+  labelStyle, disabledField, MONTHS, YEARS
+} from "../../components/faculty/publicationConstants"; import API from "../../api/axios";
 import mammoth from "mammoth";
 import * as pdfjsLib from "pdfjs-dist";
 import pdfWorker from "pdfjs-dist/build/pdf.worker.min.mjs?url";
@@ -25,10 +28,10 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorker;
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 const JOURNAL_TYPES = ["SCI", "SCIE", "ESCI", "WoS", "SCOPUS"];
-const QUARTILE_OPTIONS = ["Q1", "Q2", "Q3", "Q4", "N/A"];
+const QUARTILE_OPTIONS = ["Q1", "Q2", "Q3", "Q4"];
 const INCENTIVE_OPTIONS = ["National", "International"];
 
-export const getSdgName = (sdgCode) => {
+const getSdgName = (sdgCode) => {
   const mapping = {
     "SDG-1": "SDG-1: No Poverty",
     "SDG-2": "SDG-2: Zero Hunger",
@@ -56,7 +59,7 @@ export const getSdgName = (sdgCode) => {
 };
 
 // ─── Scopus / Elsevier API keys ───────────────────────────────────────────────
-const ELSEVIER_API_KEY = "0436d4fe788649172354545ceca9e650";
+const ELSEVIER_API_KEY = import.meta.env.VITE_ELSEVIER_API_KEY;
 
 // ─── DOI Fetch Helper ─────────────────────────────────────────────────────────
 async function fetchJournalDataByDOI(doi) {
@@ -81,8 +84,12 @@ async function fetchJournalDataByDOI(doi) {
   }
   const abstractJson = await abstractRes.json();
   const entry = abstractJson?.["search-results"]?.entry?.[0];
-  if (!entry) {
-    throw new Error("DOI not found in Scopus. Please fill fields manually.");
+  if (!entry || entry.error || (!entry["dc:title"] && !entry["prism:publicationName"])) {
+    throw new Error("DOI not found in Scopus. Please fill fields manually");
+  }
+
+  if (entry.subtype === "cp" || entry["prism:aggregationType"] === "Conference Proceeding") {
+    throw new Error("Only journal papers are allowed. Conference papers are not accepted.");
   }
 
   const title = entry["dc:title"] || "";
@@ -91,25 +98,33 @@ async function fetchJournalDataByDOI(doi) {
   const issue = entry["prism:issueIdentifier"] || "";
   const pageRange = entry["prism:pageRange"] || "";
   const coverDisplayDate = entry["prism:coverDisplayDate"] || "";
-  
+
   // Clean ISSN
-  const rawIssn = entry["prism:issn"] || entry["prism:eIssn"] || "";
-  const issn = rawIssn.split(" ")[0].replace(/-/g, "");
-  
+  const rawIssn = entry["prism:issn"] || "";
+  const rawEissn = entry["prism:eIssn"] || "";
+
+  let extractedIssn = null;
+  let extractedEissn = null;
+
+  if (rawIssn) extractedIssn = rawIssn.split(" ")[0].replace(/-/g, "");
+  if (rawEissn) extractedEissn = rawEissn.split(" ")[0].replace(/-/g, "");
+
+  const activeIssn = extractedIssn || extractedEissn;
+
   // Format ISSN with hyphen for WoS check
-  let issnWoS = "";
-  if (issn.length === 8) {
-    issnWoS = issn.slice(0, 4) + "-" + issn.slice(4);
-  } else {
-    issnWoS = rawIssn.split(" ")[0];
-  }
+  const formatISSNWithHyphen = (raw) => {
+    if (!raw) return "";
+    const digits = raw.split(" ")[0].replace(/-/g, "");
+    if (digits.length === 8) return digits.slice(0, 4) + "-" + digits.slice(4);
+    return raw.split(" ")[0];
+  };
 
   // Parse month/year from coverDisplayDate e.g. "January 2024" or "2024-01-15"
   let month = "";
   let year = "";
   if (coverDisplayDate) {
-    const monthNames = ["January","February","March","April","May","June","July","August","September","October","November","December"];
-    const shortMonths = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+    const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+    const shortMonths = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
     const yearMatch = coverDisplayDate.match(/\b(19|20)\d{2}\b/);
     if (yearMatch) year = yearMatch[0];
     for (let i = 0; i < 12; i++) {
@@ -134,16 +149,37 @@ async function fetchJournalDataByDOI(doi) {
   let quartile = "N/A";
   let journalType = "SCOPUS";
 
-  if (issn) {
+  if (activeIssn) {
     try {
-      const serialRes = await fetch(
-        `https://api.elsevier.com/content/serial/title/issn/${issn}?view=CITESCORE`,
-        { method: "GET", headers }
-      );
-      if (serialRes.ok) {
-        const serialJson = await serialRes.json();
-        const entry = serialJson?.["serial-metadata-response"]?.entry?.[0] || {};
-        
+      let serialDataFetched = false;
+      let entry = {};
+
+      if (extractedIssn) {
+        const serialRes = await fetch(
+          `https://api.elsevier.com/content/serial/title/issn/${extractedIssn}?view=CITESCORE`,
+          { method: "GET", headers }
+        );
+        if (serialRes.ok) {
+          const serialJson = await serialRes.json();
+          entry = serialJson?.["serial-metadata-response"]?.entry?.[0] || {};
+          serialDataFetched = true;
+        }
+      }
+
+      if (!serialDataFetched && extractedEissn) {
+        const serialRes = await fetch(
+          `https://api.elsevier.com/content/serial/title/issn/${extractedEissn}?view=CITESCORE`,
+          { method: "GET", headers }
+        );
+        if (serialRes.ok) {
+          const serialJson = await serialRes.json();
+          entry = serialJson?.["serial-metadata-response"]?.entry?.[0] || {};
+          serialDataFetched = true;
+        }
+      }
+
+      if (serialDataFetched) {
+
         // H-Index and Impact Factor are NOT fetched from API to prevent wrong/incorrect values
         hIndex = "";
         jcrImpactFactor = "";
@@ -155,7 +191,7 @@ async function fetchJournalDataByDOI(doi) {
         if (Array.isArray(csYearInfo) && csYearInfo.length > 0) {
           const sortedYears = [...csYearInfo].sort((a, b) => parseInt(b["@year"] || 0) - parseInt(a["@year"] || 0));
           const latestYearInfo = sortedYears[0];
-          
+
           const infoList = latestYearInfo.citeScoreInformationList || [];
           let percentiles = [];
           infoList.forEach(info => {
@@ -170,7 +206,7 @@ async function fetchJournalDataByDOI(doi) {
               });
             });
           });
-          
+
           if (percentiles.length > 0) {
             highestPercentile = Math.max(...percentiles);
           }
@@ -187,26 +223,39 @@ async function fetchJournalDataByDOI(doi) {
 
     // 3. Clarivate WoS proxy check for SCI / SCIE / ESCI / WoS flags
     try {
-      const wosRes = await API.post("/api/research/journal/wos-type", { issn: issnWoS || issn });
-      if (wosRes.data?.success && wosRes.data?.inWoS) {
-        const typesStr = wosRes.data.journalType || "";
-        if (typesStr.includes("SCIE")) journalType = "SCIE";
-        else if (typesStr.includes("SCI")) journalType = "SCI";
-        else if (typesStr.includes("ESCI")) journalType = "ESCI";
-        else if (typesStr.includes("WoS")) journalType = "WoS";
+      let clarivateSuccess = false;
+
+      if (extractedIssn) {
+        const wosIssn = formatISSNWithHyphen(extractedIssn);
+        const wosRes = await API.post("/api/research/journal/wos-type", { issn: wosIssn });
+        if (wosRes.data?.success && wosRes.data?.journalType) {
+          journalType = wosRes.data.journalType;
+          clarivateSuccess = true;
+        }
+      }
+
+      if (!clarivateSuccess && extractedEissn) {
+        const wosEissn = formatISSNWithHyphen(extractedEissn);
+        const wosRes = await API.post("/api/research/journal/wos-type", { issn: wosEissn });
+        if (wosRes.data?.success && wosRes.data?.journalType) {
+          journalType = wosRes.data.journalType;
+          clarivateSuccess = true;
+        }
       }
     } catch (_) { /* ignore WoS proxy errors */ }
   }
 
-  return { title, journalName, vol, issue, pageRange, month, year, hIndex, jcrImpactFactor, quartile, journalType, issn };
+  return { title, journalName, vol, issue, pageRange, month, year, hIndex, jcrImpactFactor, quartile, journalType, issn: activeIssn };
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
 export default function JournalPublication() {
   const { user } = useAuth();
+  const { startLoading, stopLoading } = useLoading();
   const [viewMode, setViewMode] = useState("list"); // 'list' | 'select-year' | 'form'
   const [academicYears, setAcademicYears] = useState([]);
   const [selectedYear, setSelectedYear] = useState("");
+  const [noActiveYearAlertOpen, setNoActiveYearAlertOpen] = useState(false);
   const [publicationsList, setPublicationsList] = useState([]);
   const [selectedPubDetails, setSelectedPubDetails] = useState(null);
   const [page, setPage] = useState(0);
@@ -290,10 +339,10 @@ export default function JournalPublication() {
   useEffect(() => {
     API.get("/api/research/journal")
       .then(res => setPublicationsList(res.data?.data || res.data || []))
-      .catch(() => {});
+      .catch(() => { });
     API.get("/api/academic-years")
       .then(res => setAcademicYears(res.data?.years || res.data?.data || []))
-      .catch(() => {});
+      .catch(() => { });
   }, [viewMode]);
 
   // ── Field setters ────────────────────────────────────────────────────────────
@@ -344,8 +393,8 @@ export default function JournalPublication() {
   const validateFile = (file) => {
     if (!file) return true;
     const allowed = ["application/pdf", "image/jpeg", "image/jpg", "image/png"];
-    if (!allowed.includes(file.type)) { toast.error("Only PDF, JPG, and PNG files are allowed."); return false; }
-    if (file.size > 500 * 1024) { toast.error("File size exceeds 500KB limit."); return false; }
+    if (!allowed.includes(file.type)) { toast.error("Only PDF, JPG, and PNG files are allowed"); return false; }
+    if (file.size > 500 * 1024) { toast.error("File size exceeds 500KB limit"); return false; }
     return true;
   };
 
@@ -357,19 +406,24 @@ export default function JournalPublication() {
 
   const handleCompleteJournalChange = async (e) => {
     const file = e.target.files[0];
-    if (!file) return;
+    if (!file) {
+      setFiles(p => ({ ...p, completeJournal: null }));
+      setForm(p => ({ ...p, completeJournalName: "", sdgs: "" }));
+      setScannedSdgResults(null);
+      return;
+    }
 
-    const allowedExtensions = ['.pdf', '.docx'];
+    const allowedExtensions = ['.pdf'];
     const fileName = file.name.toLowerCase();
     const isValidExtension = allowedExtensions.some(ext => fileName.endsWith(ext));
     if (!isValidExtension) {
-      toast.error("Please upload only PDF or DOCX files for the Complete Journal.");
+      toast.error("Please upload only PDF files for the Complete Journal");
       e.target.value = null;
       return;
     }
 
-    if (file.size > 500 * 1024) {
-      toast.error("Complete Journal file size exceeds 500KB limit.");
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Complete Journal file size exceeds 5MB limit");
       e.target.value = null;
       return;
     }
@@ -451,7 +505,7 @@ export default function JournalPublication() {
       toast.success(`SDG keyword scanning completed! Matched: ${matchedList.length > 0 ? matchedStr : "None"}`);
     } catch (err) {
       console.error("SDG scan error:", err);
-      toast.error("Failed to dynamically scan SDG keywords, but file was attached.");
+      toast.error("Failed to dynamically scan SDG keywords, but file was attached");
     } finally {
       setScanningSdg(false);
     }
@@ -463,7 +517,7 @@ export default function JournalPublication() {
     const filteredValue = value.replace(/[^0-9,]/g, "");
     // Split values using comma, trim spaces, ignore empty values, and count total valid entries
     const count = filteredValue.split(',').map(s => s.trim()).filter(Boolean).length;
-    
+
     setForm(p => ({
       ...p,
       agecReferencingNumbers: filteredValue,
@@ -473,8 +527,9 @@ export default function JournalPublication() {
 
   // ── DOI Fetch ────────────────────────────────────────────────────────────────
   const fetchDOIData = async () => {
-    if (!form.doi.trim()) { toast.warning("Please enter a DOI first."); return; }
+    if (!form.doi.trim()) { toast.warning("Please enter a DOI first"); return; }
     setDoiFetching(true);
+    startLoading();
     try {
       const data = await fetchJournalDataByDOI(form.doi.trim());
 
@@ -496,17 +551,28 @@ export default function JournalPublication() {
       };
 
       Object.entries(map).forEach(([k, v]) => {
-        if (v) { patch[k] = v; fetched[k] = true; }
+        if (v) {
+          patch[k] = v;
+          // Don't lock the quartile field when API returns "N/A" — let user select manually
+          if (!(k === "journalQuartile" && v === "N/A")) {
+            fetched[k] = true;
+          }
+        }
       });
+
+      if (Object.keys(patch).length === 0) {
+        throw new Error("No metadata found for this DOI. Please fill fields manually");
+      }
 
       setForm(p => ({ ...p, ...patch }));
       setDoiFetched(true);
       setDoiFetchedFields(fetched);
       toast.success("Journal details fetched successfully!");
     } catch (err) {
-      toast.error(err.message || "Failed to fetch DOI details.");
+      toast.error(err.message || "Failed to fetch DOI details");
     } finally {
       setDoiFetching(false);
+      stopLoading();
     }
   };
 
@@ -523,7 +589,7 @@ export default function JournalPublication() {
           ),
         }));
       }
-    } catch (_) {}
+    } catch (_) { }
   };
 
   const handleCoAuthorChange = (pos, field, value) => {
@@ -554,11 +620,11 @@ export default function JournalPublication() {
   // ── Submit ───────────────────────────────────────────────────────────────────
   const handleSubmit = async () => {
     if (!user?.panNumber || user?.panNumber === "Not Set" || !user?.college || user?.college === "Not Set") {
-      toast.error("Please update your profile with PAN Number and College before submitting.");
+      toast.error("Please update your profile with PAN Number and College before submitting");
       return;
     }
     if (!form.doi || !form.paperTitle || !form.journalName || !form.vol || !form.issue || !form.month || !form.year) {
-      toast.error("Please fill all required fields.");
+      toast.error("Please fill all required fields");
       return;
     }
 
@@ -573,15 +639,15 @@ export default function JournalPublication() {
       }
     }
     if (!form.applyingSeedGrant) {
-      toast.error("Please select whether applying as a Seed Grant Work.");
+      toast.error("Please select whether applying as a Seed Grant Work");
       return;
     }
     if (!form.applyIncentive) {
-      toast.error("Please select whether you want to apply for an incentive.");
+      toast.error("Please select whether you want to apply for an incentive");
       return;
     }
-    if (form.applyIncentive === "Yes" && !form.publicationScope) {
-      toast.error("Please select National or International for Publication Scope.");
+    if (!form.publicationScope) {
+      toast.error("Please select National or International for Publication Scope");
       return;
     }
 
@@ -605,34 +671,31 @@ export default function JournalPublication() {
     }
 
     if (!files.publishedPaper || !files.referencePages || !files.completeJournal) {
-      toast.error("Please attach all required documents.");
+      toast.error("Please attach all required documents");
       return;
     }
 
     setLoading(true);
     try {
       const fd = new FormData();
-      
+
       // Map coAuthors array matching CoAuthorSchema
       const coAuthorsList = form.otherAuthors.map(a => ({
         name: a.authorName || "",
         affiliation: a.affiliationType === "Aditya University" ? "Aditya University" : (a.affiliationName || ""),
-        employeeId: a.affiliationType === "Aditya University" ? a.empId : null
+        employeeId: a.affiliationType === "Aditya University" ? a.empId : null,
+        authorPosition: a.authorPosition
       })).filter(ca => ca.name && ca.affiliation);
 
       const fields = [
-        "doi","paperTitle","journalName","journalType",
-        "vol","issue","agecReferencingNumbers","applyIncentive","publicationScope",
-        "totalAuthors","userAuthorPosition","hIndex","jcrImpactFactor",
+        "doi", "paperTitle", "journalName", "journalType",
+        "vol", "issue", "agecReferencingNumbers", "applyIncentive", "publicationScope",
+        "totalAuthors", "userAuthorPosition", "hIndex", "jcrImpactFactor",
       ];
       fields.forEach(k => {
-        if (k === "publicationScope" && form.applyIncentive === "No") {
-          fd.append(k, "N/A");
-        } else {
-          fd.append(k, form[k] ?? "");
-        }
+        fd.append(k, form[k] ?? "");
       });
-      
+
       fd.append("numberOfReferencesBelongingToAGEC", form.numberOfReferencesBelongingToAGEC || 0);
 
       fd.append("publishedMonth", form.month);
@@ -673,8 +736,16 @@ export default function JournalPublication() {
         <Typography variant="h6" sx={{ color: "var(--text-primary)", fontWeight: 800 }}>My Journal Publications</Typography>
         <Button
           variant="contained"
-          onClick={() => setViewMode("select-year")}
-          sx={{ background: "var(--gradient-primary)", borderRadius: "12px", px: 3, fontWeight: 700, textTransform: "none", "&:hover": { opacity: 0.9, transform: "translateY(-1px)", boxShadow: "0 4px 12px rgba(0,0,0,0.1)" }, transition: "all 0.2s ease" }}
+          onClick={() => {
+            const activeYear = academicYears.find(y => y.isGlobalActive);
+            if (activeYear) {
+              setSelectedYear(activeYear._id);
+              setViewMode("form");
+            } else {
+              setNoActiveYearAlertOpen(true);
+            }
+          }}
+          sx={{ background: "var(--gradient-primary)", px: 3, fontWeight: 700, textTransform: "none", "&:hover": { opacity: 0.9, transform: "translateY(-1px)", boxShadow: "0 4px 12px rgba(0,0,0,0.1)" }, transition: "all 0.2s ease" }}
         >
           Apply New
         </Button>
@@ -723,14 +794,16 @@ export default function JournalPublication() {
                   <TableCell sx={{ color: "var(--text-primary)", fontWeight: 500, py: 2, maxWidth: 200 }}>{pub.paperTitle || "N/A"}</TableCell>
                   <TableCell sx={{ color: "var(--text-secondary)", py: 2 }}>{pub.journalName || "N/A"}</TableCell>
                   <TableCell sx={{ color: "var(--text-secondary)", py: 2 }}>{pub.journalQuartile || pub.categoryOfJournal || "N/A"}</TableCell>
-                  <TableCell sx={{ color: "var(--text-secondary)", py: 2 }}>{pub.facultyId?.name || "N/A"}</TableCell>
-                  <TableCell sx={{ color: "var(--text-secondary)", py: 2, maxWidth: 160 }}>
+                  <TableCell sx={{ color: "var(--text-secondary)", py: 2 }}>
+                    <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                      {pub.facultyId?.name || "N/A"}
+                    </Typography>
+                  </TableCell>
+                  <TableCell sx={{ color: "var(--text-secondary)", py: 2 }}>
                     {pub.coAuthors && pub.coAuthors.length > 0
-                      ? <Tooltip title={pub.coAuthors.map(ca => ca.name).join(", ")} arrow>
-                          <Typography variant="body2" sx={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 150, cursor: "default" }}>
-                            {pub.coAuthors.map(ca => ca.name).join(", ")}
-                          </Typography>
-                        </Tooltip>
+                      ? <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                          {pub.coAuthors.map(ca => ca.name).join(", ")}
+                        </Typography>
                       : <Typography variant="body2" sx={{ color: "var(--text-secondary)" }}>—</Typography>}
                   </TableCell>
                   <TableCell sx={{ py: 2 }}>
@@ -749,22 +822,11 @@ export default function JournalPublication() {
                     </Typography>
                   </TableCell>
                   <TableCell sx={{ py: 2, textAlign: "center" }}>
-                    <Tooltip title="View Details" arrow>
+                    <Tooltip title="View Details">
                       <IconButton
                         size="small"
                         onClick={() => setSelectedPubDetails(pub)}
-                        sx={{
-                          color: "var(--color-primary)",
-                          border: "1px solid var(--color-primary)",
-                          borderRadius: "8px",
-                          p: "5px",
-                          transition: "all 0.2s ease",
-                          "&:hover": {
-                            background: "var(--bg-accent-1)",
-                            transform: "scale(1.1)",
-                            boxShadow: "0 2px 8px rgba(0,0,0,0.15)"
-                          }
-                        }}
+                        sx={{ color: "var(--color-primary)" }}
                       >
                         <Visibility fontSize="small" />
                       </IconButton>
@@ -805,8 +867,8 @@ export default function JournalPublication() {
           {academicYears.map(y => <MenuItem key={y._id} value={y._id}>{y.year}</MenuItem>)}
         </Select>
         <Box sx={{ display: "flex", gap: 2, mt: 4, justifyContent: "flex-end" }}>
-          <Button variant="outlined" onClick={() => setViewMode("list")} sx={{ borderRadius: "12px", textTransform: "none", fontWeight: 600, color: "var(--text-primary)", borderColor: "var(--border-color)", "&:hover": { borderColor: "var(--color-primary)", background: "rgba(0,0,0,0.02)" } }}>Cancel</Button>
-          <Button variant="contained" disabled={!selectedYear} onClick={() => setViewMode("form")} sx={{ background: "var(--gradient-primary)", borderRadius: "12px", px: 4, fontWeight: 700, textTransform: "none", "&:hover": { opacity: 0.9, transform: "translateY(-1px)", boxShadow: "0 4px 12px rgba(0,0,0,0.1)" }, "&.Mui-disabled": { background: "var(--bg-panel)", color: "var(--text-secondary)", opacity: 0.5 }, transition: "all 0.2s ease" }}>Proceed</Button>
+          <Button variant="outlined" onClick={() => setViewMode("list")} sx={{ textTransform: "none", fontWeight: 600, color: "var(--text-primary)", borderColor: "var(--border-color)", "&:hover": { borderColor: "var(--color-primary)", background: "rgba(0,0,0,0.02)" } }}>Cancel</Button>
+          <Button variant="contained" disabled={!selectedYear} onClick={() => setViewMode("form")} sx={{ background: "var(--gradient-primary)", px: 4, fontWeight: 700, textTransform: "none", "&:hover": { opacity: 0.9, transform: "translateY(-1px)", boxShadow: "0 4px 12px rgba(0,0,0,0.1)" }, "&.Mui-disabled": { background: "var(--bg-panel)", color: "var(--text-secondary)", opacity: 0.5 }, transition: "all 0.2s ease" }}>Proceed</Button>
         </Box>
       </FormCard>
     </Box>
@@ -817,43 +879,59 @@ export default function JournalPublication() {
   const renderForm = () => (
     <FormCard title="Journal Publication Submission">
       {/* Academic Year Badge */}
-      <Box sx={{ mb: 3, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+      <Box sx={{ mb: 3, display: "flex", alignItems: "center" }}>
         <Typography variant="body2" sx={{ background: "var(--bg-accent-1)", color: "var(--color-primary)", px: 2, py: 0.8, borderRadius: "8px", fontWeight: 700, border: "1px solid var(--border-color)" }}>
           Academic Year: {academicYears.find(y => y._id === selectedYear)?.year || "Selected"}
         </Typography>
-        <Button size="small" variant="text" onClick={() => setViewMode("select-year")} sx={{ fontWeight: 700, textTransform: "none", color: "var(--color-primary)" }}>Change Year</Button>
       </Box>
 
       <FacultyInfoRow />
 
       {/* ── DOI Section ── */}
-      <SubLabel text="DOI Lookup: *" />
-      <Box sx={{ display: "flex", gap: 1, mb: 3 }}>
-        <TextField
-          size="small"
-          fullWidth
-          placeholder="Enter DOI (e.g. 10.1038/s41598-024-12345-y)"
-          value={form.doi}
-          onChange={set("doi")}
-        />
-        <Button
-          variant="contained"
-          onClick={fetchDOIData}
-          disabled={!form.doi || doiFetching}
-          startIcon={doiFetching ? <Loader size={16} color="inherit" /> : <Search />}
-          sx={{ minWidth: "130px", textTransform: "none", borderRadius: "8px", fontWeight: 700, background: "var(--color-primary)", whiteSpace: "nowrap" }}
-        >
-          {doiFetching ? "Fetching…" : "Fetch Data"}
-        </Button>
-      </Box>
-
-      {doiFetched && (
-        <Box sx={{ mb: 2, p: 1.5, borderRadius: "8px", background: "rgba(16,185,129,0.08)", border: "1px solid rgba(16,185,129,0.3)" }}>
-          <Typography sx={{ fontSize: 12, color: "#10b981", fontWeight: 700 }}>
+      <Box sx={{ mb: 2.5, p: 2.5, borderRadius: "12px", border: "2px solid var(--color-primary)", background: "var(--bg-accent-1)", boxShadow: "0 2px 12px rgba(var(--color-primary-rgb,99,102,241),0.08)" }}>
+        <Typography sx={{ ...labelStyle, color: "var(--color-primary)", mb: 1 }}>
+          DOI (Digital Object Identifier) : *
+          <span style={{ fontWeight: 400, textTransform: "none", fontSize: 10, opacity: 0.7 }}> — Enter DOI to auto-fill details (only journal papers accepted)</span>
+        </Typography>
+        <Box sx={{ display: "flex", gap: 1.5, alignItems: "flex-start" }}>
+          <TextField
+            size="small"
+            fullWidth
+            value={form.doi}
+            onChange={set("doi")}
+            placeholder="e.g. 10.1038/s41598-024-12345-y"
+            onKeyDown={(e) => { if (e.key === "Enter") fetchDOIData(); }}
+            InputProps={{
+              sx: { background: "var(--bg-panel)" },
+              endAdornment: doiFetched ? (
+                <Box component="span" sx={{ display: "flex", alignItems: "center", color: "#10b981", fontSize: 18, mr: 0.5 }}>✓</Box>
+              ) : null
+            }}
+          />
+          <Button
+            variant="contained"
+            onClick={fetchDOIData}
+            disabled={doiFetching || !form.doi.trim()}
+            sx={{
+              minWidth: 110,
+              height: "40px",
+              background: "var(--gradient-primary)",
+              textTransform: "none",
+              fontWeight: 700,
+              flexShrink: 0,
+              "&:hover": { opacity: 0.9 },
+              "&.Mui-disabled": { opacity: 0.5 }
+            }}
+          >
+            {doiFetching ? "Fetching..." : "Fetch Details"}
+          </Button>
+        </Box>
+        {doiFetched && (
+          <Typography sx={{ mt: 1, fontSize: 11, color: "#10b981", fontWeight: 700 }}>
             ✓ Details auto-filled from Scopus. Review and complete any remaining fields below.
           </Typography>
-        </Box>
-      )}
+        )}
+      </Box>
 
       {/* ── Article Details ── */}
       <SubLabel text="Details of the Journal Article:" />
@@ -882,9 +960,12 @@ export default function JournalPublication() {
         {/* Journal Type */}
         <Box>
           <Typography sx={labelStyle}>Type of Journal :</Typography>
-          <Select size="small" fullWidth displayEmpty value={form.journalType} onChange={set("journalType")} disabled={isFetched("journalType")} sx={isFetched("journalType") ? disabledField : {}}>
+          <Select size="small" fullWidth displayEmpty value={form.journalType || ""} onChange={set("journalType")} disabled={isFetched("journalType")} sx={isFetched("journalType") ? disabledField : {}}>
             <MenuItem value="">Select</MenuItem>
-            {JOURNAL_TYPES.map(t => <MenuItem key={t} value={t}>{t}</MenuItem>)}
+            {(form.journalType && !JOURNAL_TYPES.includes(form.journalType)
+              ? [...JOURNAL_TYPES, form.journalType]
+              : JOURNAL_TYPES
+            ).map(t => <MenuItem key={t} value={t}>{t}</MenuItem>)}
           </Select>
         </Box>
 
@@ -922,7 +1003,10 @@ export default function JournalPublication() {
             setForm(p => ({ ...p, year: e.target.value, month: "" }));
           }} disabled={isFetched("year")} sx={isFetched("year") ? disabledField : {}}>
             <MenuItem value="">Select Year</MenuItem>
-            {YEARS.map(y => <MenuItem key={y} value={y}>{y}</MenuItem>)}
+            {(form.year && !YEARS.includes(String(form.year))
+              ? [...YEARS, String(form.year)].sort((a, b) => Number(b) - Number(a))
+              : YEARS
+            ).map(y => <MenuItem key={y} value={y}>{y}</MenuItem>)}
           </Select>
         </Box>
         <Box>
@@ -993,7 +1077,10 @@ export default function JournalPublication() {
                           size="small"
                           fullWidth
                           value={ca.empId}
-                          onChange={(e) => handleCoAuthorChange(ca.authorPosition, "empId", e.target.value)}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            if (/^\d*$/.test(val)) handleCoAuthorChange(ca.authorPosition, "empId", val);
+                          }}
                           placeholder="e.g. 5741"
                         />
                       </Box>
@@ -1017,7 +1104,10 @@ export default function JournalPublication() {
                           size="small"
                           fullWidth
                           value={ca.authorName}
-                          onChange={(e) => handleCoAuthorChange(ca.authorPosition, "authorName", e.target.value)}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            if (!/\d/.test(val)) handleCoAuthorChange(ca.authorPosition, "authorName", val);
+                          }}
                           placeholder="Full Name"
                         />
                       </Box>
@@ -1027,7 +1117,10 @@ export default function JournalPublication() {
                           size="small"
                           fullWidth
                           value={ca.affiliationName}
-                          onChange={(e) => handleCoAuthorChange(ca.authorPosition, "affiliationName", e.target.value)}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            if (!/\d/.test(val)) handleCoAuthorChange(ca.authorPosition, "affiliationName", val);
+                          }}
                           placeholder="College / Organization"
                         />
                       </Box>
@@ -1046,7 +1139,7 @@ export default function JournalPublication() {
         <FileField label="Published Paper – 1st Page *" name="publishedPaper" onChange={setFile("publishedPaper")} />
         <FileField label="Reference Pages (with tick mark) *" name="referencePages" onChange={setFile("referencePages")} />
         <Box>
-          <FileField label="Complete Journal *" name="completeJournal" onChange={handleCompleteJournalChange} accept=".pdf,.docx" />
+          <FileField label="Complete Journal *" name="completeJournal" onChange={handleCompleteJournalChange} accept=".pdf" maxSize={5 * 1024 * 1024} />
           {scanningSdg && (
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mt: 1, p: 1.5, borderRadius: '8px', bgcolor: 'rgba(25, 118, 210, 0.05)', border: '1px solid rgba(25, 118, 210, 0.2)' }}>
               <CircularProgress size={16} />
@@ -1084,15 +1177,13 @@ export default function JournalPublication() {
             <MenuItem value="No">No</MenuItem>
           </Select>
         </Box>
-        {form.applyIncentive === "Yes" && (
-          <Box>
-            <Typography sx={labelStyle}>Publication Scope : *</Typography>
-            <Select size="small" fullWidth displayEmpty value={form.publicationScope} onChange={set("publicationScope")}>
-              <MenuItem value="">Select</MenuItem>
-              {INCENTIVE_OPTIONS.map(o => <MenuItem key={o} value={o}>{o}</MenuItem>)}
-            </Select>
-          </Box>
-        )}
+        <Box>
+          <Typography sx={labelStyle}>Publication Scope : *</Typography>
+          <Select size="small" fullWidth displayEmpty value={form.publicationScope} onChange={set("publicationScope")}>
+            <MenuItem value="">Select</MenuItem>
+            {INCENTIVE_OPTIONS.map(o => <MenuItem key={o} value={o}>{o}</MenuItem>)}
+          </Select>
+        </Box>
       </Grid2>
 
       {/* ── Actions ── */}
@@ -1100,7 +1191,7 @@ export default function JournalPublication() {
         <Button
           variant="outlined"
           onClick={() => setViewMode("list")}
-          sx={{ px: 4, height: "44px", borderRadius: "12px", textTransform: "none", fontWeight: 600, color: "var(--text-primary)", borderColor: "var(--border-color)", "&:hover": { borderColor: "#ef4444", color: "#ef4444", background: "rgba(239,68,68,0.05)" }, transition: "all 0.3s ease" }}
+          sx={{ px: 4, height: "44px", textTransform: "none", fontWeight: 600, color: "var(--text-primary)", borderColor: "var(--border-color)", "&:hover": { borderColor: "#ef4444", color: "#ef4444", background: "rgba(239,68,68,0.05)" }, transition: "all 0.3s ease" }}
         >
           Cancel
         </Button>
@@ -1164,8 +1255,8 @@ export default function JournalPublication() {
     })();
 
     return (
-      <Dialog 
-        open={!!selectedPubDetails} 
+      <Dialog
+        open={!!selectedPubDetails}
         onClose={handleCloseDetails}
         maxWidth="md"
         fullWidth
@@ -1189,63 +1280,69 @@ export default function JournalPublication() {
         <DialogContent sx={{ p: 3, mt: 1 }}>
           <Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)", mb: 1 }}>{data.paperTitle}</Typography>
           <Typography variant="body2" sx={{ color: "var(--text-secondary)", mb: 3, fontWeight: 600 }}>Journal: {data.journalName}</Typography>
-          
+
           <Grid container spacing={2.5}>
             <Grid item xs={12} sm={3}><LabelValue label="Academic Year" value={data.academicYear?.year || "-"} /></Grid>
             <Grid item xs={12} sm={6}><LabelValue label="DOI" value={data.doi || "-"} /></Grid>
             <Grid item xs={12} sm={3}>
-              <LabelValue 
-                label="Status" 
+              <LabelValue
+                label="Status"
                 chip={
-                  <Chip 
-                    label={data.status} 
-                    size="small" 
-                    sx={{ 
-                      bgcolor: `${statusColor}15`, 
-                      color: statusColor, 
-                      fontWeight: 800, 
+                  <Chip
+                    label={data.status}
+                    size="small"
+                    sx={{
+                      bgcolor: `${statusColor}15`,
+                      color: statusColor,
+                      fontWeight: 800,
                       border: `1px solid ${statusColor}44`,
-                      borderRadius: "6px" 
-                    }} 
+                      borderRadius: "6px"
+                    }}
                   />
-                } 
+                }
               />
             </Grid>
 
             {/* Author position, Quartile, type */}
             <Grid item xs={12} sm={4}>
-              <LabelValue 
-                label="Applicant Author Position" 
-                value={data.userAuthorPosition ? `${data.userAuthorPosition} / ${data.totalAuthors}` : (data.firstAuthor === "Yes" ? "1" : data.authorPosition || "-")} 
+              <LabelValue
+                label="Applicant Author Position"
+                value={data.userAuthorPosition ? `${data.userAuthorPosition} / ${data.totalAuthors}` : (data.firstAuthor === "Yes" ? "1" : data.authorPosition || "-")}
               />
             </Grid>
             <Grid item xs={12} sm={4}><LabelValue label="Journal Quartile" value={data.journalQuartile || data.categoryOfJournal} /></Grid>
             <Grid item xs={12} sm={4}><LabelValue label="Journal Type" value={data.journalType || "-"} /></Grid>
 
+            {/* Volume, Issue, Published Year, Published Month */}
+            <Grid item xs={12} sm={3}><LabelValue label="Volume" value={data.vol || "-"} /></Grid>
+            <Grid item xs={12} sm={3}><LabelValue label="Issue" value={data.issue || "-"} /></Grid>
+            <Grid item xs={12} sm={3}><LabelValue label="Published Year" value={data.publishedYear || data.year || "-"} /></Grid>
+            <Grid item xs={12} sm={3}><LabelValue label="Published Month" value={data.publishedMonth || data.month || "-"} /></Grid>
+
             {/* H-Index, Impact Factor, Citations, SDGS */}
             <Grid item xs={12} sm={4}><LabelValue label="H-Index" value={data.hIndex || "-"} /></Grid>
             <Grid item xs={12} sm={4}><LabelValue label="Impact Factor" value={data.jcrImpactFactor || data.impactFactor || "-"} /></Grid>
             <Grid item xs={12} sm={4}><LabelValue label="Citations" value={data.citations || "-"} /></Grid>
-            
+
             <Grid item xs={12} sm={6}><LabelValue label="AGEC Referencing Numbers" value={data.agecReferencingNumbers || data.referencingNos || "-"} /></Grid>
             <Grid item xs={12} sm={6}><LabelValue label="Number of References Belonging to AGEC" value={data.numberOfReferencesBelongingToAGEC !== undefined ? data.numberOfReferencesBelongingToAGEC : (data.papersCited !== undefined ? data.papersCited : "-")} /></Grid>
-            
+
             {/* Seed Grant Work & SDGS */}
             <Grid item xs={12} sm={6}><LabelValue label="Seed Grant Work" value={data.applyingSeedGrant || "No"} /></Grid>
             <Grid item xs={12} sm={6}><LabelValue label="SDGS Matched" value={data.sdgs ? data.sdgs.split(', ').map(getSdgName).join(', ') : "None"} /></Grid>
 
             {/* Publication Scope information */}
             <Grid item xs={12} sm={6}>
-              <LabelValue 
-                label="Publication Scope" 
-                value={data.publicationScope || data.incentiveApplied || "-"} 
+              <LabelValue
+                label="Publication Scope"
+                value={data.publicationScope || data.incentiveApplied || "-"}
               />
             </Grid>
             {data.status === "Approved" && data.approvedAmount && (
               <Grid item xs={12} sm={6}>
-                <LabelValue 
-                  label="Approved Incentive" 
-                  value={`₹${data.approvedAmount}`} 
+                <LabelValue
+                  label="Approved Incentive"
+                  value={`₹${data.approvedAmount}`}
                   chip={<Chip label={`₹${data.approvedAmount}`} size="small" sx={{ bgcolor: "rgba(76, 175, 80, 0.1)", color: "#4caf50", fontWeight: 800 }} />}
                 />
               </Grid>
@@ -1253,7 +1350,7 @@ export default function JournalPublication() {
 
             {/* Appraisal Claimant Selector */}
             <Grid item xs={12} sm={6}>
-              <LabelValue 
+              <LabelValue
                 label="Appraisal Claimant"
                 chip={
                   (() => {
@@ -1265,7 +1362,7 @@ export default function JournalPublication() {
                         .map(ca => ({
                           _id: ca.employeeId?._id || ca.employeeId,
                           name: ca.employeeId?.name || ca.name,
-                          institutionId: ca.employeeId?.institutionId || ""
+                          institutionId: ca.employeeId?.institutionId || ca.employeeId || ""
                         })))
                     ];
                     const uniqueClaimants = eligibleClaimants.filter((v, i, a) => v._id && a.findIndex(t => t._id.toString() === v._id.toString()) === i);
@@ -1278,50 +1375,15 @@ export default function JournalPublication() {
                       );
                     }
 
-                    if (isApplicant) {
-                      return (
-                        <FormControl size="small" fullWidth sx={{ mt: 0.5 }}>
-                          <Select
-                            value={data.appraisalClaimant?.institutionId || data.appraisalClaimant || ""}
-                            onChange={async (e) => {
-                              const selectedVal = e.target.value;
-                              try {
-                                const res = await API.post("/api/appraisal/resolve-claim", {
-                                  researchId: data._id,
-                                  researchType: "Journal",
-                                  claimantId: selectedVal
-                                });
-                                if (res.data?.success) {
-                                  toast.success("Claimant resolved successfully!");
-                                  setPublicationsList(prev => prev.map(p => p._id === data._id ? { ...p, appraisalClaimant: selectedVal } : p));
-                                  setSelectedPubDetails(prev => ({ ...prev, appraisalClaimant: selectedVal }));
-                                }
-                              } catch (err) {
-                                toast.error(err.response?.data?.message || "Failed to resolve claim.");
-                              }
-                            }}
-                            displayEmpty
-                          >
-                            <MenuItem value="" disabled>--Select Claimant--</MenuItem>
-                            {uniqueClaimants.map(c => (
-                              <MenuItem key={c.institutionId || c._id} value={c.institutionId || c._id}>
-                                {c.name} {c.institutionId ? `(${c.institutionId})` : ""}
-                              </MenuItem>
-                            ))}
-                          </Select>
-                        </FormControl>
-                      );
-                    } else {
-                      const currentClaimantObj = uniqueClaimants.find(c => 
-                        (c.institutionId && c.institutionId === (data.appraisalClaimant?.institutionId || data.appraisalClaimant || "").toString()) ||
-                        (c._id && c._id.toString() === (data.appraisalClaimant?._id || data.appraisalClaimant || "").toString())
-                      );
-                      return (
-                        <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>
-                          {currentClaimantObj ? `${currentClaimantObj.name} (${currentClaimantObj.institutionId})` : "Not Yet Designated"}
-                        </Typography>
-                      );
-                    }
+                    const currentClaimantObj = uniqueClaimants.find(c =>
+                      (c.institutionId && c.institutionId === (data.appraisalClaimant?.institutionId || data.appraisalClaimant || "").toString()) ||
+                      (c._id && c._id.toString() === (data.appraisalClaimant?._id || data.appraisalClaimant || "").toString())
+                    );
+                    return (
+                      <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>
+                        {currentClaimantObj ? `${currentClaimantObj.name} (${currentClaimantObj.institutionId})` : "Not Yet Designated"}
+                      </Typography>
+                    );
                   })()
                 }
               />
@@ -1341,19 +1403,40 @@ export default function JournalPublication() {
                 <Table size="small">
                   <TableHead sx={{ bgcolor: "var(--bg-panel)" }}>
                     <TableRow>
-                      <TableCell sx={{ fontWeight: 700, color: "var(--text-secondary)" }}>#</TableCell>
+                      <TableCell sx={{ fontWeight: 700, color: "var(--text-secondary)", width: 80 }}>AUTHOR NO</TableCell>
                       <TableCell sx={{ fontWeight: 700, color: "var(--text-secondary)" }}>NAME</TableCell>
                       <TableCell sx={{ fontWeight: 700, color: "var(--text-secondary)" }}>AFFILIATION</TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {data.coAuthors.map((ca, idx) => (
-                      <TableRow key={idx}>
-                        <TableCell sx={{ fontWeight: 800, color: "var(--color-primary)" }}>{idx + 1}</TableCell>
-                        <TableCell sx={{ fontWeight: 700, color: "var(--text-primary)" }}>{ca.name}</TableCell>
-                        <TableCell sx={{ color: "var(--text-secondary)" }}>{ca.affiliation}</TableCell>
-                      </TableRow>
-                    ))}
+                    {(() => {
+                      // Derive correct author positions for co-authors:
+                      // Skip the applicant's position from the full 1..totalAuthors range.
+                      const total = parseInt(data.totalAuthors) || 0;
+                      const applicantPos = parseInt(data.userAuthorPosition) || 0;
+                      const derivedPositions = total > 0
+                        ? Array.from({ length: total }, (_, i) => i + 1).filter(p => p !== applicantPos)
+                        : [];
+                      return data.coAuthors.map((ca, idx) => {
+                        const pos = ca.authorPosition || derivedPositions[idx] || (idx + 1);
+                        return (
+                          <TableRow key={idx} sx={{ '&:hover': { bgcolor: 'rgba(190,147,55,0.04)' } }}>
+                            <TableCell>
+                              <Box sx={{
+                                display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                                width: 30, height: 30, borderRadius: '50%',
+                                bgcolor: 'rgba(190, 147, 55, 0.12)', border: '1.5px solid var(--color-primary)',
+                                color: 'var(--color-primary)', fontWeight: 900, fontSize: '0.82rem'
+                              }}>
+                                {pos}
+                              </Box>
+                            </TableCell>
+                            <TableCell sx={{ fontWeight: 700, color: "var(--text-primary)" }}>{ca.name}</TableCell>
+                            <TableCell sx={{ color: "var(--text-secondary)" }}>{ca.affiliation || "-"}</TableCell>
+                          </TableRow>
+                        );
+                      });
+                    })()}
                   </TableBody>
                 </Table>
               </TableContainer>
@@ -1420,11 +1503,15 @@ export default function JournalPublication() {
 
   return (
     <Box>
-      <PageHeader title="Journal" subtitle="Manage and submit your journal publications" breadcrumbs={["Home", "Publications", "Journal"]} />
+      <PageHeader title="Journal Publications" subtitle="Manage and submit your journal publications" />
       {viewMode === "list" && renderList()}
       {viewMode === "select-year" && renderSelectYear()}
       {viewMode === "form" && renderForm()}
       {renderDetailsDialog()}
+      <NoActiveYearDialog
+        open={noActiveYearAlertOpen}
+        onClose={() => setNoActiveYearAlertOpen(false)}
+      />
     </Box>
   );
 }
