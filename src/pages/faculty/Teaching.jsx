@@ -1238,7 +1238,6 @@ export default function Teaching() {
         onClose={(refresh) => setDiscOpen(false)}
         academicYears={academicYears}
         defaultYearId={selectedYear?._id}
-        defaultSemester={selectedSemester === "ALL" ? "" : selectedSemester}
       />
     </Box>
   );
