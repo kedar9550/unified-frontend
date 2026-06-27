@@ -58,7 +58,7 @@ const SECTION_LABELS = {
 
 const ROLE_LABEL = {
   TEACHING:   "Exam Section",
-  PROCTORING: "Exam Section",
+  PROCTORING: "Uniprime",
   FEEDBACK:   "Feedback Coordinator",
   CO_ATTAINMENT: "Exam Section",
   OTHER:      "Admin",
@@ -628,11 +628,7 @@ export default function RaiseDiscrepancyModal({
                     <Typography fontSize={12} color="#888" sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                       Issue will be routed to:{" "}
                       <Chip
-                        label={
-                          section === "PROCTORING" 
-                            ? "Exam Section"
-                            : ROLE_LABEL[section]
-                        }
+                        label={ROLE_LABEL[section]}
                         size="small"
                         sx={{
                           fontSize: 10,
