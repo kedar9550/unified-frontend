@@ -35,6 +35,7 @@ import SDG from "./pages/faculty/SDG";
 import Profile from "./components/common/Profile";
 import SDGManagement from "./pages/uniprime/SDGManagement";
 import ProctoringUpload from "./pages/uniprime/ProctoringUpload";
+import UniprimeDiscrepancies from "./pages/uniprime/UniprimeDiscrepancies";
 import DOIFetcher from "./pages/faculty/DOITest";
 import FacultyAdministration from "./pages/faculty/FacultyAdministration";
 import AdministrationApprovalList from "./pages/hod/AdministrationApprovalList";
@@ -138,6 +139,7 @@ function App() {
         <Route path="/profile" element={<ProtectedRoute element={<Profile />} />} />
         <Route path="/uniprime/sdg-management" element={<ProtectedRoute element={<SDGManagement />} />} />
         <Route path="/uniprime/proctoring-upload" element={<ProtectedRoute element={<ProctoringUpload />} />} />
+        <Route path="/uniprime/discrepancies" element={<ProtectedRoute element={<UniprimeDiscrepancies />} />} />
         
         {/* Value Addition Modules */}
         <Route path="/value-addition/resource-utilization" element={<ProtectedRoute element={<ResourceUtilization />} />} />

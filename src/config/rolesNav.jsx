@@ -116,6 +116,11 @@ export const ROLE_ROUTES = {
       path: "/uniprime/appraisal-settings",
       icon: <ManageAccounts />
     },
+    {
+      text: "Discrepancies",
+      path: "/uniprime/discrepancies",
+      icon: <Flag />
+    },
   ],
 
   // Example for a future "Department HOD" role
