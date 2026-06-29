@@ -402,7 +402,7 @@ export default function RaiseDiscrepancyModal({
                         {[
                           "#",
                           "Section",
-                          "Year / Sem",
+                          "Academic Year",
                           "Issue",
                           "Status",
                           "Raised On",
@@ -454,14 +454,9 @@ export default function RaiseDiscrepancyModal({
                               {SECTION_LABELS[d.section] || d.section}
                             </TableCell>
 
-                            {/* Year / Sem */}
-                            <TableCell sx={{ fontSize: 12, color: "#555", whiteSpace: "nowrap" }}>
-                              <Box>
-                                {d.academicYearId?.year || "—"}
-                              </Box>
-                              <Box sx={{ fontSize: 11, color: "#555", fontWeight: 600 }}>
-                                {d.semester ? `Sem ${d.semester}` : d.semesterTypeId?.name || "—"}
-                              </Box>
+                            {/* Year */}
+                            <TableCell sx={{ fontSize: 13, color: "#555", whiteSpace: "nowrap" }}>
+                              {d.academicYearId?.year || "—"}
                             </TableCell>
 
                             {/* Issue note — truncated */}
@@ -519,8 +514,9 @@ export default function RaiseDiscrepancyModal({
                                   —
                                 </Typography>
                               )}
+                            </TableCell>
                             <TableCell>
-                              {d.status === "PENDING" && (
+                              {d.status === "PENDING" ? (
                                 <Tooltip title="Delete Discrepancy" arrow>
                                   <IconButton 
                                     size="small" 
@@ -534,8 +530,10 @@ export default function RaiseDiscrepancyModal({
                                     <DeleteIcon fontSize="small" />
                                   </IconButton>
                                 </Tooltip>
+                              ) : (
+                                <Typography fontSize={12} color="#bbb">—</Typography>
                               )}
-                            </TableCell></TableCell>
+                            </TableCell>
                           </TableRow>
                         );
                       })}

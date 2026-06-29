@@ -231,6 +231,7 @@ const Studentuploads = () => {
     const [selectedDept, setSelectedDept] = useState("");
     const [students, setStudents] = useState([]);
     const [loadingStudents, setLoadingStudents] = useState(false);
+    const [loadingDepts, setLoadingDepts] = useState(false);
     const [uploading, setUploading] = useState(false);
     const [updatingBulk, setUpdatingBulk] = useState(false);
     const [uploadResult, setUploadResult] = useState(null);
@@ -319,7 +320,7 @@ const Studentuploads = () => {
     const fetchUnassignedStudents = async () => {
         setLoadingStudents(true);
         try {
-            const res = await API.get("/api/student-data/unassigned", { skipGlobalLoader: true });
+            const res = await API.get("/api/student-data/unassigned");
             if (res.data.success) {
                 setStudents(res.data.data || []);
             }
@@ -334,7 +335,7 @@ const Studentuploads = () => {
         const fetchDepartments = async () => {
             setLoadingDepts(true);
             try {
-                const res = await API.get("/api/academics/departments?type=Academic", { skipGlobalLoader: true });
+                const res = await API.get("/api/academics/departments?type=Academic");
                 if (res.data.success) {
                     const depts = res.data.data || [];
                     setAllDepartments(depts.filter(d => d.type === "Academic" || !d.type));
@@ -348,7 +349,7 @@ const Studentuploads = () => {
 
         const fetchPrograms = async () => {
             try {
-                const res = await API.get("/api/student-data/filter-options", { skipGlobalLoader: true });
+                const res = await API.get("/api/student-data/filter-options");
                 if (res.data.success) {
                     setAllPrograms(res.data.data?.programs || []);
                 }
@@ -379,8 +380,7 @@ const Studentuploads = () => {
         try {
             const endpoint = "/api/student-data/upload";
             const res = await API.post(endpoint, formData, {
-                headers: { "Content-Type": "multipart/form-data" },
-                skipGlobalLoader: true
+                headers: { "Content-Type": "multipart/form-data" }
             });
             if (res.data.success) {
                 setUploadResult(res.data.summary);
@@ -406,7 +406,7 @@ const Studentuploads = () => {
 
         setUpdatingBulk(true);
         try {
-            const res = await API.post("/api/student-data/sync", { program }, { skipGlobalLoader: true });
+            const res = await API.post("/api/student-data/sync", { program });
             if (res.data.success) {
                 setUploadResult(res.data.summary);
 
@@ -439,7 +439,7 @@ const Studentuploads = () => {
         try {
             const res = await API.post("/api/student-data/sync", {
                 rollNos: selectedIds
-            }, { skipGlobalLoader: true });
+            });
             if (res.data.success) {
                 setUploadResult(res.data.summary);
                 toast[res.data.updated ? "success" : "info"](res.data.message);
@@ -461,7 +461,7 @@ const Studentuploads = () => {
             const res = await API.post("/api/student-data/add", {
                 rollNo: addRollNo,
                 department: addDept
-            }, { skipGlobalLoader: true });
+            });
             if (res.data.success) {
                 setIsAddModalOpen(false);
                 setIsUpdateModalOpen(false);
@@ -484,7 +484,7 @@ const Studentuploads = () => {
             const res = await API.post("/api/student-data/assign", {
                 studentIds: selectedIds,
                 deptId: selectedDept,
-            }, { skipGlobalLoader: true });
+            });
             if (res.data.success) {
                 setIsProceeding(false);
                 setSelectedIds([]);
