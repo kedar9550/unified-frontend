@@ -37,10 +37,13 @@ import {
 import { useNavigate } from 'react-router-dom';
 import API from "../../api/axios";
 
-const RnDDeanDashboard = () => {
+const RnDDeanDashboard = ({ activeRole = 'RESEARCH_DEAN' }) => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState(null);
+
+  const basePath = activeRole === 'RESEARCH_COORDINATOR' ? '/research-coordinator' : '/research-dean';
+  const displayRoleName = activeRole === 'RESEARCH_COORDINATOR' ? 'Research Coordinator' : 'Research & Development Dean';
 
   useEffect(() => {
     const fetchDashboardData = async () => {
@@ -88,11 +91,11 @@ const RnDDeanDashboard = () => {
   const maxDeptValue = departments.length > 0 ? Math.max(...departments.map(d => d.value), 1) : 1;
 
   const summaryCards = [
-    { title: 'Total Publications', value: dashboard.totalPublications, subtitle: 'Total Submissions', icon: <Description />, color: '#3b82f6', bg: 'rgba(59, 130, 246, 0.1)', path: '/research-dean/approvals' },
-    { title: 'Approved', value: dashboard.approved, subtitle: 'This Academic Year', icon: <CheckCircle />, color: '#10b981', bg: 'rgba(16, 185, 129, 0.1)', path: '/research-dean/approvals' },
-    { title: 'Pending in HoD', value: dashboard.pendingHod, subtitle: 'Awaiting HoD Approval', icon: <PendingActions />, color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.1)', path: '/research-dean/approvals' },
-    { title: 'Pending in R&D', value: dashboard.pendingRnd, subtitle: 'Awaiting R&D Approval', icon: <AssignmentReturn />, color: '#8b5cf6', bg: 'rgba(139, 92, 246, 0.1)', path: '/research-dean/approvals' },
-    { title: 'Rejected', value: dashboard.rejected, subtitle: 'This Academic Year', icon: <Cancel />, color: '#ef4444', bg: 'rgba(239, 68, 68, 0.1)', path: '/research-dean/approvals' },
+    { title: 'Total Publications', value: dashboard.totalPublications, subtitle: 'Total Submissions', icon: <Description />, color: '#3b82f6', bg: 'rgba(59, 130, 246, 0.1)', path: `${basePath}/approvals` },
+    { title: 'Approved', value: dashboard.approved, subtitle: 'This Academic Year', icon: <CheckCircle />, color: '#10b981', bg: 'rgba(16, 185, 129, 0.1)', path: `${basePath}/approvals` },
+    { title: 'Pending in HoD', value: dashboard.pendingHod, subtitle: 'Awaiting HoD Approval', icon: <PendingActions />, color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.1)', path: `${basePath}/approvals` },
+    { title: 'Pending in R&D', value: dashboard.pendingRnd, subtitle: 'Awaiting R&D Approval', icon: <AssignmentReturn />, color: '#8b5cf6', bg: 'rgba(139, 92, 246, 0.1)', path: `${basePath}/approvals` },
+    { title: 'Rejected', value: dashboard.rejected, subtitle: 'This Academic Year', icon: <Cancel />, color: '#ef4444', bg: 'rgba(239, 68, 68, 0.1)', path: `${basePath}/approvals` },
   ];
 
   return (
@@ -101,7 +104,7 @@ const RnDDeanDashboard = () => {
       <Box sx={{ mb: 5, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
         <Box>
           <Typography variant="h4" sx={{ fontWeight: 800, color: 'var(--text-primary)', mb: 0.5 }}>
-            Welcome, Research & Development Dean 👋
+            Welcome, {displayRoleName} 👋
           </Typography>
           <Typography variant="body1" sx={{ color: 'var(--text-secondary)', opacity: 0.8 }}>
             Here's an overview of research and publication activities.
@@ -358,7 +361,7 @@ const RnDDeanDashboard = () => {
             <Box sx={{ mt: 4, textAlign: 'center' }}>
               <Button
                 endIcon={<ArrowForward />}
-                onClick={() => navigate("/research-dean/reports")}
+                onClick={() => navigate(`${basePath}/reports`)}
                 sx={{ textTransform: 'none', fontWeight: 700, color: 'var(--color-primary)' }}
               >
                 View R&D Reports
@@ -421,7 +424,7 @@ const RnDDeanDashboard = () => {
             <Box sx={{ mt: 4, textAlign: 'center' }}>
               <Button
                 endIcon={<ArrowForward />}
-                onClick={() => navigate("/research-dean/reports")}
+                onClick={() => navigate(`${basePath}/reports`)}
                 sx={{ textTransform: 'none', fontWeight: 700, color: 'var(--color-primary)' }}
               >
                 View Research Analytics
@@ -494,7 +497,7 @@ const RnDDeanDashboard = () => {
           <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2.5 }}>
             <Button
  variant="contained"
- onClick={() => navigate("/research-dean/approvals")}
+ onClick={() => navigate(`${basePath}/approvals`)}
  sx={{
  flex: 1,
  minWidth: "220px",
@@ -515,7 +518,7 @@ const RnDDeanDashboard = () => {
             </Button>
             <Button
  variant="contained"
- onClick={() => navigate("/research-dean/reports")}
+ onClick={() => navigate(`${basePath}/reports`)}
  sx={{
  flex: 1,
  minWidth: "220px",
@@ -536,7 +539,7 @@ const RnDDeanDashboard = () => {
             </Button>
             <Button
  variant="contained"
- onClick={() => navigate("/research-dean/reports")}
+ onClick={() => navigate(`${basePath}/reports`)}
  sx={{
  flex: 1,
  minWidth: "220px",

@@ -241,6 +241,7 @@ export const ROLE_ROUTES = {
         }
       ]
     },
-    { text: "Reference Journals", path: "/research-coordinator/reference-journals", icon: <LibraryBooks /> }
+    { text: "Reference Journals", path: "/research-coordinator/reference-journals", icon: <LibraryBooks /> },
+    { text: "Author Citations", path: "/research-coordinator/author-citations", icon: <Assignment /> }
   ],
 };
