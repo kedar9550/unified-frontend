@@ -25,7 +25,7 @@ function Dashboard() {
        Welcome back! {activeRole.toLowerCase()} 
       </Typography> */}
 
-      {/* 🎯 ROLE-BASED DASHBOARD */}
+      {/*  ROLE-BASED DASHBOARD */}
       {activeRole === "FACULTY" && <FacultyDashboard />}
       {activeRole === "UNIPRIME" && <UniprimeDashboard />}
       {activeRole === "HOD" && <HODDashboard />}
@@ -33,10 +33,9 @@ function Dashboard() {
       {activeRole === "STUDENT" && <StudentDashboard />}
       {activeRole === "RESEARCH FEEDBACK COMMITTEE" && <ResearchFeedbackDashboard />}
       {activeRole === "FEEDBACK COORDINATOR" && <FeedbackCoordinatorDashboard />}
-      {activeRole === "RESEARCH_DEAN" && <RnDDeanDashboard />}
+      {(activeRole === "RESEARCH_DEAN" || activeRole === "RESEARCH_COORDINATOR") && <RnDDeanDashboard activeRole={activeRole} />}
     </Box>
   );
 }
 
 export default Dashboard;
-

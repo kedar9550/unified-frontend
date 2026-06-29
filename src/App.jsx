@@ -173,6 +173,7 @@ function App() {
         <Route path="/research-dean/reference-journals" element={<ProtectedRoute element={<ReferenceJournalManagement />} />} />
         <Route path="/research-dean/author-citations" element={<ProtectedRoute element={<AuthorCitationsManagement />} />} />
         <Route path="/research-coordinator/reference-journals" element={<ProtectedRoute element={<ReferenceJournalManagement />} />} />
+        <Route path="/research-coordinator/author-citations" element={<ProtectedRoute element={<AuthorCitationsManagement />} />} />
 
         <Route path="/doi-test" element={<DOIFetcher />} />
         <Route path="*" element={<ProtectedRoute element={<Box p={4}><Typography variant="h4">Page Content</Typography></Box>} />} />
