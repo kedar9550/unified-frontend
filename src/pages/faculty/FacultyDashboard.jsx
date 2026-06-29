@@ -211,7 +211,7 @@ const FacultyDashboard = () => {
               fontSize: { xs: "1.75rem", sm: "2.125rem" }
             }}
           >
-            Welcome back, {user?.name || "Faculty"}!
+            Welcome back, {user?.name || "Faculty"}
           </Typography>
           <Typography
             variant="body2"
@@ -814,14 +814,14 @@ const FacultyDashboard = () => {
                       item.status === "Approved"
                         ? "#dcfce7"
                         : item.status.startsWith("Pending")
-                        ? "#fef3c7"
-                        : "#fee2e2",
+                          ? "#fef3c7"
+                          : "#fee2e2",
                     color:
                       item.status === "Approved"
                         ? "#166534"
                         : item.status.startsWith("Pending")
-                        ? "#92400e"
-                        : "#991b1b",
+                          ? "#92400e"
+                          : "#991b1b",
                     textTransform: "capitalize"
                   }}
                 />
@@ -838,10 +838,10 @@ const FacultyDashboard = () => {
       </Card>
 
       {/* Proctoring Students Modal */}
-      <ProctorStudentsModal 
-        open={isProctorModalOpen} 
-        onClose={() => setIsProctorModalOpen(false)} 
-        proctorId={user?.institutionId || user?.username} 
+      <ProctorStudentsModal
+        open={isProctorModalOpen}
+        onClose={() => setIsProctorModalOpen(false)}
+        proctorId={user?.institutionId || user?.username}
       />
     </Box>
   );
