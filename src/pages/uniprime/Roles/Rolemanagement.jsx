@@ -1701,6 +1701,7 @@ const RoleManagement = () => {
                                                                             size="small"
                                                                             color="secondary"
                                                                             onClick={() => {
+                                                                                setActiveTab(0);
                                                                                 setEditingEmployee(emp);
                                                                                 setEditableEmail(emp.email || "");
                                                                                 setEditableCoreDept(emp.coreDepartment || emp.department || "");
