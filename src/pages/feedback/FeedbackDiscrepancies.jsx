@@ -155,6 +155,13 @@ export default function FeedbackDiscrepancies() {
           newRow.branch = branchObj.name;
         }
       }
+
+      // Auto-recalculate percentage when givenStudents or totalStudents edits occur
+      if (field === "givenStudents" || field === "totalStudents") {
+        const given = Number(field === "givenStudents" ? value : newRow.givenStudents) || 0;
+        const total = Number(field === "totalStudents" ? value : newRow.totalStudents) || 0;
+        newRow.percentage = total > 0 ? parseFloat(((given / total) * 100).toFixed(1)) : 0;
+      }
       
       updated[index] = newRow;
       return updated;

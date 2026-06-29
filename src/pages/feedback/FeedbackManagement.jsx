@@ -182,7 +182,7 @@ export default function FeedbackManagement() {
       "percentage",
     ];
     const sampleRows = [
-        ["FAC123", "2024-2025", "B.Tech", "CSE", "Mathematics", "MA101", "T", "A", "1", "3", "60", "55", "91.6"],
+        ["FAC123", "2024-2025", "B.Tech", "CSE", "Mathematics", "MA101", "T", "A", "1", "3", "60", "55", '"=IF(K2>0, ROUND((L2/K2)*100, 1), 0)"'],
     ];
     const csvContent = headers.join(",") + "\n" + sampleRows.map(row => row.join(",")).join("\n") + "\n";
     const blob = new Blob([csvContent], { type: "text/csv" });
