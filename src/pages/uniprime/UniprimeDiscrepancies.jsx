@@ -578,13 +578,15 @@ export default function UniprimeDiscrepancies() {
         onClose={() => !submitting && setSelected(null)}
         maxWidth="lg"
         fullWidth
-        PaperProps={{
-          sx: {
-            borderRadius: "28px",
-            background: "var(--bg-panel)",
-            border: "1px solid var(--border-color)",
-            boxShadow: "var(--shadow-premium)",
-            backdropFilter: "blur(20px)",
+        slotProps={{
+          paper: {
+            sx: {
+              borderRadius: "28px",
+              background: "var(--bg-panel)",
+              border: "1px solid var(--border-color)",
+              boxShadow: "var(--shadow-premium)",
+              backdropFilter: "blur(20px)",
+            },
           },
         }}
       >
@@ -744,7 +746,7 @@ export default function UniprimeDiscrepancies() {
                                   type="number"
                                   value={row.semesterNumber ?? ""}
                                   onChange={e => handleResultEdit(idx, "semesterNumber", e.target.value)}
-                                  InputProps={{ disableUnderline: !row._edited, sx: { fontSize: 13, color: "var(--text-primary)" } }}
+                                  slotProps={{ input: { disableUnderline: !row._edited, sx: { fontSize: 13, color: "var(--text-primary)" } } }}
                                   placeholder="Sem"
                                   sx={{ width: 45 }}
                                 />
@@ -756,7 +758,7 @@ export default function UniprimeDiscrepancies() {
                                   type="number"
                                   value={row.yearNumber ?? ""}
                                   onChange={e => handleResultEdit(idx, "yearNumber", e.target.value)}
-                                  InputProps={{ disableUnderline: !row._edited, sx: { fontSize: 13, color: "var(--text-primary)" } }}
+                                  slotProps={{ input: { disableUnderline: !row._edited, sx: { fontSize: 13, color: "var(--text-primary)" } } }}
                                   placeholder="Yr"
                                   sx={{ width: 45 }}
                                 />
@@ -767,7 +769,7 @@ export default function UniprimeDiscrepancies() {
                                   variant="standard"
                                   value={row.section || ""}
                                   onChange={e => handleResultEdit(idx, "section", e.target.value)}
-                                  InputProps={{ disableUnderline: !row._edited, sx: { fontSize: 13, color: "var(--text-primary)" } }}
+                                  slotProps={{ input: { disableUnderline: !row._edited, sx: { fontSize: 13, color: "var(--text-primary)" } } }}
                                   placeholder="Sec"
                                   sx={{ width: 45 }}
                                 />
@@ -779,7 +781,7 @@ export default function UniprimeDiscrepancies() {
                                   type="number"
                                   value={row.totalStudents ?? ""}
                                   onChange={e => handleResultEdit(idx, "totalStudents", e.target.value)}
-                                  InputProps={{ disableUnderline: !row._edited, sx: { fontSize: 13, fontWeight: 600, color: "var(--text-primary)" } }}
+                                  slotProps={{ input: { disableUnderline: !row._edited, sx: { fontSize: 13, fontWeight: 600, color: "var(--text-primary)" } } }}
                                   sx={{ width: 65 }}
                                 />
                               </TableCell>
@@ -790,7 +792,7 @@ export default function UniprimeDiscrepancies() {
                                   type="number"
                                   value={row.eligibleStudents ?? ""}
                                   onChange={e => handleResultEdit(idx, "eligibleStudents", e.target.value)}
-                                  InputProps={{ disableUnderline: !row._edited, sx: { fontSize: 13, fontWeight: 600, color: "var(--text-primary)" } }}
+                                  slotProps={{ input: { disableUnderline: !row._edited, sx: { fontSize: 13, fontWeight: 600, color: "var(--text-primary)" } } }}
                                   sx={{ width: 65 }}
                                 />
                               </TableCell>
@@ -801,7 +803,7 @@ export default function UniprimeDiscrepancies() {
                                   type="number"
                                   value={row.passedStudents ?? ""}
                                   onChange={e => handleResultEdit(idx, "passedStudents", e.target.value)}
-                                  InputProps={{ disableUnderline: !row._edited, sx: { fontSize: 13, fontWeight: 600, color: "var(--text-primary)" } }}
+                                  slotProps={{ input: { disableUnderline: !row._edited, sx: { fontSize: 13, fontWeight: 600, color: "var(--text-primary)" } } }}
                                   sx={{ width: 65 }}
                                 />
                               </TableCell>
@@ -881,11 +883,13 @@ export default function UniprimeDiscrepancies() {
       <Dialog
         open={Boolean(rejectItem)}
         onClose={() => !rejecting && setRejectItem(null)}
-        PaperProps={{
-          sx: {
-            borderRadius: "20px",
-            background: "var(--bg-panel)",
-            border: "1px solid var(--border-color)",
+        slotProps={{
+          paper: {
+            sx: {
+              borderRadius: "20px",
+              background: "var(--bg-panel)",
+              border: "1px solid var(--border-color)",
+            },
           },
         }}
       >

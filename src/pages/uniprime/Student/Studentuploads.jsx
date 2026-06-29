@@ -115,8 +115,8 @@ const UploadProgressTracker = ({ activeStep, stepTimers, isComplete }) => {
                                         color: isDone
                                             ? "var(--text-primary)"
                                             : isActive
-                                            ? "#8b5cf6"
-                                            : "var(--text-secondary)"
+                                                ? "#8b5cf6"
+                                                : "var(--text-secondary)"
                                     }}
                                 >
                                     {step.label}
@@ -144,8 +144,8 @@ const UploadProgressTracker = ({ activeStep, stepTimers, isComplete }) => {
                                     color: isActive
                                         ? "#10B981"
                                         : isDone
-                                        ? "#10B981"
-                                        : "var(--text-secondary)",
+                                            ? "#10B981"
+                                            : "var(--text-secondary)",
                                     opacity: isPending ? 0.5 : 1,
                                     flexShrink: 0,
                                     pt: 0.3
@@ -784,8 +784,8 @@ const Studentuploads = () => {
                                     onChange={(e) => setSelectedBulkProgram(e.target.value)}
                                     label="Select Program"
                                     disabled={updatingBulk}
-                                    sx={{ 
-                                        borderRadius: "15px", 
+                                    sx={{
+                                        borderRadius: "15px",
                                         color: "var(--text-primary)",
                                         "& .MuiOutlinedInput-notchedOutline": { borderColor: "var(--border-color)" },
                                         "&:hover .MuiOutlinedInput-notchedOutline": { borderColor: "var(--text-primary)" },
@@ -1007,7 +1007,7 @@ const Studentuploads = () => {
                                 value={addDept}
                                 onChange={(e) => setAddDept(e.target.value)}
                                 label="Department (Optional)"
-                                sx={{ 
+                                sx={{
                                     borderRadius: "12px",
                                     color: "var(--text-primary)",
                                     "& .MuiOutlinedInput-notchedOutline": { borderColor: "var(--border-color)" },
