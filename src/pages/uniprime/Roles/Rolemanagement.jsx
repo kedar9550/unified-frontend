@@ -100,6 +100,9 @@ const RoleManagement = () => {
     // Delete Confirmation State
     const [deleteConfirm, setDeleteConfirm] = useState({ open: false, userId: null, roleId: null, roleName: "", userName: "" });
 
+    // HOD Replacement Confirmation State
+    const [hodConfirm, setHodConfirm] = useState({ open: false, message: "" });
+
     // Debounced Search Effect
     useEffect(() => {
         const delayDebounceFn = setTimeout(() => {
@@ -115,16 +118,6 @@ const RoleManagement = () => {
         return () => clearTimeout(delayDebounceFn);
     }, [userSearchQuery]);
 
-
-    // Helper to get system-expected role name
-    const getSystemRoleName = (user) => {
-        if (!user) return "";
-        if (user.userType === "Student") return "STUDENT";
-        const desig = (user.designation || "").toLowerCase();
-        if (/prof|professor|ass|teaching|ph\.?d\.?\s*full[- ]?time\s*scholar/i.test(desig)) return "FACULTY";
-        if (/technician|programmer/i.test(desig)) return "TECHNICIAN";
-        return "STAFF";
-    };
 
     // Fetch All Roles
     const fetchRoles = async () => {
@@ -570,12 +563,6 @@ const RoleManagement = () => {
         const userRoles = user.roles || [];
         const initialRoleIds = userRoles.map(r => r._id) || [];
 
-        const defaultRoleName = getSystemRoleName(user);
-        const defaultRoleObj = roles.find(r => r.name === defaultRoleName);
-        if (defaultRoleObj && !initialRoleIds.includes(defaultRoleObj._id.toString())) {
-            initialRoleIds.push(defaultRoleObj._id.toString());
-        }
-
         setAssignedRoleIds(initialRoleIds);
 
         // Populate HOD departments if they exist
@@ -593,8 +580,8 @@ const RoleManagement = () => {
         const id = roleId.toString();
         const role = roles.find(r => r._id === id);
 
-        // If this role is the identity default role, do not toggle it
-        if (role && getSystemRoleName(selectedUser) === role.name) {
+        // If this role is an identity default role, do not allow toggling it from UI
+        if (role && role.defaultRole) {
             return;
         }
 
@@ -611,16 +598,7 @@ const RoleManagement = () => {
         });
     };
 
-    const handleSaveAssignments = async () => {
-        if (!selectedUser) return;
-
-        // Validation for HOD role
-        const isHodSelected = assignedRoleIds.some(rid => roles.find(r => r._id === rid)?.name === 'HOD');
-        if (isHodSelected && selectedHodDepts.length === 0) {
-            toast.error("Please select at least one department for the HOD role");
-            return;
-        }
-
+    const executeSaveAssignments = async () => {
         setSavingRoles(true);
         try {
             const res = await API.post("/api/roles/user/sync", {
@@ -635,6 +613,7 @@ const RoleManagement = () => {
                 setUserSearchQuery("");
                 setUserSearchResults([]);
                 setSelectedHodDepts([]);
+                setHodConfirm({ open: false, message: "" });
                 fetchAllEmployees();
             }
         } catch (error) {
@@ -642,6 +621,38 @@ const RoleManagement = () => {
         } finally {
             setSavingRoles(false);
         }
+    };
+
+    const handleSaveAssignments = async () => {
+        if (!selectedUser) return;
+
+        // Validation for HOD role
+        const isHodSelected = assignedRoleIds.some(rid => roles.find(r => r._id === rid)?.name === 'HOD');
+        if (isHodSelected && selectedHodDepts.length === 0) {
+            toast.error("Please select at least one department for the HOD role");
+            return;
+        }
+
+        if (isHodSelected) {
+            let conflictMsg = null;
+            for (const dept of selectedHodDepts) {
+                const existingHod = allEmployees.find(emp => 
+                    emp._id !== selectedUser._id &&
+                    emp.roles?.some(r => r.name === 'HOD' && r.departments?.includes(dept._id))
+                );
+                if (existingHod) {
+                    conflictMsg = `Department "${dept.name}" already has an HOD (${existingHod.name}). Continuing will replace them. Are you sure?`;
+                    break;
+                }
+            }
+
+            if (conflictMsg) {
+                setHodConfirm({ open: true, message: conflictMsg });
+                return;
+            }
+        }
+
+        executeSaveAssignments();
     };
 
     const handleDeleteUserMapping = async () => {
@@ -1480,8 +1491,8 @@ const RoleManagement = () => {
                                             {loadingRoles ? null : (
                                                 <FormGroup>
                                                     {roles.length > 0 ? roles.map((role) => {
-                                                        const isIdentityDefault = getSystemRoleName(selectedUser) === role.name;
-                                                        const isChecked = assignedRoleIds.includes(role._id.toString()) || (selectedUser && isIdentityDefault);
+                                                        const isIdentityDefault = role.defaultRole;
+                                                        const isChecked = assignedRoleIds.includes(role._id.toString());
                                                         return (
                                                             <Box key={role._id} onClick={() => handleRoleToggle(role._id)} sx={{
                                                                 p: 1.5,
@@ -1883,6 +1894,18 @@ const RoleManagement = () => {
                 <DialogActions sx={{ p: 2 }}>
                     <Button onClick={() => setDeleteConfirm({ ...deleteConfirm, open: false })}>Cancel</Button>
                     <Button variant="contained" color="error" onClick={handleDeleteUserMapping} sx={{ borderRadius: '50px', textTransform: 'none', fontWeight: 700 }}>Remove Role</Button>
+                </DialogActions>
+            </Dialog>
+
+            {/* HOD Replacement Confirmation */}
+            <Dialog open={hodConfirm.open} onClose={() => setHodConfirm({ open: false, message: "" })} PaperProps={{ sx: { borderRadius: '16px' } }}>
+                <DialogTitle sx={{ fontWeight: 800, color: 'var(--text-primary)' }}>Confirm HOD Replacement</DialogTitle>
+                <DialogContent><Typography sx={{ color: 'var(--text-secondary)' }}>{hodConfirm.message}</Typography></DialogContent>
+                <DialogActions sx={{ p: 2, gap: 1 }}>
+                    <Button onClick={() => setHodConfirm({ open: false, message: "" })} sx={{ borderRadius: '50px', textTransform: 'none', fontWeight: 600 }}>Cancel</Button>
+                    <Button variant="contained" color="primary" onClick={executeSaveAssignments} disabled={savingRoles} sx={{ borderRadius: '50px', textTransform: 'none', fontWeight: 700, background: "var(--gradient-primary)", boxShadow: "0 4px 12px rgba(0, 78, 146, 0.3)" }}>
+                        {savingRoles ? <Loader size={20} color="inherit" /> : 'Confirm Replacement'}
+                    </Button>
                 </DialogActions>
             </Dialog>
 
