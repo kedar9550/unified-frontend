@@ -972,20 +972,28 @@ export default function TextbookPublication() {
 
   const LabelValueDetails = ({ label, value, chip, horizontal = false }) => (
     <Box sx={{
-      p: horizontal ? "10px 16px" : 1.5,
-      borderRadius: "10px",
-      background: horizontal ? "transparent" : "rgba(255,255,255,0.02)",
+      p: 2,
+      borderRadius: "12px",
+      background: horizontal ? "transparent" : "var(--bg-accent-1)",
+      border: horizontal ? "none" : "1px solid var(--border-color)",
+      borderBottom: horizontal ? "1px solid var(--border-color)" : "1px solid var(--border-color)",
       display: "flex",
       flexDirection: horizontal ? "row" : "column",
       alignItems: horizontal ? "center" : "flex-start",
       justifyContent: horizontal ? "flex-start" : "center",
-      gap: horizontal ? 2 : 0.5,
-      borderBottom: horizontal ? "1px solid var(--border-color)" : "1px solid transparent",
-      "&:last-child": { borderBottom: "none" },
+      gap: horizontal ? 2 : 1,
+      height: "100%",
+      boxShadow: horizontal ? "none" : "var(--shadow-premium)",
+      transition: "all 0.2s ease-in-out",
+      "&:hover": horizontal ? {} : {
+        borderColor: "var(--color-primary)",
+        transform: "translateY(-1px)"
+      },
+      "&:last-child": horizontal ? { borderBottom: "none" } : {},
     }}>
-      <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", letterSpacing: "0.05em", fontWeight: 800, fontSize: "0.65rem", mb: horizontal ? 0 : 0.5 }}>{label}</Typography>
-      <Box sx={{ flex: horizontal ? 1 : "none" }}>
-        {chip ? chip : <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", fontSize: "0.85rem" }}>{value || "-"}</Typography>}
+      <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", letterSpacing: "0.05em", fontWeight: 800, fontSize: "0.65rem" }}>{label}</Typography>
+      <Box sx={{ flex: horizontal ? 1 : "none", display: "flex", alignItems: "center" }}>
+        {chip ? chip : <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", fontSize: "0.85rem", wordBreak: "break-all" }}>{value || "-"}</Typography>}
       </Box>
     </Box>
   );
@@ -1056,10 +1064,10 @@ export default function TextbookPublication() {
           
           <Grid container spacing={2}>
             {/* Status and dates */}
-            <Grid item xs={12} sm={3}><LabelValueDetails label="Academic Year" value={data.academicYear?.year || "N/A"} /></Grid>
-            <Grid item xs={12} sm={3}><LabelValueDetails label="ISBN" value={data.isbn} /></Grid>
-            <Grid item xs={12} sm={3}><LabelValueDetails label="Role" value={data.visibilityRole || "Applicant"} /></Grid>
-            <Grid item xs={12} sm={3}>
+            <Grid item xs={12} sm={3} sx={{ display: "flex", flexDirection: "column" }}><LabelValueDetails label="Academic Year" value={data.academicYear?.year || "N/A"} /></Grid>
+            <Grid item xs={12} sm={3} sx={{ display: "flex", flexDirection: "column" }}><LabelValueDetails label="ISBN" value={data.isbn} /></Grid>
+            <Grid item xs={12} sm={3} sx={{ display: "flex", flexDirection: "column" }}><LabelValueDetails label="Role" value={data.visibilityRole || "Applicant"} /></Grid>
+            <Grid item xs={12} sm={3} sx={{ display: "flex", flexDirection: "column" }}>
               <LabelValueDetails 
                 label="Status" 
                 chip={
@@ -1079,24 +1087,24 @@ export default function TextbookPublication() {
             </Grid>
 
             {/* Edition, cost, type, month/year */}
-            <Grid item xs={12} sm={3}><LabelValueDetails label="Edition" value={data.edition || "-"} /></Grid>
-            <Grid item xs={12} sm={3}><LabelValueDetails label="Cost" value={data.cost || "-"} /></Grid>
-            <Grid item xs={12} sm={3}><LabelValueDetails label="Publication Scope" value={data.publicationScope || "National"} /></Grid>
-            <Grid item xs={12} sm={3}><LabelValueDetails label="Month/Year" value={`${data.month || ""} ${data.year || ""}`} /></Grid>
+            <Grid item xs={12} sm={3} sx={{ display: "flex", flexDirection: "column" }}><LabelValueDetails label="Edition" value={data.edition || "-"} /></Grid>
+            <Grid item xs={12} sm={3} sx={{ display: "flex", flexDirection: "column" }}><LabelValueDetails label="Cost" value={data.cost || "-"} /></Grid>
+            <Grid item xs={12} sm={3} sx={{ display: "flex", flexDirection: "column" }}><LabelValueDetails label="Publication Scope" value={data.publicationScope || "National"} /></Grid>
+            <Grid item xs={12} sm={3} sx={{ display: "flex", flexDirection: "column" }}><LabelValueDetails label="Month/Year" value={`${data.month || ""} ${data.year || ""}`} /></Grid>
 
             {/* Author details */}
-            <Grid item xs={12} sm={6}><LabelValueDetails label="Total Authors" value={data.totalAuthors} /></Grid>
-            <Grid item xs={12} sm={6}><LabelValueDetails label="Applicant Position" value={data.userAuthorPosition} /></Grid>
+            <Grid item xs={12} sm={6} sx={{ display: "flex", flexDirection: "column" }}><LabelValueDetails label="Total Authors" value={data.totalAuthors} /></Grid>
+            <Grid item xs={12} sm={6} sx={{ display: "flex", flexDirection: "column" }}><LabelValueDetails label="Applicant Position" value={data.userAuthorPosition} /></Grid>
 
             {/* Incentive details */}
-            <Grid item xs={12} sm={6}>
+            <Grid item xs={12} sm={6} sx={{ display: "flex", flexDirection: "column" }}>
               <LabelValueDetails 
                 label="Incentive details" 
                 value={data.applyIncentive === "Yes" ? "Yes" : "No"} 
               />
             </Grid>
             {data.status === "Approved" && data.approvedAmount && (
-              <Grid item xs={12} sm={6}>
+              <Grid item xs={12} sm={6} sx={{ display: "flex", flexDirection: "column" }}>
                 <LabelValueDetails 
                   label="Approved Incentive" 
                   value={`₹${data.approvedAmount}`} 
@@ -1106,7 +1114,7 @@ export default function TextbookPublication() {
             )}
 
             {/* Appraisal Claimant Selector */}
-            <Grid item xs={12} sm={6}>
+            <Grid item xs={12} sm={6} sx={{ display: "flex", flexDirection: "column" }}>
               <LabelValueDetails 
                 label="Appraisal Claimant"
                 chip={

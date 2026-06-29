@@ -821,20 +821,28 @@ export default function FundedProject() {
 
   const LabelValueDetails = ({ label, value, chip, horizontal = false }) => (
     <Box sx={{
-      p: horizontal ? "10px 16px" : 1.5,
-      borderRadius: "10px",
-      background: horizontal ? "transparent" : "rgba(255,255,255,0.02)",
+      p: 2,
+      borderRadius: "12px",
+      background: horizontal ? "transparent" : "var(--bg-accent-1)",
+      border: horizontal ? "none" : "1px solid var(--border-color)",
+      borderBottom: horizontal ? "1px solid var(--border-color)" : "1px solid var(--border-color)",
       display: "flex",
       flexDirection: horizontal ? "row" : "column",
       alignItems: horizontal ? "center" : "flex-start",
       justifyContent: horizontal ? "flex-start" : "center",
-      gap: horizontal ? 2 : 0.5,
-      borderBottom: horizontal ? "1px solid var(--border-color)" : "1px solid transparent",
-      "&:last-child": { borderBottom: "none" },
+      gap: horizontal ? 2 : 1,
+      height: "100%",
+      boxShadow: horizontal ? "none" : "var(--shadow-premium)",
+      transition: "all 0.2s ease-in-out",
+      "&:hover": horizontal ? {} : {
+        borderColor: "var(--color-primary)",
+        transform: "translateY(-1px)"
+      },
+      "&:last-child": horizontal ? { borderBottom: "none" } : {},
     }}>
-      <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", letterSpacing: "0.05em", fontWeight: 800, fontSize: "0.65rem", mb: horizontal ? 0 : 0.5 }}>{label}</Typography>
-      <Box sx={{ flex: horizontal ? 1 : "none" }}>
-        {chip ? chip : <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", fontSize: "0.85rem" }}>{value || "-"}</Typography>}
+      <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", letterSpacing: "0.05em", fontWeight: 800, fontSize: "0.65rem" }}>{label}</Typography>
+      <Box sx={{ flex: horizontal ? 1 : "none", display: "flex", alignItems: "center" }}>
+        {chip ? chip : <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", fontSize: "0.85rem", wordBreak: "break-all" }}>{value || "-"}</Typography>}
       </Box>
     </Box>
   );
@@ -914,11 +922,11 @@ export default function FundedProject() {
           <Typography variant="body2" sx={{ color: "var(--text-secondary)", mb: 3, fontWeight: 600 }}>Funding Agency: {data.fundingAgency}</Typography>
 
           <Grid container spacing={2}>
-            <Grid item xs={12} sm={3}><LabelValueDetails label="Academic Year" value={data.academicYear?.year || "N/A"} /></Grid>
-            <Grid item xs={12} sm={3}><LabelValueDetails label="Funding Agency" value={data.fundingAgency} /></Grid>
-            <Grid item xs={12} sm={3}><LabelValueDetails label="Duration (Years)" value={data.duration} /></Grid>
-            <Grid item xs={12} sm={3}><LabelValueDetails label="Role" value={data.visibilityRole || "Applicant"} /></Grid>
-            <Grid item xs={12} sm={3}>
+            <Grid item xs={12} sm={3} sx={{ display: "flex", flexDirection: "column" }}><LabelValueDetails label="Academic Year" value={data.academicYear?.year || "N/A"} /></Grid>
+            <Grid item xs={12} sm={3} sx={{ display: "flex", flexDirection: "column" }}><LabelValueDetails label="Funding Agency" value={data.fundingAgency} /></Grid>
+            <Grid item xs={12} sm={3} sx={{ display: "flex", flexDirection: "column" }}><LabelValueDetails label="Duration (Years)" value={data.duration} /></Grid>
+            <Grid item xs={12} sm={3} sx={{ display: "flex", flexDirection: "column" }}><LabelValueDetails label="Role" value={data.visibilityRole || "Applicant"} /></Grid>
+            <Grid item xs={12} sm={3} sx={{ display: "flex", flexDirection: "column" }}>
               <LabelValueDetails
                 label="Status"
                 chip={
@@ -937,14 +945,14 @@ export default function FundedProject() {
               />
             </Grid>
 
-            <Grid item xs={12} sm={3}><LabelValueDetails label="Scheme" value={data.scheme || "-"} /></Grid>
-            <Grid item xs={12} sm={3}><LabelValueDetails label="Sanctioned Amount" value={`₹${data.sanctionedAmount}`} /></Grid>
-            <Grid item xs={12} sm={3}><LabelValueDetails label="Date of Sanction" value={formatDate(data.sanctionDate)} /></Grid>
-            <Grid item xs={12} sm={6}><LabelValueDetails label="Type of Investigator" value={data.investigatorType || "N/A"} /></Grid>
+            <Grid item xs={12} sm={3} sx={{ display: "flex", flexDirection: "column" }}><LabelValueDetails label="Scheme" value={data.scheme || "-"} /></Grid>
+            <Grid item xs={12} sm={3} sx={{ display: "flex", flexDirection: "column" }}><LabelValueDetails label="Sanctioned Amount" value={`₹${data.sanctionedAmount}`} /></Grid>
+            <Grid item xs={12} sm={3} sx={{ display: "flex", flexDirection: "column" }}><LabelValueDetails label="Date of Sanction" value={formatDate(data.sanctionDate)} /></Grid>
+            <Grid item xs={12} sm={6} sx={{ display: "flex", flexDirection: "column" }}><LabelValueDetails label="Type of Investigator" value={data.investigatorType || "N/A"} /></Grid>
 
-            <Grid item xs={12} sm={4}><LabelValueDetails label="Recurring Amount" value={data.recurring ? `₹${data.recurring}` : "-"} /></Grid>
-            <Grid item xs={12} sm={4}><LabelValueDetails label="Non-Recurring Amount" value={data.nonRecurring ? `₹${data.nonRecurring}` : "-"} /></Grid>
-            <Grid item xs={12} sm={4}><LabelValueDetails label="Applying Seed Grant?" value={data.applyingSeedGrant === "Yes" ? "Yes" : "No"} /></Grid>
+            <Grid item xs={12} sm={4} sx={{ display: "flex", flexDirection: "column" }}><LabelValueDetails label="Recurring Amount" value={data.recurring ? `₹${data.recurring}` : "-"} /></Grid>
+            <Grid item xs={12} sm={4} sx={{ display: "flex", flexDirection: "column" }}><LabelValueDetails label="Non-Recurring Amount" value={data.nonRecurring ? `₹${data.nonRecurring}` : "-"} /></Grid>
+            <Grid item xs={12} sm={4} sx={{ display: "flex", flexDirection: "column" }}><LabelValueDetails label="Applying Seed Grant?" value={data.applyingSeedGrant === "Yes" ? "Yes" : "No"} /></Grid>
 
             {data.coInvestigators && data.coInvestigators.length > 0 && (
               <Grid item xs={12} sm={12}>

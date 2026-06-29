@@ -728,20 +728,28 @@ export default function NovelProductPublication() {
 
   const LabelValueDetails = ({ label, value, chip, horizontal = false }) => (
     <Box sx={{
-      p: horizontal ? "10px 16px" : 1.5,
-      borderRadius: "10px",
-      background: horizontal ? "transparent" : "rgba(255,255,255,0.02)",
+      p: 2,
+      borderRadius: "12px",
+      background: horizontal ? "transparent" : "var(--bg-accent-1)",
+      border: horizontal ? "none" : "1px solid var(--border-color)",
+      borderBottom: horizontal ? "1px solid var(--border-color)" : "1px solid var(--border-color)",
       display: "flex",
       flexDirection: horizontal ? "row" : "column",
       alignItems: horizontal ? "center" : "flex-start",
       justifyContent: horizontal ? "flex-start" : "center",
-      gap: horizontal ? 2 : 0.5,
-      borderBottom: horizontal ? "1px solid var(--border-color)" : "1px solid transparent",
-      "&:last-child": { borderBottom: "none" },
+      gap: horizontal ? 2 : 1,
+      height: "100%",
+      boxShadow: horizontal ? "none" : "var(--shadow-premium)",
+      transition: "all 0.2s ease-in-out",
+      "&:hover": horizontal ? {} : {
+        borderColor: "var(--color-primary)",
+        transform: "translateY(-1px)"
+      },
+      "&:last-child": horizontal ? { borderBottom: "none" } : {},
     }}>
-      <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", letterSpacing: "0.05em", fontWeight: 800, fontSize: "0.65rem", mb: horizontal ? 0 : 0.5 }}>{label}</Typography>
-      <Box sx={{ flex: horizontal ? 1 : "none" }}>
-        {chip ? chip : <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", fontSize: "0.85rem" }}>{value || "-"}</Typography>}
+      <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", letterSpacing: "0.05em", fontWeight: 800, fontSize: "0.65rem" }}>{label}</Typography>
+      <Box sx={{ flex: horizontal ? 1 : "none", display: "flex", alignItems: "center" }}>
+        {chip ? chip : <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", fontSize: "0.85rem", wordBreak: "break-all" }}>{value || "-"}</Typography>}
       </Box>
     </Box>
   );
@@ -810,8 +818,8 @@ export default function NovelProductPublication() {
           <Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)", mb: 1 }}>{data.productName}</Typography>
           
           <Grid container spacing={2}>
-            <Grid item xs={12} sm={3}><LabelValueDetails label="Academic Year" value={data.academicYear?.year || "N/A"} /></Grid>
-            <Grid item xs={12} sm={3}>
+            <Grid item xs={12} sm={3} sx={{ display: "flex", flexDirection: "column" }}><LabelValueDetails label="Academic Year" value={data.academicYear?.year || "N/A"} /></Grid>
+            <Grid item xs={12} sm={3} sx={{ display: "flex", flexDirection: "column" }}>
               <LabelValueDetails 
                 label="Category" 
                 chip={
@@ -828,8 +836,8 @@ export default function NovelProductPublication() {
                 } 
               />
             </Grid>
-            <Grid item xs={12} sm={3}><LabelValueDetails label={data.category === 'Developed' ? 'Developed Organization' : 'Implemented Organization'} value={data.category === 'Developed' ? (data.developedOrganization || "—") : (data.implementedOrganization || "—")} /></Grid>
-            <Grid item xs={12} sm={3}>
+            <Grid item xs={12} sm={3} sx={{ display: "flex", flexDirection: "column" }}><LabelValueDetails label={data.category === 'Developed' ? 'Developed Organization' : 'Implemented Organization'} value={data.category === 'Developed' ? (data.developedOrganization || "—") : (data.implementedOrganization || "—")} /></Grid>
+            <Grid item xs={12} sm={3} sx={{ display: "flex", flexDirection: "column" }}>
               <LabelValueDetails 
                 label="Approval Status" 
                 chip={
@@ -847,9 +855,9 @@ export default function NovelProductPublication() {
                 } 
               />
             </Grid>
-            <Grid item xs={12} sm={3}><LabelValueDetails label="Role" value={data.visibilityRole || "Applicant"} /></Grid>
-            <Grid item xs={12} sm={6}><LabelValueDetails label="Type of Investigator" value={data.investigatorType || "N/A"} /></Grid>
-            <Grid item xs={12} sm={3}><LabelValueDetails label="Applying Incentive?" value={data.applyIncentive || "No"} /></Grid>
+            <Grid item xs={12} sm={3} sx={{ display: "flex", flexDirection: "column" }}><LabelValueDetails label="Role" value={data.visibilityRole || "Applicant"} /></Grid>
+            <Grid item xs={12} sm={6} sx={{ display: "flex", flexDirection: "column" }}><LabelValueDetails label="Type of Investigator" value={data.investigatorType || "N/A"} /></Grid>
+            <Grid item xs={12} sm={3} sx={{ display: "flex", flexDirection: "column" }}><LabelValueDetails label="Applying Incentive?" value={data.applyIncentive || "No"} /></Grid>
 
           </Grid>
 
