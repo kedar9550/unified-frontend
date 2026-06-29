@@ -40,7 +40,7 @@ export default function ProctoringUpload() {
   useEffect(() => {
     const fetchYears = async () => {
       try {
-        const res = await API.get("/api/academic-years", { skipGlobalLoader: true });
+        const res = await API.get("/api/academic-years");
         const years = res.data.years || [];
         // Remove duplicates if any
         const uniqueYears = Array.from(new Set(years.map(y => y.year)))
@@ -67,7 +67,6 @@ export default function ProctoringUpload() {
         params: { 
           academicYearId: selectedYearId,
         },
-        skipGlobalLoader: true,
       });
       setResults(res.data.data || []);
     } catch (err) {
@@ -107,7 +106,6 @@ export default function ProctoringUpload() {
         formData,
         {
           headers: { "Content-Type": "multipart/form-data" },
-          skipGlobalLoader: true,
         }
       );
 
@@ -157,7 +155,7 @@ export default function ProctoringUpload() {
     
     setLoading(true);
     try {
-      await API.delete("/api/faculty-proctoring/clear", { params, skipGlobalLoader: true });
+      await API.delete("/api/faculty-proctoring/clear", { params });
       toast.success("Records cleared successfully");
       setDeleteMenuAnchor(null);
       fetchResults();
