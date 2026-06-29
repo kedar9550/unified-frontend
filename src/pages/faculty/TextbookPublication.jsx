@@ -534,6 +534,7 @@ export default function TextbookPublication() {
           displayEmpty
           value={selectedYear}
           onChange={(e) => setSelectedYear(e.target.value)}
+          MenuProps={{ disableScrollLock: true, disableRestoreFocus: true }}
         >
           <MenuItem value="" disabled>Select Academic Year</MenuItem>
           {academicYears.map(y => (
@@ -616,6 +617,7 @@ export default function TextbookPublication() {
                     currencySymbol: val === "National" ? "₹" : "$"
                   }));
             }}
+            MenuProps={{ disableScrollLock: true, disableRestoreFocus: true }}
           >
             <MenuItem value="National">National</MenuItem>
             <MenuItem value="International">International</MenuItem>
@@ -643,7 +645,7 @@ export default function TextbookPublication() {
         </Box>
         <Box>
           <Typography sx={labelStyle}>Title of the Text Book :</Typography>
-          <TextField size="small" fullWidth value={form.title} onChange={set("title")} inputProps={{ maxLength: 200 }} disabled={isbnFetchedFields.title} sx={isbnFetchedFields.title ? disabledField : {}} />
+          <TextField size="small" fullWidth value={form.title} onChange={set("title")} slotProps={{ htmlInput: { maxLength: 200 } }} disabled={isbnFetchedFields.title} sx={isbnFetchedFields.title ? disabledField : {}} />
         </Box>
         <Box>
           <Typography sx={labelStyle}>Name of the Publisher :</Typography>
@@ -783,13 +785,13 @@ export default function TextbookPublication() {
                 type="number"
                 value={form.totalAuthors}
                 onChange={set("totalAuthors")}
-                inputProps={{ min: 1 }}
+                slotProps={{ htmlInput: { min: 1 } }}
               />
             </Box>
             {parseInt(form.totalAuthors) > 1 && (
               <Box>
                 <Typography sx={labelStyle}>Applicant Author Position :</Typography>
-                <Select size="small" fullWidth value={form.userAuthorPosition} onChange={set("userAuthorPosition")}>
+                <Select size="small" fullWidth value={form.userAuthorPosition} onChange={set("userAuthorPosition")} MenuProps={{ disableScrollLock: true, disableRestoreFocus: true }}>
                   {Array.from({ length: parseInt(form.totalAuthors) || 1 }, (_, i) => (
                     <MenuItem key={i + 1} value={i + 1}>{i + 1}</MenuItem>
                   ))}
@@ -815,6 +817,7 @@ export default function TextbookPublication() {
                         value={ca.affiliationType}
                         onChange={(e) => handleCoAuthorChange(ca.authorPosition, "affiliationType", e.target.value)}
                         displayEmpty
+                        MenuProps={{ disableScrollLock: true, disableRestoreFocus: true }}
                       >
                         <MenuItem value="" disabled>Select Affiliation</MenuItem>
                         <MenuItem value="Aditya University">Aditya University</MenuItem>
@@ -893,7 +896,7 @@ export default function TextbookPublication() {
           <Typography sx={labelStyle}>Year:</Typography>
           <Select size="small" fullWidth displayEmpty value={form.year} onChange={(e) => {
             setForm(p => ({ ...p, year: e.target.value, month: "" }));
-          }}>
+          }} MenuProps={{ disableScrollLock: true, disableRestoreFocus: true }}>
             <MenuItem value="">Select Year</MenuItem>
             {(form.year && !YEARS.includes(String(form.year))
               ? [...YEARS, String(form.year)].sort((a, b) => Number(b) - Number(a))
@@ -909,7 +912,7 @@ export default function TextbookPublication() {
         {form.year ? (
           <Box>
             <Typography sx={labelStyle}>Month:</Typography>
-            <Select size="small" fullWidth displayEmpty value={form.month} onChange={set("month")} disabled={!form.year}>
+            <Select size="small" fullWidth displayEmpty value={form.month} onChange={set("month")} disabled={!form.year} MenuProps={{ disableScrollLock: true, disableRestoreFocus: true }}>
               <MenuItem value="">Select Month</MenuItem>
               {getAvailableMonths().map((m) => <MenuItem key={m} value={m}>{m}</MenuItem>)}
             </Select>
@@ -932,7 +935,7 @@ export default function TextbookPublication() {
         <FileField label="Attach Index *" name="index" onChange={setFile("index")} />
         <Box>
           <Typography sx={labelStyle}>Whether you want to apply for incentive?</Typography>
-          <Select size="small" fullWidth displayEmpty value={form.applyIncentive} onChange={set("applyIncentive")}>
+          <Select size="small" fullWidth displayEmpty value={form.applyIncentive} onChange={set("applyIncentive")} MenuProps={{ disableScrollLock: true, disableRestoreFocus: true }}>
             <MenuItem value="">Select</MenuItem>
             <MenuItem value="Yes">Yes</MenuItem>
             <MenuItem value="No">No</MenuItem>
@@ -1041,13 +1044,15 @@ export default function TextbookPublication() {
         onClose={handleCloseDetails}
         maxWidth="md"
         fullWidth
-        PaperProps={{
-          sx: {
-            borderRadius: "20px",
-            background: "var(--bg-glass)",
-            backdropFilter: "blur(12px)",
-            border: "1px solid var(--border-color)",
-            boxShadow: "var(--shadow-premium)",
+        slotProps={{
+          paper: {
+            sx: {
+              borderRadius: "20px",
+              background: "var(--bg-glass)",
+              backdropFilter: "blur(12px)",
+              border: "1px solid var(--border-color)",
+              boxShadow: "var(--shadow-premium)",
+            }
           }
         }}
       >
