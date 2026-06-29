@@ -22,10 +22,10 @@ export const loginUser = async (loginFn, credentials) => {
 };
 
 // ---------------- FORGOT PASSWORD LOGIC ----------------
-const sendOtpCode = async (employeeCode, email) => {
-  if (!email?.trim()) return { success: false, message: "Email is required" };
+const sendOtpCode = async (employeeCode, mobile) => {
+  if (!mobile?.trim()) return { success: false, message: "Mobile number is required" };
   try {
-    const res = await API.post("/api/auth/send-otp", { employeeCode, email });
+    const res = await API.post("/api/auth/send-otp", { employeeCode, mobile });
     return { success: true, message: res.data?.message || "OTP sent successfully" };
   } catch (err) {
     return { success: false, message: err.response?.data?.message || "Failed to send OTP" };
@@ -91,7 +91,7 @@ export default function Login() {
   const [isIdValid, setIsIdValid] = useState(false);
   const [fpData, setFpData] = useState({
     id: '',
-    email: '',
+    mobile: '',
     otp: '',
     newPass: '',
     confirmPass: ''
@@ -159,7 +159,7 @@ export default function Login() {
       return {
         success: true,
         message: res.data.message,
-        email: res.data.email
+        mobile: res.data.mobile
       };
     } catch (err) {
       return {
@@ -179,14 +179,14 @@ export default function Login() {
 
     if (res.success) {
       setIsIdValid(true);
-      if (res.email) {
-        setFpData(prev => ({ ...prev, email: res.email }));
+      if (res.mobile) {
+        setFpData(prev => ({ ...prev, mobile: res.mobile }));
       }
     }
   };
   const handleSendOtp = async (e) => {
     e.preventDefault();
-    const res = await sendOtpCode(fpData.id, fpData.email);
+    const res = await sendOtpCode(fpData.id, fpData.mobile);
     setFpMsg({ text: res.message, type: res.success ? 'success' : 'error' });
     if (res.success) setFpStep(2);
   };
@@ -312,35 +312,7 @@ export default function Login() {
               </div>
 
 
-              {/* Show Email Only After Valid ID */}
-
-              {isIdValid && (
-
-                <div className="auth-field">
-
-                  <input
-                    id="fp-email"
-                    type="email"
-                    placeholder=" "
-                    value={fpData.email}
-                    onChange={e =>
-                      setFpData({
-                        ...fpData,
-                        email: e.target.value
-                      })
-                    }
-                  />
-
-                  <label
-                    className="auth-label"
-                    htmlFor="fp-email"
-                  >
-                    Email ID
-                  </label>
-
-                </div>
-
-              )}
+              {/* Mobile Number input removed as per request */}
 
 
               <div className="btn-wrapper-center">
