@@ -167,6 +167,7 @@ const AcademicHierarchyFilter = ({ onChange, initialValues = {}, showSearch = fa
                     )}
                     sx={{ 
                         minWidth: 160, 
+                        width: { xs: "100%", sm: "auto" },
                         "& .MuiInput-underline:before": { borderBottomColor: "rgba(148, 163, 184, 0.5)" },
                         "& .MuiInput-underline:hover:not(.Mui-disabled):before": { borderBottomColor: "var(--color-primary)" },
                         "& .MuiInput-underline:after": { borderBottomColor: "var(--color-primary)" },
@@ -181,6 +182,7 @@ const AcademicHierarchyFilter = ({ onChange, initialValues = {}, showSearch = fa
         return (
             <FormControl variant="standard" sx={{ 
                 minWidth: 160, 
+                width: { xs: "100%", sm: "auto" },
                 "& .MuiInput-underline:before": { borderBottomColor: "rgba(148, 163, 184, 0.5)" },
                 "& .MuiInput-underline:hover:not(.Mui-disabled):before": { borderBottomColor: "var(--color-primary)" },
                 "& .MuiInput-underline:after": { borderBottomColor: "var(--color-primary)" },
@@ -208,7 +210,7 @@ const AcademicHierarchyFilter = ({ onChange, initialValues = {}, showSearch = fa
     };
 
     return (
-        <Box sx={{ display: "flex", gap: 2, alignItems: "flex-end" }}>
+        <Box sx={{ display: "flex", flexDirection: { xs: "column", sm: "row" }, gap: 2, alignItems: { xs: "stretch", sm: "flex-end" }, width: "100%" }}>
             {renderDropdown("Program", selectedProgram, programs, loading.programs, (val) => {
                 setSelectedProgram(val);
                 setSelectedDept("");

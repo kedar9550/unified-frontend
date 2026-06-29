@@ -320,13 +320,13 @@ const Assignedstudents = () => {
                         rows={formattedRows}
                         nonSortableColumns={[0]}
                         toolbarLeft={
-                                <Box sx={{ display: "flex", alignItems: "flex-end", gap: 2, flexWrap: "nowrap" }}>
+                                <Box sx={{ display: "flex", flexDirection: { xs: "column", sm: "row" }, alignItems: { xs: "stretch", sm: "flex-end" }, gap: 2, flexWrap: "wrap", width: "100%" }}>
                                     <AcademicHierarchyFilter
                                         onChange={handleHierarchyChange}
                                         initialValues={hierarchy}
                                     />
                                     {hierarchy.department && (
-                                        <FormControl variant="standard" sx={{ minWidth: 120 }}>
+                                        <FormControl variant="standard" sx={{ minWidth: 120, width: { xs: "100%", sm: "auto" } }}>
                                             <InputLabel id="sem-filter-label" sx={{ fontSize: "0.85rem" }}>Semester</InputLabel>
                                             <Select
                                                 labelId="sem-filter-label"

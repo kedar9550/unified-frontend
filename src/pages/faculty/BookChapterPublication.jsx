@@ -823,6 +823,7 @@ export default function BookChapterPublication() {
           displayEmpty
           value={selectedYear}
           onChange={(e) => setSelectedYear(e.target.value)}
+          MenuProps={{ disableScrollLock: true, disableRestoreFocus: true }}
         >
           <MenuItem value="" disabled>Select Academic Year</MenuItem>
           {academicYears.map(y => (
@@ -898,11 +899,13 @@ export default function BookChapterPublication() {
             onChange={set("doi")}
             placeholder="e.g. 10.1007/978-3-031-12345-6_10"
             onKeyDown={(e) => { if (e.key === "Enter") fetchDOIData(); }}
-            InputProps={{
-              sx: { background: "var(--bg-panel)" },
-              endAdornment: doiFetched ? (
-                <Box component="span" sx={{ display: "flex", alignItems: "center", color: "#10b981", fontSize: 18, mr: 0.5 }}>✓</Box>
-              ) : null
+            slotProps={{
+              input: {
+                sx: { background: "var(--bg-panel)" },
+                endAdornment: doiFetched ? (
+                  <Box component="span" sx={{ display: "flex", alignItems: "center", color: "#10b981", fontSize: 18, mr: 0.5 }}>✓</Box>
+                ) : null
+              }
             }}
           />
           <Button
@@ -949,7 +952,7 @@ export default function BookChapterPublication() {
                 const val = e.target.value;
                 if (/^[0-9-]*$/.test(val)) setForm(p => ({ ...p, isbnNumber: val }));
               }}
-              inputProps={{ inputMode: "numeric" }}
+              slotProps={{ htmlInput: { inputMode: "numeric" } }}
             />
             <Button
               variant="outlined"
@@ -976,6 +979,7 @@ export default function BookChapterPublication() {
             onChange={(e) => setForm(p => ({ ...p, publicationScope: e.target.value }))}
             error={!!errors.publicationScope}
             displayEmpty
+            MenuProps={{ disableScrollLock: true, disableRestoreFocus: true }}
           >
             <MenuItem value="" disabled>Select Scope</MenuItem>
             <MenuItem value="National">National</MenuItem>
@@ -1003,13 +1007,13 @@ export default function BookChapterPublication() {
             type="number"
             value={form.totalAuthors}
             onChange={set("totalAuthors")}
-            inputProps={{ min: 1 }}
+            slotProps={{ htmlInput: { min: 1 } }}
           />
         </Box>
         {parseInt(form.totalAuthors) > 1 && (
           <Box>
             <Typography sx={labelStyle}>Applicant Author Position : *</Typography>
-            <Select size="small" fullWidth value={form.userAuthorPosition} onChange={set("userAuthorPosition")}>
+            <Select size="small" fullWidth value={form.userAuthorPosition} onChange={set("userAuthorPosition")} MenuProps={{ disableScrollLock: true, disableRestoreFocus: true }}>
               {Array.from({ length: parseInt(form.totalAuthors) || 1 }, (_, i) => (
                 <MenuItem key={i + 1} value={i + 1}>{i + 1}</MenuItem>
               ))}
@@ -1034,6 +1038,7 @@ export default function BookChapterPublication() {
                       value={ca.affiliationType}
                       onChange={(e) => handleCoAuthorChange(ca.authorPosition, "affiliationType", e.target.value)}
                       displayEmpty
+                      MenuProps={{ disableScrollLock: true, disableRestoreFocus: true }}
                     >
                       <MenuItem value="" disabled>Select Affiliation</MenuItem>
                       <MenuItem value="Aditya University">Aditya University</MenuItem>
@@ -1111,7 +1116,7 @@ export default function BookChapterPublication() {
           <Typography sx={labelStyle}>Year:</Typography>
           <Select size="small" fullWidth displayEmpty value={form.year} onChange={(e) => {
             setForm(p => ({ ...p, year: e.target.value, month: "" }));
-          }} error={!!errors.year}>
+          }} error={!!errors.year} MenuProps={{ disableScrollLock: true, disableRestoreFocus: true }}>
             <MenuItem value="">Select Year</MenuItem>
             {(form.year && !YEARS.includes(String(form.year))
               ? [...YEARS, String(form.year)].sort((a, b) => Number(b) - Number(a))
@@ -1121,7 +1126,7 @@ export default function BookChapterPublication() {
         </Box>
         <Box>
           <Typography sx={labelStyle}>Month:</Typography>
-          <Select size="small" fullWidth displayEmpty value={form.month} onChange={set("month")} disabled={!form.year} error={!!errors.month}>
+          <Select size="small" fullWidth displayEmpty value={form.month} onChange={set("month")} disabled={!form.year} error={!!errors.month} MenuProps={{ disableScrollLock: true, disableRestoreFocus: true }}>
             <MenuItem value="">Select Month</MenuItem>
             {getAvailableMonths().map((m) => <MenuItem key={m} value={m}>{m}</MenuItem>)}
           </Select>
@@ -1134,7 +1139,7 @@ export default function BookChapterPublication() {
         <FileField label="Attach Page displaying author affiliation and chapter title" name="authorAffiliation" onChange={setFile("authorAffiliation")} error={!!errors.authorAffiliation} onError={(m) => toast.error(m)} />
         <Box>
           <Typography sx={labelStyle}>Applying as a Seed Grant Work? *</Typography>
-          <Select size="small" fullWidth displayEmpty value={form.applyingSeedGrant} onChange={set("applyingSeedGrant")} error={!!errors.applyingSeedGrant}>
+          <Select size="small" fullWidth displayEmpty value={form.applyingSeedGrant} onChange={set("applyingSeedGrant")} error={!!errors.applyingSeedGrant} MenuProps={{ disableScrollLock: true, disableRestoreFocus: true }}>
             <MenuItem value="">Select</MenuItem>
             <MenuItem value="Yes">Yes</MenuItem>
             <MenuItem value="No">No</MenuItem>
@@ -1142,7 +1147,7 @@ export default function BookChapterPublication() {
         </Box>
         <Box>
           <Typography sx={labelStyle}>Whether you want to apply for incentive? *</Typography>
-          <Select size="small" fullWidth displayEmpty value={form.applyIncentive} onChange={set("applyIncentive")} error={!!errors.applyIncentive}>
+          <Select size="small" fullWidth displayEmpty value={form.applyIncentive} onChange={set("applyIncentive")} error={!!errors.applyIncentive} MenuProps={{ disableScrollLock: true, disableRestoreFocus: true }}>
             <MenuItem value="">Select</MenuItem>
             <MenuItem value="Yes">Yes</MenuItem>
             <MenuItem value="No">No</MenuItem>
@@ -1250,13 +1255,15 @@ export default function BookChapterPublication() {
         onClose={handleCloseDetails}
         maxWidth="md"
         fullWidth
-        PaperProps={{
-          sx: {
-            borderRadius: "20px",
-            background: "var(--bg-glass)",
-            backdropFilter: "blur(12px)",
-            border: "1px solid var(--border-color)",
-            boxShadow: "var(--shadow-premium)",
+        slotProps={{
+          paper: {
+            sx: {
+              borderRadius: "20px",
+              background: "var(--bg-glass)",
+              backdropFilter: "blur(12px)",
+              border: "1px solid var(--border-color)",
+              boxShadow: "var(--shadow-premium)",
+            }
           }
         }}
       >

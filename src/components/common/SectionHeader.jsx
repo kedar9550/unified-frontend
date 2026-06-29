@@ -5,9 +5,10 @@ export default function SectionHeader({ title, action }) {
     <Box
       sx={{
         display: "flex",
-        alignItems: "center",
+        flexDirection: { xs: "column", sm: "row" },
+        alignItems: { xs: "flex-start", sm: "center" },
         justifyContent: "space-between",
-        gap: 1,
+        gap: { xs: 2, sm: 1 },
         mb: 3,
         background: "var(--bg-glass)",
         backdropFilter: "blur(10px) saturate(180%)",
@@ -19,7 +20,7 @@ export default function SectionHeader({ title, action }) {
         width: "100%",
       }}
     >
-      <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+      <Box sx={{ display: "flex", alignItems: "center", gap: 1, width: { xs: "100%", sm: "auto" } }}>
         {/* Left blue bar */}
         <Box
           sx={{
@@ -27,12 +28,17 @@ export default function SectionHeader({ title, action }) {
             height: 20,
             background: "var(--color-primary)",
             borderRadius: "2px",
+            flexShrink: 0,
           }}
         />
-        <Typography component="div" fontWeight={600}>{title}</Typography>
+        <Typography component="div" fontWeight={600} sx={{ wordBreak: "break-word" }}>{title}</Typography>
       </Box>
 
-      {action && <Box>{action}</Box>}
+      {action && (
+        <Box sx={{ width: { xs: "100%", sm: "auto" }, display: "flex", justifyContent: { xs: "flex-start", sm: "flex-end" } }}>
+          {action}
+        </Box>
+      )}
     </Box>
   );
 }

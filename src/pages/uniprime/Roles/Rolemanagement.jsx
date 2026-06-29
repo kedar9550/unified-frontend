@@ -715,7 +715,7 @@ const RoleManagement = () => {
                             anchorEl={createAnchorEl}
                             open={openCreateMenu}
                             onClose={handleCreateClose}
-                            PaperProps={{ sx: { borderRadius: '12px', mt: 1, boxShadow: '0 4px 20px rgba(0,0,0,0.1)', minWidth: 160 } }}
+                            slotProps={{ paper: { sx: { borderRadius: '12px', mt: 1, boxShadow: '0 4px 20px rgba(0,0,0,0.1)', minWidth: 160 } } }}
                         >
                             <MenuItem onClick={handleRoleOption} sx={{ py: 1.5 }}>
                                 <ListItemIcon><Security fontSize="small" color="primary" /></ListItemIcon>
@@ -1485,7 +1485,7 @@ const RoleManagement = () => {
                                         </Collapse>
                                     </Box>
 
-                                    <Box sx={{ flex: 1.2, p: 3, background: 'var(--bg-accent-1)', display: 'flex', flexDirection: 'column', borderLeft: '1px solid var(--border-color)' }}>
+                                    <Box sx={{ flex: 1.2, p: 3, background: 'var(--bg-accent-1)', display: 'flex', flexDirection: 'column', borderLeft: { xs: 'none', lg: '1px solid var(--border-color)' }, borderTop: { xs: '1px solid var(--border-color)', lg: 'none' } }}>
                                         <Typography variant="subtitle2" fontWeight={700} gutterBottom color="textSecondary">{selectedUser ? `Select Roles for ${selectedUser.name}` : "Available Roles"}</Typography>
                                         <Box sx={{ flex: 1, overflowY: 'auto' }}>
                                             {loadingRoles ? null : (
@@ -1624,7 +1624,7 @@ const RoleManagement = () => {
                             </Box>
                         ) : (
                             <>
-                                <TableContainer component={Paper} elevation={0} sx={{ background: 'transparent', border: '1px solid var(--border-color)', borderRadius: '15px', overflow: 'hidden' }}>
+                                <TableContainer component={Paper} elevation={0} sx={{ background: 'transparent', border: '1px solid var(--border-color)', borderRadius: '15px', overflowX: 'auto' }}>
                                     <Table>
                                         <TableHead sx={{ bgcolor: 'var(--bg-accent-1)' }}>
                                             <TableRow>
@@ -1757,7 +1757,7 @@ const RoleManagement = () => {
             )}
 
             {/* Create Role Modal */}
-            <Dialog open={isRoleModalOpen} onClose={handleCloseRoleModal} maxWidth="xs" fullWidth PaperProps={{ sx: { borderRadius: "16px", p: 1 } }}>
+            <Dialog open={isRoleModalOpen} onClose={handleCloseRoleModal} maxWidth="xs" fullWidth slotProps={{ paper: { sx: { borderRadius: "16px", p: 1 } } }}>
                 <DialogTitle component="div" sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <Typography variant="h6" fontWeight={700}>Create New Role</Typography>
                     <IconButton onClick={handleCloseRoleModal} size="small"><Close /></IconButton>
@@ -1774,7 +1774,7 @@ const RoleManagement = () => {
             </Dialog>
 
             {/* User Choice Modal (Bulk vs Individual) */}
-            <Dialog open={isUserChoiceModalOpen} onClose={() => { setIsUserChoiceModalOpen(false); setRegistrationView("selection"); }} maxWidth={registrationView === "selection" ? "sm" : "md"} fullWidth PaperProps={{ sx: { borderRadius: "20px", p: registrationView === "selection" ? 2 : 0 } }}>
+            <Dialog open={isUserChoiceModalOpen} onClose={() => { setIsUserChoiceModalOpen(false); setRegistrationView("selection"); }} maxWidth={registrationView === "selection" ? "sm" : "md"} fullWidth slotProps={{ paper: { sx: { borderRadius: "20px", p: registrationView === "selection" ? 2 : 0 } } }}>
                 {registrationView === "selection" ? (
                     <>
                         <DialogTitle component="div" sx={{ textAlign: 'center', pb: 0 }}>
@@ -1852,7 +1852,7 @@ const RoleManagement = () => {
             </Dialog>
 
             {/* Bulk Results Dialog */}
-            <Dialog open={!!bulkResults} onClose={() => setBulkResults(null)} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: '20px' } }}>
+            <Dialog open={!!bulkResults} onClose={() => setBulkResults(null)} maxWidth="sm" fullWidth slotProps={{ paper: { sx: { borderRadius: '20px' } } }}>
                 <DialogTitle component="div" sx={{ bgcolor: '#f8fbfc', borderBottom: '1px solid rgba(0,0,0,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <Typography variant="h6" fontWeight={800}>Upload Results</Typography>
                     <IconButton onClick={() => setBulkResults(null)}><Close /></IconButton>
@@ -1889,7 +1889,7 @@ const RoleManagement = () => {
             </Dialog>
 
             {/* Delete Confirmation */}
-            <Dialog open={deleteConfirm.open} onClose={() => setDeleteConfirm({ ...deleteConfirm, open: false })} PaperProps={{ sx: { borderRadius: '16px' } }}>
+            <Dialog open={deleteConfirm.open} onClose={() => setDeleteConfirm({ ...deleteConfirm, open: false })} slotProps={{ paper: { sx: { borderRadius: '16px' } } }}>
                 <DialogTitle sx={{ fontWeight: 700 }}>Confirm Role Removal</DialogTitle>
                 <DialogContent><Typography>Are you sure you want to remove <b>{deleteConfirm.roleName}</b>?</Typography></DialogContent>
                 <DialogActions sx={{ p: 2 }}>
@@ -1899,7 +1899,7 @@ const RoleManagement = () => {
             </Dialog>
 
             {/* HOD Replacement Confirmation */}
-            <Dialog open={hodConfirm.open} onClose={() => setHodConfirm({ open: false, message: "" })} PaperProps={{ sx: { borderRadius: '16px' } }}>
+            <Dialog open={hodConfirm.open} onClose={() => setHodConfirm({ open: false, message: "" })} slotProps={{ paper: { sx: { borderRadius: '16px' } } }}>
                 <DialogTitle sx={{ fontWeight: 800, color: 'var(--text-primary)' }}>Confirm HOD Replacement</DialogTitle>
                 <DialogContent><Typography sx={{ color: 'var(--text-secondary)' }}>{hodConfirm.message}</Typography></DialogContent>
                 <DialogActions sx={{ p: 2, gap: 1 }}>
