@@ -83,13 +83,7 @@ const TextBookApprovalDetail = ({ id, onBack, role }) => {
         }
     };
 
-    if (loading) {
-        return (
-            <Box sx={{ display: 'flex', justifyContent: 'center', p: 10 }}>
-                <Loader />
-            </Box>
-        );
-    }
+    if (loading) return null;
 
     if (!data) {
         return (
