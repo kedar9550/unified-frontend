@@ -81,7 +81,7 @@ const PhdScholarFacultyDetail = ({ facultyId, onBack, role }) => {
         }
     };
 
-    if (loading) return <Box sx={{ display: 'flex', justifyContent: 'center', p: 10 }}><Loader /></Box>;
+    if (loading) return null;
     if (!facultyInfo || applications.length === 0) return <Box sx={{ textAlign: 'center', p: 5 }}><Typography color="error">No records found for this faculty.</Typography><Button onClick={onBack} sx={{ mt: 2 }}>Go Back</Button></Box>;
 
     const getStatusStyle = (s) => {
