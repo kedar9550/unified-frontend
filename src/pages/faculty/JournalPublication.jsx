@@ -802,8 +802,8 @@ export default function JournalPublication() {
                   <TableCell sx={{ color: "var(--text-secondary)", py: 2 }}>
                     {pub.coAuthors && pub.coAuthors.length > 0
                       ? <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                          {pub.coAuthors.map(ca => ca.name).join(", ")}
-                        </Typography>
+                        {pub.coAuthors.map(ca => ca.name).join(", ")}
+                      </Typography>
                       : <Typography variant="body2" sx={{ color: "var(--text-secondary)" }}>—</Typography>}
                   </TableCell>
                   <TableCell sx={{ py: 2 }}>
