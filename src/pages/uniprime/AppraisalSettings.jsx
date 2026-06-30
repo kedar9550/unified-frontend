@@ -403,13 +403,13 @@ const AppraisalSettings = () => {
                 {/* Rows */}
                 <Box sx={{ px: { xs: 1, sm: 2 }, py: 1, display: "flex", flexDirection: "column", gap: 1 }}>
                   {items.map((range, idx) => (
-                    <Box 
-                      key={idx} 
-                      sx={{ 
-                        display: "flex", 
+                    <Box
+                      key={idx}
+                      sx={{
+                        display: "flex",
                         flexDirection: "row",
-                        justifyContent: "space-between", 
-                        alignItems: "center", 
+                        justifyContent: "space-between",
+                        alignItems: "center",
                         py: 0.5,
                         width: "100%"
                       }}

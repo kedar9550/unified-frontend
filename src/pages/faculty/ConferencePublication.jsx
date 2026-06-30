@@ -87,20 +87,20 @@ export default function ConferencePublication() {
       // Populate form fields from backend response
       setForm(prev => ({
         ...prev,
-        title:          data.title          || prev.title,
-        publisher:      data.publisher      || prev.publisher,
+        title: data.title || prev.title,
+        publisher: data.publisher || prev.publisher,
         conferenceName: data.conferenceName || prev.conferenceName,
-        issnIsbn:       data.issnIsbn       || prev.issnIsbn,
-        year:           data.year           || prev.year,
-        month:          data.month          || prev.month,
-        indexing:       "Scopus Indexed",   // confirmed in Scopus as conference paper
+        issnIsbn: data.issnIsbn || prev.issnIsbn,
+        year: data.year || prev.year,
+        month: data.month || prev.month,
+        indexing: "Scopus Indexed",   // confirmed in Scopus as conference paper
       }));
 
       setDoiFetched(true);
 
       // Warn user if mandatory fields couldn't be auto-filled (rare, but possible)
       const missing = [];
-      if (!data.publisher)      missing.push("Publisher");
+      if (!data.publisher) missing.push("Publisher");
       if (!data.conferenceName) missing.push("Conference Name");
 
       if (missing.length > 0) {
@@ -110,7 +110,7 @@ export default function ConferencePublication() {
       }
 
     } catch (err) {
-      const status  = err?.response?.status;
+      const status = err?.response?.status;
       const message = err?.response?.data?.message;
 
       if (status === 422) {
@@ -1072,14 +1072,14 @@ export default function ConferencePublication() {
                         return (
                           <TableRow key={idx}>
                             <TableCell>
-                                <Box sx={{
-                                    display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                                    width: 30, height: 30, borderRadius: '50%',
-                                    bgcolor: 'rgba(190, 147, 55, 0.12)', border: '1.5px solid var(--color-primary)',
-                                    color: 'var(--color-primary)', fontWeight: 900, fontSize: '0.85rem'
-                                }}>
-                                    {pos}
-                                </Box>
+                              <Box sx={{
+                                display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                                width: 30, height: 30, borderRadius: '50%',
+                                bgcolor: 'rgba(190, 147, 55, 0.12)', border: '1.5px solid var(--color-primary)',
+                                color: 'var(--color-primary)', fontWeight: 900, fontSize: '0.85rem'
+                              }}>
+                                {pos}
+                              </Box>
                             </TableCell>
                             <TableCell sx={{ fontWeight: 700, color: "var(--text-primary)" }}>{author.name}</TableCell>
                             <TableCell sx={{ color: "var(--text-secondary)" }}>{author.affiliation}</TableCell>
