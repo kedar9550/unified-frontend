@@ -347,7 +347,7 @@ export default function NovelProductPublication() {
         </Box>
       ) : (
         <TableContainer component={Paper} sx={{ borderRadius: "16px", background: "var(--bg-panel)", border: "1px solid var(--border-color)", boxShadow: "var(--shadow-premium)", overflowX: "auto" }}>
-          <Table>
+          <Table sx={{ minWidth: 1100 }}>
             <TableHead sx={{ background: "var(--gradient-primary)" }}>
               <TableRow>
                 <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Product Name</TableCell>
@@ -594,8 +594,8 @@ export default function NovelProductPublication() {
                       </Box>
                       <Chip label={ca.role} size="small" color={ca.role === "Principal Investigator" ? "primary" : "secondary"} sx={{ fontWeight: 700, borderRadius: "6px" }} />
                     </Box>
-                    <Grid container spacing={2}>
-                      <Grid item xs={12} sm={4}>
+                    <Box sx={{ display: "grid", gridTemplateColumns: "repeat(12, 1fr)", gap: 2 }}>
+                      <Box sx={{ gridColumn: { xs: "span 12", sm: "span 4" } }}>
                         <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>AFFILIATION TYPE *</Typography>
                         <Select
                           size="small"
@@ -608,24 +608,24 @@ export default function NovelProductPublication() {
                           <MenuItem value="AUS">Aditya University</MenuItem>
                           <MenuItem value="Others">Others</MenuItem>
                         </Select>
-                      </Grid>
+                      </Box>
 
                       {ca.affiliationType === "AUS" && (
                         <>
-                          <Grid item xs={12} sm={4}>
+                          <Box sx={{ gridColumn: { xs: "span 12", sm: "span 4" } }}>
                             <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>EMPLOYEE ID *</Typography>
                             <TextField
                               size="small"
                               fullWidth
                               value={ca.empId}
                               onChange={(e) => {
-                            const val = e.target.value;
-                            if (/^\d*$/.test(val)) handleCoDeveloperChange(ca.developerPosition, "empId", val);
-                          }}
+                                const val = e.target.value;
+                                if (/^\d*$/.test(val)) handleCoDeveloperChange(ca.developerPosition, "empId", val);
+                              }}
                               placeholder="e.g. 5741"
                             />
-                          </Grid>
-                          <Grid item xs={12} sm={4}>
+                          </Box>
+                          <Box sx={{ gridColumn: { xs: "span 12", sm: "span 4" } }}>
                             <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>NAME</Typography>
                             <TextField
                               size="small"
@@ -635,41 +635,41 @@ export default function NovelProductPublication() {
                               placeholder="Auto-fetched"
                               sx={{ background: "rgba(0,0,0,0.02)" }}
                             />
-                          </Grid>
+                          </Box>
                         </>
                       )}
 
                       {ca.affiliationType === "Others" && (
                         <>
-                          <Grid item xs={12} sm={4}>
+                          <Box sx={{ gridColumn: { xs: "span 12", sm: "span 4" } }}>
                             <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>NAME *</Typography>
                             <TextField
                               size="small"
                               fullWidth
                               value={ca.name}
                               onChange={(e) => {
-                            const val = e.target.value;
-                            if (!/\d/.test(val)) handleCoDeveloperChange(ca.developerPosition, "name", val);
-                          }}
+                                const val = e.target.value;
+                                if (!/\d/.test(val)) handleCoDeveloperChange(ca.developerPosition, "name", val);
+                              }}
                               placeholder="Full Name"
                             />
-                          </Grid>
-                          <Grid item xs={12} sm={4}>
+                          </Box>
+                          <Box sx={{ gridColumn: { xs: "span 12", sm: "span 4" } }}>
                             <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>AFFILIATION / ORG *</Typography>
                             <TextField
                               size="small"
                               fullWidth
                               value={ca.affiliation}
                               onChange={(e) => {
-                            const val = e.target.value;
-                            if (!/\d/.test(val)) handleCoDeveloperChange(ca.developerPosition, "affiliation", val);
-                          }}
+                                const val = e.target.value;
+                                if (!/\d/.test(val)) handleCoDeveloperChange(ca.developerPosition, "affiliation", val);
+                              }}
                               placeholder="College / Organization"
                             />
-                          </Grid>
+                          </Box>
                         </>
                       )}
-                    </Grid>
+                    </Box>
                   </Box>
                 );
               })}
@@ -797,14 +797,19 @@ export default function NovelProductPublication() {
         onClose={handleCloseDetails}
         maxWidth="md"
         fullWidth
+        sx={{
+          "& .MuiDialog-paper": {
+            borderRadius: "20px",
+            background: "var(--bg-paper)",
+            border: "1px solid var(--border-color)",
+            boxShadow: "var(--shadow-premium)",
+          }
+        }}
         slotProps={{
-          paper: {
+          backdrop: {
             sx: {
-              borderRadius: "20px",
-              background: "var(--bg-paper)",
-              backdropFilter: "blur(12px)",
-              border: "1px solid var(--border-color)",
-              boxShadow: "var(--shadow-premium)",
+              backdropFilter: "blur(4px)",
+              backgroundColor: "rgba(0, 0, 0, 0.4)",
             }
           }
         }}
@@ -819,9 +824,9 @@ export default function NovelProductPublication() {
         <DialogContent sx={{ p: 3, mt: 1 }}>
           <Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)", mb: 1 }}>{data.productName}</Typography>
           
-          <Grid container spacing={2}>
-            <Grid item xs={12} sm={3} sx={{ display: "flex", flexDirection: "column" }}><LabelValueDetails label="Academic Year" value={data.academicYear?.year || "N/A"} /></Grid>
-            <Grid item xs={12} sm={3} sx={{ display: "flex", flexDirection: "column" }}>
+          <Box sx={{ display: "grid", gridTemplateColumns: "repeat(12, 1fr)", gap: 2 }}>
+            <Box sx={{ gridColumn: { xs: "span 12", sm: "span 3" }, display: "flex", flexDirection: "column" }}><LabelValueDetails label="Academic Year" value={data.academicYear?.year || "N/A"} /></Box>
+            <Box sx={{ gridColumn: { xs: "span 12", sm: "span 3" }, display: "flex", flexDirection: "column" }}>
               <LabelValueDetails 
                 label="Category" 
                 chip={
@@ -837,9 +842,9 @@ export default function NovelProductPublication() {
                   />
                 } 
               />
-            </Grid>
-            <Grid item xs={12} sm={3} sx={{ display: "flex", flexDirection: "column" }}><LabelValueDetails label={data.category === 'Developed' ? 'Developed Organization' : 'Implemented Organization'} value={data.category === 'Developed' ? (data.developedOrganization || "—") : (data.implementedOrganization || "—")} /></Grid>
-            <Grid item xs={12} sm={3} sx={{ display: "flex", flexDirection: "column" }}>
+            </Box>
+            <Box sx={{ gridColumn: { xs: "span 12", sm: "span 3" }, display: "flex", flexDirection: "column" }}><LabelValueDetails label={data.category === 'Developed' ? 'Developed Organization' : 'Implemented Organization'} value={data.category === 'Developed' ? (data.developedOrganization || "—") : (data.implementedOrganization || "—")} /></Box>
+            <Box sx={{ gridColumn: { xs: "span 12", sm: "span 3" }, display: "flex", flexDirection: "column" }}>
               <LabelValueDetails 
                 label="Approval Status" 
                 chip={
@@ -856,12 +861,12 @@ export default function NovelProductPublication() {
                   />
                 } 
               />
-            </Grid>
-            <Grid item xs={12} sm={3} sx={{ display: "flex", flexDirection: "column" }}><LabelValueDetails label="Role" value={data.visibilityRole || "Applicant"} /></Grid>
-            <Grid item xs={12} sm={6} sx={{ display: "flex", flexDirection: "column" }}><LabelValueDetails label="Type of Investigator" value={data.investigatorType || "N/A"} /></Grid>
-            <Grid item xs={12} sm={3} sx={{ display: "flex", flexDirection: "column" }}><LabelValueDetails label="Applying Incentive?" value={data.applyIncentive || "No"} /></Grid>
+            </Box>
+            <Box sx={{ gridColumn: { xs: "span 12", sm: "span 3" }, display: "flex", flexDirection: "column" }}><LabelValueDetails label="Role" value={data.visibilityRole || "Applicant"} /></Box>
+            <Box sx={{ gridColumn: { xs: "span 12", sm: "span 6" }, display: "flex", flexDirection: "column" }}><LabelValueDetails label="Type of Investigator" value={data.investigatorType || "N/A"} /></Box>
+            <Box sx={{ gridColumn: { xs: "span 12", sm: "span 3" }, display: "flex", flexDirection: "column" }}><LabelValueDetails label="Applying Incentive?" value={data.applyIncentive || "No"} /></Box>
 
-          </Grid>
+          </Box>
 
           <Divider sx={{ my: 3 }} />
 

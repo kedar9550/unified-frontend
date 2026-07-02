@@ -409,8 +409,8 @@ export default function FundedProject() {
           </Typography>
         </Box>
       ) : (
-        <TableContainer component={Paper} sx={{ borderRadius: "16px", background: "var(--bg-panel)", border: "1px solid var(--border-color)", boxShadow: "var(--shadow-premium)", overflow: "hidden" }}>
-          <Table>
+        <TableContainer component={Paper} sx={{ borderRadius: "16px", background: "var(--bg-panel)", border: "1px solid var(--border-color)", boxShadow: "var(--shadow-premium)", overflowX: "auto" }}>
+          <Table sx={{ minWidth: 1100 }}>
             <TableHead sx={{ background: "var(--gradient-primary)" }}>
               <TableRow>
                 <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Title</TableCell>
@@ -662,8 +662,8 @@ export default function FundedProject() {
                       <Chip label={ca.role} size="small" color={ca.role === "Principal Investigator" ? "primary" : "secondary"} sx={{ fontWeight: 700, borderRadius: "6px" }} />
                     </Box>
 
-                    <Grid container spacing={2}>
-                      <Grid item xs={12} sm={4}>
+                    <Box sx={{ display: "grid", gridTemplateColumns: "repeat(12, 1fr)", gap: 2 }}>
+                      <Box sx={{ gridColumn: { xs: "span 12", sm: "span 4" } }}>
                         <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>AFFILIATION TYPE *</Typography>
                         <Select
                           size="small"
@@ -676,24 +676,24 @@ export default function FundedProject() {
                           <MenuItem value="AUS">Aditya University</MenuItem>
                           <MenuItem value="Others">Others</MenuItem>
                         </Select>
-                      </Grid>
+                      </Box>
 
                       {ca.affiliationType === "AUS" && (
                         <>
-                          <Grid item xs={12} sm={4}>
+                          <Box sx={{ gridColumn: { xs: "span 12", sm: "span 4" } }}>
                             <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>EMPLOYEE ID *</Typography>
                             <TextField
                               size="small"
                               fullWidth
                               value={ca.empId}
                               onChange={(e) => {
-                            const val = e.target.value;
-                            if (/^\d*$/.test(val)) handleCoInvestigatorChange(ca.investigatorPosition, "empId", val);
-                          }}
+                                const val = e.target.value;
+                                if (/^\d*$/.test(val)) handleCoInvestigatorChange(ca.investigatorPosition, "empId", val);
+                              }}
                               placeholder="e.g. 5741"
                             />
-                          </Grid>
-                          <Grid item xs={12} sm={4}>
+                          </Box>
+                          <Box sx={{ gridColumn: { xs: "span 12", sm: "span 4" } }}>
                             <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>NAME</Typography>
                             <TextField
                               size="small"
@@ -703,41 +703,41 @@ export default function FundedProject() {
                               placeholder="Auto-fetched"
                               sx={{ background: "rgba(0,0,0,0.02)" }}
                             />
-                          </Grid>
+                          </Box>
                         </>
                       )}
 
                       {ca.affiliationType === "Others" && (
                         <>
-                          <Grid item xs={12} sm={4}>
+                          <Box sx={{ gridColumn: { xs: "span 12", sm: "span 4" } }}>
                             <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>NAME *</Typography>
                             <TextField
                               size="small"
                               fullWidth
                               value={ca.name}
                               onChange={(e) => {
-                            const val = e.target.value;
-                            if (!/\d/.test(val)) handleCoInvestigatorChange(ca.investigatorPosition, "name", val);
-                          }}
+                                const val = e.target.value;
+                                if (!/\d/.test(val)) handleCoInvestigatorChange(ca.investigatorPosition, "name", val);
+                              }}
                               placeholder="Full Name"
                             />
-                          </Grid>
-                          <Grid item xs={12} sm={4}>
+                          </Box>
+                          <Box sx={{ gridColumn: { xs: "span 12", sm: "span 4" } }}>
                             <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>AFFILIATION / ORG *</Typography>
                             <TextField
                               size="small"
                               fullWidth
                               value={ca.affiliation}
                               onChange={(e) => {
-                            const val = e.target.value;
-                            if (!/\d/.test(val)) handleCoInvestigatorChange(ca.investigatorPosition, "affiliation", val);
-                          }}
+                                const val = e.target.value;
+                                if (!/\d/.test(val)) handleCoInvestigatorChange(ca.investigatorPosition, "affiliation", val);
+                              }}
                               placeholder="College / Organization"
                             />
-                          </Grid>
+                          </Box>
                         </>
                       )}
-                    </Grid>
+                    </Box>
                   </Box>
                 );
               })}
@@ -900,14 +900,19 @@ export default function FundedProject() {
         onClose={handleCloseDetails}
         maxWidth="md"
         fullWidth
+        sx={{
+          "& .MuiDialog-paper": {
+            borderRadius: "20px",
+            background: "var(--bg-paper)",
+            border: "1px solid var(--border-color)",
+            boxShadow: "var(--shadow-premium)",
+          }
+        }}
         slotProps={{
-          paper: {
+          backdrop: {
             sx: {
-              borderRadius: "20px",
-              background: "var(--bg-paper)",
-              backdropFilter: "blur(12px)",
-              border: "1px solid var(--border-color)",
-              boxShadow: "var(--shadow-premium)",
+              backdropFilter: "blur(4px)",
+              backgroundColor: "rgba(0, 0, 0, 0.4)",
             }
           }
         }}
@@ -923,12 +928,12 @@ export default function FundedProject() {
           <Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)", mb: 1 }}>{data.title}</Typography>
           <Typography variant="body2" sx={{ color: "var(--text-secondary)", mb: 3, fontWeight: 600 }}>Funding Agency: {data.fundingAgency}</Typography>
 
-          <Grid container spacing={2}>
-            <Grid item xs={12} sm={3} sx={{ display: "flex", flexDirection: "column" }}><LabelValueDetails label="Academic Year" value={data.academicYear?.year || "N/A"} /></Grid>
-            <Grid item xs={12} sm={3} sx={{ display: "flex", flexDirection: "column" }}><LabelValueDetails label="Funding Agency" value={data.fundingAgency} /></Grid>
-            <Grid item xs={12} sm={3} sx={{ display: "flex", flexDirection: "column" }}><LabelValueDetails label="Duration (Years)" value={data.duration} /></Grid>
-            <Grid item xs={12} sm={3} sx={{ display: "flex", flexDirection: "column" }}><LabelValueDetails label="Role" value={data.visibilityRole || "Applicant"} /></Grid>
-            <Grid item xs={12} sm={3} sx={{ display: "flex", flexDirection: "column" }}>
+          <Box sx={{ display: "grid", gridTemplateColumns: "repeat(12, 1fr)", gap: 2 }}>
+            <Box sx={{ gridColumn: { xs: "span 12", sm: "span 3" }, display: "flex", flexDirection: "column" }}><LabelValueDetails label="Academic Year" value={data.academicYear?.year || "N/A"} /></Box>
+            <Box sx={{ gridColumn: { xs: "span 12", sm: "span 3" }, display: "flex", flexDirection: "column" }}><LabelValueDetails label="Funding Agency" value={data.fundingAgency} /></Box>
+            <Box sx={{ gridColumn: { xs: "span 12", sm: "span 3" }, display: "flex", flexDirection: "column" }}><LabelValueDetails label="Duration (Years)" value={data.duration} /></Box>
+            <Box sx={{ gridColumn: { xs: "span 12", sm: "span 3" }, display: "flex", flexDirection: "column" }}><LabelValueDetails label="Role" value={data.visibilityRole || "Applicant"} /></Box>
+            <Box sx={{ gridColumn: { xs: "span 12", sm: "span 3" }, display: "flex", flexDirection: "column" }}>
               <LabelValueDetails
                 label="Status"
                 chip={
@@ -945,19 +950,19 @@ export default function FundedProject() {
                   />
                 }
               />
-            </Grid>
+            </Box>
 
-            <Grid item xs={12} sm={3} sx={{ display: "flex", flexDirection: "column" }}><LabelValueDetails label="Scheme" value={data.scheme || "-"} /></Grid>
-            <Grid item xs={12} sm={3} sx={{ display: "flex", flexDirection: "column" }}><LabelValueDetails label="Sanctioned Amount" value={`₹${data.sanctionedAmount}`} /></Grid>
-            <Grid item xs={12} sm={3} sx={{ display: "flex", flexDirection: "column" }}><LabelValueDetails label="Date of Sanction" value={formatDate(data.sanctionDate)} /></Grid>
-            <Grid item xs={12} sm={6} sx={{ display: "flex", flexDirection: "column" }}><LabelValueDetails label="Type of Investigator" value={data.investigatorType || "N/A"} /></Grid>
+            <Box sx={{ gridColumn: { xs: "span 12", sm: "span 3" }, display: "flex", flexDirection: "column" }}><LabelValueDetails label="Scheme" value={data.scheme || "-"} /></Box>
+            <Box sx={{ gridColumn: { xs: "span 12", sm: "span 3" }, display: "flex", flexDirection: "column" }}><LabelValueDetails label="Sanctioned Amount" value={`₹${data.sanctionedAmount}`} /></Box>
+            <Box sx={{ gridColumn: { xs: "span 12", sm: "span 3" }, display: "flex", flexDirection: "column" }}><LabelValueDetails label="Date of Sanction" value={formatDate(data.sanctionDate)} /></Box>
+            <Box sx={{ gridColumn: { xs: "span 12", sm: "span 6" }, display: "flex", flexDirection: "column" }}><LabelValueDetails label="Type of Investigator" value={data.investigatorType || "N/A"} /></Box>
 
-            <Grid item xs={12} sm={4} sx={{ display: "flex", flexDirection: "column" }}><LabelValueDetails label="Recurring Amount" value={data.recurring ? `₹${data.recurring}` : "-"} /></Grid>
-            <Grid item xs={12} sm={4} sx={{ display: "flex", flexDirection: "column" }}><LabelValueDetails label="Non-Recurring Amount" value={data.nonRecurring ? `₹${data.nonRecurring}` : "-"} /></Grid>
-            <Grid item xs={12} sm={4} sx={{ display: "flex", flexDirection: "column" }}><LabelValueDetails label="Applying Seed Grant?" value={data.applyingSeedGrant === "Yes" ? "Yes" : "No"} /></Grid>
+            <Box sx={{ gridColumn: { xs: "span 12", sm: "span 4" }, display: "flex", flexDirection: "column" }}><LabelValueDetails label="Recurring Amount" value={data.recurring ? `₹${data.recurring}` : "-"} /></Box>
+            <Box sx={{ gridColumn: { xs: "span 12", sm: "span 4" }, display: "flex", flexDirection: "column" }}><LabelValueDetails label="Non-Recurring Amount" value={data.nonRecurring ? `₹${data.nonRecurring}` : "-"} /></Box>
+            <Box sx={{ gridColumn: { xs: "span 12", sm: "span 4" }, display: "flex", flexDirection: "column" }}><LabelValueDetails label="Applying Seed Grant?" value={data.applyingSeedGrant === "Yes" ? "Yes" : "No"} /></Box>
 
             {data.coInvestigators && data.coInvestigators.length > 0 && (
-              <Grid item xs={12} sm={12}>
+              <Box sx={{ gridColumn: { xs: "span 12", sm: "span 12" } }}>
                 <Box sx={{ border: "1px solid var(--border-color)", borderRadius: "8px", overflow: "hidden", width: "100%" }}>
                   <Box sx={{ display: "flex", alignItems: "center", gap: 1, p: 2, bgcolor: "rgba(0, 0, 0, 0.02)", borderBottom: "1px solid var(--border-color)" }}>
                     <Groups sx={{ color: "var(--color-primary)", fontSize: 20 }} />
@@ -1001,21 +1006,21 @@ export default function FundedProject() {
                     })}
                   </Box>
                 </Box>
-              </Grid>
+              </Box>
             )}
 
             {data.status === "Approved" && data.approvedAmount && (
-              <Grid item xs={12} sm={6}>
+              <Box sx={{ gridColumn: { xs: "span 12", sm: "span 6" } }}>
                 <LabelValueDetails
                   label="Approved Incentive"
                   value={`₹${data.approvedAmount}`}
                   chip={<Chip label={`₹${data.approvedAmount}`} size="small" sx={{ bgcolor: "rgba(76, 175, 80, 0.1)", color: "#4caf50", fontWeight: 800 }} />}
                 />
-              </Grid>
+              </Box>
             )}
 
 
-          </Grid>
+          </Box>
 
           <Divider sx={{ my: 3 }} />
 

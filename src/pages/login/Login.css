@@ -152,7 +152,7 @@
 }
 
 /* On mobile — back to single column */
-@media (max-width: 768px) {
+@media (max-width: 1024px) {
   .signup-form {
     grid-template-columns: 1fr;
   }
@@ -589,13 +589,13 @@
 }
 
 /* Slide overlay to LEFT in signup mode (DESKTOP ONLY) */
-@media (min-width: 769px) {
+@media (min-width: 1025px) {
   .signup-mode .auth-overlay {
     transform: translateX(-100%);
   }
 }
 
-@media (max-width: 768px) {
+@media (max-width: 1024px) {
   .signup-mode .auth-overlay {
     transform: none !important;
   }
@@ -654,7 +654,7 @@
   opacity: 0.9;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 1024px) {
   .overlay-logo {
     width: 340px;
     margin-bottom: 8px;
@@ -732,7 +732,7 @@
 }
 
 /* ─── RESPONSIVE ─────────────────────────────────── */
-@media (max-width: 768px) {
+@media (max-width: 1024px) {
   .auth-page {
     height: auto;
     min-height: 100vh;
