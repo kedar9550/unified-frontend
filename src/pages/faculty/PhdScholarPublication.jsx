@@ -320,7 +320,7 @@ export default function PhdScholarPublication() {
         </Box>
       ) : (
         <TableContainer component={Paper} sx={{ borderRadius: "16px", background: "var(--bg-panel)", border: "1px solid var(--border-color)", boxShadow: "var(--shadow-premium)", overflowX: "auto" }}>
-          <Table>
+          <Table sx={{ minWidth: 1100 }}>
             <TableHead sx={{ background: "var(--gradient-primary)" }}>
               <TableRow>
                 <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Scholar Roll No</TableCell>
@@ -563,20 +563,20 @@ export default function PhdScholarPublication() {
                 <Typography variant="subtitle2" sx={{ fontWeight: 800, color: "#10B981", display: "flex", alignItems: "center", gap: 1 }}>
                   <CheckCircle fontSize="small" /> Scholar Details Validated Successfully
                 </Typography>
-                <Grid container spacing={2} sx={{ mt: 1 }}>
-                  <Grid item xs={12} sm={4}>
+                <Box sx={{ display: "grid", gridTemplateColumns: "repeat(12, 1fr)", gap: 2, mt: 1 }}>
+                  <Box sx={{ gridColumn: { xs: "span 12", sm: "span 4" } }}>
                     <Typography variant="caption" sx={{ color: "var(--text-secondary)", fontWeight: 700 }}>STUDENT NAME</Typography>
                     <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>{form.studentName}</Typography>
-                  </Grid>
-                  <Grid item xs={12} sm={4}>
+                  </Box>
+                  <Box sx={{ gridColumn: { xs: "span 12", sm: "span 4" } }}>
                     <Typography variant="caption" sx={{ color: "var(--text-secondary)", fontWeight: 700 }}>COURSE / PROGRAM</Typography>
                     <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>{form.course}</Typography>
-                  </Grid>
-                  <Grid item xs={12} sm={4}>
+                  </Box>
+                  <Box sx={{ gridColumn: { xs: "span 12", sm: "span 4" } }}>
                     <Typography variant="caption" sx={{ color: "var(--text-secondary)", fontWeight: 700 }}>BRANCH</Typography>
                     <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>{form.branch || "N/A"}</Typography>
-                  </Grid>
-                </Grid>
+                  </Box>
+                </Box>
               </Box>
             )}
           </Box>
@@ -585,8 +585,8 @@ export default function PhdScholarPublication() {
         <>
           <SubLabel text="Student Details (Manual Entry)" />
           <Box sx={{ background: "var(--bg-panel)", p: 3, borderRadius: "16px", border: "1px solid var(--border-color)", mb: 3 }}>
-            <Grid container spacing={2}>
-              <Grid item xs={12} sm={6}>
+            <Box sx={{ display: "grid", gridTemplateColumns: "repeat(12, 1fr)", gap: 2 }}>
+              <Box sx={{ gridColumn: { xs: "span 12", sm: "span 6" } }}>
                 <Typography sx={labelStyle}>Scholar Roll Number / ID *</Typography>
                 <TextField
                   size="small"
@@ -595,8 +595,8 @@ export default function PhdScholarPublication() {
                   onChange={set("rollNumber")}
                   placeholder="e.g. Scholar ID or Roll Number"
                 />
-              </Grid>
-              <Grid item xs={12} sm={6}>
+              </Box>
+              <Box sx={{ gridColumn: { xs: "span 12", sm: "span 6" } }}>
                 <Typography sx={labelStyle}>Student Name *</Typography>
                 <TextField
                   size="small"
@@ -605,8 +605,8 @@ export default function PhdScholarPublication() {
                   onChange={set("studentName")}
                   placeholder="Enter student name"
                 />
-              </Grid>
-              <Grid item xs={12} sm={6}>
+              </Box>
+              <Box sx={{ gridColumn: { xs: "span 12", sm: "span 6" } }}>
                 <Typography sx={labelStyle}>Course / Program *</Typography>
                 <TextField
                   size="small"
@@ -615,8 +615,8 @@ export default function PhdScholarPublication() {
                   onChange={set("course")}
                   placeholder="e.g. Ph.D. in Computer Science"
                 />
-              </Grid>
-              <Grid item xs={12} sm={6}>
+              </Box>
+              <Box sx={{ gridColumn: { xs: "span 12", sm: "span 6" } }}>
                 <Typography sx={labelStyle}>Branch</Typography>
                 <TextField
                   size="small"
@@ -625,8 +625,8 @@ export default function PhdScholarPublication() {
                   onChange={set("branch")}
                   placeholder="e.g. CSE"
                 />
-              </Grid>
-            </Grid>
+              </Box>
+            </Box>
           </Box>
         </>
       )}
@@ -858,14 +858,19 @@ export default function PhdScholarPublication() {
         onClose={handleCloseDetails}
         maxWidth="md"
         fullWidth
+        sx={{
+          "& .MuiDialog-paper": {
+            borderRadius: "20px",
+            background: "var(--bg-paper)",
+            border: "1px solid var(--border-color)",
+            boxShadow: "var(--shadow-premium)",
+          }
+        }}
         slotProps={{
-          paper: {
+          backdrop: {
             sx: {
-              borderRadius: "20px",
-              background: "var(--bg-paper)",
-              backdropFilter: "blur(12px)",
-              border: "1px solid var(--border-color)",
-              boxShadow: "var(--shadow-premium)",
+              backdropFilter: "blur(4px)",
+              backgroundColor: "rgba(0, 0, 0, 0.4)",
             }
           }
         }}
@@ -881,11 +886,11 @@ export default function PhdScholarPublication() {
           <Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)", mb: 1 }}>{data.studentName}</Typography>
           <Typography variant="body2" sx={{ color: "var(--text-secondary)", mb: 3, fontWeight: 600 }}>Scholar Roll Number: {data.rollNumber}</Typography>
           
-          <Grid container spacing={2}>
-            <Grid item xs={12} sm={3} sx={{ display: "flex", flexDirection: "column" }}><LabelValueDetails label="Academic Year" value={data.academicYear?.year || "N/A"} /></Grid>
-            <Grid item xs={12} sm={3} sx={{ display: "flex", flexDirection: "column" }}><LabelValueDetails label="Program Name" value={data.course} /></Grid>
-            <Grid item xs={12} sm={3} sx={{ display: "flex", flexDirection: "column" }}><LabelValueDetails label="Branch" value={data.branch || "—"} /></Grid>
-            <Grid item xs={12} sm={3} sx={{ display: "flex", flexDirection: "column" }}>
+          <Box sx={{ display: "grid", gridTemplateColumns: "repeat(12, 1fr)", gap: 2 }}>
+            <Box sx={{ gridColumn: { xs: "span 12", sm: "span 3" }, display: "flex", flexDirection: "column" }}><LabelValueDetails label="Academic Year" value={data.academicYear?.year || "N/A"} /></Box>
+            <Box sx={{ gridColumn: { xs: "span 12", sm: "span 3" }, display: "flex", flexDirection: "column" }}><LabelValueDetails label="Program Name" value={data.course} /></Box>
+            <Box sx={{ gridColumn: { xs: "span 12", sm: "span 3" }, display: "flex", flexDirection: "column" }}><LabelValueDetails label="Branch" value={data.branch || "—"} /></Box>
+            <Box sx={{ gridColumn: { xs: "span 12", sm: "span 3" }, display: "flex", flexDirection: "column" }}>
               <LabelValueDetails 
                 label="Appraisal Status" 
                 chip={
@@ -901,12 +906,12 @@ export default function PhdScholarPublication() {
                   />
                 } 
               />
-            </Grid>
+            </Box>
 
-            <Grid item xs={12} sm={6} sx={{ display: "flex", flexDirection: "column" }}><LabelValueDetails label="University" value={data.university || "Aditya University"} /></Grid>
-            <Grid item xs={12} sm={6} sx={{ display: "flex", flexDirection: "column" }}><LabelValueDetails label="Scholar Type" value={data.scholarType || "Full-Time"} /></Grid>
-            <Grid item xs={12} sm={6} sx={{ display: "flex", flexDirection: "column" }}><LabelValueDetails label="Admission / Award Date" value={formatDate(data.admissionOrAwardDate)} /></Grid>
-            <Grid item xs={12} sm={6} sx={{ display: "flex", flexDirection: "column" }}>
+            <Box sx={{ gridColumn: { xs: "span 12", sm: "span 6" }, display: "flex", flexDirection: "column" }}><LabelValueDetails label="University" value={data.university || "Aditya University"} /></Box>
+            <Box sx={{ gridColumn: { xs: "span 12", sm: "span 6" }, display: "flex", flexDirection: "column" }}><LabelValueDetails label="Scholar Type" value={data.scholarType || "Full-Time"} /></Box>
+            <Box sx={{ gridColumn: { xs: "span 12", sm: "span 6" }, display: "flex", flexDirection: "column" }}><LabelValueDetails label="Admission / Award Date" value={formatDate(data.admissionOrAwardDate)} /></Box>
+            <Box sx={{ gridColumn: { xs: "span 12", sm: "span 6" }, display: "flex", flexDirection: "column" }}>
               <LabelValueDetails 
                 label="Approval Workflow Status" 
                 chip={
@@ -923,8 +928,8 @@ export default function PhdScholarPublication() {
                   />
                 } 
               />
-            </Grid>
-          </Grid>
+            </Box>
+          </Box>
 
           <Divider sx={{ my: 3 }} />
 

@@ -350,8 +350,8 @@ export default function ConsultancyPublication() {
           </Typography>
         </Box>
       ) : (
-        <TableContainer component={Paper} sx={{ borderRadius: "16px", background: "var(--bg-panel)", border: "1px solid var(--border-color)", boxShadow: "var(--shadow-premium)", overflow: "hidden" }}>
-          <Table>
+        <TableContainer component={Paper} sx={{ borderRadius: "16px", background: "var(--bg-panel)", border: "1px solid var(--border-color)", boxShadow: "var(--shadow-premium)", overflowX: "auto" }}>
+          <Table sx={{ minWidth: 1100 }}>
             <TableHead sx={{ background: "var(--gradient-primary)" }}>
               <TableRow>
                 <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Title</TableCell>
@@ -584,8 +584,8 @@ export default function ConsultancyPublication() {
                   <Chip label={ca.role} size="small" color={ca.role === "Principal Investigator" ? "primary" : "secondary"} sx={{ fontWeight: 700, borderRadius: "6px" }} />
                 </Box>
 
-                <Grid container spacing={2}>
-                  <Grid item xs={12} sm={4}>
+                <Box sx={{ display: "grid", gridTemplateColumns: "repeat(12, 1fr)", gap: 2 }}>
+                  <Box sx={{ gridColumn: { xs: "span 12", sm: "span 4" } }}>
                     <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>AFFILIATION TYPE *</Typography>
                     <Select
                       size="small"
@@ -598,11 +598,11 @@ export default function ConsultancyPublication() {
                       <MenuItem value="AUS">Aditya University</MenuItem>
                       <MenuItem value="Others">Others</MenuItem>
                     </Select>
-                  </Grid>
+                  </Box>
 
                   {ca.affiliationType === "AUS" && (
                     <>
-                      <Grid item xs={12} sm={4}>
+                      <Box sx={{ gridColumn: { xs: "span 12", sm: "span 4" } }}>
                         <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>EMPLOYEE ID *</Typography>
                         <TextField
                           size="small"
@@ -614,8 +614,8 @@ export default function ConsultancyPublication() {
                           }}
                           placeholder="e.g. 5741"
                         />
-                      </Grid>
-                      <Grid item xs={12} sm={4}>
+                      </Box>
+                      <Box sx={{ gridColumn: { xs: "span 12", sm: "span 4" } }}>
                         <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>NAME</Typography>
                         <TextField
                           size="small"
@@ -625,13 +625,13 @@ export default function ConsultancyPublication() {
                           placeholder="Auto-fetched"
                           sx={{ background: "rgba(0,0,0,0.02)" }}
                         />
-                      </Grid>
+                      </Box>
                     </>
                   )}
 
                   {ca.affiliationType === "Others" && (
                     <>
-                      <Grid item xs={12} sm={4}>
+                      <Box sx={{ gridColumn: { xs: "span 12", sm: "span 4" } }}>
                         <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>NAME *</Typography>
                         <TextField
                           size="small"
@@ -643,8 +643,8 @@ export default function ConsultancyPublication() {
                           }}
                           placeholder="Full Name"
                         />
-                      </Grid>
-                      <Grid item xs={12} sm={4}>
+                      </Box>
+                      <Box sx={{ gridColumn: { xs: "span 12", sm: "span 4" } }}>
                         <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>AFFILIATION / ORG *</Typography>
                         <TextField
                           size="small"
@@ -656,10 +656,10 @@ export default function ConsultancyPublication() {
                           }}
                           placeholder="College / Organization"
                         />
-                      </Grid>
+                      </Box>
                     </>
                   )}
-                </Grid>
+                </Box>
               </Box>
             );
           })}
@@ -789,14 +789,19 @@ export default function ConsultancyPublication() {
         onClose={handleCloseDetails}
         maxWidth="md"
         fullWidth
+        sx={{
+          "& .MuiDialog-paper": {
+            borderRadius: "20px",
+            background: "var(--bg-paper)",
+            border: "1px solid var(--border-color)",
+            boxShadow: "var(--shadow-premium)",
+          }
+        }}
         slotProps={{
-          paper: {
+          backdrop: {
             sx: {
-              borderRadius: "20px",
-              background: "var(--bg-paper)",
-              backdropFilter: "blur(12px)",
-              border: "1px solid var(--border-color)",
-              boxShadow: "var(--shadow-premium)",
+              backdropFilter: "blur(4px)",
+              backgroundColor: "rgba(0, 0, 0, 0.4)",
             }
           }
         }}
@@ -812,12 +817,12 @@ export default function ConsultancyPublication() {
           <Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)", mb: 1 }}>{data.title}</Typography>
           <Typography variant="body2" sx={{ color: "var(--text-secondary)", mb: 3, fontWeight: 600 }}>Funding Agency: {data.fundingAgency}</Typography>
 
-          <Grid container spacing={2}>
-            <Grid item xs={12} sm={3} sx={{ display: "flex", flexDirection: "column" }}><LabelValueDetails label="Academic Year" value={data.academicYear?.year || "N/A"} /></Grid>
-            <Grid item xs={12} sm={3} sx={{ display: "flex", flexDirection: "column" }}><LabelValueDetails label="Funding Agency" value={data.fundingAgency} /></Grid>
-            <Grid item xs={12} sm={3} sx={{ display: "flex", flexDirection: "column" }}><LabelValueDetails label="Amount" value={`₹${data.amount}`} /></Grid>
-            <Grid item xs={12} sm={3} sx={{ display: "flex", flexDirection: "column" }}><LabelValueDetails label="Duration (Years)" value={data.duration || "-"} /></Grid>
-            <Grid item xs={12} sm={3} sx={{ display: "flex", flexDirection: "column" }}>
+          <Box sx={{ display: "grid", gridTemplateColumns: "repeat(12, 1fr)", gap: 2 }}>
+            <Box sx={{ gridColumn: { xs: "span 12", sm: "span 3" }, display: "flex", flexDirection: "column" }}><LabelValueDetails label="Academic Year" value={data.academicYear?.year || "N/A"} /></Box>
+            <Box sx={{ gridColumn: { xs: "span 12", sm: "span 3" }, display: "flex", flexDirection: "column" }}><LabelValueDetails label="Funding Agency" value={data.fundingAgency} /></Box>
+            <Box sx={{ gridColumn: { xs: "span 12", sm: "span 3" }, display: "flex", flexDirection: "column" }}><LabelValueDetails label="Amount" value={`₹${data.amount}`} /></Box>
+            <Box sx={{ gridColumn: { xs: "span 12", sm: "span 3" }, display: "flex", flexDirection: "column" }}><LabelValueDetails label="Duration (Years)" value={data.duration || "-"} /></Box>
+            <Box sx={{ gridColumn: { xs: "span 12", sm: "span 3" }, display: "flex", flexDirection: "column" }}>
               <LabelValueDetails
                 label="Status"
                 chip={
@@ -834,27 +839,27 @@ export default function ConsultancyPublication() {
                   />
                 }
               />
-            </Grid>
+            </Box>
 
-            <Grid item xs={12} sm={4} sx={{ display: "flex", flexDirection: "column" }}><LabelValueDetails label="Commencement Month/Year" value={`${data.month || ""} ${data.year || ""}`} /></Grid>
-            <Grid item xs={12} sm={4} sx={{ display: "flex", flexDirection: "column" }}><LabelValueDetails label="Applying Seed Grant?" value={data.applyingSeedGrant === "Yes" ? "Yes" : "No"} /></Grid>
-            <Grid item xs={12} sm={4} sx={{ display: "flex", flexDirection: "column" }}><LabelValueDetails label="Applicant Faculty" value={data.facultyId?.name || "N/A"} /></Grid>
-            <Grid item xs={12} sm={3} sx={{ display: "flex", flexDirection: "column" }}><LabelValueDetails label="Role" value={data.visibilityRole || "Applicant"} /></Grid>
-            <Grid item xs={12} sm={3} sx={{ display: "flex", flexDirection: "column" }}><LabelValueDetails label="Type of Investigator" value={data.investigatorType || "N/A"} /></Grid>
-            <Grid item xs={12} sm={3} sx={{ display: "flex", flexDirection: "column" }}><LabelValueDetails label="Applying Incentive?" value={data.applyIncentive || "No"} /></Grid>
-            <Grid item xs={12} sm={3} sx={{ display: "flex", flexDirection: "column" }}><LabelValueDetails label="Project Status" value={data.projectStatus || "Sanctioned"} /></Grid>
+            <Box sx={{ gridColumn: { xs: "span 12", sm: "span 4" }, display: "flex", flexDirection: "column" }}><LabelValueDetails label="Commencement Month/Year" value={`${data.month || ""} ${data.year || ""}`} /></Box>
+            <Box sx={{ gridColumn: { xs: "span 12", sm: "span 4" }, display: "flex", flexDirection: "column" }}><LabelValueDetails label="Applying Seed Grant?" value={data.applyingSeedGrant === "Yes" ? "Yes" : "No"} /></Box>
+            <Box sx={{ gridColumn: { xs: "span 12", sm: "span 4" }, display: "flex", flexDirection: "column" }}><LabelValueDetails label="Applicant Faculty" value={data.facultyId?.name || "N/A"} /></Box>
+            <Box sx={{ gridColumn: { xs: "span 12", sm: "span 3" }, display: "flex", flexDirection: "column" }}><LabelValueDetails label="Role" value={data.visibilityRole || "Applicant"} /></Box>
+            <Box sx={{ gridColumn: { xs: "span 12", sm: "span 3" }, display: "flex", flexDirection: "column" }}><LabelValueDetails label="Type of Investigator" value={data.investigatorType || "N/A"} /></Box>
+            <Box sx={{ gridColumn: { xs: "span 12", sm: "span 3" }, display: "flex", flexDirection: "column" }}><LabelValueDetails label="Applying Incentive?" value={data.applyIncentive || "No"} /></Box>
+            <Box sx={{ gridColumn: { xs: "span 12", sm: "span 3" }, display: "flex", flexDirection: "column" }}><LabelValueDetails label="Project Status" value={data.projectStatus || "Sanctioned"} /></Box>
 
             {data.status === "Approved" && data.approvedAmount && (
-              <Grid item xs={12} sm={6} sx={{ display: "flex", flexDirection: "column" }}>
+              <Box sx={{ gridColumn: { xs: "span 12", sm: "span 6" }, display: "flex", flexDirection: "column" }}>
                 <LabelValueDetails
                   label="Approved Incentive"
                   value={`₹${data.approvedAmount}`}
                   chip={<Chip label={`₹${data.approvedAmount}`} size="small" sx={{ bgcolor: "rgba(76, 175, 80, 0.1)", color: "#4caf50", fontWeight: 800 }} />}
                 />
-              </Grid>
+              </Box>
             )}
             {data.coInvestigators && data.coInvestigators.length > 0 && (
-              <Grid item xs={12} sm={12}>
+              <Box sx={{ gridColumn: { xs: "span 12", sm: "span 12" } }}>
                 <Box sx={{ border: "1px solid var(--border-color)", borderRadius: "8px", overflow: "hidden", width: "100%" }}>
                   <Box sx={{ display: "flex", alignItems: "center", gap: 1, p: 2, bgcolor: "rgba(0, 0, 0, 0.02)", borderBottom: "1px solid var(--border-color)" }}>
                     <Groups sx={{ color: "var(--color-primary)", fontSize: 20 }} />
@@ -898,9 +903,9 @@ export default function ConsultancyPublication() {
                     })}
                   </Box>
                 </Box>
-              </Grid>
+              </Box>
             )}
-          </Grid>
+          </Box>
 
           {/* Remarks/Comments if available */}
           {(data.hodComment || data.rndComment) && (

@@ -268,7 +268,8 @@ const FacultyDashboard = () => {
                 xs: "1 1 100%",
                 sm: "1 1 calc(50% - 10px)",
                 md: "1 1 calc(50% - 10px)",
-                lg: "1 1 calc(25% - 19px)",
+                lg: "1 1 calc(50% - 10px)",
+                xl: "1 1 calc(25% - 19px)",
               },
               minWidth: 0,
             }}
@@ -398,12 +399,12 @@ const FacultyDashboard = () => {
         sx={{
           display: "flex",
           gap: 3,
-          flexWrap: { xs: "wrap", lg: "nowrap" },
+          flexWrap: { xs: "wrap", xl: "nowrap" },
           mb: 4,
         }}
       >
         {/* Research Overview */}
-        <Box sx={{ width: { xs: "100%", lg: "50%" }, display: "flex" }}>
+        <Box sx={{ width: { xs: "100%", xl: "50%" }, display: "flex" }}>
           <Card
             sx={{
               borderRadius: 2,
@@ -615,7 +616,7 @@ const FacultyDashboard = () => {
         </Box>
 
         {/* Quick Actions */}
-        <Box sx={{ width: { xs: "100%", lg: "50%" }, display: "flex" }}>
+        <Box sx={{ width: { xs: "100%", xl: "50%" }, display: "flex" }}>
           <Card
             sx={{
               position: "relative",
