@@ -1259,7 +1259,7 @@ export default function BookChapterPublication() {
           paper: {
             sx: {
               borderRadius: "20px",
-              background: "var(--bg-glass)",
+              background: "var(--bg-paper)",
               backdropFilter: "blur(12px)",
               border: "1px solid var(--border-color)",
               boxShadow: "var(--shadow-premium)",
@@ -1267,10 +1267,10 @@ export default function BookChapterPublication() {
           }
         }}
       >
-        <DialogTitle sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "var(--gradient-primary)", color: "#fff", py: 2 }}>
+        <DialogTitle component="div" sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "var(--gradient-primary)", color: "#fff", py: 2 }}>
           <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
             <Book sx={{ color: "#fff" }} />
-            <Typography variant="h6" sx={{ fontWeight: 800 }}>Book Chapter Details</Typography>
+            <Typography variant="h6" component="div" sx={{ fontWeight: 800 }}>Book Chapter Details</Typography>
           </Box>
           <IconButton onClick={handleCloseDetails} sx={{ color: "#fff" }}><Close /></IconButton>
         </DialogTitle>
@@ -1419,7 +1419,7 @@ export default function BookChapterPublication() {
               <AttachFile sx={{ color: "var(--color-primary)" }} />
               <Typography sx={{ fontWeight: 800, color: "var(--text-primary)" }}>Attached Documents</Typography>
             </Box>
-            <Stack direction="row" spacing={3} flexWrap="wrap" useFlexGap>
+            <Stack direction="row" spacing={3} sx={{ flexWrap: "wrap" }} useFlexGap>
               {renderDetailFile("Cover Page", data.coverPage)}
               {renderDetailFile("Author Affiliation", data.authorAffiliation)}
               {renderDetailFile("Index Page", data.index)}

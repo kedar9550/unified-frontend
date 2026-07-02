@@ -901,11 +901,13 @@ export default function JournalPublication() {
             onChange={set("doi")}
             placeholder="e.g. 10.1038/s41598-024-12345-y"
             onKeyDown={(e) => { if (e.key === "Enter") fetchDOIData(); }}
-            InputProps={{
-              sx: { background: "var(--bg-panel)" },
-              endAdornment: doiFetched ? (
-                <Box component="span" sx={{ display: "flex", alignItems: "center", color: "#10b981", fontSize: 18, mr: 0.5 }}>✓</Box>
-              ) : null
+            slotProps={{
+              input: {
+                sx: { background: "var(--bg-panel)" },
+                endAdornment: doiFetched ? (
+                  <Box component="span" sx={{ display: "flex", alignItems: "center", color: "#10b981", fontSize: 18, mr: 0.5 }}>✓</Box>
+                ) : null
+              }
             }}
           />
           <Button
@@ -1024,7 +1026,7 @@ export default function JournalPublication() {
         <Grid2>
           <Box>
             <Typography sx={labelStyle}>Total Number of Authors :</Typography>
-            <TextField size="small" fullWidth type="number" value={form.totalAuthors} onChange={set("totalAuthors")} inputProps={{ min: 1 }} />
+            <TextField size="small" fullWidth type="number" value={form.totalAuthors} onChange={set("totalAuthors")} slotProps={{ htmlInput: { min: 1 } }} />
           </Box>
           {parseInt(form.totalAuthors) > 1 && (
             <Box>
@@ -1268,13 +1270,15 @@ export default function JournalPublication() {
         onClose={handleCloseDetails}
         maxWidth="md"
         fullWidth
-        PaperProps={{
-          sx: {
-            borderRadius: "20px",
-            background: "var(--bg-glass)",
-            backdropFilter: "blur(12px)",
-            border: "1px solid var(--border-color)",
-            boxShadow: "var(--shadow-premium)",
+        slotProps={{
+          paper: {
+            sx: {
+              borderRadius: "20px",
+              background: "var(--bg-paper)",
+              backdropFilter: "blur(12px)",
+              border: "1px solid var(--border-color)",
+              boxShadow: "var(--shadow-premium)",
+            }
           }
         }}
       >
@@ -1290,9 +1294,9 @@ export default function JournalPublication() {
           <Typography variant="body2" sx={{ color: "var(--text-secondary)", mb: 3, fontWeight: 600 }}>Journal: {data.journalName}</Typography>
 
           <Grid container spacing={2.5}>
-            <Grid item xs={12} sm={3} sx={{ display: "flex", flexDirection: "column" }}><LabelValue label="Academic Year" value={data.academicYear?.year || "-"} /></Grid>
-            <Grid item xs={12} sm={6} sx={{ display: "flex", flexDirection: "column" }}><LabelValue label="DOI" value={data.doi || "-"} /></Grid>
-            <Grid item xs={12} sm={3} sx={{ display: "flex", flexDirection: "column" }}>
+            <Grid xs={12} sm={3} sx={{ display: "flex", flexDirection: "column" }}><LabelValue label="Academic Year" value={data.academicYear?.year || "-"} /></Grid>
+            <Grid xs={12} sm={6} sx={{ display: "flex", flexDirection: "column" }}><LabelValue label="DOI" value={data.doi || "-"} /></Grid>
+            <Grid xs={12} sm={3} sx={{ display: "flex", flexDirection: "column" }}>
               <LabelValue
                 label="Status"
                 chip={
@@ -1312,42 +1316,42 @@ export default function JournalPublication() {
             </Grid>
 
             {/* Author position, Quartile, type */}
-            <Grid item xs={12} sm={4} sx={{ display: "flex", flexDirection: "column" }}>
+            <Grid xs={12} sm={4} sx={{ display: "flex", flexDirection: "column" }}>
               <LabelValue
                 label="Applicant Author Position"
                 value={data.userAuthorPosition ? `${data.userAuthorPosition} / ${data.totalAuthors}` : (data.firstAuthor === "Yes" ? "1" : data.authorPosition || "-")}
               />
             </Grid>
-            <Grid item xs={12} sm={4} sx={{ display: "flex", flexDirection: "column" }}><LabelValue label="Journal Quartile" value={data.journalQuartile || data.categoryOfJournal} /></Grid>
-            <Grid item xs={12} sm={4} sx={{ display: "flex", flexDirection: "column" }}><LabelValue label="Journal Type" value={data.journalType || "-"} /></Grid>
+            <Grid xs={12} sm={4} sx={{ display: "flex", flexDirection: "column" }}><LabelValue label="Journal Quartile" value={data.journalQuartile || data.categoryOfJournal} /></Grid>
+            <Grid xs={12} sm={4} sx={{ display: "flex", flexDirection: "column" }}><LabelValue label="Journal Type" value={data.journalType || "-"} /></Grid>
 
             {/* Volume, Issue, Published Year, Published Month */}
-            <Grid item xs={12} sm={3} sx={{ display: "flex", flexDirection: "column" }}><LabelValue label="Volume" value={data.vol || "-"} /></Grid>
-            <Grid item xs={12} sm={3} sx={{ display: "flex", flexDirection: "column" }}><LabelValue label="Issue" value={data.issue || "-"} /></Grid>
-            <Grid item xs={12} sm={3} sx={{ display: "flex", flexDirection: "column" }}><LabelValue label="Published Year" value={data.publishedYear || data.year || "-"} /></Grid>
-            <Grid item xs={12} sm={3} sx={{ display: "flex", flexDirection: "column" }}><LabelValue label="Published Month" value={data.publishedMonth || data.month || "-"} /></Grid>
+            <Grid xs={12} sm={3} sx={{ display: "flex", flexDirection: "column" }}><LabelValue label="Volume" value={data.vol || "-"} /></Grid>
+            <Grid xs={12} sm={3} sx={{ display: "flex", flexDirection: "column" }}><LabelValue label="Issue" value={data.issue || "-"} /></Grid>
+            <Grid xs={12} sm={3} sx={{ display: "flex", flexDirection: "column" }}><LabelValue label="Published Year" value={data.publishedYear || data.year || "-"} /></Grid>
+            <Grid xs={12} sm={3} sx={{ display: "flex", flexDirection: "column" }}><LabelValue label="Published Month" value={data.publishedMonth || data.month || "-"} /></Grid>
 
             {/* H-Index, Impact Factor, Citations, SDGS */}
-            <Grid item xs={12} sm={4} sx={{ display: "flex", flexDirection: "column" }}><LabelValue label="H-Index" value={data.hIndex || "-"} /></Grid>
-            <Grid item xs={12} sm={4} sx={{ display: "flex", flexDirection: "column" }}><LabelValue label="Impact Factor" value={data.jcrImpactFactor || data.impactFactor || "-"} /></Grid>
-            <Grid item xs={12} sm={4} sx={{ display: "flex", flexDirection: "column" }}><LabelValue label="Citations" value={data.citations || "-"} /></Grid>
+            <Grid xs={12} sm={4} sx={{ display: "flex", flexDirection: "column" }}><LabelValue label="H-Index" value={data.hIndex || "-"} /></Grid>
+            <Grid xs={12} sm={4} sx={{ display: "flex", flexDirection: "column" }}><LabelValue label="Impact Factor" value={data.jcrImpactFactor || data.impactFactor || "-"} /></Grid>
+            <Grid xs={12} sm={4} sx={{ display: "flex", flexDirection: "column" }}><LabelValue label="Citations" value={data.citations || "-"} /></Grid>
 
-            <Grid item xs={12} sm={6} sx={{ display: "flex", flexDirection: "column" }}><LabelValue label="AGEC Referencing Numbers" value={data.agecReferencingNumbers || data.referencingNos || "-"} /></Grid>
-            <Grid item xs={12} sm={6} sx={{ display: "flex", flexDirection: "column" }}><LabelValue label="Number of References Belonging to AGEC" value={data.numberOfReferencesBelongingToAGEC !== undefined ? data.numberOfReferencesBelongingToAGEC : (data.papersCited !== undefined ? data.papersCited : "-")} /></Grid>
+            <Grid xs={12} sm={6} sx={{ display: "flex", flexDirection: "column" }}><LabelValue label="AGEC Referencing Numbers" value={data.agecReferencingNumbers || data.referencingNos || "-"} /></Grid>
+            <Grid xs={12} sm={6} sx={{ display: "flex", flexDirection: "column" }}><LabelValue label="Number of References Belonging to AGEC" value={data.numberOfReferencesBelongingToAGEC !== undefined ? data.numberOfReferencesBelongingToAGEC : (data.papersCited !== undefined ? data.papersCited : "-")} /></Grid>
 
             {/* Seed Grant Work & SDGS */}
-            <Grid item xs={12} sm={6} sx={{ display: "flex", flexDirection: "column" }}><LabelValue label="Seed Grant Work" value={data.applyingSeedGrant || "No"} /></Grid>
-            <Grid item xs={12} sm={6} sx={{ display: "flex", flexDirection: "column" }}><LabelValue label="SDGS Matched" value={data.sdgs ? data.sdgs.split(', ').map(getSdgName).join(', ') : "None"} /></Grid>
+            <Grid xs={12} sm={6} sx={{ display: "flex", flexDirection: "column" }}><LabelValue label="Seed Grant Work" value={data.applyingSeedGrant || "No"} /></Grid>
+            <Grid xs={12} sm={6} sx={{ display: "flex", flexDirection: "column" }}><LabelValue label="SDGS Matched" value={data.sdgs ? data.sdgs.split(', ').map(getSdgName).join(', ') : "None"} /></Grid>
 
             {/* Publication Scope information */}
-            <Grid item xs={12} sm={6} sx={{ display: "flex", flexDirection: "column" }}>
+            <Grid xs={12} sm={6} sx={{ display: "flex", flexDirection: "column" }}>
               <LabelValue
                 label="Publication Scope"
                 value={data.publicationScope || data.incentiveApplied || "-"}
               />
             </Grid>
             {data.status === "Approved" && data.approvedAmount && (
-              <Grid item xs={12} sm={6} sx={{ display: "flex", flexDirection: "column" }}>
+              <Grid xs={12} sm={6} sx={{ display: "flex", flexDirection: "column" }}>
                 <LabelValue
                   label="Approved Incentive"
                   value={`₹${data.approvedAmount}`}
@@ -1357,7 +1361,7 @@ export default function JournalPublication() {
             )}
 
             {/* Appraisal Claimant Selector */}
-            <Grid item xs={12} sm={6} sx={{ display: "flex", flexDirection: "column" }}>
+            <Grid xs={12} sm={6} sx={{ display: "flex", flexDirection: "column" }}>
               <LabelValue
                 label="Appraisal Claimant"
                 chip={
@@ -1457,7 +1461,7 @@ export default function JournalPublication() {
               <AttachFile sx={{ color: "var(--color-primary)" }} />
               <Typography sx={{ fontWeight: 800, color: "var(--text-primary)" }}>Attached Documents</Typography>
             </Box>
-            <Stack direction="row" spacing={3} flexWrap="wrap" useFlexGap>
+            <Stack direction="row" spacing={3} sx={{ flexWrap: "wrap" }} useFlexGap>
               {renderDetailFile("Published Paper (1st Page)", data.publishedPaper)}
               {renderDetailFile("Reference Pages", data.referencePages)}
               {data.completeJournal ? (

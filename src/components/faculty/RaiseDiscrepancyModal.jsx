@@ -330,18 +330,20 @@ export default function RaiseDiscrepancyModal({
         {activeTab === 0 && (
           <Box sx={{ position: "absolute", right: 24, bottom: 16 }}>
              <Tooltip title="Refresh History">
-               <IconButton 
-                 size="small" 
-                 onClick={fetchDiscrepancies} 
-                 disabled={loadingDisc}
-                 sx={{ 
-                   color: "var(--color-primary)",
-                   bgcolor: "rgba(11, 82, 153, 0.05)",
-                   "&:hover": { bgcolor: "rgba(11, 82, 153, 0.1)" }
-                 }}
-               >
-                 <RefreshIcon fontSize="small" sx={{ animation: loadingDisc ? "spin 1s linear infinite" : "none" }} />
-               </IconButton>
+               <span>
+                 <IconButton 
+                   size="small" 
+                   onClick={fetchDiscrepancies} 
+                   disabled={loadingDisc}
+                   sx={{ 
+                     color: "var(--color-primary)",
+                     bgcolor: "rgba(11, 82, 153, 0.05)",
+                     "&:hover": { bgcolor: "rgba(11, 82, 153, 0.1)" }
+                   }}
+                 >
+                   <RefreshIcon fontSize="small" sx={{ animation: loadingDisc ? "spin 1s linear infinite" : "none" }} />
+                 </IconButton>
+               </span>
              </Tooltip>
           </Box>
         )}

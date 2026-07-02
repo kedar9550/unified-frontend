@@ -4491,8 +4491,10 @@ const SelfAppraisal = () => {
                 type="date"
                 value={resUtForm.fromDate}
                 onChange={(e) => setResUtForm(p => ({ ...p, fromDate: e.target.value }))}
-                InputLabelProps={{ shrink: true }}
-                inputProps={{ max: new Date().toISOString().split("T")[0] }}
+                slotProps={{
+                  inputLabel: { shrink: true },
+                  htmlInput: { max: new Date().toISOString().split("T")[0] }
+                }}
               />
             </Box>
 
@@ -4504,8 +4506,10 @@ const SelfAppraisal = () => {
                 type="date"
                 value={resUtForm.toDate}
                 onChange={(e) => setResUtForm(p => ({ ...p, toDate: e.target.value }))}
-                InputLabelProps={{ shrink: true }}
-                inputProps={{ max: new Date().toISOString().split("T")[0] }}
+                slotProps={{
+                  inputLabel: { shrink: true },
+                  htmlInput: { max: new Date().toISOString().split("T")[0] }
+                }}
               />
             </Box>
 
@@ -4846,8 +4850,10 @@ const SelfAppraisal = () => {
                       type="date"
                       value={contForm.fromDate}
                       onChange={(e) => setContForm(p => ({ ...p, fromDate: e.target.value }))}
-                      InputLabelProps={{ shrink: true }}
-                      inputProps={{ max: todayStr }}
+                      slotProps={{
+                        inputLabel: { shrink: true },
+                        htmlInput: { max: todayStr }
+                      }}
                     />
                   </Box>
                   <Box>
@@ -4858,8 +4864,10 @@ const SelfAppraisal = () => {
                       type="date"
                       value={contForm.toDate}
                       onChange={(e) => setContForm(p => ({ ...p, toDate: e.target.value }))}
-                      InputLabelProps={{ shrink: true }}
-                      inputProps={isFutureAllowed ? {} : { max: todayStr }}
+                      slotProps={{
+                        inputLabel: { shrink: true },
+                        htmlInput: isFutureAllowed ? {} : { max: todayStr }
+                      }}
                     />
                   </Box>
                   <Box>
@@ -4916,7 +4924,7 @@ const SelfAppraisal = () => {
                       </Box>
                       <Box>
                         <Typography sx={labelStyle}>Award Date: *</Typography>
-                        <TextField size="small" fullWidth type="date" value={contForm.awardDate} onChange={(e) => setContForm(p => ({ ...p, awardDate: e.target.value }))} InputLabelProps={{ shrink: true }} inputProps={{ max: todayStr }} />
+                        <TextField size="small" fullWidth type="date" value={contForm.awardDate} onChange={(e) => setContForm(p => ({ ...p, awardDate: e.target.value }))} slotProps={{ inputLabel: { shrink: true }, htmlInput: { max: todayStr } }} />
                       </Box>
                     </>
                   );
@@ -4952,7 +4960,7 @@ const SelfAppraisal = () => {
                       </Box>
                       <Box>
                         <Typography sx={labelStyle}>Event Date: *</Typography>
-                        <TextField size="small" fullWidth type="date" value={contForm.eventDate} onChange={(e) => setContForm(p => ({ ...p, eventDate: e.target.value }))} InputLabelProps={{ shrink: true }} inputProps={{ max: todayStr }} />
+                        <TextField size="small" fullWidth type="date" value={contForm.eventDate} onChange={(e) => setContForm(p => ({ ...p, eventDate: e.target.value }))} slotProps={{ inputLabel: { shrink: true }, htmlInput: { max: todayStr } }} />
                       </Box>
                     </>
                   );
@@ -4969,7 +4977,7 @@ const SelfAppraisal = () => {
                       </Box>
                       <Box>
                         <Typography sx={labelStyle}>Publication Date: *</Typography>
-                        <TextField size="small" fullWidth type="date" value={contForm.publicationDate} onChange={(e) => setContForm(p => ({ ...p, publicationDate: e.target.value }))} InputLabelProps={{ shrink: true }} inputProps={{ max: todayStr }} />
+                        <TextField size="small" fullWidth type="date" value={contForm.publicationDate} onChange={(e) => setContForm(p => ({ ...p, publicationDate: e.target.value }))} slotProps={{ inputLabel: { shrink: true }, htmlInput: { max: todayStr } }} />
                       </Box>
                     </>
                   );

@@ -267,7 +267,8 @@ const FacultyDashboard = () => {
               flex: {
                 xs: "1 1 100%",
                 sm: "1 1 calc(50% - 10px)",
-                md: "1 1 calc(25% - 19px)",
+                md: "1 1 calc(50% - 10px)",
+                lg: "1 1 calc(25% - 19px)",
               },
               minWidth: 0,
             }}
@@ -329,7 +330,7 @@ const FacultyDashboard = () => {
                 >
                   {React.cloneElement(card.icon, { fontSize: "medium" })}
                 </Box>
-                <Box sx={{ display: "flex", flexDirection: "column", gap: 0.3 }}>
+                <Box sx={{ display: "flex", flexDirection: "column", gap: 0.3, minWidth: 0, flex: 1 }}>
                   <Typography
                     variant="body2"
                     sx={{

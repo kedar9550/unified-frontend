@@ -650,8 +650,10 @@ export default function PhdScholarPublication() {
                 type="date" 
                 value={form.admissionOrAwardDate} 
                 onChange={set("admissionOrAwardDate")} 
-                InputLabelProps={{ shrink: true }} 
-                inputProps={{ max: new Date().toISOString().split("T")[0] }} 
+                slotProps={{
+                  inputLabel: { shrink: true },
+                  htmlInput: { max: new Date().toISOString().split("T")[0] }
+                }} 
               />
             </Box>
           </Grid2>
@@ -856,13 +858,15 @@ export default function PhdScholarPublication() {
         onClose={handleCloseDetails}
         maxWidth="md"
         fullWidth
-        PaperProps={{
-          sx: {
-            borderRadius: "20px",
-            background: "var(--bg-glass)",
-            backdropFilter: "blur(12px)",
-            border: "1px solid var(--border-color)",
-            boxShadow: "var(--shadow-premium)",
+        slotProps={{
+          paper: {
+            sx: {
+              borderRadius: "20px",
+              background: "var(--bg-paper)",
+              backdropFilter: "blur(12px)",
+              border: "1px solid var(--border-color)",
+              boxShadow: "var(--shadow-premium)",
+            }
           }
         }}
       >

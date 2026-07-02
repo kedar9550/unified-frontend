@@ -478,12 +478,12 @@ export default function PatentPublication() {
             }}
             placeholder="e.g. 202341012345"
             helperText="Allowed: letters, numbers, / . -"
-            FormHelperTextProps={{ sx: { fontSize: "0.7rem", mt: 0.3 } }}
+            slotProps={{ formHelperText: { sx: { fontSize: "0.7rem", mt: 0.3 } } }}
           />
         </Box>
         <Box>
           <Typography sx={labelStyle}>Date of filing :</Typography>
-          <TextField size="small" fullWidth type="date" value={form.dateOfFiling} onChange={set("dateOfFiling")} InputLabelProps={{ shrink: true }} inputProps={{ max: new Date().toISOString().split("T")[0] }} />
+          <TextField size="small" fullWidth type="date" value={form.dateOfFiling} onChange={set("dateOfFiling")} slotProps={{ inputLabel: { shrink: true }, htmlInput: { max: new Date().toISOString().split("T")[0] } }} />
         </Box>
         <Box>
           <Typography sx={labelStyle}>Status of Patent Application :</Typography>
@@ -513,7 +513,7 @@ export default function PatentPublication() {
             type="number"
             value={form.totalInventors}
             onChange={set("totalInventors")}
-            inputProps={{ min: 1 }}
+            slotProps={{ htmlInput: { min: 1 } }}
             sx={{ maxWidth: 250 }}
           />
         </Box>
@@ -738,13 +738,15 @@ export default function PatentPublication() {
         onClose={handleCloseDetails}
         maxWidth="md"
         fullWidth
-        PaperProps={{
-          sx: {
-            borderRadius: "20px",
-            background: "var(--bg-glass)",
-            backdropFilter: "blur(12px)",
-            border: "1px solid var(--border-color)",
-            boxShadow: "var(--shadow-premium)",
+        slotProps={{
+          paper: {
+            sx: {
+              borderRadius: "20px",
+              background: "var(--bg-paper)",
+              backdropFilter: "blur(12px)",
+              border: "1px solid var(--border-color)",
+              boxShadow: "var(--shadow-premium)",
+            }
           }
         }}
       >
@@ -760,10 +762,10 @@ export default function PatentPublication() {
           <Typography variant="body2" sx={{ color: "var(--text-secondary)", mb: 3, fontWeight: 600 }}>Name of Applicant in Patent: {data.patentName}</Typography>
 
           <Grid container spacing={2}>
-            <Grid item xs={12} sm={3} sx={{ display: "flex", flexDirection: "column" }}><LabelValueDetails label="Academic Year" value={data.academicYear?.year || "N/A"} /></Grid>
-            <Grid item xs={12} sm={3} sx={{ display: "flex", flexDirection: "column" }}><LabelValueDetails label="Area" value={data.area} /></Grid>
-            <Grid item xs={12} sm={3} sx={{ display: "flex", flexDirection: "column" }}><LabelValueDetails label="Role" value={data.visibilityRole || "Applicant"} /></Grid>
-            <Grid item xs={12} sm={3} sx={{ display: "flex", flexDirection: "column" }}>
+            <Grid xs={12} sm={3} sx={{ display: "flex", flexDirection: "column" }}><LabelValueDetails label="Academic Year" value={data.academicYear?.year || "N/A"} /></Grid>
+            <Grid xs={12} sm={3} sx={{ display: "flex", flexDirection: "column" }}><LabelValueDetails label="Area" value={data.area} /></Grid>
+            <Grid xs={12} sm={3} sx={{ display: "flex", flexDirection: "column" }}><LabelValueDetails label="Role" value={data.visibilityRole || "Applicant"} /></Grid>
+            <Grid xs={12} sm={3} sx={{ display: "flex", flexDirection: "column" }}>
               <LabelValueDetails
                 label="Status"
                 chip={
@@ -782,16 +784,16 @@ export default function PatentPublication() {
               />
             </Grid>
 
-            <Grid item xs={12} sm={3} sx={{ display: "flex", flexDirection: "column" }}><LabelValueDetails label="Filing No" value={data.filingNo} /></Grid>
-            <Grid item xs={12} sm={3} sx={{ display: "flex", flexDirection: "column" }}><LabelValueDetails label="Date of Filing" value={formatDate(data.dateOfFiling)} /></Grid>
-            <Grid item xs={12} sm={3} sx={{ display: "flex", flexDirection: "column" }}><LabelValueDetails label="Patent Status" value={data.patentStatus} /></Grid>
-            <Grid item xs={12} sm={3} sx={{ display: "flex", flexDirection: "column" }}><LabelValueDetails label="Filed Country" value={data.patentFiledCountry || "India"} /></Grid>
+            <Grid xs={12} sm={3} sx={{ display: "flex", flexDirection: "column" }}><LabelValueDetails label="Filing No" value={data.filingNo} /></Grid>
+            <Grid xs={12} sm={3} sx={{ display: "flex", flexDirection: "column" }}><LabelValueDetails label="Date of Filing" value={formatDate(data.dateOfFiling)} /></Grid>
+            <Grid xs={12} sm={3} sx={{ display: "flex", flexDirection: "column" }}><LabelValueDetails label="Patent Status" value={data.patentStatus} /></Grid>
+            <Grid xs={12} sm={3} sx={{ display: "flex", flexDirection: "column" }}><LabelValueDetails label="Filed Country" value={data.patentFiledCountry || "India"} /></Grid>
 
-            <Grid item xs={12} sm={6} sx={{ display: "flex", flexDirection: "column" }}><LabelValueDetails label="Applying Seed Grant?" value={data.applyingSeedGrant === "Yes" ? "Yes" : "No"} /></Grid>
-            <Grid item xs={12} sm={6} sx={{ display: "flex", flexDirection: "column" }}><LabelValueDetails label="Apply Incentive?" value={data.applyIncentive === "Yes" ? "Yes" : "No"} /></Grid>
+            <Grid xs={12} sm={6} sx={{ display: "flex", flexDirection: "column" }}><LabelValueDetails label="Applying Seed Grant?" value={data.applyingSeedGrant === "Yes" ? "Yes" : "No"} /></Grid>
+            <Grid xs={12} sm={6} sx={{ display: "flex", flexDirection: "column" }}><LabelValueDetails label="Apply Incentive?" value={data.applyIncentive === "Yes" ? "Yes" : "No"} /></Grid>
 
             {data.status === "Approved" && data.approvedAmount && (
-              <Grid item xs={12} sm={6} sx={{ display: "flex", flexDirection: "column" }}>
+              <Grid xs={12} sm={6} sx={{ display: "flex", flexDirection: "column" }}>
                 <LabelValueDetails
                   label="Approved Incentive"
                   value={`₹${data.approvedAmount}`}
@@ -801,7 +803,7 @@ export default function PatentPublication() {
             )}
 
             {/* Appraisal Claimant - read only in faculty view */}
-            <Grid item xs={12} sm={6} sx={{ display: "flex", flexDirection: "column" }}>
+            <Grid xs={12} sm={6} sx={{ display: "flex", flexDirection: "column" }}>
               <LabelValueDetails
                 label="Appraisal Claimant"
                 chip={(() => {
@@ -875,7 +877,7 @@ export default function PatentPublication() {
               <AttachFile sx={{ color: "var(--color-primary)" }} />
               <Typography sx={{ fontWeight: 800, color: "var(--text-primary)" }}>Attached Documents</Typography>
             </Box>
-            <Stack direction="row" spacing={3} flexWrap="wrap" useFlexGap>
+            <Stack direction="row" spacing={3} sx={{ flexWrap: "wrap" }} useFlexGap>
               {renderDetailFile("e-Filing Receipt", data.eFilingReceipt)}
               {renderDetailFile("Form 1", data.form1)}
             </Stack>

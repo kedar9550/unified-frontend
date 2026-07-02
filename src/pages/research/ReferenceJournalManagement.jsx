@@ -1534,7 +1534,7 @@ const ReferenceJournalManagement = () => {
                     label="JIF"
                     required
                     type="number"
-                    inputProps={{ step: "any" }}
+                    slotProps={{ htmlInput: { step: "any" } }}
                     fullWidth
                     value={editingJif.jif}
                     onChange={(e) => setEditingJif({ ...editingJif, jif: e.target.value })}
@@ -1842,7 +1842,7 @@ const ReferenceJournalManagement = () => {
                     label="JIF"
                     required
                     type="number"
-                    inputProps={{ step: "any" }}
+                    slotProps={{ htmlInput: { step: "any" } }}
                     fullWidth
                     value={jifForm.jif}
                     onChange={(e) => setJifForm({ ...jifForm, jif: e.target.value })}
