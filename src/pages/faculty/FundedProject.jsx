@@ -627,7 +627,7 @@ export default function FundedProject() {
               fullWidth
               value={form.totalInvestigators}
               onChange={set("totalInvestigators")}
-              inputProps={{ min: 1 }}
+              slotProps={{ htmlInput: { min: 1 } }}
             />
           </Box>
 
@@ -757,7 +757,7 @@ export default function FundedProject() {
           </Box>
           <Box>
             <Typography sx={labelStyle}>Date of Sanction :</Typography>
-            <TextField size="small" fullWidth type="date" value={form.sanctionDate} onChange={set("sanctionDate")} InputLabelProps={{ shrink: true }} inputProps={{ max: new Date().toISOString().split("T")[0] }} />
+            <TextField size="small" fullWidth type="date" value={form.sanctionDate} onChange={set("sanctionDate")} slotProps={{ inputLabel: { shrink: true }, htmlInput: { max: new Date().toISOString().split("T")[0] } }} />
           </Box>
           <Box>
             <Typography sx={labelStyle}>Applying as a Seed Grant Work? *</Typography>
@@ -900,13 +900,15 @@ export default function FundedProject() {
         onClose={handleCloseDetails}
         maxWidth="md"
         fullWidth
-        PaperProps={{
-          sx: {
-            borderRadius: "20px",
-            background: "var(--bg-glass)",
-            backdropFilter: "blur(12px)",
-            border: "1px solid var(--border-color)",
-            boxShadow: "var(--shadow-premium)",
+        slotProps={{
+          paper: {
+            sx: {
+              borderRadius: "20px",
+              background: "var(--bg-paper)",
+              backdropFilter: "blur(12px)",
+              border: "1px solid var(--border-color)",
+              boxShadow: "var(--shadow-premium)",
+            }
           }
         }}
       >
@@ -1023,7 +1025,7 @@ export default function FundedProject() {
               <AttachFile sx={{ color: "var(--color-primary)" }} />
               <Typography sx={{ fontWeight: 800, color: "var(--text-primary)" }}>Attached Documents</Typography>
             </Box>
-            <Stack direction="row" spacing={3} flexWrap="wrap" useFlexGap>
+            <Stack direction="row" spacing={3} sx={{ flexWrap: "wrap" }} useFlexGap>
               {renderDetailFile("Sanction Order", data.sanctionOrder)}
             </Stack>
           </Box>

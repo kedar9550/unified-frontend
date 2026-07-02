@@ -717,16 +717,18 @@ export default function ResourceUtilization() {
         onClose={() => setSelectedActivityDetails(null)}
         maxWidth="lg"
         fullWidth
-        PaperProps={{
-          sx: {
-            borderRadius: "20px",
-            background: "var(--bg-glass)",
-            border: "1px solid var(--border-color)",
-            boxShadow: "var(--shadow-premium)",
+        slotProps={{
+          paper: {
+            sx: {
+              borderRadius: "20px",
+              background: "var(--bg-paper)",
+              border: "1px solid var(--border-color)",
+              boxShadow: "var(--shadow-premium)",
+            }
           }
         }}
       >
-        <DialogTitle sx={{ 
+        <DialogTitle component="div" sx={{ 
           display: "flex", 
           justifyContent: "space-between", 
           alignItems: "center", 
@@ -737,7 +739,7 @@ export default function ResourceUtilization() {
         }}>
           <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
             <School sx={{ fontSize: 28, color: "#6366f1" }} />
-            <Typography variant="h6" sx={{ fontWeight: 800, fontSize: "1.1rem" }}>Activity Details</Typography>
+            <Typography variant="h6" component="div" sx={{ fontWeight: 800, fontSize: "1.1rem" }}>Activity Details</Typography>
           </Box>
           <IconButton onClick={() => setSelectedActivityDetails(null)} sx={{ color: "#fff" }}>
             <Close />
@@ -1031,10 +1033,10 @@ export default function ResourceUtilization() {
       onClose={() => setOpenFormModal(false)}
       maxWidth="md"
       fullWidth
-      PaperProps={{ sx: { borderRadius: "20px" } }}
+      slotProps={{ paper: { sx: { borderRadius: "20px" } } }}
     >
-      <DialogTitle sx={{ borderBottom: "1px solid var(--border-color)", pb: 2 }}>
-        <Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>
+      <DialogTitle component="div" sx={{ borderBottom: "1px solid var(--border-color)", pb: 2 }}>
+        <Typography variant="h6" component="div" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>
           {editingId ? "Edit Resource Utilization Entry" : "Add Resource Utilization Entry"}
         </Typography>
       </DialogTitle>
@@ -1239,8 +1241,10 @@ export default function ResourceUtilization() {
               type="date"
               value={form.fromDate}
               onChange={setVal("fromDate")}
-              InputLabelProps={{ shrink: true }}
-              inputProps={{ max: new Date().toISOString().split("T")[0] }}
+              slotProps={{
+                inputLabel: { shrink: true },
+                htmlInput: { max: new Date().toISOString().split("T")[0] }
+              }}
             />
           </Box>
 
@@ -1252,8 +1256,10 @@ export default function ResourceUtilization() {
               type="date"
               value={form.toDate}
               onChange={setVal("toDate")}
-              InputLabelProps={{ shrink: true }}
-              inputProps={{ max: new Date().toISOString().split("T")[0] }}
+              slotProps={{
+                inputLabel: { shrink: true },
+                htmlInput: { max: new Date().toISOString().split("T")[0] }
+              }}
             />
           </Box>
 

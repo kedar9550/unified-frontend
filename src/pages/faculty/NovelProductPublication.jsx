@@ -561,7 +561,7 @@ export default function NovelProductPublication() {
               fullWidth
               value={form.totalDevelopers}
               onChange={set("totalDevelopers")}
-              inputProps={{ min: 1 }}
+              slotProps={{ htmlInput: { min: 1 } }}
             />
           </Box>
           <Box>
@@ -797,13 +797,15 @@ export default function NovelProductPublication() {
         onClose={handleCloseDetails}
         maxWidth="md"
         fullWidth
-        PaperProps={{
-          sx: {
-            borderRadius: "20px",
-            background: "var(--bg-glass)",
-            backdropFilter: "blur(12px)",
-            border: "1px solid var(--border-color)",
-            boxShadow: "var(--shadow-premium)",
+        slotProps={{
+          paper: {
+            sx: {
+              borderRadius: "20px",
+              background: "var(--bg-paper)",
+              backdropFilter: "blur(12px)",
+              border: "1px solid var(--border-color)",
+              boxShadow: "var(--shadow-premium)",
+            }
           }
         }}
       >

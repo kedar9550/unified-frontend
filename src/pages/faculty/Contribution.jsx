@@ -547,8 +547,10 @@ export default function Contribution() {
             type="date"
             value={form.fromDate}
             onChange={setVal("fromDate")}
-            InputLabelProps={{ shrink: true }}
-            inputProps={{ max: todayStr }}
+            slotProps={{
+              inputLabel: { shrink: true },
+              htmlInput: { max: todayStr }
+            }}
           />
         </Box>
         <Box>
@@ -559,8 +561,10 @@ export default function Contribution() {
             type="date"
             value={form.toDate}
             onChange={setVal("toDate")}
-            InputLabelProps={{ shrink: true }}
-            inputProps={isFutureAllowed ? {} : { max: todayStr }}
+            slotProps={{
+              inputLabel: { shrink: true },
+              htmlInput: isFutureAllowed ? {} : { max: todayStr }
+            }}
           />
         </Box>
         <Box>
@@ -616,7 +620,7 @@ export default function Contribution() {
             </Box>
             <Box>
               <Typography sx={labelStyle}>Award Date: *</Typography>
-              <TextField size="small" fullWidth type="date" value={form.awardDate} onChange={setVal("awardDate")} InputLabelProps={{ shrink: true }} inputProps={{ max: new Date().toISOString().split("T")[0] }} />
+              <TextField size="small" fullWidth type="date" value={form.awardDate} onChange={setVal("awardDate")} slotProps={{ inputLabel: { shrink: true }, htmlInput: { max: new Date().toISOString().split("T")[0] } }} />
             </Box>
           </>
         );
@@ -652,7 +656,7 @@ export default function Contribution() {
             </Box>
             <Box>
               <Typography sx={labelStyle}>Event Date: *</Typography>
-              <TextField size="small" fullWidth type="date" value={form.eventDate} onChange={setVal("eventDate")} InputLabelProps={{ shrink: true }} inputProps={{ max: new Date().toISOString().split("T")[0] }} />
+              <TextField size="small" fullWidth type="date" value={form.eventDate} onChange={setVal("eventDate")} slotProps={{ inputLabel: { shrink: true }, htmlInput: { max: new Date().toISOString().split("T")[0] } }} />
             </Box>
           </>
         );
@@ -669,7 +673,7 @@ export default function Contribution() {
             </Box>
             <Box>
               <Typography sx={labelStyle}>Publication Date: *</Typography>
-              <TextField size="small" fullWidth type="date" value={form.publicationDate} onChange={setVal("publicationDate")} InputLabelProps={{ shrink: true }} inputProps={{ max: new Date().toISOString().split("T")[0] }} />
+              <TextField size="small" fullWidth type="date" value={form.publicationDate} onChange={setVal("publicationDate")} slotProps={{ inputLabel: { shrink: true }, htmlInput: { max: new Date().toISOString().split("T")[0] } }} />
             </Box>
           </>
         );
@@ -957,20 +961,22 @@ export default function Contribution() {
         onClose={() => setSelectedContributionDetails(null)}
         maxWidth="md"
         fullWidth
-        PaperProps={{
-          sx: {
-            borderRadius: "20px",
-            background: "var(--bg-glass)",
-            backdropFilter: "blur(12px)",
-            border: "1px solid var(--border-color)",
-            boxShadow: "var(--shadow-premium)",
+        slotProps={{
+          paper: {
+            sx: {
+              borderRadius: "20px",
+              background: "var(--bg-paper)",
+              backdropFilter: "blur(12px)",
+              border: "1px solid var(--border-color)",
+              boxShadow: "var(--shadow-premium)",
+            }
           }
         }}
       >
-        <DialogTitle sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "var(--gradient-primary)", color: "#fff", py: 2 }}>
+        <DialogTitle component="div" sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "var(--gradient-primary)", color: "#fff", py: 2 }}>
           <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
             <WorkspacePremium sx={{ color: "#fff" }} />
-            <Typography variant="h6" sx={{ fontWeight: 800 }}>Contribution Details</Typography>
+            <Typography variant="h6" component="div" sx={{ fontWeight: 800 }}>Contribution Details</Typography>
           </Box>
           <IconButton onClick={() => setSelectedContributionDetails(null)} sx={{ color: "#fff" }}><Close /></IconButton>
         </DialogTitle>
@@ -1144,10 +1150,10 @@ export default function Contribution() {
       onClose={() => setOpenFormModal(false)}
       maxWidth="md"
       fullWidth
-      PaperProps={{ sx: { borderRadius: "20px" } }}
+      slotProps={{ paper: { sx: { borderRadius: "20px" } } }}
     >
-      <DialogTitle sx={{ borderBottom: "1px solid var(--border-color)", pb: 2 }}>
-        <Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>
+      <DialogTitle component="div" sx={{ borderBottom: "1px solid var(--border-color)", pb: 2 }}>
+        <Typography variant="h6" component="div" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>
           {editingId ? "Edit Contribution Entry" : "Add Contribution Entry"}
         </Typography>
       </DialogTitle>

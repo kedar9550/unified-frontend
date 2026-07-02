@@ -580,11 +580,13 @@ export default function ConferencePublication() {
             onChange={set("doi")}
             placeholder="e.g. 10.1109/ACCESS.2024.123456"
             onKeyDown={(e) => { if (e.key === "Enter") fetchDOIData(); }}
-            InputProps={{
-              sx: { background: "var(--bg-panel)" },
-              endAdornment: doiFetched ? (
-                <Box component="span" sx={{ display: "flex", alignItems: "center", color: "#10b981", fontSize: 18, mr: 0.5 }}>✓</Box>
-              ) : null
+            slotProps={{
+              input: {
+                sx: { background: "var(--bg-panel)" },
+                endAdornment: doiFetched ? (
+                  <Box component="span" sx={{ display: "flex", alignItems: "center", color: "#10b981", fontSize: 18, mr: 0.5 }}>✓</Box>
+                ) : null
+              }
             }}
           />
           <Button
@@ -632,7 +634,7 @@ export default function ConferencePublication() {
               const val = e.target.value;
               if (/^[0-9X-]*$/i.test(val)) setForm(p => ({ ...p, issnIsbn: val }));
             }}
-            inputProps={{ inputMode: 'numeric' }}
+            slotProps={{ htmlInput: { inputMode: 'numeric' } }}
           />
         </Box>
         <Box>
@@ -695,7 +697,7 @@ export default function ConferencePublication() {
         <Grid2>
           <Box>
             <Typography sx={labelStyle}>Total Number of Authors :</Typography>
-            <TextField size="small" fullWidth type="number" value={form.totalAuthors} onChange={set("totalAuthors")} inputProps={{ min: 1 }} />
+            <TextField size="small" fullWidth type="number" value={form.totalAuthors} onChange={set("totalAuthors")} slotProps={{ htmlInput: { min: 1 } }} />
           </Box>
           {parseInt(form.totalAuthors) > 1 && (
             <Box>
@@ -936,13 +938,15 @@ export default function ConferencePublication() {
         onClose={handleCloseDetails}
         maxWidth="md"
         fullWidth
-        PaperProps={{
-          sx: {
-            borderRadius: "20px",
-            background: "var(--bg-glass)",
-            backdropFilter: "blur(12px)",
-            border: "1px solid var(--border-color)",
-            boxShadow: "var(--shadow-premium)",
+        slotProps={{
+          paper: {
+            sx: {
+              borderRadius: "20px",
+              background: "var(--bg-paper)",
+              backdropFilter: "blur(12px)",
+              border: "1px solid var(--border-color)",
+              boxShadow: "var(--shadow-premium)",
+            }
           }
         }}
       >
@@ -1098,7 +1102,7 @@ export default function ConferencePublication() {
               <AttachFile sx={{ color: "var(--color-primary)" }} />
               <Typography sx={{ fontWeight: 800, color: "var(--text-primary)" }}>Attached Documents</Typography>
             </Box>
-            <Stack direction="row" spacing={3} flexWrap="wrap" useFlexGap>
+            <Stack direction="row" spacing={3} sx={{ flexWrap: "wrap" }} useFlexGap>
               {renderDetailFile("Presentation Certificate", data.certificate)}
               {renderDetailFile("Copy of Proceedings / Abstract Book", data.proceedings)}
             </Stack>
