@@ -1568,8 +1568,8 @@ const SelfAppraisal = () => {
 
     const I = Number(appraisal.hodEvaluation?.totalInterpersonalPoints) || 0;
 
-    const total1to4 = Math.min(200, T + R_sum + V + A);
-    const grandTotal = total1to4 + I;
+    const total1to4 = parseFloat((Math.min(200, T + R_sum + V + A)).toFixed(2));
+    const grandTotal = parseFloat((total1to4 + I).toFixed(2));
 
     return { T, R_sum, V, A, I, total1to4, grandTotal };
   };
