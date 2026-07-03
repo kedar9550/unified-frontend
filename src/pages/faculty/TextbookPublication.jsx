@@ -13,7 +13,7 @@ import {
 } from "../../components/faculty/PublicationFormFields";
 import {
   labelStyle, disabledField, MONTHS, YEARS
-} from "../../components/faculty/publicationConstants";import API from "../../api/axios";
+} from "../../components/faculty/publicationConstants"; import API from "../../api/axios";
 
 export default function TextbookPublication() {
   const { user } = useAuth();
@@ -47,19 +47,19 @@ export default function TextbookPublication() {
   useEffect(() => {
     API.get("/api/research/textbook").then(res => {
       setPublicationsList(res.data?.data || res.data || []);
-    }).catch(err => {});
+    }).catch(err => { });
 
     API.get("/api/academic-years").then(res => {
       setAcademicYears(res.data?.years || res.data?.data || []);
-    }).catch(err => {});
+    }).catch(err => { });
 
     API.get("/api/research/textbook/editions").then(res => {
       setEditions(res.data?.data || []);
-    }).catch(err => {});
+    }).catch(err => { });
 
     API.get("/api/publishers").then(res => {
       setPublishers(res.data?.data || []);
-    }).catch(err => {});
+    }).catch(err => { });
   }, [viewMode]);
 
   // Handle dynamic author generation based on total authors and user position
@@ -543,45 +543,45 @@ export default function TextbookPublication() {
         </Select>
         <Box sx={{ display: "flex", gap: 2, mt: 4, justifyContent: "flex-end" }}>
           <Button
- variant="outlined"
- onClick={() => setViewMode("list")}
- sx={{
- 
- textTransform: "none",
- fontWeight: 600,
- color: "var(--text-primary)",
- borderColor: "var(--border-color)",
- "&:hover": {
- borderColor: "var(--color-primary)",
- background: "rgba(0,0,0,0.02)"
- }
- }}
- >
+            variant="outlined"
+            onClick={() => setViewMode("list")}
+            sx={{
+
+              textTransform: "none",
+              fontWeight: 600,
+              color: "var(--text-primary)",
+              borderColor: "var(--border-color)",
+              "&:hover": {
+                borderColor: "var(--color-primary)",
+                background: "rgba(0,0,0,0.02)"
+              }
+            }}
+          >
             Cancel
           </Button>
           <Button
- variant="contained"
- disabled={!selectedYear}
- onClick={() => setViewMode("form")}
- sx={{
- background: "var(--gradient-primary)",
- 
- px: 4,
- fontWeight: 700,
- textTransform: "none",
- "&:hover": {
- opacity: 0.9,
- transform: "translateY(-1px)",
- boxShadow: "0 4px 12px rgba(0,0,0,0.1)"
- },
- "&.Mui-disabled": {
- background: "var(--bg-panel)",
- color: "var(--text-secondary)",
- opacity: 0.5
- },
- transition: "all 0.2s ease"
- }}
- >
+            variant="contained"
+            disabled={!selectedYear}
+            onClick={() => setViewMode("form")}
+            sx={{
+              background: "var(--gradient-primary)",
+
+              px: 4,
+              fontWeight: 700,
+              textTransform: "none",
+              "&:hover": {
+                opacity: 0.9,
+                transform: "translateY(-1px)",
+                boxShadow: "0 4px 12px rgba(0,0,0,0.1)"
+              },
+              "&.Mui-disabled": {
+                background: "var(--bg-panel)",
+                color: "var(--text-secondary)",
+                opacity: 0.5
+              },
+              transition: "all 0.2s ease"
+            }}
+          >
             Proceed
           </Button>
         </Box>
@@ -608,14 +608,14 @@ export default function TextbookPublication() {
             size="small"
             value={form.publicationScope}
             onChange={(e) => {
-                const val = e.target.value;
-                  setForm(prev => ({
-                    ...prev,
-                    publisher: val,
-                    publicationScope: val,
-                    customPublisher: "",
-                    currencySymbol: val === "National" ? "₹" : "$"
-                  }));
+              const val = e.target.value;
+              setForm(prev => ({
+                ...prev,
+                publisher: val,
+                publicationScope: val,
+                customPublisher: "",
+                currencySymbol: val === "National" ? "₹" : "$"
+              }));
             }}
             MenuProps={{ disableScrollLock: true, disableRestoreFocus: true }}
           >
@@ -634,11 +634,11 @@ export default function TextbookPublication() {
               placeholder="Enter ISBN to auto-fetch"
             />
             <Button
- variant="contained"
- onClick={fetchISBNData}
- disabled={!form.isbn || isbnFetching}
- sx={{ minWidth: "100px", textTransform: "none", background: "var(--color-primary)" }}
- >
+              variant="contained"
+              onClick={fetchISBNData}
+              disabled={!form.isbn || isbnFetching}
+              sx={{ minWidth: "100px", textTransform: "none", background: "var(--color-primary)" }}
+            >
               {isbnFetching ? <Loader size={20} color="inherit" /> : "Fetch"}
             </Button>
           </Box>
@@ -655,22 +655,22 @@ export default function TextbookPublication() {
             isOptionEqualToValue={(option, value) => option.name === value?.name}
             value={publishers.find(p => p.name === form.publisher) || (form.publisher === "Others" ? { name: "Others", type: form.publicationScope } : (form.publisher ? { name: form.publisher, type: form.publicationScope || "Unknown" } : null))}
             onChange={(e, newValue) => {
-                const val = newValue ? newValue.name : "";
-                setForm(p => ({ ...p, publisher: val }));
+              const val = newValue ? newValue.name : "";
+              setForm(p => ({ ...p, publisher: val }));
             }}
             freeSolo
             onInputChange={(e, newInputValue) => {
-                if (e?.type === "change") {
-                    setForm(p => ({ ...p, publisher: newInputValue }));
-                }
+              if (e?.type === "change") {
+                setForm(p => ({ ...p, publisher: newInputValue }));
+              }
             }}
             renderInput={(params) => (
-              <TextField 
-                {...params} 
-                size="small" 
-                placeholder="Select or search publisher" 
-                disabled={isbnFetchedFields.publisher} 
-                sx={isbnFetchedFields.publisher ? disabledField : {}} 
+              <TextField
+                {...params}
+                size="small"
+                placeholder="Select or search publisher"
+                disabled={isbnFetchedFields.publisher}
+                sx={isbnFetchedFields.publisher ? disabledField : {}}
               />
             )}
           />
@@ -834,9 +834,9 @@ export default function TextbookPublication() {
                             fullWidth
                             value={ca.empId}
                             onChange={(e) => {
-                            const val = e.target.value;
-                            if (/^\d*$/.test(val)) handleCoAuthorChange(ca.authorPosition, "empId", val);
-                          }}
+                              const val = e.target.value;
+                              if (/^\d*$/.test(val)) handleCoAuthorChange(ca.authorPosition, "empId", val);
+                            }}
                             placeholder="e.g. 5741"
                           />
                         </Box>
@@ -861,9 +861,9 @@ export default function TextbookPublication() {
                             fullWidth
                             value={ca.authorName}
                             onChange={(e) => {
-                            const val = e.target.value;
-                            if (!/\d/.test(val)) handleCoAuthorChange(ca.authorPosition, "authorName", val);
-                          }}
+                              const val = e.target.value;
+                              if (!/\d/.test(val)) handleCoAuthorChange(ca.authorPosition, "authorName", val);
+                            }}
                             placeholder="Full Name"
                           />
                         </Box>
@@ -874,9 +874,9 @@ export default function TextbookPublication() {
                             fullWidth
                             value={ca.affiliationName}
                             onChange={(e) => {
-                            const val = e.target.value;
-                            if (!/\d/.test(val)) handleCoAuthorChange(ca.authorPosition, "affiliationName", val);
-                          }}
+                              const val = e.target.value;
+                              if (!/\d/.test(val)) handleCoAuthorChange(ca.authorPosition, "affiliationName", val);
+                            }}
                             placeholder="College / Organization"
                           />
                         </Box>
@@ -946,24 +946,24 @@ export default function TextbookPublication() {
 
       <Box sx={{ display: "flex", gap: 2, justifyContent: "center", mt: 4 }}>
         <Button
- variant="outlined"
- onClick={() => setViewMode("list")}
- sx={{
- px: 4,
- height: "44px",
- 
- textTransform: "none",
- fontWeight: 600,
- color: "var(--text-primary)",
- borderColor: "var(--border-color)",
- "&:hover": {
- borderColor: "#ef4444",
- color: "#ef4444",
- background: "rgba(239, 68, 68, 0.05)"
- },
- transition: "all 0.3s ease"
- }}
- >
+          variant="outlined"
+          onClick={() => setViewMode("list")}
+          sx={{
+            px: 4,
+            height: "44px",
+
+            textTransform: "none",
+            fontWeight: 600,
+            color: "var(--text-primary)",
+            borderColor: "var(--border-color)",
+            "&:hover": {
+              borderColor: "#ef4444",
+              color: "#ef4444",
+              background: "rgba(239, 68, 68, 0.05)"
+            },
+            transition: "all 0.3s ease"
+          }}
+        >
           Cancel
         </Button>
         <SubmitBtn onClick={handleSubmit} loading={loading} />
@@ -1039,8 +1039,8 @@ export default function TextbookPublication() {
     })();
 
     return (
-      <Dialog 
-        open={!!selectedPubDetails} 
+      <Dialog
+        open={!!selectedPubDetails}
         onClose={handleCloseDetails}
         maxWidth="md"
         fullWidth
@@ -1071,28 +1071,28 @@ export default function TextbookPublication() {
         <DialogContent sx={{ p: 3, mt: 1 }}>
           <Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)", mb: 1 }}>{data.title}</Typography>
           <Typography variant="body2" sx={{ color: "var(--text-secondary)", mb: 3, fontWeight: 600 }}>Publisher: {data.publisher}</Typography>
-          
+
           <Box sx={{ display: "grid", gridTemplateColumns: "repeat(12, 1fr)", gap: 2 }}>
             {/* Status and dates */}
             <Box sx={{ gridColumn: { xs: "span 12", sm: "span 3" }, display: "flex", flexDirection: "column" }}><LabelValueDetails label="Academic Year" value={data.academicYear?.year || "N/A"} /></Box>
             <Box sx={{ gridColumn: { xs: "span 12", sm: "span 3" }, display: "flex", flexDirection: "column" }}><LabelValueDetails label="ISBN" value={data.isbn} /></Box>
             <Box sx={{ gridColumn: { xs: "span 12", sm: "span 3" }, display: "flex", flexDirection: "column" }}><LabelValueDetails label="Role" value={data.visibilityRole || "Applicant"} /></Box>
             <Box sx={{ gridColumn: { xs: "span 12", sm: "span 3" }, display: "flex", flexDirection: "column" }}>
-              <LabelValueDetails 
-                label="Status" 
+              <LabelValueDetails
+                label="Status"
                 chip={
-                  <Chip 
-                    label={data.status} 
-                    size="small" 
-                    sx={{ 
-                      bgcolor: `${statusColor}15`, 
-                      color: statusColor, 
-                      fontWeight: 800, 
+                  <Chip
+                    label={data.status}
+                    size="small"
+                    sx={{
+                      bgcolor: `${statusColor}15`,
+                      color: statusColor,
+                      fontWeight: 800,
                       border: `1px solid ${statusColor}44`,
-                      borderRadius: "6px" 
-                    }} 
+                      borderRadius: "6px"
+                    }}
                   />
-                } 
+                }
               />
             </Box>
 
@@ -1108,16 +1108,16 @@ export default function TextbookPublication() {
 
             {/* Incentive details */}
             <Box sx={{ gridColumn: { xs: "span 12", sm: "span 6" }, display: "flex", flexDirection: "column" }}>
-              <LabelValueDetails 
-                label="Incentive details" 
-                value={data.applyIncentive === "Yes" ? "Yes" : "No"} 
+              <LabelValueDetails
+                label="Incentive details"
+                value={data.applyIncentive === "Yes" ? "Yes" : "No"}
               />
             </Box>
             {data.status === "Approved" && data.approvedAmount && (
               <Box sx={{ gridColumn: { xs: "span 12", sm: "span 6" }, display: "flex", flexDirection: "column" }}>
-                <LabelValueDetails 
-                  label="Approved Incentive" 
-                  value={`₹${data.approvedAmount}`} 
+                <LabelValueDetails
+                  label="Approved Incentive"
+                  value={`₹${data.approvedAmount}`}
                   chip={<Chip label={`₹${data.approvedAmount}`} size="small" sx={{ bgcolor: "rgba(76, 175, 80, 0.1)", color: "#4caf50", fontWeight: 800 }} />}
                 />
               </Box>
@@ -1125,7 +1125,7 @@ export default function TextbookPublication() {
 
             {/* Appraisal Claimant Selector */}
             <Box sx={{ gridColumn: { xs: "span 12", sm: "span 6" }, display: "flex", flexDirection: "column" }}>
-              <LabelValueDetails 
+              <LabelValueDetails
                 label="Appraisal Claimant"
                 chip={
                   (() => {
@@ -1150,7 +1150,7 @@ export default function TextbookPublication() {
                       );
                     }
 
-                    const currentClaimantObj = uniqueClaimants.find(c => 
+                    const currentClaimantObj = uniqueClaimants.find(c =>
                       (c.institutionId && c.institutionId === (data.appraisalClaimant?.institutionId || data.appraisalClaimant || "").toString()) ||
                       (c._id && c._id.toString() === (data.appraisalClaimant?._id || data.appraisalClaimant || "").toString())
                     );

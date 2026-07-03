@@ -11,7 +11,7 @@ import {
 } from "../../components/faculty/PublicationFormFields";
 import {
   labelStyle, disabledField, MONTHS, YEARS
-} from "../../components/faculty/publicationConstants";import API from "../../api/axios";
+} from "../../components/faculty/publicationConstants"; import API from "../../api/axios";
 
 const ELSEVIER_API_KEY = "0436d4fe788649172354545ceca9e650";
 
@@ -94,15 +94,15 @@ export default function BookChapterPublication() {
   // ── DOI → Scopus fetch (same approach as ConferencePublication) ──────────────
   const parseDateStr = (str) => {
     if (!str) return { year: "", month: "" };
-    const monthNames = ["January","February","March","April","May","June",
-                        "July","August","September","October","November","December"];
-    const shortNames = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+    const monthNames = ["January", "February", "March", "April", "May", "June",
+      "July", "August", "September", "October", "November", "December"];
+    const shortNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
     let year = "", month = "";
     const yMatch = str.match(/\b(19|20)\d{2}\b/);
     if (yMatch) year = yMatch[0];
     for (let i = 0; i < 12; i++) {
       if (str.toLowerCase().includes(monthNames[i].toLowerCase()) ||
-          str.toLowerCase().includes(shortNames[i].toLowerCase())) {
+        str.toLowerCase().includes(shortNames[i].toLowerCase())) {
         month = monthNames[i]; break;
       }
     }
@@ -142,9 +142,9 @@ export default function BookChapterPublication() {
       }
 
       // Extract all fields from Scopus entry
-      const chapterTitle  = entry["dc:title"] || "";
-      const publisher     = entry["prism:publisher"] || entry["dc:publisher"] || "";
-      const dateRaw       = entry["prism:coverDisplayDate"] || entry["prism:coverDate"] || "";
+      const chapterTitle = entry["dc:title"] || "";
+      const publisher = entry["prism:publisher"] || entry["dc:publisher"] || "";
+      const dateRaw = entry["prism:coverDisplayDate"] || entry["prism:coverDate"] || "";
       const { year, month } = parseDateStr(dateRaw);
 
       toast.success("Chapter found in Scopus! Details fetched successfully.");
@@ -155,9 +155,9 @@ export default function BookChapterPublication() {
         ...prev,
         chapterTitle: chapterTitle || prev.chapterTitle,
         // textBookName intentionally NOT set from DOI — use ISBN to fetch Book Title
-        publisher:    publisher    || prev.publisher,
-        year:         year         || prev.year,
-        month:        month        || prev.month,
+        publisher: publisher || prev.publisher,
+        year: year || prev.year,
+        month: month || prev.month,
       }));
     } catch (err) {
       toast.error("Network error connecting to Scopus. Please fill the fields manually.");
@@ -303,17 +303,17 @@ export default function BookChapterPublication() {
         if (absRes.ok) {
           const absJson = await absRes.json();
           const coredata = absJson?.["abstracts-retrieval-response"]?.coredata || {};
-          
+
           scopusBookTitle = coredata["prism:publicationName"] || "";
           scopusPublisher = coredata["dc:publisher"] || "";
-          
+
           const coverDate = coredata["prism:coverDate"] || ""; // "YYYY-MM-DD"
           if (coverDate) {
             const parts = coverDate.split("-");
             if (parts[0]) scopusYear = parts[0];
             if (parts[1]) {
               const monthNum = parseInt(parts[1], 10);
-              const monthNames = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+              const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
               scopusMonth = monthNames[monthNum - 1] || "";
             }
           }
@@ -333,7 +333,7 @@ export default function BookChapterPublication() {
           if (!scopusYear && parts[0]) scopusYear = parts[0];
           if (!scopusMonth && parts[1]) {
             const monthNum = parseInt(parts[1], 10);
-            const monthNames = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+            const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
             scopusMonth = monthNames[monthNum - 1] || "";
           }
         }
@@ -364,8 +364,8 @@ export default function BookChapterPublication() {
               const val = dateAssertion.value;
               const yearMatch = val.match(/\b(19|20)\d{2}\b/);
               if (yearMatch) crossrefYear = yearMatch[0];
-              const monthNames = ["January","February","March","April","May","June","July","August","September","October","November","December"];
-              const shortMonths = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+              const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+              const shortMonths = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
               for (let i = 0; i < 12; i++) {
                 if (val.toLowerCase().includes(monthNames[i].toLowerCase()) || val.toLowerCase().includes(shortMonths[i].toLowerCase())) {
                   crossrefMonth = monthNames[i];
@@ -381,7 +381,7 @@ export default function BookChapterPublication() {
                 if (!crossrefYear) crossrefYear = String(dateParts[0]);
                 if (!crossrefMonth && dateParts.length > 1) {
                   const monthNum = parseInt(dateParts[1], 10);
-                  const monthNames = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+                  const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
                   crossrefMonth = monthNames[monthNum - 1] || "";
                 }
               }
@@ -603,7 +603,7 @@ export default function BookChapterPublication() {
       toast.error("Total number of authors must be at least 1");
       return;
     }
-    
+
     // Validate co-authors dynamically
     if (total > 1) {
       for (const a of form.otherAuthors) {
@@ -759,8 +759,8 @@ export default function BookChapterPublication() {
                   <TableCell sx={{ color: "var(--text-secondary)", py: 2 }}>
                     {pub.coAuthors && pub.coAuthors.length > 0
                       ? <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                          {pub.coAuthors.map(ca => ca.name).join(", ")}
-                        </Typography>
+                        {pub.coAuthors.map(ca => ca.name).join(", ")}
+                      </Typography>
                       : <Typography variant="body2" sx={{ color: "var(--text-secondary)" }}>None</Typography>}
                   </TableCell>
                   <TableCell sx={{ py: 2 }}>
@@ -832,45 +832,45 @@ export default function BookChapterPublication() {
         </Select>
         <Box sx={{ display: "flex", gap: 2, mt: 4, justifyContent: "flex-end" }}>
           <Button
- variant="outlined"
- onClick={() => setViewMode("list")}
- sx={{
- 
- textTransform: "none",
- fontWeight: 600,
- color: "var(--text-primary)",
- borderColor: "var(--border-color)",
- "&:hover": {
- borderColor: "var(--color-primary)",
- background: "rgba(0,0,0,0.02)"
- }
- }}
- >
+            variant="outlined"
+            onClick={() => setViewMode("list")}
+            sx={{
+
+              textTransform: "none",
+              fontWeight: 600,
+              color: "var(--text-primary)",
+              borderColor: "var(--border-color)",
+              "&:hover": {
+                borderColor: "var(--color-primary)",
+                background: "rgba(0,0,0,0.02)"
+              }
+            }}
+          >
             Cancel
           </Button>
           <Button
- variant="contained"
- disabled={!selectedYear}
- onClick={() => setViewMode("form")}
- sx={{
- background: "var(--gradient-primary)",
- 
- px: 4,
- fontWeight: 700,
- textTransform: "none",
- "&:hover": {
- opacity: 0.9,
- transform: "translateY(-1px)",
- boxShadow: "0 4px 12px rgba(0,0,0,0.1)"
- },
- "&.Mui-disabled": {
- background: "var(--bg-panel)",
- color: "var(--text-secondary)",
- opacity: 0.5
- },
- transition: "all 0.2s ease"
- }}
- >
+            variant="contained"
+            disabled={!selectedYear}
+            onClick={() => setViewMode("form")}
+            sx={{
+              background: "var(--gradient-primary)",
+
+              px: 4,
+              fontWeight: 700,
+              textTransform: "none",
+              "&:hover": {
+                opacity: 0.9,
+                transform: "translateY(-1px)",
+                boxShadow: "0 4px 12px rgba(0,0,0,0.1)"
+              },
+              "&.Mui-disabled": {
+                background: "var(--bg-panel)",
+                color: "var(--text-secondary)",
+                opacity: 0.5
+              },
+              transition: "all 0.2s ease"
+            }}
+          >
             Proceed
           </Button>
         </Box>
@@ -1157,24 +1157,24 @@ export default function BookChapterPublication() {
 
       <Box sx={{ display: "flex", gap: 2, justifyContent: "center", mt: 4 }}>
         <Button
- variant="outlined"
- onClick={() => setViewMode("list")}
- sx={{
- px: 4,
- height: "44px",
- 
- textTransform: "none",
- fontWeight: 600,
- color: "var(--text-primary)",
- borderColor: "var(--border-color)",
- "&:hover": {
- borderColor: "#ef4444",
- color: "#ef4444",
- background: "rgba(239, 68, 68, 0.05)"
- },
- transition: "all 0.3s ease"
- }}
- >
+          variant="outlined"
+          onClick={() => setViewMode("list")}
+          sx={{
+            px: 4,
+            height: "44px",
+
+            textTransform: "none",
+            fontWeight: 600,
+            color: "var(--text-primary)",
+            borderColor: "var(--border-color)",
+            "&:hover": {
+              borderColor: "#ef4444",
+              color: "#ef4444",
+              background: "rgba(239, 68, 68, 0.05)"
+            },
+            transition: "all 0.3s ease"
+          }}
+        >
           Cancel
         </Button>
         <SubmitBtn onClick={handleSubmit} loading={loading} />
@@ -1250,8 +1250,8 @@ export default function BookChapterPublication() {
     })();
 
     return (
-      <Dialog 
-        open={!!selectedPubDetails} 
+      <Dialog
+        open={!!selectedPubDetails}
         onClose={handleCloseDetails}
         maxWidth="md"
         fullWidth
@@ -1282,27 +1282,27 @@ export default function BookChapterPublication() {
         <DialogContent sx={{ p: 3, mt: 1 }}>
           <Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)", mb: 1 }}>{data.chapterTitle}</Typography>
           <Typography variant="body2" sx={{ color: "var(--text-secondary)", mb: 3, fontWeight: 600 }}>Text Book: {data.textBookName}</Typography>
-          
+
           <Box sx={{ display: "grid", gridTemplateColumns: "repeat(12, 1fr)", gap: 2 }}>
             <Box sx={{ gridColumn: { xs: "span 12", sm: "span 3" }, display: "flex", flexDirection: "column" }}><LabelValueDetails label="Academic Year" value={data.academicYear?.year || "N/A"} /></Box>
             <Box sx={{ gridColumn: { xs: "span 12", sm: "span 3" }, display: "flex", flexDirection: "column" }}><LabelValueDetails label="Publisher" value={data.publisher} /></Box>
             <Box sx={{ gridColumn: { xs: "span 12", sm: "span 3" }, display: "flex", flexDirection: "column" }}><LabelValueDetails label="Role" value={data.visibilityRole || "Applicant"} /></Box>
             <Box sx={{ gridColumn: { xs: "span 12", sm: "span 3" }, display: "flex", flexDirection: "column" }}>
-              <LabelValueDetails 
-                label="Status" 
+              <LabelValueDetails
+                label="Status"
                 chip={
-                  <Chip 
-                    label={data.status} 
-                    size="small" 
-                    sx={{ 
-                      bgcolor: `${statusColor}15`, 
-                      color: statusColor, 
-                      fontWeight: 800, 
+                  <Chip
+                    label={data.status}
+                    size="small"
+                    sx={{
+                      bgcolor: `${statusColor}15`,
+                      color: statusColor,
+                      fontWeight: 800,
                       border: `1px solid ${statusColor}44`,
-                      borderRadius: "6px" 
-                    }} 
+                      borderRadius: "6px"
+                    }}
                   />
-                } 
+                }
               />
             </Box>
 
@@ -1317,9 +1317,9 @@ export default function BookChapterPublication() {
 
             {data.status === "Approved" && data.approvedAmount && (
               <Box sx={{ gridColumn: { xs: "span 12", sm: "span 6" }, display: "flex", flexDirection: "column" }}>
-                <LabelValueDetails 
-                  label="Approved Incentive" 
-                  value={`₹${data.approvedAmount}`} 
+                <LabelValueDetails
+                  label="Approved Incentive"
+                  value={`₹${data.approvedAmount}`}
                   chip={<Chip label={`₹${data.approvedAmount}`} size="small" sx={{ bgcolor: "rgba(76, 175, 80, 0.1)", color: "#4caf50", fontWeight: 800 }} />}
                 />
               </Box>
@@ -1327,7 +1327,7 @@ export default function BookChapterPublication() {
 
             {/* Appraisal Claimant Selector */}
             <Box sx={{ gridColumn: { xs: "span 12", sm: "span 6" }, display: "flex", flexDirection: "column" }}>
-              <LabelValueDetails 
+              <LabelValueDetails
                 label="Appraisal Claimant"
                 chip={
                   (() => {
@@ -1352,7 +1352,7 @@ export default function BookChapterPublication() {
                       );
                     }
 
-                    const currentClaimantObj = uniqueClaimants.find(c => 
+                    const currentClaimantObj = uniqueClaimants.find(c =>
                       (c.institutionId && c.institutionId === (data.appraisalClaimant?.institutionId || data.appraisalClaimant || "").toString()) ||
                       (c._id && c._id.toString() === (data.appraisalClaimant?._id || data.appraisalClaimant || "").toString())
                     );
@@ -1397,14 +1397,14 @@ export default function BookChapterPublication() {
                         return (
                           <TableRow key={idx}>
                             <TableCell>
-                                <Box sx={{
-                                    display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                                    width: 30, height: 30, borderRadius: '50%',
-                                    bgcolor: 'rgba(190, 147, 55, 0.12)', border: '1.5px solid var(--color-primary)',
-                                    color: 'var(--color-primary)', fontWeight: 900, fontSize: '0.85rem'
-                                }}>
-                                    {pos}
-                                </Box>
+                              <Box sx={{
+                                display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                                width: 30, height: 30, borderRadius: '50%',
+                                bgcolor: 'rgba(190, 147, 55, 0.12)', border: '1.5px solid var(--color-primary)',
+                                color: 'var(--color-primary)', fontWeight: 900, fontSize: '0.85rem'
+                              }}>
+                                {pos}
+                              </Box>
                             </TableCell>
                             <TableCell sx={{ fontWeight: 700, color: "var(--text-primary)" }}>{author.name}</TableCell>
                             <TableCell sx={{ color: "var(--text-secondary)" }}>{author.affiliation}</TableCell>
