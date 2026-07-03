@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Box, Typography, TextField, MenuItem, Select, FormControl, InputLabel, Button, Alert, IconButton, Dialog, DialogContent, DialogTitle } from "@mui/material";
+import { Box, Typography, TextField, MenuItem, Select, FormControl, InputLabel, Button, Alert, IconButton, Dialog, DialogContent, DialogTitle, Tooltip } from "@mui/material";
 import { CloudUpload, Delete, Visibility, Close } from "@mui/icons-material";
 import { useAuth } from "../../context/AuthContext";
 import { toast } from "sonner";
@@ -24,11 +24,11 @@ export function FacultyInfoRow() {
   return (
     <Box sx={{ mb: 2 }}>
       {emptyFields.length > 0 && (
-        <Alert 
-          severity="warning" 
-          sx={{ 
-            mb: 2, 
-            borderRadius: "16px", 
+        <Alert
+          severity="warning"
+          sx={{
+            mb: 2,
+            borderRadius: "16px",
             fontWeight: 600,
             background: "rgba(245, 158, 11, 0.1)",
             color: "#f59e0b",
@@ -56,13 +56,13 @@ import { labelStyle, disabledField, MONTHS, YEARS } from "./publicationConstants
 // NoteBox
 export function NoteBox() {
   return (
-    <Box sx={{ 
-      background: "rgba(245, 158, 11, 0.05)", 
-      border: "1px dashed rgba(245, 158, 11, 0.4)", 
-      borderRadius: "16px", 
-      p: 2, 
-      fontSize: 12, 
-      color: "var(--text-secondary)", 
+    <Box sx={{
+      background: "rgba(245, 158, 11, 0.05)",
+      border: "1px dashed rgba(245, 158, 11, 0.4)",
+      borderRadius: "16px",
+      p: 2,
+      fontSize: 12,
+      color: "var(--text-secondary)",
       my: 3,
       display: "flex",
       flexDirection: "column",
@@ -109,7 +109,7 @@ export function FileField({ label, name, onChange, error, onError, accept = ".pn
         const msg = `${label} is too large. Max size is ${sizeStr}.`;
         if (onError) onError(msg);
         else toast.error(msg);
-        
+
         e.target.value = ""; // Reset input
         setFileName("");
         setPreview(null);
@@ -137,48 +137,51 @@ export function FileField({ label, name, onChange, error, onError, accept = ".pn
   };
 
   return (
-    <Box>
+    <Box sx={{ minWidth: 0 }}>
       <Typography sx={{ ...labelStyle, color: error ? "#ef4444" : "var(--color-primary)" }}>{label}</Typography>
       <Box sx={{
         display: "flex",
         alignItems: "center",
-        gap: 2.5,
-        px: 2,
-        minHeight: "48px",
-        py: 0.5,
+        gap: 3,
+        px: 3,
+        minHeight: "56px",
+        py: 1,
         border: "1px solid",
         borderColor: error ? "#ef4444" : "var(--border-color)",
         borderRadius: "12px",
         background: "var(--bg-glass)",
         "&:hover": { borderColor: error ? "#ef4444" : "var(--color-primary)" },
         transition: "all 0.3s ease",
-        position: "relative"
+        position: "relative",
+        minWidth: 0
       }}>
         <Button
- component="label"
- variant="contained"
- sx={{
- background: "var(--gradient-primary)",
- 
- textTransform: "none",
- fontWeight: 700,
- fontSize: 11,
- px: 2.5,
- height: "32px",
- boxShadow: "none",
- whiteSpace: "nowrap",
- flexShrink: 0,
- "&:hover": { opacity: 0.9, transform: "translateY(-1px)" },
- transition: "all 0.2s ease"
- }}
- >
+          component="label"
+          variant="contained"
+          sx={{
+            background: "var(--gradient-primary)",
+
+            textTransform: "none",
+            fontWeight: 700,
+            fontSize: 11,
+            px: 2.5,
+            height: "32px",
+            boxShadow: "none",
+            whiteSpace: "nowrap",
+            flexShrink: 0,
+            "&:hover": { opacity: 0.9, transform: "translateY(-1px)" },
+            transition: "all 0.2s ease"
+          }}
+        >
           Choose file
           <input type="file" hidden accept={accept} name={name} onChange={handleFileChange} ref={fileInputRef} />
         </Button>
 
-        <Typography sx={{ fontSize: 14, color: "var(--text-secondary)", fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flexGrow: 1, minWidth: 0 }}>
-          {fileName || "No file chosen"}
-        </Typography>
+        <Tooltip title={fileName || ""} disableHoverListener={!fileName}>
+          <Typography sx={{ fontSize: 14, color: "var(--text-secondary)", fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flexGrow: 1, minWidth: 0 }}>
+            {fileName || "No file chosen"}
+          </Typography>
+        </Tooltip>
 
         {fileName && (
           <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
@@ -251,26 +254,26 @@ export function FileField({ label, name, onChange, error, onError, accept = ".pn
 export function SubmitBtn({ onClick, loading }) {
   return (
     <Button
- variant="contained"
- onClick={onClick}
- disabled={loading}
- sx={{
- background: "var(--gradient-primary)",
- 
- px: 6,
- height: "44px", // Fixed height for alignment
- textTransform: "none",
- fontWeight: 800,
- fontSize: 15,
- boxShadow: "0 8px 20px rgba(0, 0, 0, 0.1)",
- "&:hover": {
- background: "var(--gradient-primary)",
- opacity: 0.9,
- transform: "translateY(-2px)",
- boxShadow: "0 10px 25px rgba(0, 0, 0, 0.15)"
- },
- transition: "all 0.3s ease"
- }}>
+      variant="contained"
+      onClick={onClick}
+      disabled={loading}
+      sx={{
+        background: "var(--gradient-primary)",
+
+        px: 6,
+        height: "44px", // Fixed height for alignment
+        textTransform: "none",
+        fontWeight: 800,
+        fontSize: 15,
+        boxShadow: "0 8px 20px rgba(0, 0, 0, 0.1)",
+        "&:hover": {
+          background: "var(--gradient-primary)",
+          opacity: 0.9,
+          transform: "translateY(-2px)",
+          boxShadow: "0 10px 25px rgba(0, 0, 0, 0.15)"
+        },
+        transition: "all 0.3s ease"
+      }}>
       {loading ? "Submitting..." : "Submit"}
     </Button>
   );
@@ -288,20 +291,20 @@ export function FormCard({ title, children }) {
 
 // Two-column grid box
 export function Grid2({ children, sx }) {
-  return <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, gap: 2, ...sx }}>{children}</Box>;
+  return <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "minmax(0, 1fr) minmax(0, 1fr)" }, gap: 2, ...sx }}>{children}</Box>;
 }
 
 // Section label
 export function SubLabel({ text }) {
-  return <Typography sx={{ 
-    fontSize: 13, 
-    fontWeight: 800, 
-    color: "var(--text-primary)", 
-    background: "var(--bg-accent-1)", 
-    px: 2, 
-    py: 1.2, 
-    borderRadius: "12px", 
-    my: 3, 
+  return <Typography sx={{
+    fontSize: 13,
+    fontWeight: 800,
+    color: "var(--text-primary)",
+    background: "var(--bg-accent-1)",
+    px: 2,
+    py: 1.2,
+    borderRadius: "12px",
+    my: 3,
     borderLeft: "5px solid var(--color-primary)",
     textTransform: "uppercase",
     letterSpacing: "0.03em"
