@@ -9,13 +9,18 @@ import {
   Check,
   Domain,
   School,
-  Person
+  Person,
+  Notifications,
+  Search
 } from "@mui/icons-material";
+import { InputBase } from "@mui/material";
 import { useAuth } from "../../context/AuthContext";
 import { useNavigate, useLocation } from "react-router-dom";
 import ThemeToggle from "../common/Themetoggle";
+import HeaderSearch from "../common/HeaderSearch";
 import logoLightTheme from "../../assets/Logo_Light_theme.svg";
 import logoDarkTheme from "../../assets/Logo_Dark_theme.svg";
+import universityLogoGold from "../../assets/Aditya University Gold Logo.png";
 
 const capitalizeRole = (role) => {
   if (!role) return "";
@@ -91,7 +96,7 @@ const Header = ({ isSidebarCollapsed }) => {
       sx={{
         position: "fixed",
         top: 0,
-        left: { xs: 0, md: isSidebarCollapsed ? 85 : 270 },
+        left: 0,
         right: 0,
         zIndex: 1100,
         display: "flex",
@@ -102,27 +107,40 @@ const Header = ({ isSidebarCollapsed }) => {
         pr: { xs: 1.5, md: 3 },
         py: { xs: 1.2, md: 1.2 },
         transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-        background: "var(--bg-paper)",
-        boxShadow: "0 2px 10px rgba(0,0,0,0.05)",
-        borderBottom: "1px solid var(--border-color)",
+        background: "#0D233B",
+        boxShadow: "0 2px 10px rgba(0,0,0,0.1)",
+        borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
       }}
     >
-      {/* LEFT SECTION: Mobile logo (mobile only) */}
-      <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-        {/* MOBILE ONLY LOGO: dynamic based on theme */}
+      {/* LEFT SECTION: Logo */}
+      <Box sx={{ display: "flex", alignItems: "center", flex: 1, minWidth: 0 }}>
+        {/* LOGO: Use short logo on mobile, long logo on desktop */}
         <Box
           sx={{
-            display: { xs: "flex", md: "none" },
+            display: "flex",
             alignItems: "center",
-            height: { xs: 45, sm: 52 },
-            ml: -1.2, // Shift slightly left to sit perfectly flush against the edge
+            height: { xs: 45, md: 52 },
           }}
         >
+          {/* Mobile Logo (Short) */}
           <Box
             component="img"
-            src={isDarkMode ? logoDarkTheme : logoLightTheme}
+            src={logoDarkTheme}
             alt="Aditya University Logo"
             sx={{
+              display: { xs: "block", md: "none" },
+              height: "100%",
+              width: "auto",
+              objectFit: "contain",
+            }}
+          />
+          {/* Desktop Logo (Long) */}
+          <Box
+            component="img"
+            src={universityLogoGold}
+            alt="Aditya University Logo"
+            sx={{
+              display: { xs: "none", md: "block" },
               height: "100%",
               width: "auto",
               objectFit: "contain",
@@ -131,8 +149,17 @@ const Header = ({ isSidebarCollapsed }) => {
         </Box>
       </Box>
 
-      {/* RIGHT SECTION: Unified Profile & Role Pill */}
-      <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+      {/* CENTER SECTION: Search Bar */}
+      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", flex: 1 }}>
+        <HeaderSearch activeRole={activeRole} />
+      </Box>
+
+      {/* RIGHT SECTION: Notifications & Profile Pill */}
+      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 2, flex: 1 }}>
+        {/* Notification Bell */}
+        <IconButton sx={{ color: "#fff" }}>
+          <Notifications />
+        </IconButton>
 
         <Box
           onClick={handleProfileClick}
@@ -185,10 +212,10 @@ const Header = ({ isSidebarCollapsed }) => {
           >
             <Box sx={{ display: "flex", flexDirection: "column", alignItems: "flex-start" }}>
               <Typography sx={{ fontSize: "0.85rem", fontWeight: 700, color: "var(--text-primary)", lineHeight: 1, mb: 0.2 }}>
-                {capitalizeRole(activeRole) || "User"}
+                {user?.name || "System User"}
               </Typography>
               <Typography sx={{ fontSize: "0.7rem", fontWeight: 500, color: "var(--text-secondary)", lineHeight: 1 }}>
-                {user?.name || "System User"}
+                Role: {capitalizeRole(activeRole) || "User"} {user?.designation ? `| ${user.designation}` : ""}
               </Typography>
             </Box>
             <KeyboardArrowDown
@@ -256,17 +283,7 @@ const Header = ({ isSidebarCollapsed }) => {
             }
           }}
         >
-          {/* User Info Header */}
-          <Box sx={{ px: 3.2, py: 1.8, mx: 1.5, mb: 1.5, background: "linear-gradient(135deg, rgba(0, 78, 146, 0.04), rgba(0, 4, 40, 0.04))", borderRadius: "12px" }}>
-            <Typography sx={{ fontSize: "0.85rem", fontWeight: 800, color: "#004e92" }}>
-              {user?.name || "System User"}
-            </Typography>
-            <Typography sx={{ fontSize: "0.7rem", color: "#64748b", fontWeight: 500, mt: 0.5 }}>
-              {user?.email || "user@example.com"}
-            </Typography>
-          </Box>
-
-          <Box sx={{ px: 2, pb: 1 }}>
+          <Box sx={{ px: 2, pt: 1, pb: 1 }}>
             <Typography sx={{ fontSize: "0.65rem", fontWeight: 800, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "1.2px" }}>
               Switch Role
             </Typography>

@@ -235,7 +235,7 @@ const Sidebar = ({ mobileOpen, onDrawerToggle, isCollapsed, onToggleSidebar }) =
         flexDirection: "column",
         background: "var(--bg-paper)",
         color: "var(--text-primary)",
-        p: isCollapsed ? 1.5 : 2.5,
+        p: isCollapsed ? 1 : 2.5,
         position: "relative",
         overflow: "visible",
         borderRight: "1px solid var(--border-color)",
@@ -292,30 +292,12 @@ const Sidebar = ({ mobileOpen, onDrawerToggle, isCollapsed, onToggleSidebar }) =
         </svg>
       </IconButton>
 
-      {/* Sidebar Header with Brand */}
+      {/* Sidebar Header spacing (removed logo since it's in main header) */}
       <Box sx={{
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        mb: 4,
+        mb: 2,
         mt: 1,
-        height: 65,
         transition: "all 0.3s ease",
-      }}>
-        {!isCollapsed ? (
-          <Box
-            component="img"
-            src={universityLogoGold}
-            sx={{ height: 65, width: "auto", objectFit: "contain" }}
-          />
-        ) : (
-          <Box
-            component="img"
-            src={universityShortLogoGold}
-            sx={{ height: 60, width: "auto", objectFit: "contain" }}
-          />
-        )}
-      </Box>
+      }} />
 
       {/* Role Badge Section */}
       <Box sx={{ mb: 4, display: "flex", flexDirection: "column", alignItems: "center", gap: 1.5 }}>
@@ -395,10 +377,15 @@ const Sidebar = ({ mobileOpen, onDrawerToggle, isCollapsed, onToggleSidebar }) =
                       disableRipple
                       sx={{
                         borderRadius: "12px",
-                        mb: 0.8,
-                        mx: 0,
-                        pl: isCollapsed ? 1.5 : 1.2,
-                        justifyContent: isCollapsed ? "center" : "flex-start",
+                        flexDirection: isCollapsed ? "column" : "row",
+                        borderRadius: isCollapsed ? "16px" : "12px",
+                        mb: isCollapsed ? 1.5 : 0.8,
+                        mx: "auto",
+                        width: isCollapsed ? "100%" : "auto",
+                        aspectRatio: isCollapsed ? "1/1" : "auto",
+                        height: "auto",
+                        p: isCollapsed ? 1 : 1.2,
+                        justifyContent: "center",
                         position: 'relative',
                         transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
                         overflow: "hidden",
@@ -409,7 +396,7 @@ const Sidebar = ({ mobileOpen, onDrawerToggle, isCollapsed, onToggleSidebar }) =
                         }
                       }}
                     >
-                      {(active === item.text || isParentActive) && (
+                      {!isCollapsed && (active === item.text || isParentActive) && (
                         <Box
                           sx={{
                             position: "absolute",
@@ -423,7 +410,7 @@ const Sidebar = ({ mobileOpen, onDrawerToggle, isCollapsed, onToggleSidebar }) =
                           }}
                         />
                       )}
-                      <ListItemIcon sx={{ minWidth: isCollapsed ? 0 : 42 }}>
+                      <ListItemIcon sx={{ minWidth: 0, mb: isCollapsed ? 0.5 : 0, mr: isCollapsed ? 0 : 2, justifyContent: 'center' }}>
                         <Box sx={{
                           width: 32,
                           height: 32,
@@ -439,7 +426,7 @@ const Sidebar = ({ mobileOpen, onDrawerToggle, isCollapsed, onToggleSidebar }) =
                           {React.cloneElement(item.icon, { sx: { fontSize: 18 } })}
                         </Box>
                       </ListItemIcon>
-                      {!isCollapsed && (
+                      {!isCollapsed ? (
                         <>
                           <ListItemText
                             primary={
@@ -454,15 +441,29 @@ const Sidebar = ({ mobileOpen, onDrawerToggle, isCollapsed, onToggleSidebar }) =
                           />
                           {openStates[item.text] ? <ExpandLess sx={{ color: "var(--color-primary)", fontSize: 18 }} /> : <ExpandMore sx={{ color: "#94a3b8", fontSize: 18 }} />}
                         </>
+                      ) : (
+                        <ListItemText
+                          sx={{ m: 0, width: "100%", overflow: "hidden" }}
+                          primary={
+                            <Typography sx={{
+                              fontSize: "0.6rem",
+                              fontWeight: (active === item.text || isParentActive) ? 700 : 500,
+                              color: (active === item.text || isParentActive) ? "var(--color-primary)" : "var(--text-secondary)",
+                              textAlign: "center",
+                              lineHeight: 1.1,
+                              whiteSpace: "nowrap",
+                              textOverflow: "ellipsis",
+                              overflow: "hidden"
+                            }}>
+                              {item.text}
+                            </Typography>
+                          }
+                        />
                       )}
                     </ListItemButton>
                   );
 
-                  return isCollapsed ? (
-                    <Tooltip title={item.text} placement="right" arrow key={item.text}>
-                      {parentButton}
-                    </Tooltip>
-                  ) : parentButton;
+                  return parentButton;
                 })()}
                 {!isCollapsed && (
                   <Collapse in={!!openStates[item.text]} timeout="auto" unmountOnExit sx={{ overflow: 'hidden' }}>
@@ -644,6 +645,8 @@ const Sidebar = ({ mobileOpen, onDrawerToggle, isCollapsed, onToggleSidebar }) =
             background: "var(--bg-paper)",
             overflow: "visible",
             transition: "width 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+            top: { xs: "70px", md: "88px" },
+            height: { xs: "calc(100% - 70px)", md: "calc(100% - 88px)" }
           },
         }}
         open
@@ -655,17 +658,23 @@ const Sidebar = ({ mobileOpen, onDrawerToggle, isCollapsed, onToggleSidebar }) =
 };
 
 const Item = ({ icon, text, active, onClick, nested, isCollapsed }) => {
-  const button = (
+  return (
     <ListItemButton
       onClick={onClick}
       disableRipple
       sx={{
-        pl: nested ? (isCollapsed ? 1.5 : 5) : 1.2,
-        justifyContent: isCollapsed ? "center" : "flex-start",
+        pl: isCollapsed ? 0 : (nested ? 5 : 1.2),
+        justifyContent: "center",
+        flexDirection: isCollapsed ? "column" : "row",
         position: "relative",
-        borderRadius: "12px",
-        mb: 0.8,
-        mx: 0,
+        borderRadius: isCollapsed ? "16px" : "12px",
+        mb: isCollapsed ? 1.5 : 0.8,
+        mx: "auto",
+        width: isCollapsed ? "100%" : "auto",
+        aspectRatio: isCollapsed ? "1/1" : "auto",
+        height: "auto",
+        p: isCollapsed ? 1 : undefined,
+        py: isCollapsed ? undefined : 0.8,
         transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
         overflow: "hidden",
         background: active === text ? "var(--bg-accent-4)" : "transparent",
@@ -675,7 +684,7 @@ const Item = ({ icon, text, active, onClick, nested, isCollapsed }) => {
         },
       }}
     >
-      {active === text && (
+      {!isCollapsed && active === text && (
         <Box
           sx={{
             position: "absolute",
@@ -690,7 +699,7 @@ const Item = ({ icon, text, active, onClick, nested, isCollapsed }) => {
         />
       )}
       {icon && (
-        <ListItemIcon sx={{ minWidth: isCollapsed ? 0 : 42 }}>
+        <ListItemIcon sx={{ minWidth: 0, mb: isCollapsed ? 0.5 : 0, mr: isCollapsed ? 0 : 2, justifyContent: 'center' }}>
           <Box sx={{
             width: 32,
             height: 32,
@@ -706,31 +715,27 @@ const Item = ({ icon, text, active, onClick, nested, isCollapsed }) => {
           </Box>
         </ListItemIcon>
       )}
-      {!isCollapsed && (
-        <ListItemText
-          primary={
-            <Typography sx={{
-              fontSize: "0.875rem",
-              fontWeight: active === text ? 700 : 500,
-              color: active === text ? "var(--color-primary)" : "var(--text-secondary)",
-              transition: 'all 0.2s ease'
-            }}>
-              {text}
-            </Typography>
-          }
-        />
-      )}
+      
+      <ListItemText
+        sx={{ m: 0, width: "100%", overflow: "hidden" }}
+        primary={
+          <Typography sx={{
+            fontSize: isCollapsed ? "0.6rem" : "0.875rem",
+            fontWeight: active === text ? 700 : 500,
+            color: active === text ? "var(--color-primary)" : "var(--text-secondary)",
+            transition: 'all 0.2s ease',
+            textAlign: isCollapsed ? "center" : "left",
+            lineHeight: isCollapsed ? 1.1 : 1,
+            whiteSpace: isCollapsed ? "nowrap" : "normal",
+            textOverflow: isCollapsed ? "ellipsis" : "clip",
+            overflow: isCollapsed ? "hidden" : "visible"
+          }}>
+            {text}
+          </Typography>
+        }
+      />
     </ListItemButton>
   );
-
-  if (isCollapsed) {
-    return (
-      <Tooltip title={text} placement="right" arrow>
-        {button}
-      </Tooltip>
-    );
-  }
-  return button;
 };
 
 export default Sidebar;

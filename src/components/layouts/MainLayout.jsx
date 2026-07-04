@@ -12,7 +12,8 @@ const MainLayout = ({ children }) => {
   const { user } = useAuth();
   const location = useLocation();
   const [isSidebarCollapsed, setIsSidebarCollapsed] = React.useState(() => {
-    return localStorage.getItem("sidebar-collapsed") === "true";
+    const stored = localStorage.getItem("sidebar-collapsed");
+    return stored !== null ? stored === "true" : true;
   });
 
   const handleToggleSidebar = () => {
