@@ -18,6 +18,7 @@ import { useAuth } from "../../context/AuthContext";
 import { useNavigate, useLocation } from "react-router-dom";
 import ThemeToggle from "../common/Themetoggle";
 import HeaderSearch from "../common/HeaderSearch";
+import NotificationBell from "../common/NotificationBell";
 import logoLightTheme from "../../assets/Logo_Light_theme.svg";
 import logoDarkTheme from "../../assets/Logo_Dark_theme.svg";
 import universityLogoGold from "../../assets/Aditya University Gold Logo.png";
@@ -156,10 +157,7 @@ const Header = ({ isSidebarCollapsed }) => {
 
       {/* RIGHT SECTION: Notifications & Profile Pill */}
       <Box sx={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 2, flex: 1 }}>
-        {/* Notification Bell */}
-        <IconButton sx={{ color: "#fff" }}>
-          <Notifications />
-        </IconButton>
+        <NotificationBell />
 
         <Box
           onClick={handleProfileClick}

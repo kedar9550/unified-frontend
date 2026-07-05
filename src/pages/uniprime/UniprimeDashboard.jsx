@@ -1034,7 +1034,7 @@ const roleChip = (role) => {
       bgcolor: "rgba(16, 185, 129, 0.12)",
       color: "#10B981",
     },
-    Technician: {
+    TECHNICAL_STAFF: {
       bgcolor: "rgba(124, 58, 237, 0.12)",
       color: "#7C3AED",
     },

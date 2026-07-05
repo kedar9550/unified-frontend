@@ -8,16 +8,18 @@ import theme from "./theme";
 import "./index.css";
 
 import { LoadingProvider } from "./context/LoadingContext";
-
+import { SocketProvider } from "./context/SocketContext";
 ReactDOM.createRoot(document.getElementById("root")).render(
   <LoadingProvider>
       <AuthProvider>
-        <ThemeProvider theme={theme}>
-          <CssBaseline />
-          <BrowserRouter>
-            <App />
-          </BrowserRouter>
-        </ThemeProvider>
+        <SocketProvider>
+          <ThemeProvider theme={theme}>
+            <CssBaseline />
+            <BrowserRouter>
+              <App />
+            </BrowserRouter>
+          </ThemeProvider>
+        </SocketProvider>
       </AuthProvider>
   </LoadingProvider>,
 );
