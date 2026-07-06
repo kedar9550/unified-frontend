@@ -230,7 +230,8 @@ const GenerateQR = () => {
                             <TextField
                                 fullWidth
                                 type="date"
-                                inputProps={{ min: new Date().toISOString().split('T')[0] }}
+                                inputProps={{ min: new Date().toLocaleDateString('en-CA') }}
+                                slotProps={{ htmlInput: { min: new Date().toLocaleDateString('en-CA') } }}
                                 variant="outlined"
                                 value={expiresAt}
                                 onChange={(e) => setExpiresAt(e.target.value)}
