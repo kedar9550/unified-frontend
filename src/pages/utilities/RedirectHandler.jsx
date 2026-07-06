@@ -3,7 +3,7 @@ import { useParams } from 'react-router-dom';
 import axios from '../../api/axios';
 import Loader from '../../components/common/Loader';
 import { Box, Typography } from '@mui/material';
-import ErrorOutline from '@mui/icons-material/ErrorOutline';
+import { Warning } from '@mui/icons-material';
 
 const RedirectHandler = () => {
     const { shortCode } = useParams();
@@ -35,7 +35,7 @@ const RedirectHandler = () => {
     if (error) {
         return (
             <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', flexDirection: 'column', backgroundColor: '#f8fafc', p: 3, textAlign: 'center' }}>
-                <ErrorOutline sx={{ fontSize: 64, color: '#ef4444', mb: 2 }} />
+                <Warning sx={{ fontSize: 64, color: '#ef4444', mb: 2 }} />
                 <Typography variant="h5" sx={{ color: '#0f172a', fontWeight: 'bold', mb: 1 }}>
                     Link Unavailable
                 </Typography>
