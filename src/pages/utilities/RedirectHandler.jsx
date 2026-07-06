@@ -3,7 +3,7 @@ import { useParams } from 'react-router-dom';
 import axios from '../../api/axios';
 import Loader from '../../components/common/Loader';
 import { Box, Typography } from '@mui/material';
-import { ErrorOutline } from '@mui/icons-material';
+import ErrorOutline from '@mui/icons-material/ErrorOutline';
 
 const RedirectHandler = () => {
     const { shortCode } = useParams();
