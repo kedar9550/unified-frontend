@@ -164,7 +164,7 @@ const GenerateQR = () => {
                                         <TableCell>
                                             <Box sx={{ width: 64, height: 64, backgroundColor: '#fff', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
                                                 <CustomQRCode 
-                                                    data={`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:9000'}/api/utilities/r/${link.shortCode}`} 
+                                                    data={`${window.location.origin}/r/${link.shortCode}`} 
                                                     size={60} 
                                                     colorType="solid"
                                                     solidColor="#0b5299"
@@ -263,7 +263,7 @@ const GenerateQR = () => {
                                 {selectedQr && (
                                     <CustomQRCode 
                                         ref={qrRef}
-                                        data={`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:9000'}/api/utilities/r/${selectedQr.shortCode}`} 
+                                        data={`${window.location.origin}/r/${selectedQr.shortCode}`} 
                                         size={280}
                                         colorType={qrColorStyle}
                                         solidColor={color1}

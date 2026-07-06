@@ -62,6 +62,7 @@ import ShortenUrl from "./pages/utilities/ShortenUrl";
 import GenerateQR from "./pages/utilities/GenerateQR";
 import ManageShortenUrl from "./pages/utilities/ManageShortenUrl";
 import ManageQR from "./pages/utilities/ManageQR";
+import RedirectHandler from "./pages/utilities/RedirectHandler";
 
 const PublicOnlyRoute = ({ children }) => {
   const { user } = useAuth();
@@ -184,6 +185,9 @@ function App() {
         <Route path="/utilities/generate-qr" element={<ProtectedRoute element={<GenerateQR />} />} />
         <Route path="/utilities/manage-shorten-url" element={<ProtectedRoute element={<ManageShortenUrl />} />} />
         <Route path="/utilities/manage-qr" element={<ProtectedRoute element={<ManageQR />} />} />
+        
+        {/* Public Redirect Route */}
+        <Route path="/r/:shortCode" element={<RedirectHandler />} />
 
         <Route path="/doi-test" element={<DOIFetcher />} />
         <Route path="*" element={<ProtectedRoute element={<Box p={4}><Typography variant="h4">Page Content</Typography></Box>} />} />
