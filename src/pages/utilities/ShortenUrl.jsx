@@ -52,7 +52,7 @@ const ShortenUrl = () => {
     };
 
     const handleCopy = (shortCode) => {
-        const url = `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api'}/utilities/r/${shortCode}`;
+        const url = `${import.meta.env.VITE_BACKEND_URL || 'http://localhost:9000'}/api/utilities/r/${shortCode}`;
         navigator.clipboard.writeText(url);
         toast.success('Link copied to clipboard');
     };
@@ -166,7 +166,7 @@ const ShortenUrl = () => {
                                             <Tooltip title="Open Link">
                                                 <IconButton 
                                                     component="a" 
-                                                    href={`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api'}/utilities/r/${link.shortCode}`}
+                                                    href={`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:9000'}/api/utilities/r/${link.shortCode}`}
                                                     target="_blank"
                                                     size="small" 
                                                     color="secondary"
