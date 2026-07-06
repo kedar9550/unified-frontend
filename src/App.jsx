@@ -57,7 +57,11 @@ import AppraisalSettings from "./pages/uniprime/AppraisalSettings";
 import AppraisalEvaluation from "./pages/hod/AppraisalEvaluation";
 import AppraisalResearchScoring from "./pages/research/AppraisalResearchScoring";
 
-
+// Utilities Modules
+import ShortenUrl from "./pages/utilities/ShortenUrl";
+import GenerateQR from "./pages/utilities/GenerateQR";
+import ManageShortenUrl from "./pages/utilities/ManageShortenUrl";
+import ManageQR from "./pages/utilities/ManageQR";
 
 const PublicOnlyRoute = ({ children }) => {
   const { user } = useAuth();
@@ -174,6 +178,12 @@ function App() {
         <Route path="/research-dean/author-citations" element={<ProtectedRoute element={<AuthorCitationsManagement />} />} />
         <Route path="/research-coordinator/reference-journals" element={<ProtectedRoute element={<ReferenceJournalManagement />} />} />
         <Route path="/research-coordinator/author-citations" element={<ProtectedRoute element={<AuthorCitationsManagement />} />} />
+
+        {/* Utilities Routes */}
+        <Route path="/utilities/shorten-url" element={<ProtectedRoute element={<ShortenUrl />} />} />
+        <Route path="/utilities/generate-qr" element={<ProtectedRoute element={<GenerateQR />} />} />
+        <Route path="/utilities/manage-shorten-url" element={<ProtectedRoute element={<ManageShortenUrl />} />} />
+        <Route path="/utilities/manage-qr" element={<ProtectedRoute element={<ManageQR />} />} />
 
         <Route path="/doi-test" element={<DOIFetcher />} />
         <Route path="*" element={<ProtectedRoute element={<Box p={4}><Typography variant="h4">Page Content</Typography></Box>} />} />

@@ -719,11 +719,11 @@ const RoleManagement = () => {
                         >
                             <MenuItem onClick={handleRoleOption} sx={{ py: 1.5 }}>
                                 <ListItemIcon><Security fontSize="small" color="primary" /></ListItemIcon>
-                                <ListItemText primary="Role" primaryTypographyProps={{ fontWeight: 600 }} />
+                                <ListItemText primary="Role" slotProps={{ primary: { fontWeight: 600 } }} />
                             </MenuItem>
                             <MenuItem onClick={handleUserOption} sx={{ py: 1.5 }}>
                                 <ListItemIcon><PersonAdd fontSize="small" color="secondary" /></ListItemIcon>
-                                <ListItemText primary="Employee" primaryTypographyProps={{ fontWeight: 600 }} />
+                                <ListItemText primary="Employee" slotProps={{ primary: { fontWeight: 600 } }} />
                             </MenuItem>
                         </Menu>
                     </Box>

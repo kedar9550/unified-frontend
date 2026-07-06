@@ -14,7 +14,10 @@ import {
   Assignment,
   WorkspacePremium,
   Description,
-  LibraryBooks
+  LibraryBooks,
+  Build,
+  Link,
+  QrCode
 } from "@mui/icons-material";
 import PersonIcon from '@mui/icons-material/Person';
 import React from "react";
@@ -60,6 +63,14 @@ export const ROLE_ROUTES = {
     },
     // { text: "Administration", path: "/faculty/administration", icon: <AccountBalance /> },
     { text: "Self Appraisal", path: "/faculty/appraisal", icon: <Description /> },
+    {
+      text: "Utilities",
+      icon: <Build />,
+      nested: [
+        { text: "Shorten URL", path: "/utilities/shorten-url", icon: <Link /> },
+        { text: "Generate QR Code", path: "/utilities/generate-qr", icon: <QrCode /> }
+      ]
+    },
   ],
 
   UNIPRIME: [
@@ -121,6 +132,14 @@ export const ROLE_ROUTES = {
       path: "/uniprime/discrepancies",
       icon: <Flag />
     },
+    {
+      text: "Utilities",
+      icon: <Build />,
+      nested: [
+        { text: "Manage Shorten URL", path: "/utilities/manage-shorten-url", icon: <Link /> },
+        { text: "Manage QR Code", path: "/utilities/manage-qr", icon: <QrCode /> }
+      ]
+    },
   ],
 
   // Example for a future "Department HOD" role
@@ -164,6 +183,14 @@ export const ROLE_ROUTES = {
       ]
     },
     // { text: "Proctordata", path: "/hod/protecrdataupload", icon: <People /> },
+    {
+      text: "Utilities",
+      icon: <Build />,
+      nested: [
+        { text: "Shorten URL", path: "/utilities/shorten-url", icon: <Link /> },
+        { text: "Generate QR Code", path: "/utilities/generate-qr", icon: <QrCode /> }
+      ]
+    },
   ],
 
   // Example for "Exam Section" role
@@ -180,12 +207,28 @@ export const ROLE_ROUTES = {
       ],
     },
     { text: "Discrepancies", path: "/exam-result/discrepancies", icon: <Flag /> },
+    {
+      text: "Utilities",
+      icon: <Build />,
+      nested: [
+        { text: "Shorten URL", path: "/utilities/shorten-url", icon: <Link /> },
+        { text: "Generate QR Code", path: "/utilities/generate-qr", icon: <QrCode /> }
+      ]
+    },
   ],
 
   // Example for "Research Feedback Committee"
   "RESEARCH FEEDBACK COMMITTEE": [
     { text: "Dashboard", path: "/dashboard", icon: <Dashboard /> },
     { text: "Feedback Reports", path: "/feedback-reports", icon: <Science /> },
+    {
+      text: "Utilities",
+      icon: <Build />,
+      nested: [
+        { text: "Shorten URL", path: "/utilities/shorten-url", icon: <Link /> },
+        { text: "Generate QR Code", path: "/utilities/generate-qr", icon: <QrCode /> }
+      ]
+    },
   ],
 
   // Feedback Coordinator
@@ -193,6 +236,14 @@ export const ROLE_ROUTES = {
     { text: "Dashboard", path: "/dashboard", icon: <Dashboard /> },
     { text: "Feedback Management", path: "/feedback-management", icon: <MenuBook /> },
     { text: "Discrepancies", path: "/feedback-management/discrepancies", icon: <Flag /> },
+    {
+      text: "Utilities",
+      icon: <Build />,
+      nested: [
+        { text: "Shorten URL", path: "/utilities/shorten-url", icon: <Link /> },
+        { text: "Generate QR Code", path: "/utilities/generate-qr", icon: <QrCode /> }
+      ]
+    },
   ],
 
   "RESEARCH_DEAN": [
@@ -217,7 +268,15 @@ export const ROLE_ROUTES = {
       ]
     },
     { text: "Reference Journals", path: "/research-dean/reference-journals", icon: <LibraryBooks /> },
-    { text: "Author Citations", path: "/research-dean/author-citations", icon: <Assignment /> }
+    { text: "Author Citations", path: "/research-dean/author-citations", icon: <Assignment /> },
+    {
+      text: "Utilities",
+      icon: <Build />,
+      nested: [
+        { text: "Shorten URL", path: "/utilities/shorten-url", icon: <Link /> },
+        { text: "Generate QR Code", path: "/utilities/generate-qr", icon: <QrCode /> }
+      ]
+    },
   ],
 
   "RESEARCH_COORDINATOR": [
@@ -242,6 +301,38 @@ export const ROLE_ROUTES = {
       ]
     },
     { text: "Reference Journals", path: "/research-coordinator/reference-journals", icon: <LibraryBooks /> },
-    { text: "Author Citations", path: "/research-coordinator/author-citations", icon: <Assignment /> }
+    { text: "Author Citations", path: "/research-coordinator/author-citations", icon: <Assignment /> },
+    {
+      text: "Utilities",
+      icon: <Build />,
+      nested: [
+        { text: "Shorten URL", path: "/utilities/shorten-url", icon: <Link /> },
+        { text: "Generate QR Code", path: "/utilities/generate-qr", icon: <QrCode /> }
+      ]
+    },
+  ],
+
+  STAFF: [
+    { text: "Dashboard", path: "/dashboard", icon: <Dashboard /> },
+    {
+      text: "Utilities",
+      icon: <Build />,
+      nested: [
+        { text: "Shorten URL", path: "/utilities/shorten-url", icon: <Link /> },
+        { text: "Generate QR Code", path: "/utilities/generate-qr", icon: <QrCode /> }
+      ]
+    },
+  ],
+
+  "TECHNICAL STAFF": [
+    { text: "Dashboard", path: "/dashboard", icon: <Dashboard /> },
+    {
+      text: "Utilities",
+      icon: <Build />,
+      nested: [
+        { text: "Shorten URL", path: "/utilities/shorten-url", icon: <Link /> },
+        { text: "Generate QR Code", path: "/utilities/generate-qr", icon: <QrCode /> }
+      ]
+    },
   ],
 };

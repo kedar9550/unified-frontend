@@ -143,16 +143,18 @@ const HeaderSearch = ({ activeRole }) => {
         }}
         disableAutoFocus
         disableEnforceFocus
-        PaperProps={{
-          sx: {
-            mt: 1,
-            width: '280px',
-            maxHeight: '350px',
-            background: 'var(--bg-paper)',
-            borderRadius: '12px',
-            boxShadow: '0 8px 32px rgba(0,0,0,0.15)',
-            border: '1px solid var(--border-color)',
-            overflow: 'auto',
+        slotProps={{
+          paper: {
+            sx: {
+              mt: 1,
+              width: '280px',
+              maxHeight: '350px',
+              background: 'var(--bg-paper)',
+              borderRadius: '12px',
+              boxShadow: '0 8px 32px rgba(0,0,0,0.15)',
+              border: '1px solid var(--border-color)',
+              overflow: 'auto',
+            }
           }
         }}
       >
@@ -177,8 +179,10 @@ const HeaderSearch = ({ activeRole }) => {
                 <ListItemText 
                   primary={item.text} 
                   secondary={item.parentText}
-                  primaryTypographyProps={{ sx: { fontWeight: 600, fontSize: '0.85rem', color: 'var(--text-primary)' } }}
-                  secondaryTypographyProps={{ sx: { fontSize: '0.7rem', color: 'var(--text-secondary)' } }}
+                  slotProps={{
+                    primary: { sx: { fontWeight: 600, fontSize: '0.85rem', color: 'var(--text-primary)' } },
+                    secondary: { sx: { fontSize: '0.7rem', color: 'var(--text-secondary)' } }
+                  }}
                 />
                 <ArrowForwardIos sx={{ fontSize: 12, color: 'var(--text-secondary)' }} />
               </ListItemButton>
