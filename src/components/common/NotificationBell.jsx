@@ -1,12 +1,12 @@
-import React, { useState, useEffect } from 'react';
-import { Badge, IconButton, Popover, Box, Typography, List, ListItem, ListItemText, ListItemAvatar, Avatar, Button, Divider, IconButton as MuiIconButton, CircularProgress } from '@mui/material';
-import { Notifications, DeleteOutlined, CheckCircle, InfoOutlined, WarningAmber } from '@mui/icons-material';
+import React, { useState, useEffect, forwardRef, useImperativeHandle } from 'react';
+import { Badge, IconButton, Popover, Box, Typography, List, ListItem, ListItemButton, ListItemText, ListItemAvatar, Avatar, Button, Divider, IconButton as MuiIconButton, CircularProgress, MenuItem } from '@mui/material';
+import { Notifications, DeleteOutlined, CheckCircle, InfoOutlined, WarningAmber, Close } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useSocket } from '../../context/SocketContext';
 import API from '../../api/axios';
 import { toast } from 'sonner';
 
-const NotificationBell = () => {
+const NotificationBell = forwardRef((props, ref) => {
     const [anchorEl, setAnchorEl] = useState(null);
     const [notifications, setNotifications] = useState([]);
     const [unreadCount, setUnreadCount] = useState(0);
@@ -57,6 +57,11 @@ const NotificationBell = () => {
     const handleClose = () => {
         setAnchorEl(null);
     };
+
+    useImperativeHandle(ref, () => ({
+        openMobile: (anchor) => setAnchorEl(anchor),
+        unreadCount: unreadCount
+    }));
 
     const handleNotificationClick = async (notif) => {
         // Mark as read if unread
@@ -117,7 +122,7 @@ const NotificationBell = () => {
 
     return (
         <>
-            <IconButton onClick={handleOpen} sx={{ color: "#fff" }}>
+            <IconButton onClick={handleOpen} sx={{ color: "#fff", display: { xs: "none", md: "flex" } }}>
                 <Badge badgeContent={unreadCount} color="error">
                     <Notifications />
                 </Badge>
@@ -142,11 +147,16 @@ const NotificationBell = () => {
             >
                 <Box sx={{ p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(0,0,0,0.08)' }}>
                     <Typography variant="h6" sx={{ fontSize: '1.1rem', fontWeight: 600 }}>Notifications</Typography>
-                    {unreadCount > 0 && (
-                        <Button size="small" onClick={handleMarkAllRead} sx={{ textTransform: 'none', fontSize: '0.8rem' }}>
-                            Mark all as read
-                        </Button>
-                    )}
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        {unreadCount > 0 && (
+                            <Button size="small" onClick={handleMarkAllRead} sx={{ textTransform: 'none', fontSize: '0.8rem' }}>
+                                Mark all as read
+                            </Button>
+                        )}
+                        <IconButton size="small" onClick={handleClose} sx={{ display: { xs: 'flex', md: 'none' } }}>
+                            <Close fontSize="small" />
+                        </IconButton>
+                    </Box>
                 </Box>
                 
                 {loading ? (
@@ -162,9 +172,8 @@ const NotificationBell = () => {
                     <List sx={{ p: 0 }}>
                         {notifications.map((notif) => (
                             <React.Fragment key={notif._id}>
-                                <ListItem 
+                                <ListItemButton 
                                     alignItems="flex-start" 
-                                    button 
                                     onClick={() => handleNotificationClick(notif)}
                                     sx={{ 
                                         bgcolor: notif.isRead ? 'transparent' : 'rgba(25, 118, 210, 0.04)',
@@ -197,7 +206,7 @@ const NotificationBell = () => {
                                     <MuiIconButton size="small" onClick={(e) => handleDelete(e, notif._id)} sx={{ opacity: 0.5, '&:hover': { opacity: 1, color: 'error.main' } }}>
                                         <DeleteOutlined fontSize="small" />
                                     </MuiIconButton>
-                                </ListItem>
+                                </ListItemButton>
                                 <Divider component="li" />
                             </React.Fragment>
                         ))}
@@ -206,6 +215,6 @@ const NotificationBell = () => {
             </Popover>
         </>
     );
-};
+});
 
 export default NotificationBell;

@@ -166,65 +166,55 @@ const ManageServiceMembers = () => {
 
     return (
         <Box sx={{ px: { xs: 2, md: 3 }, pb: 4 }}>
-            <Box sx={{ 
-                display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3,
-                flexDirection: { xs: 'column', md: 'row' }, gap: 2
-            }}>
-                <Box>
-                    <Typography variant="h4" sx={{ fontWeight: 700, color: 'var(--text-primary)', mb: 0.5, letterSpacing: '-0.5px' }}>
-                        Service Members
-                    </Typography>
-                    <Typography variant="body2" sx={{ color: 'var(--text-secondary)' }}>
-                        {currentServiceName} Team - View member profiles and workload
-                    </Typography>
-                </Box>
-                <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
-                    {adminServices.length > 1 && (
-                        <FormControl size="small" sx={{ minWidth: 200 }}>
-                            <InputLabel>Select Service</InputLabel>
-                            <Select
-                                value={selectedServiceId}
-                                label="Select Service"
-                                onChange={(e) => setSelectedServiceId(e.target.value)}
-                            >
-                                {adminServices.map(s => (
-                                    <MenuItem key={s._id} value={s._id}>{s.name}</MenuItem>
-                                ))}
-                            </Select>
-                        </FormControl>
-                    )}
-                    <Button 
-                        variant="contained" 
-                        startIcon={<PersonAddIcon />} 
-                        onClick={() => setOpenAddDialog(true)}
-                        sx={{ 
-                            background: '#0d47a1', 
-                            '&:hover': { background: '#1565c0' },
-                            textTransform: 'none',
-                            borderRadius: '8px',
-                            px: 3
-                        }}
-                    >
-                        Add Team Member
-                    </Button>
-                </Box>
-            </Box>
+            <PageHeader 
+                title="Service Members" 
+                subtitle={`${currentServiceName} Team - View member profiles and workload`}
+                action={
+                    <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+                        {adminServices.length > 1 && (
+                            <FormControl size="small" sx={{ minWidth: 200, bgcolor: 'background.paper' }}>
+                                <InputLabel>Select Service</InputLabel>
+                                <Select
+                                    value={selectedServiceId}
+                                    label="Select Service"
+                                    onChange={(e) => setSelectedServiceId(e.target.value)}
+                                >
+                                    {adminServices.map(s => (
+                                        <MenuItem key={s._id} value={s._id}>{s.name}</MenuItem>
+                                    ))}
+                                </Select>
+                            </FormControl>
+                        )}
+                        <Button 
+                            variant="contained" 
+                            startIcon={<PersonAddIcon />} 
+                            onClick={() => setOpenAddDialog(true)}
+                            sx={{ 
+                                background: 'var(--gradient-primary)',
+                                textTransform: 'none',
+                                borderRadius: '8px',
+                                px: 3,
+                                fontWeight: 600
+                            }}
+                        >
+                            Add Team Member
+                        </Button>
+                    </Box>
+                }
+            />
 
             {/* Top Stats Grid */}
-            <Grid container spacing={3} sx={{ mb: 4 }}>
-                <Grid item xs={12} sm={6} md={3}>
-                    <StatCard title="Total Members" value={serviceEmps.length} icon={<GroupIcon />} color="#1976d2" />
-                </Grid>
-                <Grid item xs={12} sm={6} md={3}>
-                    <StatCard title="Available" value={availableCount} icon={<AvailableIcon />} color="#2e7d32" />
-                </Grid>
-                <Grid item xs={12} sm={6} md={3}>
-                    <StatCard title="Busy" value={busyCount} icon={<BusyIcon />} color="#ed6c02" />
-                </Grid>
-                <Grid item xs={12} sm={6} md={3}>
-                    <StatCard title="Active Tickets" value={activeTicketsTotal} icon={<TicketIcon />} color="#1976d2" />
-                </Grid>
-            </Grid>
+            <Box sx={{ 
+                display: 'grid', 
+                gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(4, 1fr)' }, 
+                gap: 3, 
+                mb: 4 
+            }}>
+                <StatCard title="Total Members" value={serviceEmps.length} icon={<GroupIcon />} color="#1976d2" />
+                <StatCard title="Available" value={availableCount} icon={<AvailableIcon />} color="#2e7d32" />
+                <StatCard title="Busy" value={busyCount} icon={<BusyIcon />} color="#ed6c02" />
+                <StatCard title="Active Tickets" value={activeTicketsTotal} icon={<TicketIcon />} color="#1976d2" />
+            </Box>
 
             {/* Members Grid */}
             {loadingEmps ? (
@@ -234,101 +224,110 @@ const ManageServiceMembers = () => {
                     <Typography variant="body1" color="textSecondary">No team members found for this service.</Typography>
                 </Paper>
             ) : (
-                <Grid container spacing={3}>
+                <Box sx={{ 
+                    display: 'grid', 
+                    gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)', lg: 'repeat(4, 1fr)' }, 
+                    gap: 3 
+                }}>
                     {serviceEmps.map((member) => (
-                        <Grid item xs={12} sm={6} md={4} key={member._id}>
-                            <Paper sx={{ 
-                                p: 3, 
-                                borderRadius: '16px', 
-                                boxShadow: '0 4px 20px rgba(0,0,0,0.03)',
-                                border: '1px solid var(--border-color)',
-                                height: '100%',
-                                display: 'flex',
-                                flexDirection: 'column'
-                            }}>
-                                {/* Header */}
-                                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 3 }}>
-                                    <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
-                                        <Avatar 
-                                            src={member.employee?.profileImage} 
-                                            sx={{ width: 56, height: 56, bgcolor: '#e3f2fd', color: '#1976d2', fontWeight: 600 }}
-                                        >
-                                            {member.employee?.name?.charAt(0)}
-                                        </Avatar>
-                                        <Box>
-                                            <Typography variant="subtitle1" sx={{ fontWeight: 700, lineHeight: 1.2, mb: 0.5 }}>
-                                                {member.employee?.name || 'Unknown'}
-                                            </Typography>
-                                            <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                                                Emp ID: {member.employee?.institutionId || 'N/A'}
-                                            </Typography>
-                                        </Box>
-                                    </Box>
-                                    <Chip 
-                                        label="available" 
-                                        size="small" 
-                                        sx={{ 
-                                            bgcolor: '#e8f5e9', 
-                                            color: '#2e7d32', 
-                                            fontWeight: 600, 
-                                            fontSize: '0.7rem',
-                                            borderRadius: '6px' 
-                                        }} 
-                                    />
-                                </Box>
-
-                                {/* Contact Details */}
-                                <Box sx={{ mb: 3, flexGrow: 1 }}>
-                                    <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'center', mb: 1.5 }}>
-                                        <EmailIcon sx={{ color: 'text.secondary', fontSize: 18 }} />
-                                        <Typography variant="body2" sx={{ color: 'text.secondary', wordBreak: 'break-all' }}>
-                                            {member.employee?.email || 'N/A'}
-                                        </Typography>
-                                    </Box>
-                                    <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'center' }}>
-                                        <PhoneIcon sx={{ color: 'text.secondary', fontSize: 18 }} />
-                                        <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                                            N/A
-                                        </Typography>
-                                    </Box>
-                                </Box>
-
-                                <Divider sx={{ mb: 2 }} />
-
-                                {/* Footer Stats */}
-                                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                    <Box sx={{ textAlign: 'center' }}>
-                                        <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mb: 0.5 }}>
-                                            Active Tickets
-                                        </Typography>
-                                        <Typography variant="subtitle1" sx={{ fontWeight: 700, color: 'var(--text-primary)' }}>
-                                            0
-                                        </Typography>
-                                    </Box>
-                                    <Box sx={{ textAlign: 'center' }}>
-                                        <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mb: 0.5 }}>
-                                            Completed
-                                        </Typography>
-                                        <Typography variant="subtitle1" sx={{ fontWeight: 700, color: '#2e7d32' }}>
-                                            0
-                                        </Typography>
-                                    </Box>
-                                    {/* Action to remove */}
+                        <Paper key={member._id} sx={{ 
+                            p: 3, 
+                            borderRadius: '16px', 
+                            boxShadow: '0 4px 20px rgba(0,0,0,0.03)',
+                            border: '1px solid var(--border-color)',
+                            height: '100%',
+                            display: 'flex',
+                            flexDirection: 'column'
+                        }}>
+                            {/* Header */}
+                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 3 }}>
+                                <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+                                    <Avatar 
+                                        src={`https://info.aec.edu.in/aec/employeephotos/${member.employee?.institutionId}.jpg`}
+                                        sx={{ width: 56, height: 56, bgcolor: '#e3f2fd', color: '#1976d2', fontWeight: 600 }}
+                                    >
+                                        {member.employee?.name?.charAt(0)}
+                                    </Avatar>
                                     <Box>
-                                        <Button 
-                                            size="small" 
-                                            color="error" 
-                                            onClick={() => handleRemoveEmp(member.employee?._id)}
-                                            sx={{ textTransform: 'none', minWidth: 'auto', p: 1 }}
-                                        >
-                                            Remove
-                                        </Button>
+                                        <Typography variant="subtitle1" sx={{ fontWeight: 700, lineHeight: 1.2, mb: 0.5, fontSize: '0.95rem', color: 'var(--text-primary)' }}>
+                                            {member.employee?.name || 'Unknown'}
+                                        </Typography>
+                                        <Typography variant="body2" sx={{ color: 'text.secondary', fontSize: '0.85rem' }}>
+                                            Emp ID: {member.employee?.institutionId || 'N/A'}
+                                        </Typography>
                                     </Box>
                                 </Box>
-                            </Paper>
-                        </Grid>
+                                <Chip 
+                                    label="available" 
+                                    size="small" 
+                                    sx={{ 
+                                        bgcolor: '#e8f5e9', 
+                                        color: '#2e7d32', 
+                                        fontWeight: 600, 
+                                        fontSize: '0.7rem',
+                                        borderRadius: '6px' 
+                                    }} 
+                                />
+                            </Box>
+
+                            {/* Contact Details */}
+                            <Box sx={{ mb: 3, flexGrow: 1 }}>
+                                <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'center', mb: 1.5 }}>
+                                    <EmailIcon sx={{ color: 'text.secondary', fontSize: 18 }} />
+                                    <Typography variant="body2" sx={{ color: 'text.secondary', wordBreak: 'break-all', fontSize: '0.85rem' }}>
+                                        {member.employee?.email || 'N/A'}
+                                    </Typography>
+                                </Box>
+                                <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'center' }}>
+                                    <PhoneIcon sx={{ color: 'text.secondary', fontSize: 18 }} />
+                                    <Typography variant="body2" sx={{ color: 'text.secondary', fontSize: '0.85rem' }}>
+                                        {member.employee?.phone || 'N/A'}
+                                    </Typography>
+                                </Box>
+                            </Box>
+
+                            <Divider sx={{ mb: 2 }} />
+
+                            {/* Footer Stats */}
+                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <Box sx={{ textAlign: 'center' }}>
+                                    <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mb: 0.5 }}>
+                                        Active Tickets
+                                    </Typography>
+                                    <Typography variant="subtitle1" sx={{ fontWeight: 700, color: 'var(--text-primary)' }}>
+                                        0
+                                    </Typography>
+                                </Box>
+                                <Box sx={{ textAlign: 'center' }}>
+                                    <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mb: 0.5 }}>
+                                        Completed
+                                    </Typography>
+                                    <Typography variant="subtitle1" sx={{ fontWeight: 700, color: '#2e7d32' }}>
+                                        0
+                                    </Typography>
+                                </Box>
+                                {/* Action to remove */}
+                                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                    <Button 
+                                        size="small" 
+                                        onClick={() => handleRemoveEmp(member.employee?._id)}
+                                        sx={{ 
+                                            textTransform: 'none', 
+                                            minWidth: 'auto', 
+                                            p: 1,
+                                            color: '#0d47a1',
+                                            fontWeight: 700,
+                                            fontSize: '0.85rem',
+                                            '&:hover': { background: 'transparent', textDecoration: 'underline' }
+                                        }}
+                                    >
+                                        Remove
+                                    </Button>
+                                </Box>
+                            </Box>
+                        </Paper>
                     ))}
-                </Grid>
+                </Box>
             )}
 
             {/* Add Member Dialog */}

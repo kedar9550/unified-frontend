@@ -102,7 +102,6 @@ const RaiseTicket = () => {
             
             <Box sx={{ p: 3, maxWidth: 800, mx: 'auto' }}>
                 <Paper sx={{ p: 4, borderRadius: '16px', background: 'var(--bg-panel)', boxShadow: 'var(--shadow-premium)' }}>
-                    <form onSubmit={handleSubmit}>
                         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
                             
                             <FormControl fullWidth required>
@@ -143,7 +142,7 @@ const RaiseTicket = () => {
                                 <RichTextEditor 
                                     placeholder="Detailed explanation of the issue or request..."
                                     value={formData.description} 
-                                    onChange={(value) => setFormData({ ...formData, description: value })} 
+                                    onChange={(value) => setFormData(prev => ({ ...prev, description: value }))} 
                                 />
                             </Box>
 
@@ -197,7 +196,7 @@ const RaiseTicket = () => {
 
                             <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
                                 <Button
-                                    type="submit"
+                                    onClick={handleSubmit}
                                     variant="contained"
                                     disabled={submitting}
                                     startIcon={submitting ? <CircularProgress size={20} color="inherit" /> : <SendIcon />}
@@ -215,7 +214,6 @@ const RaiseTicket = () => {
                             </Box>
 
                         </Box>
-                    </form>
                 </Paper>
             </Box>
         </Box>

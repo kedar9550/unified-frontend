@@ -22,6 +22,8 @@ import NotificationBell from "../common/NotificationBell";
 import logoLightTheme from "../../assets/Logo_Light_theme.svg";
 import logoDarkTheme from "../../assets/Logo_Dark_theme.svg";
 import universityLogoGold from "../../assets/Aditya University Gold Logo.png";
+import logoWhite from "../../assets/logo_white.png";
+import circleLogoWhite from "../../assets/Circle_logo_white.png";
 
 const capitalizeRole = (role) => {
   if (!role) return "";
@@ -32,6 +34,7 @@ const Header = ({ isSidebarCollapsed }) => {
   const { user, activeRole, switchRole, logout } = useAuth();
   const [imgError, setImgError] = useState(false);
   const [anchorEl, setAnchorEl] = useState(null);
+  const notifRef = React.useRef(null);
   const [isDarkMode, setIsDarkMode] = useState(() => {
     return document.body.classList.contains("dark-mode") || localStorage.getItem("theme") === "dark";
   });
@@ -104,7 +107,7 @@ const Header = ({ isSidebarCollapsed }) => {
         alignItems: "center",
         justifyContent: "space-between",
         gap: 2,
-        pl: { xs: 1.5, md: 3 },
+        pl: { xs: 0.1, md: 3 },
         pr: { xs: 1.5, md: 3 },
         py: { xs: 1.2, md: 1.2 },
         height: { xs: "70px", md: "88px" },
@@ -126,40 +129,44 @@ const Header = ({ isSidebarCollapsed }) => {
           }}
         >
           {/* Mobile Logo (Short) */}
-          <Box
-            component="img"
-            src={logoDarkTheme}
-            alt="Aditya University Logo"
-            sx={{
-              display: { xs: "block", md: "none" },
-              height: "100%",
-              width: "auto",
-              objectFit: "contain",
-            }}
-          />
+          <Box sx={{ display: { xs: "flex", md: "none" }, flexShrink: 0, alignItems: "center" }}>
+            <img
+              src={isDarkMode ? circleLogoWhite : logoDarkTheme}
+              alt="Aditya University Logo"
+              style={{
+                display: "block",
+                height: "45px",
+                width: "auto",
+                objectFit: "contain",
+                marginLeft: "-12px", // Offset built-in transparent padding in the image file
+              }}
+            />
+          </Box>
           {/* Desktop Logo (Long) */}
-          <Box
-            component="img"
-            src={universityLogoGold}
-            alt="Aditya University Logo"
-            sx={{
-              display: { xs: "none", md: "block" },
-              height: "100%",
-              width: "auto",
-              objectFit: "contain",
-            }}
-          />
+          <Box sx={{ display: { xs: "none", md: "flex" }, flexShrink: 0, alignItems: "center" }}>
+            <img
+              src={isDarkMode ? logoWhite : universityLogoGold}
+              alt="Aditya University Logo"
+              style={{
+                display: "block",
+                height: "60px",
+                width: "auto",
+                objectFit: "contain",
+                marginTop: "10px",
+              }}
+            />
+          </Box>
         </Box>
       </Box>
 
       {/* CENTER SECTION: Search Bar */}
-      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", flex: 1 }}>
+      <Box sx={{ display: { xs: "none", md: "flex" }, alignItems: "center", justifyContent: "center", flex: 1 }}>
         <HeaderSearch activeRole={activeRole} />
       </Box>
 
       {/* RIGHT SECTION: Notifications & Profile Pill */}
-      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 2, flex: 1 }}>
-        <NotificationBell />
+      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: { xs: 1, md: 2 }, flex: 1 }}>
+        <NotificationBell ref={notifRef} />
 
         <Box
           onClick={handleProfileClick}
@@ -176,11 +183,11 @@ const Header = ({ isSidebarCollapsed }) => {
             cursor: "pointer",
             transition: "all 0.4s cubic-bezier(0.4, 0, 0.2, 1)",
             boxShadow: open ? "var(--shadow-premium)" : "none",
-            maxWidth: open ? "250px" : "48px", // Collapsed = perfect circle (matches height)
+            maxWidth: open ? "400px" : "48px", // Collapsed = perfect circle (matches height)
             boxSizing: "border-box",
             overflow: "hidden",
             "&:hover": {
-              maxWidth: "250px", // Expand on hover
+              maxWidth: "400px", // Expand on hover
               background: open
                 ? "linear-gradient(var(--bg-panel), var(--bg-panel)) padding-box, var(--gradient-primary) border-box"
                 : "var(--border-color)",
@@ -205,21 +212,24 @@ const Header = ({ isSidebarCollapsed }) => {
               opacity: open ? 1 : 0,
               transform: open ? "translateX(0)" : "translateX(10px)",
               transition: "all 0.4s cubic-bezier(0.4, 0, 0.2, 1)",
-              whiteSpace: "nowrap",
-              pl: 2, // Added left padding since parent has 0
-              pr: 1
+              pl: 2,
+              pr: 1,
+              overflow: "hidden",
+              flex: 1,
+              minWidth: 0
             }}
           >
-            <Box sx={{ display: "flex", flexDirection: "column", alignItems: "flex-start" }}>
-              <Typography sx={{ fontSize: "0.85rem", fontWeight: 700, color: "var(--text-primary)", lineHeight: 1, mb: 0.2 }}>
+            <Box sx={{ display: "flex", flexDirection: "column", alignItems: "flex-start", overflow: "hidden", width: "100%", minWidth: 0 }}>
+              <Typography noWrap sx={{ fontSize: "0.85rem", fontWeight: 700, color: "var(--text-primary)", lineHeight: 1, mb: 0.2, width: "100%" }}>
                 {user?.name || "System User"}
               </Typography>
-              <Typography sx={{ fontSize: "0.7rem", fontWeight: 500, color: "var(--text-secondary)", lineHeight: 1 }}>
-                Role: {capitalizeRole(activeRole) || "User"} {user?.designation ? `| ${user.designation}` : ""}
+              <Typography noWrap sx={{ fontSize: "0.7rem", fontWeight: 500, color: "var(--text-secondary)", lineHeight: 1, width: "100%" }}>
+                {user?.designation || capitalizeRole(activeRole) || "User"}
               </Typography>
             </Box>
             <KeyboardArrowDown
               sx={{
+                display: { xs: "none", sm: "block" },
                 fontSize: 18,
                 color: "#94a3b8",
                 transition: "transform 0.2s ease",
@@ -363,6 +373,23 @@ const Header = ({ isSidebarCollapsed }) => {
             </Typography>
 
             {/* Profile Link */}
+            <MenuItem
+              sx={{ display: { xs: "flex", md: "none" }, alignItems: "center", gap: 1.5, py: 1.2, px: 2, mb: 0.5, mx: 1.5, borderRadius: "10px", fontWeight: 600, fontSize: "0.85rem", color: "var(--text-secondary)", "&:hover": { background: "var(--bg-panel)" } }}
+              onClick={() => {
+                const pillAnchor = anchorEl;
+                handleClose();
+                setTimeout(() => {
+                  notifRef.current?.openMobile(pillAnchor);
+                }, 150); // slight delay to allow menu to unmount smoothly
+              }}
+            >
+              <Notifications fontSize="small" sx={{ color: "var(--text-secondary)" }} />
+              <Box sx={{ flexGrow: 1 }}>Notifications</Box>
+              {notifRef.current?.unreadCount > 0 && (
+                <Badge badgeContent={notifRef.current?.unreadCount} color="error" sx={{ mr: 2 }} />
+              )}
+            </MenuItem>
+
             <MenuItem
               onClick={() => { handleClose(); navigate("/profile"); }}
               sx={{

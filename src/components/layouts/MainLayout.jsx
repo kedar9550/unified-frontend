@@ -50,9 +50,8 @@ const MainLayout = ({ children }) => {
             display: "flex",
             flexDirection: "column",
             px: { xs: 0, md: 3 },
-            py: { xs: 1.5, md: 3 },
-            pt: { xs: "70px", md: "88px" },
-            pb: { xs: "80px", md: 3 }, /* Space for bottom navbar */
+            pt: { xs: "calc(70px + 16px)", md: "calc(88px + 24px)" },
+            pb: { xs: "calc(80px + 16px)", md: 3 },
             transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
             overflow: "hidden",
           }}
