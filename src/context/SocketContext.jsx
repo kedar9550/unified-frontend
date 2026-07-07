@@ -23,7 +23,7 @@ export const SocketProvider = ({ children }) => {
         }
 
         // Initialize Socket
-        const newSocket = io(import.meta.env.VITE_API_BASE_URL || 'http://localhost:9000', {
+        const newSocket = io(import.meta.env.VITE_BACKEND_URL || 'http://localhost:9000', {
             withCredentials: true
         });
 

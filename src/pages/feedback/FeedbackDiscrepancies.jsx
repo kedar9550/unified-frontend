@@ -378,8 +378,8 @@ export default function FeedbackDiscrepancies() {
             <Typography fontSize={13}>All clear!</Typography>
           </Box>
         ) : (
-          <Paper sx={{ borderRadius: "18px", overflow: "hidden", boxShadow: "none", background: "transparent" }}>
-            <Table sx={{ minWidth: 900 }}>
+          <Paper sx={{ borderRadius: "18px", overflowX: "auto", boxShadow: "none", background: "transparent" }}>
+            <Table sx={{ minWidth: 1100 }}>
               <TableHead sx={{ background: "var(--gradient-primary)" }}>
                 <TableRow>
                   {["#", "Faculty", "Academic Year", "Note", "Raised At", "Status", "Action"].map(col => (
