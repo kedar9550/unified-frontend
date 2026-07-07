@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
-    Box, Typography, Button, Paper, Table, TableBody, TableCell, TableContainer,
-    TableHead, TableRow, IconButton, Dialog, DialogTitle, DialogContent,
+    Box, Typography, Button, IconButton, Dialog, DialogTitle, DialogContent,
     DialogActions, TextField, Tooltip, MenuItem, Select, FormControl, InputLabel
 } from '@mui/material';
 import { Add, QrCode as QrCodeIcon, Download, Delete, Block, CheckCircle } from '@mui/icons-material';
@@ -9,6 +8,7 @@ import axios from '../../api/axios';
 import { toast } from 'sonner';
 import CustomQRCode from '../../components/CustomQRCode';
 import PageHeader from '../../components/common/PageHeader';
+import DataTable from '../../components/data/DataTable';
 import LogoDarkTheme from '../../assets/Logo_Dark_theme.svg';
 
 const GenerateQR = () => {
@@ -16,7 +16,6 @@ const GenerateQR = () => {
     const [openModal, setOpenModal] = useState(false);
     const [longUrl, setLongUrl] = useState('');
     const [expiresAt, setExpiresAt] = useState('');
-    const [searchQuery, setSearchQuery] = useState('');
     
     // QR Customization State
     const [selectedQr, setSelectedQr] = useState(null); // For downloading
@@ -99,9 +98,7 @@ const GenerateQR = () => {
         }
     };
 
-    const filteredLinks = links.filter(link => 
-        link.longUrl.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+
 
     return (
         <Box>
@@ -122,89 +119,66 @@ const GenerateQR = () => {
             </Box>
 
             <Box sx={{ px: 3, pb: 3 }}>
-                <Box sx={{ display: 'flex', justifyContent: 'flex-start', mb: 2 }}>
-                    <TextField
-                        placeholder="Search Destination URL..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        size="small"
-                        sx={{ width: '300px', background: 'var(--bg-panel)', borderRadius: 1 }}
-                    />
-                </Box>
-                {filteredLinks.length === 0 ? (
-                    <Box sx={{
-                        display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-                        py: 8, px: 3, background: "var(--bg-panel)", borderRadius: "16px",
-                        border: "1px dashed var(--border-color)", boxShadow: "var(--shadow-premium)", textAlign: "center"
-                    }}>
-                        <Typography variant="h6" sx={{ color: "var(--text-secondary)", fontWeight: 600, mb: 1 }}>
-                            No QR Codes Found
-                        </Typography>
-                        <Typography variant="body2" sx={{ color: "text.secondary", mb: 3, maxWidth: "400px" }}>
-                            You haven't generated any QR codes matching your criteria.
-                        </Typography>
-                    </Box>
-                ) : (
-                    <TableContainer component={Paper} sx={{ borderRadius: "16px", background: "var(--bg-panel)", border: "1px solid var(--border-color)", boxShadow: "var(--shadow-premium)", overflowX: "auto" }}>
-                        <Table sx={{ minWidth: 650 }}>
-                            <TableHead sx={{ background: "var(--gradient-primary)" }}>
-                                <TableRow>
-                                    <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2, width: 60 }}>S.No</TableCell>
-                                    <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>QR CODE</TableCell>
-                                    <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>DESTINATION</TableCell>
-                                    <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>SCANS</TableCell>
-                                    <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>STATUS</TableCell>
-                                    <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2, textAlign: 'right' }}>ACTIONS</TableCell>
-                                </TableRow>
-                            </TableHead>
-                            <TableBody>
-                                {filteredLinks.map((link, index) => (
-                                    <TableRow key={link._id} sx={{ "&:hover": { background: "var(--bg-accent-1)" }, transition: "background 0.15s" }}>
-                                        <TableCell>{index + 1}</TableCell>
-                                        <TableCell>
-                                            <Box sx={{ width: 64, height: 64, backgroundColor: '#fff', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
-                                                <CustomQRCode 
-                                                    data={`${window.location.origin}/r/${link.shortCode}`} 
-                                                    size={60} 
-                                                    colorType="solid"
-                                                    solidColor="#0b5299"
-                                                />
-                                            </Box>
-                                        </TableCell>
-                                        <TableCell sx={{ maxWidth: '300px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                            {link.longUrl}
-                                        </TableCell>
-                                        <TableCell>{link.clicks}</TableCell>
-                                        <TableCell>
-                                            {link.isActive ? (
-                                                <Typography sx={{ backgroundColor: '#e6f4ea', color: '#1e8e3e', fontSize: '0.75rem', fontWeight: 600, px: 1.5, py: 0.5, borderRadius: '4px', display: 'inline-block' }}>Active</Typography>
-                                            ) : (
-                                                <Typography sx={{ backgroundColor: '#fce8e6', color: '#d93025', fontSize: '0.75rem', fontWeight: 600, px: 1.5, py: 0.5, borderRadius: '4px', display: 'inline-block' }}>Inactive</Typography>
-                                            )}
-                                        </TableCell>
-                                        <TableCell align="right">
-                                            <Tooltip title="Download QR">
-                                                <IconButton onClick={() => openDownload(link)} size="small" sx={{ color: '#d06c38' }}>
-                                                    <Download fontSize="small" />
-                                                </IconButton>
-                                            </Tooltip>
-                                            <Tooltip title={link.isActive ? 'Deactivate' : 'Activate'}>
-                                                <IconButton onClick={() => handleToggleStatus(link._id, link.isActive)} size="small" sx={{ color: link.isActive ? '#eab308' : '#10b981' }}>
-                                                    {link.isActive ? <Block fontSize="small" /> : <CheckCircle fontSize="small" />}
-                                                </IconButton>
-                                            </Tooltip>
-                                            <Tooltip title="Delete">
-                                                <IconButton onClick={() => handleDelete(link._id)} size="small" sx={{ color: '#ef4444' }}>
-                                                    <Delete fontSize="small" />
-                                                </IconButton>
-                                            </Tooltip>
-                                        </TableCell>
-                                    </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
-                    </TableContainer>
-                )}
+                <DataTable 
+                    columns={["S.No", "QR CODE", "DESTINATION", "SCANS", "STATUS", "ACTIONS"]}
+                    alignments={["center", "center", "left", "center", "center", "right"]}
+                    nonSortableColumns={[0, 1, 5]}
+                    rows={links.map((link, index) => [
+                        { value: index + 1, display: index + 1 },
+                        {
+                            value: '',
+                            display: (
+                                <Box sx={{ width: 64, height: 64, backgroundColor: '#fff', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none', margin: '0 auto' }}>
+                                    <CustomQRCode 
+                                        data={`${window.location.origin}/r/${link.shortCode}`} 
+                                        size={60} 
+                                        colorType="solid"
+                                        solidColor="#0b5299"
+                                    />
+                                </Box>
+                            )
+                        },
+                        {
+                            value: link.longUrl,
+                            display: (
+                                <Box sx={{ maxWidth: '300px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                    {link.longUrl}
+                                </Box>
+                            )
+                        },
+                        { value: link.clicks, display: link.clicks },
+                        {
+                            value: link.isActive ? 'Active' : 'Inactive',
+                            display: link.isActive ? (
+                                <Typography sx={{ backgroundColor: '#e6f4ea', color: '#1e8e3e', fontSize: '0.75rem', fontWeight: 600, px: 1.5, py: 0.5, borderRadius: '4px', display: 'inline-block' }}>Active</Typography>
+                            ) : (
+                                <Typography sx={{ backgroundColor: '#fce8e6', color: '#d93025', fontSize: '0.75rem', fontWeight: 600, px: 1.5, py: 0.5, borderRadius: '4px', display: 'inline-block' }}>Inactive</Typography>
+                            )
+                        },
+                        {
+                            value: '',
+                            display: (
+                                <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+                                    <Tooltip title="Download QR">
+                                        <IconButton onClick={() => openDownload(link)} size="small" sx={{ color: '#d06c38' }}>
+                                            <Download fontSize="small" />
+                                        </IconButton>
+                                    </Tooltip>
+                                    <Tooltip title={link.isActive ? 'Deactivate' : 'Activate'}>
+                                        <IconButton onClick={() => handleToggleStatus(link._id, link.isActive)} size="small" sx={{ color: link.isActive ? '#eab308' : '#10b981' }}>
+                                            {link.isActive ? <Block fontSize="small" /> : <CheckCircle fontSize="small" />}
+                                        </IconButton>
+                                    </Tooltip>
+                                    <Tooltip title="Delete">
+                                        <IconButton onClick={() => handleDelete(link._id)} size="small" sx={{ color: '#ef4444' }}>
+                                            <Delete fontSize="small" />
+                                        </IconButton>
+                                    </Tooltip>
+                                </Box>
+                            )
+                        }
+                    ])}
+                />
             </Box>
 
             {/* Create Modal */}

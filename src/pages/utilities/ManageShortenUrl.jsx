@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import {
-    Box, Typography, Paper, Table, TableBody, TableCell, TableContainer,
-    TableHead, TableRow, IconButton, Chip, Tooltip, Dialog, DialogTitle,
+    Box, Typography, IconButton, Chip, Tooltip, Dialog, DialogTitle,
     DialogContent, DialogActions, Button
 } from '@mui/material';
-import { Delete, Lock, LockOpen, Warning, DeleteForever } from '@mui/icons-material';
+import { Delete, Lock, LockOpen, Warning, DeleteForever, ContentCopy, OpenInNew } from '@mui/icons-material';
 import PageHeader from '../../components/common/PageHeader';
+import DataTable from '../../components/data/DataTable';
 import axios from '../../api/axios';
 import { toast } from 'sonner';
 
@@ -37,14 +37,17 @@ const ManageShortenUrl = () => {
         }
     };
 
+    const handleCopy = (shortCode) => {
+        const url = `${window.location.origin}/r/${shortCode}`;
+        navigator.clipboard.writeText(url);
+        toast.success('Link copied to clipboard');
+    };
+
     const handleDelete = async () => {
         try {
-            if (deleteModal.type === 'soft') {
-                await axios.delete(`/api/utilities/admin/${deleteModal.id}/soft-delete`);
-                toast.success('Soft deleted successfully');
-            } else if (deleteModal.type === 'hard') {
+            if (deleteModal.type === 'hard') {
                 await axios.delete(`/api/utilities/admin/${deleteModal.id}/hard-delete`);
-                toast.success('Hard deleted successfully');
+                toast.success('Deleted successfully');
             }
             setDeleteModal({ open: false, type: '', id: null });
             fetchLinks();
@@ -63,99 +66,97 @@ const ManageShortenUrl = () => {
                 </Typography>
             </Box>
             <Box sx={{ px: 3, pb: 3 }}>
-                {links.length === 0 ? (
-                    <Box sx={{
-                        display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-                        py: 8, px: 3, background: "var(--bg-panel)", borderRadius: "16px",
-                        border: "1px dashed var(--border-color)", boxShadow: "var(--shadow-premium)", textAlign: "center"
-                    }}>
-                        <Typography variant="h6" sx={{ color: "var(--text-secondary)", fontWeight: 600, mb: 1 }}>
-                            No Short URLs Found
-                        </Typography>
-                        <Typography variant="body2" sx={{ color: "text.secondary", mb: 3, maxWidth: "400px" }}>
-                            There are currently no short URLs created by any user.
-                        </Typography>
-                    </Box>
-                ) : (
-                    <TableContainer component={Paper} sx={{ borderRadius: "16px", background: "var(--bg-panel)", border: "1px solid var(--border-color)", boxShadow: "var(--shadow-premium)", overflowX: "auto" }}>
-                        <Table sx={{ minWidth: 800 }}>
-                            <TableHead sx={{ background: "var(--gradient-primary)" }}>
-                                <TableRow>
-                                    <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Creator</TableCell>
-                                    <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Original URL</TableCell>
-                                    <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Short Link</TableCell>
-                                    <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Clicks</TableCell>
-                                    <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Status</TableCell>
-                                    <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2, textAlign: 'right' }}>Actions</TableCell>
-                                </TableRow>
-                            </TableHead>
-                            <TableBody>
-                                {links.map((link) => (
-                                    <TableRow key={link._id} sx={{ "&:hover": { background: "var(--bg-accent-1)" }, transition: "background 0.15s", opacity: link.isDeleted ? 0.5 : 1 }}>
-                                        <TableCell>
-                                            <Typography variant="body2" fontWeight="bold" sx={{ color: "var(--text-primary)" }}>
-                                                {link.userId?.name || 'Unknown'}
-                                            </Typography>
-                                            <Typography variant="caption" sx={{ color: "var(--text-secondary)", display: "block" }}>
-                                                {link.userId?.designation || ''} | ID: {link.userId?.employeeId || ''}
-                                            </Typography>
-                                        </TableCell>
-                                    <TableCell sx={{ maxWidth: '200px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                        {link.longUrl}
-                                    </TableCell>
-                                    <TableCell>
-                                        <Typography variant="body2" color="#0b5299">{link.shortCode}</Typography>
-                                    </TableCell>
-                                    <TableCell>{link.clicks}</TableCell>
-                                    <TableCell>
-                                        {link.isDeleted ? (
-                                            <Chip label="Deleted" color="error" size="small" />
-                                        ) : link.isActive ? (
-                                            <Chip label="Active" color="success" size="small" />
-                                        ) : (
-                                            <Chip label="Inactive" color="warning" size="small" />
-                                        )}
-                                    </TableCell>
-                                    <TableCell align="right">
-                                        {!link.isDeleted && (
-                                            <Tooltip title={link.isActive ? "Deactivate" : "Activate"}>
-                                                <IconButton onClick={() => handleToggleStatus(link._id)} size="small" color={link.isActive ? "warning" : "success"}>
-                                                    {link.isActive ? <Lock fontSize="small" /> : <LockOpen fontSize="small" />}
-                                                </IconButton>
-                                            </Tooltip>
-                                        )}
-                                        {!link.isDeleted && (
-                                            <Tooltip title="Soft Delete">
-                                                <IconButton onClick={() => setDeleteModal({ open: true, type: 'soft', id: link._id })} size="small" color="error">
-                                                    <Delete fontSize="small" />
-                                                </IconButton>
-                                            </Tooltip>
-                                        )}
-                                        <Tooltip title="Hard Delete">
-                                            <IconButton onClick={() => setDeleteModal({ open: true, type: 'hard', id: link._id })} size="small" sx={{ color: '#d32f2f' }}>
-                                                <DeleteForever fontSize="small" />
+                <DataTable 
+                    columns={["Creator", "Original URL", "Short Link", "Clicks", "Status", "Actions"]}
+                    alignments={["left", "left", "left", "center", "center", "right"]}
+                    nonSortableColumns={[5]}
+                    rows={links.map(link => [
+                        {
+                            value: link.userId?.name || 'Unknown',
+                            display: (
+                                <Box>
+                                    <Typography variant="body2" fontWeight="bold" sx={{ color: "var(--text-primary)" }}>
+                                        {link.userId?.name || 'Unknown'}
+                                    </Typography>
+                                    <Typography variant="caption" sx={{ color: "var(--text-secondary)", display: "block" }}>
+                                        {link.userId?.designation || ''} | ID: {link.userId?.institutionId || link.userId?.employeeId || 'N/A'}
+                                    </Typography>
+                                </Box>
+                            )
+                        },
+                        {
+                            value: link.longUrl,
+                            display: (
+                                <Box sx={{ maxWidth: '200px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                    {link.longUrl}
+                                </Box>
+                            )
+                        },
+                        {
+                            value: link.shortCode,
+                            display: <Typography variant="body2" color="#0b5299" sx={{ fontWeight: 600 }}>{link.shortCode}</Typography>
+                        },
+                        {
+                            value: link.clicks,
+                            display: link.clicks
+                        },
+                        {
+                            value: link.isDeleted ? 'Deleted' : link.isActive ? 'Active' : 'Inactive',
+                            display: link.isDeleted ? (
+                                <Chip label="Deleted" color="error" size="small" />
+                            ) : link.isActive ? (
+                                <Chip label="Active" color="success" size="small" />
+                            ) : (
+                                <Chip label="Inactive" color="warning" size="small" />
+                            )
+                        },
+                        {
+                            value: '',
+                            display: (
+                                <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+                                    <Tooltip title="Copy Link">
+                                        <IconButton onClick={() => handleCopy(link.shortCode)} size="small" color="primary">
+                                            <ContentCopy fontSize="small" />
+                                        </IconButton>
+                                    </Tooltip>
+                                    <Tooltip title="Open Link">
+                                        <IconButton 
+                                            component="a" 
+                                            href={`${window.location.origin}/r/${link.shortCode}`}
+                                            target="_blank"
+                                            size="small" 
+                                            color="secondary"
+                                        >
+                                            <OpenInNew fontSize="small" />
+                                        </IconButton>
+                                    </Tooltip>
+                                    {!link.isDeleted && (
+                                        <Tooltip title={link.isActive ? "Deactivate" : "Activate"}>
+                                            <IconButton onClick={() => handleToggleStatus(link._id)} size="small" color={link.isActive ? "warning" : "success"}>
+                                                {link.isActive ? <Lock fontSize="small" /> : <LockOpen fontSize="small" />}
                                             </IconButton>
                                         </Tooltip>
-                                    </TableCell>
-                                </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
-                </TableContainer>
-                )}
+                                    )}
+                                    <Tooltip title="Delete">
+                                        <IconButton onClick={() => setDeleteModal({ open: true, type: 'hard', id: link._id })} size="small" sx={{ color: '#d32f2f' }}>
+                                            <DeleteForever fontSize="small" />
+                                        </IconButton>
+                                    </Tooltip>
+                                </Box>
+                            )
+                        }
+                    ])}
+                />
             </Box>
 
             {/* Delete Confirmation Modal */}
             <Dialog open={deleteModal.open} onClose={() => setDeleteModal({ open: false, type: '', id: null })}>
                 <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1, color: '#d32f2f' }}>
-                    <Warning /> Confirm {deleteModal.type === 'hard' ? 'Hard Delete' : 'Soft Delete'}
+                    <Warning /> Confirm Delete
                 </DialogTitle>
                 <DialogContent>
                     <Typography>
-                        {deleteModal.type === 'hard' 
-                            ? 'Are you sure you want to permanently delete this URL? This action cannot be undone.'
-                            : 'Are you sure you want to soft delete this URL? It will be marked as deleted and inactive.'
-                        }
+                        Are you sure you want to permanently delete this URL? This action cannot be undone.
                     </Typography>
                 </DialogContent>
                 <DialogActions>

@@ -107,6 +107,8 @@ const Header = ({ isSidebarCollapsed }) => {
         pl: { xs: 1.5, md: 3 },
         pr: { xs: 1.5, md: 3 },
         py: { xs: 1.2, md: 1.2 },
+        height: { xs: "70px", md: "88px" },
+        boxSizing: "border-box",
         transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
         background: "#0D233B",
         boxShadow: "0 2px 10px rgba(0,0,0,0.1)",

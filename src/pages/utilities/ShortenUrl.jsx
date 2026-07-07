@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import {
-    Box, Typography, Button, Paper, Table, TableBody, TableCell, TableContainer,
-    TableHead, TableRow, IconButton, Dialog, DialogTitle, DialogContent,
+    Box, Typography, Button, IconButton, Dialog, DialogTitle, DialogContent,
     DialogActions, TextField, InputAdornment, Tooltip
 } from '@mui/material';
 import { Add, ContentCopy, OpenInNew, Link as LinkIcon, Block, CheckCircle, Delete } from '@mui/icons-material';
 import PageHeader from '../../components/common/PageHeader';
+import DataTable from '../../components/data/DataTable';
 import axios from '../../api/axios';
 import { toast } from 'sonner';
 
@@ -14,7 +14,6 @@ const ShortenUrl = () => {
     const [openModal, setOpenModal] = useState(false);
     const [longUrl, setLongUrl] = useState('');
     const [expiresAt, setExpiresAt] = useState('');
-    const [searchQuery, setSearchQuery] = useState('');
 
     const fetchLinks = async () => {
         try {
@@ -78,10 +77,7 @@ const ShortenUrl = () => {
         }
     };
 
-    const filteredLinks = links.filter(link => 
-        link.longUrl.toLowerCase().includes(searchQuery.toLowerCase()) || 
-        link.shortCode.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+
 
     return (
         <Box>
@@ -102,95 +98,72 @@ const ShortenUrl = () => {
             </Box>
 
             <Box sx={{ px: 3, pb: 3 }}>
-                <Box sx={{ display: 'flex', justifyContent: 'flex-start', mb: 2 }}>
-                    <TextField
-                        placeholder="Search URL or Short code..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        size="small"
-                        sx={{ width: '300px', background: 'var(--bg-panel)', borderRadius: 1 }}
-                    />
-                </Box>
-                {filteredLinks.length === 0 ? (
-                    <Box sx={{
-                        display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-                        py: 8, px: 3, background: "var(--bg-panel)", borderRadius: "16px",
-                        border: "1px dashed var(--border-color)", boxShadow: "var(--shadow-premium)", textAlign: "center"
-                    }}>
-                        <Typography variant="h6" sx={{ color: "var(--text-secondary)", fontWeight: 600, mb: 1 }}>
-                            No Short URLs Found
-                        </Typography>
-                        <Typography variant="body2" sx={{ color: "text.secondary", mb: 3, maxWidth: "400px" }}>
-                            You haven't created any short URLs matching your criteria.
-                        </Typography>
-                    </Box>
-                ) : (
-                    <TableContainer component={Paper} sx={{ borderRadius: "16px", background: "var(--bg-panel)", border: "1px solid var(--border-color)", boxShadow: "var(--shadow-premium)", overflowX: "auto" }}>
-                        <Table sx={{ minWidth: 650 }}>
-                            <TableHead sx={{ background: "var(--gradient-primary)" }}>
-                                <TableRow>
-                                    <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2, width: 60 }}>S.No</TableCell>
-                                    <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Original URL</TableCell>
-                                    <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Short Link</TableCell>
-                                    <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Clicks</TableCell>
-                                    <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Status</TableCell>
-                                    <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2, textAlign: 'right' }}>Actions</TableCell>
-                                </TableRow>
-                            </TableHead>
-                            <TableBody>
-                                {filteredLinks.map((link, index) => (
-                                    <TableRow key={link._id} sx={{ "&:hover": { background: "var(--bg-accent-1)" }, transition: "background 0.15s" }}>
-                                        <TableCell>{index + 1}</TableCell>
-                                        <TableCell sx={{ maxWidth: '300px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                            {link.longUrl}
-                                        </TableCell>
-                                        <TableCell>
-                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                                <Typography variant="body2" color="#0b5299" sx={{ fontWeight: 600 }}>{link.shortCode}</Typography>
-                                            </Box>
-                                        </TableCell>
-                                        <TableCell>{link.clicks}</TableCell>
-                                        <TableCell>
-                                            {link.isActive ? (
-                                                <Typography sx={{ backgroundColor: '#e6f4ea', color: '#1e8e3e', fontSize: '0.75rem', fontWeight: 600, px: 1.5, py: 0.5, borderRadius: '4px', display: 'inline-block' }}>Active</Typography>
-                                            ) : (
-                                                <Typography sx={{ backgroundColor: '#fce8e6', color: '#d93025', fontSize: '0.75rem', fontWeight: 600, px: 1.5, py: 0.5, borderRadius: '4px', display: 'inline-block' }}>Inactive</Typography>
-                                            )}
-                                        </TableCell>
-                                        <TableCell align="right">
-                                            <Tooltip title="Copy Link">
-                                                <IconButton onClick={() => handleCopy(link.shortCode)} size="small" color="primary">
-                                                    <ContentCopy fontSize="small" />
-                                                </IconButton>
-                                            </Tooltip>
-                                            <Tooltip title="Open Link">
-                                                <IconButton 
-                                                    component="a" 
-                                                    href={`${window.location.origin}/r/${link.shortCode}`}
-                                                    target="_blank"
-                                                    size="small" 
-                                                    color="secondary"
-                                                >
-                                                    <OpenInNew fontSize="small" />
-                                                </IconButton>
-                                            </Tooltip>
-                                            <Tooltip title={link.isActive ? 'Deactivate' : 'Activate'}>
-                                                <IconButton onClick={() => handleToggleStatus(link._id, link.isActive)} size="small" sx={{ color: link.isActive ? '#eab308' : '#10b981' }}>
-                                                    {link.isActive ? <Block fontSize="small" /> : <CheckCircle fontSize="small" />}
-                                                </IconButton>
-                                            </Tooltip>
-                                            <Tooltip title="Delete">
-                                                <IconButton onClick={() => handleDelete(link._id)} size="small" sx={{ color: '#ef4444' }}>
-                                                    <Delete fontSize="small" />
-                                                </IconButton>
-                                            </Tooltip>
-                                        </TableCell>
-                                    </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
-                    </TableContainer>
-                )}
+                <DataTable 
+                    columns={["S.No", "Original URL", "Short Link", "Clicks", "Status", "Actions"]}
+                    alignments={["center", "left", "left", "center", "center", "right"]}
+                    nonSortableColumns={[0, 5]}
+                    rows={links.map((link, index) => [
+                        { value: index + 1, display: index + 1 },
+                        {
+                            value: link.longUrl,
+                            display: (
+                                <Box sx={{ maxWidth: '300px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                    {link.longUrl}
+                                </Box>
+                            )
+                        },
+                        {
+                            value: link.shortCode,
+                            display: (
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                    <Typography variant="body2" color="#0b5299" sx={{ fontWeight: 600 }}>{link.shortCode}</Typography>
+                                </Box>
+                            )
+                        },
+                        { value: link.clicks, display: link.clicks },
+                        {
+                            value: link.isActive ? 'Active' : 'Inactive',
+                            display: link.isActive ? (
+                                <Typography sx={{ backgroundColor: '#e6f4ea', color: '#1e8e3e', fontSize: '0.75rem', fontWeight: 600, px: 1.5, py: 0.5, borderRadius: '4px', display: 'inline-block' }}>Active</Typography>
+                            ) : (
+                                <Typography sx={{ backgroundColor: '#fce8e6', color: '#d93025', fontSize: '0.75rem', fontWeight: 600, px: 1.5, py: 0.5, borderRadius: '4px', display: 'inline-block' }}>Inactive</Typography>
+                            )
+                        },
+                        {
+                            value: '',
+                            display: (
+                                <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+                                    <Tooltip title="Copy Link">
+                                        <IconButton onClick={() => handleCopy(link.shortCode)} size="small" color="primary">
+                                            <ContentCopy fontSize="small" />
+                                        </IconButton>
+                                    </Tooltip>
+                                    <Tooltip title="Open Link">
+                                        <IconButton 
+                                            component="a" 
+                                            href={`${window.location.origin}/r/${link.shortCode}`}
+                                            target="_blank"
+                                            size="small" 
+                                            color="secondary"
+                                        >
+                                            <OpenInNew fontSize="small" />
+                                        </IconButton>
+                                    </Tooltip>
+                                    <Tooltip title={link.isActive ? 'Deactivate' : 'Activate'}>
+                                        <IconButton onClick={() => handleToggleStatus(link._id, link.isActive)} size="small" sx={{ color: link.isActive ? '#eab308' : '#10b981' }}>
+                                            {link.isActive ? <Block fontSize="small" /> : <CheckCircle fontSize="small" />}
+                                        </IconButton>
+                                    </Tooltip>
+                                    <Tooltip title="Delete">
+                                        <IconButton onClick={() => handleDelete(link._id)} size="small" sx={{ color: '#ef4444' }}>
+                                            <Delete fontSize="small" />
+                                        </IconButton>
+                                    </Tooltip>
+                                </Box>
+                            )
+                        }
+                    ])}
+                />
             </Box>
 
             {/* Create Modal */}
