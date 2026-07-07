@@ -32,7 +32,7 @@ const HeaderSearch = ({ activeRole }) => {
       return;
     }
     const roleRoutes = ROLE_ROUTES[activeRole] || ROLE_ROUTES.STUDENT;
-    
+
     // Flatten routes
     const allRoutes = [];
     roleRoutes.forEach(item => {
@@ -45,8 +45,8 @@ const HeaderSearch = ({ activeRole }) => {
     });
 
     const lowerQuery = query.toLowerCase();
-    const filtered = allRoutes.filter(route => 
-      route.text.toLowerCase().includes(lowerQuery) || 
+    const filtered = allRoutes.filter(route =>
+      route.text.toLowerCase().includes(lowerQuery) ||
       (route.parentText && route.parentText.toLowerCase().includes(lowerQuery))
     );
     setResults(filtered);
@@ -168,7 +168,7 @@ const HeaderSearch = ({ activeRole }) => {
         {results.length > 0 ? (
           <List sx={{ p: 1 }}>
             {results.map((item, idx) => (
-              <ListItemButton 
+              <ListItemButton
                 key={idx}
                 onClick={() => handleNavigate(item.path)}
                 sx={{
@@ -183,8 +183,8 @@ const HeaderSearch = ({ activeRole }) => {
                     {React.cloneElement(item.icon, { fontSize: 'small' })}
                   </ListItemIcon>
                 )}
-                <ListItemText 
-                  primary={item.text} 
+                <ListItemText
+                  primary={item.text}
                   secondary={item.parentText}
                   slotProps={{
                     primary: { sx: { fontWeight: 600, fontSize: '0.85rem', color: 'var(--text-primary)' } },

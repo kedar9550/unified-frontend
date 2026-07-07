@@ -7,6 +7,8 @@ import { UploadFile, Close as CloseIcon, Send as SendIcon } from '@mui/icons-mat
 import PageHeader from '../../components/common/PageHeader';
 import API from '../../api/axios';
 import { toast } from 'sonner';
+import RichTextEditor from '../../components/common/RichTextEditor';
+
 
 const RaiseTicket = () => {
     const [services, setServices] = useState([]);
@@ -134,17 +136,16 @@ const RaiseTicket = () => {
                                 placeholder="Brief summary of your request"
                             />
 
-                            <TextField
-                                label="Description"
-                                name="description"
-                                value={formData.description}
-                                onChange={handleChange}
-                                required
-                                fullWidth
-                                multiline
-                                rows={5}
-                                placeholder="Detailed explanation of the issue or request..."
-                            />
+                            <Box sx={{ mb: 6 }}>
+                                <Typography variant="subtitle2" sx={{ mb: 1, color: 'text.secondary' }}>
+                                    Description *
+                                </Typography>
+                                <RichTextEditor 
+                                    placeholder="Detailed explanation of the issue or request..."
+                                    value={formData.description} 
+                                    onChange={(value) => setFormData({ ...formData, description: value })} 
+                                />
+                            </Box>
 
                             <FormControl fullWidth>
                                 <InputLabel>Priority (Optional)</InputLabel>

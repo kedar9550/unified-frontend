@@ -79,8 +79,7 @@ export default function PageHeader({
       <Box sx={{
         position: "relative",
         zIndex: 1,
-        width: { xs: "100%", md: "auto" },
-        "& > button": { width: "100%" }
+        width: "auto"
       }}>
         {action}
       </Box>
