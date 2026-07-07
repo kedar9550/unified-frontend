@@ -41,6 +41,7 @@ const ManageTickets = () => {
     const [assignTicketTarget, setAssignTicketTarget] = useState(null);
     const [selectedAssignees, setSelectedAssignees] = useState([]);
     const [assignPriority, setAssignPriority] = useState('');
+    const [assignDueDate, setAssignDueDate] = useState('');
     const [assigning, setAssigning] = useState(false);
     const [availableEmpsForAssign, setAvailableEmpsForAssign] = useState([]);
 
@@ -113,6 +114,7 @@ const ManageTickets = () => {
     const handleOpenAssign = async (ticket) => {
         setAssignTicketTarget(ticket);
         setAssignPriority(ticket.priority || 'MEDIUM');
+        setAssignDueDate(ticket.dueDate ? ticket.dueDate.split('T')[0] : '');
         const existingIds = ticket.assignedTo.map(a => a.employee._id);
         setSelectedAssignees([]); 
         setOpenAssignDialog(true);
@@ -138,7 +140,8 @@ const ManageTickets = () => {
             setAssigning(true);
             const res = await API.post(`/api/service-desk/tickets/${assignTicketTarget._id}/assign`, {
                 employeeIds: selectedAssignees.map(e => e._id),
-                priority: assignPriority
+                priority: assignPriority,
+                dueDate: assignDueDate || null
             });
             if (res.data.success) {
                 toast.success('Ticket assigned successfully');
@@ -284,7 +287,7 @@ const ManageTickets = () => {
             <Dialog open={openAssignDialog} onClose={() => setOpenAssignDialog(false)} maxWidth="sm" fullWidth>
                 <DialogTitle>Assign Ticket #{assignTicketTarget?.ticketNumber}</DialogTitle>
                 <DialogContent dividers sx={{ minHeight: '300px' }}>
-                    <Box sx={{ mb: 3 }}>
+                    <Box sx={{ mb: 3, display: 'flex', gap: 2 }}>
                         <FormControl fullWidth size="small">
                             <InputLabel>Priority</InputLabel>
                             <Select
@@ -297,6 +300,19 @@ const ManageTickets = () => {
                                 <MenuItem value="HIGH">High</MenuItem>
                             </Select>
                         </FormControl>
+
+                        <TextField
+                            fullWidth
+                            size="small"
+                            type="date"
+                            label="Due Date"
+                            slotProps={{ 
+                                inputLabel: { shrink: true },
+                                htmlInput: { min: new Date().toISOString().split('T')[0] }
+                            }}
+                            value={assignDueDate}
+                            onChange={(e) => setAssignDueDate(e.target.value)}
+                        />
                     </Box>
 
                     <Typography variant="subtitle2" sx={{ mb: 1 }}>Assign To</Typography>

@@ -71,6 +71,7 @@ import TicketDetail from "./pages/serviceDesk/TicketDetail";
 import ManageServices from "./pages/serviceDesk/ManageServices";
 import ManageTickets from "./pages/serviceDesk/ManageTickets";
 import ManageServiceMembers from "./pages/serviceDesk/ManageServiceMembers";
+import AssignedToMe from "./pages/serviceDesk/AssignedToMe";
 
 const PublicOnlyRoute = ({ children }) => {
   const { user } = useAuth();
@@ -202,6 +203,7 @@ function App() {
         {/* Service Desk Routes */}
         <Route path="/service-desk/raise" element={<ProtectedRoute element={<RaiseTicket />} />} />
         <Route path="/service-desk/my-tickets" element={<ProtectedRoute element={<MyTickets />} />} />
+        <Route path="/service-desk/assigned-to-me" element={<ProtectedRoute element={<AssignedToMe />} />} />
         <Route path="/service-desk/ticket/:id" element={<ProtectedRoute element={<TicketDetail />} />} />
         <Route path="/service-desk/admin/manage-services" element={<ProtectedRoute element={<ManageServices />} />} />
         <Route path="/service-desk/admin/services" element={<ProtectedRoute element={<ManageTickets />} />} />

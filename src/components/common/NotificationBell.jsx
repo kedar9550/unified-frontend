@@ -124,7 +124,7 @@ const NotificationBell = forwardRef((props, ref) => {
         <>
             <IconButton onClick={handleOpen} sx={{ color: "#fff", display: { xs: "none", md: "flex" } }}>
                 <Badge badgeContent={unreadCount} color="error">
-                    <Notifications />
+                    <Notifications sx={{ color: 'white !important' }} />
                 </Badge>
             </IconButton>
 

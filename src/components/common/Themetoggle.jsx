@@ -25,7 +25,7 @@ export default function ThemeToggle({ onToggle }) {
     }
     const nextDark = !isDark;
 
-    console.log("ThemeToggle: handleToggle clicked. nextDark:", nextDark, "has onToggle:", !!onToggle);
+    //console.log("ThemeToggle: handleToggle clicked. nextDark:", nextDark, "has onToggle:", !!onToggle);
     if (onToggle) onToggle();
 
     // Delay the theme toggle transition slightly to allow the menu close animation to execute

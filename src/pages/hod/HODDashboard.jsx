@@ -180,7 +180,7 @@ const HODDashboard = () => {
       {/* Summary Cards Row */}
       <Grid container spacing={3} sx={{ mb: 4 }}>
         {topCards.map((card, i) => (
-          <Grid item xs={12} sm={6} md={3} key={i}>
+          <Grid xs={12} sm={6} md={3} key={i}>
             <Card sx={{
               borderRadius: "16px",
               background: 'var(--bg-panel)',
@@ -244,7 +244,7 @@ const HODDashboard = () => {
       {/* Main Grid: Pending Approval Hub & Side Stats */}
       <Grid container spacing={4}>
         {/* Left Side: Pending Actions Hub */}
-        <Grid item xs={12} lg={8}>
+        <Grid xs={12} lg={8}>
           <Box sx={{ mb: 4 }}>
             <Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)", mb: 2 }}>
               Pending Action Items Hub
@@ -340,7 +340,7 @@ const HODDashboard = () => {
         </Grid>
 
         {/* Right Side: Publications PieChart & Faculty Leaderboard */}
-        <Grid item xs={12} lg={4}>
+        <Grid xs={12} lg={4}>
           {/* Recharts PieChart Card */}
           {/* <Card sx={{
             p: 3,

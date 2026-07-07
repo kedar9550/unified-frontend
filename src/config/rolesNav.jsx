@@ -23,7 +23,8 @@ import {
   Analytics,
   Group as GroupIcon,
   ConfirmationNumber,
-  ListAlt
+  ListAlt,
+  AssignmentInd
 } from "@mui/icons-material";
 import PersonIcon from '@mui/icons-material/Person';
 import React from "react";
@@ -433,11 +434,6 @@ export const ROLE_ROUTES = {
 
   SERVICE_EMP: [
     { text: "Dashboard", path: "/dashboard", icon: <Dashboard /> },
-    {
-      text: "Service Desk", icon: <SupportAgent />, nested: [
-
-        { text: "Assigned to Me", path: "/service-desk/assigned-to-me" },
-      ]
-    }
+    { text: "Assigned to Me", path: "/service-desk/assigned-to-me", icon: <AssignmentInd /> },
   ]
 };

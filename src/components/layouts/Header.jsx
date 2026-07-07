@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Box, Typography, IconButton, Menu, MenuItem, Fade, ListItemIcon } from "@mui/material";
+import { Box, Typography, IconButton, Menu, MenuItem, Fade, ListItemIcon, Badge } from "@mui/material";
 import {
   Menu as MenuIcon,
   KeyboardArrowDown,
@@ -54,7 +54,7 @@ const Header = ({ isSidebarCollapsed }) => {
   };
 
   const handleClose = () => {
-    console.log("Header: handleClose called, setting anchorEl to null");
+    //console.log("Header: handleClose called, setting anchorEl to null");
     setAnchorEl(null);
     // Remove focus from the active element (e.g., clicked MenuItem) before the menu hides
     // This prevents the "Blocked aria-hidden on an element because its descendant retained focus" warning.
@@ -83,7 +83,7 @@ const Header = ({ isSidebarCollapsed }) => {
   const getEcapImage = () => {
     if (!user || user.profileImage || !user.institutionId || user.institutionId === "Prime") return null;
     if (user.userType === "Employee") {
-      return `https://info.aec.edu.in/aus/employeephotos/${user.institutionId}.jpg`;
+      return `https://info.aec.edu.in/aec/employeephotos/${user.institutionId}.jpg`;
     } else if (user.userType === "Student") {
       return `https://info.aec.edu.in/adityacentral/StudentPhotos/${user.institutionId}.jpg`;
     }
@@ -137,8 +137,7 @@ const Header = ({ isSidebarCollapsed }) => {
                 display: "block",
                 height: "45px",
                 width: "auto",
-                objectFit: "contain",
-                marginLeft: "-12px", // Offset built-in transparent padding in the image file
+                objectFit: "contain"
               }}
             />
           </Box>
