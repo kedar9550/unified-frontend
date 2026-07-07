@@ -106,10 +106,17 @@ const HeaderSearch = ({ activeRole }) => {
           value={query}
           onChange={handleChange}
           onFocus={handleFocus}
+          style={{ backgroundColor: 'transparent' }}
           sx={{
             color: "#fff",
             flex: 1,
             fontSize: "0.85rem",
+            "body.dark-mode &&": {
+              backgroundColor: "transparent !important",
+            },
+            "body.dark-mode && .MuiInputBase-input": {
+              backgroundColor: "transparent !important",
+            },
             "& .MuiInputBase-input::placeholder": {
               color: "rgba(255, 255, 255, 0.6)",
               opacity: 1

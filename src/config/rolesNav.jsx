@@ -17,7 +17,8 @@ import {
   LibraryBooks,
   Build,
   Link,
-  QrCode
+  QrCode,
+  SupportAgent
 } from "@mui/icons-material";
 import PersonIcon from '@mui/icons-material/Person';
 import React from "react";
@@ -71,6 +72,14 @@ export const ROLE_ROUTES = {
         { text: "Generate QR Code", path: "/utilities/generate-qr", icon: <QrCode /> }
       ]
     },
+    {
+      text: "Service Desk",
+      icon: <SupportAgent />,
+      nested: [
+        { text: "Raise Ticket", path: "/service-desk/raise" },
+        { text: "My Tickets", path: "/service-desk/my-tickets" },
+      ]
+    }
   ],
 
   UNIPRIME: [
@@ -140,6 +149,16 @@ export const ROLE_ROUTES = {
         { text: "Manage QR Code", path: "/utilities/manage-qr", icon: <QrCode /> }
       ]
     },
+    {
+      text: "Service Desk",
+      icon: <SupportAgent />,
+      nested: [
+        { text: "Raise Ticket", path: "/service-desk/raise" },
+        { text: "My Tickets", path: "/service-desk/my-tickets" },
+        { text: "Manage Services", path: "/service-desk/admin/manage-services" },
+        { text: "Feedback Analytics", path: "/service-desk/admin/feedback" }
+      ]
+    }
   ],
 
   // Example for a future "Department HOD" role
@@ -191,6 +210,14 @@ export const ROLE_ROUTES = {
         { text: "Generate QR Code", path: "/utilities/generate-qr", icon: <QrCode /> }
       ]
     },
+    {
+      text: "Service Desk",
+      icon: <SupportAgent />,
+      nested: [
+        { text: "Raise Ticket", path: "/service-desk/raise" },
+        { text: "My Tickets", path: "/service-desk/my-tickets" },
+      ]
+    }
   ],
 
   // Example for "Exam Section" role
@@ -215,6 +242,14 @@ export const ROLE_ROUTES = {
         { text: "Generate QR Code", path: "/utilities/generate-qr", icon: <QrCode /> }
       ]
     },
+    {
+      text: "Service Desk",
+      icon: <SupportAgent />,
+      nested: [
+        { text: "Raise Ticket", path: "/service-desk/raise" },
+        { text: "My Tickets", path: "/service-desk/my-tickets" },
+      ]
+    }
   ],
 
   // Example for "Research Feedback Committee"
@@ -229,6 +264,14 @@ export const ROLE_ROUTES = {
         { text: "Generate QR Code", path: "/utilities/generate-qr", icon: <QrCode /> }
       ]
     },
+    {
+      text: "Service Desk",
+      icon: <SupportAgent />,
+      nested: [
+        { text: "Raise Ticket", path: "/service-desk/raise" },
+        { text: "My Tickets", path: "/service-desk/my-tickets" },
+      ]
+    }
   ],
 
   // Feedback Coordinator
@@ -244,6 +287,14 @@ export const ROLE_ROUTES = {
         { text: "Generate QR Code", path: "/utilities/generate-qr", icon: <QrCode /> }
       ]
     },
+    {
+      text: "Service Desk",
+      icon: <SupportAgent />,
+      nested: [
+        { text: "Raise Ticket", path: "/service-desk/raise" },
+        { text: "My Tickets", path: "/service-desk/my-tickets" },
+      ]
+    }
   ],
 
   "RESEARCH_DEAN": [
@@ -277,6 +328,14 @@ export const ROLE_ROUTES = {
         { text: "Generate QR Code", path: "/utilities/generate-qr", icon: <QrCode /> }
       ]
     },
+    {
+      text: "Service Desk",
+      icon: <SupportAgent />,
+      nested: [
+        { text: "Raise Ticket", path: "/service-desk/raise" },
+        { text: "My Tickets", path: "/service-desk/my-tickets" },
+      ]
+    }
   ],
 
   "RESEARCH_COORDINATOR": [
@@ -310,6 +369,14 @@ export const ROLE_ROUTES = {
         { text: "Generate QR Code", path: "/utilities/generate-qr", icon: <QrCode /> }
       ]
     },
+    {
+      text: "Service Desk",
+      icon: <SupportAgent />,
+      nested: [
+        { text: "Raise Ticket", path: "/service-desk/raise" },
+        { text: "My Tickets", path: "/service-desk/my-tickets" },
+      ]
+    }
   ],
 
   STAFF: [
@@ -322,6 +389,14 @@ export const ROLE_ROUTES = {
         { text: "Generate QR Code", path: "/utilities/generate-qr", icon: <QrCode /> }
       ]
     },
+    {
+      text: "Service Desk",
+      icon: <SupportAgent />,
+      nested: [
+        { text: "Raise Ticket", path: "/service-desk/raise" },
+        { text: "My Tickets", path: "/service-desk/my-tickets" },
+      ]
+    }
   ],
 
   "TECHNICAL STAFF": [
@@ -334,5 +409,32 @@ export const ROLE_ROUTES = {
         { text: "Generate QR Code", path: "/utilities/generate-qr", icon: <QrCode /> }
       ]
     },
+    {
+      text: "Service Desk",
+      icon: <SupportAgent />,
+      nested: [
+        { text: "Raise Ticket", path: "/service-desk/raise" },
+        { text: "My Tickets", path: "/service-desk/my-tickets" },
+      ]
+    }
   ],
+
+  SERVICE_ADMIN: [
+    { text: "Dashboard", path: "/dashboard", icon: <Dashboard /> },
+    { text: "Service Desk", icon: <SupportAgent />, nested: [
+        { text: "Raise Ticket", path: "/service-desk/raise" },
+        { text: "My Tickets", path: "/service-desk/my-tickets" },
+        { text: "Manage Tickets", path: "/service-desk/admin/services" },
+        { text: "Feedback Analytics", path: "/service-desk/admin/feedback" },
+    ]}
+  ],
+
+  SERVICE_EMP: [
+    { text: "Dashboard", path: "/dashboard", icon: <Dashboard /> },
+    { text: "Service Desk", icon: <SupportAgent />, nested: [
+        { text: "Raise Ticket", path: "/service-desk/raise" },
+        { text: "My Tickets", path: "/service-desk/my-tickets" },
+        { text: "Assigned to Me", path: "/service-desk/assigned-to-me" },
+    ]}
+  ]
 };
