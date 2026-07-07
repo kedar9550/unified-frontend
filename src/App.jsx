@@ -64,6 +64,14 @@ import ManageShortenUrl from "./pages/utilities/ManageShortenUrl";
 import ManageQR from "./pages/utilities/ManageQR";
 import RedirectHandler from "./pages/utilities/RedirectHandler";
 
+// Service Desk Modules
+import RaiseTicket from "./pages/serviceDesk/RaiseTicket";
+import MyTickets from "./pages/serviceDesk/MyTickets";
+import TicketDetail from "./pages/serviceDesk/TicketDetail";
+import ManageServices from "./pages/serviceDesk/ManageServices";
+import ManageTickets from "./pages/serviceDesk/ManageTickets";
+import ManageServiceMembers from "./pages/serviceDesk/ManageServiceMembers";
+
 const PublicOnlyRoute = ({ children }) => {
   const { user } = useAuth();
   if (user) {
@@ -190,6 +198,15 @@ function App() {
         <Route path="/r/:shortCode" element={<RedirectHandler />} />
 
         <Route path="/doi-test" element={<DOIFetcher />} />
+        
+        {/* Service Desk Routes */}
+        <Route path="/service-desk/raise" element={<ProtectedRoute element={<RaiseTicket />} />} />
+        <Route path="/service-desk/my-tickets" element={<ProtectedRoute element={<MyTickets />} />} />
+        <Route path="/service-desk/ticket/:id" element={<ProtectedRoute element={<TicketDetail />} />} />
+        <Route path="/service-desk/admin/manage-services" element={<ProtectedRoute element={<ManageServices />} />} />
+        <Route path="/service-desk/admin/services" element={<ProtectedRoute element={<ManageTickets />} />} />
+        <Route path="/service-desk/admin/team" element={<ProtectedRoute element={<ManageServiceMembers />} />} />
+
         <Route path="*" element={<ProtectedRoute element={<Box p={4}><Typography variant="h4">Page Content</Typography></Box>} />} />
       </Routes>
     </>

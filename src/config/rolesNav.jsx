@@ -18,7 +18,10 @@ import {
   Build,
   Link,
   QrCode,
-  SupportAgent
+  SupportAgent,
+  AssignmentTurnedIn,
+  Analytics,
+  Group as GroupIcon
 } from "@mui/icons-material";
 import PersonIcon from '@mui/icons-material/Person';
 import React from "react";
@@ -153,8 +156,6 @@ export const ROLE_ROUTES = {
       text: "Service Desk",
       icon: <SupportAgent />,
       nested: [
-        { text: "Raise Ticket", path: "/service-desk/raise" },
-        { text: "My Tickets", path: "/service-desk/my-tickets" },
         { text: "Manage Services", path: "/service-desk/admin/manage-services" },
         { text: "Feedback Analytics", path: "/service-desk/admin/feedback" }
       ]
@@ -421,20 +422,22 @@ export const ROLE_ROUTES = {
 
   SERVICE_ADMIN: [
     { text: "Dashboard", path: "/dashboard", icon: <Dashboard /> },
-    { text: "Service Desk", icon: <SupportAgent />, nested: [
-        { text: "Raise Ticket", path: "/service-desk/raise" },
-        { text: "My Tickets", path: "/service-desk/my-tickets" },
-        { text: "Manage Tickets", path: "/service-desk/admin/services" },
-        { text: "Feedback Analytics", path: "/service-desk/admin/feedback" },
-    ]}
+    {
+      text: "Service Desk", icon: <SupportAgent />, nested: [
+        { text: "Service Team", path: "/service-desk/admin/team", icon: <GroupIcon /> },
+        { text: "Manage Tickets", path: "/service-desk/admin/services", icon: <AssignmentTurnedIn /> },
+        { text: "Feedback Analytics", path: "/service-desk/admin/feedback", icon: <Analytics /> },
+      ]
+    }
   ],
 
   SERVICE_EMP: [
     { text: "Dashboard", path: "/dashboard", icon: <Dashboard /> },
-    { text: "Service Desk", icon: <SupportAgent />, nested: [
-        { text: "Raise Ticket", path: "/service-desk/raise" },
-        { text: "My Tickets", path: "/service-desk/my-tickets" },
+    {
+      text: "Service Desk", icon: <SupportAgent />, nested: [
+
         { text: "Assigned to Me", path: "/service-desk/assigned-to-me" },
-    ]}
+      ]
+    }
   ]
 };

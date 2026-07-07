@@ -2,6 +2,7 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
 // https://vitejs.dev/config/
+// Trigger Vite restart to clear cache
 export default defineConfig({
   plugins: [react()],
 
