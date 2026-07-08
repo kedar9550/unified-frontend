@@ -27,7 +27,7 @@ const getSatisfactionColor = (satisfaction) => {
 };
 
 // eslint-disable-next-line no-unused-vars
-const StatCard = ({ title, value, icon: Icon, trend, subtitle, color, progress, bgIcon: BgIcon }) => (
+const StatCard = ({ title, value, icon: Icon, trend, subtitle, color, progress, bgIcon: BgIcon, valueVariant = "h4" }) => (
     <Paper sx={{
         p: 3,
         height: '100%',
@@ -54,7 +54,7 @@ const StatCard = ({ title, value, icon: Icon, trend, subtitle, color, progress, 
         </Box>
         
         <Box sx={{ position: 'relative', zIndex: 1 }}>
-            <Typography variant="h4" sx={{ fontWeight: 800, color: 'var(--text-color)', mb: 0.5 }}>
+            <Typography variant={valueVariant} sx={{ fontWeight: 800, color: 'var(--text-color)', mb: 0.5, letterSpacing: valueVariant !== 'h4' ? '-0.5px' : 'normal' }}>
                 {value}
             </Typography>
             <Typography variant="body2" sx={{ color: 'var(--secondary-color)', fontWeight: 500, mb: progress !== undefined ? 2 : 0 }}>
@@ -243,7 +243,6 @@ const FeedbackOverview = () => {
                             title="Average Rating" 
                             value={summary?.averageRating || "0.0"} 
                             icon={Star} 
-                            trend="8%" 
                             subtitle="Out of 5" 
                             color="#f5a623"
                             bgIcon={Star}
@@ -254,7 +253,6 @@ const FeedbackOverview = () => {
                             title="Satisfaction Rate" 
                             value={`${satisfactionRate}%`} 
                             icon={Smile} 
-                            trend="12%" 
                             progress={satisfactionRate}
                             color="#22c55e"
                             bgIcon={Smile}
@@ -265,7 +263,6 @@ const FeedbackOverview = () => {
                             title="Total Feedback" 
                             value={summary?.totalFeedback || 0} 
                             icon={MessageSquare} 
-                            trend="15%" 
                             color="#3b82f6"
                             bgIcon={MessageSquare}
                         />
@@ -278,6 +275,7 @@ const FeedbackOverview = () => {
                             subtitle={responseQuality.msg} 
                             color={responseQuality.color}
                             bgIcon={ShieldCheck}
+                            valueVariant="h5"
                         />
                     </Box>
                 </Box>

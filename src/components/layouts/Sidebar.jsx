@@ -53,7 +53,16 @@ import {
   BusinessCenter,
   Campaign,
   Public,
-  Devices
+  Devices,
+  Build,
+  Link,
+  QrCode,
+  SupportAgent,
+  ConfirmationNumber,
+  ListAlt,
+  Group as GroupIcon,
+  AssignmentTurnedIn,
+  LibraryBooks
 } from "@mui/icons-material";
 
 const capitalizeRole = (role) => {
@@ -103,7 +112,23 @@ const ITEM_METADATA = {
   "Appraisal Settings": { color: "rgba(91, 33, 182, 0.12)", iconColor: "#a855f7", icon: <ManageAccounts /> },
   "Proctoring Upload": { color: "rgba(79, 70, 229, 0.12)", iconColor: "#4f46e5", icon: <Assignment /> },
   "Appraisal Verification": { color: "rgba(22, 101, 52, 0.12)", iconColor: "#22c55e", icon: <DescriptionIcon /> },
-  "Appraisal Finalization": { color: "rgba(30, 64, 175, 0.12)", iconColor: "#3b82f6", icon: <DescriptionIcon /> }
+  "Appraisal Finalization": { color: "rgba(30, 64, 175, 0.12)", iconColor: "#3b82f6", icon: <DescriptionIcon /> },
+  "Value addition": { color: "rgba(234, 179, 8, 0.12)", iconColor: "#eab308", icon: <AccountBalance /> },
+  "Utilities": { color: "rgba(100, 116, 139, 0.12)", iconColor: "#64748b", icon: <Build /> },
+  "Shorten URL": { color: "rgba(14, 165, 233, 0.12)", iconColor: "#0ea5e9", icon: <Link /> },
+  "Generate QR Code": { color: "rgba(168, 85, 247, 0.12)", iconColor: "#a855f7", icon: <QrCode /> },
+  "Manage Shorten URL": { color: "rgba(14, 165, 233, 0.12)", iconColor: "#0ea5e9", icon: <Link /> },
+  "Manage QR Code": { color: "rgba(168, 85, 247, 0.12)", iconColor: "#a855f7", icon: <QrCode /> },
+  "Service Desk": { color: "rgba(236, 72, 153, 0.12)", iconColor: "#ec4899", icon: <SupportAgent /> },
+  "Raise Ticket": { color: "rgba(244, 63, 94, 0.12)", iconColor: "#f43f5e", icon: <ConfirmationNumber /> },
+  "My Tickets": { color: "rgba(16, 185, 129, 0.12)", iconColor: "#10b981", icon: <ListAlt /> },
+  "Manage Services": { color: "rgba(245, 158, 11, 0.12)", iconColor: "#f59e0b", icon: <AccountTree /> },
+  "Manage Tickets": { color: "rgba(99, 102, 241, 0.12)", iconColor: "#6366f1", icon: <AssignmentTurnedIn /> },
+  "Service Team": { color: "rgba(20, 184, 166, 0.12)", iconColor: "#14b8a6", icon: <GroupIcon /> },
+  "Feedback Analytics": { color: "rgba(217, 70, 239, 0.12)", iconColor: "#d946ef", icon: <Analytics /> },
+  "Assigned to Me": { color: "rgba(59, 130, 246, 0.12)", iconColor: "#3b82f6", icon: <AssignmentInd /> },
+  "Author Citations": { color: "rgba(239, 68, 68, 0.12)", iconColor: "#ef4444", icon: <Assignment /> },
+  "Reference Journals": { color: "rgba(34, 197, 94, 0.12)", iconColor: "#22c55e", icon: <LibraryBooks /> }
 };
 
 const drawerWidth = 270;
@@ -376,7 +401,6 @@ const Sidebar = ({ mobileOpen, onDrawerToggle, isCollapsed, onToggleSidebar }) =
                       }}
                       disableRipple
                       sx={{
-                        borderRadius: "12px",
                         flexDirection: isCollapsed ? "column" : "row",
                         borderRadius: isCollapsed ? "16px" : "12px",
                         mb: isCollapsed ? 1.5 : 0.8,

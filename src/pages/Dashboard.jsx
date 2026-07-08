@@ -10,6 +10,8 @@ import StudentDashboard from "./student/StudentDashboard";
 import ResearchFeedbackDashboard from "./feedback/ResearchFeedbackDashboard";
 import FeedbackCoordinatorDashboard from "./feedback/FeedbackCoordinatorDashboard";
 import RnDDeanDashboard from "./research/RnDDeanDashboard";
+import ServiceAdminDashboard from "./serviceDesk/ServiceAdminDashboard";
+import ServiceEmpDashboard from "./serviceDesk/ServiceEmpDashboard";
 
 function Dashboard() {
   const { activeRole } = useAuth();
@@ -34,6 +36,8 @@ function Dashboard() {
       {activeRole === "RESEARCH FEEDBACK COMMITTEE" && <ResearchFeedbackDashboard />}
       {activeRole === "FEEDBACK COORDINATOR" && <FeedbackCoordinatorDashboard />}
       {(activeRole === "RESEARCH_DEAN" || activeRole === "RESEARCH_COORDINATOR") && <RnDDeanDashboard activeRole={activeRole} />}
+      {activeRole === "SERVICE_ADMIN" && <ServiceAdminDashboard />}
+      {activeRole === "SERVICE_EMP" && <ServiceEmpDashboard />}
     </Box>
   );
 }

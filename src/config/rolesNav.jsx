@@ -24,7 +24,9 @@ import {
   Group as GroupIcon,
   ConfirmationNumber,
   ListAlt,
-  AssignmentInd
+  AssignmentInd,
+  AccountTree,
+  Assessment
 } from "@mui/icons-material";
 import PersonIcon from '@mui/icons-material/Person';
 import React from "react";
@@ -159,9 +161,9 @@ export const ROLE_ROUTES = {
       text: "Service Desk",
       icon: <SupportAgent />,
       nested: [
-        { text: "Manage Services", path: "/service-desk/admin/manage-services" },
-        { text: "Reports", path: "/service-desk/reports" },
-        { text: "Feedback Analytics", path: "/service-desk/admin/feedback" }
+        { text: "Manage Services", path: "/service-desk/admin/manage-services", icon: <AccountTree /> },
+        { text: "Reports", path: "/service-desk/reports", icon: <Assessment /> },
+        { text: "Feedback Analytics", path: "/service-desk/admin/feedback", icon: <Analytics /> }
       ]
     }
   ],
