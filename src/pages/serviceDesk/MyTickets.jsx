@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
-    Box, Typography, Chip, Button, CircularProgress, Alert, AlertTitle
+    Box, Typography, Chip, Button, CircularProgress, Alert, AlertTitle, IconButton, Tooltip
 } from '@mui/material';
 import { Visibility, Feedback as FeedbackIcon } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
@@ -124,15 +124,31 @@ const MyTickets = () => {
                             {
                                 value: '',
                                 display: (
-                                    <Button 
-                                        size="small" 
-                                        variant="outlined" 
-                                        startIcon={<Visibility />}
-                                        onClick={() => navigate(`/service-desk/ticket/${t._id}`)}
-                                        sx={{ textTransform: 'none', borderRadius: '8px' }}
-                                    >
-                                        View
-                                    </Button>
+                                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 1 }}>
+                                        <Tooltip title="View Ticket">
+                                            <IconButton 
+                                                size="small" 
+                                                onClick={() => navigate(`/service-desk/ticket/${t._id}`)}
+                                                sx={{ color: 'primary.main', bgcolor: 'primary.50', '&:hover': { bgcolor: 'primary.100' } }}
+                                            >
+                                                <Visibility fontSize="small" />
+                                            </IconButton>
+                                        </Tooltip>
+                                        {t.status === 'RESOLVED' && pendingFeedback.some(pf => pf._id === t._id) && (
+                                            <Tooltip title="Provide Feedback">
+                                                <IconButton 
+                                                    size="small" 
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        navigate(`/service-desk/ticket/${t._id}`);
+                                                    }}
+                                                    sx={{ color: 'success.main', bgcolor: 'success.50', '&:hover': { bgcolor: 'success.100' } }}
+                                                >
+                                                    <FeedbackIcon fontSize="small" />
+                                                </IconButton>
+                                            </Tooltip>
+                                        )}
+                                    </Box>
                                 )
                             }
                         ])}

@@ -19,6 +19,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import ThemeToggle from "../common/Themetoggle";
 import HeaderSearch from "../common/HeaderSearch";
 import NotificationBell from "../common/NotificationBell";
+import GlobalFeedbackPrompt from "../common/GlobalFeedbackPrompt";
 import logoLightTheme from "../../assets/Logo_Light_theme.svg";
 import logoDarkTheme from "../../assets/Logo_Dark_theme.svg";
 import universityLogoGold from "../../assets/Aditya University Gold Logo.png";
@@ -118,6 +119,7 @@ const Header = ({ isSidebarCollapsed }) => {
         borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
       }}
     >
+      <GlobalFeedbackPrompt />
       {/* LEFT SECTION: Logo */}
       <Box sx={{ display: "flex", alignItems: "center", flex: 1, minWidth: 0 }}>
         {/* LOGO: Use short logo on mobile, long logo on desktop */}

@@ -283,12 +283,17 @@ const TicketDetail = () => {
     const myAssignment = ticket.assignedTo?.find(a => a.employee?._id === user?._id || a.employee === user?._id);
     const isAssignedToMe = !!myAssignment;
     
-    const formatActionName = (action) => {
-        return action
-            .replace(/_/g, ' ')
-            .split(' ')
-            .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-            .join(' ');
+    const getTimelineLabel = (act) => {
+        if (act.action === 'TICKET_CREATED') return 'Ticket Created';
+        if (act.action === 'TICKET_ASSIGNED') return 'Assigned By';
+        if (act.action === 'STATUS_UPDATED') {
+            if (act.metadata?.status === 'IN_PROGRESS') return 'In Progress';
+            if (act.metadata?.status === 'RESOLVED') return 'Resolved';
+            if (act.metadata?.status === 'REJECTED') return 'Rejected';
+        }
+        if (act.action === 'TICKET_CLOSED') return 'Ticket Closed';
+        if (act.action === 'TICKET_REJECTED') return 'Ticket Rejected';
+        return act.action.replace(/_/g, ' ').split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(' ');
     };
 
     const getAvatarSrc = (userObj) => {
@@ -540,12 +545,14 @@ const TicketDetail = () => {
                             <Box sx={{ display: 'flex', flexDirection: 'column', mt: 1 }}>
                                 {(() => {
                                     const pendingSteps = [];
-                                    if (ticket.status === 'OPEN') {
-                                        pendingSteps.push('Assigned', 'In Progress', 'Completed');
-                                    } else if (ticket.status === 'ASSIGNED') {
-                                        pendingSteps.push('In Progress', 'Completed');
-                                    } else if (ticket.status === 'IN_PROGRESS') {
-                                        pendingSteps.push('Completed');
+                                    if (ticket.status !== 'CLOSED' && ticket.status !== 'RESOLVED' && ticket.status !== 'REJECTED') {
+                                        if (ticket.status === 'OPEN') {
+                                            pendingSteps.push('Assigned By', 'In Progress', 'Resolved');
+                                        } else if (ticket.status === 'ASSIGNED') {
+                                            pendingSteps.push('In Progress', 'Resolved');
+                                        } else if (ticket.status === 'IN_PROGRESS') {
+                                            pendingSteps.push('Resolved');
+                                        }
                                     }
 
                                     const allTimelineItems = [
@@ -591,7 +598,7 @@ const TicketDetail = () => {
                                                 {/* Content */}
                                                 <Box sx={{ pb: 3, flex: 1 }}>
                                                     <Typography variant="body2" sx={{ fontWeight: 600, color: 'var(--text-primary)', mb: isCompleted ? 0.5 : 0, fontSize: '0.9rem', pt: isCompleted ? 0 : '1px' }}>
-                                                        {isCompleted ? formatActionName(item.act.action) : item.label}
+                                                        {isCompleted ? getTimelineLabel(item.act) : item.label}
                                                     </Typography>
                                                     
                                                     {isCompleted && (
@@ -656,15 +663,17 @@ const TicketDetail = () => {
                                 </Box>
                                 {myAssignment?.status !== 'RESOLVED' && myAssignment?.status !== 'REJECTED' && (
                                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                                        <Button 
-                                            variant="contained" 
-                                            color="info"
-                                            onClick={() => { setEmpActionStatus('IN_PROGRESS'); setEmpStatusModalOpen(true); }}
-                                            fullWidth
-                                            sx={{ textTransform: 'none', borderRadius: '8px' }}
-                                        >
-                                            Start Work (In Progress)
-                                        </Button>
+                                        {myAssignment?.status === 'ASSIGNED' && (
+                                            <Button 
+                                                variant="contained" 
+                                                color="info"
+                                                onClick={() => { setEmpActionStatus('IN_PROGRESS'); setEmpStatusModalOpen(true); }}
+                                                fullWidth
+                                                sx={{ textTransform: 'none', borderRadius: '8px' }}
+                                            >
+                                                Start Work (In Progress)
+                                            </Button>
+                                        )}
                                         <Button 
                                             variant="contained" 
                                             color="success"
@@ -674,15 +683,17 @@ const TicketDetail = () => {
                                         >
                                             Mark as Resolved
                                         </Button>
-                                        <Button 
-                                            variant="outlined" 
-                                            color="error"
-                                            onClick={() => { setEmpActionStatus('REJECTED'); setEmpStatusModalOpen(true); }}
-                                            fullWidth
-                                            sx={{ textTransform: 'none', borderRadius: '8px' }}
-                                        >
-                                            Reject Assignment
-                                        </Button>
+                                        {myAssignment?.status === 'ASSIGNED' && (
+                                            <Button 
+                                                variant="outlined" 
+                                                color="error"
+                                                onClick={() => { setEmpActionStatus('REJECTED'); setEmpStatusModalOpen(true); }}
+                                                fullWidth
+                                                sx={{ textTransform: 'none', borderRadius: '8px' }}
+                                            >
+                                                Reject Assignment
+                                            </Button>
+                                        )}
                                     </Box>
                                 )}
                             </Paper>
