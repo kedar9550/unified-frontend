@@ -447,7 +447,7 @@ const FacultyDashboard = () => {
               sx={{
                 display: "flex",
                 gap: 3,
-                alignItems: "center",
+                alignItems: "flex-start",
                 height: "100%",
                 flexWrap: { xs: "wrap", sm: "nowrap" },
               }}
@@ -458,14 +458,14 @@ const FacultyDashboard = () => {
                   width: { xs: "100%", sm: "50%" },
                   display: "flex",
                   flexDirection: "column",
-                  alignItems: "center",
+                  alignItems: "flex-start",
                 }}
               >
                 <Typography
                   variant="subtitle2"
                   sx={{
                     alignSelf: "flex-start",
-                    mb: 1,
+                    mb: 2,
                     fontWeight: 700,
                     color: "var(--text-secondary)",
                     textTransform: "uppercase",
@@ -529,49 +529,52 @@ const FacultyDashboard = () => {
                     </Typography>
                   </Box>
                 </Box>
-                <Box sx={{ mt: 2, width: "100%", maxHeight: 150, overflowY: "auto" }}>
-                  {(dashboardData?.researchTypeDistribution || []).filter(item => item.value > 0).map((item, idx) => (
-                    <Box
-                      key={idx}
-                      sx={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                        mb: 1,
-                      }}
-                    >
+                <Box sx={{ mt: 2, width: "100%", maxWidth: 180, maxHeight: 150, overflowY: "auto" }}>
+                  {(dashboardData?.researchTypeDistribution || [])
+                    .map((item, idx) => ({ ...item, originalIndex: idx }))
+                    .filter(item => item.value > 0)
+                    .map((item) => (
                       <Box
-                        sx={{ display: "flex", alignItems: "center", gap: 1 }}
+                        key={item.originalIndex}
+                        sx={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                          mb: 1.5,
+                        }}
                       >
                         <Box
-                          sx={{
-                            width: 8,
-                            height: 8,
-                            borderRadius: 1,
-                            bgcolor: CHART_COLORS[idx % CHART_COLORS.length],
-                          }}
-                        />
+                          sx={{ display: "flex", alignItems: "center", gap: 1 }}
+                        >
+                          <Box
+                            sx={{
+                              width: 8,
+                              height: 8,
+                              borderRadius: "50%",
+                              bgcolor: CHART_COLORS[item.originalIndex % CHART_COLORS.length],
+                            }}
+                          />
+                          <Typography
+                            sx={{
+                              fontSize: 13,
+                              color: "var(--text-secondary)",
+                              fontWeight: 500,
+                            }}
+                          >
+                            {item.name}
+                          </Typography>
+                        </Box>
                         <Typography
                           sx={{
                             fontSize: 13,
-                            color: "var(--text-secondary)",
-                            fontWeight: 500,
+                            fontWeight: 700,
+                            color: "var(--text-primary)",
                           }}
                         >
-                          {item.name}
+                          {item.value}
                         </Typography>
                       </Box>
-                      <Typography
-                        sx={{
-                          fontSize: 13,
-                          fontWeight: 700,
-                          color: "var(--text-primary)",
-                        }}
-                      >
-                        {item.value}
-                      </Typography>
-                    </Box>
-                  ))}
+                    ))}
                 </Box>
               </Box>
 
@@ -590,21 +593,51 @@ const FacultyDashboard = () => {
                 >
                   Verification Status
                 </Typography>
-                <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
                   {[
-                    { label: "Total Submissions", value: dashboardData?.totalResearch || 0, icon: <Description sx={{ fontSize: 20, color: "var(--color-primary)" }} /> },
-                    { label: "Approved Items", value: dashboardData?.approvedResearch || 0, icon: <AssignmentTurnedIn sx={{ fontSize: 20, color: "#10B981" }} /> },
-                    { label: "Pending Verification", value: dashboardData?.pendingResearch || 0, icon: <Event sx={{ fontSize: 20, color: "#F59E0B" }} /> },
-                    { label: "Rejected / Returned", value: dashboardData?.rejectedResearch || 0, icon: <PersonOff sx={{ fontSize: 20, color: "#EF4444" }} /> },
+                    { label: "Total Submissions", value: dashboardData?.totalResearch || 0, icon: <Description sx={{ fontSize: 18, color: "var(--color-primary)" }} />, bgColor: "rgba(59, 130, 246, 0.1)" },
+                    { label: "Approved Items", value: dashboardData?.approvedResearch || 0, icon: <AssignmentTurnedIn sx={{ fontSize: 18, color: "#10B981" }} />, bgColor: "rgba(16, 185, 129, 0.1)" },
+                    { label: "Pending Verification", value: dashboardData?.pendingResearch || 0, icon: <Event sx={{ fontSize: 18, color: "#F59E0B" }} />, bgColor: "rgba(245, 158, 11, 0.1)" },
+                    { label: "Rejected / Returned", value: dashboardData?.rejectedResearch || 0, icon: <PersonOff sx={{ fontSize: 18, color: "#EF4444" }} />, bgColor: "rgba(239, 68, 68, 0.1)" },
                   ].map((stat, i) => (
-                    <Box key={i} sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                      <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                        {stat.icon}
-                        <Typography sx={{ fontSize: 14, color: "var(--text-secondary)", fontWeight: 500 }}>
+                    <Box
+                      key={i}
+                      sx={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        p: 1.5,
+                        px: 2,
+                        borderRadius: "12px",
+                        border: "1px solid var(--border-color)",
+                        background: "var(--bg-glass)",
+                        transition: "all 0.2s ease-in-out",
+                        "&:hover": {
+                          borderColor: "var(--color-primary-alpha)",
+                          background: "var(--bg-accent-1)",
+                          transform: "translateX(4px)",
+                        }
+                      }}
+                    >
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                        <Box
+                          sx={{
+                            display: "flex",
+                            justifyContent: "center",
+                            alignItems: "center",
+                            width: 32,
+                            height: 32,
+                            borderRadius: "8px",
+                            backgroundColor: stat.bgColor,
+                          }}
+                        >
+                          {stat.icon}
+                        </Box>
+                        <Typography sx={{ fontSize: 13, color: "var(--text-secondary)", fontWeight: 600 }}>
                           {stat.label}
                         </Typography>
                       </Box>
-                      <Typography sx={{ fontWeight: 800, color: "var(--text-primary)" }}>
+                      <Typography sx={{ fontSize: 14, fontWeight: 800, color: "var(--text-primary)" }}>
                         {stat.value}
                       </Typography>
                     </Box>
