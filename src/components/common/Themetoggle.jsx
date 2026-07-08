@@ -16,6 +16,7 @@ export default function ThemeToggle({ onToggle }) {
       document.body.classList.remove("dark-mode");
       localStorage.setItem("theme", "light");
     }
+    window.dispatchEvent(new CustomEvent("themeChanged", { detail: { isDark } }));
   }, [isDark]);
 
   const handleToggle = (e) => {

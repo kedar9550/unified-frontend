@@ -20,11 +20,10 @@ import ThemeToggle from "../common/Themetoggle";
 import HeaderSearch from "../common/HeaderSearch";
 import NotificationBell from "../common/NotificationBell";
 import GlobalFeedbackPrompt from "../common/GlobalFeedbackPrompt";
-import logoLightTheme from "../../assets/Logo_Light_theme.svg";
 import logoDarkTheme from "../../assets/Logo_Dark_theme.svg";
 import universityLogoGold from "../../assets/Aditya University Gold Logo.png";
-import logoWhite from "../../assets/logo_white.png";
 import circleLogoWhite from "../../assets/Circle_logo_white.png";
+import smallLogoWhite from "../../assets/Small_logo_white.png";
 
 const capitalizeRole = (role) => {
   if (!role) return "";
@@ -131,22 +130,22 @@ const Header = ({ isSidebarCollapsed }) => {
           }}
         >
           {/* Mobile Logo (Short) */}
-          <Box sx={{ display: { xs: "flex", md: "none" }, flexShrink: 0, alignItems: "center" }}>
+          <Box sx={{ display: { xs: "flex", md: "none" }, flexShrink: 0, alignItems: "center", pl: 2 }}>
             <img
-              src={logoDarkTheme}
+              src={isDarkMode ? circleLogoWhite : logoDarkTheme}
               alt="Aditya University Logo"
               style={{
                 display: "block",
-                height: "45px",
-                width: "auto",
-                objectFit: "contain"
+                height: "50px",
+                width: "48px",
+                objectFit: "cover"
               }}
             />
           </Box>
           {/* Desktop Logo (Long) */}
           <Box sx={{ display: { xs: "none", md: "flex" }, flexShrink: 0, alignItems: "center" }}>
             <img
-              src={universityLogoGold}
+              src={isDarkMode ? smallLogoWhite : universityLogoGold}
               alt="Aditya University Logo"
               style={{
                 display: "block",
