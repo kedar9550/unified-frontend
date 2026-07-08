@@ -1,7 +1,8 @@
+import Loader from "../../components/common/Loader";
 import React, { useState, useEffect, useRef } from 'react';
 import { 
     Box, Typography, Paper, Chip, Divider, Button, 
-    TextField, Avatar, CircularProgress, IconButton,
+    TextField, Avatar, IconButton,
     Dialog, DialogTitle, DialogContent, DialogActions,
     Select, MenuItem, FormControl, InputLabel, Rating,
     List, ListItem, ListItemAvatar, ListItemText, Grid,
@@ -269,7 +270,7 @@ const TicketDetail = () => {
     if (loading) {
         return (
             <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
-                <CircularProgress />
+                <Loader />
             </Box>
         );
     }

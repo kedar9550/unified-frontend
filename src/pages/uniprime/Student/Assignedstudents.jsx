@@ -1,5 +1,6 @@
+import Loader from "../../../components/common/Loader";
 import React, { useState, useEffect, useCallback } from "react";
-import { Box, Avatar, CircularProgress, Typography, MenuItem, Select, FormControl, InputLabel, Paper, Button, Grid, Checkbox } from "@mui/material";
+import { Box, Avatar, Typography, MenuItem, Select, FormControl, InputLabel, Paper, Button, Grid, Checkbox } from "@mui/material";
 import { UploadFile, PersonAdd, Download } from "@mui/icons-material";
 import PageHeader from "../../../components/common/PageHeader";
 import SectionHeader from "../../../components/common/SectionHeader";

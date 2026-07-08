@@ -1,3 +1,4 @@
+import Loader from "../../components/common/Loader";
 import React, { useState, useEffect } from "react";
 import {
   Box,
@@ -10,7 +11,6 @@ import {
   DialogActions,
   TextField,
   Chip,
-  CircularProgress,
   Tooltip,
   Grid,
   Collapse,

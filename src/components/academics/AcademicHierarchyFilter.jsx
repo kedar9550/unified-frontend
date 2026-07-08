@@ -6,7 +6,6 @@ import {
     InputLabel, 
     Select, 
     MenuItem, 
-    CircularProgress, 
     FormHelperText,
     Autocomplete,
     TextField

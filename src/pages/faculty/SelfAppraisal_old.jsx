@@ -1,3 +1,4 @@
+import Loader from "../../components/common/Loader";
 import React, { useState, useEffect } from "react";
 import {
   Box,
@@ -33,9 +34,7 @@ import {
   Radio,
   RadioGroup,
   FormControlLabel,
-  FormLabel,
-  CircularProgress
-} from "@mui/material";
+  FormLabel} from "@mui/material";
 import {
   Send,
   CloudUpload,
@@ -2277,14 +2276,14 @@ const SelfAppraisal = () => {
                     </Box>
                   </Box>
                   <Box sx={{ position: "relative", display: "inline-flex" }}>
-                    <CircularProgress
+                    <Loader
                       variant="determinate"
                       value={100}
                       size={40}
                       thickness={4}
                       sx={{ color: "var(--border-color)", opacity: 0.15 }}
                     />
-                    <CircularProgress
+                    <Loader
                       variant="determinate"
                       value={Math.min(100, Math.round((eligibility.scores.T / 80) * 100))}
                       size={40}
@@ -2741,7 +2740,7 @@ const SelfAppraisal = () => {
  }
  }}
  >
-                      {submittingProctoring ? <CircularProgress size={16} sx={{ color: "#fff" }} /> : editingEntry ? "Save Changes" : "Add Record"}
+                      {submittingProctoring ? <Loader size={16} sx={{ color: "#fff" }} /> : editingEntry ? "Save Changes" : "Add Record"}
                     </Button>
                   </DialogActions>
                 </form>
@@ -2893,14 +2892,14 @@ const SelfAppraisal = () => {
                     </Box>
                   </Box>
                   <Box sx={{ position: "relative", display: "inline-flex" }}>
-                    <CircularProgress
+                    <Loader
                       variant="determinate"
                       value={100}
                       size={40}
                       thickness={4}
                       sx={{ color: "var(--border-color)", opacity: 0.15 }}
                     />
-                    <CircularProgress
+                    <Loader
                       variant="determinate"
                       value={Math.min(100, Math.round((eligibility.scores.R_sum / 80) * 100))}
                       size={40}
@@ -3285,14 +3284,14 @@ const SelfAppraisal = () => {
                     </Box>
                   </Box>
                   <Box sx={{ position: "relative", display: "inline-flex" }}>
-                    <CircularProgress
+                    <Loader
                       variant="determinate"
                       value={100}
                       size={40}
                       thickness={4}
                       sx={{ color: "var(--border-color)", opacity: 0.15 }}
                     />
-                    <CircularProgress
+                    <Loader
                       variant="determinate"
                       value={Math.min(100, Math.round((eligibility.scores.V / 20) * 100))}
                       size={40}
@@ -3596,14 +3595,14 @@ const SelfAppraisal = () => {
                       </Box>
                     </Box>
                     <Box sx={{ position: "relative", display: "inline-flex" }}>
-                      <CircularProgress
+                      <Loader
                         variant="determinate"
                         value={100}
                         size={40}
                         thickness={4}
                         sx={{ color: "var(--border-color)", opacity: 0.15 }}
                       />
-                      <CircularProgress
+                      <Loader
                         variant="determinate"
                         value={Math.min(100, Math.round((eligibility.scores.A / 20) * 100))}
                         size={40}
@@ -3893,14 +3892,14 @@ const SelfAppraisal = () => {
 
                     {/* Circular Progress */}
                     <Box sx={{ position: "relative", display: "inline-flex", flexShrink: 0 }}>
-                      <CircularProgress
+                      <Loader
                         variant="determinate"
                         value={100}
                         size={76}
                         thickness={4.5}
                         sx={{ color: "var(--border-color)", opacity: 0.15 }}
                       />
-                      <CircularProgress
+                      <Loader
                         variant="determinate"
                         value={card.percent}
                         size={76}

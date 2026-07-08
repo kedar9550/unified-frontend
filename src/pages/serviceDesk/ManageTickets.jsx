@@ -1,6 +1,7 @@
+import Loader from "../../components/common/Loader";
 import React, { useState, useEffect } from 'react';
 import {
-    Box, Typography, Button, CircularProgress, Tooltip, IconButton, Chip, Select, MenuItem, FormControl, InputLabel,
+    Box, Typography, Button, Tooltip, IconButton, Chip, Select, MenuItem, FormControl, InputLabel,
     Dialog, DialogTitle, DialogContent, DialogActions, TextField, Autocomplete, Tabs, Tab
 } from '@mui/material';
 import { Visibility, AssignmentInd as AssignIcon, Block as RejectIcon, Close as CloseIcon } from '@mui/icons-material';
@@ -157,7 +158,7 @@ const ManageTickets = () => {
     };
 
     if (loadingInit) {
-        return <Box sx={{ display: 'flex', justifyContent: 'center', p: 5 }}><CircularProgress /></Box>;
+        return <Box sx={{ display: 'flex', justifyContent: 'center', p: 5 }}><Loader /></Box>;
     }
 
     if (adminServices.length === 0) {
@@ -204,7 +205,7 @@ const ManageTickets = () => {
 
                 {loadingTickets ? (
                     <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
-                        <CircularProgress />
+                        <Loader />
                     </Box>
                 ) : tickets.length === 0 ? (
                     <Box sx={{

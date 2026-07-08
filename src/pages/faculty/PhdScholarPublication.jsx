@@ -1,5 +1,6 @@
+import Loader from "../../components/common/Loader";
 import { useState, useEffect } from "react";
-import { Box, TextField, MenuItem, Select, Typography, Button, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, IconButton, Dialog, DialogTitle, DialogContent, DialogActions, Stack, Grid, Card, Chip, Divider, CircularProgress, TablePagination, Tooltip } from "@mui/material";
+import { Box, TextField, MenuItem, Select, Typography, Button, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, IconButton, Dialog, DialogTitle, DialogContent, DialogActions, Stack, Grid, Card, Chip, Divider, TablePagination, Tooltip } from "@mui/material";
 import { toast } from "sonner";
 import { AddCircle, Delete, Close, Description, Download, AttachFile, Groups, WorkspacePremium, CheckCircle, Visibility } from "@mui/icons-material";
 import PageHeader from "../../components/common/PageHeader";
@@ -544,7 +545,7 @@ export default function PhdScholarPublication() {
  variant="contained"
  onClick={handleVerifyRollNumber}
  disabled={isVerifying || !rollNumberInput.trim() || loading}
- startIcon={isVerifying ? <CircularProgress size={16} color="inherit" /> : <CheckCircle />}
+ startIcon={isVerifying ? <Loader size={16} color="inherit" /> : <CheckCircle />}
  sx={{
  background: "linear-gradient(135deg, #10B981 0%, #059669 100%)",
  

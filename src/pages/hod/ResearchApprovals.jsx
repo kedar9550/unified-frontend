@@ -1,3 +1,4 @@
+import Loader from "../../components/common/Loader";
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import API from '../../api/axios';
@@ -16,7 +17,6 @@ import {
   DialogActions,
   Grid,
   Divider,
-  CircularProgress,
   Close,
 } from '@mui/material';
 import { Visibility as ViewIcon, Check as ApproveIcon, Close as RejectIcon } from '@mui/icons-material';
@@ -270,7 +270,7 @@ const ResearchApprovals = () => {
         </Typography>
         {loading ? (
           <Box sx={{ display: 'flex', justifyContent: 'center', py: 5 }}>
-            <CircularProgress />
+            <Loader />
           </Box>
         ) : (
           <DataTable columns={columns} rows={rows} />

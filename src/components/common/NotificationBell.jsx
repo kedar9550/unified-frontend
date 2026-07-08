@@ -1,5 +1,6 @@
+import Loader from "./Loader";
 import React, { useState, useEffect, forwardRef, useImperativeHandle } from 'react';
-import { Badge, IconButton, Popover, Box, Typography, List, ListItem, ListItemButton, ListItemText, ListItemAvatar, Avatar, Button, Divider, IconButton as MuiIconButton, CircularProgress, MenuItem } from '@mui/material';
+import { Badge, IconButton, Popover, Box, Typography, List, ListItem, ListItemButton, ListItemText, ListItemAvatar, Avatar, Button, Divider, IconButton as MuiIconButton, MenuItem } from '@mui/material';
 import { Notifications, DeleteOutlined, CheckCircle, InfoOutlined, WarningAmber, Close } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useSocket } from '../../context/SocketContext';
@@ -161,7 +162,7 @@ const NotificationBell = forwardRef((props, ref) => {
                 
                 {loading ? (
                     <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
-                        <CircularProgress size={24} />
+                        <Loader size={24} />
                     </Box>
                 ) : notifications.length === 0 ? (
                     <Box sx={{ p: 4, textAlign: 'center', color: 'text.secondary' }}>

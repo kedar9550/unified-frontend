@@ -5,7 +5,7 @@ import { useLoading } from "../../context/LoadingContext";
 
 import {
   Box, TextField, MenuItem, Select, Typography, Button, Table, TableBody,
-  TableCell, TableContainer, TableHead, TableRow, Paper, CircularProgress,
+  TableCell, TableContainer, TableHead, TableRow, Paper,
   Dialog, DialogTitle, DialogContent, DialogActions, IconButton, Stack, Grid, Card, Chip, Divider, FormControl,
   TablePagination, Tooltip
 } from "@mui/material";
@@ -1144,7 +1144,7 @@ export default function JournalPublication() {
           <FileField label="Complete Journal *" name="completeJournal" onChange={handleCompleteJournalChange} accept=".pdf" maxSize={5 * 1024 * 1024} />
           {scanningSdg && (
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mt: 1, p: 1.5, borderRadius: '8px', bgcolor: 'rgba(25, 118, 210, 0.05)', border: '1px solid rgba(25, 118, 210, 0.2)' }}>
-              <CircularProgress size={16} />
+              <Loader size={16} />
               <Typography variant="caption" sx={{ fontWeight: 600, color: 'var(--color-primary)' }}>Scanning complete journal for SDG keywords...</Typography>
             </Box>
           )}

@@ -5,8 +5,7 @@ import {
     Table, TableBody, TableCell, TableContainer,
     TableHead, TableRow, Paper, Chip, IconButton,
     Tooltip, TextField, InputAdornment, Dialog,
-    DialogTitle, DialogContent, DialogActions,
-    CircularProgress, Collapse,
+    DialogTitle, DialogContent, DialogActions, Collapse,
     List, ListItem, ListItemText, ListItemSecondaryAction,
     Divider, Avatar, Checkbox, FormControlLabel, FormGroup,
     ListItemButton, Menu, MenuItem, ListItemIcon, Grid,
@@ -1620,7 +1619,7 @@ const RoleManagement = () => {
 
                         {loadingEmployees ? (
                             <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
-                                <CircularProgress />
+                                <Loader />
                             </Box>
                         ) : (
                             <>

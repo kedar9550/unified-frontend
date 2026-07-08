@@ -1,3 +1,4 @@
+import Loader from "../../components/common/Loader";
 import React, { useEffect, useState } from "react";
 import {
   Box,
@@ -7,7 +8,6 @@ import {
   MenuItem,
   Select,
   Typography,
-  CircularProgress,
   Radio,
   RadioGroup,
   FormControlLabel,
@@ -323,7 +323,7 @@ export default function FacultyAdministration() {
 
       {loading ? (
         <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>
-          <CircularProgress size={40} sx={{ color: "var(--color-primary)" }} />
+          <Loader size={40} sx={{ color: "var(--color-primary)" }} />
         </Box>
       ) : (
         <Box>
@@ -734,7 +734,7 @@ export default function FacultyAdministration() {
                 <Button
  type="submit"
  disabled={saving}
- startIcon={saving ? <CircularProgress size={18} sx={{ color: "#fff" }} /> : <Save />}
+ startIcon={saving ? <Loader size={18} sx={{ color: "#fff" }} /> : <Save />}
  sx={{
  
  px: 4,

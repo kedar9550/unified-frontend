@@ -24,7 +24,6 @@ import {
   TablePagination,
   Tooltip,
   Alert,
-  CircularProgress,
   Stack,
   Tabs,
   Tab,
@@ -1001,7 +1000,7 @@ const ReferenceJournalManagement = () => {
                 variant="contained"
                 disabled={!csvFile || uploading}
                 onClick={handleBulkUpload}
-                startIcon={uploading ? <CircularProgress size={18} color="inherit" /> : <UploadIcon />}
+                startIcon={uploading ? <Loader size={18} color="inherit" /> : <UploadIcon />}
                 sx={{
                   textTransform: "none",
                   fontWeight: 700,
@@ -1768,7 +1767,7 @@ const ReferenceJournalManagement = () => {
                 variant="contained"
                 disabled={!jifCsvFile || jifUploading}
                 onClick={handleJifBulkUpload}
-                startIcon={jifUploading ? <CircularProgress size={18} color="inherit" /> : <UploadIcon />}
+                startIcon={jifUploading ? <Loader size={18} color="inherit" /> : <UploadIcon />}
                 sx={{
                   textTransform: "none",
                   fontWeight: 700,

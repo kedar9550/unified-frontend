@@ -1,3 +1,4 @@
+import Loader from "../../components/common/Loader";
 import React, { useState, useEffect } from "react";
 import {
   Box,
@@ -21,7 +22,6 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  CircularProgress,
   Stack,
   Tooltip,
   Avatar
@@ -358,7 +358,7 @@ const AuthorCitationsManagement = () => {
             variant="outlined"
             component="label"
             disabled={uploading}
-            startIcon={uploading ? <CircularProgress size={20} color="inherit" /> : <UploadFile />}
+            startIcon={uploading ? <Loader size={20} color="inherit" /> : <UploadFile />}
             sx={{
               borderColor: "var(--color-primary)",
               color: "var(--color-primary)",
@@ -438,7 +438,7 @@ const AuthorCitationsManagement = () => {
       <TableContainer component={Paper} sx={{ borderRadius: "16px", border: "1px solid var(--border-color)", boxShadow: "none", overflow: "hidden" }}>
         {loading && records.length === 0 ? (
           <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>
-            <CircularProgress color="secondary" />
+            <Loader color="secondary" />
           </Box>
         ) : records.length === 0 ? (
           <Box sx={{ py: 8, textAlign: "center" }}>
@@ -542,7 +542,7 @@ const AuthorCitationsManagement = () => {
                     disabled={verifying || !formEmpid.trim()}
                     sx={{ borderRadius: "10px", textTransform: "none", fontWeight: 700, px: 3 }}
                   >
-                    {verifying ? <CircularProgress size={24} /> : "Verify"}
+                    {verifying ? <Loader size={24} /> : "Verify"}
                   </Button>
                 )}
               </Stack>
@@ -653,7 +653,7 @@ const AuthorCitationsManagement = () => {
               color: "white"
             }}
           >
-            {loading ? <CircularProgress size={24} color="inherit" /> : "Save"}
+            {loading ? <Loader size={24} color="inherit" /> : "Save"}
           </Button>
         </DialogActions>
       </Dialog>

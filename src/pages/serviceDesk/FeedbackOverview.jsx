@@ -135,9 +135,8 @@ const FeedbackOverview = () => {
                 setTrendData(formattedTrend);
             }
 
-            if (Array.isArray(servicesRes.data)) {
-                setAllServicesList(servicesRes.data);
-            }
+            const servicesList = servicesRes.data?.data || (Array.isArray(servicesRes.data) ? servicesRes.data : []);
+            setAllServicesList(servicesList);
         } catch (err) {
             console.error('Error fetching data:', err);
         } finally {
@@ -160,7 +159,7 @@ const FeedbackOverview = () => {
         } else {
             const serviceNames = feedbackData.map(f => f.ticket?.service?.name).filter(Boolean);
             const uniqueNames = [...new Set(serviceNames)];
-            return uniqueNames.length > 1 ? ["All Services", ...uniqueNames] : uniqueNames;
+            return ["All Services", ...uniqueNames];
         }
     }, [allServicesList, isSA, feedbackData]);
 

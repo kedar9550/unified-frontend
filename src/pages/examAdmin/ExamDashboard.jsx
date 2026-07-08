@@ -9,9 +9,7 @@ import {
   Avatar,
   Chip,
   LinearProgress,
-  Paper,
-  CircularProgress
-} from "@mui/material";
+  Paper} from "@mui/material";
 import { toast } from "sonner";
 import {
   People,

@@ -1,8 +1,7 @@
 import Loader from "../../components/common/Loader";
 import React, { useEffect, useState, useRef } from "react";
 import {
-  Box, Button, MenuItem, Select, Typography,
-  CircularProgress, Stack, IconButton, Tooltip, TextField, Chip
+  Box, Button, MenuItem, Select, Typography, Stack, IconButton, Tooltip, TextField, Chip
 } from "@mui/material";
 import {
   CloudUpload as CloudUploadIcon,
@@ -316,7 +315,7 @@ const DeptProctorUploads = () => {
       // Pharma.D CSV template: no semester column, has yearname column
       const headers = ["proctorid", "studentid", "academicyear", "semester", "yearname"];
       const rows = students.map(s =>
-        `,${s.studentId},${acYearStr},,${selectedYearName}`
+        `,${s.studentId},${acYearStr},${selectedYearName}`
       );
       const csvContent = [headers.join(","), ...rows].join("\n");
       triggerDownload(csvContent, `proctor_template_pharmad_${selectedYearName.replace(" ", "_")}.csv`);

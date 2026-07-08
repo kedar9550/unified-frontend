@@ -1,3 +1,4 @@
+import Loader from "../../components/common/Loader";
 import React, { useState, useEffect } from "react";
 import PageHeader from "../../components/common/PageHeader";
 import SectionHeader from "../../components/common/SectionHeader";
@@ -16,7 +17,6 @@ import {
     Tooltip,
     Stack,
     TextField,
-    CircularProgress,
     Typography,
     Grid,
     Dialog,
@@ -280,7 +280,7 @@ const ProctoringApprovalList = () => {
 
                     {loading ? (
                         <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>
-                            <CircularProgress size={36} sx={{ color: "var(--color-primary)" }} />
+                            <Loader size={36} sx={{ color: "var(--color-primary)" }} />
                         </Box>
                     ) : rows.length === 0 ? (
                         <Box
@@ -500,7 +500,7 @@ const ProctoringApprovalList = () => {
  variant="outlined"
  color="error"
  disabled={actionLoading}
- startIcon={actionLoading ? <CircularProgress size={16} /> : <CancelIcon />}
+ startIcon={actionLoading ? <Loader size={16} /> : <CancelIcon />}
  onClick={() => handleHODAction("Reject")}
  sx={{ textTransform: "none", fontWeight: 700, borderColor: "rgba(239, 68, 68, 0.4)", color: "#EF4444" }}
  >
@@ -509,7 +509,7 @@ const ProctoringApprovalList = () => {
                                     <Button
  variant="contained"
  disabled={actionLoading}
- startIcon={actionLoading ? <CircularProgress size={16} /> : <CheckCircleIcon />}
+ startIcon={actionLoading ? <Loader size={16} /> : <CheckCircleIcon />}
  onClick={() => handleHODAction("Approve")}
  sx={{
  textTransform: "none",

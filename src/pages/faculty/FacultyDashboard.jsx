@@ -13,7 +13,6 @@ import {
   TableRow,
   Paper,
   IconButton,
-  CircularProgress,
   Chip,
   MenuItem,
   Select,
@@ -38,6 +37,7 @@ import API from "../../api/axios";
 import { useAuth } from "../../context/AuthContext";
 import DataTable from "../../components/data/DataTable";
 import ProctorStudentsModal from "../../components/faculty/ProctorStudentsModal";
+import Loader from "../../components/common/Loader";
 import { useNavigate } from "react-router-dom";
 
 const FacultyDashboard = () => {
@@ -180,11 +180,7 @@ const FacultyDashboard = () => {
   ];
 
   if (loadingDashboard && !dashboardData) {
-    return (
-      <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "60vh" }}>
-        <CircularProgress />
-      </Box>
-    );
+    return <Loader sx={{ minHeight: '60vh' }} />;
   }
 
   return (

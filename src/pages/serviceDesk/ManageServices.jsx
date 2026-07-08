@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
+import Loader from "../../components/common/Loader";
 import {
     Box, Button, Paper, IconButton, Dialog,
-    DialogTitle, DialogContent, DialogActions, TextField, Chip, CircularProgress,
+    DialogTitle, DialogContent, DialogActions, TextField, Chip,
     Tooltip, Autocomplete, List, ListItem, ListItemText, ListItemSecondaryAction, Divider, Typography
 } from '@mui/material';
 import { Add as AddIcon, Edit as EditIcon, Delete as DeleteIcon, Security as SecurityIcon, PersonAdd as PersonAddIcon, Close as CloseIcon } from '@mui/icons-material';
@@ -224,7 +225,7 @@ const ManageServices = () => {
             <Box sx={{ p: 3 }}>
                 {loading ? (
                     <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
-                        <CircularProgress />
+                        <Loader />
                     </Box>
                 ) : services.length === 0 ? (
                     <Box sx={{
@@ -364,7 +365,7 @@ const ManageServices = () => {
                                         ...(params.InputProps || {}),
                                         endAdornment: (
                                             <React.Fragment>
-                                                {searchingEmployees ? <CircularProgress color="inherit" size={20} /> : null}
+                                                {searchingEmployees ? <Loader color="inherit" size={20} /> : null}
                                                 {params.InputProps?.endAdornment}
                                             </React.Fragment>
                                         ),
@@ -378,7 +379,7 @@ const ManageServices = () => {
                             onClick={handleAddAdmin}
                             sx={{ height: '56px', px: 3 }}
                         >
-                            {addingAdmin ? <CircularProgress size={24} color="inherit" /> : 'Add'}
+                            {addingAdmin ? <Loader size={24} color="inherit" /> : 'Add'}
                         </Button>
                     </Box>
 
@@ -390,7 +391,7 @@ const ManageServices = () => {
 
                     {loadingAdmins ? (
                         <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
-                            <CircularProgress />
+                            <Loader />
                         </Box>
                     ) : serviceAdmins.length === 0 ? (
                         <Typography variant="body2" color="textSecondary" align="center" sx={{ py: 3 }}>

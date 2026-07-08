@@ -1,3 +1,4 @@
+import Loader from "../../components/common/Loader";
 import React, { useState, useEffect } from "react";
 import {
   Box,
@@ -23,7 +24,6 @@ import {
   Chip,
   Stack,
   IconButton,
-  CircularProgress,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -701,14 +701,14 @@ const AppraisalEvaluation = () => {
                       </Box>
                     </Box>
                     <Box sx={{ position: "relative", display: "inline-flex" }}>
-                      <CircularProgress
+                      <Loader
                         variant="determinate"
                         value={100}
                         size={40}
                         thickness={4}
                         sx={{ color: "var(--border-color)", opacity: 0.15 }}
                       />
-                      <CircularProgress
+                      <Loader
                         variant="determinate"
                         value={Math.min(100, Math.round(((selectedAppraisal.teaching?.totalClaimed || 0) / 80) * 100))}
                         size={40}
@@ -1035,14 +1035,14 @@ const AppraisalEvaluation = () => {
                       </Box>
                     </Box>
                     <Box sx={{ position: "relative", display: "inline-flex" }}>
-                      <CircularProgress
+                      <Loader
                         variant="determinate"
                         value={100}
                         size={40}
                         thickness={4}
                         sx={{ color: "var(--border-color)", opacity: 0.15 }}
                       />
-                      <CircularProgress
+                      <Loader
                         variant="determinate"
                         value={Math.min(100, Math.round(((selectedAppraisal.research?.totalClaimed || 0) / 80) * 100))}
                         size={40}
@@ -1489,14 +1489,14 @@ const AppraisalEvaluation = () => {
                       </Box>
                     </Box>
                     <Box sx={{ position: "relative", display: "inline-flex" }}>
-                      <CircularProgress
+                      <Loader
                         variant="determinate"
                         value={100}
                         size={40}
                         thickness={4}
                         sx={{ color: "var(--border-color)", opacity: 0.15 }}
                       />
-                      <CircularProgress
+                      <Loader
                         variant="determinate"
                         value={Math.min(100, Math.round((liveValueAdditionPoints / 20) * 100))}
                         size={40}
@@ -1797,14 +1797,14 @@ const AppraisalEvaluation = () => {
                       </Box>
                     </Box>
                     <Box sx={{ position: "relative", display: "inline-flex" }}>
-                      <CircularProgress
+                      <Loader
                         variant="determinate"
                         value={100}
                         size={40}
                         thickness={4}
                         sx={{ color: "var(--border-color)", opacity: 0.15 }}
                       />
-                      <CircularProgress
+                      <Loader
                         variant="determinate"
                         value={Math.min(100, Math.round((liveAdminPoints / 20) * 100))}
                         size={40}

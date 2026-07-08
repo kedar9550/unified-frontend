@@ -2,8 +2,7 @@ import Loader from "../../../components/common/Loader";
 import React, { useState, useEffect } from "react";
 import {
     Box, Typography, Grid, Card, Button, TextField,
-    Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
-    CircularProgress, Chip, IconButton, Stack
+    Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Chip, IconButton, Stack
 } from "@mui/material";
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import SchoolIcon from '@mui/icons-material/School';

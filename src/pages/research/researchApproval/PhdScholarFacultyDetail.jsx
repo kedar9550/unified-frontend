@@ -1,8 +1,7 @@
 import Loader from "../../../components/common/Loader";
 import React, { useState, useEffect } from "react";
 import {
-    Box, Typography, Grid, Card, Button,
-    CircularProgress, Chip, IconButton, Stack, Table, TableHead, TableBody, TableRow, TableCell, TableContainer
+    Box, Typography, Grid, Card, Button, Chip, IconButton, Stack, Table, TableHead, TableBody, TableRow, TableCell, TableContainer
 } from "@mui/material";
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import PersonIcon from '@mui/icons-material/Person';
@@ -237,7 +236,7 @@ const PhdScholarFacultyDetail = ({ facultyId, onBack, role }) => {
                                                 variant="contained"
                                                 color="success"
                                                 fullWidth
-                                                startIcon={actionLoadingId === app._id ? <CircularProgress size={16} color="inherit" /> : <CheckIcon />}
+                                                startIcon={actionLoadingId === app._id ? <Loader size={16} color="inherit" /> : <CheckIcon />}
                                                 disabled={actionLoadingId !== null}
                                                 onClick={() => handleAction(app._id, 'Approve')}
                                             >
@@ -247,7 +246,7 @@ const PhdScholarFacultyDetail = ({ facultyId, onBack, role }) => {
                                                 variant="outlined"
                                                 color="error"
                                                 fullWidth
-                                                startIcon={actionLoadingId === app._id ? <CircularProgress size={16} color="inherit" /> : <CloseIcon />}
+                                                startIcon={actionLoadingId === app._id ? <Loader size={16} color="inherit" /> : <CloseIcon />}
                                                 disabled={actionLoadingId !== null}
                                                 onClick={() => handleAction(app._id, 'Reject')}
                                             >

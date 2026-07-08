@@ -1,3 +1,4 @@
+import Loader from "../../components/common/Loader";
 import React, { useState, useEffect } from "react";
 import {
   Box,
@@ -22,7 +23,6 @@ import {
   IconButton,
   FormControl,
   FormLabel,
-  CircularProgress,
   Select,
   MenuItem
 } from "@mui/material";

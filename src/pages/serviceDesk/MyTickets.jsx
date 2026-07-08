@@ -1,6 +1,7 @@
+import Loader from "../../components/common/Loader";
 import React, { useState, useEffect } from 'react';
 import {
-    Box, Typography, Chip, Button, CircularProgress, Alert, AlertTitle, IconButton, Tooltip
+    Box, Typography, Chip, Button, Alert, AlertTitle, IconButton, Tooltip
 } from '@mui/material';
 import { Visibility, Feedback as FeedbackIcon } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
@@ -81,7 +82,7 @@ const MyTickets = () => {
 
                 {loading ? (
                     <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
-                        <CircularProgress />
+                        <Loader />
                     </Box>
                 ) : tickets.length === 0 ? (
                     <Box sx={{

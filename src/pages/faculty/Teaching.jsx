@@ -6,7 +6,6 @@ import {
   MenuItem,
   Select,
   Typography,
-  CircularProgress,
   Grid,
   Card,
   Chip,
@@ -1137,7 +1136,7 @@ export default function Teaching() {
 
         {manualLoading ? (
           <Box sx={{ display: "flex", justifyContent: "center", py: 5 }}>
-            <CircularProgress size={32} sx={{ color: "var(--color-primary)" }} />
+            <Loader size={32} sx={{ color: "var(--color-primary)" }} />
           </Box>
         ) : filteredManualProctoringEntries.length === 0 ? (
           <Box

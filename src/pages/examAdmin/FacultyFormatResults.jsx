@@ -9,7 +9,6 @@ import {
   MenuItem,
   Select,
   Avatar,
-  CircularProgress,
   IconButton,
   Tooltip,
   Typography,

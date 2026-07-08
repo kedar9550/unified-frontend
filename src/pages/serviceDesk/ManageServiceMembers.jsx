@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
+import Loader from "../../components/common/Loader";
 import {
-    Box, Typography, Button, CircularProgress, Chip, Dialog, DialogTitle, DialogContent, 
+    Box, Typography, Button, Chip, Dialog, DialogTitle, DialogContent, 
     DialogActions, TextField, Autocomplete, Avatar, Divider, Grid, Paper, Select, MenuItem, FormControl, InputLabel
 } from '@mui/material';
 import { 
@@ -150,7 +151,7 @@ const ManageServiceMembers = () => {
     };
 
     if (loadingInit) {
-        return <Box sx={{ display: 'flex', justifyContent: 'center', p: 5 }}><CircularProgress /></Box>;
+        return <Box sx={{ display: 'flex', justifyContent: 'center', p: 5 }}><Loader /></Box>;
     }
 
     if (adminServices.length === 0) {
@@ -218,7 +219,7 @@ const ManageServiceMembers = () => {
 
             {/* Members Grid */}
             {loadingEmps ? (
-                <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}><CircularProgress /></Box>
+                <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}><Loader /></Box>
             ) : serviceEmps.length === 0 ? (
                 <Paper sx={{ p: 5, textAlign: 'center', borderRadius: '16px', border: '1px dashed var(--border-color)' }}>
                     <Typography variant="body1" color="textSecondary">No team members found for this service.</Typography>
@@ -363,7 +364,7 @@ const ManageServiceMembers = () => {
                                         ...(params.InputProps || {}),
                                         endAdornment: (
                                             <React.Fragment>
-                                                {searchingEmployees ? <CircularProgress color="inherit" size={20} /> : null}
+                                                {searchingEmployees ? <Loader color="inherit" size={20} /> : null}
                                                 {params.InputProps?.endAdornment}
                                             </React.Fragment>
                                         ),

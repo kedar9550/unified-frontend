@@ -9,7 +9,6 @@ import {
     FormControl,
     InputLabel,
     Collapse,
-    CircularProgress,
     Typography,
     Tooltip,
     IconButton,

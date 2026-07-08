@@ -1,7 +1,8 @@
+import Loader from "../../../components/common/Loader";
 import React, { useState, useEffect } from "react";
 import {
     Box, Typography, Button, Grid, Card, CardContent, Dialog, DialogTitle,
-    DialogContent, DialogActions, TextField, CircularProgress, IconButton,
+    DialogContent, DialogActions, TextField, IconButton,
     Tooltip, Divider, List, ListItem, ListItemText, ListItemSecondaryAction,
     Fade, Chip, MenuItem, Select, FormControl, InputLabel,
     Tabs, Tab, Paper, Switch, FormControlLabel, FormHelperText,

@@ -21,7 +21,6 @@ import {
   Tooltip,
   Select,
   MenuItem,
-  CircularProgress,
 } from "@mui/material";
 import {
   Close as CloseIcon,
@@ -673,7 +672,7 @@ export default function UniprimeDiscrepancies() {
 
                   {resultLoading ? (
                     <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
-                      <CircularProgress size={24} />
+                      <Loader size={24} />
                     </Box>
                   ) : resultData.length === 0 ? (
                     <Box

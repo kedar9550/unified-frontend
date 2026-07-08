@@ -11,7 +11,8 @@ import { toast } from 'sonner';
 
 import DataTable from '../../components/data/DataTable';
 import PageHeader from '../../components/common/PageHeader';
-import { CircularProgress, Box, Typography, Chip, Tooltip, IconButton, Menu, MenuItem, Select, FormControl, InputLabel, TextField, Button, Grid, Paper } from '@mui/material';
+import Loader from '../../components/common/Loader';
+import { Box, Typography, Chip, Tooltip, IconButton, Menu, MenuItem, Select, FormControl, InputLabel, TextField, Button, Grid, Paper } from '@mui/material';
 
 const getStatusColor = (status) => {
     switch (status) {
@@ -69,10 +70,12 @@ const Reports = () => {
 
     const fetchDepartments = async () => {
         try {
-            const res = await API.get('/api/service');
-            setDepartments(res.data.data || []);
+            const res = await API.get('/api/service-desk/services', { withCredentials: true });
+            // API returns { success: true, data: [...] } or plain array
+            const list = res.data?.data || res.data || [];
+            setDepartments(list);
         } catch (error) {
-            console.error('Error fetching departments:', error);
+            console.error('Error fetching services:', error);
         }
     };
 
@@ -237,7 +240,7 @@ const Reports = () => {
 
             {loading && !stats ? (
                 <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
-                    <CircularProgress />
+                    <Loader />
                 </Box>
             ) : (
                 <Box sx={{ px: 3, pb: 3 }}>
@@ -378,7 +381,7 @@ const Reports = () => {
                                 <Typography variant="subtitle2" fontWeight={700} color="#333" mb={3}>Tickets Trend (Last 30 Days)</Typography>
                                 <Box sx={{ height: 250, width: '100%' }}>
                                     {containerReady ? (
-                                        <ResponsiveContainer width="100%" height="100%">
+                                        <ResponsiveContainer width="100%" height="100%" minWidth={1}>
                                             <AreaChart data={trendData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                                                 <defs>
                                                     <linearGradient id="colorCreated" x1="0" y1="0" x2="0" y2="1">
@@ -400,7 +403,7 @@ const Reports = () => {
                                         </ResponsiveContainer>
                                     ) : (
                                         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
-                                            <CircularProgress size={24} />
+                                            <Loader size={24} />
                                         </Box>
                                     )}
                                 </Box>
@@ -412,7 +415,7 @@ const Reports = () => {
                                 <Typography variant="subtitle2" fontWeight={700} color="#333" mb={3}>Tickets by Status</Typography>
                                 <Box sx={{ flexGrow: 1, height: 250, width: '100%', position: 'relative' }}>
                                     {containerReady ? (
-                                        <ResponsiveContainer width="100%" height="100%">
+                                        <ResponsiveContainer width="100%" height="100%" minWidth={1}>
                                             <PieChart>
                                                 <Pie
                                                     data={statusData}
@@ -433,7 +436,7 @@ const Reports = () => {
                                         </ResponsiveContainer>
                                     ) : (
                                         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
-                                            <CircularProgress size={24} />
+                                            <Loader size={24} />
                                         </Box>
                                     )}
                                 </Box>

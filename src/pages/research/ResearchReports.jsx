@@ -11,9 +11,7 @@ import {
     InputLabel,
     Select,
     MenuItem,
-    Paper,
-    CircularProgress
-} from "@mui/material";
+    Paper} from "@mui/material";
 import {
     Download as DownloadIcon,
     Analytics as AnalyticsIcon,

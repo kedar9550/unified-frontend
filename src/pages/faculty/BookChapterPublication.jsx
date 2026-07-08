@@ -1,7 +1,8 @@
+import Loader from "../../components/common/Loader";
 import { useState, useEffect } from "react";
 import { useAuth } from "../../context/AuthContext";
 
-import { Box, TextField, MenuItem, Select, Typography, Button, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, IconButton, CircularProgress, Dialog, DialogTitle, DialogContent, DialogActions, Stack, Grid, Card, Chip, Divider, Tooltip, TablePagination } from "@mui/material";
+import { Box, TextField, MenuItem, Select, Typography, Button, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, IconButton, Dialog, DialogTitle, DialogContent, DialogActions, Stack, Grid, Card, Chip, Divider, Tooltip, TablePagination } from "@mui/material";
 import { toast } from "sonner";
 import { Close, Description, AttachFile, Groups, Book, Visibility } from "@mui/icons-material";
 import PageHeader from "../../components/common/PageHeader";
@@ -914,7 +915,7 @@ export default function BookChapterPublication() {
             disabled={doiFetching || !form.doi.trim()}
             sx={{ minWidth: 120, height: "40px", background: "var(--gradient-primary)", textTransform: "none", fontWeight: 700, flexShrink: 0, "&:hover": { opacity: 0.9 }, "&.Mui-disabled": { opacity: 0.5 } }}
           >
-            {doiFetching ? <><CircularProgress size={14} color="inherit" sx={{ mr: 0.8 }} />Fetching...</> : "Fetch Details"}
+            {doiFetching ? <><Loader size={14} color="inherit" sx={{ mr: 0.8 }} />Fetching...</> : "Fetch Details"}
           </Button>
         </Box>
         {scopusIndexed && (
@@ -960,7 +961,7 @@ export default function BookChapterPublication() {
               disabled={isbnFetching || !form.isbnNumber.trim()}
               sx={{ minWidth: 90, height: "40px", textTransform: "none", fontWeight: 700, flexShrink: 0, borderColor: "var(--color-primary)", color: "var(--color-primary)", "&:hover": { background: "var(--bg-accent-1)" }, "&.Mui-disabled": { opacity: 0.5 } }}
             >
-              {isbnFetching ? <CircularProgress size={14} color="inherit" /> : "Fetch Title"}
+              {isbnFetching ? <Loader size={14} color="inherit" /> : "Fetch Title"}
             </Button>
           </Box>
         </Box>

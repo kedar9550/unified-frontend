@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
+import Loader from "../../components/common/Loader";
 import {
     Box, Typography, TextField, Button, MenuItem, Select, FormControl,
-    InputLabel, Paper, CircularProgress, Chip
+    InputLabel, Paper, Chip
 } from '@mui/material';
 import { UploadFile, Close as CloseIcon, Send as SendIcon } from '@mui/icons-material';
 import PageHeader from '../../components/common/PageHeader';
@@ -199,7 +200,7 @@ const RaiseTicket = () => {
                                     onClick={handleSubmit}
                                     variant="contained"
                                     disabled={submitting}
-                                    startIcon={submitting ? <CircularProgress size={20} color="inherit" /> : <SendIcon />}
+                                    startIcon={submitting ? <Loader size={20} color="inherit" /> : <SendIcon />}
                                     sx={{ 
                                         px: 4, 
                                         py: 1.5, 
