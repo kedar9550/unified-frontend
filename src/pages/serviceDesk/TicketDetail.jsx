@@ -164,7 +164,7 @@ const TicketDetail = () => {
         try {
             setAssignPriority(ticket.priority || 'MEDIUM');
             setAssignDueDate(ticket.dueDate ? ticket.dueDate.split('T')[0] : '');
-            const existingIds = ticket.assignedTo.map(a => a.employee._id);
+            const existingIds = ticket.assignedTo.filter(a => a.status !== 'REJECTED').map(a => a.employee._id);
             setSelectedEmps([]);
             
             const res = await API.get(`/api/service-desk/services/${ticket.service._id}/emps`);
@@ -367,8 +367,8 @@ const TicketDetail = () => {
                         <Grid xs={6} sm={3}>
                             <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mb: 0.5 }}>Assigned To</Typography>
                             <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                                {ticket.assignedTo && ticket.assignedTo.length > 0 
-                                    ? ticket.assignedTo.map(a => a.employee?.name).join(', ') 
+                                {ticket.assignedTo && ticket.assignedTo.filter(a => a.status !== 'REJECTED').length > 0 
+                                    ? ticket.assignedTo.filter(a => a.status !== 'REJECTED').map(a => a.employee?.name).join(', ') 
                                     : 'Not Assigned'}
                             </Typography>
                         </Grid>
@@ -385,6 +385,19 @@ const TicketDetail = () => {
                             </Typography>
                         </Grid>
                     </Grid>
+
+                    {isAdminView && ticket.assignedTo?.some(a => a.status === 'REJECTED') && (
+                        <Box sx={{ mt: 3, p: 2, bgcolor: '#fff1f2', borderRadius: 2, border: '1px solid #fecdd3' }}>
+                            <Typography variant="subtitle2" sx={{ color: '#be123c', fontWeight: 700, mb: 1 }}>Assignment Rejections</Typography>
+                            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                                {ticket.assignedTo.filter(a => a.status === 'REJECTED').map(a => (
+                                    <Typography key={a.employee?._id || a._id} variant="body2" sx={{ color: '#be123c' }}>
+                                        <strong>{a.employee?.name || 'Unknown Employee'}</strong>: {a.note || 'No reason provided'}
+                                    </Typography>
+                                ))}
+                            </Box>
+                        </Box>
+                    )}
                 </Paper>
 
                 <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 3 }}>
@@ -555,8 +568,19 @@ const TicketDetail = () => {
                                         }
                                     }
 
+                                    const filteredActivities = activities.filter((act, index, self) => {
+                                        if (act.action === 'STATUS_UPDATED' && act.metadata?.status === 'REJECTED') {
+                                            return false;
+                                        }
+                                        if (act.action === 'TICKET_ASSIGNED') {
+                                            const lastAssignIndex = self.findLastIndex(a => a.action === 'TICKET_ASSIGNED');
+                                            return index === lastAssignIndex;
+                                        }
+                                        return true;
+                                    });
+
                                     const allTimelineItems = [
-                                        ...activities.map(act => ({ type: 'completed', act })),
+                                        ...filteredActivities.map(act => ({ type: 'completed', act })),
                                         ...pendingSteps.map(step => ({ type: 'pending', label: step }))
                                     ];
 

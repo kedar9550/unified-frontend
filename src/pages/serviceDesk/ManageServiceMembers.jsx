@@ -240,23 +240,13 @@ const ManageServiceMembers = () => {
                             flexDirection: 'column'
                         }}>
                             {/* Header */}
-                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 3 }}>
-                                <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
-                                    <Avatar 
-                                        src={`https://info.aec.edu.in/aec/employeephotos/${member.employee?.institutionId}.jpg`}
-                                        sx={{ width: 56, height: 56, bgcolor: '#e3f2fd', color: '#1976d2', fontWeight: 600 }}
-                                    >
-                                        {member.employee?.name?.charAt(0)}
-                                    </Avatar>
-                                    <Box>
-                                        <Typography variant="subtitle1" sx={{ fontWeight: 700, lineHeight: 1.2, mb: 0.5, fontSize: '0.95rem', color: 'var(--text-primary)' }}>
-                                            {member.employee?.name || 'Unknown'}
-                                        </Typography>
-                                        <Typography variant="body2" sx={{ color: 'text.secondary', fontSize: '0.85rem' }}>
-                                            Emp ID: {member.employee?.institutionId || 'N/A'}
-                                        </Typography>
-                                    </Box>
-                                </Box>
+                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
+                                <Avatar 
+                                    src={`https://info.aec.edu.in/aec/employeephotos/${member.employee?.institutionId}.jpg`}
+                                    sx={{ width: 56, height: 56, bgcolor: '#e3f2fd', color: '#1976d2', fontWeight: 600 }}
+                                >
+                                    {member.employee?.name?.charAt(0)}
+                                </Avatar>
                                 <Chip 
                                     label="available" 
                                     size="small" 
@@ -269,10 +259,27 @@ const ManageServiceMembers = () => {
                                     }} 
                                 />
                             </Box>
+                            
+                            <Box sx={{ mb: 2.5, flexGrow: 1 }}>
+                                <Typography 
+                                    variant="subtitle1" 
+                                    sx={{ 
+                                        fontWeight: 700, 
+                                        lineHeight: 1.3, 
+                                        mb: 0.5, 
+                                        fontSize: '1.05rem', 
+                                        color: 'var(--text-primary)',
+                                        wordBreak: 'break-word'
+                                    }}
+                                >
+                                    {member.employee?.name || 'Unknown'}
+                                </Typography>
+                                <Typography variant="body2" sx={{ color: 'text.secondary', fontSize: '0.85rem', mb: 1.5 }}>
+                                    Emp ID: {member.employee?.institutionId || 'N/A'}
+                                </Typography>
 
-                            {/* Contact Details */}
-                            <Box sx={{ mb: 3, flexGrow: 1 }}>
-                                <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'center', mb: 1.5 }}>
+                                {/* Contact Details */}
+                                <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'center', mb: 1 }}>
                                     <EmailIcon sx={{ color: 'text.secondary', fontSize: 18 }} />
                                     <Typography variant="body2" sx={{ color: 'text.secondary', wordBreak: 'break-all', fontSize: '0.85rem' }}>
                                         {member.employee?.email || 'N/A'}

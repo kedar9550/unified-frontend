@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
-    Box, Typography, Chip, Button, CircularProgress
+    Box, Typography, Chip, Button, CircularProgress, Tabs, Tab, IconButton, Tooltip
 } from '@mui/material';
 import { Visibility } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
@@ -8,6 +8,7 @@ import PageHeader from '../../components/common/PageHeader';
 import DataTable from '../../components/data/DataTable';
 import API from '../../api/axios';
 import { toast } from 'sonner';
+import { useAuth } from '../../context/AuthContext';
 
 const getStatusColor = (status) => {
     switch (status) {
@@ -23,13 +24,17 @@ const getStatusColor = (status) => {
 
 const AssignedToMe = () => {
     const navigate = useNavigate();
+    const { user } = useAuth();
     const [tickets, setTickets] = useState([]);
     const [loading, setLoading] = useState(true);
 
+    const [currentTab, setCurrentTab] = useState('active');
+
     useEffect(() => {
         const fetchData = async () => {
+            setLoading(true);
             try {
-                const res = await API.get('/api/service-desk/tickets/assigned-to-me');
+                const res = await API.get(`/api/service-desk/tickets/assigned-to-me?tab=${currentTab}`);
                 if (res.data.success) {
                     setTickets(res.data.data);
                 }
@@ -40,11 +45,37 @@ const AssignedToMe = () => {
             }
         };
         fetchData();
-    }, []);
+    }, [currentTab]);
 
     return (
         <Box>
             <PageHeader title="Assigned to Me" subtitle="Manage and resolve tickets assigned to you" />
+
+            <Box sx={{ borderBottom: 1, borderColor: 'var(--border-color)', mb: 3, px: 3 }}>
+                <Tabs 
+                    value={currentTab} 
+                    onChange={(e, newValue) => setCurrentTab(newValue)}
+                    sx={{
+                        '& .MuiTab-root': {
+                            textTransform: 'none',
+                            fontWeight: 600,
+                            fontSize: '0.95rem',
+                            color: 'text.secondary',
+                            minWidth: 120,
+                            '&.Mui-selected': {
+                                color: 'primary.main',
+                            }
+                        },
+                        '& .MuiTabs-indicator': {
+                            borderRadius: '2px 2px 0 0',
+                            height: 3
+                        }
+                    }}
+                >
+                    <Tab label="Active Assignments" value="active" />
+                    <Tab label="Rejected Assignments" value="rejected" />
+                </Tabs>
+            </Box>
 
             <Box sx={{ px: 3, pb: 3 }}>
                 {loading ? (
@@ -67,7 +98,7 @@ const AssignedToMe = () => {
                 ) : (
                     <DataTable 
                         columns={["Ticket #", "Service", "Title", "Priority", "Due Date", "Status", "Action"]}
-                        alignments={["left", "left", "left", "center", "left", "center", "right"]}
+                        alignments={["left", "left", "left", "center", "left", "center", "center"]}
                         nonSortableColumns={[6]}
                         rows={tickets.map((t) => [
                             { value: t.ticketNumber, display: <Typography fontWeight={600} color="primary">#{t.ticketNumber}</Typography> },
@@ -82,21 +113,29 @@ const AssignedToMe = () => {
                                 display: t.dueDate ? new Date(t.dueDate).toLocaleDateString() : 'N/A' 
                             },
                             { 
-                                value: t.status, 
-                                display: <Chip label={t.status} color={getStatusColor(t.status)} size="small" sx={{ fontWeight: 600, borderRadius: '6px' }} /> 
+                                value: (() => {
+                                    const myAssignment = t.assignedTo?.find(a => a.employee?.toString() === user?._id?.toString() || a.employee?._id?.toString() === user?._id?.toString());
+                                    return myAssignment?.status || t.status;
+                                })(), 
+                                display: (() => {
+                                    const myAssignment = t.assignedTo?.find(a => a.employee?.toString() === user?._id?.toString() || a.employee?._id?.toString() === user?._id?.toString());
+                                    const statusToDisplay = myAssignment?.status || t.status;
+                                    return <Chip label={statusToDisplay} color={getStatusColor(statusToDisplay)} size="small" sx={{ fontWeight: 600, borderRadius: '6px' }} />;
+                                })()
                             },
                             {
                                 value: '',
                                 display: (
-                                    <Button 
-                                        size="small" 
-                                        variant="outlined" 
-                                        startIcon={<Visibility />}
-                                        onClick={() => navigate(`/service-desk/ticket/${t._id}`)}
-                                        sx={{ textTransform: 'none', borderRadius: '8px' }}
-                                    >
-                                        Manage
-                                    </Button>
+                                    <Tooltip title="View Ticket">
+                                        <IconButton 
+                                            color="primary" 
+                                            onClick={() => navigate(`/service-desk/ticket/${t._id}`)} 
+                                            size="small" 
+                                            sx={{ background: 'var(--bg-glass)' }}
+                                        >
+                                            <Visibility fontSize="small" />
+                                        </IconButton>
+                                    </Tooltip>
                                 )
                             }
                         ])}

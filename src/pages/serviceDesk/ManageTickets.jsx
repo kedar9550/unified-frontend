@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
     Box, Typography, Button, CircularProgress, Tooltip, IconButton, Chip, Select, MenuItem, FormControl, InputLabel,
-    Dialog, DialogTitle, DialogContent, DialogActions, TextField, Autocomplete
+    Dialog, DialogTitle, DialogContent, DialogActions, TextField, Autocomplete, Tabs, Tab
 } from '@mui/material';
 import { Visibility, AssignmentInd as AssignIcon, Block as RejectIcon, Close as CloseIcon } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
@@ -29,6 +29,7 @@ const ManageTickets = () => {
     const [selectedServiceId, setSelectedServiceId] = useState('');
     const [tickets, setTickets] = useState([]);
     const [loadingTickets, setLoadingTickets] = useState(false);
+    const [currentTab, setCurrentTab] = useState('active');
 
     // Dialog: Reject Ticket
     const [openRejectDialog, setOpenRejectDialog] = useState(false);
@@ -67,16 +68,16 @@ const ManageTickets = () => {
 
     useEffect(() => {
         if (selectedServiceId) {
-            fetchTickets(selectedServiceId);
+            fetchTickets(selectedServiceId, currentTab);
         } else {
             setTickets([]);
         }
-    }, [selectedServiceId]);
+    }, [selectedServiceId, currentTab]);
 
-    const fetchTickets = async (serviceId) => {
+    const fetchTickets = async (serviceId, tabStr) => {
         try {
             setLoadingTickets(true);
-            const res = await API.get(`/api/service-desk/tickets/service/${serviceId}`);
+            const res = await API.get(`/api/service-desk/tickets/service/${serviceId}?tab=${tabStr}`);
             if (res.data.success) {
                 setTickets(res.data.data);
             }
@@ -101,7 +102,7 @@ const ManageTickets = () => {
             if (res.data.success) {
                 toast.success('Ticket rejected');
                 setOpenRejectDialog(false);
-                fetchTickets(selectedServiceId);
+                fetchTickets(selectedServiceId, currentTab);
             }
         } catch (error) {
             toast.error(error.response?.data?.message || 'Failed to reject ticket');
@@ -115,7 +116,7 @@ const ManageTickets = () => {
         setAssignTicketTarget(ticket);
         setAssignPriority(ticket.priority || 'MEDIUM');
         setAssignDueDate(ticket.dueDate ? ticket.dueDate.split('T')[0] : '');
-        const existingIds = ticket.assignedTo.map(a => a.employee._id);
+        const existingIds = ticket.assignedTo.filter(a => a.status !== 'REJECTED').map(a => a.employee._id);
         setSelectedAssignees([]); 
         setOpenAssignDialog(true);
         
@@ -146,7 +147,7 @@ const ManageTickets = () => {
             if (res.data.success) {
                 toast.success('Ticket assigned successfully');
                 setOpenAssignDialog(false);
-                fetchTickets(selectedServiceId);
+                fetchTickets(selectedServiceId, currentTab);
             }
         } catch (error) {
             toast.error(error.response?.data?.message || 'Failed to assign ticket');
@@ -177,22 +178,29 @@ const ManageTickets = () => {
             />
 
             <Box sx={{ p: 3 }}>
-                {adminServices.length > 1 && (
-                    <Box sx={{ mb: 3, maxWidth: 300 }}>
-                        <FormControl fullWidth size="small">
-                            <InputLabel>Select Service</InputLabel>
-                            <Select
-                                value={selectedServiceId}
-                                label="Select Service"
-                                onChange={(e) => setSelectedServiceId(e.target.value)}
-                            >
-                                {adminServices.map(s => (
-                                    <MenuItem key={s._id} value={s._id}>{s.name}</MenuItem>
-                                ))}
-                            </Select>
-                        </FormControl>
-                    </Box>
-                )}
+                <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Tabs value={currentTab} onChange={(e, newValue) => setCurrentTab(newValue)}>
+                        <Tab label="Active Tickets" value="active" sx={{ fontWeight: 600 }} />
+                        <Tab label="Reject History" value="rejected" sx={{ fontWeight: 600 }} />
+                    </Tabs>
+
+                    {adminServices.length > 1 && (
+                        <Box sx={{ minWidth: 200 }}>
+                            <FormControl fullWidth size="small">
+                                <InputLabel>Select Service</InputLabel>
+                                <Select
+                                    value={selectedServiceId}
+                                    label="Select Service"
+                                    onChange={(e) => setSelectedServiceId(e.target.value)}
+                                >
+                                    {adminServices.map(s => (
+                                        <MenuItem key={s._id} value={s._id}>{s.name}</MenuItem>
+                                    ))}
+                                </Select>
+                            </FormControl>
+                        </Box>
+                    )}
+                </Box>
 
                 {loadingTickets ? (
                     <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
@@ -214,7 +222,7 @@ const ManageTickets = () => {
                 ) : (
                     <DataTable 
                         columns={["Ticket #", "Requester", "Title", "Priority", "Status", "Date", "Actions"]}
-                        alignments={["left", "left", "left", "center", "center", "center", "right"]}
+                        alignments={["left", "left", "left", "center", "center", "center", "center"]}
                         nonSortableColumns={[6]}
                         rows={tickets.map(t => [
                             { value: t.ticketNumber, display: <Typography fontWeight={600} color="primary">#{t.ticketNumber}</Typography> },
@@ -226,7 +234,22 @@ const ManageTickets = () => {
                             },
                             { 
                                 value: t.status, 
-                                display: <Chip label={t.status} color={getStatusColor(t.status)} size="small" sx={{ fontWeight: 600, borderRadius: '6px' }} /> 
+                                display: (
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, justifyContent: 'center' }}>
+                                        <Chip label={t.status} color={getStatusColor(t.status)} size="small" sx={{ fontWeight: 600, borderRadius: '6px' }} />
+                                        {t.assignedTo?.filter(a => a.status === 'REJECTED').length > 0 && currentTab === 'active' && (
+                                            <Tooltip title={`${t.assignedTo.filter(a => a.status === 'REJECTED').length} assignee(s) rejected`}>
+                                                <Chip 
+                                                    label={`${t.assignedTo.filter(a => a.status === 'REJECTED').length} Rejected`} 
+                                                    color="error" 
+                                                    size="small" 
+                                                    variant="outlined" 
+                                                    sx={{ fontWeight: 600, borderRadius: '6px', height: '22px', fontSize: '0.7rem' }} 
+                                                />
+                                            </Tooltip>
+                                        )}
+                                    </Box>
+                                )
                             },
                             {
                                 value: t.createdAt,
@@ -235,20 +258,20 @@ const ManageTickets = () => {
                             {
                                 value: '',
                                 display: (
-                                    <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
+                                    <Box sx={{ display: 'flex', justifyContent: 'center', gap: 1 }}>
                                         {['OPEN', 'ASSIGNED', 'IN_PROGRESS'].includes(t.status) && (
-                                            <>
-                                                <Tooltip title="Assign Employees">
-                                                    <IconButton color="secondary" onClick={() => handleOpenAssign(t)} size="small" sx={{ background: 'var(--bg-glass)' }}>
-                                                        <AssignIcon fontSize="small" />
-                                                    </IconButton>
-                                                </Tooltip>
-                                                <Tooltip title="Reject Ticket">
-                                                    <IconButton color="error" onClick={() => handleOpenReject(t)} size="small" sx={{ background: 'var(--bg-glass)' }}>
-                                                        <RejectIcon fontSize="small" />
-                                                    </IconButton>
-                                                </Tooltip>
-                                            </>
+                                            <Tooltip title="Assign Employees">
+                                                <IconButton color="secondary" onClick={() => handleOpenAssign(t)} size="small" sx={{ background: 'var(--bg-glass)' }}>
+                                                    <AssignIcon fontSize="small" />
+                                                </IconButton>
+                                            </Tooltip>
+                                        )}
+                                        {['OPEN', 'ASSIGNED', 'IN_PROGRESS'].includes(t.status) && (
+                                            <Tooltip title="Reject Ticket">
+                                                <IconButton color="error" onClick={() => handleOpenReject(t)} size="small" sx={{ background: 'var(--bg-glass)' }}>
+                                                    <RejectIcon fontSize="small" />
+                                                </IconButton>
+                                            </Tooltip>
                                         )}
                                         <Tooltip title="View Ticket">
                                             <IconButton color="primary" onClick={() => navigate(`/service-desk/ticket/${t._id}`)} size="small" sx={{ background: 'var(--bg-glass)' }}>
