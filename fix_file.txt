@@ -1,0 +1,267 @@
+    const [allServicesList, setAllServicesList] = useState([]);
+
+    const fetchFeedback = async () => {
+        try {
+            setLoading(true);
+            const [feedbackRes, servicesRes] = await Promise.all([
+                API.get('/api/service-desk/tickets/feedback/analytics', { withCredentials: true }),
+                API.get('/api/service-desk/services', { withCredentials: true })
+            ]);
+
+            if (feedbackRes.data.success) {
+                setFeedbackData(feedbackRes.data.data);
+                setSummary(feedbackRes.data.summary);
+                setTrendData(feedbackRes.data.trendData);
+            }
+
+            if (Array.isArray(servicesRes.data)) {
+                setAllServicesList(servicesRes.data);
+            }
+        } catch (err) {
+            console.error('Error fetching data:', err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchFeedback();
+    }, []);
+
+    // Reset to first page when filters change
+    useEffect(() => {
+        setPage(0);
+    }, [search, serviceFilter, ratingFilter, statusFilter]);
+
+    // Extract Unique Services for Filter
+    const uniqueServices = useMemo(() => {
+        if (!allServicesList.length) return ["All Services"];
+
+        let services = allServicesList;
+        
+        // Filter for regular Admins
+        if (!isSA && user?.roles) {
+            const adminServiceIds = user.roles
+                .filter(r => r.role === "ADMIN" && r.service)
+                .map(r => r.service._id || r.service); // In case it's populated or just ID
+            
+            services = services.filter(s => adminServiceIds.includes(s._id));
+        }
+
+        const serviceNames = services.map(s => s.name).filter(Boolean);
+        return ["All Services", ...new Set(serviceNames)];
+    }, [allServicesList, isSA, user]);
+
+    const filteredRows = useMemo(() => {
+        return feedbackData.filter(f => {
+            const matchesSearch = !search || 
+                f.user?.name?.toLowerCase().includes(search.toLowerCase()) ||
+                f.ticket?.ticketNumber?.toLowerCase().includes(search.toLowerCase()) ||
+                f.ticket?.title?.toLowerCase().includes(search.toLowerCase());
+            
+            const matchesService = serviceFilter === "All Services" || f.ticket?.service?.name === serviceFilter;
+            const matchesRating = ratingFilter === "All Ratings" || Number(f.rating) === Number(ratingFilter);
+            const matchesStatus = statusFilter === "All Status" || f.satisfaction === statusFilter;
+
+            return matchesSearch && matchesService && matchesRating && matchesStatus;
+        });
+    }, [feedbackData, search, serviceFilter, ratingFilter, statusFilter]);
+
+    const handleExport = () => {
+        const csvContent = "data:text/csv;charset=utf-8," 
+            + "User,Service,Ticket,Rating,Satisfaction,Comments,Date\n"
+            + filteredRows.map(r => `"${r.user?.name}","${r.ticket?.service?.name}","${r.ticket?.ticketNumber}","${r.rating}","${r.satisfaction}","${r.comments.replace(/"/g, '""')}","${new Date(r.createdAt).toLocaleDateString()}"`).join("\n");
+        
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", "feedback_report.csv");
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
+    const satisfactionRate = useMemo(() => {
+        if (!feedbackData.length) return 0;
+        const positive = feedbackData.filter(f => ["Satisfied", "Very Satisfied"].includes(f.satisfaction)).length;
+        return Math.round((positive / feedbackData.length) * 100);
+    }, [feedbackData]);
+
+    const responseQuality = useMemo(() => {
+        const avg = Number(summary?.averageRating || 0);
+        if (avg >= 4.5) return { label: "Excellent", color: "#22c55e", msg: "Exceptional service standards!" };
+        if (avg >= 4) return { label: "Good", color: "#34d399", msg: "Maintain the good work!" };
+        if (avg >= 3) return { label: "Average", color: "#fbbf24", msg: "There is room for improvement." };
+        return { label: "Poor", color: "#ef4444", msg: "Needs immediate attention!" };
+    }, [summary]);
+
+    const satisfactionColors = {
+        "Very Satisfied": "#22c55e",
+        "Satisfied": "#84cc16",
+        "Neutral": "#eab308",
+        "Dissatisfied": "#f97316",
+        "Very Dissatisfied": "#ef4444"
+    };
+
+    const satisfactionData = summary?.satisfactionDistribution ? 
+        Object.entries(summary.satisfactionDistribution).map(([name, value]) => ({
+            name,
+            value,
+            color: satisfactionColors[name] || "#CBD5E1"
+        })).filter(d => d.value > 0) : [];
+
+    if (loading) return <Loader />;
+
+    return (
+        <Box sx={{ width: '100%', flexGrow: 1, display: 'flex', flexDirection: 'column', bgcolor: '#f5f7fa', minHeight: '100vh' }}>
+            <Box sx={{ px: { xs: 2, md: 3 }, pt: { xs: 2, md: 3 }, pb: 2 }}>
+                <PageHeader 
+                    title="Feedback Overview" 
+                    subtitle="Analyze user satisfaction and service quality trends" 
+                />
+            </Box>
+
+            <Box sx={{ px: 3, pb: 3 }}>
+
+            {/* KPI Section */}
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 3, mb: 4 }}>
+                <Box sx={{ width: { xs: '100%', sm: 'calc(50% - 12px)', lg: 'calc(25% - 18px)' } }}>
+                    <StatCard 
+                        title="Average Rating" 
+                        value={summary?.averageRating || "0.0"} 
+                        icon={Star} 
+                        trend="8%" 
+                        subtitle="Out of 5" 
+                        color="#f5a623"
+                        bgIcon={Star}
+                    />
+                </Box>
+                <Box sx={{ width: { xs: '100%', sm: 'calc(50% - 12px)', lg: 'calc(25% - 18px)' } }}>
+                    <StatCard 
+                        title="Satisfaction Rate" 
+                        value={`${satisfactionRate}%`} 
+                        icon={Smile} 
+                        trend="12%" 
+                        progress={satisfactionRate}
+                        color="#22c55e"
+                        bgIcon={Smile}
+                    />
+                </Box>
+                <Box sx={{ width: { xs: '100%', sm: 'calc(50% - 12px)', lg: 'calc(25% - 18px)' } }}>
+                    <StatCard 
+                        title="Total Feedback" 
+                        value={summary?.totalFeedback || 0} 
+                        icon={MessageSquare} 
+                        trend="15%" 
+                        color="#3b82f6"
+                        bgIcon={MessageSquare}
+                    />
+                </Box>
+                <Box sx={{ width: { xs: '100%', sm: 'calc(50% - 12px)', lg: 'calc(25% - 18px)' } }}>
+                    <StatCard 
+                        title="Response Quality" 
+                        value={responseQuality.label} 
+                        icon={ShieldCheck} 
+                        subtitle={responseQuality.msg} 
+                        color={responseQuality.color}
+                        bgIcon={ShieldCheck}
+                    />
+                </Box>
+            </Box>
+
+            {/* Visual Insights Section (Moved between KPIs and Filters) */}
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 3, mb: 4 }}>
+                <Box sx={{ width: { xs: '100%', lg: 'calc(33.333% - 16px)' } }}>
+                    <Paper sx={{ p: { xs: 3, md: 4 }, height: '100%', borderRadius: '16px', background: 'var(--card-bg)', boxShadow: '0px 2px 10px rgba(0,0,0,0.04)', border: 'none', display: 'flex', flexDirection: 'column' }}>
+                        <Typography variant="subtitle1" fontWeight={700} mb={4}>Rating Distribution</Typography>
+                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, justifyContent: 'center', minHeight: '200px' }}>
+                            {[5, 4, 3, 2, 1].map(rating => {
+                                const count = summary?.ratingDistribution?.[rating] || 0;
+                                const percentage = summary?.totalFeedback > 0 ? ((count / summary.totalFeedback) * 100).toFixed(1) : 0;
+                                return (
+                                    <Box key={rating} sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                                        <Typography variant="caption" fontWeight={700} sx={{ minWidth: "45px", color: "var(--text-color)" }}>{rating} Star</Typography>
+                                        <Box sx={{ flexGrow: 1, borderRadius: 5, overflow: 'hidden', height: "8px", backgroundColor: "var(--border-color)" }}>
+                                            <Box sx={{ height: '100%', borderRadius: 5, width: `${percentage}%`, backgroundColor: rating >= 4 ? "#22c55e" : rating === 3 ? "#eab308" : "#ef4444", transition: "width 1s ease-in-out" }} />
+                                        </Box>
+                                        <Typography variant="caption" sx={{ minWidth: "65px", color: "var(--secondary-color)" }}>{count} ({percentage}%)</Typography>
+                                    </Box>
+                                );
+                            })}
+                        </Box>
+                    </Paper>
+                </Box>
+                <Box sx={{ width: { xs: '100%', md: 'calc(50% - 12px)', lg: 'calc(33.333% - 16px)' } }}>
+                    <Paper sx={{ p: { xs: 3, md: 4 }, height: '100%', borderRadius: '16px', background: 'var(--card-bg)', boxShadow: '0px 2px 10px rgba(0,0,0,0.04)', border: 'none', display: 'flex', flexDirection: 'column' }}>
+                        <Typography variant="subtitle1" fontWeight={700} mb={4}>Satisfaction Level</Typography>
+                        <Box sx={{ height: "200px", width: "100%", position: "relative" }}>
+                            <ResponsiveContainer width="100%" height={200}>
+                                <PieChart>
+                                    <Pie data={satisfactionData} innerRadius={60} outerRadius={85} paddingAngle={4} dataKey="value" stroke="none">
+                                        {satisfactionData.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.color} />)}
+                                    </Pie>
+                                    <Tooltip contentStyle={{ backgroundColor: 'var(--card-bg)', border: '1px solid var(--border-color)', color: 'var(--text-color)', borderRadius: '8px' }} />
+                                    <Legend verticalAlign="middle" align="right" layout="vertical" iconType="circle" wrapperStyle={{ fontSize: "12px", color: "var(--text-color)" }} />
+                                </PieChart>
+                            </ResponsiveContainer>
+                        </Box>
+                    </Paper>
+                </Box>
+                <Box sx={{ width: { xs: '100%', md: 'calc(50% - 12px)', lg: 'calc(33.333% - 16px)' } }}>
+                    <Paper sx={{ p: { xs: 3, md: 4 }, height: '100%', borderRadius: '16px', background: 'var(--card-bg)', boxShadow: '0px 2px 10px rgba(0,0,0,0.04)', border: 'none', display: 'flex', flexDirection: 'column' }}>
+                        <Typography variant="subtitle1" fontWeight={700} mb={4}>Feedback Trend</Typography>
+                        <Box sx={{ height: "200px", width: "100%", position: "relative" }}>
+                            <ResponsiveContainer width="100%" height={200}>
+                                <AreaChart data={trendData} margin={{ top: 10, right: 10, left: -30, bottom: 0 }}>
+                                    <defs>
+                                        <linearGradient id="colorFeedbackOverview" x1="0" y1="0" x2="0" y2="1">
+                                            <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3}/>
+                                            <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                                        </linearGradient>
+                                    </defs>
+                                    <XAxis dataKey="date" tick={{fontSize: 10, fill: "var(--secondary-color)"}} tickLine={false} axisLine={false} minTickGap={20} />
+                                    <YAxis tick={{fontSize: 10, fill: "var(--secondary-color)"}} tickLine={false} axisLine={false} />
+                                    <Tooltip content={({ active, payload, label }) => {
+                                        if (active && payload && payload.length) {
+                                            return (
+                                                <div className="p-2 border rounded shadow-sm" style={{ fontSize: "11px", backgroundColor: "var(--card-bg)", color: "var(--text-color)", borderColor: "var(--border-color)", borderRadius: '8px' }}>
+                                                    <p className="mb-1 fw-bold">{label}</p>
+                                                    <p className="mb-0 text-primary">Feedback: {payload[0].value}</p>
+                                                </div>
+                                            );
+                                        }
+                                        return null;
+                                    }} />
+                                    <Area type="monotone" dataKey="count" stroke="#3b82f6" strokeWidth={3} fillOpacity={1} fill="url(#colorFeedbackOverview)" />
+                                </AreaChart>
+                            </ResponsiveContainer>
+                        </Box>
+                    </Paper>
+                </Box>
+            </Box>
+
+            {/* Filter Bar */}
+            <Paper sx={{ p: 3, mb: 4, borderRadius: '16px', background: 'var(--card-bg)', boxShadow: '0px 2px 10px rgba(0,0,0,0.04)', border: 'none' }}>
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 3, alignItems: 'center' }}>
+                    <Box sx={{ flexGrow: 1, minWidth: { xs: '100%', lg: '300px' } }}>
+                        <TextField
+                            fullWidth
+                            placeholder="Search by user, service or ticket..."
+                            variant="outlined"
+                            size="small"
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                            slotProps={{
+                                input: {
+                                    startAdornment: (
+                                        <InputAdornment position="start">
+                                            <Search size={18} color="var(--secondary-color)" />
+                                        </InputAdornment>
+                                    )
+                                }
+                            }}
+                            sx={{ '& .MuiOutlinedInput-root': { borderRadius: '12px', bgcolor: 'var(--bg-color)' } }}
+                        />
+                    </Box>
+                    <Box sx={{ width: { xs: 'calc(50% - 12px)', lg: '150px' } }}>
+                        <FormControl fullWidth size="small">
