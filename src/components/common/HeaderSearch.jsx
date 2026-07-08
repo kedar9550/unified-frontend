@@ -102,6 +102,8 @@ const HeaderSearch = ({ activeRole }) => {
         <Search sx={{ color: "rgba(255, 255, 255, 0.6)", mr: 1, fontSize: 20 }} />
         <InputBase
           inputRef={inputRef}
+          type="search"
+          autoComplete="off"
           placeholder="Search anything..."
           value={query}
           onChange={handleChange}
