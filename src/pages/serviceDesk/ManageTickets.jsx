@@ -213,9 +213,9 @@ const ManageTickets = () => {
                     </Box>
                 ) : (
                     <DataTable 
-                        columns={["Ticket #", "Requester", "Title", "Priority", "Status", "Actions"]}
-                        alignments={["left", "left", "left", "center", "center", "right"]}
-                        nonSortableColumns={[5]}
+                        columns={["Ticket #", "Requester", "Title", "Priority", "Status", "Date", "Actions"]}
+                        alignments={["left", "left", "left", "center", "center", "center", "right"]}
+                        nonSortableColumns={[6]}
                         rows={tickets.map(t => [
                             { value: t.ticketNumber, display: <Typography fontWeight={600} color="primary">#{t.ticketNumber}</Typography> },
                             { value: t.createdBy?.name, display: t.createdBy?.name || 'Unknown' },
@@ -227,6 +227,10 @@ const ManageTickets = () => {
                             { 
                                 value: t.status, 
                                 display: <Chip label={t.status} color={getStatusColor(t.status)} size="small" sx={{ fontWeight: 600, borderRadius: '6px' }} /> 
+                            },
+                            {
+                                value: t.createdAt,
+                                display: <Typography fontSize="0.875rem" color="text.secondary">{t.createdAt ? new Date(t.createdAt).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'N/A'}</Typography>
                             },
                             {
                                 value: '',

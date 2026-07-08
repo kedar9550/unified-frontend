@@ -133,7 +133,7 @@ const Header = ({ isSidebarCollapsed }) => {
           {/* Mobile Logo (Short) */}
           <Box sx={{ display: { xs: "flex", md: "none" }, flexShrink: 0, alignItems: "center" }}>
             <img
-              src={isDarkMode ? circleLogoWhite : logoDarkTheme}
+              src={logoDarkTheme}
               alt="Aditya University Logo"
               style={{
                 display: "block",
@@ -146,7 +146,7 @@ const Header = ({ isSidebarCollapsed }) => {
           {/* Desktop Logo (Long) */}
           <Box sx={{ display: { xs: "none", md: "flex" }, flexShrink: 0, alignItems: "center" }}>
             <img
-              src={isDarkMode ? logoWhite : universityLogoGold}
+              src={universityLogoGold}
               alt="Aditya University Logo"
               style={{
                 display: "block",
