@@ -160,6 +160,7 @@ export const ROLE_ROUTES = {
       icon: <SupportAgent />,
       nested: [
         { text: "Manage Services", path: "/service-desk/admin/manage-services" },
+        { text: "Reports", path: "/service-desk/reports" },
         { text: "Feedback Analytics", path: "/service-desk/admin/feedback" }
       ]
     }
@@ -428,6 +429,7 @@ export const ROLE_ROUTES = {
 
     { text: "Service Team", path: "/service-desk/admin/team", icon: <GroupIcon /> },
     { text: "Manage Tickets", path: "/service-desk/admin/services", icon: <AssignmentTurnedIn /> },
+    { text: "Reports", path: "/service-desk/reports", icon: <Analytics /> },
     { text: "Feedback Analytics", path: "/service-desk/admin/feedback", icon: <Analytics /> },
 
   ],

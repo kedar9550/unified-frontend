@@ -72,6 +72,7 @@ import ManageServices from "./pages/serviceDesk/ManageServices";
 import ManageTickets from "./pages/serviceDesk/ManageTickets";
 import ManageServiceMembers from "./pages/serviceDesk/ManageServiceMembers";
 import AssignedToMe from "./pages/serviceDesk/AssignedToMe";
+import Reports from "./pages/serviceDesk/Reports";
 
 const PublicOnlyRoute = ({ children }) => {
   const { user } = useAuth();
@@ -208,6 +209,7 @@ function App() {
         <Route path="/service-desk/admin/manage-services" element={<ProtectedRoute element={<ManageServices />} />} />
         <Route path="/service-desk/admin/services" element={<ProtectedRoute element={<ManageTickets />} />} />
         <Route path="/service-desk/admin/team" element={<ProtectedRoute element={<ManageServiceMembers />} />} />
+        <Route path="/service-desk/reports" element={<ProtectedRoute element={<Reports />} />} />
 
         <Route path="*" element={<ProtectedRoute element={<Box p={4}><Typography variant="h4">Page Content</Typography></Box>} />} />
       </Routes>
