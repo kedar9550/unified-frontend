@@ -192,24 +192,7 @@ body.dark-mode .MuiCheckbox-root {
   color: var(--text-secondary);
 }
 
-/* Scrollbar */
-body.dark-mode ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
 
-body.dark-mode ::-webkit-scrollbar-track {
-  background: var(--bg-main);
-}
-
-body.dark-mode ::-webkit-scrollbar-thumb {
-  background: var(--bg-panel);
-  border-radius: 10px;
-}
-
-body.dark-mode ::-webkit-scrollbar-thumb:hover {
-  background: var(--text-secondary);
-}
 
 /* Tooltips */
 body.dark-mode .MuiTooltip-tooltip {
@@ -348,37 +331,12 @@ body.dark-mode [data-sonner-toast][data-type="info"] {
 
 
 /* ================Custom Scrollbar Styles======================*/
-body {
-  overflow-y: auto;
+/* Hide scrollbar globally for a cleaner, flat interface while keeping scrolling active */
+::-webkit-scrollbar {
+  display: none;
 }
 
-/* Custom Scrollbar */
-body::-webkit-scrollbar {
-  width: 3px;
-}
-
-body::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-body::-webkit-scrollbar-thumb {
-  background: var(--gradient-primary);
-  border-radius: 0px;
-}
-
-/* Sidebar Scrollbar */
-.sidebar-scrollbar::-webkit-scrollbar,
-.MuiDrawer-paper::-webkit-scrollbar {
-  width: 3px !important;
-}
-
-.sidebar-scrollbar::-webkit-scrollbar-track,
-.MuiDrawer-paper::-webkit-scrollbar-track {
-  background: var(--bg-main) !important;
-}
-
-.sidebar-scrollbar::-webkit-scrollbar-thumb,
-.MuiDrawer-paper::-webkit-scrollbar-thumb {
-  background: var(--gradient-primary) !important;
-  border-radius: 0px !important;
+* {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
 }
