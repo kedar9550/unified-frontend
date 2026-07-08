@@ -139,8 +139,38 @@ const Profile = () => {
   const [showPwd, setShowPwd] = React.useState({ old: false, new: false, confirm: false });
   const [pwdLoading, setPwdLoading] = React.useState(false);
   const [doj, setDoj] = React.useState(null);
+  const [syncing, setSyncing] = React.useState(false);
   
   const pwdFormRef = React.useRef(null);
+
+  const handleSyncERP = async () => {
+    setSyncing(true);
+    try {
+      const res = await API.post("/api/employees/me/sync-ecap");
+      if (res.data && res.data.user) {
+        setProfileData(res.data.user);
+        setForm({
+          email: res.data.user.email || "",
+          phone: res.data.user.phone || "",
+          scopusId: res.data.user.scopusId || "",
+          wosId: res.data.user.wosId || "",
+          orcidId: res.data.user.orcidId || "",
+          googleScholarId: res.data.user.googleScholarId || "",
+          panNumber: res.data.user.panNumber || "",
+          college: res.data.user.college || "",
+          qualification: res.data.user.qualification || ""
+        });
+        toast.success("Profile details synced  successfully!");
+      } else {
+        toast.error("Failed to sync");
+      }
+    } catch (err) {
+      console.error("Sync failed", err);
+      toast.error(err.response?.data?.message || "Failed to sync details");
+    } finally {
+      setSyncing(false);
+    }
+  };
 
   React.useEffect(() => {
     if (showPwdForm) {
@@ -389,10 +419,34 @@ const Profile = () => {
                   Core: {profile?.coreDepartment || "N/A"}
                 </Typography>
                 {doj && (
-                  <Typography sx={{ fontSize: "0.85rem", color: "var(--gradient-primary)", fontWeight: 400 }}>
+                  <Typography sx={{ fontSize: "0.85rem", color: "var(--gradient-primary)", fontWeight: 400, mb: 1 }}>
                     Date of Joining: {doj}
                   </Typography>
                 )}
+                <Button
+                  fullWidth
+                  variant="contained"
+                  onClick={handleSyncERP}
+                  disabled={syncing}
+                  sx={{
+                    mt: 2,
+                    py: 1,
+                    textTransform: "none",
+                    fontWeight: 700,
+                    fontSize: "0.85rem",
+                    bgcolor: "var(--color-primary)",
+                    color: "#fff",
+                    borderRadius: "12px",
+                    transition: "all 0.3s ease",
+                    "&:hover": {
+                      bgcolor: "var(--color-primary-dark, #0369a1)",
+                      transform: "translateY(-1.5px)",
+                      boxShadow: "0 4px 12px rgba(2, 132, 199, 0.2)"
+                    }
+                  }}
+                >
+                  {syncing ? "Updating..." : "Update"}
+                </Button>
               </>
             )}
 
@@ -652,6 +706,7 @@ const Profile = () => {
               <Box sx={{ position: "relative", display: "flex", alignItems: "center" }}>
                 <TextField
                   autoFocus={showPwdForm}
+                  autoComplete="new-password"
                   size="small" fullWidth placeholder="Enter old password"
                   type={showPwd.old ? "text" : "password"}
                   value={pwdForm.oldPassword}
@@ -688,6 +743,7 @@ const Profile = () => {
               <Typography sx={{ fontSize: "0.7rem", color: "var(--text-secondary)", fontWeight: 500, mb: 0.5, textTransform: "uppercase" }}>New Password</Typography>
               <Box sx={{ position: "relative", display: "flex", alignItems: "center" }}>
                 <TextField
+                  autoComplete="new-password"
                   size="small" fullWidth placeholder="Enter new password"
                   variant="outlined"
                   type={showPwd.new ? "text" : "password"}
@@ -720,6 +776,7 @@ const Profile = () => {
               <Typography sx={{ fontSize: "0.7rem", color: "var(--text-secondary)", fontWeight: 500, mb: 0.5, textTransform: "uppercase" }}>Re-enter Password</Typography>
               <Box sx={{ position: "relative", display: "flex", alignItems: "center" }}>
                 <TextField
+                  autoComplete="new-password"
                   size="small" fullWidth placeholder="Confirm new password"
                   variant="outlined"
                   type={showPwd.confirm ? "text" : "password"}
