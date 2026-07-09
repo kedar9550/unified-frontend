@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect } from "react";
 import API from "../api/axios";
 import { getHighestRole } from "../config/rolePriority";
+import { requestForToken } from "../firebase";
 
 const AuthContext = createContext();
 
@@ -21,7 +22,8 @@ export const AuthProvider = ({ children }) => {
 
   const logout = async () => {
     try {
-      await API.post("/api/employees/logout");
+      const fcmToken = localStorage.getItem("fcmToken");
+      await API.post("/api/employees/logout", { fcmToken });
     } catch (e) {
       console.error("Logout err", e);
     }
@@ -29,6 +31,7 @@ export const AuthProvider = ({ children }) => {
     setActiveRole(null);
     localStorage.removeItem("user");
     localStorage.removeItem("activeRole");
+    localStorage.removeItem("fcmToken");
   };
 
   // Initialize from storage on first load
@@ -78,8 +81,18 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (formData) => {
     try {
+      let fcmToken = null;
+      try {
+        fcmToken = await requestForToken();
+        if (fcmToken) {
+          localStorage.setItem("fcmToken", fcmToken);
+        }
+      } catch (tokenErr) {
+        console.error("Failed to get FCM token during login", tokenErr);
+      }
+
       // Append app context to login details as required by backend
-      const payload = { ...formData, app: "UNIFIED_SYSTEM" };
+      const payload = { ...formData, app: "UNIFIED_SYSTEM", fcmToken };
       const res = await API.post("/api/employees/login", payload); 
 
       let userData = res.data.user;
