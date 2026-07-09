@@ -37,7 +37,7 @@ import API from "../../api/axios";
 import { useAuth } from "../../context/AuthContext";
 import DataTable from "../../components/data/DataTable";
 import ProctorStudentsModal from "../../components/faculty/ProctorStudentsModal";
-import Loader from "../../components/common/Loader";
+
 import { useNavigate } from "react-router-dom";
 
 const FacultyDashboard = () => {
@@ -179,9 +179,6 @@ const FacultyDashboard = () => {
     { title: "Proctoring", desc: "Assigned students list", icon: <Group sx={{ color: "#EF4444" }} />, onClick: () => setIsProctorModalOpen(true) },
   ];
 
-  if (loadingDashboard && !dashboardData) {
-    return <Loader sx={{ minHeight: '60vh' }} />;
-  }
 
   return (
     <Box>
