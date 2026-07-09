@@ -394,7 +394,7 @@ export default function Login() {
         {/* Right half — visible by default */}
         <div className="overlay-side overlay-right">
           <img src={loginLogo} alt="Aditya University" className="overlay-logo" />
-          <h2 className="overlay-title">Welcome to Unified Portal</h2>
+          <h2 className="overlay-title">Welcome to Digital Services</h2>
           <p className="overlay-sub">Access all your academic resources in one place.</p>
         </div>
       </div>
