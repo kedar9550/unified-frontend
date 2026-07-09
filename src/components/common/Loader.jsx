@@ -38,6 +38,14 @@ const Loader = ({ fullScreen = false, size = 130, sx = {}, ...props }) => {
         );
     }
 
+    // Heuristic: If it's a large loader (size >= 50) and not explicitly forced,
+    // we assume it's a page-level loader. Since the global loader handles page loads,
+    // we suppress this local loader to avoid duplicates.
+    if (size >= 50 && !props.forceShow) {
+        return null;
+    }
+
+    // Small loaders (button spinners, inline loaders) are rendered normally
     return (
         <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", ...sx }} {...props}>
             <SunLoader progress={progress} size={size} />

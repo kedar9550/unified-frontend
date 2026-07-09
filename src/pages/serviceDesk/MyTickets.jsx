@@ -1,4 +1,4 @@
-import Loader from "../../components/common/Loader";
+
 import React, { useState, useEffect } from 'react';
 import {
     Box, Typography, Chip, Button, Alert, AlertTitle, IconButton, Tooltip
@@ -82,7 +82,6 @@ const MyTickets = () => {
 
                 {loading ? (
                     <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
-                        <Loader />
                     </Box>
                 ) : tickets.length === 0 ? (
                     <Box sx={{
