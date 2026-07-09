@@ -27,7 +27,7 @@ const GlobalFeedbackPrompt = () => {
 
     const fetchPendingFeedback = async () => {
         try {
-            const res = await API.get('/api/service-desk/tickets/feedback/pending');
+            const res = await API.get('/api/service-desk/tickets/feedback/pending', { skipGlobalLoader: true });
             if (res.data.success && res.data.data.length > 0) {
                 setPendingTickets(res.data.data);
                 setIsOpen(true);

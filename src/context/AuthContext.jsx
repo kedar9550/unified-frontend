@@ -43,7 +43,7 @@ export const AuthProvider = ({ children }) => {
       setUser(parsedUser);
 
       // Refresh user data from server to get latest populated fields
-      API.get("/api/employees/me").then(res => {
+      API.get("/api/employees/me", { skipGlobalLoader: true }).then(res => {
         if (res.data.user) {
           let updatedUser = normalizeRoles(res.data.user);
           setUser(updatedUser);

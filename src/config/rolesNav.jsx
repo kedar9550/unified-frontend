@@ -208,6 +208,7 @@ export const ROLE_ROUTES = {
         },
       ]
     },
+    { text: "Staff Directory", path: "/hod/staff", icon: <People /> },
     // { text: "Proctordata", path: "/hod/protecrdataupload", icon: <People /> },
     {
       text: "Utilities",
