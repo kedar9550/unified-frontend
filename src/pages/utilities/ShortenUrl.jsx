@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
     Box, Typography, Button, IconButton, Dialog, DialogTitle, DialogContent,
-    DialogActions, TextField, InputAdornment, Tooltip
+    DialogActions, TextField, InputAdornment, Tooltip, ToggleButtonGroup, ToggleButton
 } from '@mui/material';
 import { Add, ContentCopy, OpenInNew, Link as LinkIcon, Block, CheckCircle, Delete } from '@mui/icons-material';
 import PageHeader from '../../components/common/PageHeader';
@@ -14,6 +14,8 @@ const ShortenUrl = () => {
     const [openModal, setOpenModal] = useState(false);
     const [longUrl, setLongUrl] = useState('');
     const [expiresAt, setExpiresAt] = useState('');
+    const [linkType, setLinkType] = useState('random');
+    const [customSlug, setCustomSlug] = useState('');
 
     const fetchLinks = async () => {
         try {
@@ -35,15 +37,29 @@ const ShortenUrl = () => {
             toast.error('Destination URL is required');
             return;
         }
+        if (linkType === 'custom') {
+            if (!customSlug) {
+                toast.error('Custom alias is required');
+                return;
+            }
+            if (!/^[a-zA-Z0-9-]+$/.test(customSlug)) {
+                toast.error('Custom link can only contain letters, numbers, and hyphens');
+                return;
+            }
+        }
+
         try {
             await axios.post('/api/utilities/shorten-url', {
                 longUrl,
-                expiresAt: expiresAt || null
+                expiresAt: expiresAt || null,
+                ...(linkType === 'custom' && { customSlug })
             });
             toast.success('Short link created successfully');
             setOpenModal(false);
             setLongUrl('');
             setExpiresAt('');
+            setLinkType('random');
+            setCustomSlug('');
             fetchLinks();
         } catch (error) {
             toast.error(error.response?.data?.message || 'Failed to create short link');
@@ -184,6 +200,40 @@ const ShortenUrl = () => {
                                 size="small"
                             />
                         </Box>
+
+                        <Box>
+                            <Typography variant="body2" color="textSecondary" mb={1}>Link Generation Method</Typography>
+                            <ToggleButtonGroup
+                                color="primary"
+                                value={linkType}
+                                exclusive
+                                onChange={(e, newType) => {
+                                    if (newType) setLinkType(newType);
+                                }}
+                                fullWidth
+                                size="small"
+                            >
+                                <ToggleButton value="random" sx={{ textTransform: 'none', fontWeight: 600 }}>Random Link</ToggleButton>
+                                <ToggleButton value="custom" sx={{ textTransform: 'none', fontWeight: 600 }}>Custom Alias</ToggleButton>
+                            </ToggleButtonGroup>
+                        </Box>
+
+                        {linkType === 'custom' && (
+                            <Box>
+                                <Typography variant="body2" color="textSecondary" mb={0.5}>Custom Alias</Typography>
+                                <TextField
+                                    fullWidth
+                                    variant="outlined"
+                                    placeholder="e.g. my-custom-event"
+                                    value={customSlug}
+                                    onChange={(e) => setCustomSlug(e.target.value)}
+                                    size="small"
+                                    InputProps={{
+                                        startAdornment: <InputAdornment position="start">{window.location.host}/r/</InputAdornment>,
+                                    }}
+                                />
+                            </Box>
+                        )}
                         <Box>
                             <Typography variant="body2" color="textSecondary" mb={0.5}>Expiration Date (Optional)</Typography>
                             <TextField
