@@ -67,7 +67,7 @@ export default function DataTable({ columns, rows, toolbarLeft, nonSortableColum
   };
 
   return (
-    <Box sx={{ width: "100%", display: "flex", flexDirection: "column", gap: 1 }}>
+    <Box sx={{ width: "100%", display: "flex", flexDirection: "column", gap: 1, minWidth: 0 }}>
       {/*  TOOLBAR: Filters on left, Search on right */}
       <Box sx={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 2, mb: 1, flexWrap: "wrap" }}>
         {/* Left slot: Filters */}
@@ -108,10 +108,34 @@ export default function DataTable({ columns, rows, toolbarLeft, nonSortableColum
       </Box>
 
       {/*  TABLE */}
-      <Box sx={{ overflowX: "auto", borderRadius: "12px" }}>
+      <Box 
+        sx={{ 
+          overflowX: "auto", 
+          borderRadius: "12px", 
+          width: "100%",
+          "&::-webkit-scrollbar": {
+            height: "8px",
+            display: "block !important",
+          },
+          "&::-webkit-scrollbar-track": {
+            background: "rgba(0, 0, 0, 0.05)",
+            borderRadius: "10px",
+          },
+          "&::-webkit-scrollbar-thumb": {
+            background: "var(--color-primary, #2563eb)",
+            opacity: 0.5,
+            borderRadius: "10px",
+            "&:hover": {
+              background: "var(--color-primary-dark, #1d4ed8)",
+            }
+          },
+          scrollbarWidth: "auto !important",
+        }}
+      >
         <Table
           sx={{
-            minWidth: 600,
+            minWidth: "100%",
+            width: "auto",
             borderCollapse: "collapse",
             "& th, & td": { whiteSpace: "nowrap" }
           }}

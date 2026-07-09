@@ -46,6 +46,7 @@ const MainLayout = ({ children }) => {
         <Box
           sx={{
             flexGrow: 1,
+            minWidth: 0,
             minHeight: "100vh",
             display: "flex",
             flexDirection: "column",
@@ -59,6 +60,7 @@ const MainLayout = ({ children }) => {
           <Box
             sx={{
               flex: 1,
+              minWidth: 0,
               borderRadius: { xs: 0, md: "16px" },
               background: "var(--bg-glass)",
               backdropFilter: "blur(2px) saturate(160%)",
@@ -70,7 +72,7 @@ const MainLayout = ({ children }) => {
               overflow: "hidden",
             }}
           >
-            <Box sx={{ flex: 1, px: { xs: 0.5, md: 4 }, py: { xs: 1.5, md: 4 }, overflowY: "auto" }}>
+            <Box sx={{ flex: 1, minWidth: 0, px: { xs: 0.5, md: 4 }, py: { xs: 1.5, md: 4 }, overflowY: "auto", overflowX: "hidden" }}>
               {children}
             </Box>
             <Footer />
