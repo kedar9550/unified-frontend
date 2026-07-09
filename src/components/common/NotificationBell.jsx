@@ -18,7 +18,7 @@ const NotificationBell = forwardRef((props, ref) => {
     const fetchNotifications = async () => {
         try {
             setLoading(true);
-            const res = await API.get('/api/notifications');
+            const res = await API.get('/api/notifications', { skipGlobalLoader: true });
             if (res.data.success) {
                 setNotifications(res.data.data);
                 setUnreadCount(res.data.unreadCount);
