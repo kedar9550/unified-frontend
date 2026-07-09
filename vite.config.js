@@ -9,7 +9,7 @@ export default defineConfig({
       strategies: 'injectManifest',
       srcDir: 'src',
       filename: 'firebase-messaging-sw.js',
-      registerType: 'prompt',
+      registerType: 'autoUpdate', // <-- CHANGE TO autoUpdate
       injectManifest: {
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024
       },
@@ -43,7 +43,22 @@ export default defineConfig({
             purpose: 'any'
           }
         ]
+      }, // manifest is closing here
+
+      // <-- Add devOptions here
+      devOptions: {
+        enabled: true,
+        type: 'module'
       }
     })
-  ]
+  ],
+
+  // This is your server preview block
+  preview: {
+    host: '0.0.0.0',
+    port: 4173,
+    allowedHosts: [
+      'digitalservices.adityauniversity.in'
+    ]
+  }
 })

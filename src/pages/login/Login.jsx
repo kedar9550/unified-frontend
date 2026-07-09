@@ -1,4 +1,4 @@
-import API from "../../api/axios";
+﻿import API from "../../api/axios";
 
 // ---------------- LOGIN VALIDATION ----------------
 export const validateLogin = (data) => {
@@ -97,6 +97,7 @@ export default function Login() {
     confirmPass: ''
   });
   const [fpMsg, setFpMsg] = useState({ text: '', type: '' }); // type: error or success
+  const [idValidMsg, setIdValidMsg] = useState('');
   const [forgotAnimClass, setForgotAnimClass] = useState('');
   const [isClosing, setIsClosing] = useState(false);
   const [isRoleOpen, setIsRoleOpen] = useState(false);
@@ -125,6 +126,7 @@ export default function Login() {
       confirmPass: ''
     });
     setFpMsg({ text: '', type: '' });
+    setIdValidMsg('');
     setShowResetPass(false);
     setShowResetConfirm(false);
   };
@@ -172,16 +174,19 @@ export default function Login() {
     e.preventDefault();
     const res = await checkEmployeeId(fpData.id);
 
-    setFpMsg({
-      text: res.message,
-      type: res.success ? "success" : "error"
-    });
-
     if (res.success) {
       setIsIdValid(true);
+      setIdValidMsg(res.message);
+      setFpMsg({ text: '', type: '' }); // Clear any previous errors
       if (res.mobile) {
         setFpData(prev => ({ ...prev, mobile: res.mobile }));
       }
+    } else {
+      setFpMsg({
+        text: res.message,
+        type: "error"
+      });
+      setIdValidMsg('');
     }
   };
   const handleSendOtp = async (e) => {
@@ -240,7 +245,7 @@ export default function Login() {
               <input id="login-id" type="text" placeholder=" "
                 value={loginData.id}
                 onChange={e => setLoginData({ ...loginData, id: e.target.value })} />
-              <label className="auth-label" htmlFor="login-id">Employee / Student ID</label>
+              <label className="auth-label" htmlFor="login-id">Employee ID</label>
             </div>
             <div className="auth-field">
               <input id="login-password" type={showLogPass ? 'text' : 'password'} placeholder=" "
@@ -306,7 +311,7 @@ export default function Login() {
                   className="auth-label"
                   htmlFor="fp-id"
                 >
-                  Employee / Student ID
+                  Employee ID
                 </label>
 
               </div>
@@ -314,6 +319,12 @@ export default function Login() {
 
               {/* Mobile Number input removed as per request */}
 
+
+              {isIdValid && idValidMsg && (
+                <p style={{ fontSize: '0.9rem', color: '#0b5299', textAlign: 'center', marginBottom: '10px' }}>
+                  {idValidMsg}
+                </p>
+              )}
 
               <div className="btn-wrapper-center">
 
