@@ -314,14 +314,12 @@ const TicketDetail = () => {
     };
 
     const handleBack = () => {
-        if (window.history.state && window.history.state.idx > 0) {
-            navigate(-1);
+        if (isAdminView) {
+            navigate('/service-desk/admin/services');
+        } else if (activeRole === 'SERVICE_EMP') {
+            navigate('/service-desk/assigned-to-me');
         } else {
-            if (isAdminView) {
-                navigate('/service-desk/admin/services');
-            } else {
-                navigate('/service-desk/my-tickets');
-            }
+            navigate('/service-desk/my-tickets');
         }
     };
 

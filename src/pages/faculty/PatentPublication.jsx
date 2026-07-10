@@ -915,7 +915,11 @@ export default function PatentPublication() {
 
   return (
     <Box>
-      <PageHeader title="Patent Publications" subtitle="Manage and submit your patent publications" />
+      <PageHeader 
+        title="Patent Publications" 
+        subtitle="Manage and submit your patent publications" 
+        onBack={viewMode !== "list" ? () => setViewMode("list") : undefined} 
+      />
 
       {viewMode === "list" && renderList()}
       {viewMode === "select-year" && renderSelectYear()}

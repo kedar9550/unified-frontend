@@ -985,21 +985,34 @@ export default function Teaching() {
         title="Teaching Dashboard"
         subtitle="Manage courses, performance, and student outcomes" action={
           <Button
- onClick={() => setDiscOpen(true)}
- startIcon={<FlagIcon />}
- sx={{
- 
- px: 3,
- py: 1,
- textTransform: "none",
- fontWeight: 600,
- fontSize: 14,
- background: "linear-gradient(135deg,#e53935,#ff7043)",
- color: "#fff",
- boxShadow: "0 4px 15px rgba(229,57,53,0.3)",
- "&:hover": {
- background: "linear-gradient(135deg,#c62828,#e64a19)" } }}
- >
+            onClick={() => {
+              const hasNoAcademicsData =
+                results.length === 0 &&
+                (!proctorStats || proctorStats.assignedCount === 0 || !proctorStats.studentPassPercentages || proctorStats.studentPassPercentages.length === 0) &&
+                feedbackResults.length === 0 &&
+                coAttainmentResults.length === 0;
+
+              if (hasNoAcademicsData) {
+                toast.error("No academic data available for the selected academic year. You cannot raise a discrepancy.");
+                return;
+              }
+              setDiscOpen(true);
+            }}
+            startIcon={<FlagIcon />}
+            sx={{
+              px: 3,
+              py: 1,
+              textTransform: "none",
+              fontWeight: 600,
+              fontSize: 14,
+              background: "linear-gradient(135deg,#e53935,#ff7043)",
+              color: "#fff",
+              boxShadow: "0 4px 15px rgba(229,57,53,0.3)",
+              "&:hover": {
+                background: "linear-gradient(135deg,#c62828,#e64a19)"
+              }
+            }}
+          >
             Raise Discrepancy
           </Button>
         }

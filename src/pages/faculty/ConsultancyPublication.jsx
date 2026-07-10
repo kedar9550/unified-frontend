@@ -934,7 +934,11 @@ export default function ConsultancyPublication() {
 
   return (
     <>
-      <PageHeader title="Consultancy Projects" subtitle="Manage and submit your consultancy projects" />
+      <PageHeader 
+        title="Consultancy Projects" 
+        subtitle="Manage and submit your consultancy projects" 
+        onBack={viewMode !== "list" ? () => setViewMode("list") : undefined} 
+      />
 
       {viewMode === "list" && renderList()}
       {viewMode === "select-year" && renderSelectYear()}

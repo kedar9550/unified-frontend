@@ -1,10 +1,29 @@
-import { Box, Typography } from "@mui/material";
+import { Box, Typography, IconButton } from "@mui/material";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import { useNavigate } from "react-router-dom";
 
 export default function PageHeader({
   title,
   subtitle,
   action,
+  showBack = false,
+  onBack,
+  backPath,
 }) {
+  const navigate = useNavigate();
+
+  const handleBack = () => {
+    if (onBack) {
+      onBack();
+    } else if (backPath) {
+      navigate(backPath);
+    } else {
+      navigate("/dashboard");
+    }
+  };
+
+  const shouldShowBack = showBack || !!onBack || !!backPath;
+
   return (
     <Box
       sx={{
@@ -61,18 +80,45 @@ export default function PageHeader({
       </Box>
 
       {/* LEFT */}
-      <Box sx={{ position: "relative", zIndex: 1, pr: { xs: 2, md: 0 }, textAlign: "left" }}>
-        {/* Breadcrumbs removed as per request */}
-        {/* Title */}
-        <Typography variant="h4" fontWeight={800} sx={{ color: "var(--text-primary)", fontSize: { xs: "1.5rem", sm: "2rem" }, letterSpacing: "-0.5px" }}>
-          {title}
-        </Typography>
-        {/* Subtitle */}
-        {subtitle && (
-          <Typography variant="body2" sx={{ color: "var(--text-secondary)", fontWeight: 500, mt: 0.5, opacity: 0.8 }}>
-            {subtitle}
-          </Typography>
+      <Box sx={{ display: "flex", alignItems: "flex-start", gap: 2, position: "relative", zIndex: 1, pr: { xs: 2, md: 0 }, textAlign: "left" }}>
+        {shouldShowBack && (
+          <IconButton
+            onClick={handleBack}
+            sx={{
+              p: 1,
+              mt: 0.5,
+              bgcolor: "var(--bg-glass)",
+              border: "1px solid var(--border-color)",
+              color: "var(--text-primary)",
+              borderRadius: "12px",
+              boxShadow: "var(--shadow-premium-soft)",
+              transition: "all 0.25s cubic-bezier(0.4, 0, 0.2, 1)",
+              "&:hover": {
+                bgcolor: "var(--color-primary, #3b82f6)",
+                color: "#fff",
+                transform: "translateX(-4px)",
+                boxShadow: "0 4px 12px rgba(59, 130, 246, 0.3)",
+              },
+              "&:active": {
+                transform: "translateX(-2px) scale(0.95)",
+              }
+            }}
+          >
+            <ArrowBackIcon sx={{ fontSize: 20 }} />
+          </IconButton>
         )}
+        <Box>
+          {/* Title */}
+          <Typography variant="h4" fontWeight={800} sx={{ color: "var(--text-primary)", fontSize: { xs: "1.5rem", sm: "2rem" }, letterSpacing: "-0.5px" }}>
+            {title}
+          </Typography>
+          {/* Subtitle */}
+          {subtitle && (
+            <Typography variant="body2" sx={{ color: "var(--text-secondary)", fontWeight: 500, mt: 0.5, opacity: 0.8 }}>
+              {subtitle}
+            </Typography>
+          )}
+        </Box>
       </Box>
 
       {/* RIGHT */}

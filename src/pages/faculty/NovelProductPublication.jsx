@@ -972,7 +972,9 @@ export default function NovelProductPublication() {
     <Box sx={{ width: "100%", pb: 5 }}>
       <PageHeader 
         title="Novel Products & Technologies" 
-        subtitle="Manage and submit your novel products and technologies" />
+        subtitle="Manage and submit your novel products and technologies" 
+        onBack={viewMode !== "list" ? () => setViewMode("list") : undefined} 
+      />
       <Box sx={{ mt: 3 }}>
         {viewMode === "list" && renderList()}
         {viewMode === "select-year" && renderSelectYear()}

@@ -6,6 +6,7 @@ const StudentDashboard = () => (
     title="Student Portal" 
     subtitle="Welcome to your academic dashboard." 
     showLogo={false} 
+    showBack={false}
   />
 );
 

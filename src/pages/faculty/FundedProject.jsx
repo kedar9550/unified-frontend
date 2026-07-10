@@ -1063,7 +1063,11 @@ export default function FundedProject() {
 
   return (
     <>
-      <PageHeader title="Funded Projects" subtitle="Manage and submit your funded projects" />
+      <PageHeader 
+        title="Funded Projects" 
+        subtitle="Manage and submit your funded projects" 
+        onBack={viewMode !== "list" ? () => setViewMode("list") : undefined} 
+      />
 
       {viewMode === "list" && renderList()}
       {viewMode === "select-year" && renderSelectYear()}

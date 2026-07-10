@@ -1140,7 +1140,11 @@ export default function ConferencePublication() {
 
   return (
     <Box>
-      <PageHeader title="Conference Publications" subtitle="Manage and submit your conference publications" />
+      <PageHeader 
+        title="Conference Publications" 
+        subtitle="Manage and submit your conference publications" 
+        onBack={viewMode !== "list" ? () => setViewMode("list") : undefined} 
+      />
 
       {viewMode === "list" && renderList()}
       {viewMode === "select-year" && renderSelectYear()}

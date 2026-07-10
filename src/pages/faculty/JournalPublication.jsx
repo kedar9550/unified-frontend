@@ -1520,7 +1520,11 @@ export default function JournalPublication() {
 
   return (
     <Box>
-      <PageHeader title="Journal Publications" subtitle="Manage and submit your journal publications" />
+      <PageHeader 
+        title="Journal Publications" 
+        subtitle="Manage and submit your journal publications" 
+        onBack={viewMode !== "list" ? () => setViewMode("list") : undefined} 
+      />
       {viewMode === "list" && renderList()}
       {viewMode === "select-year" && renderSelectYear()}
       {viewMode === "form" && renderForm()}
