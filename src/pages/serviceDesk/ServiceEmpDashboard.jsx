@@ -116,7 +116,7 @@ const ServiceEmpDashboard = () => {
     <Box sx={{ width: '100%' }}>
       {/* ── Header ─────────────────────────────────────────────────── */}
       <Box sx={{ mb: 3 }}>
-        <PageHeader title="My Work Dashboard" subtitle="Your assigned tasks and activity overview" />
+        <PageHeader title="My Work Dashboard" subtitle="Your assigned tasks and activity overview" showBack={false} />
       </Box>
 
       {/* ── Stat Cards ─────────────────────────────────────────────── */}

@@ -1250,7 +1250,11 @@ export default function TextbookPublication() {
 
   return (
     <Box>
-      <PageHeader title="Textbook Publications" subtitle="Manage and submit your textbook publications" />
+      <PageHeader 
+        title="Textbook Publications" 
+        subtitle="Manage and submit your textbook publications" 
+        onBack={viewMode !== "list" ? () => setViewMode("list") : undefined} 
+      />
       {viewMode === "list" && renderList()}
       {viewMode === "select-year" && renderSelectYear()}
       {viewMode === "form" && renderForm()}

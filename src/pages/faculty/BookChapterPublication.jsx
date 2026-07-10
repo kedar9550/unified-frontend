@@ -1460,7 +1460,11 @@ export default function BookChapterPublication() {
 
   return (
     <Box>
-      <PageHeader title="Book Chapter Publications" subtitle="Manage and submit your book chapter publications" />
+      <PageHeader 
+        title="Book Chapter Publications" 
+        subtitle="Manage and submit your book chapter publications" 
+        onBack={viewMode !== "list" ? () => setViewMode("list") : undefined} 
+      />
 
       {viewMode === "list" && renderList()}
       {viewMode === "select-year" && renderSelectYear()}

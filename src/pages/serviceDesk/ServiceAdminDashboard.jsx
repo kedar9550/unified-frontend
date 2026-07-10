@@ -167,7 +167,7 @@ const ServiceAdminDashboard = () => {
     <Box sx={{ width: '100%' }}>
       {/* ── Header ─────────────────────────────────────────────────── */}
       <Box sx={{ display: 'flex', alignItems: { xs: 'flex-start', sm: 'center' }, justifyContent: 'space-between', flexWrap: 'wrap', gap: 2, mb: 3 }}>
-        <PageHeader title="Service Admin Dashboard" subtitle={`Monitoring · ${selectedSvcName}`} />
+        <PageHeader title="Service Admin Dashboard" subtitle={`Monitoring · ${selectedSvcName}`} showBack={false} />
         {memberships.length > 1 && (
           <FormControl size="small" sx={{ minWidth: 200 }}>
             <Select

@@ -386,7 +386,7 @@ const Sidebar = ({ mobileOpen, onDrawerToggle, isCollapsed, onToggleSidebar }) =
         {menuItems.map((item) => (
           <React.Fragment key={item.text}>
             {item.nested ? (
-              <>
+              <Box sx={{ width: '100%' }}>
                 {(() => {
                   const isParentActive = item.nested.some(sub => active === sub.text);
                   const parentButton = (
@@ -490,7 +490,15 @@ const Sidebar = ({ mobileOpen, onDrawerToggle, isCollapsed, onToggleSidebar }) =
                   return parentButton;
                 })()}
                 {!isCollapsed && (
-                  <Collapse in={!!openStates[item.text]} timeout="auto" unmountOnExit sx={{ overflow: 'hidden' }}>
+                  <Collapse
+                    in={!!openStates[item.text]}
+                    timeout="auto"
+                    unmountOnExit
+                    sx={{ overflow: 'hidden' }}
+                    onEntered={(node) => {
+                      node.parentElement?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                    }}
+                  >
                     <List component="div" disablePadding>
                       {item.nested.map((subItem) => (
                         <Item
@@ -506,7 +514,7 @@ const Sidebar = ({ mobileOpen, onDrawerToggle, isCollapsed, onToggleSidebar }) =
                     </List>
                   </Collapse>
                 )}
-              </>
+              </Box>
             ) : (
               <Item icon={item.icon} text={item.text} active={active} isCollapsed={isCollapsed} onClick={() => navigateTo(item.path, item.text)} />
             )}
