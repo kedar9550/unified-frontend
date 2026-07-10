@@ -127,7 +127,6 @@ const AcademicManagement = () => {
 
   const renderSemesters = (yearDoc, programEntry, programPattern, durationYears) => {
     const yearId = yearDoc._id;
-    const isGlobalActive = yearDoc.isGlobalActive;
     const programId = programEntry.programId?._id || programEntry.programId;
     let availableSemesters = [];
     if (programPattern === "YEAR") {
@@ -151,15 +150,15 @@ const AcademicManagement = () => {
                   <Paper variant="outlined" sx={{
                     p: 1.2, textAlign: "left",
                     display: "flex", justifyContent: "space-between", alignItems: "center",
-                    background: isActive && isGlobalActive ? "rgba(16,185,129,0.15)" : "var(--bg-glass)",
-                    borderColor: isActive && isGlobalActive ? "var(--color-success, #10B981)" : "var(--border-color)",
-                    opacity: isGlobalActive ? 1 : 0.6
+                    background: isActive && programEntry.isActive ? "rgba(16,185,129,0.15)" : "var(--bg-glass)",
+                    borderColor: isActive && programEntry.isActive ? "var(--color-success, #10B981)" : "var(--border-color)",
+                    opacity: programEntry.isActive ? 1 : 0.6
                   }}>
                     <Typography variant="body2" sx={{ fontWeight: 600, color: "var(--text-primary)" }}>Year {idx + 1}</Typography>
                     {isActive ? (
                       <Chip size="small" icon={<CheckCircle />} label="Active" color="success" sx={{ fontWeight: 700 }} />
                     ) : (
-                      <Button size="small" variant="text" disabled={!isGlobalActive}
+                      <Button size="small" variant="text" disabled={!programEntry.isActive}
                         onClick={() => setProgramSemester(yearId, programId, st._id)}
                         sx={{ textTransform: "none", fontWeight: 700, fontSize: "0.7rem", color: "var(--color-primary)",
                           "&:hover": { background: "transparent", opacity: 0.8 },
@@ -199,9 +198,9 @@ const AcademicManagement = () => {
                   justifyContent: "space-between", 
                   alignItems: { xs: "flex-start", lg: "center" },
                   gap: { xs: 1.5, lg: 0 },
-                  background: isActive && isGlobalActive ? "rgba(16,185,129,0.15)" : "var(--bg-glass)",
-                  borderColor: isActive && isGlobalActive ? "var(--color-success, #10B981)" : "var(--border-color)",
-                  opacity: isGlobalActive ? 1 : 0.6
+                  background: isActive && programEntry.isActive ? "rgba(16,185,129,0.15)" : "var(--bg-glass)",
+                  borderColor: isActive && programEntry.isActive ? "var(--color-success, #10B981)" : "var(--border-color)",
+                  opacity: programEntry.isActive ? 1 : 0.6
                 }}>
                   <Box>
                     <Typography variant="body2" sx={{ fontWeight: 600, color: "var(--text-primary)" }}>{title}</Typography>
@@ -211,7 +210,7 @@ const AcademicManagement = () => {
                     {isActive ? (
                       <Chip size="small" icon={<CheckCircle />} label="Active" color="success" sx={{ fontWeight: 700 }} />
                     ) : (
-                      <Button size="small" variant="text" disabled={!isGlobalActive}
+                      <Button size="small" variant="text" disabled={!programEntry.isActive}
                         onClick={() => setProgramSemester(yearId, programId, st._id)}
                         sx={{ 
                           textTransform: "none", fontWeight: 700, fontSize: "0.8rem", 
@@ -306,7 +305,7 @@ const AcademicManagement = () => {
                 {yearDoc.isGlobalActive ? (
                   <Chip size="small" icon={<CheckCircle />} label="Active" color="success" sx={{ fontWeight: 700 }} />
                 ) : (
-                  <Chip size="small" label="Set Active" variant="outlined"
+                  <Chip size="small" label="Set Globally Active" variant="outlined"
                     onClick={(e) => { e.stopPropagation(); activateAcademicYearGlobal(yearDoc._id); }}
                     sx={{ 
                       cursor: "pointer", 
@@ -407,26 +406,27 @@ const AcademicManagement = () => {
                             <Box sx={{ width: { xs: "100%", sm: "auto" } }}>
                               <Box sx={{ display: "flex", alignItems: "center", gap: 1, justifyContent: { xs: "space-between", sm: "flex-start" }, width: "100%" }}>
                                 <Typography variant="caption" sx={{ color: "var(--text-secondary)" }}>Program Status</Typography>
-                                {yearDoc.isGlobalActive ? (
-                                  <Chip size="small" icon={<CheckCircle sx={{ color: "white !important" }} />} label="Active" 
-                                    sx={{ 
-                                      height: 26, 
-                                      background: "var(--gradient-primary)", 
-                                      color: "white", fontWeight: 700,
-                                      border: "none",
-                                      boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
-                                      "& .MuiChip-label": { px: 1.5 }
-                                    }} />
-                                ) : (
-                                  <Chip size="small" icon={<RadioButtonUnchecked />} label="Inactive" variant="outlined"
-                                    sx={{ 
-                                      height: 26, 
-                                      borderColor: "var(--text-secondary)",
-                                      color: "var(--text-secondary)", 
-                                      fontWeight: 700,
-                                      "& .MuiChip-label": { px: 1.5 }
-                                    }} />
-                                )}
+                                <Chip 
+                                  size="small" 
+                                  icon={entry.isActive ? <CheckCircle sx={{ color: "white !important" }} /> : <RadioButtonUnchecked />} 
+                                  label={entry.isActive ? "Active" : "Inactive"} 
+                                  onClick={() => toggleProgramStatus(yearDoc._id, progId, entry.isActive)}
+                                  sx={{ 
+                                    height: 26, 
+                                    background: entry.isActive ? "var(--gradient-primary)" : "transparent", 
+                                    color: entry.isActive ? "white" : "var(--text-secondary)", 
+                                    borderColor: entry.isActive ? "transparent" : "var(--text-secondary)",
+                                    border: entry.isActive ? "none" : "1px solid",
+                                    fontWeight: 700,
+                                    cursor: "pointer",
+                                    boxShadow: entry.isActive ? "0 2px 8px rgba(0,0,0,0.15)" : "none",
+                                    "& .MuiChip-label": { px: 1.5 },
+                                    "&:hover": {
+                                      opacity: 0.9,
+                                      background: entry.isActive ? "var(--gradient-primary)" : "rgba(0,0,0,0.05)"
+                                    }
+                                  }} 
+                                />
                               </Box>
                             </Box>
                           </Box>
