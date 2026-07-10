@@ -348,6 +348,7 @@ const SelfAppraisal = () => {
   const [showGatekeeperModal, setShowGatekeeperModal] = useState(false);
   const [resolvingClaimId, setResolvingClaimId] = useState(null);
   const [appraisalError, setAppraisalError] = useState("");
+  const [selectedClaimants, setSelectedClaimants] = useState({});
 
   // Fetch/Initiate Appraisal on Academic Year change
   const fetchAppraisal = async () => {
@@ -1793,21 +1794,42 @@ const SelfAppraisal = () => {
                     </TableCell>
                     <TableCell align="center">
                       {claim.isApplicant ? (
-                        <FormControl size="small" sx={{ minWidth: 200 }}>
-                          <Select
-                            displayEmpty
-                            value=""
-                            onChange={(e) => handleResolveClaim(claim._id, claim.type, e.target.value)}
-                            disabled={resolvingClaimId === claim._id}
+                        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, justifyContent: "center" }}>
+                          <FormControl size="small" sx={{ minWidth: 200 }}>
+                            <Select
+                              displayEmpty
+                              value={selectedClaimants[claim._id] || ""}
+                              onChange={(e) => setSelectedClaimants({
+                                ...selectedClaimants,
+                                [claim._id]: e.target.value
+                              })}
+                              disabled={resolvingClaimId === claim._id}
+                            >
+                              <MenuItem value="" disabled>Select Claimant</MenuItem>
+                              {claim.eligibleClaimants.map((el, idx) => (
+                                <MenuItem key={el.institutionId || el.name || idx} value={el.institutionId || el.name}>
+                                  {el.name}{el.institutionId ? ` (${el.institutionId})` : ""}
+                                </MenuItem>
+                              ))}
+                            </Select>
+                          </FormControl>
+                          <Button
+                            variant="contained"
+                            size="small"
+                            onClick={() => handleResolveClaim(claim._id, claim.type, selectedClaimants[claim._id])}
+                            disabled={!selectedClaimants[claim._id] || resolvingClaimId === claim._id}
+                            sx={{
+                              background: "var(--gradient-primary)",
+                              color: "#fff",
+                              fontWeight: 700,
+                              textTransform: "none",
+                              px: 2,
+                              py: 0.8
+                            }}
                           >
-                            <MenuItem value="" disabled>Select Claimant</MenuItem>
-                            {claim.eligibleClaimants.map((el, idx) => (
-                              <MenuItem key={el.institutionId || el.name || idx} value={el.institutionId || el.name}>
-                                {el.name}{el.institutionId ? ` (${el.institutionId})` : ""}
-                              </MenuItem>
-                            ))}
-                          </Select>
-                        </FormControl>
+                            Resolve
+                          </Button>
+                        </Box>
                       ) : (
                         <Chip
                           label={`Awaiting ${claim.applicant?.name || "Applicant"}`}
