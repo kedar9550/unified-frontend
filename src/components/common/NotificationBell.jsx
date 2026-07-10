@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import { useSocket } from '../../context/SocketContext';
 import API from '../../api/axios';
 import { toast } from 'sonner';
+import { useAuth } from '../../context/AuthContext';
 
 const NotificationBell = forwardRef((props, ref) => {
     const [anchorEl, setAnchorEl] = useState(null);
@@ -14,6 +15,7 @@ const NotificationBell = forwardRef((props, ref) => {
     const [loading, setLoading] = useState(false);
     const { socket } = useSocket();
     const navigate = useNavigate();
+    const { switchRole } = useAuth();
 
     const fetchNotifications = async () => {
         try {
@@ -76,8 +78,12 @@ const NotificationBell = forwardRef((props, ref) => {
             }
         }
 
-        // Navigate
+        // Navigate and Auto-Switch Role
         if (notif.link) {
+            if (notif.metadata && notif.metadata.targetRole) {
+                switchRole(notif.metadata.targetRole);
+                toast.success(`Role switched to ${notif.metadata.targetRole}`);
+            }
             handleClose();
             navigate(notif.link);
         }
