@@ -57,7 +57,7 @@ export const ROLE_ROUTES = {
         { text: "Consultancy", path: "/research/consultancy-publication" },
         { text: "Ph.D. Scholars", path: "/research/phd-scholars" },
         { text: "Novel Products / Tech", path: "/research/novel-products" },
-        { text: "SDG's", path: "/research/sdg" },
+
       ],
     },
 
@@ -77,7 +77,8 @@ export const ROLE_ROUTES = {
       icon: <Build />,
       nested: [
         { text: "Shorten URL", path: "/utilities/shorten-url", icon: <Link /> },
-        { text: "Generate QR Code", path: "/utilities/generate-qr", icon: <QrCode /> }
+        { text: "Generate QR Code", path: "/utilities/generate-qr", icon: <QrCode /> },
+        { text: "SDG's", path: "/research/sdg" },
       ]
     },
     {
