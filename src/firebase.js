@@ -15,25 +15,41 @@ const messaging = getMessaging(app);
 
 export const requestForToken = async () => {
     try {
+        if (typeof window !== 'undefined' && 'Notification' in window) {
+            const permission = await Notification.requestPermission();
+            if (permission !== 'granted') {
+                console.warn('Notification permission denied.');
+                return null;
+            }
+        }
+
         let registration = null;
         if ('serviceWorker' in navigator) {
-            registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
+            try {
+                registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js', {
+                    type: import.meta.env?.DEV ? 'module' : 'classic'
+                });
+            } catch (swErr) {
+                console.error("Service worker registration failed", swErr);
+                // Continue, as some browsers handle SW registration differently
+            }
         }
 
         const currentToken = await getToken(messaging, {
             vapidKey: 'BJw8wpJBtSZfwOfKWl3x313etpLEa7aG6X3pqoF2zUH7hoE5H5FkmthGaFSh0l_qYzQcba3yI3yLnR8CVxgw6sk',
             serviceWorkerRegistration: registration
         });
+        
         if (currentToken) {
             console.log('current token for client: ', currentToken);
             return currentToken;
         } else {
-            console.log('No registration token available. Request permission to generate one.');
+            console.log('No registration token available.');
             return null;
         }
     } catch (err) {
         console.error('An error occurred while retrieving token. ', err);
-        throw err;
+        return null;
     }
 };
 
