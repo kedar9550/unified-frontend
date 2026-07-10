@@ -13,7 +13,7 @@ const MainLayout = ({ children }) => {
   const location = useLocation();
   const [isSidebarCollapsed, setIsSidebarCollapsed] = React.useState(() => {
     const stored = localStorage.getItem("sidebar-collapsed");
-    return stored !== null ? stored === "true" : true;
+    return stored !== null ? stored === "true" : false;
   });
 
   const handleToggleSidebar = () => {
