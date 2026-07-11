@@ -358,8 +358,15 @@ export default function FundedProject() {
 
   const renderList = () => (
     <Box sx={{ p: 2 }}>
-      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
-        <Typography variant="h6" sx={{ color: "var(--text-primary)", fontWeight: 800 }}>My Funded Projects</Typography>
+      <Box sx={{
+        display: "flex",
+        flexDirection: { xs: "column", sm: "row" },
+        justifyContent: "space-between",
+        alignItems: "center",
+        gap: { xs: 2, sm: 0 },
+        mb: 3
+      }}>
+        <Typography variant="h6" sx={{ color: "var(--text-primary)", fontWeight: 800, textAlign: { xs: "center", sm: "left" } }}>My Funded Projects</Typography>
         <Button
           variant="contained"
           onClick={() => {
