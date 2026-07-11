@@ -38,7 +38,7 @@ const StaffList = () => {
       const res = await API.get('/api/employees/hod/staff');
       setStaff(res.data || []);
     } catch (err) {
-      console.error('Failed to load department staff', err);
+      console.error('Failed to load  staff', err);
     } finally {
       setLoading(false);
     }
