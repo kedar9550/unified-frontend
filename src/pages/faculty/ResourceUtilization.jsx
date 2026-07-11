@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import {
   Box, TextField, MenuItem, Select, Typography, Button, Table, TableBody, TableCell,
   TableContainer, TableHead, TableRow, Paper, IconButton, Dialog, DialogTitle,
-  DialogContent, DialogActions, Grid, Chip, Divider, Stack
+  DialogContent, DialogActions, Grid, Chip, Divider, Stack, useTheme, useMediaQuery
 } from "@mui/material";
 import { toast } from "sonner";
 import { Description, WorkspacePremium, Close, AddCircle, Edit, Delete, Visibility, School, LocationOn, FilePresent, CalendarToday, Download, Info, DateRange } from "@mui/icons-material";
@@ -84,6 +84,8 @@ const ROLES_BY_CATEGORY = {
 
 export default function ResourceUtilization() {
   const { user } = useAuth();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const [academicYears, setAcademicYears] = useState([]);
   const [selectedYear, setSelectedYear] = useState("");
   const [activitiesList, setActivitiesList] = useState([]);
@@ -1027,6 +1029,295 @@ export default function ResourceUtilization() {
     );
   };
 
+  const renderFormContent = () => (
+    <>
+      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mt: 2, mb: 3, flexWrap: "wrap", gap: 2 }}>
+        <Typography sx={{ 
+          fontSize: 13, 
+          fontWeight: 800, 
+          color: "var(--text-primary)", 
+          background: "var(--bg-accent-1)", 
+          px: 2, 
+          py: 1.2, 
+          borderRadius: "12px", 
+          borderLeft: "5px solid var(--color-primary)",
+          textTransform: "uppercase",
+          letterSpacing: "0.03em"
+        }}>
+          Details of the Activity:
+        </Typography>
+        <Box sx={{ background: "var(--bg-accent-1)", color: "var(--color-primary)", px: 2, py: 1, borderRadius: "12px", fontWeight: 800, border: "1px solid var(--border-color)", fontSize: "0.85rem" }}>
+          Academic Year: {academicYears.find(y => y._id === form.academicYear)?.year || "N/A"}
+        </Box>
+      </Box>
+      <Grid2>
+
+        <Box>
+          <Typography sx={labelStyle}>Activity Category: *</Typography>
+          <Select
+            size="small"
+            fullWidth
+            displayEmpty
+            value={form.activityCategory}
+            onChange={handleCategoryChange}
+            onClose={blurActiveElement}
+            MenuProps={selectMenuProps}
+          >
+            <MenuItem value="" disabled>--Select Category--</MenuItem>
+            {ACTIVITY_CATEGORIES.map(cat => (
+              <MenuItem key={cat} value={cat}>{cat}</MenuItem>
+            ))}
+          </Select>
+        </Box>
+
+        <Box>
+          <Typography sx={labelStyle}>Activity Role / Type: *</Typography>
+          <Select
+            size="small"
+            fullWidth
+            displayEmpty
+            value={form.activityType}
+            onChange={handleRoleChange}
+            disabled={!form.activityCategory}
+            onClose={blurActiveElement}
+            MenuProps={selectMenuProps}
+          >
+            <MenuItem value="" disabled>--Select Role--</MenuItem>
+            {form.activityCategory && ROLES_BY_CATEGORY[form.activityCategory]?.map(role => (
+              <MenuItem key={role} value={role}>{role}</MenuItem>
+            ))}
+          </Select>
+        </Box>
+
+        {form.activityCategory === "FDP" && form.activityType === "FDP Participant" ? (
+          <>
+            <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
+              <Typography sx={labelStyle}>Course Name: *</Typography>
+              <TextField
+                size="small"
+                fullWidth
+                value={form.courseFdpName}
+                onChange={setVal("courseFdpName")}
+                placeholder="Enter Course Name"
+              />
+            </Box>
+
+            <Box>
+              <Typography sx={labelStyle}>Organizing Institution Category: *</Typography>
+              <Select
+                size="small"
+                fullWidth
+                displayEmpty
+                value={form.organizingInstitutionCategory}
+                onChange={setVal("organizingInstitutionCategory")}
+                onClose={blurActiveElement}
+                MenuProps={selectMenuProps}
+              >
+                <MenuItem value="" disabled>--Select Category--</MenuItem>
+                {[
+                  "UGC",
+                  "AICTE",
+                  "IIT",
+                  "IIM",
+                  "NIT",
+                  "MHRD R&D Lab",
+                  "NITTTR",
+                  "NIPER",
+                  "ICMR",
+                  "Govt. University",
+                  "NIRF Ranked Institute (Below 200)",
+                  "NPTEL"
+                ].map(opt => (
+                  <MenuItem key={opt} value={opt}>{opt}</MenuItem>
+                ))}
+              </Select>
+            </Box>
+
+            <Box>
+              <Typography sx={labelStyle}>Location (City, State): *</Typography>
+              <TextField
+                size="small"
+                fullWidth
+                value={form.location}
+                onChange={setVal("location")}
+                placeholder="e.g. Hyderabad, Telangana"
+              />
+            </Box>
+
+            {form.organizingInstitutionCategory === "MHRD R&D Lab" && (
+              <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
+                <Typography sx={labelStyle}>Lab Name: *</Typography>
+                <TextField
+                  size="small"
+                  fullWidth
+                  value={form.labName}
+                  onChange={setVal("labName")}
+                  placeholder="Enter Lab Name"
+                />
+              </Box>
+            )}
+
+            {form.organizingInstitutionCategory === "Govt. University" && (
+              <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
+                <Typography sx={labelStyle}>University Name: *</Typography>
+                <TextField
+                  size="small"
+                  fullWidth
+                  value={form.universityName}
+                  onChange={setVal("universityName")}
+                  placeholder="Enter University Name"
+                />
+              </Box>
+            )}
+
+            {form.organizingInstitutionCategory === "NIRF Ranked Institute (Below 200)" && (
+              <>
+                <Box>
+                  <Typography sx={labelStyle}>Institute Name: *</Typography>
+                  <TextField
+                    size="small"
+                    fullWidth
+                    value={form.instituteName}
+                    onChange={setVal("instituteName")}
+                    placeholder="Enter Institute Name"
+                  />
+                </Box>
+                <Box>
+                  <Typography sx={labelStyle}>NIRF Rank: *</Typography>
+                  <TextField
+                    size="small"
+                    fullWidth
+                    type="number"
+                    value={form.nirfRank}
+                    onChange={setVal("nirfRank")}
+                    placeholder="e.g. 45"
+                  />
+                </Box>
+              </>
+            )}
+
+            {form.organizingInstitutionCategory === "NPTEL" && (
+              <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
+                <Typography sx={labelStyle}>NPTEL Certificate Number: *</Typography>
+                <TextField
+                  size="small"
+                  fullWidth
+                  value={form.certificateNumber}
+                  onChange={setVal("certificateNumber")}
+                  placeholder="e.g. NPTEL24CS01S1234"
+                  helperText="Required to prevent duplicate claims in Metric 3.2 (Contribution)"
+                />
+              </Box>
+            )}
+          </>
+        ) : (
+          <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
+            <Typography sx={labelStyle}>Organization / Event Name: *</Typography>
+            <TextField
+              size="small"
+              fullWidth
+              value={form.organizationName}
+              onChange={setVal("organizationName")}
+              placeholder="Enter Name of Event or Organization"
+            />
+          </Box>
+        )}
+
+        <Box>
+          <Typography sx={labelStyle}>From Date: *</Typography>
+          <TextField
+            size="small"
+            fullWidth
+            type="date"
+            value={form.fromDate}
+            onChange={setVal("fromDate")}
+            slotProps={{
+              inputLabel: { shrink: true },
+              htmlInput: { max: new Date().toISOString().split("T")[0] }
+            }}
+          />
+        </Box>
+
+        <Box>
+          <Typography sx={labelStyle}>To Date: *</Typography>
+          <TextField
+            size="small"
+            fullWidth
+            type="date"
+            value={form.toDate}
+            onChange={setVal("toDate")}
+            slotProps={{
+              inputLabel: { shrink: true },
+              htmlInput: { max: new Date().toISOString().split("T")[0] }
+            }}
+          />
+        </Box>
+
+        <Box>
+          <Typography sx={labelStyle}>Duration (Days): *</Typography>
+          <TextField
+            size="small"
+            fullWidth
+            disabled
+            value={form.duration || ""}
+            placeholder="Calculated automatically"
+          />
+        </Box>
+
+        {showSessionsField && (
+          <Box>
+            <Typography sx={labelStyle}>Number of Sessions Conducted: *</Typography>
+            <TextField
+              size="small"
+              fullWidth
+              type="number"
+              value={form.sessionsConducted}
+              onChange={setVal("sessionsConducted")}
+              placeholder="e.g. 3"
+            />
+          </Box>
+        )}
+
+        {showDaysField && (
+          <Box>
+            <Typography sx={labelStyle}>Number of Days Participated: *</Typography>
+            <TextField
+              size="small"
+              fullWidth
+              type="number"
+              value={form.daysParticipated}
+              onChange={setVal("daysParticipated")}
+              placeholder="e.g. 5"
+            />
+          </Box>
+        )}
+
+        <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
+          <Typography sx={labelStyle}>Remarks (Optional):</Typography>
+          <TextField
+            size="small"
+            fullWidth
+            multiline
+            rows={2}
+            value={form.remarks}
+            onChange={setVal("remarks")}
+            placeholder="Any additional remarks..."
+          />
+        </Box>
+      </Grid2>
+
+      <NoteBox />
+
+      <Box sx={{ mt: 2 }}>
+        <FileField
+          label={editingId ? "Upload New Proof (Optional):" : "Relevant Proof Upload: *"}
+          name="proof"
+          onChange={handleFileChange}
+        />
+      </Box>
+    </>
+  );
+
   const renderFormModal = () => (
     <Dialog
       open={openFormModal}
@@ -1041,297 +1332,14 @@ export default function ResourceUtilization() {
         </Typography>
       </DialogTitle>
       <DialogContent sx={{ p: 3, pt: 2 }}>
-        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mt: 2, mb: 3, flexWrap: "wrap", gap: 2 }}>
-          <Typography sx={{ 
-            fontSize: 13, 
-            fontWeight: 800, 
-            color: "var(--text-primary)", 
-            background: "var(--bg-accent-1)", 
-            px: 2, 
-            py: 1.2, 
-            borderRadius: "12px", 
-            borderLeft: "5px solid var(--color-primary)",
-            textTransform: "uppercase",
-            letterSpacing: "0.03em"
-          }}>
-            Details of the Activity:
-          </Typography>
-          <Box sx={{ background: "var(--bg-accent-1)", color: "var(--color-primary)", px: 2, py: 1, borderRadius: "12px", fontWeight: 800, border: "1px solid var(--border-color)", fontSize: "0.85rem" }}>
-            Academic Year: {academicYears.find(y => y._id === form.academicYear)?.year || "N/A"}
-          </Box>
-        </Box>
-        <Grid2>
-
-          <Box>
-            <Typography sx={labelStyle}>Activity Category: *</Typography>
-            <Select
-              size="small"
-              fullWidth
-              displayEmpty
-              value={form.activityCategory}
-              onChange={handleCategoryChange}
-              onClose={blurActiveElement}
-              MenuProps={selectMenuProps}
-            >
-              <MenuItem value="" disabled>--Select Category--</MenuItem>
-              {ACTIVITY_CATEGORIES.map(cat => (
-                <MenuItem key={cat} value={cat}>{cat}</MenuItem>
-              ))}
-            </Select>
-          </Box>
-
-          <Box>
-            <Typography sx={labelStyle}>Activity Role / Type: *</Typography>
-            <Select
-              size="small"
-              fullWidth
-              displayEmpty
-              value={form.activityType}
-              onChange={handleRoleChange}
-              disabled={!form.activityCategory}
-              onClose={blurActiveElement}
-              MenuProps={selectMenuProps}
-            >
-              <MenuItem value="" disabled>--Select Role--</MenuItem>
-              {form.activityCategory && ROLES_BY_CATEGORY[form.activityCategory]?.map(role => (
-                <MenuItem key={role} value={role}>{role}</MenuItem>
-              ))}
-            </Select>
-          </Box>
-
-          {form.activityCategory === "FDP" && form.activityType === "FDP Participant" ? (
-            <>
-              <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
-                <Typography sx={labelStyle}>Course Name: *</Typography>
-                <TextField
-                  size="small"
-                  fullWidth
-                  value={form.courseFdpName}
-                  onChange={setVal("courseFdpName")}
-                  placeholder="Enter Course Name"
-                />
-              </Box>
-
-              <Box>
-                <Typography sx={labelStyle}>Organizing Institution Category: *</Typography>
-                <Select
-                  size="small"
-                  fullWidth
-                  displayEmpty
-                  value={form.organizingInstitutionCategory}
-                  onChange={setVal("organizingInstitutionCategory")}
-                  onClose={blurActiveElement}
-                  MenuProps={selectMenuProps}
-                >
-                  <MenuItem value="" disabled>--Select Category--</MenuItem>
-                  {[
-                    "UGC",
-                    "AICTE",
-                    "IIT",
-                    "IIM",
-                    "NIT",
-                    "MHRD R&D Lab",
-                    "NITTTR",
-                    "NIPER",
-                    "ICMR",
-                    "Govt. University",
-                    "NIRF Ranked Institute (Below 200)",
-                    "NPTEL"
-                  ].map(opt => (
-                    <MenuItem key={opt} value={opt}>{opt}</MenuItem>
-                  ))}
-                </Select>
-              </Box>
-
-              <Box>
-                <Typography sx={labelStyle}>Location (City, State): *</Typography>
-                <TextField
-                  size="small"
-                  fullWidth
-                  value={form.location}
-                  onChange={setVal("location")}
-                  placeholder="e.g. Hyderabad, Telangana"
-                />
-              </Box>
-
-              {form.organizingInstitutionCategory === "MHRD R&D Lab" && (
-                <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
-                  <Typography sx={labelStyle}>Lab Name: *</Typography>
-                  <TextField
-                    size="small"
-                    fullWidth
-                    value={form.labName}
-                    onChange={setVal("labName")}
-                    placeholder="Enter Lab Name"
-                  />
-                </Box>
-              )}
-
-              {form.organizingInstitutionCategory === "Govt. University" && (
-                <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
-                  <Typography sx={labelStyle}>University Name: *</Typography>
-                  <TextField
-                    size="small"
-                    fullWidth
-                    value={form.universityName}
-                    onChange={setVal("universityName")}
-                    placeholder="Enter University Name"
-                  />
-                </Box>
-              )}
-
-              {form.organizingInstitutionCategory === "NIRF Ranked Institute (Below 200)" && (
-                <>
-                  <Box>
-                    <Typography sx={labelStyle}>Institute Name: *</Typography>
-                    <TextField
-                      size="small"
-                      fullWidth
-                      value={form.instituteName}
-                      onChange={setVal("instituteName")}
-                      placeholder="Enter Institute Name"
-                    />
-                  </Box>
-                  <Box>
-                    <Typography sx={labelStyle}>NIRF Rank: *</Typography>
-                    <TextField
-                      size="small"
-                      fullWidth
-                      type="number"
-                      value={form.nirfRank}
-                      onChange={setVal("nirfRank")}
-                      placeholder="e.g. 45"
-                    />
-                  </Box>
-                </>
-              )}
-
-              {form.organizingInstitutionCategory === "NPTEL" && (
-                <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
-                  <Typography sx={labelStyle}>NPTEL Certificate Number: *</Typography>
-                  <TextField
-                    size="small"
-                    fullWidth
-                    value={form.certificateNumber}
-                    onChange={setVal("certificateNumber")}
-                    placeholder="e.g. NPTEL24CS01S1234"
-                    helperText="Required to prevent duplicate claims in Metric 3.2 (Contribution)"
-                  />
-                </Box>
-              )}
-            </>
-          ) : (
-            <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
-              <Typography sx={labelStyle}>Organization / Event Name: *</Typography>
-              <TextField
-                size="small"
-                fullWidth
-                value={form.organizationName}
-                onChange={setVal("organizationName")}
-                placeholder="Enter Name of Event or Organization"
-              />
-            </Box>
-          )}
-
-          <Box>
-            <Typography sx={labelStyle}>From Date: *</Typography>
-            <TextField
-              size="small"
-              fullWidth
-              type="date"
-              value={form.fromDate}
-              onChange={setVal("fromDate")}
-              slotProps={{
-                inputLabel: { shrink: true },
-                htmlInput: { max: new Date().toISOString().split("T")[0] }
-              }}
-            />
-          </Box>
-
-          <Box>
-            <Typography sx={labelStyle}>To Date: *</Typography>
-            <TextField
-              size="small"
-              fullWidth
-              type="date"
-              value={form.toDate}
-              onChange={setVal("toDate")}
-              slotProps={{
-                inputLabel: { shrink: true },
-                htmlInput: { max: new Date().toISOString().split("T")[0] }
-              }}
-            />
-          </Box>
-
-          <Box>
-            <Typography sx={labelStyle}>Duration (Days): *</Typography>
-            <TextField
-              size="small"
-              fullWidth
-              disabled
-              value={form.duration || ""}
-              placeholder="Calculated automatically"
-            />
-          </Box>
-
-          {showSessionsField && (
-            <Box>
-              <Typography sx={labelStyle}>Number of Sessions Conducted: *</Typography>
-              <TextField
-                size="small"
-                fullWidth
-                type="number"
-                value={form.sessionsConducted}
-                onChange={setVal("sessionsConducted")}
-                placeholder="e.g. 3"
-              />
-            </Box>
-          )}
-
-          {showDaysField && (
-            <Box>
-              <Typography sx={labelStyle}>Number of Days Participated: *</Typography>
-              <TextField
-                size="small"
-                fullWidth
-                type="number"
-                value={form.daysParticipated}
-                onChange={setVal("daysParticipated")}
-                placeholder="e.g. 5"
-              />
-            </Box>
-          )}
-
-          <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
-            <Typography sx={labelStyle}>Remarks (Optional):</Typography>
-            <TextField
-              size="small"
-              fullWidth
-              multiline
-              rows={2}
-              value={form.remarks}
-              onChange={setVal("remarks")}
-              placeholder="Any additional remarks..."
-            />
-          </Box>
-        </Grid2>
-
-        <NoteBox />
-
-        <Box sx={{ mt: 2 }}>
-          <FileField
-            label={editingId ? "Upload New Proof (Optional):" : "Relevant Proof Upload: *"}
-            name="proof"
-            onChange={handleFileChange}
-          />
-        </Box>
+        {renderFormContent()}
       </DialogContent>
       <DialogActions sx={{ p: 2.5, borderTop: "1px solid var(--border-color)" }}>
         <Button
- variant="outlined"
- onClick={() => setOpenFormModal(false)}
- sx={{ textTransform: "none", fontWeight: 700 }}
- >
+          variant="outlined"
+          onClick={() => setOpenFormModal(false)}
+          sx={{ textTransform: "none", fontWeight: 700 }}
+        >
           Cancel
         </Button>
         <SubmitBtn onClick={handleSaveDraft} loading={loading} />
@@ -1339,16 +1347,49 @@ export default function ResourceUtilization() {
     </Dialog>
   );
 
+  const renderFormInline = () => (
+    <FormCard title={editingId ? "Edit Resource Utilization Entry" : "Add Resource Utilization Entry"}>
+      {renderFormContent()}
+      <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 2, mt: 3, pt: 2.5, borderTop: "1px solid var(--border-color)" }}>
+        <Button
+          variant="outlined"
+          onClick={() => setOpenFormModal(false)}
+          sx={{ textTransform: "none", fontWeight: 700 }}
+        >
+          Cancel
+        </Button>
+        <SubmitBtn onClick={handleSaveDraft} loading={loading} />
+      </Box>
+    </FormCard>
+  );
+
+  const showFormInline = isMobile && openFormModal;
+
   return (
     <Box sx={{ width: "100%", pb: 5 }}>
       <PageHeader
-        title="Faculty Resource Utilization"
-        subtitle="Manage, edit drafts, and submit all FDP, workshop, refesher course, seminar and event utilization activities."
+        title={
+          showFormInline
+            ? (editingId ? "Edit Resource Utilization" : "Add Resource Utilization")
+            : "Faculty Resource Utilization"
+        }
+        subtitle={
+          showFormInline
+            ? "Provide the details of your FDP, workshop, refresher course, or other activity utilization."
+            : "Manage, edit drafts, and submit all FDP, workshop, refesher course, seminar and event utilization activities."
+        }
+        onBack={showFormInline ? () => setOpenFormModal(false) : undefined}
       />
       <Box sx={{ mt: 4 }}>
-        {renderDashboard()}
-        {renderDetailsDialog()}
-        {renderFormModal()}
+        {showFormInline ? (
+          renderFormInline()
+        ) : (
+          <>
+            {renderDashboard()}
+            {renderDetailsDialog()}
+            {renderFormModal()}
+          </>
+        )}
       </Box>
       <NoActiveYearDialog
         open={noActiveYearAlertOpen}
