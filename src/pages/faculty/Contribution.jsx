@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import {
   Box, TextField, MenuItem, Select, Typography, Button, Table, TableBody, TableCell,
   TableContainer, TableHead, TableRow, Paper, IconButton, Dialog, DialogTitle,
-  DialogContent, DialogActions, Grid, Chip, Divider, Stack
+  DialogContent, DialogActions, Grid, Chip, Divider, Stack, useTheme, useMediaQuery
 } from "@mui/material";
 import { toast } from "sonner";
 import { Description, WorkspacePremium, Close, AddCircle, Edit, Delete, Visibility } from "@mui/icons-material";
@@ -34,6 +34,8 @@ const CONTRIBUTION_CATEGORIES = [
 
 export default function Contribution() {
   const { user } = useAuth();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const [academicYears, setAcademicYears] = useState([]);
   const [selectedYear, setSelectedYear] = useState("");
   const [contributionsList, setContributionsList] = useState([]);
@@ -1144,6 +1146,66 @@ export default function Contribution() {
   };
 
 
+  const renderFormContent = () => (
+    <>
+      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mt: 2, mb: 3, flexWrap: "wrap", gap: 2 }}>
+        <Typography sx={{ 
+          fontSize: 13, 
+          fontWeight: 800, 
+          color: "var(--text-primary)", 
+          background: "var(--bg-accent-1)", 
+          px: 2, 
+          py: 1.2, 
+          borderRadius: "12px", 
+          borderLeft: "5px solid var(--color-primary)",
+          textTransform: "uppercase",
+          letterSpacing: "0.03em"
+        }}>
+          Details of the Contribution:
+        </Typography>
+        <Box sx={{ background: "var(--bg-accent-1)", color: "var(--color-primary)", px: 2, py: 1, borderRadius: "12px", fontWeight: 800, border: "1px solid var(--border-color)", fontSize: "0.85rem" }}>
+          Academic Year: {academicYears.find(y => y._id === form.academicYear)?.year || "N/A"}
+        </Box>
+      </Box>
+
+      <Box sx={{ mb: 4, maxWidth: 500 }}>
+        <Typography sx={labelStyle}>Contribution Category: *</Typography>
+        <Select
+          size="small"
+          fullWidth
+          displayEmpty
+          value={form.category}
+          onChange={handleCategoryChange}
+          disabled={!!editingId}
+        >
+          <MenuItem value="" disabled>--Select Category (1 to 13)--</MenuItem>
+          {CONTRIBUTION_CATEGORIES.map(cat => (
+            <MenuItem key={cat.id} value={cat.id}>{cat.name}</MenuItem>
+          ))}
+        </Select>
+      </Box>
+
+      {form.category && (
+        <Grid2 sx={{ mt: 2 }}>
+          {renderCategorySpecificFields()}
+        </Grid2>
+      )}
+
+      {form.category && (
+        <>
+          <NoteBox />
+          <Box sx={{ mt: 2 }}>
+            <FileField
+              label={editingId ? "Upload New Proof (Optional):" : "Relevant Proof/Certificate Upload: *"}
+              name="proof"
+              onChange={handleFileChange}
+            />
+          </Box>
+        </>
+      )}
+    </>
+  );
+
   const renderFormModal = () => (
     <Dialog
       open={openFormModal}
@@ -1158,61 +1220,7 @@ export default function Contribution() {
         </Typography>
       </DialogTitle>
       <DialogContent sx={{ p: 3, pt: 2 }}>
-        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mt: 2, mb: 3, flexWrap: "wrap", gap: 2 }}>
-          <Typography sx={{ 
-            fontSize: 13, 
-            fontWeight: 800, 
-            color: "var(--text-primary)", 
-            background: "var(--bg-accent-1)", 
-            px: 2, 
-            py: 1.2, 
-            borderRadius: "12px", 
-            borderLeft: "5px solid var(--color-primary)",
-            textTransform: "uppercase",
-            letterSpacing: "0.03em"
-          }}>
-            Details of the Contribution:
-          </Typography>
-          <Box sx={{ background: "var(--bg-accent-1)", color: "var(--color-primary)", px: 2, py: 1, borderRadius: "12px", fontWeight: 800, border: "1px solid var(--border-color)", fontSize: "0.85rem" }}>
-            Academic Year: {academicYears.find(y => y._id === form.academicYear)?.year || "N/A"}
-          </Box>
-        </Box>
-
-        <Box sx={{ mb: 4, maxWidth: 500 }}>
-          <Typography sx={labelStyle}>Contribution Category: *</Typography>
-          <Select
-            size="small"
-            fullWidth
-            displayEmpty
-            value={form.category}
-            onChange={handleCategoryChange}
-            disabled={!!editingId}
-          >
-            <MenuItem value="" disabled>--Select Category (1 to 13)--</MenuItem>
-            {CONTRIBUTION_CATEGORIES.map(cat => (
-              <MenuItem key={cat.id} value={cat.id}>{cat.name}</MenuItem>
-            ))}
-          </Select>
-        </Box>
-
-        {form.category && (
-          <Grid2 sx={{ mt: 2 }}>
-            {renderCategorySpecificFields()}
-          </Grid2>
-        )}
-
-        {form.category && (
-          <>
-            <NoteBox />
-            <Box sx={{ mt: 2 }}>
-              <FileField
-                label={editingId ? "Upload New Proof (Optional):" : "Relevant Proof/Certificate Upload: *"}
-                name="proof"
-                onChange={handleFileChange}
-              />
-            </Box>
-          </>
-        )}
+        {renderFormContent()}
       </DialogContent>
       <DialogActions sx={{ p: 2.5, borderTop: "1px solid var(--border-color)" }}>
         <Button
@@ -1227,16 +1235,49 @@ export default function Contribution() {
     </Dialog>
   );
 
+  const renderFormInline = () => (
+    <FormCard title={editingId ? "Edit Contribution Entry" : "Add Contribution Entry"}>
+      {renderFormContent()}
+      <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 2, mt: 3, pt: 2.5, borderTop: "1px solid var(--border-color)" }}>
+        <Button
+          variant="outlined"
+          onClick={() => setOpenFormModal(false)}
+          sx={{ textTransform: "none", fontWeight: 700 }}
+        >
+          Cancel
+        </Button>
+        <SubmitBtn onClick={handleSaveDraft} loading={loading} />
+      </Box>
+    </FormCard>
+  );
+
+  const showFormInline = isMobile && openFormModal;
+
   return (
     <Box sx={{ width: "100%", pb: 5 }}>
       <PageHeader
-        title="Faculty Expertise / Recognition / Contribution"
-        subtitle="Manage and submit dynamic drafts of e-content, course completions, magazine articles, and awards."
+        title={
+          showFormInline
+            ? (editingId ? "Edit Contribution" : "Add Contribution")
+            : "Faculty Expertise / Recognition / Contribution"
+        }
+        subtitle={
+          showFormInline
+            ? "Provide details about your academic expertise, recognitions, or professional contributions."
+            : "Manage and submit dynamic drafts of e-content, course completions, magazine articles, and awards."
+        }
+        onBack={showFormInline ? () => setOpenFormModal(false) : undefined}
       />
       <Box sx={{ mt: 4 }}>
-        {renderDashboard()}
-        {renderDetailsDialog()}
-        {renderFormModal()}
+        {showFormInline ? (
+          renderFormInline()
+        ) : (
+          <>
+            {renderDashboard()}
+            {renderDetailsDialog()}
+            {renderFormModal()}
+          </>
+        )}
       </Box>
       <NoActiveYearDialog
         open={noActiveYearAlertOpen}
