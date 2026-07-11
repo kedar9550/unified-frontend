@@ -39,7 +39,7 @@ export const requestForToken = async () => {
             vapidKey: 'BJw8wpJBtSZfwOfKWl3x313etpLEa7aG6X3pqoF2zUH7hoE5H5FkmthGaFSh0l_qYzQcba3yI3yLnR8CVxgw6sk',
             serviceWorkerRegistration: registration
         });
-        
+
         if (currentToken) {
             console.log('current token for client: ', currentToken);
             return currentToken;

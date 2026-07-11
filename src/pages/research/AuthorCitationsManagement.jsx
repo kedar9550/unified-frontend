@@ -435,7 +435,7 @@ const AuthorCitationsManagement = () => {
       </Card>
 
       {/* Data Table */}
-      <TableContainer component={Paper} sx={{ borderRadius: "16px", border: "1px solid var(--border-color)", boxShadow: "none", overflow: "hidden" }}>
+      <TableContainer component={Paper} sx={{ borderRadius: "16px", border: "1px solid var(--border-color)", boxShadow: "none", overflowX: "auto" }}>
         {loading && records.length === 0 ? (
           <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>
             <Loader color="secondary" />
