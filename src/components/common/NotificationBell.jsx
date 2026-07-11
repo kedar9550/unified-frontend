@@ -15,7 +15,7 @@ const NotificationBell = forwardRef((props, ref) => {
     const [loading, setLoading] = useState(false);
     const { socket } = useSocket();
     const navigate = useNavigate();
-    const { switchRole } = useAuth();
+    const { user, activeRole, switchRole } = useAuth();
 
     const fetchNotifications = async () => {
         try {
@@ -80,9 +80,62 @@ const NotificationBell = forwardRef((props, ref) => {
 
         // Navigate and Auto-Switch Role
         if (notif.link) {
-            if (notif.metadata && notif.metadata.targetRole) {
-                switchRole(notif.metadata.targetRole);
-                toast.success(`Role switched to ${notif.metadata.targetRole}`);
+            let targetRole = notif.metadata?.targetRole;
+
+            // Fallback auto-detection for old notifications or missing metadata
+            if (!targetRole && user?.roles) {
+                const userRoles = user.roles.map(r => r.role?.toUpperCase()).filter(Boolean);
+                const link = notif.link.toLowerCase();
+                const title = (notif.title || '').toLowerCase();
+                const msg = (notif.message || '').toLowerCase();
+
+                if (link.includes('/service-desk')) {
+                    if (link.includes('/admin') || link.includes('/reports')) {
+                        if (userRoles.includes('SERVICE_ADMIN')) {
+                            targetRole = 'SERVICE_ADMIN';
+                        }
+                    } else if (link.includes('/assigned-to-me')) {
+                        if (userRoles.includes('SERVICE_EMP')) {
+                            targetRole = 'SERVICE_EMP';
+                        }
+                    } else if (link.includes('/ticket/')) {
+                        const isForEmp = title.includes('assign') || msg.includes('assigned to you') || msg.includes('by user');
+                        if (isForEmp && userRoles.includes('SERVICE_EMP')) {
+                            targetRole = 'SERVICE_EMP';
+                        } else if (userRoles.includes('SERVICE_ADMIN') && (title.includes('admin') || title.includes('new ticket') || title.includes('escalated'))) {
+                            targetRole = 'SERVICE_ADMIN';
+                        } else {
+                            // Creator roles
+                            const clientRoles = ['FACULTY', 'STAFF', 'TECHNICAL STAFF', 'EXAMSECTION', 'HOD', 'STUDENT'];
+                            targetRole = clientRoles.find(r => userRoles.includes(r));
+                        }
+                    }
+                } else if (link.includes('/research') || link.includes('/hod') || link.includes('/research-dean') || link.includes('/research-coordinator')) {
+                    if (link.includes('/hod/')) {
+                        if (userRoles.includes('HOD')) {
+                            targetRole = 'HOD';
+                        }
+                    } else if (link.includes('/research-dean/')) {
+                        if (userRoles.includes('RESEARCH_DEAN')) {
+                            targetRole = 'RESEARCH_DEAN';
+                        }
+                    } else if (link.includes('/research-coordinator/')) {
+                        if (userRoles.includes('RESEARCH_COORDINATOR')) {
+                            targetRole = 'RESEARCH_COORDINATOR';
+                        }
+                    } else {
+                        if (userRoles.includes('FACULTY')) {
+                            targetRole = 'FACULTY';
+                        } else if (userRoles.includes('STUDENT')) {
+                            targetRole = 'STUDENT';
+                        }
+                    }
+                }
+            }
+
+            if (targetRole && targetRole !== activeRole) {
+                switchRole(targetRole);
+                toast.success(`Role switched to ${targetRole}`);
             }
             handleClose();
             navigate(notif.link);

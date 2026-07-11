@@ -50,7 +50,16 @@ const TicketDetail = () => {
     // Chat state
     const [comments, setComments] = useState([]);
     const [newMessage, setNewMessage] = useState('');
-    const chatEndRef = useRef(null);
+    const commentsContainerRef = useRef(null);
+
+    const scrollToBottom = (behavior = 'auto') => {
+        if (commentsContainerRef.current) {
+            commentsContainerRef.current.scrollTo({
+                top: commentsContainerRef.current.scrollHeight,
+                behavior
+            });
+        }
+    };
 
     // Modals
     const [assignModalOpen, setAssignModalOpen] = useState(false);
@@ -87,7 +96,7 @@ const TicketDetail = () => {
             
             const handleNewMessage = (comment) => {
                 setComments(prev => [...prev, comment]);
-                setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
+                setTimeout(() => scrollToBottom('smooth'), 100);
             };
             
             socket.on('new_message', handleNewMessage);
@@ -113,7 +122,7 @@ const TicketDetail = () => {
             }
             if (commentsRes.data.success) {
                 setComments(commentsRes.data.data);
-                setTimeout(() => chatEndRef.current?.scrollIntoView(), 100);
+                setTimeout(() => scrollToBottom('auto'), 100);
             }
             if (activitiesRes?.data?.success) {
                 setActivities(activitiesRes.data.data);
@@ -438,7 +447,7 @@ const TicketDetail = () => {
                                     </Typography>
                                 </Box>
                                 
-                                <Box sx={{ p: 3, overflowY: 'auto', maxHeight: '500px', display: 'flex', flexDirection: 'column', gap: 3, bgcolor: 'var(--bg-dashboard)' }}>
+                                <Box ref={commentsContainerRef} sx={{ p: 3, overflowY: 'auto', maxHeight: '500px', display: 'flex', flexDirection: 'column', gap: 3, bgcolor: 'var(--bg-dashboard)' }}>
                                     {comments.length === 0 ? (
                                         <Box sx={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', py: 4 }}>
                                             <Typography variant="body2" color="text.secondary">No comments yet. Start the conversation!</Typography>
@@ -499,7 +508,6 @@ const TicketDetail = () => {
                                             );
                                         })
                                     )}
-                                    <div ref={chatEndRef} />
                                 </Box>
                                 
                                 <Box sx={{ p: 2, borderTop: '1px solid var(--border-color)', bgcolor: 'var(--bg-panel)' }}>
