@@ -233,7 +233,7 @@ const FeedbackCoordinatorDashboard = () => {
                 <Box sx={{ position: "relative", width: 130, height: 130, flexShrink: 0 }}>
                   <ResponsiveContainer width="100%" height={130}>
                     <PieChart>
-                      <Pie data={dashboardData.chartData} dataKey="value" innerRadius={45} outerRadius={60} stroke="none" paddingAngle={5}>
+                      <Pie data={dashboardData.chartData} dataKey="value" cx="50%" cy="50%" innerRadius={45} outerRadius={60} stroke="none" paddingAngle={5}>
                         {dashboardData.chartData.map((entry, index) => (
                           <Cell key={`cell-${index}`} fill={entry.color} />
                         ))}
