@@ -679,6 +679,8 @@ const UniprimeDashboard = () => {
                             data={dashboardData.roleDistribution}
                             dataKey="value"
                             nameKey="label"
+                            cx="50%"
+                            cy="50%"
                             innerRadius={55}
                             outerRadius={80}
                             paddingAngle={2}

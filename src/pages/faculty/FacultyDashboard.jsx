@@ -451,7 +451,7 @@ const FacultyDashboard = () => {
                   width: { xs: "100%", sm: "50%" },
                   display: "flex",
                   flexDirection: "column",
-                  alignItems: "flex-start",
+                  alignItems: { xs: "center", sm: "flex-start" },
                 }}
               >
                 <Typography
@@ -475,6 +475,8 @@ const FacultyDashboard = () => {
                         data={dashboardData?.researchTypeDistribution || []}
                         dataKey="value"
                         nameKey="name"
+                        cx="50%"
+                        cy="50%"
                         innerRadius={55}
                         outerRadius={75}
                         paddingAngle={4}
