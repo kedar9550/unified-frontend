@@ -298,8 +298,15 @@ export default function ConsultancyPublication() {
 
   const renderList = () => (
     <Box sx={{ p: 2 }}>
-      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
-        <Typography variant="h6" sx={{ color: "var(--text-primary)", fontWeight: 800 }}>My Consultancy Work</Typography>
+      <Box sx={{
+        display: "flex",
+        flexDirection: { xs: "column", sm: "row" },
+        justifyContent: "space-between",
+        alignItems: "center",
+        gap: { xs: 2, sm: 0 },
+        mb: 3
+      }}>
+        <Typography variant="h6" sx={{ color: "var(--text-primary)", fontWeight: 800, textAlign: { xs: "center", sm: "left" } }}>My Consultancy Work</Typography>
         <Button
           variant="contained"
           onClick={() => {

@@ -95,13 +95,14 @@ const SDGCard = ({ id, sdg, imageUrl, isExpanded, toggleExpand }) => {
                 }
             }}
         >
-            <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' } }}>
+            <Box sx={{ display: 'flex', flexDirection: 'row', width: '100%' }}>
                 {/* Left Section (Image Container) */}
                 <Box
                     onClick={() => isMobile && toggleExpand(id)}
                     sx={{
-                        width: { xs: '100%', md: 160 },
-                        height: { xs: 'auto', md: 'auto' },
+                        width: { xs: 100, md: 160 },
+                        minHeight: { xs: 100, md: 160 },
+                        height: 'auto',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
@@ -122,7 +123,7 @@ const SDGCard = ({ id, sdg, imageUrl, isExpanded, toggleExpand }) => {
                         alt={sdg.title}
                         sx={{
                             width: '100%',
-                            height: { xs: 'auto', md: '100%' },
+                            height: '100%',
                             objectFit: 'contain',
                             display: 'block',
                             transition: 'transform 0.5s ease',
@@ -131,45 +132,52 @@ const SDGCard = ({ id, sdg, imageUrl, isExpanded, toggleExpand }) => {
                             }
                         }}
                     />
-                    {isMobile && (
-                        <Box
-                            sx={{
-                                position: 'absolute',
-                                bottom: 8,
-                                right: 8,
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                background: 'rgba(0, 0, 0, 0.5)',
-                                backdropFilter: 'blur(4px)',
-                                borderRadius: '50%',
-                                width: 28,
-                                height: 28,
-                                color: '#fff',
-                                transition: 'transform 0.3s ease',
-                                transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
-                                border: '1px solid var(--border-color)',
-                                pointerEvents: 'none'
-                            }}
-                        >
-                            <ExpandMore sx={{ fontSize: 18 }} />
-                        </Box>
-                    )}
                 </Box>
 
-                {/* Main Content Area */}
-                <Collapse in={!isMobile || isExpanded} timeout="auto" unmountOnExit={isMobile} sx={{ width: '100%' }}>
-                    <Box sx={{ flexGrow: 1, p: { xs: 1.5, md: 1.5 }, display: 'flex', flexDirection: 'column', width: '100%' }}>
-                        <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', width: '100%' }}>
-                            {/* Keyword Container (Shows all keywords) */}
+                {/* Right Section (Content Area) */}
+                <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', width: '100%', minWidth: 0 }}>
+                    {/* Header with Title and Expand Icon */}
+                    <Box
+                        onClick={() => isMobile && toggleExpand(id)}
+                        sx={{
+                            p: { xs: 1.5, md: 2 },
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            cursor: isMobile ? 'pointer' : 'default',
+                            borderBottom: (!isMobile || isExpanded) ? '1px solid var(--border-color)' : 'none',
+                            transition: 'border-color 0.3s ease'
+                        }}
+                    >
+                        <Box sx={{ minWidth: 0 }}>
+                            <Typography sx={{ fontSize: '0.7rem', fontWeight: 700, color: brandColor, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                                {id}
+                            </Typography>
+                            <Typography sx={{ fontSize: { xs: '0.9rem', md: '1.1rem' }, fontWeight: 800, color: 'var(--text-primary)', mt: 0.5, lineHeight: 1.2 }}>
+                                {sdg.title}
+                            </Typography>
+                        </Box>
+                        {isMobile && (
+                            <IconButton size="small" sx={{ color: 'var(--text-secondary)' }}>
+                                <ExpandMore
+                                    sx={{
+                                        transition: 'transform 0.3s ease',
+                                        transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)'
+                                    }}
+                                />
+                            </IconButton>
+                        )}
+                    </Box>
+
+                    {/* Keywords collapse */}
+                    <Collapse in={!isMobile || isExpanded} timeout="auto" unmountOnExit={isMobile} sx={{ width: '100%' }}>
+                        <Box sx={{ p: { xs: 1.5, md: 2 } }}>
                             <Box
                                 sx={{
                                     display: 'flex',
                                     flexWrap: 'wrap',
                                     gap: 1,
-                                    flexGrow: 1,
-                                    position: 'relative',
-                                    pb: 0.5
+                                    width: '100%'
                                 }}
                             >
                                 {sdg.keywords.map((kw, i) => (
@@ -193,8 +201,8 @@ const SDGCard = ({ id, sdg, imageUrl, isExpanded, toggleExpand }) => {
                                 ))}
                             </Box>
                         </Box>
-                    </Box>
-                </Collapse>
+                    </Collapse>
+                </Box>
             </Box>
         </Box>
     );

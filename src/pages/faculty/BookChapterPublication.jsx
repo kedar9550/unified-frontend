@@ -674,8 +674,15 @@ export default function BookChapterPublication() {
 
   const renderList = () => (
     <Box>
-      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
-        <Typography variant="h6" sx={{ color: "var(--text-primary)", fontWeight: 800 }}>My Book Chapter Publications</Typography>
+      <Box sx={{
+        display: "flex",
+        flexDirection: { xs: "column", sm: "row" },
+        justifyContent: "space-between",
+        alignItems: "center",
+        gap: { xs: 2, sm: 0 },
+        mb: 3
+      }}>
+        <Typography variant="h6" sx={{ color: "var(--text-primary)", fontWeight: 800, textAlign: { xs: "center", sm: "left" } }}>My Book Chapter Publications</Typography>
         <Button
           variant="contained"
           onClick={() => {
