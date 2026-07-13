@@ -1,4 +1,4 @@
-﻿import API from "../../api/axios";
+import API from "../../api/axios";
 
 // ---------------- LOGIN VALIDATION ----------------
 export const validateLogin = (data) => {
@@ -59,7 +59,7 @@ const resetPasswordCode = async (employeeCode, otp, newPassword, confirmPassword
 // UI COMPONENT
 // ─────────────────────────────────────────────────
 import React, { useState, useEffect, useRef } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import Footer from '../../components/Footer';
 import loginLogo from '../../assets/Aditya University Gold Logo.png';
@@ -78,9 +78,42 @@ const EyeOffIcon = () => (
   </svg>
 );
 
-export default function Login() {
+export default function Login({ defaultSignUp = false }) {
+  const { login, signup } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
+
   // ── panel toggle ──
-  const [isSignUp, setIsSignUp] = useState(false);
+  const [isSignUp, setIsSignUp] = useState(defaultSignUp);
+  const [isForgot, setIsForgot] = useState(false);
+
+  // Sync state with active route
+  useEffect(() => {
+    if (location.pathname === '/signup') {
+      setIsSignUp(true);
+      setIsForgot(false);
+    } else {
+      setIsSignUp(false);
+      setIsForgot(false);
+    }
+  }, [location.pathname]);
+
+  // ── signup state ──
+  const [signupStep, setSignupStep] = useState(1);
+  const [signupData, setSignupData] = useState({
+    institutionId: '',
+    email: '',
+    password: '',
+    confirmPassword: ''
+  });
+  const [signupDetails, setSignupDetails] = useState({
+    fullname: '',
+    department: '',
+    designation: '',
+    phone: ''
+  });
+  const [signupMsg, setSignupMsg] = useState({ text: '', type: '' });
+  const [signupLoading, setSignupLoading] = useState(false);
 
   // ── login state ──
   const [loginData, setLoginData] = useState({ id: '', password: '' });
@@ -134,6 +167,7 @@ export default function Login() {
   const handleForgotClick = (e) => {
     e.preventDefault();
     setIsSignUp(true);
+    setIsForgot(true);
     resetForgotPasswordState();
   };
 
@@ -150,8 +184,117 @@ export default function Login() {
 
   const toggleForgot = () => {
     setIsSignUp(false);
+    setIsForgot(false);
     resetForgotPasswordState();
   };
+
+  // ── signup handlers ──
+  const handleVerifySignUpId = async (e) => {
+    e.preventDefault();
+    if (!signupData.institutionId.trim()) {
+      setSignupMsg({ text: "Institution ID is required", type: "error" });
+      return;
+    }
+    setSignupMsg({ text: '', type: '' });
+    setSignupLoading(true);
+
+    try {
+      const res = await API.post("/api/employees/ecap-data", {
+        institutionId: signupData.institutionId.trim(),
+        role: "Employee"
+      });
+
+      const data = res.data;
+      if (!data || data.error) {
+        setSignupMsg({ text: "Invalid Institution ID. Details not found in ECAP.", type: "error" });
+        setSignupLoading(false);
+        return;
+      }
+
+      const nameVal = (data.employeename || data.EmployeeName || '').trim();
+      const deptVal = (data.departmentname || data.DepartmentName || '').trim();
+      const desigVal = (data.designation || data.Designation || '').trim();
+      const phoneVal = (data.mobileno || data.MobileNo || '').trim();
+
+      if (!nameVal) {
+        setSignupMsg({ text: "Verification failed: Employee name missing in record.", type: "error" });
+        setSignupLoading(false);
+        return;
+      }
+
+      setSignupDetails({
+        fullname: nameVal,
+        department: deptVal,
+        designation: desigVal,
+        phone: phoneVal || "0000000000"
+      });
+      setSignupStep(2);
+    } catch (err) {
+      console.error("ECAP Verification Error:", err);
+      setSignupMsg({
+        text: err.response?.data?.message || "Failed to connect to ECAP. Check ID or try again.",
+        type: "error"
+      });
+    } finally {
+      setSignupLoading(false);
+    }
+  };
+
+  const handleSignUpSubmit = async (e) => {
+    e.preventDefault();
+    
+    if (!signupData.email.trim()) {
+      setSignupMsg({ text: "Email ID is required", type: "error" });
+      return;
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(signupData.email.trim())) {
+      setSignupMsg({ text: "Please enter a valid email address", type: "error" });
+      return;
+    }
+    if (!signupData.password) {
+      setSignupMsg({ text: "Password is required", type: "error" });
+      return;
+    }
+    if (signupData.password.length < 6) {
+      setSignupMsg({ text: "Password must be at least 6 characters long", type: "error" });
+      return;
+    }
+    if (signupData.password !== signupData.confirmPassword) {
+      setSignupMsg({ text: "Passwords do not match", type: "error" });
+      return;
+    }
+
+    setSignupMsg({ text: '', type: '' });
+    setSignupLoading(true);
+
+    try {
+      await signup({
+        fullname: signupDetails.fullname,
+        id: signupData.institutionId.trim(),
+        department: signupDetails.department,
+        designation: signupDetails.designation,
+        email: signupData.email.trim(),
+        phone: signupDetails.phone,
+        password: signupData.password
+      });
+      navigate('/dashboard');
+    } catch (err) {
+      console.error("Signup Submission Error:", err);
+      setSignupMsg({
+        text: err.response?.data?.message || "Registration failed. Please try again.",
+        type: "error"
+      });
+    } finally {
+      setSignupLoading(false);
+    }
+  };
+
+  const handleBackToSignUpVerify = () => {
+    setSignupStep(1);
+    setSignupMsg({ text: '', type: '' });
+  };
+
   const checkEmployeeId = async (employeeCode) => {
     try {
       const res = await API.post(
@@ -213,9 +356,6 @@ export default function Login() {
   };
 
 
-  const { login, signup } = useAuth();
-  const navigate = useNavigate();
-
   // ── login submit ──
   const handleLoginSubmit = async (e) => {
     e.preventDefault();
@@ -230,8 +370,7 @@ export default function Login() {
   };
 
   const goSignIn = () => {
-    setIsSignUp(false);
-    resetForgotPasswordState();
+    navigate('/');
   };
 
   return (
@@ -257,137 +396,243 @@ export default function Login() {
               </button>
             </div>
             <button type="button" className="auth-forgot" onClick={handleForgotClick}>Forgot your password?</button>
-            <div className="btn-wrapper-center">
+            <div className="btn-wrapper-center" style={{ flexDirection: 'column', gap: '15px' }}>
               <button type="submit" className="btn-auth-primary">SIGN IN</button>
+              <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
+                Don't have an account? <Link to="/signup" style={{ color: 'var(--color-primary)', fontWeight: '600', textDecoration: 'none' }}>Sign Up</Link>
+              </p>
             </div>
           </form>
         </div>
         <div className="footer-aliceblue"><Footer /></div>
       </div>
 
-      {/* ══ FORGOT PASSWORD FORM — always on the right ══ */}
+      {/* ══ RIGHT PANEL — shows SignUp or Reset Password ══ */}
       <div className="auth-panel signup-panel">
         <div className="auth-form-wrap">
-          <h1 className="auth-heading">Reset Password</h1>
-          {fpMsg.text && (
-            <p className="auth-error" style={{
-              background: fpMsg.type === 'success' ? 'rgba(34, 197, 94, 0.1)' : 'rgba(239, 68, 68, 0.1)',
-              color: fpMsg.type === 'success' ? '#22c55e' : '#ef4444',
-              border: `1px solid ${fpMsg.type === 'success' ? 'rgba(34, 197, 94, 0.2)' : 'rgba(239, 68, 68, 0.2)'}`
-            }}>
-              {fpMsg.text}
-            </p>
-          )}
-
-          {fpStep === 1 && (
-
-            <form
-              className="auth-form"
-              onSubmit={
-                isIdValid
-                  ? handleSendOtp
-                  : handleCheckEmployeeId
-              }
-            >
-
-              {/* Employee ID */}
-
-              <div className="auth-field">
-
-                <input
-                  id="fp-id"
-                  type="text"
-                  placeholder=" "
-                  value={fpData.id}
-                  onChange={e =>
-                    setFpData({
-                      ...fpData,
-                      id: e.target.value
-                    })
-                  }
-                />
-
-                <label
-                  className="auth-label"
-                  htmlFor="fp-id"
-                >
-                  Employee ID
-                </label>
-
-              </div>
-
-
-              {/* Mobile Number input removed as per request */}
-
-
-              {isIdValid && idValidMsg && (
-                <p style={{ fontSize: '0.9rem', color: '#0b5299', textAlign: 'center', marginBottom: '10px' }}>
-                  {idValidMsg}
+          {isForgot ? (
+            /* ══ RESET PASSWORD FORM ══ */
+            <>
+              <h1 className="auth-heading">Reset Password</h1>
+              {fpMsg.text && (
+                <p className="auth-error" style={{
+                  background: fpMsg.type === 'success' ? 'rgba(34, 197, 94, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+                  color: fpMsg.type === 'success' ? '#22c55e' : '#ef4444',
+                  border: `1px solid ${fpMsg.type === 'success' ? 'rgba(34, 197, 94, 0.2)' : 'rgba(239, 68, 68, 0.2)'}`
+                }}>
+                  {fpMsg.text}
                 </p>
               )}
 
-              <div className="btn-wrapper-center">
-
-                <button
-                  type="submit"
-                  className="btn-auth-primary"
+              {fpStep === 1 && (
+                <form
+                  className="auth-form"
+                  onSubmit={
+                    isIdValid
+                      ? handleSendOtp
+                      : handleCheckEmployeeId
+                  }
                 >
+                  <div className="auth-field" data-has-value={!!fpData.id}>
+                    <input
+                      id="fp-id"
+                      type="text"
+                      placeholder=" "
+                      value={fpData.id}
+                      onChange={e =>
+                        setFpData({
+                          ...fpData,
+                          id: e.target.value
+                        })
+                      }
+                    />
+                    <label className="auth-label" htmlFor="fp-id">Employee ID</label>
+                  </div>
 
-                  {isIdValid
-                    ? "SEND OTP"
-                    : "CHECK ID"}
+                  {isIdValid && idValidMsg && (
+                    <p style={{ fontSize: '0.9rem', color: '#0b5299', textAlign: 'center', marginBottom: '10px' }}>
+                      {idValidMsg}
+                    </p>
+                  )}
 
-                </button>
+                  <div className="btn-wrapper-center">
+                    <button type="submit" className="btn-auth-primary">
+                      {isIdValid ? "SEND OTP" : "CHECK ID"}
+                    </button>
+                  </div>
 
-              </div>
+                  <button type="button" className="auth-forgot auth-forgot-center" onClick={toggleForgot}>
+                    Back to Sign In
+                  </button>
+                </form>
+              )}
 
+              {fpStep === 2 && (
+                <form className="auth-form" onSubmit={handleVerifyOtp}>
+                  <div className="auth-field" data-has-value={!!fpData.otp}>
+                    <input id="fp-otp" type="text" placeholder=" " value={fpData.otp} onChange={e => setFpData({ ...fpData, otp: e.target.value })} />
+                    <label className="auth-label" htmlFor="fp-otp">Enter OTP</label>
+                  </div>
+                  <div className="btn-wrapper-center">
+                    <button type="submit" className="btn-auth-primary">VERIFY OTP</button>
+                  </div>
+                  <button type="button" className="auth-forgot auth-forgot-center" onClick={toggleForgot}>Cancel</button>
+                </form>
+              )}
 
-              <button
-                type="button"
-                className="auth-forgot auth-forgot-center"
-                onClick={toggleForgot}
-              >
-                Back to Sign In
-              </button>
+              {fpStep === 3 && (
+                <form className="auth-form" onSubmit={handleResetPassword}>
+                  <div className="auth-field" data-has-value={!!fpData.newPass}>
+                    <input id="fp-new" type={showResetPass ? 'text' : 'password'} placeholder=" " value={fpData.newPass} onChange={e => setFpData({ ...fpData, newPass: e.target.value })} />
+                    <label className="auth-label" htmlFor="fp-new">New Password</label>
+                    <button type="button" className="password-toggle" onClick={() => setShowResetPass(!showResetPass)}>
+                      {showResetPass ? <EyeOffIcon /> : <EyeIcon />}
+                    </button>
+                  </div>
+                  <div className="auth-field" data-has-value={!!fpData.confirmPass}>
+                    <input id="fp-confirm" type={showResetConfirm ? 'text' : 'password'} placeholder=" " value={fpData.confirmPass} onChange={e => setFpData({ ...fpData, confirmPass: e.target.value })} />
+                    <label className="auth-label" htmlFor="fp-confirm">Confirm Password</label>
+                    <button type="button" className="password-toggle" onClick={() => setShowResetConfirm(!showResetConfirm)}>
+                      {showResetConfirm ? <EyeOffIcon /> : <EyeIcon />}
+                    </button>
+                  </div>
+                  <div className="btn-wrapper-center">
+                    <button type="submit" className="btn-auth-primary">SET PASSWORD</button>
+                  </div>
+                  <button type="button" className="auth-forgot auth-forgot-center" onClick={toggleForgot}>Cancel</button>
+                </form>
+              )}
+            </>
+          ) : (
+            /* ══ SIGN UP FORM ══ */
+            <>
+              <h1 className="auth-heading">Employee Sign Up</h1>
+              {signupMsg.text && (
+                <p className="auth-error" style={{
+                  background: signupMsg.type === 'success' ? 'rgba(34, 197, 94, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+                  color: signupMsg.type === 'success' ? '#22c55e' : '#ef4444',
+                  border: `1px solid ${signupMsg.type === 'success' ? 'rgba(34, 197, 94, 0.2)' : 'rgba(239, 68, 68, 0.2)'}`
+                }}>
+                  {signupMsg.text}
+                </p>
+              )}
 
-            </form>
-
-          )}
-
-          {fpStep === 2 && (
-            <form className="auth-form" onSubmit={handleVerifyOtp}>
-              <div className="auth-field">
-                <input id="fp-otp" type="text" placeholder=" " value={fpData.otp} onChange={e => setFpData({ ...fpData, otp: e.target.value })} />
-                <label className="auth-label" htmlFor="fp-otp">Enter OTP</label>
-              </div>
-              <div className="btn-wrapper-center">
-                <button type="submit" className="btn-auth-primary">VERIFY OTP</button>
-              </div>
-              <button type="button" className="auth-forgot auth-forgot-center" onClick={toggleForgot}>Cancel</button>
-            </form>
-          )}
-
-          {fpStep === 3 && (
-            <form className="auth-form" onSubmit={handleResetPassword}>
-              <div className="auth-field">
-                <input id="fp-new" type={showResetPass ? 'text' : 'password'} placeholder=" " value={fpData.newPass} onChange={e => setFpData({ ...fpData, newPass: e.target.value })} />
-                <label className="auth-label" htmlFor="fp-new">New Password</label>
-                <button type="button" className="password-toggle" onClick={() => setShowResetPass(!showResetPass)}>
-                  {showResetPass ? <EyeOffIcon /> : <EyeIcon />}
-                </button>
-              </div>
-              <div className="auth-field">
-                <input id="fp-confirm" type={showResetConfirm ? 'text' : 'password'} placeholder=" " value={fpData.confirmPass} onChange={e => setFpData({ ...fpData, confirmPass: e.target.value })} />
-                <label className="auth-label" htmlFor="fp-confirm">Confirm Password</label>
-                <button type="button" className="password-toggle" onClick={() => setShowResetConfirm(!showResetConfirm)}>
-                  {showResetConfirm ? <EyeOffIcon /> : <EyeIcon />}
-                </button>
-              </div>
-              <div className="btn-wrapper-center">
-                <button type="submit" className="btn-auth-primary">SET PASSWORD</button>
-              </div>
-              <button type="button" className="auth-forgot auth-forgot-center" onClick={toggleForgot}>Cancel</button>
-            </form>
+              {signupStep === 1 ? (
+                /* Step 1: Verify ID */
+                <form className="auth-form" onSubmit={handleVerifySignUpId}>
+                  <div className="auth-field" data-has-value={!!signupData.institutionId}>
+                    <input
+                      id="signup-id"
+                      type="text"
+                      placeholder=" "
+                      value={signupData.institutionId}
+                      onChange={e => setSignupData({ ...signupData, institutionId: e.target.value })}
+                      disabled={signupLoading}
+                    />
+                    <label className="auth-label" htmlFor="signup-id">Institution ID</label>
+                  </div>
+                  <div className="btn-wrapper-center" style={{ flexDirection: 'column', gap: '15px' }}>
+                    <button type="submit" className="btn-auth-primary" disabled={signupLoading}>
+                      {signupLoading ? "VERIFYING..." : "VERIFY ID"}
+                    </button>
+                    <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
+                      Already have an account? <Link to="/" style={{ color: 'var(--color-primary)', fontWeight: '600', textDecoration: 'none' }}>Sign In</Link>
+                    </p>
+                  </div>
+                </form>
+              ) : (
+                /* Step 2: Fill Details */
+                <form className="auth-form signup-form" onSubmit={handleSignUpSubmit}>
+                  <div className="auth-field" data-has-value={true}>
+                    <input
+                      id="signup-name"
+                      type="text"
+                      placeholder=" "
+                      value={signupDetails.fullname}
+                      disabled
+                    />
+                    <label className="auth-label" htmlFor="signup-name">Full Name</label>
+                  </div>
+                  <div className="auth-field" data-has-value={true}>
+                    <input
+                      id="signup-phone"
+                      type="text"
+                      placeholder=" "
+                      value={signupDetails.phone}
+                      disabled
+                    />
+                    <label className="auth-label" htmlFor="signup-phone">Mobile No</label>
+                  </div>
+                  <div className="auth-field" data-has-value={true}>
+                    <input
+                      id="signup-dept"
+                      type="text"
+                      placeholder=" "
+                      value={signupDetails.department}
+                      disabled
+                    />
+                    <label className="auth-label" htmlFor="signup-dept">Department</label>
+                  </div>
+                  <div className="auth-field" data-has-value={true}>
+                    <input
+                      id="signup-desig"
+                      type="text"
+                      placeholder=" "
+                      value={signupDetails.designation}
+                      disabled
+                    />
+                    <label className="auth-label" htmlFor="signup-desig">Designation</label>
+                  </div>
+                  <div className="auth-field field-full" data-has-value={!!signupData.email}>
+                    <input
+                      id="signup-email"
+                      type="email"
+                      placeholder=" "
+                      value={signupData.email}
+                      onChange={e => setSignupData({ ...signupData, email: e.target.value })}
+                      disabled={signupLoading}
+                    />
+                    <label className="auth-label" htmlFor="signup-email">Email ID</label>
+                  </div>
+                  <div className="auth-field" data-has-value={!!signupData.password}>
+                    <input
+                      id="signup-pass"
+                      type={showSignPass ? 'text' : 'password'}
+                      placeholder=" "
+                      value={signupData.password}
+                      onChange={e => setSignupData({ ...signupData, password: e.target.value })}
+                      disabled={signupLoading}
+                    />
+                    <label className="auth-label" htmlFor="signup-pass">Password</label>
+                    <button type="button" className="password-toggle" onClick={() => setShowSignPass(!showSignPass)}>
+                      {showSignPass ? <EyeOffIcon /> : <EyeIcon />}
+                    </button>
+                  </div>
+                  <div className="auth-field" data-has-value={!!signupData.confirmPassword}>
+                    <input
+                      id="signup-confirm"
+                      type={showSignConfirm ? 'text' : 'password'}
+                      placeholder=" "
+                      value={signupData.confirmPassword}
+                      onChange={e => setSignupData({ ...signupData, confirmPassword: e.target.value })}
+                      disabled={signupLoading}
+                    />
+                    <label className="auth-label" htmlFor="signup-confirm">Confirm Password</label>
+                    <button type="button" className="password-toggle" onClick={() => setShowSignConfirm(!showSignConfirm)}>
+                      {showSignConfirm ? <EyeOffIcon /> : <EyeIcon />}
+                    </button>
+                  </div>
+                  <div className="btn-wrapper-center" style={{ flexDirection: 'column', gap: '15px' }}>
+                    <button type="submit" className="btn-auth-primary" disabled={signupLoading}>
+                      {signupLoading ? "CREATING ACCOUNT..." : "REGISTER"}
+                    </button>
+                    <button type="button" className="auth-forgot auth-forgot-center" onClick={handleBackToSignUpVerify} disabled={signupLoading}>
+                      Change Institution ID
+                    </button>
+                  </div>
+                </form>
+              )}
+            </>
           )}
         </div>
         <div className="footer-aliceblue"><Footer /></div>
@@ -398,8 +643,17 @@ export default function Login() {
         {/* Left half — visible after sliding left */}
         <div className="overlay-side overlay-left">
           <img src={loginLogo} alt="Aditya University" className="overlay-logo" />
-          <h2 className="overlay-title">Reset Your Password</h2>
-          <p className="overlay-sub">Remembered your password? Sign in to access your portal.</p>
+          {isForgot ? (
+            <>
+              <h2 className="overlay-title">Reset Your Password</h2>
+              <p className="overlay-sub">Remembered your password? Sign in to access your portal.</p>
+            </>
+          ) : (
+            <>
+              <h2 className="overlay-title">Join Digital Services</h2>
+              <p className="overlay-sub">Already have an account? Sign in to access your portal.</p>
+            </>
+          )}
           <button className="btn-overlay" onClick={goSignIn}>BACK TO LOGIN</button>
         </div>
         {/* Right half — visible by default */}

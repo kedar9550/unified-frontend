@@ -245,8 +245,8 @@ export default function PatentPublication() {
           onClick={() => {
             const activeYear = academicYears.find(y => y.isGlobalActive);
             if (activeYear) {
-              setSelectedYear(activeYear._id);
-              setViewMode("form");
+              setSelectedYear("");
+              setViewMode("select-year");
             } else {
               setNoActiveYearAlertOpen(true);
             }
@@ -377,69 +377,81 @@ export default function PatentPublication() {
     </Box>
   );
 
-  const renderSelectYear = () => (
-    <Box sx={{ maxWidth: 500, mx: "auto", mt: 5 }}>
-      <FormCard title="Select Academic Year">
-        <Typography sx={{ mb: 2, color: "var(--text-secondary)", fontWeight: 500 }}>Please select the academic year for this publication submission:</Typography>
-        <Select
-          fullWidth
-          size="small"
-          displayEmpty
-          value={selectedYear}
-          onChange={(e) => setSelectedYear(e.target.value)}
-        >
-          <MenuItem value="" disabled>Select Academic Year</MenuItem>
-          {academicYears.map(y => (
-            <MenuItem key={y._id} value={y._id}>{y.year}</MenuItem>
-          ))}
-        </Select>
-        <Box sx={{ display: "flex", gap: 2, mt: 4, justifyContent: "flex-end" }}>
-          <Button
-            variant="outlined"
-            onClick={() => setViewMode("list")}
-            sx={{
+  const renderSelectYear = () => {
+    const activeYearDoc = academicYears.find(y => y.isGlobalActive);
+    let priorYearStr = "";
+    if (activeYearDoc && activeYearDoc.year) {
+      const parts = activeYearDoc.year.split('-');
+      if (parts.length === 2) {
+        priorYearStr = `${parseInt(parts[0], 10) - 1}-${parseInt(parts[1], 10) - 1}`;
+      }
+    }
+    const filteredYears = academicYears.filter(
+      y => y.year === activeYearDoc?.year || y.year === priorYearStr
+    );
 
-              textTransform: "none",
-              fontWeight: 600,
-              color: "var(--text-primary)",
-              borderColor: "var(--border-color)",
-              "&:hover": {
-                borderColor: "var(--color-primary)",
-                background: "rgba(0,0,0,0.02)"
-              }
-            }}
+    return (
+      <Box sx={{ maxWidth: 500, mx: "auto", mt: 5 }}>
+        <FormCard title="Select Academic Year">
+          <Typography sx={{ mb: 2, color: "var(--text-secondary)", fontWeight: 500 }}>Please select the academic year for this publication submission:</Typography>
+          <Select
+            fullWidth
+            size="small"
+            displayEmpty
+            value={selectedYear}
+            onChange={(e) => setSelectedYear(e.target.value)}
           >
-            Cancel
-          </Button>
-          <Button
-            variant="contained"
-            disabled={!selectedYear}
-            onClick={() => setViewMode("form")}
-            sx={{
-              background: "var(--gradient-primary)",
-
-              px: 4,
-              fontWeight: 700,
-              textTransform: "none",
-              "&:hover": {
-                opacity: 0.9,
-                transform: "translateY(-1px)",
-                boxShadow: "0 4px 12px rgba(0,0,0,0.1)"
-              },
-              "&.Mui-disabled": {
-                background: "var(--bg-panel)",
-                color: "var(--text-secondary)",
-                opacity: 0.5
-              },
-              transition: "all 0.2s ease"
-            }}
-          >
-            Proceed
-          </Button>
-        </Box>
-      </FormCard>
-    </Box>
-  );
+            <MenuItem value="" disabled>Select Academic Year</MenuItem>
+            {filteredYears.map(y => (
+              <MenuItem key={y._id} value={y._id}>{y.year}</MenuItem>
+            ))}
+          </Select>
+          <Box sx={{ display: "flex", gap: 2, mt: 4, justifyContent: "flex-end" }}>
+            <Button
+              variant="outlined"
+              onClick={() => setViewMode("list")}
+              sx={{
+                textTransform: "none",
+                fontWeight: 600,
+                color: "var(--text-primary)",
+                borderColor: "var(--border-color)",
+                "&:hover": {
+                  borderColor: "var(--color-primary)",
+                  background: "rgba(0,0,0,0.02)"
+                }
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="contained"
+              disabled={!selectedYear}
+              onClick={() => setViewMode("form")}
+              sx={{
+                background: "var(--gradient-primary)",
+                px: 4,
+                fontWeight: 700,
+                textTransform: "none",
+                "&:hover": {
+                  opacity: 0.9,
+                  transform: "translateY(-1px)",
+                  boxShadow: "0 4px 12px rgba(0,0,0,0.1)"
+                },
+                "&.Mui-disabled": {
+                  background: "var(--bg-panel)",
+                  color: "var(--text-secondary)",
+                  opacity: 0.5
+                },
+                transition: "all 0.2s ease"
+              }}
+            >
+              Proceed
+            </Button>
+          </Box>
+        </FormCard>
+      </Box>
+    );
+  };
 
   const renderForm = () => (
     <FormCard title="Patent Submission">
