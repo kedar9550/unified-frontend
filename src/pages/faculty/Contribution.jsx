@@ -843,7 +843,7 @@ export default function Contribution() {
             flexDirection: "column",
             alignItems: "center",
             justifyContent: "center",
-            py: 8,
+            py: 5,
             px: 3,
             background: "var(--bg-panel)",
             borderRadius: "16px",

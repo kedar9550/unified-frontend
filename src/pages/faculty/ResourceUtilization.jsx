@@ -89,11 +89,11 @@ export default function ResourceUtilization() {
   const [academicYears, setAcademicYears] = useState([]);
   const [selectedYear, setSelectedYear] = useState("");
   const [activitiesList, setActivitiesList] = useState([]);
-  
+
   const [openFormModal, setOpenFormModal] = useState(false);
   const [noActiveYearAlertOpen, setNoActiveYearAlertOpen] = useState(false);
   const [selectedActivityDetails, setSelectedActivityDetails] = useState(null);
-  
+
   const [editingId, setEditingId] = useState(null); // stores ID when editing
   const [form, setForm] = useState({
     academicYear: "",
@@ -115,7 +115,7 @@ export default function ResourceUtilization() {
     nirfRank: "",
     certificateNumber: ""
   });
-  
+
   const [proofFile, setProofFile] = useState(null);
   const [loading, setLoading] = useState(false);
 
@@ -168,8 +168,8 @@ export default function ResourceUtilization() {
   }, [form.fromDate, form.toDate]);
 
   const fetchActivities = () => {
-    const url = selectedYear 
-      ? `/api/value-addition/resource-utilization?academicYear=${selectedYear}` 
+    const url = selectedYear
+      ? `/api/value-addition/resource-utilization?academicYear=${selectedYear}`
       : `/api/value-addition/resource-utilization`;
     API.get(url)
       .then(res => {
@@ -179,7 +179,7 @@ export default function ResourceUtilization() {
   };
 
   const setVal = (k) => (e) => setForm((p) => ({ ...p, [k]: e.target.value }));
-  
+
   const handleFileChange = (e) => {
     setProofFile(e.target.files[0]);
   };
@@ -189,7 +189,7 @@ export default function ResourceUtilization() {
     setForm(prev => ({
       ...prev,
       activityCategory: category,
-      activityType: "", 
+      activityType: "",
       sessionsConducted: "",
       daysParticipated: "",
       courseFdpName: "",
@@ -294,7 +294,7 @@ export default function ResourceUtilization() {
 
   const handleSaveDraft = async () => {
     const isFdpParticipant = form.activityCategory === "FDP" && form.activityType === "FDP Participant";
-    const basicFieldsValid = isFdpParticipant 
+    const basicFieldsValid = isFdpParticipant
       ? (form.academicYear && form.activityCategory && form.activityType && form.courseFdpName && form.fromDate && form.toDate)
       : (form.academicYear && form.activityCategory && form.activityType && form.organizationName && form.fromDate && form.toDate);
 
@@ -377,7 +377,7 @@ export default function ResourceUtilization() {
       fd.append("toDate", form.toDate);
       fd.append("duration", form.duration);
       fd.append("remarks", form.remarks || "");
-      
+
       if (isFdpParticipant) {
         fd.append("courseFdpName", form.courseFdpName);
         fd.append("organizingInstitutionCategory", form.organizingInstitutionCategory);
@@ -561,7 +561,7 @@ export default function ResourceUtilization() {
             flexDirection: "column",
             alignItems: "center",
             justifyContent: "center",
-            py: 8,
+            py: 5,
             px: 3,
             background: "var(--bg-panel)",
             borderRadius: "16px",
@@ -579,7 +579,7 @@ export default function ResourceUtilization() {
         ) : (
           <TableContainer component={Paper} sx={{ borderRadius: "16px", background: "var(--bg-panel)", border: "1px solid var(--border-color)", boxShadow: "var(--shadow-premium)", overflowX: "auto" }}>
             <Table>
-               <TableHead sx={{ background: "var(--gradient-primary)" }}>
+              <TableHead sx={{ background: "var(--gradient-primary)" }}>
                 <TableRow>
                   <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Academic Year</TableCell>
                   <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Category</TableCell>
@@ -730,12 +730,12 @@ export default function ResourceUtilization() {
           }
         }}
       >
-        <DialogTitle component="div" sx={{ 
-          display: "flex", 
-          justifyContent: "space-between", 
-          alignItems: "center", 
+        <DialogTitle component="div" sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
           background: "var(--gradient-primary)",
-          color: "#fff", 
+          color: "#fff",
           py: 2.5,
           px: 3
         }}>
@@ -750,8 +750,8 @@ export default function ResourceUtilization() {
 
         <DialogContent sx={{ pt: 2, px: 3, pb: 3, mt: 2 }}>
           {/* Header Section with Activity Info */}
-          <Box sx={{ 
-            display: "grid", 
+          <Box sx={{
+            display: "grid",
             gridTemplateColumns: { xs: "1fr", md: "1fr auto" },
             gap: 2,
             mb: 3,
@@ -759,16 +759,16 @@ export default function ResourceUtilization() {
           }}>
             {/* Left: Activity Type & Course */}
             <Box>
-              <Typography sx={{ 
-                fontSize: "1.5rem", 
-                fontWeight: 800, 
+              <Typography sx={{
+                fontSize: "1.5rem",
+                fontWeight: 800,
                 color: "var(--text-primary)",
                 mb: 0.5
               }}>
                 {data.activityCategory} - {data.activityType}
               </Typography>
-              <Typography sx={{ 
-                fontSize: "1rem", 
+              <Typography sx={{
+                fontSize: "1rem",
                 color: "var(--text-secondary)",
                 fontWeight: 600
               }}>
@@ -810,8 +810,8 @@ export default function ResourceUtilization() {
 
           {/* Quick Info Cards */}
           {data.activityCategory === "FDP" && data.activityType === "FDP Participant" && (
-            <Box sx={{ 
-              display: "grid", 
+            <Box sx={{
+              display: "grid",
               gridTemplateColumns: { xs: "1fr", sm: "repeat(4, 1fr)" },
               gap: 2,
               mb: 3
@@ -869,8 +869,8 @@ export default function ResourceUtilization() {
           )}
 
           {data.activityCategory === "FDP" && data.activityType !== "FDP Participant" && (
-            <Box sx={{ 
-              display: "grid", 
+            <Box sx={{
+              display: "grid",
               gridTemplateColumns: { xs: "1fr", sm: "repeat(2, 1fr)" },
               gap: 2,
               mb: 3
@@ -904,8 +904,8 @@ export default function ResourceUtilization() {
           )}
 
           {/* Activity Period Section */}
-          <Box sx={{ 
-            display: "grid", 
+          <Box sx={{
+            display: "grid",
             gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" },
             gap: 2,
             mb: 3
@@ -913,7 +913,7 @@ export default function ResourceUtilization() {
             <Box sx={{ p: 2.5, background: "var(--bg-panel)", borderRadius: "12px", border: "1px solid var(--border-color)" }}>
               <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1.5 }}>
                 <CalendarToday sx={{ fontSize: 20, color: "#4f46e5" }} />
-                  <Typography sx={{ fontWeight: 800, color: "#1a2e5e", fontSize: "0.95rem" }}>
+                <Typography sx={{ fontWeight: 800, color: "#1a2e5e", fontSize: "0.95rem" }}>
                   Activity Period
                 </Typography>
               </Box>
@@ -994,7 +994,7 @@ export default function ResourceUtilization() {
             )}
           </Box>
 
-          
+
 
           {/* Additional Info */}
           {data.remarks && (
@@ -1013,10 +1013,10 @@ export default function ResourceUtilization() {
         </DialogContent>
 
         <DialogActions sx={{ p: 2.5, background: "var(--bg-glass)", borderTop: "1px solid var(--border-color)" }}>
-          <Button 
+          <Button
             onClick={() => setSelectedActivityDetails(null)}
-            sx={{ 
-              color: "var(--text-primary)", 
+            sx={{
+              color: "var(--text-primary)",
               fontWeight: 700,
               textTransform: "none",
               fontSize: "0.95rem"
@@ -1032,14 +1032,14 @@ export default function ResourceUtilization() {
   const renderFormContent = () => (
     <>
       <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mt: 2, mb: 3, flexWrap: "wrap", gap: 2 }}>
-        <Typography sx={{ 
-          fontSize: 13, 
-          fontWeight: 800, 
-          color: "var(--text-primary)", 
-          background: "var(--bg-accent-1)", 
-          px: 2, 
-          py: 1.2, 
-          borderRadius: "12px", 
+        <Typography sx={{
+          fontSize: 13,
+          fontWeight: 800,
+          color: "var(--text-primary)",
+          background: "var(--bg-accent-1)",
+          px: 2,
+          py: 1.2,
+          borderRadius: "12px",
           borderLeft: "5px solid var(--color-primary)",
           textTransform: "uppercase",
           letterSpacing: "0.03em"
@@ -1328,7 +1328,7 @@ export default function ResourceUtilization() {
     >
       <DialogTitle component="div" sx={{ borderBottom: "1px solid var(--border-color)", pb: 2 }}>
         <Typography variant="h6" component="div" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>
-          {editingId ? "Edit Resource Utilization Entry" : "Add Resource Utilization Entry"}
+          {editingId ? "Edit Faculty Resource Utilization Entry" : "Add Faculty Resource Utilization Entry"}
         </Typography>
       </DialogTitle>
       <DialogContent sx={{ p: 3, pt: 2 }}>
@@ -1348,7 +1348,7 @@ export default function ResourceUtilization() {
   );
 
   const renderFormInline = () => (
-    <FormCard title={editingId ? "Edit Resource Utilization Entry" : "Add Resource Utilization Entry"}>
+    <FormCard title={editingId ? "Edit Faculty Resource Utilization Entry" : "Add Faculty Resource Utilization Entry"}>
       {renderFormContent()}
       <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 2, mt: 3, pt: 2.5, borderTop: "1px solid var(--border-color)" }}>
         <Button

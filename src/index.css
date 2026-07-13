@@ -50,6 +50,7 @@ html,
 /* =========================================
    DARK MODE OVERRIDES
    ========================================= */
+html:has(body.dark-mode),
 body.dark-mode {
   color-scheme: dark;
   --bg-main: #020617;
@@ -331,12 +332,42 @@ body.dark-mode [data-sonner-toast][data-type="info"] {
 
 
 /* ================Custom Scrollbar Styles======================*/
-/* Hide scrollbar globally for a cleaner, flat interface while keeping scrolling active */
+/* Subtle scrollbar for a clean interface while keeping scroll indication */
 ::-webkit-scrollbar {
+  width: 3px;
+  height: 3px;
+  background: transparent;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--gradient-primary);
+  border-radius: 0px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--gradient-primary-hover);
+}
+
+@supports (-moz-appearance: none) {
+  * {
+    scrollbar-width: thin;
+    /* Firefox */
+    scrollbar-color: var(--color-primary) transparent;
+  }
+}
+
+/* Hide scrollbar completely for sidebar menu */
+.sidebar-scrollbar::-webkit-scrollbar {
   display: none;
 }
 
-* {
-  -ms-overflow-style: none;  /* IE and Edge */
-  scrollbar-width: none;  /* Firefox */
+.sidebar-scrollbar {
+  scrollbar-width: none;
+  /* Firefox */
+  -ms-overflow-style: none;
+  /* IE and Edge */
 }
