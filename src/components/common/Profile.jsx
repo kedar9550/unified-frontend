@@ -306,17 +306,63 @@ const Profile = () => {
     setErrors(prev => ({ ...prev, orcidId: validateField('orcidId', formatted) }));
   };
 
-  const getEcapImage = () => {
-    if (!user || user.profileImage) return null;
-    if (user.userType === "Employee") {
-      return `https://info.aec.edu.in/aus/employeephotos/${user.institutionId}.jpg`;
-    } else if (user.userType === "Student") {
-      return `https://info.aec.edu.in/adityacentral/StudentPhotos/${user.institutionId}.jpg`;
-    }
-    return null;
-  };
+  const [imageSrc, setImageSrc] = React.useState(null);
 
-  const imageSrc = profile?.profileImage || getEcapImage();
+  React.useEffect(() => {
+    if (profile?.profileImage) {
+      setImageSrc(profile.profileImage);
+      return;
+    }
+
+    if (!profile?.institutionId) {
+      setImageSrc(null);
+      return;
+    }
+
+    const checkImage = (url) => {
+      return new Promise((resolve) => {
+        const img = new Image();
+        img.src = url;
+        img.onload = () => resolve(true);
+        img.onerror = () => resolve(false);
+      });
+    };
+
+    let isMounted = true;
+    const resolveProfileImage = async () => {
+      if (profile.userType === "Employee") {
+        const ausUrl = `https://info.aec.edu.in/aus/employeephotos/${profile.institutionId}.jpg`;
+        const aecUrl = `https://info.aec.edu.in/aec/employeephotos/${profile.institutionId}.jpg`;
+        const acetUrl = `https://info.aec.edu.in/acet/employeephotos/${profile.institutionId}.jpg`;
+
+        if (await checkImage(ausUrl)) {
+          if (isMounted) setImageSrc(ausUrl);
+        } else if (await checkImage(aecUrl)) {
+          if (isMounted) setImageSrc(aecUrl);
+        } else if (await checkImage(acetUrl)) {
+          if (isMounted) setImageSrc(acetUrl);
+        } else {
+          if (isMounted) setImageSrc(null);
+        }
+      } else if (profile.userType === "Student") {
+        const studentUrl = `https://info.aec.edu.in/adityacentral/StudentPhotos/${profile.institutionId}.jpg`;
+        if (await checkImage(studentUrl)) {
+          if (isMounted) setImageSrc(studentUrl);
+        } else {
+          if (isMounted) setImageSrc(null);
+        }
+      } else {
+        if (isMounted) setImageSrc(null);
+      }
+    };
+
+    resolveProfileImage();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [profile]);
+
   const initials = profile?.name ? user.name.charAt(0).toUpperCase() : "U";
 
 

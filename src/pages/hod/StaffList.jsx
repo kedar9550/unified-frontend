@@ -103,28 +103,50 @@ const EmployeeAvatar = ({ item }) => {
   useEffect(() => {
     if (item.profileImage) {
       setImgSrc(`/uploads/profile/${item.profileImage}`);
-    } else if (item.institutionId) {
-      // Primary: Try aus (Aditya University) portal
-      setImgSrc(`https://info.aec.edu.in/aus/employeephotos/${item.institutionId}.jpg`);
+      return;
     }
-  }, [item]);
 
-  const handleError = () => {
-    // If aus failed, fallback to aec (Aditya Engineering College) portal
-    if (imgSrc && imgSrc.includes('/aus/')) {
-      setImgSrc(`https://info.aec.edu.in/aec/employeephotos/${item.institutionId}.jpg`);
-    } else if (imgSrc && imgSrc.includes('/aec/')) {
-      // If aec also failed, fallback to acet (ACET) portal
-      setImgSrc(`https://info.aec.edu.in/acet/employeephotos/${item.institutionId}.jpg`);
-    } else {
+    if (!item.institutionId) {
       setImgSrc(null);
+      return;
     }
-  };
+
+    const checkImage = (url) => {
+      return new Promise((resolve) => {
+        const img = new Image();
+        img.src = url;
+        img.onload = () => resolve(true);
+        img.onerror = () => resolve(false);
+      });
+    };
+
+    let isMounted = true;
+    const resolveAvatar = async () => {
+      const ausUrl = `https://info.aec.edu.in/aus/employeephotos/${item.institutionId}.jpg`;
+      const aecUrl = `https://info.aec.edu.in/aec/employeephotos/${item.institutionId}.jpg`;
+      const acetUrl = `https://info.aec.edu.in/acet/employeephotos/${item.institutionId}.jpg`;
+
+      if (await checkImage(ausUrl)) {
+        if (isMounted) setImgSrc(ausUrl);
+      } else if (await checkImage(aecUrl)) {
+        if (isMounted) setImgSrc(aecUrl);
+      } else if (await checkImage(acetUrl)) {
+        if (isMounted) setImgSrc(acetUrl);
+      } else {
+        if (isMounted) setImgSrc(null);
+      }
+    };
+
+    resolveAvatar();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [item]);
 
   return (
     <Avatar
       src={imgSrc}
-      imgProps={{ onError: handleError }}
       sx={{
         width: 40,
         height: 40,
