@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Box, Typography, IconButton, Menu, MenuItem, Fade, ListItemIcon, Badge } from "@mui/material";
 import {
   Menu as MenuIcon,
@@ -80,17 +80,63 @@ const Header = ({ isSidebarCollapsed }) => {
     }
   };
 
-  const getEcapImage = () => {
-    if (!user || user.profileImage || !user.institutionId || user.institutionId === "Prime") return null;
-    if (user.userType === "Employee") {
-      return `https://info.aec.edu.in/aec/employeephotos/${user.institutionId}.jpg`;
-    } else if (user.userType === "Student") {
-      return `https://info.aec.edu.in/adityacentral/StudentPhotos/${user.institutionId}.jpg`;
-    }
-    return null;
-  };
+  const [imageSrc, setImageSrc] = useState(null);
 
-  const imageSrc = user?.profileImage || getEcapImage();
+  useEffect(() => {
+    if (user?.profileImage) {
+      setImageSrc(user.profileImage);
+      return;
+    }
+
+    if (!user || !user.institutionId || user.institutionId === "Prime") {
+      setImageSrc(null);
+      return;
+    }
+
+    const checkImage = (url) => {
+      return new Promise((resolve) => {
+        const img = new Image();
+        img.src = url;
+        img.onload = () => resolve(true);
+        img.onerror = () => resolve(false);
+      });
+    };
+
+    let isMounted = true;
+    const resolveHeaderImage = async () => {
+      if (user.userType === "Employee") {
+        const ausUrl = `https://info.aec.edu.in/aus/employeephotos/${user.institutionId}.jpg`;
+        const aecUrl = `https://info.aec.edu.in/aec/employeephotos/${user.institutionId}.jpg`;
+        const acetUrl = `https://info.aec.edu.in/acet/employeephotos/${user.institutionId}.jpg`;
+
+        if (await checkImage(aecUrl)) {
+          if (isMounted) setImageSrc(aecUrl);
+        } else if (await checkImage(ausUrl)) {
+          if (isMounted) setImageSrc(ausUrl);
+        } else if (await checkImage(acetUrl)) {
+          if (isMounted) setImageSrc(acetUrl);
+        } else {
+          if (isMounted) setImageSrc(null);
+        }
+      } else if (user.userType === "Student") {
+        const studentUrl = `https://info.aec.edu.in/adityacentral/StudentPhotos/${user.institutionId}.jpg`;
+        if (await checkImage(studentUrl)) {
+          if (isMounted) setImageSrc(studentUrl);
+        } else {
+          if (isMounted) setImageSrc(null);
+        }
+      } else {
+        if (isMounted) setImageSrc(null);
+      }
+    };
+
+    resolveHeaderImage();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [user]);
+
   const initials = user?.name ? user.name.charAt(0).toUpperCase() : "U";
 
   const open = Boolean(anchorEl);
