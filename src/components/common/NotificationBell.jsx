@@ -7,7 +7,6 @@ import { useSocket } from '../../context/SocketContext';
 import API from '../../api/axios';
 import { toast } from 'sonner';
 import { useAuth } from '../../context/AuthContext';
-import { requestForToken } from '../../firebase';
 
 const NotificationBell = forwardRef((props, ref) => {
     const [anchorEl, setAnchorEl] = useState(null);
@@ -17,26 +16,6 @@ const NotificationBell = forwardRef((props, ref) => {
     const { socket } = useSocket();
     const navigate = useNavigate();
     const { user, activeRole, switchRole } = useAuth();
-    const [permissionState, setPermissionState] = useState(
-        typeof window !== 'undefined' && 'Notification' in window ? Notification.permission : 'unsupported'
-    );
-
-    const enableNotifications = async () => {
-        try {
-            const token = await requestForToken(true);
-            if (token) {
-                setPermissionState('granted');
-                await API.post('/api/employees/save-fcm-token', { fcmToken: token });
-                toast.success("Desktop notifications enabled!");
-            } else if (Notification.permission === 'denied') {
-                setPermissionState('denied');
-                toast.error("Notification permission denied. Please unblock in browser settings.");
-            }
-        } catch (err) {
-            console.error("Failed to enable notifications", err);
-            toast.error("Failed to enable notifications.");
-        }
-    };
 
     const fetchNotifications = async () => {
         try {
@@ -239,17 +218,6 @@ const NotificationBell = forwardRef((props, ref) => {
                         </IconButton>
                     </Box>
                 </Box>
-
-                {permissionState === 'default' && (
-                    <Box sx={{ p: 2, bgcolor: 'rgba(25, 118, 210, 0.08)', borderBottom: '1px solid rgba(0,0,0,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                        <Typography variant="body2" sx={{ color: 'primary.main', fontWeight: 500 }}>
-                            Enable desktop notifications
-                        </Typography>
-                        <Button size="small" variant="contained" onClick={enableNotifications} sx={{ textTransform: 'none' }}>
-                            Enable
-                        </Button>
-                    </Box>
-                )}
                 
                 {loading ? (
                     <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>

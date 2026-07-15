@@ -13,12 +13,9 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const messaging = getMessaging(app);
 
-export const requestForToken = async (promptUser = false) => {
+export const requestForToken = async () => {
     try {
         if (typeof window !== 'undefined' && 'Notification' in window) {
-            if (!promptUser && Notification.permission === 'default') {
-                return null;
-            }
             const permission = Notification.permission === 'default' ? await Notification.requestPermission() : Notification.permission;
             if (permission !== 'granted') {
                 return null;
