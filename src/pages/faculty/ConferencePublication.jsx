@@ -368,7 +368,7 @@ export default function ConferencePublication() {
         <Button
           variant="contained"
           onClick={() => {
-            const activeYear = academicYears.find(y => y.isGlobalActive);
+            const activeYear = academicYears.length > 0;
             if (activeYear) {
               setSelectedYear("");
               setViewMode("select-year");
@@ -500,7 +500,7 @@ export default function ConferencePublication() {
   );
 
   const renderSelectYear = () => {
-    const activeYearDoc = academicYears.find(y => y.isGlobalActive);
+    const activeYearDoc = academicYears[0];
     let priorYearStr = "";
     if (activeYearDoc && activeYearDoc.year) {
       const parts = activeYearDoc.year.split('-');
@@ -508,9 +508,7 @@ export default function ConferencePublication() {
         priorYearStr = `${parseInt(parts[0], 10) - 1}-${parseInt(parts[1], 10) - 1}`;
       }
     }
-    const filteredYears = academicYears.filter(
-      y => y.year === activeYearDoc?.year || y.year === priorYearStr
-    );
+    const filteredYears = academicYears;
 
     return (
       <Box sx={{ maxWidth: 500, mx: "auto", mt: 5 }}>

@@ -25,9 +25,7 @@ export const requestForToken = async () => {
         let registration = null;
         if ('serviceWorker' in navigator) {
             try {
-                registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js', {
-                    type: import.meta.env?.DEV ? 'module' : 'classic'
-                });
+                registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
             } catch (swErr) {
                 console.error("Service worker registration failed", swErr);
                 // Continue, as some browsers handle SW registration differently

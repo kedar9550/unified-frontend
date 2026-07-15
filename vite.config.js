@@ -48,7 +48,7 @@ export default defineConfig({
       // <-- Add devOptions here
       devOptions: {
         enabled: true,
-        type: 'module'
+        type: 'classic'
       }
     })
   ],

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import SunLoader from "./SunLoader.jsx";
-import { Box } from "@mui/material";
+import { Box, CircularProgress } from "@mui/material";
 
 const Loader = ({ fullScreen = false, size = 130, sx = {}, ...props }) => {
     const [counter, setCounter] = useState(0);
@@ -45,7 +45,13 @@ const Loader = ({ fullScreen = false, size = 130, sx = {}, ...props }) => {
         return null;
     }
 
-    // Small loaders (button spinners, inline loaders) are rendered normally
+    // If it's a determinate progress (e.g., score rings) or a small loader (e.g., button spinners),
+    // use the standard MUI CircularProgress because SunLoader is too detailed for small sizes.
+    if (props.variant === "determinate" || size <= 40) {
+        return <CircularProgress size={size} sx={sx} {...props} />;
+    }
+
+    // Small-ish loaders (between 41 and 49) are rendered as SunLoader
     return (
         <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", ...sx }} {...props}>
             <SunLoader progress={progress} size={size} />

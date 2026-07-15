@@ -225,14 +225,14 @@ export default function ResourceUtilization() {
   const showDaysField = form.activityType?.includes("Participant");
 
   const handleOpenAddModal = () => {
-    const activeYear = academicYears.find(y => y.isGlobalActive);
-    if (!activeYear) {
+    const activeYearDoc = academicYears[0];
+    if (!activeYearDoc) {
       setNoActiveYearAlertOpen(true);
       return;
     }
     setEditingId(null);
     setForm({
-      academicYear: activeYear._id,
+      academicYear: activeYearDoc._id,
       activityCategory: "",
       activityType: "",
       organizationName: "",
@@ -1046,8 +1046,21 @@ export default function ResourceUtilization() {
         }}>
           Details of the Activity:
         </Typography>
-        <Box sx={{ background: "var(--bg-accent-1)", color: "var(--color-primary)", px: 2, py: 1, borderRadius: "12px", fontWeight: 800, border: "1px solid var(--border-color)", fontSize: "0.85rem" }}>
-          Academic Year: {academicYears.find(y => y._id === form.academicYear)?.year || "N/A"}
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+          <Typography sx={{ fontSize: "0.85rem", fontWeight: 600, color: "var(--text-secondary)" }}>Academic Year: *</Typography>
+          <Select
+            size="small"
+            displayEmpty
+            value={form.academicYear || ""}
+            onChange={setVal("academicYear")}
+            disabled={!!editingId}
+            sx={{ minWidth: 150, background: "var(--bg-panel)" }}
+          >
+            <MenuItem value="" disabled>--Select--</MenuItem>
+            {academicYears.map(y => (
+              <MenuItem key={y._id} value={y._id}>{y.year}</MenuItem>
+            ))}
+          </Select>
         </Box>
       </Box>
       <Grid2>

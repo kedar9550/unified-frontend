@@ -83,7 +83,11 @@ export const AuthProvider = ({ children }) => {
     try {
       let fcmToken = null;
       try {
-        fcmToken = await requestForToken();
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error("FCM token request timed out (Edge browser issue)")), 3000)
+        );
+        fcmToken = await Promise.race([requestForToken(), timeoutPromise]);
+        
         if (fcmToken) {
           localStorage.setItem("fcmToken", fcmToken);
         }
