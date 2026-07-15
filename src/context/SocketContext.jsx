@@ -28,7 +28,7 @@ export const SocketProvider = ({ children }) => {
         });
 
         newSocket.on('connect', () => {
-            console.log('Connected to global socket server');
+            // connected
         });
 
         newSocket.on('connect_error', (err) => {

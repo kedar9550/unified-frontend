@@ -13,12 +13,14 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const messaging = getMessaging(app);
 
-export const requestForToken = async () => {
+export const requestForToken = async (promptUser = false) => {
     try {
         if (typeof window !== 'undefined' && 'Notification' in window) {
-            const permission = await Notification.requestPermission();
+            if (!promptUser && Notification.permission === 'default') {
+                return null;
+            }
+            const permission = Notification.permission === 'default' ? await Notification.requestPermission() : Notification.permission;
             if (permission !== 'granted') {
-                console.warn('Notification permission denied.');
                 return null;
             }
         }
@@ -41,10 +43,8 @@ export const requestForToken = async () => {
         });
 
         if (currentToken) {
-            console.log('current token for client: ', currentToken);
             return currentToken;
         } else {
-            console.log('No registration token available.');
             return null;
         }
     } catch (err) {
