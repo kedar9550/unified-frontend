@@ -116,11 +116,7 @@ export const AuthProvider = ({ children }) => {
 
   const signup = async (formData) => {
     try {
-      const res = await API.post("/api/employees/register", formData);
-      let userData = res.data.user;
-      userData = normalizeRoles(userData);
-      setUser(userData);
-      localStorage.setItem("user", JSON.stringify(userData));
+      await API.post("/api/employees/register", formData);
       return { success: true };
     } catch (err) {
       throw err;

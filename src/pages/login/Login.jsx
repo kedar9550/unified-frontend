@@ -77,6 +77,56 @@ const EyeOffIcon = () => (
     <line x1="1" y1="1" x2="23" y2="23" />
   </svg>
 );
+// ── Custom SVGs for OTP Signup Flow ──
+const UserPlusIcon = () => (
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+    <circle cx="9" cy="7" r="4" />
+    <line x1="19" y1="8" x2="19" y2="14" />
+    <line x1="16" y1="11" x2="22" y2="11" />
+  </svg>
+);
+const BankIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M3 22h18" />
+    <path d="M6 18v-7" />
+    <path d="M10 18v-7" />
+    <path d="M14 18v-7" />
+    <path d="M18 18v-7" />
+    <path d="M4 11h16L12 3z" />
+  </svg>
+);
+const PhoneIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
+  </svg>
+);
+const ShieldCheckIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+    <path d="m9 11 2 2 4-4" />
+  </svg>
+);
+const ArrowRightIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <line x1="5" y1="12" x2="19" y2="12" />
+    <polyline points="12 5 19 12 12 19" />
+  </svg>
+);
+const ReloadIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" />
+    <path d="M16 3h5v5" />
+    <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16" />
+    <path d="M8 21H3v-5" />
+  </svg>
+);
+const CheckCircleIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+    <polyline points="22 4 12 14.01 9 11.01" />
+  </svg>
+);
 
 export default function Login({ defaultSignUp = false }) {
   const { login, signup } = useAuth();
@@ -96,6 +146,7 @@ export default function Login({ defaultSignUp = false }) {
       setIsSignUp(false);
       setIsForgot(false);
     }
+    resetSignUpState();
   }, [location.pathname]);
 
   // ── signup state ──
@@ -114,10 +165,37 @@ export default function Login({ defaultSignUp = false }) {
   });
   const [signupMsg, setSignupMsg] = useState({ text: '', type: '' });
   const [signupLoading, setSignupLoading] = useState(false);
+  const [signupOtp, setSignupOtp] = useState('');
+  const [signupSignature, setSignupSignature] = useState('');
+  const [signupExpiry, setSignupExpiry] = useState('');
+  const [isOtpVerified, setIsOtpVerified] = useState(false);
+  const [otpDigits, setOtpDigits] = useState(['', '', '', '', '', '']);
+
+  const resetSignUpState = () => {
+    setSignupStep(1);
+    setIsOtpVerified(false);
+    setSignupData({
+      institutionId: '',
+      email: '',
+      password: '',
+      confirmPassword: ''
+    });
+    setSignupDetails({
+      fullname: '',
+      department: '',
+      designation: '',
+      phone: ''
+    });
+    setSignupOtp('');
+    setSignupSignature('');
+    setSignupExpiry('');
+    setOtpDigits(['', '', '', '', '', '']);
+    setSignupMsg({ text: '', type: '' });
+  };
 
   // ── login state ──
   const [loginData, setLoginData] = useState({ id: '', password: '' });
-  const [loginError, setLoginError] = useState('');
+  const [loginMsg, setLoginMsg] = useState({ text: '', type: '' });
 
   // ── forgot password state ──
   const [fpStep, setFpStep] = useState(1);
@@ -188,9 +266,38 @@ export default function Login({ defaultSignUp = false }) {
     resetForgotPasswordState();
   };
 
+  const handleOtpDigitChange = (index, value) => {
+    if (value && isNaN(value)) return; // Allow only numbers
+    const newDigits = [...otpDigits];
+    newDigits[index] = value.substring(value.length - 1); // take only last character
+    setOtpDigits(newDigits);
+    setSignupOtp(newDigits.join('')); // sync with string state for backend submit
+
+    // Auto-focus next input
+    if (value && index < 5) {
+      const nextInput = document.getElementById(`otp-input-${index + 1}`);
+      if (nextInput) nextInput.focus();
+    }
+  };
+
+  const handleOtpKeyDown = (index, e) => {
+    if (e.key === 'Backspace') {
+      if (!otpDigits[index] && index > 0) {
+        const prevInput = document.getElementById(`otp-input-${index - 1}`);
+        if (prevInput) {
+          prevInput.focus();
+          const newDigits = [...otpDigits];
+          newDigits[index - 1] = '';
+          setOtpDigits(newDigits);
+          setSignupOtp(newDigits.join(''));
+        }
+      }
+    }
+  };
+
   // ── signup handlers ──
   const handleVerifySignUpId = async (e) => {
-    e.preventDefault();
+    if (e && e.preventDefault) e.preventDefault();
     if (!signupData.institutionId.trim()) {
       setSignupMsg({ text: "Institution ID is required", type: "error" });
       return;
@@ -199,40 +306,60 @@ export default function Login({ defaultSignUp = false }) {
     setSignupLoading(true);
 
     try {
-      const res = await API.post("/api/employees/ecap-data", {
-        institutionId: signupData.institutionId.trim(),
-        role: "Employee"
+      const res = await API.post("/api/employees/send-signup-otp", {
+        institutionId: signupData.institutionId.trim()
       });
 
-      const data = res.data;
-      if (!data || data.error) {
-        setSignupMsg({ text: "Invalid Institution ID. Details not found in ECAP.", type: "error" });
-        setSignupLoading(false);
-        return;
-      }
+      const { signature, expiry, details } = res.data;
 
-      const nameVal = (data.employeename || data.EmployeeName || '').trim();
-      const deptVal = (data.departmentname || data.DepartmentName || '').trim();
-      const desigVal = (data.designation || data.Designation || '').trim();
-      const phoneVal = (data.mobileno || data.MobileNo || '').trim();
-
-      if (!nameVal) {
-        setSignupMsg({ text: "Verification failed: Employee name missing in record.", type: "error" });
-        setSignupLoading(false);
-        return;
-      }
-
+      setSignupSignature(signature);
+      setSignupExpiry(expiry);
       setSignupDetails({
-        fullname: nameVal,
-        department: deptVal,
-        designation: desigVal,
-        phone: phoneVal || "0000000000"
+        fullname: details.fullname,
+        department: details.department,
+        designation: details.designation,
+        phone: details.phone
       });
-      setSignupStep(2);
+      setSignupMsg({ text: "OTP sent successfully to your registered mobile number", type: "success" });
     } catch (err) {
-      console.error("ECAP Verification Error:", err);
+      console.error("Signup OTP Send Error:", err);
       setSignupMsg({
-        text: err.response?.data?.message || "Failed to connect to ECAP. Check ID or try again.",
+        text: err.response?.data?.message || "Failed to send OTP. Please check ID or try again.",
+        type: "error"
+      });
+    } finally {
+      setSignupLoading(false);
+    }
+  };
+
+  const handleVerifySignUpOtp = async (e) => {
+    if (e && e.preventDefault) e.preventDefault();
+    if (!signupOtp.trim()) {
+      setSignupMsg({ text: "OTP is required", type: "error" });
+      return;
+    }
+    setSignupMsg({ text: '', type: '' });
+    setSignupLoading(true);
+
+    try {
+      const res = await API.post("/api/employees/verify-signup-otp", {
+        institutionId: signupData.institutionId.trim(),
+        phone: signupDetails.phone,
+        otp: signupOtp.trim(),
+        signature: signupSignature,
+        expiry: signupExpiry
+      });
+
+      if (res.data?.success) {
+        setSignupMsg({ text: '', type: '' });
+        setIsOtpVerified(true);
+      } else {
+        setSignupMsg({ text: res.data?.message || "OTP verification failed", type: "error" });
+      }
+    } catch (err) {
+      console.error("Signup OTP Verification Error:", err);
+      setSignupMsg({
+        text: err.response?.data?.message || "Invalid or expired OTP. Please try again.",
         type: "error"
       });
     } finally {
@@ -276,9 +403,18 @@ export default function Login({ defaultSignUp = false }) {
         designation: signupDetails.designation,
         email: signupData.email.trim(),
         phone: signupDetails.phone,
-        password: signupData.password
+        password: signupData.password,
+        otp: signupOtp.trim(),
+        signature: signupSignature,
+        expiry: signupExpiry
       });
-      navigate('/dashboard');
+      resetSignUpState();
+      setIsSignUp(false);
+      navigate('/');
+      setLoginMsg({
+        text: "Sign up successful! Please log in using your credentials.",
+        type: "success"
+      });
     } catch (err) {
       console.error("Signup Submission Error:", err);
       setSignupMsg({
@@ -292,6 +428,8 @@ export default function Login({ defaultSignUp = false }) {
 
   const handleBackToSignUpVerify = () => {
     setSignupStep(1);
+    setSignupSignature('');
+    setSignupOtp('');
     setSignupMsg({ text: '', type: '' });
   };
 
@@ -360,12 +498,12 @@ export default function Login({ defaultSignUp = false }) {
   const handleLoginSubmit = async (e) => {
     e.preventDefault();
     const v = validateLogin(loginData);
-    if (!v.isValid) { setLoginError(Object.values(v.errors)[0]); return; }
+    if (!v.isValid) { setLoginMsg({ text: Object.values(v.errors)[0], type: 'error' }); return; }
     try {
       await login(loginData);
       navigate('/dashboard');
     } catch (err) {
-      setLoginError(err.response?.data?.message || err.message || 'Login failed');
+      setLoginMsg({ text: err.response?.data?.message || err.message || 'Login failed', type: 'error' });
     }
   };
 
@@ -378,7 +516,17 @@ export default function Login({ defaultSignUp = false }) {
       <div className="auth-panel signin-panel">
         <div className="auth-form-wrap">
           <h1 className="auth-heading">Sign In</h1>
-          {loginError && <p className="auth-error">{loginError}</p>}
+          {loginMsg.text && (
+            <p className="auth-error" style={{
+              background: loginMsg.type === 'success' ? 'rgba(34, 197, 94, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+              color: loginMsg.type === 'success' ? '#22c55e' : '#ef4444',
+              border: `1px solid ${loginMsg.type === 'success' ? 'rgba(34, 197, 94, 0.2)' : 'rgba(239, 68, 68, 0.2)'}`,
+              width: '100%',
+              margin: '0 0 15px 0'
+            }}>
+              {loginMsg.text}
+            </p>
+          )}
           <form className="auth-form" onSubmit={handleLoginSubmit}>
             <div className="auth-field">
               <input id="login-id" type="text" placeholder=" "
@@ -506,131 +654,238 @@ export default function Login({ defaultSignUp = false }) {
           ) : (
             /* ══ SIGN UP FORM ══ */
             <>
-              <h1 className="auth-heading">Employee Sign Up</h1>
-              {signupMsg.text && (
-                <p className="auth-error" style={{
-                  background: signupMsg.type === 'success' ? 'rgba(34, 197, 94, 0.1)' : 'rgba(239, 68, 68, 0.1)',
-                  color: signupMsg.type === 'success' ? '#22c55e' : '#ef4444',
-                  border: `1px solid ${signupMsg.type === 'success' ? 'rgba(34, 197, 94, 0.2)' : 'rgba(239, 68, 68, 0.2)'}`
-                }}>
-                  {signupMsg.text}
-                </p>
+              {!signupSignature && (
+                /* Step 1: Verify ID */
+                <>
+                  <div className="signup-header-icon">
+                    <UserPlusIcon />
+                  </div>
+                  <h1 className="auth-heading">Employee Sign Up</h1>
+                  <p className="signup-sub">Verify your ID to continue</p>
+                  {signupMsg.text && (
+                    <p className="auth-error" style={{
+                      background: signupMsg.type === 'success' ? 'rgba(34, 197, 94, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+                      color: signupMsg.type === 'success' ? '#22c55e' : '#ef4444',
+                      border: `1px solid ${signupMsg.type === 'success' ? 'rgba(34, 197, 94, 0.2)' : 'rgba(239, 68, 68, 0.2)'}`
+                    }}>
+                      {signupMsg.text}
+                    </p>
+                  )}
+
+                  <form className="auth-form" onSubmit={handleVerifySignUpId}>
+                    <div className="auth-field" data-has-value={!!signupData.institutionId}>
+                      <input
+                        id="signup-id"
+                        type="text"
+                        placeholder=" "
+                        value={signupData.institutionId}
+                        onChange={e => setSignupData({ ...signupData, institutionId: e.target.value })}
+                        disabled={signupLoading}
+                      />
+                      <label className="auth-label" htmlFor="signup-id">Institution ID</label>
+                    </div>
+
+                    <div className="btn-wrapper-center" style={{ flexDirection: 'column', gap: '15px', marginTop: '15px' }}>
+                      <button type="submit" className="btn-auth-primary" disabled={signupLoading}>
+                        {signupLoading ? "VERIFYING..." : "VERIFY ID"}
+                      </button>
+                      <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
+                        Already have an account? <Link to="/" style={{ color: 'var(--color-primary)', fontWeight: '600', textDecoration: 'none' }}>Sign In</Link>
+                      </p>
+                    </div>
+                  </form>
+                </>
               )}
 
-              {signupStep === 1 ? (
-                /* Step 1: Verify ID */
-                <form className="auth-form" onSubmit={handleVerifySignUpId}>
-                  <div className="auth-field" data-has-value={!!signupData.institutionId}>
-                    <input
-                      id="signup-id"
-                      type="text"
-                      placeholder=" "
-                      value={signupData.institutionId}
-                      onChange={e => setSignupData({ ...signupData, institutionId: e.target.value })}
-                      disabled={signupLoading}
-                    />
-                    <label className="auth-label" htmlFor="signup-id">Institution ID</label>
+              {signupSignature && !isOtpVerified && (
+                /* Step 1.5: Enter OTP (Reference Layout) */
+                <>
+                  <div className="signup-header-icon">
+                    <UserPlusIcon />
                   </div>
-                  <div className="btn-wrapper-center" style={{ flexDirection: 'column', gap: '15px' }}>
-                    <button type="submit" className="btn-auth-primary" disabled={signupLoading}>
-                      {signupLoading ? "VERIFYING..." : "VERIFY ID"}
-                    </button>
-                    <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
-                      Already have an account? <Link to="/" style={{ color: 'var(--color-primary)', fontWeight: '600', textDecoration: 'none' }}>Sign In</Link>
+                  <h1 className="auth-heading">Employee Sign Up</h1>
+                  <p className="signup-sub">Verify your mobile number to continue</p>
+                  
+                  <div className="success-banner">
+                    <CheckCircleIcon />
+                    <span>OTP sent successfully to your registered mobile number</span>
+                  </div>
+
+                  {signupMsg.text && signupMsg.type === 'error' && (
+                    <p className="auth-error" style={{
+                      background: signupMsg.type === 'success' ? 'rgba(34, 197, 94, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+                      color: signupMsg.type === 'success' ? '#22c55e' : '#ef4444',
+                      border: `1px solid ${signupMsg.type === 'success' ? 'rgba(34, 197, 94, 0.2)' : 'rgba(239, 68, 68, 0.2)'}`
+                    }}>
+                      {signupMsg.text}
                     </p>
-                  </div>
-                </form>
-              ) : (
+                  )}
+
+                  <form className="auth-form" onSubmit={handleVerifySignUpOtp}>
+                    <div className="signup-info-box">
+                      <div className="signup-info-col">
+                        <div className="signup-info-icon">
+                          <BankIcon />
+                        </div>
+                        <div className="signup-info-col-details">
+                          <span className="signup-info-label">Institution ID</span>
+                          <span className="signup-info-val">{signupData.institutionId}</span>
+                        </div>
+                      </div>
+                      <div className="signup-info-divider"></div>
+                      <div className="signup-info-col">
+                        <div className="signup-info-icon">
+                          <PhoneIcon />
+                        </div>
+                        <div className="signup-info-col-details">
+                          <span className="signup-info-label">OTP sent to</span>
+                          <span className="signup-info-val">{signupDetails.phone ? `******${signupDetails.phone.slice(-4)}` : ''}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="otp-box-container">
+                      <label className="otp-box-label">Enter OTP</label>
+                      <div className="otp-box-inputs">
+                        {otpDigits.map((digit, idx) => (
+                          <input
+                            key={idx}
+                            id={`otp-input-${idx}`}
+                            type="text"
+                            maxLength="1"
+                            className="otp-digit-input"
+                            value={digit}
+                            onChange={e => handleOtpDigitChange(idx, e.target.value)}
+                            onKeyDown={e => handleOtpKeyDown(idx, e)}
+                            disabled={signupLoading}
+                            autoComplete="one-time-code"
+                          />
+                        ))}
+                      </div>
+                    </div>
+
+                    <button type="submit" className="btn-verify-otp" disabled={signupLoading}>
+                      {signupLoading ? "VERIFYING..." : "VERIFY OTP"} <ArrowRightIcon />
+                    </button>
+
+                    <div className="or-divider">
+                      <span>OR</span>
+                    </div>
+
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', width: '100%' }}>
+                      <button 
+                        type="button" 
+                        className="action-link" 
+                        onClick={() => handleVerifySignUpId({ preventDefault: () => {} })} 
+                        disabled={signupLoading}
+                      >
+                        <ReloadIcon /> Resend OTP
+                      </button>
+                      <button 
+                        type="button" 
+                        className="action-link" 
+                        onClick={handleBackToSignUpVerify} 
+                        disabled={signupLoading}
+                      >
+                        <BankIcon /> Change Institution ID
+                      </button>
+                    </div>
+
+                    <div className="signup-footer-secure">
+                      <ShieldCheckIcon /> Your information is secure and encrypted
+                    </div>
+                  </form>
+                </>
+              )}
+
+              {isOtpVerified && (
                 /* Step 2: Fill Details */
-                <form className="auth-form signup-form" onSubmit={handleSignUpSubmit}>
-                  <div className="auth-field" data-has-value={true}>
-                    <input
-                      id="signup-name"
-                      type="text"
-                      placeholder=" "
-                      value={signupDetails.fullname}
-                      disabled
-                    />
-                    <label className="auth-label" htmlFor="signup-name">Full Name</label>
+                <>
+                  <div className="signup-header-icon">
+                    <UserPlusIcon />
                   </div>
-                  <div className="auth-field" data-has-value={true}>
-                    <input
-                      id="signup-phone"
-                      type="text"
-                      placeholder=" "
-                      value={signupDetails.phone}
-                      disabled
-                    />
-                    <label className="auth-label" htmlFor="signup-phone">Mobile No</label>
-                  </div>
-                  <div className="auth-field" data-has-value={true}>
-                    <input
-                      id="signup-dept"
-                      type="text"
-                      placeholder=" "
-                      value={signupDetails.department}
-                      disabled
-                    />
-                    <label className="auth-label" htmlFor="signup-dept">Department</label>
-                  </div>
-                  <div className="auth-field" data-has-value={true}>
-                    <input
-                      id="signup-desig"
-                      type="text"
-                      placeholder=" "
-                      value={signupDetails.designation}
-                      disabled
-                    />
-                    <label className="auth-label" htmlFor="signup-desig">Designation</label>
-                  </div>
-                  <div className="auth-field field-full" data-has-value={!!signupData.email}>
-                    <input
-                      id="signup-email"
-                      type="email"
-                      placeholder=" "
-                      value={signupData.email}
-                      onChange={e => setSignupData({ ...signupData, email: e.target.value })}
-                      disabled={signupLoading}
-                    />
-                    <label className="auth-label" htmlFor="signup-email">Email ID</label>
-                  </div>
-                  <div className="auth-field" data-has-value={!!signupData.password}>
-                    <input
-                      id="signup-pass"
-                      type={showSignPass ? 'text' : 'password'}
-                      placeholder=" "
-                      value={signupData.password}
-                      onChange={e => setSignupData({ ...signupData, password: e.target.value })}
-                      disabled={signupLoading}
-                    />
-                    <label className="auth-label" htmlFor="signup-pass">Password</label>
-                    <button type="button" className="password-toggle" onClick={() => setShowSignPass(!showSignPass)}>
-                      {showSignPass ? <EyeOffIcon /> : <EyeIcon />}
-                    </button>
-                  </div>
-                  <div className="auth-field" data-has-value={!!signupData.confirmPassword}>
-                    <input
-                      id="signup-confirm"
-                      type={showSignConfirm ? 'text' : 'password'}
-                      placeholder=" "
-                      value={signupData.confirmPassword}
-                      onChange={e => setSignupData({ ...signupData, confirmPassword: e.target.value })}
-                      disabled={signupLoading}
-                    />
-                    <label className="auth-label" htmlFor="signup-confirm">Confirm Password</label>
-                    <button type="button" className="password-toggle" onClick={() => setShowSignConfirm(!showSignConfirm)}>
-                      {showSignConfirm ? <EyeOffIcon /> : <EyeIcon />}
-                    </button>
-                  </div>
-                  <div className="btn-wrapper-center" style={{ flexDirection: 'column', gap: '15px' }}>
-                    <button type="submit" className="btn-auth-primary" disabled={signupLoading}>
-                      {signupLoading ? "CREATING ACCOUNT..." : "REGISTER"}
-                    </button>
-                    <button type="button" className="auth-forgot auth-forgot-center" onClick={handleBackToSignUpVerify} disabled={signupLoading}>
-                      Change Institution ID
-                    </button>
-                  </div>
-                </form>
+                  <h1 className="auth-heading">Employee Sign Up</h1>
+                  <p className="signup-sub">Complete your profile setup</p>
+                  {signupMsg.text && (
+                    <p className="auth-error" style={{
+                      background: signupMsg.type === 'success' ? 'rgba(34, 197, 94, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+                      color: signupMsg.type === 'success' ? '#22c55e' : '#ef4444',
+                      border: `1px solid ${signupMsg.type === 'success' ? 'rgba(34, 197, 94, 0.2)' : 'rgba(239, 68, 68, 0.2)'}`
+                    }}>
+                      {signupMsg.text}
+                    </p>
+                  )}
+
+                  <form className="auth-form signup-form" onSubmit={handleSignUpSubmit}>
+                    <div className="auth-field" data-has-value={true}>
+                      <input id="signup-name" type="text" placeholder=" " value={signupDetails.fullname} disabled />
+                      <label className="auth-label" htmlFor="signup-name">Full Name</label>
+                    </div>
+                    <div className="auth-field" data-has-value={true}>
+                      <input id="signup-phone" type="text" placeholder=" " value={signupDetails.phone} disabled />
+                      <label className="auth-label" htmlFor="signup-phone">Mobile No</label>
+                    </div>
+                    <div className="auth-field" data-has-value={true}>
+                      <input id="signup-dept" type="text" placeholder=" " value={signupDetails.department} disabled />
+                      <label className="auth-label" htmlFor="signup-dept">Department</label>
+                    </div>
+                    <div className="auth-field" data-has-value={true}>
+                      <input id="signup-desig" type="text" placeholder=" " value={signupDetails.designation} disabled />
+                      <label className="auth-label" htmlFor="signup-desig">Designation</label>
+                    </div>
+                    <div className="auth-field field-full" data-has-value={!!signupData.email}>
+                      <input
+                        id="signup-email"
+                        type="email"
+                        placeholder=" "
+                        value={signupData.email}
+                        onChange={e => setSignupData({ ...signupData, email: e.target.value })}
+                        disabled={signupLoading}
+                        autoComplete="off"
+                      />
+                      <label className="auth-label" htmlFor="signup-email">Email ID</label>
+                    </div>
+                    <div className="auth-field" data-has-value={!!signupData.password}>
+                      <input
+                        id="signup-pass"
+                        type={showSignPass ? 'text' : 'password'}
+                        placeholder=" "
+                        value={signupData.password}
+                        onChange={e => setSignupData({ ...signupData, password: e.target.value })}
+                        disabled={signupLoading}
+                        autoComplete="new-password"
+                      />
+                      <label className="auth-label" htmlFor="signup-pass">Password</label>
+                      <button type="button" className="password-toggle" onClick={() => setShowSignPass(!showSignPass)}>
+                        {showSignPass ? <EyeOffIcon /> : <EyeIcon />}
+                      </button>
+                    </div>
+                    <div className="auth-field" data-has-value={!!signupData.confirmPassword}>
+                      <input
+                        id="signup-confirm"
+                        type={showSignConfirm ? 'text' : 'password'}
+                        placeholder=" "
+                        value={signupData.confirmPassword}
+                        onChange={e => setSignupData({ ...signupData, confirmPassword: e.target.value })}
+                        disabled={signupLoading}
+                        autoComplete="new-password"
+                      />
+                      <label className="auth-label" htmlFor="signup-confirm">Confirm Password</label>
+                      <button type="button" className="password-toggle" onClick={() => setShowSignConfirm(!showSignConfirm)}>
+                        {showSignConfirm ? <EyeOffIcon /> : <EyeIcon />}
+                      </button>
+                    </div>
+
+                    <div className="btn-wrapper-center field-full" style={{ flexDirection: 'column', gap: '15px', marginTop: '20px', width: '100%' }}>
+                      <button type="submit" className="btn-auth-primary" disabled={signupLoading}>
+                        {signupLoading ? "CREATING ACCOUNT..." : "REGISTER"}
+                      </button>
+                      <button type="button" className="auth-forgot auth-forgot-center" onClick={handleBackToSignUpVerify} disabled={signupLoading}>
+                        Change Institution ID
+                      </button>
+                    </div>
+                  </form>
+                </>
               )}
             </>
           )}
