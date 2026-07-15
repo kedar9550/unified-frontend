@@ -564,6 +564,7 @@ const FacultyDashboard = () => {
                             fontSize: 13,
                             fontWeight: 700,
                             color: "var(--text-primary)",
+                            mr: 1.5,
                           }}
                         >
                           {item.value}
