@@ -452,7 +452,7 @@ export default function NovelProductPublication() {
   );
 
   const renderSelectYear = () => {
-    const activeYearDoc = academicYears[0];
+    const activeYearDoc = academicYears.find(y => y.active) || academicYears[0];
     let priorYearStr = "";
     if (activeYearDoc && activeYearDoc.year) {
       const parts = activeYearDoc.year.split('-');
@@ -460,7 +460,16 @@ export default function NovelProductPublication() {
         priorYearStr = `${parseInt(parts[0], 10) - 1}-${parseInt(parts[1], 10) - 1}`;
       }
     }
-    const filteredYears = academicYears;
+    
+    // Only show Active and Prior year
+    let filteredYears = academicYears.filter(y => y._id === activeYearDoc?._id || y.year === priorYearStr);
+    
+    // Ensure active is first
+    filteredYears.sort((a, b) => {
+        if (a._id === activeYearDoc?._id) return -1;
+        if (b._id === activeYearDoc?._id) return 1;
+        return 0;
+    });
 
     return (
       <Box sx={{ maxWidth: 500, mx: "auto", mt: 5 }}>

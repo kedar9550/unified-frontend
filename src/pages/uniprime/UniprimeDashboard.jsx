@@ -62,7 +62,9 @@ const UniprimeDashboard = () => {
     programsList: [],
     branchesList: [],
     recentUsers: [],
-    roleDistribution: []
+    roleDistribution: [],
+    activeYearStart: null,
+    activeYearEnd: null
   });
 
   useEffect(() => {
@@ -87,7 +89,9 @@ const UniprimeDashboard = () => {
             programsList: res.data.data.programsList || [],
             branchesList: res.data.data.branchesList || [],
             recentUsers: (res.data.data.recentUsers || []).filter(Boolean),
-            roleDistribution: res.data.data.roleDistribution || []
+            roleDistribution: res.data.data.roleDistribution || [],
+            activeYearStart: res.data.data.activeYearStart || null,
+            activeYearEnd: res.data.data.activeYearEnd || null
           });
         }
       } catch (error) {
@@ -170,7 +174,6 @@ const UniprimeDashboard = () => {
   ];
 
   const quickActions = [
-    { title: "Add Academic Year", desc: "Create new year", icon: <AddBox color="primary" />, path: "/academics/management" },
     { title: "Add Department", desc: "Create new department", icon: <DomainAdd color="success" />, path: "/academics/department" },
     { title: "Add Program / Branch", desc: "Add program or branch", icon: <AccountTree color="secondary" />, path: "/academics/programs" },
     { title: "Add User", desc: "Register new user", icon: <PersonAdd sx={{ color: "#00b0ff" }} />, path: "/student/student-uploads" },
@@ -206,6 +209,27 @@ const UniprimeDashboard = () => {
       icon: <Security color="warning" /> 
     },
   ];
+
+  const calculateDurationProgress = (start, end) => {
+    if (!start || !end) return { percent: 0, text: "N/A", dateString: "N/A" };
+    const startDate = new Date(start);
+    const endDate = new Date(end);
+    const now = new Date();
+    
+    const dateString = `${startDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} - ${endDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`;
+    
+    if (now < startDate) return { percent: 0, text: "Not started yet", dateString };
+    if (now > endDate) return { percent: 100, text: "Completed", dateString };
+    
+    const totalDuration = endDate - startDate;
+    const elapsedDuration = now - startDate;
+    const percent = Math.min(100, Math.max(0, (elapsedDuration / totalDuration) * 100));
+    
+    const daysRemaining = Math.ceil((endDate - now) / (1000 * 60 * 60 * 24));
+    return { percent, text: `${daysRemaining} days remaining`, dateString };
+  };
+
+  const durationData = calculateDurationProgress(dashboardData.activeYearStart, dashboardData.activeYearEnd);
 
   return (
     <Box>
@@ -568,34 +592,16 @@ const UniprimeDashboard = () => {
                   </Box>
                 </Box>
 
-                {/* Card 2 */}
-                <Box sx={configBox}>
-                  <Box>
-                    <Typography sx={labelStyle}>
-                      Active Semester
-                    </Typography>
-
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                      <Typography sx={valueStyle}>{dashboardData.activeSemester}</Typography>
-                      <Chip label="Active" size="small" sx={activeChip} />
-                    </Box>
-                  </Box>
-
-                  <Box sx={iconBox("var(--bg-accent-5)")}>
-                    <MenuBook sx={{ color: "#8B5CF6" }} />
-                  </Box>
-                </Box>
-
                 {/* Duration */}
                 <Box sx={{ ...configBox, display: "block" }}>
                   <Box sx={{ display: "flex", gap: 2, mb: 1.5, alignItems: "center" }}>
                     <CalendarMonth sx={{ color: "var(--color-primary)" }} />
                     <Box>
                       <Typography sx={labelStyle}>
-                        Semester Duration
+                        Active Academic Year Duration
                       </Typography>
                       <Typography sx={{ fontWeight: 600 }}>
-                        Jan 15, 2025 - May 30, 2025
+                        {durationData.dateString}
                       </Typography>
                     </Box>
                   </Box>
@@ -603,7 +609,7 @@ const UniprimeDashboard = () => {
                   <Box sx={{ width: "100%" }}>
                     <LinearProgress
                       variant="determinate"
-                      value={60}
+                      value={durationData.percent}
                       sx={{
                         height: 6,
                         borderRadius: 3,
@@ -623,7 +629,7 @@ const UniprimeDashboard = () => {
                         fontWeight: 600,
                       }}
                     >
-                      136 days remaining
+                      {durationData.text}
                     </Typography>
                   </Box>
                 </Box>
