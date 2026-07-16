@@ -441,5 +441,13 @@ export const ROLE_ROUTES = {
   SERVICE_EMP: [
     { text: "Dashboard", path: "/dashboard", icon: <Dashboard /> },
     { text: "Assigned to Me", path: "/service-desk/assigned-to-me", icon: <AssignmentInd /> },
-  ]
+  ],
+
+  "STUDENT EVENT ADMIN": [
+    { text: "Dashboard", path: "/dashboard", icon: <Dashboard /> },
+    { text: "Student Event Admin", path: "/student-event-admin", icon: <AssignmentInd /> },
+
+
+
+  ],
 };

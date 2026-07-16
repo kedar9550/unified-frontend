@@ -75,6 +75,10 @@ import ManageServiceMembers from "./pages/serviceDesk/ManageServiceMembers";
 import AssignedToMe from "./pages/serviceDesk/AssignedToMe";
 import Reports from "./pages/serviceDesk/Reports";
 import FeedbackOverview from "./pages/serviceDesk/FeedbackOverview";
+
+//Student Event Admin
+import StudentEventAdmin from "./pages/studenteventsadmin/evencreation";
+
 const PublicOnlyRoute = ({ children }) => {
   const { user } = useAuth();
   if (user) {
@@ -157,7 +161,7 @@ function App() {
         <Route path="/uniprime/sdg-management" element={<ProtectedRoute element={<SDGManagement />} />} />
         <Route path="/uniprime/proctoring-upload" element={<ProtectedRoute element={<ProctoringUpload />} />} />
         <Route path="/uniprime/discrepancies" element={<ProtectedRoute element={<UniprimeDiscrepancies />} />} />
-        
+
         {/* Value Addition Modules */}
         <Route path="/value-addition/resource-utilization" element={<ProtectedRoute element={<ResourceUtilization />} />} />
         <Route path="/value-addition/contribution" element={<ProtectedRoute element={<Contribution />} />} />
@@ -197,12 +201,12 @@ function App() {
         <Route path="/utilities/generate-qr" element={<ProtectedRoute element={<GenerateQR />} />} />
         <Route path="/utilities/manage-shorten-url" element={<ProtectedRoute element={<ManageShortenUrl />} />} />
         <Route path="/utilities/manage-qr" element={<ProtectedRoute element={<ManageQR />} />} />
-        
+
         {/* Public Redirect Route */}
         <Route path="/r/:shortCode" element={<RedirectHandler />} />
 
         <Route path="/doi-test" element={<DOIFetcher />} />
-        
+
         {/* Service Desk Routes */}
         <Route path="/service-desk/raise" element={<ProtectedRoute element={<RaiseTicket />} />} />
         <Route path="/service-desk/my-tickets" element={<ProtectedRoute element={<MyTickets />} />} />
@@ -213,6 +217,9 @@ function App() {
         <Route path="/service-desk/admin/team" element={<ProtectedRoute element={<ManageServiceMembers />} />} />
         <Route path="/service-desk/reports" element={<ProtectedRoute element={<Reports />} />} />
         <Route path="/service-desk/admin/feedback" element={<ProtectedRoute element={<FeedbackOverview />} />} />
+
+        {/* Student Event Admin */}
+        <Route path="/student-event-admin" element={<ProtectedRoute element={<StudentEventAdmin />} />} />
 
         <Route path="*" element={<ProtectedRoute element={<Box p={4}><Typography variant="h4">Page Content</Typography></Box>} />} />
       </Routes>
