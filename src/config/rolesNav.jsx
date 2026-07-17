@@ -71,6 +71,7 @@ export const ROLE_ROUTES = {
       ],
     },
     // { text: "Administration", path: "/faculty/administration", icon: <AccountBalance /> },
+    { text: "Event Coordination", path: "/faculty/event-coordination", icon: <Groups /> },
     { text: "Self Appraisal", path: "/faculty/appraisal", icon: <Description /> },
     {
       text: "Utilities",
