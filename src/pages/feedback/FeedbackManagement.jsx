@@ -181,7 +181,7 @@ export default function FeedbackManagement() {
       "percentage",
     ];
     const sampleRows = [
-        ["FAC123", "2024-2025", "B.Tech", "CSE", "Mathematics", "MA101", "T", "A", "1", "3", "60", "55", '"=IF(K2>0, ROUND((L2/K2)*100, 1), 0)"'],
+        ["FAC123", "2024-2025", "B.Tech", "CSE", "Mathematics", "MA101", "T", "A", "1", "3", "60", "55", "90.6"],
     ];
     const csvContent = headers.join(",") + "\n" + sampleRows.map(row => row.join(",")).join("\n") + "\n";
     const blob = new Blob([csvContent], { type: "text/csv" });
@@ -268,12 +268,19 @@ export default function FeedbackManagement() {
               </ActionButton>
             )}
             <ActionButton
+              variant="outlined"
               onClick={downloadTemplate}
               sx={{
                 background: "var(--bg-glass)",
                 color: "var(--text-primary)",
-                border: "1px solid var(--border-color)",
+                borderColor: "var(--border-color)",
                 px: 2.5,
+                transition: "all 0.2s ease",
+                "&:hover": {
+                  background: "var(--bg-accent-1)",
+                  borderColor: "var(--color-primary)",
+                  color: "var(--color-primary)",
+                }
               }}
             >
               <DownloadIcon sx={{ mr: 1, fontSize: 18 }} /> Template
