@@ -1603,7 +1603,7 @@ const AppraisalEvaluation = () => {
                                 {(item.status === "Pending" || item.status === "Pending at HOD") ? (
                                   <TableRow sx={{ background: "rgba(232, 160, 0, 0.02)" }}>
                                     <TableCell colSpan={7} sx={{ py: 1.5 }}>
-                                      <Box display="flex" gap={2} alignItems="center" px={1}>
+                                      <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5, alignItems: "flex-start", px: 1 }}>
                                         <TextField
                                           size="small"
                                           fullWidth
@@ -1614,7 +1614,7 @@ const AppraisalEvaluation = () => {
                                             setResUtRemarks(p => ({ ...p, [item._id]: val }));
                                           }}
                                         />
-                                        <Stack direction="row" spacing={1}>
+                                        <Stack direction="row" spacing={1} sx={{ mt: 1.5 }}>
                                           <Button size="small" variant="outlined" color="error" onClick={() => handleResUtHODAction(item._id, "Reject", resUtRemarks[item._id] || "")}>Reject</Button>
                                           <Button size="small" variant="contained" color="success" sx={{ color: "#fff" }} onClick={() => handleResUtHODAction(item._id, "Approve", resUtRemarks[item._id] || "")}>Approve</Button>
                                         </Stack>
@@ -1720,7 +1720,7 @@ const AppraisalEvaluation = () => {
                                 {(item.status === "Pending" || item.status === "Pending at HOD") ? (
                                   <TableRow sx={{ background: "rgba(232, 160, 0, 0.02)" }}>
                                     <TableCell colSpan={5} sx={{ py: 1.5 }}>
-                                      <Box display="flex" gap={2} alignItems="center" px={1}>
+                                      <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5, alignItems: "flex-start", px: 1 }}>
                                         <TextField
                                           size="small"
                                           fullWidth
@@ -1731,7 +1731,7 @@ const AppraisalEvaluation = () => {
                                             setContRemarks(p => ({ ...p, [item._id]: val }));
                                           }}
                                         />
-                                        <Stack direction="row" spacing={1}>
+                                        <Stack direction="row" spacing={1} sx={{ mt: 1.5 }}>
                                           <Button size="small" variant="outlined" color="error" onClick={() => handleContHODAction(item._id, "Reject", contRemarks[item._id] || "")}>Reject</Button>
                                           <Button size="small" variant="contained" color="success" sx={{ color: "#fff" }} onClick={() => handleContHODAction(item._id, "Approve", contRemarks[item._id] || "")}>Approve</Button>
                                         </Stack>
@@ -1866,7 +1866,7 @@ const AppraisalEvaluation = () => {
                                 {role.status === "Pending" ? (
                                   <TableRow sx={{ background: "rgba(232, 160, 0, 0.02)" }}>
                                     <TableCell colSpan={5} sx={{ py: 1.5 }}>
-                                      <Box display="flex" gap={2} alignItems="center" px={1}>
+                                      <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5, alignItems: "flex-start", px: 1 }}>
                                         <TextField
                                           size="small"
                                           fullWidth
@@ -1877,7 +1877,7 @@ const AppraisalEvaluation = () => {
                                             setAdminRemarks(p => ({ ...p, [role.roleName]: val }));
                                           }}
                                         />
-                                        <Stack direction="row" spacing={1}>
+                                        <Stack direction="row" spacing={1} sx={{ mt: 1.5 }}>
                                           <Button size="small" variant="outlined" color="error" onClick={() => handleAdminHODAction(selectedAppraisal.administrationDetail._id, role.roleName, "Reject", adminRemarks[role.roleName] || "")}>Reject</Button>
                                           <Button size="small" variant="contained" color="success" sx={{ color: "#fff" }} onClick={() => handleAdminHODAction(selectedAppraisal.administrationDetail._id, role.roleName, "Approve", adminRemarks[role.roleName] || "")}>Approve</Button>
                                         </Stack>
