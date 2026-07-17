@@ -108,6 +108,7 @@ const ITEM_METADATA = {
   "Contribution": { color: "rgba(180, 83, 9, 0.12)", iconColor: "#b45309", icon: <WorkspacePremium /> },
   "Proctoring Verification": { color: "rgba(124, 58, 237, 0.12)", iconColor: "#7c3aed", icon: <SupervisorAccount /> },
   "Administration Verification": { color: "rgba(91, 33, 182, 0.12)", iconColor: "#a855f7", icon: <AccountBalance /> },
+  "Event Coordination": { color: "rgba(236, 72, 153, 0.12)", iconColor: "#ec4899", icon: <Groups /> },
   "Self Appraisal": { color: "rgba(154, 52, 18, 0.12)", iconColor: "#f97316", icon: <DescriptionIcon /> },
   "Appraisal Settings": { color: "rgba(91, 33, 182, 0.12)", iconColor: "#a855f7", icon: <ManageAccounts /> },
   "Proctoring Upload": { color: "rgba(79, 70, 229, 0.12)", iconColor: "#4f46e5", icon: <Assignment /> },

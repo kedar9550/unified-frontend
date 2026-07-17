@@ -39,6 +39,7 @@ import UniprimeDiscrepancies from "./pages/uniprime/UniprimeDiscrepancies";
 import DOIFetcher from "./pages/faculty/DOITest";
 import FacultyAdministration from "./pages/faculty/FacultyAdministration";
 import AdministrationApprovalList from "./pages/hod/AdministrationApprovalList";
+import EventCoordination from "./pages/faculty/EventCoordination";
 
 import ResourceUtilization from "./pages/faculty/ResourceUtilization";
 import Contribution from "./pages/faculty/Contribution";
@@ -176,6 +177,7 @@ function App() {
         <Route path="/hod/staff" element={<ProtectedRoute element={<StaffList />} />} />
 
         {/* Self Appraisal routes */}
+        <Route path="/faculty/event-coordination" element={<ProtectedRoute element={<EventCoordination />} />} />
         <Route path="/faculty/appraisal" element={<ProtectedRoute element={<SelfAppraisal />} />} />
         <Route path="/hod/appraisal-verification" element={<ProtectedRoute element={<AppraisalEvaluation />} />} />
         <Route path="/uniprime/appraisal-settings" element={<ProtectedRoute element={<AppraisalSettings />} />} />
