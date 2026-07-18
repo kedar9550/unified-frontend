@@ -55,6 +55,8 @@ import AuthorCitationsManagement from './pages/research/AuthorCitationsManagemen
 // Self Appraisal Modules
 import SelfAppraisal from "./pages/faculty/SelfAppraisal";
 import AppraisalSettings from "./pages/uniprime/AppraisalSettings";
+import AppraisalReports from "./pages/uniprime/AppraisalReports";
+import AppraisalReportDetail from "./pages/uniprime/AppraisalReportDetail";
 import AppraisalEvaluation from "./pages/hod/AppraisalEvaluation";
 import AppraisalResearchScoring from "./pages/research/AppraisalResearchScoring";
 import StaffList from "./pages/hod/StaffList";
@@ -181,6 +183,8 @@ function App() {
         <Route path="/faculty/appraisal" element={<ProtectedRoute element={<SelfAppraisal />} />} />
         <Route path="/hod/appraisal-verification" element={<ProtectedRoute element={<AppraisalEvaluation />} />} />
         <Route path="/uniprime/appraisal-settings" element={<ProtectedRoute element={<AppraisalSettings />} />} />
+        <Route path="/uniprime/appraisal-reports" element={<ProtectedRoute element={<AppraisalReports />} />} />
+        <Route path="/uniprime/appraisal-reports/:id" element={<ProtectedRoute element={<AppraisalReportDetail />} />} />
         <Route path="/research-dean/appraisal-finalization" element={<ProtectedRoute element={<AppraisalResearchScoring />} />} />
         <Route path="/research-coordinator/appraisal-finalization" element={<ProtectedRoute element={<AppraisalResearchScoring />} />} />
 

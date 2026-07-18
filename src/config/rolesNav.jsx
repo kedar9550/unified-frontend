@@ -26,7 +26,9 @@ import {
   ListAlt,
   AssignmentInd,
   AccountTree,
-  Assessment
+  Assessment,
+  Settings,
+
 } from "@mui/icons-material";
 import PersonIcon from '@mui/icons-material/Person';
 import React from "react";
@@ -142,9 +144,20 @@ export const ROLE_ROUTES = {
       icon: <Assignment />
     },
     {
-      text: "Appraisal Settings",
-      path: "/uniprime/appraisal-settings",
-      icon: <ManageAccounts />
+      text: "Appraisal",
+      icon: <ManageAccounts />,
+      nested: [
+        {
+          text: "Appraisal Settings",
+          path: "/uniprime/appraisal-settings",
+          icon: <Settings />
+        },
+        {
+          text: "Appraisal Reports",
+          path: "/uniprime/appraisal-reports",
+          icon: <Link />
+        }
+      ]
     },
     {
       text: "Discrepancies",

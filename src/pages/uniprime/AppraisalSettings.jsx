@@ -83,12 +83,23 @@ const AppraisalSettings = () => {
   useEffect(() => {
     const fetchYears = async () => {
       try {
-        const res = await axiosInstance.get("/api/academic-years");
-        const yearsList = res.data?.years || [];
-        setAcademicYears(yearsList);
-        if (yearsList.length > 0) {
-          const active = yearsList.find((y) => y.isGlobalActive);
-          setSelectedYear(active ? active._id : yearsList[0]._id);
+        const [resYears, resActive] = await Promise.all([
+          axiosInstance.get("/api/academic-years"),
+          axiosInstance.get("/api/appraisal/active-year")
+        ]);
+        
+        const activeAppraisalYearId = resActive.data?.data;
+        const yearsList = resYears.data?.years || [];
+        
+        const mappedYears = yearsList.map(y => ({
+          ...y,
+          isAppraisalActive: activeAppraisalYearId === y._id
+        }));
+        
+        setAcademicYears(mappedYears);
+        if (mappedYears.length > 0) {
+          const active = mappedYears.find((y) => y.isAppraisalActive);
+          setSelectedYear(active ? active._id : mappedYears[0]._id);
         }
       } catch (err) {
         toast.error(err.response?.data?.message || "Failed to load academic years");
@@ -596,12 +607,12 @@ const AppraisalSettings = () => {
                       </Typography>
 
                       <Box sx={{ flexShrink: 0 }}>
-                        {isEditing ? (
+                        {isEditing && !item.readOnly ? (
                           <TextField
                             type="number"
                             size="small"
                             value={item.value}
-                            onChange={(e) => item.setter(e.target.value)}
+                            onChange={(e) => item.setter && item.setter(e.target.value)}
                             sx={cellInputStyle}
                           />
                         ) : (
@@ -1055,7 +1066,7 @@ const AppraisalSettings = () => {
                 }
               }}
             >
-              Save Changes
+              Save
             </Button>
           </Box>
         }
@@ -1092,6 +1103,7 @@ const AppraisalSettings = () => {
             <Tab label="2. Research Rules" icon={<Science fontSize="small" />} iconPosition="start" sx={horizontalTabStyle} />
             <Tab label="3. Value Addition" icon={<WorkspacePremium fontSize="small" />} iconPosition="start" sx={horizontalTabStyle} />
             <Tab label="4. Administrative Roles" icon={<SupervisorAccount fontSize="small" />} iconPosition="start" sx={horizontalTabStyle} />
+            <Tab label="5. Minimum Points" icon={<Stars fontSize="small" />} iconPosition="start" sx={horizontalTabStyle} />
           </Tabs>
         </Box>
 
@@ -1381,6 +1393,52 @@ const AppraisalSettings = () => {
                 <Box sx={{ flex: "1 1 100%" }}>
                   {renderAdminRolesCard()}
                 </Box>
+              </Box>
+            </Box>
+          )}
+
+          {/* ========================================================
+              TAB 5: MINIMUM POINTS REQUIREMENTS
+              ======================================================== */}
+          {activeTab === 4 && (
+            <Box sx={{ animation: "fadeIn 0.3s ease" }}>
+              <Box sx={{ display: "flex", gap: 1, alignItems: "center", mb: 3 }}>
+                <Stars color="primary" />
+                <Typography variant="subtitle1" fontWeight={700} color="var(--text-primary)">
+                  5. Minimum Points Requirements
+                </Typography>
+              </Box>
+
+              <Box sx={{ display: "flex", flexWrap: "wrap", gap: 3 }}>
+                {["doctorates", "nonDoctorates", "leadershipTeam"].map((category) => (
+                  <Box key={category} sx={{ flex: "1 1 420px", minWidth: { xs: "100%", sm: "380px" } }}>
+                    {renderSettingsCard({
+                      id: `min_points_${category}`,
+                      title: `Minimum Points for ${category === "doctorates" ? "Doctorates" : category === "nonDoctorates" ? "Non-Doctorates" : "Leadership Team"}`,
+                      icon: <Stars fontSize="small" />,
+                      items: [
+                        { label: "Teaching", value: config.minimumPoints?.[category]?.teaching ?? 0, setter: (val) => setConfig(prev => ({ ...prev, minimumPoints: { ...prev.minimumPoints, [category]: { ...prev.minimumPoints?.[category], teaching: Number(val) } } })) },
+                        { label: "Research", value: config.minimumPoints?.[category]?.research ?? 0, setter: (val) => setConfig(prev => ({ ...prev, minimumPoints: { ...prev.minimumPoints, [category]: { ...prev.minimumPoints?.[category], research: Number(val) } } })) },
+                        { label: "Value Addition", value: config.minimumPoints?.[category]?.valueAddition ?? 0, setter: (val) => setConfig(prev => ({ ...prev, minimumPoints: { ...prev.minimumPoints, [category]: { ...prev.minimumPoints?.[category], valueAddition: Number(val) } } })) },
+                        { label: "Administration", value: config.minimumPoints?.[category]?.administration ?? 0, setter: (val) => setConfig(prev => ({ ...prev, minimumPoints: { ...prev.minimumPoints, [category]: { ...prev.minimumPoints?.[category], administration: Number(val) } } })) },
+                        { label: "Interpersonal Skills", value: config.minimumPoints?.[category]?.interpersonalSkills ?? 0, setter: (val) => setConfig(prev => ({ ...prev, minimumPoints: { ...prev.minimumPoints, [category]: { ...prev.minimumPoints?.[category], interpersonalSkills: Number(val) } } })) },
+                        { 
+                          label: "TOTAL", 
+                          value: (config.minimumPoints?.[category]?.teaching || 0) + 
+                                 (config.minimumPoints?.[category]?.research || 0) + 
+                                 (config.minimumPoints?.[category]?.valueAddition || 0) + 
+                                 (config.minimumPoints?.[category]?.administration || 0) + 
+                                 (config.minimumPoints?.[category]?.interpersonalSkills || 0), 
+                          readOnly: true, 
+                          isCap: true 
+                        }
+                      ],
+                      accentColor: "#f59e0b",
+                      accentBg: "rgba(245, 158, 11, 0.08)",
+                      hoverBorderColor: "rgba(245, 158, 11, 0.2)"
+                    })}
+                  </Box>
+                ))}
               </Box>
             </Box>
           )}
