@@ -111,6 +111,7 @@ const ITEM_METADATA = {
   "Event Coordination": { color: "rgba(236, 72, 153, 0.12)", iconColor: "#ec4899", icon: <Groups /> },
   "Self Appraisal": { color: "rgba(154, 52, 18, 0.12)", iconColor: "#f97316", icon: <DescriptionIcon /> },
   "Appraisal Settings": { color: "rgba(91, 33, 182, 0.12)", iconColor: "#a855f7", icon: <ManageAccounts /> },
+  "Appraisal Reports": { color: "rgba(154, 52, 18, 0.12)", iconColor: "#f97316", icon: <Assessment /> },
   "Proctoring Upload": { color: "rgba(79, 70, 229, 0.12)", iconColor: "#4f46e5", icon: <Assignment /> },
   "Appraisal Verification": { color: "rgba(22, 101, 52, 0.12)", iconColor: "#22c55e", icon: <DescriptionIcon /> },
   "Appraisal Finalization": { color: "rgba(30, 64, 175, 0.12)", iconColor: "#3b82f6", icon: <DescriptionIcon /> },

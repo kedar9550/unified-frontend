@@ -34,7 +34,9 @@ import {
   Radio,
   RadioGroup,
   FormControlLabel,
-  FormLabel} from "@mui/material";
+  FormLabel,
+  TablePagination
+} from "@mui/material";
 import {
   Send,
   CloudUpload,
@@ -69,6 +71,7 @@ import axiosInstance from "../../api/axios";
 import { toast } from "sonner";
 import { SubLabel, Grid2, NoteBox, FileField } from "../../components/faculty/PublicationFormFields";
 import { labelStyle } from "../../components/faculty/publicationConstants";
+import PageHeader from "../../components/common/PageHeader";
 
 const ADMINISTRATIVE_ROLES_LIST = [
   { id: "dean", label: "Deans / Assoc Deans / CoE" },
@@ -176,6 +179,13 @@ const SelfAppraisal = () => {
   const [faculty, setFaculty] = useState(null);
   const [profileComplete, setProfileComplete] = useState(true);
   const [missingFields, setMissingFields] = useState([]);
+
+  // List View States
+  const [viewMode, setViewMode] = useState("list"); // "list" | "form"
+  const [myAppraisals, setMyAppraisals] = useState([]);
+  const [fetchingAppraisals, setFetchingAppraisals] = useState(true);
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(5);
 
   const [citationYear, setCitationYear] = useState("");
   const [previousHIndexYear, setPreviousHIndexYear] = useState("");
@@ -324,24 +334,64 @@ const SelfAppraisal = () => {
   const [contLoading, setContLoading] = useState(false);
   const [selectedContDetails, setSelectedContDetails] = useState(null);
 
-  // Fetch Active Appraisal Academic Year
-  useEffect(() => {
-    const fetchActiveAppraisalYear = async () => {
-      try {
-        const res = await axiosInstance.get("/api/appraisal/active-year");
-        if (res.data && res.data.success && res.data.data) {
-          const activeYear = res.data.data;
-          setAcademicYears([activeYear]);
-          setSelectedYear(activeYear._id);
-        } else {
-          setAppraisalError("No active appraisal year is configured in Prime.");
-        }
-      } catch (err) {
-        setAppraisalError(err.response?.data?.message || "Failed to load active appraisal year");
+  const fetchMyAppraisals = async () => {
+    setFetchingAppraisals(true);
+    try {
+      const res = await axiosInstance.get("/api/appraisal/my-appraisals");
+      if (res.data && res.data.success) {
+        setMyAppraisals(res.data.data);
       }
-    };
-    fetchActiveAppraisalYear();
+    } catch (error) {
+      console.error("Failed to fetch my appraisals:", error);
+      toast.error("Failed to load your appraisals.");
+    } finally {
+      setFetchingAppraisals(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchMyAppraisals();
   }, []);
+
+  const handleApplyNew = async () => {
+    try {
+      const res = await axiosInstance.get("/api/appraisal/active-year");
+      if (res.data && res.data.success && res.data.data) {
+        const activeYearObj = res.data.data;
+        const activeYearId = typeof activeYearObj === 'string' ? activeYearObj : activeYearObj._id;
+
+        if (!activeYearId) {
+          toast.error("Active appraisal year is invalid.");
+          return;
+        }
+
+        const existing = myAppraisals.find(app => {
+          const appId = typeof app.academicYearId === 'object' ? app.academicYearId._id : app.academicYearId;
+          return appId === activeYearId;
+        });
+
+        if (existing) {
+          if (existing.status === "Draft" || existing.status === "Rejected by HOD") {
+            toast.info(`Opening existing ${existing.status} appraisal.`);
+            setAcademicYears([activeYearObj]);
+            setSelectedYear(activeYearId);
+            setViewMode("form");
+          } else {
+            toast.warning(`Appraisal for this year is already ${existing.status}.`);
+          }
+        } else {
+          setAcademicYears([activeYearObj]);
+          setSelectedYear(activeYearId);
+          setViewMode("form");
+        }
+      } else {
+        toast.error("No active appraisal year is configured.");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error(err.response?.data?.message || "Failed to initiate appraisal");
+    }
+  };
 
   // Unresolved co-authored claims state variables
   const [unresolvedClaims, setUnresolvedClaims] = useState([]);
@@ -414,6 +464,7 @@ const SelfAppraisal = () => {
         setAppraisalError(err.response?.data?.message || "Self-appraisal is not active for this academic year.");
       } else {
         toast.error("Failed to fetch or calculate self appraisal");
+        setAppraisalError(err.response?.data?.message || "Failed to fetch or calculate self appraisal");
       }
       setAppraisal(null);
       setFaculty(null);
@@ -1851,6 +1902,126 @@ const SelfAppraisal = () => {
     );
   };
 
+  if (viewMode === "list") {
+    if (fetchingAppraisals) {
+      return (
+        <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "50vh" }}>
+          <Loader />
+        </Box>
+      );
+    }
+    return (
+      <Box>
+        <PageHeader
+          title="Faculty Self Appraisal"
+          subtitle="Manage and submit your self appraisal applications"
+        />
+        <Box p={3} sx={{ animation: "fadeIn 0.5s ease" }}>
+          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
+            <Typography variant="h6" sx={{ color: "var(--text-primary)", fontWeight: 800 }}>
+              My Appraisals
+            </Typography>
+            <Button
+              variant="contained"
+              onClick={handleApplyNew}
+              sx={{
+                background: "var(--gradient-primary)",
+                px: 3,
+                fontWeight: 700,
+                textTransform: "none",
+                "&:hover": { opacity: 0.9, transform: "translateY(-1px)", boxShadow: "0 4px 12px rgba(0,0,0,0.1)" },
+                transition: "all 0.2s ease"
+              }}
+            >
+              Apply New
+            </Button>
+          </Box>
+
+          {myAppraisals.length === 0 ? (
+            <Box sx={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              py: 8,
+              px: 3,
+              background: "var(--bg-panel)",
+              borderRadius: "16px",
+              border: "1px dashed var(--border-color)",
+              boxShadow: "var(--shadow-premium)",
+              textAlign: "center"
+            }}>
+              <Typography variant="h6" sx={{ color: "var(--text-secondary)", fontWeight: 600, mb: 1 }}>
+                No Previous Appraisals
+              </Typography>
+              <Typography variant="body2" sx={{ color: "text.secondary", mb: 3, maxWidth: "400px" }}>
+                You haven't submitted any appraisal details yet. Click the "Apply New" button to start.
+              </Typography>
+            </Box>
+          ) : (
+            <TableContainer component={Paper} sx={{ borderRadius: "16px", background: "var(--bg-panel)", border: "1px solid var(--border-color)", boxShadow: "var(--shadow-premium)", overflowX: "auto" }}>
+              <Table sx={{ minWidth: 700 }}>
+                <TableHead sx={{ background: "var(--gradient-primary)" }}>
+                  <TableRow>
+                    <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Academic Year</TableCell>
+                    <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }} align="center">Min Points Required</TableCell>
+                    <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }} align="center">Total Points Gained</TableCell>
+                    <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }} align="center">Status</TableCell>
+                    <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }} align="center">Actions</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {myAppraisals.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((app) => (
+                    <TableRow key={app._id} sx={{ "&:hover": { background: "var(--bg-accent-1)" }, transition: "background 0.15s" }}>
+                      <TableCell sx={{ color: "var(--text-secondary)", py: 2, fontWeight: 600 }}>{app.academicYearId?.year || "N/A"}</TableCell>
+                      <TableCell align="center" sx={{ color: "var(--text-secondary)", py: 2, fontWeight: 600 }}>{app.minPointsRequired}</TableCell>
+                      <TableCell align="center" sx={{ py: 2 }}>
+                        <Chip label={app.totalPointsGained} color="primary" variant="outlined" size="small" sx={{ fontWeight: 700, fontSize: "0.85rem", minWidth: "60px" }} />
+                      </TableCell>
+                      <TableCell align="center" sx={{ py: 2 }}>
+                        {getStatusChip(app.status)}
+                      </TableCell>
+                      <TableCell align="center" sx={{ py: 2 }}>
+                        <IconButton
+                          color="primary"
+                          onClick={() => {
+                            setAcademicYears([app.academicYearId]);
+                            setSelectedYear(app.academicYearId._id);
+                            setViewMode("form");
+                          }}
+                          sx={{ bgcolor: "rgba(59,130,246,0.1)", "&:hover": { bgcolor: "rgba(59,130,246,0.2)" } }}
+                        >
+                          <Visibility fontSize="small" />
+                        </IconButton>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+              <TablePagination
+                component="div"
+                count={myAppraisals.length}
+                page={page}
+                onPageChange={(_, newPage) => setPage(newPage)}
+                rowsPerPage={rowsPerPage}
+                onRowsPerPageChange={(e) => { setRowsPerPage(parseInt(e.target.value, 10)); setPage(0); }}
+                rowsPerPageOptions={[5, 10, 25]}
+                sx={{
+                  borderTop: "1px solid var(--border-color)",
+                  color: "var(--text-secondary)",
+                  ".MuiTablePagination-select": { color: "var(--text-primary)" },
+                  ".MuiTablePagination-selectIcon": { color: "var(--text-secondary)" },
+                  ".MuiIconButton-root": { color: "var(--text-secondary)" },
+                  ".MuiIconButton-root.Mui-disabled": { opacity: 0.3 }
+                }}
+              />
+            </TableContainer>
+          )}
+        </Box>
+      </Box>
+    );
+  }
+
   if (!appraisal) {
     if (appraisalError) {
       return (
@@ -1949,10 +2120,10 @@ const SelfAppraisal = () => {
             </Typography>
 
             <Button
- variant="contained"
- onClick={() => setShowGatekeeperModal(true)}
- sx={{ background: "var(--gradient-primary)", color: "#fff", fontWeight: 700, px: 4, py: 1.5 }}
- >
+              variant="contained"
+              onClick={() => setShowGatekeeperModal(true)}
+              sx={{ background: "var(--gradient-primary)", color: "#fff", fontWeight: 700, px: 4, py: 1.5 }}
+            >
               Resolve Pending Claims
             </Button>
           </Card>
@@ -1966,12 +2137,13 @@ const SelfAppraisal = () => {
         sx={{
           p: 4,
           display: "flex",
+          flexDirection: "column",
           justifyContent: "center",
           alignItems: "center",
           minHeight: "50vh",
         }}
       >
-        <Typography color="var(--text-secondary)">
+        <Typography color="var(--text-secondary)" mb={2}>
           Loading appraisal details...
         </Typography>
       </Box>
@@ -1981,1672 +2153,1358 @@ const SelfAppraisal = () => {
   const eligibility = getEligibilityChecklist();
 
   return (
-    <Box p={4} sx={{ maxWidth: 1300, margin: "0 auto", animation: "fadeIn 0.5s ease" }}>
+    <Box>
+      <PageHeader
+        title="Faculty Self Appraisal"
+        subtitle="Fill, review, and submit your performance appraisal form."
+        onBack={() => setViewMode("list")}
+      />
+      <Box p={4} sx={{ maxWidth: 1300, margin: "0 auto", animation: "fadeIn 0.5s ease" }}>
 
-      {/* Header Panel */}
-      <Box
-        sx={{
-          display: "flex",
-          flexDirection: "column",
-          mb: 4,
-          p: 3.5,
-          borderRadius: "24px",
-          background: "var(--bg-panel)",
-          border: "1px solid var(--border-color)",
-          backdropFilter: "blur(12px)",
-          boxShadow: "var(--shadow-premium)",
-          gap: 3
-        }}
-      >
-        {/* Top Row: Status and Academic Year */}
-        <Box sx={{ display: "flex", flexDirection: { xs: "column", md: "row" }, gap: 3, alignItems: { xs: "stretch", md: "center" }, justifyContent: "space-between", width: "100%" }}>
-          {appraisal.status === "Draft" || appraisal.status === "Rejected by HOD" ? (
-            <Button
- variant="contained"
- startIcon={<Send />}
- onClick={handleSubmit}
- disabled={loading || !eligibility.canSubmit || !profileComplete || appraisal.research.scopusCitations === null || appraisal.research.scopusCitations === undefined}
- sx={{
- whiteSpace: "nowrap",
- 
- textTransform: "none",
- fontWeight: 800,
- px: 4,
- py: 1.2,
- boxShadow: "0 4px 14px rgba(0, 78, 146, 0.3)",
- background: "var(--color-primary)",
- color: "var(--bg-paper)",
- transition: "all 0.3s ease",
- "&:hover": {
- background: "var(--gradient-primary-hover)",
- transform: "translateY(-1px)",
- boxShadow: "0 6px 20px rgba(0, 78, 146, 0.4)"
- },
- "&.Mui-disabled": {
- background: "var(--border-color)",
- color: "var(--text-secondary)"
- }
- }}
- >
-              Submit to HOD
-            </Button>
-          ) : (
-            <Chip
-              label={`Status: ${appraisal.status}`}
-              icon={<AssignmentTurnedIn sx={{ color: "#fff !important" }} />}
-              sx={{
-                fontWeight: 800,
-                px: 2.5,
-                py: 2.5,
-                borderRadius: "20px",
-                whiteSpace: "nowrap",
-                background: "var(--gradient-primary)",
-                color: "#fff",
-                border: "none",
-                boxShadow: "0 4px 14px rgba(0, 78, 146, 0.3)"
-              }}
-            />
-          )}
+        {/* Header Panel */}
+        <Box
+          sx={{
+            display: "flex",
+            flexDirection: "column",
+            mb: 4,
+            p: 3.5,
+            borderRadius: "24px",
+            background: "var(--bg-panel)",
+            border: "1px solid var(--border-color)",
+            backdropFilter: "blur(12px)",
+            boxShadow: "var(--shadow-premium)",
+            gap: 3
+          }}
+        >
+          {/* Top Row: Status and Academic Year */}
+          <Box sx={{ display: "flex", flexDirection: { xs: "column", md: "row" }, gap: 3, alignItems: { xs: "stretch", md: "center" }, justifyContent: "space-between", width: "100%" }}>
+            {appraisal.status === "Draft" || appraisal.status === "Rejected by HOD" ? (
+              <Button
+                variant="contained"
+                startIcon={<Send />}
+                onClick={handleSubmit}
+                disabled={loading || !eligibility.canSubmit || !profileComplete || appraisal.research.scopusCitations === null || appraisal.research.scopusCitations === undefined}
+                sx={{
+                  whiteSpace: "nowrap",
 
-          {selectedYear && (
-            <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, p: 1.2, px: 2.5, borderRadius: "10px", background: "rgba(59, 130, 246, 0.08)", border: "1px solid rgba(59, 130, 246, 0.2)", minWidth: 200, justifyContent: "center" }}>
-              <Typography variant="body2" sx={{ fontWeight: 800, color: "var(--color-primary)" }}>
-                Appraisal Year: {academicYears.find(y => y._id === selectedYear)?.year || "Loading..."}
-              </Typography>
-            </Box>
-          )}
-        </Box>
-
-        {/* Bottom Row: Avatar and Title */}
-        <Box sx={{ display: "flex", alignItems: "center", gap: 3, width: "100%" }}>
-          {/* Profile Photo Avatar Frame */}
-          <Box sx={{ position: "relative" }}>
-            <Box
-              sx={{
-                width: 72,
-                height: 72,
-                borderRadius: "18px",
-                background: "rgba(59, 130, 246, 0.08)",
-                border: "2px solid rgba(59, 130, 246, 0.2)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                boxShadow: "0 8px 20px rgba(0, 0, 0, 0.05)"
-              }}
-            >
-              <Person sx={{ fontSize: 36, color: "var(--color-primary)" }} />
-            </Box>
-            {/* Overlapping gold status badge at bottom right */}
-            <Box
-              sx={{
-                position: "absolute",
-                bottom: -2,
-                right: -2,
-                width: 22,
-                height: 22,
-                borderRadius: "50%",
-                backgroundColor: "#e8a000",
-                border: "2px solid var(--bg-paper)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                boxShadow: "0 2px 6px rgba(0, 0, 0, 0.15)"
-              }}
-            >
-              <Typography sx={{ fontSize: 11, fontWeight: 900, color: "#fff", lineHeight: 1 }}>
-                ✓
-              </Typography>
-            </Box>
-          </Box>
-
-          <Box sx={{ flexGrow: 1 }}>
-            <Typography variant="h5" sx={{ fontWeight: 800, color: "var(--text-primary)", letterSpacing: "-0.02em" }}>
-              Faculty Self Appraisal Portal
-            </Typography>
-            <Typography variant="body2" color="var(--text-secondary)" sx={{ mt: 0.5 }}>
-              Fill, review, and submit your performance appraisal form.
-            </Typography>
-          </Box>
-        </Box>
-
-        {/* Custom Progress Bar Loader */}
-        <Box sx={{ display: "flex", alignItems: "center", gap: 2, width: "100%" }}>
-          <Typography variant="caption" sx={{ fontWeight: 800, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.5px" }}>
-            Progress
-          </Typography>
-          <Box sx={{ flexGrow: 1, height: 10, borderRadius: 5, bgcolor: "var(--border-color)", overflow: "hidden", position: "relative" }}>
-            <Box
-              sx={{
-                height: "100%",
-                borderRadius: 5,
-                width: `${calculateProgressPercentage()}%`,
-                background: "var(--gradient-primary)",
-                boxShadow: "0 0 10px rgba(0, 78, 146, 0.2)",
-                transition: "width 0.6s cubic-bezier(0.4, 0, 0.2, 1)"
-              }}
-            />
-          </Box>
-          <Typography variant="body2" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>
-            {calculateProgressPercentage()}%
-          </Typography>
-        </Box>
-      </Box>
-
-      {/* Completeness Warning Banner */}
-      {!profileComplete && (
-        <Alert severity="warning" variant="filled" sx={{ mb: 4, borderRadius: "16px" }}>
-          <AlertTitle sx={{ fontWeight: 700 }}>Profile Details Incomplete</AlertTitle>
-          You must complete the following fields in your profile before you can submit this appraisal to HOD:
-          <strong> {missingFields.join(", ")}</strong>. Please navigate to the Profile settings to update them.
-        </Alert>
-      )}
-
-
-      {/* Main Grid */}
-      <Grid container spacing={4}>
-
-        {/* Left Side: Detail Sheets - NOW SPANNING FULL WIDTH (xs={12}) */}
-        <Grid size={{ xs: 12 }}>
-          {/* PART-A: Personal Information */}
-          <Card sx={{ borderRadius: "20px", background: "var(--bg-panel)", border: "1px solid var(--border-color)", mb: 4, boxShadow: "var(--shadow-premium)" }}>
-            <CardContent sx={{ p: 3.5 }}>
-              <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
-                <Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)", display: "flex", alignItems: "center", gap: 1.5 }}>
-                  <Person sx={{ color: "#e8a000" }} /> PART-A: Personal Information
-                </Typography>
-
-                {profileComplete ? (
-                  <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, bgcolor: "rgba(16, 185, 129, 0.1)", color: "#10b981", px: 2, py: 0.5, borderRadius: "20px", border: "1px solid rgba(16, 185, 129, 0.2)" }}>
-                    <CheckCircle sx={{ fontSize: 16 }} />
-                    <Typography variant="caption" sx={{ fontWeight: 800 }}>Completed</Typography>
-                  </Box>
-                ) : (
-                  <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, bgcolor: "rgba(239, 68, 68, 0.1)", color: "#ef4444", px: 2, py: 0.5, borderRadius: "20px", border: "1px solid rgba(239, 68, 68, 0.2)" }}>
-                    <Cancel sx={{ fontSize: 16 }} />
-                    <Typography variant="caption" sx={{ fontWeight: 800 }}>Incomplete</Typography>
-                  </Box>
-                )}
-              </Box>
-              <Divider sx={{ mb: 3 }} />
-
-              <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2.5 }}>
-                {[
-                  {
-                    label: "Name with Emp ID",
-                    val: `${appraisal.personalInfoSnapshot?.name || "N/A"} (${appraisal.personalInfoSnapshot?.institutionId || "N/A"})`,
-                    icon: <Badge sx={{ fontSize: 22 }} />,
-                    iconBg: "rgba(59, 130, 246, 0.12)",
-                    iconColor: "#3b82f6"
+                  textTransform: "none",
+                  fontWeight: 800,
+                  px: 4,
+                  py: 1.2,
+                  boxShadow: "0 4px 14px rgba(0, 78, 146, 0.3)",
+                  background: "var(--color-primary)",
+                  color: "var(--bg-paper)",
+                  transition: "all 0.3s ease",
+                  "&:hover": {
+                    background: "var(--gradient-primary-hover)",
+                    transform: "translateY(-1px)",
+                    boxShadow: "0 6px 20px rgba(0, 78, 146, 0.4)"
                   },
-                  {
-                    label: "Designation & Dept",
-                    val: `${appraisal.personalInfoSnapshot?.designation || "N/A"} - ${appraisal.personalInfoSnapshot?.departmentName || "N/A"}`,
-                    icon: <Work sx={{ fontSize: 22 }} />,
-                    iconBg: "rgba(168, 85, 247, 0.12)",
-                    iconColor: "#a855f7"
-                  },
-                  {
-                    label: "Qualification",
-                    val: appraisal.personalInfoSnapshot?.qualification || "N/A",
-                    icon: <School sx={{ fontSize: 22 }} />,
-                    iconBg: "rgba(16, 185, 129, 0.12)",
-                    iconColor: "#10b981"
-                  },
-                  {
-                    label: "Scopus ID",
-                    val: appraisal.personalInfoSnapshot?.scopusId || "N/A",
-                    icon: <Description sx={{ fontSize: 22 }} />,
-                    iconBg: "rgba(234, 179, 8, 0.12)",
-                    iconColor: "#e8a000"
-                  },
-                  {
-                    label: "Web of Science ID",
-                    val: appraisal.personalInfoSnapshot?.wosId || "N/A",
-                    icon: <Public sx={{ fontSize: 22 }} />,
-                    iconBg: "rgba(244, 63, 94, 0.12)",
-                    iconColor: "#f43f5e"
-                  },
-                  {
-                    label: "ORCID ID",
-                    val: appraisal.personalInfoSnapshot?.orcidId || "N/A",
-                    icon: <Fingerprint sx={{ fontSize: 22 }} />,
-                    iconBg: "rgba(6, 182, 212, 0.12)",
-                    iconColor: "#06b6d4"
-                  }
-                ].map((item, idx) => (
-                  <Box
-                    key={idx}
-                    sx={{
-                      flex: {
-                        xs: "1 1 100%",
-                        sm: "1 1 calc(50% - 10px)",
-                        md: "1 1 calc(33.333% - 14px)"
-                      },
-                      minWidth: 0,
-                      display: "flex"
-                    }}
-                  >
-                    <Card
-                      elevation={0}
-                      sx={{
-                        p: 2,
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 2,
-                        borderRadius: "16px",
-                        border: "1px solid var(--border-color)",
-                        background: "var(--bg-paper)",
-                        height: "100%",
-                        width: "100%",
-                        transition: "all 0.3s ease",
-                        "&:hover": {
-                          transform: "translateY(-3px)",
-                          boxShadow: "var(--shadow-premium)",
-                          borderColor: "var(--color-primary)"
-                        }
-                      }}
-                    >
-                      <Box
-                        sx={{
-                          width: 44,
-                          height: 44,
-                          borderRadius: "12px",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          background: item.iconBg,
-                          color: item.iconColor,
-                          flexShrink: 0
-                        }}
-                      >
-                        {item.icon}
-                      </Box>
-                      <Box sx={{ overflow: "hidden" }}>
-                        <Typography
-                          variant="caption"
-                          sx={{
-                            color: "var(--text-secondary)",
-                            fontWeight: 700,
-                            textTransform: "uppercase",
-                            fontSize: "0.68rem",
-                            letterSpacing: "0.3px",
-                            display: "block"
-                          }}
-                        >
-                          {item.label}
-                        </Typography>
-                        <Typography
-                          variant="body2"
-                          sx={{
-                            fontWeight: 700,
-                            color: "var(--text-primary)",
-                            mt: 0.5,
-                            wordBreak: "break-word",
-                            lineHeight: 1.3
-                          }}
-                        >
-                          {item.val}
-                        </Typography>
-                      </Box>
-                    </Card>
-                  </Box>
-                ))}
-              </Box>
-            </CardContent>
-          </Card>
-
-          {/* PART-B: Performance Details */}
-          <Box sx={{ mb: 4, mt: 4, display: "flex", alignItems: "center", gap: 2 }}>
-            <Typography variant="h6" sx={{ fontWeight: 900, color: "var(--text-primary)", display: "flex", alignItems: "center", gap: 1.5, letterSpacing: "-0.02em" }}>
-              <AssignmentTurnedIn sx={{ color: "#e8a000" }} /> PART-B: Performance Details
-            </Typography>
-            <Divider sx={{ borderColor: "var(--border-color)" }} />
-          </Box>
-
-          {/* 1. Teaching & Learning */}
-          <Card sx={{ borderRadius: "20px", background: "var(--bg-panel)", border: "1px solid var(--border-color)", mb: 4, boxShadow: "var(--shadow-premium)" }}>
-            <CardContent sx={{ p: 3.5 }}>
-              <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3, flexWrap: "wrap", gap: 2 }}>
-                <Box>
-                  <Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)", display: "flex", alignItems: "center", gap: 1.5 }}>
-                    <MenuBook sx={{ color: "var(--color-primary)" }} /> 1. Teaching & Learning
-                  </Typography>
-                  <Typography variant="caption" sx={{ color: "var(--text-secondary)", fontWeight: 500, display: "block", ml: 5 }}>
-                    Maximum Points: 80
-                  </Typography>
-                </Box>
-                <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 2, bgcolor: "rgba(59, 130, 246, 0.04)", p: "8px 16px", borderRadius: "12px", border: "1px solid rgba(59, 130, 246, 0.1)", width: { xs: "100%", sm: "auto" } }}>
-                  <Box>
-                    <Typography variant="caption" sx={{ color: "var(--text-secondary)", fontWeight: 700, display: "block", fontSize: "0.7rem", textTransform: "uppercase" }}>
-                      Total Points Earned
-                    </Typography>
-                    <Box sx={{ display: "flex", alignItems: "baseline", gap: 0.5 }}>
-                      <Typography variant="h6" sx={{ fontWeight: 900, color: "var(--color-primary)" }}>
-                        {eligibility.scores.T}
-                      </Typography>
-                      <Typography variant="body2" sx={{ color: "var(--text-secondary)", fontWeight: 700 }}>
-                        / 80
-                      </Typography>
-                    </Box>
-                  </Box>
-                  <Box sx={{ position: "relative", display: "inline-flex" }}>
-                    <Loader
-                      variant="determinate"
-                      value={100}
-                      size={40}
-                      thickness={4}
-                      sx={{ color: "var(--border-color)", opacity: 0.15 }}
-                    />
-                    <Loader
-                      variant="determinate"
-                      value={Math.min(100, Math.round((eligibility.scores.T / 80) * 100))}
-                      size={40}
-                      thickness={4}
-                      sx={{
-                        color: "var(--color-primary)",
-                        position: "absolute",
-                        left: 0
-                      }}
-                    />
-                    <Box sx={{ top: 0, left: 0, bottom: 0, right: 0, position: "absolute", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                      <Typography variant="caption" sx={{ fontWeight: 800, color: "var(--text-primary)", fontSize: "0.7rem" }}>
-                        {Math.min(100, Math.round((eligibility.scores.T / 80) * 100))}%
-                      </Typography>
-                    </Box>
-                  </Box>
-                </Box>
-              </Box>
-              <Divider sx={{ mb: 3 }} />
-
-              {/* 1.1 Course pass percentage */}
-              {!(appraisal.status === "Completed" && (!appraisal.teaching.passPercentage?.courses || appraisal.teaching.passPercentage.courses.length === 0)) && (
-              <>
-              <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 1, color: "var(--color-primary)" }}>
-                1.1 Course Average Pass Percentage (Theory only)
-              </Typography>
-              <TableContainer component={Paper} elevation={0} sx={{ mb: 3.5, borderRadius: "16px", background: "var(--bg-paper)", border: "1px solid var(--border-color)", overflowX: "auto", boxShadow: "none", maxWidth: { xs: "100%", md: "100%", lg: 1000, xl: 1100 }, mx: "auto" }}>
-                <Table size="small" sx={{ minWidth: 650, mx: "auto" }}>
-                  <TableHead sx={{ background: "var(--gradient-primary)" }}>
-                    <TableRow>
-                      <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }}>Course Name</TableCell>
-                      <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }}>Sem-Branch-Sec</TableCell>
-                      <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }} align="center">Appeared</TableCell>
-                      <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }} align="center">Passed</TableCell>
-                      <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }} align="center">Pass %</TableCell>
-                      <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }} align="center">Points claimed</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {appraisal.teaching.passPercentage.courses.length > 0 ? (
-                      <>
-                        {appraisal.teaching.passPercentage.courses.map((c, i) => (
-                          <TableRow key={i} sx={{ "&:hover": { bgcolor: "var(--bg-hover)" } }}>
-                            <TableCell sx={{ fontWeight: 600, color: "var(--text-primary)" }}>{c.courseName}</TableCell>
-                            <TableCell sx={{ color: "var(--text-primary)" }}>{c.secBranchSem}</TableCell>
-                            <TableCell align="center" sx={{ color: "var(--text-primary)" }}>{c.appeared}</TableCell>
-                            <TableCell align="center" sx={{ color: "var(--text-primary)" }}>{c.passed}</TableCell>
-                            <TableCell align="center" sx={{ color: "var(--text-primary)" }}>{c.percentage}%</TableCell>
-                            <TableCell align="center" sx={{ fontWeight: 800, color: "var(--color-primary)" }}>{c.pointsClaimed}</TableCell>
-                          </TableRow>
-                        ))}
-                        {/* Summary / Average Row */}
-                        {(() => {
-                          const totalAppeared = appraisal.teaching.passPercentage.courses.reduce((sum, c) => sum + (Number(c.appeared) || 0), 0);
-                          const totalPassed = appraisal.teaching.passPercentage.courses.reduce((sum, c) => sum + (Number(c.passed) || 0), 0);
-                          const overallPassPct = totalAppeared > 0 ? ((totalPassed / totalAppeared) * 100).toFixed(2) : "0.00";
-                          return (
-                            <TableRow sx={{ background: "rgba(0, 78, 146, 0.04)", "&:hover": { bgcolor: "rgba(0, 78, 146, 0.06) !important" } }}>
-                              <TableCell colSpan={2} sx={{ fontWeight: 800, color: "var(--text-primary)", pl: 2 }}>
-                                <Box component="span" sx={{ position: "sticky", left: 16, display: "inline-block", whiteSpace: "nowrap" }}>
-                                  Overall Performance
-                                </Box>
-                              </TableCell>
-                              <TableCell align="center" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>{totalAppeared}</TableCell>
-                              <TableCell align="center" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>{totalPassed}</TableCell>
-                              <TableCell align="center" sx={{ fontWeight: 900, color: "var(--color-primary)" }}>{overallPassPct}%</TableCell>
-                              <TableCell align="center" sx={{ fontWeight: 900, color: "var(--color-primary)", fontSize: "0.95rem" }}>
-                                {appraisal.teaching.passPercentage.averagePoints}
-                              </TableCell>
-                            </TableRow>
-                          );
-                        })()}
-                      </>
-                    ) : (
-                      <TableRow>
-                        <TableCell colSpan={6} align="center" sx={{ py: 3, color: "var(--text-secondary)", fontStyle: "italic" }}>
-                          No theory subjects result found.
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
-              </TableContainer>
-              </>
-              )}
-
-              {/* 1.2 Proctoring Students' Average Pass Percentage */}
-              {!(appraisal.status === "Completed" && (!appraisal.teaching.proctoring?.entries || appraisal.teaching.proctoring.entries.length === 0)) && (
-              <Box sx={{ mb: 4 }}>
-                <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 2 }}>
-                  <Typography variant="subtitle1" sx={{ fontWeight: 700, color: "var(--color-primary)" }}>
-                    1.2 Proctoring Students' Average Pass Percentage
-                  </Typography>
-                </Box>
-
-                <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
-                  <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-                    <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-secondary)" }}>
-                      Proctoring Records for this cycle:
-                    </Typography>
-                  </Box>
-                </Box>
-
-                <TableContainer component={Paper} elevation={0} sx={{ mb: 3.5, borderRadius: "16px", background: "var(--bg-paper)", border: "1px solid var(--border-color)", overflowX: "auto", boxShadow: "none", maxWidth: { xs: "100%", md: "100%", lg: 1000, xl: 1100 }, mx: "auto" }}>
-                  <Table size="small" sx={{ minWidth: 650, mx: "auto" }}>
-                    <TableHead sx={{ background: "var(--gradient-primary)" }}>
-                      <TableRow>
-                        <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }}>Program</TableCell>
-                        <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }}>Sem/Yr - Branch - Sec</TableCell>
-                        <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }} align="right">Total Allotted</TableCell>
-                        <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }} align="right">Eligible (A)</TableCell>
-                        <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }} align="right">Passed (B)</TableCell>
-                        <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }} align="right">Pass % (B/A)</TableCell>
-                        <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }} align="right">Points</TableCell>
-                      </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      {appraisal.teaching.proctoring.entries.length > 0 ? (
-                        <>
-                          {appraisal.teaching.proctoring.entries.map((e, i) => {
-                            const isYearProg = e.yearNumber !== null && e.yearNumber !== undefined && e.yearNumber !== 0;
-                            const semYrBranchSec = isYearProg
-                              ? `YEAR-${e.yearNumber} ${e.branchCode || "—"} - SEC ${e.section}`
-                              : `SEM-${e.semesterNumber} ${e.branchCode || "—"} - SEC ${e.section}`;
-                            return (
-                              <TableRow key={i} sx={{
-                                "&:hover": { bgcolor: "var(--bg-hover)" }
-                              }}>
-                                <TableCell sx={{ fontWeight: 600, color: "var(--text-primary)" }}>{e.programCode || "—"}</TableCell>
-                                <TableCell sx={{ color: "var(--text-primary)" }}>{semYrBranchSec}</TableCell>
-                                <TableCell align="right" sx={{ color: "var(--text-primary)" }}>{e.totalStudents}</TableCell>
-                                <TableCell align="right" sx={{ color: "#8B5CF6", fontWeight: 600 }}>{e.appeared}</TableCell>
-                                <TableCell align="right" sx={{ color: "#10B981", fontWeight: 600 }}>{e.passed}</TableCell>
-                                <TableCell align="right" sx={{ color: "var(--text-primary)" }}>{e.percentage.toFixed(2)}%</TableCell>
-                                <TableCell align="right" sx={{ fontWeight: 800, color: "var(--color-primary)" }}>{e.pointsClaimed}</TableCell>
-                              </TableRow>
-                            );
-                          })}
-                          {/* Summary / Average Row */}
-                          {(() => {
-                            const totalAppeared = appraisal.teaching.proctoring.entries.reduce((sum, e) => sum + (Number(e.appeared) || 0), 0);
-                            const totalPassed = appraisal.teaching.proctoring.entries.reduce((sum, e) => sum + (Number(e.passed) || 0), 0);
-                            const overallPassPct = totalAppeared > 0 ? ((totalPassed / totalAppeared) * 100).toFixed(2) : "0.00";
-                            return (
-                              <TableRow sx={{ background: "rgba(0, 78, 146, 0.04)", "&:hover": { bgcolor: "rgba(0, 78, 146, 0.06) !important" } }}>
-                                <TableCell colSpan={2} sx={{ fontWeight: 800, color: "var(--text-primary)", pl: 2 }}>
-                                  <Box component="span" sx={{ display: "inline-block", whiteSpace: "nowrap" }}>
-                                    Overall Performance (Average Points)
-                                  </Box>
-                                </TableCell>
-                                <TableCell align="right" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>{appraisal.teaching.proctoring.entries.reduce((sum, e) => sum + (Number(e.totalStudents) || 0), 0)}</TableCell>
-                                <TableCell align="right" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>{totalAppeared}</TableCell>
-                                <TableCell align="right" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>{totalPassed}</TableCell>
-                                <TableCell align="right" sx={{ fontWeight: 900, color: "var(--color-primary)" }}>{overallPassPct}%</TableCell>
-                                <TableCell align="right" sx={{ fontWeight: 900, color: "var(--color-primary)", fontSize: "0.95rem" }}>
-                                  {appraisal.teaching.proctoring.averagePoints} Points
-                                </TableCell>
-                              </TableRow>
-                            );
-                          })()}
-                        </>
-                      ) : (
-                        <TableRow>
-                          <TableCell colSpan={7} align="center" sx={{ py: 3, color: "var(--text-secondary)", fontStyle: "italic" }}>
-                            No proctoring records found.
-                          </TableCell>
-                        </TableRow>
-                      )}
-                    </TableBody>
-                  </Table>
-                </TableContainer>
-              </Box>
-              )}
-
-              {/* Self Appraisal Proctoring Form CRUD Dialog Modal */}
-              <Dialog
-                open={isProctorModalOpen}
-                onClose={() => setIsProctorModalOpen(false)}
-                maxWidth="sm"
-                fullWidth
-                slotProps={{
-                  paper: {
-                    sx: {
-                      borderRadius: "20px",
-                      bgcolor: "var(--bg-panel)",
-                      border: "1px solid var(--border-color)",
-                      backgroundImage: "none",
-                      p: 1
-                    }
+                  "&.Mui-disabled": {
+                    background: "var(--border-color)",
+                    color: "var(--text-secondary)"
                   }
                 }}
               >
-                <DialogTitle sx={{ fontWeight: 800, fontSize: 18, color: "var(--text-primary)", pb: 1 }}>
-                  {editingEntry ? "Edit Proctoring Record" : "Add Proctoring Record"}
-                </DialogTitle>
-                <form onSubmit={handleProctorModalSubmit}>
-                  <DialogContent>
-                    <Grid container spacing={2.5} sx={{ mt: 0.5 }}>
-                      {/* Program selection */}
-                      <Grid size={{ xs: 12, sm: 6 }}>
-                        <FormControl fullWidth size="small">
-                          <InputLabel shrink sx={{ color: "var(--text-secondary)" }}>Program</InputLabel>
-                          <Select
-                            value={selectedProgramId}
-                            label="Program"
-                            onChange={(e) => setSelectedProgramId(e.target.value)}
-                            displayEmpty
-                            fullWidth
-                            sx={{ borderRadius: "10px", color: "var(--text-primary)", bgcolor: "rgba(255,255,255,0.01)" }}
-                          >
-                            <MenuItem value="" disabled sx={{ fontStyle: "italic", color: "var(--text-secondary)" }}>
-                              Select Program
-                            </MenuItem>
-                            {programs.map((p) => (
-                              <MenuItem key={p._id} value={p._id}>
-                                {p.name} ({p.code})
-                              </MenuItem>
-                            ))}
-                          </Select>
-                        </FormControl>
-                      </Grid>
+                Submit to HOD
+              </Button>
+            ) : (
+              <Chip
+                label={`Status: ${appraisal.status}`}
+                icon={<AssignmentTurnedIn sx={{ color: "#fff !important" }} />}
+                sx={{
+                  fontWeight: 800,
+                  px: 2.5,
+                  py: 2.5,
+                  borderRadius: "20px",
+                  whiteSpace: "nowrap",
+                  background: "var(--gradient-primary)",
+                  color: "#fff",
+                  border: "none",
+                  boxShadow: "0 4px 14px rgba(0, 78, 146, 0.3)"
+                }}
+              />
+            )}
 
-                      {/* Branch selection */}
-                      <Grid size={{ xs: 12, sm: 6 }}>
-                        <FormControl fullWidth size="small" disabled={!selectedProgramId}>
-                          <InputLabel shrink sx={{ color: "var(--text-secondary)" }}>Branch Code</InputLabel>
-                          <Select
-                            value={selectedBranchId}
-                            label="Branch Code"
-                            onChange={(e) => setSelectedBranchId(e.target.value)}
-                            displayEmpty
-                            fullWidth
-                            sx={{ borderRadius: "10px", color: "var(--text-primary)", bgcolor: "rgba(255,255,255,0.01)" }}
-                          >
-                            <MenuItem value="" disabled sx={{ fontStyle: "italic", color: "var(--text-secondary)" }}>
-                              Select Branch
-                            </MenuItem>
-                            {branches.map((b) => (
-                              <MenuItem key={b._id} value={b._id}>
-                                {b.name} ({b.code})
-                              </MenuItem>
-                            ))}
-                          </Select>
-                        </FormControl>
-                      </Grid>
+            {selectedYear && (
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, p: 1.2, px: 2.5, borderRadius: "10px", background: "rgba(59, 130, 246, 0.08)", border: "1px solid rgba(59, 130, 246, 0.2)", minWidth: 200, justifyContent: "center" }}>
+                <Typography variant="body2" sx={{ fontWeight: 800, color: "var(--color-primary)" }}>
+                  Appraisal Year: {academicYears.find(y => y._id === selectedYear)?.year || "Loading..."}
+                </Typography>
+              </Box>
+            )}
+          </Box>
 
-                      {/* Sem/Year numeric input based on Program Pattern */}
-                      <Grid size={{ xs: 12, sm: 6 }}>
-                        {(() => {
-                          const program = programs.find((p) => p._id === selectedProgramId);
-                          const isYearPattern = program?.programPattern === "YEAR";
-                          if (isYearPattern) {
-                            return (
-                              <TextField
-                                label="Year Number"
-                                type="number"
-                                fullWidth
-                                size="small"
-                                required
-                                value={yearNumber}
-                                onChange={(e) => setYearNumber(e.target.value)}
-                                slotProps={{ htmlInput: { min: 1, step: 1 } }}
-                                sx={{ "& .MuiOutlinedInput-root": { borderRadius: "10px" } }}
-                              />
-                            );
-                          } else {
-                            return (
-                              <TextField
-                                label="Semester Number"
-                                type="number"
-                                fullWidth
-                                size="small"
-                                required
-                                value={semesterNumber}
-                                onChange={(e) => setSemesterNumber(e.target.value)}
-                                slotProps={{ htmlInput: { min: 1, step: 1 } }}
-                                sx={{ "& .MuiOutlinedInput-root": { borderRadius: "10px" } }}
-                              />
-                            );
+          {/* Bottom Row: Avatar and Title */}
+          <Box sx={{ display: "flex", alignItems: "center", gap: 3, width: "100%" }}>
+            {/* Profile Photo Avatar Frame */}
+            <Box sx={{ position: "relative" }}>
+              <Box
+                sx={{
+                  width: 72,
+                  height: 72,
+                  borderRadius: "18px",
+                  background: "rgba(59, 130, 246, 0.08)",
+                  border: "2px solid rgba(59, 130, 246, 0.2)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  boxShadow: "0 8px 20px rgba(0, 0, 0, 0.05)"
+                }}
+              >
+                <Person sx={{ fontSize: 36, color: "var(--color-primary)" }} />
+              </Box>
+              {/* Overlapping gold status badge at bottom right */}
+              <Box
+                sx={{
+                  position: "absolute",
+                  bottom: -2,
+                  right: -2,
+                  width: 22,
+                  height: 22,
+                  borderRadius: "50%",
+                  backgroundColor: "#e8a000",
+                  border: "2px solid var(--bg-paper)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  boxShadow: "0 2px 6px rgba(0, 0, 0, 0.15)"
+                }}
+              >
+                <Typography sx={{ fontSize: 11, fontWeight: 900, color: "#fff", lineHeight: 1 }}>
+                  ✓
+                </Typography>
+              </Box>
+            </Box>
+
+            <Box sx={{ flexGrow: 1 }}>
+              <Typography variant="h5" sx={{ fontWeight: 800, color: "var(--text-primary)", letterSpacing: "-0.02em" }}>
+                Faculty Self Appraisal Portal
+              </Typography>
+              <Typography variant="body2" color="var(--text-secondary)" sx={{ mt: 0.5 }}>
+                Fill, review, and submit your performance appraisal form.
+              </Typography>
+            </Box>
+          </Box>
+
+          {/* Custom Progress Bar Loader */}
+          <Box sx={{ display: "flex", alignItems: "center", gap: 2, width: "100%" }}>
+            <Typography variant="caption" sx={{ fontWeight: 800, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+              Progress
+            </Typography>
+            <Box sx={{ flexGrow: 1, height: 10, borderRadius: 5, bgcolor: "var(--border-color)", overflow: "hidden", position: "relative" }}>
+              <Box
+                sx={{
+                  height: "100%",
+                  borderRadius: 5,
+                  width: `${calculateProgressPercentage()}%`,
+                  background: "var(--gradient-primary)",
+                  boxShadow: "0 0 10px rgba(0, 78, 146, 0.2)",
+                  transition: "width 0.6s cubic-bezier(0.4, 0, 0.2, 1)"
+                }}
+              />
+            </Box>
+            <Typography variant="body2" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>
+              {calculateProgressPercentage()}%
+            </Typography>
+          </Box>
+        </Box>
+
+        {/* Completeness Warning Banner */}
+        {!profileComplete && (
+          <Alert severity="warning" variant="filled" sx={{ mb: 4, borderRadius: "16px" }}>
+            <AlertTitle sx={{ fontWeight: 700 }}>Profile Details Incomplete</AlertTitle>
+            You must complete the following fields in your profile before you can submit this appraisal to HOD:
+            <strong> {missingFields.join(", ")}</strong>. Please navigate to the Profile settings to update them.
+          </Alert>
+        )}
+
+
+        {/* Main Grid */}
+        <Grid container spacing={4}>
+
+          {/* Left Side: Detail Sheets - NOW SPANNING FULL WIDTH (xs={12}) */}
+          <Grid size={{ xs: 12 }}>
+            {/* PART-A: Personal Information */}
+            <Card sx={{ borderRadius: "20px", background: "var(--bg-panel)", border: "1px solid var(--border-color)", mb: 4, boxShadow: "var(--shadow-premium)" }}>
+              <CardContent sx={{ p: 3.5 }}>
+                <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
+                  <Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)", display: "flex", alignItems: "center", gap: 1.5 }}>
+                    <Person sx={{ color: "#e8a000" }} /> PART-A: Personal Information
+                  </Typography>
+
+                  {profileComplete ? (
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, bgcolor: "rgba(16, 185, 129, 0.1)", color: "#10b981", px: 2, py: 0.5, borderRadius: "20px", border: "1px solid rgba(16, 185, 129, 0.2)" }}>
+                      <CheckCircle sx={{ fontSize: 16 }} />
+                      <Typography variant="caption" sx={{ fontWeight: 800 }}>Completed</Typography>
+                    </Box>
+                  ) : (
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, bgcolor: "rgba(239, 68, 68, 0.1)", color: "#ef4444", px: 2, py: 0.5, borderRadius: "20px", border: "1px solid rgba(239, 68, 68, 0.2)" }}>
+                      <Cancel sx={{ fontSize: 16 }} />
+                      <Typography variant="caption" sx={{ fontWeight: 800 }}>Incomplete</Typography>
+                    </Box>
+                  )}
+                </Box>
+                <Divider sx={{ mb: 3 }} />
+
+                <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2.5 }}>
+                  {[
+                    {
+                      label: "Name with Emp ID",
+                      val: `${appraisal.personalInfoSnapshot?.name || "N/A"} (${appraisal.personalInfoSnapshot?.institutionId || "N/A"})`,
+                      icon: <Badge sx={{ fontSize: 22 }} />,
+                      iconBg: "rgba(59, 130, 246, 0.12)",
+                      iconColor: "#3b82f6"
+                    },
+                    {
+                      label: "Designation & Dept",
+                      val: `${appraisal.personalInfoSnapshot?.designation || "N/A"} - ${appraisal.personalInfoSnapshot?.departmentName || "N/A"}`,
+                      icon: <Work sx={{ fontSize: 22 }} />,
+                      iconBg: "rgba(168, 85, 247, 0.12)",
+                      iconColor: "#a855f7"
+                    },
+                    {
+                      label: "Qualification",
+                      val: appraisal.personalInfoSnapshot?.qualification || "N/A",
+                      icon: <School sx={{ fontSize: 22 }} />,
+                      iconBg: "rgba(16, 185, 129, 0.12)",
+                      iconColor: "#10b981"
+                    },
+                    {
+                      label: "Scopus ID",
+                      val: appraisal.personalInfoSnapshot?.scopusId || "N/A",
+                      icon: <Description sx={{ fontSize: 22 }} />,
+                      iconBg: "rgba(234, 179, 8, 0.12)",
+                      iconColor: "#e8a000"
+                    },
+                    {
+                      label: "Web of Science ID",
+                      val: appraisal.personalInfoSnapshot?.wosId || "N/A",
+                      icon: <Public sx={{ fontSize: 22 }} />,
+                      iconBg: "rgba(244, 63, 94, 0.12)",
+                      iconColor: "#f43f5e"
+                    },
+                    {
+                      label: "ORCID ID",
+                      val: appraisal.personalInfoSnapshot?.orcidId || "N/A",
+                      icon: <Fingerprint sx={{ fontSize: 22 }} />,
+                      iconBg: "rgba(6, 182, 212, 0.12)",
+                      iconColor: "#06b6d4"
+                    }
+                  ].map((item, idx) => (
+                    <Box
+                      key={idx}
+                      sx={{
+                        flex: {
+                          xs: "1 1 100%",
+                          sm: "1 1 calc(50% - 10px)",
+                          md: "1 1 calc(33.333% - 14px)"
+                        },
+                        minWidth: 0,
+                        display: "flex"
+                      }}
+                    >
+                      <Card
+                        elevation={0}
+                        sx={{
+                          p: 2,
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 2,
+                          borderRadius: "16px",
+                          border: "1px solid var(--border-color)",
+                          background: "var(--bg-paper)",
+                          height: "100%",
+                          width: "100%",
+                          transition: "all 0.3s ease",
+                          "&:hover": {
+                            transform: "translateY(-3px)",
+                            boxShadow: "var(--shadow-premium)",
+                            borderColor: "var(--color-primary)"
                           }
-                        })()}
-                      </Grid>
-
-                      {/* Section - numeric only */}
-                      <Grid size={{ xs: 12, sm: 6 }}>
-                        <TextField
-                          label="Section (Numeric Only)"
-                          type="number"
-                          fullWidth
-                          size="small"
-                          required
-                          value={section}
-                          onChange={(e) => setSection(e.target.value)}
-                          slotProps={{ htmlInput: { min: 1, step: 1 } }}
-                          sx={{ "& .MuiOutlinedInput-root": { borderRadius: "10px" } }}
-                        />
-                      </Grid>
-
-                      {/* Student counts inputs */}
-                      <Grid size={{ xs: 12, sm: 4 }}>
-                        <TextField
-                          label="Total Allotted"
-                          type="number"
-                          fullWidth
-                          size="small"
-                          required
-                          value={totalStudents}
-                          onChange={(e) => setTotalStudents(e.target.value)}
-                          slotProps={{ htmlInput: { min: 0, step: 1 } }}
-                          sx={{ "& .MuiOutlinedInput-root": { borderRadius: "10px" } }}
-                        />
-                      </Grid>
-
-                      <Grid size={{ xs: 12, sm: 4 }}>
-                        <TextField
-                          label="Eligible for End Exams (A)"
-                          type="number"
-                          fullWidth
-                          size="small"
-                          required
-                          value={eligibleStudents}
-                          onChange={(e) => setEligibleStudents(e.target.value)}
-                          slotProps={{ htmlInput: { min: 0, step: 1 } }}
-                          sx={{ "& .MuiOutlinedInput-root": { borderRadius: "10px" } }}
-                        />
-                      </Grid>
-
-                      <Grid size={{ xs: 12, sm: 4 }}>
-                        <TextField
-                          label="Passed Students (B)"
-                          type="number"
-                          fullWidth
-                          size="small"
-                          required
-                          value={passedStudents}
-                          onChange={(e) => setPassedStudents(e.target.value)}
-                          slotProps={{ htmlInput: { min: 0, step: 1 } }}
-                          sx={{ "& .MuiOutlinedInput-root": { borderRadius: "10px" } }}
-                        />
-                      </Grid>
-
-                      {/* Calculated Pass Percentage display */}
-                      <Grid size={{ xs: 12 }}>
+                        }}
+                      >
                         <Box
                           sx={{
-                            p: 2,
+                            width: 44,
+                            height: 44,
                             borderRadius: "12px",
-                            bgcolor: "rgba(2, 132, 199, 0.05)",
-                            border: "1px solid rgba(2, 132, 199, 0.15)",
                             display: "flex",
-                            justifyContent: "space-between",
-                            alignItems: "center"
+                            alignItems: "center",
+                            justifyContent: "center",
+                            background: item.iconBg,
+                            color: item.iconColor,
+                            flexShrink: 0
                           }}
                         >
-                          <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-secondary)" }}>
-                            Calculated Pass Percentage:
+                          {item.icon}
+                        </Box>
+                        <Box sx={{ overflow: "hidden" }}>
+                          <Typography
+                            variant="caption"
+                            sx={{
+                              color: "var(--text-secondary)",
+                              fontWeight: 700,
+                              textTransform: "uppercase",
+                              fontSize: "0.68rem",
+                              letterSpacing: "0.3px",
+                              display: "block"
+                            }}
+                          >
+                            {item.label}
                           </Typography>
-                          <Typography variant="subtitle1" sx={{ fontWeight: 800, color: "var(--color-primary)" }}>
-                            {(() => {
-                              const elg = parseInt(eligibleStudents);
-                              const pass = parseInt(passedStudents);
-                              if (isNaN(elg) || isNaN(pass) || elg <= 0 || pass < 0 || pass > elg) return "0.00%";
-                              return `${((pass / elg) * 100).toFixed(2)}%`;
-                            })()}
+                          <Typography
+                            variant="body2"
+                            sx={{
+                              fontWeight: 700,
+                              color: "var(--text-primary)",
+                              mt: 0.5,
+                              wordBreak: "break-word",
+                              lineHeight: 1.3
+                            }}
+                          >
+                            {item.val}
                           </Typography>
                         </Box>
-                      </Grid>
-                    </Grid>
-                  </DialogContent>
-                  <DialogActions sx={{ px: 3, pb: 2.5, gap: 1 }}>
-                    <Button
- onClick={() => setIsProctorModalOpen(false)}
- disabled={submittingProctoring}
- sx={{ textTransform: "none", fontWeight: 700, color: "var(--text-secondary)" }}
- >
-                      Cancel
-                    </Button>
-                    <Button
- type="submit"
- variant="contained"
- disabled={submittingProctoring}
- sx={{
- textTransform: "none",
- fontWeight: 700,
- 
- px: 3,
- background: "var(--gradient-primary)",
- color: "#fff",
- boxShadow: "0 4px 15px rgba(0, 78, 146, 0.2)",
- "&:hover": {
- background: "var(--gradient-primary)",
- opacity: 0.95
- }
- }}
- >
-                      {submittingProctoring ? <Loader size={16} sx={{ color: "#fff" }} /> : editingEntry ? "Save Changes" : "Add Record"}
-                    </Button>
-                  </DialogActions>
-                </form>
-              </Dialog>
-
-              {/* 1.3 Course Feedback */}
-              {!(appraisal.status === "Completed" && (!appraisal.teaching.feedback?.courses || appraisal.teaching.feedback.courses.length === 0)) && (
-              <>
-              <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 1.5, color: "var(--color-primary)" }}>
-                1.3 Course Feedback
-              </Typography>
-              <TableContainer component={Paper} elevation={0} sx={{ mb: 3.5, borderRadius: "16px", background: "var(--bg-paper)", border: "1px solid var(--border-color)", overflowX: "auto", boxShadow: "none", maxWidth: { xs: "100%", md: "100%", lg: 1000, xl: 1100 }, mx: "auto" }}>
-                <Table size="small" sx={{ minWidth: 650, mx: "auto" }}>
-                  <TableHead sx={{ background: "var(--gradient-primary)" }}>
-                    <TableRow>
-                      <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }}>Course Name</TableCell>
-                      <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }}>Sem-Branch-Sec</TableCell>
-                      <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }} align="center">Students</TableCell>
-                      <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }} align="center">Feedback %</TableCell>
-                      <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }} align="center">Points claimed</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {appraisal.teaching.feedback.courses.length > 0 ? (
-                      <>
-                        {appraisal.teaching.feedback.courses.map((c, i) => (
-                          <TableRow key={i} sx={{ "&:hover": { bgcolor: "var(--bg-hover)" } }}>
-                            <TableCell sx={{ fontWeight: 600, color: "var(--text-primary)" }}>{c.courseName}</TableCell>
-                            <TableCell sx={{ color: "var(--text-primary)" }}>{c.secBranchSem}</TableCell>
-                            <TableCell align="center" sx={{ color: "var(--text-primary)" }}>{c.noOfStudents}</TableCell>
-                            <TableCell align="center" sx={{ color: "var(--text-primary)" }}>{c.feedbackPercentage}%</TableCell>
-                            <TableCell align="center" sx={{ fontWeight: 800, color: "var(--color-primary)" }}>{c.pointsClaimed}</TableCell>
-                          </TableRow>
-                        ))}
-                        {/* Summary / Average Row */}
-                        {(() => {
-                          const totalStudents = appraisal.teaching.feedback.courses.reduce((sum, c) => sum + (Number(c.noOfStudents) || 0), 0);
-                          const totalWeightedFeedback = appraisal.teaching.feedback.courses.reduce((sum, c) => sum + ((Number(c.noOfStudents) || 0) * (Number(c.feedbackPercentage) || 0)), 0);
-                          const overallFeedbackPct = totalStudents > 0 ? (totalWeightedFeedback / totalStudents).toFixed(2) : "0.00";
-                          return (
-                            <TableRow sx={{ background: "rgba(0, 78, 146, 0.04)", "&:hover": { bgcolor: "rgba(0, 78, 146, 0.06) !important" } }}>
-                              <TableCell colSpan={2} sx={{ fontWeight: 800, color: "var(--text-primary)", pl: 2 }}>
-                                <Box component="span" sx={{ position: "sticky", left: 16, display: "inline-block", whiteSpace: "nowrap" }}>
-                                  Overall Performance
-                                </Box>
-                              </TableCell>
-                              <TableCell align="center" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>{totalStudents}</TableCell>
-                              <TableCell align="center" sx={{ fontWeight: 900, color: "var(--color-primary)" }}>{overallFeedbackPct}%</TableCell>
-                              <TableCell align="center" sx={{ fontWeight: 900, color: "var(--color-primary)", fontSize: "0.95rem" }}>
-                                {appraisal.teaching.feedback.averagePoints}
-                              </TableCell>
-                            </TableRow>
-                          );
-                        })()}
-                      </>
-                    ) : (
-                      <TableRow>
-                        <TableCell colSpan={5} align="center" sx={{ py: 3, color: "var(--text-secondary)", fontStyle: "italic" }}>
-                          No course feedbacks found.
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
-              </TableContainer>
-              </>
-              )}
-
-              {/* 1.4 CO Attainment */}
-              {!(appraisal.status === "Completed" && (!appraisal.teaching.coAttainment?.courses || appraisal.teaching.coAttainment.courses.length === 0)) && (
-              <>
-              <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 1.5, color: "var(--color-primary)" }}>
-                1.4 CO Attainment (Theory only)
-              </Typography>
-              <TableContainer component={Paper} elevation={0} sx={{ borderRadius: "16px", background: "var(--bg-paper)", border: "1px solid var(--border-color)", overflowX: "auto", boxShadow: "none", maxWidth: { xs: "100%", md: "100%", lg: 1000, xl: 1100 }, mx: "auto", mb: 4 }}>
-                <Table size="small" sx={{ minWidth: 650, mx: "auto" }}>
-                  <TableHead sx={{ background: "var(--gradient-primary)" }}>
-                    <TableRow>
-                      <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }}>Course Name</TableCell>
-                      <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }}>Sem-Branch-Sec</TableCell>
-                      <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }} align="center">Total COs</TableCell>
-                      <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }} align="center">COs Attained</TableCell>
-                      <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }} align="center">Points claimed</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {appraisal.teaching.coAttainment.courses.length > 0 ? (
-                      <>
-                        {appraisal.teaching.coAttainment.courses.map((c, i) => (
-                          <TableRow key={i} sx={{ "&:hover": { bgcolor: "var(--bg-hover)" } }}>
-                            <TableCell sx={{ fontWeight: 600, color: "var(--text-primary)" }}>{c.courseName}</TableCell>
-                            <TableCell sx={{ color: "var(--text-primary)" }}>{c.secBranchSem}</TableCell>
-                            <TableCell align="center" sx={{ color: "var(--text-primary)" }}>{c.noOfCos}</TableCell>
-                            <TableCell align="center" sx={{ color: "var(--text-primary)" }}>{c.noOfCosAttained}</TableCell>
-                            <TableCell align="center" sx={{ fontWeight: 800, color: "var(--color-primary)" }}>{c.pointsClaimed}</TableCell>
-                          </TableRow>
-                        ))}
-                        {/* Summary / Average Row */}
-                        {(() => {
-                          const totalCos = appraisal.teaching.coAttainment.courses.reduce((sum, c) => sum + (Number(c.noOfCos) || 0), 0);
-                          const totalCosAttained = appraisal.teaching.coAttainment.courses.reduce((sum, c) => sum + (Number(c.noOfCosAttained) || 0), 0);
-                          return (
-                            <TableRow sx={{ background: "rgba(0, 78, 146, 0.04)", "&:hover": { bgcolor: "rgba(0, 78, 146, 0.06) !important" } }}>
-                              <TableCell colSpan={2} sx={{ fontWeight: 800, color: "var(--text-primary)", pl: 2 }}>
-                                <Box component="span" sx={{ position: "sticky", left: 16, display: "inline-block", whiteSpace: "nowrap" }}>
-                                  Overall Performance
-                                </Box>
-                              </TableCell>
-                              <TableCell align="center" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>{totalCos}</TableCell>
-                              <TableCell align="center" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>{totalCosAttained}</TableCell>
-                              <TableCell align="center" sx={{ fontWeight: 900, color: "var(--color-primary)", fontSize: "0.95rem" }}>
-                                {appraisal.teaching.coAttainment.averagePoints}
-                              </TableCell>
-                            </TableRow>
-                          );
-                        })()}
-                      </>
-                    ) : (
-                      <TableRow>
-                        <TableCell colSpan={5} align="center" sx={{ py: 3, color: "var(--text-secondary)", fontStyle: "italic" }}>
-                          No CO attainment details found.
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
-              </TableContainer>
-              </>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* 2. Research Contributions */}
-          <Card sx={{ borderRadius: "20px", background: "var(--bg-panel)", border: "1px solid var(--border-color)", mb: 4, boxShadow: "var(--shadow-premium)" }}>
-            <CardContent sx={{ p: 3.5 }}>
-              <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3, flexWrap: "wrap", gap: 2 }}>
-                <Box>
-                  <Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)", display: "flex", alignItems: "center", gap: 1.5 }}>
-                    <Science sx={{ color: "#a855f7" }} /> 2. Research Contributions
-                  </Typography>
-                  <Typography variant="caption" sx={{ color: "var(--text-secondary)", fontWeight: 500, display: "block", ml: 5 }}>
-                    Maximum Points: 80*
-                  </Typography>
+                      </Card>
+                    </Box>
+                  ))}
                 </Box>
-                <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 2, bgcolor: "rgba(168, 85, 247, 0.04)", p: "8px 16px", borderRadius: "12px", border: "1px solid rgba(168, 85, 247, 0.1)", width: { xs: "100%", sm: "auto" } }}>
+              </CardContent>
+            </Card>
+
+            {/* PART-B: Performance Details */}
+            <Box sx={{ mb: 4, mt: 4, display: "flex", alignItems: "center", gap: 2 }}>
+              <Typography variant="h6" sx={{ fontWeight: 900, color: "var(--text-primary)", display: "flex", alignItems: "center", gap: 1.5, letterSpacing: "-0.02em" }}>
+                <AssignmentTurnedIn sx={{ color: "#e8a000" }} /> PART-B: Performance Details
+              </Typography>
+              <Divider sx={{ borderColor: "var(--border-color)" }} />
+            </Box>
+
+            {/* 1. Teaching & Learning */}
+            <Card sx={{ borderRadius: "20px", background: "var(--bg-panel)", border: "1px solid var(--border-color)", mb: 4, boxShadow: "var(--shadow-premium)" }}>
+              <CardContent sx={{ p: 3.5 }}>
+                <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3, flexWrap: "wrap", gap: 2 }}>
                   <Box>
-                    <Typography variant="caption" sx={{ color: "var(--text-secondary)", fontWeight: 700, display: "block", fontSize: "0.7rem", textTransform: "uppercase" }}>
-                      Total Points Earned
+                    <Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)", display: "flex", alignItems: "center", gap: 1.5 }}>
+                      <MenuBook sx={{ color: "var(--color-primary)" }} /> 1. Teaching & Learning
                     </Typography>
-                    <Box sx={{ display: "flex", alignItems: "baseline", gap: 0.5 }}>
-                      <Typography variant="h6" sx={{ fontWeight: 900, color: "#a855f7" }}>
-                        {eligibility.scores.R_sum}
-                      </Typography>
-                      <Typography variant="body2" sx={{ color: "var(--text-secondary)", fontWeight: 700 }}>
-                        / 80
-                      </Typography>
-                    </Box>
-                  </Box>
-                  <Box sx={{ position: "relative", display: "inline-flex" }}>
-                    <Loader
-                      variant="determinate"
-                      value={100}
-                      size={40}
-                      thickness={4}
-                      sx={{ color: "var(--border-color)", opacity: 0.15 }}
-                    />
-                    <Loader
-                      variant="determinate"
-                      value={Math.min(100, Math.round((eligibility.scores.R_sum / 80) * 100))}
-                      size={40}
-                      thickness={4}
-                      sx={{
-                        color: "#a855f7",
-                        position: "absolute",
-                        left: 0
-                      }}
-                    />
-                    <Box sx={{ top: 0, left: 0, bottom: 0, right: 0, position: "absolute", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                      <Typography variant="caption" sx={{ fontWeight: 800, color: "var(--text-primary)", fontSize: "0.7rem" }}>
-                        {Math.min(100, Math.round((eligibility.scores.R_sum / 80) * 100))}%
-                      </Typography>
-                    </Box>
-                  </Box>
-                </Box>
-              </Box>
-              <Divider sx={{ mb: 3 }} />
-
-              {/* 2.1 Papers Publication with Claims Coordination */}
-              {!(appraisal.status === "Completed" && (!appraisal.research.papers?.items || appraisal.research.papers.items.length === 0)) && (
-              <>
-              <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 1.5, color: "var(--color-primary)" }}>
-                2.1 Paper Publication: (only for one Aditya author)
-              </Typography>
-              <TableContainer component={Paper} elevation={0} sx={{ mb: 4, borderRadius: "16px", background: "var(--bg-paper)", border: "1px solid var(--border-color)", overflowX: "auto", boxShadow: "none", maxWidth: { xs: "100%", md: "100%", lg: 1000, xl: 1100 }, mx: "auto" }}>
-                <Table size="small" sx={{ minWidth: 800, mx: "auto" }}>
-                  <TableHead sx={{ background: "var(--gradient-primary)" }}>
-                    <TableRow>
-                      <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2, width: "80px", whiteSpace: "nowrap" }} align="center">S. No</TableCell>
-                      <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }}>Article details in IEEE format</TableCell>
-                      <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }} align="center">Category of the Journal</TableCell>
-                      <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }} align="center">JCR Impact Factor</TableCell>
-                      <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }} align="center">Points claimed</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {appraisal.research.papers.items.length > 0 ? (
-                      <>
-                        {appraisal.research.papers.items.map((p, i) => (
-                          <TableRow key={i} sx={{ "&:hover": { bgcolor: "var(--bg-hover)" } }}>
-                            <TableCell align="center" sx={{ color: "var(--text-primary)" }}>{i + 1}</TableCell>
-                            <TableCell sx={{ fontWeight: 600, color: "var(--text-primary)" }}>{p.title}</TableCell>
-                            <TableCell align="center" sx={{ color: "var(--text-primary)" }}>{p.scope}</TableCell>
-                            <TableCell align="center" sx={{ color: "var(--text-primary)" }}>{p.impactFactor ?? 0}</TableCell>
-                            <TableCell align="center" sx={{ fontWeight: 800, color: "var(--color-primary)" }}>{p.pointsClaimed}</TableCell>
-                          </TableRow>
-                        ))}
-                        {/* Summary / Total Row */}
-                        <TableRow sx={{ background: "rgba(0, 78, 146, 0.04)", "&:hover": { bgcolor: "rgba(0, 78, 146, 0.06) !important" } }}>
-                          <TableCell colSpan={4} sx={{ fontWeight: 800, color: "var(--text-primary)", pl: 2 }}>
-                            <Box component="span" sx={{ position: "sticky", left: 16, display: "inline-block", whiteSpace: "nowrap" }}>
-                              Self-Assessment Points
-                            </Box>
-                          </TableCell>
-                          <TableCell align="center" sx={{ fontWeight: 900, color: "var(--color-primary)", fontSize: "0.95rem" }}>
-                            {appraisal.research.papers.items.reduce((sum, p) => sum + (Number(p.pointsClaimed) || 0), 0)}
-                          </TableCell>
-                        </TableRow>
-                      </>
-                    ) : (
-                      <TableRow>
-                        <TableCell colSpan={5} align="center" sx={{ py: 3, color: "var(--text-secondary)", fontStyle: "italic" }}>
-                          No approved journals found.
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
-              </TableContainer>
-              </>
-              )}
-
-              {/* PhD, Books, Patents */}
-              {/* 2.2 Guiding Ph. D Scholars */}
-              {appraisal.research.phdGuiding?.items?.length > 0 && (
-                <>
-                  <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 1.5, color: "var(--color-primary)" }}>
-                    2.2 Guiding Ph. D Scholars: Pursuing- 2 Points, Awarded- 20 points
-                  </Typography>
-                  <TableContainer component={Paper} elevation={0} sx={{ mb: 4, borderRadius: "16px", background: "var(--bg-paper)", border: "1px solid var(--border-color)", overflowX: "auto", boxShadow: "none", maxWidth: { xs: "100%", md: "100%", lg: 1000, xl: 1100 }, mx: "auto" }}>
-                    <Table size="small" sx={{ minWidth: 800, mx: "auto" }}>
-                      <TableHead sx={{ background: "var(--gradient-primary)" }}>
-                        <TableRow>
-                          <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2, width: "80px", whiteSpace: "nowrap" }} align="center">S. No</TableCell>
-                          <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }}>Name of the Research Scholar (FT/PT)</TableCell>
-                          <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }}>University</TableCell>
-                          <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }} align="center">Month & Year of Admission/Award</TableCell>
-                          <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }} align="center">Pursuing / Awarded</TableCell>
-                          <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }} align="center">Points claimed</TableCell>
-                        </TableRow>
-                      </TableHead>
-                      <TableBody>
-                        {appraisal.research.phdGuiding.items.map((p, i) => (
-                          <TableRow key={i} sx={{ "&:hover": { bgcolor: "var(--bg-hover)" } }}>
-                            <TableCell align="center" sx={{ color: "var(--text-primary)" }}>{i + 1}</TableCell>
-                            <TableCell sx={{ fontWeight: 600, color: "var(--text-primary)" }}>
-                              {p.name} ({p.scholarType === 'Part-Time' ? 'PT' : 'FT'})
-                            </TableCell>
-                            <TableCell sx={{ color: "var(--text-primary)" }}>{p.university || "Aditya University"}</TableCell>
-                            <TableCell align="center" sx={{ color: "var(--text-primary)" }}>
-                              {p.admissionOrAwardDate ? new Date(p.admissionOrAwardDate).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : "—"}
-                            </TableCell>
-                            <TableCell align="center" sx={{ color: "var(--text-primary)" }}>{p.status}</TableCell>
-                            <TableCell align="center" sx={{ fontWeight: 800, color: "var(--color-primary)" }}>{p.pointsClaimed}</TableCell>
-                          </TableRow>
-                        ))}
-                        <TableRow sx={{ background: "rgba(0, 78, 146, 0.04)", "&:hover": { bgcolor: "rgba(0, 78, 146, 0.06) !important" } }}>
-                          <TableCell colSpan={5} sx={{ fontWeight: 800, color: "var(--text-primary)", pl: 2 }}>
-                            <Box component="span" sx={{ position: "sticky", left: 16, display: "inline-block", whiteSpace: "nowrap" }}>
-                              Self-Assessment Points
-                            </Box>
-                          </TableCell>
-                          <TableCell align="center" sx={{ fontWeight: 900, color: "var(--color-primary)", fontSize: "0.95rem" }}>
-                            {appraisal.research.phdGuiding.items.reduce((sum, p) => sum + (Number(p.pointsClaimed) || 0), 0)}
-                          </TableCell>
-                        </TableRow>
-                      </TableBody>
-                    </Table>
-                  </TableContainer>
-                </>
-              )}
-
-              {/* 2.3 Books / Chapters */}
-              {appraisal.research.booksChapters?.items?.length > 0 && (
-                <>
-                  <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 1.5, color: "var(--color-primary)" }}>
-                    2.3 Books / Chapters (Max 10 pts)
-                  </Typography>
-                  <TableContainer component={Paper} elevation={0} sx={{ mb: 4, borderRadius: "16px", background: "var(--bg-paper)", border: "1px solid var(--border-color)", overflowX: "auto", boxShadow: "none", maxWidth: { xs: "100%", md: "100%", lg: 1000, xl: 1100 }, mx: "auto" }}>
-                    <Table size="small" sx={{ minWidth: 800, mx: "auto" }}>
-                      <TableHead sx={{ background: "var(--gradient-primary)" }}>
-                        <TableRow>
-                          <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2, width: "80px", whiteSpace: "nowrap" }} align="center">S. No</TableCell>
-                          <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }}>Details of Books/Chapter/conference Proceedings published along with ISBN/ISSN number</TableCell>
-                          <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }}>Category (Book/chapter/Proceedings)</TableCell>
-                          <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }}>Publisher</TableCell>
-                          <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }} align="center">Points claimed</TableCell>
-                        </TableRow>
-                      </TableHead>
-                      <TableBody>
-                        {appraisal.research.booksChapters.items.map((b, i) => (
-                          <TableRow key={i} sx={{ "&:hover": { bgcolor: "var(--bg-hover)" } }}>
-                            <TableCell align="center" sx={{ color: "var(--text-primary)" }}>{i + 1}</TableCell>
-                            <TableCell sx={{ fontWeight: 600, color: "var(--text-primary)" }}>{b.title}</TableCell>
-                            <TableCell sx={{ color: "var(--text-primary)" }}>
-                              {b.itemType === 'Textbook' ? 'Book' : b.itemType === 'BookChapter' ? 'Book Chapter' : 'Conference Proceedings'}
-                            </TableCell>
-                            <TableCell sx={{ color: "var(--text-primary)" }}>{b.publisher || "—"}</TableCell>
-                            <TableCell align="center" sx={{ fontWeight: 800, color: "var(--color-primary)" }}>{b.pointsClaimed}</TableCell>
-                          </TableRow>
-                        ))}
-                        <TableRow sx={{ background: "rgba(0, 78, 146, 0.04)", "&:hover": { bgcolor: "rgba(0, 78, 146, 0.06) !important" } }}>
-                          <TableCell colSpan={4} sx={{ fontWeight: 800, color: "var(--text-primary)", pl: 2 }}>
-                            <Box component="span" sx={{ position: "sticky", left: 16, display: "inline-block", whiteSpace: "nowrap" }}>
-                              Self-Assessment Points (Max:10)
-                            </Box>
-                          </TableCell>
-                          <TableCell align="center" sx={{ fontWeight: 900, color: "var(--color-primary)", fontSize: "0.95rem" }}>
-                            {Math.min(10, appraisal.research.booksChapters.items.reduce((sum, b) => sum + (Number(b.pointsClaimed) || 0), 0))}
-                          </TableCell>
-                        </TableRow>
-                      </TableBody>
-                    </Table>
-                  </TableContainer>
-                </>
-              )}
-
-              {/* 2.4 Patents */}
-              {appraisal.research.patents?.items?.length > 0 && (
-                <>
-                  <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 1.5, color: "var(--color-primary)" }}>
-                    2.4 Patents
-                  </Typography>
-                  <TableContainer component={Paper} elevation={0} sx={{ mb: 4, borderRadius: "16px", background: "var(--bg-paper)", border: "1px solid var(--border-color)", overflowX: "auto", boxShadow: "none", maxWidth: { xs: "100%", md: "100%", lg: 1000, xl: 1100 }, mx: "auto" }}>
-                    <Table size="small" sx={{ minWidth: 800, mx: "auto" }}>
-                      <TableHead sx={{ background: "var(--gradient-primary)" }}>
-                        <TableRow>
-                          <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2, width: "80px", whiteSpace: "nowrap" }} align="center">S. No</TableCell>
-                          <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }}>Patent Title along with Number and date</TableCell>
-                          <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }}>Patent filed Country</TableCell>
-                          <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }}>Published/Granted</TableCell>
-                          <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }} align="center">Points claimed</TableCell>
-                        </TableRow>
-                      </TableHead>
-                      <TableBody>
-                        {appraisal.research.patents.items.map((p, i) => {
-                          const dateObj = new Date(p.dateOfFiling);
-                          const dateString = !isNaN(dateObj) ? dateObj.toLocaleDateString("en-GB") : "N/A";
-                          return (
-                            <TableRow key={i} sx={{ "&:hover": { bgcolor: "var(--bg-hover)" } }}>
-                              <TableCell align="center" sx={{ color: "var(--text-primary)" }}>{i + 1}</TableCell>
-                              <TableCell sx={{ fontWeight: 600, color: "var(--text-primary)" }}>{p.title} - {p.filingNo} - {dateString}</TableCell>
-                              <TableCell sx={{ color: "var(--text-primary)" }}>{p.country}</TableCell>
-                              <TableCell sx={{ color: "var(--text-primary)" }}>{p.status}</TableCell>
-                              <TableCell align="center" sx={{ fontWeight: 800, color: "var(--color-primary)" }}>{p.pointsClaimed}</TableCell>
-                            </TableRow>
-                          );
-                        })}
-                        <TableRow sx={{ background: "rgba(0, 78, 146, 0.04)", "&:hover": { bgcolor: "rgba(0, 78, 146, 0.06) !important" } }}>
-                          <TableCell colSpan={4} sx={{ fontWeight: 800, color: "var(--text-primary)", pl: 2 }}>
-                            <Box component="span" sx={{ position: "sticky", left: 16, display: "inline-block", whiteSpace: "nowrap" }}>
-                              Self-Assessment Points
-                            </Box>
-                          </TableCell>
-                          <TableCell align="center" sx={{ fontWeight: 900, color: "var(--color-primary)", fontSize: "0.95rem" }}>
-                            {appraisal.research.patents.items.reduce((sum, p) => sum + (Number(p.pointsClaimed) || 0), 0)}
-                          </TableCell>
-                        </TableRow>
-                      </TableBody>
-                    </Table>
-                  </TableContainer>
-                </>
-              )}
-
-              {/* 2.5 Novel Products / Technology */}
-              {appraisal.research.novelProducts?.items?.length > 0 && (
-                <>
-                  <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 1.5, color: "var(--color-primary)" }}>
-                    2.5 Novel Products / Technology
-                  </Typography>
-                  <TableContainer component={Paper} elevation={0} sx={{ mb: 4, borderRadius: "16px", background: "var(--bg-paper)", border: "1px solid var(--border-color)", overflowX: "auto", boxShadow: "none", maxWidth: { xs: "100%", md: "100%", lg: 1000, xl: 1100 }, mx: "auto" }}>
-                    <Table size="small" sx={{ minWidth: 700, mx: "auto" }}>
-                      <TableHead sx={{ background: "var(--gradient-primary)" }}>
-                        <TableRow>
-                          <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2, width: "80px", whiteSpace: "nowrap" }} align="center">S. No</TableCell>
-                          <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }}>Details of the Novel Product/Technology</TableCell>
-                          <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }}>Name of the Implemented organization</TableCell>
-                          <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }} align="center">Points claimed</TableCell>
-                        </TableRow>
-                      </TableHead>
-                      <TableBody>
-                        {appraisal.research.novelProducts.items.map((p, i) => (
-                          <TableRow key={i} sx={{ "&:hover": { bgcolor: "var(--bg-hover)" } }}>
-                            <TableCell align="center" sx={{ color: "var(--text-primary)" }}>{i + 1}</TableCell>
-                            <TableCell sx={{ fontWeight: 600, color: "var(--text-primary)" }}>{p.title} ({p.status})</TableCell>
-                            <TableCell sx={{ color: "var(--text-primary)" }}>{p.organizationName}</TableCell>
-                            <TableCell align="center" sx={{ fontWeight: 800, color: "var(--color-primary)" }}>{p.pointsClaimed}</TableCell>
-                          </TableRow>
-                        ))}
-                        <TableRow sx={{ background: "rgba(0, 78, 146, 0.04)", "&:hover": { bgcolor: "rgba(0, 78, 146, 0.06) !important" } }}>
-                          <TableCell colSpan={3} sx={{ fontWeight: 800, color: "var(--text-primary)", pl: 2 }}>
-                            <Box component="span" sx={{ position: "sticky", left: 16, display: "inline-block", whiteSpace: "nowrap" }}>
-                              Self-Assessment Points
-                            </Box>
-                          </TableCell>
-                          <TableCell align="center" sx={{ fontWeight: 900, color: "var(--color-primary)", fontSize: "0.95rem" }}>
-                            {appraisal.research.novelProducts.items.reduce((sum, p) => sum + (Number(p.pointsClaimed) || 0), 0)}
-                          </TableCell>
-                        </TableRow>
-                      </TableBody>
-                    </Table>
-                  </TableContainer>
-                </>
-              )}
-
-              {/* 2.6 Funded Projects & Consultancies */}
-              {appraisal.research.projectsConsultancies?.items?.length > 0 && (
-                <>
-                  <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 1.5, color: "var(--color-primary)" }}>
-                    2.6 Funded Projects & Consultancies
-                  </Typography>
-                  <TableContainer component={Paper} elevation={0} sx={{ mb: 4, borderRadius: "16px", background: "var(--bg-paper)", border: "1px solid var(--border-color)", overflowX: "auto", boxShadow: "none", maxWidth: { xs: "100%", md: "100%", lg: 1000, xl: 1100 }, mx: "auto" }}>
-                    <Table size="small" sx={{ minWidth: 800, mx: "auto" }}>
-                      <TableHead sx={{ background: "var(--gradient-primary)" }}>
-                        <TableRow>
-                          <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2, width: "80px", whiteSpace: "nowrap" }} align="center">S. No</TableCell>
-                          <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }}>Details of the Research Project/Consultancy</TableCell>
-                          <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }}>Funding Agency/Industry</TableCell>
-                          <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }} align="right">Total worth (in lakhs)</TableCell>
-                          <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }} align="center">Points claimed</TableCell>
-                        </TableRow>
-                      </TableHead>
-                      <TableBody>
-                        {appraisal.research.projectsConsultancies.items.map((p, i) => (
-                          <TableRow key={i} sx={{ "&:hover": { bgcolor: "var(--bg-hover)" } }}>
-                            <TableCell align="center" sx={{ color: "var(--text-primary)" }}>{i + 1}</TableCell>
-                            <TableCell sx={{ fontWeight: 600, color: "var(--text-primary)" }}>
-                              {p.title} ({p.projectType === 'FundedProject' ? 'Funded Project' : 'Consultancy'} - {p.status})
-                            </TableCell>
-                            <TableCell sx={{ color: "var(--text-primary)" }}>{p.agency || "N/A"}</TableCell>
-                            <TableCell align="right" sx={{ color: "var(--text-primary)" }}>{p.amountInLakhs || 0}</TableCell>
-                            <TableCell align="center" sx={{ fontWeight: 800, color: "var(--color-primary)" }}>{p.pointsClaimed}</TableCell>
-                          </TableRow>
-                        ))}
-                        <TableRow sx={{ background: "rgba(0, 78, 146, 0.04)", "&:hover": { bgcolor: "rgba(0, 78, 146, 0.06) !important" } }}>
-                          <TableCell colSpan={4} sx={{ fontWeight: 800, color: "var(--text-primary)", pl: 2 }}>
-                            <Box component="span" sx={{ position: "sticky", left: 16, display: "inline-block", whiteSpace: "nowrap" }}>
-                              Self-Assessment Points
-                            </Box>
-                          </TableCell>
-                          <TableCell align="center" sx={{ fontWeight: 900, color: "var(--color-primary)", fontSize: "0.95rem" }}>
-                            {appraisal.research.projectsConsultancies.items.reduce((sum, p) => sum + (Number(p.pointsClaimed) || 0), 0)}
-                          </TableCell>
-                        </TableRow>
-                      </TableBody>
-                    </Table>
-                  </TableContainer>
-                </>
-              )}
-
-              {/* 2.7 — Scopus Citations */}
-              <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 1.5, mt: 4, color: "var(--color-primary)" }}>
-                2.7 Scopus Citations
-              </Typography>
-              {appraisal.status !== "Completed" && (appraisal.research.scopusCitations === null || appraisal.research.scopusCitations === undefined) && (
-              <Alert severity="warning" sx={{ mb: 2, borderRadius: "10px", "& .MuiAlert-message": { width: "100%" } }}>
-                <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                  Scopus Citations and H-Index data not found. Please contact the Research Team to update your records.
-                </Typography>
-              </Alert>
-              )}
-
-              <TableContainer component={Paper} elevation={0} sx={{ mb: 4, borderRadius: "16px", background: "var(--bg-paper)", border: "1px solid var(--border-color)", overflowX: "auto", boxShadow: "none", maxWidth: { xs: "100%", md: "100%", lg: 1000, xl: 1100 }, mx: "auto" }}>
-                <Table size="small" sx={{ minWidth: 800, mx: "auto" }}>
-                  <TableHead sx={{ background: "var(--gradient-primary)" }}>
-                    <TableRow>
-                      <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2, width: "80px", whiteSpace: "nowrap" }} align="center">S. No</TableCell>
-                      <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }}>Metric Details</TableCell>
-                      <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }}>Citations ({citationYear})</TableCell>
-                      <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }} align="center">Evaluated Points</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    <TableRow sx={{ "&:hover": { bgcolor: "var(--bg-hover)" } }}>
-                      <TableCell align="center" sx={{ color: "var(--text-primary)" }}>1</TableCell>
-                      <TableCell sx={{ fontWeight: 600, color: "var(--text-primary)" }}>Scopus Citations</TableCell>
-                      <TableCell sx={{ color: "var(--text-primary)", fontWeight: 700 }}>{appraisal.research.scopusCitations != null ? appraisal.research.scopusCitations : "—"}</TableCell>
-                      <TableCell align="center" sx={{ fontWeight: 800, color: "var(--color-primary)" }}>{appraisal.research.scopusCitationScore || 0}</TableCell>
-                    </TableRow>
-
-                    <TableRow sx={{ background: "rgba(0, 78, 146, 0.04)", "&:hover": { bgcolor: "rgba(0, 78, 146, 0.06) !important" } }}>
-                      <TableCell colSpan={3} sx={{ fontWeight: 800, color: "var(--text-primary)", pl: 2 }}>
-                        <Box component="span" sx={{ position: "sticky", left: 16, display: "inline-block", whiteSpace: "nowrap" }}>
-                          Total Evaluated Points
-                        </Box>
-                      </TableCell>
-                      <TableCell align="center" sx={{ fontWeight: 900, color: "var(--color-primary)", fontSize: "0.95rem" }}>
-                        {appraisal.research.scopusCitationScore || 0}
-                      </TableCell>
-                    </TableRow>
-                  </TableBody>
-                </Table>
-              </TableContainer>
-
-              {/* 2.8 — Scopus h-index */}
-              <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 1.5, mt: 4, color: "var(--color-primary)" }}>
-                2.8 Scopus h-index
-              </Typography>
-
-
-              <TableContainer component={Paper} elevation={0} sx={{ mb: 4, borderRadius: "16px", background: "var(--bg-paper)", border: "1px solid var(--border-color)", overflowX: "auto", boxShadow: "none", maxWidth: { xs: "100%", md: "100%", lg: 1000, xl: 1100 }, mx: "auto" }}>
-                <Table size="small" sx={{ minWidth: 800, mx: "auto" }}>
-                  <TableHead sx={{ background: "var(--gradient-primary)" }}>
-                    <TableRow>
-                      <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2, width: "80px", whiteSpace: "nowrap" }} align="center">S. No</TableCell>
-                      <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }}>Metric Details</TableCell>
-                      <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }}>h-index in {previousHIndexYear}</TableCell>
-                      <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }}>h-index in {currentHIndexYear}</TableCell>
-                      <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }}>Raise (Diff)</TableCell>
-                      <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }} align="center">Evaluated Points</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    <TableRow sx={{ "&:hover": { bgcolor: "var(--bg-hover)" } }}>
-                      <TableCell align="center" sx={{ color: "var(--text-primary)" }}>1</TableCell>
-                      <TableCell sx={{ fontWeight: 600, color: "var(--text-primary)" }}>Scopus h-index</TableCell>
-                      <TableCell sx={{ color: "var(--text-primary)", fontWeight: 700 }}>
-                        {appraisal.research.hIndexPrevYear != null ? appraisal.research.hIndexPrevYear : "—"}
-                      </TableCell>
-                      <TableCell sx={{ color: "var(--text-primary)", fontWeight: 700 }}>
-                        {appraisal.research.hIndexCurrentYear != null ? appraisal.research.hIndexCurrentYear : "—"}
-                      </TableCell>
-                      <TableCell sx={{ color: "var(--text-primary)", fontWeight: 700 }}>
-                        {appraisal.research.hIndexPrevYear != null && appraisal.research.hIndexCurrentYear != null ? (
-                          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                            {appraisal.research.hIndexCurrentYear - appraisal.research.hIndexPrevYear > 0 ? (
-                              <Typography component="span" variant="caption" sx={{ color: "#10b981", fontWeight: 800, bgcolor: "rgba(16,185,129,0.1)", px: 1, py: 0.2, borderRadius: "4px" }}>
-                                +{appraisal.research.hIndexCurrentYear - appraisal.research.hIndexPrevYear}
-                              </Typography>
-                            ) : (
-                              appraisal.research.hIndexCurrentYear - appraisal.research.hIndexPrevYear
-                            )}
-                          </Box>
-                        ) : "—"}
-                      </TableCell>
-                      <TableCell align="center" sx={{ fontWeight: 800, color: "var(--color-primary)" }}>{appraisal.research.scopusHIndexScore || 0}</TableCell>
-                    </TableRow>
-
-                    <TableRow sx={{ background: "rgba(0, 78, 146, 0.04)", "&:hover": { bgcolor: "rgba(0, 78, 146, 0.06) !important" } }}>
-                      <TableCell colSpan={5} sx={{ fontWeight: 800, color: "var(--text-primary)", pl: 2 }}>
-                        <Box component="span" sx={{ position: "sticky", left: 16, display: "inline-block", whiteSpace: "nowrap" }}>
-                          Total Evaluated Points
-                        </Box>
-                      </TableCell>
-                      <TableCell align="center" sx={{ fontWeight: 900, color: "var(--color-primary)", fontSize: "0.95rem" }}>
-                        {appraisal.research.scopusHIndexScore || 0}
-                      </TableCell>
-                    </TableRow>
-                  </TableBody>
-                </Table>
-              </TableContainer>
-            </CardContent>
-          </Card>
-
-          {/* 3. Extension / Value Addition */}
-          <Card sx={{ borderRadius: "20px", background: "var(--bg-panel)", border: "1px solid var(--border-color)", mb: 4, boxShadow: "var(--shadow-premium)" }}>
-            <CardContent sx={{ p: 3.5 }}>
-              <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3, flexWrap: "wrap", gap: 2 }}>
-                <Box>
-                  <Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)", display: "flex", alignItems: "center", gap: 1.5 }}>
-                    <CardMembership sx={{ color: "#10b981" }} /> 3. Extension / Value Addition
-                  </Typography>
-                  <Typography variant="caption" sx={{ color: "var(--text-secondary)", fontWeight: 500, display: "block", ml: 5 }}>
-                    Maximum Points: 20
-                  </Typography>
-                </Box>
-                <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 2, bgcolor: "rgba(16, 185, 129, 0.04)", p: "8px 16px", borderRadius: "12px", border: "1px solid rgba(16, 185, 129, 0.1)", width: { xs: "100%", sm: "auto" } }}>
-                  <Box>
-                    <Typography variant="caption" sx={{ color: "var(--text-secondary)", fontWeight: 700, display: "block", fontSize: "0.7rem", textTransform: "uppercase" }}>
-                      Total Points Earned
+                    <Typography variant="caption" sx={{ color: "var(--text-secondary)", fontWeight: 500, display: "block", ml: 5 }}>
+                      Maximum Points: 80
                     </Typography>
-                    <Box sx={{ display: "flex", alignItems: "baseline", gap: 0.5 }}>
-                      <Typography variant="h6" sx={{ fontWeight: 900, color: "#10b981" }}>
-                        {eligibility.scores.V}
-                      </Typography>
-                      <Typography variant="body2" sx={{ color: "var(--text-secondary)", fontWeight: 700 }}>
-                        / 20
-                      </Typography>
-                    </Box>
                   </Box>
-                  <Box sx={{ position: "relative", display: "inline-flex" }}>
-                    <Loader
-                      variant="determinate"
-                      value={100}
-                      size={40}
-                      thickness={4}
-                      sx={{ color: "var(--border-color)", opacity: 0.15 }}
-                    />
-                    <Loader
-                      variant="determinate"
-                      value={Math.min(100, Math.round((eligibility.scores.V / 20) * 100))}
-                      size={40}
-                      thickness={4}
-                      sx={{
-                        color: "#10b981",
-                        position: "absolute",
-                        left: 0
-                      }}
-                    />
-                    <Box sx={{ top: 0, left: 0, bottom: 0, right: 0, position: "absolute", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                      <Typography variant="caption" sx={{ fontWeight: 800, color: "var(--text-primary)", fontSize: "0.7rem" }}>
-                        {Math.min(100, Math.round((eligibility.scores.V / 20) * 100))}%
-                      </Typography>
-                    </Box>
-                  </Box>
-                </Box>
-              </Box>
-              <Divider sx={{ mb: 3 }} />
-
-              {/* 3.1 Resource Utilization */}
-              {!(appraisal.status === "Completed" && (!resourceUtilizationDetails || resourceUtilizationDetails.length === 0)) && (
-              <>
-              <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
-                <Typography variant="subtitle1" sx={{ fontWeight: 700, color: "var(--color-primary)" }}>
-                  3.1 Resource Utilization (Max 10 points)
-                </Typography>
-                {(appraisal.status === "Draft" || appraisal.status === "Rejected by HOD") && (
-                  <Button
-                    variant="outlined"
-                    size="small"
-                    startIcon={<AddCircle />}
-                    onClick={handleResUtOpenAdd}
-                    sx={{ textTransform: "none", fontWeight: 700 }}
-                  >
-                    Add Resource Utilization
-                  </Button>
-                )}
-              </Box>
-
-              <TableContainer component={Paper} elevation={0} sx={{ mb: 4, borderRadius: "16px", background: "var(--bg-paper)", border: "1px solid var(--border-color)", overflowX: "auto", boxShadow: "none", maxWidth: { xs: "100%", md: "100%", lg: 1000, xl: 1100 }, mx: "auto" }}>
-                <Table size="small" sx={{ minWidth: 800, mx: "auto" }}>
-                  <TableHead sx={{ background: "var(--gradient-primary)" }}>
-                    <TableRow>
-                      <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2, width: "80px", whiteSpace: "nowrap" }}>S. No</TableCell>
-                      <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }}>Details of the Event along with dates</TableCell>
-                      <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2, width: "120px" }}>Duration</TableCell>
-                      <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2, width: "180px" }}>Role</TableCell>
-                      <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2, width: "130px" }} align="center">Points claimed</TableCell>
-                      <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2, width: "120px" }}>Status</TableCell>
-                      <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2, width: "120px" }} align="center">Actions</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {resourceUtilizationDetails.length > 0 ? (
-                      <>
-                        {resourceUtilizationDetails.map((activity, i) => {
-                          const statusStyle = getStatusColor(activity.status);
-                          const isEditable = activity.status === 'Draft' || activity.status === 'Rejected';
-                          const fromDateFormatted = activity.fromDate ? new Date(activity.fromDate).toLocaleDateString("en-IN", { day: '2-digit', month: '2-digit', year: 'numeric' }) : "";
-                          const toDateFormatted = activity.toDate ? new Date(activity.toDate).toLocaleDateString("en-IN", { day: '2-digit', month: '2-digit', year: 'numeric' }) : "";
-
-                          return (
-                            <TableRow key={activity._id || i} sx={{ "&:hover": { bgcolor: "var(--bg-hover)" } }}>
-                              <TableCell sx={{ color: "var(--text-primary)" }}>{i + 1}</TableCell>
-                              <TableCell sx={{ fontWeight: 600, color: "var(--text-primary)" }}>
-                                {activity.organizationName} {fromDateFormatted && toDateFormatted ? `(${fromDateFormatted} - ${toDateFormatted})` : ""}
-                                {activity.status === "Rejected" && activity.hodComment && (
-                                  <Typography variant="caption" sx={{ color: "error.main", mt: 0.5, display: "block", fontWeight: 700 }}>
-                                    Rejection Reason: {activity.hodComment}
-                                  </Typography>
-                                )}
-                              </TableCell>
-                              <TableCell sx={{ color: "var(--text-primary)" }}>{activity.duration} Days</TableCell>
-                              <TableCell sx={{ color: "var(--text-primary)" }}>{activity.activityType}</TableCell>
-                              <TableCell align="center" sx={{ fontWeight: 800, color: "var(--color-primary)" }}>
-                                {calculateResourceUtilizationPoints(activity, appraisalConfig)}
-                              </TableCell>
-                              <TableCell>
-                                <Chip
-                                  label={activity.status}
-                                  size="small"
-                                  sx={{
-                                    bgcolor: statusStyle.bg,
-                                    color: statusStyle.color,
-                                    fontWeight: 800,
-                                    borderRadius: "6px"
-                                  }}
-                                />
-                              </TableCell>
-                              <TableCell align="center">
-                                <Stack direction="row" spacing={1} sx={{ justifyContent: "center" }}>
-                                  <IconButton
-                                    size="small"
-                                    onClick={() => setSelectedResUtDetails(activity)}
-                                    sx={{ color: "var(--color-primary)" }}
-                                  >
-                                    <Visibility fontSize="small" />
-                                  </IconButton>
-                                  {isEditable && (appraisal.status === "Draft" || appraisal.status === "Rejected by HOD") && (
-                                    <>
-                                      <IconButton
-                                        size="small"
-                                        color="info"
-                                        onClick={() => handleResUtOpenEdit(activity)}
-                                      >
-                                        <Edit fontSize="small" />
-                                      </IconButton>
-                                      <IconButton
-                                        size="small"
-                                        color="error"
-                                        onClick={() => handleResUtDelete(activity._id)}
-                                      >
-                                        <Delete fontSize="small" />
-                                      </IconButton>
-                                    </>
-                                  )}
-                                </Stack>
-                              </TableCell>
-                            </TableRow>
-                          );
-                        })}
-                        {/* Footer row displaying dynamic sum */}
-                        <TableRow sx={{ background: "var(--bg-accent-1)" }}>
-                          <TableCell colSpan={4} sx={{ fontWeight: 800, pl: 2, color: "var(--text-primary)" }}>
-                            <Box component="span" sx={{ position: "sticky", left: 16, display: "inline-block", whiteSpace: "nowrap" }}>
-                              Self-Assessment Points (Max:10)
-                            </Box>
-                          </TableCell>
-                          <TableCell align="center" sx={{ fontWeight: 800, color: "var(--color-primary)", fontSize: "0.95rem" }}>
-                            {Math.min(10, resourceUtilizationDetails.reduce((sum, r) => r.status !== 'Rejected' ? sum + calculateResourceUtilizationPoints(r, appraisalConfig) : sum, 0))}
-                          </TableCell>
-                          <TableCell colSpan={2}></TableCell>
-                        </TableRow>
-                      </>
-                    ) : (
-                      <TableRow>
-                        <TableCell colSpan={7} align="center" sx={{ color: "var(--text-secondary)", py: 3, fontStyle: "italic" }}>
-                          No Resource Utilization records found for this academic year.
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
-              </TableContainer>
-              </>
-              )}
-
-              {/* 3.2 Expertise / Contribution */}
-              {!(appraisal.status === "Completed" && (!appraisal.extension?.contributions || appraisal.extension.contributions.length === 0)) && (
-              <>
-              <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
-                <Typography variant="subtitle1" sx={{ fontWeight: 700, color: "var(--color-primary)" }}>
-                  3.2 Expertise / Contribution (Max 10 points)
-                </Typography>
-                {(appraisal.status === "Draft" || appraisal.status === "Rejected by HOD") && (
-                  <Button
-                    variant="outlined"
-                    size="small"
-                    startIcon={<AddCircle />}
-                    onClick={handleContOpenAdd}
-                    sx={{ textTransform: "none", fontWeight: 700 }}
-                  >
-                    Add Contribution
-                  </Button>
-                )}
-              </Box>
-
-              <TableContainer component={Paper} elevation={0} sx={{ borderRadius: "16px", background: "var(--bg-paper)", border: "1px solid var(--border-color)", overflowX: "auto", boxShadow: "none", maxWidth: { xs: "100%", md: "100%", lg: 1000, xl: 1100 }, mx: "auto", mb: 4 }}>
-                <Table size="small" sx={{ minWidth: 800, mx: "auto" }}>
-                  <TableHead sx={{ background: "var(--gradient-primary)" }}>
-                    <TableRow>
-                      <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2, width: "80px", whiteSpace: "nowrap" }}>S. No</TableCell>
-                      <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }}>Details of the Faculty Expertise/Recognition/Contribution</TableCell>
-                      <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2, width: "130px" }} align="center">Points claimed</TableCell>
-                      <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2, width: "120px" }}>Status</TableCell>
-                      <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2, width: "120px" }} align="center">Actions</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {contributionDetails.length > 0 ? (
-                      <>
-                        {contributionDetails.map((item, i) => {
-                          const statusStyle = getStatusColor(item.status);
-                          const isEditable = item.status === 'Draft' || item.status === 'Rejected';
-                          const { value } = getContributionNameField(item.category, item);
-                          return (
-                            <TableRow key={item._id || i} sx={{ "&:hover": { bgcolor: "var(--bg-hover)" } }}>
-                              <TableCell sx={{ color: "var(--text-primary)" }}>{i + 1}</TableCell>
-                              <TableCell sx={{ fontWeight: 600, color: "var(--text-primary)" }}>
-                                {getCategoryName(item.category)} - {value || "N/A"}
-                                {item.status === "Rejected" && item.hodComment && (
-                                  <Typography variant="caption" sx={{ color: "error.main", mt: 0.5, display: "block", fontWeight: 700 }}>
-                                    Rejection Reason: {item.hodComment}
-                                  </Typography>
-                                )}
-                              </TableCell>
-                              <TableCell align="center" sx={{ fontWeight: 800, color: "var(--color-primary)" }}>
-                                {calculateContributionPoints(item, appraisalConfig)}
-                              </TableCell>
-                              <TableCell>
-                                <Chip
-                                  label={item.status}
-                                  size="small"
-                                  sx={{
-                                    bgcolor: statusStyle.bg,
-                                    color: statusStyle.color,
-                                    fontWeight: 800,
-                                    borderRadius: "6px"
-                                  }}
-                                />
-                              </TableCell>
-                              <TableCell align="center">
-                                <Stack direction="row" spacing={1} sx={{ justifyContent: "center" }}>
-                                  <IconButton
-                                    size="small"
-                                    onClick={() => setSelectedContDetails(item)}
-                                    sx={{ color: "var(--color-primary)" }}
-                                  >
-                                    <Visibility fontSize="small" />
-                                  </IconButton>
-                                  {isEditable && (appraisal.status === "Draft" || appraisal.status === "Rejected by HOD") && (
-                                    <>
-                                      <IconButton
-                                        size="small"
-                                        color="info"
-                                        onClick={() => handleContOpenEdit(item)}
-                                      >
-                                        <Edit fontSize="small" />
-                                      </IconButton>
-                                      <IconButton
-                                        size="small"
-                                        color="error"
-                                        onClick={() => handleContDelete(item._id)}
-                                      >
-                                        <Delete fontSize="small" />
-                                      </IconButton>
-                                    </>
-                                  )}
-                                </Stack>
-                              </TableCell>
-                            </TableRow>
-                          );
-                        })}
-                        {/* Footer row displaying dynamic sum */}
-                        <TableRow sx={{ background: "var(--bg-accent-1)" }}>
-                          <TableCell colSpan={2} sx={{ fontWeight: 800, pl: 2, color: "var(--text-primary)" }}>
-                            <Box component="span" sx={{ position: "sticky", left: 16, display: "inline-block", whiteSpace: "nowrap" }}>
-                              Self-Assessment Points (Max:10)
-                            </Box>
-                          </TableCell>
-                          <TableCell align="center" sx={{ fontWeight: 800, color: "var(--color-primary)", fontSize: "0.95rem" }}>
-                            {Math.min(10, contributionDetails.reduce((sum, r) => r.status !== 'Rejected' ? sum + calculateContributionPoints(r, appraisalConfig) : sum, 0))}
-                          </TableCell>
-                          <TableCell colSpan={2}></TableCell>
-                        </TableRow>
-                      </>
-                    ) : (
-                      <TableRow>
-                        <TableCell colSpan={5} align="center" sx={{ color: "var(--text-secondary)", py: 3, fontStyle: "italic" }}>
-                          No Expertise / Contribution records found for this academic year.
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
-              </TableContainer>
-              </>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* 4. Administrative Responsibilities */}
-          {!(appraisal.status === "Completed" && (!administrationDetail?.roles || administrationDetail.roles.length === 0)) && (
-          <Card sx={{ borderRadius: "20px", background: "var(--bg-panel)", border: "1px solid var(--border-color)", mb: 4, boxShadow: "var(--shadow-premium)" }}>
-            <CardContent sx={{ p: 3.5 }}>
-              <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3, flexWrap: "wrap", gap: 2 }}>
-                <Box>
-                  <Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)", display: "flex", alignItems: "center", gap: 1.5 }}>
-                    <AssignmentTurnedIn sx={{ color: "#f97316" }} /> 4. Administrative Responsibilities
-                  </Typography>
-                  <Typography variant="caption" sx={{ color: "var(--text-secondary)", fontWeight: 500, display: "block", ml: 5 }}>
-                    Maximum Points: 20
-                  </Typography>
-                </Box>
-                <Box sx={{ display: "flex", alignItems: "center", gap: 2, flexWrap: "wrap", width: { xs: "100%", sm: "auto" } }}>
-                  {(appraisal.status === "Draft" || appraisal.status === "Rejected by HOD") && (
-                    <Button
-                      variant="outlined"
-                      size="small"
-                      startIcon={<AddCircle />}
-                      onClick={openAdminModalAdd}
-                      sx={{ textTransform: "none", fontWeight: 700, whiteSpace: "nowrap" }}
-                    >
-                      Add Responsibility
-                    </Button>
-                  )}
-                  <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 2, bgcolor: "rgba(249, 115, 22, 0.04)", p: "8px 16px", borderRadius: "12px", border: "1px solid rgba(249, 115, 22, 0.1)", width: { xs: "100%", sm: "auto" } }}>
+                  <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 2, bgcolor: "rgba(59, 130, 246, 0.04)", p: "8px 16px", borderRadius: "12px", border: "1px solid rgba(59, 130, 246, 0.1)", width: { xs: "100%", sm: "auto" } }}>
                     <Box>
                       <Typography variant="caption" sx={{ color: "var(--text-secondary)", fontWeight: 700, display: "block", fontSize: "0.7rem", textTransform: "uppercase" }}>
                         Total Points Earned
                       </Typography>
                       <Box sx={{ display: "flex", alignItems: "baseline", gap: 0.5 }}>
-                        <Typography variant="h6" sx={{ fontWeight: 900, color: "#f97316" }}>
-                          {eligibility.scores.A}
+                        <Typography variant="h6" sx={{ fontWeight: 900, color: "var(--color-primary)" }}>
+                          {eligibility.scores.T}
+                        </Typography>
+                        <Typography variant="body2" sx={{ color: "var(--text-secondary)", fontWeight: 700 }}>
+                          / 80
+                        </Typography>
+                      </Box>
+                    </Box>
+                    <Box sx={{ position: "relative", display: "inline-flex" }}>
+                      <Loader
+                        variant="determinate"
+                        value={100}
+                        size={40}
+                        thickness={4}
+                        sx={{ color: "var(--border-color)", opacity: 0.15 }}
+                      />
+                      <Loader
+                        variant="determinate"
+                        value={Math.min(100, Math.round((eligibility.scores.T / 80) * 100))}
+                        size={40}
+                        thickness={4}
+                        sx={{
+                          color: "var(--color-primary)",
+                          position: "absolute",
+                          left: 0
+                        }}
+                      />
+                      <Box sx={{ top: 0, left: 0, bottom: 0, right: 0, position: "absolute", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                        <Typography variant="caption" sx={{ fontWeight: 800, color: "var(--text-primary)", fontSize: "0.7rem" }}>
+                          {Math.min(100, Math.round((eligibility.scores.T / 80) * 100))}%
+                        </Typography>
+                      </Box>
+                    </Box>
+                  </Box>
+                </Box>
+                <Divider sx={{ mb: 3 }} />
+
+                {/* 1.1 Course pass percentage */}
+                {!(appraisal.status === "Completed" && (!appraisal.teaching.passPercentage?.courses || appraisal.teaching.passPercentage.courses.length === 0)) && (
+                  <>
+                    <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 1, color: "var(--color-primary)" }}>
+                      1.1 Course Average Pass Percentage (Theory only)
+                    </Typography>
+                    <TableContainer component={Paper} elevation={0} sx={{ mb: 3.5, borderRadius: "16px", background: "var(--bg-paper)", border: "1px solid var(--border-color)", overflowX: "auto", boxShadow: "none", maxWidth: { xs: "100%", md: "100%", lg: 1000, xl: 1100 }, mx: "auto" }}>
+                      <Table size="small" sx={{ minWidth: 650, mx: "auto" }}>
+                        <TableHead sx={{ background: "var(--gradient-primary)" }}>
+                          <TableRow>
+                            <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }}>Course Name</TableCell>
+                            <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }}>Sem-Branch-Sec</TableCell>
+                            <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }} align="center">Appeared</TableCell>
+                            <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }} align="center">Passed</TableCell>
+                            <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }} align="center">Pass %</TableCell>
+                            <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }} align="center">Points claimed</TableCell>
+                          </TableRow>
+                        </TableHead>
+                        <TableBody>
+                          {appraisal.teaching.passPercentage.courses.length > 0 ? (
+                            <>
+                              {appraisal.teaching.passPercentage.courses.map((c, i) => (
+                                <TableRow key={i} sx={{ "&:hover": { bgcolor: "var(--bg-hover)" } }}>
+                                  <TableCell sx={{ fontWeight: 600, color: "var(--text-primary)" }}>{c.courseName}</TableCell>
+                                  <TableCell sx={{ color: "var(--text-primary)" }}>{c.secBranchSem}</TableCell>
+                                  <TableCell align="center" sx={{ color: "var(--text-primary)" }}>{c.appeared}</TableCell>
+                                  <TableCell align="center" sx={{ color: "var(--text-primary)" }}>{c.passed}</TableCell>
+                                  <TableCell align="center" sx={{ color: "var(--text-primary)" }}>{c.percentage}%</TableCell>
+                                  <TableCell align="center" sx={{ fontWeight: 800, color: "var(--color-primary)" }}>{c.pointsClaimed}</TableCell>
+                                </TableRow>
+                              ))}
+                              {/* Summary / Average Row */}
+                              {(() => {
+                                const totalAppeared = appraisal.teaching.passPercentage.courses.reduce((sum, c) => sum + (Number(c.appeared) || 0), 0);
+                                const totalPassed = appraisal.teaching.passPercentage.courses.reduce((sum, c) => sum + (Number(c.passed) || 0), 0);
+                                const overallPassPct = totalAppeared > 0 ? ((totalPassed / totalAppeared) * 100).toFixed(2) : "0.00";
+                                return (
+                                  <TableRow sx={{ background: "rgba(0, 78, 146, 0.04)", "&:hover": { bgcolor: "rgba(0, 78, 146, 0.06) !important" } }}>
+                                    <TableCell colSpan={2} sx={{ fontWeight: 800, color: "var(--text-primary)", pl: 2 }}>
+                                      <Box component="span" sx={{ position: "sticky", left: 16, display: "inline-block", whiteSpace: "nowrap" }}>
+                                        Overall Performance
+                                      </Box>
+                                    </TableCell>
+                                    <TableCell align="center" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>{totalAppeared}</TableCell>
+                                    <TableCell align="center" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>{totalPassed}</TableCell>
+                                    <TableCell align="center" sx={{ fontWeight: 900, color: "var(--color-primary)" }}>{overallPassPct}%</TableCell>
+                                    <TableCell align="center" sx={{ fontWeight: 900, color: "var(--color-primary)", fontSize: "0.95rem" }}>
+                                      {appraisal.teaching.passPercentage.averagePoints}
+                                    </TableCell>
+                                  </TableRow>
+                                );
+                              })()}
+                            </>
+                          ) : (
+                            <TableRow>
+                              <TableCell colSpan={6} align="center" sx={{ py: 3, color: "var(--text-secondary)", fontStyle: "italic" }}>
+                                No theory subjects result found.
+                              </TableCell>
+                            </TableRow>
+                          )}
+                        </TableBody>
+                      </Table>
+                    </TableContainer>
+                  </>
+                )}
+
+                {/* 1.2 Proctoring Students' Average Pass Percentage */}
+                {!(appraisal.status === "Completed" && (!appraisal.teaching.proctoring?.entries || appraisal.teaching.proctoring.entries.length === 0)) && (
+                  <Box sx={{ mb: 4 }}>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 2 }}>
+                      <Typography variant="subtitle1" sx={{ fontWeight: 700, color: "var(--color-primary)" }}>
+                        1.2 Proctoring Students' Average Pass Percentage
+                      </Typography>
+                    </Box>
+
+                    <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                        <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-secondary)" }}>
+                          Proctoring Records for this cycle:
+                        </Typography>
+                      </Box>
+                    </Box>
+
+                    <TableContainer component={Paper} elevation={0} sx={{ mb: 3.5, borderRadius: "16px", background: "var(--bg-paper)", border: "1px solid var(--border-color)", overflowX: "auto", boxShadow: "none", maxWidth: { xs: "100%", md: "100%", lg: 1000, xl: 1100 }, mx: "auto" }}>
+                      <Table size="small" sx={{ minWidth: 650, mx: "auto" }}>
+                        <TableHead sx={{ background: "var(--gradient-primary)" }}>
+                          <TableRow>
+                            <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }}>Program</TableCell>
+                            <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }}>Sem/Yr - Branch - Sec</TableCell>
+                            <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }} align="right">Total Allotted</TableCell>
+                            <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }} align="right">Eligible (A)</TableCell>
+                            <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }} align="right">Passed (B)</TableCell>
+                            <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }} align="right">Pass % (B/A)</TableCell>
+                            <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }} align="right">Points</TableCell>
+                          </TableRow>
+                        </TableHead>
+                        <TableBody>
+                          {appraisal.teaching.proctoring.entries.length > 0 ? (
+                            <>
+                              {appraisal.teaching.proctoring.entries.map((e, i) => {
+                                const isYearProg = e.yearNumber !== null && e.yearNumber !== undefined && e.yearNumber !== 0;
+                                const semYrBranchSec = isYearProg
+                                  ? `YEAR-${e.yearNumber} ${e.branchCode || "—"} - SEC ${e.section}`
+                                  : `SEM-${e.semesterNumber} ${e.branchCode || "—"} - SEC ${e.section}`;
+                                return (
+                                  <TableRow key={i} sx={{
+                                    "&:hover": { bgcolor: "var(--bg-hover)" }
+                                  }}>
+                                    <TableCell sx={{ fontWeight: 600, color: "var(--text-primary)" }}>{e.programCode || "—"}</TableCell>
+                                    <TableCell sx={{ color: "var(--text-primary)" }}>{semYrBranchSec}</TableCell>
+                                    <TableCell align="right" sx={{ color: "var(--text-primary)" }}>{e.totalStudents}</TableCell>
+                                    <TableCell align="right" sx={{ color: "#8B5CF6", fontWeight: 600 }}>{e.appeared}</TableCell>
+                                    <TableCell align="right" sx={{ color: "#10B981", fontWeight: 600 }}>{e.passed}</TableCell>
+                                    <TableCell align="right" sx={{ color: "var(--text-primary)" }}>{e.percentage.toFixed(2)}%</TableCell>
+                                    <TableCell align="right" sx={{ fontWeight: 800, color: "var(--color-primary)" }}>{e.pointsClaimed}</TableCell>
+                                  </TableRow>
+                                );
+                              })}
+                              {/* Summary / Average Row */}
+                              {(() => {
+                                const totalAppeared = appraisal.teaching.proctoring.entries.reduce((sum, e) => sum + (Number(e.appeared) || 0), 0);
+                                const totalPassed = appraisal.teaching.proctoring.entries.reduce((sum, e) => sum + (Number(e.passed) || 0), 0);
+                                const overallPassPct = totalAppeared > 0 ? ((totalPassed / totalAppeared) * 100).toFixed(2) : "0.00";
+                                return (
+                                  <TableRow sx={{ background: "rgba(0, 78, 146, 0.04)", "&:hover": { bgcolor: "rgba(0, 78, 146, 0.06) !important" } }}>
+                                    <TableCell colSpan={2} sx={{ fontWeight: 800, color: "var(--text-primary)", pl: 2 }}>
+                                      <Box component="span" sx={{ display: "inline-block", whiteSpace: "nowrap" }}>
+                                        Overall Performance (Average Points)
+                                      </Box>
+                                    </TableCell>
+                                    <TableCell align="right" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>{appraisal.teaching.proctoring.entries.reduce((sum, e) => sum + (Number(e.totalStudents) || 0), 0)}</TableCell>
+                                    <TableCell align="right" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>{totalAppeared}</TableCell>
+                                    <TableCell align="right" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>{totalPassed}</TableCell>
+                                    <TableCell align="right" sx={{ fontWeight: 900, color: "var(--color-primary)" }}>{overallPassPct}%</TableCell>
+                                    <TableCell align="right" sx={{ fontWeight: 900, color: "var(--color-primary)", fontSize: "0.95rem" }}>
+                                      {appraisal.teaching.proctoring.averagePoints} Points
+                                    </TableCell>
+                                  </TableRow>
+                                );
+                              })()}
+                            </>
+                          ) : (
+                            <TableRow>
+                              <TableCell colSpan={7} align="center" sx={{ py: 3, color: "var(--text-secondary)", fontStyle: "italic" }}>
+                                No proctoring records found.
+                              </TableCell>
+                            </TableRow>
+                          )}
+                        </TableBody>
+                      </Table>
+                    </TableContainer>
+                  </Box>
+                )}
+
+                {/* Self Appraisal Proctoring Form CRUD Dialog Modal */}
+                <Dialog
+                  open={isProctorModalOpen}
+                  onClose={() => setIsProctorModalOpen(false)}
+                  maxWidth="sm"
+                  fullWidth
+                  slotProps={{
+                    paper: {
+                      sx: {
+                        borderRadius: "20px",
+                        bgcolor: "var(--bg-panel)",
+                        border: "1px solid var(--border-color)",
+                        backgroundImage: "none",
+                        p: 1
+                      }
+                    }
+                  }}
+                >
+                  <DialogTitle sx={{ fontWeight: 800, fontSize: 18, color: "var(--text-primary)", pb: 1 }}>
+                    {editingEntry ? "Edit Proctoring Record" : "Add Proctoring Record"}
+                  </DialogTitle>
+                  <form onSubmit={handleProctorModalSubmit}>
+                    <DialogContent>
+                      <Grid container spacing={2.5} sx={{ mt: 0.5 }}>
+                        {/* Program selection */}
+                        <Grid size={{ xs: 12, sm: 6 }}>
+                          <FormControl fullWidth size="small">
+                            <InputLabel shrink sx={{ color: "var(--text-secondary)" }}>Program</InputLabel>
+                            <Select
+                              value={selectedProgramId}
+                              label="Program"
+                              onChange={(e) => setSelectedProgramId(e.target.value)}
+                              displayEmpty
+                              fullWidth
+                              sx={{ borderRadius: "10px", color: "var(--text-primary)", bgcolor: "rgba(255,255,255,0.01)" }}
+                            >
+                              <MenuItem value="" disabled sx={{ fontStyle: "italic", color: "var(--text-secondary)" }}>
+                                Select Program
+                              </MenuItem>
+                              {programs.map((p) => (
+                                <MenuItem key={p._id} value={p._id}>
+                                  {p.name} ({p.code})
+                                </MenuItem>
+                              ))}
+                            </Select>
+                          </FormControl>
+                        </Grid>
+
+                        {/* Branch selection */}
+                        <Grid size={{ xs: 12, sm: 6 }}>
+                          <FormControl fullWidth size="small" disabled={!selectedProgramId}>
+                            <InputLabel shrink sx={{ color: "var(--text-secondary)" }}>Branch Code</InputLabel>
+                            <Select
+                              value={selectedBranchId}
+                              label="Branch Code"
+                              onChange={(e) => setSelectedBranchId(e.target.value)}
+                              displayEmpty
+                              fullWidth
+                              sx={{ borderRadius: "10px", color: "var(--text-primary)", bgcolor: "rgba(255,255,255,0.01)" }}
+                            >
+                              <MenuItem value="" disabled sx={{ fontStyle: "italic", color: "var(--text-secondary)" }}>
+                                Select Branch
+                              </MenuItem>
+                              {branches.map((b) => (
+                                <MenuItem key={b._id} value={b._id}>
+                                  {b.name} ({b.code})
+                                </MenuItem>
+                              ))}
+                            </Select>
+                          </FormControl>
+                        </Grid>
+
+                        {/* Sem/Year numeric input based on Program Pattern */}
+                        <Grid size={{ xs: 12, sm: 6 }}>
+                          {(() => {
+                            const program = programs.find((p) => p._id === selectedProgramId);
+                            const isYearPattern = program?.programPattern === "YEAR";
+                            if (isYearPattern) {
+                              return (
+                                <TextField
+                                  label="Year Number"
+                                  type="number"
+                                  fullWidth
+                                  size="small"
+                                  required
+                                  value={yearNumber}
+                                  onChange={(e) => setYearNumber(e.target.value)}
+                                  slotProps={{ htmlInput: { min: 1, step: 1 } }}
+                                  sx={{ "& .MuiOutlinedInput-root": { borderRadius: "10px" } }}
+                                />
+                              );
+                            } else {
+                              return (
+                                <TextField
+                                  label="Semester Number"
+                                  type="number"
+                                  fullWidth
+                                  size="small"
+                                  required
+                                  value={semesterNumber}
+                                  onChange={(e) => setSemesterNumber(e.target.value)}
+                                  slotProps={{ htmlInput: { min: 1, step: 1 } }}
+                                  sx={{ "& .MuiOutlinedInput-root": { borderRadius: "10px" } }}
+                                />
+                              );
+                            }
+                          })()}
+                        </Grid>
+
+                        {/* Section - numeric only */}
+                        <Grid size={{ xs: 12, sm: 6 }}>
+                          <TextField
+                            label="Section (Numeric Only)"
+                            type="number"
+                            fullWidth
+                            size="small"
+                            required
+                            value={section}
+                            onChange={(e) => setSection(e.target.value)}
+                            slotProps={{ htmlInput: { min: 1, step: 1 } }}
+                            sx={{ "& .MuiOutlinedInput-root": { borderRadius: "10px" } }}
+                          />
+                        </Grid>
+
+                        {/* Student counts inputs */}
+                        <Grid size={{ xs: 12, sm: 4 }}>
+                          <TextField
+                            label="Total Allotted"
+                            type="number"
+                            fullWidth
+                            size="small"
+                            required
+                            value={totalStudents}
+                            onChange={(e) => setTotalStudents(e.target.value)}
+                            slotProps={{ htmlInput: { min: 0, step: 1 } }}
+                            sx={{ "& .MuiOutlinedInput-root": { borderRadius: "10px" } }}
+                          />
+                        </Grid>
+
+                        <Grid size={{ xs: 12, sm: 4 }}>
+                          <TextField
+                            label="Eligible for End Exams (A)"
+                            type="number"
+                            fullWidth
+                            size="small"
+                            required
+                            value={eligibleStudents}
+                            onChange={(e) => setEligibleStudents(e.target.value)}
+                            slotProps={{ htmlInput: { min: 0, step: 1 } }}
+                            sx={{ "& .MuiOutlinedInput-root": { borderRadius: "10px" } }}
+                          />
+                        </Grid>
+
+                        <Grid size={{ xs: 12, sm: 4 }}>
+                          <TextField
+                            label="Passed Students (B)"
+                            type="number"
+                            fullWidth
+                            size="small"
+                            required
+                            value={passedStudents}
+                            onChange={(e) => setPassedStudents(e.target.value)}
+                            slotProps={{ htmlInput: { min: 0, step: 1 } }}
+                            sx={{ "& .MuiOutlinedInput-root": { borderRadius: "10px" } }}
+                          />
+                        </Grid>
+
+                        {/* Calculated Pass Percentage display */}
+                        <Grid size={{ xs: 12 }}>
+                          <Box
+                            sx={{
+                              p: 2,
+                              borderRadius: "12px",
+                              bgcolor: "rgba(2, 132, 199, 0.05)",
+                              border: "1px solid rgba(2, 132, 199, 0.15)",
+                              display: "flex",
+                              justifyContent: "space-between",
+                              alignItems: "center"
+                            }}
+                          >
+                            <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-secondary)" }}>
+                              Calculated Pass Percentage:
+                            </Typography>
+                            <Typography variant="subtitle1" sx={{ fontWeight: 800, color: "var(--color-primary)" }}>
+                              {(() => {
+                                const elg = parseInt(eligibleStudents);
+                                const pass = parseInt(passedStudents);
+                                if (isNaN(elg) || isNaN(pass) || elg <= 0 || pass < 0 || pass > elg) return "0.00%";
+                                return `${((pass / elg) * 100).toFixed(2)}%`;
+                              })()}
+                            </Typography>
+                          </Box>
+                        </Grid>
+                      </Grid>
+                    </DialogContent>
+                    <DialogActions sx={{ px: 3, pb: 2.5, gap: 1 }}>
+                      <Button
+                        onClick={() => setIsProctorModalOpen(false)}
+                        disabled={submittingProctoring}
+                        sx={{ textTransform: "none", fontWeight: 700, color: "var(--text-secondary)" }}
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        type="submit"
+                        variant="contained"
+                        disabled={submittingProctoring}
+                        sx={{
+                          textTransform: "none",
+                          fontWeight: 700,
+
+                          px: 3,
+                          background: "var(--gradient-primary)",
+                          color: "#fff",
+                          boxShadow: "0 4px 15px rgba(0, 78, 146, 0.2)",
+                          "&:hover": {
+                            background: "var(--gradient-primary)",
+                            opacity: 0.95
+                          }
+                        }}
+                      >
+                        {submittingProctoring ? <Loader size={16} sx={{ color: "#fff" }} /> : editingEntry ? "Save Changes" : "Add Record"}
+                      </Button>
+                    </DialogActions>
+                  </form>
+                </Dialog>
+
+                {/* 1.3 Course Feedback */}
+                {!(appraisal.status === "Completed" && (!appraisal.teaching.feedback?.courses || appraisal.teaching.feedback.courses.length === 0)) && (
+                  <>
+                    <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 1.5, color: "var(--color-primary)" }}>
+                      1.3 Course Feedback
+                    </Typography>
+                    <TableContainer component={Paper} elevation={0} sx={{ mb: 3.5, borderRadius: "16px", background: "var(--bg-paper)", border: "1px solid var(--border-color)", overflowX: "auto", boxShadow: "none", maxWidth: { xs: "100%", md: "100%", lg: 1000, xl: 1100 }, mx: "auto" }}>
+                      <Table size="small" sx={{ minWidth: 650, mx: "auto" }}>
+                        <TableHead sx={{ background: "var(--gradient-primary)" }}>
+                          <TableRow>
+                            <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }}>Course Name</TableCell>
+                            <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }}>Sem-Branch-Sec</TableCell>
+                            <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }} align="center">Students</TableCell>
+                            <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }} align="center">Feedback %</TableCell>
+                            <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }} align="center">Points claimed</TableCell>
+                          </TableRow>
+                        </TableHead>
+                        <TableBody>
+                          {appraisal.teaching.feedback.courses.length > 0 ? (
+                            <>
+                              {appraisal.teaching.feedback.courses.map((c, i) => (
+                                <TableRow key={i} sx={{ "&:hover": { bgcolor: "var(--bg-hover)" } }}>
+                                  <TableCell sx={{ fontWeight: 600, color: "var(--text-primary)" }}>{c.courseName}</TableCell>
+                                  <TableCell sx={{ color: "var(--text-primary)" }}>{c.secBranchSem}</TableCell>
+                                  <TableCell align="center" sx={{ color: "var(--text-primary)" }}>{c.noOfStudents}</TableCell>
+                                  <TableCell align="center" sx={{ color: "var(--text-primary)" }}>{c.feedbackPercentage}%</TableCell>
+                                  <TableCell align="center" sx={{ fontWeight: 800, color: "var(--color-primary)" }}>{c.pointsClaimed}</TableCell>
+                                </TableRow>
+                              ))}
+                              {/* Summary / Average Row */}
+                              {(() => {
+                                const totalStudents = appraisal.teaching.feedback.courses.reduce((sum, c) => sum + (Number(c.noOfStudents) || 0), 0);
+                                const totalWeightedFeedback = appraisal.teaching.feedback.courses.reduce((sum, c) => sum + ((Number(c.noOfStudents) || 0) * (Number(c.feedbackPercentage) || 0)), 0);
+                                const overallFeedbackPct = totalStudents > 0 ? (totalWeightedFeedback / totalStudents).toFixed(2) : "0.00";
+                                return (
+                                  <TableRow sx={{ background: "rgba(0, 78, 146, 0.04)", "&:hover": { bgcolor: "rgba(0, 78, 146, 0.06) !important" } }}>
+                                    <TableCell colSpan={2} sx={{ fontWeight: 800, color: "var(--text-primary)", pl: 2 }}>
+                                      <Box component="span" sx={{ position: "sticky", left: 16, display: "inline-block", whiteSpace: "nowrap" }}>
+                                        Overall Performance
+                                      </Box>
+                                    </TableCell>
+                                    <TableCell align="center" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>{totalStudents}</TableCell>
+                                    <TableCell align="center" sx={{ fontWeight: 900, color: "var(--color-primary)" }}>{overallFeedbackPct}%</TableCell>
+                                    <TableCell align="center" sx={{ fontWeight: 900, color: "var(--color-primary)", fontSize: "0.95rem" }}>
+                                      {appraisal.teaching.feedback.averagePoints}
+                                    </TableCell>
+                                  </TableRow>
+                                );
+                              })()}
+                            </>
+                          ) : (
+                            <TableRow>
+                              <TableCell colSpan={5} align="center" sx={{ py: 3, color: "var(--text-secondary)", fontStyle: "italic" }}>
+                                No course feedbacks found.
+                              </TableCell>
+                            </TableRow>
+                          )}
+                        </TableBody>
+                      </Table>
+                    </TableContainer>
+                  </>
+                )}
+
+                {/* 1.4 CO Attainment */}
+                {!(appraisal.status === "Completed" && (!appraisal.teaching.coAttainment?.courses || appraisal.teaching.coAttainment.courses.length === 0)) && (
+                  <>
+                    <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 1.5, color: "var(--color-primary)" }}>
+                      1.4 CO Attainment (Theory only)
+                    </Typography>
+                    <TableContainer component={Paper} elevation={0} sx={{ borderRadius: "16px", background: "var(--bg-paper)", border: "1px solid var(--border-color)", overflowX: "auto", boxShadow: "none", maxWidth: { xs: "100%", md: "100%", lg: 1000, xl: 1100 }, mx: "auto", mb: 4 }}>
+                      <Table size="small" sx={{ minWidth: 650, mx: "auto" }}>
+                        <TableHead sx={{ background: "var(--gradient-primary)" }}>
+                          <TableRow>
+                            <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }}>Course Name</TableCell>
+                            <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }}>Sem-Branch-Sec</TableCell>
+                            <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }} align="center">Total COs</TableCell>
+                            <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }} align="center">COs Attained</TableCell>
+                            <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }} align="center">Points claimed</TableCell>
+                          </TableRow>
+                        </TableHead>
+                        <TableBody>
+                          {appraisal.teaching.coAttainment.courses.length > 0 ? (
+                            <>
+                              {appraisal.teaching.coAttainment.courses.map((c, i) => (
+                                <TableRow key={i} sx={{ "&:hover": { bgcolor: "var(--bg-hover)" } }}>
+                                  <TableCell sx={{ fontWeight: 600, color: "var(--text-primary)" }}>{c.courseName}</TableCell>
+                                  <TableCell sx={{ color: "var(--text-primary)" }}>{c.secBranchSem}</TableCell>
+                                  <TableCell align="center" sx={{ color: "var(--text-primary)" }}>{c.noOfCos}</TableCell>
+                                  <TableCell align="center" sx={{ color: "var(--text-primary)" }}>{c.noOfCosAttained}</TableCell>
+                                  <TableCell align="center" sx={{ fontWeight: 800, color: "var(--color-primary)" }}>{c.pointsClaimed}</TableCell>
+                                </TableRow>
+                              ))}
+                              {/* Summary / Average Row */}
+                              {(() => {
+                                const totalCos = appraisal.teaching.coAttainment.courses.reduce((sum, c) => sum + (Number(c.noOfCos) || 0), 0);
+                                const totalCosAttained = appraisal.teaching.coAttainment.courses.reduce((sum, c) => sum + (Number(c.noOfCosAttained) || 0), 0);
+                                return (
+                                  <TableRow sx={{ background: "rgba(0, 78, 146, 0.04)", "&:hover": { bgcolor: "rgba(0, 78, 146, 0.06) !important" } }}>
+                                    <TableCell colSpan={2} sx={{ fontWeight: 800, color: "var(--text-primary)", pl: 2 }}>
+                                      <Box component="span" sx={{ position: "sticky", left: 16, display: "inline-block", whiteSpace: "nowrap" }}>
+                                        Overall Performance
+                                      </Box>
+                                    </TableCell>
+                                    <TableCell align="center" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>{totalCos}</TableCell>
+                                    <TableCell align="center" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>{totalCosAttained}</TableCell>
+                                    <TableCell align="center" sx={{ fontWeight: 900, color: "var(--color-primary)", fontSize: "0.95rem" }}>
+                                      {appraisal.teaching.coAttainment.averagePoints}
+                                    </TableCell>
+                                  </TableRow>
+                                );
+                              })()}
+                            </>
+                          ) : (
+                            <TableRow>
+                              <TableCell colSpan={5} align="center" sx={{ py: 3, color: "var(--text-secondary)", fontStyle: "italic" }}>
+                                No CO attainment details found.
+                              </TableCell>
+                            </TableRow>
+                          )}
+                        </TableBody>
+                      </Table>
+                    </TableContainer>
+                  </>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* 2. Research Contributions */}
+            <Card sx={{ borderRadius: "20px", background: "var(--bg-panel)", border: "1px solid var(--border-color)", mb: 4, boxShadow: "var(--shadow-premium)" }}>
+              <CardContent sx={{ p: 3.5 }}>
+                <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3, flexWrap: "wrap", gap: 2 }}>
+                  <Box>
+                    <Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)", display: "flex", alignItems: "center", gap: 1.5 }}>
+                      <Science sx={{ color: "#a855f7" }} /> 2. Research Contributions
+                    </Typography>
+                    <Typography variant="caption" sx={{ color: "var(--text-secondary)", fontWeight: 500, display: "block", ml: 5 }}>
+                      Maximum Points: 80*
+                    </Typography>
+                  </Box>
+                  <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 2, bgcolor: "rgba(168, 85, 247, 0.04)", p: "8px 16px", borderRadius: "12px", border: "1px solid rgba(168, 85, 247, 0.1)", width: { xs: "100%", sm: "auto" } }}>
+                    <Box>
+                      <Typography variant="caption" sx={{ color: "var(--text-secondary)", fontWeight: 700, display: "block", fontSize: "0.7rem", textTransform: "uppercase" }}>
+                        Total Points Earned
+                      </Typography>
+                      <Box sx={{ display: "flex", alignItems: "baseline", gap: 0.5 }}>
+                        <Typography variant="h6" sx={{ fontWeight: 900, color: "#a855f7" }}>
+                          {eligibility.scores.R_sum}
+                        </Typography>
+                        <Typography variant="body2" sx={{ color: "var(--text-secondary)", fontWeight: 700 }}>
+                          / 80
+                        </Typography>
+                      </Box>
+                    </Box>
+                    <Box sx={{ position: "relative", display: "inline-flex" }}>
+                      <Loader
+                        variant="determinate"
+                        value={100}
+                        size={40}
+                        thickness={4}
+                        sx={{ color: "var(--border-color)", opacity: 0.15 }}
+                      />
+                      <Loader
+                        variant="determinate"
+                        value={Math.min(100, Math.round((eligibility.scores.R_sum / 80) * 100))}
+                        size={40}
+                        thickness={4}
+                        sx={{
+                          color: "#a855f7",
+                          position: "absolute",
+                          left: 0
+                        }}
+                      />
+                      <Box sx={{ top: 0, left: 0, bottom: 0, right: 0, position: "absolute", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                        <Typography variant="caption" sx={{ fontWeight: 800, color: "var(--text-primary)", fontSize: "0.7rem" }}>
+                          {Math.min(100, Math.round((eligibility.scores.R_sum / 80) * 100))}%
+                        </Typography>
+                      </Box>
+                    </Box>
+                  </Box>
+                </Box>
+                <Divider sx={{ mb: 3 }} />
+
+                {/* 2.1 Papers Publication with Claims Coordination */}
+                {!(appraisal.status === "Completed" && (!appraisal.research.papers?.items || appraisal.research.papers.items.length === 0)) && (
+                  <>
+                    <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 1.5, color: "var(--color-primary)" }}>
+                      2.1 Paper Publication: (only for one Aditya author)
+                    </Typography>
+                    <TableContainer component={Paper} elevation={0} sx={{ mb: 4, borderRadius: "16px", background: "var(--bg-paper)", border: "1px solid var(--border-color)", overflowX: "auto", boxShadow: "none", maxWidth: { xs: "100%", md: "100%", lg: 1000, xl: 1100 }, mx: "auto" }}>
+                      <Table size="small" sx={{ minWidth: 800, mx: "auto" }}>
+                        <TableHead sx={{ background: "var(--gradient-primary)" }}>
+                          <TableRow>
+                            <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2, width: "80px", whiteSpace: "nowrap" }} align="center">S. No</TableCell>
+                            <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }}>Article details in IEEE format</TableCell>
+                            <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }} align="center">Category of the Journal</TableCell>
+                            <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }} align="center">JCR Impact Factor</TableCell>
+                            <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }} align="center">Points claimed</TableCell>
+                          </TableRow>
+                        </TableHead>
+                        <TableBody>
+                          {appraisal.research.papers.items.length > 0 ? (
+                            <>
+                              {appraisal.research.papers.items.map((p, i) => (
+                                <TableRow key={i} sx={{ "&:hover": { bgcolor: "var(--bg-hover)" } }}>
+                                  <TableCell align="center" sx={{ color: "var(--text-primary)" }}>{i + 1}</TableCell>
+                                  <TableCell sx={{ fontWeight: 600, color: "var(--text-primary)" }}>{p.title}</TableCell>
+                                  <TableCell align="center" sx={{ color: "var(--text-primary)" }}>{p.scope}</TableCell>
+                                  <TableCell align="center" sx={{ color: "var(--text-primary)" }}>{p.impactFactor ?? 0}</TableCell>
+                                  <TableCell align="center" sx={{ fontWeight: 800, color: "var(--color-primary)" }}>{p.pointsClaimed}</TableCell>
+                                </TableRow>
+                              ))}
+                              {/* Summary / Total Row */}
+                              <TableRow sx={{ background: "rgba(0, 78, 146, 0.04)", "&:hover": { bgcolor: "rgba(0, 78, 146, 0.06) !important" } }}>
+                                <TableCell colSpan={4} sx={{ fontWeight: 800, color: "var(--text-primary)", pl: 2 }}>
+                                  <Box component="span" sx={{ position: "sticky", left: 16, display: "inline-block", whiteSpace: "nowrap" }}>
+                                    Self-Assessment Points
+                                  </Box>
+                                </TableCell>
+                                <TableCell align="center" sx={{ fontWeight: 900, color: "var(--color-primary)", fontSize: "0.95rem" }}>
+                                  {appraisal.research.papers.items.reduce((sum, p) => sum + (Number(p.pointsClaimed) || 0), 0)}
+                                </TableCell>
+                              </TableRow>
+                            </>
+                          ) : (
+                            <TableRow>
+                              <TableCell colSpan={5} align="center" sx={{ py: 3, color: "var(--text-secondary)", fontStyle: "italic" }}>
+                                No approved journals found.
+                              </TableCell>
+                            </TableRow>
+                          )}
+                        </TableBody>
+                      </Table>
+                    </TableContainer>
+                  </>
+                )}
+
+                {/* PhD, Books, Patents */}
+                {/* 2.2 Guiding Ph. D Scholars */}
+                {appraisal.research.phdGuiding?.items?.length > 0 && (
+                  <>
+                    <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 1.5, color: "var(--color-primary)" }}>
+                      2.2 Guiding Ph. D Scholars: Pursuing- 2 Points, Awarded- 20 points
+                    </Typography>
+                    <TableContainer component={Paper} elevation={0} sx={{ mb: 4, borderRadius: "16px", background: "var(--bg-paper)", border: "1px solid var(--border-color)", overflowX: "auto", boxShadow: "none", maxWidth: { xs: "100%", md: "100%", lg: 1000, xl: 1100 }, mx: "auto" }}>
+                      <Table size="small" sx={{ minWidth: 800, mx: "auto" }}>
+                        <TableHead sx={{ background: "var(--gradient-primary)" }}>
+                          <TableRow>
+                            <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2, width: "80px", whiteSpace: "nowrap" }} align="center">S. No</TableCell>
+                            <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }}>Name of the Research Scholar (FT/PT)</TableCell>
+                            <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }}>University</TableCell>
+                            <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }} align="center">Month & Year of Admission/Award</TableCell>
+                            <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }} align="center">Pursuing / Awarded</TableCell>
+                            <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }} align="center">Points claimed</TableCell>
+                          </TableRow>
+                        </TableHead>
+                        <TableBody>
+                          {appraisal.research.phdGuiding.items.map((p, i) => (
+                            <TableRow key={i} sx={{ "&:hover": { bgcolor: "var(--bg-hover)" } }}>
+                              <TableCell align="center" sx={{ color: "var(--text-primary)" }}>{i + 1}</TableCell>
+                              <TableCell sx={{ fontWeight: 600, color: "var(--text-primary)" }}>
+                                {p.name} ({p.scholarType === 'Part-Time' ? 'PT' : 'FT'})
+                              </TableCell>
+                              <TableCell sx={{ color: "var(--text-primary)" }}>{p.university || "Aditya University"}</TableCell>
+                              <TableCell align="center" sx={{ color: "var(--text-primary)" }}>
+                                {p.admissionOrAwardDate ? new Date(p.admissionOrAwardDate).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : "—"}
+                              </TableCell>
+                              <TableCell align="center" sx={{ color: "var(--text-primary)" }}>{p.status}</TableCell>
+                              <TableCell align="center" sx={{ fontWeight: 800, color: "var(--color-primary)" }}>{p.pointsClaimed}</TableCell>
+                            </TableRow>
+                          ))}
+                          <TableRow sx={{ background: "rgba(0, 78, 146, 0.04)", "&:hover": { bgcolor: "rgba(0, 78, 146, 0.06) !important" } }}>
+                            <TableCell colSpan={5} sx={{ fontWeight: 800, color: "var(--text-primary)", pl: 2 }}>
+                              <Box component="span" sx={{ position: "sticky", left: 16, display: "inline-block", whiteSpace: "nowrap" }}>
+                                Self-Assessment Points
+                              </Box>
+                            </TableCell>
+                            <TableCell align="center" sx={{ fontWeight: 900, color: "var(--color-primary)", fontSize: "0.95rem" }}>
+                              {appraisal.research.phdGuiding.items.reduce((sum, p) => sum + (Number(p.pointsClaimed) || 0), 0)}
+                            </TableCell>
+                          </TableRow>
+                        </TableBody>
+                      </Table>
+                    </TableContainer>
+                  </>
+                )}
+
+                {/* 2.3 Books / Chapters */}
+                {appraisal.research.booksChapters?.items?.length > 0 && (
+                  <>
+                    <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 1.5, color: "var(--color-primary)" }}>
+                      2.3 Books / Chapters (Max 10 pts)
+                    </Typography>
+                    <TableContainer component={Paper} elevation={0} sx={{ mb: 4, borderRadius: "16px", background: "var(--bg-paper)", border: "1px solid var(--border-color)", overflowX: "auto", boxShadow: "none", maxWidth: { xs: "100%", md: "100%", lg: 1000, xl: 1100 }, mx: "auto" }}>
+                      <Table size="small" sx={{ minWidth: 800, mx: "auto" }}>
+                        <TableHead sx={{ background: "var(--gradient-primary)" }}>
+                          <TableRow>
+                            <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2, width: "80px", whiteSpace: "nowrap" }} align="center">S. No</TableCell>
+                            <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }}>Details of Books/Chapter/conference Proceedings published along with ISBN/ISSN number</TableCell>
+                            <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }}>Category (Book/chapter/Proceedings)</TableCell>
+                            <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }}>Publisher</TableCell>
+                            <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }} align="center">Points claimed</TableCell>
+                          </TableRow>
+                        </TableHead>
+                        <TableBody>
+                          {appraisal.research.booksChapters.items.map((b, i) => (
+                            <TableRow key={i} sx={{ "&:hover": { bgcolor: "var(--bg-hover)" } }}>
+                              <TableCell align="center" sx={{ color: "var(--text-primary)" }}>{i + 1}</TableCell>
+                              <TableCell sx={{ fontWeight: 600, color: "var(--text-primary)" }}>{b.title}</TableCell>
+                              <TableCell sx={{ color: "var(--text-primary)" }}>
+                                {b.itemType === 'Textbook' ? 'Book' : b.itemType === 'BookChapter' ? 'Book Chapter' : 'Conference Proceedings'}
+                              </TableCell>
+                              <TableCell sx={{ color: "var(--text-primary)" }}>{b.publisher || "—"}</TableCell>
+                              <TableCell align="center" sx={{ fontWeight: 800, color: "var(--color-primary)" }}>{b.pointsClaimed}</TableCell>
+                            </TableRow>
+                          ))}
+                          <TableRow sx={{ background: "rgba(0, 78, 146, 0.04)", "&:hover": { bgcolor: "rgba(0, 78, 146, 0.06) !important" } }}>
+                            <TableCell colSpan={4} sx={{ fontWeight: 800, color: "var(--text-primary)", pl: 2 }}>
+                              <Box component="span" sx={{ position: "sticky", left: 16, display: "inline-block", whiteSpace: "nowrap" }}>
+                                Self-Assessment Points (Max:10)
+                              </Box>
+                            </TableCell>
+                            <TableCell align="center" sx={{ fontWeight: 900, color: "var(--color-primary)", fontSize: "0.95rem" }}>
+                              {Math.min(10, appraisal.research.booksChapters.items.reduce((sum, b) => sum + (Number(b.pointsClaimed) || 0), 0))}
+                            </TableCell>
+                          </TableRow>
+                        </TableBody>
+                      </Table>
+                    </TableContainer>
+                  </>
+                )}
+
+                {/* 2.4 Patents */}
+                {appraisal.research.patents?.items?.length > 0 && (
+                  <>
+                    <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 1.5, color: "var(--color-primary)" }}>
+                      2.4 Patents
+                    </Typography>
+                    <TableContainer component={Paper} elevation={0} sx={{ mb: 4, borderRadius: "16px", background: "var(--bg-paper)", border: "1px solid var(--border-color)", overflowX: "auto", boxShadow: "none", maxWidth: { xs: "100%", md: "100%", lg: 1000, xl: 1100 }, mx: "auto" }}>
+                      <Table size="small" sx={{ minWidth: 800, mx: "auto" }}>
+                        <TableHead sx={{ background: "var(--gradient-primary)" }}>
+                          <TableRow>
+                            <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2, width: "80px", whiteSpace: "nowrap" }} align="center">S. No</TableCell>
+                            <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }}>Patent Title along with Number and date</TableCell>
+                            <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }}>Patent filed Country</TableCell>
+                            <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }}>Published/Granted</TableCell>
+                            <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }} align="center">Points claimed</TableCell>
+                          </TableRow>
+                        </TableHead>
+                        <TableBody>
+                          {appraisal.research.patents.items.map((p, i) => {
+                            const dateObj = new Date(p.dateOfFiling);
+                            const dateString = !isNaN(dateObj) ? dateObj.toLocaleDateString("en-GB") : "N/A";
+                            return (
+                              <TableRow key={i} sx={{ "&:hover": { bgcolor: "var(--bg-hover)" } }}>
+                                <TableCell align="center" sx={{ color: "var(--text-primary)" }}>{i + 1}</TableCell>
+                                <TableCell sx={{ fontWeight: 600, color: "var(--text-primary)" }}>{p.title} - {p.filingNo} - {dateString}</TableCell>
+                                <TableCell sx={{ color: "var(--text-primary)" }}>{p.country}</TableCell>
+                                <TableCell sx={{ color: "var(--text-primary)" }}>{p.status}</TableCell>
+                                <TableCell align="center" sx={{ fontWeight: 800, color: "var(--color-primary)" }}>{p.pointsClaimed}</TableCell>
+                              </TableRow>
+                            );
+                          })}
+                          <TableRow sx={{ background: "rgba(0, 78, 146, 0.04)", "&:hover": { bgcolor: "rgba(0, 78, 146, 0.06) !important" } }}>
+                            <TableCell colSpan={4} sx={{ fontWeight: 800, color: "var(--text-primary)", pl: 2 }}>
+                              <Box component="span" sx={{ position: "sticky", left: 16, display: "inline-block", whiteSpace: "nowrap" }}>
+                                Self-Assessment Points
+                              </Box>
+                            </TableCell>
+                            <TableCell align="center" sx={{ fontWeight: 900, color: "var(--color-primary)", fontSize: "0.95rem" }}>
+                              {appraisal.research.patents.items.reduce((sum, p) => sum + (Number(p.pointsClaimed) || 0), 0)}
+                            </TableCell>
+                          </TableRow>
+                        </TableBody>
+                      </Table>
+                    </TableContainer>
+                  </>
+                )}
+
+                {/* 2.5 Novel Products / Technology */}
+                {appraisal.research.novelProducts?.items?.length > 0 && (
+                  <>
+                    <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 1.5, color: "var(--color-primary)" }}>
+                      2.5 Novel Products / Technology
+                    </Typography>
+                    <TableContainer component={Paper} elevation={0} sx={{ mb: 4, borderRadius: "16px", background: "var(--bg-paper)", border: "1px solid var(--border-color)", overflowX: "auto", boxShadow: "none", maxWidth: { xs: "100%", md: "100%", lg: 1000, xl: 1100 }, mx: "auto" }}>
+                      <Table size="small" sx={{ minWidth: 700, mx: "auto" }}>
+                        <TableHead sx={{ background: "var(--gradient-primary)" }}>
+                          <TableRow>
+                            <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2, width: "80px", whiteSpace: "nowrap" }} align="center">S. No</TableCell>
+                            <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }}>Details of the Novel Product/Technology</TableCell>
+                            <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }}>Name of the Implemented organization</TableCell>
+                            <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }} align="center">Points claimed</TableCell>
+                          </TableRow>
+                        </TableHead>
+                        <TableBody>
+                          {appraisal.research.novelProducts.items.map((p, i) => (
+                            <TableRow key={i} sx={{ "&:hover": { bgcolor: "var(--bg-hover)" } }}>
+                              <TableCell align="center" sx={{ color: "var(--text-primary)" }}>{i + 1}</TableCell>
+                              <TableCell sx={{ fontWeight: 600, color: "var(--text-primary)" }}>{p.title} ({p.status})</TableCell>
+                              <TableCell sx={{ color: "var(--text-primary)" }}>{p.organizationName}</TableCell>
+                              <TableCell align="center" sx={{ fontWeight: 800, color: "var(--color-primary)" }}>{p.pointsClaimed}</TableCell>
+                            </TableRow>
+                          ))}
+                          <TableRow sx={{ background: "rgba(0, 78, 146, 0.04)", "&:hover": { bgcolor: "rgba(0, 78, 146, 0.06) !important" } }}>
+                            <TableCell colSpan={3} sx={{ fontWeight: 800, color: "var(--text-primary)", pl: 2 }}>
+                              <Box component="span" sx={{ position: "sticky", left: 16, display: "inline-block", whiteSpace: "nowrap" }}>
+                                Self-Assessment Points
+                              </Box>
+                            </TableCell>
+                            <TableCell align="center" sx={{ fontWeight: 900, color: "var(--color-primary)", fontSize: "0.95rem" }}>
+                              {appraisal.research.novelProducts.items.reduce((sum, p) => sum + (Number(p.pointsClaimed) || 0), 0)}
+                            </TableCell>
+                          </TableRow>
+                        </TableBody>
+                      </Table>
+                    </TableContainer>
+                  </>
+                )}
+
+                {/* 2.6 Funded Projects & Consultancies */}
+                {appraisal.research.projectsConsultancies?.items?.length > 0 && (
+                  <>
+                    <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 1.5, color: "var(--color-primary)" }}>
+                      2.6 Funded Projects & Consultancies
+                    </Typography>
+                    <TableContainer component={Paper} elevation={0} sx={{ mb: 4, borderRadius: "16px", background: "var(--bg-paper)", border: "1px solid var(--border-color)", overflowX: "auto", boxShadow: "none", maxWidth: { xs: "100%", md: "100%", lg: 1000, xl: 1100 }, mx: "auto" }}>
+                      <Table size="small" sx={{ minWidth: 800, mx: "auto" }}>
+                        <TableHead sx={{ background: "var(--gradient-primary)" }}>
+                          <TableRow>
+                            <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2, width: "80px", whiteSpace: "nowrap" }} align="center">S. No</TableCell>
+                            <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }}>Details of the Research Project/Consultancy</TableCell>
+                            <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }}>Funding Agency/Industry</TableCell>
+                            <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }} align="right">Total worth (in lakhs)</TableCell>
+                            <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }} align="center">Points claimed</TableCell>
+                          </TableRow>
+                        </TableHead>
+                        <TableBody>
+                          {appraisal.research.projectsConsultancies.items.map((p, i) => (
+                            <TableRow key={i} sx={{ "&:hover": { bgcolor: "var(--bg-hover)" } }}>
+                              <TableCell align="center" sx={{ color: "var(--text-primary)" }}>{i + 1}</TableCell>
+                              <TableCell sx={{ fontWeight: 600, color: "var(--text-primary)" }}>
+                                {p.title} ({p.projectType === 'FundedProject' ? 'Funded Project' : 'Consultancy'} - {p.status})
+                              </TableCell>
+                              <TableCell sx={{ color: "var(--text-primary)" }}>{p.agency || "N/A"}</TableCell>
+                              <TableCell align="right" sx={{ color: "var(--text-primary)" }}>{p.amountInLakhs || 0}</TableCell>
+                              <TableCell align="center" sx={{ fontWeight: 800, color: "var(--color-primary)" }}>{p.pointsClaimed}</TableCell>
+                            </TableRow>
+                          ))}
+                          <TableRow sx={{ background: "rgba(0, 78, 146, 0.04)", "&:hover": { bgcolor: "rgba(0, 78, 146, 0.06) !important" } }}>
+                            <TableCell colSpan={4} sx={{ fontWeight: 800, color: "var(--text-primary)", pl: 2 }}>
+                              <Box component="span" sx={{ position: "sticky", left: 16, display: "inline-block", whiteSpace: "nowrap" }}>
+                                Self-Assessment Points
+                              </Box>
+                            </TableCell>
+                            <TableCell align="center" sx={{ fontWeight: 900, color: "var(--color-primary)", fontSize: "0.95rem" }}>
+                              {appraisal.research.projectsConsultancies.items.reduce((sum, p) => sum + (Number(p.pointsClaimed) || 0), 0)}
+                            </TableCell>
+                          </TableRow>
+                        </TableBody>
+                      </Table>
+                    </TableContainer>
+                  </>
+                )}
+
+                {/* 2.7 — Scopus Citations */}
+                <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 1.5, mt: 4, color: "var(--color-primary)" }}>
+                  2.7 Scopus Citations
+                </Typography>
+                {appraisal.status !== "Completed" && (appraisal.research.scopusCitations === null || appraisal.research.scopusCitations === undefined) && (
+                  <Alert severity="warning" sx={{ mb: 2, borderRadius: "10px", "& .MuiAlert-message": { width: "100%" } }}>
+                    <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                      Scopus Citations and H-Index data not found. Please contact the Research Team to update your records.
+                    </Typography>
+                  </Alert>
+                )}
+
+                <TableContainer component={Paper} elevation={0} sx={{ mb: 4, borderRadius: "16px", background: "var(--bg-paper)", border: "1px solid var(--border-color)", overflowX: "auto", boxShadow: "none", maxWidth: { xs: "100%", md: "100%", lg: 1000, xl: 1100 }, mx: "auto" }}>
+                  <Table size="small" sx={{ minWidth: 800, mx: "auto" }}>
+                    <TableHead sx={{ background: "var(--gradient-primary)" }}>
+                      <TableRow>
+                        <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2, width: "80px", whiteSpace: "nowrap" }} align="center">S. No</TableCell>
+                        <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }}>Metric Details</TableCell>
+                        <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }}>Citations ({citationYear})</TableCell>
+                        <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }} align="center">Evaluated Points</TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      <TableRow sx={{ "&:hover": { bgcolor: "var(--bg-hover)" } }}>
+                        <TableCell align="center" sx={{ color: "var(--text-primary)" }}>1</TableCell>
+                        <TableCell sx={{ fontWeight: 600, color: "var(--text-primary)" }}>Scopus Citations</TableCell>
+                        <TableCell sx={{ color: "var(--text-primary)", fontWeight: 700 }}>{appraisal.research.scopusCitations != null ? appraisal.research.scopusCitations : "—"}</TableCell>
+                        <TableCell align="center" sx={{ fontWeight: 800, color: "var(--color-primary)" }}>{appraisal.research.scopusCitationScore || 0}</TableCell>
+                      </TableRow>
+
+                      <TableRow sx={{ background: "rgba(0, 78, 146, 0.04)", "&:hover": { bgcolor: "rgba(0, 78, 146, 0.06) !important" } }}>
+                        <TableCell colSpan={3} sx={{ fontWeight: 800, color: "var(--text-primary)", pl: 2 }}>
+                          <Box component="span" sx={{ position: "sticky", left: 16, display: "inline-block", whiteSpace: "nowrap" }}>
+                            Total Evaluated Points
+                          </Box>
+                        </TableCell>
+                        <TableCell align="center" sx={{ fontWeight: 900, color: "var(--color-primary)", fontSize: "0.95rem" }}>
+                          {appraisal.research.scopusCitationScore || 0}
+                        </TableCell>
+                      </TableRow>
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+
+                {/* 2.8 — Scopus h-index */}
+                <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 1.5, mt: 4, color: "var(--color-primary)" }}>
+                  2.8 Scopus h-index
+                </Typography>
+
+
+                <TableContainer component={Paper} elevation={0} sx={{ mb: 4, borderRadius: "16px", background: "var(--bg-paper)", border: "1px solid var(--border-color)", overflowX: "auto", boxShadow: "none", maxWidth: { xs: "100%", md: "100%", lg: 1000, xl: 1100 }, mx: "auto" }}>
+                  <Table size="small" sx={{ minWidth: 800, mx: "auto" }}>
+                    <TableHead sx={{ background: "var(--gradient-primary)" }}>
+                      <TableRow>
+                        <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2, width: "80px", whiteSpace: "nowrap" }} align="center">S. No</TableCell>
+                        <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }}>Metric Details</TableCell>
+                        <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }}>h-index in {previousHIndexYear}</TableCell>
+                        <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }}>h-index in {currentHIndexYear}</TableCell>
+                        <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }}>Raise (Diff)</TableCell>
+                        <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }} align="center">Evaluated Points</TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      <TableRow sx={{ "&:hover": { bgcolor: "var(--bg-hover)" } }}>
+                        <TableCell align="center" sx={{ color: "var(--text-primary)" }}>1</TableCell>
+                        <TableCell sx={{ fontWeight: 600, color: "var(--text-primary)" }}>Scopus h-index</TableCell>
+                        <TableCell sx={{ color: "var(--text-primary)", fontWeight: 700 }}>
+                          {appraisal.research.hIndexPrevYear != null ? appraisal.research.hIndexPrevYear : "—"}
+                        </TableCell>
+                        <TableCell sx={{ color: "var(--text-primary)", fontWeight: 700 }}>
+                          {appraisal.research.hIndexCurrentYear != null ? appraisal.research.hIndexCurrentYear : "—"}
+                        </TableCell>
+                        <TableCell sx={{ color: "var(--text-primary)", fontWeight: 700 }}>
+                          {appraisal.research.hIndexPrevYear != null && appraisal.research.hIndexCurrentYear != null ? (
+                            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                              {appraisal.research.hIndexCurrentYear - appraisal.research.hIndexPrevYear > 0 ? (
+                                <Typography component="span" variant="caption" sx={{ color: "#10b981", fontWeight: 800, bgcolor: "rgba(16,185,129,0.1)", px: 1, py: 0.2, borderRadius: "4px" }}>
+                                  +{appraisal.research.hIndexCurrentYear - appraisal.research.hIndexPrevYear}
+                                </Typography>
+                              ) : (
+                                appraisal.research.hIndexCurrentYear - appraisal.research.hIndexPrevYear
+                              )}
+                            </Box>
+                          ) : "—"}
+                        </TableCell>
+                        <TableCell align="center" sx={{ fontWeight: 800, color: "var(--color-primary)" }}>{appraisal.research.scopusHIndexScore || 0}</TableCell>
+                      </TableRow>
+
+                      <TableRow sx={{ background: "rgba(0, 78, 146, 0.04)", "&:hover": { bgcolor: "rgba(0, 78, 146, 0.06) !important" } }}>
+                        <TableCell colSpan={5} sx={{ fontWeight: 800, color: "var(--text-primary)", pl: 2 }}>
+                          <Box component="span" sx={{ position: "sticky", left: 16, display: "inline-block", whiteSpace: "nowrap" }}>
+                            Total Evaluated Points
+                          </Box>
+                        </TableCell>
+                        <TableCell align="center" sx={{ fontWeight: 900, color: "var(--color-primary)", fontSize: "0.95rem" }}>
+                          {appraisal.research.scopusHIndexScore || 0}
+                        </TableCell>
+                      </TableRow>
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+              </CardContent>
+            </Card>
+
+            {/* 3. Extension / Value Addition */}
+            <Card sx={{ borderRadius: "20px", background: "var(--bg-panel)", border: "1px solid var(--border-color)", mb: 4, boxShadow: "var(--shadow-premium)" }}>
+              <CardContent sx={{ p: 3.5 }}>
+                <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3, flexWrap: "wrap", gap: 2 }}>
+                  <Box>
+                    <Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)", display: "flex", alignItems: "center", gap: 1.5 }}>
+                      <CardMembership sx={{ color: "#10b981" }} /> 3. Extension / Value Addition
+                    </Typography>
+                    <Typography variant="caption" sx={{ color: "var(--text-secondary)", fontWeight: 500, display: "block", ml: 5 }}>
+                      Maximum Points: 20
+                    </Typography>
+                  </Box>
+                  <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 2, bgcolor: "rgba(16, 185, 129, 0.04)", p: "8px 16px", borderRadius: "12px", border: "1px solid rgba(16, 185, 129, 0.1)", width: { xs: "100%", sm: "auto" } }}>
+                    <Box>
+                      <Typography variant="caption" sx={{ color: "var(--text-secondary)", fontWeight: 700, display: "block", fontSize: "0.7rem", textTransform: "uppercase" }}>
+                        Total Points Earned
+                      </Typography>
+                      <Box sx={{ display: "flex", alignItems: "baseline", gap: 0.5 }}>
+                        <Typography variant="h6" sx={{ fontWeight: 900, color: "#10b981" }}>
+                          {eligibility.scores.V}
                         </Typography>
                         <Typography variant="body2" sx={{ color: "var(--text-secondary)", fontWeight: 700 }}>
                           / 20
@@ -3663,540 +3521,504 @@ const SelfAppraisal = () => {
                       />
                       <Loader
                         variant="determinate"
-                        value={Math.min(100, Math.round((eligibility.scores.A / 20) * 100))}
+                        value={Math.min(100, Math.round((eligibility.scores.V / 20) * 100))}
                         size={40}
                         thickness={4}
                         sx={{
-                          color: "#f97316",
+                          color: "#10b981",
                           position: "absolute",
                           left: 0
                         }}
                       />
                       <Box sx={{ top: 0, left: 0, bottom: 0, right: 0, position: "absolute", display: "flex", alignItems: "center", justifyContent: "center" }}>
                         <Typography variant="caption" sx={{ fontWeight: 800, color: "var(--text-primary)", fontSize: "0.7rem" }}>
-                          {Math.min(100, Math.round((eligibility.scores.A / 20) * 100))}%
+                          {Math.min(100, Math.round((eligibility.scores.V / 20) * 100))}%
                         </Typography>
                       </Box>
                     </Box>
                   </Box>
                 </Box>
-              </Box>
-              <Divider sx={{ mb: 3 }} />
+                <Divider sx={{ mb: 3 }} />
 
-              <TableContainer component={Paper} elevation={0} sx={{ borderRadius: "16px", background: "var(--bg-paper)", border: "1px solid var(--border-color)", overflowX: "auto", boxShadow: "none", maxWidth: { xs: "100%", md: "100%", lg: 1000, xl: 1100 }, mx: "auto", mb: 4 }}>
-                <Table size="small" sx={{ minWidth: 800, mx: "auto" }}>
-                  <TableHead sx={{ background: "var(--gradient-primary)" }}>
-                    <TableRow>
-                      <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2, width: "80px", whiteSpace: "nowrap" }}>S. No</TableCell>
-                      <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }}>Details of the Administrative Responsibility</TableCell>
-                      <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2, width: "150px" }}>Assigned by</TableCell>
-                      <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2, width: "130px" }} align="center">Points claimed</TableCell>
-                      <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2, width: "120px" }}>Status</TableCell>
-                      <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2, width: "120px" }} align="center">Actions</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {administrationDetail && administrationDetail.roles?.filter(r => r.isResponsible).length > 0 ? (
-                      <>
-                        {administrationDetail.roles.filter(r => r.isResponsible).map((role, i) => {
-                          const assignedByText = role.level && (role.level.toLowerCase().includes("central") || role.level.toLowerCase().includes("institute")) ? "Central" : "Dept";
-                          const isEditable = role.status === 'Pending' || role.status === 'Rejected';
-                          return (
-                            <TableRow key={i} sx={{ "&:hover": { bgcolor: "var(--bg-hover)" } }}>
-                              <TableCell sx={{ color: "var(--text-primary)" }}>{i + 1}</TableCell>
-                              <TableCell sx={{ fontWeight: 600, color: "var(--text-primary)" }}>
-                                {role.roleName} {role.details ? `(${role.details})` : ""}
-                                {role.status === "Rejected" && role.remarks && (
-                                  <Typography variant="caption" sx={{ color: "error.main", mt: 0.5, display: "block", fontWeight: 700 }}>
-                                    Rejection Reason: {role.remarks}
-                                  </Typography>
-                                )}
-                              </TableCell>
-                              <TableCell sx={{ color: "var(--text-primary)" }}>{assignedByText}</TableCell>
-                              <TableCell align="center" sx={{ fontWeight: 800, color: "var(--color-primary)" }}>
-                                {calculateAdministrativePoints(role, appraisalConfig)}
-                              </TableCell>
-                              <TableCell>
-                                <Chip
-                                  label={role.status || "Pending"}
-                                  size="small"
-                                  sx={{
-                                    bgcolor: getStatusColor(role.status || "Pending").bg,
-                                    color: getStatusColor(role.status || "Pending").color,
-                                    fontWeight: 800,
-                                    borderRadius: "6px"
-                                  }}
-                                />
-                              </TableCell>
-                              <TableCell align="center">
-                                <Stack direction="row" spacing={1} sx={{ justifyContent: "center" }}>
-                                  {isEditable && (appraisal.status === "Draft" || appraisal.status === "Rejected by HOD") && (
-                                    <>
-                                      <IconButton size="small" color="info" onClick={() => openAdminModalEdit(role)}>
-                                        <Edit fontSize="small" />
-                                      </IconButton>
-                                      <IconButton size="small" color="error" onClick={() => handleAdminDelete(role.roleName)}>
-                                        <Delete fontSize="small" />
-                                      </IconButton>
-                                    </>
-                                  )}
-                                </Stack>
+                {/* 3.1 Resource Utilization */}
+                {!(appraisal.status === "Completed" && (!resourceUtilizationDetails || resourceUtilizationDetails.length === 0)) && (
+                  <>
+                    <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
+                      <Typography variant="subtitle1" sx={{ fontWeight: 700, color: "var(--color-primary)" }}>
+                        3.1 Resource Utilization (Max 10 points)
+                      </Typography>
+                      {(appraisal.status === "Draft" || appraisal.status === "Rejected by HOD") && (
+                        <Button
+                          variant="outlined"
+                          size="small"
+                          startIcon={<AddCircle />}
+                          onClick={handleResUtOpenAdd}
+                          sx={{ textTransform: "none", fontWeight: 700 }}
+                        >
+                          Add Resource Utilization
+                        </Button>
+                      )}
+                    </Box>
+
+                    <TableContainer component={Paper} elevation={0} sx={{ mb: 4, borderRadius: "16px", background: "var(--bg-paper)", border: "1px solid var(--border-color)", overflowX: "auto", boxShadow: "none", maxWidth: { xs: "100%", md: "100%", lg: 1000, xl: 1100 }, mx: "auto" }}>
+                      <Table size="small" sx={{ minWidth: 800, mx: "auto" }}>
+                        <TableHead sx={{ background: "var(--gradient-primary)" }}>
+                          <TableRow>
+                            <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2, width: "80px", whiteSpace: "nowrap" }}>S. No</TableCell>
+                            <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }}>Details of the Event along with dates</TableCell>
+                            <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2, width: "120px" }}>Duration</TableCell>
+                            <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2, width: "180px" }}>Role</TableCell>
+                            <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2, width: "130px" }} align="center">Points claimed</TableCell>
+                            <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2, width: "120px" }}>Status</TableCell>
+                            <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2, width: "120px" }} align="center">Actions</TableCell>
+                          </TableRow>
+                        </TableHead>
+                        <TableBody>
+                          {resourceUtilizationDetails.length > 0 ? (
+                            <>
+                              {resourceUtilizationDetails.map((activity, i) => {
+                                const statusStyle = getStatusColor(activity.status);
+                                const isEditable = activity.status === 'Draft' || activity.status === 'Rejected';
+                                const fromDateFormatted = activity.fromDate ? new Date(activity.fromDate).toLocaleDateString("en-IN", { day: '2-digit', month: '2-digit', year: 'numeric' }) : "";
+                                const toDateFormatted = activity.toDate ? new Date(activity.toDate).toLocaleDateString("en-IN", { day: '2-digit', month: '2-digit', year: 'numeric' }) : "";
+
+                                return (
+                                  <TableRow key={activity._id || i} sx={{ "&:hover": { bgcolor: "var(--bg-hover)" } }}>
+                                    <TableCell sx={{ color: "var(--text-primary)" }}>{i + 1}</TableCell>
+                                    <TableCell sx={{ fontWeight: 600, color: "var(--text-primary)" }}>
+                                      {activity.organizationName} {fromDateFormatted && toDateFormatted ? `(${fromDateFormatted} - ${toDateFormatted})` : ""}
+                                      {activity.status === "Rejected" && activity.hodComment && (
+                                        <Typography variant="caption" sx={{ color: "error.main", mt: 0.5, display: "block", fontWeight: 700 }}>
+                                          Rejection Reason: {activity.hodComment}
+                                        </Typography>
+                                      )}
+                                    </TableCell>
+                                    <TableCell sx={{ color: "var(--text-primary)" }}>{activity.duration} Days</TableCell>
+                                    <TableCell sx={{ color: "var(--text-primary)" }}>{activity.activityType}</TableCell>
+                                    <TableCell align="center" sx={{ fontWeight: 800, color: "var(--color-primary)" }}>
+                                      {calculateResourceUtilizationPoints(activity, appraisalConfig)}
+                                    </TableCell>
+                                    <TableCell>
+                                      <Chip
+                                        label={activity.status}
+                                        size="small"
+                                        sx={{
+                                          bgcolor: statusStyle.bg,
+                                          color: statusStyle.color,
+                                          fontWeight: 800,
+                                          borderRadius: "6px"
+                                        }}
+                                      />
+                                    </TableCell>
+                                    <TableCell align="center">
+                                      <Stack direction="row" spacing={1} sx={{ justifyContent: "center" }}>
+                                        <IconButton
+                                          size="small"
+                                          onClick={() => setSelectedResUtDetails(activity)}
+                                          sx={{ color: "var(--color-primary)" }}
+                                        >
+                                          <Visibility fontSize="small" />
+                                        </IconButton>
+                                        {isEditable && (appraisal.status === "Draft" || appraisal.status === "Rejected by HOD") && (
+                                          <>
+                                            <IconButton
+                                              size="small"
+                                              color="info"
+                                              onClick={() => handleResUtOpenEdit(activity)}
+                                            >
+                                              <Edit fontSize="small" />
+                                            </IconButton>
+                                            <IconButton
+                                              size="small"
+                                              color="error"
+                                              onClick={() => handleResUtDelete(activity._id)}
+                                            >
+                                              <Delete fontSize="small" />
+                                            </IconButton>
+                                          </>
+                                        )}
+                                      </Stack>
+                                    </TableCell>
+                                  </TableRow>
+                                );
+                              })}
+                              {/* Footer row displaying dynamic sum */}
+                              <TableRow sx={{ background: "var(--bg-accent-1)" }}>
+                                <TableCell colSpan={4} sx={{ fontWeight: 800, pl: 2, color: "var(--text-primary)" }}>
+                                  <Box component="span" sx={{ position: "sticky", left: 16, display: "inline-block", whiteSpace: "nowrap" }}>
+                                    Self-Assessment Points (Max:10)
+                                  </Box>
+                                </TableCell>
+                                <TableCell align="center" sx={{ fontWeight: 800, color: "var(--color-primary)", fontSize: "0.95rem" }}>
+                                  {Math.min(10, resourceUtilizationDetails.reduce((sum, r) => r.status !== 'Rejected' ? sum + calculateResourceUtilizationPoints(r, appraisalConfig) : sum, 0))}
+                                </TableCell>
+                                <TableCell colSpan={2}></TableCell>
+                              </TableRow>
+                            </>
+                          ) : (
+                            <TableRow>
+                              <TableCell colSpan={7} align="center" sx={{ color: "var(--text-secondary)", py: 3, fontStyle: "italic" }}>
+                                No Resource Utilization records found for this academic year.
                               </TableCell>
                             </TableRow>
-                          );
-                        })}
-                        <TableRow sx={{ background: "var(--bg-accent-1)" }}>
-                          <TableCell colSpan={3} sx={{ fontWeight: 800, pl: 2, color: "var(--text-primary)" }}>
-                            <Box component="span" sx={{ position: "sticky", left: 16, display: "inline-block", whiteSpace: "nowrap" }}>
-                              Self-Assessment points (Max:20)
-                            </Box>
-                          </TableCell>
-                          <TableCell align="center" sx={{ fontWeight: 800, color: "var(--color-primary)", fontSize: "0.95rem" }}>
-                            {Math.min(20, administrationDetail.roles.filter(r => r.isResponsible).reduce((sum, r) => r.status !== 'Rejected' ? sum + calculateAdministrativePoints(r, appraisalConfig) : sum, 0))}
-                          </TableCell>
-                          <TableCell colSpan={2}></TableCell>
-                        </TableRow>
-                      </>
-                    ) : (
-                      <TableRow>
-                        <TableCell colSpan={6} align="center" sx={{ color: "var(--text-secondary)", py: 3, fontStyle: "italic" }}>
-                          No administrative responsibilities claimed yet.
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
-              </TableContainer>
-            </CardContent>
-          </Card>
-          )}
-        </Grid>
+                          )}
+                        </TableBody>
+                      </Table>
+                    </TableContainer>
+                  </>
+                )}
 
-        {/* Right Side Panel Removed - Scorecard is now rendered at the bottom */}
-      </Grid>
-
-      {/* Points Scorecard & Eligibility Checklist Section */}
-      <Box
-        sx={{
-          mt: 5,
-          mb: 5,
-          display: "grid",
-          gridTemplateColumns: { xs: "1fr", md: "7fr 3fr" },
-          gap: 4,
-          alignItems: "stretch",
-          width: "100%"
-        }}
-      >
-        {/* Left Column: Points Scorecard */}
-        <Card
-          sx={{
-            p: 3.5,
-            borderRadius: "24px",
-            border: "1px solid var(--border-color)",
-            boxShadow: "var(--shadow-premium)",
-            background: "var(--bg-panel)",
-            backdropFilter: "blur(20px)",
-            minWidth: 0,
-            width: "100%",
-            height: "100%"
-          }}
-        >
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 0 }}>
-            <Box
-              sx={{
-                width: 44,
-                height: 44,
-                borderRadius: "12px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                background: "var(--bg-accent-4)",
-                color: "var(--color-primary)"
-              }}
-            >
-              <AssignmentTurnedIn sx={{ fontSize: 24 }} />
-            </Box>
-            <Box>
-              <Typography variant="h5" sx={{ fontWeight: 900, color: "var(--text-primary)", letterSpacing: "-0.02em" }}>
-                Points Scorecard
-              </Typography>
-              <Typography variant="body2" sx={{ color: "var(--text-secondary)", fontWeight: 500 }}>
-                Summary of your self appraisal points
-              </Typography>
-            </Box>
-          </Box>
-
-          {/* 5 Category Cards Grid using CSS Grid */}
-          <Box
-            sx={{
-              display: "grid",
-              gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" },
-              gap: 2.5,
-              mt: 3
-            }}
-          >
-            {[
-              {
-                label: "1. Teaching & Learning",
-                score: eligibility.scores.T,
-                max: 80,
-                icon: <School />,
-                iconBg: "rgba(59, 130, 246, 0.1)",
-                iconColor: "#3b82f6",
-                gradient: "linear-gradient(135deg, var(--bg-paper), rgba(59, 130, 246, 0.04))",
-                passed: eligibility.scores.T >= eligibility.thresholds.teaching,
-                percent: Math.min(100, Math.round((eligibility.scores.T / 80) * 100))
-              },
-              {
-                label: "2. Research Contributions",
-                score: eligibility.scores.R_sum,
-                max: 80,
-                icon: <Science />,
-                iconBg: "rgba(168, 85, 247, 0.1)",
-                iconColor: "#a855f7",
-                gradient: "linear-gradient(135deg, var(--bg-paper), rgba(168, 85, 247, 0.04))",
-                passed: eligibility.checklist.metric21.passed,
-                percent: Math.min(100, Math.round((eligibility.scores.R_sum / 80) * 100))
-              },
-              {
-                label: "3. Extension / Value Addition",
-                score: eligibility.scores.V,
-                max: 20,
-                icon: <CardMembership />,
-                iconBg: "rgba(16, 185, 129, 0.1)",
-                iconColor: "#10b981",
-                gradient: "linear-gradient(135deg, var(--bg-paper), rgba(16, 185, 129, 0.04))",
-                passed: eligibility.scores.V >= 20,
-                percent: Math.min(100, Math.round((eligibility.scores.V / 20) * 100))
-              },
-              {
-                label: "4. Administrative Duties",
-                score: eligibility.scores.A,
-                max: 20,
-                icon: <Work />,
-                iconBg: "rgba(249, 115, 22, 0.1)",
-                iconColor: "#f97316",
-                gradient: "linear-gradient(135deg, var(--bg-paper), rgba(249, 115, 22, 0.04))",
-                passed: eligibility.scores.A >= (eligibility.category === "Doctorate Faculty" ? 15 : (eligibility.category === "Leadership Team" ? 20 : 10)),
-                percent: Math.min(100, Math.round((eligibility.scores.A / 20) * 100))
-              },
-              {
-                label: "5. HOD Interpersonal Skills",
-                score: eligibility.scores.I,
-                max: 50,
-                icon: <Groups />,
-                iconBg: "rgba(244, 63, 94, 0.1)",
-                iconColor: "#f43f5e",
-                gradient: "linear-gradient(135deg, var(--bg-paper), rgba(244, 63, 94, 0.04))",
-                passed: eligibility.scores.I >= 30,
-                percent: Math.min(100, Math.round((eligibility.scores.I / 50) * 100))
-              }
-            ].map((card, idx) => (
-              <Box
-                key={idx}
-                sx={{
-                  gridColumn: { xs: "span 1", sm: idx === 4 ? "span 2" : "span 1" }
-                }}
-              >
-                <Card
-                  sx={{
-                    p: 3,
-                    borderRadius: "24px",
-                    border: "1px solid var(--border-color)",
-                    background: card.gradient,
-                    display: "flex",
-                    flexDirection: "column",
-                    justifyContent: "space-between",
-                    height: "100%",
-                    transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-                    "&:hover": {
-                      transform: "translateY(-4px)",
-                      boxShadow: "var(--shadow-premium)",
-                      borderColor: card.iconColor
-                    }
-                  }}
-                >
-                  {/* Row 1: Icon and Heading on one line */}
-                  <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 2.5 }}>
-                    <Box
-                      sx={{
-                        width: 44,
-                        height: 44,
-                        borderRadius: "12px",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        background: card.iconBg,
-                        color: card.iconColor,
-                        flexShrink: 0
-                      }}
-                    >
-                      {card.icon}
-                    </Box>
-                    <Typography variant="body2" sx={{ fontWeight: 800, color: "var(--text-primary)", whiteSpace: "nowrap" }}>
-                      {card.label}
-                    </Typography>
-                  </Box>
-
-                  {/* Row 2: Score (65 / 80) and Circular progress bar on one line */}
-                  <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
-                    {/* Score (65 / 80) */}
-                    <Box sx={{ display: "flex", alignItems: "baseline", gap: 0.5, whiteSpace: "nowrap" }}>
-                      <Typography variant="h4" sx={{ fontWeight: 900, color: "var(--text-primary)" }}>
-                        {card.score}
+                {/* 3.2 Expertise / Contribution */}
+                {!(appraisal.status === "Completed" && (!appraisal.extension?.contributions || appraisal.extension.contributions.length === 0)) && (
+                  <>
+                    <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
+                      <Typography variant="subtitle1" sx={{ fontWeight: 700, color: "var(--color-primary)" }}>
+                        3.2 Expertise / Contribution (Max 10 points)
                       </Typography>
-                      <Typography variant="body2" sx={{ color: "var(--text-secondary)", fontWeight: 700 }}>
-                        / {card.max}
-                      </Typography>
+                      {(appraisal.status === "Draft" || appraisal.status === "Rejected by HOD") && (
+                        <Button
+                          variant="outlined"
+                          size="small"
+                          startIcon={<AddCircle />}
+                          onClick={handleContOpenAdd}
+                          sx={{ textTransform: "none", fontWeight: 700 }}
+                        >
+                          Add Contribution
+                        </Button>
+                      )}
                     </Box>
 
-                    {/* Circular Progress */}
-                    <Box sx={{ position: "relative", display: "inline-flex", flexShrink: 0 }}>
-                      <Loader
-                        variant="determinate"
-                        value={100}
-                        size={76}
-                        thickness={4.5}
-                        sx={{ color: "var(--border-color)", opacity: 0.15 }}
-                      />
-                      <Loader
-                        variant="determinate"
-                        value={card.percent}
-                        size={76}
-                        thickness={4.5}
-                        sx={{
-                          color: card.percent === 100 ? "#10b981" : card.iconColor,
-                          position: "absolute",
-                          left: 0
-                        }}
-                      />
-                      <Box
-                        sx={{
-                          top: 0,
-                          left: 0,
-                          bottom: 0,
-                          right: 0,
-                          position: "absolute",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center"
-                        }}
-                      >
-                        <Typography variant="body2" sx={{ fontWeight: 900, color: "var(--text-primary)", fontSize: "0.9rem" }}>
-                          {card.percent}%
-                        </Typography>
+                    <TableContainer component={Paper} elevation={0} sx={{ borderRadius: "16px", background: "var(--bg-paper)", border: "1px solid var(--border-color)", overflowX: "auto", boxShadow: "none", maxWidth: { xs: "100%", md: "100%", lg: 1000, xl: 1100 }, mx: "auto", mb: 4 }}>
+                      <Table size="small" sx={{ minWidth: 800, mx: "auto" }}>
+                        <TableHead sx={{ background: "var(--gradient-primary)" }}>
+                          <TableRow>
+                            <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2, width: "80px", whiteSpace: "nowrap" }}>S. No</TableCell>
+                            <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }}>Details of the Faculty Expertise/Recognition/Contribution</TableCell>
+                            <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2, width: "130px" }} align="center">Points claimed</TableCell>
+                            <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2, width: "120px" }}>Status</TableCell>
+                            <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2, width: "120px" }} align="center">Actions</TableCell>
+                          </TableRow>
+                        </TableHead>
+                        <TableBody>
+                          {contributionDetails.length > 0 ? (
+                            <>
+                              {contributionDetails.map((item, i) => {
+                                const statusStyle = getStatusColor(item.status);
+                                const isEditable = item.status === 'Draft' || item.status === 'Rejected';
+                                const { value } = getContributionNameField(item.category, item);
+                                return (
+                                  <TableRow key={item._id || i} sx={{ "&:hover": { bgcolor: "var(--bg-hover)" } }}>
+                                    <TableCell sx={{ color: "var(--text-primary)" }}>{i + 1}</TableCell>
+                                    <TableCell sx={{ fontWeight: 600, color: "var(--text-primary)" }}>
+                                      {getCategoryName(item.category)} - {value || "N/A"}
+                                      {item.status === "Rejected" && item.hodComment && (
+                                        <Typography variant="caption" sx={{ color: "error.main", mt: 0.5, display: "block", fontWeight: 700 }}>
+                                          Rejection Reason: {item.hodComment}
+                                        </Typography>
+                                      )}
+                                    </TableCell>
+                                    <TableCell align="center" sx={{ fontWeight: 800, color: "var(--color-primary)" }}>
+                                      {calculateContributionPoints(item, appraisalConfig)}
+                                    </TableCell>
+                                    <TableCell>
+                                      <Chip
+                                        label={item.status}
+                                        size="small"
+                                        sx={{
+                                          bgcolor: statusStyle.bg,
+                                          color: statusStyle.color,
+                                          fontWeight: 800,
+                                          borderRadius: "6px"
+                                        }}
+                                      />
+                                    </TableCell>
+                                    <TableCell align="center">
+                                      <Stack direction="row" spacing={1} sx={{ justifyContent: "center" }}>
+                                        <IconButton
+                                          size="small"
+                                          onClick={() => setSelectedContDetails(item)}
+                                          sx={{ color: "var(--color-primary)" }}
+                                        >
+                                          <Visibility fontSize="small" />
+                                        </IconButton>
+                                        {isEditable && (appraisal.status === "Draft" || appraisal.status === "Rejected by HOD") && (
+                                          <>
+                                            <IconButton
+                                              size="small"
+                                              color="info"
+                                              onClick={() => handleContOpenEdit(item)}
+                                            >
+                                              <Edit fontSize="small" />
+                                            </IconButton>
+                                            <IconButton
+                                              size="small"
+                                              color="error"
+                                              onClick={() => handleContDelete(item._id)}
+                                            >
+                                              <Delete fontSize="small" />
+                                            </IconButton>
+                                          </>
+                                        )}
+                                      </Stack>
+                                    </TableCell>
+                                  </TableRow>
+                                );
+                              })}
+                              {/* Footer row displaying dynamic sum */}
+                              <TableRow sx={{ background: "var(--bg-accent-1)" }}>
+                                <TableCell colSpan={2} sx={{ fontWeight: 800, pl: 2, color: "var(--text-primary)" }}>
+                                  <Box component="span" sx={{ position: "sticky", left: 16, display: "inline-block", whiteSpace: "nowrap" }}>
+                                    Self-Assessment Points (Max:10)
+                                  </Box>
+                                </TableCell>
+                                <TableCell align="center" sx={{ fontWeight: 800, color: "var(--color-primary)", fontSize: "0.95rem" }}>
+                                  {Math.min(10, contributionDetails.reduce((sum, r) => r.status !== 'Rejected' ? sum + calculateContributionPoints(r, appraisalConfig) : sum, 0))}
+                                </TableCell>
+                                <TableCell colSpan={2}></TableCell>
+                              </TableRow>
+                            </>
+                          ) : (
+                            <TableRow>
+                              <TableCell colSpan={5} align="center" sx={{ color: "var(--text-secondary)", py: 3, fontStyle: "italic" }}>
+                                No Expertise / Contribution records found for this academic year.
+                              </TableCell>
+                            </TableRow>
+                          )}
+                        </TableBody>
+                      </Table>
+                    </TableContainer>
+                  </>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* 4. Administrative Responsibilities */}
+            {!(appraisal.status === "Completed" && (!administrationDetail?.roles || administrationDetail.roles.length === 0)) && (
+              <Card sx={{ borderRadius: "20px", background: "var(--bg-panel)", border: "1px solid var(--border-color)", mb: 4, boxShadow: "var(--shadow-premium)" }}>
+                <CardContent sx={{ p: 3.5 }}>
+                  <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3, flexWrap: "wrap", gap: 2 }}>
+                    <Box>
+                      <Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)", display: "flex", alignItems: "center", gap: 1.5 }}>
+                        <AssignmentTurnedIn sx={{ color: "#f97316" }} /> 4. Administrative Responsibilities
+                      </Typography>
+                      <Typography variant="caption" sx={{ color: "var(--text-secondary)", fontWeight: 500, display: "block", ml: 5 }}>
+                        Maximum Points: 20
+                      </Typography>
+                    </Box>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 2, flexWrap: "wrap", width: { xs: "100%", sm: "auto" } }}>
+                      {(appraisal.status === "Draft" || appraisal.status === "Rejected by HOD") && (
+                        <Button
+                          variant="outlined"
+                          size="small"
+                          startIcon={<AddCircle />}
+                          onClick={openAdminModalAdd}
+                          sx={{ textTransform: "none", fontWeight: 700, whiteSpace: "nowrap" }}
+                        >
+                          Add Responsibility
+                        </Button>
+                      )}
+                      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 2, bgcolor: "rgba(249, 115, 22, 0.04)", p: "8px 16px", borderRadius: "12px", border: "1px solid rgba(249, 115, 22, 0.1)", width: { xs: "100%", sm: "auto" } }}>
+                        <Box>
+                          <Typography variant="caption" sx={{ color: "var(--text-secondary)", fontWeight: 700, display: "block", fontSize: "0.7rem", textTransform: "uppercase" }}>
+                            Total Points Earned
+                          </Typography>
+                          <Box sx={{ display: "flex", alignItems: "baseline", gap: 0.5 }}>
+                            <Typography variant="h6" sx={{ fontWeight: 900, color: "#f97316" }}>
+                              {eligibility.scores.A}
+                            </Typography>
+                            <Typography variant="body2" sx={{ color: "var(--text-secondary)", fontWeight: 700 }}>
+                              / 20
+                            </Typography>
+                          </Box>
+                        </Box>
+                        <Box sx={{ position: "relative", display: "inline-flex" }}>
+                          <Loader
+                            variant="determinate"
+                            value={100}
+                            size={40}
+                            thickness={4}
+                            sx={{ color: "var(--border-color)", opacity: 0.15 }}
+                          />
+                          <Loader
+                            variant="determinate"
+                            value={Math.min(100, Math.round((eligibility.scores.A / 20) * 100))}
+                            size={40}
+                            thickness={4}
+                            sx={{
+                              color: "#f97316",
+                              position: "absolute",
+                              left: 0
+                            }}
+                          />
+                          <Box sx={{ top: 0, left: 0, bottom: 0, right: 0, position: "absolute", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                            <Typography variant="caption" sx={{ fontWeight: 800, color: "var(--text-primary)", fontSize: "0.7rem" }}>
+                              {Math.min(100, Math.round((eligibility.scores.A / 20) * 100))}%
+                            </Typography>
+                          </Box>
+                        </Box>
                       </Box>
                     </Box>
                   </Box>
+                  <Divider sx={{ mb: 3 }} />
 
-                  {/* Row 3: Completed badge aligned to the left */}
-                  <Box sx={{ display: "flex", justifyContent: "flex-start", mt: "auto" }}>
-                    <Box
-                      sx={{
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: 0.75,
-                        bgcolor: card.passed ? "rgba(16, 185, 129, 0.08)" : "rgba(232, 160, 0, 0.08)",
-                        color: card.passed ? "#10b981" : "#e8a000",
-                        px: 2,
-                        py: 0.5,
-                        borderRadius: "20px",
-                        border: `1px solid ${card.passed ? "rgba(16, 185, 129, 0.15)" : "rgba(232, 160, 0, 0.15)"}`
-                      }}
-                    >
-                      <Box sx={{ width: 6, height: 6, borderRadius: "50%", bgcolor: card.passed ? "#10b981" : "#e8a000" }} />
-                      <Typography variant="caption" sx={{ fontWeight: 800, textTransform: "capitalize", fontSize: "0.7rem", letterSpacing: "0.03em" }}>
-                        {card.passed ? "Completed" : "Pending"}
-                      </Typography>
-                    </Box>
-                  </Box>
-                </Card>
-              </Box>
-            ))}
-          </Box>
-
-          {/* Totals Linear Progress Bars Container using CSS Grid */}
-          <Box
-            sx={{
-              display: "grid",
-              gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" },
-              gap: 2.5,
-              mt: 3.5
-            }}
-          >
-            <Box>
-              <Card
-                sx={{
-                  p: 3,
-                  borderRadius: "24px",
-                  border: "1px solid var(--border-color)",
-                  background: "var(--bg-paper)",
-                  boxShadow: "var(--shadow-premium)",
-                  transition: "transform 0.2s ease",
-                  "&:hover": { transform: "translateY(-2px)" }
-                }}
-              >
-                <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 2 }}>
-                  <Box sx={{ display: "flex", alignItems: "center", gap: 1.25 }}>
-                    <Box sx={{ display: "flex", color: "var(--color-blue)" }}>
-                      <Description sx={{ fontSize: 20 }} />
-                    </Box>
-                    <Typography variant="body1" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>
-                      Total (1-4)
-                    </Typography>
-                  </Box>
-                  <Box sx={{ display: "flex", alignItems: "baseline", gap: 0.5 }}>
-                    <Typography variant="h5" sx={{ fontWeight: 900, color: "var(--text-primary)" }}>
-                      {eligibility.scores.total1to4}
-                    </Typography>
-                    <Typography variant="body2" sx={{ color: "var(--text-secondary)", fontWeight: 700 }}>
-                      / 200
-                    </Typography>
-                  </Box>
-                </Box>
-                <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-                  <Box sx={{ flexGrow: 1 }}>
-                    <Box sx={{ width: "100%", height: 10, bgcolor: "var(--border-color)", borderRadius: "5px", overflow: "hidden", position: "relative" }}>
-                      <Box
-                        sx={{
-                          width: `${Math.min(100, (eligibility.scores.total1to4 / 200) * 100)}%`,
-                          height: "100%",
-                          bgcolor: "var(--color-blue)",
-                          borderRadius: "5px"
-                        }}
-                      />
-                    </Box>
-                  </Box>
-                  <Typography variant="body2" sx={{ fontWeight: 900, color: "var(--text-primary)", minWidth: 36, textAlign: "right" }}>
-                    {Math.round((eligibility.scores.total1to4 / 200) * 100)}%
-                  </Typography>
-                </Box>
+                  <TableContainer component={Paper} elevation={0} sx={{ borderRadius: "16px", background: "var(--bg-paper)", border: "1px solid var(--border-color)", overflowX: "auto", boxShadow: "none", maxWidth: { xs: "100%", md: "100%", lg: 1000, xl: 1100 }, mx: "auto", mb: 4 }}>
+                    <Table size="small" sx={{ minWidth: 800, mx: "auto" }}>
+                      <TableHead sx={{ background: "var(--gradient-primary)" }}>
+                        <TableRow>
+                          <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2, width: "80px", whiteSpace: "nowrap" }}>S. No</TableCell>
+                          <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }}>Details of the Administrative Responsibility</TableCell>
+                          <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2, width: "150px" }}>Assigned by</TableCell>
+                          <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2, width: "130px" }} align="center">Points claimed</TableCell>
+                          <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2, width: "120px" }}>Status</TableCell>
+                          <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2, width: "120px" }} align="center">Actions</TableCell>
+                        </TableRow>
+                      </TableHead>
+                      <TableBody>
+                        {administrationDetail && administrationDetail.roles?.filter(r => r.isResponsible).length > 0 ? (
+                          <>
+                            {administrationDetail.roles.filter(r => r.isResponsible).map((role, i) => {
+                              const assignedByText = role.level && (role.level.toLowerCase().includes("central") || role.level.toLowerCase().includes("institute")) ? "Central" : "Dept";
+                              const isEditable = role.status === 'Pending' || role.status === 'Rejected';
+                              return (
+                                <TableRow key={i} sx={{ "&:hover": { bgcolor: "var(--bg-hover)" } }}>
+                                  <TableCell sx={{ color: "var(--text-primary)" }}>{i + 1}</TableCell>
+                                  <TableCell sx={{ fontWeight: 600, color: "var(--text-primary)" }}>
+                                    {role.roleName} {role.details ? `(${role.details})` : ""}
+                                    {role.status === "Rejected" && role.remarks && (
+                                      <Typography variant="caption" sx={{ color: "error.main", mt: 0.5, display: "block", fontWeight: 700 }}>
+                                        Rejection Reason: {role.remarks}
+                                      </Typography>
+                                    )}
+                                  </TableCell>
+                                  <TableCell sx={{ color: "var(--text-primary)" }}>{assignedByText}</TableCell>
+                                  <TableCell align="center" sx={{ fontWeight: 800, color: "var(--color-primary)" }}>
+                                    {calculateAdministrativePoints(role, appraisalConfig)}
+                                  </TableCell>
+                                  <TableCell>
+                                    <Chip
+                                      label={role.status || "Pending"}
+                                      size="small"
+                                      sx={{
+                                        bgcolor: getStatusColor(role.status || "Pending").bg,
+                                        color: getStatusColor(role.status || "Pending").color,
+                                        fontWeight: 800,
+                                        borderRadius: "6px"
+                                      }}
+                                    />
+                                  </TableCell>
+                                  <TableCell align="center">
+                                    <Stack direction="row" spacing={1} sx={{ justifyContent: "center" }}>
+                                      {isEditable && (appraisal.status === "Draft" || appraisal.status === "Rejected by HOD") && (
+                                        <>
+                                          <IconButton size="small" color="info" onClick={() => openAdminModalEdit(role)}>
+                                            <Edit fontSize="small" />
+                                          </IconButton>
+                                          <IconButton size="small" color="error" onClick={() => handleAdminDelete(role.roleName)}>
+                                            <Delete fontSize="small" />
+                                          </IconButton>
+                                        </>
+                                      )}
+                                    </Stack>
+                                  </TableCell>
+                                </TableRow>
+                              );
+                            })}
+                            <TableRow sx={{ background: "var(--bg-accent-1)" }}>
+                              <TableCell colSpan={3} sx={{ fontWeight: 800, pl: 2, color: "var(--text-primary)" }}>
+                                <Box component="span" sx={{ position: "sticky", left: 16, display: "inline-block", whiteSpace: "nowrap" }}>
+                                  Self-Assessment points (Max:20)
+                                </Box>
+                              </TableCell>
+                              <TableCell align="center" sx={{ fontWeight: 800, color: "var(--color-primary)", fontSize: "0.95rem" }}>
+                                {Math.min(20, administrationDetail.roles.filter(r => r.isResponsible).reduce((sum, r) => r.status !== 'Rejected' ? sum + calculateAdministrativePoints(r, appraisalConfig) : sum, 0))}
+                              </TableCell>
+                              <TableCell colSpan={2}></TableCell>
+                            </TableRow>
+                          </>
+                        ) : (
+                          <TableRow>
+                            <TableCell colSpan={6} align="center" sx={{ color: "var(--text-secondary)", py: 3, fontStyle: "italic" }}>
+                              No administrative responsibilities claimed yet.
+                            </TableCell>
+                          </TableRow>
+                        )}
+                      </TableBody>
+                    </Table>
+                  </TableContainer>
+                </CardContent>
               </Card>
-            </Box>
+            )}
+          </Grid>
 
-            <Box>
-              <Card
-                sx={{
-                  p: 3,
-                  borderRadius: "24px",
-                  border: "1px solid var(--border-color)",
-                  background: "var(--bg-paper)",
-                  boxShadow: "var(--shadow-premium)",
-                  transition: "transform 0.2s ease",
-                  "&:hover": { transform: "translateY(-2px)" }
-                }}
-              >
-                <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 2 }}>
-                  <Box sx={{ display: "flex", alignItems: "center", gap: 1.25 }}>
-                    <Box sx={{ display: "flex", color: "#BE9337" }}>
-                      <EmojiEvents sx={{ fontSize: 20 }} />
-                    </Box>
-                    <Typography variant="body1" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>
-                      Grand Total
-                    </Typography>
-                  </Box>
-                  <Box sx={{ display: "flex", alignItems: "baseline", gap: 0.5 }}>
-                    <Typography variant="h5" sx={{ fontWeight: 900, color: "var(--text-primary)" }}>
-                      {eligibility.scores.grandTotal}
-                    </Typography>
-                    <Typography variant="body2" sx={{ color: "var(--text-secondary)", fontWeight: 700 }}>
-                      / 250
-                    </Typography>
-                  </Box>
-                </Box>
-                <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-                  <Box sx={{ flexGrow: 1 }}>
-                    <Box sx={{ width: "100%", height: 10, bgcolor: "var(--border-color)", borderRadius: "5px", overflow: "hidden", position: "relative" }}>
-                      <Box
-                        sx={{
-                          width: `${Math.min(100, (eligibility.scores.grandTotal / 250) * 100)}%`,
-                          height: "100%",
-                          bgcolor: "#BE9337",
-                          borderRadius: "5px"
-                        }}
-                      />
-                    </Box>
-                  </Box>
-                  <Typography variant="body2" sx={{ fontWeight: 900, color: "var(--text-primary)", minWidth: 36, textAlign: "right" }}>
-                    {Math.round((eligibility.scores.grandTotal / 250) * 100)}%
-                  </Typography>
-                </Box>
-              </Card>
-            </Box>
-          </Box>
+          {/* Right Side Panel Removed - Scorecard is now rendered at the bottom */}
+        </Grid>
 
-          <Typography variant="caption" sx={{ color: "var(--text-secondary)", display: "block", mt: 2, pl: 1, fontStyle: "italic", fontWeight: 500 }}>
-            * Extra research points beyond 80 are counted towards Total (1-4) until the total reaches 200.
-          </Typography>
-        </Card>
-
-        {/* Right Column: Eligibility Checklist */}
-        <Box
-          sx={{
-            minWidth: 0,
-            width: "100%",
-            height: "100%"
-          }}
-        >
+        {/* Eligibility Checklist Section */}
+        <Box sx={{ mt: 5, mb: 5, width: "100%" }}>
           <Card
             sx={{
-              p: 3.5,
+              p: 4,
               borderRadius: "24px",
               border: "1px solid var(--border-color)",
               boxShadow: "var(--shadow-premium)",
               background: "var(--bg-glass)",
               backdropFilter: "blur(20px)",
-              display: "flex",
-              flexDirection: "column",
-              height: "100%"
+              width: "100%",
             }}
           >
-            <Typography variant="h6" sx={{ fontWeight: 800, mb: 3, color: "var(--text-primary)", display: "flex", alignItems: "center", gap: 1.25 }}>
-              <CardMembership sx={{ color: "var(--color-primary)" }} /> Eligibility Checklist
+            <Typography variant="h5" sx={{ fontWeight: 800, mb: 4, color: "var(--text-primary)", display: "flex", alignItems: "center", gap: 1.5 }}>
+              <CardMembership sx={{ color: "var(--color-primary)", fontSize: 28 }} /> Eligibility Checklist
             </Typography>
 
-            <Stack spacing={2} sx={{ mb: 3.5 }}>
+            <Box
+              sx={{
+                display: "grid",
+                gridTemplateColumns: { xs: "1fr", md: "1fr 1fr", lg: "1fr 1fr 1fr" },
+                gap: 3,
+                mb: 4
+              }}
+            >
               {Object.entries(eligibility.checklist).map(([key, item]) => {
-                let icon = <CheckCircle sx={{ fontSize: 18 }} />;
+                let icon = <CheckCircle sx={{ fontSize: 24 }} />;
                 let color = "#10b981";
                 let iconBg = "rgba(16, 185, 129, 0.08)";
-                let cardBorder = "rgba(16, 185, 129, 0.15)";
+                let cardBorder = "rgba(16, 185, 129, 0.2)";
 
                 if (item.isPending) {
-                  icon = <HourglassEmpty sx={{ fontSize: 18 }} />;
+                  icon = <HourglassEmpty sx={{ fontSize: 24 }} />;
                   color = "#e8a000";
                   iconBg = "rgba(232, 160, 0, 0.08)";
-                  cardBorder = "rgba(232, 160, 0, 0.15)";
+                  cardBorder = "rgba(232, 160, 0, 0.2)";
                 } else if (!item.passed) {
-                  icon = <Cancel sx={{ fontSize: 18 }} />;
+                  icon = <Cancel sx={{ fontSize: 24 }} />;
                   color = "#ef4444";
                   iconBg = "rgba(239, 68, 68, 0.08)";
-                  cardBorder = "rgba(239, 68, 68, 0.15)";
+                  cardBorder = "rgba(239, 68, 68, 0.2)";
                 }
 
                 return (
                   <Box
                     key={key}
                     sx={{
-                      p: 2,
+                      p: 2.5,
                       borderRadius: "16px",
                       bgcolor: "var(--bg-paper)",
                       border: "1px solid var(--border-color)",
-                      boxShadow: "0 2px 8px rgba(0,0,0,0.01)",
                       display: "flex",
-                      alignItems: "center",
+                      alignItems: "flex-start",
                       gap: 2,
                       transition: "all 0.2s ease",
                       "&:hover": {
                         borderColor: cardBorder,
-                        boxShadow: "var(--shadow-premium)"
+                        boxShadow: "var(--shadow-premium)",
+                        transform: "translateY(-2px)"
                       }
                     }}
                   >
                     <Box
                       sx={{
-                        width: 36,
-                        height: 36,
+                        width: 48,
+                        height: 48,
                         borderRadius: "50%",
                         bgcolor: iconBg,
                         color: color,
@@ -4209,10 +4031,10 @@ const SelfAppraisal = () => {
                       {icon}
                     </Box>
                     <Box sx={{ flexGrow: 1 }}>
-                      <Typography variant="body2" sx={{ fontWeight: 800, color: "var(--text-primary)", lineHeight: 1.2 }}>
+                      <Typography variant="body1" sx={{ fontWeight: 800, color: "var(--text-primary)", lineHeight: 1.3 }}>
                         {item.label}
                       </Typography>
-                      <Typography variant="caption" sx={{ color: "var(--text-secondary)", mt: 0.5, display: "block", fontSize: "0.75rem", lineHeight: 1.2 }}>
+                      <Typography variant="body2" sx={{ color: "var(--text-secondary)", mt: 0.75, display: "block", lineHeight: 1.4 }}>
                         {item.desc}
                       </Typography>
                       {item.isGating && !item.passed && (
@@ -4220,36 +4042,36 @@ const SelfAppraisal = () => {
                           label="Required to Submit"
                           size="small"
                           color="error"
-                          sx={{ mt: 1, fontWeight: 800, height: 18, fontSize: "0.65rem" }}
+                          sx={{ mt: 1.5, fontWeight: 800, height: 22, fontSize: "0.7rem" }}
                         />
                       )}
                     </Box>
                   </Box>
                 );
               })}
-            </Stack>
+            </Box>
 
             {/* Status banner card at the bottom */}
-            <Divider sx={{ mx: -3.5, mt: "auto", mb: 0, borderColor: "var(--border-color)" }} />
+            <Divider sx={{ mx: -4, mb: 0, borderColor: "var(--border-color)" }} />
             {eligibility.canSubmit ? (
               <Box
                 sx={{
-                  p: 2.25,
+                  p: 3,
                   borderRadius: "0 0 24px 24px",
                   background: "rgba(16, 185, 129, 0.08)",
                   display: "flex",
                   alignItems: "center",
-                  gap: 1.75,
-                  mx: -3.5,
-                  mb: -3.5
+                  gap: 2,
+                  mx: -4,
+                  mb: -4
                 }}
               >
-                <Box sx={{ fontSize: 24, flexShrink: 0 }}>🎉</Box>
+                <Box sx={{ fontSize: 32, flexShrink: 0 }}>🎉</Box>
                 <Box>
-                  <Typography variant="body2" sx={{ fontWeight: 800, color: "#10b981" }}>
+                  <Typography variant="h6" sx={{ fontWeight: 800, color: "#10b981" }}>
                     You are eligible!
                   </Typography>
-                  <Typography variant="caption" sx={{ color: "var(--text-secondary)", display: "block", mt: 0.25, fontSize: "0.75rem" }}>
+                  <Typography variant="body2" sx={{ color: "var(--text-secondary)", display: "block", mt: 0.5, fontWeight: 500 }}>
                     All gating requirements satisfied. Submit your appraisal now.
                   </Typography>
                 </Box>
@@ -4257,22 +4079,22 @@ const SelfAppraisal = () => {
             ) : (
               <Box
                 sx={{
-                  p: 2.25,
+                  p: 3,
                   borderRadius: "0 0 24px 24px",
                   background: "rgba(232, 160, 0, 0.08)",
                   display: "flex",
                   alignItems: "center",
-                  gap: 1.75,
-                  mx: -3.5,
-                  mb: -3.5
+                  gap: 2,
+                  mx: -4,
+                  mb: -4
                 }}
               >
-                <Box sx={{ fontSize: 24, flexShrink: 0 }}>🎉</Box>
+                <Box sx={{ fontSize: 32, flexShrink: 0 }}>🎉</Box>
                 <Box>
-                  <Typography variant="body2" sx={{ fontWeight: 800, color: "#e8a000" }}>
+                  <Typography variant="h6" sx={{ fontWeight: 800, color: "#e8a000" }}>
                     You are almost there!
                   </Typography>
-                  <Typography variant="caption" sx={{ color: "var(--text-secondary)", display: "block", mt: 0.25, fontSize: "0.75rem" }}>
+                  <Typography variant="body2" sx={{ color: "var(--text-secondary)", display: "block", mt: 0.5, fontWeight: 500 }}>
                     Complete the pending criteria to become eligible.
                   </Typography>
                 </Box>
@@ -4280,912 +4102,463 @@ const SelfAppraisal = () => {
             )}
           </Card>
         </Box>
-      </Box>
 
-      {/* Co-author claims modal */}
-      <Modal open={claimModalOpen} onClose={() => setClaimModalOpen(false)}>
-        <Box
-          sx={{
-            position: "absolute",
-            top: "50%",
-            left: "50%",
-            transform: "translate(-50%, -50%)",
-            width: 480,
-            background: "var(--bg-panel)",
-            border: "1px solid var(--border-color)",
-            boxShadow: 24,
-            p: 4,
-            borderRadius: "16px"
-          }}
-        >
-          <Typography variant="h6" sx={{ fontWeight: 800, mb: 2, color: "var(--text-primary)" }}>
-            Claim Co-Authored Research
-          </Typography>
-          <Divider sx={{ mb: 2 }} />
-
-          <Typography variant="body2" color="var(--text-secondary)" sx={{ mb: 3 }}>
-            Only one author from Aditya University can claim this paper. If you are <strong>not</strong> the first author, you must upload a signed <strong>Undertaking Form</strong> from other authors.
-          </Typography>
-
-          <Button
-            variant="outlined"
-            component="label"
-            fullWidth
-            startIcon={<CloudUpload />}
-            sx={{ py: 1.5, borderStyle: "dashed", mb: 3, textTransform: "none", fontWeight: 700 }}
-          >
-            Upload Undertaking (PDF/Image)
-            <input
-              type="file"
-              hidden
-              accept=".pdf,.png,.jpg,.jpeg"
-              onChange={(e) => setUndertakingFile(e.target.files[0])}
-            />
-          </Button>
-
-          {undertakingFile && (
-            <Alert severity="success" icon={<CheckCircle />} sx={{ mb: 3, borderRadius: "10px" }}>
-              File selected: {undertakingFile.name}
-            </Alert>
-          )}
-
-          <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 2 }}>
-            <Button onClick={() => setClaimModalOpen(false)} sx={{ fontWeight: 700 }}>
-              Cancel
-            </Button>
-            <Button
-              variant="contained"
-              color="warning"
-              onClick={handleClaimSubmit}
-              disabled={loading}
-              sx={{ fontWeight: 700, color: "#fff" }}
-            >
-              Submit Claim
-            </Button>
-          </Box>
-        </Box>
-      </Modal>
-
-      {/* 3.1 Resource Utilization Form Dialog */}
-      <Dialog
-        open={resUtOpen}
-        onClose={() => setResUtOpen(false)}
-        maxWidth="md"
-        fullWidth
-        slotProps={{
-          paper: {
-            sx: {
-              borderRadius: "20px",
+        {/* Co-author claims modal */}
+        <Modal open={claimModalOpen} onClose={() => setClaimModalOpen(false)}>
+          <Box
+            sx={{
+              position: "absolute",
+              top: "50%",
+              left: "50%",
+              transform: "translate(-50%, -50%)",
+              width: 480,
               background: "var(--bg-panel)",
-              border: "1px solid var(--border-color)"
-            }
-          }
-        }}
-      >
-        <DialogTitle sx={{ borderBottom: "1px solid var(--border-color)", pb: 2 }}>
-          <Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>
-            {resUtEditingId ? "Edit Resource Utilization Entry" : "Add Resource Utilization Entry"}
-          </Typography>
-        </DialogTitle>
-        <DialogContent sx={{ p: 3, pt: 4 }}>
-          <SubLabel text="Details of the Activity:" />
-          <Grid2>
-            <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
-              <Typography sx={labelStyle}>Academic Year:</Typography>
-              {/* Show the selected year as read-only disabled field since it is already selected in appraisal */}
-              {(() => {
-                const yearObj = academicYears.find(y => y._id === selectedYear);
-                return (
-                  <TextField
-                    size="small"
-                    fullWidth
-                    disabled
-                    value={yearObj ? yearObj.year : "N/A"}
-                    sx={{
-                      "& .MuiInputBase-root": { background: "rgba(0,0,0,0.02)" },
-                      "& .MuiInputBase-input.Mui-disabled": { WebkitTextFillColor: "var(--text-secondary)", fontWeight: 600 }
-                    }}
-                  />
-                );
-              })()}
-            </Box>
-
-            <Box>
-              <Typography sx={labelStyle}>Activity Category: *</Typography>
-              <Select
-                size="small"
-                fullWidth
-                displayEmpty
-                value={resUtForm.activityCategory}
-                onChange={handleResUtCategoryChange}
-              >
-                <MenuItem value="" disabled>--Select Category--</MenuItem>
-                {RESOURCE_UTILIZATION_CATEGORIES.map(cat => (
-                  <MenuItem key={cat} value={cat}>{cat}</MenuItem>
-                ))}
-              </Select>
-            </Box>
-
-            <Box>
-              <Typography sx={labelStyle}>Activity Role / Type: *</Typography>
-              <Select
-                size="small"
-                fullWidth
-                displayEmpty
-                value={resUtForm.activityType}
-                onChange={handleResUtRoleChange}
-                disabled={!resUtForm.activityCategory}
-              >
-                <MenuItem value="" disabled>--Select Role--</MenuItem>
-                {resUtForm.activityCategory && ROLES_BY_CATEGORY[resUtForm.activityCategory]?.map(role => (
-                  <MenuItem key={role} value={role}>{role}</MenuItem>
-                ))}
-              </Select>
-            </Box>
-
-            {resUtForm.activityCategory === "FDP" && resUtForm.activityType === "FDP Participant" ? (
-              <>
-                <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
-                  <Typography sx={labelStyle}>Course Name: *</Typography>
-                  <TextField
-                    size="small"
-                    fullWidth
-                    value={resUtForm.courseFdpName}
-                    onChange={(e) => setResUtForm(p => ({ ...p, courseFdpName: e.target.value }))}
-                    placeholder="Enter Course Name"
-                  />
-                </Box>
-
-                <Box>
-                  <Typography sx={labelStyle}>Organizing Institution Category: *</Typography>
-                  <Select
-                    size="small"
-                    fullWidth
-                    displayEmpty
-                    value={resUtForm.organizingInstitutionCategory}
-                    onChange={(e) => setResUtForm(p => ({ ...p, organizingInstitutionCategory: e.target.value }))}
-                  >
-                    <MenuItem value="" disabled>--Select Category--</MenuItem>
-                    {[
-                      "UGC",
-                      "AICTE",
-                      "IIT",
-                      "IIM",
-                      "NIT",
-                      "MHRD R&D Lab",
-                      "NITTTR",
-                      "NIPER",
-                      "ICMR",
-                      "Govt. University",
-                      "NIRF Ranked Institute (Below 200)",
-                      "NPTEL"
-                    ].map(opt => (
-                      <MenuItem key={opt} value={opt}>{opt}</MenuItem>
-                    ))}
-                  </Select>
-                </Box>
-
-                <Box>
-                  <Typography sx={labelStyle}>Location (City, State): *</Typography>
-                  <TextField
-                    size="small"
-                    fullWidth
-                    value={resUtForm.location}
-                    onChange={(e) => setResUtForm(p => ({ ...p, location: e.target.value }))}
-                    placeholder="e.g. Hyderabad, Telangana"
-                  />
-                </Box>
-
-                {resUtForm.organizingInstitutionCategory === "MHRD R&D Lab" && (
-                  <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
-                    <Typography sx={labelStyle}>Lab Name: *</Typography>
-                    <TextField
-                      size="small"
-                      fullWidth
-                      value={resUtForm.labName}
-                      onChange={(e) => setResUtForm(p => ({ ...p, labName: e.target.value }))}
-                      placeholder="Enter Lab Name"
-                    />
-                  </Box>
-                )}
-
-                {resUtForm.organizingInstitutionCategory === "Govt. University" && (
-                  <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
-                    <Typography sx={labelStyle}>University Name: *</Typography>
-                    <TextField
-                      size="small"
-                      fullWidth
-                      value={resUtForm.universityName}
-                      onChange={(e) => setResUtForm(p => ({ ...p, universityName: e.target.value }))}
-                      placeholder="Enter University Name"
-                    />
-                  </Box>
-                )}
-
-                {resUtForm.organizingInstitutionCategory === "NIRF Ranked Institute (Below 200)" && (
-                  <>
-                    <Box>
-                      <Typography sx={labelStyle}>Institute Name: *</Typography>
-                      <TextField
-                        size="small"
-                        fullWidth
-                        value={resUtForm.instituteName}
-                        onChange={(e) => setResUtForm(p => ({ ...p, instituteName: e.target.value }))}
-                        placeholder="Enter Institute Name"
-                      />
-                    </Box>
-                    <Box>
-                      <Typography sx={labelStyle}>NIRF Rank: *</Typography>
-                      <TextField
-                        size="small"
-                        fullWidth
-                        type="number"
-                        value={resUtForm.nirfRank}
-                        onChange={(e) => setResUtForm(p => ({ ...p, nirfRank: e.target.value }))}
-                        placeholder="e.g. 45"
-                      />
-                    </Box>
-                  </>
-                )}
-              </>
-            ) : (
-              <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
-                <Typography sx={labelStyle}>Organization / Event Name: *</Typography>
-                <TextField
-                  size="small"
-                  fullWidth
-                  value={resUtForm.organizationName}
-                  onChange={(e) => setResUtForm(p => ({ ...p, organizationName: e.target.value }))}
-                  placeholder="Enter Name of Event or Organization"
-                />
-              </Box>
-            )}
-
-            <Box>
-              <Typography sx={labelStyle}>From Date: *</Typography>
-              <TextField
-                size="small"
-                fullWidth
-                type="date"
-                value={resUtForm.fromDate}
-                onChange={(e) => setResUtForm(p => ({ ...p, fromDate: e.target.value }))}
-                slotProps={{
-                  inputLabel: { shrink: true },
-                  htmlInput: { max: new Date().toISOString().split("T")[0] }
-                }}
-              />
-            </Box>
-
-            <Box>
-              <Typography sx={labelStyle}>To Date: *</Typography>
-              <TextField
-                size="small"
-                fullWidth
-                type="date"
-                value={resUtForm.toDate}
-                onChange={(e) => setResUtForm(p => ({ ...p, toDate: e.target.value }))}
-                slotProps={{
-                  inputLabel: { shrink: true },
-                  htmlInput: { max: new Date().toISOString().split("T")[0] }
-                }}
-              />
-            </Box>
-
-            <Box>
-              <Typography sx={labelStyle}>Duration (Days):</Typography>
-              <TextField
-                size="small"
-                fullWidth
-                disabled
-                value={resUtForm.duration || ""}
-                placeholder="Calculated automatically"
-              />
-            </Box>
-
-            {resUtForm.activityType?.includes("Resource Person") && (
-              <Box>
-                <Typography sx={labelStyle}>Number of Sessions Conducted: *</Typography>
-                <TextField
-                  size="small"
-                  fullWidth
-                  type="number"
-                  value={resUtForm.sessionsConducted}
-                  onChange={(e) => setResUtForm(p => ({ ...p, sessionsConducted: e.target.value }))}
-                  placeholder="e.g. 3"
-                />
-              </Box>
-            )}
-
-            {resUtForm.activityType?.includes("Participant") && (
-              <Box>
-                <Typography sx={labelStyle}>Number of Days Participated: *</Typography>
-                <TextField
-                  size="small"
-                  fullWidth
-                  type="number"
-                  value={resUtForm.daysParticipated}
-                  onChange={(e) => setResUtForm(p => ({ ...p, daysParticipated: e.target.value }))}
-                  placeholder="e.g. 5"
-                />
-              </Box>
-            )}
-
-            <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
-              <Typography sx={labelStyle}>Remarks / Comments:</Typography>
-              <TextField
-                size="small"
-                fullWidth
-                multiline
-                rows={2}
-                value={resUtForm.remarks}
-                onChange={(e) => setResUtForm(p => ({ ...p, remarks: e.target.value }))}
-                placeholder="Any additional information..."
-              />
-            </Box>
-
-            <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
-              <FileField
-                label={resUtEditingId ? "Upload New Proof (Leave empty to keep existing)" : "Supporting Proof (PDF/Image, Max 500KB) *"}
-                name="proof"
-                onChange={(e) => setResUtProof(e.target.files[0])}
-                error={!resUtProof && !resUtEditingId}
-              />
-            </Box>
-          </Grid2>
-          <NoteBox />
-        </DialogContent>
-        <DialogActions sx={{ p: 2.5, borderTop: "1px solid var(--border-color)" }}>
-          <Button onClick={() => setResUtOpen(false)} sx={{ fontWeight: 700 }}>Cancel</Button>
-          <Button
-            variant="contained"
-            onClick={handleResUtSaveDraft}
-            disabled={resUtLoading}
-            sx={{ fontWeight: 700, color: "#fff" }}
-          >
-            {resUtLoading ? "Saving..." : "Save Entry"}
-          </Button>
-        </DialogActions>
-      </Dialog>
-
-      {/* 3.1 Resource Utilization Details View Dialog */}
-      {selectedResUtDetails && (() => {
-        const data = selectedResUtDetails;
-        const statusStyle = getStatusColor(data.status);
-        const backendURL = (import.meta.env.VITE_BACKEND_URL || "http://localhost:9000").replace(/\/$/, "");
-        const fileUrl = data.proof ? (data.proof.startsWith('http') ? data.proof : `${backendURL}${data.proof}`) : null;
-        const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(data.proof || "");
-
-        return (
-          <Dialog
-            open={!!selectedResUtDetails}
-            onClose={() => setSelectedResUtDetails(null)}
-            maxWidth="md"
-            fullWidth
-            slotProps={{
-              paper: {
-                sx: {
-                  borderRadius: "20px",
-                  background: "var(--bg-panel)",
-                  border: "1px solid var(--border-color)"
-                }
-              }
+              border: "1px solid var(--border-color)",
+              boxShadow: 24,
+              p: 4,
+              borderRadius: "16px"
             }}
           >
-            <DialogTitle sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "var(--bg-accent-4)", py: 2 }}>
-              <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-                <Info sx={{ color: "var(--color-primary)" }} />
-                <Typography variant="h6" sx={{ fontWeight: 800 }}>Resource Utilization Details</Typography>
-              </Box>
-              <IconButton onClick={() => setSelectedResUtDetails(null)}><Close /></IconButton>
-            </DialogTitle>
-            <DialogContent sx={{ p: 3, mt: 1 }}>
-              <Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)", mb: 1 }}>
-                {data.activityCategory} - {data.activityType}
-              </Typography>
-              {data.activityCategory === "FDP" && data.activityType === "FDP Participant" ? (
-                <Typography variant="body2" sx={{ color: "var(--text-secondary)", mb: 3, fontWeight: 600 }}>Course Name: {data.courseFdpName || data.organizationName}</Typography>
-              ) : (
-                <Typography variant="body2" sx={{ color: "var(--text-secondary)", mb: 3, fontWeight: 600 }}>Organization / Event Name: {data.organizationName}</Typography>
-              )}
+            <Typography variant="h6" sx={{ fontWeight: 800, mb: 2, color: "var(--text-primary)" }}>
+              Claim Co-Authored Research
+            </Typography>
+            <Divider sx={{ mb: 2 }} />
 
-              <Grid container spacing={2}>
-                {data.activityCategory === "FDP" && data.activityType === "FDP Participant" && (
-                  <>
-                    <Grid size={{ xs: 12, sm: 4 }}>
-                      <Box sx={{ p: 1.5, borderRadius: "10px", background: "var(--bg-paper)", border: "1px solid var(--border-color)" }}>
-                        <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", fontWeight: 800 }}>Organizing Category</Typography>
-                        <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>{data.organizingInstitutionCategory}</Typography>
-                      </Box>
-                    </Grid>
-                    <Grid size={{ xs: 12, sm: 4 }}>
-                      <Box sx={{ p: 1.5, borderRadius: "10px", background: "var(--bg-paper)", border: "1px solid var(--border-color)" }}>
-                        <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", fontWeight: 800 }}>Location</Typography>
-                        <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>{data.location}</Typography>
-                      </Box>
-                    </Grid>
-                    {data.organizingInstitutionCategory === "MHRD R&D Lab" && (
-                      <Grid size={{ xs: 12, sm: 4 }}>
-                        <Box sx={{ p: 1.5, borderRadius: "10px", background: "var(--bg-paper)", border: "1px solid var(--border-color)" }}>
-                          <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", fontWeight: 800 }}>Lab Name</Typography>
-                          <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>{data.labName}</Typography>
-                        </Box>
-                      </Grid>
-                    )}
-                    {data.organizingInstitutionCategory === "Govt. University" && (
-                      <Grid size={{ xs: 12, sm: 4 }}>
-                        <Box sx={{ p: 1.5, borderRadius: "10px", background: "var(--bg-paper)", border: "1px solid var(--border-color)" }}>
-                          <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", fontWeight: 800 }}>University Name</Typography>
-                          <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>{data.universityName}</Typography>
-                        </Box>
-                      </Grid>
-                    )}
-                    {data.organizingInstitutionCategory === "NIRF Ranked Institute (Below 200)" && (
-                      <>
-                        <Grid size={{ xs: 12, sm: 4 }}>
-                          <Box sx={{ p: 1.5, borderRadius: "10px", background: "var(--bg-paper)", border: "1px solid var(--border-color)" }}>
-                            <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", fontWeight: 800 }}>Institute Name</Typography>
-                            <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>{data.instituteName}</Typography>
-                          </Box>
-                        </Grid>
-                        <Grid size={{ xs: 12, sm: 4 }}>
-                          <Box sx={{ p: 1.5, borderRadius: "10px", background: "var(--bg-paper)", border: "1px solid var(--border-color)" }}>
-                            <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", fontWeight: 800 }}>NIRF Rank</Typography>
-                            <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>{data.nirfRank}</Typography>
-                          </Box>
-                        </Grid>
-                      </>
-                    )}
-                  </>
-                )}
+            <Typography variant="body2" color="var(--text-secondary)" sx={{ mb: 3 }}>
+              Only one author from Aditya University can claim this paper. If you are <strong>not</strong> the first author, you must upload a signed <strong>Undertaking Form</strong> from other authors.
+            </Typography>
 
-                <Grid size={{ xs: 12, sm: 4 }}>
-                  <Box sx={{ p: 1.5, borderRadius: "10px", background: "var(--bg-paper)", border: "1px solid var(--border-color)" }}>
-                    <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", fontWeight: 800 }}>Dates</Typography>
-                    <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>
-                      {new Date(data.fromDate).toLocaleDateString("en-IN")} to {new Date(data.toDate).toLocaleDateString("en-IN")}
-                    </Typography>
-                  </Box>
-                </Grid>
-                <Grid size={{ xs: 12, sm: 4 }}>
-                  <Box sx={{ p: 1.5, borderRadius: "10px", background: "var(--bg-paper)", border: "1px solid var(--border-color)" }}>
-                    <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", fontWeight: 800 }}>Duration</Typography>
-                    <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>{data.duration} Days</Typography>
-                  </Box>
-                </Grid>
-                <Grid size={{ xs: 12, sm: 4 }}>
-                  <Box sx={{ p: 1.5, borderRadius: "10px", background: "var(--bg-paper)", border: "1px solid var(--border-color)" }}>
-                    <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", fontWeight: 800 }}>Status</Typography>
-                    <Box sx={{ mt: 0.5 }}>
-                      <Chip
-                        label={data.status}
-                        size="small"
-                        sx={{
-                          bgcolor: statusStyle.bg,
-                          color: statusStyle.color,
-                          fontWeight: 800,
-                          borderRadius: "6px"
-                        }}
-                      />
-                    </Box>
-                  </Box>
-                </Grid>
+            <Button
+              variant="outlined"
+              component="label"
+              fullWidth
+              startIcon={<CloudUpload />}
+              sx={{ py: 1.5, borderStyle: "dashed", mb: 3, textTransform: "none", fontWeight: 700 }}
+            >
+              Upload Undertaking (PDF/Image)
+              <input
+                type="file"
+                hidden
+                accept=".pdf,.png,.jpg,.jpeg"
+                onChange={(e) => setUndertakingFile(e.target.files[0])}
+              />
+            </Button>
 
-                {data.sessionsConducted !== undefined && (
-                  <Grid size={{ xs: 12, sm: 4 }}>
-                    <Box sx={{ p: 1.5, borderRadius: "10px", background: "var(--bg-paper)", border: "1px solid var(--border-color)" }}>
-                      <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", fontWeight: 800 }}>Sessions Conducted</Typography>
-                      <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>{data.sessionsConducted}</Typography>
-                    </Box>
-                  </Grid>
-                )}
+            {undertakingFile && (
+              <Alert severity="success" icon={<CheckCircle />} sx={{ mb: 3, borderRadius: "10px" }}>
+                File selected: {undertakingFile.name}
+              </Alert>
+            )}
 
-                {data.daysParticipated !== undefined && (
-                  <Grid size={{ xs: 12, sm: 4 }}>
-                    <Box sx={{ p: 1.5, borderRadius: "10px", background: "var(--bg-paper)", border: "1px solid var(--border-color)" }}>
-                      <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", fontWeight: 800 }}>Days Participated</Typography>
-                      <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>{data.daysParticipated}</Typography>
-                    </Box>
-                  </Grid>
-                )}
-
-                {data.remarks && (
-                  <Grid size={{ xs: 12 }}>
-                    <Box sx={{ p: 1.5, borderRadius: "10px", background: "var(--bg-paper)", border: "1px solid var(--border-color)" }}>
-                      <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", fontWeight: 800 }}>Remarks</Typography>
-                      <Typography variant="body2" sx={{ color: "var(--text-primary)", mt: 0.5 }}>{data.remarks}</Typography>
-                    </Box>
-                  </Grid>
-                )}
-
-                {data.hodComment && (
-                  <Grid size={{ xs: 12 }}>
-                    <Box sx={{ p: 2, bgcolor: "rgba(239, 68, 68, 0.05)", borderRadius: "10px", border: "1px solid rgba(239, 68, 68, 0.2)" }}>
-                      <Typography variant="caption" sx={{ fontWeight: 900, color: "#ef4444", textTransform: "uppercase" }}>HOD Feedback</Typography>
-                      <Typography variant="body2" sx={{ fontStyle: "italic", mt: 0.5, color: "var(--text-primary)" }}>"{data.hodComment}"</Typography>
-                    </Box>
-                  </Grid>
-                )}
-              </Grid>
-
-              {fileUrl && (
-                <Box sx={{ mt: 3 }}>
-                  <Typography variant="caption" sx={{ fontWeight: 800, color: "var(--color-primary)", textTransform: "uppercase", display: "block", mb: 1 }}>Proof Document</Typography>
-                  <Box sx={{
-                    height: 250, display: "flex", alignItems: "center", justifyContent: "center",
-                    border: "1px solid var(--border-color)", background: "var(--bg-paper)", borderRadius: "8px",
-                    overflow: "hidden", cursor: "pointer", transition: "all 0.2s ease",
-                    "&:hover": { borderColor: "var(--color-primary)", transform: "translateY(-2px)" }
-                  }} onClick={() => window.open(fileUrl, '_blank')}>
-                    {isImage ? (
-                      <img src={fileUrl} alt="Proof" style={{ width: "100%", height: "100%", objectFit: "contain" }} />
-                    ) : (
-                      <Box sx={{ textAlign: "center" }}>
-                        <Description sx={{ fontSize: 40, color: "var(--text-secondary)", mb: 0.5 }} />
-                        <Typography variant="caption" sx={{ color: "var(--text-secondary)", fontWeight: 700, display: "block" }}>PDF Preview (Click to open)</Typography>
-                      </Box>
-                    )}
-                  </Box>
-                </Box>
-              )}
-            </DialogContent>
-            <DialogActions sx={{ p: 2.5, borderTop: "1px solid var(--border-color)" }}>
-              <Button onClick={() => setSelectedResUtDetails(null)} sx={{ fontWeight: 700 }}>Close</Button>
-            </DialogActions>
-          </Dialog>
-        );
-      })()}
-
-      {/* 3.2 Contribution Form Dialog */}
-      <Dialog
-        open={contOpen}
-        onClose={() => setContOpen(false)}
-        maxWidth="md"
-        fullWidth
-        slotProps={{
-          paper: {
-            sx: {
-              borderRadius: "20px",
-              background: "var(--bg-panel)",
-              border: "1px solid var(--border-color)"
-            }
-          }
-        }}
-      >
-        <DialogTitle sx={{ borderBottom: "1px solid var(--border-color)", pb: 2 }}>
-          <Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>
-            {contEditingId ? "Edit Contribution Entry" : "Add Contribution Entry"}
-          </Typography>
-        </DialogTitle>
-        <DialogContent sx={{ p: 3, pt: 4 }}>
-          <SubLabel text="Details of the Contribution:" />
-          <Grid2>
-            <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
-              <Typography sx={labelStyle}>Academic Year:</Typography>
-              {/* Show the selected year as read-only disabled field since it is already selected in appraisal */}
-              {(() => {
-                const yearObj = academicYears.find(y => y._id === selectedYear);
-                return (
-                  <TextField
-                    size="small"
-                    fullWidth
-                    disabled
-                    value={yearObj ? yearObj.year : "N/A"}
-                    sx={{
-                      "& .MuiInputBase-root": { background: "rgba(0,0,0,0.02)" },
-                      "& .MuiInputBase-input.Mui-disabled": { WebkitTextFillColor: "var(--text-secondary)", fontWeight: 600 }
-                    }}
-                  />
-                );
-              })()}
-            </Box>
-
-            <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
-              <Typography sx={labelStyle}>Contribution Category: *</Typography>
-              <Select
-                size="small"
-                fullWidth
-                displayEmpty
-                value={contForm.category}
-                onChange={handleContCategoryChange}
-                disabled={!!contEditingId}
+            <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 2 }}>
+              <Button onClick={() => setClaimModalOpen(false)} sx={{ fontWeight: 700 }}>
+                Cancel
+              </Button>
+              <Button
+                variant="contained"
+                color="warning"
+                onClick={handleClaimSubmit}
+                disabled={loading}
+                sx={{ fontWeight: 700, color: "#fff" }}
               >
-                <MenuItem value="" disabled>--Select Category--</MenuItem>
-                {CONTRIBUTION_CATEGORIES.map(cat => (
-                  <MenuItem key={cat.id} value={cat.id}>{cat.name}</MenuItem>
-                ))}
-              </Select>
+                Submit Claim
+              </Button>
             </Box>
+          </Box>
+        </Modal>
 
-            {/* Render fields conditionally based on category selection */}
-            {contForm.category && (() => {
-              const cat = parseInt(contForm.category);
-              const isFutureAllowed = [1, 2, 3].includes(cat);
-              const todayStr = new Date().toISOString().split("T")[0];
-
-              const renderDateFields = () => (
-                <>
-                  <Box>
-                    <Typography sx={labelStyle}>From Date: *</Typography>
-                    <TextField
-                      size="small"
-                      fullWidth
-                      type="date"
-                      value={contForm.fromDate}
-                      onChange={(e) => setContForm(p => ({ ...p, fromDate: e.target.value }))}
-                      slotProps={{
-                        inputLabel: { shrink: true },
-                        htmlInput: { max: todayStr }
-                      }}
-                    />
-                  </Box>
-                  <Box>
-                    <Typography sx={labelStyle}>To Date: *</Typography>
-                    <TextField
-                      size="small"
-                      fullWidth
-                      type="date"
-                      value={contForm.toDate}
-                      onChange={(e) => setContForm(p => ({ ...p, toDate: e.target.value }))}
-                      slotProps={{
-                        inputLabel: { shrink: true },
-                        htmlInput: isFutureAllowed ? {} : { max: todayStr }
-                      }}
-                    />
-                  </Box>
-                  <Box>
-                    <Typography sx={labelStyle}>Auto Duration (Days):</Typography>
+        {/* 3.1 Resource Utilization Form Dialog */}
+        <Dialog
+          open={resUtOpen}
+          onClose={() => setResUtOpen(false)}
+          maxWidth="md"
+          fullWidth
+          slotProps={{
+            paper: {
+              sx: {
+                borderRadius: "20px",
+                background: "var(--bg-panel)",
+                border: "1px solid var(--border-color)"
+              }
+            }
+          }}
+        >
+          <DialogTitle sx={{ borderBottom: "1px solid var(--border-color)", pb: 2 }}>
+            <Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>
+              {resUtEditingId ? "Edit Resource Utilization Entry" : "Add Resource Utilization Entry"}
+            </Typography>
+          </DialogTitle>
+          <DialogContent sx={{ p: 3, pt: 4 }}>
+            <SubLabel text="Details of the Activity:" />
+            <Grid2>
+              <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
+                <Typography sx={labelStyle}>Academic Year:</Typography>
+                {/* Show the selected year as read-only disabled field since it is already selected in appraisal */}
+                {(() => {
+                  const yearObj = academicYears.find(y => y._id === selectedYear);
+                  return (
                     <TextField
                       size="small"
                       fullWidth
                       disabled
-                      value={contForm.duration || ""}
-                      placeholder="Calculated automatically"
+                      value={yearObj ? yearObj.year : "N/A"}
+                      sx={{
+                        "& .MuiInputBase-root": { background: "rgba(0,0,0,0.02)" },
+                        "& .MuiInputBase-input.Mui-disabled": { WebkitTextFillColor: "var(--text-secondary)", fontWeight: 600 }
+                      }}
+                    />
+                  );
+                })()}
+              </Box>
+
+              <Box>
+                <Typography sx={labelStyle}>Activity Category: *</Typography>
+                <Select
+                  size="small"
+                  fullWidth
+                  displayEmpty
+                  value={resUtForm.activityCategory}
+                  onChange={handleResUtCategoryChange}
+                >
+                  <MenuItem value="" disabled>--Select Category--</MenuItem>
+                  {RESOURCE_UTILIZATION_CATEGORIES.map(cat => (
+                    <MenuItem key={cat} value={cat}>{cat}</MenuItem>
+                  ))}
+                </Select>
+              </Box>
+
+              <Box>
+                <Typography sx={labelStyle}>Activity Role / Type: *</Typography>
+                <Select
+                  size="small"
+                  fullWidth
+                  displayEmpty
+                  value={resUtForm.activityType}
+                  onChange={handleResUtRoleChange}
+                  disabled={!resUtForm.activityCategory}
+                >
+                  <MenuItem value="" disabled>--Select Role--</MenuItem>
+                  {resUtForm.activityCategory && ROLES_BY_CATEGORY[resUtForm.activityCategory]?.map(role => (
+                    <MenuItem key={role} value={role}>{role}</MenuItem>
+                  ))}
+                </Select>
+              </Box>
+
+              {resUtForm.activityCategory === "FDP" && resUtForm.activityType === "FDP Participant" ? (
+                <>
+                  <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
+                    <Typography sx={labelStyle}>Course Name: *</Typography>
+                    <TextField
+                      size="small"
+                      fullWidth
+                      value={resUtForm.courseFdpName}
+                      onChange={(e) => setResUtForm(p => ({ ...p, courseFdpName: e.target.value }))}
+                      placeholder="Enter Course Name"
                     />
                   </Box>
-                </>
-              );
 
-              switch (cat) {
-                case 1:
-                  return (
-                    <>
-                      <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
-                        <Typography sx={labelStyle}>Organization Name: *</Typography>
-                        <TextField size="small" fullWidth value={contForm.organizationName} onChange={(e) => setContForm(p => ({ ...p, organizationName: e.target.value }))} />
-                      </Box>
-                      {renderDateFields()}
-                    </>
-                  );
-                case 2:
-                  return (
-                    <>
-                      <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
-                        <Typography sx={labelStyle}>Journal Name (SCIE / Q1 / Q2): *</Typography>
-                        <TextField size="small" fullWidth value={contForm.journalName} onChange={(e) => setContForm(p => ({ ...p, journalName: e.target.value }))} />
-                      </Box>
-                      {renderDateFields()}
-                    </>
-                  );
-                case 3:
-                  return (
-                    <>
-                      <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
-                        <Typography sx={labelStyle}>Journal / Conference Name: *</Typography>
-                        <TextField size="small" fullWidth value={contForm.journalConferenceName} onChange={(e) => setContForm(p => ({ ...p, journalConferenceName: e.target.value }))} />
-                      </Box>
-                      {renderDateFields()}
-                    </>
-                  );
-                case 4:
-                case 5:
-                  return (
-                    <>
-                      <Box>
-                        <Typography sx={labelStyle}>Award Name: *</Typography>
-                        <TextField size="small" fullWidth value={contForm.awardName} onChange={(e) => setContForm(p => ({ ...p, awardName: e.target.value }))} />
-                      </Box>
-                      <Box>
-                        <Typography sx={labelStyle}>Award Date: *</Typography>
-                        <TextField size="small" fullWidth type="date" value={contForm.awardDate} onChange={(e) => setContForm(p => ({ ...p, awardDate: e.target.value }))} slotProps={{ inputLabel: { shrink: true }, htmlInput: { max: todayStr } }} />
-                      </Box>
-                    </>
-                  );
-                case 6:
-                  return (
-                    <>
-                      <Box>
-                        <Typography sx={labelStyle}>Course Name: *</Typography>
-                        <TextField size="small" fullWidth value={contForm.courseName} onChange={(e) => setContForm(p => ({ ...p, courseName: e.target.value }))} />
-                      </Box>
-                      <Box>
-                        <Typography sx={labelStyle}>E-Content URL: *</Typography>
-                        <TextField size="small" fullWidth value={contForm.url} onChange={(e) => setContForm(p => ({ ...p, url: e.target.value }))} placeholder="https://example.com/course" />
-                      </Box>
-                    </>
-                  );
-                case 7:
-                  return (
-                    <>
-                      <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
-                        <Typography sx={labelStyle}>Certification Name: *</Typography>
-                        <TextField size="small" fullWidth value={contForm.certificationName} onChange={(e) => setContForm(p => ({ ...p, certificationName: e.target.value }))} />
-                      </Box>
-                      {renderDateFields()}
-                    </>
-                  );
-                case 8:
-                  return (
+                  <Box>
+                    <Typography sx={labelStyle}>Organizing Institution Category: *</Typography>
+                    <Select
+                      size="small"
+                      fullWidth
+                      displayEmpty
+                      value={resUtForm.organizingInstitutionCategory}
+                      onChange={(e) => setResUtForm(p => ({ ...p, organizingInstitutionCategory: e.target.value }))}
+                    >
+                      <MenuItem value="" disabled>--Select Category--</MenuItem>
+                      {[
+                        "UGC",
+                        "AICTE",
+                        "IIT",
+                        "IIM",
+                        "NIT",
+                        "MHRD R&D Lab",
+                        "NITTTR",
+                        "NIPER",
+                        "ICMR",
+                        "Govt. University",
+                        "NIRF Ranked Institute (Below 200)",
+                        "NPTEL"
+                      ].map(opt => (
+                        <MenuItem key={opt} value={opt}>{opt}</MenuItem>
+                      ))}
+                    </Select>
+                  </Box>
+
+                  <Box>
+                    <Typography sx={labelStyle}>Location (City, State): *</Typography>
+                    <TextField
+                      size="small"
+                      fullWidth
+                      value={resUtForm.location}
+                      onChange={(e) => setResUtForm(p => ({ ...p, location: e.target.value }))}
+                      placeholder="e.g. Hyderabad, Telangana"
+                    />
+                  </Box>
+
+                  {resUtForm.organizingInstitutionCategory === "MHRD R&D Lab" && (
+                    <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
+                      <Typography sx={labelStyle}>Lab Name: *</Typography>
+                      <TextField
+                        size="small"
+                        fullWidth
+                        value={resUtForm.labName}
+                        onChange={(e) => setResUtForm(p => ({ ...p, labName: e.target.value }))}
+                        placeholder="Enter Lab Name"
+                      />
+                    </Box>
+                  )}
+
+                  {resUtForm.organizingInstitutionCategory === "Govt. University" && (
+                    <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
+                      <Typography sx={labelStyle}>University Name: *</Typography>
+                      <TextField
+                        size="small"
+                        fullWidth
+                        value={resUtForm.universityName}
+                        onChange={(e) => setResUtForm(p => ({ ...p, universityName: e.target.value }))}
+                        placeholder="Enter University Name"
+                      />
+                    </Box>
+                  )}
+
+                  {resUtForm.organizingInstitutionCategory === "NIRF Ranked Institute (Below 200)" && (
                     <>
                       <Box>
-                        <Typography sx={labelStyle}>Event Name: *</Typography>
-                        <TextField size="small" fullWidth value={contForm.eventName} onChange={(e) => setContForm(p => ({ ...p, eventName: e.target.value }))} />
-                      </Box>
-                      <Box>
-                        <Typography sx={labelStyle}>Event Date: *</Typography>
-                        <TextField size="small" fullWidth type="date" value={contForm.eventDate} onChange={(e) => setContForm(p => ({ ...p, eventDate: e.target.value }))} slotProps={{ inputLabel: { shrink: true }, htmlInput: { max: todayStr } }} />
-                      </Box>
-                    </>
-                  );
-                case 9:
-                  return (
-                    <>
-                      <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
-                        <Typography sx={labelStyle}>Article Title: *</Typography>
-                        <TextField size="small" fullWidth value={contForm.articleTitle} onChange={(e) => setContForm(p => ({ ...p, articleTitle: e.target.value }))} />
-                      </Box>
-                      <Box>
-                        <Typography sx={labelStyle}>Publication Name: *</Typography>
-                        <TextField size="small" fullWidth value={contForm.publicationName} onChange={(e) => setContForm(p => ({ ...p, publicationName: e.target.value }))} />
-                      </Box>
-                      <Box>
-                        <Typography sx={labelStyle}>Publication Date: *</Typography>
-                        <TextField size="small" fullWidth type="date" value={contForm.publicationDate} onChange={(e) => setContForm(p => ({ ...p, publicationDate: e.target.value }))} slotProps={{ inputLabel: { shrink: true }, htmlInput: { max: todayStr } }} />
-                      </Box>
-                    </>
-                  );
-                case 10:
-                  return (
-                    <>
-                      <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
-                        <Typography sx={labelStyle}>Facility Name: *</Typography>
-                        <TextField size="small" fullWidth value={contForm.facilityName} onChange={(e) => setContForm(p => ({ ...p, facilityName: e.target.value }))} />
-                      </Box>
-                      {renderDateFields()}
-                    </>
-                  );
-                case 11:
-                  return (
-                    <>
-                      <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
-                        <Typography sx={labelStyle}>Course Name: *</Typography>
-                        <TextField size="small" fullWidth value={contForm.courseName} onChange={(e) => setContForm(p => ({ ...p, courseName: e.target.value }))} />
-                      </Box>
-                      <Box>
-                        <Typography sx={labelStyle}>Duration: *</Typography>
-                        <Select
+                        <Typography sx={labelStyle}>Institute Name: *</Typography>
+                        <TextField
                           size="small"
                           fullWidth
-                          value={contForm.duration}
-                          onChange={(e) => setContForm(p => ({ ...p, duration: e.target.value }))}
-                          displayEmpty
-                        >
-                          <MenuItem value="" disabled>--Select NPTEL Duration--</MenuItem>
-                          <MenuItem value="12 Weeks">12 Weeks</MenuItem>
-                          <MenuItem value="8 Weeks">8 Weeks</MenuItem>
-                          <MenuItem value="4 Weeks">4 Weeks</MenuItem>
-                        </Select>
+                          value={resUtForm.instituteName}
+                          onChange={(e) => setResUtForm(p => ({ ...p, instituteName: e.target.value }))}
+                          placeholder="Enter Institute Name"
+                        />
                       </Box>
                       <Box>
-                        <Typography sx={labelStyle}>Certificate Number (Optional):</Typography>
-                        <TextField size="small" fullWidth value={contForm.certificateNumber || ""} onChange={(e) => setContForm(p => ({ ...p, certificateNumber: e.target.value }))} placeholder="Enter Certificate Number (if available)" />
-                      </Box>
-                      <Box sx={{ gridColumn: { sm: "1 / -1" }, mt: 2, p: 2, bgcolor: "rgba(232, 160, 0, 0.08)", border: "1px solid rgba(232, 160, 0, 0.3)", borderRadius: "8px" }}>
-                        <Typography variant="body2" sx={{ color: "#e8a000", fontWeight: 700 }}>
-                          Note: Certificate will be considered only in one metric, either 3.1 or 3.2.
-                        </Typography>
+                        <Typography sx={labelStyle}>NIRF Rank: *</Typography>
+                        <TextField
+                          size="small"
+                          fullWidth
+                          type="number"
+                          value={resUtForm.nirfRank}
+                          onChange={(e) => setResUtForm(p => ({ ...p, nirfRank: e.target.value }))}
+                          placeholder="e.g. 45"
+                        />
                       </Box>
                     </>
-                  );
-                case 12:
-                  return (
-                    <>
-                      <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
-                        <Typography sx={labelStyle}>Course Name (Coursera): *</Typography>
-                        <TextField size="small" fullWidth value={contForm.courseName} onChange={(e) => setContForm(p => ({ ...p, courseName: e.target.value }))} />
-                      </Box>
-                      <Box>
-                        <Typography sx={labelStyle}>Course Duration (Hours): *</Typography>
-                        <TextField type="number" size="small" fullWidth value={contForm.courseHours || ""} onChange={(e) => setContForm(p => ({ ...p, courseHours: e.target.value }))} placeholder="e.g. 40" />
-                      </Box>
-                      <Box>
-                        <Typography sx={labelStyle}>Certificate Number (Optional):</Typography>
-                        <TextField size="small" fullWidth value={contForm.certificateNumber || ""} onChange={(e) => setContForm(p => ({ ...p, certificateNumber: e.target.value }))} placeholder="Enter Certificate Number (if available)" />
-                      </Box>
-                      {renderDateFields()}
-                    </>
-                  );
-                case 13:
-                  return (
-                    <>
-                      <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
-                        <Typography sx={labelStyle}>Grant Name: *</Typography>
-                        <TextField size="small" fullWidth value={contForm.grantName} onChange={(e) => setContForm(p => ({ ...p, grantName: e.target.value }))} />
-                      </Box>
-                      {renderDateFields()}
-                    </>
-                  );
-                default:
-                  return null;
-              }
-            })()}
+                  )}
+                </>
+              ) : (
+                <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
+                  <Typography sx={labelStyle}>Organization / Event Name: *</Typography>
+                  <TextField
+                    size="small"
+                    fullWidth
+                    value={resUtForm.organizationName}
+                    onChange={(e) => setResUtForm(p => ({ ...p, organizationName: e.target.value }))}
+                    placeholder="Enter Name of Event or Organization"
+                  />
+                </Box>
+              )}
 
-            <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
-              <FileField
-                label={contEditingId ? "Upload New Proof (Leave empty to keep existing)" : "Supporting Proof (PDF/Image, Max 500KB) *"}
-                name="proof"
-                onChange={(e) => setContProof(e.target.files[0])}
-                error={!contProof && !contEditingId}
-              />
-            </Box>
-          </Grid2>
-          <NoteBox />
-        </DialogContent>
-        <DialogActions sx={{ p: 2.5, borderTop: "1px solid var(--border-color)" }}>
-          <Button onClick={() => setContOpen(false)} sx={{ fontWeight: 700 }}>Cancel</Button>
-          <Button
-            variant="contained"
-            onClick={handleContSaveDraft}
-            disabled={contLoading}
-            sx={{ fontWeight: 700, color: "#fff" }}
-          >
-            {contLoading ? "Saving..." : "Save Entry"}
-          </Button>
-        </DialogActions>
-      </Dialog>
-
-      {/* 3.2 Contribution Details View Dialog */}
-      {selectedContDetails && (() => {
-        const data = selectedContDetails;
-        const statusStyle = getStatusColor(data.status);
-        const { value } = getContributionNameField(data.category, data);
-
-        const backendURL = (import.meta.env.VITE_BACKEND_URL || "http://localhost:9000").replace(/\/$/, "");
-        const fileUrl = data.proof ? (data.proof.startsWith('http') ? data.proof : `${backendURL}${data.proof}`) : null;
-        const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(data.proof || "");
-
-        return (
-          <Dialog
-            open={!!selectedContDetails}
-            onClose={() => setSelectedContDetails(null)}
-            maxWidth="md"
-            fullWidth
-            slotProps={{
-              paper: {
-                sx: {
-                  borderRadius: "20px",
-                  background: "var(--bg-panel)",
-                  border: "1px solid var(--border-color)"
-                }
-              }
-            }}
-          >
-            <DialogTitle sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "var(--bg-accent-4)", py: 2 }}>
-              <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-                <Info sx={{ color: "var(--color-primary)" }} />
-                <Typography variant="h6" sx={{ fontWeight: 800 }}>Contribution Details</Typography>
+              <Box>
+                <Typography sx={labelStyle}>From Date: *</Typography>
+                <TextField
+                  size="small"
+                  fullWidth
+                  type="date"
+                  value={resUtForm.fromDate}
+                  onChange={(e) => setResUtForm(p => ({ ...p, fromDate: e.target.value }))}
+                  slotProps={{
+                    inputLabel: { shrink: true },
+                    htmlInput: { max: new Date().toISOString().split("T")[0] }
+                  }}
+                />
               </Box>
-              <IconButton onClick={() => setSelectedContDetails(null)}><Close /></IconButton>
-            </DialogTitle>
-            <DialogContent sx={{ pt: 2, px: 3, pb: 3, mt: 2 }}>
-              <Typography variant="subtitle2" color="var(--color-primary)" sx={{ fontWeight: 800, textTransform: "uppercase" }}>
-                {getCategoryName(data.category)}
-              </Typography>
-              <Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)", mb: 2, mt: 0.5 }}>
-                {value}
-              </Typography>
 
-              <Grid container spacing={2}>
-                {data.fromDate && data.toDate && (
+              <Box>
+                <Typography sx={labelStyle}>To Date: *</Typography>
+                <TextField
+                  size="small"
+                  fullWidth
+                  type="date"
+                  value={resUtForm.toDate}
+                  onChange={(e) => setResUtForm(p => ({ ...p, toDate: e.target.value }))}
+                  slotProps={{
+                    inputLabel: { shrink: true },
+                    htmlInput: { max: new Date().toISOString().split("T")[0] }
+                  }}
+                />
+              </Box>
+
+              <Box>
+                <Typography sx={labelStyle}>Duration (Days):</Typography>
+                <TextField
+                  size="small"
+                  fullWidth
+                  disabled
+                  value={resUtForm.duration || ""}
+                  placeholder="Calculated automatically"
+                />
+              </Box>
+
+              {resUtForm.activityType?.includes("Resource Person") && (
+                <Box>
+                  <Typography sx={labelStyle}>Number of Sessions Conducted: *</Typography>
+                  <TextField
+                    size="small"
+                    fullWidth
+                    type="number"
+                    value={resUtForm.sessionsConducted}
+                    onChange={(e) => setResUtForm(p => ({ ...p, sessionsConducted: e.target.value }))}
+                    placeholder="e.g. 3"
+                  />
+                </Box>
+              )}
+
+              {resUtForm.activityType?.includes("Participant") && (
+                <Box>
+                  <Typography sx={labelStyle}>Number of Days Participated: *</Typography>
+                  <TextField
+                    size="small"
+                    fullWidth
+                    type="number"
+                    value={resUtForm.daysParticipated}
+                    onChange={(e) => setResUtForm(p => ({ ...p, daysParticipated: e.target.value }))}
+                    placeholder="e.g. 5"
+                  />
+                </Box>
+              )}
+
+              <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
+                <Typography sx={labelStyle}>Remarks / Comments:</Typography>
+                <TextField
+                  size="small"
+                  fullWidth
+                  multiline
+                  rows={2}
+                  value={resUtForm.remarks}
+                  onChange={(e) => setResUtForm(p => ({ ...p, remarks: e.target.value }))}
+                  placeholder="Any additional information..."
+                />
+              </Box>
+
+              <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
+                <FileField
+                  label={resUtEditingId ? "Upload New Proof (Leave empty to keep existing)" : "Supporting Proof (PDF/Image, Max 500KB) *"}
+                  name="proof"
+                  onChange={(e) => setResUtProof(e.target.files[0])}
+                  error={!resUtProof && !resUtEditingId}
+                />
+              </Box>
+            </Grid2>
+            <NoteBox />
+          </DialogContent>
+          <DialogActions sx={{ p: 2.5, borderTop: "1px solid var(--border-color)" }}>
+            <Button onClick={() => setResUtOpen(false)} sx={{ fontWeight: 700 }}>Cancel</Button>
+            <Button
+              variant="contained"
+              onClick={handleResUtSaveDraft}
+              disabled={resUtLoading}
+              sx={{ fontWeight: 700, color: "#fff" }}
+            >
+              {resUtLoading ? "Saving..." : "Save Entry"}
+            </Button>
+          </DialogActions>
+        </Dialog>
+
+        {/* 3.1 Resource Utilization Details View Dialog */}
+        {selectedResUtDetails && (() => {
+          const data = selectedResUtDetails;
+          const statusStyle = getStatusColor(data.status);
+          const backendURL = (import.meta.env.VITE_BACKEND_URL || "http://localhost:9000").replace(/\/$/, "");
+          const fileUrl = data.proof ? (data.proof.startsWith('http') ? data.proof : `${backendURL}${data.proof}`) : null;
+          const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(data.proof || "");
+
+          return (
+            <Dialog
+              open={!!selectedResUtDetails}
+              onClose={() => setSelectedResUtDetails(null)}
+              maxWidth="md"
+              fullWidth
+              slotProps={{
+                paper: {
+                  sx: {
+                    borderRadius: "20px",
+                    background: "var(--bg-panel)",
+                    border: "1px solid var(--border-color)"
+                  }
+                }
+              }}
+            >
+              <DialogTitle sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "var(--bg-accent-4)", py: 2 }}>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                  <Info sx={{ color: "var(--color-primary)" }} />
+                  <Typography variant="h6" sx={{ fontWeight: 800 }}>Resource Utilization Details</Typography>
+                </Box>
+                <IconButton onClick={() => setSelectedResUtDetails(null)}><Close /></IconButton>
+              </DialogTitle>
+              <DialogContent sx={{ p: 3, mt: 1 }}>
+                <Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)", mb: 1 }}>
+                  {data.activityCategory} - {data.activityType}
+                </Typography>
+                {data.activityCategory === "FDP" && data.activityType === "FDP Participant" ? (
+                  <Typography variant="body2" sx={{ color: "var(--text-secondary)", mb: 3, fontWeight: 600 }}>Course Name: {data.courseFdpName || data.organizationName}</Typography>
+                ) : (
+                  <Typography variant="body2" sx={{ color: "var(--text-secondary)", mb: 3, fontWeight: 600 }}>Organization / Event Name: {data.organizationName}</Typography>
+                )}
+
+                <Grid container spacing={2}>
+                  {data.activityCategory === "FDP" && data.activityType === "FDP Participant" && (
+                    <>
+                      <Grid size={{ xs: 12, sm: 4 }}>
+                        <Box sx={{ p: 1.5, borderRadius: "10px", background: "var(--bg-paper)", border: "1px solid var(--border-color)" }}>
+                          <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", fontWeight: 800 }}>Organizing Category</Typography>
+                          <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>{data.organizingInstitutionCategory}</Typography>
+                        </Box>
+                      </Grid>
+                      <Grid size={{ xs: 12, sm: 4 }}>
+                        <Box sx={{ p: 1.5, borderRadius: "10px", background: "var(--bg-paper)", border: "1px solid var(--border-color)" }}>
+                          <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", fontWeight: 800 }}>Location</Typography>
+                          <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>{data.location}</Typography>
+                        </Box>
+                      </Grid>
+                      {data.organizingInstitutionCategory === "MHRD R&D Lab" && (
+                        <Grid size={{ xs: 12, sm: 4 }}>
+                          <Box sx={{ p: 1.5, borderRadius: "10px", background: "var(--bg-paper)", border: "1px solid var(--border-color)" }}>
+                            <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", fontWeight: 800 }}>Lab Name</Typography>
+                            <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>{data.labName}</Typography>
+                          </Box>
+                        </Grid>
+                      )}
+                      {data.organizingInstitutionCategory === "Govt. University" && (
+                        <Grid size={{ xs: 12, sm: 4 }}>
+                          <Box sx={{ p: 1.5, borderRadius: "10px", background: "var(--bg-paper)", border: "1px solid var(--border-color)" }}>
+                            <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", fontWeight: 800 }}>University Name</Typography>
+                            <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>{data.universityName}</Typography>
+                          </Box>
+                        </Grid>
+                      )}
+                      {data.organizingInstitutionCategory === "NIRF Ranked Institute (Below 200)" && (
+                        <>
+                          <Grid size={{ xs: 12, sm: 4 }}>
+                            <Box sx={{ p: 1.5, borderRadius: "10px", background: "var(--bg-paper)", border: "1px solid var(--border-color)" }}>
+                              <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", fontWeight: 800 }}>Institute Name</Typography>
+                              <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>{data.instituteName}</Typography>
+                            </Box>
+                          </Grid>
+                          <Grid size={{ xs: 12, sm: 4 }}>
+                            <Box sx={{ p: 1.5, borderRadius: "10px", background: "var(--bg-paper)", border: "1px solid var(--border-color)" }}>
+                              <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", fontWeight: 800 }}>NIRF Rank</Typography>
+                              <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>{data.nirfRank}</Typography>
+                            </Box>
+                          </Grid>
+                        </>
+                      )}
+                    </>
+                  )}
+
                   <Grid size={{ xs: 12, sm: 4 }}>
                     <Box sx={{ p: 1.5, borderRadius: "10px", background: "var(--bg-paper)", border: "1px solid var(--border-color)" }}>
                       <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", fontWeight: 800 }}>Dates</Typography>
@@ -5194,201 +4567,650 @@ const SelfAppraisal = () => {
                       </Typography>
                     </Box>
                   </Grid>
-                )}
-                {data.duration && (
                   <Grid size={{ xs: 12, sm: 4 }}>
                     <Box sx={{ p: 1.5, borderRadius: "10px", background: "var(--bg-paper)", border: "1px solid var(--border-color)" }}>
                       <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", fontWeight: 800 }}>Duration</Typography>
-                      <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>{data.duration}</Typography>
+                      <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>{data.duration} Days</Typography>
                     </Box>
                   </Grid>
-                )}
-
-                {data.awardDate && (
                   <Grid size={{ xs: 12, sm: 4 }}>
                     <Box sx={{ p: 1.5, borderRadius: "10px", background: "var(--bg-paper)", border: "1px solid var(--border-color)" }}>
-                      <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", fontWeight: 800 }}>Award Date</Typography>
-                      <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>
-                        {new Date(data.awardDate).toLocaleDateString("en-IN")}
-                      </Typography>
+                      <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", fontWeight: 800 }}>Status</Typography>
+                      <Box sx={{ mt: 0.5 }}>
+                        <Chip
+                          label={data.status}
+                          size="small"
+                          sx={{
+                            bgcolor: statusStyle.bg,
+                            color: statusStyle.color,
+                            fontWeight: 800,
+                            borderRadius: "6px"
+                          }}
+                        />
+                      </Box>
                     </Box>
                   </Grid>
-                )}
 
-                {data.eventDate && (
-                  <Grid size={{ xs: 12, sm: 4 }}>
-                    <Box sx={{ p: 1.5, borderRadius: "10px", background: "var(--bg-paper)", border: "1px solid var(--border-color)" }}>
-                      <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", fontWeight: 800 }}>Event Date</Typography>
-                      <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>
-                        {new Date(data.eventDate).toLocaleDateString("en-IN")}
-                      </Typography>
+                  {data.sessionsConducted !== undefined && (
+                    <Grid size={{ xs: 12, sm: 4 }}>
+                      <Box sx={{ p: 1.5, borderRadius: "10px", background: "var(--bg-paper)", border: "1px solid var(--border-color)" }}>
+                        <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", fontWeight: 800 }}>Sessions Conducted</Typography>
+                        <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>{data.sessionsConducted}</Typography>
+                      </Box>
+                    </Grid>
+                  )}
+
+                  {data.daysParticipated !== undefined && (
+                    <Grid size={{ xs: 12, sm: 4 }}>
+                      <Box sx={{ p: 1.5, borderRadius: "10px", background: "var(--bg-paper)", border: "1px solid var(--border-color)" }}>
+                        <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", fontWeight: 800 }}>Days Participated</Typography>
+                        <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>{data.daysParticipated}</Typography>
+                      </Box>
+                    </Grid>
+                  )}
+
+                  {data.remarks && (
+                    <Grid size={{ xs: 12 }}>
+                      <Box sx={{ p: 1.5, borderRadius: "10px", background: "var(--bg-paper)", border: "1px solid var(--border-color)" }}>
+                        <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", fontWeight: 800 }}>Remarks</Typography>
+                        <Typography variant="body2" sx={{ color: "var(--text-primary)", mt: 0.5 }}>{data.remarks}</Typography>
+                      </Box>
+                    </Grid>
+                  )}
+
+                  {data.hodComment && (
+                    <Grid size={{ xs: 12 }}>
+                      <Box sx={{ p: 2, bgcolor: "rgba(239, 68, 68, 0.05)", borderRadius: "10px", border: "1px solid rgba(239, 68, 68, 0.2)" }}>
+                        <Typography variant="caption" sx={{ fontWeight: 900, color: "#ef4444", textTransform: "uppercase" }}>HOD Feedback</Typography>
+                        <Typography variant="body2" sx={{ fontStyle: "italic", mt: 0.5, color: "var(--text-primary)" }}>"{data.hodComment}"</Typography>
+                      </Box>
+                    </Grid>
+                  )}
+                </Grid>
+
+                {fileUrl && (
+                  <Box sx={{ mt: 3 }}>
+                    <Typography variant="caption" sx={{ fontWeight: 800, color: "var(--color-primary)", textTransform: "uppercase", display: "block", mb: 1 }}>Proof Document</Typography>
+                    <Box sx={{
+                      height: 250, display: "flex", alignItems: "center", justifyContent: "center",
+                      border: "1px solid var(--border-color)", background: "var(--bg-paper)", borderRadius: "8px",
+                      overflow: "hidden", cursor: "pointer", transition: "all 0.2s ease",
+                      "&:hover": { borderColor: "var(--color-primary)", transform: "translateY(-2px)" }
+                    }} onClick={() => window.open(fileUrl, '_blank')}>
+                      {isImage ? (
+                        <img src={fileUrl} alt="Proof" style={{ width: "100%", height: "100%", objectFit: "contain" }} />
+                      ) : (
+                        <Box sx={{ textAlign: "center" }}>
+                          <Description sx={{ fontSize: 40, color: "var(--text-secondary)", mb: 0.5 }} />
+                          <Typography variant="caption" sx={{ color: "var(--text-secondary)", fontWeight: 700, display: "block" }}>PDF Preview (Click to open)</Typography>
+                        </Box>
+                      )}
                     </Box>
-                  </Grid>
+                  </Box>
                 )}
+              </DialogContent>
+              <DialogActions sx={{ p: 2.5, borderTop: "1px solid var(--border-color)" }}>
+                <Button onClick={() => setSelectedResUtDetails(null)} sx={{ fontWeight: 700 }}>Close</Button>
+              </DialogActions>
+            </Dialog>
+          );
+        })()}
 
-                {data.publicationDate && (
-                  <Grid size={{ xs: 12, sm: 4 }}>
-                    <Box sx={{ p: 1.5, borderRadius: "10px", background: "var(--bg-paper)", border: "1px solid var(--border-color)" }}>
-                      <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", fontWeight: 800 }}>Publication Date</Typography>
-                      <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>
-                        {new Date(data.publicationDate).toLocaleDateString("en-IN")}
-                      </Typography>
-                    </Box>
-                  </Grid>
-                )}
+        {/* 3.2 Contribution Form Dialog */}
+        <Dialog
+          open={contOpen}
+          onClose={() => setContOpen(false)}
+          maxWidth="md"
+          fullWidth
+          slotProps={{
+            paper: {
+              sx: {
+                borderRadius: "20px",
+                background: "var(--bg-panel)",
+                border: "1px solid var(--border-color)"
+              }
+            }
+          }}
+        >
+          <DialogTitle sx={{ borderBottom: "1px solid var(--border-color)", pb: 2 }}>
+            <Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>
+              {contEditingId ? "Edit Contribution Entry" : "Add Contribution Entry"}
+            </Typography>
+          </DialogTitle>
+          <DialogContent sx={{ p: 3, pt: 4 }}>
+            <SubLabel text="Details of the Contribution:" />
+            <Grid2>
+              <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
+                <Typography sx={labelStyle}>Academic Year:</Typography>
+                {/* Show the selected year as read-only disabled field since it is already selected in appraisal */}
+                {(() => {
+                  const yearObj = academicYears.find(y => y._id === selectedYear);
+                  return (
+                    <TextField
+                      size="small"
+                      fullWidth
+                      disabled
+                      value={yearObj ? yearObj.year : "N/A"}
+                      sx={{
+                        "& .MuiInputBase-root": { background: "rgba(0,0,0,0.02)" },
+                        "& .MuiInputBase-input.Mui-disabled": { WebkitTextFillColor: "var(--text-secondary)", fontWeight: 600 }
+                      }}
+                    />
+                  );
+                })()}
+              </Box>
 
-                {data.url && (
-                  <Grid size={{ xs: 12 }}>
-                    <Box sx={{ p: 1.5, borderRadius: "10px", background: "var(--bg-paper)", border: "1px solid var(--border-color)" }}>
-                      <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", fontWeight: 800 }}>URL / Reference Link</Typography>
-                      <Typography variant="body2" sx={{ fontWeight: 700, mt: 0.5 }}>
-                        <a href={data.url} target="_blank" rel="noopener noreferrer" style={{ color: "var(--color-primary)", textDecoration: "none" }}>{data.url}</a>
-                      </Typography>
-                    </Box>
-                  </Grid>
-                )}
+              <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
+                <Typography sx={labelStyle}>Contribution Category: *</Typography>
+                <Select
+                  size="small"
+                  fullWidth
+                  displayEmpty
+                  value={contForm.category}
+                  onChange={handleContCategoryChange}
+                  disabled={!!contEditingId}
+                >
+                  <MenuItem value="" disabled>--Select Category--</MenuItem>
+                  {CONTRIBUTION_CATEGORIES.map(cat => (
+                    <MenuItem key={cat.id} value={cat.id}>{cat.name}</MenuItem>
+                  ))}
+                </Select>
+              </Box>
 
-                <Grid size={{ xs: 12, sm: 4 }}>
-                  <Box sx={{ p: 1.5, borderRadius: "10px", background: "var(--bg-paper)", border: "1px solid var(--border-color)" }}>
-                    <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", fontWeight: 800 }}>Status</Typography>
-                    <Box sx={{ mt: 0.5 }}>
-                      <Chip
-                        label={data.status}
+              {/* Render fields conditionally based on category selection */}
+              {contForm.category && (() => {
+                const cat = parseInt(contForm.category);
+                const isFutureAllowed = [1, 2, 3].includes(cat);
+                const todayStr = new Date().toISOString().split("T")[0];
+
+                const renderDateFields = () => (
+                  <>
+                    <Box>
+                      <Typography sx={labelStyle}>From Date: *</Typography>
+                      <TextField
                         size="small"
-                        sx={{
-                          bgcolor: statusStyle.bg,
-                          color: statusStyle.color,
-                          fontWeight: 800,
-                          borderRadius: "6px"
+                        fullWidth
+                        type="date"
+                        value={contForm.fromDate}
+                        onChange={(e) => setContForm(p => ({ ...p, fromDate: e.target.value }))}
+                        slotProps={{
+                          inputLabel: { shrink: true },
+                          htmlInput: { max: todayStr }
                         }}
                       />
                     </Box>
-                  </Box>
-                </Grid>
+                    <Box>
+                      <Typography sx={labelStyle}>To Date: *</Typography>
+                      <TextField
+                        size="small"
+                        fullWidth
+                        type="date"
+                        value={contForm.toDate}
+                        onChange={(e) => setContForm(p => ({ ...p, toDate: e.target.value }))}
+                        slotProps={{
+                          inputLabel: { shrink: true },
+                          htmlInput: isFutureAllowed ? {} : { max: todayStr }
+                        }}
+                      />
+                    </Box>
+                    <Box>
+                      <Typography sx={labelStyle}>Auto Duration (Days):</Typography>
+                      <TextField
+                        size="small"
+                        fullWidth
+                        disabled
+                        value={contForm.duration || ""}
+                        placeholder="Calculated automatically"
+                      />
+                    </Box>
+                  </>
+                );
 
-                {data.hodComment && (
-                  <Grid size={{ xs: 12 }}>
-                    <Box sx={{ p: 2, bgcolor: "rgba(239, 68, 68, 0.05)", borderRadius: "10px", border: "1px solid rgba(239, 68, 68, 0.2)" }}>
-                      <Typography variant="caption" sx={{ fontWeight: 900, color: "#ef4444", textTransform: "uppercase" }}>HOD Feedback</Typography>
-                      <Typography variant="body2" sx={{ fontStyle: "italic", mt: 0.5, color: "var(--text-primary)" }}>"{data.hodComment}"</Typography>
+                switch (cat) {
+                  case 1:
+                    return (
+                      <>
+                        <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
+                          <Typography sx={labelStyle}>Organization Name: *</Typography>
+                          <TextField size="small" fullWidth value={contForm.organizationName} onChange={(e) => setContForm(p => ({ ...p, organizationName: e.target.value }))} />
+                        </Box>
+                        {renderDateFields()}
+                      </>
+                    );
+                  case 2:
+                    return (
+                      <>
+                        <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
+                          <Typography sx={labelStyle}>Journal Name (SCIE / Q1 / Q2): *</Typography>
+                          <TextField size="small" fullWidth value={contForm.journalName} onChange={(e) => setContForm(p => ({ ...p, journalName: e.target.value }))} />
+                        </Box>
+                        {renderDateFields()}
+                      </>
+                    );
+                  case 3:
+                    return (
+                      <>
+                        <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
+                          <Typography sx={labelStyle}>Journal / Conference Name: *</Typography>
+                          <TextField size="small" fullWidth value={contForm.journalConferenceName} onChange={(e) => setContForm(p => ({ ...p, journalConferenceName: e.target.value }))} />
+                        </Box>
+                        {renderDateFields()}
+                      </>
+                    );
+                  case 4:
+                  case 5:
+                    return (
+                      <>
+                        <Box>
+                          <Typography sx={labelStyle}>Award Name: *</Typography>
+                          <TextField size="small" fullWidth value={contForm.awardName} onChange={(e) => setContForm(p => ({ ...p, awardName: e.target.value }))} />
+                        </Box>
+                        <Box>
+                          <Typography sx={labelStyle}>Award Date: *</Typography>
+                          <TextField size="small" fullWidth type="date" value={contForm.awardDate} onChange={(e) => setContForm(p => ({ ...p, awardDate: e.target.value }))} slotProps={{ inputLabel: { shrink: true }, htmlInput: { max: todayStr } }} />
+                        </Box>
+                      </>
+                    );
+                  case 6:
+                    return (
+                      <>
+                        <Box>
+                          <Typography sx={labelStyle}>Course Name: *</Typography>
+                          <TextField size="small" fullWidth value={contForm.courseName} onChange={(e) => setContForm(p => ({ ...p, courseName: e.target.value }))} />
+                        </Box>
+                        <Box>
+                          <Typography sx={labelStyle}>E-Content URL: *</Typography>
+                          <TextField size="small" fullWidth value={contForm.url} onChange={(e) => setContForm(p => ({ ...p, url: e.target.value }))} placeholder="https://example.com/course" />
+                        </Box>
+                      </>
+                    );
+                  case 7:
+                    return (
+                      <>
+                        <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
+                          <Typography sx={labelStyle}>Certification Name: *</Typography>
+                          <TextField size="small" fullWidth value={contForm.certificationName} onChange={(e) => setContForm(p => ({ ...p, certificationName: e.target.value }))} />
+                        </Box>
+                        {renderDateFields()}
+                      </>
+                    );
+                  case 8:
+                    return (
+                      <>
+                        <Box>
+                          <Typography sx={labelStyle}>Event Name: *</Typography>
+                          <TextField size="small" fullWidth value={contForm.eventName} onChange={(e) => setContForm(p => ({ ...p, eventName: e.target.value }))} />
+                        </Box>
+                        <Box>
+                          <Typography sx={labelStyle}>Event Date: *</Typography>
+                          <TextField size="small" fullWidth type="date" value={contForm.eventDate} onChange={(e) => setContForm(p => ({ ...p, eventDate: e.target.value }))} slotProps={{ inputLabel: { shrink: true }, htmlInput: { max: todayStr } }} />
+                        </Box>
+                      </>
+                    );
+                  case 9:
+                    return (
+                      <>
+                        <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
+                          <Typography sx={labelStyle}>Article Title: *</Typography>
+                          <TextField size="small" fullWidth value={contForm.articleTitle} onChange={(e) => setContForm(p => ({ ...p, articleTitle: e.target.value }))} />
+                        </Box>
+                        <Box>
+                          <Typography sx={labelStyle}>Publication Name: *</Typography>
+                          <TextField size="small" fullWidth value={contForm.publicationName} onChange={(e) => setContForm(p => ({ ...p, publicationName: e.target.value }))} />
+                        </Box>
+                        <Box>
+                          <Typography sx={labelStyle}>Publication Date: *</Typography>
+                          <TextField size="small" fullWidth type="date" value={contForm.publicationDate} onChange={(e) => setContForm(p => ({ ...p, publicationDate: e.target.value }))} slotProps={{ inputLabel: { shrink: true }, htmlInput: { max: todayStr } }} />
+                        </Box>
+                      </>
+                    );
+                  case 10:
+                    return (
+                      <>
+                        <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
+                          <Typography sx={labelStyle}>Facility Name: *</Typography>
+                          <TextField size="small" fullWidth value={contForm.facilityName} onChange={(e) => setContForm(p => ({ ...p, facilityName: e.target.value }))} />
+                        </Box>
+                        {renderDateFields()}
+                      </>
+                    );
+                  case 11:
+                    return (
+                      <>
+                        <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
+                          <Typography sx={labelStyle}>Course Name: *</Typography>
+                          <TextField size="small" fullWidth value={contForm.courseName} onChange={(e) => setContForm(p => ({ ...p, courseName: e.target.value }))} />
+                        </Box>
+                        <Box>
+                          <Typography sx={labelStyle}>Duration: *</Typography>
+                          <Select
+                            size="small"
+                            fullWidth
+                            value={contForm.duration}
+                            onChange={(e) => setContForm(p => ({ ...p, duration: e.target.value }))}
+                            displayEmpty
+                          >
+                            <MenuItem value="" disabled>--Select NPTEL Duration--</MenuItem>
+                            <MenuItem value="12 Weeks">12 Weeks</MenuItem>
+                            <MenuItem value="8 Weeks">8 Weeks</MenuItem>
+                            <MenuItem value="4 Weeks">4 Weeks</MenuItem>
+                          </Select>
+                        </Box>
+                        <Box>
+                          <Typography sx={labelStyle}>Certificate Number (Optional):</Typography>
+                          <TextField size="small" fullWidth value={contForm.certificateNumber || ""} onChange={(e) => setContForm(p => ({ ...p, certificateNumber: e.target.value }))} placeholder="Enter Certificate Number (if available)" />
+                        </Box>
+                        <Box sx={{ gridColumn: { sm: "1 / -1" }, mt: 2, p: 2, bgcolor: "rgba(232, 160, 0, 0.08)", border: "1px solid rgba(232, 160, 0, 0.3)", borderRadius: "8px" }}>
+                          <Typography variant="body2" sx={{ color: "#e8a000", fontWeight: 700 }}>
+                            Note: Certificate will be considered only in one metric, either 3.1 or 3.2.
+                          </Typography>
+                        </Box>
+                      </>
+                    );
+                  case 12:
+                    return (
+                      <>
+                        <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
+                          <Typography sx={labelStyle}>Course Name (Coursera): *</Typography>
+                          <TextField size="small" fullWidth value={contForm.courseName} onChange={(e) => setContForm(p => ({ ...p, courseName: e.target.value }))} />
+                        </Box>
+                        <Box>
+                          <Typography sx={labelStyle}>Course Duration (Hours): *</Typography>
+                          <TextField type="number" size="small" fullWidth value={contForm.courseHours || ""} onChange={(e) => setContForm(p => ({ ...p, courseHours: e.target.value }))} placeholder="e.g. 40" />
+                        </Box>
+                        <Box>
+                          <Typography sx={labelStyle}>Certificate Number (Optional):</Typography>
+                          <TextField size="small" fullWidth value={contForm.certificateNumber || ""} onChange={(e) => setContForm(p => ({ ...p, certificateNumber: e.target.value }))} placeholder="Enter Certificate Number (if available)" />
+                        </Box>
+                        {renderDateFields()}
+                      </>
+                    );
+                  case 13:
+                    return (
+                      <>
+                        <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
+                          <Typography sx={labelStyle}>Grant Name: *</Typography>
+                          <TextField size="small" fullWidth value={contForm.grantName} onChange={(e) => setContForm(p => ({ ...p, grantName: e.target.value }))} />
+                        </Box>
+                        {renderDateFields()}
+                      </>
+                    );
+                  default:
+                    return null;
+                }
+              })()}
+
+              <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
+                <FileField
+                  label={contEditingId ? "Upload New Proof (Leave empty to keep existing)" : "Supporting Proof (PDF/Image, Max 500KB) *"}
+                  name="proof"
+                  onChange={(e) => setContProof(e.target.files[0])}
+                  error={!contProof && !contEditingId}
+                />
+              </Box>
+            </Grid2>
+            <NoteBox />
+          </DialogContent>
+          <DialogActions sx={{ p: 2.5, borderTop: "1px solid var(--border-color)" }}>
+            <Button onClick={() => setContOpen(false)} sx={{ fontWeight: 700 }}>Cancel</Button>
+            <Button
+              variant="contained"
+              onClick={handleContSaveDraft}
+              disabled={contLoading}
+              sx={{ fontWeight: 700, color: "#fff" }}
+            >
+              {contLoading ? "Saving..." : "Save Entry"}
+            </Button>
+          </DialogActions>
+        </Dialog>
+
+        {/* 3.2 Contribution Details View Dialog */}
+        {selectedContDetails && (() => {
+          const data = selectedContDetails;
+          const statusStyle = getStatusColor(data.status);
+          const { value } = getContributionNameField(data.category, data);
+
+          const backendURL = (import.meta.env.VITE_BACKEND_URL || "http://localhost:9000").replace(/\/$/, "");
+          const fileUrl = data.proof ? (data.proof.startsWith('http') ? data.proof : `${backendURL}${data.proof}`) : null;
+          const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(data.proof || "");
+
+          return (
+            <Dialog
+              open={!!selectedContDetails}
+              onClose={() => setSelectedContDetails(null)}
+              maxWidth="md"
+              fullWidth
+              slotProps={{
+                paper: {
+                  sx: {
+                    borderRadius: "20px",
+                    background: "var(--bg-panel)",
+                    border: "1px solid var(--border-color)"
+                  }
+                }
+              }}
+            >
+              <DialogTitle sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "var(--bg-accent-4)", py: 2 }}>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                  <Info sx={{ color: "var(--color-primary)" }} />
+                  <Typography variant="h6" sx={{ fontWeight: 800 }}>Contribution Details</Typography>
+                </Box>
+                <IconButton onClick={() => setSelectedContDetails(null)}><Close /></IconButton>
+              </DialogTitle>
+              <DialogContent sx={{ pt: 2, px: 3, pb: 3, mt: 2 }}>
+                <Typography variant="subtitle2" color="var(--color-primary)" sx={{ fontWeight: 800, textTransform: "uppercase" }}>
+                  {getCategoryName(data.category)}
+                </Typography>
+                <Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)", mb: 2, mt: 0.5 }}>
+                  {value}
+                </Typography>
+
+                <Grid container spacing={2}>
+                  {data.fromDate && data.toDate && (
+                    <Grid size={{ xs: 12, sm: 4 }}>
+                      <Box sx={{ p: 1.5, borderRadius: "10px", background: "var(--bg-paper)", border: "1px solid var(--border-color)" }}>
+                        <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", fontWeight: 800 }}>Dates</Typography>
+                        <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>
+                          {new Date(data.fromDate).toLocaleDateString("en-IN")} to {new Date(data.toDate).toLocaleDateString("en-IN")}
+                        </Typography>
+                      </Box>
+                    </Grid>
+                  )}
+                  {data.duration && (
+                    <Grid size={{ xs: 12, sm: 4 }}>
+                      <Box sx={{ p: 1.5, borderRadius: "10px", background: "var(--bg-paper)", border: "1px solid var(--border-color)" }}>
+                        <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", fontWeight: 800 }}>Duration</Typography>
+                        <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>{data.duration}</Typography>
+                      </Box>
+                    </Grid>
+                  )}
+
+                  {data.awardDate && (
+                    <Grid size={{ xs: 12, sm: 4 }}>
+                      <Box sx={{ p: 1.5, borderRadius: "10px", background: "var(--bg-paper)", border: "1px solid var(--border-color)" }}>
+                        <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", fontWeight: 800 }}>Award Date</Typography>
+                        <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>
+                          {new Date(data.awardDate).toLocaleDateString("en-IN")}
+                        </Typography>
+                      </Box>
+                    </Grid>
+                  )}
+
+                  {data.eventDate && (
+                    <Grid size={{ xs: 12, sm: 4 }}>
+                      <Box sx={{ p: 1.5, borderRadius: "10px", background: "var(--bg-paper)", border: "1px solid var(--border-color)" }}>
+                        <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", fontWeight: 800 }}>Event Date</Typography>
+                        <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>
+                          {new Date(data.eventDate).toLocaleDateString("en-IN")}
+                        </Typography>
+                      </Box>
+                    </Grid>
+                  )}
+
+                  {data.publicationDate && (
+                    <Grid size={{ xs: 12, sm: 4 }}>
+                      <Box sx={{ p: 1.5, borderRadius: "10px", background: "var(--bg-paper)", border: "1px solid var(--border-color)" }}>
+                        <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", fontWeight: 800 }}>Publication Date</Typography>
+                        <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>
+                          {new Date(data.publicationDate).toLocaleDateString("en-IN")}
+                        </Typography>
+                      </Box>
+                    </Grid>
+                  )}
+
+                  {data.url && (
+                    <Grid size={{ xs: 12 }}>
+                      <Box sx={{ p: 1.5, borderRadius: "10px", background: "var(--bg-paper)", border: "1px solid var(--border-color)" }}>
+                        <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", fontWeight: 800 }}>URL / Reference Link</Typography>
+                        <Typography variant="body2" sx={{ fontWeight: 700, mt: 0.5 }}>
+                          <a href={data.url} target="_blank" rel="noopener noreferrer" style={{ color: "var(--color-primary)", textDecoration: "none" }}>{data.url}</a>
+                        </Typography>
+                      </Box>
+                    </Grid>
+                  )}
+
+                  <Grid size={{ xs: 12, sm: 4 }}>
+                    <Box sx={{ p: 1.5, borderRadius: "10px", background: "var(--bg-paper)", border: "1px solid var(--border-color)" }}>
+                      <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", fontWeight: 800 }}>Status</Typography>
+                      <Box sx={{ mt: 0.5 }}>
+                        <Chip
+                          label={data.status}
+                          size="small"
+                          sx={{
+                            bgcolor: statusStyle.bg,
+                            color: statusStyle.color,
+                            fontWeight: 800,
+                            borderRadius: "6px"
+                          }}
+                        />
+                      </Box>
                     </Box>
                   </Grid>
-                )}
-              </Grid>
 
-              {fileUrl && (
-                <Box sx={{ mt: 3 }}>
-                  <Typography variant="caption" sx={{ fontWeight: 800, color: "var(--color-primary)", textTransform: "uppercase", display: "block", mb: 1 }}>Proof Document</Typography>
-                  <Box sx={{
-                    height: 250, display: "flex", alignItems: "center", justifyContent: "center",
-                    border: "1px solid var(--border-color)", background: "var(--bg-paper)", borderRadius: "8px",
-                    overflow: "hidden", cursor: "pointer", transition: "all 0.2s ease",
-                    "&:hover": { borderColor: "var(--color-primary)", transform: "translateY(-2px)" }
-                  }} onClick={() => window.open(fileUrl, '_blank')}>
-                    {isImage ? (
-                      <img src={fileUrl} alt="Proof" style={{ width: "100%", height: "100%", objectFit: "contain" }} />
-                    ) : (
-                      <Box sx={{ textAlign: "center" }}>
-                        <Description sx={{ fontSize: 40, color: "var(--text-secondary)", mb: 0.5 }} />
-                        <Typography variant="caption" sx={{ color: "var(--text-secondary)", fontWeight: 700, display: "block" }}>PDF Preview (Click to open)</Typography>
+                  {data.hodComment && (
+                    <Grid size={{ xs: 12 }}>
+                      <Box sx={{ p: 2, bgcolor: "rgba(239, 68, 68, 0.05)", borderRadius: "10px", border: "1px solid rgba(239, 68, 68, 0.2)" }}>
+                        <Typography variant="caption" sx={{ fontWeight: 900, color: "#ef4444", textTransform: "uppercase" }}>HOD Feedback</Typography>
+                        <Typography variant="body2" sx={{ fontStyle: "italic", mt: 0.5, color: "var(--text-primary)" }}>"{data.hodComment}"</Typography>
                       </Box>
-                    )}
+                    </Grid>
+                  )}
+                </Grid>
+
+                {fileUrl && (
+                  <Box sx={{ mt: 3 }}>
+                    <Typography variant="caption" sx={{ fontWeight: 800, color: "var(--color-primary)", textTransform: "uppercase", display: "block", mb: 1 }}>Proof Document</Typography>
+                    <Box sx={{
+                      height: 250, display: "flex", alignItems: "center", justifyContent: "center",
+                      border: "1px solid var(--border-color)", background: "var(--bg-paper)", borderRadius: "8px",
+                      overflow: "hidden", cursor: "pointer", transition: "all 0.2s ease",
+                      "&:hover": { borderColor: "var(--color-primary)", transform: "translateY(-2px)" }
+                    }} onClick={() => window.open(fileUrl, '_blank')}>
+                      {isImage ? (
+                        <img src={fileUrl} alt="Proof" style={{ width: "100%", height: "100%", objectFit: "contain" }} />
+                      ) : (
+                        <Box sx={{ textAlign: "center" }}>
+                          <Description sx={{ fontSize: 40, color: "var(--text-secondary)", mb: 0.5 }} />
+                          <Typography variant="caption" sx={{ color: "var(--text-secondary)", fontWeight: 700, display: "block" }}>PDF Preview (Click to open)</Typography>
+                        </Box>
+                      )}
+                    </Box>
                   </Box>
-                </Box>
-              )}
-            </DialogContent>
-            <DialogActions sx={{ p: 2.5, borderTop: "1px solid var(--border-color)" }}>
-              <Button onClick={() => setSelectedContDetails(null)} sx={{ fontWeight: 700 }}>Close</Button>
-            </DialogActions>
-          </Dialog>
-        );
-      })()}
+                )}
+              </DialogContent>
+              <DialogActions sx={{ p: 2.5, borderTop: "1px solid var(--border-color)" }}>
+                <Button onClick={() => setSelectedContDetails(null)} sx={{ fontWeight: 700 }}>Close</Button>
+              </DialogActions>
+            </Dialog>
+          );
+        })()}
 
-      {/* 4. Administrative Responsibilities Dialog */}
-      <Dialog open={adminOpen} onClose={() => setAdminOpen(false)} maxWidth="sm" fullWidth slotProps={{ paper: { sx: { borderRadius: "20px", background: "var(--bg-panel)" } } }}>
-        <DialogTitle sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "var(--bg-accent-4)", py: 2 }}>
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-            <AssignmentTurnedIn sx={{ color: "var(--color-primary)" }} />
-            <Typography variant="h6" sx={{ fontWeight: 800 }}>{adminEditingRole ? "Edit" : "Add"} Administrative Responsibility</Typography>
-          </Box>
-          <IconButton onClick={() => setAdminOpen(false)}><Close /></IconButton>
-        </DialogTitle>
-        <DialogContent sx={{ p: 3, mt: 1 }}>
-          <Grid2 sx={{ mb: 2 }}>
-            <Box sx={{ gridColumn: "1 / -1", mb: 2 }}>
-              <Typography sx={labelStyle}>Select Administrative Role / Responsibility: *</Typography>
-              <Select
-                size="small"
-                fullWidth
-                value={adminForm.roleName}
-                onChange={(e) => setAdminForm(p => ({ ...p, roleName: e.target.value }))}
-                disabled={!!adminEditingRole}
-              >
-                {ADMINISTRATIVE_ROLES_LIST.map(role => (
-                  <MenuItem key={role.id} value={role.label} disabled={!adminEditingRole && adminRolesForm[role.id]?.isResponsible && (administrationDetail?.roles?.find(r => r.roleName === role.label)?.status !== 'Rejected')}>
-                    {role.label}
-                  </MenuItem>
-                ))}
-              </Select>
+        {/* 4. Administrative Responsibilities Dialog */}
+        <Dialog open={adminOpen} onClose={() => setAdminOpen(false)} maxWidth="sm" fullWidth slotProps={{ paper: { sx: { borderRadius: "20px", background: "var(--bg-panel)" } } }}>
+          <DialogTitle sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "var(--bg-accent-4)", py: 2 }}>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+              <AssignmentTurnedIn sx={{ color: "var(--color-primary)" }} />
+              <Typography variant="h6" sx={{ fontWeight: 800 }}>{adminEditingRole ? "Edit" : "Add"} Administrative Responsibility</Typography>
             </Box>
+            <IconButton onClick={() => setAdminOpen(false)}><Close /></IconButton>
+          </DialogTitle>
+          <DialogContent sx={{ p: 3, mt: 1 }}>
+            <Grid2 sx={{ mb: 2 }}>
+              <Box sx={{ gridColumn: "1 / -1", mb: 2 }}>
+                <Typography sx={labelStyle}>Select Administrative Role / Responsibility: *</Typography>
+                <Select
+                  size="small"
+                  fullWidth
+                  value={adminForm.roleName}
+                  onChange={(e) => setAdminForm(p => ({ ...p, roleName: e.target.value }))}
+                  disabled={!!adminEditingRole}
+                >
+                  {ADMINISTRATIVE_ROLES_LIST.map(role => (
+                    <MenuItem key={role.id} value={role.label} disabled={!adminEditingRole && adminRolesForm[role.id]?.isResponsible && (administrationDetail?.roles?.find(r => r.roleName === role.label)?.status !== 'Rejected')}>
+                      {role.label}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </Box>
 
-            <Box sx={{ gridColumn: "1 / -1", mb: 2 }}>
-              <Typography sx={labelStyle}>Level (Assigned By): *</Typography>
-              <Select
-                size="small"
-                fullWidth
-                value={adminForm.level}
-                onChange={(e) => setAdminForm(p => ({ ...p, level: e.target.value }))}
-              >
-                <MenuItem value="Department level">Department level</MenuItem>
-                <MenuItem value="Institute level">Institute / Central level</MenuItem>
-              </Select>
-            </Box>
+              <Box sx={{ gridColumn: "1 / -1", mb: 2 }}>
+                <Typography sx={labelStyle}>Level (Assigned By): *</Typography>
+                <Select
+                  size="small"
+                  fullWidth
+                  value={adminForm.level}
+                  onChange={(e) => setAdminForm(p => ({ ...p, level: e.target.value }))}
+                >
+                  <MenuItem value="Department level">Department level</MenuItem>
+                  <MenuItem value="Institute level">Institute / Central level</MenuItem>
+                </Select>
+              </Box>
 
-            {(() => {
-              const roleConfig = ADMINISTRATIVE_ROLES_LIST.find((r) => r.label === adminForm.roleName);
-              if (roleConfig && roleConfig.hasDetails) {
+              {(() => {
+                const roleConfig = ADMINISTRATIVE_ROLES_LIST.find((r) => r.label === adminForm.roleName);
+                if (roleConfig && roleConfig.hasDetails) {
+                  return (
+                    <Box sx={{ gridColumn: "1 / -1", mb: 2 }}>
+                      <Typography sx={labelStyle}>Specify event / activity name: *</Typography>
+                      <TextField
+                        size="small"
+                        fullWidth
+                        value={adminForm.details}
+                        onChange={(e) => setAdminForm(p => ({ ...p, details: e.target.value }))}
+                        placeholder="Enter work description"
+                      />
+                    </Box>
+                  );
+                }
                 return (
                   <Box sx={{ gridColumn: "1 / -1", mb: 2 }}>
-                    <Typography sx={labelStyle}>Specify event / activity name: *</Typography>
+                    <Typography sx={labelStyle}>Remarks / Details (Optional):</Typography>
                     <TextField
                       size="small"
                       fullWidth
                       value={adminForm.details}
                       onChange={(e) => setAdminForm(p => ({ ...p, details: e.target.value }))}
-                      placeholder="Enter work description"
+                      placeholder="Any specific remarks"
                     />
                   </Box>
                 );
-              }
-              return (
-                <Box sx={{ gridColumn: "1 / -1", mb: 2 }}>
-                  <Typography sx={labelStyle}>Remarks / Details (Optional):</Typography>
-                  <TextField
-                    size="small"
-                    fullWidth
-                    value={adminForm.details}
-                    onChange={(e) => setAdminForm(p => ({ ...p, details: e.target.value }))}
-                    placeholder="Any specific remarks"
-                  />
-                </Box>
-              );
-            })()}
-          </Grid2>
-        </DialogContent>
-        <DialogActions sx={{ p: 2.5, borderTop: "1px solid var(--border-color)" }}>
-          <Button onClick={() => setAdminOpen(false)} sx={{ fontWeight: 700 }}>Cancel</Button>
-          <Button
-            variant="contained"
-            onClick={handleAdminSave}
-            disabled={submittingAdmin}
-            sx={{ fontWeight: 700, color: "#fff" }}
-          >
-            {submittingAdmin ? "Saving..." : "Save Entry"}
-          </Button>
-        </DialogActions>
-      </Dialog>
+              })()}
+            </Grid2>
+          </DialogContent>
+          <DialogActions sx={{ p: 2.5, borderTop: "1px solid var(--border-color)" }}>
+            <Button onClick={() => setAdminOpen(false)} sx={{ fontWeight: 700 }}>Cancel</Button>
+            <Button
+              variant="contained"
+              onClick={handleAdminSave}
+              disabled={submittingAdmin}
+              sx={{ fontWeight: 700, color: "#fff" }}
+            >
+              {submittingAdmin ? "Saving..." : "Save Entry"}
+            </Button>
+          </DialogActions>
+        </Dialog>
 
+      </Box>
     </Box>
   );
 };

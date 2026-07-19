@@ -155,7 +155,7 @@ export const ROLE_ROUTES = {
         {
           text: "Appraisal Reports",
           path: "/uniprime/appraisal-reports",
-          icon: <Link />
+          icon: <Assessment />
         }
       ]
     },
