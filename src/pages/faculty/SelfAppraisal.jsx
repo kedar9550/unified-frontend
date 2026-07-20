@@ -1987,7 +1987,7 @@ const SelfAppraisal = () => {
                         <IconButton
                           color="primary"
                           onClick={() => {
-                            if (app.status === 'Approved') {
+                            if (app.status === 'Completed') {
                               navigate(`/appraisal/details/${app._id}`);
                             } else {
                               setAcademicYears([app.academicYearId]);
@@ -2223,21 +2223,44 @@ const SelfAppraisal = () => {
                 Submit to HOD
               </Button>
             ) : (
-              <Chip
-                label={`Status: ${appraisal.status}`}
-                icon={<AssignmentTurnedIn sx={{ color: "#fff !important" }} />}
-                sx={{
-                  fontWeight: 800,
-                  px: 2.5,
-                  py: 2.5,
-                  borderRadius: "20px",
-                  whiteSpace: "nowrap",
-                  background: "var(--gradient-primary)",
-                  color: "#fff",
-                  border: "none",
-                  boxShadow: "0 4px 14px rgba(0, 78, 146, 0.3)"
-                }}
-              />
+              <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+                <Chip
+                  label={`Status: ${appraisal.status}`}
+                  icon={<AssignmentTurnedIn sx={{ color: "#fff !important" }} />}
+                  sx={{
+                    fontWeight: 800,
+                    px: 2.5,
+                    py: 2.5,
+                    borderRadius: "20px",
+                    whiteSpace: "nowrap",
+                    background: "var(--gradient-primary)",
+                    color: "#fff",
+                    border: "none",
+                    boxShadow: "0 4px 14px rgba(0, 78, 146, 0.3)"
+                  }}
+                />
+                {appraisal.status === 'Completed' && (
+                  <Button
+                    variant="outlined"
+                    onClick={() => navigate(`/appraisal/details/${appraisal._id}`)}
+                    startIcon={<Visibility />}
+                    sx={{
+                      fontWeight: 800,
+                      borderRadius: "12px",
+                      textTransform: "none",
+                      borderColor: "var(--color-primary)",
+                      color: "var(--color-primary)",
+                      height: "44px",
+                      "&:hover": {
+                        background: "rgba(59, 130, 246, 0.1)",
+                        borderColor: "var(--color-primary)"
+                      }
+                    }}
+                  >
+                    View Details
+                  </Button>
+                )}
+              </Box>
             )}
 
             {selectedYear && (
