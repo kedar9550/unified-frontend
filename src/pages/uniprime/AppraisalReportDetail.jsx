@@ -219,7 +219,7 @@ const AppraisalReportDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const user = JSON.parse(localStorage.getItem("user") || "{}");
-  const role = user?.role;
+  const role = localStorage.getItem("activeRole") || "";
   const [pendingList, setPendingList] = useState([]);
   const [selectedAppraisal, setSelectedAppraisal] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -2079,7 +2079,7 @@ const AppraisalReportDetail = () => {
                   </Typography>
                 )}
 
-                <Box sx={{ maxHeight: "600px", overflowY: "auto", pr: 1, mb: 2, display: "flex", flexDirection: "column", gap: 2 }}>
+                <Box sx={{ maxHeight: "450px", overflowY: "auto", position: "relative", pr: 1, mb: 3, display: "flex", flexDirection: "column", gap: 2 }}>
                   {PARAMETERS.map((p) => (
                     <Box
                       key={p.id}
