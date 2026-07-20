@@ -130,7 +130,7 @@ const GenerateQR = () => {
                             display: (
                                 <Box sx={{ width: 64, height: 64, backgroundColor: '#fff', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none', margin: '0 auto' }}>
                                     <CustomQRCode 
-                                        data={`${window.location.origin}/r/${link.shortCode}`} 
+                                        data={`${window.location.origin}/go/${link.shortCode}`} 
                                         size={60} 
                                         colorType="solid"
                                         solidColor="#0b5299"
@@ -239,7 +239,7 @@ const GenerateQR = () => {
                                 {selectedQr && (
                                     <CustomQRCode 
                                         ref={qrRef}
-                                        data={`${window.location.origin}/r/${selectedQr.shortCode}`} 
+                                        data={`${window.location.origin}/go/${selectedQr.shortCode}`} 
                                         size={280}
                                         colorType={qrColorStyle}
                                         solidColor={color1}

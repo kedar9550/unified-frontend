@@ -199,7 +199,7 @@ function App() {
         <Route path="/utilities/manage-qr" element={<ProtectedRoute element={<ManageQR />} />} />
 
         {/* Public Redirect Route */}
-        <Route path="/r/:shortCode" element={<RedirectHandler />} />
+        <Route path="/go/:shortCode" element={<RedirectHandler />} />
 
         <Route path="/doi-test" element={<DOIFetcher />} />
 

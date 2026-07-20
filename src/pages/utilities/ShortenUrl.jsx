@@ -67,7 +67,7 @@ const ShortenUrl = () => {
     };
 
     const handleCopy = (shortCode) => {
-        const url = `${window.location.origin}/r/${shortCode}`;
+        const url = `${window.location.origin}/go/${shortCode}`;
         navigator.clipboard.writeText(url);
         toast.success('Link copied to clipboard');
     };
@@ -157,7 +157,7 @@ const ShortenUrl = () => {
                                     <Tooltip title="Open Link">
                                         <IconButton 
                                             component="a" 
-                                            href={`${window.location.origin}/r/${link.shortCode}`}
+                                            href={`${window.location.origin}/go/${link.shortCode}`}
                                             target="_blank"
                                             size="small" 
                                             color="secondary"
@@ -229,7 +229,7 @@ const ShortenUrl = () => {
                                     onChange={(e) => setCustomSlug(e.target.value)}
                                     size="small"
                                     InputProps={{
-                                        startAdornment: <InputAdornment position="start">{window.location.host}/r/</InputAdornment>,
+                                        startAdornment: <InputAdornment position="start">{window.location.host}/go/</InputAdornment>,
                                     }}
                                 />
                             </Box>

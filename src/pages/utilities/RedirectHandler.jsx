@@ -13,7 +13,7 @@ const RedirectHandler = () => {
         const fetchUrl = async () => {
             try {
                 // Request JSON so backend returns the URL instead of doing a 302 redirect
-                const response = await axios.get(`/api/utilities/r/${shortCode}`, {
+                const response = await axios.get(`/api/utilities/go/${shortCode}`, {
                     headers: { 'Accept': 'application/json' }
                 });
                 
