@@ -605,6 +605,51 @@ const AppraisalReportDetail = () => {
   const liveAdminPointsRaw = liveAdminRoles.reduce((sum, r) => r.status !== 'Rejected' ? sum + calculateAdministrativePoints(r, appraisalConfig) : sum, 0);
   const liveAdminPoints = Math.min(20, liveAdminPointsRaw);
 
+  // PDF Pre-calculated Data Object
+  const calculatedPrintData = selectedAppraisal ? {
+    personalInfoSnapshot: selectedAppraisal.personalInfoSnapshot,
+    academicYearId: selectedAppraisal.academicYearId,
+    status: selectedAppraisal.status,
+    hodEvaluation: selectedAppraisal.hodEvaluation,
+    teaching: {
+      passPercentage: selectedAppraisal.teaching?.passPercentage || {},
+      courseFeedback: selectedAppraisal.teaching?.feedback || {},
+      proctoring: selectedAppraisal.teaching?.proctoring || {},
+      coAttainment: selectedAppraisal.teaching?.coAttainment || {},
+      t1: Number(selectedAppraisal.teaching?.passPercentage?.averagePoints || 0),
+      t2: Number(selectedAppraisal.teaching?.feedback?.averagePoints || 0),
+      t3: Number(selectedAppraisal.teaching?.proctoring?.averagePoints || 0),
+      t4: Number(selectedAppraisal.teaching?.coAttainment?.averagePoints || 0),
+      teachingTotal: Number(selectedAppraisal.teaching?.totalClaimed || 0)
+    },
+    research: {
+      papers: selectedAppraisal.research?.papers || {},
+      phdGuidance: selectedAppraisal.research?.phdGuiding || {},
+      booksChapters: selectedAppraisal.research?.booksChapters || {},
+      patents: selectedAppraisal.research?.patents || {},
+      novelProducts: selectedAppraisal.research?.novelProducts || {},
+      projectsConsultancies: selectedAppraisal.research?.projectsConsultancies || {},
+      r21: (selectedAppraisal.research?.papers?.items || []).reduce((s, p) => s + (Number(p.pointsClaimed) || 0), 0),
+      r22: (selectedAppraisal.research?.phdGuiding?.items || []).reduce((s, p) => s + (Number(p.pointsClaimed) || 0), 0),
+      r23: Math.min(10, (selectedAppraisal.research?.booksChapters?.items || []).reduce((s, b) => s + (Number(b.pointsClaimed) || 0), 0)),
+      r24: (selectedAppraisal.research?.patents?.items || []).reduce((s, p) => s + (Number(p.pointsClaimed) || 0), 0),
+      r25: (selectedAppraisal.research?.novelProducts?.items || []).reduce((s, p) => s + (Number(p.pointsClaimed) || 0), 0),
+      r26: (selectedAppraisal.research?.projectsConsultancies?.items || []).reduce((s, p) => s + (Number(p.pointsClaimed) || 0), 0),
+      r27: Number(selectedAppraisal.research?.scopusCitationsScore || selectedAppraisal.research?.scopusCitations || 0),
+      r28: Number(selectedAppraisal.research?.scopusHIndexScore || selectedAppraisal.research?.scopusHIndex || 0),
+      researchTotal: Number(selectedAppraisal.research?.totalClaimed || 0)
+    },
+    valueAddition: {
+      resourceUtilization: (selectedAppraisal.resourceUtilizationDetails || []).filter(r => r.status !== 'Rejected').map(r => ({ ...r, pointsClaimed: calculateResourceUtilizationPoints(r, appraisalConfig) })),
+      contributions: (selectedAppraisal.contributionDetails || []).filter(r => r.status !== 'Rejected').map(r => ({ ...r, pointsClaimed: calculateContributionPoints(r, appraisalConfig) })),
+      valueAdditionTotal: liveValueAdditionPoints
+    },
+    administrativeResponsibilities: {
+      roles: liveAdminRoles.filter(r => r.status !== 'Rejected').map(r => ({ ...r, pointsClaimed: calculateAdministrativePoints(r, appraisalConfig) })),
+      adminTotal: liveAdminPoints
+    }
+  } : null;
+
   return (
     <Box p={4} sx={{ maxWidth: 1200, margin: "0 auto", animation: "fadeIn 0.5s ease" }}>
 
@@ -705,7 +750,7 @@ const AppraisalReportDetail = () => {
         <Box sx={{ width: '100%' }}>
           
           <div style={{ display: 'none' }}>
-            <AppraisalPDFReport data={selectedAppraisal} ref={printRef} />
+            <AppraisalPDFReport data={calculatedPrintData} ref={printRef} />
           </div>
 
           <Grid container spacing={4}>

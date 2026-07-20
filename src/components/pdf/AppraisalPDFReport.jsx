@@ -84,33 +84,19 @@ const AppraisalPDFReport = forwardRef(({ data }, ref) => {
       : `SEM-${e.semesterNumber} ${e.branchCode || "—"} - SEC ${e.section || ""}`;
   };
 
-  const sumPoints = (items, key = 'pointsClaimed') => {
-    if (!items || !Array.isArray(items)) return 0;
-    return items.reduce((sum, item) => sum + (Number(item[key]) || 0), 0);
-  };
-
-  // 1. Teaching summary calculations
+  // 1. Teaching summary variables (Pre-calculated from backend/detail page)
   const teaching = data.teaching || {};
-  const t1 = Number(teaching.passPercentage?.averagePoints || 0);
-  const t2 = Number(teaching.courseFeedback?.averagePoints || 0);
-  const t3 = Number(teaching.proctoring?.averagePoints || 0);
-  const t4 = Number(teaching.coAttainment?.averagePoints || 0);
-  const teachingTotal = t1 + t2 + t3 + t4;
+  const { t1, t2, t3, t4, teachingTotal } = teaching;
 
-  // 2. Research summary calculations
+  // 2. Research summary variables (Pre-calculated from backend/detail page)
   const rData = data.research || {};
-  const r21 = sumPoints(rData.papers?.items);
-  const r22 = sumPoints(rData.phdGuidance?.items);
-  const r23 = Math.min(10, sumPoints(rData.booksChapters?.items));
-  const r24 = sumPoints(rData.patents?.items);
-  const r25 = sumPoints(rData.novelProducts?.items);
-  const r26 = sumPoints(rData.projectsConsultancies?.items);
-  const r27 = Number(rData.scopusCitationsScore || rData.scopusCitations || 0);
-  const r28 = Number(rData.scopusHIndexScore || rData.scopusHIndex || 0);
-  const researchTotal = r21 + r22 + r23 + r24 + r25 + r26 + r27 + r28;
+  const { r21, r22, r23, r24, r25, r26, r27, r28, researchTotal } = rData;
 
   // 3. Value addition
   const vData = data.valueAddition || {};
+
+  // 4. Administration
+  const adminData = data.administrativeResponsibilities || {};
 
   return (
     <div ref={ref} style={styles.container}>
@@ -377,7 +363,7 @@ const AppraisalPDFReport = forwardRef(({ data }, ref) => {
             <tr key={row.m} style={styles.tr}>
               <td style={styles.td}>{row.m}</td>
               <td style={styles.tdLeft}>{row.label}</td>
-              <td style={styles.td}>{row.val}</td>
+              <td style={styles.td}>{row.val || 0}</td>
             </tr>
           ))}
           <tr style={styles.tr}>
@@ -626,10 +612,7 @@ const AppraisalPDFReport = forwardRef(({ data }, ref) => {
                   <td style={styles.td}>{r.pointsClaimed || ''}</td>
                 </tr>
               ))}
-              <tr style={styles.tr}>
-                <td colSpan="4" style={{ ...styles.td, fontWeight: 'bold', textAlign: 'right' }}>Self-Assessment Points (Max:10)</td>
-                <td style={{ ...styles.td, fontWeight: 'bold' }}>{Math.min(10, sumPoints(vData.resourceUtilization))}</td>
-              </tr>
+              {/* Max capped points are already calculated and can be added if needed separately */}
             </tbody>
           </table>
         </>
@@ -674,17 +657,25 @@ const AppraisalPDFReport = forwardRef(({ data }, ref) => {
                   </tr>
                 )
               })}
-              <tr style={styles.tr}>
-                <td colSpan="2" style={{ ...styles.td, fontWeight: 'bold', textAlign: 'right' }}>Self-Assessment Points (Max: 10)</td>
-                <td style={{ ...styles.td, fontWeight: 'bold' }}>{Math.min(10, sumPoints(vData.contributions))}</td>
-              </tr>
             </tbody>
           </table>
         </>
       )}
 
+      {/* 3 Total Row */}
+      {(vData?.resourceUtilization?.length > 0 || vData?.contributions?.length > 0) && (
+        <table style={styles.table}>
+          <tbody>
+            <tr style={styles.tr}>
+              <td style={{ ...styles.td, fontWeight: 'bold', textAlign: 'right' }}>Self-Assessment Points (Max: 20)</td>
+              <td style={{ ...styles.td, fontWeight: 'bold', width: '15%' }}>{vData.valueAdditionTotal || 0}</td>
+            </tr>
+          </tbody>
+        </table>
+      )}
+
       {/* 4. ADMINISTRATION */}
-      {data.administrativeResponsibilities?.roles?.length > 0 && (
+      {adminData?.roles?.length > 0 && (
         <>
           <div style={{ fontWeight: 'bold', fontSize: '15px', marginTop: '20px', marginBottom: '5px' }}>
             4. Administrative Responsibilities:
@@ -699,7 +690,7 @@ const AppraisalPDFReport = forwardRef(({ data }, ref) => {
               </tr>
             </thead>
             <tbody>
-              {data.administrativeResponsibilities.roles.map((r, i) => (
+              {adminData.roles.map((r, i) => (
                 <tr key={i} style={styles.tr}>
                   <td style={styles.td}>{i + 1}</td>
                   <td style={styles.tdLeft}>{r.roleName} ({r.level})</td>
@@ -710,7 +701,7 @@ const AppraisalPDFReport = forwardRef(({ data }, ref) => {
               <tr style={styles.tr}>
                 <td colSpan="3" style={{ ...styles.td, fontWeight: 'bold', textAlign: 'right' }}>Self-Assessment points (Max: 20)</td>
                 <td style={{ ...styles.td, fontWeight: 'bold' }}>
-                  {Math.min(20, sumPoints(data.administrativeResponsibilities.roles))}
+                  {adminData.adminTotal || 0}
                 </td>
               </tr>
             </tbody>
