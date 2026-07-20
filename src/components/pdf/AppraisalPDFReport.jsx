@@ -280,7 +280,7 @@ const AppraisalPDFReport = forwardRef(({ data }, ref) => {
               {teaching.proctoring.entries.map((e, i) => (
                 <tr key={i} style={styles.tr}>
                   <td style={styles.td}>{i + 1}</td>
-                  <td style={styles.td}>{e.allotedStudents}</td>
+                  <td style={styles.td}>{e.totalStudents}</td>
                   <td style={styles.td}>{getSemBranchSec(e)}</td>
                   <td style={styles.td}>{e.appeared || e.eligible || ''}</td>
                   <td style={styles.td}>{e.passed || ''}</td>
@@ -322,8 +322,8 @@ const AppraisalPDFReport = forwardRef(({ data }, ref) => {
                   <td style={styles.td}>{i + 1}</td>
                   <td style={styles.tdLeft}>{t.courseName}</td>
                   <td style={styles.td}>{getSemBranchSec(t)}</td>
-                  <td style={styles.td}>{t.totalCOs || ''}</td>
-                  <td style={styles.td}>{t.attainedCOs || ''}</td>
+                  <td style={styles.td}>{t.noOfCos || ''}</td>
+                  <td style={styles.td}>{t.noOfCosAttained || ''}</td>
                   <td style={styles.td}>{t.pointsClaimed || ''}</td>
                   {i === 0 && (
                     <td style={{ ...styles.td, verticalAlign: 'middle' }} rowSpan={teaching.coAttainment.courses.length}>
@@ -394,7 +394,7 @@ const AppraisalPDFReport = forwardRef(({ data }, ref) => {
                 <tr key={i} style={styles.tr}>
                   <td style={styles.td}>{i + 1}</td>
                   <td style={styles.tdLeft}>{j.title}</td>
-                  <td style={styles.td}>{j.category || j.journalName || ''}</td>
+                  <td style={styles.td}>{j.scope || j.category || j.journalName || ''}</td>
                   <td style={styles.td}>{j.impactFactor || ''}</td>
                   <td style={styles.td}>{j.pointsClaimed || ''}</td>
                 </tr>
@@ -429,9 +429,9 @@ const AppraisalPDFReport = forwardRef(({ data }, ref) => {
               {rData.phdGuidance.items.map((p, i) => (
                 <tr key={i} style={styles.tr}>
                   <td style={styles.td}>{i + 1}</td>
-                  <td style={styles.tdLeft}>{p.scholarName}</td>
+                  <td style={styles.tdLeft}>{p.name} {p.scholarType ? '(' + p.scholarType + ')' : ''}</td>
                   <td style={styles.td}>{p.university}</td>
-                  <td style={styles.td}>{p.monthYear}</td>
+                  <td style={styles.td}>{p.admissionOrAwardDate ? new Date(p.admissionOrAwardDate).toLocaleDateString('en-GB', { month: 'short', year: 'numeric' }) : ''}</td>
                   <td style={styles.td}>{p.status}</td>
                   <td style={styles.td}>{p.pointsClaimed}</td>
                 </tr>
@@ -466,7 +466,7 @@ const AppraisalPDFReport = forwardRef(({ data }, ref) => {
                 <tr key={i} style={styles.tr}>
                   <td style={styles.td}>{i + 1}</td>
                   <td style={styles.tdLeft}>{b.title} {b.isbnIssn ? `(ISBN/ISSN: ${b.isbnIssn})` : ''}</td>
-                  <td style={styles.td}>{b.category || ''}</td>
+                  <td style={styles.td}>{b.itemType || b.category || ''}</td>
                   <td style={styles.td}>{b.publisher || ''}</td>
                   <td style={styles.td}>{b.pointsClaimed || ''}</td>
                 </tr>
@@ -535,7 +535,7 @@ const AppraisalPDFReport = forwardRef(({ data }, ref) => {
                 <tr key={i} style={styles.tr}>
                   <td style={styles.td}>{i + 1}</td>
                   <td style={styles.tdLeft}>{n.title || n.details || ''}</td>
-                  <td style={styles.td}>{n.organization || n.implementedOrganization || ''}</td>
+                  <td style={styles.td}>{n.productId?.implementedOrganization || n.productId?.developedOrganization || n.organizationName || n.organization || n.implementedOrganization || ''}</td>
                   <td style={styles.td}>{n.pointsClaimed || ''}</td>
                 </tr>
               ))}
@@ -570,8 +570,8 @@ const AppraisalPDFReport = forwardRef(({ data }, ref) => {
                   <td style={styles.td}>{i + 1}</td>
                   <td style={styles.tdLeft}>{fp.title || fp.details || ''}</td>
                   <td style={styles.td}>{fp.agency || fp.fundingAgency || ''}</td>
-                  <td style={styles.td}>{fp.amount || fp.worth || ''}</td>
-                  <td style={styles.td}>{fp.pointsClaimed || ''}</td>
+                  <td style={styles.td}>{fp.amountInLakhs || fp.amount || fp.worth || ''}</td>
+                  <td style={styles.td}>{fp.pointsClaimed ?? ''}</td>
                 </tr>
               ))}
               <tr style={styles.tr}>
@@ -606,9 +606,9 @@ const AppraisalPDFReport = forwardRef(({ data }, ref) => {
               {vData.resourceUtilization.map((r, i) => (
                 <tr key={i} style={styles.tr}>
                   <td style={styles.td}>{i + 1}</td>
-                  <td style={styles.tdLeft}>{r.eventName || r.topic} {r.date ? `(${r.date})` : ''}</td>
+                  <td style={styles.tdLeft}>{r.courseFdpName || r.event || r.organizationName || r.eventName || r.topic} {r.fromDate ? '(' + new Date(r.fromDate).toLocaleDateString('en-GB') + (r.toDate ? ' to ' + new Date(r.toDate).toLocaleDateString('en-GB') : '') + ')' : (r.date ? '(' + r.date + ')' : '')}</td>
                   <td style={styles.td}>{r.duration || r.daysParticipated || ''}</td>
-                  <td style={styles.td}>{r.natureOfEvent} - {r.roleOfFaculty || r.activityRole}</td>
+                  <td style={styles.td}>{(r.activityCategory || r.natureOfEvent || '') + ' - ' + (r.activityType || r.roleOfFaculty || r.activityRole || '')}</td>
                   <td style={styles.td}>{r.pointsClaimed || ''}</td>
                 </tr>
               ))}
