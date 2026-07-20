@@ -18,9 +18,7 @@ import AcademicManagement from "./pages/uniprime/academics/AcademicManagement";
 import FacultyFormatResults from "./pages/examAdmin/FacultyFormatResults";
 import StudentFormatResults from "./pages/examAdmin/StudentFormatResults";
 import Discrepancies from "./pages/examAdmin/Discrepancies";
-import DeptProctorUploads from "./pages/hod/DeptProctorUploads";
 import HODDiscrepancies from "./pages/hod/HODDiscrepancies";
-import ProctoringApprovalList from "./pages/hod/ProctoringApprovalList";
 import AcademicStructure from "./pages/uniprime/academics/AcademicStructure";
 import Assignedstudents from "./pages/uniprime/Student/Assignedstudents";
 import RoleManagement from "./pages/uniprime/Roles/Rolemanagement";
@@ -38,13 +36,10 @@ import ProctoringUpload from "./pages/uniprime/ProctoringUpload";
 import UniprimeDiscrepancies from "./pages/uniprime/UniprimeDiscrepancies";
 import DOIFetcher from "./pages/faculty/DOITest";
 import FacultyAdministration from "./pages/faculty/FacultyAdministration";
-import AdministrationApprovalList from "./pages/hod/AdministrationApprovalList";
 import EventCoordination from "./pages/faculty/EventCoordination";
 
 import ResourceUtilization from "./pages/faculty/ResourceUtilization";
 import Contribution from "./pages/faculty/Contribution";
-import ResourceUtilizationApproval from "./pages/hod/ResourceUtilizationApproval";
-import ContributionApproval from "./pages/hod/ContributionApproval";
 
 import ResearchApprovalList from './pages/research/researchApproval/ResearchApprovalList';
 import ResearchApprovalDetailWrapper from './pages/research/researchApproval/ResearchApprovalDetailWrapper';
@@ -150,7 +145,6 @@ function App() {
         <Route path="exam-result/faculty-format" element={<ProtectedRoute element={<FacultyFormatResults />} />} />
         <Route path="exam-result/students-format" element={<ProtectedRoute element={<StudentFormatResults />} />} />
         <Route path="exam-result/discrepancies" element={<ProtectedRoute element={<Discrepancies />} />} />
-        <Route path="/hod/protecrdataupload" element={<ProtectedRoute element={<DeptProctorUploads />} />} />
         <Route path="/hod/discrepancies" element={<ProtectedRoute element={<HODDiscrepancies />} />} />
         <Route path="/academics/programs" element={<ProtectedRoute element={<AcademicStructure />} />} />
         <Route path="/academics/department" element={<ProtectedRoute element={<AcademicStructure />} />} />
@@ -168,14 +162,10 @@ function App() {
         {/* Value Addition Modules */}
         <Route path="/value-addition/resource-utilization" element={<ProtectedRoute element={<ResourceUtilization />} />} />
         <Route path="/value-addition/contribution" element={<ProtectedRoute element={<Contribution />} />} />
-        <Route path="/hod/value-addition/resource-utilization" element={<ProtectedRoute element={<ResourceUtilizationApproval />} />} />
-        <Route path="/hod/value-addition/contribution" element={<ProtectedRoute element={<ContributionApproval />} />} />
 
         <Route path="/hod/research-approvals" element={<ProtectedRoute element={<ResearchApprovalList role="HOD" />} />} />
         <Route path="/hod/research-request/:type/:id" element={<ProtectedRoute element={<ResearchApprovalDetailWrapper role="HOD" />} />} />
-        <Route path="/hod/proctoring-approvals" element={<ProtectedRoute element={<ProctoringApprovalList />} />} />
         <Route path="/faculty/administration" element={<ProtectedRoute element={<FacultyAdministration />} />} />
-        <Route path="/hod/administration-approvals" element={<ProtectedRoute element={<AdministrationApprovalList />} />} />
         <Route path="/hod/staff" element={<ProtectedRoute element={<StaffList />} />} />
 
         {/* Self Appraisal routes */}
@@ -184,7 +174,7 @@ function App() {
         <Route path="/hod/appraisal-verification" element={<ProtectedRoute element={<AppraisalEvaluation />} />} />
         <Route path="/uniprime/appraisal-settings" element={<ProtectedRoute element={<AppraisalSettings />} />} />
         <Route path="/uniprime/appraisal-reports" element={<ProtectedRoute element={<AppraisalReports />} />} />
-        <Route path="/uniprime/appraisal-reports/:id" element={<ProtectedRoute element={<AppraisalReportDetail />} />} />
+        <Route path="/appraisal/details/:id" element={<ProtectedRoute element={<AppraisalReportDetail />} />} />
         <Route path="/research-dean/appraisal-finalization" element={<ProtectedRoute element={<AppraisalResearchScoring />} />} />
         <Route path="/research-coordinator/appraisal-finalization" element={<ProtectedRoute element={<AppraisalResearchScoring />} />} />
 

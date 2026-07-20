@@ -1,5 +1,6 @@
 import Loader from "../../components/common/Loader";
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Box,
   Card,
@@ -172,6 +173,7 @@ const ROLES_BY_CATEGORY = {
 };
 
 const SelfAppraisal = () => {
+  const navigate = useNavigate();
   const [academicYears, setAcademicYears] = useState([]);
   const [selectedYear, setSelectedYear] = useState("");
   const [loading, setLoading] = useState(false);
@@ -1985,9 +1987,13 @@ const SelfAppraisal = () => {
                         <IconButton
                           color="primary"
                           onClick={() => {
-                            setAcademicYears([app.academicYearId]);
-                            setSelectedYear(app.academicYearId._id);
-                            setViewMode("form");
+                            if (app.status === 'Approved') {
+                              navigate(`/appraisal/details/${app._id}`);
+                            } else {
+                              setAcademicYears([app.academicYearId]);
+                              setSelectedYear(app.academicYearId._id);
+                              setViewMode("form");
+                            }
                           }}
                           sx={{ bgcolor: "rgba(59,130,246,0.1)", "&:hover": { bgcolor: "rgba(59,130,246,0.2)" } }}
                         >
@@ -2160,6 +2166,14 @@ const SelfAppraisal = () => {
         onBack={() => setViewMode("list")}
       />
       <Box p={4} sx={{ maxWidth: 1300, margin: "0 auto", animation: "fadeIn 0.5s ease" }}>
+
+        {appraisal.status === 'Rejected' && appraisal.hodComment && (
+          <Alert severity="error" sx={{ mb: 4, borderRadius: "12px", border: "1px solid rgba(239, 68, 68, 0.3)", '& .MuiAlert-message': { width: '100%' } }}>
+            <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>Appraisal Rejected by HOD</Typography>
+            <Typography variant="body2" sx={{ mt: 0.5 }}><strong>Remarks:</strong> {appraisal.hodComment}</Typography>
+            <Typography variant="caption" sx={{ display: 'block', mt: 1 }}>Please fix the mentioned issues and resubmit your appraisal.</Typography>
+          </Alert>
+        )}
 
         {/* Header Panel */}
         <Box

@@ -197,23 +197,19 @@ export const ROLE_ROUTES = {
         },
         // {
         //   text: "Proctoring Verification",
-        //   path: "/hod/proctoring-approvals",
         //   icon: <SupervisorAccount />
         // },
 
         {
           text: "Resource Utilization",
-          path: "/hod/value-addition/resource-utilization",
           icon: <Assignment />
         },
         {
           text: "Contribution",
-          path: "/hod/value-addition/contribution",
           icon: <WorkspacePremium />
         },
         {
           text: "Administration Verification",
-          path: "/hod/administration-approvals",
           icon: <AccountBalance />
         },
         {
@@ -224,7 +220,6 @@ export const ROLE_ROUTES = {
       ]
     },
     { text: "Staff Directory", path: "/hod/staff", icon: <People /> },
-    // { text: "Proctordata", path: "/hod/protecrdataupload", icon: <People /> },
     {
       text: "Utilities",
       icon: <Build />,

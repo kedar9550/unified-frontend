@@ -1,5 +1,6 @@
 import Loader from "../../components/common/Loader";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
+import { useReactToPrint } from "react-to-print";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   Box,
@@ -37,6 +38,7 @@ import { RateReview, CheckCircle, Reply, Visibility, OpenInNew, School, Science,
 import axiosInstance from "../../api/axios";
 import { toast } from "sonner";
 import DataTable from "../../components/data/DataTable";
+import AppraisalPDFReport from "../../components/pdf/AppraisalPDFReport";
 
 const PARAMETERS = [
   { id: 1, text: "Commitment- Unwavering dedication to student growth and institutional progress, consistently completing all work with diligence." },
@@ -216,6 +218,8 @@ const calculateAdministrativePoints = (r, config) => {
 const AppraisalReportDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const user = JSON.parse(localStorage.getItem("user") || "{}");
+  const role = user?.role;
   const [pendingList, setPendingList] = useState([]);
   const [selectedAppraisal, setSelectedAppraisal] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -239,6 +243,40 @@ const AppraisalReportDetail = () => {
   // Filters
   const [statusFilter, setStatusFilter] = useState("Pending");
   const [searchTerm, setSearchTerm] = useState("");
+
+  // Print Ref
+  const printRef = useRef();
+  const handlePrint = useReactToPrint({
+    contentRef: printRef,
+    documentTitle: "Faculty_Appraisal_Report_2025-26",
+    pageStyle: `
+      @media print {
+        body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      }
+    `,
+  });
+
+  // Main Appraisal Actions
+  const [mainAppraisalRemarks, setMainAppraisalRemarks] = useState("");
+
+  const handleMainHODAction = async (action) => {
+    if (action === "Reject" && !mainAppraisalRemarks.trim()) {
+      toast.warning("Please provide remarks for rejection.");
+      return;
+    }
+    try {
+      const res = await axiosInstance.put(`/api/appraisal/hod-evaluate/${id}`, {
+        action,
+        comments: mainAppraisalRemarks
+      });
+      if (res.data?.success) {
+        toast.success(`Appraisal ${action === 'Approve' ? 'approved' : 'rejected'} successfully.`);
+        fetchAppraisalDetails();
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || `Failed to ${action} appraisal.`);
+    }
+  };
 
   // HOD actions on individual sections
   const handleProctoringHODBulkAction = async (action, remarks) => {
@@ -664,22 +702,35 @@ const AppraisalReportDetail = () => {
           </Card>
         </Box>
       ) : (
-        <Grid container spacing={4}>
+        <Box sx={{ width: '100%' }}>
+          
+          <div style={{ display: 'none' }}>
+            <AppraisalPDFReport data={selectedAppraisal} ref={printRef} />
+          </div>
 
-          {/* Left Column: Full Appraisal Preview (xs={12} lg={7.5}) */}
-          <Grid xs={12} lg={7.5}>
-            {/* PART-A: Personal Information */}
-            <Card sx={{ borderRadius: "20px", background: "var(--bg-panel)", border: "1px solid var(--border-color)", mb: 4, boxShadow: "var(--shadow-premium)" }}>
-              <CardContent sx={{ p: 3 }}>
-                <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
-                  <Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)", display: "flex", alignItems: "center", gap: 1.5 }}>
-                    <Person sx={{ color: "#e8a000" }} /> PART-A: Personal Information
-                  </Typography>
-                  <Button size="small" startIcon={<Reply />} onClick={() => navigate(-1)} sx={{ textTransform: "none", fontWeight: 700 }}>
-                    Back to Reports
-                  </Button>
-                </Box>
-                <Divider sx={{ mb: 2.5 }} />
+          <Grid container spacing={4}>
+            {/* Left Column: Full Appraisal Preview (xs={12} lg={7.5}) */}
+            <Grid xs={12} lg={7.5}>
+              {/* PART-A: Personal Information */}
+              <Card sx={{ borderRadius: "20px", background: "var(--bg-panel)", border: "1px solid var(--border-color)", mb: 4, boxShadow: "var(--shadow-premium)" }}>
+                <CardContent sx={{ p: 3 }}>
+                  <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
+                    <Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)", display: "flex", alignItems: "center", gap: 1.5 }}>
+                      <Person sx={{ color: "#e8a000" }} /> PART-A: Personal Information
+                    </Typography>
+                    <Box sx={{ display: "flex", gap: 1 }}>
+                      {selectedAppraisal.status === "Approved" || selectedAppraisal.status === "Completed" || selectedAppraisal.status === "Pending Research Admin" ? (
+                        <Button size="small" variant="contained" onClick={handlePrint} sx={{ textTransform: "none", fontWeight: 700, bgcolor: "#e8a000", color: "#fff", '&:hover': { bgcolor: "#cc8d00" } }}>
+                          Download PDF
+                        </Button>
+                      ) : null}
+                      <Button size="small" startIcon={<Reply />} onClick={() => navigate(-1)} sx={{ textTransform: "none", fontWeight: 700 }}>
+                        Back to Reports
+                      </Button>
+                    </Box>
+                  </Box>
+                  
+                  <Divider sx={{ mb: 2.5 }} />
                 <Grid container spacing={2}>
                   {[
                     { label: "Name with Emp ID", val: `${selectedAppraisal.personalInfoSnapshot?.name || "N/A"} (${selectedAppraisal.personalInfoSnapshot?.institutionId || "N/A"})`, icon: <Badge fontSize="small" />, iconColor: "#3b82f6" },
@@ -1383,7 +1434,6 @@ const AppraisalReportDetail = () => {
                               <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2, width: "80px", whiteSpace: "nowrap" }} align="center">S. No</TableCell>
                               <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }}>Metric Details</TableCell>
                               <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }}>Citations ({citationYear})</TableCell>
-                              <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }}>Verification Status</TableCell>
                               <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }} align="center">Evaluated Points</TableCell>
                             </TableRow>
                           </TableHead>
@@ -1392,21 +1442,11 @@ const AppraisalReportDetail = () => {
                               <TableCell align="center" sx={{ color: "var(--text-primary)" }}>1</TableCell>
                               <TableCell sx={{ fontWeight: 600, color: "var(--text-primary)" }}>Scopus Citations</TableCell>
                               <TableCell sx={{ color: "var(--text-primary)", fontWeight: 700 }}>{selectedAppraisal.research?.scopusCitations != null ? selectedAppraisal.research.scopusCitations : "—"}</TableCell>
-                              <TableCell sx={{ color: "var(--text-primary)" }}>
-                                {selectedAppraisal.research?.scopusCitationStatus ? (
-                                  <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5, alignItems: "flex-start" }}>
-                                    {getStatusChip(selectedAppraisal.research.scopusCitationStatus)}
-                                    {selectedAppraisal.research.scopusCitationStatus === "Rejected" && selectedAppraisal.research.scopusCitationRemarks && (
-                                      <Typography variant="caption" sx={{ color: "#ef4444", fontWeight: 600 }}>Reason: {selectedAppraisal.research.scopusCitationRemarks}</Typography>
-                                    )}
-                                  </Box>
-                                ) : "Pending"}
-                              </TableCell>
                               <TableCell align="center" sx={{ fontWeight: 800, color: "var(--color-primary)" }}>{selectedAppraisal.research?.scopusCitationScore || 0}</TableCell>
                             </TableRow>
 
                             <TableRow sx={{ background: "rgba(0, 78, 146, 0.04)", "&:hover": { bgcolor: "rgba(0, 78, 146, 0.06) !important" } }}>
-                              <TableCell colSpan={4} sx={{ fontWeight: 800, color: "var(--text-primary)", pl: 2 }}>
+                              <TableCell colSpan={3} sx={{ fontWeight: 800, color: "var(--text-primary)", pl: 2 }}>
                                 <Box component="span" sx={{ position: "sticky", left: 16, display: "inline-block", whiteSpace: "nowrap" }}>
                                   Total Evaluated Points
                                 </Box>
@@ -1432,7 +1472,6 @@ const AppraisalReportDetail = () => {
                               <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }}>h-index in {previousHIndexYear}</TableCell>
                               <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }}>h-index in {currentHIndexYear}</TableCell>
                               <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }}>Raise (Diff)</TableCell>
-                              <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }}>Verification Status</TableCell>
                               <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }} align="center">Evaluated Points</TableCell>
                             </TableRow>
                           </TableHead>
@@ -1459,21 +1498,11 @@ const AppraisalReportDetail = () => {
                                   </Box>
                                 ) : "—"}
                               </TableCell>
-                              <TableCell sx={{ color: "var(--text-primary)" }}>
-                                {selectedAppraisal.research?.scopusHIndexStatus ? (
-                                  <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5, alignItems: "flex-start" }}>
-                                    {getStatusChip(selectedAppraisal.research.scopusHIndexStatus)}
-                                    {selectedAppraisal.research.scopusHIndexStatus === "Rejected" && selectedAppraisal.research.scopusHIndexRemarks && (
-                                      <Typography variant="caption" sx={{ color: "#ef4444", fontWeight: 600 }}>Reason: {selectedAppraisal.research.scopusHIndexRemarks}</Typography>
-                                    )}
-                                  </Box>
-                                ) : "Pending"}
-                              </TableCell>
                               <TableCell align="center" sx={{ fontWeight: 800, color: "var(--color-primary)" }}>{selectedAppraisal.research?.scopusHIndexScore || 0}</TableCell>
                             </TableRow>
 
                             <TableRow sx={{ background: "rgba(0, 78, 146, 0.04)", "&:hover": { bgcolor: "rgba(0, 78, 146, 0.06) !important" } }}>
-                              <TableCell colSpan={6} sx={{ fontWeight: 800, color: "var(--text-primary)", pl: 2 }}>
+                              <TableCell colSpan={5} sx={{ fontWeight: 800, color: "var(--text-primary)", pl: 2 }}>
                                 <Box component="span" sx={{ position: "sticky", left: 16, display: "inline-block", whiteSpace: "nowrap" }}>
                                   Total Evaluated Points
                                 </Box>
@@ -2146,6 +2175,7 @@ const AppraisalReportDetail = () => {
             </Card>
           </Grid>
         </Grid>
+        </Box>
       )}
 
       {/* Resource Utilization Detail View Dialog */}
@@ -2475,6 +2505,63 @@ const AppraisalReportDetail = () => {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Main HOD Action Bar */}
+      {role === "HOD" && selectedAppraisal?.status === "Submitted to HOD" && (
+        <Paper
+          elevation={4}
+          sx={{
+            position: "sticky",
+            bottom: 20,
+            zIndex: 1000,
+            mx: { xs: 2, md: 4 },
+            mt: 4,
+            p: 3,
+            borderRadius: "16px",
+            border: "1px solid rgba(59, 130, 246, 0.3)",
+            background: "var(--bg-glass)",
+            backdropFilter: "blur(20px)",
+            display: "flex",
+            flexDirection: "column",
+            gap: 2
+          }}
+        >
+          <Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>
+            Final HOD Verification
+          </Typography>
+          <Typography variant="body2" sx={{ color: "var(--text-secondary)" }}>
+            Ensure you have reviewed all individual sections (Journals, Patents, Duties, etc.) before taking the final action on this appraisal.
+          </Typography>
+          <TextField
+            fullWidth
+            multiline
+            rows={2}
+            placeholder="Enter final remarks (Required for rejection)..."
+            value={mainAppraisalRemarks}
+            onChange={(e) => setMainAppraisalRemarks(e.target.value)}
+          />
+          <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 2, mt: 1 }}>
+            <Button
+              variant="outlined"
+              color="error"
+              size="large"
+              onClick={() => handleMainHODAction("Reject")}
+              sx={{ fontWeight: 700, px: 4 }}
+            >
+              Reject Appraisal
+            </Button>
+            <Button
+              variant="contained"
+              color="success"
+              size="large"
+              onClick={() => handleMainHODAction("Approve")}
+              sx={{ fontWeight: 700, px: 4, color: "#fff" }}
+            >
+              Approve Appraisal
+            </Button>
+          </Box>
+        </Paper>
+      )}
 
     </Box>
   );

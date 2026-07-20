@@ -340,7 +340,7 @@ const AppraisalReports = () => {
                     <TableCell align="center">
                       <Tooltip title="View Details">
                         <IconButton 
-                          onClick={() => navigate(`/uniprime/appraisal-reports/${row._id}`)} 
+                          onClick={() => navigate(`/appraisal/details/${row._id}`)} 
                           color="primary" 
                           size="small" 
                           sx={{ border: "1px solid rgba(79, 70, 229, 0.15)", bgcolor: "rgba(79, 70, 229, 0.05)" }}
