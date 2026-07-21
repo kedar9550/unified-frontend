@@ -89,15 +89,8 @@ export default function ProctoringUpload() {
     const file = e.target.files[0];
     if (!file) return;
 
-    if (!selectedYearId) {
-      toast.warning("Please select an Academic Year first before uploading.");
-      e.target.value = "";
-      return;
-    }
-
     const formData = new FormData();
     formData.append("file", file);
-    formData.append("academicYear", selectedYearId);
 
     setUploading(true);
     try {
@@ -292,7 +285,7 @@ export default function ProctoringUpload() {
         }}>
           <InfoIcon sx={{ color: "var(--color-primary)", fontSize: 20 }} />
           <Typography sx={{ fontSize: 13, color: "var(--text-secondary)", fontWeight: 600 }}>
-            Upload proctoring details. Select the target <strong>Academic Year</strong> before uploading.
+            Upload proctoring details. The academic year will be determined by the data in your file.
           </Typography>
         </Box>
 
