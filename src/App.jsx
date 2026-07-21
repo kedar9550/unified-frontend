@@ -77,6 +77,8 @@ import FeedbackOverview from "./pages/serviceDesk/FeedbackOverview";
 
 //Student Event Admin
 import StudentEventAdmin from "./pages/studenteventsadmin/evencreation";
+import ClubManagement from "./pages/studenteventsadmin/ClubManagement";
+import EventAssignment from "./pages/studenteventsadmin/EventAssignment";
 
 const PublicOnlyRoute = ({ children }) => {
   const { user } = useAuth();
@@ -218,6 +220,8 @@ function App() {
 
         {/* Student Event Admin */}
         <Route path="/student-event-admin" element={<ProtectedRoute element={<StudentEventAdmin />} />} />
+        <Route path="/student-event-admin/clubs" element={<ProtectedRoute element={<ClubManagement />} />} />
+        <Route path="/student-event-admin/event-assignments" element={<ProtectedRoute element={<EventAssignment />} />} />
 
         <Route path="*" element={<ProtectedRoute element={<Box p={4}><Typography variant="h4">Page Content</Typography></Box>} />} />
       </Routes>

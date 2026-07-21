@@ -456,8 +456,7 @@ export const ROLE_ROUTES = {
   "STUDENT EVENT ADMIN": [
     { text: "Dashboard", path: "/dashboard", icon: <Dashboard /> },
     { text: "Student Event Admin", path: "/student-event-admin", icon: <AssignmentInd /> },
-
-
-
+    { text: "Club Management", path: "/student-event-admin/clubs", icon: <Groups /> },
+    { text: "Event Assignment", path: "/student-event-admin/event-assignments", icon: <AssignmentInd /> },
   ],
 };
