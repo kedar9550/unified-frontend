@@ -36,7 +36,9 @@ import {
   RadioGroup,
   FormControlLabel,
   FormLabel,
-  TablePagination
+  TablePagination,
+  Tabs,
+  Tab
 } from "@mui/material";
 import {
   Send,
@@ -66,7 +68,9 @@ import {
   AccountBox,
   EmojiEvents,
   Groups,
-  BarChart
+  BarChart,
+  WorkspacePremium,
+  SupervisorAccount
 } from "@mui/icons-material";
 import axiosInstance from "../../api/axios";
 import { toast } from "sonner";
@@ -181,6 +185,34 @@ const SelfAppraisal = () => {
   const [faculty, setFaculty] = useState(null);
   const [profileComplete, setProfileComplete] = useState(true);
   const [missingFields, setMissingFields] = useState([]);
+  const [activeTab, setActiveTab] = useState(0);
+
+  const horizontalTabStyle = {
+    textTransform: "none",
+    fontWeight: 700,
+    fontSize: { xs: "0.8rem", sm: "0.92rem" },
+    py: { xs: 1, sm: 1.5 },
+    px: { xs: 1.5, sm: 2.5 },
+    minHeight: { xs: "40px", sm: "48px" },
+    color: "var(--text-secondary)",
+    transition: "all 0.2s ease-in-out",
+    "&.Mui-selected": {
+      color: "var(--color-primary) !important",
+      "& .MuiSvgIcon-root": {
+        color: "var(--color-primary) !important"
+      }
+    },
+    "& .MuiSvgIcon-root": {
+      color: "var(--text-secondary)",
+      transition: "color 0.2s ease"
+    },
+    "&:hover": {
+      color: "var(--color-primary)",
+      "& .MuiSvgIcon-root": {
+        color: "var(--color-primary)"
+      }
+    }
+  };
 
   // List View States
   const [viewMode, setViewMode] = useState("list"); // "list" | "form"
@@ -2362,8 +2394,46 @@ const SelfAppraisal = () => {
 
           {/* Left Side: Detail Sheets - NOW SPANNING FULL WIDTH (xs={12}) */}
           <Grid size={{ xs: 12 }}>
-            {/* PART-A: Personal Information */}
-            <Card sx={{ borderRadius: "20px", background: "var(--bg-panel)", border: "1px solid var(--border-color)", mb: 4, boxShadow: "var(--shadow-premium)" }}>
+            <Card
+              sx={{
+                borderRadius: "24px",
+                background: "var(--bg-panel)",
+                border: "1px solid var(--border-color)",
+                boxShadow: "var(--shadow-premium)",
+                overflow: "visible",
+                mb: 4
+              }}
+            >
+              {/* Horizontal Navigation Tabs */}
+              <Box sx={{ borderBottom: "1px solid var(--border-color)", px: { xs: 2, md: 3 } }}>
+                <Tabs
+                  value={activeTab}
+                  onChange={(e, newTab) => setActiveTab(newTab)}
+                  variant="scrollable"
+                  scrollButtons="auto"
+                  allowScrollButtonsMobile
+                  sx={{
+                    "& .MuiTabs-indicator": {
+                      backgroundColor: "var(--color-primary)",
+                      height: "3px",
+                      borderRadius: "3px 3px 0 0"
+                    }
+                  }}
+                >
+                  <Tab label="1. Personal Info" icon={<Person fontSize="small" />} iconPosition="start" sx={horizontalTabStyle} />
+                  <Tab label="2. Teaching & Learning" icon={<School fontSize="small" />} iconPosition="start" sx={horizontalTabStyle} />
+                  <Tab label="3. Research Contributions" icon={<Science fontSize="small" />} iconPosition="start" sx={horizontalTabStyle} />
+                  <Tab label="4. Value Addition" icon={<WorkspacePremium fontSize="small" />} iconPosition="start" sx={horizontalTabStyle} />
+                  <Tab label="5. Administrative Roles" icon={<SupervisorAccount fontSize="small" />} iconPosition="start" sx={horizontalTabStyle} />
+                </Tabs>
+              </Box>
+
+              {/* Tab content panel */}
+              <Box sx={{ p: { xs: 2, md: 3.5 } }}>
+                {activeTab === 0 && (
+                  <Box sx={{ animation: "fadeIn 0.3s ease" }}>
+                    {/* PART-A: Personal Information */}
+                    <Card sx={{ borderRadius: "20px", background: "var(--bg-paper)", border: "1px solid var(--border-color)", mb: 0, boxShadow: "none" }}>
               <CardContent sx={{ p: 3.5 }}>
                 <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
                   <Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)", display: "flex", alignItems: "center", gap: 1.5 }}>
@@ -2509,17 +2579,13 @@ const SelfAppraisal = () => {
                 </Box>
               </CardContent>
             </Card>
+                  </Box>
+                )}
 
-            {/* PART-B: Performance Details */}
-            <Box sx={{ mb: 4, mt: 4, display: "flex", alignItems: "center", gap: 2 }}>
-              <Typography variant="h6" sx={{ fontWeight: 900, color: "var(--text-primary)", display: "flex", alignItems: "center", gap: 1.5, letterSpacing: "-0.02em" }}>
-                <AssignmentTurnedIn sx={{ color: "#e8a000" }} /> PART-B: Performance Details
-              </Typography>
-              <Divider sx={{ borderColor: "var(--border-color)" }} />
-            </Box>
-
-            {/* 1. Teaching & Learning */}
-            <Card sx={{ borderRadius: "20px", background: "var(--bg-panel)", border: "1px solid var(--border-color)", mb: 4, boxShadow: "var(--shadow-premium)" }}>
+                {activeTab === 1 && (
+                  <Box sx={{ animation: "fadeIn 0.3s ease" }}>
+                    {/* 1. Teaching & Learning */}
+                    <Card sx={{ borderRadius: "20px", background: "var(--bg-paper)", border: "1px solid var(--border-color)", mb: 0, boxShadow: "none" }}>
               <CardContent sx={{ p: 3.5 }}>
                 <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3, flexWrap: "wrap", gap: 2 }}>
                   <Box>
@@ -3080,9 +3146,13 @@ const SelfAppraisal = () => {
                 )}
               </CardContent>
             </Card>
+                  </Box>
+                )}
 
-            {/* 2. Research Contributions */}
-            <Card sx={{ borderRadius: "20px", background: "var(--bg-panel)", border: "1px solid var(--border-color)", mb: 4, boxShadow: "var(--shadow-premium)" }}>
+                {activeTab === 2 && (
+                  <Box sx={{ animation: "fadeIn 0.3s ease" }}>
+                    {/* 2. Research Contributions */}
+                    <Card sx={{ borderRadius: "20px", background: "var(--bg-paper)", border: "1px solid var(--border-color)", mb: 0, boxShadow: "none" }}>
               <CardContent sx={{ p: 3.5 }}>
                 <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3, flexWrap: "wrap", gap: 2 }}>
                   <Box>
@@ -3521,9 +3591,13 @@ const SelfAppraisal = () => {
                 </TableContainer>
               </CardContent>
             </Card>
+                  </Box>
+                )}
 
-            {/* 3. Extension / Value Addition */}
-            <Card sx={{ borderRadius: "20px", background: "var(--bg-panel)", border: "1px solid var(--border-color)", mb: 4, boxShadow: "var(--shadow-premium)" }}>
+                {activeTab === 3 && (
+                  <Box sx={{ animation: "fadeIn 0.3s ease" }}>
+                    {/* 3. Extension / Value Addition */}
+                    <Card sx={{ borderRadius: "20px", background: "var(--bg-paper)", border: "1px solid var(--border-color)", mb: 0, boxShadow: "none" }}>
               <CardContent sx={{ p: 3.5 }}>
                 <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3, flexWrap: "wrap", gap: 2 }}>
                   <Box>
@@ -3828,10 +3902,14 @@ const SelfAppraisal = () => {
                 )}
               </CardContent>
             </Card>
+                  </Box>
+                )}
 
-            {/* 4. Administrative Responsibilities */}
-            {!(appraisal.status === "Completed" && (!administrationDetail?.roles || administrationDetail.roles.length === 0)) && (
-              <Card sx={{ borderRadius: "20px", background: "var(--bg-panel)", border: "1px solid var(--border-color)", mb: 4, boxShadow: "var(--shadow-premium)" }}>
+                {activeTab === 4 && (
+                  <Box sx={{ animation: "fadeIn 0.3s ease" }}>
+                    {/* 4. Administrative Responsibilities */}
+                    {!(appraisal.status === "Completed" && (!administrationDetail?.roles || administrationDetail.roles.length === 0)) ? (
+                      <Card sx={{ borderRadius: "20px", background: "var(--bg-paper)", border: "1px solid var(--border-color)", mb: 0, boxShadow: "none" }}>
                 <CardContent sx={{ p: 3.5 }}>
                   <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3, flexWrap: "wrap", gap: 2 }}>
                     <Box>
@@ -3983,8 +4061,20 @@ const SelfAppraisal = () => {
                     </Table>
                   </TableContainer>
                 </CardContent>
-              </Card>
-            )}
+                      </Card>
+                    ) : (
+                      <Card sx={{ borderRadius: "20px", background: "var(--bg-paper)", border: "1px solid var(--border-color)", mb: 0, boxShadow: "none" }}>
+                        <CardContent sx={{ p: 3.5, textAlign: "center" }}>
+                          <Typography variant="body1" color="var(--text-secondary)" sx={{ fontStyle: "italic" }}>
+                            No administrative responsibilities to display.
+                          </Typography>
+                        </CardContent>
+                      </Card>
+                    )}
+                  </Box>
+                )}
+              </Box>
+            </Card>
           </Grid>
 
           {/* Right Side Panel Removed - Scorecard is now rendered at the bottom */}
