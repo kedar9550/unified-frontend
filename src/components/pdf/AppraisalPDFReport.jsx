@@ -179,7 +179,7 @@ const AppraisalPDFReport = forwardRef(({ data }, ref) => {
 
       {/* 1.1 Course Average Pass Percentage */}
       {teaching?.passPercentage?.courses?.length > 0 && (
-        <>
+        <div style={{ pageBreakInside: 'avoid' }}>
           <div style={{ fontSize: '14px', marginTop: '15px', marginBottom: '5px' }}>
             1.1 Course Average Pass Percentage (Theory only) :
           </div>
@@ -215,12 +215,12 @@ const AppraisalPDFReport = forwardRef(({ data }, ref) => {
               ))}
             </tbody>
           </table>
-        </>
+        </div>
       )}
 
       {/* 1.2 Course feedback */}
       {teaching?.courseFeedback?.courses?.length > 0 && (
-        <>
+        <div style={{ pageBreakInside: 'avoid' }}>
           <div style={{ fontSize: '14px', marginTop: '15px', marginBottom: '5px' }}>
             1.2 Course feedback: (Theory only)
           </div>
@@ -254,12 +254,12 @@ const AppraisalPDFReport = forwardRef(({ data }, ref) => {
               ))}
             </tbody>
           </table>
-        </>
+        </div>
       )}
 
       {/* 1.3 Proctoring Students Average pass percentage */}
       {teaching?.proctoring?.entries?.length > 0 && (
-        <>
+        <div style={{ pageBreakInside: 'avoid' }}>
           <div style={{ fontSize: '14px', marginTop: '15px', marginBottom: '5px' }}>
             1.3 Proctoring Students Average pass percentage:
           </div>
@@ -295,12 +295,12 @@ const AppraisalPDFReport = forwardRef(({ data }, ref) => {
               ))}
             </tbody>
           </table>
-        </>
+        </div>
       )}
 
       {/* 1.4 CO attainment */}
       {teaching?.coAttainment?.courses?.length > 0 && (
-        <>
+        <div style={{ pageBreakInside: 'avoid' }}>
           <div style={{ fontSize: '14px', marginTop: '15px', marginBottom: '5px' }}>
             1.4 CO attainment: (Theory only)
           </div>
@@ -334,7 +334,7 @@ const AppraisalPDFReport = forwardRef(({ data }, ref) => {
               ))}
             </tbody>
           </table>
-        </>
+        </div>
       )}
 
       {/* 2. RESEARCH SUMMARY */}
@@ -375,7 +375,7 @@ const AppraisalPDFReport = forwardRef(({ data }, ref) => {
 
       {/* 2.1 Paper publication */}
       {rData?.papers?.items?.length > 0 && (
-        <>
+        <div style={{ pageBreakInside: 'avoid' }}>
           <div style={{ fontSize: '14px', marginTop: '15px', marginBottom: '5px' }}>
             2.1 Paper publication: (only for one Aditya author)
           </div>
@@ -405,12 +405,12 @@ const AppraisalPDFReport = forwardRef(({ data }, ref) => {
               </tr>
             </tbody>
           </table>
-        </>
+        </div>
       )}
 
       {/* 2.2 Guiding Ph.D Scholars */}
       {rData?.phdGuidance?.items?.length > 0 && (
-        <>
+        <div style={{ pageBreakInside: 'avoid' }}>
           <div style={{ fontSize: '14px', marginTop: '15px', marginBottom: '5px' }}>
             2.2 Guiding Ph. D Scholars:
           </div>
@@ -442,12 +442,12 @@ const AppraisalPDFReport = forwardRef(({ data }, ref) => {
               </tr>
             </tbody>
           </table>
-        </>
+        </div>
       )}
 
       {/* 2.3 Books/Chapters */}
       {rData?.booksChapters?.items?.length > 0 && (
-        <>
+        <div style={{ pageBreakInside: 'avoid' }}>
           <div style={{ fontSize: '14px', marginTop: '15px', marginBottom: '5px' }}>
             2.3 Books/Chapters/Scopus Conference proceedings:
           </div>
@@ -477,12 +477,12 @@ const AppraisalPDFReport = forwardRef(({ data }, ref) => {
               </tr>
             </tbody>
           </table>
-        </>
+        </div>
       )}
 
       {/* 2.4 Patents */}
       {rData?.patents?.items?.length > 0 && (
-        <>
+        <div style={{ pageBreakInside: 'avoid' }}>
           <div style={{ fontSize: '14px', marginTop: '15px', marginBottom: '5px' }}>
             2.4 Patents Published/Granted:
           </div>
@@ -512,12 +512,12 @@ const AppraisalPDFReport = forwardRef(({ data }, ref) => {
               </tr>
             </tbody>
           </table>
-        </>
+        </div>
       )}
 
       {/* 2.5 Novel products */}
       {rData?.novelProducts?.items?.length > 0 && (
-        <>
+        <div style={{ pageBreakInside: 'avoid' }}>
           <div style={{ fontSize: '14px', marginTop: '15px', marginBottom: '5px' }}>
             2.5 Novel products/Technology:
           </div>
@@ -545,12 +545,12 @@ const AppraisalPDFReport = forwardRef(({ data }, ref) => {
               </tr>
             </tbody>
           </table>
-        </>
+        </div>
       )}
 
       {/* 2.6 Project/Consultancy Proposals */}
       {rData?.projectsConsultancies?.items?.length > 0 && (
-        <>
+        <div style={{ pageBreakInside: 'avoid' }}>
           <div style={{ fontSize: '14px', marginTop: '15px', marginBottom: '5px' }}>
             2.6 Project/Consultancy Proposals:
           </div>
@@ -580,12 +580,12 @@ const AppraisalPDFReport = forwardRef(({ data }, ref) => {
               </tr>
             </tbody>
           </table>
-        </>
+        </div>
       )}
 
       {/* 3.1 Faculty resource utilization */}
       {vData?.resourceUtilization?.length > 0 && (
-        <>
+        <div style={{ pageBreakInside: 'avoid' }}>
           <div style={{ fontSize: '14px', marginTop: '20px', marginBottom: '5px', fontWeight: 'bold' }}>
             3. Extension/Value addition:
           </div>
@@ -615,12 +615,12 @@ const AppraisalPDFReport = forwardRef(({ data }, ref) => {
               {/* Max capped points are already calculated and can be added if needed separately */}
             </tbody>
           </table>
-        </>
+        </div>
       )}
 
       {/* 3.2 Faculty Expertise */}
       {vData?.contributions?.length > 0 && (
-        <>
+        <div style={{ pageBreakInside: 'avoid' }}>
           <div style={{ fontSize: '14px', marginTop: '15px', marginBottom: '5px' }}>
             3.2 Faculty Expertise/Recognition/Contribution
           </div>
@@ -659,7 +659,7 @@ const AppraisalPDFReport = forwardRef(({ data }, ref) => {
               })}
             </tbody>
           </table>
-        </>
+        </div>
       )}
 
       {/* 3 Total Row */}
@@ -676,7 +676,7 @@ const AppraisalPDFReport = forwardRef(({ data }, ref) => {
 
       {/* 4. ADMINISTRATION */}
       {adminData?.roles?.length > 0 && (
-        <>
+        <div style={{ pageBreakInside: 'avoid' }}>
           <div style={{ fontWeight: 'bold', fontSize: '15px', marginTop: '20px', marginBottom: '5px' }}>
             4. Administrative Responsibilities:
           </div>
@@ -706,12 +706,20 @@ const AppraisalPDFReport = forwardRef(({ data }, ref) => {
               </tr>
             </tbody>
           </table>
-        </>
+        </div>
       )}
+
+      <div style={{ marginTop: '40px', display: 'flex', justifyContent: 'flex-end', pageBreakInside: 'avoid' }}>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ borderTop: '1px solid #000', width: '200px', paddingTop: '5px', fontWeight: 'bold' }}>
+            Signature of Faculty
+          </div>
+        </div>
+      </div>
 
       {/* 5. INTERPERSONAL SKILLS */}
       {data.hodEvaluation?.interpersonalRatings?.length > 0 && (
-        <>
+        <div style={{ pageBreakBefore: 'always' }}>
           <div style={{ fontWeight: 'bold', fontSize: '15px', marginTop: '20px', marginBottom: '5px' }}>
             5. Interpersonal Skills
           </div>
@@ -739,12 +747,115 @@ const AppraisalPDFReport = forwardRef(({ data }, ref) => {
               </tr>
             </tbody>
           </table>
-        </>
+        </div>
       )}
+
+      {/* 6. MINIMUM POINTS SUMMARY TABLE */}
+      {(() => {
+        const facultyCategory = data.facultyCategory || "Non-Doctorate Faculty";
+        const minPointsCategoryKey = facultyCategory === "Doctorate Faculty" ? "doctorates" 
+                                   : facultyCategory === "Leadership Team" ? "leadershipTeam" 
+                                   : "nonDoctorates";
+        const minPoints = data.minimumPoints?.[minPointsCategoryKey] || {};
+        
+        const minTeaching = minPoints.teaching || 0;
+        const minResearch21 = minPoints.research21 || 0;
+        const minResearch22_28 = minPoints.research22_28 || 0;
+        const minValAdd = minPoints.valueAddition || 0;
+        const minAdmin = minPoints.administration || 0;
+        const minTotal1to4 = minTeaching + minResearch21 + minResearch22_28 + minValAdd + minAdmin;
+        const minInterpersonal = minPoints.interpersonalSkills || 0;
+        const minGrandTotal = minTotal1to4 + minInterpersonal;
+
+        const awdTeaching = teachingTotal || 0;
+        const awdResearch21 = r21 || 0;
+        const awdResearch22_28 = (researchTotal || 0) - awdResearch21;
+        const awdValAdd = vData.valueAdditionTotal || 0;
+        const awdAdmin = adminData.adminTotal || 0;
+        const awdTotal1to4 = awdTeaching + awdResearch21 + awdResearch22_28 + awdValAdd + awdAdmin;
+        const awdInterpersonal = data.hodEvaluation?.interpersonalRatings?.reduce((sum, r) => sum + (Number(r.rating) || 0), 0) || 0;
+        const awdGrandTotal = awdTotal1to4 + awdInterpersonal;
+
+        return (
+          <div style={{ pageBreakInside: 'avoid', marginTop: '30px', pageBreakBefore: 'always' }}>
+            <div style={{ fontWeight: 'bold', fontSize: '15px', marginBottom: '10px' }}>
+              6. Minimum Points Summary
+            </div>
+            <table style={styles.table}>
+              <thead>
+                <tr style={{ ...styles.tr, backgroundColor: '#f0f0f0' }}>
+                  <th style={styles.th}>S. No</th>
+                  <th style={{ ...styles.th, textAlign: 'left' }}>Metrics</th>
+                  <th style={styles.th}>Max Score</th>
+                  <th style={styles.th}>Minimum points for {facultyCategory}</th>
+                  <th style={styles.th}>Points Awarded</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr style={styles.tr}>
+                  <td style={styles.td}>1</td>
+                  <td style={styles.tdLeft}>Teaching</td>
+                  <td style={styles.td}>80</td>
+                  <td style={styles.td}>{minTeaching}</td>
+                  <td style={styles.td}>{awdTeaching.toFixed(2)}</td>
+                </tr>
+                <tr style={styles.tr}>
+                  <td style={styles.td} rowSpan={3}>2</td>
+                  <td style={styles.tdLeft} colSpan={4}>Research</td>
+                </tr>
+                <tr style={styles.tr}>
+                  <td style={styles.tdLeft}>2.1 Paper publication</td>
+                  <td style={styles.td} rowSpan={2}>80*</td>
+                  <td style={styles.td}>{minResearch21}</td>
+                  <td style={styles.td}>{awdResearch21.toFixed(2)}</td>
+                </tr>
+                <tr style={styles.tr}>
+                  <td style={styles.tdLeft}>2.2 to 2.8</td>
+                  <td style={styles.td}>{minResearch22_28}</td>
+                  <td style={styles.td}>{awdResearch22_28.toFixed(2)}</td>
+                </tr>
+                <tr style={styles.tr}>
+                  <td style={styles.td}>3</td>
+                  <td style={styles.tdLeft}>Value addition</td>
+                  <td style={styles.td}>20</td>
+                  <td style={styles.td}>{minValAdd}</td>
+                  <td style={styles.td}>{awdValAdd.toFixed(2)}</td>
+                </tr>
+                <tr style={styles.tr}>
+                  <td style={styles.td}>4</td>
+                  <td style={styles.tdLeft}>Administration</td>
+                  <td style={styles.td}>20</td>
+                  <td style={styles.td}>{minAdmin}</td>
+                  <td style={styles.td}>{awdAdmin.toFixed(2)}</td>
+                </tr>
+                <tr style={{ ...styles.tr, fontWeight: 'bold', backgroundColor: '#f9f9f9' }}>
+                  <td style={styles.td} colSpan={2}>Total</td>
+                  <td style={styles.td}>200</td>
+                  <td style={styles.td}>{minTotal1to4}</td>
+                  <td style={styles.td}>{awdTotal1to4.toFixed(2)}</td>
+                </tr>
+                <tr style={styles.tr}>
+                  <td style={styles.td}>5</td>
+                  <td style={styles.tdLeft}>Interpersonal skills</td>
+                  <td style={styles.td}>50</td>
+                  <td style={styles.td}>{minInterpersonal}</td>
+                  <td style={styles.td}>{awdInterpersonal.toFixed(2)}</td>
+                </tr>
+                <tr style={{ ...styles.tr, fontWeight: 'bold', backgroundColor: '#e5e7eb' }}>
+                  <td style={styles.td} colSpan={2}>Grand Total</td>
+                  <td style={styles.td}>250</td>
+                  <td style={styles.td}>{minGrandTotal}</td>
+                  <td style={styles.td}>{awdGrandTotal.toFixed(2)}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        );
+      })()}
 
       {/* EVALUATION & STATUS */}
       {data.status !== "Submitted to HOD" && (
-        <>
+        <div style={{ pageBreakInside: 'avoid' }}>
           <div style={{ fontWeight: 'bold', fontSize: '15px', marginTop: '20px', marginBottom: '5px' }}>
             EVALUATION & STATUS
           </div>
@@ -760,13 +871,7 @@ const AppraisalPDFReport = forwardRef(({ data }, ref) => {
               </tr>
             </tbody>
           </table>
-          
           <div style={{ marginTop: '80px', display: 'flex', justifyContent: 'space-between' }}>
-            <div style={{ textAlign: 'center' }}>
-              <div style={{ borderTop: '1px solid #000', width: '200px', paddingTop: '5px', fontWeight: 'bold' }}>
-                Signature of Faculty
-              </div>
-            </div>
             <div style={{ textAlign: 'center' }}>
               <div style={{ borderTop: '1px solid #000', width: '200px', paddingTop: '5px', fontWeight: 'bold' }}>
                 Signature of HOD
@@ -778,7 +883,7 @@ const AppraisalPDFReport = forwardRef(({ data }, ref) => {
               </div>
             </div>
           </div>
-        </>
+        </div>
       )}
     </div>
   );

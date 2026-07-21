@@ -250,8 +250,16 @@ const AppraisalReportDetail = () => {
     contentRef: printRef,
     documentTitle: "Faculty_Appraisal_Report_2025-26",
     pageStyle: `
+      @page {
+        size: auto;
+        margin: 0mm;
+      }
       @media print {
-        body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        body { 
+          -webkit-print-color-adjust: exact; 
+          print-color-adjust: exact; 
+          margin: 15mm !important; 
+        }
       }
     `,
   });
@@ -611,6 +619,8 @@ const AppraisalReportDetail = () => {
     academicYearId: selectedAppraisal.academicYearId,
     status: selectedAppraisal.status,
     hodEvaluation: selectedAppraisal.hodEvaluation,
+    facultyCategory: getFacultyCategory(selectedAppraisal.personalInfoSnapshot),
+    minimumPoints: appraisalConfig?.minimumPoints,
     teaching: {
       passPercentage: selectedAppraisal.teaching?.passPercentage || {},
       courseFeedback: selectedAppraisal.teaching?.feedback || {},

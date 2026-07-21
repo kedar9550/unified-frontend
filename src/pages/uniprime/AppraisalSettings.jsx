@@ -137,6 +137,7 @@ const AppraisalSettings = () => {
         research: config.research,
         valueAddition: config.valueAddition,
         administration: config.administration,
+        minimumPoints: config.minimumPoints,
         isActive: config.isActive || false
       });
       if (res.data && res.data.success) {
@@ -1418,14 +1419,16 @@ const AppraisalSettings = () => {
                       icon: <Stars fontSize="small" />,
                       items: [
                         { label: "Teaching", value: config.minimumPoints?.[category]?.teaching ?? 0, setter: (val) => setConfig(prev => ({ ...prev, minimumPoints: { ...prev.minimumPoints, [category]: { ...prev.minimumPoints?.[category], teaching: Number(val) } } })) },
-                        { label: "Research", value: config.minimumPoints?.[category]?.research ?? 0, setter: (val) => setConfig(prev => ({ ...prev, minimumPoints: { ...prev.minimumPoints, [category]: { ...prev.minimumPoints?.[category], research: Number(val) } } })) },
+                        { label: "Research (2.1 Paper publication)", value: config.minimumPoints?.[category]?.research21 ?? 0, setter: (val) => setConfig(prev => ({ ...prev, minimumPoints: { ...prev.minimumPoints, [category]: { ...prev.minimumPoints?.[category], research21: Number(val) } } })) },
+                        { label: "Research (2.2 to 2.8)", value: config.minimumPoints?.[category]?.research22_28 ?? 0, setter: (val) => setConfig(prev => ({ ...prev, minimumPoints: { ...prev.minimumPoints, [category]: { ...prev.minimumPoints?.[category], research22_28: Number(val) } } })) },
                         { label: "Value Addition", value: config.minimumPoints?.[category]?.valueAddition ?? 0, setter: (val) => setConfig(prev => ({ ...prev, minimumPoints: { ...prev.minimumPoints, [category]: { ...prev.minimumPoints?.[category], valueAddition: Number(val) } } })) },
                         { label: "Administration", value: config.minimumPoints?.[category]?.administration ?? 0, setter: (val) => setConfig(prev => ({ ...prev, minimumPoints: { ...prev.minimumPoints, [category]: { ...prev.minimumPoints?.[category], administration: Number(val) } } })) },
                         { label: "Interpersonal Skills", value: config.minimumPoints?.[category]?.interpersonalSkills ?? 0, setter: (val) => setConfig(prev => ({ ...prev, minimumPoints: { ...prev.minimumPoints, [category]: { ...prev.minimumPoints?.[category], interpersonalSkills: Number(val) } } })) },
                         { 
                           label: "TOTAL", 
                           value: (config.minimumPoints?.[category]?.teaching || 0) + 
-                                 (config.minimumPoints?.[category]?.research || 0) + 
+                                 (config.minimumPoints?.[category]?.research21 || 0) + 
+                                 (config.minimumPoints?.[category]?.research22_28 || 0) + 
                                  (config.minimumPoints?.[category]?.valueAddition || 0) + 
                                  (config.minimumPoints?.[category]?.administration || 0) + 
                                  (config.minimumPoints?.[category]?.interpersonalSkills || 0), 
