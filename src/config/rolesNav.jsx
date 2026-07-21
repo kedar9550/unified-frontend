@@ -28,7 +28,7 @@ import {
   AccountTree,
   Assessment,
   Settings,
-
+  CloudUpload,
 } from "@mui/icons-material";
 import PersonIcon from '@mui/icons-material/Person';
 import React from "react";
@@ -156,9 +156,10 @@ export const ROLE_ROUTES = {
           text: "Appraisal Reports",
           path: "/uniprime/appraisal-reports",
           icon: <Assessment />
-        }
+        },
       ]
     },
+    { text: "Research Uploads", path: "/uniprime/research-uploads", icon: <CloudUpload /> },
     {
       text: "Discrepancies",
       path: "/uniprime/discrepancies",
