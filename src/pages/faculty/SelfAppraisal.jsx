@@ -2420,11 +2420,11 @@ const SelfAppraisal = () => {
                     }
                   }}
                 >
-                  <Tab label="1. Personal Info" icon={<Person fontSize="small" />} iconPosition="start" sx={horizontalTabStyle} />
-                  <Tab label="2. Teaching & Learning" icon={<School fontSize="small" />} iconPosition="start" sx={horizontalTabStyle} />
-                  <Tab label="3. Research Contributions" icon={<Science fontSize="small" />} iconPosition="start" sx={horizontalTabStyle} />
-                  <Tab label="4. Value Addition" icon={<WorkspacePremium fontSize="small" />} iconPosition="start" sx={horizontalTabStyle} />
-                  <Tab label="5. Administrative Roles" icon={<SupervisorAccount fontSize="small" />} iconPosition="start" sx={horizontalTabStyle} />
+                  <Tab label="Personal Info" icon={<Person fontSize="small" />} iconPosition="start" sx={horizontalTabStyle} />
+                  <Tab label="Teaching & Learning" icon={<School fontSize="small" />} iconPosition="start" sx={horizontalTabStyle} />
+                  <Tab label="Research Contributions" icon={<Science fontSize="small" />} iconPosition="start" sx={horizontalTabStyle} />
+                  <Tab label="Value Addition" icon={<WorkspacePremium fontSize="small" />} iconPosition="start" sx={horizontalTabStyle} />
+                  <Tab label="Administrative Roles" icon={<SupervisorAccount fontSize="small" />} iconPosition="start" sx={horizontalTabStyle} />
                 </Tabs>
               </Box>
 

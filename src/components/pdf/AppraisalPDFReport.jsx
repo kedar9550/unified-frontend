@@ -1,6 +1,6 @@
 import React, { forwardRef } from 'react';
 
-const AppraisalPDFReport = forwardRef(({ data }, ref) => {
+const AppraisalPDFReport = forwardRef(({ data, hideInterpersonal }, ref) => {
   if (!data) return null;
 
   const styles = {
@@ -718,7 +718,7 @@ const AppraisalPDFReport = forwardRef(({ data }, ref) => {
       </div>
 
       {/* 5. INTERPERSONAL SKILLS */}
-      {data.hodEvaluation?.interpersonalRatings?.length > 0 && (
+      {!hideInterpersonal && data.hodEvaluation?.interpersonalRatings?.length > 0 && (
         <div style={{ pageBreakBefore: 'always' }}>
           <div style={{ fontWeight: 'bold', fontSize: '15px', marginTop: '20px', marginBottom: '5px' }}>
             5. Interpersonal Skills
@@ -751,7 +751,7 @@ const AppraisalPDFReport = forwardRef(({ data }, ref) => {
       )}
 
       {/* 6. MINIMUM POINTS SUMMARY TABLE */}
-      {(() => {
+      {!hideInterpersonal && (() => {
         const facultyCategory = data.facultyCategory || "Non-Doctorate Faculty";
         const minPointsCategoryKey = facultyCategory === "Doctorate Faculty" ? "doctorates" 
                                    : facultyCategory === "Leadership Team" ? "leadershipTeam" 
@@ -834,19 +834,23 @@ const AppraisalPDFReport = forwardRef(({ data }, ref) => {
                   <td style={styles.td}>{minTotal1to4}</td>
                   <td style={styles.td}>{awdTotal1to4.toFixed(2)}</td>
                 </tr>
-                <tr style={styles.tr}>
-                  <td style={styles.td}>5</td>
-                  <td style={styles.tdLeft}>Interpersonal skills</td>
-                  <td style={styles.td}>50</td>
-                  <td style={styles.td}>{minInterpersonal}</td>
-                  <td style={styles.td}>{awdInterpersonal.toFixed(2)}</td>
-                </tr>
-                <tr style={{ ...styles.tr, fontWeight: 'bold', backgroundColor: '#e5e7eb' }}>
-                  <td style={styles.td} colSpan={2}>Grand Total</td>
-                  <td style={styles.td}>250</td>
-                  <td style={styles.td}>{minGrandTotal}</td>
-                  <td style={styles.td}>{awdGrandTotal.toFixed(2)}</td>
-                </tr>
+                {!hideInterpersonal && (
+                  <>
+                    <tr style={styles.tr}>
+                      <td style={styles.td}>5</td>
+                      <td style={styles.tdLeft}>Interpersonal skills</td>
+                      <td style={styles.td}>50</td>
+                      <td style={styles.td}>{minInterpersonal}</td>
+                      <td style={styles.td}>{awdInterpersonal.toFixed(2)}</td>
+                    </tr>
+                    <tr style={{ ...styles.tr, fontWeight: 'bold', backgroundColor: '#e5e7eb' }}>
+                      <td style={styles.td} colSpan={2}>Grand Total</td>
+                      <td style={styles.td}>250</td>
+                      <td style={styles.td}>{minGrandTotal}</td>
+                      <td style={styles.td}>{awdGrandTotal.toFixed(2)}</td>
+                    </tr>
+                  </>
+                )}
               </tbody>
             </table>
           </div>
@@ -854,7 +858,7 @@ const AppraisalPDFReport = forwardRef(({ data }, ref) => {
       })()}
 
       {/* EVALUATION & STATUS */}
-      {data.status !== "Submitted to HOD" && (
+      {!hideInterpersonal && data.status !== "Submitted to HOD" && (
         <div style={{ pageBreakInside: 'avoid' }}>
           <div style={{ fontWeight: 'bold', fontSize: '15px', marginTop: '20px', marginBottom: '5px' }}>
             EVALUATION & STATUS

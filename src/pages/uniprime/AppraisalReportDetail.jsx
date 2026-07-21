@@ -760,12 +760,12 @@ const AppraisalReportDetail = () => {
         <Box sx={{ width: '100%' }}>
           
           <div style={{ display: 'none' }}>
-            <AppraisalPDFReport data={calculatedPrintData} ref={printRef} />
+            <AppraisalPDFReport data={calculatedPrintData} ref={printRef} hideInterpersonal={role === "FACULTY"} />
           </div>
 
           <Grid container spacing={4}>
             {/* Left Column: Full Appraisal Preview (xs={12} lg={7.5}) */}
-            <Grid xs={12} lg={7.5}>
+            <Grid xs={12} lg={role === "FACULTY" ? 12 : 7.5}>
               {/* PART-A: Personal Information */}
               <Card sx={{ borderRadius: "20px", background: "var(--bg-panel)", border: "1px solid var(--border-color)", mb: 4, boxShadow: "var(--shadow-premium)" }}>
                 <CardContent sx={{ p: 3 }}>
@@ -2027,9 +2027,10 @@ const AppraisalReportDetail = () => {
           </Grid>
 
           {/* Right Column: Scorecard & II. Interpersonal Skills (xs={12} lg={4.5}) */}
-          <Grid xs={12} lg={4.5}>
-            {/* 5. HOD Interpersonal Skills */}
-            <Card sx={{ borderRadius: "20px", background: "var(--bg-panel)", border: "1px solid var(--border-color)", boxShadow: "var(--shadow-premium)" }}>
+          {role !== "FACULTY" && (
+            <Grid xs={12} lg={4.5}>
+              {/* 5. HOD Interpersonal Skills */}
+              <Card sx={{ borderRadius: "20px", background: "var(--bg-panel)", border: "1px solid var(--border-color)", boxShadow: "var(--shadow-premium)" }}>
               <CardContent sx={{ p: 3 }}>
                 <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3, flexWrap: "wrap", gap: 2 }}>
                   <Box>
@@ -2229,6 +2230,7 @@ const AppraisalReportDetail = () => {
               </CardContent>
             </Card>
           </Grid>
+          )}
         </Grid>
         </Box>
       )}
