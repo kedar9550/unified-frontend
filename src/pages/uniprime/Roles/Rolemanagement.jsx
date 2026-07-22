@@ -254,6 +254,12 @@ const RoleManagement = () => {
             updates.coreDepartment = editableCoreDept;
         }
 
+        if (editingEmployee.isEcapFetched) {
+            updates.name = editingEmployee.name;
+            updates.department = editingEmployee.department;
+            updates.designation = editingEmployee.designation;
+        }
+
         if (Object.keys(updates).length === 0) {
             toast.info("No changes to update");
             setEditingEmployee(null);
@@ -635,7 +641,7 @@ const RoleManagement = () => {
         if (isHodSelected) {
             let conflictMsg = null;
             for (const dept of selectedHodDepts) {
-                const existingHod = allEmployees.find(emp => 
+                const existingHod = allEmployees.find(emp =>
                     emp._id !== selectedUser._id &&
                     emp.roles?.some(r => r.name === 'HOD' && r.departments?.includes(dept._id))
                 );
@@ -1155,10 +1161,50 @@ const RoleManagement = () => {
                                                                             size="small"
                                                                             variant="contained"
                                                                             startIcon={<Edit sx={{ fontSize: 14 }} />}
-                                                                            onClick={() => {
+                                                                            onClick={async () => {
                                                                                 setEditingEmployee(user);
                                                                                 setEditableEmail(user.email || "");
                                                                                 setEditableCoreDept(user.coreDepartment || user.department || "");
+                                                                                
+                                                                                const loadingToast = toast.loading("Fetching latest details from ECAP...");
+                                                                                try {
+                                                                                    const res = await API.post("/api/employees/ecap-data", {
+                                                                                        institutionId: user.institutionId,
+                                                                                        role: "Employee"
+                                                                                    });
+                                                                                    if (res.data && !res.data.error) {
+                                                                                        const ecapName = res.data.employeename || res.data.EmployeeName || user.name;
+                                                                                        const ecapDept = res.data.departmentname || res.data.DepartmentName;
+                                                                                        const ecapDesig = res.data.designation || res.data.Designation || user.designation;
+                                                                                        
+                                                                                        let mappedDeptId = user.department;
+                                                                                        if (ecapDept) {
+                                                                                            const escapedEcapDept = ecapDept.trim().toLowerCase();
+                                                                                            const foundDept = allDepartments.find(d => 
+                                                                                                d.name.toLowerCase() === escapedEcapDept || 
+                                                                                                d.code.toLowerCase() === escapedEcapDept
+                                                                                            );
+                                                                                            if (foundDept) {
+                                                                                                mappedDeptId = foundDept._id;
+                                                                                            }
+                                                                                        }
+                                                                                        
+                                                                                        setEditingEmployee({
+                                                                                            ...user,
+                                                                                            name: ecapName,
+                                                                                            department: mappedDeptId,
+                                                                                            ecapDeptName: ecapDept,
+                                                                                            designation: ecapDesig,
+                                                                                            isEcapFetched: true
+                                                                                        });
+                                                                                        toast.success("Fetched details from ECAP", { id: loadingToast });
+                                                                                    } else {
+                                                                                        toast.error("Employee not found in ECAP", { id: loadingToast });
+                                                                                    }
+                                                                                } catch (e) {
+                                                                                    console.error("Failed to fetch ECAP data", e);
+                                                                                    toast.error("Failed to connect to ECAP", { id: loadingToast });
+                                                                                }
                                                                             }}
                                                                             sx={{
                                                                                 textTransform: 'none',
@@ -1224,7 +1270,7 @@ const RoleManagement = () => {
                                                         <TextField
                                                             fullWidth
                                                             label="Department"
-                                                            value={allDepartments.find(d => d._id === editingEmployee?.department)?.name || editingEmployee?.department || ""}
+                                                            value={allDepartments.find(d => d._id === editingEmployee?.department)?.name || editingEmployee?.ecapDeptName || editingEmployee?.department || ""}
                                                             disabled
                                                             size="small"
                                                             sx={{ "& .MuiInputBase-input.Mui-disabled": { WebkitTextFillColor: "var(--text-secondary)", fontWeight: 600 } }}

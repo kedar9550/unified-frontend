@@ -174,10 +174,19 @@ const AcademicStructure = () => {
                 API.get("/api/academics/branches")
             ]);
 
-            setSchools(schoolRes.data.data || []);
-            setDepartments(deptRes.data.data || []);
-            setPrograms(progRes.data.data || []);
-            setBranches(branchRes.data.data || []);
+            const newSchools = schoolRes.data.data || [];
+            const newDepts = deptRes.data.data || [];
+            const newProgs = progRes.data.data || [];
+            const newBranches = branchRes.data.data || [];
+
+            setSchools(newSchools);
+            setDepartments(newDepts);
+            setPrograms(newProgs);
+            setBranches(newBranches);
+
+            setSelectedSchool(prev => prev ? newSchools.find(s => s._id === prev._id) || prev : null);
+            setSelectedDepartment(prev => prev ? newDepts.find(d => d._id === prev._id) || prev : null);
+            setSelectedProgram(prev => prev ? newProgs.find(p => p._id === prev._id) || prev : null);
         } catch (error) {
             toast.error(error.response?.data?.message || "Failed to load academic data.");
         } finally {
