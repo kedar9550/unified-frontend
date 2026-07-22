@@ -209,10 +209,10 @@ export const ROLE_ROUTES = {
           text: "Contribution",
           icon: <WorkspacePremium />
         },
-        {
-          text: "Administration Verification",
-          icon: <AccountBalance />
-        },
+        // {
+        //   text: "Administration Verification",
+        //   icon: <AccountBalance />
+        // },
         {
           text: "Appraisal Verification",
           path: "/hod/appraisal-verification",
@@ -221,22 +221,6 @@ export const ROLE_ROUTES = {
       ]
     },
     { text: "Staff Directory", path: "/hod/staff", icon: <People /> },
-    {
-      text: "Utilities",
-      icon: <Build />,
-      nested: [
-        { text: "Shorten URL", path: "/utilities/shorten-url", icon: <Link /> },
-        { text: "Generate QR Code", path: "/utilities/generate-qr", icon: <QrCode /> }
-      ]
-    },
-    {
-      text: "Service Desk",
-      icon: <SupportAgent />,
-      nested: [
-        { text: "Raise Ticket", path: "/service-desk/raise" },
-        { text: "My Tickets", path: "/service-desk/my-tickets" },
-      ]
-    }
   ],
 
   // Example for "Exam Section" role
@@ -253,44 +237,12 @@ export const ROLE_ROUTES = {
       ],
     },
     { text: "Discrepancies", path: "/exam-result/discrepancies", icon: <Flag /> },
-    {
-      text: "Utilities",
-      icon: <Build />,
-      nested: [
-        { text: "Shorten URL", path: "/utilities/shorten-url", icon: <Link /> },
-        { text: "Generate QR Code", path: "/utilities/generate-qr", icon: <QrCode /> }
-      ]
-    },
-    {
-      text: "Service Desk",
-      icon: <SupportAgent />,
-      nested: [
-        { text: "Raise Ticket", path: "/service-desk/raise" },
-        { text: "My Tickets", path: "/service-desk/my-tickets" },
-      ]
-    }
   ],
 
   // Example for "Research Feedback Committee"
   "RESEARCH FEEDBACK COMMITTEE": [
     { text: "Dashboard", path: "/dashboard", icon: <Dashboard /> },
     { text: "Feedback Reports", path: "/feedback-reports", icon: <Science /> },
-    {
-      text: "Utilities",
-      icon: <Build />,
-      nested: [
-        { text: "Shorten URL", path: "/utilities/shorten-url", icon: <Link /> },
-        { text: "Generate QR Code", path: "/utilities/generate-qr", icon: <QrCode /> }
-      ]
-    },
-    {
-      text: "Service Desk",
-      icon: <SupportAgent />,
-      nested: [
-        { text: "Raise Ticket", path: "/service-desk/raise" },
-        { text: "My Tickets", path: "/service-desk/my-tickets" },
-      ]
-    }
   ],
 
   // Feedback Coordinator
@@ -298,22 +250,6 @@ export const ROLE_ROUTES = {
     { text: "Dashboard", path: "/dashboard", icon: <Dashboard /> },
     { text: "Feedback Management", path: "/feedback-management", icon: <MenuBook /> },
     { text: "Discrepancies", path: "/feedback-management/discrepancies", icon: <Flag /> },
-    {
-      text: "Utilities",
-      icon: <Build />,
-      nested: [
-        { text: "Shorten URL", path: "/utilities/shorten-url", icon: <Link /> },
-        { text: "Generate QR Code", path: "/utilities/generate-qr", icon: <QrCode /> }
-      ]
-    },
-    {
-      text: "Service Desk",
-      icon: <SupportAgent />,
-      nested: [
-        { text: "Raise Ticket", path: "/service-desk/raise" },
-        { text: "My Tickets", path: "/service-desk/my-tickets" },
-      ]
-    }
   ],
 
   "RESEARCH_DEAN": [
@@ -339,22 +275,6 @@ export const ROLE_ROUTES = {
     },
     { text: "Reference Journals", path: "/research-dean/reference-journals", icon: <LibraryBooks /> },
     { text: "Author Citations", path: "/research-dean/author-citations", icon: <Assignment /> },
-    {
-      text: "Utilities",
-      icon: <Build />,
-      nested: [
-        { text: "Shorten URL", path: "/utilities/shorten-url", icon: <Link /> },
-        { text: "Generate QR Code", path: "/utilities/generate-qr", icon: <QrCode /> }
-      ]
-    },
-    {
-      text: "Service Desk",
-      icon: <SupportAgent />,
-      nested: [
-        { text: "Raise Ticket", path: "/service-desk/raise" },
-        { text: "My Tickets", path: "/service-desk/my-tickets" },
-      ]
-    }
   ],
 
   "RESEARCH_COORDINATOR": [
@@ -380,22 +300,7 @@ export const ROLE_ROUTES = {
     },
     { text: "Reference Journals", path: "/research-coordinator/reference-journals", icon: <LibraryBooks /> },
     { text: "Author Citations", path: "/research-coordinator/author-citations", icon: <Assignment /> },
-    {
-      text: "Utilities",
-      icon: <Build />,
-      nested: [
-        { text: "Shorten URL", path: "/utilities/shorten-url", icon: <Link /> },
-        { text: "Generate QR Code", path: "/utilities/generate-qr", icon: <QrCode /> }
-      ]
-    },
-    {
-      text: "Service Desk",
-      icon: <SupportAgent />,
-      nested: [
-        { text: "Raise Ticket", path: "/service-desk/raise" },
-        { text: "My Tickets", path: "/service-desk/my-tickets" },
-      ]
-    }
+
   ],
 
   STAFF: [

@@ -140,7 +140,7 @@ const Profile = () => {
   const [pwdLoading, setPwdLoading] = React.useState(false);
   const [doj, setDoj] = React.useState(null);
   const [syncing, setSyncing] = React.useState(false);
-  
+
   const pwdFormRef = React.useRef(null);
 
   const handleSyncERP = async () => {
@@ -555,20 +555,20 @@ const Profile = () => {
                 </Typography>
               </Box>
               <Button
- startIcon={isEditing ? <Save /> : <Edit />}
- variant="outlined"
- size="small"
- onClick={() => isEditing ? handleSave() : setIsEditing(true)}
- disabled={loading}
- sx={{
- 
- textTransform: "none",
- fontWeight: 700,
- borderColor: "var(--border-color)",
- color: "var(--color-primary)",
- "&:hover": { borderColor: "var(--color-primary)", background: "rgba(2, 132, 199, 0.05)" }
- }}
- >
+                startIcon={isEditing ? <Save /> : <Edit />}
+                variant="outlined"
+                size="small"
+                onClick={() => isEditing ? handleSave() : setIsEditing(true)}
+                disabled={loading}
+                sx={{
+
+                  textTransform: "none",
+                  fontWeight: 700,
+                  borderColor: "var(--border-color)",
+                  color: "var(--color-primary)",
+                  "&:hover": { borderColor: "var(--color-primary)", background: "rgba(2, 132, 199, 0.05)" }
+                }}
+              >
                 {loading ? "Saving..." : isEditing ? "Save Changes" : "Edit Info"}
               </Button>
             </Box>
@@ -608,7 +608,7 @@ const Profile = () => {
                       >
                         <MenuItem value="">Select College</MenuItem>
                         <MenuItem value="Aditya University">Aditya University</MenuItem>
-                        <MenuItem value="Aditya college of engineering and technology">Aditya college of engineering and technology</MenuItem>
+                        {/* <MenuItem value="Aditya college of engineering and technology">Aditya college of engineering and technology</MenuItem> */}
                         <MenuItem value="Aditya College of Pharmacy">Aditya College of Pharmacy</MenuItem>
                       </Select>
                     ) : (
@@ -855,43 +855,43 @@ const Profile = () => {
           </Box>
           <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 2 }}>
             <Button
- variant="contained"
- disabled={pwdLoading || !pwdForm.oldPassword || !pwdForm.newPassword || pwdForm.newPassword !== pwdForm.confirmPassword}
- onClick={async () => {
- setPwdLoading(true);
- try {
- await API.put("/api/employees/me/change-password", {
- oldPassword: pwdForm.oldPassword,
- newPassword: pwdForm.newPassword
- });
- toast.success("Password updated successfully!");
- setShowPwdForm(false);
- setPwdForm({ oldPassword: "", newPassword: "", confirmPassword: "" });
- } catch (err) {
- toast.error(err.response?.data?.message || "Failed to update password");
- } finally {
- setPwdLoading(false);
- }
- }}
- sx={{
- px: 4, py: 0.8, textTransform: "none",
- fontWeight: 700, fontSize: "0.85rem",
- bgcolor: "var(--color-primary)",
- color: "#fff",
- transition: "all 0.2s ease",
- "&:hover": {
- bgcolor: "var(--color-primary-dark, #0369a1)",
- boxShadow: "0 4px 12px rgba(2, 132, 199, 0.3)",
- transform: "translateY(-1px)"
- },
- "&.Mui-disabled": {
- bgcolor: "var(--bg-accent-1)",
- color: "var(--text-secondary)",
- border: "1px solid var(--border-color)",
- opacity: 0.5
- }
- }}
- >
+              variant="contained"
+              disabled={pwdLoading || !pwdForm.oldPassword || !pwdForm.newPassword || pwdForm.newPassword !== pwdForm.confirmPassword}
+              onClick={async () => {
+                setPwdLoading(true);
+                try {
+                  await API.put("/api/employees/me/change-password", {
+                    oldPassword: pwdForm.oldPassword,
+                    newPassword: pwdForm.newPassword
+                  });
+                  toast.success("Password updated successfully!");
+                  setShowPwdForm(false);
+                  setPwdForm({ oldPassword: "", newPassword: "", confirmPassword: "" });
+                } catch (err) {
+                  toast.error(err.response?.data?.message || "Failed to update password");
+                } finally {
+                  setPwdLoading(false);
+                }
+              }}
+              sx={{
+                px: 4, py: 0.8, textTransform: "none",
+                fontWeight: 700, fontSize: "0.85rem",
+                bgcolor: "var(--color-primary)",
+                color: "#fff",
+                transition: "all 0.2s ease",
+                "&:hover": {
+                  bgcolor: "var(--color-primary-dark, #0369a1)",
+                  boxShadow: "0 4px 12px rgba(2, 132, 199, 0.3)",
+                  transform: "translateY(-1px)"
+                },
+                "&.Mui-disabled": {
+                  bgcolor: "var(--bg-accent-1)",
+                  color: "var(--text-secondary)",
+                  border: "1px solid var(--border-color)",
+                  opacity: 0.5
+                }
+              }}
+            >
               {pwdLoading ? "Updating..." : "Update Password"}
             </Button>
           </Box>

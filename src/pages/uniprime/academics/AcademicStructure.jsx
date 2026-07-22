@@ -167,11 +167,12 @@ const AcademicStructure = () => {
     const fetchData = async () => {
         setLoading(true);
         try {
+            const timestamp = new Date().getTime();
             const [schoolRes, deptRes, progRes, branchRes] = await Promise.all([
-                API.get("/api/academics/schools"),
-                API.get("/api/academics/departments"),
-                API.get("/api/academics/programs"),
-                API.get("/api/academics/branches")
+                API.get(`/api/academics/schools?t=${timestamp}`),
+                API.get(`/api/academics/departments?t=${timestamp}`),
+                API.get(`/api/academics/programs?t=${timestamp}`),
+                API.get(`/api/academics/branches?t=${timestamp}`)
             ]);
 
             const newSchools = schoolRes.data.data || [];
@@ -243,7 +244,10 @@ const AcademicStructure = () => {
                 }
                 toast.success(`${displayName} ${actionText} successfully!`);
                 setModal({ open: false, type: '', mode: 'add', data: {} });
-                fetchData();
+                
+                // Add a small delay to allow DB replication/sync
+                await new Promise(resolve => setTimeout(resolve, 1500));
+                await fetchData();
             }
         } catch (error) {
             const displayName = type === 'branch' ? 'specialization' : type;
@@ -265,7 +269,7 @@ const AcademicStructure = () => {
                     if (res.data.success) {
                         toast.success(`Program unlinked successfully.`);
                         setDeleteConfirm({ open: false, type: '', id: null, name: "" });
-                        fetchData();
+                        await fetchData();
                     }
                 }
                 return;
@@ -276,7 +280,7 @@ const AcademicStructure = () => {
                 const displayName = deleteConfirm.type === 'branch' ? 'Specialization' : deleteConfirm.type.charAt(0).toUpperCase() + deleteConfirm.type.slice(1);
                 toast.success(`${displayName} deleted successfully.`);
                 setDeleteConfirm({ open: false, type: '', id: null, name: "" });
-                fetchData();
+                await fetchData();
             }
         } catch (error) {
             const displayName = deleteConfirm.type === 'branch' ? 'specialization' : deleteConfirm.type;
@@ -684,6 +688,15 @@ const AcademicStructure = () => {
 
         const renderSpecializationsSection = () => {
             if (!selectedProgram) return null;
+            
+            const filtered = branches.filter(b => {
+                const isDeptMatch = (b.departmentId?._id === selectedDepartment._id || b.departmentId === selectedDepartment._id);
+                const isProgMatch = (b.programId?._id === selectedProgram._id || b.programId === selectedProgram._id);
+                const isSchoolMatch = (!selectedSchool || !b.schoolId || (b.schoolId?._id === selectedSchool._id || b.schoolId === selectedSchool._id));
+                
+                return isDeptMatch && isProgMatch && isSchoolMatch;
+            });
+            
             return (
                 <Box sx={{ p: { xs: 1.25, sm: 1.5 }, borderRadius: '10px', background: '#faf5ff', border: '1px solid #f3e8ff', mb: 2, ml: { xs: 0, sm: 7, md: 12 } }}>
                     <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, justifyContent: 'space-between', alignItems: { xs: 'flex-start', sm: 'center' }, gap: 1.5, mb: 1.5 }}>
@@ -710,12 +723,12 @@ const AcademicStructure = () => {
                             </Box>
                         </Box>
                         <Typography variant="body2" sx={{ color: '#6d28d9', fontWeight: 700, fontSize: '0.7rem' }}>
-                            {programBranches.length} Specializations
+                            {filtered.length} Specializations
                         </Typography>
                     </Box>
 
                     <Grid container spacing={2}>
-                        {programBranches.map(spec => (
+                        {filtered.map(spec => (
                             <Grid size={{ xs: 12, sm: 6, md: 3 }} key={spec._id} sx={{ display: 'flex', flexDirection: 'column' }}>
                                 <Card
                                     sx={{
