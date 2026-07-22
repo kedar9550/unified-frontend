@@ -264,9 +264,10 @@ const AcademicStructure = () => {
             if (data.programId) {
                 modalData.programId = data.programId;
             }
-            if (selectedSchool) {
-                modalData.schoolId = selectedSchool._id;
-            }
+        }
+        if (selectedSchool && mode === 'add' && type !== 'school') {
+            modalData.schoolId = selectedSchool._id;
+            modalData.schoolIds = [selectedSchool._id];
         }
         setModal({ open: true, type, mode, data: modalData });
     };
@@ -277,9 +278,7 @@ const AcademicStructure = () => {
         // School departments (if a school is selected)
         const schoolDepts = selectedSchool
             ? departments.filter(d =>
-                (d.schoolIds && d.schoolIds.some(id => (id?._id || id) === selectedSchool._id)) ||
-                d.schoolId?._id === selectedSchool._id ||
-                d.schoolId === selectedSchool._id
+                (d.schoolIds && d.schoolIds.some(id => (id?._id || id) === selectedSchool._id))
             )
             : [];
 
@@ -767,15 +766,14 @@ const AcademicStructure = () => {
                     <Grid container spacing={3} sx={{ mb: 2 }}>
                         {schools.map(school => {
                             const sDepts = departments.filter(d =>
-                                (d.schoolIds && d.schoolIds.some(id => (id?._id || id) === school._id)) ||
-                                d.schoolId?._id === school._id ||
-                                d.schoolId === school._id
+                                (d.schoolIds && d.schoolIds.some(id => (id?._id || id) === school._id))
                             );
                             const sBranches = branches.filter(b =>
                                 b.schoolId?._id === school._id || b.schoolId === school._id ||
                                 (!b.schoolId && sDepts.some(d => d._id === b.departmentId?._id || d._id === b.departmentId))
                             );
-                            const sProgs = programs.filter(p => p.schoolId?._id === school._id || p.schoolId === school._id);
+                            const sProgsIds = new Set(sBranches.map(b => b.programId?._id || b.programId));
+                            const sProgs = programs.filter(p => sProgsIds.has(p._id));
                             const isSelected = selectedSchool?._id === school._id;
 
                             return (
@@ -1133,9 +1131,6 @@ const AcademicStructure = () => {
 
                             <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mb: 2 }}>
                                 <Chip label={prog.code} size="small" sx={{ fontWeight: 800, height: 22, fontSize: '0.7rem', borderRadius: '50px', background: "var(--gradient-primary)", color: '#fff' }} />
-                                {prog.schoolId && (
-                                    <Chip label={`School: ${prog.schoolId.code || prog.schoolId.name}`} size="small" variant="outlined" sx={{ fontWeight: 700, height: 22, fontSize: '0.65rem', borderRadius: '50px', border: '1.5px solid #f59e0b', color: '#f59e0b' }} />
-                                )}
                                 <Chip label={prog.type} size="small" variant="outlined" sx={{ fontWeight: 700, height: 22, fontSize: '0.65rem', borderRadius: '50px', border: '1.5px solid var(--color-primary)', color: 'var(--color-primary)' }} />
                                 <Chip label={`${prog.durationYears || 4} Years`} size="small" variant="outlined" sx={{ fontWeight: 700, height: 22, fontSize: '0.65rem', borderRadius: '50px', border: '1px solid #10b981', color: '#10b981' }} />
                                 <Chip label={prog.programPattern === 'YEAR' ? 'YEAR WISE' : 'SEMESTER WISE'} size="small" variant="outlined" sx={{ fontWeight: 700, height: 22, fontSize: '0.65rem', borderRadius: '50px', border: '1px solid #8b5cf6', color: '#8b5cf6' }} />
@@ -1234,17 +1229,7 @@ const AcademicStructure = () => {
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, mt: 1 }}>
                         {modal.type === 'program' && (
                             <>
-                                <FormControl fullWidth>
-                                    <InputLabel>School</InputLabel>
-                                    <Select
-                                        value={modal.data.schoolId?._id || modal.data.schoolId || ''}
-                                        onChange={(e) => setModal({ ...modal, data: { ...modal.data, schoolId: e.target.value } })}
-                                        label="School"
-                                    >
-                                        <MenuItem value=""><em>None / Central Level</em></MenuItem>
-                                        {schools.map(s => <MenuItem key={s._id} value={s._id}>{s.name} ({s.code})</MenuItem>)}
-                                    </Select>
-                                </FormControl>
+
 
                                 <FormControl fullWidth>
                                     <InputLabel>Type (Level)</InputLabel>
@@ -1304,13 +1289,13 @@ const AcademicStructure = () => {
 
 
 
-                        {modal.type === 'department' && (
+                        {modal.type === 'department' && !selectedSchool && (
                             <>
                                 <FormControl fullWidth>
                                     <InputLabel>Department Type</InputLabel>
                                     <Select
                                         value={modal.data.type || 'Academic'}
-                                        onChange={(e) => setModal({ ...modal, data: { ...modal.data, type: e.target.value, schoolId: e.target.value === 'Central' ? null : modal.data.schoolId } })}
+                                        onChange={(e) => setModal({ ...modal, data: { ...modal.data, type: e.target.value, schoolIds: e.target.value === 'Central' ? [] : modal.data.schoolIds } })}
                                         label="Department Type"
                                     >
                                         <MenuItem value="Academic">Academic (Under a School)</MenuItem>
@@ -1326,7 +1311,7 @@ const AcademicStructure = () => {
                                             value={
                                                 modal.data.schoolIds
                                                     ? modal.data.schoolIds.map(s => typeof s === 'object' ? s._id : s)
-                                                    : (modal.data.schoolId ? [typeof modal.data.schoolId === 'object' ? modal.data.schoolId._id : modal.data.schoolId] : [])
+                                                    : []
                                             }
                                             onChange={(e) => setModal({ ...modal, data: { ...modal.data, schoolIds: e.target.value } })}
                                             label="Schools"
@@ -1350,15 +1335,17 @@ const AcademicStructure = () => {
                             </>
                         )}
 
-                        <TextField
-                            label="Name"
-                            fullWidth
-                            value={modal.data.name || ''}
-                            onChange={(e) => setModal({ ...modal, data: { ...modal.data, name: e.target.value } })}
-                            helperText={modal.type === 'branch' ? (selectedProgram ? "e.g., Structural Engineering" : `e.g., ${selectedDepartment?.name || "Civil Engineering"}`) : ""}
-                        />
+                        {!(modal.type === 'branch' && !modal.data.lockProgram) && (
+                            <TextField
+                                label="Name"
+                                fullWidth
+                                value={modal.data.name || ''}
+                                onChange={(e) => setModal({ ...modal, data: { ...modal.data, name: e.target.value } })}
+                                helperText={modal.type === 'branch' ? (selectedProgram ? "e.g., Structural Engineering" : `e.g., ${selectedDepartment?.name || "Civil Engineering"}`) : ""}
+                            />
+                        )}
 
-                        {(modal.type === 'school' || modal.type === 'department' || modal.type === 'branch' || modal.type === 'program') && (
+                        {(modal.type === 'school' || modal.type === 'department' || modal.type === 'program' || (modal.type === 'branch' && modal.data.lockProgram)) && (
                             <TextField
                                 label="Code"
                                 fullWidth
