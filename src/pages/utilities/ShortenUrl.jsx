@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
     Box, Typography, Button, IconButton, Dialog, DialogTitle, DialogContent,
-    DialogActions, TextField, InputAdornment, Tooltip, ToggleButtonGroup, ToggleButton
+    DialogActions, TextField, InputAdornment, Tooltip, ToggleButtonGroup, ToggleButton, Chip
 } from '@mui/material';
 import { Add, ContentCopy, OpenInNew, Link as LinkIcon, Block, CheckCircle, Delete } from '@mui/icons-material';
 import PageHeader from '../../components/common/PageHeader';
@@ -132,7 +132,7 @@ const ShortenUrl = () => {
                             value: link.shortCode,
                             display: (
                                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                    <Typography variant="body2" color="#0b5299" sx={{ fontWeight: 600 }}>{link.shortCode}</Typography>
+                                    <Typography variant="body2" sx={{ fontWeight: 600, color: 'var(--color-blue)' }}>{link.shortCode}</Typography>
                                 </Box>
                             )
                         },
@@ -140,9 +140,9 @@ const ShortenUrl = () => {
                         {
                             value: link.isActive ? 'Active' : 'Inactive',
                             display: link.isActive ? (
-                                <Typography sx={{ backgroundColor: '#e6f4ea', color: '#1e8e3e', fontSize: '0.75rem', fontWeight: 600, px: 1.5, py: 0.5, borderRadius: '4px', display: 'inline-block' }}>Active</Typography>
+                                <Chip label="Active" color="success" size="small" sx={{ fontWeight: 600 }} />
                             ) : (
-                                <Typography sx={{ backgroundColor: '#fce8e6', color: '#d93025', fontSize: '0.75rem', fontWeight: 600, px: 1.5, py: 0.5, borderRadius: '4px', display: 'inline-block' }}>Inactive</Typography>
+                                <Chip label="Inactive" color="warning" size="small" sx={{ fontWeight: 600 }} />
                             )
                         },
                         {
@@ -184,8 +184,8 @@ const ShortenUrl = () => {
 
             {/* Create Modal */}
             <Dialog open={openModal} onClose={() => setOpenModal(false)} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: 2 } }}>
-                <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1, pb: 1, color: '#0D233B', fontWeight: 'bold' }}>
-                    <LinkIcon sx={{ color: '#0b5299' }} /> Create New Short Link
+                <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1, pb: 1, color: 'var(--text-primary)', fontWeight: 'bold' }}>
+                    <LinkIcon sx={{ color: 'var(--color-blue)' }} /> Create New Short Link
                 </DialogTitle>
                 <DialogContent>
                     <Box sx={{ mt: 1, display: 'flex', flexDirection: 'column', gap: 3 }}>
@@ -250,10 +250,10 @@ const ShortenUrl = () => {
                     </Box>
                 </DialogContent>
                 <DialogActions sx={{ p: 3, pt: 1 }}>
-                    <Button onClick={() => setOpenModal(false)} variant="text" sx={{ color: '#0D233B', fontWeight: 'bold' }}>
+                    <Button onClick={() => setOpenModal(false)} variant="text" sx={{ color: 'var(--text-primary)', fontWeight: 'bold' }}>
                         Cancel
                     </Button>
-                    <Button onClick={handleCreate} variant="contained" sx={{ backgroundColor: '#d06c38', '&:hover': { backgroundColor: '#b35a2e' }, fontWeight: 'bold', px: 4 }}>
+                    <Button onClick={handleCreate} variant="contained" sx={{ background: 'var(--gradient-primary)', fontWeight: 'bold', px: 4, textTransform: 'none' }}>
                         Create
                     </Button>
                 </DialogActions>

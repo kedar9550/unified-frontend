@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
     Box, Typography, Button, IconButton, Dialog, DialogTitle, DialogContent,
-    DialogActions, TextField, Tooltip, MenuItem, Select, FormControl, InputLabel
+    DialogActions, TextField, Tooltip, MenuItem, Select, FormControl, InputLabel, Chip
 } from '@mui/material';
 import { Add, QrCode as QrCodeIcon, Download, Delete, Block, CheckCircle } from '@mui/icons-material';
 import axios from '../../api/axios';
@@ -21,6 +21,7 @@ const GenerateQR = () => {
     const [selectedQr, setSelectedQr] = useState(null); // For downloading
     const [qrColorStyle, setQrColorStyle] = useState('bw');
     const [qrBgColor, setQrBgColor] = useState('white');
+    const [qrLogoStyle, setQrLogoStyle] = useState('default');
     const [color1, setColor1] = useState('#b58635');
     const [color2, setColor2] = useState('#0a1b2a');
     const [openDownloadModal, setOpenDownloadModal] = useState(false);
@@ -128,10 +129,10 @@ const GenerateQR = () => {
                         {
                             value: '',
                             display: (
-                                <Box sx={{ width: 64, height: 64, backgroundColor: '#fff', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none', margin: '0 auto' }}>
+                                <Box sx={{ width: 56, height: 56, p: '4px', backgroundColor: '#ffffff', borderRadius: '8px', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 6px rgba(0,0,0,0.15)', pointerEvents: 'none', margin: '0 auto' }}>
                                     <CustomQRCode 
                                         data={`${window.location.origin}/go/${link.shortCode}`} 
-                                        size={60} 
+                                        size={48} 
                                         colorType="solid"
                                         solidColor="#0b5299"
                                     />
@@ -150,9 +151,9 @@ const GenerateQR = () => {
                         {
                             value: link.isActive ? 'Active' : 'Inactive',
                             display: link.isActive ? (
-                                <Typography sx={{ backgroundColor: '#e6f4ea', color: '#1e8e3e', fontSize: '0.75rem', fontWeight: 600, px: 1.5, py: 0.5, borderRadius: '4px', display: 'inline-block' }}>Active</Typography>
+                                <Chip label="Active" color="success" size="small" sx={{ fontWeight: 600 }} />
                             ) : (
-                                <Typography sx={{ backgroundColor: '#fce8e6', color: '#d93025', fontSize: '0.75rem', fontWeight: 600, px: 1.5, py: 0.5, borderRadius: '4px', display: 'inline-block' }}>Inactive</Typography>
+                                <Chip label="Inactive" color="warning" size="small" sx={{ fontWeight: 600 }} />
                             )
                         },
                         {
@@ -183,8 +184,8 @@ const GenerateQR = () => {
 
             {/* Create Modal */}
             <Dialog open={openModal} onClose={() => setOpenModal(false)} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: 2 } }}>
-                <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1, pb: 1, color: '#0D233B', fontWeight: 'bold' }}>
-                    <QrCodeIcon sx={{ color: '#0b5299' }} /> Create New QR Code
+                <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1, pb: 1, color: 'var(--text-primary)', fontWeight: 'bold' }}>
+                    <QrCodeIcon sx={{ color: 'var(--color-blue)' }} /> Create New QR Code
                 </DialogTitle>
                 <DialogContent>
                     <Box sx={{ mt: 1, display: 'flex', flexDirection: 'column', gap: 3 }}>
@@ -215,110 +216,145 @@ const GenerateQR = () => {
                     </Box>
                 </DialogContent>
                 <DialogActions sx={{ p: 3, pt: 1 }}>
-                    <Button onClick={() => setOpenModal(false)} variant="text" sx={{ color: '#0D233B', fontWeight: 'bold' }}>
+                    <Button onClick={() => setOpenModal(false)} variant="text" sx={{ color: 'var(--text-primary)', fontWeight: 'bold' }}>
                         Cancel
                     </Button>
-                    <Button onClick={handleCreate} variant="contained" sx={{ backgroundColor: '#d06c38', '&:hover': { backgroundColor: '#b35a2e' }, fontWeight: 'bold', px: 4 }}>
+                    <Button onClick={handleCreate} variant="contained" sx={{ background: 'var(--gradient-primary)', fontWeight: 'bold', px: 4, textTransform: 'none' }}>
                         Create
                     </Button>
                 </DialogActions>
             </Dialog>
 
             {/* Download Modal */}
-            <Dialog open={openDownloadModal} onClose={() => setOpenDownloadModal(false)} maxWidth="xs" fullWidth PaperProps={{ sx: { borderRadius: '16px', p: 1 } }}>
-                <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontWeight: 700, color: '#1a202c', pb: 1 }}>
+            <Dialog open={openDownloadModal} onClose={() => setOpenDownloadModal(false)} maxWidth="md" fullWidth PaperProps={{ sx: { borderRadius: '16px', p: 1, maxWidth: { xs: '420px', md: '720px' } } }}>
+                <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontWeight: 700, color: 'var(--text-primary)', pb: 1 }}>
                     Customize QR Code
                     <IconButton onClick={() => setOpenDownloadModal(false)} size="small">
                         <Typography sx={{ fontSize: '1.2rem', lineHeight: 1 }}>&times;</Typography>
                     </IconButton>
                 </DialogTitle>
                 <DialogContent>
-                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-                        <Box sx={{ display: 'flex', justifyContent: 'center', position: 'relative' }}>
-                            <Box sx={{ p: 3, backgroundColor: 'white', borderRadius: '16px', border: '1px solid #e2e8f0', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                    <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 3, alignItems: { xs: 'center', md: 'stretch' } }}>
+                        {/* Left Column: QR Code Preview */}
+                        <Box sx={{ flexShrink: 0, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                            <Box sx={{ p: 2.5, backgroundColor: qrBgColor === 'black' ? '#000000' : (qrBgColor === 'transparent' ? 'transparent' : 'white'), borderRadius: '16px', border: qrBgColor === 'transparent' ? '1px dashed #64748b' : '1px solid #e2e8f0', display: 'flex', justifyContent: 'center', alignItems: 'center', transition: 'all 0.3s' }}>
                                 {selectedQr && (
                                     <CustomQRCode 
                                         ref={qrRef}
                                         data={`${window.location.origin}/go/${selectedQr.shortCode}`} 
-                                        size={280}
+                                        size={260}
                                         colorType={qrColorStyle}
                                         solidColor={color1}
                                         gradientColors={[color1, color2]}
                                         backgroundColor={qrBgColor}
+                                        logoStyle={qrLogoStyle}
                                     />
                                 )}
                             </Box>
                         </Box>
 
-                        <Box>
-                            <Typography variant="body2" color="textSecondary" mb={1}>Color Style</Typography>
-                            <FormControl fullWidth size="small">
-                                <Select
-                                    value={qrColorStyle}
-                                    onChange={(e) => setQrColorStyle(e.target.value)}
-                                    sx={{ borderRadius: '8px' }}
-                                >
-                                    <MenuItem value="bw">Black & White</MenuItem>
-                                    <MenuItem value="solid">Solid Color</MenuItem>
-                                    <MenuItem value="gradient">Gradient (Combination)</MenuItem>
-                                </Select>
-                            </FormControl>
-                        </Box>
+                        {/* Right Column: Customization Controls */}
+                        <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 2, justifyContent: 'center' }}>
+                            <Box>
+                                <Typography variant="body2" color="textSecondary" mb={0.5}>Color Style</Typography>
+                                <FormControl fullWidth size="small">
+                                    <Select
+                                        value={qrColorStyle}
+                                        onChange={(e) => setQrColorStyle(e.target.value)}
+                                        sx={{ borderRadius: '8px' }}
+                                    >
+                                        <MenuItem value="bw">Black & White</MenuItem>
+                                        <MenuItem value="solid">Solid Color</MenuItem>
+                                        <MenuItem value="gradient">Gradient (Combination)</MenuItem>
+                                    </Select>
+                                </FormControl>
+                            </Box>
 
-                        <Box>
-                            <Typography variant="body2" color="textSecondary" mb={1}>Background</Typography>
-                            <FormControl fullWidth size="small">
-                                <Select
-                                    value={qrBgColor}
-                                    onChange={(e) => setQrBgColor(e.target.value)}
-                                    sx={{ borderRadius: '8px' }}
-                                >
-                                    <MenuItem value="white">White</MenuItem>
-                                    <MenuItem value="transparent">Transparent</MenuItem>
-                                </Select>
-                            </FormControl>
-                        </Box>
+                            <Box>
+                                <Typography variant="body2" color="textSecondary" mb={0.5}>Background</Typography>
+                                <FormControl fullWidth size="small">
+                                    <Select
+                                        value={qrBgColor}
+                                        onChange={(e) => setQrBgColor(e.target.value)}
+                                        sx={{ borderRadius: '8px' }}
+                                    >
+                                        <MenuItem value="white">White</MenuItem>
+                                        <MenuItem value="black">Black</MenuItem>
+                                        <MenuItem value="transparent">Transparent</MenuItem>
+                                    </Select>
+                                </FormControl>
+                            </Box>
 
-                        {qrColorStyle !== 'bw' && (
-                            <Box sx={{ display: 'flex', gap: 2 }}>
-                                <Box sx={{ flex: 1 }}>
-                                    <Typography variant="body2" color="textSecondary" mb={1}>
-                                        {qrColorStyle === 'solid' ? 'Color' : 'Color 1'}
-                                    </Typography>
-                                    <TextField 
-                                        type="color" 
-                                        value={color1} 
-                                        onChange={(e) => setColor1(e.target.value)}
-                                        fullWidth
-                                        size="small"
-                                        sx={{ '& input': { p: 0, height: '36px', cursor: 'pointer' } }}
-                                    />
-                                </Box>
-                                {qrColorStyle === 'gradient' && (
+                            <Box>
+                                <Typography variant="body2" color="textSecondary" mb={0.5}>Logo Style</Typography>
+                                <FormControl fullWidth size="small">
+                                    <Select
+                                        value={qrLogoStyle}
+                                        onChange={(e) => setQrLogoStyle(e.target.value)}
+                                        sx={{ borderRadius: '8px' }}
+                                    >
+                                        <MenuItem value="default">Gold</MenuItem>
+                                        <MenuItem value="logo_png">Theme</MenuItem>
+                                        <MenuItem value="circle_white">White</MenuItem>
+                                        <MenuItem value="circle_black">Black</MenuItem>
+                                        <MenuItem value="none">No logo</MenuItem>
+                                    </Select>
+                                </FormControl>
+                            </Box>
+
+                            {qrColorStyle !== 'bw' && (
+                                <Box sx={{ display: 'flex', gap: 2 }}>
                                     <Box sx={{ flex: 1 }}>
-                                        <Typography variant="body2" color="textSecondary" mb={1}>Color 2</Typography>
+                                        <Typography variant="body2" color="textSecondary" mb={0.5}>
+                                            {qrColorStyle === 'solid' ? 'Color' : 'Color 1'}
+                                        </Typography>
                                         <TextField 
                                             type="color" 
-                                            value={color2} 
-                                            onChange={(e) => setColor2(e.target.value)}
+                                            value={color1} 
+                                            onChange={(e) => {
+                                                const newColor = e.target.value;
+                                                setColor1(newColor);
+                                                if (newColor === '#ffffff' && qrBgColor === 'white') {
+                                                    setQrBgColor('black');
+                                                }
+                                            }}
                                             fullWidth
                                             size="small"
                                             sx={{ '& input': { p: 0, height: '36px', cursor: 'pointer' } }}
                                         />
                                     </Box>
-                                )}
-                            </Box>
-                        )}
-                        
-                        <Button 
-                            onClick={handleDownload} 
-                            variant="contained" 
-                            fullWidth
-                            startIcon={<Download />}
-                            sx={{ backgroundColor: '#0D233B', color: 'white', '&:hover': { backgroundColor: '#1a365d' }, py: 1.5, borderRadius: '8px', fontWeight: 600, textTransform: 'none' }}
-                        >
-                            Download QR Code
-                        </Button>
+                                    {qrColorStyle === 'gradient' && (
+                                        <Box sx={{ flex: 1 }}>
+                                            <Typography variant="body2" color="textSecondary" mb={0.5}>Color 2</Typography>
+                                            <TextField 
+                                                type="color" 
+                                                value={color2} 
+                                                onChange={(e) => {
+                                                    const newColor = e.target.value;
+                                                    setColor2(newColor);
+                                                    if (newColor === '#ffffff' && qrBgColor === 'white') {
+                                                        setQrBgColor('black');
+                                                    }
+                                                }}
+                                                fullWidth
+                                                size="small"
+                                                sx={{ '& input': { p: 0, height: '36px', cursor: 'pointer' } }}
+                                            />
+                                        </Box>
+                                    )}
+                                </Box>
+                            )}
+                            
+                            <Button 
+                                onClick={handleDownload} 
+                                variant="contained" 
+                                fullWidth
+                                startIcon={<Download />}
+                                sx={{ background: 'var(--gradient-primary)', color: 'white', py: 1.2, mt: 0.5, borderRadius: '8px', fontWeight: 600, textTransform: 'none' }}
+                            >
+                                Download QR Code
+                            </Button>
+                        </Box>
                     </Box>
                 </DialogContent>
             </Dialog>

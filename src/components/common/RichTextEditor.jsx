@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import Quill from 'quill';
 import 'quill/dist/quill.snow.css';
+import './RichTextEditor.css';
 
 const RichTextEditor = ({ value, onChange, placeholder, style }) => {
     const editorRef = useRef(null);

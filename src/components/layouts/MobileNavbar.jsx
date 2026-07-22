@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
     Box,
     Typography,
@@ -33,11 +33,14 @@ import {
     Assignment,
     Devices,
     AccountBalance,
-    SupervisorAccount
+    SupervisorAccount,
+    Search
 } from "@mui/icons-material";
 import { useAuth } from "../../context/AuthContext";
 import { ROLE_ROUTES } from "../../config/rolesNav";
 import { useNavigate, useLocation } from "react-router-dom";
+
+import HeaderSearch from "../common/HeaderSearch";
 
 // Mapping for sub-item descriptions and icons
 const SUB_ITEM_METADATA = {
@@ -95,8 +98,51 @@ const MobileNavbar = () => {
     const [expandedItem, setExpandedItem] = useState(null);
     const [weather, setWeather] = useState({ temp: "--", icon: null, desc: "Loading...", hourly: [] });
     const [weatherExpanded, setWeatherExpanded] = useState(false);
+    const [searchExpanded, setSearchExpanded] = useState(false);
     const [coords, setCoords] = useState({ lat: 17.089845, lon: 82.067751 }); // Default: Aditya University Coords
     const [windowWidth, setWindowWidth] = useState(window.innerWidth);
+
+    // Draggable FAB state
+    const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+    const isDraggingRef = useRef(false);
+    const startPosRef = useRef({ x: 0, y: 0 });
+    const fabRef = useRef(null);
+
+    const handlePointerDown = (e) => {
+        isDraggingRef.current = false;
+        startPosRef.current = {
+            x: e.clientX - dragOffset.x,
+            y: e.clientY - dragOffset.y
+        };
+        if (fabRef.current) {
+            fabRef.current.setPointerCapture(e.pointerId);
+        }
+    };
+
+    const handlePointerMove = (e) => {
+        if (fabRef.current && fabRef.current.hasPointerCapture(e.pointerId)) {
+            const newX = e.clientX - startPosRef.current.x;
+            const newY = e.clientY - startPosRef.current.y;
+
+            // Mark as dragging if moved more than 5 pixels
+            if (Math.abs(newX - dragOffset.x) > 5 || Math.abs(newY - dragOffset.y) > 5) {
+                isDraggingRef.current = true;
+            }
+            setDragOffset({ x: newX, y: newY });
+        }
+    };
+
+    const handlePointerUp = (e) => {
+        if (fabRef.current && fabRef.current.hasPointerCapture(e.pointerId)) {
+            fabRef.current.releasePointerCapture(e.pointerId);
+        }
+    };
+
+    const handleFabClick = () => {
+        if (!isDraggingRef.current) {
+            setSearchExpanded(true);
+        }
+    };
 
     useEffect(() => {
         const handleResize = () => setWindowWidth(window.innerWidth);
@@ -245,6 +291,66 @@ const MobileNavbar = () => {
                         </Typography>
                     </Box>
                 ))}
+            </Box>
+
+            {/* Floating Search Button & Container */}
+            <Box sx={{
+                position: 'fixed',
+                bottom: weatherExpanded ? 180 : 80, // Push up if weather is expanded, reduced gap from navbar
+                left: '50%',
+                zIndex: 9999, // Ensure it's on top of everything
+                display: { xs: 'flex', md: 'none' },
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: 1.5,
+                transition: 'bottom 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+                transform: 'translateX(-50%)'
+            }}>
+                {/* Full Screen Search Dialog */}
+                <HeaderSearch
+                    activeRole={activeRole}
+                    variant="mobile"
+                    mobileOpen={searchExpanded}
+                    onMobileClose={() => setSearchExpanded(false)}
+                />
+
+                <Box
+                    component="button"
+                    onClick={() => setSearchExpanded(true)}
+                    style={{
+                        display: searchExpanded ? 'none' : 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        background: 'var(--bg-glass)',
+                        backdropFilter: 'blur(20px) saturate(180%)',
+                        height: '32px',
+                        padding: '0 12px',
+                        borderRadius: '16px',
+                        boxShadow: '0 8px 32px rgba(0,0,0,0.15)',
+                        border: '1px solid var(--border-color)',
+                        transition: 'background 0.3s, transform 0.3s',
+                        cursor: 'pointer',
+                        outline: 'none',
+                        userSelect: 'none',
+                        WebkitTapHighlightColor: 'transparent'
+                    }}
+                    onMouseDown={(e) => e.currentTarget.style.transform = 'scale(0.95)'}
+                    onMouseUp={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                    onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                    onTouchStart={(e) => e.currentTarget.style.transform = 'scale(0.95)'}
+                    onTouchEnd={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                >
+                    <Search sx={{ fontSize: 16, mr: 0.5, fill: 'url(#mobile-nav-gradient)' }} />
+                    <Typography sx={{
+                        fontSize: '0.75rem',
+                        fontWeight: 600,
+                        background: 'var(--gradient-primary)',
+                        WebkitBackgroundClip: 'text',
+                        WebkitTextFillColor: 'transparent'
+                    }}>
+                        Search
+                    </Typography>
+                </Box>
             </Box>
 
             <Drawer

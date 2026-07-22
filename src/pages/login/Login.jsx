@@ -155,7 +155,8 @@ export default function Login({ defaultSignUp = false }) {
     institutionId: '',
     email: '',
     password: '',
-    confirmPassword: ''
+    confirmPassword: '',
+    coreDepartment: ''
   });
   const [signupDetails, setSignupDetails] = useState({
     fullname: '',
@@ -170,6 +171,7 @@ export default function Login({ defaultSignUp = false }) {
   const [signupExpiry, setSignupExpiry] = useState('');
   const [isOtpVerified, setIsOtpVerified] = useState(false);
   const [otpDigits, setOtpDigits] = useState(['', '', '', '', '', '']);
+  const [departments, setDepartments] = useState([]);
 
   const resetSignUpState = () => {
     setSignupStep(1);
@@ -178,7 +180,8 @@ export default function Login({ defaultSignUp = false }) {
       institutionId: '',
       email: '',
       password: '',
-      confirmPassword: ''
+      confirmPassword: '',
+      coreDepartment: ''
     });
     setSignupDetails({
       fullname: '',
@@ -190,8 +193,30 @@ export default function Login({ defaultSignUp = false }) {
     setSignupSignature('');
     setSignupExpiry('');
     setOtpDigits(['', '', '', '', '', '']);
+    setDepartments([]);
     setSignupMsg({ text: '', type: '' });
   };
+
+  useEffect(() => {
+    if (isOtpVerified && (signupDetails.department || "").toLowerCase().trim() === "freshman engineering") {
+      API.get("/api/employees/public-departments")
+        .then(res => {
+          if (res.data?.success) {
+            const allDepts = res.data.data || [];
+            const fedDepts = allDepts.filter(dept => 
+              /^(fed-1|fed-2|fed-3|fed-4|fed-5)$/i.test(dept.name.trim()) ||
+              /^(fed-1|fed-2|fed-3|fed-4|fed-5)$/i.test(dept.code.trim())
+            );
+            setDepartments(fedDepts);
+          }
+        })
+        .catch(err => {
+          console.error("Error fetching departments:", err);
+        });
+    }
+  }, [isOtpVerified, signupDetails.department]);
+
+  const showCoreDept = (signupDetails.department || "").toLowerCase().trim() === "freshman engineering";
 
   // ── login state ──
   const [loginData, setLoginData] = useState({ id: '', password: '' });
@@ -213,6 +238,8 @@ export default function Login({ defaultSignUp = false }) {
   const [isClosing, setIsClosing] = useState(false);
   const [isRoleOpen, setIsRoleOpen] = useState(false);
   const roleRef = useRef(null);
+  const [isDeptSelectOpen, setIsDeptSelectOpen] = useState(false);
+  const deptSelectRef = useRef(null);
 
   // ── password visibility states ──
   const [showLogPass, setShowLogPass] = useState(false);
@@ -249,11 +276,14 @@ export default function Login({ defaultSignUp = false }) {
     resetForgotPasswordState();
   };
 
-  // ── handle click outside for custom role select ──
+  // ── handle click outside for custom select dropdowns ──
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (roleRef.current && !roleRef.current.contains(e.target)) {
         setIsRoleOpen(false);
+      }
+      if (deptSelectRef.current && !deptSelectRef.current.contains(e.target)) {
+        setIsDeptSelectOpen(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -379,6 +409,12 @@ export default function Login({ defaultSignUp = false }) {
       setSignupMsg({ text: "Please enter a valid email address", type: "error" });
       return;
     }
+    if ((signupDetails.department || "").toLowerCase().trim() === "freshman engineering") {
+      if (!signupData.coreDepartment) {
+        setSignupMsg({ text: "Core Department is required for Freshman Engineering", type: "error" });
+        return;
+      }
+    }
     if (!signupData.password) {
       setSignupMsg({ text: "Password is required", type: "error" });
       return;
@@ -406,7 +442,8 @@ export default function Login({ defaultSignUp = false }) {
         password: signupData.password,
         otp: signupOtp.trim(),
         signature: signupSignature,
-        expiry: signupExpiry
+        expiry: signupExpiry,
+        coreDepartment: signupData.coreDepartment
       });
       resetSignUpState();
       setIsSignUp(false);
@@ -544,7 +581,7 @@ export default function Login({ defaultSignUp = false }) {
               </button>
             </div>
             <button type="button" className="auth-forgot" onClick={handleForgotClick}>Forgot your password?</button>
-            <div className="btn-wrapper-center" style={{ flexDirection: 'column', gap: '15px' }}>
+            <div className="btn-wrapper-center" style={{ flexDirection: 'column', gap: '15px', alignItems: 'center' }}>
               <button type="submit" className="btn-auth-primary">SIGN IN</button>
               <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
                 Don't have an account? <Link to="/signup" style={{ color: 'var(--color-primary)', fontWeight: '600', textDecoration: 'none' }}>Sign Up</Link>
@@ -556,7 +593,7 @@ export default function Login({ defaultSignUp = false }) {
       </div>
 
       {/* ══ RIGHT PANEL — shows SignUp or Reset Password ══ */}
-      <div className="auth-panel signup-panel">
+      <div className={`auth-panel signup-panel ${isOtpVerified ? 'wide-panel' : ''}`}>
         <div className="auth-form-wrap">
           {isForgot ? (
             /* ══ RESET PASSWORD FORM ══ */
@@ -685,7 +722,7 @@ export default function Login({ defaultSignUp = false }) {
                       <label className="auth-label" htmlFor="signup-id">Institution ID</label>
                     </div>
 
-                    <div className="btn-wrapper-center" style={{ flexDirection: 'column', gap: '15px', marginTop: '15px' }}>
+                    <div className="btn-wrapper-center" style={{ flexDirection: 'column', gap: '15px', marginTop: '15px', alignItems: 'center' }}>
                       <button type="submit" className="btn-auth-primary" disabled={signupLoading}>
                         {signupLoading ? "VERIFYING..." : "VERIFY ID"}
                       </button>
@@ -818,22 +855,55 @@ export default function Login({ defaultSignUp = false }) {
 
                   <form className="auth-form signup-form" onSubmit={handleSignUpSubmit}>
                     <div className="auth-field" data-has-value={true}>
-                      <input id="signup-name" type="text" placeholder=" " value={signupDetails.fullname} disabled />
+                      <input id="signup-name" type="text" placeholder=" " value={signupDetails.fullname} disabled title={signupDetails.fullname} />
                       <label className="auth-label" htmlFor="signup-name">Full Name</label>
                     </div>
                     <div className="auth-field" data-has-value={true}>
-                      <input id="signup-phone" type="text" placeholder=" " value={signupDetails.phone} disabled />
+                      <input id="signup-phone" type="text" placeholder=" " value={signupDetails.phone} disabled title={signupDetails.phone} />
                       <label className="auth-label" htmlFor="signup-phone">Mobile No</label>
                     </div>
                     <div className="auth-field" data-has-value={true}>
-                      <input id="signup-dept" type="text" placeholder=" " value={signupDetails.department} disabled />
+                      <input id="signup-dept" type="text" placeholder=" " value={signupDetails.department} disabled title={signupDetails.department} />
                       <label className="auth-label" htmlFor="signup-dept">Department</label>
                     </div>
+                    {showCoreDept && (
+                      <div 
+                        ref={deptSelectRef}
+                        className={`auth-select-wrap ${isDeptSelectOpen ? 'is-open' : ''}`} 
+                        data-has-value={!!signupData.coreDepartment}
+                      >
+                        <div 
+                          className="custom-select-trigger"
+                          onClick={() => !signupLoading && setIsDeptSelectOpen(!isDeptSelectOpen)}
+                        >
+                          <span>{signupData.coreDepartment || ""}</span>
+                          <span className="custom-select-arrow"></span>
+                        </div>
+                        <label className="auth-label">Core Department</label>
+                        
+                        {isDeptSelectOpen && (
+                          <div className="custom-select-options">
+                            {departments.map((dept) => (
+                              <div
+                                key={dept.code || dept.name}
+                                className={`custom-option ${signupData.coreDepartment === dept.name ? 'is-selected' : ''}`}
+                                onClick={() => {
+                                  setSignupData({ ...signupData, coreDepartment: dept.name });
+                                  setIsDeptSelectOpen(false);
+                                }}
+                              >
+                                {dept.name}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
                     <div className="auth-field" data-has-value={true}>
-                      <input id="signup-desig" type="text" placeholder=" " value={signupDetails.designation} disabled />
+                      <input id="signup-desig" type="text" placeholder=" " value={signupDetails.designation} disabled title={signupDetails.designation} />
                       <label className="auth-label" htmlFor="signup-desig">Designation</label>
                     </div>
-                    <div className="auth-field field-full" data-has-value={!!signupData.email}>
+                    <div className={`auth-field ${showCoreDept ? '' : 'field-full'}`} data-has-value={!!signupData.email}>
                       <input
                         id="signup-email"
                         type="email"
@@ -876,7 +946,7 @@ export default function Login({ defaultSignUp = false }) {
                       </button>
                     </div>
 
-                    <div className="btn-wrapper-center field-full" style={{ flexDirection: 'column', gap: '15px', marginTop: '20px', width: '100%' }}>
+                    <div className="btn-wrapper-center field-full" style={{ flexDirection: 'column', gap: '15px', marginTop: '20px', width: '100%', alignItems: 'center' }}>
                       <button type="submit" className="btn-auth-primary" disabled={signupLoading}>
                         {signupLoading ? "CREATING ACCOUNT..." : "REGISTER"}
                       </button>
