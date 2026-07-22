@@ -767,7 +767,7 @@ const RoleManagement = () => {
                                     <Box>
                                         <Typography variant="h6" fontWeight={800} color="var(--text-primary)">Add Employee</Typography>
                                         <Typography variant="body2" color="textSecondary" fontWeight={500}>
-                                            Create and update data
+                                            Add and update data
                                         </Typography>
                                     </Box>
                                     <Button
@@ -816,7 +816,7 @@ const RoleManagement = () => {
                                             }
                                         }}
                                     >
-                                        Create
+                                        Add
                                     </Button>
                                     <Button
                                         variant="contained"
@@ -850,7 +850,7 @@ const RoleManagement = () => {
                                 <Collapse in={showCreateOptions}>
                                     <Box sx={{ mt: 3, p: 2, borderRadius: '15px', background: 'var(--bg-glass)', border: '1px solid var(--border-color)', backdropFilter: 'blur(5px)' }}>
                                         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                                            <Typography variant="subtitle2" fontWeight={800} color="var(--text-primary)">Create Options</Typography>
+                                            <Typography variant="subtitle2" fontWeight={800} color="var(--text-primary)">Add Options</Typography>
                                             <IconButton onClick={() => setShowCreateOptions(false)} size="small"><Close sx={{ fontSize: 18 }} /></IconButton>
                                         </Box>
                                         <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 2, alignItems: { xs: 'stretch', sm: 'center' }, justifyContent: 'space-between', width: '100%' }}>
@@ -877,7 +877,7 @@ const RoleManagement = () => {
                                                     }}
                                                     sx={{ width: { xs: '100%', sm: 'auto' }, borderRadius: '50px', textTransform: 'none', fontWeight: 700, border: '1.5px solid var(--color-primary)', background: showCreateIndividualSearch ? 'rgba(0, 78, 146, 0.1)' : 'transparent', color: 'var(--color-primary)', transition: '0.3s', py: { xs: 1.2, sm: 0.5 }, '&:hover': { background: 'rgba(0, 78, 146, 0.05)' } }}
                                                 >
-                                                    Create Individual
+                                                    Add Individual
                                                 </Button>
                                             </Box>
 
@@ -967,7 +967,7 @@ const RoleManagement = () => {
                                                             }
                                                         }}
                                                     >
-                                                        Create
+                                                        Add
                                                     </Button>
                                                 </Paper>
                                             </Box>
