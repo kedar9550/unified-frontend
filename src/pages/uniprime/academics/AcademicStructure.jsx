@@ -209,18 +209,30 @@ const AcademicStructure = () => {
             }
 
             let res;
-            const pluralType = type === 'branch' ? 'branches' : `${type}s`;
-            const endpoint = `/api/academics/${pluralType}`;
-
-            if (mode === 'add') {
-                res = await API.post(endpoint, payload);
+            if (type === 'link-program') {
+                const dept = departments.find(d => d._id === payload.departmentId);
+                const currentProgramIds = dept.programIds ? dept.programIds.map(id => id?._id || id) : [];
+                const newProgramIds = [...new Set([...currentProgramIds, payload.programId])];
+                res = await API.put(`/api/academics/departments/${payload.departmentId}`, { programIds: newProgramIds });
             } else {
-                res = await API.put(`${endpoint}/${payload._id}`, payload);
+                const pluralType = type === 'branch' ? 'branches' : `${type}s`;
+                const endpoint = `/api/academics/${pluralType}`;
+
+                if (mode === 'add') {
+                    res = await API.post(endpoint, payload);
+                } else {
+                    res = await API.put(`${endpoint}/${payload._id}`, payload);
+                }
             }
 
-            if (res.data.success) {
-                const displayName = type === 'branch' ? 'Specialization' : type.charAt(0).toUpperCase() + type.slice(1);
-                toast.success(`${displayName} ${mode === 'add' ? 'added' : 'updated'} successfully!`);
+            if (res && res.data && res.data.success) {
+                let displayName = type === 'branch' ? 'Specialization' : type.charAt(0).toUpperCase() + type.slice(1);
+                let actionText = mode === 'add' ? 'added' : 'updated';
+                if (type === 'link-program') {
+                    displayName = 'Program';
+                    actionText = 'linked';
+                }
+                toast.success(`${displayName} ${actionText} successfully!`);
                 setModal({ open: false, type: '', mode: 'add', data: {} });
                 fetchData();
             }
@@ -235,6 +247,20 @@ const AcademicStructure = () => {
     const handleDelete = async () => {
         setSubmitting(true);
         try {
+            if (deleteConfirm.type === 'unlink-program') {
+                const dept = departments.find(d => d._id === deleteConfirm.departmentId);
+                if (dept) {
+                    const currentProgramIds = dept.programIds ? dept.programIds.map(id => id?._id || id) : [];
+                    const newProgramIds = currentProgramIds.filter(id => id !== deleteConfirm.id);
+                    const res = await API.put(`/api/academics/departments/${deleteConfirm.departmentId}`, { programIds: newProgramIds });
+                    if (res.data.success) {
+                        toast.success(`Program unlinked successfully.`);
+                        setDeleteConfirm({ open: false, type: '', id: null, name: "" });
+                        fetchData();
+                    }
+                }
+                return;
+            }
             const pluralType = deleteConfirm.type === 'branch' ? 'branches' : `${deleteConfirm.type}s`;
             const res = await API.delete(`/api/academics/${pluralType}/${deleteConfirm.id}`);
             if (res.data.success) {
@@ -297,7 +323,15 @@ const AcademicStructure = () => {
                 }
             });
 
-            if (selectedDepartment.programId) {
+            if (selectedDepartment.programIds && selectedDepartment.programIds.length > 0) {
+                selectedDepartment.programIds.forEach(pId => {
+                    const prog = programs.find(p => p._id === (pId._id || pId));
+                    if (prog && !programIdsSeen.has(prog._id.toString())) {
+                        programIdsSeen.add(prog._id.toString());
+                        deptPrograms.push(prog);
+                    }
+                });
+            } else if (selectedDepartment.programId) {
                 const prog = programs.find(p => p._id === (selectedDepartment.programId._id || selectedDepartment.programId));
                 if (prog && !programIdsSeen.has(prog._id.toString())) {
                     programIdsSeen.add(prog._id.toString());
@@ -311,7 +345,8 @@ const AcademicStructure = () => {
             ? branches.filter(b =>
                 (b.departmentId?._id === selectedDepartment._id || b.departmentId === selectedDepartment._id) &&
                 (b.programId?._id === selectedProgram._id || b.programId === selectedProgram._id) &&
-                (!selectedSchool || !b.schoolId || (b.schoolId?._id === selectedSchool._id || b.schoolId === selectedSchool._id))
+                (!selectedSchool || !b.schoolId || (b.schoolId?._id === selectedSchool._id || b.schoolId === selectedSchool._id)) &&
+                !(b.name === selectedDepartment.name && b.code === selectedDepartment.code)
             )
             : [];
 
@@ -527,7 +562,7 @@ const AcademicStructure = () => {
                                                 '&:hover': {
                                                     transform: 'translateY(-2px)',
                                                     boxShadow: '0 4px 12px rgba(0, 0, 0, 0.05)',
-                                                    '& .edit-prog-btn': { opacity: 1, visibility: 'visible' }
+                                                    '& .prog-actions-btn': { opacity: 1, visibility: 'visible' }
                                                 }
                                             }}
                                             onClick={() => {
@@ -549,23 +584,34 @@ const AcademicStructure = () => {
                                                         </Typography>
                                                     </Box>
 
-                                                    <IconButton
-                                                        size="small"
-                                                        className="edit-prog-btn"
-                                                        onClick={(e) => { e.stopPropagation(); openModal('program', 'edit', prog); }}
-                                                        sx={{
-                                                            color: 'text.secondary',
-                                                            p: 0.5,
-                                                            opacity: 0,
-                                                            visibility: 'hidden',
-                                                            transition: 'all 0.2s ease',
-                                                            mt: -0.5,
-                                                            mr: -1,
-                                                            '&:hover': { color: 'var(--color-primary)', background: 'rgba(37, 99, 235, 0.08)' }
-                                                        }}
-                                                    >
-                                                        <Edit sx={{ fontSize: 14 }} />
-                                                    </IconButton>
+                                                    <Box className="prog-actions-btn" sx={{ display: 'flex', gap: 0.5, opacity: 0, visibility: 'hidden', transition: 'all 0.2s ease', mt: -0.5, mr: -1 }}>
+                                                        <IconButton
+                                                            size="small"
+                                                            onClick={(e) => { e.stopPropagation(); openModal('program', 'edit', prog); }}
+                                                            sx={{ color: 'text.secondary', p: 0.5, '&:hover': { color: 'var(--color-primary)', background: 'rgba(37, 99, 235, 0.08)' } }}
+                                                        >
+                                                            <Edit sx={{ fontSize: 14 }} />
+                                                        </IconButton>
+                                                        {(() => {
+                                                            const isLinkedDirectly = selectedDepartment.programIds && selectedDepartment.programIds.some(id => (id?._id || id) === prog._id);
+                                                            const hasSpecializations = branches.some(b => 
+                                                                (b.departmentId?._id === selectedDepartment._id || b.departmentId === selectedDepartment._id) &&
+                                                                (b.programId?._id === prog._id || b.programId === prog._id)
+                                                            );
+                                                            if (isLinkedDirectly || !hasSpecializations) {
+                                                                return (
+                                                                    <IconButton
+                                                                        size="small"
+                                                                        onClick={(e) => { e.stopPropagation(); setDeleteConfirm({ open: true, type: 'unlink-program', id: prog._id, name: `${prog.name} from ${selectedDepartment.name}`, departmentId: selectedDepartment._id }); }}
+                                                                        sx={{ color: 'error.main', p: 0.5, '&:hover': { background: 'rgba(239, 68, 68, 0.08)' } }}
+                                                                    >
+                                                                        <Delete sx={{ fontSize: 14 }} />
+                                                                    </IconButton>
+                                                                );
+                                                            }
+                                                            return null;
+                                                        })()}
+                                                    </Box>
                                                 </Box>
 
                                                 <Box sx={{ mt: 'auto', display: 'flex', gap: 1, alignItems: 'center', pt: 1 }}>
@@ -614,7 +660,7 @@ const AcademicStructure = () => {
                                         transform: 'translateY(-2px)'
                                     }
                                 }}
-                                onClick={() => openModal('branch', 'add', { departmentId: selectedDepartment._id })}
+                                onClick={() => openModal('link-program', 'add', { departmentId: selectedDepartment._id })}
                             >
                                 <Box sx={{ textAlign: "center", p: 1.5 }}>
                                     <Add sx={{ fontSize: 20, color: 'var(--color-primary)', mb: 0.25 }} />
@@ -1220,7 +1266,7 @@ const AcademicStructure = () => {
                             ? (modal.data.lockProgram
                                 ? `Add Specialization for ${programs.find(p => p._id === (modal.data.programId?._id || modal.data.programId))?.name || ''}`
                                 : `Add Program for ${selectedDepartment?.name || ''}`)
-                            : `Add ${modal.type?.toUpperCase()}`)
+                            : modal.type === 'link-program' ? `Add Program` : `Add ${modal.type?.toUpperCase()}`)
                         : (modal.type === 'branch'
                             ? `Edit Specialization for ${programs.find(p => p._id === (modal.data.programId?._id || modal.data.programId))?.name || ''}`
                             : `Edit ${modal.type?.toUpperCase()}`)}
@@ -1269,7 +1315,7 @@ const AcademicStructure = () => {
                             </>
                         )}
 
-                        {modal.type === 'branch' && (
+                        {(modal.type === 'branch' || modal.type === 'link-program') && (
                             <FormControl fullWidth>
                                 <InputLabel>Program</InputLabel>
                                 <Select
@@ -1335,7 +1381,7 @@ const AcademicStructure = () => {
                             </>
                         )}
 
-                        {!(modal.type === 'branch' && !modal.data.lockProgram) && (
+                        {!(modal.type === 'branch' && !modal.data.lockProgram) && modal.type !== 'link-program' && (
                             <TextField
                                 label="Name"
                                 fullWidth
@@ -1360,7 +1406,7 @@ const AcademicStructure = () => {
                             />
                         )}
 
-                        {modal.type !== 'branch' && (
+                        {modal.type !== 'branch' && modal.type !== 'link-program' && (
                             <TextField
                                 label="Description"
                                 fullWidth
