@@ -61,15 +61,16 @@ const AssignedToMe = () => {
                             textTransform: 'none',
                             fontWeight: 600,
                             fontSize: '0.95rem',
-                            color: 'text.secondary',
+                            color: 'var(--text-secondary)',
                             minWidth: 120,
                             '&.Mui-selected': {
-                                color: 'primary.main',
+                                color: 'var(--color-primary)',
                             }
                         },
                         '& .MuiTabs-indicator': {
                             borderRadius: '2px 2px 0 0',
-                            height: 3
+                            height: 3,
+                            background: 'var(--gradient-primary)'
                         }
                     }}
                 >

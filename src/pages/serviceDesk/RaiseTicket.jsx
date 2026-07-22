@@ -205,9 +205,14 @@ const RaiseTicket = () => {
                                         px: 4, 
                                         py: 1.5, 
                                         background: "var(--gradient-primary)",
+                                        color: '#fff',
                                         textTransform: "none",
                                         fontWeight: 600,
-                                        borderRadius: '8px'
+                                        borderRadius: '8px',
+                                        boxShadow: 'none',
+                                        '&:hover': {
+                                            boxShadow: 'none'
+                                        }
                                     }}
                                 >
                                     {submitting ? 'Submitting...' : 'Submit Ticket'}
