@@ -32,9 +32,14 @@ const HeaderSearch = ({ activeRole, variant = "desktop", mobileOpen, onMobileClo
   // Auto focus when mobile dialog opens
   useEffect(() => {
     if (variant === 'mobile' && mobileOpen && inputRef.current) {
-      setTimeout(() => {
-        inputRef.current.focus();
-      }, 400); // Wait for Dialog transition to complete to prevent jank
+      // Focus immediately to ensure mobile keyboard opens
+      inputRef.current.focus();
+      
+      // Fallback in case Dialog transition steals focus
+      const timer = setTimeout(() => {
+        if (inputRef.current) inputRef.current.focus();
+      }, 50);
+      return () => clearTimeout(timer);
     }
   }, [mobileOpen, variant]);
 
@@ -129,7 +134,9 @@ const HeaderSearch = ({ activeRole, variant = "desktop", mobileOpen, onMobileClo
           backdropFilter: 'blur(25px) saturate(200%)',
           WebkitBackdropFilter: 'blur(25px) saturate(200%)',
           'body.dark-mode &': {
-            background: 'rgba(0, 0, 0, 0.45)',
+            background: 'var(--bg-main)', // Use solid background for dark mode to prevent weird transparency issues
+            backdropFilter: 'none',
+            WebkitBackdropFilter: 'none',
           }
         }}>
           
@@ -211,6 +218,10 @@ const HeaderSearch = ({ activeRole, variant = "desktop", mobileOpen, onMobileClo
             pb: 'calc(12px + env(safe-area-inset-bottom))',
             borderTop: '1px solid rgba(255, 255, 255, 0.1)', 
             background: 'transparent',
+            'body.dark-mode &': {
+              borderTop: '1px solid var(--border-color)',
+              background: 'var(--bg-panel)',
+            },
             gap: 1
           }}>
             <Box sx={{
@@ -222,11 +233,16 @@ const HeaderSearch = ({ activeRole, variant = "desktop", mobileOpen, onMobileClo
               px: 2,
               py: 1,
               border: '1px solid rgba(255, 255, 255, 0.15)',
-              boxShadow: 'inset 0 2px 10px rgba(0,0,0,0.05)'
+              boxShadow: 'inset 0 2px 10px rgba(0,0,0,0.05)',
+              'body.dark-mode &': {
+                background: 'var(--bg-main)',
+                border: '1px solid var(--border-color)',
+              }
             }}>
               <Search sx={{ color: 'var(--text-secondary)', mr: 1, fontSize: 22 }} />
               <InputBase
                 inputRef={inputRef}
+                autoFocus={true}
                 type="search"
                 autoComplete="off"
                 placeholder="Search"
