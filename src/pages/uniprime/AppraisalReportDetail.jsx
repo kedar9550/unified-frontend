@@ -587,6 +587,7 @@ const AppraisalReportDetail = () => {
         action // 'Approve' or 'Reject'
       });
       if (res.data && res.data.success) {
+        toast.dismiss(); // Clear any existing toasts to prevent overlapping
         toast.success(action === "Approve" ? "Appraisal approved and finalized successfully!" : "Appraisal sent back to faculty for corrections.");
         setSelectedAppraisal(null);
         fetchPending();
@@ -870,7 +871,7 @@ const AppraisalReportDetail = () => {
                     <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 1, color: "var(--color-primary)", display: "block" }}>
                       1.1 Course Average Pass Percentage (Theory only)
                     </Typography>
-                    <TableContainer component={Paper} sx={{ mb: 3, borderRadius: "12px", background: "var(--bg-paper)", border: "1px solid var(--border-color)", overflowX: "auto", maxWidth: { xs: "100%", md: "100%", lg: 1000, xl: 1100 }, mx: "auto" }}>
+                    <TableContainer component={Paper} sx={{ mb: 3, borderRadius: "12px", background: "var(--bg-paper)", border: "1px solid var(--border-color)", overflowX: "auto", width: "100%" }}>
                       <Table size="small" sx={{ minWidth: 650, mx: "auto" }}>
                         <TableHead sx={{ background: "var(--gradient-primary)" }}>
                           <TableRow>
@@ -928,7 +929,7 @@ const AppraisalReportDetail = () => {
                     <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 1, color: "var(--color-primary)", display: "block" }}>
                       1.2 Proctoring Students' Average Pass Percentage
                     </Typography>
-                    <TableContainer component={Paper} sx={{ mb: 2, borderRadius: "12px", background: "var(--bg-paper)", border: "1px solid var(--border-color)", overflowX: "auto", maxWidth: { xs: "100%", md: "100%", lg: 1000, xl: 1100 }, mx: "auto" }}>
+                    <TableContainer component={Paper} sx={{ mb: 2, borderRadius: "12px", background: "var(--bg-paper)", border: "1px solid var(--border-color)", overflowX: "auto", width: "100%" }}>
                       <Table size="small" sx={{ minWidth: 650, mx: "auto" }}>
                         <TableHead sx={{ background: "var(--gradient-primary)" }}>
                           <TableRow>
@@ -1041,7 +1042,7 @@ const AppraisalReportDetail = () => {
                     <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 1, color: "var(--color-primary)", display: "block" }}>
                       1.3 Course Student Feedback Points
                     </Typography>
-                    <TableContainer component={Paper} sx={{ mb: 3, borderRadius: "12px", background: "var(--bg-paper)", border: "1px solid var(--border-color)", overflowX: "auto", maxWidth: { xs: "100%", md: "100%", lg: 1000, xl: 1100 }, mx: "auto" }}>
+                    <TableContainer component={Paper} sx={{ mb: 3, borderRadius: "12px", background: "var(--bg-paper)", border: "1px solid var(--border-color)", overflowX: "auto", width: "100%" }}>
                       <Table size="small" sx={{ minWidth: 650, mx: "auto" }}>
                         <TableHead sx={{ background: "var(--gradient-primary)" }}>
                           <TableRow>
@@ -1096,7 +1097,7 @@ const AppraisalReportDetail = () => {
                     <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 1, color: "var(--color-primary)", display: "block" }}>
                       1.4 Course CO Attainment Points
                     </Typography>
-                    <TableContainer component={Paper} sx={{ borderRadius: "12px", background: "var(--bg-paper)", border: "1px solid var(--border-color)", overflowX: "auto", maxWidth: { xs: "100%", md: "100%", lg: 1000, xl: 1100 }, mx: "auto", mb: 4 }}>
+                    <TableContainer component={Paper} sx={{ borderRadius: "12px", background: "var(--bg-paper)", border: "1px solid var(--border-color)", overflowX: "auto", width: "100%", mb: 4 }}>
                       <Table size="small" sx={{ minWidth: 650, mx: "auto" }}>
                         <TableHead sx={{ background: "var(--gradient-primary)" }}>
                           <TableRow>
@@ -1204,7 +1205,7 @@ const AppraisalReportDetail = () => {
                     <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 1, color: "var(--color-primary)", display: "block" }}>
                       2.1 Journal / Conference Publications
                     </Typography>
-                    <TableContainer component={Paper} sx={{ mb: 3, borderRadius: "12px", background: "var(--bg-paper)", border: "1px solid var(--border-color)", overflowX: "auto", maxWidth: { xs: "100%", md: "100%", lg: 1000, xl: 1100 }, mx: "auto" }}>
+                    <TableContainer component={Paper} sx={{ mb: 3, borderRadius: "12px", background: "var(--bg-paper)", border: "1px solid var(--border-color)", overflowX: "auto", width: "100%" }}>
                       <Table size="small" sx={{ minWidth: 800, mx: "auto" }}>
                         <TableHead sx={{ background: "var(--gradient-primary)" }}>
                           <TableRow>
@@ -1253,7 +1254,7 @@ const AppraisalReportDetail = () => {
                     <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 1, color: "var(--color-primary)", display: "block" }}>
                       2.2 Guiding Ph. D Scholars
                     </Typography>
-                    <TableContainer component={Paper} sx={{ mb: 3, borderRadius: "12px", background: "var(--bg-paper)", border: "1px solid var(--border-color)", overflowX: "auto", maxWidth: { xs: "100%", md: "100%", lg: 1000, xl: 1100 }, mx: "auto" }}>
+                    <TableContainer component={Paper} sx={{ mb: 3, borderRadius: "12px", background: "var(--bg-paper)", border: "1px solid var(--border-color)", overflowX: "auto", width: "100%" }}>
                       <Table size="small" sx={{ minWidth: 800, mx: "auto" }}>
                         <TableHead sx={{ background: "var(--gradient-primary)" }}>
                           <TableRow>
@@ -1298,7 +1299,7 @@ const AppraisalReportDetail = () => {
                     <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 1, color: "var(--color-primary)", display: "block" }}>
                       2.3 Books / Chapters (Max 10 pts)
                     </Typography>
-                    <TableContainer component={Paper} sx={{ mb: 3, borderRadius: "12px", background: "var(--bg-paper)", border: "1px solid var(--border-color)", overflowX: "auto", maxWidth: { xs: "100%", md: "100%", lg: 1000, xl: 1100 }, mx: "auto" }}>
+                    <TableContainer component={Paper} sx={{ mb: 3, borderRadius: "12px", background: "var(--bg-paper)", border: "1px solid var(--border-color)", overflowX: "auto", width: "100%" }}>
                       <Table size="small" sx={{ minWidth: 800, mx: "auto" }}>
                         <TableHead sx={{ background: "var(--gradient-primary)" }}>
                           <TableRow>
@@ -1343,7 +1344,7 @@ const AppraisalReportDetail = () => {
                     <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 1, color: "var(--color-primary)", display: "block" }}>
                       2.4 Patents
                     </Typography>
-                    <TableContainer component={Paper} sx={{ mb: 3, borderRadius: "12px", background: "var(--bg-paper)", border: "1px solid var(--border-color)", overflowX: "auto", maxWidth: { xs: "100%", md: "100%", lg: 1000, xl: 1100 }, mx: "auto" }}>
+                    <TableContainer component={Paper} sx={{ mb: 3, borderRadius: "12px", background: "var(--bg-paper)", border: "1px solid var(--border-color)", overflowX: "auto", width: "100%" }}>
                       <Table size="small" sx={{ minWidth: 800, mx: "auto" }}>
                         <TableHead sx={{ background: "var(--gradient-primary)" }}>
                           <TableRow>
@@ -1384,7 +1385,7 @@ const AppraisalReportDetail = () => {
                     <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 1, color: "var(--color-primary)", display: "block" }}>
                       2.5 Novel Products / Technology
                     </Typography>
-                    <TableContainer component={Paper} sx={{ mb: 3, borderRadius: "12px", background: "var(--bg-paper)", border: "1px solid var(--border-color)", overflowX: "auto", maxWidth: { xs: "100%", md: "100%", lg: 1000, xl: 1100 }, mx: "auto" }}>
+                    <TableContainer component={Paper} sx={{ mb: 3, borderRadius: "12px", background: "var(--bg-paper)", border: "1px solid var(--border-color)", overflowX: "auto", width: "100%" }}>
                       <Table size="small" sx={{ minWidth: 700, mx: "auto" }}>
                         <TableHead sx={{ background: "var(--gradient-primary)" }}>
                           <TableRow>
@@ -1423,7 +1424,7 @@ const AppraisalReportDetail = () => {
                     <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 1, color: "var(--color-primary)", display: "block" }}>
                       2.6 Funded Projects & Consultancies
                     </Typography>
-                    <TableContainer component={Paper} sx={{ mb: 3, borderRadius: "12px", background: "var(--bg-paper)", border: "1px solid var(--border-color)", overflowX: "auto", maxWidth: { xs: "100%", md: "100%", lg: 1000, xl: 1100 }, mx: "auto" }}>
+                    <TableContainer component={Paper} sx={{ mb: 3, borderRadius: "12px", background: "var(--bg-paper)", border: "1px solid var(--border-color)", overflowX: "auto", width: "100%" }}>
                       <Table size="small" sx={{ minWidth: 800, mx: "auto" }}>
                         <TableHead sx={{ background: "var(--gradient-primary)" }}>
                           <TableRow>
@@ -1482,7 +1483,7 @@ const AppraisalReportDetail = () => {
                         <Description fontSize="small" /> 2.7 Scopus Citations
                       </Typography>
 
-                      <TableContainer component={Paper} elevation={0} sx={{ mb: 4, borderRadius: "16px", background: "var(--bg-paper)", border: "1px solid var(--border-color)", overflowX: "auto", boxShadow: "none", maxWidth: { xs: "100%", md: "100%", lg: 1000, xl: 1100 }, mx: "auto" }}>
+                      <TableContainer component={Paper} elevation={0} sx={{ mb: 4, borderRadius: "16px", background: "var(--bg-paper)", border: "1px solid var(--border-color)", overflowX: "auto", boxShadow: "none", width: "100%" }}>
                         <Table size="small" sx={{ minWidth: 800, mx: "auto" }}>
                           <TableHead sx={{ background: "var(--gradient-primary)" }}>
                             <TableRow>
@@ -1518,7 +1519,7 @@ const AppraisalReportDetail = () => {
                         <Description fontSize="small" /> 2.8 Scopus h-index
                       </Typography>
 
-                      <TableContainer component={Paper} elevation={0} sx={{ mb: 4, borderRadius: "16px", background: "var(--bg-paper)", border: "1px solid var(--border-color)", overflowX: "auto", boxShadow: "none", maxWidth: { xs: "100%", md: "100%", lg: 1000, xl: 1100 }, mx: "auto" }}>
+                      <TableContainer component={Paper} elevation={0} sx={{ mb: 4, borderRadius: "16px", background: "var(--bg-paper)", border: "1px solid var(--border-color)", overflowX: "auto", boxShadow: "none", width: "100%" }}>
                         <Table size="small" sx={{ minWidth: 800, mx: "auto" }}>
                           <TableHead sx={{ background: "var(--gradient-primary)" }}>
                             <TableRow>
@@ -1636,7 +1637,7 @@ const AppraisalReportDetail = () => {
                     <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 1, color: "var(--color-primary)", display: "block" }}>
                       3.1 Resource Utilization (Max 10 points)
                     </Typography>
-                    <TableContainer component={Paper} sx={{ mb: 4, borderRadius: "12px", background: "var(--bg-paper)", border: "1px solid var(--border-color)", overflowX: "auto", maxWidth: { xs: "100%", md: "100%", lg: 1000, xl: 1100 }, mx: "auto" }}>
+                    <TableContainer component={Paper} sx={{ mb: 4, borderRadius: "12px", background: "var(--bg-paper)", border: "1px solid var(--border-color)", overflowX: "auto", width: "100%" }}>
                       <Table size="small" sx={{ minWidth: 800, mx: "auto" }}>
                         <TableHead sx={{ background: "var(--gradient-primary)" }}>
                           <TableRow>
@@ -1771,7 +1772,7 @@ const AppraisalReportDetail = () => {
                     <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 1, color: "var(--color-primary)", display: "block" }}>
                       3.2 Expertise / Contribution (Max 10 points)
                     </Typography>
-                    <TableContainer component={Paper} sx={{ mb: 2, borderRadius: "12px", background: "var(--bg-paper)", border: "1px solid var(--border-color)", overflowX: "auto", maxWidth: { xs: "100%", md: "100%", lg: 1000, xl: 1100 }, mx: "auto" }}>
+                    <TableContainer component={Paper} sx={{ mb: 2, borderRadius: "12px", background: "var(--bg-paper)", border: "1px solid var(--border-color)", overflowX: "auto", width: "100%" }}>
                       <Table size="small" sx={{ minWidth: 800, mx: "auto" }}>
                         <TableHead sx={{ background: "var(--gradient-primary)" }}>
                           <TableRow>
@@ -1937,7 +1938,7 @@ const AppraisalReportDetail = () => {
                 </Box>
                 <Divider sx={{ mb: 2.5 }} />
 
-                <TableContainer component={Paper} sx={{ borderRadius: "12px", background: "var(--bg-paper)", border: "1px solid var(--border-color)", overflowX: "auto", maxWidth: { xs: "100%", md: "100%", lg: 1000, xl: 1100 }, mx: "auto", mb: 4 }}>
+                <TableContainer component={Paper} sx={{ borderRadius: "12px", background: "var(--bg-paper)", border: "1px solid var(--border-color)", overflowX: "auto", width: "100%", mb: 4 }}>
                   <Table size="small" sx={{ minWidth: 800, mx: "auto" }}>
                     <TableHead sx={{ background: "var(--gradient-primary)" }}>
                       <TableRow>

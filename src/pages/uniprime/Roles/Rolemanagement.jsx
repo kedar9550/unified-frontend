@@ -1317,7 +1317,9 @@ const RoleManagement = () => {
                                                             }}
                                                         >
                                                             <MenuItem value="" disabled>Select Department</MenuItem>
-                                                            {allDepartments.map(d => (
+                                                            {allDepartments
+                                                                .filter(d => d.type !== 'Central' && d.name.toLowerCase() !== 'freshman engineering')
+                                                                .map(d => (
                                                                 <MenuItem key={d._id} value={d._id}>{d.name}</MenuItem>
                                                             ))}
                                                         </TextField>
