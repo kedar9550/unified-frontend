@@ -360,8 +360,42 @@ export const ROLE_ROUTES = {
 
   "STUDENT EVENT ADMIN": [
     { text: "Dashboard", path: "/dashboard", icon: <Dashboard /> },
-    { text: "Student Event Admin", path: "/student-event-admin", icon: <AssignmentInd /> },
+    // { text: "Student Event Admin", path: "/student-event-admin", icon: <AssignmentInd /> },
     { text: "Club Management", path: "/student-event-admin/clubs", icon: <Groups /> },
     { text: "Event Assignment", path: "/student-event-admin/event-assignments", icon: <AssignmentInd /> },
+    {
+      text: "Service Desk",
+      icon: <SupportAgent />,
+      nested: [
+        { text: "Raise Ticket", path: "/service-desk/raise" },
+        { text: "My Tickets", path: "/service-desk/my-tickets" },
+      ]
+    }
+  ],
+
+  CONVENER: [
+    { text: "Dashboard", path: "/dashboard", icon: <Dashboard /> },
+    { text: "Fest", path: "/convener/fests", icon: <Groups /> },
+    {
+      text: "Service Desk",
+      icon: <SupportAgent />,
+      nested: [
+        { text: "Raise Ticket", path: "/service-desk/raise" },
+        { text: "My Tickets", path: "/service-desk/my-tickets" },
+      ]
+    }
+  ],
+
+  "MAJOR EVENT ADMIN": [
+    { text: "Dashboard", path: "/dashboard", icon: <Dashboard /> },
+    { text: "Fest Groups", path: "/major-event-admin/groups", icon: <Groups /> },
+    {
+      text: "Service Desk",
+      icon: <SupportAgent />,
+      nested: [
+        { text: "Raise Ticket", path: "/service-desk/raise" },
+        { text: "My Tickets", path: "/service-desk/my-tickets" },
+      ]
+    }
   ],
 };

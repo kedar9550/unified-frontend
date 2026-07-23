@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   Box,
   Card,
@@ -20,20 +20,24 @@ import {
   CircularProgress,
 } from '@mui/material';
 import {
+  AccountBalance as OtherEventIcon,
+  ArrowDownward as ArrowDownwardIcon,
+  ChevronRight as ChevronRightIcon,
   Delete as DeleteIcon,
   Add as AddIcon,
+  Celebration as FestIcon,
   Edit as EditIcon,
+  Groups as ClubIcon,
 } from '@mui/icons-material';
 import PageHeader from '../../components/common/PageHeader';
-import DataTable from '../../components/data/DataTable';
 import API from '../../api/axios';
 import { toast } from 'sonner';
 
 const EventAssignment = () => {
   const [view, setView] = useState('list');
+  const [selectedType, setSelectedType] = useState('Fest');
   const [editingAssignment, setEditingAssignment] = useState(null);
   const [assignments, setAssignments] = useState([]);
-  const [loading, setLoading] = useState(false);
 
   // Form State
   const [assignmentType, setAssignmentType] = useState('Fest');
@@ -54,16 +58,131 @@ const EventAssignment = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [assignmentToDelete, setAssignmentToDelete] = useState(null);
 
+  const assignmentTypes = [
+    {
+      value: 'Fest',
+      label: 'Fest',
+      description: 'Assign conveners to university fests.',
+      role: 'CONVENER',
+      icon: <FestIcon />,
+      color: '#0f766e',
+      background: 'rgba(20, 184, 166, 0.12)',
+    },
+    {
+      value: 'Club',
+      label: 'Club',
+      description: 'Assign coordinators to student clubs.',
+      role: 'CLUB COORDINATOR',
+      icon: <ClubIcon />,
+      color: '#2563eb',
+      background: 'rgba(59, 130, 246, 0.12)',
+    },
+    {
+      value: 'Other Event',
+      label: 'Other Events',
+      description: 'Assign coordinators to other events.',
+      role: 'EVENT COORDINATOR',
+      icon: <OtherEventIcon />,
+      color: '#c2410c',
+      background: 'rgba(249, 115, 22, 0.12)',
+    },
+  ];
+
+  const selectedTypeMeta = assignmentTypes.find((type) => type.value === selectedType) || assignmentTypes[0];
+  const formTypeMeta = assignmentTypes.find((type) => type.value === assignmentType) || assignmentTypes[0];
+  const selectedTypeIndex = assignmentTypes.findIndex((type) => type.value === selectedType);
+
+  const assignmentSummary = useMemo(() => ({
+    Fest: assignments.filter((assignment) => assignment.assignmentType === 'Fest').length,
+    Club: assignments.filter((assignment) => assignment.assignmentType === 'Club').length,
+    'Other Event': assignments.filter((assignment) => assignment.assignmentType === 'Other Event').length,
+  }), [assignments]);
+
+  const renderSelectedAssignmentSection = () => {
+    const typeAssignments = assignments.filter((assignment) => assignment.assignmentType === selectedType);
+
+    return (
+      <Box
+        sx={{
+          p: { xs: 2, sm: 2.5 },
+          borderRadius: '16px',
+          border: '1px solid',
+          borderColor: selectedTypeMeta.color,
+          bgcolor: selectedTypeMeta.background,
+          boxShadow: `0 8px 24px ${selectedTypeMeta.color}18`,
+        }}
+      >
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 2, mb: 2 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}>
+            <Box sx={{ width: 36, height: 36, display: 'grid', placeItems: 'center', borderRadius: '50%', bgcolor: selectedTypeMeta.background, color: selectedTypeMeta.color }}>
+              {selectedTypeMeta.icon}
+            </Box>
+            <Box>
+              <Typography variant="h6" fontWeight={700}>{selectedTypeMeta.label} Assignments</Typography>
+              <Typography variant="body2" color="text.secondary">{selectedTypeMeta.description}</Typography>
+            </Box>
+          </Box>
+          <Chip label={`${typeAssignments.length} total`} size="small" sx={{ color: selectedTypeMeta.color, bgcolor: 'rgba(255,255,255,0.8)', fontWeight: 700 }} />
+        </Box>
+
+        {typeAssignments.length ? (
+          <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(270px, 1fr))', gap: 1.5 }}>
+            {typeAssignments.map((assignment) => {
+              const targetName = assignment.assignmentType === 'Club' ? assignment.club?.name || 'Unknown Club' : assignment.eventName;
+              return (
+                <Box
+                  key={assignment._id}
+                  sx={{
+                    p: 2,
+                    borderRadius: '12px',
+                    bgcolor: 'background.paper',
+                    border: '1px solid rgba(148, 163, 184, 0.22)',
+                    boxShadow: 1,
+                  }}
+                >
+                  <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 1 }}>
+                    <Box sx={{ minWidth: 0 }}>
+                      <Typography variant="subtitle1" fontWeight={700} sx={{ overflowWrap: 'anywhere' }}>{targetName}</Typography>
+                      <Typography variant="caption" color="text.secondary">{assignment.assignmentType}</Typography>
+                    </Box>
+                    <Box sx={{ display: 'flex', gap: 0.5, flexShrink: 0 }}>
+                      <IconButton size="small" aria-label="Edit assignment" onClick={() => openEditForm(assignment)} sx={{ color: '#2563eb', bgcolor: 'rgba(37, 99, 235, 0.1)' }}>
+                        <EditIcon fontSize="small" />
+                      </IconButton>
+                      <IconButton size="small" aria-label="Delete assignment" onClick={() => handleDeleteClick(assignment)} sx={{ color: '#dc2626', bgcolor: 'rgba(220, 38, 38, 0.1)' }}>
+                        <DeleteIcon fontSize="small" />
+                      </IconButton>
+                    </Box>
+                  </Box>
+                  <Box sx={{ mt: 1.5, pt: 1.25, borderTop: '1px solid', borderColor: 'divider' }}>
+                    <Typography variant="caption" color="text.secondary">Assigned employees</Typography>
+                    {assignment.assignees?.map((assignee) => (
+                      <Typography key={assignee.employeeId} variant="body2" sx={{ mt: 0.5 }}>
+                        {assignee.employeeName} ({assignee.employeeId})
+                      </Typography>
+                    ))}
+                  </Box>
+                  <Chip label={`${assignment.assignees?.length || 0} assigned`} size="small" sx={{ mt: 1.5, color: selectedTypeMeta.color, bgcolor: selectedTypeMeta.background, fontWeight: 700 }} />
+                </Box>
+              );
+            })}
+          </Box>
+        ) : (
+          <Box sx={{ p: 2, borderRadius: '10px', bgcolor: 'rgba(148, 163, 184, 0.08)' }}>
+            <Typography variant="body2" color="text.secondary">No {selectedTypeMeta.label.toLowerCase()} assignments have been created yet.</Typography>
+          </Box>
+        )}
+      </Box>
+    );
+  };
+
   const fetchAssignments = useCallback(async () => {
-    setLoading(true);
     try {
       const response = await API.get('/api/event-assignments');
       setAssignments(response.data?.assignments || []);
     } catch (error) {
       console.error('Error fetching assignments:', error);
       toast.error('Failed to load assignments');
-    } finally {
-      setLoading(false);
     }
   }, []);
 
@@ -137,11 +256,6 @@ const EventAssignment = () => {
     setSearchQuery('');
     setErrors({});
     setEditingAssignment(null);
-  };
-
-  const openCreateForm = () => {
-    resetForm();
-    setView('form');
   };
 
   const openEditForm = (assignment) => {
@@ -236,81 +350,21 @@ const EventAssignment = () => {
     }
   };
 
-  // --- Table Configuration ---
-  const columns = ['#', 'Type', 'Target Event/Club', 'Assigned Coordinators', 'Actions'];
-
-  const tableRows = assignments.map((assignment, index) => {
-    const targetName = assignment.assignmentType === 'Club' 
-        ? assignment.club?.name || 'Unknown Club' 
-        : assignment.eventName;
-
-    return [
-      index + 1,
-      <Chip 
-        label={assignment.assignmentType} 
-        size="small" 
-        sx={{ 
-          fontWeight: 600,
-          bgcolor: 'rgba(59, 130, 246, 0.12)', 
-          color: '#2563eb' 
-        }} 
-      />,
-      targetName,
-      {
-        value: assignment.assignees?.length || 0,
-        display: (
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-            {assignment.assignees?.map((a, i) => (
-               <Typography key={i} variant="caption" sx={{ color: 'var(--text-secondary)' }}>
-                 • {a.employeeName} ({a.roleAssigned})
-               </Typography>
-            ))}
-          </Box>
-        )
-      },
-      {
-        value: '',
-        display: (
-          <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center' }}>
-            <IconButton
-              size="small"
-              onClick={() => openEditForm(assignment)}
-              sx={{
-                color: '#3b82f6',
-                bgcolor: 'rgba(59, 130, 246, 0.1)',
-                '&:hover': { bgcolor: 'rgba(59, 130, 246, 0.2)' },
-              }}
-            >
-              <EditIcon fontSize="small" />
-            </IconButton>
-            <IconButton
-              size="small"
-              onClick={() => handleDeleteClick(assignment)}
-              sx={{
-                color: '#ef4444',
-                bgcolor: 'rgba(239, 68, 68, 0.1)',
-                '&:hover': { bgcolor: 'rgba(239, 68, 68, 0.2)' },
-              }}
-            >
-              <DeleteIcon fontSize="small" />
-            </IconButton>
-          </Box>
-        ),
-      },
-    ];
-  });
-
   if (view === 'list') {
     return (
-      <Box sx={{ p: 3 }}>
+      <Box sx={{ p: { xs: 2, md: 3 } }}>
         <PageHeader
           title="Event Assignment"
-          subtitle="Assign roles to coordinators and conveners"
+          subtitle="Choose an event type to manage its assignments"
           action={
             <Button
               variant="contained"
               startIcon={<AddIcon />}
-              onClick={openCreateForm}
+              onClick={() => {
+                resetForm();
+                setAssignmentType(selectedType);
+                setView('form');
+              }}
               sx={{
                 borderRadius: '12px',
                 px: 3,
@@ -320,17 +374,87 @@ const EventAssignment = () => {
                 background: 'var(--gradient-primary)',
               }}
             >
-              New Assignment
+              New {selectedTypeMeta.label} Assignment
             </Button>
           }
         />
 
-        <DataTable
-          columns={columns}
-          rows={tableRows}
-          nonSortableColumns={[3, 4]}
-          alignments={['center', 'center', 'left', 'left', 'center']}
-        />
+        <Box sx={{ mt: 3 }}>
+          
+
+          <Typography variant="h6" fontWeight={700} sx={{ mb: 0.5 }}>Assignment Types</Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2.5 }}>
+            Select a category to view and manage its assigned employees.
+          </Typography>
+          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(3, minmax(0, 1fr))' }, gap: 2 }}>
+            {assignmentTypes.map((type) => {
+              const count = assignments.filter((assignment) => assignment.assignmentType === type.value).length;
+              const isSelected = selectedType === type.value;
+              return (
+                <Card
+                  key={type.value}
+                  onClick={() => setSelectedType(type.value)}
+                  sx={{
+                    cursor: 'pointer',
+                    border: '1px solid',
+                    borderColor: isSelected ? type.color : 'divider',
+                    borderRadius: '14px',
+                    boxShadow: isSelected ? `0 8px 24px ${type.color}24` : 1,
+                    transform: isSelected ? 'translateY(-2px)' : 'none',
+                    transition: 'all 160ms ease',
+                  }}
+                >
+                  <CardContent sx={{ minHeight: 150 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                        <Box sx={{ width: 42, height: 42, display: 'grid', placeItems: 'center', borderRadius: '50%', bgcolor: type.background, color: type.color }}>
+                          {type.icon}
+                        </Box>
+                        <Typography fontWeight={700}>{type.label}</Typography>
+                      </Box>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Typography variant="h5" fontWeight={800} sx={{ color: type.color }}>{count}</Typography>
+                        <ChevronRightIcon sx={{ color: isSelected ? type.color : 'text.disabled' }} />
+                      </Box>
+                    </Box>
+                    <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>{type.description}</Typography>
+                    <Chip label={type.role} size="small" sx={{ mt: 2, color: type.color, bgcolor: type.background, fontWeight: 700 }} />
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </Box>
+        </Box>
+
+        <Box
+          aria-hidden="true"
+          sx={{
+            display: 'grid',
+            gridTemplateColumns: { xs: '1fr', sm: 'repeat(3, minmax(0, 1fr))' },
+            height: 58,
+            mt: 0.5,
+          }}
+        >
+          <Box
+            sx={{
+              gridColumn: { xs: '1', sm: selectedTypeIndex + 1 },
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              position: 'relative',
+              color: selectedTypeMeta.color,
+            }}
+          >
+            <Box sx={{ position: 'absolute', top: 0, bottom: 0, borderLeft: `2px dotted ${selectedTypeMeta.color}` }} />
+            <Box sx={{ zIndex: 1, width: 28, height: 28, display: 'grid', placeItems: 'center', bgcolor: 'var(--bg-primary, #f8fafc)', borderRadius: '50%' }}>
+              <ArrowDownwardIcon fontSize="small" />
+            </Box>
+          </Box>
+        </Box>
+
+        <Box sx={{ mt: 4, maxWidth: 1100, mx: 'auto', display: 'grid', gap: 2.5 }}>
+          {renderSelectedAssignmentSection()}
+        </Box>
 
         <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)} PaperProps={{ sx: { borderRadius: '16px' } }}>
           <DialogTitle sx={{ fontWeight: 700 }}>Delete Assignment</DialogTitle>
@@ -357,47 +481,66 @@ const EventAssignment = () => {
         onBack={goBackToList}
       />
 
-      <Card sx={{ mt: 3, maxWidth: 800, mx: 'auto', boxShadow: 3, borderRadius: '16px' }}>
-        <CardContent sx={{ p: 4, display: 'flex', flexDirection: 'column', gap: 4 }}>
+      <Card sx={{ mt: 3, maxWidth: 1000, mx: 'auto', boxShadow: 3, borderRadius: '16px', overflow: 'hidden' }}>
+        <Box sx={{ px: { xs: 2.5, sm: 4 }, pt: { xs: 2.5, sm: 4 } }}>
+          <Typography variant="overline" sx={{ color: formTypeMeta.color, fontWeight: 800, letterSpacing: '0.12em' }}>
+            Assignment workflow
+          </Typography>
+          <Typography variant="h6" fontWeight={700}>{formTypeMeta.label} assignment</Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+            Select the event type, choose its target, then assign the responsible employees.
+          </Typography>
+        </Box>
+        <CardContent sx={{ p: { xs: 2.5, sm: 4 }, display: 'flex', flexDirection: 'column', gap: 3 }}>
           
           <Box>
-            <Typography variant="subtitle1" fontWeight="600" mb={1}>Assignment Type *</Typography>
-            <FormControl fullWidth>
-              <Select
-                value={assignmentType}
-                onChange={(e) => {
-                  setAssignmentType(e.target.value);
-                  setEventName('');
-                  setClubId('');
-                  setSelectedEmployees([]);
-                  setErrors({});
-                }}
-                sx={{ borderRadius: '12px' }}
-              >
-                <MenuItem value="Fest">Fest</MenuItem>
-                <MenuItem value="Club">Club</MenuItem>
-                <MenuItem value="Other Event">Other Event</MenuItem>
-              </Select>
-            </FormControl>
+            <Typography variant="subtitle1" fontWeight="700" mb={1.5}>1. Choose assignment type</Typography>
+            <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))', gap: 1.5 }}>
+              {assignmentTypes.map((type) => (
+                <Box
+                  key={type.value}
+                  onClick={() => {
+                    setAssignmentType(type.value);
+                    setEventName('');
+                    setClubId('');
+                    setSelectedEmployees([]);
+                    setErrors({});
+                  }}
+                  sx={{
+                    p: 1.5,
+                    border: '1px solid',
+                    borderColor: assignmentType === type.value ? type.color : 'divider',
+                    bgcolor: assignmentType === type.value ? type.background : 'transparent',
+                    borderRadius: '12px',
+                    cursor: 'pointer',
+                    transition: 'all 160ms ease',
+                  }}
+                >
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Box sx={{ color: type.color }}>{type.icon}</Box>
+                    <Typography fontWeight={700}>{type.label}</Typography>
+                  </Box>
+                  <Typography variant="caption" color="text.secondary">{type.description}</Typography>
+                </Box>
+              ))}
+            </Box>
           </Box>
 
-          {(assignmentType === 'Fest' || assignmentType === 'Other Event') && (
-            <Box>
-              <Typography variant="subtitle1" fontWeight="600" mb={1}>Event Name *</Typography>
+          <Box sx={{ p: { xs: 2, sm: 2.5 }, borderRadius: '14px', bgcolor: 'rgba(15, 118, 110, 0.045)', border: '1px solid rgba(15, 118, 110, 0.14)' }}>
+            <Typography variant="subtitle1" fontWeight="700" mb={1.5}>2. Choose target</Typography>
+            {(assignmentType === 'Fest' || assignmentType === 'Other Event') && (
               <TextField
                 fullWidth
-                placeholder="Enter event name"
+                label={assignmentType === 'Fest' ? 'Fest Name *' : 'Event Name *'}
+                placeholder={assignmentType === 'Fest' ? 'Example: VEDA or COLOURS' : 'Enter event name'}
                 value={eventName}
                 onChange={(e) => setEventName(e.target.value)}
                 error={!!errors.eventName}
                 helperText={errors.eventName}
               />
-            </Box>
-          )}
+            )}
 
-          {assignmentType === 'Club' && (
-            <Box>
-              <Typography variant="subtitle1" fontWeight="600" mb={1}>Select Club *</Typography>
+            {assignmentType === 'Club' && (
               <FormControl fullWidth error={!!errors.clubId}>
                 <Select
                   value={clubId}
@@ -429,13 +572,11 @@ const EventAssignment = () => {
                 </Select>
                 {errors.clubId && <Typography color="error" variant="caption" sx={{ ml: 2, mt: 0.5 }}>{errors.clubId}</Typography>}
               </FormControl>
-            </Box>
-          )}
+            )}
+          </Box>
 
-          <Box>
-            <Typography variant="subtitle1" fontWeight="600" mb={1}>
-              Assignees *
-            </Typography>
+          <Box sx={{ p: { xs: 2, sm: 2.5 }, borderRadius: '14px', bgcolor: 'rgba(37, 99, 235, 0.045)', border: '1px solid rgba(37, 99, 235, 0.14)' }}>
+            <Typography variant="subtitle1" fontWeight="700" mb={1.5}>3. Assign employees</Typography>
             <Autocomplete
               multiple
               options={employeeOptions}

@@ -15,6 +15,10 @@ const messaging = getMessaging(app);
 
 export const requestForToken = async () => {
     try {
+        if (import.meta.env.DEV) {
+            return null;
+        }
+
         if (typeof window !== 'undefined' && 'Notification' in window) {
             const permission = Notification.permission === 'default' ? await Notification.requestPermission() : Notification.permission;
             if (permission !== 'granted') {
