@@ -534,7 +534,13 @@ const SelfAppraisal = () => {
   // Submit Appraisal
   const handleSubmit = async () => {
     if (!profileComplete) {
-      toast.error("Please complete your faculty profile details before submitting");
+      const hasCoreDeptMissing = missingFields.includes("Core Department");
+      const otherMissingFields = missingFields.filter(f => f !== "Core Department");
+      if (hasCoreDeptMissing && otherMissingFields.length === 0) {
+        toast.error("Your Core Department is not set. Please contact the Administrator to assign it.");
+      } else {
+        toast.error("Please complete your faculty profile details before submitting");
+      }
       return;
     }
 
@@ -2383,8 +2389,25 @@ const SelfAppraisal = () => {
         {!profileComplete && (
           <Alert severity="warning" variant="filled" sx={{ mb: 4, borderRadius: "16px" }}>
             <AlertTitle sx={{ fontWeight: 700 }}>Profile Details Incomplete</AlertTitle>
-            You must complete the following fields in your profile before you can submit this appraisal to HOD:
-            <strong> {missingFields.join(", ")}</strong>. Please navigate to the Profile settings to update them.
+            {(() => {
+              const hasCoreDeptMissing = missingFields.includes("Core Department");
+              const otherMissingFields = missingFields.filter(f => f !== "Core Department");
+              return (
+                <Box>
+                  {otherMissingFields.length > 0 && (
+                    <Typography variant="body2" sx={{ mb: hasCoreDeptMissing ? 1.5 : 0 }}>
+                      You must complete the following fields in your profile before you can submit this appraisal to HOD:
+                      <strong> {otherMissingFields.join(", ")}</strong>. Please navigate to the Profile settings to update them.
+                    </Typography>
+                  )}
+                  {hasCoreDeptMissing && (
+                    <Typography variant="body2">
+                      Your <strong>Core Department</strong> is not set. Please contact the <strong>Administrator</strong> or your <strong>HOD</strong> to assign it before submitting your appraisal.
+                    </Typography>
+                  )}
+                </Box>
+              );
+            })()}
           </Alert>
         )}
 
