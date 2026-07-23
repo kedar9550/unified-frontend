@@ -81,7 +81,7 @@ const ResearchUploads = () => {
 
       <Grid container spacing={3}>
         {uploadCategories.map((cat) => (
-          <Grid item xs={12} sm={6} md={4} lg={3} key={cat.id}>
+          <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }} key={cat.id}>
             <Card sx={{ 
               height: "100%", 
               background: "var(--bg-panel)", 
