@@ -93,6 +93,7 @@ export default function ResourceUtilization() {
   const [openFormModal, setOpenFormModal] = useState(false);
   const [noActiveYearAlertOpen, setNoActiveYearAlertOpen] = useState(false);
   const [selectedActivityDetails, setSelectedActivityDetails] = useState(null);
+  const [isDocumentRemoved, setIsDocumentRemoved] = useState(false);
 
   const [editingId, setEditingId] = useState(null); // stores ID when editing
   const [form, setForm] = useState({
@@ -113,7 +114,8 @@ export default function ResourceUtilization() {
     universityName: "",
     instituteName: "",
     nirfRank: "",
-    certificateNumber: ""
+    certificateNumber: "",
+    existingProof: ""
   });
 
   const [proofFile, setProofFile] = useState(null);
@@ -249,8 +251,10 @@ export default function ResourceUtilization() {
       universityName: "",
       instituteName: "",
       nirfRank: "",
-      certificateNumber: ""
+      certificateNumber: "",
+      existingProof: ""
     });
+    setIsDocumentRemoved(false);
     setProofFile(null);
     setOpenFormModal(true);
   };
@@ -275,8 +279,10 @@ export default function ResourceUtilization() {
       universityName: activity.universityName || "",
       instituteName: activity.instituteName || "",
       nirfRank: activity.nirfRank !== undefined ? String(activity.nirfRank) : "",
-      certificateNumber: activity.certificateNumber || ""
+      certificateNumber: activity.certificateNumber || "",
+      existingProof: activity.proof || ""
     });
+    setIsDocumentRemoved(false);
     setProofFile(null);
     setOpenFormModal(true);
   };
@@ -347,7 +353,7 @@ export default function ResourceUtilization() {
       return;
     }
 
-    if (!proofFile && !editingId) {
+    if (!proofFile && (!editingId || isDocumentRemoved)) {
       toast.error("Supporting proof upload is mandatory");
       return;
     }
@@ -1322,11 +1328,24 @@ export default function ResourceUtilization() {
       <NoteBox />
 
       <Box sx={{ mt: 2 }}>
-        <FileField
-          label={editingId ? "Upload New Proof (Optional):" : "Relevant Proof Upload: *"}
-          name="proof"
-          onChange={handleFileChange}
-        />
+        {editingId && form.existingProof && !isDocumentRemoved ? (
+          <Box sx={{ p: 2, border: "1px solid var(--border-color)", borderRadius: "12px", background: "var(--bg-glass)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+              <FilePresent sx={{ color: "var(--color-primary)" }} />
+              <Typography sx={{ fontWeight: 600, color: "var(--text-primary)" }}>Existing Document</Typography>
+              <Button size="small" href={form.existingProof.startsWith('http') ? form.existingProof : `${(import.meta.env.VITE_BACKEND_URL || "http://localhost:9000").replace(/\/$/, "")}${form.existingProof}`} target="_blank" sx={{ ml: 2, textTransform: "none" }}>View</Button>
+            </Box>
+            <IconButton onClick={() => setIsDocumentRemoved(true)} sx={{ color: "#ef4444" }}>
+              <Delete />
+            </IconButton>
+          </Box>
+        ) : (
+          <FileField
+            label="Relevant Proof Upload: *"
+            name="proof"
+            onChange={handleFileChange}
+          />
+        )}
       </Box>
     </>
   );

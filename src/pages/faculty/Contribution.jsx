@@ -40,9 +40,9 @@ export default function Contribution() {
   const [selectedYear, setSelectedYear] = useState("");
   const [contributionsList, setContributionsList] = useState([]);
 
-  const [openFormModal, setOpenFormModal] = useState(false);
   const [noActiveYearAlertOpen, setNoActiveYearAlertOpen] = useState(false);
   const [selectedContributionDetails, setSelectedContributionDetails] = useState(null);
+  const [isDocumentRemoved, setIsDocumentRemoved] = useState(false);
 
   const [editingId, setEditingId] = useState(null);
   const [form, setForm] = useState({
@@ -69,7 +69,8 @@ export default function Contribution() {
     grantName: "",
     sanctionDate: "",
     courseHours: "",
-    certificateNumber: ""
+    certificateNumber: "",
+    existingProof: ""
   });
 
   const [proofFile, setProofFile] = useState(null);
@@ -201,8 +202,10 @@ export default function Contribution() {
       grantName: "",
       sanctionDate: "",
       courseHours: "",
-      certificateNumber: ""
+      certificateNumber: "",
+      existingProof: ""
     });
+    setIsDocumentRemoved(false);
     setProofFile(null);
     setOpenFormModal(true);
   };
@@ -234,8 +237,10 @@ export default function Contribution() {
       grantName: item.grantName || "",
       sanctionDate: item.sanctionDate ? item.sanctionDate.substring(0, 10) : "",
       courseHours: item.courseHours !== undefined ? String(item.courseHours) : "",
-      certificateNumber: item.certificateNumber || ""
+      certificateNumber: item.certificateNumber || "",
+      existingProof: item.proof || ""
     });
+    setIsDocumentRemoved(false);
     setProofFile(null);
     setOpenFormModal(true);
   };
@@ -261,7 +266,7 @@ export default function Contribution() {
       return;
     }
 
-    if (!proofFile && !editingId) {
+    if (!proofFile && (!editingId || isDocumentRemoved)) {
       toast.error("Supporting proof upload is mandatory");
       return;
     }
@@ -1208,11 +1213,24 @@ export default function Contribution() {
         <>
           <NoteBox />
           <Box sx={{ mt: 2 }}>
-            <FileField
-              label={editingId ? "Upload New Proof (Optional):" : "Relevant Proof/Certificate Upload: *"}
-              name="proof"
-              onChange={handleFileChange}
-            />
+            {editingId && form.existingProof && !isDocumentRemoved ? (
+              <Box sx={{ p: 2, border: "1px solid var(--border-color)", borderRadius: "12px", background: "var(--bg-glass)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                  <FilePresent sx={{ color: "var(--color-primary)" }} />
+                  <Typography sx={{ fontWeight: 600, color: "var(--text-primary)" }}>Existing Document</Typography>
+                  <Button size="small" href={form.existingProof.startsWith('http') ? form.existingProof : `${(import.meta.env.VITE_BACKEND_URL || "http://localhost:9000").replace(/\/$/, "")}${form.existingProof}`} target="_blank" sx={{ ml: 2, textTransform: "none" }}>View</Button>
+                </Box>
+                <IconButton onClick={() => setIsDocumentRemoved(true)} sx={{ color: "#ef4444" }}>
+                  <Delete />
+                </IconButton>
+              </Box>
+            ) : (
+              <FileField
+                label="Relevant Proof/Certificate Upload: *"
+                name="proof"
+                onChange={handleFileChange}
+              />
+            )}
           </Box>
         </>
       )}

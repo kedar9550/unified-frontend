@@ -316,6 +316,7 @@ const SelfAppraisal = () => {
   // Resource Utilization Modal States
   const [resUtOpen, setResUtOpen] = useState(false);
   const [resUtEditingId, setResUtEditingId] = useState(null);
+  const [isResUtDocumentRemoved, setIsResUtDocumentRemoved] = useState(false);
   const [resUtForm, setResUtForm] = useState({
     activityCategory: "",
     activityType: "",
@@ -332,7 +333,8 @@ const SelfAppraisal = () => {
     labName: "",
     universityName: "",
     instituteName: "",
-    nirfRank: ""
+    nirfRank: "",
+    existingProof: ""
   });
   const [resUtProof, setResUtProof] = useState(null);
   const [resUtLoading, setResUtLoading] = useState(false);
@@ -341,6 +343,7 @@ const SelfAppraisal = () => {
   // Contribution Modal States
   const [contOpen, setContOpen] = useState(false);
   const [contEditingId, setContEditingId] = useState(null);
+  const [isContDocumentRemoved, setIsContDocumentRemoved] = useState(false);
   const [contForm, setContForm] = useState({
     category: "",
     organizationName: "",
@@ -362,7 +365,8 @@ const SelfAppraisal = () => {
     facilityName: "",
     facilityDate: "",
     grantName: "",
-    sanctionDate: ""
+    sanctionDate: "",
+    existingProof: ""
   });
   const [contProof, setContProof] = useState(null);
   const [contLoading, setContLoading] = useState(false);
@@ -902,8 +906,10 @@ const SelfAppraisal = () => {
       labName: "",
       universityName: "",
       instituteName: "",
-      nirfRank: ""
+      nirfRank: "",
+      existingProof: ""
     });
+    setIsResUtDocumentRemoved(false);
     setResUtProof(null);
     setResUtOpen(true);
   };
@@ -926,8 +932,10 @@ const SelfAppraisal = () => {
       labName: activity.labName || "",
       universityName: activity.universityName || "",
       instituteName: activity.instituteName || "",
-      nirfRank: activity.nirfRank !== undefined ? String(activity.nirfRank) : ""
+      nirfRank: activity.nirfRank !== undefined ? String(activity.nirfRank) : "",
+      existingProof: activity.proof || ""
     });
+    setIsResUtDocumentRemoved(false);
     setResUtProof(null);
     setResUtOpen(true);
   };
@@ -999,7 +1007,7 @@ const SelfAppraisal = () => {
       toast.error("Number of Days Participated is required for Participant role");
       return;
     }
-    if (!resUtProof && !resUtEditingId) {
+    if (!resUtProof && (!resUtEditingId || isResUtDocumentRemoved)) {
       toast.error("Supporting proof upload is mandatory");
       return;
     }
@@ -1115,8 +1123,10 @@ const SelfAppraisal = () => {
       grantName: "",
       sanctionDate: "",
       courseHours: "",
-      certificateNumber: ""
+      certificateNumber: "",
+      existingProof: ""
     });
+    setIsContDocumentRemoved(false);
     setContProof(null);
     setContOpen(true);
   };
@@ -1146,8 +1156,10 @@ const SelfAppraisal = () => {
       grantName: item.grantName || "",
       sanctionDate: item.sanctionDate ? item.sanctionDate.substring(0, 10) : "",
       courseHours: item.courseHours || "",
-      certificateNumber: item.certificateNumber || ""
+      certificateNumber: item.certificateNumber || "",
+      existingProof: item.proof || ""
     });
+    setIsContDocumentRemoved(false);
     setContProof(null);
     setContOpen(true);
   };
@@ -1168,7 +1180,7 @@ const SelfAppraisal = () => {
       toast.error("Please select a contribution category");
       return;
     }
-    if (!contProof && !contEditingId) {
+    if (!contProof && (!contEditingId || isContDocumentRemoved)) {
       toast.error("Supporting proof upload is mandatory");
       return;
     }
@@ -4565,12 +4577,24 @@ const SelfAppraisal = () => {
               </Box>
 
               <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
-                <FileField
-                  label={resUtEditingId ? "Upload New Proof (Leave empty to keep existing)" : "Supporting Proof (PDF/Image, Max 500KB) *"}
-                  name="proof"
-                  onChange={(e) => setResUtProof(e.target.files[0])}
-                  error={!resUtProof && !resUtEditingId}
-                />
+                {resUtEditingId && resUtForm.existingProof && !isResUtDocumentRemoved ? (
+                  <Box sx={{ p: 2, border: "1px solid var(--border-color)", borderRadius: "12px", background: "var(--bg-glass)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                      <Description sx={{ color: "var(--color-primary)" }} />
+                      <Typography sx={{ fontWeight: 600, color: "var(--text-primary)" }}>Existing Document</Typography>
+                      <Button size="small" href={resUtForm.existingProof.startsWith('http') ? resUtForm.existingProof : `${(import.meta.env.VITE_BACKEND_URL || "http://localhost:9000").replace(/\/$/, "")}${resUtForm.existingProof}`} target="_blank" sx={{ ml: 2, textTransform: "none" }}>View</Button>
+                    </Box>
+                    <IconButton onClick={() => setIsResUtDocumentRemoved(true)} sx={{ color: "#ef4444" }}>
+                      <Delete />
+                    </IconButton>
+                  </Box>
+                ) : (
+                  <FileField
+                    label="Supporting Proof (PDF/Image, Max 500KB) *"
+                    name="proof"
+                    onChange={(e) => setResUtProof(e.target.files[0])}
+                  />
+                )}
               </Box>
             </Grid2>
             <NoteBox />
@@ -5061,12 +5085,24 @@ const SelfAppraisal = () => {
               })()}
 
               <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
-                <FileField
-                  label={contEditingId ? "Upload New Proof (Leave empty to keep existing)" : "Supporting Proof (PDF/Image, Max 500KB) *"}
-                  name="proof"
-                  onChange={(e) => setContProof(e.target.files[0])}
-                  error={!contProof && !contEditingId}
-                />
+                {contEditingId && contForm.existingProof && !isContDocumentRemoved ? (
+                  <Box sx={{ p: 2, border: "1px solid var(--border-color)", borderRadius: "12px", background: "var(--bg-glass)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                      <Description sx={{ color: "var(--color-primary)" }} />
+                      <Typography sx={{ fontWeight: 600, color: "var(--text-primary)" }}>Existing Document</Typography>
+                      <Button size="small" href={contForm.existingProof.startsWith('http') ? contForm.existingProof : `${(import.meta.env.VITE_BACKEND_URL || "http://localhost:9000").replace(/\/$/, "")}${contForm.existingProof}`} target="_blank" sx={{ ml: 2, textTransform: "none" }}>View</Button>
+                    </Box>
+                    <IconButton onClick={() => setIsContDocumentRemoved(true)} sx={{ color: "#ef4444" }}>
+                      <Delete />
+                    </IconButton>
+                  </Box>
+                ) : (
+                  <FileField
+                    label="Supporting Proof (PDF/Image, Max 500KB) *"
+                    name="proof"
+                    onChange={(e) => setContProof(e.target.files[0])}
+                  />
+                )}
               </Box>
             </Grid2>
             <NoteBox />
