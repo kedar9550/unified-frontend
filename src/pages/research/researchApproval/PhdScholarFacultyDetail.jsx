@@ -151,7 +151,7 @@ const PhdScholarFacultyDetail = ({ facultyId, onBack, role }) => {
                         <Box sx={{ flex: { xs: "1 1 100%", sm: "1 1 50%" } }}>
                             <LabelValue label="Name" value={facultyInfo.name} horizontal />
                             <LabelValue label="Emp ID" value={facultyInfo.institutionId} horizontal />
-                            <LabelValue label="Department" value={facultyInfo.coreDepartment?.name} horizontal />
+                            <LabelValue label="Parent Department" value={facultyInfo.coreDepartment?.name} horizontal />
                         </Box>
                         <Box sx={{ flex: { xs: "1 1 100%", sm: "1 1 50%" } }}>
                             <LabelValue label="Designation" value={facultyInfo.designation} horizontal />

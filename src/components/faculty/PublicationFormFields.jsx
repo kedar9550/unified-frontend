@@ -11,8 +11,8 @@ export function FacultyInfoRow() {
   const fields = [
     { label: "Name of the Faculty", value: user?.name || "" },
     { label: "Designation", value: user?.designation || "" },
-    { label: "Department", value: user?.department || "" },
-    { label: "Core Department", value: user?.coreDepartment || "" },
+    { label: "Serving Department", value: user?.department || "" },
+    { label: "Parent Department", value: user?.coreDepartment || "" },
     { label: "Employee ID", value: user?.institutionId || "" },
     { label: "Contact Number", value: user?.phone || user?.contactNumber || "" },
     { label: "PAN Number", value: user?.panNumber || "" },

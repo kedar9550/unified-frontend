@@ -140,7 +140,7 @@ const Assignedstudents = () => {
                 setSelectedStudents([]);
                 setSelectedDept("");
                 setRefreshTrigger(prev => prev + 1);
-                toast.success("Department changed successfully");
+                toast.success("Serving Department changed successfully");
             }
         } catch (error) {
             console.error("Failed to move department", error);
@@ -173,7 +173,7 @@ const Assignedstudents = () => {
     const handleDownload = () => {
         if (filteredStudents.length === 0) return;
 
-        const headers = ["Roll No", "Student Name", "Department", "Semester/Year", "Program", "Branch", "Email"];
+        const headers = ["Roll No", "Student Name", "Serving Department", "Semester/Year", "Program", "Branch", "Email"];
         const rows = filteredStudents.map(s => [
             s.rollNo,
             s.personalInfo?.studentName,
@@ -272,7 +272,7 @@ const Assignedstudents = () => {
         <Box sx={{ p: 3 }}>
             <PageHeader
                 title="Assigned Students"
-                subtitle="View and manage students assigned to departments" />
+                subtitle="View and manage students assigned to serving departments" />
 
 
             {/* TABLE CARD with inline filter toolbar */}
@@ -401,12 +401,12 @@ const Assignedstudents = () => {
                         </Box>
                         <Box sx={{ display: "flex", gap: 2, alignItems: "center", flexWrap: "wrap" }}>
                             <FormControl size="small" sx={{ minWidth: 220 }}>
-                                <InputLabel id="dept-move-label" sx={{ color: "var(--text-secondary)" }}>Change Department</InputLabel>
+                                <InputLabel id="dept-move-label" sx={{ color: "var(--text-secondary)" }}>Change Serving Department</InputLabel>
                                 <Select
                                     labelId="dept-move-label"
                                     value={selectedDept}
                                     onChange={(e) => setSelectedDept(e.target.value)}
-                                    label="Change Department"
+                                    label="Change Serving Department"
                                     sx={{
                                         borderRadius: "10px",
                                         color: "var(--text-primary)",
