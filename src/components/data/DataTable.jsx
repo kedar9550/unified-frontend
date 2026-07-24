@@ -112,24 +112,7 @@ export default function DataTable({ columns, rows, toolbarLeft, nonSortableColum
         sx={{ 
           overflowX: "auto", 
           borderRadius: "12px", 
-          width: "100%",
-          "&::-webkit-scrollbar": {
-            height: "8px",
-            display: "block !important",
-          },
-          "&::-webkit-scrollbar-track": {
-            background: "rgba(0, 0, 0, 0.05)",
-            borderRadius: "10px",
-          },
-          "&::-webkit-scrollbar-thumb": {
-            background: "var(--color-primary, #2563eb)",
-            opacity: 0.5,
-            borderRadius: "10px",
-            "&:hover": {
-              background: "var(--color-primary-dark, #1d4ed8)",
-            }
-          },
-          scrollbarWidth: "auto !important",
+          width: "100%"
         }}
       >
         <Table
@@ -285,15 +268,24 @@ export default function DataTable({ columns, rows, toolbarLeft, nonSortableColum
         sx={{
           color: "var(--text-primary)",
           borderBottom: "none",
+          "& .MuiTablePagination-toolbar": {
+            paddingLeft: { xs: 1, sm: 2 },
+            paddingRight: { xs: 1, sm: 2 },
+          },
           "& .MuiTablePagination-selectLabel, & .MuiTablePagination-displayedRows": {
-            fontSize: "0.875rem",
+            fontSize: { xs: "0.7rem", sm: "0.875rem" },
+            margin: { xs: 0, sm: "auto" },
           },
           "& .MuiSelect-select": {
-            fontSize: "0.875rem",
+            fontSize: { xs: "0.7rem", sm: "0.875rem" },
+          },
+          "& .MuiTablePagination-actions": {
+            marginLeft: { xs: 0, sm: 2 },
           },
           "& .MuiTablePagination-actions button": {
             background: "var(--bg-panel)",
-            margin: "0 4px",
+            margin: { xs: "0 2px", sm: "0 4px" },
+            padding: { xs: "4px", sm: "8px" },
             color: "var(--text-primary)",
             backdropFilter: "blur(4px)",
             "&:hover": { background: "var(--bg-accent-1)" },
