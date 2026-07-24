@@ -80,7 +80,11 @@ import FeedbackOverview from "./pages/serviceDesk/FeedbackOverview";
 import ClubManagement from "./pages/studenteventsadmin/ClubManagement";
 import EventAssignment from "./pages/studenteventsadmin/EventAssignment";
 import FestManagement from "./pages/convener/FestManagement";
+import GroupManagement from "./pages/studenteventsadmin/Groupmanagement";
+import DepartmentManagement from "./pages/studenteventsadmin/Departmentmanagement";
 import MajorEventGroups from "./pages/majorEventAdmin/MajorEventGroups";
+import FormAssign from "./pages/majorEventAdmin/FormAssign";
+import FormPreview from "./pages/majorEventAdmin/FormPreview";
 
 const PublicOnlyRoute = ({ children }) => {
   const { user } = useAuth();
@@ -225,7 +229,13 @@ function App() {
         <Route path="/student-event-admin/clubs" element={<ProtectedRoute element={<ClubManagement />} />} />
         <Route path="/student-event-admin/event-assignments" element={<ProtectedRoute element={<EventAssignment />} />} />
         <Route path="/convener/fests" element={<ProtectedRoute element={<FestManagement />} />} />
+
+
+        <Route path="/Eventveda/groups" element={<ProtectedRoute element={<GroupManagement />} />} />
+        <Route path="/Eventveda/departments" element={<ProtectedRoute element={<DepartmentManagement />} />} />
         <Route path="/major-event-admin/groups" element={<ProtectedRoute element={<MajorEventGroups />} />} />
+        <Route path="/major-event-admin/form-assign" element={<ProtectedRoute element={<FormAssign />} />} />
+        <Route path="/major-event-admin/form-preview" element={<ProtectedRoute element={<FormPreview />} />} />
 
         <Route path="*" element={<ProtectedRoute element={<Box p={4}><Typography variant="h4">Page Content</Typography></Box>} />} />
       </Routes>

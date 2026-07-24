@@ -17,7 +17,7 @@ import {
     Search, FilterList, MoreVert, Close, ExpandMore,
     PersonAdd, RemoveCircle, Save, CheckCircle,
     ArrowForward, Star, Sync, GroupAdd, UploadFile,
-    Person
+    Person, AdminPanelSettings
 } from "@mui/icons-material";
 import PageHeader from "../../../components/common/PageHeader";
 import API from "../../../api/axios";
@@ -40,6 +40,16 @@ const RoleManagement = () => {
     // Roles State
     const [roles, setRoles] = useState([]);
     const [loadingRoles, setLoadingRoles] = useState(true);
+    const [rolesSearchQuery, setRolesSearchQuery] = useState("");
+    const [rolesPage, setRolesPage] = useState(0);
+    const [rolesRowsPerPage, setRolesRowsPerPage] = useState(10);
+    const [editingRole, setEditingRole] = useState(null);
+    const [roleDeleteModal, setRoleDeleteModal] = useState({ open: false, role: null });
+    const [deletingRole, setDeletingRole] = useState(false);
+
+    useEffect(() => {
+        setRolesPage(0);
+    }, [rolesSearchQuery]);
 
     // Menu state
     const [createAnchorEl, setCreateAnchorEl] = useState(null);
@@ -48,7 +58,7 @@ const RoleManagement = () => {
     // Modal State - Role
     const [isRoleModalOpen, setIsRoleModalOpen] = useState(false);
     const [submitting, setSubmitting] = useState(false);
-    const [formData, setFormData] = useState({ name: "" });
+    const [formData, setFormData] = useState({ name: "", description: "", defaultRole: false });
 
     // Modal State - User Choice
     const [isUserChoiceModalOpen, setIsUserChoiceModalOpen] = useState(false);
@@ -289,7 +299,8 @@ const RoleManagement = () => {
 
     const handleCloseRoleModal = () => {
         setIsRoleModalOpen(false);
-        setFormData({ name: "" });
+        setEditingRole(null);
+        setFormData({ name: "", description: "", defaultRole: false });
     };
 
     const handleFormChange = (e) => {
@@ -526,19 +537,55 @@ const RoleManagement = () => {
     };
 
     const handleSubmitRole = async () => {
-        if (!formData.name) return;
+        if (!formData.name || !formData.name.trim()) {
+            toast.error("Role name is required");
+            return;
+        }
         setSubmitting(true);
         try {
-            const res = await API.post("/api/roles", formData);
-            if (res.data.success) {
-                toast.success("Role created successfully!");
-                handleCloseRoleModal();
-                fetchRoles();
+            const payload = {
+                name: formData.name.trim().toUpperCase(),
+                description: formData.description || "",
+                defaultRole: Boolean(formData.defaultRole)
+            };
+
+            if (editingRole) {
+                const res = await API.put(`/api/roles/${editingRole._id}`, payload);
+                if (res.data.success) {
+                    toast.success("Role updated successfully!");
+                    handleCloseRoleModal();
+                    fetchRoles();
+                }
+            } else {
+                const res = await API.post("/api/roles", payload);
+                if (res.data.success) {
+                    toast.success("Role created successfully!");
+                    handleCloseRoleModal();
+                    fetchRoles();
+                }
             }
         } catch (error) {
-            toast.error(error.response?.data?.message || "Failed to create role");
+            toast.error(error.response?.data?.message || "Operation failed");
         } finally {
             setSubmitting(false);
+        }
+    };
+
+    const handleConfirmDeleteRole = async () => {
+        if (!roleDeleteModal.role?._id) return;
+        setDeletingRole(true);
+        try {
+            const res = await API.delete(`/api/roles/${roleDeleteModal.role._id}`);
+            if (res.data.success) {
+                toast.success("Role deleted successfully!");
+                setRoleDeleteModal({ open: false, role: null });
+                fetchRoles();
+                if (allEmployees.length > 0) fetchAllEmployees();
+            }
+        } catch (error) {
+            toast.error(error.response?.data?.message || "Failed to delete role");
+        } finally {
+            setDeletingRole(false);
         }
     };
 
@@ -706,6 +753,21 @@ const RoleManagement = () => {
 
     const paginatedEmployees = filteredEmployees.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
 
+    const filteredRoles = roles.filter((role) => {
+        if (!rolesSearchQuery) return true;
+        const query = rolesSearchQuery.toLowerCase().trim();
+        return (
+            (role.name && role.name.toLowerCase().includes(query)) ||
+            (role.description && role.description.toLowerCase().includes(query)) ||
+            (role.app && role.app.toLowerCase().includes(query))
+        );
+    });
+
+    const paginatedRoles = filteredRoles.slice(
+        rolesPage * rolesRowsPerPage,
+        rolesPage * rolesRowsPerPage + rolesRowsPerPage
+    );
+
     return (
         <Box sx={{ p: 0 }}>
             <PageHeader
@@ -762,6 +824,7 @@ const RoleManagement = () => {
             >
                 <Tab label="Assign & Create Roles" icon={<Security />} iconPosition="start" />
                 <Tab label="All Users" icon={<People />} iconPosition="start" />
+                <Tab label="All Roles" icon={<AdminPanelSettings />} iconPosition="start" />
             </Tabs>
 
             {activeTab === 0 && (
@@ -1837,20 +1900,344 @@ const RoleManagement = () => {
                 </Box>
             )}
 
-            {/* Create Role Modal */}
+            {activeTab === 2 && (
+                <Box sx={{ mt: 3 }}>
+                    <Paper
+                        elevation={0}
+                        sx={{
+                            p: 3,
+                            borderRadius: "20px",
+                            background: "var(--bg-glass)",
+                            backdropFilter: "blur(10px) saturate(150%)",
+                            border: "1px solid var(--border-color)",
+                            boxShadow: "0 4px 20px rgba(0,0,0,0.02)"
+                        }}
+                    >
+                        <Box
+                            sx={{
+                                display: 'flex',
+                                flexDirection: { xs: 'column', sm: 'row' },
+                                justifyContent: 'space-between',
+                                alignItems: { xs: 'stretch', sm: 'center' },
+                                gap: 2,
+                                mb: 3
+                            }}
+                        >
+                            <Box>
+                                <Typography variant="h6" fontWeight={800} color="var(--text-primary)">
+                                    All System Roles
+                                </Typography>
+                                <Typography variant="body2" color="textSecondary" fontWeight={500}>
+                                    Total: {filteredRoles.length} roles
+                                </Typography>
+                            </Box>
+
+                            <Box
+                                sx={{
+                                    display: 'flex',
+                                    gap: 2,
+                                    flexDirection: { xs: 'column', sm: 'row' },
+                                    width: { xs: '100%', sm: 'auto' }
+                                }}
+                            >
+                                <TextField
+                                    placeholder="Search by role name or description..."
+                                    size="small"
+                                    value={rolesSearchQuery}
+                                    onChange={(e) => setRolesSearchQuery(e.target.value)}
+                                    sx={{
+                                        width: { xs: '100%', sm: '320px' },
+                                        "& .MuiOutlinedInput-root": {
+                                            borderRadius: "10px",
+                                            background: "var(--bg-glass)",
+                                            backdropFilter: "blur(5px)"
+                                        }
+                                    }}
+                                    slotProps={{
+                                        input: {
+                                            startAdornment: (
+                                                <InputAdornment position="start">
+                                                    <Search fontSize="small" sx={{ color: 'var(--color-primary)' }} />
+                                                </InputAdornment>
+                                            )
+                                        }
+                                    }}
+                                />
+
+                                <Button
+                                    variant="contained"
+                                    startIcon={<Add />}
+                                    onClick={() => {
+                                        setEditingRole(null);
+                                        setFormData({ name: "", description: "", defaultRole: false });
+                                        setIsRoleModalOpen(true);
+                                    }}
+                                    sx={{
+                                        borderRadius: '50px',
+                                        textTransform: 'none',
+                                        fontWeight: 700,
+                                        background: "var(--gradient-primary)",
+                                        boxShadow: "0 4px 12px rgba(0, 78, 146, 0.3)",
+                                        px: 3,
+                                        '&:hover': {
+                                            background: "var(--gradient-primary-hover)",
+                                            boxShadow: "0 6px 16px rgba(0, 78, 146, 0.4)"
+                                        }
+                                    }}
+                                >
+                                    Create Role
+                                </Button>
+                            </Box>
+                        </Box>
+
+                        {loadingRoles ? (
+                            <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+                                <Loader />
+                            </Box>
+                        ) : (
+                            <>
+                                <TableContainer
+                                    component={Paper}
+                                    elevation={0}
+                                    sx={{
+                                        background: 'transparent',
+                                        border: '1px solid var(--border-color)',
+                                        borderRadius: '15px',
+                                        overflowX: 'auto'
+                                    }}
+                                >
+                                    <Table>
+                                        <TableHead sx={{ bgcolor: 'var(--bg-accent-1)' }}>
+                                            <TableRow>
+                                                <TableCell sx={{ fontWeight: 800, color: 'var(--text-primary)' }}>Role Name</TableCell>
+                                                <TableCell sx={{ fontWeight: 800, color: 'var(--text-primary)' }}>Description</TableCell>
+                                                <TableCell sx={{ fontWeight: 800, color: 'var(--text-primary)' }}>Type</TableCell>
+                                                <TableCell sx={{ fontWeight: 800, color: 'var(--text-primary)' }}>App Scope</TableCell>
+                                                <TableCell sx={{ fontWeight: 800, color: 'var(--text-primary)' }}>Created At</TableCell>
+                                                <TableCell align="right" sx={{ fontWeight: 800, color: 'var(--text-primary)', pr: 3 }}>Actions</TableCell>
+                                            </TableRow>
+                                        </TableHead>
+                                        <TableBody>
+                                            {paginatedRoles.length > 0 ? (
+                                                paginatedRoles.map((role) => (
+                                                    <TableRow key={role._id} hover sx={{ '&:last-child td, &:last-child th': { border: 0 } }}>
+                                                        <TableCell sx={{ fontWeight: 700, color: 'var(--text-primary)' }}>
+                                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                                                                <Avatar sx={{ width: 32, height: 32, bgcolor: 'var(--bg-accent-2)', color: 'var(--color-primary)', fontSize: '0.85rem', fontWeight: 800 }}>
+                                                                    <Security fontSize="small" />
+                                                                </Avatar>
+                                                                <Typography variant="body2" fontWeight={800} color="var(--text-primary)">
+                                                                    {role.name}
+                                                                </Typography>
+                                                            </Box>
+                                                        </TableCell>
+                                                        <TableCell sx={{ fontWeight: 500, color: 'var(--text-secondary)', maxWidth: 300 }}>
+                                                            {role.description || <Typography variant="caption" fontStyle="italic" color="text.disabled">No description</Typography>}
+                                                        </TableCell>
+                                                        <TableCell>
+                                                            {role.defaultRole ? (
+                                                                <Chip
+                                                                    label="Identity Role"
+                                                                    size="small"
+                                                                    color="success"
+                                                                    icon={<Star sx={{ fontSize: '12px !important' }} />}
+                                                                    sx={{ height: 22, fontSize: '11px', fontWeight: 700, borderRadius: '50px' }}
+                                                                />
+                                                            ) : (
+                                                                <Chip
+                                                                    label="Custom Role"
+                                                                    size="small"
+                                                                    variant="outlined"
+                                                                    sx={{ height: 22, fontSize: '11px', fontWeight: 600, borderRadius: '50px', borderColor: 'var(--border-color)' }}
+                                                                />
+                                                            )}
+                                                        </TableCell>
+                                                        <TableCell sx={{ fontWeight: 600, color: 'var(--text-secondary)' }}>
+                                                            <Chip
+                                                                label={role.app || 'UNIFIED_SYSTEM'}
+                                                                size="small"
+                                                                sx={{ height: 20, fontSize: '10px', background: 'var(--bg-accent-1)', color: 'var(--color-primary)', fontWeight: 700 }}
+                                                            />
+                                                        </TableCell>
+                                                        <TableCell sx={{ fontWeight: 500, fontSize: '0.85rem' }}>
+                                                            {role.createdAt ? new Date(role.createdAt).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }) : 'N/A'}
+                                                        </TableCell>
+                                                        <TableCell align="right" sx={{ pr: 2 }}>
+                                                            <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
+                                                                <Tooltip title="Edit Role">
+                                                                    <IconButton
+                                                                        size="small"
+                                                                        color="primary"
+                                                                        onClick={() => {
+                                                                            setEditingRole(role);
+                                                                            setFormData({
+                                                                                name: role.name || "",
+                                                                                description: role.description || "",
+                                                                                defaultRole: role.defaultRole || false
+                                                                            });
+                                                                            setIsRoleModalOpen(true);
+                                                                        }}
+                                                                        sx={{ border: '1.5px solid var(--border-color)', borderRadius: '10px' }}
+                                                                    >
+                                                                        <Edit fontSize="small" />
+                                                                    </IconButton>
+                                                                </Tooltip>
+                                                                <Tooltip title="Delete Role">
+                                                                    <IconButton
+                                                                        size="small"
+                                                                        color="error"
+                                                                        onClick={() => setRoleDeleteModal({ open: true, role })}
+                                                                        sx={{ border: '1.5px solid var(--border-color)', borderRadius: '10px' }}
+                                                                    >
+                                                                        <Delete fontSize="small" />
+                                                                    </IconButton>
+                                                                </Tooltip>
+                                                            </Box>
+                                                        </TableCell>
+                                                    </TableRow>
+                                                ))
+                                            ) : (
+                                                <TableRow>
+                                                    <TableCell colSpan={6} align="center" sx={{ py: 6 }}>
+                                                        <Security sx={{ fontSize: 40, color: 'text.disabled', mb: 1, opacity: 0.5 }} />
+                                                        <Typography variant="body2" color="textSecondary">No roles found matching criteria.</Typography>
+                                                    </TableCell>
+                                                </TableRow>
+                                            )}
+                                        </TableBody>
+                                    </Table>
+                                </TableContainer>
+
+                                <TablePagination
+                                    rowsPerPageOptions={[5, 10, 25]}
+                                    component="div"
+                                    count={filteredRoles.length}
+                                    rowsPerPage={rolesRowsPerPage}
+                                    page={rolesPage}
+                                    onPageChange={(event, newPage) => setRolesPage(newPage)}
+                                    onRowsPerPageChange={(event) => {
+                                        setRolesRowsPerPage(parseInt(event.target.value, 10));
+                                        setRolesPage(0);
+                                    }}
+                                    sx={{
+                                        borderTop: '1px solid var(--border-color)',
+                                        color: 'var(--text-secondary)',
+                                        fontWeight: 600,
+                                        '& .MuiTablePagination-selectLabel, & .MuiTablePagination-displayedRows': {
+                                            fontWeight: 600,
+                                        }
+                                    }}
+                                />
+                            </>
+                        )}
+                    </Paper>
+                </Box>
+            )}
+
+            {/* Create / Edit Role Modal */}
             <Dialog open={isRoleModalOpen} onClose={handleCloseRoleModal} maxWidth="xs" fullWidth slotProps={{ paper: { sx: { borderRadius: "16px", p: 1 } } }}>
                 <DialogTitle component="div" sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <Typography variant="h6" fontWeight={700}>Create New Role</Typography>
+                    <Typography variant="h6" fontWeight={700}>
+                        {editingRole ? "Edit Role" : "Create New Role"}
+                    </Typography>
                     <IconButton onClick={handleCloseRoleModal} size="small"><Close /></IconButton>
                 </DialogTitle>
                 <DialogContent>
                     <Box component="form" sx={{ pt: 1, display: 'flex', flexDirection: 'column', gap: 2.5 }}>
-                        <TextField fullWidth label="Role Name" name="name" value={formData.name} onChange={handleFormChange} size="small" />
+                        <TextField
+                            fullWidth
+                            label="Role Name"
+                            name="name"
+                            value={formData.name}
+                            onChange={handleFormChange}
+                            size="small"
+                            placeholder="E.g. FACULTY, HOD"
+                            helperText="Role name will automatically be formatted in uppercase"
+                        />
+                        <TextField
+                            fullWidth
+                            label="Description"
+                            name="description"
+                            value={formData.description || ""}
+                            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                            size="small"
+                            multiline
+                            rows={3}
+                            placeholder="Describe role capabilities and scope..."
+                        />
+                        <FormControlLabel
+                            control={
+                                <Checkbox
+                                    checked={formData.defaultRole || false}
+                                    onChange={(e) => setFormData({ ...formData, defaultRole: e.target.checked })}
+                                    color="primary"
+                                />
+                            }
+                            label={
+                                <Box>
+                                    <Typography variant="body2" fontWeight={700}>Default Identity Role</Typography>
+                                    <Typography variant="caption" color="textSecondary">Mark if this role is a default identity role</Typography>
+                                </Box>
+                            }
+                        />
                     </Box>
                 </DialogContent>
                 <DialogActions sx={{ p: 2 }}>
                     <Button onClick={handleCloseRoleModal}>Cancel</Button>
-                    <Button variant="contained" onClick={handleSubmitRole} disabled={submitting} sx={{ borderRadius: '50px', textTransform: 'none', fontWeight: 700, background: "var(--gradient-primary)", boxShadow: '0 4px 12px rgba(0, 78, 146, 0.3)', px: 4, transition: '0.3s', '&:hover': { background: "var(--gradient-primary-hover)", boxShadow: '0 6px 16px rgba(0, 78, 146, 0.4)' } }}>Create Role</Button>
+                    <Button
+                        variant="contained"
+                        onClick={handleSubmitRole}
+                        disabled={submitting}
+                        sx={{
+                            borderRadius: '50px',
+                            textTransform: 'none',
+                            fontWeight: 700,
+                            background: "var(--gradient-primary)",
+                            boxShadow: '0 4px 12px rgba(0, 78, 146, 0.3)',
+                            px: 4,
+                            transition: '0.3s',
+                            '&:hover': {
+                                background: "var(--gradient-primary-hover)",
+                                boxShadow: '0 6px 16px rgba(0, 78, 146, 0.4)'
+                            }
+                        }}
+                    >
+                        {submitting ? <Loader size={20} color="inherit" /> : (editingRole ? "Update Role" : "Create Role")}
+                    </Button>
+                </DialogActions>
+            </Dialog>
+
+            {/* Delete Role Modal */}
+            <Dialog
+                open={roleDeleteModal.open}
+                onClose={() => setRoleDeleteModal({ open: false, role: null })}
+                slotProps={{ paper: { sx: { borderRadius: '16px' } } }}
+            >
+                <DialogTitle sx={{ fontWeight: 800, color: 'var(--text-primary)' }}>Confirm Role Deletion</DialogTitle>
+                <DialogContent>
+                    <Typography color="var(--text-secondary)" sx={{ mb: 1 }}>
+                        Are you sure you want to delete the role <b>{roleDeleteModal.role?.name}</b>?
+                    </Typography>
+                    <Typography variant="caption" color="error.main" fontWeight={600} display="block">
+                        Warning: This action will unassign this role from all assigned employees and cannot be undone.
+                    </Typography>
+                </DialogContent>
+                <DialogActions sx={{ p: 2, gap: 1 }}>
+                    <Button
+                        onClick={() => setRoleDeleteModal({ open: false, role: null })}
+                        sx={{ borderRadius: '50px', textTransform: 'none', fontWeight: 600 }}
+                    >
+                        Cancel
+                    </Button>
+                    <Button
+                        variant="contained"
+                        color="error"
+                        onClick={handleConfirmDeleteRole}
+                        disabled={deletingRole}
+                        sx={{ borderRadius: '50px', textTransform: 'none', fontWeight: 700 }}
+                    >
+                        {deletingRole ? <Loader size={20} color="inherit" /> : 'Delete Role'}
+                    </Button>
                 </DialogActions>
             </Dialog>
 

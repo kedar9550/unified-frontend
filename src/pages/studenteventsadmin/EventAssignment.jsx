@@ -20,7 +20,6 @@ import {
   CircularProgress,
 } from '@mui/material';
 import {
-  AccountBalance as OtherEventIcon,
   ArrowDownward as ArrowDownwardIcon,
   ChevronRight as ChevronRightIcon,
   Delete as DeleteIcon,
@@ -77,15 +76,6 @@ const EventAssignment = () => {
       color: '#2563eb',
       background: 'rgba(59, 130, 246, 0.12)',
     },
-    {
-      value: 'Other Event',
-      label: 'Other Events',
-      description: 'Assign coordinators to other events.',
-      role: 'EVENT COORDINATOR',
-      icon: <OtherEventIcon />,
-      color: '#c2410c',
-      background: 'rgba(249, 115, 22, 0.12)',
-    },
   ];
 
   const selectedTypeMeta = assignmentTypes.find((type) => type.value === selectedType) || assignmentTypes[0];
@@ -95,7 +85,6 @@ const EventAssignment = () => {
   const assignmentSummary = useMemo(() => ({
     Fest: assignments.filter((assignment) => assignment.assignmentType === 'Fest').length,
     Club: assignments.filter((assignment) => assignment.assignmentType === 'Club').length,
-    'Other Event': assignments.filter((assignment) => assignment.assignmentType === 'Other Event').length,
   }), [assignments]);
 
   const renderSelectedAssignmentSection = () => {
@@ -234,7 +223,7 @@ const EventAssignment = () => {
 
   const validateForm = () => {
     const newErrors = {};
-    if ((assignmentType === 'Fest' || assignmentType === 'Other Event') && !eventName.trim()) {
+    if (assignmentType === 'Fest' && !eventName.trim()) {
       newErrors.eventName = 'Event Name is required.';
     }
     if (assignmentType === 'Club' && !clubId) {
@@ -386,7 +375,7 @@ const EventAssignment = () => {
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2.5 }}>
             Select a category to view and manage its assigned employees.
           </Typography>
-          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(3, minmax(0, 1fr))' }, gap: 2 }}>
+          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, minmax(0, 1fr))' }, gap: 2 }}>
             {assignmentTypes.map((type) => {
               const count = assignments.filter((assignment) => assignment.assignmentType === type.value).length;
               const isSelected = selectedType === type.value;
@@ -430,7 +419,7 @@ const EventAssignment = () => {
           aria-hidden="true"
           sx={{
             display: 'grid',
-            gridTemplateColumns: { xs: '1fr', sm: 'repeat(3, minmax(0, 1fr))' },
+            gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, minmax(0, 1fr))' },
             height: 58,
             mt: 0.5,
           }}
@@ -528,7 +517,7 @@ const EventAssignment = () => {
 
           <Box sx={{ p: { xs: 2, sm: 2.5 }, borderRadius: '14px', bgcolor: 'rgba(15, 118, 110, 0.045)', border: '1px solid rgba(15, 118, 110, 0.14)' }}>
             <Typography variant="subtitle1" fontWeight="700" mb={1.5}>2. Choose target</Typography>
-            {(assignmentType === 'Fest' || assignmentType === 'Other Event') && (
+            {assignmentType === 'Fest' && (
               <TextField
                 fullWidth
                 label={assignmentType === 'Fest' ? 'Fest Name *' : 'Event Name *'}
@@ -641,7 +630,7 @@ const EventAssignment = () => {
             <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
               Selected employees will be assigned the role: 
               <strong>
-                {assignmentType === 'Fest' ? ' CONVENER' : assignmentType === 'Club' ? ' CLUB COORDINATOR' : ' EVENT COORDINATOR'}
+                {assignmentType === 'Fest' ? ' CONVENER' : ' CLUB COORDINATOR'}
               </strong>
             </Typography>
           </Box>

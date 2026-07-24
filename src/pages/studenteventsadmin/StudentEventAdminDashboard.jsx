@@ -95,7 +95,6 @@ const StudentEventAdminDashboard = () => {
     const activeAssignments = assignments.filter((assignment) => Array.isArray(assignment.assignees) && assignment.assignees.length > 0).length;
     const festAssignments = assignments.filter((assignment) => assignment.assignmentType === 'Fest').length;
     const clubAssignments = assignments.filter((assignment) => assignment.assignmentType === 'Club').length;
-    const otherEventAssignments = assignments.filter((assignment) => assignment.assignmentType === 'Other Event').length;
 
     return {
       totalClubs: clubs.length,
@@ -104,7 +103,6 @@ const StudentEventAdminDashboard = () => {
       activeAssignments,
       festAssignments,
       clubAssignments,
-      otherEventAssignments,
     };
   }, [clubs, assignments]);
 
@@ -199,7 +197,6 @@ const StudentEventAdminDashboard = () => {
             <Box sx={{ display: 'grid', gap: 0.7 }}>
               <Typography variant="body2" color="text.secondary">Fest: <strong>{metrics.festAssignments}</strong></Typography>
               <Typography variant="body2" color="text.secondary">Club: <strong>{metrics.clubAssignments}</strong></Typography>
-              <Typography variant="body2" color="text.secondary">Other Event: <strong>{metrics.otherEventAssignments}</strong></Typography>
             </Box>
           </CardContent>
         </Card>
