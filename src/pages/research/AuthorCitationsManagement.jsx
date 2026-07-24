@@ -325,7 +325,7 @@ const AuthorCitationsManagement = () => {
             </Box>
           ) : (
             <DataTable
-              columns={["EMP ID", "FACULTY NAME", "DEPARTMENT", "SCOPUS ID", `CITATIONS (${meta.citationYear})`, `H-INDEX (${meta.hIndexYears[0]})`, `H-INDEX (${meta.hIndexYears[1]})`, "ACTIONS"]}
+              columns={["EMP ID", "FACULTY NAME", "PARENT DEPARTMENT", "SCOPUS ID", `CITATIONS (${meta.citationYear})`, `H-INDEX (${meta.hIndexYears[0]})`, `H-INDEX (${meta.hIndexYears[1]})`, "ACTIONS"]}
               rows={records.map((row) => {
                 const citYear = String(meta.citationYear);
                 const prevYear = String(meta.hIndexYears[0]);

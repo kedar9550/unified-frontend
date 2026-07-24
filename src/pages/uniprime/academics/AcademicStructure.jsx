@@ -211,8 +211,8 @@ const AcademicStructure = () => {
             if (payload.departmentId && typeof payload.departmentId === 'object') {
                 payload.departmentId = payload.departmentId._id;
             }
-            if (payload.programId && typeof payload.programId === 'object') {
-                payload.programId = payload.programId._id;
+            if (payload.programIds && Array.isArray(payload.programIds)) {
+                payload.programIds = payload.programIds.map(p => typeof p === 'object' ? p._id : p);
             }
             if (payload.schoolIds && Array.isArray(payload.schoolIds)) {
                 payload.schoolIds = payload.schoolIds.map(s => typeof s === 'object' ? s._id : s);
@@ -224,6 +224,11 @@ const AcademicStructure = () => {
                 const currentProgramIds = dept.programIds ? dept.programIds.map(id => id?._id || id) : [];
                 const newProgramIds = [...new Set([...currentProgramIds, payload.programId])];
                 res = await API.put(`/api/academics/departments/${payload.departmentId}`, { programIds: newProgramIds });
+            } else if (type === 'branch' && mode === 'add' && payload.existingBranchId && payload.existingBranchId !== 'NEW') {
+                const branchToUpdate = branches.find(b => b._id === payload.existingBranchId);
+                const currentProgIds = branchToUpdate.programIds ? branchToUpdate.programIds.map(p => p?._id || p) : (branchToUpdate.programId ? [branchToUpdate.programId?._id || branchToUpdate.programId] : []);
+                const newProgIds = [...new Set([...currentProgIds, ...(payload.programIds || [])])];
+                res = await API.put(`/api/academics/branches/${payload.existingBranchId}`, { programIds: newProgIds });
             } else {
                 const pluralType = type === 'branch' ? 'branches' : `${type}s`;
                 const endpoint = `/api/academics/${pluralType}`;
@@ -301,7 +306,7 @@ const AcademicStructure = () => {
                 }
             }
             if (data.programId) {
-                modalData.programId = data.programId;
+                modalData.programIds = [data.programId];
             }
         }
         if (selectedSchool && mode === 'add' && type !== 'school') {
@@ -327,12 +332,16 @@ const AcademicStructure = () => {
             const deptBranches = branches.filter(b => b.departmentId?._id === selectedDepartment._id || b.departmentId === selectedDepartment._id);
             const programIdsSeen = new Set();
             deptBranches.forEach(b => {
-                if (b.programId && b.programId._id) {
-                    const progId = b.programId._id.toString();
-                    if (!programIdsSeen.has(progId)) {
-                        programIdsSeen.add(progId);
-                        deptPrograms.push(b.programId);
-                    }
+                if (b.programIds && Array.isArray(b.programIds)) {
+                    b.programIds.forEach(p => {
+                        if (p && p._id) {
+                            const progId = p._id.toString();
+                            if (!programIdsSeen.has(progId)) {
+                                programIdsSeen.add(progId);
+                                deptPrograms.push(p);
+                            }
+                        }
+                    });
                 }
             });
 
@@ -357,7 +366,7 @@ const AcademicStructure = () => {
         const programBranches = (selectedDepartment && selectedProgram)
             ? branches.filter(b =>
                 (b.departmentId?._id === selectedDepartment._id || b.departmentId === selectedDepartment._id) &&
-                (b.programId?._id === selectedProgram._id || b.programId === selectedProgram._id) &&
+                ((b.programIds && b.programIds.some(p => (p?._id || p) === selectedProgram._id)) || (b.programId && (b.programId?._id || b.programId) === selectedProgram._id)) &&
                 (!selectedSchool || !b.schoolId || (b.schoolId?._id === selectedSchool._id || b.schoolId === selectedSchool._id)) &&
                 !(b.name === selectedDepartment.name && b.code === selectedDepartment.code)
             )
@@ -385,15 +394,15 @@ const AcademicStructure = () => {
                             </Box>
                             <Box>
                                 <Typography variant="subtitle1" fontWeight={700} sx={{ color: '#1b4332', fontSize: '1rem', lineHeight: 1.2 }}>
-                                    {selectedSchool.name} ({selectedSchool.code}) - Departments
+                                    {selectedSchool.name} ({selectedSchool.code}) - Serving Departments
                                 </Typography>
-                                <Typography variant="caption" color="textSecondary">
-                                    Click a department to view its programs and specializations.
+                                <Typography variant="body2" sx={{ color: 'var(--text-secondary)' }}>
+                                    Click a serving department to view its programs and specializations.
                                 </Typography>
                             </Box>
                         </Box>
                         <Typography variant="body2" sx={{ color: '#047857', fontWeight: 700, fontSize: '0.8rem' }}>
-                            {schoolDepts.length} Departments
+                            {schoolDepts.length} Serving Departments
                         </Typography>
                     </Box>
 
@@ -512,7 +521,7 @@ const AcademicStructure = () => {
                             >
                                 <Box sx={{ textAlign: "center", p: 1.5 }}>
                                     <Add sx={{ fontSize: 20, color: '#10B981', mb: 0.25 }} />
-                                    <Typography variant="subtitle2" fontWeight={700} sx={{ color: '#10B981', fontSize: '0.8rem' }}>Add Department</Typography>
+                                    <Typography variant="subtitle2" fontWeight={700} sx={{ color: '#10B981', fontSize: '0.8rem' }}>Add Serving Department</Typography>
                                 </Box>
                             </Card>
                         </Grid>
@@ -607,10 +616,10 @@ const AcademicStructure = () => {
                                                         </IconButton>
                                                         {(() => {
                                                             const isLinkedDirectly = selectedDepartment.programIds && selectedDepartment.programIds.some(id => (id?._id || id) === prog._id);
-                                                            const hasSpecializations = branches.some(b => 
-                                                                (b.departmentId?._id === selectedDepartment._id || b.departmentId === selectedDepartment._id) &&
-                                                                (b.programId?._id === prog._id || b.programId === prog._id)
-                                                            );
+                                                                const hasSpecializations = branches.some(b => 
+                                                                    (b.departmentId?._id === selectedDepartment._id || b.departmentId === selectedDepartment._id) &&
+                                                                    ((b.programIds && b.programIds.some(p => (p?._id || p) === prog._id)) || (b.programId && (b.programId?._id || b.programId) === prog._id))
+                                                                );
                                                             if (isLinkedDirectly || !hasSpecializations) {
                                                                 return (
                                                                     <IconButton
@@ -691,9 +700,13 @@ const AcademicStructure = () => {
             
             const filtered = branches.filter(b => {
                 const isDeptMatch = (b.departmentId?._id === selectedDepartment._id || b.departmentId === selectedDepartment._id);
-                const isProgMatch = (b.programId?._id === selectedProgram._id || b.programId === selectedProgram._id);
+                const isProgMatch = (b.programIds && b.programIds.some(p => (p?._id || p) === selectedProgram._id)) || (b.programId && (b.programId?._id || b.programId) === selectedProgram._id);
                 const isSchoolMatch = (!selectedSchool || !b.schoolId || (b.schoolId?._id === selectedSchool._id || b.schoolId === selectedSchool._id));
                 
+                if (isDeptMatch) {
+                    console.log('Branch:', b.name, 'isProgMatch:', isProgMatch, 'b.programIds:', b.programIds, 'selectedProgram._id:', selectedProgram._id);
+                }
+
                 return isDeptMatch && isProgMatch && isSchoolMatch;
             });
             
@@ -789,7 +802,7 @@ const AcademicStructure = () => {
                                     alignItems: "center",
                                     justifyContent: "center",
                                     borderRadius: "8px",
-                                    minHeight: "70px",
+                                    minHeight: '70px',
                                     boxShadow: 'none',
                                     cursor: 'pointer',
                                     transition: 'all 0.3s ease',
@@ -1029,15 +1042,15 @@ const AcademicStructure = () => {
                         <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, justifyContent: 'space-between', alignItems: { xs: 'stretch', sm: 'center' }, gap: 2, mb: 2 }}>
                             <Box>
                                 <Typography variant="h6" fontWeight={800} sx={{ display: 'flex', alignItems: 'center', gap: 1.5, color: 'var(--text-primary)' }}>
-                                    <Business sx={{ color: 'var(--color-primary)' }} /> Central Level Departments
+                                    <Business sx={{ color: 'var(--color-primary)' }} /> Central Level Serving Departments
                                 </Typography>
-                                <Typography variant="body2" color="textSecondary">
-                                    Departments operating at the central level. Click to explore.
+                                <Typography variant="body2" sx={{ color: 'var(--text-secondary)' }}>
+                                    Serving departments operating at the central level. Click to explore.
                                 </Typography>
                             </Box>
                             <Button variant="contained" startIcon={<Add />} onClick={() => openModal('department', 'add', { type: 'Central' })}
                                 sx={{ borderRadius: '50px', background: "var(--gradient-primary)", textTransform: 'none', fontWeight: 700, width: { xs: '100%', sm: 'auto' } }}>
-                                Add Central Department
+                                Add Central Serving Department
                             </Button>
                         </Box>
 
@@ -1268,7 +1281,7 @@ const AcademicStructure = () => {
                         }
                     }}
                 >
-                    <Tab icon={<Business />} iconPosition="start" label="Departments & Specializations" />
+                    <Tab icon={<Business />} iconPosition="start" label="Serving Departments & Specializations" />
                     <Tab icon={<School />} iconPosition="start" label="Programs" />
                 </Tabs>
             </Paper>
@@ -1286,12 +1299,12 @@ const AcademicStructure = () => {
                     {modal.mode === 'add'
                         ? (modal.type === 'branch'
                             ? (modal.data.lockProgram
-                                ? `Add Specialization for ${programs.find(p => p._id === (modal.data.programId?._id || modal.data.programId))?.name || ''}`
+                                ? `Add Specialization for ${programs.find(p => p._id === (modal.data.programIds && modal.data.programIds[0]))?.name || ''}`
                                 : `Add Program for ${selectedDepartment?.name || ''}`)
-                            : modal.type === 'link-program' ? `Add Program` : `Add ${modal.type?.toUpperCase()}`)
+                            : modal.type === 'link-program' ? `Add Program` : `Add ${modal.type === 'department' ? 'Serving Department' : modal.type?.toUpperCase()}`)
                         : (modal.type === 'branch'
-                            ? `Edit Specialization for ${programs.find(p => p._id === (modal.data.programId?._id || modal.data.programId))?.name || ''}`
-                            : `Edit ${modal.type?.toUpperCase()}`)}
+                            ? `Edit Specialization`
+                            : `Edit ${modal.type === 'department' ? 'Serving Department' : modal.type?.toUpperCase()}`)}
                 </DialogTitle>
                 <DialogContent sx={{ py: 2 }}>
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, mt: 1 }}>
@@ -1339,12 +1352,37 @@ const AcademicStructure = () => {
 
                         {(modal.type === 'branch' || modal.type === 'link-program') && (
                             <FormControl fullWidth>
-                                <InputLabel>Program</InputLabel>
+                                <InputLabel>Programs</InputLabel>
                                 <Select
-                                    value={modal.data.programId?._id || modal.data.programId || ''}
-                                    onChange={(e) => setModal({ ...modal, data: { ...modal.data, programId: e.target.value } })}
-                                    label="Program"
-                                    disabled={modal.mode === 'edit' || (modal.mode === 'add' && !!modal.data.lockProgram)}
+                                    multiple={modal.type === 'branch'}
+                                    value={
+                                        modal.type === 'link-program'
+                                            ? (modal.data.programId?._id || modal.data.programId || '')
+                                            : (modal.data.programIds ? modal.data.programIds.map(p => typeof p === 'object' ? p._id : p) : [])
+                                    }
+                                    onChange={(e) => {
+                                        if (modal.type === 'link-program') {
+                                            setModal({ ...modal, data: { ...modal.data, programId: e.target.value } });
+                                        } else {
+                                            setModal({ ...modal, data: { ...modal.data, programIds: e.target.value } });
+                                        }
+                                    }}
+                                    label="Programs"
+                                    disabled={modal.mode === 'add' && !!modal.data.lockProgram}
+                                    renderValue={(selected) => {
+                                        if (modal.type === 'link-program') {
+                                            const prog = programs.find(p => p._id === selected);
+                                            return prog ? prog.name : '';
+                                        }
+                                        return (
+                                            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                                                {selected.map((value) => {
+                                                    const prog = programs.find(p => p._id === value);
+                                                    return <Chip key={value} label={prog ? prog.name : value} size="small" />;
+                                                })}
+                                            </Box>
+                                        );
+                                    }}
                                 >
                                     {programs.map(p => (
                                         <MenuItem key={p._id} value={p._id}>
@@ -1360,11 +1398,11 @@ const AcademicStructure = () => {
                         {modal.type === 'department' && !selectedSchool && (
                             <>
                                 <FormControl fullWidth>
-                                    <InputLabel>Department Type</InputLabel>
+                                    <InputLabel>Serving Department Type</InputLabel>
                                     <Select
                                         value={modal.data.type || 'Academic'}
                                         onChange={(e) => setModal({ ...modal, data: { ...modal.data, type: e.target.value, schoolIds: e.target.value === 'Central' ? [] : modal.data.schoolIds } })}
-                                        label="Department Type"
+                                        label="Serving Department Type"
                                     >
                                         <MenuItem value="Academic">Academic (Under a School)</MenuItem>
                                         <MenuItem value="Central">Central Level</MenuItem>
@@ -1403,22 +1441,51 @@ const AcademicStructure = () => {
                             </>
                         )}
 
-                        {!(modal.type === 'branch' && !modal.data.lockProgram) && modal.type !== 'link-program' && (
+                        {modal.type === 'branch' && modal.mode === 'add' && !!modal.data.lockProgram && (
+                            <FormControl fullWidth sx={{ mb: 2 }}>
+                                <InputLabel>Add Existing or New Specialization</InputLabel>
+                                <Select
+                                    value={modal.data.existingBranchId || 'NEW'}
+                                    onChange={(e) => {
+                                        const bId = e.target.value;
+                                        if (bId === 'NEW') {
+                                            setModal({ ...modal, data: { ...modal.data, existingBranchId: 'NEW', name: '', code: '' } });
+                                        } else {
+                                            const selectedBranch = branches.find(b => b._id === bId);
+                                            setModal({ ...modal, data: { ...modal.data, existingBranchId: bId, name: selectedBranch.name, code: selectedBranch.code } });
+                                        }
+                                    }}
+                                    label="Add Existing or New Specialization"
+                                >
+                                    <MenuItem value="NEW" sx={{ fontWeight: 'bold', color: 'var(--color-primary)' }}>+ Create New Specialization</MenuItem>
+                                    {branches
+                                        .filter(b => (b.departmentId?._id === selectedDepartment?._id || b.departmentId === selectedDepartment?._id) && !(b.programIds && b.programIds.some(p => (p?._id || p) === selectedProgram?._id)) && !(b.programId && (b.programId?._id || b.programId) === selectedProgram?._id) && b.name !== selectedDepartment?.name)
+                                        .map(b => (
+                                            <MenuItem key={b._id} value={b._id}>{b.name} ({b.code})</MenuItem>
+                                        ))}
+                                </Select>
+                            </FormControl>
+                        )}
+
+                        {!(modal.type === 'branch' && modal.mode === 'add' && !modal.data.lockProgram) && modal.type !== 'link-program' && (
                             <TextField
                                 label="Name"
                                 fullWidth
                                 value={modal.data.name || ''}
                                 onChange={(e) => setModal({ ...modal, data: { ...modal.data, name: e.target.value } })}
+                                disabled={modal.type === 'branch' && modal.mode === 'add' && modal.data.existingBranchId && modal.data.existingBranchId !== 'NEW'}
                                 helperText={modal.type === 'branch' ? (selectedProgram ? "e.g., Structural Engineering" : `e.g., ${selectedDepartment?.name || "Civil Engineering"}`) : ""}
+                                sx={{ mb: 2 }}
                             />
                         )}
 
-                        {(modal.type === 'school' || modal.type === 'department' || modal.type === 'program' || (modal.type === 'branch' && modal.data.lockProgram)) && (
+                        {(modal.type === 'school' || modal.type === 'department' || modal.type === 'program' || (modal.type === 'branch' && (modal.mode === 'edit' || modal.data.lockProgram))) && (
                             <TextField
                                 label="Code"
                                 fullWidth
                                 value={modal.data.code || ''}
                                 onChange={(e) => setModal({ ...modal, data: { ...modal.data, code: e.target.value.toUpperCase() } })}
+                                disabled={modal.type === 'branch' && modal.mode === 'add' && modal.data.existingBranchId && modal.data.existingBranchId !== 'NEW'}
                                 helperText={
                                     modal.type === 'school' ? "e.g., SOE" :
                                         modal.type === 'department' ? "e.g., CSE" :

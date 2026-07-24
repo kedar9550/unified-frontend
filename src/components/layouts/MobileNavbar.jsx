@@ -509,18 +509,6 @@ const MobileNavbar = () => {
                         minWidth: 0,
                         display: 'flex',
                         overflowX: 'auto',
-                        '&::-webkit-scrollbar': {
-                            height: '3px',
-                        },
-                        '&::-webkit-scrollbar-track': {
-                            background: 'rgba(0, 0, 0, 0.02)',
-                        },
-                        '&::-webkit-scrollbar-thumb': {
-                            background: 'var(--color-primary-alpha, rgba(37, 99, 235, 0.25))',
-                            borderRadius: '10px',
-                        },
-                        scrollbarWidth: 'thin',
-                        scrollbarColor: 'var(--color-primary-alpha, rgba(37, 99, 235, 0.25)) transparent',
                         height: '100%',
                         background: 'var(--bg-nav-special)'
                     }}>

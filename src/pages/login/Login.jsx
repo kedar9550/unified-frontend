@@ -411,7 +411,7 @@ export default function Login({ defaultSignUp = false }) {
     }
     if ((signupDetails.department || "").toLowerCase().trim() === "freshman engineering") {
       if (!signupData.coreDepartment) {
-        setSignupMsg({ text: "Core Department is required for Freshman Engineering", type: "error" });
+        setSignupMsg({ text: "Parent Department is required for Freshman Engineering", type: "error" });
         return;
       }
     }
@@ -864,7 +864,7 @@ export default function Login({ defaultSignUp = false }) {
                     </div>
                     <div className="auth-field" data-has-value={true}>
                       <input id="signup-dept" type="text" placeholder=" " value={signupDetails.department} disabled title={signupDetails.department} />
-                      <label className="auth-label" htmlFor="signup-dept">Department</label>
+                      <label className="auth-label" htmlFor="signup-dept">Serving Department</label>
                     </div>
                     {showCoreDept && (
                       <div 
@@ -879,7 +879,7 @@ export default function Login({ defaultSignUp = false }) {
                           <span>{signupData.coreDepartment || ""}</span>
                           <span className="custom-select-arrow"></span>
                         </div>
-                        <label className="auth-label">Core Department</label>
+                        <label className="auth-label">Parent Department</label>
                         
                         {isDeptSelectOpen && (
                           <div className="custom-select-options">

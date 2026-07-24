@@ -106,7 +106,24 @@ const UniprimeDashboard = () => {
     fetchDashboardData();
   }, []);
 
-  const COLORS = ["#2196f3", "#4caf50", "#ff9800", "#f44336", "#9c27b0", "#00bcd4"];
+  const COLORS = [
+    "#3b82f6", // Blue
+    "#10b981", // Emerald/Green
+    "#f59e0b", // Amber/Orange
+    "#ef4444", // Red
+    "#8b5cf6", // Purple
+    "#06b6d4", // Cyan
+    "#ec4899", // Pink
+    "#14b8a6", // Teal
+    "#f97316", // Orange
+    "#a855f7", // Violet
+    "#6366f1", // Indigo
+    "#84cc16", // Lime
+    "#0ea5e9", // Sky Blue
+    "#d946ef", // Fuchsia
+    "#eab308", // Yellow
+    "#22c55e", // Light Green
+  ];
 
   // Top Row Cards Data
   const topCards = [
@@ -132,7 +149,7 @@ const UniprimeDashboard = () => {
       path: "/academics/management",
     },
     {
-      title: "Departments",
+      title: "Serving Departments",
       value: dashboardData.departmentsCount,
       icon: <AccountBalance />,
       gradient: "linear-gradient(135deg, #8B5CF6, #6D28D9)",
@@ -174,7 +191,7 @@ const UniprimeDashboard = () => {
   ];
 
   const quickActions = [
-    { title: "Add Department", desc: "Create new department", icon: <DomainAdd color="success" />, path: "/academics/department" },
+    { title: "Add Serving Department", desc: "Create new serving department", icon: <DomainAdd color="success" />, path: "/academics/department" },
     { title: "Add Program / Branch", desc: "Add program or branch", icon: <AccountTree color="secondary" />, path: "/academics/programs" },
     { title: "Add User", desc: "Register new user", icon: <PersonAdd sx={{ color: "#00b0ff" }} />, path: "/student/student-uploads" },
     { title: "Assign Role", desc: "Assign role to user", icon: <AssignmentInd color="warning" />, path: "/academics/roles" },
@@ -182,6 +199,7 @@ const UniprimeDashboard = () => {
   ];
 
   const recentUsers = dashboardData.recentUsers || [];
+  const totalRoleAssignments = (dashboardData.roleDistribution || []).reduce((sum, item) => sum + item.value, 0);
 
   const recentActivity = [
     { 
@@ -191,7 +209,7 @@ const UniprimeDashboard = () => {
       icon: <CalendarMonth color="success" /> 
     },
     { 
-      title: dashboardData.departmentsList[0]?.departmentName ? `Department '${dashboardData.departmentsList[0].departmentName}' onboarded` : "Academic structure updated", 
+      title: dashboardData.departmentsList[0]?.departmentName ? `Serving Department '${dashboardData.departmentsList[0].departmentName}' onboarded` : "Academic structure updated", 
       by: "Super Admin", 
       time: "Today", 
       icon: <AccountBalance color="primary" /> 
@@ -473,7 +491,7 @@ const UniprimeDashboard = () => {
                       }}>
                         <AccountBalance sx={{ color: "#2563eb", fontSize: 22 }} />
                       </Box>
-                      <Typography sx={{ fontWeight: 700, color: "var(--text-primary)", fontSize: "0.95rem" }}>Departments</Typography>
+                      <Typography sx={{ fontWeight: 700, color: "var(--text-primary)", fontSize: "0.95rem" }}>Serving Departments</Typography>
                     </Box>
                     <Box sx={{ bgcolor: "rgba(59, 130, 246, 0.1)", px: 2, py: 0.5, borderRadius: "20px" }}>
                       <Typography sx={{ fontWeight: 800, color: "#2563eb", fontSize: "0.85rem" }}>{dashboardData.departmentsCount}</Typography>
@@ -690,6 +708,7 @@ const UniprimeDashboard = () => {
                             innerRadius={55}
                             outerRadius={80}
                             paddingAngle={2}
+                            minAngle={5}
                             stroke="none"
                           >
                             {dashboardData.roleDistribution.map((entry, index) => (
@@ -724,20 +743,36 @@ const UniprimeDashboard = () => {
                       sx={{
                         p: 2.5,
                         borderRadius: "16px",
-                        border: "1px solid #e2e8f0",
+                        border: "1px solid var(--border-color, #e2e8f0)",
                         bgcolor: "var(--bg-glass)",
                         width: { xs: '100%', md: 'auto' },
                         minWidth: { md: 260 },
                         flexGrow: 1,
                         display: "flex",
                         flexDirection: "column",
-                        gap: 1.5
+                        gap: 1.5,
+                        maxHeight: 280,
+                        overflowY: "auto",
+                        pr: 1.5,
+                        "&::-webkit-scrollbar": {
+                          width: "6px",
+                        },
+                        "&::-webkit-scrollbar-track": {
+                          background: "transparent",
+                        },
+                        "&::-webkit-scrollbar-thumb": {
+                          background: "rgba(0, 0, 0, 0.1)",
+                          borderRadius: "4px",
+                        },
+                        "&::-webkit-scrollbar-thumb:hover": {
+                          background: "rgba(0, 0, 0, 0.2)",
+                        },
                       }}
                     >
                       {dashboardData.roleDistribution.map((role, idx) => {
                         const percent =
-                          dashboardData.usersCount > 0
-                            ? ((role.value / dashboardData.usersCount) * 100).toFixed(1)
+                          totalRoleAssignments > 0
+                            ? ((role.value / totalRoleAssignments) * 100).toFixed(1)
                             : 0;
 
                         return (

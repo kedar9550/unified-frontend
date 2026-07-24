@@ -50,11 +50,9 @@ const theme = createTheme({
         contained: {
           background: "var(--gradient-primary)",
           color: "#ffffff",
-          boxShadow: "0 4px 12px rgba(0, 78, 146, 0.3)",
           border: "none",
           "&:hover": {
             background: "var(--gradient-primary-hover)",
-            boxShadow: "0 6px 16px rgba(0, 78, 146, 0.4)",
           },
           "&.Mui-disabled": {
             background: "var(--disabled-bg)",
@@ -63,42 +61,32 @@ const theme = createTheme({
           },
           "&.MuiButton-containedSecondary": {
             background: "linear-gradient(135deg, #d06c38, #b05325)",
-            boxShadow: "0 4px 12px rgba(208, 108, 56, 0.3)",
             "&:hover": {
               background: "linear-gradient(135deg, #b05325, #903c15)",
-              boxShadow: "0 6px 16px rgba(208, 108, 56, 0.4)",
             }
           },
           "&.MuiButton-containedSuccess": {
             background: "linear-gradient(135deg, #10B981, #059669)",
-            boxShadow: "0 4px 12px rgba(16, 185, 129, 0.3)",
             "&:hover": {
               background: "linear-gradient(135deg, #059669, #047857)",
-              boxShadow: "0 6px 16px rgba(16, 185, 129, 0.4)",
             }
           },
           "&.MuiButton-containedError": {
             background: "linear-gradient(135deg, #EF4444, #DC2626)",
-            boxShadow: "0 4px 12px rgba(239, 68, 68, 0.3)",
             "&:hover": {
               background: "linear-gradient(135deg, #DC2626, #B91C1C)",
-              boxShadow: "0 6px 16px rgba(239, 68, 68, 0.4)",
             }
           },
           "&.MuiButton-containedWarning": {
             background: "linear-gradient(135deg, #F59E0B, #D97706)",
-            boxShadow: "0 4px 12px rgba(245, 158, 11, 0.3)",
             "&:hover": {
               background: "linear-gradient(135deg, #D97706, #B45309)",
-              boxShadow: "0 6px 16px rgba(245, 158, 11, 0.4)",
             }
           },
           "&.MuiButton-containedInfo": {
             background: "linear-gradient(135deg, #3B82F6, #2563EB)",
-            boxShadow: "0 4px 12px rgba(59, 130, 246, 0.3)",
             "&:hover": {
               background: "linear-gradient(135deg, #2563EB, #1D4ED8)",
-              boxShadow: "0 6px 16px rgba(59, 130, 246, 0.4)",
             }
           }
         },

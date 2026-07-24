@@ -462,7 +462,7 @@ const Profile = () => {
                   {profile?.department || "N/A"}
                 </Typography>
                 <Typography sx={{ fontSize: "0.75rem", color: "var(--color-primary)", fontWeight: 700, mb: doj ? 1 : 2 }}>
-                  Core: {profile?.coreDepartment || "N/A"}
+                  Parent: {profile?.coreDepartment || "N/A"}
                 </Typography>
                 {doj && (
                   <Typography sx={{ fontSize: "0.85rem", color: "var(--gradient-primary)", fontWeight: 400, mb: 1 }}>
@@ -582,8 +582,8 @@ const Profile = () => {
               {/* Read-only */}
               <InfoCard icon={BadgeIcon} label="Institution ID" value={profile?.institutionId} />
               <InfoCard icon={Person} label="Full Name" value={profile?.name} />
-              <InfoCard icon={Business} label="Department" value={profile?.department} />
-              <InfoCard icon={VerifiedUser} label="Core Department" value={profile?.coreDepartment} />
+              <InfoCard icon={Business} label="Serving Department" value={profile?.department} />
+              <InfoCard icon={VerifiedUser} label="Parent Department" value={profile?.coreDepartment} />
               <EditableField
                 icon={ContactMail} label="Email Address" fieldKey="email" value={profile?.email}
                 isEditing={isEditing} fieldValue={form.email} fieldError={errors.email}

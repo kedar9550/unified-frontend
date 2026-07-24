@@ -44,7 +44,7 @@ const ProctorStudentsModal = ({ open, onClose, proctorId }) => {
     // Basic CSV download logic
     if (students.length === 0) return;
     
-    const headers = ["Student ID", "Student Name", "Department", "Sem/Year", "Start Academic Year"];
+    const headers = ["Student ID", "Student Name", "Serving Department", "Sem/Year", "Start Academic Year"];
     const rows = students.map(s => [
       s.studentId, 
       s.studentName, 
@@ -176,7 +176,7 @@ const ProctorStudentsModal = ({ open, onClose, proctorId }) => {
           </Box>
         ) : (
           <DataTable
-            columns={["ROLL NO", "STUDENT NAME", "DEPARTMENT", "SEM/YEAR", "ASSIGNED SINCE", "ACTIONS"]}
+            columns={["ROLL NO", "STUDENT NAME", "SERVING DEPARTMENT", "SEM/YEAR", "ASSIGNED SINCE", "ACTIONS"]}
             rows={students.map((s) => [
               s.studentId,
               s.studentName,
