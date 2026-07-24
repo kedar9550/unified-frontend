@@ -331,6 +331,9 @@ const Sidebar = ({ mobileOpen, onDrawerToggle, isCollapsed, onToggleSidebar }) =
         {(() => {
           const displayedRole = effectiveRole;
           const roleUpper = displayedRole.toUpperCase();
+          const activeRoleObj = user?.roles?.find(r => r.role === displayedRole);
+          const displayedRoleName = activeRoleObj?.name || capitalizeRole(displayedRole);
+          
           const roleIcon = {
             FACULTY: <School sx={{ fontSize: "1.2rem" }} />,
             STUDENT: <PersonIcon sx={{ fontSize: "1.2rem" }} />,
@@ -343,7 +346,7 @@ const Sidebar = ({ mobileOpen, onDrawerToggle, isCollapsed, onToggleSidebar }) =
           }[roleUpper] || <AccountCircle sx={{ fontSize: "2rem" }} />;
 
           return (
-            <Tooltip title={capitalizeRole(displayedRole)} disableHoverListener={!isCollapsed} placement="right" arrow>
+            <Tooltip title={displayedRoleName} disableHoverListener={!isCollapsed} placement="right" arrow>
               <Box
                 sx={{
                   display: "inline-flex",
@@ -366,7 +369,7 @@ const Sidebar = ({ mobileOpen, onDrawerToggle, isCollapsed, onToggleSidebar }) =
                 <Box sx={{ display: "flex", color: "var(--color-primary)" }}>{roleIcon}</Box>
                 {!isCollapsed && (
                   <Typography sx={{ fontSize: "0.85rem", fontWeight: 700, letterSpacing: "0.5px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                    {capitalizeRole(displayedRole)}
+                    {displayedRoleName}
                   </Typography>
                 )}
               </Box>

@@ -58,7 +58,7 @@ const RoleManagement = () => {
     // Modal State - Role
     const [isRoleModalOpen, setIsRoleModalOpen] = useState(false);
     const [submitting, setSubmitting] = useState(false);
-    const [formData, setFormData] = useState({ name: "", description: "", defaultRole: false });
+    const [formData, setFormData] = useState({ name: "", key: "", description: "", defaultRole: false });
 
     // Modal State - User Choice
     const [isUserChoiceModalOpen, setIsUserChoiceModalOpen] = useState(false);
@@ -545,6 +545,7 @@ const RoleManagement = () => {
         try {
             const payload = {
                 name: formData.name.trim().toUpperCase(),
+                key: (formData.key || formData.name).trim().toUpperCase().replace(/ /g, '_'),
                 description: formData.description || "",
                 defaultRole: Boolean(formData.defaultRole)
             };
@@ -1969,7 +1970,7 @@ const RoleManagement = () => {
                                     startIcon={<Add />}
                                     onClick={() => {
                                         setEditingRole(null);
-                                        setFormData({ name: "", description: "", defaultRole: false });
+                                        setFormData({ name: "", key: "", description: "", defaultRole: false });
                                         setIsRoleModalOpen(true);
                                     }}
                                     sx={{
@@ -2010,6 +2011,7 @@ const RoleManagement = () => {
                                         <TableHead sx={{ bgcolor: 'var(--bg-accent-1)' }}>
                                             <TableRow>
                                                 <TableCell sx={{ fontWeight: 800, color: 'var(--text-primary)' }}>Role Name</TableCell>
+                                                <TableCell sx={{ fontWeight: 800, color: 'var(--text-primary)' }}>Role Key</TableCell>
                                                 <TableCell sx={{ fontWeight: 800, color: 'var(--text-primary)' }}>Description</TableCell>
                                                 <TableCell sx={{ fontWeight: 800, color: 'var(--text-primary)' }}>Type</TableCell>
                                                 <TableCell sx={{ fontWeight: 800, color: 'var(--text-primary)' }}>App Scope</TableCell>
@@ -2030,6 +2032,9 @@ const RoleManagement = () => {
                                                                     {role.name}
                                                                 </Typography>
                                                             </Box>
+                                                        </TableCell>
+                                                        <TableCell sx={{ fontWeight: 600, color: 'var(--text-primary)' }}>
+                                                            {role.key || <Typography variant="caption" fontStyle="italic" color="text.disabled">N/A</Typography>}
                                                         </TableCell>
                                                         <TableCell sx={{ fontWeight: 500, color: 'var(--text-secondary)', maxWidth: 300 }}>
                                                             {role.description || <Typography variant="caption" fontStyle="italic" color="text.disabled">No description</Typography>}
@@ -2072,6 +2077,7 @@ const RoleManagement = () => {
                                                                             setEditingRole(role);
                                                                             setFormData({
                                                                                 name: role.name || "",
+                                                                                key: role.key || "",
                                                                                 description: role.description || "",
                                                                                 defaultRole: role.defaultRole || false
                                                                             });
@@ -2153,6 +2159,17 @@ const RoleManagement = () => {
                             size="small"
                             placeholder="E.g. FACULTY, HOD"
                             helperText="Role name will automatically be formatted in uppercase"
+                        />
+                        <TextField
+                            fullWidth
+                            label="Role Key"
+                            name="key"
+                            value={formData.key}
+                            onChange={(e) => setFormData({ ...formData, key: e.target.value.toUpperCase().replace(/ /g, '_') })}
+                            size="small"
+                            placeholder="E.g. FACULTY, HOD"
+                            helperText="Unique identifier for logic. Auto-formats to uppercase without spaces."
+                            required
                         />
                         <TextField
                             fullWidth

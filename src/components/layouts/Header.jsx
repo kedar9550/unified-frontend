@@ -32,6 +32,7 @@ const capitalizeRole = (role) => {
 
 const Header = ({ isSidebarCollapsed }) => {
   const { user, activeRole, switchRole, logout } = useAuth();
+  const activeRoleObj = user?.roles?.find(r => r.role === activeRole);
   const [imgError, setImgError] = useState(false);
   const [anchorEl, setAnchorEl] = useState(null);
   const notifRef = React.useRef(null);
@@ -270,7 +271,7 @@ const Header = ({ isSidebarCollapsed }) => {
                 {user?.name || "System User"}
               </Typography>
               <Typography noWrap sx={{ fontSize: "0.7rem", fontWeight: 500, color: "var(--text-secondary)", lineHeight: 1, width: "100%" }}>
-                {user?.designation || capitalizeRole(activeRole) || "User"}
+                {user?.designation || (activeRoleObj?.name || capitalizeRole(activeRole)) || "User"}
               </Typography>
             </Box>
             <KeyboardArrowDown
@@ -402,7 +403,7 @@ const Header = ({ isSidebarCollapsed }) => {
                       {isUniprime ? <Domain sx={{ fontSize: 18 }} /> : <School sx={{ fontSize: 18 }} />}
                     </Box>
                     <Typography sx={{ fontWeight: 800, fontSize: "0.85rem", letterSpacing: "0.3px" }}>
-                      {capitalizeRole(r.role)}
+                      {r.name || capitalizeRole(r.role)}
                     </Typography>
                   </Box>
 
