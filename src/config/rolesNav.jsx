@@ -240,13 +240,13 @@ export const ROLE_ROUTES = {
   ],
 
   // Example for "Research Feedback Committee"
-  "RESEARCH FEEDBACK COMMITTEE": [
+  RESEARCH_FEEDBACK_COMMITTEE: [
     { text: "Dashboard", path: "/dashboard", icon: <Dashboard /> },
     { text: "Feedback Reports", path: "/feedback-reports", icon: <Science /> },
   ],
 
   // Feedback Coordinator
-  "FEEDBACK COORDINATOR": [
+  FEEDBACK_COORDINATOR: [
     { text: "Dashboard", path: "/dashboard", icon: <Dashboard /> },
     { text: "Feedback Management", path: "/feedback-management", icon: <MenuBook /> },
     { text: "Discrepancies", path: "/feedback-management/discrepancies", icon: <Flag /> },
@@ -323,7 +323,7 @@ export const ROLE_ROUTES = {
     }
   ],
 
-  "TECHNICAL STAFF": [
+  TECHNICAL_STAFF: [
     { text: "Dashboard", path: "/dashboard", icon: <Dashboard /> },
     {
       text: "Utilities",
@@ -358,7 +358,7 @@ export const ROLE_ROUTES = {
     { text: "Assigned to Me", path: "/service-desk/assigned-to-me", icon: <AssignmentInd /> },
   ],
 
-  "STUDENT EVENT ADMIN": [
+  STUDENT_EVENT_ADMIN: [
     { text: "Dashboard", path: "/dashboard", icon: <Dashboard /> },
     // { text: "Student Event Admin", path: "/student-event-admin", icon: <AssignmentInd /> },
     // { text: "Club Management", path: "/student-event-admin/clubs", icon: <Groups /> },
@@ -395,7 +395,7 @@ export const ROLE_ROUTES = {
     }
   ],
 
-  "MAJOR EVENT ADMIN": [
+  MAJOR_EVENT_ADMIN: [
     { text: "Dashboard", path: "/dashboard", icon: <Dashboard /> },
     { text: "Fest Groups", path: "/major-event-admin/groups", icon: <Groups /> },
     {
