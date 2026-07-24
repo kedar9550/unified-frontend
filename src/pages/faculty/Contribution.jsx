@@ -5,7 +5,7 @@ import {
   DialogContent, DialogActions, Grid, Chip, Divider, Stack, useTheme, useMediaQuery
 } from "@mui/material";
 import { toast } from "sonner";
-import { Description, WorkspacePremium, Close, AddCircle, Edit, Delete, Visibility } from "@mui/icons-material";
+import { Description, WorkspacePremium, Close, AddCircle, Edit, Delete, Visibility, CheckCircle, CalendarToday, Download, Comment, FormatQuote, DateRange, School } from "@mui/icons-material";
 import PageHeader from "../../components/common/PageHeader";
 import NoActiveYearDialog from "../../components/common/NoActiveYearDialog";
 import {
@@ -42,6 +42,44 @@ export default function Contribution() {
 
   const [noActiveYearAlertOpen, setNoActiveYearAlertOpen] = useState(false);
   const [selectedContributionDetails, setSelectedContributionDetails] = useState(null);
+  const [previewBlobUrl, setPreviewBlobUrl] = useState(null);
+
+  useEffect(() => {
+    let active = true;
+    if (selectedContributionDetails?.proof) {
+      const data = selectedContributionDetails;
+      const backendURL = (import.meta.env.VITE_BACKEND_URL || "http://localhost:9000").replace(/\/$/, "");
+      const fileUrl = data.proof.startsWith('http') ? data.proof : `${backendURL}${data.proof}`;
+      
+      fetch(fileUrl)
+        .then(res => {
+          if (!res.ok) throw new Error("Failed to fetch proof");
+          return res.blob();
+        })
+        .then(blob => {
+          if (active) {
+            const url = URL.createObjectURL(blob);
+            setPreviewBlobUrl(url);
+          }
+        })
+        .catch(err => {
+          console.error("Error loading preview:", err);
+          if (active) {
+            setPreviewBlobUrl(fileUrl);
+          }
+        });
+    } else {
+      setPreviewBlobUrl(null);
+    }
+
+    return () => {
+      active = false;
+      if (previewBlobUrl && previewBlobUrl.startsWith("blob:")) {
+        URL.revokeObjectURL(previewBlobUrl);
+      }
+    };
+  }, [selectedContributionDetails]);
+
   const [isDocumentRemoved, setIsDocumentRemoved] = useState(false);
 
   const [editingId, setEditingId] = useState(null);
@@ -959,192 +997,354 @@ export default function Contribution() {
 
     const formatDate = (dateStr) => {
       if (!dateStr) return "-";
-      return new Date(dateStr).toLocaleDateString("en-IN", { day: "2-digit", month: "2-digit", year: "numeric" });
+      return new Date(dateStr).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
     };
+
+    // Determine what dates we have to display in the lavender card
+    const hasFromToDates = data.fromDate && data.toDate;
+    const singleDate = data.awardDate || data.eventDate || data.publicationDate;
+    const dateLabel = data.awardDate ? "Award Date" : data.eventDate ? "Event Date" : "Publication Date";
 
     return (
       <Dialog
         open={!!selectedContributionDetails}
         onClose={() => setSelectedContributionDetails(null)}
-        maxWidth="md"
+        maxWidth="lg"
         fullWidth
         slotProps={{
           paper: {
             sx: {
               borderRadius: "20px",
               background: "var(--bg-paper)",
-              backdropFilter: "blur(12px)",
               border: "1px solid var(--border-color)",
               boxShadow: "var(--shadow-premium)",
             }
           }
         }}
       >
-        <DialogTitle component="div" sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "var(--gradient-primary)", color: "#fff", py: 2 }}>
+        <DialogTitle component="div" sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          background: "linear-gradient(90deg, #0d1b3e 0%, #0f172a 100%)",
+          color: "#fff",
+          py: 2.2,
+          px: 3
+        }}>
           <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-            <WorkspacePremium sx={{ color: "#fff" }} />
-            <Typography variant="h6" component="div" sx={{ fontWeight: 800 }}>Contribution Details</Typography>
+            <WorkspacePremium sx={{ fontSize: 24, color: "#fff" }} />
+            <Typography variant="h6" component="div" sx={{ fontWeight: 600, fontSize: "1.1rem" }}>Contribution Details</Typography>
           </Box>
-          <IconButton onClick={() => setSelectedContributionDetails(null)} sx={{ color: "#fff" }}><Close /></IconButton>
+          <IconButton onClick={() => setSelectedContributionDetails(null)} sx={{ color: "#fff" }}>
+            <Close sx={{ fontSize: 20 }} />
+          </IconButton>
         </DialogTitle>
-        <DialogContent sx={{ pt: 2, px: 3, pb: 3, mt: 2 }}>
-          <Typography variant="subtitle2" color="var(--color-primary)" sx={{ fontWeight: 800, textTransform: "uppercase" }}>
-            {getCategoryName(data.category)}
-          </Typography>
-          {value && (
-            <Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)", mb: 3, mt: 0.5 }}>
-              {value}
-            </Typography>
-          )}
 
-          <Grid container spacing={2} sx={{ mt: value ? 0 : 2 }}>
-            <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-              <Box sx={{ p: 1.5, borderRadius: "10px", background: "var(--bg-paper)", border: "1px solid var(--border-color)", height: "100%" }}>
-                <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", fontWeight: 800, fontSize: "0.65rem" }}>Academic Year</Typography>
-                <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>{data.academicYear?.year || "N/A"}</Typography>
-              </Box>
-            </Grid>
-
-            <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-              <Box sx={{ p: 1.5, borderRadius: "10px", background: "var(--bg-paper)", border: "1px solid var(--border-color)", height: "100%" }}>
-                <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", fontWeight: 800, fontSize: "0.65rem" }}>Status</Typography>
-                <Box sx={{ mt: 0.5 }}>
-                  <Chip
-                    label={data.status}
-                    size="small"
-                    sx={{
-                      bgcolor: statusStyle.bg,
-                      color: statusStyle.color,
-                      fontWeight: 800,
-                      borderRadius: "6px"
-                    }}
-                  />
-                </Box>
-              </Box>
-            </Grid>
-
-            {/* Category specific fields */}
-            {data.fromDate && data.toDate && (
-              <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-                <Box sx={{ p: 1.5, borderRadius: "10px", background: "var(--bg-paper)", border: "1px solid var(--border-color)", height: "100%" }}>
-                  <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", fontWeight: 800, fontSize: "0.65rem" }}>Dates</Typography>
-                  <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>
-                    {formatDate(data.fromDate)} to {formatDate(data.toDate)}
-                  </Typography>
-                </Box>
-              </Grid>
-            )}
-
-            {data.duration && (
-              <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-                <Box sx={{ p: 1.5, borderRadius: "10px", background: "var(--bg-paper)", border: "1px solid var(--border-color)", height: "100%" }}>
-                  <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", fontWeight: 800, fontSize: "0.65rem" }}>Duration</Typography>
-                  <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>{data.duration}</Typography>
-                </Box>
-              </Grid>
-            )}
-
-            {data.awardDate && (
-              <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-                <Box sx={{ p: 1.5, borderRadius: "10px", background: "var(--bg-paper)", border: "1px solid var(--border-color)", height: "100%" }}>
-                  <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", fontWeight: 800, fontSize: "0.65rem" }}>Award Date</Typography>
-                  <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>{formatDate(data.awardDate)}</Typography>
-                </Box>
-              </Grid>
-            )}
-
-            {data.eventDate && (
-              <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-                <Box sx={{ p: 1.5, borderRadius: "10px", background: "var(--bg-paper)", border: "1px solid var(--border-color)", height: "100%" }}>
-                  <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", fontWeight: 800, fontSize: "0.65rem" }}>Event Date</Typography>
-                  <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>{formatDate(data.eventDate)}</Typography>
-                </Box>
-              </Grid>
-            )}
-
-            {data.publicationName && (
-              <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-                <Box sx={{ p: 1.5, borderRadius: "10px", background: "var(--bg-paper)", border: "1px solid var(--border-color)", height: "100%" }}>
-                  <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", fontWeight: 800, fontSize: "0.65rem" }}>Publication Name</Typography>
-                  <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>{data.publicationName}</Typography>
-                </Box>
-              </Grid>
-            )}
-
-            {data.publicationDate && (
-              <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-                <Box sx={{ p: 1.5, borderRadius: "10px", background: "var(--bg-paper)", border: "1px solid var(--border-color)", height: "100%" }}>
-                  <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", fontWeight: 800, fontSize: "0.65rem" }}>Publication Date</Typography>
-                  <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>{formatDate(data.publicationDate)}</Typography>
-                </Box>
-              </Grid>
-            )}
-
-            {data.certificateNumber && (
-              <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-                <Box sx={{ p: 1.5, borderRadius: "10px", background: "var(--bg-paper)", border: "1px solid var(--border-color)", height: "100%" }}>
-                  <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", fontWeight: 800, fontSize: "0.65rem" }}>Certificate Number</Typography>
-                  <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>{data.certificateNumber}</Typography>
-                </Box>
-              </Grid>
-            )}
-
-            {(data.courseHours !== undefined && data.courseHours !== null) && (
-              <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-                <Box sx={{ p: 1.5, borderRadius: "10px", background: "var(--bg-paper)", border: "1px solid var(--border-color)", height: "100%" }}>
-                  <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", fontWeight: 800, fontSize: "0.65rem" }}>Course Hours</Typography>
-                  <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>{data.courseHours} hrs</Typography>
-                </Box>
-              </Grid>
-            )}
-
-            {data.url && (
-              <Grid size={{ xs: 12 }}>
-                <Box sx={{ p: 1.5, borderRadius: "10px", background: "var(--bg-paper)", border: "1px solid var(--border-color)", height: "100%" }}>
-                  <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", fontWeight: 800, fontSize: "0.65rem" }}>URL / Reference Link</Typography>
-                  <Typography variant="body2" sx={{ fontWeight: 700, mt: 0.5 }}>
-                    <a href={data.url} target="_blank" rel="noopener noreferrer" style={{ color: "var(--color-primary)", textDecoration: "none" }}>{data.url}</a>
-                  </Typography>
-                </Box>
-              </Grid>
-            )}
-
-            {/* HOD Feedback / Remarks */}
-            {data.hodComment && (
-              <Grid size={{ xs: 12 }}>
-                <Box sx={{ p: 2, bgcolor: "rgba(232, 160, 0, 0.05)", borderRadius: "12px", border: "1px solid rgba(232, 160, 0, 0.2)" }}>
-                  <Typography variant="caption" sx={{ fontWeight: 900, color: "#e8a000", textTransform: "uppercase", letterSpacing: "0.05em" }}>HOD Remarks</Typography>
-                  <Typography variant="body2" sx={{ fontStyle: "italic", mt: 0.5, color: "var(--text-primary)" }}>&quot;{data.hodComment}&quot;</Typography>
-                </Box>
-              </Grid>
-            )}
-          </Grid>
-
-          <Divider sx={{ my: 3 }} />
-
-          {fileUrl && (
-            <Box sx={{ mt: 3 }}>
-              <Typography variant="caption" sx={{ fontWeight: 800, color: "var(--color-primary)", fontSize: "0.7rem", textTransform: "uppercase", display: "block", mb: 1 }}>Supporting Certificate</Typography>
+        <DialogContent sx={{ pt: "24px !important", px: 4, pb: 4 }}>
+          {/* Header Section with Contribution Info & Large Circle Icon */}
+          <Box sx={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            gap: 2.5,
+            mb: 4,
+            mt: 1.5,
+            flexWrap: { xs: "wrap", md: "nowrap" }
+          }}>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 2.5, flex: 1 }}>
+              {/* Left Circle Icon */}
               <Box sx={{
-                height: 250, display: "flex", alignItems: "center", justifyContent: "center",
-                border: "1px solid var(--border-color)", background: "var(--bg-panel)", borderRadius: "8px",
-                overflow: "hidden", cursor: "pointer", transition: "all 0.2s ease",
-                "&:hover": { borderColor: "var(--color-primary)", transform: "translateY(-2px)" }
-              }} onClick={() => window.open(fileUrl, '_blank')}>
-                {isImage ? (
-                  <img src={fileUrl} alt="Proof" style={{ width: "100%", height: "100%", objectFit: "contain" }} />
-                ) : (
-                  <Box sx={{ textAlign: "center" }}>
-                    <Description sx={{ fontSize: 40, color: "var(--text-secondary)", mb: 0.5 }} />
-                    <Typography variant="caption" sx={{ color: "var(--text-secondary)", fontWeight: 700, display: "block" }}>PDF Preview (Click to open)</Typography>
-                  </Box>
+                width: 64,
+                height: 64,
+                borderRadius: "50%",
+                bgcolor: "#eff6ff",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                flexShrink: 0
+              }}>
+                <School sx={{ fontSize: 32, color: "#1e3a8a" }} />
+              </Box>
+              
+              {/* Title & Subtitle */}
+              <Box>
+                <Typography sx={{
+                  fontSize: "0.85rem",
+                  fontWeight: 800,
+                  color: "#2563eb",
+                  textTransform: "uppercase",
+                  letterSpacing: "0.05em",
+                  mb: 0.5
+                }}>
+                  {getCategoryName(data.category)}
+                </Typography>
+                {value && (
+                  <Typography sx={{
+                    fontSize: "1.35rem",
+                    fontWeight: 800,
+                    color: "var(--text-primary)",
+                    lineHeight: 1.25
+                  }}>
+                    {value}
+                  </Typography>
                 )}
+              </Box>
+            </Box>
+
+            {/* Right: Status Badge */}
+            <Chip
+              label={data.status}
+              icon={
+                data.status === "Approved" ? (
+                  <span style={{ color: "#10b981", fontWeight: "bold", marginRight: "2px" }}>✓</span>
+                ) : undefined
+              }
+              sx={{
+                bgcolor: data.status === "Approved" ? "#f0fdf4" : statusStyle.bg,
+                color: data.status === "Approved" ? "#10b981" : statusStyle.color,
+                border: data.status === "Approved" ? "1px solid #bbf7d0" : `1px solid ${statusStyle.color}40`,
+                fontWeight: 700,
+                fontSize: "0.85rem",
+                px: 1.8,
+                py: 2.2,
+                borderRadius: "8px",
+                "& .MuiChip-icon": {
+                  color: "inherit"
+                }
+              }}
+            />
+          </Box>
+
+          {/* Grid Layout containing Labeled Info Columns */}
+          <Grid container spacing={4}>
+            {/* Left Column: Contribution Info and Duration */}
+            <Grid size={{ xs: 12, md: 7.5 }}>
+              
+              {/* CONTRIBUTION INFORMATION */}
+              <Box sx={{ mb: 4 }}>
+                <Typography sx={{ fontSize: "0.85rem", fontWeight: 800, color: "#2563eb", textTransform: "uppercase", letterSpacing: "0.05em", mb: 2.5 }}>
+                  Contribution Information
+                </Typography>
+                
+                <Box sx={{ display: "grid", gridTemplateColumns: { xs: "120px 1fr", sm: "220px 1fr" }, gap: 2 }}>
+                  <Typography sx={{ fontWeight: 600, color: "#475569", fontSize: "0.9rem" }}>Contribution Category</Typography>
+                  <Typography sx={{ color: "#0f172a", fontSize: "0.9rem" }}>{getCategoryName(data.category)}</Typography>
+                  
+                  {value && (
+                    <>
+                      <Typography sx={{ fontWeight: 600, color: "#475569", fontSize: "0.9rem" }}>Title / Details</Typography>
+                      <Typography sx={{ color: "#0f172a", fontSize: "0.9rem" }}>{value}</Typography>
+                    </>
+                  )}
+
+                  <Typography sx={{ fontWeight: 600, color: "#475569", fontSize: "0.9rem" }}>Academic Year</Typography>
+                  <Typography sx={{ color: "#0f172a", fontSize: "0.9rem" }}>{data.academicYear?.year || "N/A"}</Typography>
+                  
+                  {data.publicationName && (
+                    <>
+                      <Typography sx={{ fontWeight: 600, color: "#475569", fontSize: "0.9rem" }}>Publication Name</Typography>
+                      <Typography sx={{ color: "#0f172a", fontSize: "0.9rem" }}>{data.publicationName}</Typography>
+                    </>
+                  )}
+                  {data.certificateNumber && (
+                    <>
+                      <Typography sx={{ fontWeight: 600, color: "#475569", fontSize: "0.9rem" }}>Certificate Number</Typography>
+                      <Typography sx={{ color: "#0f172a", fontSize: "0.9rem" }}>{data.certificateNumber}</Typography>
+                    </>
+                  )}
+                  {(data.courseHours !== undefined && data.courseHours !== null) && (
+                    <>
+                      <Typography sx={{ fontWeight: 600, color: "#475569", fontSize: "0.9rem" }}>Course Hours</Typography>
+                      <Typography sx={{ color: "#0f172a", fontSize: "0.9rem" }}>{data.courseHours} hrs</Typography>
+                    </>
+                  )}
+                  {data.url && (
+                    <>
+                      <Typography sx={{ fontWeight: 600, color: "#475569", fontSize: "0.9rem" }}>URL / Reference Link</Typography>
+                      <Typography sx={{ color: "#0f172a", fontSize: "0.9rem" }}>
+                        <a href={data.url} target="_blank" rel="noopener noreferrer" style={{ color: "#2563eb", textDecoration: "none" }}>{data.url}</a>
+                      </Typography>
+                    </>
+                  )}
+                </Box>
+              </Box>
+
+              {/* Horizontal line divider */}
+              {(hasFromToDates || singleDate) && (
+                <>
+                  <Box sx={{ borderBottom: "1px solid #cbd5e1", mb: 4, opacity: 0.5 }} />
+
+                  {/* CONTRIBUTION DURATION */}
+                  <Box>
+                    <Typography sx={{ fontSize: "0.85rem", fontWeight: 800, color: "#2563eb", textTransform: "uppercase", letterSpacing: "0.05em", mb: 2.5 }}>
+                      Contribution Duration
+                    </Typography>
+                    
+                    <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1px 1.2fr" }, gap: 3.5 }}>
+                      {hasFromToDates ? (
+                        <Box sx={{ display: "grid", gridTemplateColumns: "90px 1fr", gap: 2 }}>
+                          <Typography sx={{ fontWeight: 600, color: "#475569", fontSize: "0.9rem" }}>From Date</Typography>
+                          <Typography sx={{ color: "#0f172a", fontSize: "0.9rem" }}>{formatDate(data.fromDate)}</Typography>
+                          
+                          <Typography sx={{ fontWeight: 600, color: "#475569", fontSize: "0.9rem" }}>To Date</Typography>
+                          <Typography sx={{ color: "#0f172a", fontSize: "0.9rem" }}>{formatDate(data.toDate)}</Typography>
+                        </Box>
+                      ) : (
+                        <Box sx={{ display: "grid", gridTemplateColumns: "90px 1fr", gap: 2 }}>
+                          <Typography sx={{ fontWeight: 600, color: "#475569", fontSize: "0.9rem" }}>{dateLabel}</Typography>
+                          <Typography sx={{ color: "#0f172a", fontSize: "0.9rem" }}>{formatDate(singleDate)}</Typography>
+                        </Box>
+                      )}
+
+                      {/* Vertical Divider */}
+                      <Box sx={{ display: { xs: "none", sm: "block" }, width: "1px", height: "100%", bgcolor: "#cbd5e1" }} />
+
+                      {/* Duration details */}
+                      <Box sx={{ display: "grid", gridTemplateColumns: "180px 1fr", gap: 2 }}>
+                        <Typography sx={{ fontWeight: 600, color: "#475569", fontSize: "0.9rem" }}>Duration</Typography>
+                        <Typography sx={{ color: "#0f172a", fontSize: "0.9rem", fontWeight: 700 }}>{data.duration || "N/A"}</Typography>
+                      </Box>
+                    </Box>
+                  </Box>
+                </>
+              )}
+
+            </Grid>
+
+            {/* Right Column: Proof Document */}
+            <Grid size={{ xs: 12, md: 4.5 }} sx={{ borderLeft: { xs: "none", md: "1px solid #cbd5e1" }, pl: { xs: 0, md: 4 } }}>
+              <Typography sx={{ fontSize: "0.85rem", fontWeight: 800, color: "#2563eb", textTransform: "uppercase", letterSpacing: "0.05em", mb: 2.5 }}>
+                Proof Document
+              </Typography>
+              
+              {fileUrl ? (
+                <Box sx={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 2
+                }}>
+                  {/* Embedded Document Preview */}
+                  <Box sx={{
+                    width: "100%",
+                    height: 380,
+                    border: "1px solid #cbd5e1",
+                    borderRadius: "12px",
+                    overflow: "hidden",
+                    bgcolor: "#f8fafc",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center"
+                  }}>
+                    {isImage ? (
+                      <img
+                        src={previewBlobUrl || fileUrl}
+                        alt="Proof Document"
+                        style={{ width: "100%", height: "100%", objectFit: "contain" }}
+                      />
+                    ) : (
+                      <iframe
+                        src={previewBlobUrl ? `${previewBlobUrl}#toolbar=0&navpanes=0&scrollbar=0` : ""}
+                        width="100%"
+                        height="100%"
+                        style={{ border: "none" }}
+                        title="Proof Document Preview"
+                      />
+                    )}
+                  </Box>
+
+                  {/* Download Action */}
+                  <Button
+                    variant="contained"
+                    size="medium"
+                    fullWidth
+                    startIcon={<Download sx={{ fontSize: 18 }} />}
+                    onClick={() => window.open(fileUrl, "_blank")}
+                    sx={{
+                      background: "linear-gradient(135deg, #0f172a 0%, #1e293b 100%)",
+                      "&:hover": {
+                        background: "#0f172a"
+                      },
+                      fontWeight: 700,
+                      fontSize: "0.9rem",
+                      textTransform: "none",
+                      borderRadius: "10px",
+                      py: 1.2
+                    }}
+                  >
+                    Download Document
+                  </Button>
+                </Box>
+              ) : (
+                <Typography sx={{ color: "var(--text-secondary)", fontStyle: "italic" }}>No proof document uploaded</Typography>
+              )}
+            </Grid>
+          </Grid>
+          
+          {/* HOD Remarks (only shown if present) */}
+          {data.hodComment && (
+            <Box sx={{
+              mt: 4,
+              p: 2.5,
+              background: "#fff1f2",
+              borderRadius: "12px",
+              border: "1px solid #ffe4e6",
+              display: "flex",
+              alignItems: "center",
+              gap: 2.5,
+              position: "relative",
+              overflow: "hidden"
+            }}>
+              <Box sx={{
+                width: 44,
+                height: 44,
+                borderRadius: "50%",
+                background: "#ffe4e6",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                flexShrink: 0
+              }}>
+                <WorkspacePremium sx={{ color: "#e11d48", fontSize: 22 }} />
+              </Box>
+              
+              <Box sx={{
+                width: "1px",
+                height: 32,
+                bgcolor: "#fda4af"
+              }} />
+
+              <Box sx={{ flex: 1, zIndex: 2 }}>
+                <Typography sx={{ fontSize: "0.85rem", fontWeight: 800, color: "#be185d", mb: 0.5 }}>
+                  HOD Remarks
+                </Typography>
+                <Typography sx={{ fontSize: "0.9rem", color: "#881337", fontStyle: "italic", fontWeight: 600 }}>
+                  &quot;{data.hodComment}&quot;
+                </Typography>
               </Box>
             </Box>
           )}
         </DialogContent>
+
         <DialogActions sx={{ p: 2.5, borderTop: "1px solid var(--border-color)" }}>
-          <Button onClick={() => setSelectedContributionDetails(null)} sx={{ color: "var(--text-primary)", fontWeight: 700 }}>Close</Button>
+          <Button
+            onClick={() => setSelectedContributionDetails(null)}
+            variant="outlined"
+            sx={{
+              color: "var(--text-primary)",
+              borderColor: "var(--border-color)",
+              "&:hover": {
+                borderColor: "var(--text-primary)",
+                background: "var(--bg-panel)"
+              },
+              fontWeight: 700,
+              textTransform: "none",
+              fontSize: "0.95rem",
+              borderRadius: "8px",
+              px: 3
+            }}
+          >
+            Close
+          </Button>
         </DialogActions>
       </Dialog>
     );
