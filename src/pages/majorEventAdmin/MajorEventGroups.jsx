@@ -45,7 +45,7 @@ const MajorEventGroups = () => {
   const [searchingEmployees, setSearchingEmployees] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [editingEvent, setEditingEvent] = useState(null);
-  const [eventDialogOpen, setEventDialogOpen] = useState(false);
+  const [view, setView] = useState('list');
   const [eventToDelete, setEventToDelete] = useState(null);
   const [deleting, setDeleting] = useState(false);
 
@@ -117,13 +117,13 @@ const MajorEventGroups = () => {
     setEmployeeOptions([]);
     setEmployeeSearch('');
     setEditingEvent(null);
-    setEventDialogOpen(false);
+    setView('list');
   };
 
   const handleSubmit = async (event) => {
     event.preventDefault();
     if (!selectedGroup || !form.eventName.trim() || !form.coordinator) {
-      toast.error('Select a group, enter an event name, and assign a coordinator');
+      toast.error('Select a group, enter an event name, and assign an event coordinator');
       return;
     }
 
@@ -153,7 +153,7 @@ const MajorEventGroups = () => {
       setEditingEvent(null);
       setEmployeeOptions([]);
       setEmployeeSearch('');
-      setEventDialogOpen(false);
+      setView('list');
       await fetchEvents();
     } catch (error) {
       toast.error(error.response?.data?.message || 'Failed to save event');
@@ -175,12 +175,12 @@ const MajorEventGroups = () => {
     setEditingEvent(event);
     setForm({ eventName: event.eventName, status: event.status, coordinator });
     if (coordinator) setEmployeeOptions([coordinator]);
-    setEventDialogOpen(true);
+    setView('form');
   };
 
   const openCreateEventDialog = () => {
     resetEventForm();
-    setEventDialogOpen(true);
+    setView('form');
   };
 
   const handleDelete = async () => {
@@ -240,7 +240,7 @@ const MajorEventGroups = () => {
 
         <Box sx={{ display: 'grid', gap: 0.65, mt: 0.05 }}>
           <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.45, mb: 0.05 }}>
-            <strong>Coordinator:</strong>{' '}
+            <strong>Event Coordinator:</strong>{' '}
             {event.coordinator?.employeeName
               ? `${event.coordinator.employeeName} (${event.coordinator.employeeId || 'N/A'})`
               : 'Not assigned'}
@@ -269,8 +269,9 @@ const MajorEventGroups = () => {
     </Card>
   );
 
-  return (
-    <Box sx={{ p: 3 }}>
+  if (view === 'list') {
+    return (
+      <Box sx={{ p: 3 }}>
       <PageHeader
         title="Fest Groups"
         subtitle="Select a group to create and manage its events"
@@ -472,6 +473,16 @@ const MajorEventGroups = () => {
               <Typography variant="subtitle1" fontWeight="700">
                 {selectedGroup ? `${selectedGroup.groupName} Events` : 'Events'}
               </Typography>
+              {selectedGroup && (
+                <Button
+                  variant="contained"
+                  startIcon={<AddIcon />}
+                  onClick={openCreateEventDialog}
+                  sx={{ borderRadius: '10px', textTransform: 'none', fontWeight: 600, background: 'var(--gradient-primary)' }}
+                >
+                  Add Event
+                </Button>
+              )}
             </Box>
 
             {loadingEvents ? (
@@ -480,39 +491,6 @@ const MajorEventGroups = () => {
               </Box>
             ) : (
               <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, minmax(0, 1fr))', lg: 'repeat(3, minmax(0, 1fr))' }, gap: 1.25, alignItems: 'stretch' }}>
-                <Box
-                  onClick={openCreateEventDialog}
-                  sx={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: 1,
-                    px: 1.75,
-                    py: 1.1,
-                    borderRadius: '18px',
-                    border: '1px dashed rgba(15, 118, 110, 0.5)',
-                    bgcolor: 'rgba(15, 118, 110, 0.07)',
-                    color: '#0f766e',
-                    fontWeight: 800,
-                    cursor: 'pointer',
-                    minHeight: 190,
-                    boxShadow: '0 6px 16px rgba(15, 23, 42, 0.05)',
-                    transition: 'all 180ms ease',
-                    height: '100%',
-                    '&:hover': {
-                      bgcolor: 'rgba(15, 118, 110, 0.13)',
-                      borderColor: 'rgba(15, 118, 110, 0.75)',
-                      transform: 'translateY(-2px)',
-                      boxShadow: '0 12px 24px rgba(15, 118, 110, 0.18)',
-                    },
-                  }}
-                >
-                  <AddIcon fontSize="large" />
-                  <Typography variant="button" sx={{ textTransform: 'none', fontWeight: 800 }}>
-                    Add Event
-                  </Typography>
-                </Box>
-
                 {events.length === 0 ? (
                   <Box sx={{ gridColumn: '1 / -1', border: '1px dashed rgba(15, 118, 110, 0.28)', borderRadius: '14px', p: 3, textAlign: 'center' }}>
                     <Typography variant="body2" color="text.secondary">
@@ -528,10 +506,41 @@ const MajorEventGroups = () => {
         </CardContent>
       </Card>
 
-      <Dialog open={eventDialogOpen} onClose={() => !submitting && setEventDialogOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>{editingEvent ? 'Edit Event' : 'Create Event'}</DialogTitle>
+      <Dialog open={Boolean(eventToDelete)} onClose={() => !deleting && setEventToDelete(null)}>
+        <DialogTitle>Delete Event</DialogTitle>
         <DialogContent>
-          <Box component="form" id="major-event-form" onSubmit={handleSubmit} sx={{ display: 'grid', gap: 2.25, pt: 0.5 }}>
+          <DialogContentText>
+            Delete the event {eventToDelete?.eventName ? `"${eventToDelete.eventName}"` : ''}? This action cannot be undone.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button onClick={() => setEventToDelete(null)} disabled={deleting}>Cancel</Button>
+          <Button onClick={handleDelete} color="error" variant="contained" disabled={deleting}>
+            {deleting ? 'Deleting...' : 'Delete'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </Box>
+    );
+  }
+
+  return (
+    <Box sx={{ p: 3 }}>
+      <PageHeader
+        title={editingEvent ? 'Edit Event' : 'Create Event'}
+        subtitle={editingEvent ? 'Update the details for this event' : 'Add a new event to the selected group'}
+        showBack
+        onBack={() => { resetEventForm(); setView('list'); }}
+      />
+      <Card sx={{ mt: 3, maxWidth: 800, mx: 'auto', boxShadow: 3, borderRadius: '16px', overflow: 'hidden' }}>
+        <Box sx={{ px: { xs: 2.5, sm: 4 }, pt: { xs: 2.5, sm: 4 } }}>
+          <Typography variant="h6" fontWeight={700}>{editingEvent ? 'Edit Event Details' : 'New Event Details'}</Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+            Fill out the event details and assign an event coordinator.
+          </Typography>
+        </Box>
+        <CardContent sx={{ p: { xs: 2.5, sm: 4 }, display: 'flex', flexDirection: 'column', gap: 3 }}>
+          <Box component="form" id="major-event-form" onSubmit={handleSubmit} sx={{ display: 'grid', gap: 2.5 }}>
             <TextField label="Selected Group Name" value={selectedGroup?.groupName || ''} fullWidth disabled />
             <TextField
               label="Event Name"
@@ -550,21 +559,25 @@ const MajorEventGroups = () => {
               getOptionLabel={(option) => `${option.name} (${option.institutionId})`}
               onChange={(event, value) => setForm((current) => ({ ...current, coordinator: value }))}
               onInputChange={(event, value) => setEmployeeSearch(value)}
-              renderOption={(props, option) => (
-                <li {...props} key={option.institutionId}>
-                  <Box>
-                    <Typography variant="body2" fontWeight={600}>{option.name} ({option.institutionId})</Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      {option.department?.name || option.department || 'N/A'} • {option.designation || 'N/A'}
-                    </Typography>
-                  </Box>
-                </li>
-              )}
+              renderOption={(props, option) => {
+                  const { key, ...otherProps } = props;
+                  return (
+                    <li key={key} {...otherProps}>
+                      <Box sx={{ display: 'flex', flexDirection: 'column', py: 0.5 }}>
+                        <Typography variant="body2" fontWeight={600}>{option.name} ({option.institutionId})</Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          {option.department?.name || option.department || 'N/A'} • {option.designation || 'N/A'}
+                        </Typography>
+                      </Box>
+                    </li>
+                  );
+              }}
               renderInput={(params) => (
                 <TextField
                   {...params}
-                  label="Assign Coordinator"
+                  label="Assign Event Coordinator *"
                   placeholder="Search employee by name or ID"
+                  required={!form.coordinator}
                   InputProps={{
                     ...params.InputProps,
                     endAdornment: (
@@ -590,29 +603,16 @@ const MajorEventGroups = () => {
               </Select>
             </FormControl>
           </Box>
-        </DialogContent>
-        <DialogActions sx={{ px: 3, pb: 2, pt: 0.5 }}>
-          <Button onClick={() => { resetEventForm(); setEventDialogOpen(false); }} disabled={submitting}>Cancel</Button>
-          <Button type="submit" form="major-event-form" variant="contained" disabled={submitting || !selectedGroup}>
-            {submitting ? 'Saving...' : editingEvent ? 'Update Event' : 'Create Event'}
-          </Button>
-        </DialogActions>
-      </Dialog>
-
-      <Dialog open={Boolean(eventToDelete)} onClose={() => !deleting && setEventToDelete(null)}>
-        <DialogTitle>Delete Event</DialogTitle>
-        <DialogContent>
-          <DialogContentText>
-            Delete the event {eventToDelete?.eventName ? `"${eventToDelete.eventName}"` : ''}? This action cannot be undone.
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions sx={{ px: 3, pb: 2 }}>
-          <Button onClick={() => setEventToDelete(null)} disabled={deleting}>Cancel</Button>
-          <Button onClick={handleDelete} color="error" variant="contained" disabled={deleting}>
-            {deleting ? 'Deleting...' : 'Delete'}
-          </Button>
-        </DialogActions>
-      </Dialog>
+          <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2, gap: 2 }}>
+            <Button onClick={() => { resetEventForm(); setView('list'); }} disabled={submitting} variant="outlined" color="inherit" sx={{ borderRadius: '10px' }}>
+              Cancel
+            </Button>
+            <Button type="submit" form="major-event-form" variant="contained" disabled={submitting || !selectedGroup} sx={{ borderRadius: '10px', px: 4, background: 'var(--gradient-primary)' }}>
+              {submitting ? 'Saving...' : editingEvent ? 'Update Event' : 'Create Event'}
+            </Button>
+          </Box>
+        </CardContent>
+      </Card>
     </Box>
   );
 };
