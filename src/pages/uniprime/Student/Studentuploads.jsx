@@ -498,7 +498,7 @@ const Studentuploads = () => {
     };
 
     const handleTemplateDownload = () => {
-        const headers = ["Roll Number", "Department"];
+        const headers = ["Roll Number", "Serving Department"];
         const csvContent = headers.join(",");
         const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
         const link = document.createElement("a");
@@ -512,7 +512,7 @@ const Studentuploads = () => {
     };
 
     const handleExportClick = () => {
-        const headers = ["Roll No", "Name", "Dept", "Email", "Phone", "Branch", "Program", "Department", "Semester"];
+        const headers = ["Roll No", "Name", "Serving Dept", "Email", "Phone", "Branch", "Program", "Serving Department", "Semester"];
         const csvContent = [
             headers.join(","),
             ...students.map(s => [s.rollNo, s.personalInfo?.studentName, s.academicInfo?.department?.name || s.academicInfo?.department || "", s.contactInfo?.emailId, s.contactInfo?.mobileNumber, s.academicInfo?.branch, s.academicInfo?.programName, "", ""].join(","))
@@ -694,7 +694,7 @@ const Studentuploads = () => {
                             <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 2, color: "var(--text-primary)" }}>Steps:</Typography>
                             {[
                                 "Download the template",
-                                "Fill in Roll Number and Department",
+                                "Fill in Roll Number and Serving Department",
                                 "Upload the file and we'll fetch student data"
                             ].map((step, idx) => (
                                 <Box key={idx} sx={{ display: "flex", alignItems: "center", gap: 2, mb: 1.5 }}>
@@ -930,11 +930,11 @@ const Studentuploads = () => {
                                 </Box>
                                 <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
                                     <FormControl size="small" sx={{ minWidth: 200 }}>
-                                        <InputLabel sx={{ color: "var(--text-secondary)" }}>Select Department</InputLabel>
+                                        <InputLabel sx={{ color: "var(--text-secondary)" }}>Select Serving Department</InputLabel>
                                         <Select
                                             value={selectedDept}
                                             onChange={(e) => setSelectedDept(e.target.value)}
-                                            label="Select Department"
+                                            label="Select Serving Department"
                                             sx={{ borderRadius: "10px", color: "var(--text-primary)", "& .MuiOutlinedInput-notchedOutline": { borderColor: "var(--border-color)" } }}
                                         >
                                             {allDepartments.map((dept) => (
@@ -1001,11 +1001,11 @@ const Studentuploads = () => {
                     />
                     {!isUpdateModalOpen && (
                         <FormControl fullWidth sx={{ mt: 2 }}>
-                            <InputLabel sx={{ color: "var(--text-secondary)", "&.Mui-focused": { color: "var(--color-primary)" } }}>Department (Optional)</InputLabel>
+                            <InputLabel sx={{ color: "var(--text-secondary)", "&.Mui-focused": { color: "var(--color-primary)" } }}>Serving Department (Optional)</InputLabel>
                             <Select
                                 value={addDept}
                                 onChange={(e) => setAddDept(e.target.value)}
-                                label="Department (Optional)"
+                                label="Serving Department (Optional)"
                                 sx={{
                                     borderRadius: "12px",
                                     color: "var(--text-primary)",

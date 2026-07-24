@@ -216,7 +216,7 @@ const AcademicHierarchyFilter = ({ onChange, initialValues = {}, showSearch = fa
                 setSelectedBranch("");
             })}
 
-            {selectedProgram && renderDropdown("Department", selectedDept, departments, loading.departments, (val) => {
+            {selectedProgram && renderDropdown("Serving Department", selectedDept, departments, loading.departments, (val) => {
                 setSelectedDept(val);
                 setSelectedBranch("");
             }, false)}

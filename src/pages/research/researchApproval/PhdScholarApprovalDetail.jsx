@@ -213,7 +213,7 @@ const PhdScholarApprovalDetail = ({ id, onBack, role }) => {
                         <Box sx={{ width: "100%" }}>
                             <LabelValue label="Name" value={facultyId?.name} horizontal />
                             <LabelValue label="Designation" value={facultyId?.designation} horizontal />
-                            <LabelValue label="Department" value={facultyId?.coreDepartment?.name} horizontal />
+                            <LabelValue label="Parent Department" value={facultyId?.coreDepartment?.name} horizontal />
                             <LabelValue label="Emp ID" value={facultyId?.institutionId} horizontal />
                             <LabelValue label="College" value={facultyId?.college || "Aditya University"} horizontal />
                         </Box>

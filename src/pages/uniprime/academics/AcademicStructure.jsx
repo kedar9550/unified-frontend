@@ -394,15 +394,15 @@ const AcademicStructure = () => {
                             </Box>
                             <Box>
                                 <Typography variant="subtitle1" fontWeight={700} sx={{ color: '#1b4332', fontSize: '1rem', lineHeight: 1.2 }}>
-                                    {selectedSchool.name} ({selectedSchool.code}) - Departments
+                                    {selectedSchool.name} ({selectedSchool.code}) - Serving Departments
                                 </Typography>
-                                <Typography variant="caption" color="textSecondary">
-                                    Click a department to view its programs and specializations.
+                                <Typography variant="body2" sx={{ color: 'var(--text-secondary)' }}>
+                                    Click a serving department to view its programs and specializations.
                                 </Typography>
                             </Box>
                         </Box>
                         <Typography variant="body2" sx={{ color: '#047857', fontWeight: 700, fontSize: '0.8rem' }}>
-                            {schoolDepts.length} Departments
+                            {schoolDepts.length} Serving Departments
                         </Typography>
                     </Box>
 
@@ -521,7 +521,7 @@ const AcademicStructure = () => {
                             >
                                 <Box sx={{ textAlign: "center", p: 1.5 }}>
                                     <Add sx={{ fontSize: 20, color: '#10B981', mb: 0.25 }} />
-                                    <Typography variant="subtitle2" fontWeight={700} sx={{ color: '#10B981', fontSize: '0.8rem' }}>Add Department</Typography>
+                                    <Typography variant="subtitle2" fontWeight={700} sx={{ color: '#10B981', fontSize: '0.8rem' }}>Add Serving Department</Typography>
                                 </Box>
                             </Card>
                         </Grid>
@@ -802,7 +802,7 @@ const AcademicStructure = () => {
                                     alignItems: "center",
                                     justifyContent: "center",
                                     borderRadius: "8px",
-                                    minHeight: "70px",
+                                    minHeight: '70px',
                                     boxShadow: 'none',
                                     cursor: 'pointer',
                                     transition: 'all 0.3s ease',
@@ -1042,15 +1042,15 @@ const AcademicStructure = () => {
                         <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, justifyContent: 'space-between', alignItems: { xs: 'stretch', sm: 'center' }, gap: 2, mb: 2 }}>
                             <Box>
                                 <Typography variant="h6" fontWeight={800} sx={{ display: 'flex', alignItems: 'center', gap: 1.5, color: 'var(--text-primary)' }}>
-                                    <Business sx={{ color: 'var(--color-primary)' }} /> Central Level Departments
+                                    <Business sx={{ color: 'var(--color-primary)' }} /> Central Level Serving Departments
                                 </Typography>
-                                <Typography variant="body2" color="textSecondary">
-                                    Departments operating at the central level. Click to explore.
+                                <Typography variant="body2" sx={{ color: 'var(--text-secondary)' }}>
+                                    Serving departments operating at the central level. Click to explore.
                                 </Typography>
                             </Box>
                             <Button variant="contained" startIcon={<Add />} onClick={() => openModal('department', 'add', { type: 'Central' })}
                                 sx={{ borderRadius: '50px', background: "var(--gradient-primary)", textTransform: 'none', fontWeight: 700, width: { xs: '100%', sm: 'auto' } }}>
-                                Add Central Department
+                                Add Central Serving Department
                             </Button>
                         </Box>
 
@@ -1281,7 +1281,7 @@ const AcademicStructure = () => {
                         }
                     }}
                 >
-                    <Tab icon={<Business />} iconPosition="start" label="Departments & Specializations" />
+                    <Tab icon={<Business />} iconPosition="start" label="Serving Departments & Specializations" />
                     <Tab icon={<School />} iconPosition="start" label="Programs" />
                 </Tabs>
             </Paper>
@@ -1301,10 +1301,10 @@ const AcademicStructure = () => {
                             ? (modal.data.lockProgram
                                 ? `Add Specialization for ${programs.find(p => p._id === (modal.data.programIds && modal.data.programIds[0]))?.name || ''}`
                                 : `Add Program for ${selectedDepartment?.name || ''}`)
-                            : modal.type === 'link-program' ? `Add Program` : `Add ${modal.type?.toUpperCase()}`)
+                            : modal.type === 'link-program' ? `Add Program` : `Add ${modal.type === 'department' ? 'Serving Department' : modal.type?.toUpperCase()}`)
                         : (modal.type === 'branch'
                             ? `Edit Specialization`
-                            : `Edit ${modal.type?.toUpperCase()}`)}
+                            : `Edit ${modal.type === 'department' ? 'Serving Department' : modal.type?.toUpperCase()}`)}
                 </DialogTitle>
                 <DialogContent sx={{ py: 2 }}>
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, mt: 1 }}>
@@ -1398,11 +1398,11 @@ const AcademicStructure = () => {
                         {modal.type === 'department' && !selectedSchool && (
                             <>
                                 <FormControl fullWidth>
-                                    <InputLabel>Department Type</InputLabel>
+                                    <InputLabel>Serving Department Type</InputLabel>
                                     <Select
                                         value={modal.data.type || 'Academic'}
                                         onChange={(e) => setModal({ ...modal, data: { ...modal.data, type: e.target.value, schoolIds: e.target.value === 'Central' ? [] : modal.data.schoolIds } })}
-                                        label="Department Type"
+                                        label="Serving Department Type"
                                     >
                                         <MenuItem value="Academic">Academic (Under a School)</MenuItem>
                                         <MenuItem value="Central">Central Level</MenuItem>
