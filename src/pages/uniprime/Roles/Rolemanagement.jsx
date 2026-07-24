@@ -74,7 +74,7 @@ const RoleManagement = () => {
 
     // Individual Signup State
     const [signupData, setSignupData] = useState({
-        id: '', fullname: '', department: '', designation: '',
+        id: '', fullname: '', department: '', coreDepartment: '', designation: '',
         email: '', phone: '', password: 'Aditya@123', confirmPassword: 'Aditya@123', role: 'Employee',
     });
     const [signupError, setSignupError] = useState('');
@@ -332,7 +332,7 @@ const RoleManagement = () => {
     };
 
     const handleDownloadTemplate = () => {
-        const csvContent = "data:text/csv;charset=utf-8,institutionId,email\n";
+        const csvContent = "data:text/csv;charset=utf-8,institutionId,email,serving_department,parent_department\n";
         const encodedUri = encodeURI(csvContent);
         const link = document.createElement("a");
         link.setAttribute("href", encodedUri);
@@ -348,6 +348,7 @@ const RoleManagement = () => {
         if (!data.id?.trim()) return "ID is required";
         if (!data.fullname?.trim()) return "Full name is required";
         if (!data.department) return "Serving Department is required";
+        if (!data.coreDepartment) return "Parent Department is required";
         if (!data.email?.trim()) return "Email is required";
         if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) return "Invalid email format";
         const cleanPhone = data.phone?.toString().replace(/\D/g, '').slice(-10);
@@ -369,12 +370,10 @@ const RoleManagement = () => {
             if (data && !data.error) {
                 const mapped = signupData.role === "Employee" ? {
                     fullname: data?.employeename?.trim() || "",
-                    department: data?.departmentname || "",
                     designation: data?.designation || "",
                     phone: data?.mobileno || "",
                 } : {
                     fullname: data?.studentname?.trim() || "",
-                    department: data?.branch || "",
                     designation: "Student",
                     phone: data?.mobilenumber || "",
                     email: data?.emailid || "",
@@ -437,7 +436,8 @@ const RoleManagement = () => {
             ...signupData,
             id: createIndividualPreview.id,
             fullname: data.employeename || data.EmployeeName || data.studentname || "",
-            department: data.departmentname || data.Department || data.branch || "",
+            department: "",
+            coreDepartment: "",
             designation: data.designation || data.Designation || (signupData.role === "Student" ? "Student" : "Staff"),
             phone: data.mobileno || data.MobileNo || data.mobilenumber || "",
             email: ""
@@ -499,6 +499,7 @@ const RoleManagement = () => {
                 fullname: signupData.fullname,
                 id: signupData.id,
                 department: signupData.department,
+                coreDepartment: signupData.coreDepartment,
                 designation: signupData.designation,
                 email: signupData.email,
                 phone: signupData.phone,
@@ -511,7 +512,7 @@ const RoleManagement = () => {
                 setIsUserChoiceModalOpen(false);
                 setRegistrationView("selection");
                 setSignupData({
-                    id: '', fullname: '', department: '', designation: '',
+                    id: '', fullname: '', department: '', coreDepartment: '', designation: '',
                     email: '', phone: '', password: 'Aditya@123', confirmPassword: 'Aditya@123', role: 'Employee',
                 });
                 fetchRoles();
@@ -1007,7 +1008,40 @@ const RoleManagement = () => {
                                                         />
                                                     </Grid>
                                                     <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-                                                        <TextField label="Serving Department" fullWidth value={signupData.department} slotProps={{ input: { readOnly: true } }} size="small" variant="filled" sx={{ "& .MuiInputBase-input": { fontWeight: 700 } }} />
+                                                        <TextField
+                                                            fullWidth
+                                                            select
+                                                            required
+                                                            label="Serving Department"
+                                                            value={signupData.department || ""}
+                                                            onChange={(e) => setSignupData({ ...signupData, department: e.target.value })}
+                                                            size="small"
+                                                            slotProps={{ select: { native: false } }}
+                                                            sx={{ "& .MuiOutlinedInput-root": { borderRadius: "10px", background: "white" } }}
+                                                        >
+                                                            <MenuItem value="" disabled sx={{ fontWeight: 'bold' }}>Select Serving Department</MenuItem>
+                                                            {allDepartments.map(d => (
+                                                                <MenuItem key={d._id} value={d.name}>{d.name}</MenuItem>
+                                                            ))}
+                                                        </TextField>
+                                                    </Grid>
+                                                    <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+                                                        <TextField
+                                                            fullWidth
+                                                            select
+                                                            required
+                                                            label="Parent Department"
+                                                            value={signupData.coreDepartment || ""}
+                                                            onChange={(e) => setSignupData({ ...signupData, coreDepartment: e.target.value })}
+                                                            size="small"
+                                                            slotProps={{ select: { native: false } }}
+                                                            sx={{ "& .MuiOutlinedInput-root": { borderRadius: "10px", background: "white" } }}
+                                                        >
+                                                            <MenuItem value="" disabled sx={{ fontWeight: 'bold' }}>Select Parent Department</MenuItem>
+                                                            {allDepartments.map(d => (
+                                                                <MenuItem key={d._id} value={d.name}>{d.name}</MenuItem>
+                                                            ))}
+                                                        </TextField>
                                                     </Grid>
                                                     <Grid size={{ xs: 12, sm: 6, md: 4 }}>
                                                         <TextField label="Phone" fullWidth value={signupData.phone} slotProps={{ input: { readOnly: true } }} size="small" variant="filled" sx={{ "& .MuiInputBase-input": { fontWeight: 700 } }} />
@@ -1837,7 +1871,7 @@ const RoleManagement = () => {
                                     <CardContent sx={{ textAlign: 'center', p: 3 }}>
                                         <Avatar sx={{ width: 60, height: 60, bgcolor: '#e8eaf6', color: '#3f51b5', mx: 'auto', mb: 2 }}><UploadFile fontSize="large" /></Avatar>
                                         <Typography variant="h6" fontWeight={700}>Bulk Upload</Typography>
-                                        <Typography variant="caption" color="textSecondary">Upload a CSV file. Format: institutionId, email</Typography>
+                                        <Typography variant="caption" color="textSecondary">Upload a CSV file. Format: institutionId, email, serving_department, parent_department</Typography>
                                     </CardContent>
                                 </Card>
                                 <Card
@@ -1877,7 +1911,36 @@ const RoleManagement = () => {
                                 <TextField label="Full Name" value={signupData.fullname} onChange={(e) => setSignupData({ ...signupData, fullname: e.target.value })} disabled={disabledFields.fullname} size="small" fullWidth />
                                 <TextField label="Email Address" value={signupData.email} onChange={(e) => setSignupData({ ...signupData, email: e.target.value })} disabled={disabledFields.email} size="small" fullWidth />
                                 <TextField label="Phone Number" value={signupData.phone} onChange={(e) => setSignupData({ ...signupData, phone: e.target.value })} disabled={disabledFields.phone} size="small" fullWidth placeholder="9876543210" />
-                                <TextField label="Serving Department" value={signupData.department} onChange={(e) => setSignupData({ ...signupData, department: e.target.value })} disabled={disabledFields.department} size="small" fullWidth />
+                                <TextField
+                                    select
+                                    required
+                                    label="Serving Department"
+                                    value={signupData.department || ""}
+                                    onChange={(e) => setSignupData({ ...signupData, department: e.target.value })}
+                                    size="small"
+                                    fullWidth
+                                    slotProps={{ select: { native: false } }}
+                                >
+                                    <MenuItem value="" disabled sx={{ fontWeight: 'bold' }}>Select Serving Department</MenuItem>
+                                    {allDepartments.map(d => (
+                                        <MenuItem key={d._id} value={d.name}>{d.name}</MenuItem>
+                                    ))}
+                                </TextField>
+                                <TextField
+                                    select
+                                    required
+                                    label="Parent Department"
+                                    value={signupData.coreDepartment || ""}
+                                    onChange={(e) => setSignupData({ ...signupData, coreDepartment: e.target.value })}
+                                    size="small"
+                                    fullWidth
+                                    slotProps={{ select: { native: false } }}
+                                >
+                                    <MenuItem value="" disabled sx={{ fontWeight: 'bold' }}>Select Parent Department</MenuItem>
+                                    {allDepartments.map(d => (
+                                        <MenuItem key={d._id} value={d.name}>{d.name}</MenuItem>
+                                    ))}
+                                </TextField>
                                 <TextField label="Designation" value={signupData.designation} onChange={(e) => setSignupData({ ...signupData, designation: e.target.value })} disabled={disabledFields.designation} size="small" fullWidth />
                                 <TextField label="Password" type="password" value={signupData.password} onChange={(e) => setSignupData({ ...signupData, password: e.target.value })} size="small" fullWidth />
                                 <TextField label="Confirm Password" type="password" value={signupData.confirmPassword} onChange={(e) => setSignupData({ ...signupData, confirmPassword: e.target.value })} size="small" fullWidth />
