@@ -55,6 +55,7 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
     const [jcrImpactFactor, setJcrImpactFactor] = useState("");
     const [citations, setCitations] = useState("");
     const [quartile, setQuartile] = useState("");
+    const [journalType, setJournalType] = useState("");
     const [actionLoading, setActionLoading] = useState(false);
     const [imgError, setImgError] = useState(false);
 
@@ -77,6 +78,7 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
                     if (journal.citations) setCitations(journal.citations);
                     if (journal.journalQuartile) setQuartile(journal.journalQuartile);
                     else if (journal.categoryOfJournal) setQuartile(journal.categoryOfJournal);
+                    if (journal.journalType) setJournalType(journal.journalType);
 
                     const jcrIFValue = journal.jcrImpactFactor || journal.impactFactor;
                     if (jcrIFValue) {
@@ -133,12 +135,13 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
                 hIndex: isResearchAdmin ? hIndex : undefined,
                 jcrImpactFactor: isResearchAdmin ? jcrImpactFactor : undefined,
                 citations: isResearchAdmin ? citations : undefined,
-                journalQuartile: isResearchAdmin ? quartile : undefined
+                journalQuartile: isResearchAdmin ? quartile : undefined,
+                journalType: isResearchAdmin ? journalType : undefined
             };
             const res = await API.put(endpoint, payload);
             if (res.data?.success) {
                 toast.success(`Request ${action === 'Approve' ? 'Approved' : 'Rejected'} successfully`);
-                onBack(); 
+                onBack();
             }
         } catch (error) {
             console.error("Action failed", error);
@@ -155,7 +158,8 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
                 hIndex,
                 jcrImpactFactor,
                 citations,
-                journalQuartile: quartile
+                journalQuartile: quartile,
+                journalType
             });
             if (res.data?.success) {
                 toast.success("Journal metrics updated successfully");
@@ -165,6 +169,7 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
                 if (updatedIF) setJcrImpactFactor(updatedIF);
                 if (res.data.data.citations) setCitations(res.data.data.citations);
                 if (res.data.data.journalQuartile) setQuartile(res.data.data.journalQuartile);
+                if (res.data.data.journalType) setJournalType(res.data.data.journalType);
             }
         } catch (error) {
             console.error("Update metrics failed", error);
@@ -270,7 +275,7 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
                         <LabelValue label="Submission Date" value={new Date(data.createdAt).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })} />
                     </Box>
                     <Box sx={{ flex: { xs: "1 1 100%", sm: "1 1 23%" } }}>
-                        <Box sx={{ 
+                        <Box sx={{
                             p: 2, borderRadius: "14px", height: "100%", display: "flex", flexDirection: "column", justifyContent: "center",
                             background: "rgba(255,255,255,0.02)", border: "1px solid transparent",
                             "&:hover": { borderColor: "var(--color-primary)", bgcolor: "rgba(190, 147, 55, 0.05)", transform: "translateY(-2px)", boxShadow: "var(--shadow-premium)" },
@@ -288,124 +293,124 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
 
             <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", lg: "repeat(2, 1fr)" }, gap: 3, mb: 3 }}>
                 {/* Applicant Info */}
-                    <Card sx={{ ...cardStyle, height: "100%", mb: 0 }}>
-                        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 3 }}><PersonIcon sx={{ color: "var(--color-primary)" }} /><Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>Applicant Information</Typography></Box>
-                        <Box sx={{ display: "flex", flexDirection: "column", gap: 3, alignItems: "center" }}>
-                            <Box sx={{ width: 100, height: 100, borderRadius: "50%", background: "var(--bg-panel)", border: "2px solid var(--border-color)", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "var(--shadow-premium)" }}>
-                                {(() => {
-                                    const backendURL = (import.meta.env.VITE_BACKEND_URL || "http://localhost:9000").replace(/\/$/, "");
-                                    const portalImg = facultyId?.profileImage ? (facultyId.profileImage.startsWith('http') ? facultyId.profileImage : `${backendURL}${facultyId.profileImage.startsWith('/') ? facultyId.profileImage : `/${facultyId.profileImage}`}`) : null;
-                                    const ecapImg = facultyId?.institutionId ? `https://info.aec.edu.in/aus/employeephotos/${facultyId.institutionId}.jpg` : null;
-                                    const src = portalImg || ecapImg;
+                <Card sx={{ ...cardStyle, height: "100%", mb: 0 }}>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 3 }}><PersonIcon sx={{ color: "var(--color-primary)" }} /><Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>Applicant Information</Typography></Box>
+                    <Box sx={{ display: "flex", flexDirection: "column", gap: 3, alignItems: "center" }}>
+                        <Box sx={{ width: 100, height: 100, borderRadius: "50%", background: "var(--bg-panel)", border: "2px solid var(--border-color)", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "var(--shadow-premium)" }}>
+                            {(() => {
+                                const backendURL = (import.meta.env.VITE_BACKEND_URL || "http://localhost:9000").replace(/\/$/, "");
+                                const portalImg = facultyId?.profileImage ? (facultyId.profileImage.startsWith('http') ? facultyId.profileImage : `${backendURL}${facultyId.profileImage.startsWith('/') ? facultyId.profileImage : `/${facultyId.profileImage}`}`) : null;
+                                const ecapImg = facultyId?.institutionId ? `https://info.aec.edu.in/aus/employeephotos/${facultyId.institutionId}.jpg` : null;
+                                const src = portalImg || ecapImg;
 
-                                    if (src && !imgError) {
-                                        return (
-                                            <img 
-                                                src={src} 
-                                                alt={facultyId?.name} 
-                                                style={{ width: "100%", height: "100%", objectFit: "cover" }} 
-                                                onError={() => setImgError(true)}
-                                            />
-                                        );
-                                    }
-                                    return <Typography sx={{ fontSize: 36, fontWeight: 800, color: "var(--text-secondary)" }}>{facultyId?.name?.charAt(0).toUpperCase() || "F"}</Typography>;
-                                })()}
-                            </Box>
-                            <Box sx={{ width: "100%" }}>
-                                <LabelValue label="Name" value={facultyId?.name} horizontal />
-                                <LabelValue label="Designation" value={facultyId?.designation} horizontal />
-                                <LabelValue label="Department" value={facultyId?.coreDepartment?.name} horizontal />
-                                <LabelValue label="Emp ID" value={facultyId?.institutionId} horizontal />
-                                <LabelValue label="Contact" value={facultyId?.phone} horizontal />
-                                <LabelValue label="College" value={facultyId?.college || "Aditya University"} horizontal />
-                            </Box>
+                                if (src && !imgError) {
+                                    return (
+                                        <img
+                                            src={src}
+                                            alt={facultyId?.name}
+                                            style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                                            onError={() => setImgError(true)}
+                                        />
+                                    );
+                                }
+                                return <Typography sx={{ fontSize: 36, fontWeight: 800, color: "var(--text-secondary)" }}>{facultyId?.name?.charAt(0).toUpperCase() || "F"}</Typography>;
+                            })()}
                         </Box>
-                    </Card>
+                        <Box sx={{ width: "100%" }}>
+                            <LabelValue label="Name" value={facultyId?.name} horizontal />
+                            <LabelValue label="Designation" value={facultyId?.designation} horizontal />
+                            <LabelValue label="Department" value={facultyId?.coreDepartment?.name} horizontal />
+                            <LabelValue label="Emp ID" value={facultyId?.institutionId} horizontal />
+                            <LabelValue label="Contact" value={facultyId?.phone} horizontal />
+                            <LabelValue label="College" value={facultyId?.college || "Aditya University"} horizontal />
+                        </Box>
+                    </Box>
+                </Card>
 
                 {/* Article Info */}
-                    <Card sx={{ ...cardStyle, height: "100%", mb: 0 }}>
-                        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 3 }}><ArticleIcon sx={{ color: "var(--color-primary)" }} /><Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>Article Information</Typography></Box>
-                        <Box sx={{ display: "flex", flexDirection: "column" }}>
-                            <LabelValue label="Article Title" value={data.paperTitle || "-"} horizontal />
-                            <LabelValue label="DOI" value={data.doi || "-"} horizontal />
-                            <LabelValue 
-                                label="Applicant Author Position" 
-                                horizontal
-                                chip={
-                                    (() => {
-                                        const pos = data.userAuthorPosition || (data.firstAuthor === "Yes" ? "1" : data.authorPosition);
-                                        const total = data.totalAuthors;
-                                        if (!pos) return <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)" }}>-</Typography>;
-                                        return (
-                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                                <Box sx={{
-                                                    display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                                                    width: 36, height: 36, borderRadius: '50%',
-                                                    bgcolor: 'rgba(190, 147, 55, 0.15)', border: '2px solid var(--color-primary)',
-                                                    color: 'var(--color-primary)', fontWeight: 900, fontSize: '1rem'
-                                                }}>
-                                                    {pos}
-                                                </Box>
-                                                {total && (
-                                                    <>
-                                                        <Typography sx={{ color: 'var(--text-secondary)', fontWeight: 700, fontSize: '1rem' }}>of</Typography>
-                                                        <Box sx={{
-                                                            display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                                                            px: 1.5, height: 32, borderRadius: '8px',
-                                                            bgcolor: 'var(--bg-panel)', border: '1px solid var(--border-color)',
-                                                            color: 'var(--text-primary)', fontWeight: 900, fontSize: '0.95rem'
-                                                        }}>
-                                                            {total} Authors
-                                                        </Box>
-                                                    </>
-                                                )}
+                <Card sx={{ ...cardStyle, height: "100%", mb: 0 }}>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 3 }}><ArticleIcon sx={{ color: "var(--color-primary)" }} /><Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>Article Information</Typography></Box>
+                    <Box sx={{ display: "flex", flexDirection: "column" }}>
+                        <LabelValue label="Article Title" value={data.paperTitle || "-"} horizontal />
+                        <LabelValue label="DOI" value={data.doi || "-"} horizontal />
+                        <LabelValue
+                            label="Applicant Author Position"
+                            horizontal
+                            chip={
+                                (() => {
+                                    const pos = data.userAuthorPosition || (data.firstAuthor === "Yes" ? "1" : data.authorPosition);
+                                    const total = data.totalAuthors;
+                                    if (!pos) return <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)" }}>-</Typography>;
+                                    return (
+                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                            <Box sx={{
+                                                display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                                                width: 36, height: 36, borderRadius: '50%',
+                                                bgcolor: 'rgba(190, 147, 55, 0.15)', border: '2px solid var(--color-primary)',
+                                                color: 'var(--color-primary)', fontWeight: 900, fontSize: '1rem'
+                                            }}>
+                                                {pos}
                                             </Box>
-                                        );
-                                    })()
-                                }
-                            />
-                            <LabelValue label="SDGS" value={data.sdgs ? data.sdgs.split(', ').map(getSdgName).join(', ') : "-"} horizontal />
-                            <LabelValue label="Seed Grant Work" value={data.applyingSeedGrant || "No"} horizontal />
-                            <LabelValue label="Incentive Applied" horizontal chip={
-                                <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-                                    <Chip label={data.applyIncentive} size="small" sx={{ bgcolor: data.applyIncentive === 'Yes' ? "rgba(76, 175, 80, 0.1)" : "var(--bg-panel)", color: data.applyIncentive === 'Yes' ? "#4caf50" : "var(--text-secondary)", fontWeight: 800, border: "1px solid", borderColor: data.applyIncentive === 'Yes' ? "#4caf5044" : "var(--border-color)" }} />
-                                    {data.applyIncentive === 'Yes' && data.status === 'Approved' && data.approvedAmount && (
-                                        <Typography variant="body2" sx={{ fontWeight: 800, color: "#4caf50" }}>₹{data.approvedAmount}</Typography>
-                                    )}
-                                </Box>
-                            } />
-                        </Box>
-                    </Card>
+                                            {total && (
+                                                <>
+                                                    <Typography sx={{ color: 'var(--text-secondary)', fontWeight: 700, fontSize: '1rem' }}>of</Typography>
+                                                    <Box sx={{
+                                                        display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                                                        px: 1.5, height: 32, borderRadius: '8px',
+                                                        bgcolor: 'var(--bg-panel)', border: '1px solid var(--border-color)',
+                                                        color: 'var(--text-primary)', fontWeight: 900, fontSize: '0.95rem'
+                                                    }}>
+                                                        {total} Authors
+                                                    </Box>
+                                                </>
+                                            )}
+                                        </Box>
+                                    );
+                                })()
+                            }
+                        />
+                        <LabelValue label="SDGS" value={data.sdgs ? data.sdgs.split(', ').map(getSdgName).join(', ') : "-"} horizontal />
+                        <LabelValue label="Seed Grant Work" value={data.applyingSeedGrant || "No"} horizontal />
+                        <LabelValue label="Incentive Applied" horizontal chip={
+                            <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+                                <Chip label={data.applyIncentive} size="small" sx={{ bgcolor: data.applyIncentive === 'Yes' ? "rgba(76, 175, 80, 0.1)" : "var(--bg-panel)", color: data.applyIncentive === 'Yes' ? "#4caf50" : "var(--text-secondary)", fontWeight: 800, border: "1px solid", borderColor: data.applyIncentive === 'Yes' ? "#4caf5044" : "var(--border-color)" }} />
+                                {data.applyIncentive === 'Yes' && data.status === 'Approved' && data.approvedAmount && (
+                                    <Typography variant="body2" sx={{ fontWeight: 800, color: "#4caf50" }}>₹{data.approvedAmount}</Typography>
+                                )}
+                            </Box>
+                        } />
+                    </Box>
+                </Card>
 
                 {/* Journal Information */}
-                    <Card sx={{ ...cardStyle, height: "100%", mb: 0 }}>
-                        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 3 }}><MenuBookIcon sx={{ color: "var(--color-primary)" }} /><Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>Journal Information</Typography></Box>
-                        <Box sx={{ display: "flex", flexDirection: "column" }}>
-                            <LabelValue label="Journal Name" value={data.journalName || "-"} horizontal />
-                            <LabelValue label="Journal Type" value={data.journalType || "-"} horizontal />
-                            <LabelValue label="Publication Scope" value={data.publicationScope || "-"} horizontal />
-                            <LabelValue 
-                                label="Month/Year" 
-                                value={`${data.publishedMonth || data.month || "-"} ${data.publishedYear || data.year || "-"}`} 
-                                horizontal 
-                            />
-                            <LabelValue label="Volume" value={data.vol || "-"} horizontal />
-                            <LabelValue label="Issue" value={data.issue || "-"} horizontal />
-                        </Box>
-                    </Card>
+                <Card sx={{ ...cardStyle, height: "100%", mb: 0 }}>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 3 }}><MenuBookIcon sx={{ color: "var(--color-primary)" }} /><Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>Journal Information</Typography></Box>
+                    <Box sx={{ display: "flex", flexDirection: "column" }}>
+                        <LabelValue label="Journal Name" value={data.journalName || "-"} horizontal />
+                        <LabelValue label="Journal Type" value={data.journalType || "-"} horizontal />
+                        <LabelValue label="Publication Scope" value={data.publicationScope || "-"} horizontal />
+                        <LabelValue
+                            label="Month/Year"
+                            value={`${data.publishedMonth || data.month || "-"} ${data.publishedYear || data.year || "-"}`}
+                            horizontal
+                        />
+                        <LabelValue label="Volume" value={data.vol || "-"} horizontal />
+                        <LabelValue label="Issue" value={data.issue || "-"} horizontal />
+                    </Box>
+                </Card>
 
                 {/* Journal and Article Metrics */}
-                    <Card sx={{ ...cardStyle, height: "100%", mb: 0 }}>
-                        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 3 }}><HistoryIcon sx={{ color: "var(--color-primary)" }} /><Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>Journal and Article Metrics</Typography></Box>
-                        <Box sx={{ display: "flex", flexDirection: "column" }}>
-                            <LabelValue label="Quartile" value={data.journalQuartile || data.categoryOfJournal || "-"} horizontal />
-                            <LabelValue label="Journal H-Index" value={data.hIndex || "-"} horizontal />
-                            <LabelValue label="Impact Factor (JCR)" value={data.jcrImpactFactor || data.impactFactor || "-"} horizontal />
-                            <LabelValue label="Citations" value={data.citations || "-"} horizontal />
-                            <LabelValue label="AGEC Referencing Numbers" value={data.agecReferencingNumbers || data.referencingNos || "-"} horizontal />
-                            <LabelValue label="Number of References Belonging to AGEC" value={data.numberOfReferencesBelongingToAGEC !== undefined ? data.numberOfReferencesBelongingToAGEC : (data.papersCited !== undefined ? data.papersCited : "-")} horizontal />
-                        </Box>
-                    </Card>
+                <Card sx={{ ...cardStyle, height: "100%", mb: 0 }}>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 3 }}><HistoryIcon sx={{ color: "var(--color-primary)" }} /><Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>Journal and Article Metrics</Typography></Box>
+                    <Box sx={{ display: "flex", flexDirection: "column" }}>
+                        <LabelValue label="Quartile" value={data.journalQuartile || data.categoryOfJournal || "-"} horizontal />
+                        <LabelValue label="Journal H-Index" value={data.hIndex || "-"} horizontal />
+                        <LabelValue label="Impact Factor (JCR)" value={data.jcrImpactFactor || data.impactFactor || "-"} horizontal />
+                        <LabelValue label="Citations" value={data.citations || "-"} horizontal />
+                        <LabelValue label="AGEC Referencing Numbers" value={data.agecReferencingNumbers || data.referencingNos || "-"} horizontal />
+                        <LabelValue label="Number of References Belonging to AGEC" value={data.numberOfReferencesBelongingToAGEC !== undefined ? data.numberOfReferencesBelongingToAGEC : (data.papersCited !== undefined ? data.papersCited : "-")} horizontal />
+                    </Box>
+                </Card>
             </Box>
 
             {/* Co-Authors - shown above Attached Documents */}
@@ -442,20 +447,20 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
                                         const pos = ca.authorPosition || derivedPositions[i] || (i + 1);
                                         return (
                                             <TableRow key={i} sx={{ '&:hover': { bgcolor: 'rgba(190,147,55,0.04)' } }}>
-                                        <TableCell>
-                                            <Box sx={{
-                                                display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                                                width: 32, height: 32, borderRadius: '50%',
-                                                bgcolor: 'rgba(190, 147, 55, 0.12)', border: '1.5px solid var(--color-primary)',
-                                                color: 'var(--color-primary)', fontWeight: 900, fontSize: '0.85rem'
-                                            }}>
-                                                {pos}
-                                            </Box>
-                                        </TableCell>
-                                        <TableCell sx={{ fontWeight: 700, color: "var(--text-primary)" }}>{ca.name}</TableCell>
-                                        <TableCell sx={{ fontWeight: 600, color: "var(--text-secondary)" }}>{ca.affiliation || "-"}</TableCell>
-                                    </TableRow>
-                                    );
+                                                <TableCell>
+                                                    <Box sx={{
+                                                        display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                                                        width: 32, height: 32, borderRadius: '50%',
+                                                        bgcolor: 'rgba(190, 147, 55, 0.12)', border: '1.5px solid var(--color-primary)',
+                                                        color: 'var(--color-primary)', fontWeight: 900, fontSize: '0.85rem'
+                                                    }}>
+                                                        {pos}
+                                                    </Box>
+                                                </TableCell>
+                                                <TableCell sx={{ fontWeight: 700, color: "var(--text-primary)" }}>{ca.name}</TableCell>
+                                                <TableCell sx={{ fontWeight: 600, color: "var(--text-secondary)" }}>{ca.affiliation || "-"}</TableCell>
+                                            </TableRow>
+                                        );
                                     });
                                 })()}
                             </TableBody>
@@ -501,12 +506,12 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
             {/* Actions */}
             <Box sx={{ display: "flex", flexWrap: "wrap", gap: 3, mt: 3 }}>
                 {data.hodComment && <Box sx={{ flex: 1, minWidth: 300 }}><Card sx={{ ...cardStyle, borderLeft: "4px solid #ffc107", height: "100%", mb: 0 }}><Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 2 }}><HistoryIcon sx={{ color: "#ffc107" }} /><Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>HOD Review</Typography></Box><Box sx={{ p: 2, bgcolor: "rgba(255, 193, 7, 0.05)", borderRadius: "10px", border: "1px solid #ffc10733" }}><Typography variant="body2" sx={{ fontStyle: "italic", fontWeight: 600 }}>"{data.hodComment}"</Typography></Box></Card></Box>}
-                
+
                 <Box sx={{ flex: 1, minWidth: 350 }}>
                     {((isHOD && data.status === 'Pending at HOD') || (isResearchAdmin && data.status === 'Pending at R&D')) ? (
                         <Card sx={{ ...cardStyle, borderTop: "4px solid var(--color-primary)", mb: 0 }}>
                             <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 3 }}><GavelIcon sx={{ color: "var(--color-primary)" }} /><Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>Review Decision</Typography></Box>
-                            
+
                             {isResearchAdmin && (
                                 <Box sx={{ display: "flex", gap: 3, mb: 3, flexWrap: "wrap" }}>
                                     <Box sx={{ flex: "1 1 150px" }}>
@@ -520,47 +525,59 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
                                         </Select>
                                     </Box>
                                     <Box sx={{ flex: "1 1 150px" }}>
+                                        <Typography variant="subtitle2" sx={{ fontWeight: 900, mb: 1, color: "var(--color-primary)", fontSize: "0.75rem" }}>JOURNAL TYPE</Typography>
+                                        <Select fullWidth size="small" value={journalType} onChange={e => setJournalType(e.target.value)} displayEmpty sx={{ borderRadius: "10px", bgcolor: "var(--bg-panel)" }}>
+                                            <MenuItem value="" disabled>Select Type</MenuItem>
+                                            <MenuItem value="SCI">SCI</MenuItem>
+                                            <MenuItem value="SCIE">SCIE</MenuItem>
+                                            <MenuItem value="SCOPUS">SCOPUS</MenuItem>
+                                            <MenuItem value="ESCI">ESCI</MenuItem>
+                                            <MenuItem value="UGC">UGC</MenuItem>
+                                            <MenuItem value="Other">Other</MenuItem>
+                                        </Select>
+                                    </Box>
+                                    <Box sx={{ flex: "1 1 150px" }}>
                                         <Typography variant="subtitle2" sx={{ fontWeight: 900, mb: 1, color: "var(--color-primary)", fontSize: "0.75rem" }}>JOURNAL H-INDEX</Typography>
-                                        <TextField 
-                                            fullWidth size="small" 
-                                            placeholder="Enter Journal H-Index" 
-                                            value={hIndex} 
-                                            onChange={e => setHIndex(e.target.value)} 
-                                            sx={{ "& .MuiOutlinedInput-root": { borderRadius: "10px", bgcolor: "var(--bg-panel)" } }} 
+                                        <TextField
+                                            fullWidth size="small"
+                                            placeholder="Enter Journal H-Index"
+                                            value={hIndex}
+                                            onChange={e => setHIndex(e.target.value)}
+                                            sx={{ "& .MuiOutlinedInput-root": { borderRadius: "10px", bgcolor: "var(--bg-panel)" } }}
                                         />
                                     </Box>
                                     <Box sx={{ flex: "1 1 150px" }}>
                                         <Typography variant="subtitle2" sx={{ fontWeight: 900, mb: 1, color: "var(--color-primary)", fontSize: "0.75rem" }}>IMPACT FACTOR (JCR) *</Typography>
-                                        <TextField 
-                                            fullWidth size="small" 
-                                            placeholder="Enter Impact Factor (JCR)" 
-                                            value={jcrImpactFactor} 
-                                            onChange={e => setJcrImpactFactor(e.target.value)} 
-                                            sx={{ "& .MuiOutlinedInput-root": { borderRadius: "10px", bgcolor: "var(--bg-panel)" } }} 
+                                        <TextField
+                                            fullWidth size="small"
+                                            placeholder="Enter Impact Factor (JCR)"
+                                            value={jcrImpactFactor}
+                                            onChange={e => setJcrImpactFactor(e.target.value)}
+                                            sx={{ "& .MuiOutlinedInput-root": { borderRadius: "10px", bgcolor: "var(--bg-panel)" } }}
                                         />
                                     </Box>
                                     <Box sx={{ flex: "1 1 150px" }}>
                                         <Typography variant="subtitle2" sx={{ fontWeight: 900, mb: 1, color: "var(--color-primary)", fontSize: "0.75rem" }}>CITATIONS</Typography>
-                                        <TextField 
-                                            fullWidth size="small" 
-                                            placeholder="Enter Citations" 
-                                            value={citations} 
-                                            onChange={e => setCitations(e.target.value)} 
-                                            sx={{ "& .MuiOutlinedInput-root": { borderRadius: "10px", bgcolor: "var(--bg-panel)" } }} 
+                                        <TextField
+                                            fullWidth size="small"
+                                            placeholder="Enter Citations"
+                                            value={citations}
+                                            onChange={e => setCitations(e.target.value)}
+                                            sx={{ "& .MuiOutlinedInput-root": { borderRadius: "10px", bgcolor: "var(--bg-panel)" } }}
                                         />
                                     </Box>
                                 </Box>
                             )}
 
-                             {isResearchAdmin && data.applyIncentive === 'Yes' && (
+                            {isResearchAdmin && data.applyIncentive === 'Yes' && (
                                 <Box sx={{ mb: 3 }}>
                                     <Typography variant="subtitle2" sx={{ fontWeight: 900, mb: 1, color: "var(--color-primary)", fontSize: "0.75rem" }}>APPROVED INCENTIVE (₹)</Typography>
-                                    <TextField 
-                                        fullWidth size="small" type="number" 
-                                        placeholder="Enter Approved Incentive Amount" 
-                                        value={approvedAmount} 
-                                        onChange={e => setApprovedAmount(e.target.value)} 
-                                        sx={{ maxWidth: 250, "& .MuiOutlinedInput-root": { borderRadius: "10px", bgcolor: "var(--bg-panel)" } }} 
+                                    <TextField
+                                        fullWidth size="small" type="number"
+                                        placeholder="Enter Approved Incentive Amount"
+                                        value={approvedAmount}
+                                        onChange={e => setApprovedAmount(e.target.value)}
+                                        sx={{ maxWidth: 250, "& .MuiOutlinedInput-root": { borderRadius: "10px", bgcolor: "var(--bg-panel)" } }}
                                     />
                                 </Box>
                             )}
@@ -592,7 +609,7 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
                                         <GavelIcon sx={{ color: "var(--color-primary)" }} />
                                         <Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>Update Journal Metrics</Typography>
                                     </Box>
-                                    
+
                                     <Box sx={{ display: "flex", gap: 3, mb: 3, flexWrap: "wrap" }}>
                                         <Box sx={{ flex: "1 1 150px" }}>
                                             <Typography variant="subtitle2" sx={{ fontWeight: 900, mb: 1, color: "var(--color-primary)", fontSize: "0.75rem" }}>QUARTILE</Typography>
@@ -605,44 +622,54 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
                                             </Select>
                                         </Box>
                                         <Box sx={{ flex: "1 1 150px" }}>
+                                            <Typography variant="subtitle2" sx={{ fontWeight: 900, mb: 1, color: "var(--color-primary)", fontSize: "0.75rem" }}>JOURNAL TYPE</Typography>
+                                            <Select fullWidth size="small" value={journalType} onChange={e => setJournalType(e.target.value)} displayEmpty sx={{ borderRadius: "10px", bgcolor: "var(--bg-panel)" }}>
+                                                <MenuItem value="" disabled>Select Type</MenuItem>
+                                                <MenuItem value="SCI">SCI</MenuItem>
+                                                <MenuItem value="SCIE">SCIE</MenuItem>
+                                                <MenuItem value="SCOPUS">SCOPUS</MenuItem>
+                                                <MenuItem value="ESCI">ESCI</MenuItem>
+                                            </Select>
+                                        </Box>
+                                        <Box sx={{ flex: "1 1 150px" }}>
                                             <Typography variant="subtitle2" sx={{ fontWeight: 900, mb: 1, color: "var(--color-primary)", fontSize: "0.75rem" }}>JOURNAL H-INDEX</Typography>
-                                            <TextField 
-                                                fullWidth size="small" 
-                                                placeholder="Enter Journal H-Index" 
-                                                value={hIndex} 
-                                                onChange={e => setHIndex(e.target.value)} 
-                                                sx={{ "& .MuiOutlinedInput-root": { borderRadius: "10px", bgcolor: "var(--bg-panel)" } }} 
+                                            <TextField
+                                                fullWidth size="small"
+                                                placeholder="Enter Journal H-Index"
+                                                value={hIndex}
+                                                onChange={e => setHIndex(e.target.value)}
+                                                sx={{ "& .MuiOutlinedInput-root": { borderRadius: "10px", bgcolor: "var(--bg-panel)" } }}
                                             />
                                         </Box>
                                         <Box sx={{ flex: "1 1 150px" }}>
                                             <Typography variant="subtitle2" sx={{ fontWeight: 900, mb: 1, color: "var(--color-primary)", fontSize: "0.75rem" }}>IMPACT FACTOR (JCR)</Typography>
-                                            <TextField 
-                                                fullWidth size="small" 
-                                                placeholder="Enter Impact Factor (JCR)" 
-                                                value={jcrImpactFactor} 
-                                                onChange={e => setJcrImpactFactor(e.target.value)} 
-                                                sx={{ "& .MuiOutlinedInput-root": { borderRadius: "10px", bgcolor: "var(--bg-panel)" } }} 
+                                            <TextField
+                                                fullWidth size="small"
+                                                placeholder="Enter Impact Factor (JCR)"
+                                                value={jcrImpactFactor}
+                                                onChange={e => setJcrImpactFactor(e.target.value)}
+                                                sx={{ "& .MuiOutlinedInput-root": { borderRadius: "10px", bgcolor: "var(--bg-panel)" } }}
                                             />
                                         </Box>
                                         <Box sx={{ flex: "1 1 150px" }}>
                                             <Typography variant="subtitle2" sx={{ fontWeight: 900, mb: 1, color: "var(--color-primary)", fontSize: "0.75rem" }}>CITATIONS</Typography>
-                                            <TextField 
-                                                fullWidth size="small" 
-                                                placeholder="Enter Citations" 
-                                                value={citations} 
-                                                onChange={e => setCitations(e.target.value)} 
-                                                sx={{ "& .MuiOutlinedInput-root": { borderRadius: "10px", bgcolor: "var(--bg-panel)" } }} 
+                                            <TextField
+                                                fullWidth size="small"
+                                                placeholder="Enter Citations"
+                                                value={citations}
+                                                onChange={e => setCitations(e.target.value)}
+                                                sx={{ "& .MuiOutlinedInput-root": { borderRadius: "10px", bgcolor: "var(--bg-panel)" } }}
                                             />
                                         </Box>
                                     </Box>
 
                                     <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
-                                        <Button 
- variant="contained" 
- disabled={actionLoading} 
- onClick={handleUpdateMetrics} 
- sx={{ bgcolor: "var(--color-primary)", color: "#fff", fontWeight: 800, textTransform: "none", px: 4, "&:hover": { opacity: 0.9 } }}
- >
+                                        <Button
+                                            variant="contained"
+                                            disabled={actionLoading}
+                                            onClick={handleUpdateMetrics}
+                                            sx={{ bgcolor: "var(--color-primary)", color: "#fff", fontWeight: 800, textTransform: "none", px: 4, "&:hover": { opacity: 0.9 } }}
+                                        >
                                             Update Metrics
                                         </Button>
                                     </Box>
