@@ -149,7 +149,7 @@ const UniprimeDashboard = () => {
       path: "/academics/management",
     },
     {
-      title: "Departments",
+      title: "Serving Departments",
       value: dashboardData.departmentsCount,
       icon: <AccountBalance />,
       gradient: "linear-gradient(135deg, #8B5CF6, #6D28D9)",
@@ -191,7 +191,7 @@ const UniprimeDashboard = () => {
   ];
 
   const quickActions = [
-    { title: "Add Department", desc: "Create new department", icon: <DomainAdd color="success" />, path: "/academics/department" },
+    { title: "Add Serving Department", desc: "Create new serving department", icon: <DomainAdd color="success" />, path: "/academics/department" },
     { title: "Add Program / Branch", desc: "Add program or branch", icon: <AccountTree color="secondary" />, path: "/academics/programs" },
     { title: "Add User", desc: "Register new user", icon: <PersonAdd sx={{ color: "#00b0ff" }} />, path: "/student/student-uploads" },
     { title: "Assign Role", desc: "Assign role to user", icon: <AssignmentInd color="warning" />, path: "/academics/roles" },
@@ -209,7 +209,7 @@ const UniprimeDashboard = () => {
       icon: <CalendarMonth color="success" /> 
     },
     { 
-      title: dashboardData.departmentsList[0]?.departmentName ? `Department '${dashboardData.departmentsList[0].departmentName}' onboarded` : "Academic structure updated", 
+      title: dashboardData.departmentsList[0]?.departmentName ? `Serving Department '${dashboardData.departmentsList[0].departmentName}' onboarded` : "Academic structure updated", 
       by: "Super Admin", 
       time: "Today", 
       icon: <AccountBalance color="primary" /> 
@@ -491,7 +491,7 @@ const UniprimeDashboard = () => {
                       }}>
                         <AccountBalance sx={{ color: "#2563eb", fontSize: 22 }} />
                       </Box>
-                      <Typography sx={{ fontWeight: 700, color: "var(--text-primary)", fontSize: "0.95rem" }}>Departments</Typography>
+                      <Typography sx={{ fontWeight: 700, color: "var(--text-primary)", fontSize: "0.95rem" }}>Serving Departments</Typography>
                     </Box>
                     <Box sx={{ bgcolor: "rgba(59, 130, 246, 0.1)", px: 2, py: 0.5, borderRadius: "20px" }}>
                       <Typography sx={{ fontWeight: 800, color: "#2563eb", fontSize: "0.85rem" }}>{dashboardData.departmentsCount}</Typography>

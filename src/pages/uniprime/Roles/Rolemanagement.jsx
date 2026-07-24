@@ -347,7 +347,7 @@ const RoleManagement = () => {
     const validateIndividual = (data) => {
         if (!data.id?.trim()) return "ID is required";
         if (!data.fullname?.trim()) return "Full name is required";
-        if (!data.department) return "Department is required";
+        if (!data.department) return "Serving Department is required";
         if (!data.email?.trim()) return "Email is required";
         if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) return "Invalid email format";
         const cleanPhone = data.phone?.toString().replace(/\D/g, '').slice(-10);
@@ -634,7 +634,7 @@ const RoleManagement = () => {
         // Validation for HOD role
         const isHodSelected = assignedRoleIds.some(rid => roles.find(r => r._id === rid)?.name === 'HOD');
         if (isHodSelected && selectedHodDepts.length === 0) {
-            toast.error("Please select at least one department for the HOD role");
+            toast.error("Please select at least one serving department for the HOD role");
             return;
         }
 
@@ -1007,7 +1007,7 @@ const RoleManagement = () => {
                                                         />
                                                     </Grid>
                                                     <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-                                                        <TextField label="Department" fullWidth value={signupData.department} slotProps={{ input: { readOnly: true } }} size="small" variant="filled" sx={{ "& .MuiInputBase-input": { fontWeight: 700 } }} />
+                                                        <TextField label="Serving Department" fullWidth value={signupData.department} slotProps={{ input: { readOnly: true } }} size="small" variant="filled" sx={{ "& .MuiInputBase-input": { fontWeight: 700 } }} />
                                                     </Grid>
                                                     <Grid size={{ xs: 12, sm: 6, md: 4 }}>
                                                         <TextField label="Phone" fullWidth value={signupData.phone} slotProps={{ input: { readOnly: true } }} size="small" variant="filled" sx={{ "& .MuiInputBase-input": { fontWeight: 700 } }} />
@@ -1269,7 +1269,7 @@ const RoleManagement = () => {
                                                     <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                                                         <TextField
                                                             fullWidth
-                                                            label="Department"
+                                                            label="Serving Department"
                                                             value={allDepartments.find(d => d._id === editingEmployee?.department)?.name || editingEmployee?.ecapDeptName || editingEmployee?.department || ""}
                                                             disabled
                                                             size="small"
@@ -1305,7 +1305,7 @@ const RoleManagement = () => {
                                                         <TextField
                                                             fullWidth
                                                             select
-                                                            label="Core Department"
+                                                            label="Parent Department"
                                                             value={editableCoreDept}
                                                             onChange={(e) => setEditableCoreDept(e.target.value)}
                                                             size="small"
@@ -1316,7 +1316,7 @@ const RoleManagement = () => {
                                                                 "& .MuiOutlinedInput-root": { borderRadius: '10px' }
                                                             }}
                                                         >
-                                                            <MenuItem value="" disabled>Select Department</MenuItem>
+                                                            <MenuItem value="" disabled>Select Parent Department</MenuItem>
                                                             {allDepartments
                                                                 .filter(d => d.type !== 'Central' && d.name.toLowerCase() !== 'freshman engineering')
                                                                 .map(d => (
@@ -1470,14 +1470,14 @@ const RoleManagement = () => {
                                             )) : <Box sx={{ textAlign: 'center', py: 5, color: 'text.disabled' }}><People sx={{ fontSize: 40, mb: 1, opacity: 0.5 }} /><Typography variant="body2">No users found.</Typography></Box>}
                                         </List>
 
-                                        {/* HOD Department Selection UI (Under User Card) */}
+                                        {/* HOD Serving Department Selection UI (Under User Card) */}
                                         <Collapse in={!!selectedUser && assignedRoleIds.some(rid => roles.find(r => r._id === rid)?.name === 'HOD')}>
                                             <Box sx={{ mt: 2, p: 2, borderRadius: '15px', background: 'var(--bg-paper)', border: '1px solid var(--border-color)' }}>
                                                 <Typography variant="subtitle2" fontWeight={800} color="var(--text-primary)" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                                    <Security sx={{ fontSize: 18 }} /> HOD Department Assignment
+                                                    <Security sx={{ fontSize: 18 }} /> HOD Serving Department Assignment
                                                 </Typography>
                                                 <Typography variant="caption" color="textSecondary" display="block" sx={{ mb: 2 }}>
-                                                    Assign this HOD to multiple departments for context-aware access.
+                                                    Assign this HOD to multiple serving departments for context-aware access.
                                                 </Typography>
 
                                                 <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
@@ -1634,7 +1634,7 @@ const RoleManagement = () => {
                                         }
                                     }}
                                 >
-                                    <MenuItem value="">All Departments</MenuItem>
+                                    <MenuItem value="">All Serving Departments</MenuItem>
                                     {allDepartments.map(d => (
                                         <MenuItem key={d._id} value={d._id}>{d.name}</MenuItem>
                                     ))}
@@ -1678,7 +1678,7 @@ const RoleManagement = () => {
                                                 <TableCell sx={{ fontWeight: 800, color: 'var(--text-primary)' }}>Name</TableCell>
                                                 <TableCell sx={{ fontWeight: 800, color: 'var(--text-primary)' }}>Institution ID</TableCell>
                                                 <TableCell sx={{ fontWeight: 800, color: 'var(--text-primary)' }}>Email</TableCell>
-                                                <TableCell sx={{ fontWeight: 800, color: 'var(--text-primary)' }}>Department</TableCell>
+                                                <TableCell sx={{ fontWeight: 800, color: 'var(--text-primary)' }}>Serving Department</TableCell>
                                                 <TableCell sx={{ fontWeight: 800, color: 'var(--text-primary)' }}>Designation</TableCell>
                                                 <TableCell sx={{ fontWeight: 800, color: 'var(--text-primary)' }}>Assigned Roles</TableCell>
                                                 <TableCell align="right" sx={{ fontWeight: 800, color: 'var(--text-primary)', pr: 3 }}>Actions</TableCell>
@@ -1877,7 +1877,7 @@ const RoleManagement = () => {
                                 <TextField label="Full Name" value={signupData.fullname} onChange={(e) => setSignupData({ ...signupData, fullname: e.target.value })} disabled={disabledFields.fullname} size="small" fullWidth />
                                 <TextField label="Email Address" value={signupData.email} onChange={(e) => setSignupData({ ...signupData, email: e.target.value })} disabled={disabledFields.email} size="small" fullWidth />
                                 <TextField label="Phone Number" value={signupData.phone} onChange={(e) => setSignupData({ ...signupData, phone: e.target.value })} disabled={disabledFields.phone} size="small" fullWidth placeholder="9876543210" />
-                                <TextField label="Department" value={signupData.department} onChange={(e) => setSignupData({ ...signupData, department: e.target.value })} disabled={disabledFields.department} size="small" fullWidth />
+                                <TextField label="Serving Department" value={signupData.department} onChange={(e) => setSignupData({ ...signupData, department: e.target.value })} disabled={disabledFields.department} size="small" fullWidth />
                                 <TextField label="Designation" value={signupData.designation} onChange={(e) => setSignupData({ ...signupData, designation: e.target.value })} disabled={disabledFields.designation} size="small" fullWidth />
                                 <TextField label="Password" type="password" value={signupData.password} onChange={(e) => setSignupData({ ...signupData, password: e.target.value })} size="small" fullWidth />
                                 <TextField label="Confirm Password" type="password" value={signupData.confirmPassword} onChange={(e) => setSignupData({ ...signupData, confirmPassword: e.target.value })} size="small" fullWidth />

@@ -275,7 +275,7 @@ export default function HODDiscrepancies() {
             <Table>
               <TableHead sx={{ background: "var(--gradient-primary)" }}>
                 <TableRow>
-                  {["#", "Faculty", "Department", "Year / Sem", "Raised On", "Note", "Status", "Action"].map(col => (
+                  {["#", "Faculty", "Serving Department", "Year / Sem", "Raised On", "Note", "Status", "Action"].map(col => (
                     <TableCell key={col} sx={{ color: "#fff", fontWeight: 700 }}>{col}</TableCell>
                   ))}
                 </TableRow>

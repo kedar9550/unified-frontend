@@ -229,7 +229,7 @@ const ConferenceApprovalDetails = ({ id, onBack, role }) => {
                         <Box sx={{ width: "100%" }}>
                             <LabelValue label="Name" value={facultyId?.name} horizontal />
                             <LabelValue label="Designation" value={facultyId?.designation} horizontal />
-                            <LabelValue label="Department" value={facultyId?.coreDepartment?.name || facultyId?.department?.name} horizontal />
+                            <LabelValue label="Parent Department" value={facultyId?.coreDepartment?.name || facultyId?.department?.name} horizontal />
                             <LabelValue label="Emp ID" value={facultyId?.institutionId} horizontal />
                             <LabelValue label="Contact" value={facultyId?.phone || facultyId?.contactNumber} horizontal />
                             <LabelValue label="PAN Number" value={data.panNumber} horizontal />
