@@ -5,7 +5,7 @@ import {
   DialogContent, DialogActions, Grid, Chip, Divider, Stack, useTheme, useMediaQuery
 } from "@mui/material";
 import { toast } from "sonner";
-import { Description, WorkspacePremium, Close, AddCircle, Edit, Delete, Visibility, School, LocationOn, FilePresent, CalendarToday, Download, Info, DateRange } from "@mui/icons-material";
+import { Description, WorkspacePremium, Close, AddCircle, Edit, Delete, Visibility, School, LocationOn, FilePresent, CalendarToday, Download, Info, DateRange, CheckCircle, TrackChanges, Comment, FormatQuote } from "@mui/icons-material";
 import FileDownloadIcon from "@mui/icons-material/FileDownload";
 import PageHeader from "../../components/common/PageHeader";
 import NoActiveYearDialog from "../../components/common/NoActiveYearDialog";
@@ -93,6 +93,44 @@ export default function ResourceUtilization() {
   const [openFormModal, setOpenFormModal] = useState(false);
   const [noActiveYearAlertOpen, setNoActiveYearAlertOpen] = useState(false);
   const [selectedActivityDetails, setSelectedActivityDetails] = useState(null);
+  const [previewBlobUrl, setPreviewBlobUrl] = useState(null);
+
+  useEffect(() => {
+    let active = true;
+    if (selectedActivityDetails?.proof) {
+      const data = selectedActivityDetails;
+      const backendURL = (import.meta.env.VITE_BACKEND_URL || "http://localhost:9000").replace(/\/$/, "");
+      const fileUrl = data.proof.startsWith('http') ? data.proof : `${backendURL}${data.proof}`;
+      
+      fetch(fileUrl)
+        .then(res => {
+          if (!res.ok) throw new Error("Failed to fetch proof");
+          return res.blob();
+        })
+        .then(blob => {
+          if (active) {
+            const url = URL.createObjectURL(blob);
+            setPreviewBlobUrl(url);
+          }
+        })
+        .catch(err => {
+          console.error("Error loading preview:", err);
+          if (active) {
+            setPreviewBlobUrl(fileUrl);
+          }
+        });
+    } else {
+      setPreviewBlobUrl(null);
+    }
+
+    return () => {
+      active = false;
+      if (previewBlobUrl && previewBlobUrl.startsWith("blob:")) {
+        URL.revokeObjectURL(previewBlobUrl);
+      }
+    };
+  }, [selectedActivityDetails]);
+
   const [isDocumentRemoved, setIsDocumentRemoved] = useState(false);
 
   const [editingId, setEditingId] = useState(null); // stores ID when editing
@@ -740,292 +778,310 @@ export default function ResourceUtilization() {
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
-          background: "var(--gradient-primary)",
+          background: "linear-gradient(90deg, #0d1b3e 0%, #0f172a 100%)",
           color: "#fff",
-          py: 2.5,
+          py: 2.2,
           px: 3
         }}>
-          <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-            <School sx={{ fontSize: 28, color: "#6366f1" }} />
-            <Typography variant="h6" component="div" sx={{ fontWeight: 800, fontSize: "1.1rem" }}>Activity Details</Typography>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+            <School sx={{ fontSize: 24, color: "#fff" }} />
+            <Typography variant="h6" component="div" sx={{ fontWeight: 600, fontSize: "1.1rem" }}>Activity Details</Typography>
           </Box>
           <IconButton onClick={() => setSelectedActivityDetails(null)} sx={{ color: "#fff" }}>
-            <Close />
+            <Close sx={{ fontSize: 20 }} />
           </IconButton>
         </DialogTitle>
 
-        <DialogContent sx={{ pt: 2, px: 3, pb: 3, mt: 2 }}>
-          {/* Header Section with Activity Info */}
+        <DialogContent sx={{ pt: "24px !important", px: 4, pb: 4 }}>
+          {/* Header Section with Activity Info & Large Circle Icon */}
           <Box sx={{
-            display: "grid",
-            gridTemplateColumns: { xs: "1fr", md: "1fr auto" },
-            gap: 2,
-            mb: 3,
-            alignItems: "start"
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            gap: 2.5,
+            mb: 4,
+            mt: 1.5,
+            flexWrap: { xs: "wrap", md: "nowrap" }
           }}>
-            {/* Left: Activity Type & Course */}
-            <Box>
-              <Typography sx={{
-                fontSize: "1.5rem",
-                fontWeight: 800,
-                color: "var(--text-primary)",
-                mb: 0.5
+            <Box sx={{ display: "flex", alignItems: "center", gap: 2.5, flex: 1 }}>
+              {/* Left Circle Icon */}
+              <Box sx={{
+                width: 64,
+                height: 64,
+                borderRadius: "50%",
+                bgcolor: "#eff6ff",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                flexShrink: 0
               }}>
-                {data.activityCategory} - {data.activityType}
-              </Typography>
-              <Typography sx={{
-                fontSize: "1rem",
-                color: "var(--text-secondary)",
-                fontWeight: 600
-              }}>
-                {data.activityCategory === "FDP" && data.activityType === "FDP Participant"
-                  ? data.courseFdpName || data.organizationName
-                  : data.organizationName}
-              </Typography>
+                <School sx={{ fontSize: 32, color: "#1e3a8a" }} />
+              </Box>
+              
+              {/* Title & Subtitle */}
+              <Box>
+                <Typography sx={{
+                  fontSize: "1.35rem",
+                  fontWeight: 800,
+                  color: "var(--text-primary)",
+                  lineHeight: 1.25,
+                  mb: 0.5
+                }}>
+                  {data.activityCategory} - {data.activityType}
+                </Typography>
+                <Typography sx={{
+                  fontSize: "0.95rem",
+                  color: "var(--text-secondary)",
+                  fontWeight: 500
+                }}>
+                  {data.activityCategory === "FDP" && data.activityType === "FDP Participant"
+                    ? data.courseFdpName || data.organizationName
+                    : data.organizationName}
+                </Typography>
+              </Box>
             </Box>
 
             {/* Right: Status Badge */}
             <Chip
               label={data.status}
-              icon={data.status === "Approved" ? <span style={{ marginRight: 4 }}>✓</span> : undefined}
+              icon={
+                data.status === "Approved" ? (
+                  <span style={{ color: "#10b981", fontWeight: "bold", marginRight: "2px" }}>✓</span>
+                ) : undefined
+              }
               sx={{
-                bgcolor: statusStyle.bg,
-                color: statusStyle.color,
-                fontWeight: 800,
-                fontSize: "0.9rem",
-                px: 2,
-                py: 3,
-                borderRadius: "8px"
+                bgcolor: data.status === "Approved" ? "#f0fdf4" : statusStyle.bg,
+                color: data.status === "Approved" ? "#10b981" : statusStyle.color,
+                border: data.status === "Approved" ? "1px solid #bbf7d0" : `1px solid ${statusStyle.color}40`,
+                fontWeight: 700,
+                fontSize: "0.85rem",
+                px: 1.8,
+                py: 2.2,
+                borderRadius: "8px",
+                "& .MuiChip-icon": {
+                  color: "inherit"
+                }
               }}
             />
           </Box>
 
-          {rule && (
-            <Box sx={{ mb: 3, p: 2, background: "var(--bg-panel)", borderRadius: "12px", border: "1px solid var(--border-color)" }}>
-              <Typography sx={{ fontSize: "0.85rem", fontWeight: 800, color: "var(--color-primary)", textTransform: "uppercase", mb: 1 }}>
-                Scoring rule
-              </Typography>
-              <Typography sx={{ fontWeight: 700, color: "var(--text-primary)", mb: 0.5 }}>
-                {rule}
-              </Typography>
-              <Typography sx={{ fontSize: "0.85rem", color: "var(--text-secondary)" }}>
-                Calculated score: <strong>{score}</strong>
-              </Typography>
-            </Box>
-          )}
-
-          {/* Quick Info Cards */}
-          {data.activityCategory === "FDP" && data.activityType === "FDP Participant" && (
-            <Box sx={{
-              display: "grid",
-              gridTemplateColumns: { xs: "1fr", sm: "repeat(4, 1fr)" },
-              gap: 2,
-              mb: 3
-            }}>
-              <Box sx={{ p: 2, background: "var(--bg-panel)", borderRadius: "12px", border: "1px solid var(--border-color)" }}>
-                <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
-                  <School sx={{ fontSize: 20, color: "var(--color-primary)" }} />
-                  <Typography sx={{ fontSize: "0.75rem", fontWeight: 800, color: "var(--text-secondary)", textTransform: "uppercase" }}>
-                    Organizing Category
-                  </Typography>
-                </Box>
-                <Typography sx={{ fontWeight: 700, color: "var(--text-primary)", fontSize: "0.95rem" }}>
-                  {data.organizingInstitutionCategory || "N/A"}
+          {/* Grid Layout containing Labeled Info Columns */}
+          <Grid container spacing={4}>
+            {/* Left Column: Activity Info and Activity Duration */}
+            <Grid size={{ xs: 12, md: 7.5 }}>
+              
+              {/* ACTIVITY INFORMATION */}
+              <Box sx={{ mb: 4 }}>
+                <Typography sx={{ fontSize: "0.85rem", fontWeight: 800, color: "#2563eb", textTransform: "uppercase", letterSpacing: "0.05em", mb: 2.5 }}>
+                  Activity Information
                 </Typography>
+                
+                <Box sx={{ display: "grid", gridTemplateColumns: { xs: "120px 1fr", sm: "220px 1fr" }, gap: 2 }}>
+                  <Typography sx={{ fontWeight: 600, color: "#475569", fontSize: "0.9rem" }}>Activity Category</Typography>
+                  <Typography sx={{ color: "#0f172a",fontWeight: 600, fontSize: "0.9rem" }}>{data.activityCategory}</Typography>
+                  
+                  <Typography sx={{ fontWeight: 600, color: "#475569", fontSize: "0.9rem" }}>Activity Role / Type</Typography>
+                  <Typography sx={{ color: "#0f172a", fontWeight: 600, fontSize: "0.9rem" }}>{data.activityType}</Typography>
+                  
+                  <Typography sx={{ fontWeight: 600, color: "#475569", fontSize: "0.9rem" }}>Organization / Event Name</Typography>
+                  <Typography sx={{ color: "#0f172a",fontWeight: 600, fontSize: "0.9rem" }}>
+                    {data.activityCategory === "FDP" && data.activityType === "FDP Participant"
+                      ? data.courseFdpName || data.organizationName
+                      : data.organizationName}
+                  </Typography>
+
+                  {/* FDP organizing category or location details */}
+                  {data.activityCategory === "FDP" && data.activityType === "FDP Participant" && (
+                    <>
+                      <Typography sx={{ fontWeight: 600, color: "#475569", fontSize: "0.9rem" }}>Organizing Institution Category</Typography>
+                      <Typography sx={{ color: "#0f172a",fontWeight: 600, fontSize: "0.9rem" }}>{data.organizingInstitutionCategory || "N/A"}</Typography>
+                      
+                      <Typography sx={{ fontWeight: 600, color: "#475569", fontSize: "0.9rem" }}>Location</Typography>
+                      <Typography sx={{ color: "#0f172a",fontWeight: 600, fontSize: "0.9rem" }}>{data.location || "N/A"}</Typography>
+                    </>
+                  )}
+                  {data.certificateNumber && (
+                    <>
+                      <Typography sx={{ fontWeight: 600, color: "#475569", fontSize: "0.9rem" }}>Certificate Number</Typography>
+                      <Typography sx={{ color: "#0f172a", fontSize: "0.9rem" }}>{data.certificateNumber}</Typography>
+                    </>
+                  )}
+                </Box>
               </Box>
 
-              <Box sx={{ p: 2, background: "var(--bg-panel)", borderRadius: "12px", border: "1px solid var(--border-color)" }}>
-                <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
-                  <LocationOn sx={{ fontSize: 20, color: "var(--accent-pink, #ec4899)" }} />
-                  <Typography sx={{ fontSize: "0.75rem", fontWeight: 800, color: "var(--text-secondary)", textTransform: "uppercase" }}>
-                    Location
-                  </Typography>
-                </Box>
-                <Typography sx={{ fontWeight: 700, color: "var(--text-primary)", fontSize: "0.95rem" }}>
-                  {data.location || "N/A"}
-                </Typography>
-              </Box>
+              {/* Horizontal line divider */}
+              <Box sx={{ borderBottom: "1px solid #cbd5e1", mb: 4, opacity: 0.5 }} />
 
-              {data.certificateNumber && (
-                <Box sx={{ p: 2, background: "var(--bg-panel)", borderRadius: "12px", border: "1px solid var(--border-color)" }}>
-                  <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
-                    <FilePresent sx={{ fontSize: 20, color: "var(--accent-teal, #06b6d4)" }} />
-                    <Typography sx={{ fontSize: "0.75rem", fontWeight: 800, color: "var(--text-secondary)", textTransform: "uppercase" }}>
-                      Certificate #
+              {/* ACTIVITY DURATION */}
+              <Box>
+                <Typography sx={{ fontSize: "0.85rem", fontWeight: 800, color: "#2563eb", textTransform: "uppercase", letterSpacing: "0.05em", mb: 2.5 }}>
+                  Activity Duration
+                </Typography>
+                
+                <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1px 1.2fr" }, gap: 3.5 }}>
+                  {/* From & To Dates */}
+                  <Box sx={{ display: "grid", gridTemplateColumns: "90px 1fr", gap: 2 }}>
+                    <Typography sx={{ fontWeight: 600, color: "#475569", fontSize: "0.9rem" }}>From Date</Typography>
+                    <Typography sx={{ color: "#0f172a", fontSize: "0.9rem" }}>
+                      {new Date(data.fromDate).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}
+                    </Typography>
+                    
+                    <Typography sx={{ fontWeight: 600, color: "#475569", fontSize: "0.9rem" }}>To Date</Typography>
+                    <Typography sx={{ color: "#0f172a", fontSize: "0.9rem" }}>
+                      {new Date(data.toDate).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}
                     </Typography>
                   </Box>
-                  <Typography sx={{ fontWeight: 700, color: "var(--text-primary)", fontSize: "0.95rem" }}>
-                    {data.certificateNumber}
-                  </Typography>
-                </Box>
-              )}
 
-              <Box sx={{ p: 2, background: "var(--bg-panel)", borderRadius: "12px", border: "1px solid var(--border-color)" }}>
-                <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
-                  <CalendarToday sx={{ fontSize: 20, color: "var(--color-primary)" }} />
-                  <Typography sx={{ fontSize: "0.75rem", fontWeight: 800, color: "var(--text-secondary)", textTransform: "uppercase" }}>
-                    Duration
-                  </Typography>
-                </Box>
-                <Typography sx={{ fontWeight: 700, color: "var(--text-primary)", fontSize: "0.95rem" }}>
-                  {data.duration} Days
-                </Typography>
-              </Box>
-            </Box>
-          )}
+                  {/* Vertical Divider */}
+                  <Box sx={{ display: { xs: "none", sm: "block" }, width: "1px", height: "100%", bgcolor: "#cbd5e1" }} />
 
-          {data.activityCategory === "FDP" && data.activityType !== "FDP Participant" && (
-            <Box sx={{
-              display: "grid",
-              gridTemplateColumns: { xs: "1fr", sm: "repeat(2, 1fr)" },
-              gap: 2,
-              mb: 3
-            }}>
-              {data.certificateNumber && (
-                <Box sx={{ p: 2, background: "var(--bg-panel)", borderRadius: "12px", border: "1px solid var(--border-color)" }}>
-                  <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
-                    <FilePresent sx={{ fontSize: 20, color: "var(--accent-teal, #06b6d4)" }} />
-                    <Typography sx={{ fontSize: "0.75rem", fontWeight: 800, color: "var(--text-secondary)", textTransform: "uppercase" }}>
-                      Certificate #
-                    </Typography>
-                  </Box>
-                  <Typography sx={{ fontWeight: 700, color: "var(--text-primary)", fontSize: "0.95rem" }}>
-                    {data.certificateNumber}
-                  </Typography>
-                </Box>
-              )}
-
-              <Box sx={{ p: 2, background: "var(--bg-panel)", borderRadius: "12px", border: "1px solid var(--border-color)" }}>
-                <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
-                  <CalendarToday sx={{ fontSize: 20, color: "var(--color-primary)" }} />
-                  <Typography sx={{ fontSize: "0.75rem", fontWeight: 800, color: "var(--text-secondary)", textTransform: "uppercase" }}>
-                    Duration
-                  </Typography>
-                </Box>
-                <Typography sx={{ fontWeight: 700, color: "var(--text-primary)", fontSize: "0.95rem" }}>
-                  {data.duration} Days
-                </Typography>
-              </Box>
-            </Box>
-          )}
-
-          {/* Activity Period Section */}
-          <Box sx={{
-            display: "grid",
-            gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" },
-            gap: 2,
-            mb: 3
-          }}>
-            <Box sx={{ p: 2.5, background: "var(--bg-panel)", borderRadius: "12px", border: "1px solid var(--border-color)" }}>
-              <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1.5 }}>
-                <CalendarToday sx={{ fontSize: 20, color: "#4f46e5" }} />
-                <Typography sx={{ fontWeight: 800, color: "#1a2e5e", fontSize: "0.95rem" }}>
-                  Activity Period
-                </Typography>
-              </Box>
-              <Box sx={{ pl: 0 }}>
-                <Box sx={{ mb: 1.5 }}>
-                  <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: "#6b7280", textTransform: "uppercase" }}>
-                    Start Date
-                  </Typography>
-                  <Typography sx={{ fontWeight: 700, color: "#1a2e5e", fontSize: "1rem" }}>
-                    {new Date(data.fromDate).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}
-                  </Typography>
-                </Box>
-                <Box>
-                  <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: "#6b7280", textTransform: "uppercase" }}>
-                    End Date
-                  </Typography>
-                  <Typography sx={{ fontWeight: 700, color: "#0284c7", fontSize: "1rem" }}>
-                    {new Date(data.toDate).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}
-                  </Typography>
-                </Box>
-              </Box>
-            </Box>
-
-            {/* Proof Document Section */}
-            {fileUrl && (
-              <Box sx={{ p: 2.5, background: "var(--bg-panel)", borderRadius: "12px", border: "1px solid var(--border-color)" }}>
-                <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1.5 }}>
-                  <FilePresent sx={{ fontSize: 20, color: "#4f46e5" }} />
-                  <Typography sx={{ fontWeight: 800, color: "var(--text-primary)", fontSize: "0.95rem" }}>
-                    Proof Document
-                  </Typography>
-                </Box>
-                <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2 }}>
-                  <Description sx={{ fontSize: 24, color: "#ef4444" }} />
-                  <Box sx={{ flex: 1 }}>
-                    <Typography sx={{ fontWeight: 700, color: "var(--text-primary)", fontSize: "0.95rem" }}>
-                      {data.proof?.split("/").pop() || "certificate.pdf"}
-                    </Typography>
-                    <Typography sx={{ fontSize: "0.75rem", color: "var(--text-secondary)" }}>
-                      {data.proofSize ? `${data.proofSize} KB` : "245.6 KB"}
-                    </Typography>
+                  {/* Duration & Days Participated */}
+                  <Box sx={{ display: "grid", gridTemplateColumns: "180px 1fr", gap: 2 }}>
+                    <Typography sx={{ fontWeight: 600, color: "#475569", fontSize: "0.9rem" }}>Duration (Days)</Typography>
+                    <Typography sx={{ color: "#0f172a", fontSize: "0.9rem", fontWeight: 700 }}>{data.duration || 0} Days</Typography>
+                    
+                    {data.activityType?.includes("Participant") && data.daysParticipated && (
+                      <>
+                        <Typography sx={{ fontWeight: 600, color: "#475569", fontSize: "0.9rem" }}>Number of Days Participated</Typography>
+                        <Typography sx={{ color: "#0f172a", fontSize: "0.9rem", fontWeight: 700 }}>{data.daysParticipated} Days</Typography>
+                      </>
+                    )}
                   </Box>
                 </Box>
-                <Box sx={{ display: "flex", gap: 1 }}>
-                  <Button
-                    variant="outlined"
-                    size="small"
-                    startIcon={<Visibility sx={{ fontSize: 16 }} />}
-                    onClick={() => window.open(fileUrl, "_blank")}
-                    sx={{
-                      color: "var(--color-primary)",
-                      borderColor: "var(--color-primary)",
-                      fontWeight: 700,
-                      fontSize: "0.85rem",
-                      flex: 1,
-                      textTransform: "none"
-                    }}
-                  >
-                    Preview
-                  </Button>
+              </Box>
+
+            </Grid>
+
+            {/* Right Column: Proof Document */}
+            <Grid size={{ xs: 12, md: 4.5 }} sx={{ borderLeft: { xs: "none", md: "1px solid #cbd5e1" }, pl: { xs: 0, md: 4 } }}>
+              <Typography sx={{ fontSize: "0.85rem", fontWeight: 800, color: "#2563eb", textTransform: "uppercase", letterSpacing: "0.05em", mb: 2.5 }}>
+                Proof Document
+              </Typography>
+              
+              {fileUrl ? (
+                <Box sx={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 2
+                }}>
+                  {/* Embedded Document Preview */}
+                  <Box sx={{
+                    width: "100%",
+                    height: 380,
+                    border: "1px solid #cbd5e1",
+                    borderRadius: "12px",
+                    overflow: "hidden",
+                    bgcolor: "#f8fafc",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center"
+                  }}>
+                    {/\.(jpg|jpeg|png|gif|webp)$/i.test(data.proof || "") ? (
+                      <img
+                        src={previewBlobUrl || fileUrl}
+                        alt="Proof Document"
+                        style={{ width: "100%", height: "100%", objectFit: "contain" }}
+                      />
+                    ) : (
+                      <iframe
+                        src={previewBlobUrl ? `${previewBlobUrl}#toolbar=0&navpanes=0&scrollbar=0` : ""}
+                        width="100%"
+                        height="100%"
+                        style={{ border: "none" }}
+                        title="Proof Document Preview"
+                      />
+                    )}
+                  </Box>
+
+                  {/* Download Action */}
                   <Button
                     variant="contained"
-                    size="small"
-                    startIcon={<Download sx={{ fontSize: 16 }} />}
+                    size="medium"
+                    fullWidth
+                    startIcon={<Download sx={{ fontSize: 18 }} />}
                     onClick={() => window.open(fileUrl, "_blank")}
                     sx={{
-                      background: "var(--gradient-primary)",
+                      background: "linear-gradient(135deg, #0f172a 0%, #1e293b 100%)",
+                      "&:hover": {
+                        background: "#0f172a"
+                      },
                       fontWeight: 700,
-                      fontSize: "0.85rem",
-                      flex: 1,
-                      textTransform: "none"
+                      fontSize: "0.9rem",
+                      textTransform: "none",
+                      borderRadius: "10px",
+                      py: 1.2
                     }}
                   >
-                    Download
+                    Download Document
                   </Button>
                 </Box>
-              </Box>
-            )}
-          </Box>
-
-
-
-          {/* Additional Info */}
-          {data.remarks && (
-            <Box sx={{ mt: 2.5, p: 2, background: "var(--bg-panel)", borderRadius: "12px", border: "1px solid var(--border-color)" }}>
-              <Typography sx={{ fontSize: "0.85rem", fontWeight: 800, color: "var(--color-primary)", mb: 0.5 }}>Remarks</Typography>
-              <Typography sx={{ fontSize: "0.85rem", color: "var(--text-primary)" }}>{data.remarks}</Typography>
-            </Box>
-          )}
-
+              ) : (
+                <Typography sx={{ color: "var(--text-secondary)", fontStyle: "italic" }}>No proof document uploaded</Typography>
+              )}
+            </Grid>
+          </Grid>
+          
+          {/* HOD Remarks (only shown if present) */}
           {data.hodComment && (
-            <Box sx={{ mt: 2.5, p: 2, background: "var(--bg-panel)", borderRadius: "12px", border: "1px solid var(--border-color)" }}>
-              <Typography sx={{ fontSize: "0.85rem", fontWeight: 800, color: "var(--accent-amber, #d97706)", mb: 0.5 }}>HOD Remarks</Typography>
-              <Typography sx={{ fontSize: "0.85rem", color: "var(--text-primary)", fontStyle: "italic" }}>&quot;{data.hodComment}&quot;</Typography>
+            <Box sx={{
+              mt: 4,
+              p: 2.5,
+              background: "#fff1f2",
+              borderRadius: "12px",
+              border: "1px solid #ffe4e6",
+              display: "flex",
+              alignItems: "center",
+              gap: 2.5,
+              position: "relative",
+              overflow: "hidden"
+            }}>
+              <Box sx={{
+                width: 44,
+                height: 44,
+                borderRadius: "50%",
+                background: "#ffe4e6",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                flexShrink: 0
+              }}>
+                <WorkspacePremium sx={{ color: "#e11d48", fontSize: 22 }} />
+              </Box>
+              
+              <Box sx={{
+                width: "1px",
+                height: 32,
+                bgcolor: "#fda4af"
+              }} />
+
+              <Box sx={{ flex: 1, zIndex: 2 }}>
+                <Typography sx={{ fontSize: "0.85rem", fontWeight: 800, color: "#be185d", mb: 0.5 }}>
+                  HOD Remarks
+                </Typography>
+                <Typography sx={{ fontSize: "0.9rem", color: "#881337", fontStyle: "italic", fontWeight: 600 }}>
+                  &quot;{data.hodComment}&quot;
+                </Typography>
+              </Box>
             </Box>
           )}
         </DialogContent>
 
-        <DialogActions sx={{ p: 2.5, background: "var(--bg-glass)", borderTop: "1px solid var(--border-color)" }}>
+        <DialogActions sx={{ p: 2.5, borderTop: "1px solid var(--border-color)" }}>
           <Button
             onClick={() => setSelectedActivityDetails(null)}
+            variant="outlined"
             sx={{
               color: "var(--text-primary)",
+              borderColor: "var(--border-color)",
+              "&:hover": {
+                borderColor: "var(--text-primary)",
+                background: "var(--bg-panel)"
+              },
               fontWeight: 700,
               textTransform: "none",
-              fontSize: "0.95rem"
+              fontSize: "0.95rem",
+              borderRadius: "8px",
+              px: 3
             }}
           >
             Close
