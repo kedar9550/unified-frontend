@@ -373,6 +373,19 @@ export default function ResourceUtilization() {
       return;
     }
 
+    const durationDays = parseInt(form.duration, 10) || 0;
+    if (form.activityCategory === "STTP" || form.activityCategory === "Refresher Course") {
+      if (durationDays < 10) {
+        toast.error(`${form.activityCategory} must have a minimum duration of 10 days.`);
+        return;
+      }
+    } else if (form.activityCategory === "FDP" || form.activityCategory === "SYMPOSIUM") {
+      if (durationDays < 5) {
+        toast.error(`${form.activityCategory} must have a minimum duration of 5 days.`);
+        return;
+      }
+    }
+
     setLoading(true);
     try {
       const fd = new FormData();
@@ -1330,10 +1343,24 @@ export default function ResourceUtilization() {
       <Box sx={{ mt: 2 }}>
         {editingId && form.existingProof && !isDocumentRemoved ? (
           <Box sx={{ p: 2, border: "1px solid var(--border-color)", borderRadius: "12px", background: "var(--bg-glass)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-              <FilePresent sx={{ color: "var(--color-primary)" }} />
-              <Typography sx={{ fontWeight: 600, color: "var(--text-primary)" }}>Existing Document</Typography>
-              <Button size="small" href={form.existingProof.startsWith('http') ? form.existingProof : `${(import.meta.env.VITE_BACKEND_URL || "http://localhost:9000").replace(/\/$/, "")}${form.existingProof}`} target="_blank" sx={{ ml: 2, textTransform: "none" }}>View</Button>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+              {form.existingProof.match(/\.(jpeg|jpg|gif|png)$/i) ? (
+                 <a href={form.existingProof.startsWith('http') ? form.existingProof : `${(import.meta.env.VITE_BACKEND_URL || "http://localhost:9000").replace(/\/$/, "")}${form.existingProof}`} target="_blank" rel="noreferrer">
+                   <img 
+                     src={form.existingProof.startsWith('http') ? form.existingProof : `${(import.meta.env.VITE_BACKEND_URL || "http://localhost:9000").replace(/\/$/, "")}${form.existingProof}`} 
+                     alt="Proof Document"
+                     style={{ width: "60px", height: "60px", objectFit: "cover", borderRadius: "8px", border: "1px solid var(--border-color)" }}
+                   />
+                 </a>
+              ) : (
+                 <FilePresent sx={{ color: "var(--color-primary)", fontSize: 40 }} />
+              )}
+              <Box>
+                <Typography sx={{ fontWeight: 600, color: "var(--text-primary)" }}>Existing Document</Typography>
+                {!form.existingProof.match(/\.(jpeg|jpg|gif|png)$/i) && (
+                  <Button size="small" href={form.existingProof.startsWith('http') ? form.existingProof : `${(import.meta.env.VITE_BACKEND_URL || "http://localhost:9000").replace(/\/$/, "")}${form.existingProof}`} target="_blank" sx={{ mt: 0.5, textTransform: "none", p: 0, minWidth: "auto" }}>View PDF</Button>
+                )}
+              </Box>
             </Box>
             <IconButton onClick={() => setIsDocumentRemoved(true)} sx={{ color: "#ef4444" }}>
               <Delete />

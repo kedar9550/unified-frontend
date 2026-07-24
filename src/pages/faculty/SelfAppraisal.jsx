@@ -4579,10 +4579,24 @@ const SelfAppraisal = () => {
               <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
                 {resUtEditingId && resUtForm.existingProof && !isResUtDocumentRemoved ? (
                   <Box sx={{ p: 2, border: "1px solid var(--border-color)", borderRadius: "12px", background: "var(--bg-glass)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                      <Description sx={{ color: "var(--color-primary)" }} />
-                      <Typography sx={{ fontWeight: 600, color: "var(--text-primary)" }}>Existing Document</Typography>
-                      <Button size="small" href={resUtForm.existingProof.startsWith('http') ? resUtForm.existingProof : `${(import.meta.env.VITE_BACKEND_URL || "http://localhost:9000").replace(/\/$/, "")}${resUtForm.existingProof}`} target="_blank" sx={{ ml: 2, textTransform: "none" }}>View</Button>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                      {resUtForm.existingProof.match(/\.(jpeg|jpg|gif|png)$/i) ? (
+                        <a href={resUtForm.existingProof.startsWith('http') ? resUtForm.existingProof : `${(import.meta.env.VITE_BACKEND_URL || "http://localhost:9000").replace(/\/$/, "")}${resUtForm.existingProof}`} target="_blank" rel="noreferrer">
+                          <img 
+                            src={resUtForm.existingProof.startsWith('http') ? resUtForm.existingProof : `${(import.meta.env.VITE_BACKEND_URL || "http://localhost:9000").replace(/\/$/, "")}${resUtForm.existingProof}`} 
+                            alt="Proof Document"
+                            style={{ width: "60px", height: "60px", objectFit: "cover", borderRadius: "8px", border: "1px solid var(--border-color)" }}
+                          />
+                        </a>
+                      ) : (
+                        <Description sx={{ color: "var(--color-primary)", fontSize: 40 }} />
+                      )}
+                      <Box>
+                        <Typography sx={{ fontWeight: 600, color: "var(--text-primary)" }}>Existing Document</Typography>
+                        {!resUtForm.existingProof.match(/\.(jpeg|jpg|gif|png)$/i) && (
+                          <Button size="small" href={resUtForm.existingProof.startsWith('http') ? resUtForm.existingProof : `${(import.meta.env.VITE_BACKEND_URL || "http://localhost:9000").replace(/\/$/, "")}${resUtForm.existingProof}`} target="_blank" sx={{ mt: 0.5, textTransform: "none", p: 0, minWidth: "auto" }}>View PDF</Button>
+                        )}
+                      </Box>
                     </Box>
                     <IconButton onClick={() => setIsResUtDocumentRemoved(true)} sx={{ color: "#ef4444" }}>
                       <Delete />
@@ -5087,10 +5101,24 @@ const SelfAppraisal = () => {
               <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
                 {contEditingId && contForm.existingProof && !isContDocumentRemoved ? (
                   <Box sx={{ p: 2, border: "1px solid var(--border-color)", borderRadius: "12px", background: "var(--bg-glass)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                      <Description sx={{ color: "var(--color-primary)" }} />
-                      <Typography sx={{ fontWeight: 600, color: "var(--text-primary)" }}>Existing Document</Typography>
-                      <Button size="small" href={contForm.existingProof.startsWith('http') ? contForm.existingProof : `${(import.meta.env.VITE_BACKEND_URL || "http://localhost:9000").replace(/\/$/, "")}${contForm.existingProof}`} target="_blank" sx={{ ml: 2, textTransform: "none" }}>View</Button>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                      {contForm.existingProof.match(/\.(jpeg|jpg|gif|png)$/i) ? (
+                        <a href={contForm.existingProof.startsWith('http') ? contForm.existingProof : `${(import.meta.env.VITE_BACKEND_URL || "http://localhost:9000").replace(/\/$/, "")}${contForm.existingProof}`} target="_blank" rel="noreferrer">
+                          <img 
+                            src={contForm.existingProof.startsWith('http') ? contForm.existingProof : `${(import.meta.env.VITE_BACKEND_URL || "http://localhost:9000").replace(/\/$/, "")}${contForm.existingProof}`} 
+                            alt="Proof Document"
+                            style={{ width: "60px", height: "60px", objectFit: "cover", borderRadius: "8px", border: "1px solid var(--border-color)" }}
+                          />
+                        </a>
+                      ) : (
+                        <Description sx={{ color: "var(--color-primary)", fontSize: 40 }} />
+                      )}
+                      <Box>
+                        <Typography sx={{ fontWeight: 600, color: "var(--text-primary)" }}>Existing Document</Typography>
+                        {!contForm.existingProof.match(/\.(jpeg|jpg|gif|png)$/i) && (
+                          <Button size="small" href={contForm.existingProof.startsWith('http') ? contForm.existingProof : `${(import.meta.env.VITE_BACKEND_URL || "http://localhost:9000").replace(/\/$/, "")}${contForm.existingProof}`} target="_blank" sx={{ mt: 0.5, textTransform: "none", p: 0, minWidth: "auto" }}>View PDF</Button>
+                        )}
+                      </Box>
                     </Box>
                     <IconButton onClick={() => setIsContDocumentRemoved(true)} sx={{ color: "#ef4444" }}>
                       <Delete />
