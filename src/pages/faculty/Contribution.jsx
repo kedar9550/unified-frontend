@@ -81,6 +81,7 @@ export default function Contribution() {
   }, [selectedContributionDetails]);
 
   const [isDocumentRemoved, setIsDocumentRemoved] = useState(false);
+  const [openFormModal, setOpenFormModal] = useState(false);
 
   const [editingId, setEditingId] = useState(null);
   const [form, setForm] = useState({
@@ -1237,13 +1238,13 @@ export default function Contribution() {
                   }}>
                     {isImage ? (
                       <img
-                        src={previewBlobUrl || fileUrl}
+                        src={previewBlobUrl || fileUrl || undefined}
                         alt="Proof Document"
                         style={{ width: "100%", height: "100%", objectFit: "contain" }}
                       />
                     ) : (
                       <iframe
-                        src={previewBlobUrl ? `${previewBlobUrl}#toolbar=0&navpanes=0&scrollbar=0` : ""}
+                        src={previewBlobUrl ? `${previewBlobUrl}#toolbar=0&navpanes=0&scrollbar=0` : (fileUrl || undefined)}
                         width="100%"
                         height="100%"
                         style={{ border: "none" }}
