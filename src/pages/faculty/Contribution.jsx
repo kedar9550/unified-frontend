@@ -941,7 +941,7 @@ export default function Contribution() {
                             display: "inline-block"
                           }}
                         >
-                          {item.status}
+                          {item.status === "Pending at HOD" ? "Pending at HOD / Dean" : item.status}
                         </Typography>
                       </TableCell>
                       <TableCell sx={{ py: 2 }}>
@@ -1093,7 +1093,7 @@ export default function Contribution() {
 
             {/* Right: Status Badge */}
             <Chip
-              label={data.status}
+              label={data.status === "Pending at HOD" ? "Pending at HOD / Dean" : data.status}
               icon={
                 data.status === "Approved" ? (
                   <span style={{ color: "#10b981", fontWeight: "bold", marginRight: "2px" }}>✓</span>

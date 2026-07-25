@@ -98,7 +98,7 @@ const AppraisalEvaluation = () => {
                   value: displayStatus,
                   display: (
                     <Chip
-                      label={displayStatus === "Pending" ? "Pending at HOD" : displayStatus}
+                      label={displayStatus === "Pending" ? "Pending at HOD / Dean" : displayStatus === "Pending at HOD" ? "Pending at HOD / Dean" : displayStatus}
                       size="small"
                       sx={{
                         bgcolor: statusColor.bg,

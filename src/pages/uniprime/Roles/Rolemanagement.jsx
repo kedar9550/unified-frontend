@@ -17,7 +17,7 @@ import {
     Search, FilterList, MoreVert, Close, ExpandMore,
     PersonAdd, RemoveCircle, Save, CheckCircle,
     ArrowForward, Star, Sync, GroupAdd, UploadFile,
-    Person, AdminPanelSettings
+    Person, AdminPanelSettings, School
 } from "@mui/icons-material";
 import PageHeader from "../../../components/common/PageHeader";
 import API from "../../../api/axios";
@@ -41,6 +41,7 @@ const RoleManagement = () => {
     const [roles, setRoles] = useState([]);
     const [loadingRoles, setLoadingRoles] = useState(true);
     const [rolesSearchQuery, setRolesSearchQuery] = useState("");
+    const [assignmentRolesSearchQuery, setAssignmentRolesSearchQuery] = useState("");
     const [rolesPage, setRolesPage] = useState(0);
     const [rolesRowsPerPage, setRolesRowsPerPage] = useState(10);
     const [editingRole, setEditingRole] = useState(null);
@@ -96,6 +97,10 @@ const RoleManagement = () => {
     // HOD Department Context
     const [allDepartments, setAllDepartments] = useState([]);
     const [selectedHodDepts, setSelectedHodDepts] = useState([]);
+
+    // SCHOOL_DEAN Context
+    const [allSchools, setAllSchools] = useState([]);
+    const [selectedDeanSchools, setSelectedDeanSchools] = useState([]);
 
     // Assignment State
     const [selectedUser, setSelectedUser] = useState(null);
@@ -167,9 +172,21 @@ const RoleManagement = () => {
         }
     };
 
+    const fetchSchools = async () => {
+        try {
+            const res = await API.get("/api/academics/schools");
+            if (res.data.success) {
+                setAllSchools(res.data.data || []);
+            }
+        } catch (error) {
+            console.error("Failed to fetch schools", error);
+        }
+    };
+
     useEffect(() => {
         fetchRoles();
         fetchDepartments();
+        fetchSchools();
     }, []);
 
     useEffect(() => {
@@ -626,6 +643,14 @@ const RoleManagement = () => {
         } else {
             setSelectedHodDepts([]);
         }
+        
+        // Populate SCHOOL_DEAN schools if they exist
+        const dean = userRoles.find(r => r.key === "SCHOOL_DEAN");
+        if (dean && dean.schools) {
+            setSelectedDeanSchools(allSchools.filter(s => dean.schools.includes(s._id)));
+        } else {
+            setSelectedDeanSchools([]);
+        }
     };
 
     // Checkbox Logic
@@ -658,7 +683,8 @@ const RoleManagement = () => {
             const res = await API.post("/api/roles/user/sync", {
                 userId: selectedUser._id,
                 roleIds: assignedRoleIds,
-                hodDepartments: selectedHodDepts.map(d => d._id)
+                hodDepartments: selectedHodDepts.map(d => d._id),
+                deanSchools: selectedDeanSchools.map(s => s._id)
             });
             if (res.data.success) {
                 toast.success("Roles updated successfully!");
@@ -667,6 +693,7 @@ const RoleManagement = () => {
                 setUserSearchQuery("");
                 setUserSearchResults([]);
                 setSelectedHodDepts([]);
+                setSelectedDeanSchools([]);
                 setHodConfirm({ open: false, message: "" });
                 fetchAllEmployees();
             }
@@ -696,6 +723,32 @@ const RoleManagement = () => {
                 );
                 if (existingHod) {
                     conflictMsg = `Department "${dept.name}" already has an HOD (${existingHod.name}). Continuing will replace them. Are you sure?`;
+                    break;
+                }
+            }
+
+            if (conflictMsg) {
+                setHodConfirm({ open: true, message: conflictMsg });
+                return;
+            }
+        }
+
+        // Validation for SCHOOL_DEAN role
+        const isDeanSelected = assignedRoleIds.some(rid => roles.find(r => r._id === rid)?.key === 'SCHOOL_DEAN');
+        if (isDeanSelected && selectedDeanSchools.length === 0) {
+            toast.error("Please select at least one school for the SCHOOL_DEAN role");
+            return;
+        }
+
+        if (isDeanSelected) {
+            let conflictMsg = null;
+            for (const school of selectedDeanSchools) {
+                const existingDean = allEmployees.find(emp =>
+                    emp._id !== selectedUser._id &&
+                    emp.roles?.some(r => r.name === 'SCHOOL_DEAN' && r.schools?.includes(school._id))
+                );
+                if (existingDean) {
+                    conflictMsg = `School "${school.name}" already has a Dean (${existingDean.name}). Continuing will replace them. Are you sure?`;
                     break;
                 }
             }
@@ -768,6 +821,12 @@ const RoleManagement = () => {
         rolesPage * rolesRowsPerPage,
         rolesPage * rolesRowsPerPage + rolesRowsPerPage
     );
+
+    const filteredAssignmentRoles = roles.filter(role => {
+        if (!assignmentRolesSearchQuery) return true;
+        return role.name?.toLowerCase().includes(assignmentRolesSearchQuery.toLowerCase().trim()) || 
+               role.key?.toLowerCase().includes(assignmentRolesSearchQuery.toLowerCase().trim());
+    });
 
     return (
         <Box sx={{ p: 0 }}>
@@ -1628,14 +1687,90 @@ const RoleManagement = () => {
                                                 />
                                             </Box>
                                         </Collapse>
+
+                                        {/* SCHOOL_DEAN Serving School Selection UI */}
+                                        <Collapse in={!!selectedUser && assignedRoleIds.some(rid => roles.find(r => r._id === rid)?.key === 'SCHOOL_DEAN')}>
+                                            <Box sx={{ mt: 2, p: 2, borderRadius: '15px', background: 'var(--bg-paper)', border: '1px solid var(--border-color)' }}>
+                                                <Typography variant="subtitle2" fontWeight={800} color="var(--text-primary)" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                    <School sx={{ fontSize: 18 }} /> SCHOOL_DEAN School Assignment
+                                                </Typography>
+                                                <Typography variant="caption" color="textSecondary" display="block" sx={{ mb: 2 }}>
+                                                    Assign this Dean to multiple schools for context-aware access.
+                                                </Typography>
+
+                                                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
+                                                    {selectedDeanSchools.map(school => (
+                                                        <Chip
+                                                            key={school._id}
+                                                            label={school.name}
+                                                            size="small"
+                                                            onDelete={() => setSelectedDeanSchools(prev => prev.filter(s => s._id !== school._id))}
+                                                            sx={{ background: "var(--gradient-primary)", color: '#fff', fontWeight: 700, borderRadius: '50px', '& .MuiChip-deleteIcon': { color: 'rgba(255,255,255,0.7)' } }}
+                                                        />
+                                                    ))}
+                                                </Box>
+
+                                                <FormControlLabel
+                                                    sx={{ width: '100%', m: 0 }}
+                                                    control={
+                                                        <Box sx={{ width: '100%', mt: 1 }}>
+                                                            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, p: 1, border: '1px dashed var(--text-secondary)', borderRadius: '10px' }}>
+                                                                {allSchools.map(school => {
+                                                                    const isSelected = selectedDeanSchools.some(s => s._id === school._id);
+                                                                    return (
+                                                                        <Chip
+                                                                            key={school._id}
+                                                                            label={school.name}
+                                                                            onClick={() => {
+                                                                                if (isSelected) {
+                                                                                    setSelectedDeanSchools(prev => prev.filter(s => s._id !== school._id));
+                                                                                } else {
+                                                                                    setSelectedDeanSchools(prev => [...prev, school]);
+                                                                                }
+                                                                            }}
+                                                                            variant={isSelected ? "filled" : "outlined"}
+                                                                            size="small"
+                                                                            sx={{
+                                                                                cursor: 'pointer',
+                                                                                borderRadius: '50px',
+                                                                                fontWeight: 700,
+                                                                                border: isSelected ? 'none' : '1.5px solid var(--color-primary)',
+                                                                                background: isSelected ? "var(--gradient-primary)" : 'transparent',
+                                                                                color: isSelected ? '#fff' : 'var(--color-primary)'
+                                                                            }}
+                                                                        />
+                                                                    );
+                                                                })}
+                                                            </Box>
+                                                        </Box>
+                                                    }
+                                                    label=""
+                                                />
+                                            </Box>
+                                        </Collapse>
                                     </Box>
 
                                     <Box sx={{ flex: 1.2, p: 3, background: 'var(--bg-accent-1)', display: 'flex', flexDirection: 'column', borderLeft: { xs: 'none', lg: '1px solid var(--border-color)' }, borderTop: { xs: '1px solid var(--border-color)', lg: 'none' } }}>
                                         <Typography variant="subtitle2" fontWeight={700} gutterBottom color="textSecondary">{selectedUser ? `Select Roles for ${selectedUser.name}` : "Available Roles"}</Typography>
+                                        <TextField
+                                            placeholder="Search roles to assign..."
+                                            size="small"
+                                            fullWidth
+                                            value={assignmentRolesSearchQuery}
+                                            onChange={(e) => setAssignmentRolesSearchQuery(e.target.value)}
+                                            sx={{ mb: 2, "& .MuiOutlinedInput-root": { borderRadius: "10px", background: "var(--bg-glass)" } }}
+                                            InputProps={{
+                                                startAdornment: (
+                                                    <InputAdornment position="start">
+                                                        <Search sx={{ color: 'var(--text-secondary)' }} />
+                                                    </InputAdornment>
+                                                )
+                                            }}
+                                        />
                                         <Box sx={{ flex: 1, overflowY: 'auto' }}>
                                             {loadingRoles ? null : (
                                                 <FormGroup>
-                                                    {roles.length > 0 ? roles.map((role) => {
+                                                    {filteredAssignmentRoles.length > 0 ? filteredAssignmentRoles.map((role) => {
                                                         const isIdentityDefault = role.defaultRole;
                                                         const isChecked = assignedRoleIds.includes(role._id.toString());
                                                         return (

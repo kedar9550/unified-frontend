@@ -856,7 +856,7 @@ export default function ResourceUtilization() {
 
             {/* Right: Status Badge */}
             <Chip
-              label={data.status}
+              label={data.status === "Pending at HOD" ? "Pending at HOD / Dean" : data.status}
               icon={
                 data.status === "Approved" ? (
                   <span style={{ color: "#10b981", fontWeight: "bold", marginRight: "2px" }}>✓</span>

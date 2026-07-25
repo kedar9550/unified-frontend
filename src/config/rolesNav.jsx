@@ -223,6 +223,36 @@ export const ROLE_ROUTES = {
     { text: "Staff Directory", path: "/hod/staff", icon: <People /> },
   ],
 
+  // "SCHOOL_DEAN" role (same access as HOD but for their schools)
+  "SCHOOL_DEAN": [
+    { text: "Dashboard", path: "/dashboard", icon: <Dashboard /> },
+    {
+      text: "Approvals",
+      icon: <Verified />,
+      nested: [
+        {
+          text: "Research",
+          path: "/hod/research-approvals",
+          icon: <Science />
+        },
+        {
+          text: "Resource Utilization",
+          icon: <Assignment />
+        },
+        {
+          text: "Contribution",
+          icon: <WorkspacePremium />
+        },
+        {
+          text: "Appraisal Verification",
+          path: "/hod/appraisal-verification",
+          icon: <Description />
+        },
+      ]
+    },
+    { text: "Staff Directory", path: "/hod/staff", icon: <People /> },
+  ],
+
   // Example for "Exam Section" role
   EXAMSECTION: [
     { text: "Dashboard", path: "/dashboard", icon: <Dashboard /> },
