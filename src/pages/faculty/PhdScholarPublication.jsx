@@ -374,7 +374,7 @@ export default function PhdScholarPublication() {
                         display: "inline-block"
                       }}
                     >
-                      {pub.status || "Pending at HOD"}
+                      {pub.status === "Pending at HOD" ? "Pending at HOD / Dean" : (pub.status || "Pending at HOD / Dean")}
                     </Typography>
                   </TableCell>
                   <TableCell sx={{ py: 2, textAlign: "center" }}>

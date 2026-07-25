@@ -121,10 +121,10 @@ const ResearchApprovalList = ({ role }) => {
             item.type,
             submitDate,
             {
-                value: item.status,
+                value: item.status === "Pending at HOD" ? "Pending at HOD / Dean" : item.status,
                 display: (
                     <Chip
-                        label={item.status}
+                        label={item.status === "Pending at HOD" ? "Pending at HOD / Dean" : item.status}
                         size="small"
                         sx={{
                             bgcolor: statusStyle.bg,
@@ -213,7 +213,7 @@ const ResearchApprovalList = ({ role }) => {
                                 MenuProps={{ disableAriaHidden: true }}
                             >
                                 <MenuItem value="All">All Status</MenuItem>
-                                <MenuItem value="Pending">{isResearchAdmin ? 'Pending at R&D' : 'Pending at HOD'}</MenuItem>
+                                <MenuItem value="Pending">{isResearchAdmin ? 'Pending at R&D' : 'Pending at HOD / Dean'}</MenuItem>
                                 <MenuItem value="Approved">Approved</MenuItem>
                                 <MenuItem value="Rejected">Rejected</MenuItem>
                             </Select>

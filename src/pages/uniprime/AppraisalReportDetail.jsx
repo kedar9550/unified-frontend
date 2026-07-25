@@ -279,7 +279,7 @@ const AppraisalReportDetail = () => {
       });
       if (res.data?.success) {
         toast.success(`Appraisal ${action === 'Approve' ? 'approved' : 'rejected'} successfully.`);
-        fetchAppraisalDetails();
+        fetchDetail();
       }
     } catch (err) {
       toast.error(err.response?.data?.message || `Failed to ${action} appraisal.`);
@@ -590,7 +590,7 @@ const AppraisalReportDetail = () => {
         toast.dismiss(); // Clear any existing toasts to prevent overlapping
         toast.success(action === "Approve" ? "Appraisal approved and finalized successfully!" : "Appraisal sent back to faculty for corrections.");
         setSelectedAppraisal(null);
-        fetchPending();
+        fetchDetail();
       }
     } catch (err) {
       toast.error(err.response?.data?.message || "Failed to process appraisal action.");
@@ -696,7 +696,7 @@ const AppraisalReportDetail = () => {
                     value: displayStatus,
                     display: (
                       <Chip
-                        label={displayStatus === "Pending" ? "Pending at HOD" : displayStatus}
+                        label={displayStatus === "Pending" ? "Pending at HOD / Dean" : displayStatus === "Pending at HOD" ? "Pending at HOD / Dean" : displayStatus}
                         size="small"
                         sx={{
                           bgcolor: statusColor.bg,
