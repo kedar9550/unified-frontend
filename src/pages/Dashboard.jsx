@@ -34,12 +34,12 @@ function Dashboard() {
       {activeRole === "HOD" && <HODDashboard />}
       {activeRole === "EXAMSECTION" && <ExamDashboard />}
       {activeRole === "STUDENT" && <StudentDashboard />}
-      {activeRole === "RESEARCH FEEDBACK COMMITTEE" && <ResearchFeedbackDashboard />}
-      {activeRole === "FEEDBACK COORDINATOR" && <FeedbackCoordinatorDashboard />}
+      {activeRole === "RESEARCH_FEEDBACK_COMMITTEE" && <ResearchFeedbackDashboard />}
+      {activeRole === "FEEDBACK_COORDINATOR" && <FeedbackCoordinatorDashboard />}
       {(activeRole === "RESEARCH_DEAN" || activeRole === "RESEARCH_COORDINATOR") && <RnDDeanDashboard activeRole={activeRole} />}
       {activeRole === "SERVICE_ADMIN" && <ServiceAdminDashboard />}
       {activeRole === "SERVICE_EMP" && <ServiceEmpDashboard />}
-      {activeRole === "STUDENT EVENT ADMIN" && <StudentEventAdminDashboard />}
+      {activeRole === "STUDENT_EVENT_ADMIN" && <StudentEventAdminDashboard />}
     </Box>
   );
 }
