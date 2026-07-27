@@ -1,391 +1,608 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
   Box,
   Card,
   CardContent,
   Typography,
   TextField,
-  Autocomplete,
-  Chip,
-  CircularProgress,
   Button,
-  Grid,
+  MenuItem,
+  Select,
+  FormControl,
+  InputLabel,
   IconButton,
   FormHelperText,
+  Stack,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
+  Chip,
+  Autocomplete,
+  CircularProgress,
 } from '@mui/material';
-import { CloudUpload as CloudUploadIcon, Delete as DeleteIcon } from '@mui/icons-material';
+import {
+  Add as AddIcon,
+  Remove as RemoveIcon,
+  Edit as EditIcon,
+  Delete as DeleteIcon,
+  ArrowBack as ArrowBackIcon,
+} from '@mui/icons-material';
 import PageHeader from '../../components/common/PageHeader';
+import DataTable from '../../components/data/DataTable';
 import API from '../../api/axios';
+import { toast } from 'sonner';
 
 const EventCreation = () => {
+  const [view, setView] = useState('list');
+  const [events, setEvents] = useState([]);
+  const [groups, setGroups] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [eventToDelete, setEventToDelete] = useState(null);
+
+  const [editingEvent, setEditingEvent] = useState(null);
+  const [selectedGroup, setSelectedGroup] = useState(null);
+  const [departmentName, setDepartmentName] = useState('');
   const [eventName, setEventName] = useState('');
-  
-  // Convener states
-  const [convenerSearchTerm, setConvenerSearchTerm] = useState('');
-  const [convenerOptions, setConvenerOptions] = useState([]);
-  const [selectedConveners, setSelectedConveners] = useState([]);
-  const [isSearching, setIsSearching] = useState(false);
-  
-  // Image states
-  const [bannerImage, setBannerImage] = useState(null);
-  const [imagePreview, setImagePreview] = useState(null);
-  const [imageError, setImageError] = useState('');
-
-  // Form errors
+  const [price, setPrice] = useState('');
+  const [maxTeamSize, setMaxTeamSize] = useState('');
+  const [venue, setVenue] = useState('');
+  const [extraTeamSize, setExtraTeamSize] = useState('');
+  const [extraAmountPerHead, setExtraAmountPerHead] = useState('');
+  const [overview, setOverview] = useState('');
+  const [rules, setRules] = useState(['']);
   const [errors, setErrors] = useState({});
+  const [selectedCoordinators, setSelectedCoordinators] = useState([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [employeeOptions, setEmployeeOptions] = useState([]);
+  const [isSearching, setIsSearching] = useState(false);
 
-  // Debounced search for conveners
+  const fetchGroups = useCallback(async () => {
+    try {
+      const response = await API.get('/api/groups');
+      const activeGroups = (response.data?.groups || []).filter((group) => group.status === 'Active');
+      setGroups(activeGroups);
+    } catch (error) {
+      console.error('Failed to load groups', error);
+      toast.error('Failed to load groups');
+    }
+  }, []);
+
+  const fetchEvents = useCallback(async () => {
+    setLoading(true);
+    try {
+      const response = await API.get('/api/events');
+      setEvents(response.data?.events || []);
+    } catch (error) {
+      console.error('Failed to load events', error);
+      toast.error('Failed to load events');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
-    if (!convenerSearchTerm || convenerSearchTerm.trim() === '') {
-      setConvenerOptions([]);
+    fetchGroups();
+    fetchEvents();
+  }, [fetchGroups, fetchEvents]);
+
+  useEffect(() => {
+    if (!searchQuery || searchQuery.trim() === '') {
+      setEmployeeOptions([]);
       return;
     }
 
-    const delayDebounceFn = setTimeout(async () => {
+    const debounce = setTimeout(async () => {
       setIsSearching(true);
       try {
         const response = await API.get('/api/employees/search', {
-          params: { query: convenerSearchTerm },
+          params: { query: searchQuery },
         });
-        // API might return data wrapped in 'users' or just the array directly
-        const users = response.data?.users || response.data || [];
-        setConvenerOptions(Array.isArray(users) ? users : []);
+        const users = response.data || [];
+        setEmployeeOptions(Array.isArray(users) ? users : []);
       } catch (error) {
-        console.error('Error fetching employees:', error);
-        setConvenerOptions([]);
+        console.error('Error searching employees:', error);
+        setEmployeeOptions([]);
       } finally {
         setIsSearching(false);
       }
-    }, 500);
+    }, 400);
 
-    return () => clearTimeout(delayDebounceFn);
-  }, [convenerSearchTerm]);
+    return () => clearTimeout(debounce);
+  }, [searchQuery]);
 
-  const handleImageChange = (e) => {
-    const file = e.target.files[0];
-    setImageError('');
-    
-    if (!file) return;
-
-    // Validate type
-    const validTypes = ['image/jpeg', 'image/png', 'image/jpg', 'image/webp'];
-    if (!validTypes.includes(file.type)) {
-      setImageError('Please upload a valid image file (JPG, JPEG, PNG, WebP).');
-      return;
-    }
-
-    // Validate size (5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      setImageError('Image size should not exceed 5 MB.');
-      return;
-    }
-
-    setBannerImage(file);
-    setImagePreview(URL.createObjectURL(file));
-    
-    // Clear banner error if any
-    setErrors(prev => ({ ...prev, bannerImage: null }));
+  const resetForm = () => {
+    setEditingEvent(null);
+    setSelectedGroup(null);
+    setDepartmentName('');
+    setEventName('');
+    setPrice('');
+    setMaxTeamSize('');
+    setVenue('');
+    setExtraTeamSize('');
+    setExtraAmountPerHead('');
+    setOverview('');
+    setRules(['']);
+    setSelectedCoordinators([]);
+    setSearchQuery('');
+    setEmployeeOptions([]);
+    setIsSearching(false);
+    setErrors({});
   };
 
-  const removeImage = () => {
-    setBannerImage(null);
-    setImagePreview(null);
-    setImageError('');
+  const openCreateForm = () => {
+    resetForm();
+    setView('form');
+  };
+
+  const openEditForm = (event) => {
+    const group = groups.find((g) => String(g._id) === String(event.group?._id || event.group)) || null;
+    setEditingEvent(event);
+    setSelectedGroup(group || null);
+    setDepartmentName(group?.department?.name || event.department || '');
+    setSelectedCoordinators(event.facultyCoordinators?.length > 0 ? event.facultyCoordinators.map((coordinator) => ({
+      employeeId: coordinator.employeeId || coordinator.institutionId || '',
+      employeeName: coordinator.employeeName || '',
+      department: coordinator.department || '',
+      designation: coordinator.designation || '',
+      name: coordinator.employeeName || '',
+      institutionId: coordinator.employeeId || coordinator.institutionId || '',
+    })) : event.facultyCoordinator ? [{
+      employeeId: event.facultyCoordinator.employeeId || event.facultyCoordinator.institutionId || '',
+      employeeName: event.facultyCoordinator.employeeName || '',
+      department: event.facultyCoordinator.department || '',
+      designation: event.facultyCoordinator.designation || '',
+      name: event.facultyCoordinator.employeeName || '',
+      institutionId: event.facultyCoordinator.employeeId || event.facultyCoordinator.institutionId || '',
+    }] : []);
+    setEventName(event.eventName || '');
+    setPrice(event.price != null ? String(event.price) : '');
+    setMaxTeamSize(event.maxTeamSize != null ? String(event.maxTeamSize) : '');
+    setVenue(event.venue || '');
+    setExtraTeamSize(event.extraTeamSize != null ? String(event.extraTeamSize) : '');
+    setExtraAmountPerHead(event.extraAmountPerHead != null ? String(event.extraAmountPerHead) : '');
+    setOverview(event.overview || '');
+    setRules(event.rules && event.rules.length > 0 ? event.rules : ['']);
+    setErrors({});
+    setView('form');
   };
 
   const validateForm = () => {
     const newErrors = {};
-    if (!eventName.trim()) {
-      newErrors.eventName = 'Event Name is required.';
-    } else if (eventName.length > 200) {
-      newErrors.eventName = 'Event Name cannot exceed 200 characters.';
-    }
 
-    if (selectedConveners.length === 0) {
-      newErrors.conveners = 'At least one Convener must be selected.';
-    }
+    if (!selectedGroup) newErrors.group = 'Group is required.';
+    if (!eventName.trim()) newErrors.eventName = 'Event Name is required.';
+    if (eventName.length > 200) newErrors.eventName = 'Event Name cannot exceed 200 characters.';
+    if (!price || Number(price) < 0) newErrors.price = 'Enter a valid price.';
+    if (!maxTeamSize || Number(maxTeamSize) <= 0) newErrors.maxTeamSize = 'Enter a valid max team size.';
+    if (!venue.trim()) newErrors.venue = 'Venue is required.';
+    if (!selectedCoordinators || selectedCoordinators.length === 0) newErrors.facultyCoordinator = 'At least one Faculty Coordinator is required.';
+    if (extraTeamSize === '' || Number(extraTeamSize) < 0) newErrors.extraTeamSize = 'Enter a valid extra team size.';
+    if (extraAmountPerHead === '' || Number(extraAmountPerHead) < 0) newErrors.extraAmountPerHead = 'Enter a valid amount per head.';
+    if (!overview.trim()) newErrors.overview = 'Overview is required.';
 
-    if (!bannerImage) {
-      newErrors.bannerImage = 'Banner Image is required.';
+    const ruleErrors = rules.map((rule) => !rule.trim());
+    if (ruleErrors.every((isEmpty) => isEmpty)) {
+      newErrors.rules = 'Add at least one regulation.';
     }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = async () => {
+  const onSubmit = async () => {
     if (!validateForm()) return;
+    setSubmitting(true);
 
-    // Prepare payload
-    const formData = new FormData();
-    formData.append('eventName', eventName);
-    
-    const convenersPayload = selectedConveners.map((conv) => ({
-      employeeId: conv.institutionId,
-      employeeName: conv.name,
-      department: conv.department?.name || conv.department,
-      designation: conv.designation,
-      role: 'Convener'
-    }));
-    
-    formData.append('conveners', JSON.stringify(convenersPayload));
-    formData.append('bannerImage', bannerImage);
+    const payload = {
+      groupId: selectedGroup?._id,
+      eventName: eventName.trim(),
+      price: Number(price),
+      maxTeamSize: Number(maxTeamSize),
+      venue: venue.trim(),
+      extraTeamSize: Number(extraTeamSize),
+      extraAmountPerHead: Number(extraAmountPerHead),
+      overview: overview.trim(),
+      rules: rules.filter((rule) => rule.trim()),
+      facultyCoordinators: JSON.stringify(selectedCoordinators.map((coordinator) => ({
+        employeeId: coordinator?.employeeId || coordinator?.institutionId || coordinator?.employeeCode || '',
+        employeeName: coordinator?.employeeName || coordinator?.name || '',
+        department: coordinator?.department || '',
+        designation: coordinator?.designation || '',
+      })) ),
+    };
 
     try {
-      const response = await API.post('/api/events', formData);
-      if (response.data.success) {
-        alert('Event created successfully!');
+      if (editingEvent) {
+        const response = await API.put(`/api/events/${editingEvent._id}`, payload);
+        if (response.data.success) {
+          toast.success('Event updated successfully');
+          fetchEvents();
+          setView('list');
+        } else {
+          toast.error(response.data.message || 'Failed to update event.');
+        }
       } else {
-        alert('Event creation failed: ' + response.data.message);
+        const response = await API.post('/api/events', payload);
+        if (response.data.success) {
+          toast.success('Event created successfully');
+          fetchEvents();
+          setView('list');
+        } else {
+          toast.error(response.data.message || 'Failed to create event.');
+        }
       }
-      
-      // Reset form on success
-      setEventName('');
-      setSelectedConveners([]);
-      removeImage();
-      setErrors({});
     } catch (error) {
-      console.error('Error creating event:', error);
-      alert(error.response?.data?.message || 'Failed to create event. Please try again.');
+      console.error('Failed to save event', error);
+      toast.error(error.response?.data?.message || 'Failed to save event.');
+    } finally {
+      setSubmitting(false);
     }
   };
+
+  const handleRuleChange = (index, value) => {
+    setRules((currentRules) => currentRules.map((rule, i) => (i === index ? value : rule)));
+    setErrors((prev) => ({ ...prev, rules: null }));
+  };
+
+  const addRule = () => setRules((currentRules) => [...currentRules, '']);
+
+  const removeRule = (index) => setRules((currentRules) => currentRules.filter((_, i) => i !== index));
+
+  const handleDeleteClick = (event) => {
+    setEventToDelete(event);
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!eventToDelete) return;
+    try {
+      const response = await API.delete(`/api/events/${eventToDelete._id}`);
+      if (response.data.success) {
+        toast.success('Event deleted successfully');
+        fetchEvents();
+      }
+    } catch (error) {
+      console.error('Failed to delete event', error);
+      toast.error(error.response?.data?.message || 'Failed to delete event.');
+    } finally {
+      setDeleteDialogOpen(false);
+      setEventToDelete(null);
+    }
+  };
+
+  const cancelForm = () => {
+    resetForm();
+    setView('list');
+  };
+
+  const tableColumns = ['#', 'Group', 'Department', 'Coordinators', 'Event Name', 'Venue', 'Max Team Size', 'Price', 'Actions'];
+
+  const tableRows = events.map((event, index) => {
+    const coordinators = Array.isArray(event.facultyCoordinators) && event.facultyCoordinators.length > 0
+      ? event.facultyCoordinators
+      : event.facultyCoordinator ? [event.facultyCoordinator] : [];
+
+    const coordinatorLabel = coordinators.length > 0
+      ? coordinators.map((coordinator) => `${coordinator.employeeName || ''} (${coordinator.employeeId || coordinator.institutionId || ''})`).join(', ')
+      : 'N/A';
+
+    return [
+      index + 1,
+      event.group?.name || '',
+      event.department || event.group?.department?.name || '',
+      coordinatorLabel,
+      event.eventName,
+      event.venue,
+      event.maxTeamSize || '',
+      event.price != null && event.price > 0 ? `₹${event.price}` : '',
+      {
+        value: '',
+        display: (
+          <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center' }}>
+            <IconButton
+              size="small"
+              onClick={() => openEditForm(event)}
+              sx={{ color: '#3b82f6', bgcolor: 'rgba(59, 130, 246, 0.1)', '&:hover': { bgcolor: 'rgba(59, 130, 246, 0.2)' } }}
+            >
+              <EditIcon fontSize="small" />
+            </IconButton>
+            <IconButton
+              size="small"
+              onClick={() => handleDeleteClick(event)}
+              sx={{ color: '#ef4444', bgcolor: 'rgba(239, 68, 68, 0.1)', '&:hover': { bgcolor: 'rgba(239, 68, 68, 0.2)' } }}
+            >
+              <DeleteIcon fontSize="small" />
+            </IconButton>
+          </Box>
+        ),
+      },
+    ];
+  });
+
+  if (view === 'list') {
+    return (
+      <Box sx={{ p: 3 }}>
+        <PageHeader
+          title="Event Management"
+          subtitle="Create and manage VEDA events"
+          action={
+            <Button
+              variant="contained"
+              startIcon={<AddIcon />}
+              onClick={openCreateForm}
+              sx={{ borderRadius: '12px', px: 3, py: 1.2, textTransform: 'none' }}
+            >
+              Create Event
+            </Button>
+          }
+        />
+
+        <DataTable
+          columns={tableColumns}
+          rows={tableRows}
+          nonSortableColumns={[7]}
+          alignments={['center', 'left', 'left', 'left', 'left', 'center', 'center', 'center']}
+        />
+
+        <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>
+          <DialogTitle>Delete Event</DialogTitle>
+          <DialogContent>
+            <DialogContentText>
+              Are you sure you want to delete <strong>{eventToDelete?.eventName}</strong>?
+            </DialogContentText>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setDeleteDialogOpen(false)} variant="outlined">
+              Cancel
+            </Button>
+            <Button onClick={confirmDelete} variant="contained" color="error">
+              Delete
+            </Button>
+          </DialogActions>
+        </Dialog>
+      </Box>
+    );
+  }
 
   return (
     <Box sx={{ p: 3 }}>
       <PageHeader
-        title="Event Creation"
-        subtitle="Create a new student event"
-        showLogo={false}
-        showBack={false}
+        title={editingEvent ? 'Edit Event' : 'Create Event'}
+        subtitle={editingEvent ? `Editing ${editingEvent.eventName}` : 'Fill in the details to create a new event'}
+        showBack
+        onBack={cancelForm}
       />
 
-      <Card sx={{ mt: 3, maxWidth: 800, mx: 'auto', boxShadow: 3 }}>
+      <Card sx={{ mt: 3, maxWidth: 900, mx: 'auto', boxShadow: 3 }}>
         <CardContent sx={{ p: 4 }}>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-            
-            {/* Event Name */}
-            <Box>
-              <Typography variant="subtitle1" fontWeight="600" mb={1}>
-                Event Name *
-              </Typography>
-              <TextField
-                fullWidth
-                placeholder="Enter event name"
-                value={eventName}
-                onChange={(e) => setEventName(e.target.value)}
-                error={!!errors.eventName}
-                helperText={errors.eventName || `${eventName.length}/200`}
-                slotProps={{
-                  htmlInput: { maxLength: 200 }
+          <Stack spacing={3}>
+            <FormControl fullWidth error={!!errors.group}>
+              <InputLabel id="group-label">Group</InputLabel>
+              <Select
+                labelId="group-label"
+                value={selectedGroup?._id || ''}
+                label="Group"
+                onChange={(e) => {
+                  const group = groups.find((g) => g._id === e.target.value) || null;
+                  setSelectedGroup(group);
+                  setDepartmentName(group?.department?.name || '');
                 }}
-                variant="outlined"
-              />
-            </Box>
+              >
+                <MenuItem value="">Select Group</MenuItem>
+                {groups.map((group) => (
+                  <MenuItem key={group._id} value={group._id}>
+                    {group.name}
+                  </MenuItem>
+                ))}
+              </Select>
+              {errors.group && <FormHelperText>{errors.group}</FormHelperText>}
+            </FormControl>
 
-            {/* Conveners Section */}
-            <Box>
-              <Typography variant="subtitle1" fontWeight="600" mb={1}>
-                Conveners *
-              </Typography>
-              <Autocomplete
-                multiple
-                options={convenerOptions}
-                getOptionLabel={(option) => `${option.name} (${option.institutionId})`}
-                isOptionEqualToValue={(option, value) => option.institutionId === value.institutionId}
-                filterOptions={(x) => x}
-                loading={isSearching}
-                value={selectedConveners}
-                onChange={(event, newValue) => {
-                  setSelectedConveners(newValue);
-                  if (newValue.length > 0) {
-                      setErrors(prev => ({ ...prev, conveners: null }));
-                  }
-                }}
-                onInputChange={(event, newInputValue) => {
-                  setConvenerSearchTerm(newInputValue);
-                }}
-                renderInput={(params) => (
+            {selectedGroup && (
+              <TextField fullWidth label="Department" value={departmentName} InputProps={{ readOnly: true }} />
+            )}
+
+            <Autocomplete
+              multiple
+              options={employeeOptions}
+              getOptionLabel={(option) => {
+                if (!option) return '';
+                const name = option.employeeName || option.name || '';
+                const code = option.institutionId || option.employeeId || option.employeeCode || '';
+                return code ? `${name} (${code})` : name;
+              }}
+              value={selectedCoordinators}
+              onChange={(_, newValue) => {
+                const normalized = Array.isArray(newValue)
+                  ? newValue.map((item) => {
+                      const code = item.institutionId || item.employeeId || item.employeeCode || '';
+                      return {
+                        ...item,
+                        employeeId: code,
+                        institutionId: code,
+                        employeeName: item.employeeName || item.name || '',
+                        name: item.employeeName || item.name || '',
+                      };
+                    })
+                  : [];
+
+                setSelectedCoordinators(normalized);
+                setErrors((prev) => ({ ...prev, facultyCoordinator: null }));
+              }}
+              inputValue={searchQuery}
+              onInputChange={(_, newInputValue) => setSearchQuery(newInputValue)}
+              loading={isSearching}
+              noOptionsText={searchQuery ? 'No matches found' : 'Type to search'}
+              renderInput={(params) => {
+                const inputProps = params.InputProps || {};
+                return (
                   <TextField
                     {...params}
-                    placeholder="Search employees by Name or ID..."
-                    error={!!errors.conveners}
-                    helperText={errors.conveners}
-                    variant="outlined"
+                    label="Faculty Coordinators"
+                    placeholder="Search by name or ID"
+                    error={!!errors.facultyCoordinator}
+                    helperText={errors.facultyCoordinator}
                     InputProps={{
-                      ...(params.InputProps || {}),
+                      ...inputProps,
                       endAdornment: (
-                        <React.Fragment>
+                        <>
                           {isSearching ? <CircularProgress color="inherit" size={20} /> : null}
-                          {params.InputProps?.endAdornment}
-                        </React.Fragment>
+                          {inputProps.endAdornment}
+                        </>
                       ),
                     }}
+                    variant="outlined"
                   />
-                )}
-                renderOption={(props, option) => {
-                    const { key, ...otherProps } = props;
-                    return (
-                        <li key={key} {...otherProps}>
-                            <Box sx={{ display: 'flex', flexDirection: 'column', py: 0.5 }}>
-                                <Typography variant="body1" fontWeight="500">
-                                    {option.name} <Typography component="span" variant="body2" color="text.secondary">({option.institutionId})</Typography>
-                                </Typography>
-                                <Typography variant="caption" color="text.secondary">
-                                    {option.department?.name || option.department} • {option.designation}
-                                </Typography>
-                            </Box>
-                        </li>
-                    );
-                }}
-                renderTags={(value, getTagProps) =>
-                  value.map((option, index) => {
-                      const { key, ...tagProps } = getTagProps({ index });
-                      return (
-                        <Chip
-                          key={key}
-                          label={`${option.name} (${option.institutionId})`}
-                          {...tagProps}
-                          color="primary"
-                          variant="outlined"
-                          sx={{ m: 0.5 }}
-                        />
-                      );
-                  })
-                }
-                noOptionsText={convenerSearchTerm ? "No employees found" : "Type to search"}
-              />
-            </Box>
-
-            {/* Banner Image Upload */}
-            <Box>
-              <Typography variant="subtitle1" fontWeight="600" mb={1}>
-                Banner Image *
-              </Typography>
-              {!imagePreview ? (
-                <Box
-                  sx={{
-                    border: '2px dashed',
-                    borderColor: errors.bannerImage ? 'error.main' : 'grey.300',
-                    borderRadius: 2,
-                    p: 4,
-                    textAlign: 'center',
-                    cursor: 'pointer',
-                    bgcolor: 'background.default',
-                    transition: 'all 0.2s',
-                    '&:hover': { 
-                        borderColor: 'primary.main', 
-                        bgcolor: 'action.hover' 
-                    },
-                  }}
-                  component="label"
-                >
-                  <input
-                    type="file"
-                    hidden
-                    accept=".jpg,.jpeg,.png,.webp"
-                    onChange={handleImageChange}
-                  />
-                  <CloudUploadIcon sx={{ fontSize: 48, color: errors.bannerImage ? 'error.main' : 'primary.main', mb: 1 }} />
-                  <Typography variant="h6" color="text.primary" gutterBottom>
-                    Click or drag file to this area to upload
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    Support for a single image upload (JPG, PNG, WebP). Max size: 5MB.
-                  </Typography>
-                </Box>
-              ) : (
-                <Box sx={{ 
-                    position: 'relative', 
-                    width: '100%', 
-                    maxHeight: 400, 
-                    borderRadius: 2, 
-                    overflow: 'hidden',
-                    border: '1px solid',
-                    borderColor: 'divider',
-                    bgcolor: 'background.paper',
-                    display: 'flex',
-                    justifyContent: 'center',
-                    alignItems: 'center'
-                }}>
-                  <img
-                    src={imagePreview}
-                    alt="Banner Preview"
-                    style={{ maxWidth: '100%', maxHeight: '400px', objectFit: 'contain' }}
-                  />
-                  <Box sx={{ 
-                      position: 'absolute', 
-                      top: 16, 
-                      right: 16, 
-                      display: 'flex', 
-                      gap: 1,
-                      bgcolor: 'rgba(255, 255, 255, 0.9)',
-                      p: 0.5,
-                      borderRadius: 1,
-                      boxShadow: 1
-                  }}>
-                    <Button
-                      variant="contained"
-                      component="label"
-                      size="small"
-                      color="primary"
-                    >
-                      Replace
-                      <input
-                        type="file"
-                        hidden
-                        accept=".jpg,.jpeg,.png,.webp"
-                        onChange={handleImageChange}
-                      />
-                    </Button>
-                    <IconButton
-                      color="error"
-                      onClick={removeImage}
-                      size="small"
-                    >
-                      <DeleteIcon />
-                    </IconButton>
+                );
+              }}
+              renderOption={(props, option) => (
+                <Box component="li" {...props} key={option.employeeId || option._id || option.institutionId}>
+                  <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+                    <Typography variant="body2" fontWeight={600}>{option.name}</Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      {option.designation || 'Staff'} • {option.department || 'Unknown'}
+                    </Typography>
                   </Box>
                 </Box>
               )}
-              {imageError && (
-                <FormHelperText error sx={{ mt: 1, ml: 1 }}>
-                  {imageError}
-                </FormHelperText>
-              )}
-              {errors.bannerImage && !imagePreview && (
-                <FormHelperText error sx={{ mt: 1, ml: 1 }}>
-                  {errors.bannerImage}
-                </FormHelperText>
-              )}
+              isOptionEqualToValue={(option, value) => option?.institutionId === value?.institutionId || option?.employeeId === value?.employeeId}
+              renderTags={(value, getTagProps) =>
+                value.map((option, index) => (
+                  <Chip
+                    label={`${option.employeeName || option.name || ''} (${option.employeeId || option.institutionId || ''})`}
+                    {...getTagProps({ index })}
+                    key={option.employeeId || option.institutionId || option._id || index}
+                  />
+                ))
+              }
+            />
+
+            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 2 }}>
+              <TextField
+                fullWidth
+                label="Event Name"
+                value={eventName}
+                onChange={(e) => setEventName(e.target.value)}
+                error={!!errors.eventName}
+                helperText={errors.eventName}
+              />
+              <TextField
+                fullWidth
+                label="Price"
+                type="number"
+                inputProps={{ min: 0 }}
+                value={price}
+                onChange={(e) => setPrice(e.target.value)}
+                error={!!errors.price}
+                helperText={errors.price}
+              />
             </Box>
 
-            {/* Actions */}
+            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 2 }}>
+              <TextField
+                fullWidth
+                label="Max Team Size"
+                type="number"
+                inputProps={{ min: 1 }}
+                value={maxTeamSize}
+                onChange={(e) => setMaxTeamSize(e.target.value)}
+                error={!!errors.maxTeamSize}
+                helperText={errors.maxTeamSize}
+              />
+              <TextField
+                fullWidth
+                label="Venue"
+                value={venue}
+                onChange={(e) => setVenue(e.target.value)}
+                error={!!errors.venue}
+                helperText={errors.venue}
+              />
+            </Box>
+
+            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 2 }}>
+              <TextField
+                fullWidth
+                label="Extra Team Size"
+                type="number"
+                inputProps={{ min: 0 }}
+                value={extraTeamSize}
+                onChange={(e) => setExtraTeamSize(e.target.value)}
+                error={!!errors.extraTeamSize}
+                helperText={errors.extraTeamSize}
+              />
+              <TextField
+                fullWidth
+                label="Extra Amount Per Head"
+                type="number"
+                inputProps={{ min: 0 }}
+                value={extraAmountPerHead}
+                onChange={(e) => setExtraAmountPerHead(e.target.value)}
+                error={!!errors.extraAmountPerHead}
+                helperText={errors.extraAmountPerHead}
+              />
+            </Box>
+
+            <TextField
+              fullWidth
+              label="Overview"
+              multiline
+              minRows={4}
+              value={overview}
+              onChange={(e) => setOverview(e.target.value)}
+              error={!!errors.overview}
+              helperText={errors.overview}
+            />
+
             <Box>
-              <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2, gap: 2 }}>
-                <Button
-                  variant="outlined"
-                  color="inherit"
-                  onClick={() => {
-                    setEventName('');
-                    setSelectedConveners([]);
-                    removeImage();
-                    setErrors({});
-                  }}
-                >
-                  Clear Form
-                </Button>
-                <Button
-                  variant="contained"
-                  color="primary"
-                  onClick={handleSubmit}
-                  size="large"
-                  sx={{ px: 4 }}
-                >
-                  Save Event
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+                <Typography variant="subtitle1" fontWeight={600}>
+                  Rules (Enter the regulation in form of points.)
+                </Typography>
+                <Button variant="outlined" startIcon={<AddIcon />} onClick={addRule}>
+                  Add Regulation
                 </Button>
               </Box>
+
+              <Stack spacing={2}>
+                {rules.map((rule, index) => (
+                  <Box key={`rule-${index}`} sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr auto' }, gap: 2 }}>
+                    <TextField
+                      fullWidth
+                      label={`Regulation ${index + 1}`}
+                      value={rule}
+                      onChange={(e) => handleRuleChange(index, e.target.value)}
+                      error={!!errors.rules && !rule.trim()}
+                      helperText={index === rules.length - 1 && errors.rules ? errors.rules : ''}
+                    />
+                    <IconButton
+                      aria-label="remove regulation"
+                      onClick={() => removeRule(index)}
+                      disabled={rules.length === 1}
+                      sx={{ alignSelf: 'center', ml: 0.5 }}
+                    >
+                      <RemoveIcon />
+                    </IconButton>
+                  </Box>
+                ))}
+              </Stack>
             </Box>
-          </Box>
+
+            <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2, mt: 1 }}>
+              <Button variant="outlined" startIcon={<ArrowBackIcon />} onClick={cancelForm}>
+                Back
+              </Button>
+              <Button variant="outlined" onClick={resetForm}>
+                Clear
+              </Button>
+              <Button variant="contained" onClick={onSubmit} disabled={submitting}>
+                {editingEvent ? 'Save Changes' : 'Create Event'}
+              </Button>
+            </Box>
+          </Stack>
         </CardContent>
       </Card>
     </Box>

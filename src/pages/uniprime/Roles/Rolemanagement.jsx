@@ -1322,7 +1322,7 @@ const RoleManagement = () => {
                                                                                 setEditingEmployee(user);
                                                                                 setEditableEmail(user.email || "");
                                                                                 setEditableCoreDept(user.coreDepartment || user.department || "");
-                                                                                
+
                                                                                 const loadingToast = toast.loading("Fetching latest details from ECAP...");
                                                                                 try {
                                                                                     const res = await API.post("/api/employees/ecap-data", {
@@ -1333,19 +1333,19 @@ const RoleManagement = () => {
                                                                                         const ecapName = res.data.employeename || res.data.EmployeeName || user.name;
                                                                                         const ecapDept = res.data.departmentname || res.data.DepartmentName;
                                                                                         const ecapDesig = res.data.designation || res.data.Designation || user.designation;
-                                                                                        
+
                                                                                         let mappedDeptId = user.department;
                                                                                         if (ecapDept) {
                                                                                             const escapedEcapDept = ecapDept.trim().toLowerCase();
-                                                                                            const foundDept = allDepartments.find(d => 
-                                                                                                d.name.toLowerCase() === escapedEcapDept || 
+                                                                                            const foundDept = allDepartments.find(d =>
+                                                                                                d.name.toLowerCase() === escapedEcapDept ||
                                                                                                 d.code.toLowerCase() === escapedEcapDept
                                                                                             );
                                                                                             if (foundDept) {
                                                                                                 mappedDeptId = foundDept._id;
                                                                                             }
                                                                                         }
-                                                                                        
+
                                                                                         setEditingEmployee({
                                                                                             ...user,
                                                                                             name: ecapName,
@@ -1477,8 +1477,8 @@ const RoleManagement = () => {
                                                             {allDepartments
                                                                 .filter(d => d.type !== 'Central' && d.name.toLowerCase() !== 'freshman engineering')
                                                                 .map(d => (
-                                                                <MenuItem key={d._id} value={d._id}>{d.name}</MenuItem>
-                                                            ))}
+                                                                    <MenuItem key={d._id} value={d._id}>{d.name}</MenuItem>
+                                                                ))}
                                                         </TextField>
                                                     </Grid>
                                                 </Grid>
@@ -2305,6 +2305,11 @@ const RoleManagement = () => {
                             placeholder="E.g. FACULTY, HOD"
                             helperText="Unique identifier for logic. Auto-formats to uppercase without spaces."
                             required
+                            slotProps={{
+                                input: {
+                                    readOnly: !!editingRole,
+                                },
+                            }}
                         />
                         <TextField
                             fullWidth
