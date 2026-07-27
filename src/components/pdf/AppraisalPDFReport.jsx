@@ -1,4 +1,5 @@
 import React, { forwardRef } from 'react';
+import ausLogo from '../../assets/AUS Long Logo.png';
 
 const AppraisalPDFReport = forwardRef(({ data, hideInterpersonal }, ref) => {
   if (!data) return null;
@@ -101,7 +102,7 @@ const AppraisalPDFReport = forwardRef(({ data, hideInterpersonal }, ref) => {
   return (
     <div ref={ref} style={styles.container}>
       <div style={styles.header}>
-        <img src="/src/assets/AUS Long Logo.png" alt="Aditya University" style={styles.logo} />
+        <img src={ausLogo} alt="Aditya University" style={styles.logo} />
         <div style={styles.title}>Faculty Appraisal Report ({year})</div>
       </div>
 
@@ -181,7 +182,7 @@ const AppraisalPDFReport = forwardRef(({ data, hideInterpersonal }, ref) => {
       {teaching?.passPercentage?.courses?.length > 0 && (
         <div style={{ pageBreakInside: 'avoid' }}>
           <div style={{ fontSize: '14px', marginTop: '15px', marginBottom: '5px' }}>
-            1.1 Course Average Pass Percentage (Theory only) :
+            1.1 Course Average Pass Percentage :
           </div>
           <table style={styles.table}>
             <thead>
@@ -222,7 +223,7 @@ const AppraisalPDFReport = forwardRef(({ data, hideInterpersonal }, ref) => {
       {teaching?.courseFeedback?.courses?.length > 0 && (
         <div style={{ pageBreakInside: 'avoid' }}>
           <div style={{ fontSize: '14px', marginTop: '15px', marginBottom: '5px' }}>
-            1.2 Course feedback: (Theory only)
+            1.2 Course feedback:
           </div>
           <table style={styles.table}>
             <thead>
@@ -230,7 +231,8 @@ const AppraisalPDFReport = forwardRef(({ data, hideInterpersonal }, ref) => {
                 <th style={styles.th}>S. No</th>
                 <th style={styles.th}>Course Name</th>
                 <th style={styles.th}>Sem- Branch- Sec</th>
-                <th style={styles.th}>No. of students</th>
+                <th style={styles.th}>Total Students</th>
+                <th style={styles.th}>Given Students</th>
                 <th style={styles.th}>Feedback %</th>
                 <th style={styles.th}>Points claimed</th>
                 <th style={styles.th}>Average points</th>
@@ -242,7 +244,8 @@ const AppraisalPDFReport = forwardRef(({ data, hideInterpersonal }, ref) => {
                   <td style={styles.td}>{i + 1}</td>
                   <td style={styles.tdLeft}>{t.courseName}</td>
                   <td style={styles.td}>{getSemBranchSec(t)}</td>
-                  <td style={styles.td}>{t.students || ''}</td>
+                  <td style={styles.td}>{t.totalStudents || t.students || ''}</td>
+                  <td style={styles.td}>{t.givenStudents || ''}</td>
                   <td style={styles.td}>{t.feedbackPercentage || ''}%</td>
                   <td style={styles.td}>{t.pointsClaimed || ''}</td>
                   {i === 0 && (
@@ -302,7 +305,7 @@ const AppraisalPDFReport = forwardRef(({ data, hideInterpersonal }, ref) => {
       {teaching?.coAttainment?.courses?.length > 0 && (
         <div style={{ pageBreakInside: 'avoid' }}>
           <div style={{ fontSize: '14px', marginTop: '15px', marginBottom: '5px' }}>
-            1.4 CO attainment: (Theory only)
+            1.4 CO attainment:
           </div>
           <table style={styles.table}>
             <thead>

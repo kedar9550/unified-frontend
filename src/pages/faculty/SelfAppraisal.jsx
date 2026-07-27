@@ -1049,6 +1049,8 @@ const SelfAppraisal = () => {
         } else if (resUtForm.organizingInstitutionCategory === "NIRF Ranked Institute (Below 200)") {
           fd.append("instituteName", resUtForm.instituteName);
           fd.append("nirfRank", resUtForm.nirfRank);
+        } else if (resUtForm.organizingInstitutionCategory === "Other / Host Institute") {
+          fd.append("instituteName", resUtForm.instituteName);
         }
       } else {
         fd.append("organizationName", resUtForm.organizationName);
@@ -2648,7 +2650,7 @@ const SelfAppraisal = () => {
                         {!(appraisal.status === "Completed" && (!appraisal.teaching.passPercentage?.courses || appraisal.teaching.passPercentage.courses.length === 0)) && (
                           <>
                             <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 1, color: "var(--color-primary)" }}>
-                              1.1 Course Average Pass Percentage (Theory only)
+                              1.1 Course Average Pass Percentage
                             </Typography>
                             <TableContainer component={Paper} elevation={0} sx={{ mb: 3.5, borderRadius: "16px", background: "var(--bg-paper)", border: "1px solid var(--border-color)", overflowX: "auto", boxShadow: "none", width: "100%" }}>
                               <Table size="small" sx={{ minWidth: 650, mx: "auto" }}>
@@ -2700,7 +2702,7 @@ const SelfAppraisal = () => {
                                   ) : (
                                     <TableRow>
                                       <TableCell colSpan={6} align="center" sx={{ py: 3, color: "var(--text-secondary)", fontStyle: "italic" }}>
-                                        No theory subjects result found.
+                                        No subjects result found.
                                       </TableCell>
                                     </TableRow>
                                   )}
@@ -3037,7 +3039,8 @@ const SelfAppraisal = () => {
                                   <TableRow>
                                     <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }}>Course Name</TableCell>
                                     <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }}>Sem-Branch-Sec</TableCell>
-                                    <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }} align="center">Students</TableCell>
+                                    <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }} align="center">Total Students</TableCell>
+                                    <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }} align="center">Given Students</TableCell>
                                     <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }} align="center">Feedback %</TableCell>
                                     <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }} align="center">Points claimed</TableCell>
                                   </TableRow>
@@ -3049,30 +3052,14 @@ const SelfAppraisal = () => {
                                         <TableRow key={i} sx={{ "&:hover": { bgcolor: "var(--bg-hover)" } }}>
                                           <TableCell sx={{ fontWeight: 600, color: "var(--text-primary)" }}>{c.courseName}</TableCell>
                                           <TableCell sx={{ color: "var(--text-primary)" }}>{c.secBranchSem}</TableCell>
-                                          <TableCell align="center" sx={{ color: "var(--text-primary)" }}>{c.noOfStudents}</TableCell>
+                                          <TableCell align="center" sx={{ color: "var(--text-primary)" }}>{c.totalStudents || c.noOfStudents}</TableCell>
+                                          <TableCell align="center" sx={{ color: "var(--text-primary)" }}>{c.givenStudents || ''}</TableCell>
                                           <TableCell align="center" sx={{ color: "var(--text-primary)" }}>{c.feedbackPercentage}%</TableCell>
                                           <TableCell align="center" sx={{ fontWeight: 800, color: "var(--color-primary)" }}>{c.pointsClaimed}</TableCell>
                                         </TableRow>
                                       ))}
                                       {/* Summary / Average Row */}
                                       {(() => {
-                                        const totalStudents = appraisal.teaching.feedback.courses.reduce((sum, c) => sum + (Number(c.noOfStudents) || 0), 0);
-                                        const totalWeightedFeedback = appraisal.teaching.feedback.courses.reduce((sum, c) => sum + ((Number(c.noOfStudents) || 0) * (Number(c.feedbackPercentage) || 0)), 0);
-                                        const overallFeedbackPct = totalStudents > 0 ? (totalWeightedFeedback / totalStudents).toFixed(2) : "0.00";
-                                        return (
-                                          <TableRow sx={{ background: "rgba(0, 78, 146, 0.04)", "&:hover": { bgcolor: "rgba(0, 78, 146, 0.06) !important" } }}>
-                                            <TableCell colSpan={2} sx={{ fontWeight: 800, color: "var(--text-primary)", pl: 2 }}>
-                                              <Box component="span" sx={{ position: "sticky", left: 16, display: "inline-block", whiteSpace: "nowrap" }}>
-                                                Overall Performance
-                                              </Box>
-                                            </TableCell>
-                                            <TableCell align="center" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>{totalStudents}</TableCell>
-                                            <TableCell align="center" sx={{ fontWeight: 900, color: "var(--color-primary)" }}>{overallFeedbackPct}%</TableCell>
-                                            <TableCell align="center" sx={{ fontWeight: 900, color: "var(--color-primary)", fontSize: "0.95rem" }}>
-                                              {appraisal.teaching.feedback.averagePoints}
-                                            </TableCell>
-                                          </TableRow>
-                                        );
                                       })()}
                                     </>
                                   ) : (
@@ -3092,7 +3079,7 @@ const SelfAppraisal = () => {
                         {!(appraisal.status === "Completed" && (!appraisal.teaching.coAttainment?.courses || appraisal.teaching.coAttainment.courses.length === 0)) && (
                           <>
                             <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 1.5, color: "var(--color-primary)" }}>
-                              1.4 CO Attainment (Theory only)
+                              1.4 CO Attainment
                             </Typography>
                             <TableContainer component={Paper} elevation={0} sx={{ borderRadius: "16px", background: "var(--bg-paper)", border: "1px solid var(--border-color)", overflowX: "auto", boxShadow: "none", width: "100%", mb: 4 }}>
                               <Table size="small" sx={{ minWidth: 650, mx: "auto" }}>
@@ -4411,7 +4398,8 @@ const SelfAppraisal = () => {
                         "ICMR",
                         "Govt. University",
                         "NIRF Ranked Institute (Below 200)",
-                        "NPTEL"
+                        "NPTEL",
+                        "Other / Host Institute"
                       ].map(opt => (
                         <MenuItem key={opt} value={opt}>{opt}</MenuItem>
                       ))}
@@ -4475,10 +4463,23 @@ const SelfAppraisal = () => {
                           type="number"
                           value={resUtForm.nirfRank}
                           onChange={(e) => setResUtForm(p => ({ ...p, nirfRank: e.target.value }))}
-                          placeholder="e.g. 45"
+                          placeholder="e.g. 15"
                         />
                       </Box>
                     </>
+                  )}
+
+                  {resUtForm.organizingInstitutionCategory === "Other / Host Institute" && (
+                    <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
+                      <Typography sx={labelStyle}>Institute Name: *</Typography>
+                      <TextField
+                        size="small"
+                        fullWidth
+                        value={resUtForm.instituteName}
+                        onChange={(e) => setResUtForm(p => ({ ...p, instituteName: e.target.value }))}
+                        placeholder="Enter Institute Name"
+                      />
+                    </Box>
                   )}
                 </>
               ) : (
@@ -4582,8 +4583,8 @@ const SelfAppraisal = () => {
                     <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
                       {resUtForm.existingProof.match(/\.(jpeg|jpg|gif|png)$/i) ? (
                         <a href={resUtForm.existingProof.startsWith('http') ? resUtForm.existingProof : `${(import.meta.env.VITE_BACKEND_URL || "http://localhost:9000").replace(/\/$/, "")}${resUtForm.existingProof}`} target="_blank" rel="noreferrer">
-                          <img 
-                            src={resUtForm.existingProof.startsWith('http') ? resUtForm.existingProof : `${(import.meta.env.VITE_BACKEND_URL || "http://localhost:9000").replace(/\/$/, "")}${resUtForm.existingProof}`} 
+                          <img
+                            src={resUtForm.existingProof.startsWith('http') ? resUtForm.existingProof : `${(import.meta.env.VITE_BACKEND_URL || "http://localhost:9000").replace(/\/$/, "")}${resUtForm.existingProof}`}
                             alt="Proof Document"
                             style={{ width: "60px", height: "60px", objectFit: "cover", borderRadius: "8px", border: "1px solid var(--border-color)" }}
                           />
@@ -5104,8 +5105,8 @@ const SelfAppraisal = () => {
                     <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
                       {contForm.existingProof.match(/\.(jpeg|jpg|gif|png)$/i) ? (
                         <a href={contForm.existingProof.startsWith('http') ? contForm.existingProof : `${(import.meta.env.VITE_BACKEND_URL || "http://localhost:9000").replace(/\/$/, "")}${contForm.existingProof}`} target="_blank" rel="noreferrer">
-                          <img 
-                            src={contForm.existingProof.startsWith('http') ? contForm.existingProof : `${(import.meta.env.VITE_BACKEND_URL || "http://localhost:9000").replace(/\/$/, "")}${contForm.existingProof}`} 
+                          <img
+                            src={contForm.existingProof.startsWith('http') ? contForm.existingProof : `${(import.meta.env.VITE_BACKEND_URL || "http://localhost:9000").replace(/\/$/, "")}${contForm.existingProof}`}
                             alt="Proof Document"
                             style={{ width: "60px", height: "60px", objectFit: "cover", borderRadius: "8px", border: "1px solid var(--border-color)" }}
                           />

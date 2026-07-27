@@ -447,6 +447,8 @@ export default function ResourceUtilization() {
         } else if (form.organizingInstitutionCategory === "NIRF Ranked Institute (Below 200)") {
           fd.append("instituteName", form.instituteName);
           fd.append("nirfRank", form.nirfRank);
+        } else if (form.organizingInstitutionCategory === "Other / Host Institute") {
+          fd.append("instituteName", form.instituteName);
         } else if (form.organizingInstitutionCategory === "NPTEL" && form.certificateNumber) {
           fd.append("certificateNumber", form.certificateNumber);
         }
@@ -1214,7 +1216,8 @@ export default function ResourceUtilization() {
                   "ICMR",
                   "Govt. University",
                   "NIRF Ranked Institute (Below 200)",
-                  "NPTEL"
+                  "NPTEL",
+                  "Other / Host Institute"
                 ].map(opt => (
                   <MenuItem key={opt} value={opt}>{opt}</MenuItem>
                 ))}
@@ -1282,6 +1285,19 @@ export default function ResourceUtilization() {
                   />
                 </Box>
               </>
+            )}
+
+            {form.organizingInstitutionCategory === "Other / Host Institute" && (
+              <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
+                <Typography sx={labelStyle}>Institute Name: *</Typography>
+                <TextField
+                  size="small"
+                  fullWidth
+                  value={form.instituteName}
+                  onChange={setVal("instituteName")}
+                  placeholder="Enter Institute Name"
+                />
+              </Box>
             )}
 
             {form.organizingInstitutionCategory === "NPTEL" && (
