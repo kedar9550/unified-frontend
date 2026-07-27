@@ -29,6 +29,7 @@ import {
   Assessment,
   Settings,
   CloudUpload,
+  EventAvailable,
 } from "@mui/icons-material";
 import PersonIcon from '@mui/icons-material/Person';
 import React from "react";
@@ -369,6 +370,7 @@ export const ROLE_ROUTES = {
       nested: [
         { text: "Departments", path: "/Eventveda/departments", icon: <AccountTree /> },
         { text: "Groups", path: "/Eventveda/groups", icon: <Groups /> },
+        { text: "Events", path: "/Eventveda/events", icon: <EventAvailable /> },
       ]
     }
     // {

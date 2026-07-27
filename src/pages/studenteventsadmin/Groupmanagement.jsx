@@ -18,6 +18,8 @@ import {
   DialogContentText,
   DialogActions,
   Avatar,
+  Autocomplete,
+  CircularProgress,
 } from '@mui/material';
 import {
   CloudUpload as CloudUploadIcon,
@@ -51,6 +53,10 @@ const GroupManagement = () => {
   const [departmentsList, setDepartmentsList] = useState([]);
   const [content, setContent] = useState('');
   const [status, setStatus] = useState('Active');
+  const [selectedCoordinator, setSelectedCoordinator] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [employeeOptions, setEmployeeOptions] = useState([]);
+  const [isSearching, setIsSearching] = useState(false);
 
   const [logoFile, setLogoFile] = useState(null);
   const [logoPreview, setLogoPreview] = useState(null);
@@ -105,6 +111,30 @@ const GroupManagement = () => {
     fetchGroups();
     fetchDepartments();
   }, [fetchGroups, fetchDepartments]);
+
+  useEffect(() => {
+    if (!searchQuery || searchQuery.trim() === '') {
+      setEmployeeOptions([]);
+      return;
+    }
+
+    const debounce = setTimeout(async () => {
+      setIsSearching(true);
+      try {
+        const response = await API.get('/api/employees/search', {
+          params: { query: searchQuery },
+        });
+        setEmployeeOptions(Array.isArray(response.data) ? response.data : response.data?.users || []);
+      } catch (error) {
+        console.error('Error searching employees:', error);
+        setEmployeeOptions([]);
+      } finally {
+        setIsSearching(false);
+      }
+    }, 400);
+
+    return () => clearTimeout(debounce);
+  }, [searchQuery]);
 
   // ─── Image handling (shared by logo & banner) ───
   const validateImage = (file) => {
@@ -181,6 +211,10 @@ const GroupManagement = () => {
       newErrors.content = 'Content cannot exceed 5000 characters.';
     }
 
+    if (!selectedCoordinator) {
+      newErrors.eventCoordinator = 'Event Coordinator is required.';
+    }
+
     // Images required only when creating
     if (!editingGroup && !logoFile) {
       newErrors.logo = 'Group Logo is required.';
@@ -199,6 +233,9 @@ const GroupManagement = () => {
     setDepartment('');
     setContent('');
     setStatus('Active');
+    setSelectedCoordinator(null);
+    setSearchQuery('');
+    setEmployeeOptions([]);
     setLogoFile(null);
     setLogoPreview(null);
     setLogoError('');
@@ -220,6 +257,14 @@ const GroupManagement = () => {
     setDepartment(group.department?._id || group.department || '');
     setContent(group.content || '');
     setStatus(group.status || 'Active');
+    setSelectedCoordinator(group.eventCoordinator ? {
+      employeeId: group.eventCoordinator.employeeId || group.eventCoordinator.institutionId || group.eventCoordinator.employeeCode || '',
+      institutionId: group.eventCoordinator.institutionId || group.eventCoordinator.employeeId || group.eventCoordinator.employeeCode || '',
+      employeeName: group.eventCoordinator.employeeName || group.eventCoordinator.name || '',
+      name: group.eventCoordinator.employeeName || group.eventCoordinator.name || '',
+      department: group.eventCoordinator.department,
+      designation: group.eventCoordinator.designation,
+    } : null);
 
     setLogoFile(null);
     setLogoPreview(group.logo ? `${BACKEND_URL}${group.logo}` : null);
@@ -249,6 +294,7 @@ const GroupManagement = () => {
     formData.append('department', department);
     formData.append('content', content);
     formData.append('status', status);
+    formData.append('eventCoordinator', JSON.stringify(selectedCoordinator || {}));
 
     if (logoFile) formData.append('logo', logoFile);
     if (bannerFile) formData.append('banner', bannerFile);
@@ -299,7 +345,7 @@ const GroupManagement = () => {
   };
 
   // ─── Table columns & rows ───
-  const columns = ['#', 'Logo', 'Banner', 'Name', 'Department', 'Status', 'Actions'];
+  const columns = ['#', 'Logo', 'Banner', 'Name', 'Department', 'Staff Coordinator', 'Status', 'Actions'];
 
   const tableRows = groups.map((group, index) => [
     index + 1,
@@ -351,6 +397,11 @@ const GroupManagement = () => {
     },
     group.name,
     group.department?.name || 'N/A',
+    (() => {
+      const code = group.eventCoordinator?.institutionId || group.eventCoordinator?.employeeId || group.eventCoordinator?.employeeCode || '';
+      const name = group.eventCoordinator?.employeeName || 'N/A';
+      return code ? `${name} (${code})` : name;
+    })(),
     {
       value: group.status,
       display: (
@@ -522,8 +573,8 @@ const GroupManagement = () => {
           columns={columns}
           rows={tableRows}
           loading={loading}
-          nonSortableColumns={[1, 2, 6]}
-          alignments={['center', 'center', 'center', 'left', 'left', 'center', 'center']}
+          nonSortableColumns={[1, 2, 7]}
+          alignments={['center', 'center', 'center', 'left', 'left', 'left', 'center', 'center']}
         />
 
         {/* Delete Confirmation Dialog */}
@@ -783,6 +834,80 @@ const GroupManagement = () => {
                 helperText={errors.content || `${content.length}/5000`}
                 slotProps={{ htmlInput: { maxLength: 5000 } }}
                 variant="outlined"
+              />
+            </Box>
+
+            {/* Staff Coordinator */}
+            <Box>
+              <Typography
+                variant="subtitle1"
+                fontWeight="600"
+                mb={1}
+                sx={{ color: 'var(--text-primary)' }}
+              >
+                Staff  Coordinator *
+              </Typography>
+              <Autocomplete
+                options={employeeOptions}
+                getOptionLabel={(option) => {
+                  if (!option) return '';
+                  const name = option.employeeName || option.name || '';
+                  const code = option.institutionId || option.employeeId || option.employeeCode || '';
+                  return code ? `${name} (${code})` : name;
+                }}
+                value={selectedCoordinator}
+                onChange={(_, newValue) => {
+                  if (newValue) {
+                    const code = newValue.institutionId || newValue.employeeId || newValue.employeeCode || '';
+                    setSelectedCoordinator({
+                      ...newValue,
+                      employeeId: code,
+                      institutionId: code,
+                      employeeName: newValue.employeeName || newValue.name || '',
+                    });
+                  } else {
+                    setSelectedCoordinator(null);
+                  }
+                  setErrors((prev) => ({ ...prev, eventCoordinator: null }));
+                }}
+                inputValue={searchQuery}
+                onInputChange={(_, newInputValue) => {
+                  setSearchQuery(newInputValue);
+                }}
+                loading={isSearching}
+                noOptionsText={searchQuery ? 'No matches found' : 'Type to search'}
+                renderInput={(params) => {
+                  const inputProps = params.InputProps || {};
+                  return (
+                    <TextField
+                      {...params}
+                      placeholder="Search by name or ID"
+                      error={!!errors.eventCoordinator}
+                      helperText={errors.eventCoordinator}
+                      InputProps={{
+                        ...inputProps,
+                        endAdornment: (
+                          <>
+                            {isSearching ? <CircularProgress color="inherit" size={20} /> : null}
+                            {inputProps.endAdornment}
+                          </>
+                        ),
+                      }}
+                      variant="outlined"
+                    />
+                  );
+                }}
+                renderOption={(props, option) => (
+                  <Box component="li" {...props} key={option.employeeId || option._id}>
+                    <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+                      <Typography variant="body2" fontWeight={600}>{option.name}</Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        {option.designation || 'Staff'} • {option.department || 'Unknown'}
+                      </Typography>
+                    </Box>
+                  </Box>
+                )}
+                isOptionEqualToValue={(option, value) => option?.employeeId === value?.employeeId}
               />
             </Box>
 

@@ -76,7 +76,7 @@ import Reports from "./pages/serviceDesk/Reports";
 import FeedbackOverview from "./pages/serviceDesk/FeedbackOverview";
 
 //Student Event Admin
-// import StudentEventAdmin from "./pages/studenteventsadmin/evencreation";
+import EventCreation from "./pages/studenteventsadmin/evencreation";
 import ClubManagement from "./pages/studenteventsadmin/ClubManagement";
 import EventAssignment from "./pages/studenteventsadmin/EventAssignment";
 import FestManagement from "./pages/convener/FestManagement";
@@ -232,6 +232,7 @@ function App() {
 
 
         <Route path="/Eventveda/groups" element={<ProtectedRoute element={<GroupManagement />} />} />
+        <Route path="/Eventveda/events" element={<ProtectedRoute element={<EventCreation />} />} />
         <Route path="/Eventveda/departments" element={<ProtectedRoute element={<DepartmentManagement />} />} />
         <Route path="/major-event-admin/groups" element={<ProtectedRoute element={<MajorEventGroups />} />} />
         <Route path="/major-event-admin/form-assign" element={<ProtectedRoute element={<FormAssign />} />} />
