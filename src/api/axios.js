@@ -5,6 +5,11 @@ const API = axios.create({
   withCredentials: true,
 });
 
+const storedToken = localStorage.getItem('authToken');
+if (storedToken) {
+  API.defaults.headers.common.Authorization = `Bearer ${storedToken}`;
+}
+
 // Global loading callbacks — set once by LoadingProvider
 let _startLoading = () => { };
 let _stopLoading = () => { };

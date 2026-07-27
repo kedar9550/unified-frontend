@@ -30,6 +30,7 @@ import {
 } from '@mui/icons-material';
 import PageHeader from '../../components/common/PageHeader';
 import DataTable from '../../components/data/DataTable';
+import { fetchEventDepartments } from '../../api/eventDepartmentApi';
 import API from '../../api/axios';
 import { toast } from 'sonner';
 
@@ -49,7 +50,7 @@ const GroupManagement = () => {
 
   // Form state
   const [name, setName] = useState('');
-  const [department, setDepartment] = useState('');
+  const [departments, setDepartments] = useState([]);
   const [departmentsList, setDepartmentsList] = useState([]);
   const [content, setContent] = useState('');
   const [status, setStatus] = useState('Active');
@@ -98,8 +99,7 @@ const GroupManagement = () => {
 
   const fetchDepartments = useCallback(async () => {
     try {
-      const response = await API.get('/api/event-departments');
-      // Only keep active departments
+      const response = await fetchEventDepartments();
       const activeDepts = (response.data?.departments || []).filter(d => d.status === 'Active');
       setDepartmentsList(activeDepts);
     } catch (error) {
@@ -201,8 +201,8 @@ const GroupManagement = () => {
       newErrors.name = 'Group Name cannot exceed 200 characters.';
     }
 
-    if (!department) {
-      newErrors.department = 'Department is required.';
+    if (!departments || departments.length === 0) {
+      newErrors.department = 'At least one department is required.';
     }
 
     if (!content.trim()) {
@@ -230,7 +230,7 @@ const GroupManagement = () => {
   // ─── Form helpers ───
   const resetForm = () => {
     setName('');
-    setDepartment('');
+    setDepartments([]);
     setContent('');
     setStatus('Active');
     setSelectedCoordinator(null);
@@ -254,7 +254,11 @@ const GroupManagement = () => {
   const openEditForm = (group) => {
     setEditingGroup(group);
     setName(group.name || '');
-    setDepartment(group.department?._id || group.department || '');
+    setDepartments(Array.isArray(group.department)
+      ? group.department.map((dept) => dept._id || dept)
+      : group.department
+        ? [group.department._id || group.department]
+        : []);
     setContent(group.content || '');
     setStatus(group.status || 'Active');
     setSelectedCoordinator(group.eventCoordinator ? {
@@ -291,7 +295,7 @@ const GroupManagement = () => {
     setSubmitting(true);
     const formData = new FormData();
     formData.append('name', name);
-    formData.append('department', department);
+    formData.append('department', JSON.stringify(departments));
     formData.append('content', content);
     formData.append('status', status);
     formData.append('eventCoordinator', JSON.stringify(selectedCoordinator || {}));
@@ -396,7 +400,9 @@ const GroupManagement = () => {
       ),
     },
     group.name,
-    group.department?.name || 'N/A',
+    Array.isArray(group.department)
+      ? group.department.map((dept) => dept?.name || '').filter(Boolean).join(', ') || 'N/A'
+      : group.department?.name || 'N/A',
     (() => {
       const code = group.eventCoordinator?.institutionId || group.eventCoordinator?.employeeId || group.eventCoordinator?.employeeCode || '';
       const name = group.eventCoordinator?.employeeName || 'N/A';
@@ -731,17 +737,36 @@ const GroupManagement = () => {
               </Typography>
               <FormControl fullWidth error={!!errors.department}>
                 <Select
-                  value={department}
-                  onChange={(e) => setDepartment(e.target.value)}
+                  multiple
+                  value={departments}
+                  onChange={(e) => setDepartments(e.target.value)}
                   displayEmpty
+                  renderValue={(selected) => {
+                    if (!selected || selected.length === 0) {
+                      return <em>Select department(s)</em>;
+                    }
+                    return selected
+                      .map((deptId) => departmentsList.find((dept) => dept._id === deptId)?.name || deptId)
+                      .join(', ');
+                  }}
                   variant="outlined"
+                  MenuProps={{
+                    PaperProps: {
+                      sx: { maxHeight: 300 },
+                    },
+                  }}
                 >
-                  <MenuItem value="" disabled>
-                    Select department
-                  </MenuItem>
                   {departmentsList.map((dept) => (
                     <MenuItem key={dept._id} value={dept._id}>
-                      {dept.name}
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <input
+                          type="checkbox"
+                          checked={departments.includes(dept._id)}
+                          readOnly
+                          style={{ width: 16, height: 16 }}
+                        />
+                        <Typography>{dept.name}</Typography>
+                      </Box>
                     </MenuItem>
                   ))}
                 </Select>
