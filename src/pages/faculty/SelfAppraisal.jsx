@@ -769,10 +769,13 @@ const SelfAppraisal = () => {
   // 4. Administration Sync and Submit Handlers
   useEffect(() => {
     const initialForm = {};
+    const usedBackendRoles = new Set();
+    
     ADMINISTRATIVE_ROLES_LIST.forEach((r) => {
       let matchedRole = null;
       if (administrationDetail && administrationDetail.roles) {
         matchedRole = administrationDetail.roles.find((x) => x.roleName === r.label);
+        if (matchedRole) usedBackendRoles.add(matchedRole._id || matchedRole.roleName);
       }
       initialForm[r.id] = {
         roleName: r.label,
@@ -781,18 +784,35 @@ const SelfAppraisal = () => {
         details: matchedRole ? matchedRole.details : ""
       };
     });
+
+    if (administrationDetail && administrationDetail.roles) {
+      administrationDetail.roles.forEach((r, idx) => {
+        if (!usedBackendRoles.has(r._id || r.roleName) && r.roleName.startsWith("Any other remarkable event / activity coordinator")) {
+           initialForm[`other_custom_${idx}`] = {
+             roleName: r.roleName,
+             isResponsible: r.isResponsible,
+             level: r.level || "",
+             details: r.details || ""
+           };
+        }
+      });
+    }
+
     setAdminRolesForm(initialForm);
   }, [selectedYear, administrationDetail]);
 
   const openAdminModalAdd = () => {
     setAdminEditingRole(null);
-    setAdminForm({ roleName: "", level: "Department level", details: "" });
+    setAdminForm({ roleName: "", customRoleName: "", level: "Department level", details: "" });
     setAdminOpen(true);
   };
 
   const openAdminModalEdit = (role) => {
     setAdminEditingRole(role.roleName);
-    setAdminForm({ roleName: role.roleName, level: role.level || "Department level", details: role.details || "" });
+    const isCustom = role.roleName.startsWith("Any other remarkable event / activity coordinator - ");
+    const baseRoleName = role.roleName.startsWith("Any other remarkable event") ? "Any other remarkable event / activity coordinator" : role.roleName;
+    const customRoleName = isCustom ? role.roleName.replace("Any other remarkable event / activity coordinator - ", "") : "";
+    setAdminForm({ roleName: baseRoleName, customRoleName: customRoleName, level: role.level || "Department level", details: role.details || "" });
     setAdminOpen(true);
   };
 
@@ -803,17 +823,27 @@ const SelfAppraisal = () => {
       return;
     }
     const roleConfig = ADMINISTRATIVE_ROLES_LIST.find((r) => r.label === adminForm.roleName);
-    if (roleConfig && roleConfig.hasDetails && !adminForm.details.trim()) {
-      toast.error("Please specify the event/activity name");
+    if (adminForm.roleName === "Any other remarkable event / activity coordinator" && (!adminForm.customRoleName || !adminForm.customRoleName.trim())) {
+      toast.error("Please specify the custom role name");
       return;
     }
 
     const updatedForm = { ...adminRolesForm };
-    const roleId = roleConfig ? roleConfig.id : null;
+    let roleId = roleConfig ? roleConfig.id : null;
+
+    if (roleId === 'other') {
+      if (adminEditingRole) {
+        roleId = Object.keys(updatedForm).find(key => updatedForm[key].roleName === adminEditingRole) || roleId;
+      } else {
+        roleId = 'other_' + Date.now();
+      }
+    }
 
     if (roleId) {
       updatedForm[roleId] = {
-        roleName: adminForm.roleName,
+        roleName: adminForm.roleName === "Any other remarkable event / activity coordinator" 
+                  ? "Any other remarkable event / activity coordinator - " + adminForm.customRoleName.trim() 
+                  : adminForm.roleName,
         isResponsible: true,
         level: adminForm.level,
         details: adminForm.details
@@ -848,8 +878,8 @@ const SelfAppraisal = () => {
   const handleAdminDelete = async (roleName) => {
     if (!window.confirm("Are you sure you want to delete this administrative role?")) return;
 
-    const roleId = ADMINISTRATIVE_ROLES_LIST.find((r) => r.label === roleName)?.id;
     const updatedForm = { ...adminRolesForm };
+    const roleId = Object.keys(updatedForm).find(key => updatedForm[key].roleName === roleName);
     if (roleId && updatedForm[roleId]) {
       updatedForm[roleId].isResponsible = false;
     }
@@ -3990,7 +4020,7 @@ const SelfAppraisal = () => {
                                         <TableRow key={i} sx={{ "&:hover": { bgcolor: "var(--bg-hover)" } }}>
                                           <TableCell sx={{ color: "var(--text-primary)" }}>{i + 1}</TableCell>
                                           <TableCell sx={{ fontWeight: 600, color: "var(--text-primary)" }}>
-                                            {role.roleName} {role.details ? `(${role.details})` : ""}
+                                            {role.roleName.startsWith("Any other remarkable event") ? "Any other remarkable event / activity coordinator" : role.roleName} {role.details ? `(${role.details})` : ""}
                                             {role.status === "Rejected" && role.remarks && (
                                               <Typography variant="caption" sx={{ color: "error.main", mt: 0.5, display: "block", fontWeight: 700 }}>
                                                 Rejection Reason: {role.remarks}
@@ -5331,12 +5361,25 @@ const SelfAppraisal = () => {
                   disabled={!!adminEditingRole}
                 >
                   {ADMINISTRATIVE_ROLES_LIST.map(role => (
-                    <MenuItem key={role.id} value={role.label} disabled={!adminEditingRole && adminRolesForm[role.id]?.isResponsible && (administrationDetail?.roles?.find(r => r.roleName === role.label)?.status !== 'Rejected')}>
+                    <MenuItem key={role.id} value={role.label} disabled={role.id !== 'other' && !adminEditingRole && adminRolesForm[role.id]?.isResponsible && (administrationDetail?.roles?.find(r => r.roleName === role.label)?.status !== 'Rejected')}>
                       {role.label}
                     </MenuItem>
                   ))}
                 </Select>
               </Box>
+
+              {adminForm.roleName === "Any other remarkable event / activity coordinator" && (
+                <Box sx={{ gridColumn: "1 / -1", mb: 2 }}>
+                  <Typography sx={labelStyle}>Specify Custom Role Name: *</Typography>
+                  <TextField
+                    size="small"
+                    fullWidth
+                    placeholder="Enter custom role name"
+                    value={adminForm.customRoleName || ""}
+                    onChange={(e) => setAdminForm(p => ({ ...p, customRoleName: e.target.value }))}
+                  />
+                </Box>
+              )}
 
               <Box sx={{ gridColumn: "1 / -1", mb: 2 }}>
                 <Typography sx={labelStyle}>Level (Assigned By): *</Typography>
@@ -5356,7 +5399,7 @@ const SelfAppraisal = () => {
                 if (roleConfig && roleConfig.hasDetails) {
                   return (
                     <Box sx={{ gridColumn: "1 / -1", mb: 2 }}>
-                      <Typography sx={labelStyle}>Specify event / activity name: *</Typography>
+                      <Typography sx={labelStyle}>Remarks / Details (Optional):</Typography>
                       <TextField
                         size="small"
                         fullWidth
