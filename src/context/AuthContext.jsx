@@ -99,6 +99,12 @@ export const AuthProvider = ({ children }) => {
       const payload = { ...formData, app: "UNIFIED_SYSTEM", fcmToken };
       const res = await API.post("/api/employees/login", payload); 
 
+      const token = res.data.token;
+      if (token) {
+        API.defaults.headers.common.Authorization = `Bearer ${token}`;
+        localStorage.setItem('authToken', token);
+      }
+
       let userData = res.data.user;
       userData = normalizeRoles(userData);
 

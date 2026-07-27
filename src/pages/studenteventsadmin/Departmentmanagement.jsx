@@ -24,7 +24,12 @@ import {
 } from '@mui/icons-material';
 import PageHeader from '../../components/common/PageHeader';
 import DataTable from '../../components/data/DataTable';
-import API from '../../api/axios';
+import {
+  fetchEventDepartments,
+  createEventDepartment,
+  updateEventDepartment,
+  deleteEventDepartment,
+} from '../../api/eventDepartmentApi';
 import { toast } from 'sonner';
 
 const DepartmentManagement = () => {
@@ -51,7 +56,7 @@ const DepartmentManagement = () => {
   const fetchDepartments = useCallback(async () => {
     setLoading(true);
     try {
-      const response = await API.get('/api/event-departments');
+      const response = await fetchEventDepartments();
       setDepartments(response.data?.departments || []);
     } catch (error) {
       console.error('Error fetching departments:', error);
@@ -118,13 +123,13 @@ const DepartmentManagement = () => {
 
     try {
       if (editingDepartment) {
-        const response = await API.put(`/api/event-departments/${editingDepartment._id}`, payload);
+        const response = await updateEventDepartment(editingDepartment._id, payload);
         if (response.data.success) {
           toast.success('Department updated successfully!');
           goBackToList();
         }
       } else {
-        const response = await API.post('/api/event-departments', payload);
+        const response = await createEventDepartment(payload);
         if (response.data.success) {
           toast.success('Department created successfully!');
           goBackToList();
@@ -147,7 +152,7 @@ const DepartmentManagement = () => {
   const confirmDelete = async () => {
     if (!departmentToDelete) return;
     try {
-      const response = await API.delete(`/api/event-departments/${departmentToDelete._id}`);
+      const response = await deleteEventDepartment(departmentToDelete._id);
       if (response.data.success) {
         toast.success('Department deleted successfully!');
         fetchDepartments();
