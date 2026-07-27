@@ -264,6 +264,8 @@
   align-items: center;
   justify-content: space-between;
   transition: all 0.2s ease-in-out;
+  min-height: 54px;
+  box-sizing: border-box;
 }
 
 .auth-select-wrap.is-open .custom-select-trigger {
@@ -298,7 +300,8 @@
   border-radius: 12px;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
   z-index: 100;
-  overflow: hidden;
+  max-height: 250px;
+  overflow-y: auto;
   animation: slideDownIn 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 

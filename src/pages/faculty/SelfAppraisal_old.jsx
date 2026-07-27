@@ -3488,7 +3488,7 @@ const SelfAppraisal = () => {
                               </TableCell>
                               <TableCell>
                                 <Chip
-                                  label={item.status}
+                                  label={item.status === "Pending at HOD" ? "Pending at HOD / Dean" : item.status}
                                   size="small"
                                   sx={{
                                     bgcolor: statusStyle.bg,
@@ -4696,7 +4696,7 @@ const SelfAppraisal = () => {
                     <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", fontWeight: 800 }}>Status</Typography>
                     <Box sx={{ mt: 0.5 }}>
                       <Chip
-                        label={data.status}
+                        label={data.status === "Pending at HOD" ? "Pending at HOD / Dean" : data.status}
                         size="small"
                         sx={{
                           bgcolor: statusStyle.bg,
@@ -5188,7 +5188,7 @@ const SelfAppraisal = () => {
                     <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", fontWeight: 800 }}>Status</Typography>
                     <Box sx={{ mt: 0.5 }}>
                       <Chip
-                        label={data.status}
+                        label={data.status === "Pending at HOD" ? "Pending at HOD / Dean" : data.status}
                         size="small"
                         sx={{
                           bgcolor: statusStyle.bg,

@@ -40,7 +40,8 @@ import {
   Link as LinkIcon,
   AccountBalance,
   Visibility,
-  VisibilityOff
+  VisibilityOff,
+  Close
 } from "@mui/icons-material";
 import { MenuItem, Select, TextField } from "@mui/material";
 import API from "../../api/axios";
@@ -306,6 +307,22 @@ const Profile = () => {
     setErrors(prev => ({ ...prev, orcidId: validateField('orcidId', formatted) }));
   };
 
+  const handleDiscard = () => {
+    setForm({
+      email: profile?.email || "",
+      phone: profile?.phone || "",
+      scopusId: profile?.scopusId || "",
+      wosId: profile?.wosId || "",
+      orcidId: profile?.orcidId || "",
+      googleScholarId: profile?.googleScholarId || "",
+      panNumber: profile?.panNumber || "",
+      college: profile?.college || "",
+      qualification: profile?.qualification || ""
+    });
+    setErrors({});
+    setIsEditing(false);
+  };
+
   const [imageSrc, setImageSrc] = React.useState(null);
 
   React.useEffect(() => {
@@ -547,30 +564,11 @@ const Profile = () => {
               pointerEvents: "none"
             }
           }}>
-            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
-              <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-                <Person sx={{ color: "var(--color-primary)" }} />
-                <Typography sx={{ fontSize: "1rem", fontWeight: 800, color: "var(--text-primary)" }}>
-                  Personal Information
-                </Typography>
-              </Box>
-              <Button
-                startIcon={isEditing ? <Save /> : <Edit />}
-                variant="outlined"
-                size="small"
-                onClick={() => isEditing ? handleSave() : setIsEditing(true)}
-                disabled={loading}
-                sx={{
-
-                  textTransform: "none",
-                  fontWeight: 700,
-                  borderColor: "var(--border-color)",
-                  color: "var(--color-primary)",
-                  "&:hover": { borderColor: "var(--color-primary)", background: "rgba(2, 132, 199, 0.05)" }
-                }}
-              >
-                {loading ? "Saving..." : isEditing ? "Save Changes" : "Edit Info"}
-              </Button>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 3 }}>
+              <Person sx={{ color: "var(--color-primary)" }} />
+              <Typography sx={{ fontSize: "1rem", fontWeight: 800, color: "var(--text-primary)" }}>
+                Personal Information
+              </Typography>
             </Box>
 
             {/* All fields in a single responsive 3-column grid */}
@@ -662,6 +660,51 @@ const Profile = () => {
                   />
                 </>
               )}
+            </Box>
+
+            <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 2, mt: 3 }}>
+              {isEditing && (
+                <Button
+                  startIcon={<Close />}
+                  variant="outlined"
+                  color="error"
+                  size="small"
+                  onClick={handleDiscard}
+                  disabled={loading}
+                  sx={{
+                    textTransform: "none",
+                    fontWeight: 700,
+                    borderColor: "var(--border-color)",
+                    borderRadius: "50px",
+                    px: 2.5,
+                    py: 0.8,
+                    transition: "all 0.3s ease",
+                    "&:hover": { borderColor: "var(--color-error-dark, #dc2626)", background: "rgba(220, 38, 38, 0.05)", transform: "translateY(-1px)" }
+                  }}
+                >
+                  Discard Changes
+                </Button>
+              )}
+              <Button
+                startIcon={isEditing ? <Save /> : <Edit />}
+                variant="outlined"
+                size="small"
+                onClick={() => isEditing ? handleSave() : setIsEditing(true)}
+                disabled={loading}
+                sx={{
+                  textTransform: "none",
+                  fontWeight: 700,
+                  borderColor: "var(--border-color)",
+                  color: "var(--color-primary)",
+                  borderRadius: "50px",
+                  px: 2.5,
+                  py: 0.8,
+                  transition: "all 0.3s ease",
+                  "&:hover": { borderColor: "var(--color-primary)", background: "rgba(2, 132, 199, 0.05)", transform: "translateY(-1px)" }
+                }}
+              >
+                {loading ? "Saving..." : isEditing ? "Save Changes" : "Edit Info"}
+              </Button>
             </Box>
           </Paper>
         </Box>

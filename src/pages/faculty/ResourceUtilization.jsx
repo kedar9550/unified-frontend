@@ -856,7 +856,7 @@ export default function ResourceUtilization() {
 
             {/* Right: Status Badge */}
             <Chip
-              label={data.status}
+              label={data.status === "Pending at HOD" ? "Pending at HOD / Dean" : data.status}
               icon={
                 data.status === "Approved" ? (
                   <span style={{ color: "#10b981", fontWeight: "bold", marginRight: "2px" }}>✓</span>
@@ -991,13 +991,13 @@ export default function ResourceUtilization() {
                   }}>
                     {/\.(jpg|jpeg|png|gif|webp)$/i.test(data.proof || "") ? (
                       <img
-                        src={previewBlobUrl || fileUrl}
+                        src={previewBlobUrl || fileUrl || undefined}
                         alt="Proof Document"
                         style={{ width: "100%", height: "100%", objectFit: "contain" }}
                       />
                     ) : (
                       <iframe
-                        src={previewBlobUrl ? `${previewBlobUrl}#toolbar=0&navpanes=0&scrollbar=0` : ""}
+                        src={previewBlobUrl ? `${previewBlobUrl}#toolbar=0&navpanes=0&scrollbar=0` : (fileUrl || undefined)}
                         width="100%"
                         height="100%"
                         style={{ border: "none" }}

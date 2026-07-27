@@ -172,6 +172,9 @@ export default function Login({ defaultSignUp = false }) {
   const [isOtpVerified, setIsOtpVerified] = useState(false);
   const [otpDigits, setOtpDigits] = useState(['', '', '', '', '', '']);
   const [departments, setDepartments] = useState([]);
+  const [allPublicDepartments, setAllPublicDepartments] = useState([]);
+  const [isServingDeptSelectOpen, setIsServingDeptSelectOpen] = useState(false);
+  const servingDeptSelectRef = useRef(null);
 
   const resetSignUpState = () => {
     setSignupStep(1);
@@ -194,15 +197,18 @@ export default function Login({ defaultSignUp = false }) {
     setSignupExpiry('');
     setOtpDigits(['', '', '', '', '', '']);
     setDepartments([]);
+    setAllPublicDepartments([]);
+    setIsServingDeptSelectOpen(false);
     setSignupMsg({ text: '', type: '' });
   };
 
   useEffect(() => {
-    if (isOtpVerified && (signupDetails.department || "").toLowerCase().trim() === "freshman engineering") {
+    if (isOtpVerified) {
       API.get("/api/employees/public-departments")
         .then(res => {
           if (res.data?.success) {
             const allDepts = res.data.data || [];
+            setAllPublicDepartments(allDepts);
             const fedDepts = allDepts.filter(dept => 
               /^(fed-1|fed-2|fed-3|fed-4|fed-5)$/i.test(dept.name.trim()) ||
               /^(fed-1|fed-2|fed-3|fed-4|fed-5)$/i.test(dept.code.trim())
@@ -214,9 +220,7 @@ export default function Login({ defaultSignUp = false }) {
           console.error("Error fetching departments:", err);
         });
     }
-  }, [isOtpVerified, signupDetails.department]);
-
-  const showCoreDept = (signupDetails.department || "").toLowerCase().trim() === "freshman engineering";
+  }, [isOtpVerified]);
 
   // ── login state ──
   const [loginData, setLoginData] = useState({ id: '', password: '' });
@@ -284,6 +288,9 @@ export default function Login({ defaultSignUp = false }) {
       }
       if (deptSelectRef.current && !deptSelectRef.current.contains(e.target)) {
         setIsDeptSelectOpen(false);
+      }
+      if (servingDeptSelectRef.current && !servingDeptSelectRef.current.contains(e.target)) {
+        setIsServingDeptSelectOpen(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -409,11 +416,13 @@ export default function Login({ defaultSignUp = false }) {
       setSignupMsg({ text: "Please enter a valid email address", type: "error" });
       return;
     }
-    if ((signupDetails.department || "").toLowerCase().trim() === "freshman engineering") {
-      if (!signupData.coreDepartment) {
-        setSignupMsg({ text: "Parent Department is required for Freshman Engineering", type: "error" });
-        return;
-      }
+    if (!signupDetails.department) {
+      setSignupMsg({ text: "Serving Department is required", type: "error" });
+      return;
+    }
+    if (!signupData.coreDepartment) {
+      setSignupMsg({ text: "Parent Department is required", type: "error" });
+      return;
     }
     if (!signupData.password) {
       setSignupMsg({ text: "Password is required", type: "error" });
@@ -862,48 +871,81 @@ export default function Login({ defaultSignUp = false }) {
                       <input id="signup-phone" type="text" placeholder=" " value={signupDetails.phone} disabled title={signupDetails.phone} />
                       <label className="auth-label" htmlFor="signup-phone">Mobile No</label>
                     </div>
-                    <div className="auth-field" data-has-value={true}>
-                      <input id="signup-dept" type="text" placeholder=" " value={signupDetails.department} disabled title={signupDetails.department} />
-                      <label className="auth-label" htmlFor="signup-dept">Serving Department</label>
-                    </div>
-                    {showCoreDept && (
+                    <div 
+                      ref={servingDeptSelectRef}
+                      className={`auth-select-wrap ${isServingDeptSelectOpen ? 'is-open' : ''}`} 
+                      data-has-value={!!signupDetails.department}
+                    >
                       <div 
-                        ref={deptSelectRef}
-                        className={`auth-select-wrap ${isDeptSelectOpen ? 'is-open' : ''}`} 
-                        data-has-value={!!signupData.coreDepartment}
+                        className="custom-select-trigger"
+                        onClick={() => !signupLoading && setIsServingDeptSelectOpen(!isServingDeptSelectOpen)}
                       >
-                        <div 
-                          className="custom-select-trigger"
-                          onClick={() => !signupLoading && setIsDeptSelectOpen(!isDeptSelectOpen)}
-                        >
-                          <span>{signupData.coreDepartment || ""}</span>
-                          <span className="custom-select-arrow"></span>
-                        </div>
-                        <label className="auth-label">Parent Department</label>
-                        
-                        {isDeptSelectOpen && (
-                          <div className="custom-select-options">
-                            {departments.map((dept) => (
-                              <div
-                                key={dept.code || dept.name}
-                                className={`custom-option ${signupData.coreDepartment === dept.name ? 'is-selected' : ''}`}
-                                onClick={() => {
-                                  setSignupData({ ...signupData, coreDepartment: dept.name });
-                                  setIsDeptSelectOpen(false);
-                                }}
-                              >
-                                {dept.name}
-                              </div>
-                            ))}
-                          </div>
-                        )}
+                        <span>{signupDetails.department || "\u00a0"}</span>
+                        <span className="custom-select-arrow"></span>
                       </div>
-                    )}
+                      <label className="auth-label">Serving Department</label>
+                      
+                      {isServingDeptSelectOpen && (
+                        <div className="custom-select-options">
+                          {allPublicDepartments.map((dept) => (
+                            <div
+                              key={dept.code || dept.name}
+                              className={`custom-option ${signupDetails.department === dept.name ? 'is-selected' : ''}`}
+                              onClick={() => {
+                                const newDept = dept.name;
+                                setSignupDetails(prev => ({ ...prev, department: newDept }));
+                                if (newDept.toLowerCase().trim() !== "freshman engineering") {
+                                  setSignupData(prev => ({ ...prev, coreDepartment: '' }));
+                                }
+                                setIsServingDeptSelectOpen(false);
+                              }}
+                            >
+                              {dept.name}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    <div 
+                      ref={deptSelectRef}
+                      className={`auth-select-wrap ${isDeptSelectOpen ? 'is-open' : ''}`} 
+                      data-has-value={!!signupData.coreDepartment}
+                    >
+                      <div 
+                        className="custom-select-trigger"
+                        onClick={() => !signupLoading && setIsDeptSelectOpen(!isDeptSelectOpen)}
+                      >
+                        <span>{signupData.coreDepartment || "\u00a0"}</span>
+                        <span className="custom-select-arrow"></span>
+                      </div>
+                      <label className="auth-label">Parent Department</label>
+                      
+                      {isDeptSelectOpen && (
+                        <div className="custom-select-options">
+                          {(
+                            (signupDetails.department || "").toLowerCase().trim() === "freshman engineering"
+                              ? departments
+                              : allPublicDepartments
+                          ).map((dept) => (
+                            <div
+                              key={dept.code || dept.name}
+                              className={`custom-option ${signupData.coreDepartment === dept.name ? 'is-selected' : ''}`}
+                              onClick={() => {
+                                setSignupData({ ...signupData, coreDepartment: dept.name });
+                                setIsDeptSelectOpen(false);
+                              }}
+                            >
+                              {dept.name}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                     <div className="auth-field" data-has-value={true}>
                       <input id="signup-desig" type="text" placeholder=" " value={signupDetails.designation} disabled title={signupDetails.designation} />
                       <label className="auth-label" htmlFor="signup-desig">Designation</label>
                     </div>
-                    <div className={`auth-field ${showCoreDept ? '' : 'field-full'}`} data-has-value={!!signupData.email}>
+                    <div className="auth-field" data-has-value={!!signupData.email}>
                       <input
                         id="signup-email"
                         type="email"
