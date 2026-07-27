@@ -646,8 +646,8 @@ const AppraisalReportDetail = () => {
       r24: (selectedAppraisal.research?.patents?.items || []).reduce((s, p) => s + (Number(p.pointsClaimed) || 0), 0),
       r25: (selectedAppraisal.research?.novelProducts?.items || []).reduce((s, p) => s + (Number(p.pointsClaimed) || 0), 0),
       r26: (selectedAppraisal.research?.projectsConsultancies?.items || []).reduce((s, p) => s + (Number(p.pointsClaimed) || 0), 0),
-      r27: Number(selectedAppraisal.research?.scopusCitationsScore || selectedAppraisal.research?.scopusCitations || 0),
-      r28: Number(selectedAppraisal.research?.scopusHIndexScore || selectedAppraisal.research?.scopusHIndex || 0),
+      r27: Number(selectedAppraisal.research?.scopusCitationScore || 0),
+      r28: Number(selectedAppraisal.research?.scopusHIndexScore || 0),
       researchTotal: Number(selectedAppraisal.research?.totalClaimed || 0)
     },
     valueAddition: {
@@ -1048,7 +1048,8 @@ const AppraisalReportDetail = () => {
                           <TableRow>
                             <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 1 }}>Course Name</TableCell>
                             <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 1 }}>Sem-Branch-Sec</TableCell>
-                            <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 1 }} align="center">Students</TableCell>
+                            <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 1 }} align="center">Total Students</TableCell>
+                            <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 1 }} align="center">Given Students</TableCell>
                             <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 1 }} align="center">Feedback %</TableCell>
                             <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 1 }} align="center">Points claimed</TableCell>
                           </TableRow>
@@ -1060,7 +1061,8 @@ const AppraisalReportDetail = () => {
                                 <TableRow key={i}>
                                   <TableCell sx={{ fontWeight: 600, color: "var(--text-primary)" }}>{c.courseName}</TableCell>
                                   <TableCell sx={{ color: "var(--text-primary)" }}>{c.secBranchSem}</TableCell>
-                                  <TableCell align="center" sx={{ color: "var(--text-primary)" }}>{c.noOfStudents}</TableCell>
+                                  <TableCell align="center" sx={{ color: "var(--text-primary)" }}>{c.totalStudents || c.noOfStudents}</TableCell>
+                                  <TableCell align="center" sx={{ color: "var(--text-primary)" }}>{c.givenStudents || ''}</TableCell>
                                   <TableCell align="center" sx={{ color: "var(--text-primary)" }}>{c.feedbackPercentage}%</TableCell>
                                   <TableCell align="center" sx={{ fontWeight: 800, color: "var(--color-primary)" }}>{c.pointsClaimed}</TableCell>
                                 </TableRow>
@@ -1071,10 +1073,11 @@ const AppraisalReportDetail = () => {
                                     Overall Performance
                                   </Box>
                                 </TableCell>
-                                <TableCell align="center" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>{selectedAppraisal.teaching.feedback.courses.reduce((sum, c) => sum + (Number(c.noOfStudents) || 0), 0)}</TableCell>
+                                <TableCell align="center" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>{selectedAppraisal.teaching.feedback.courses.reduce((sum, c) => sum + (Number(c.totalStudents || c.noOfStudents) || 0), 0)}</TableCell>
+                                <TableCell align="center" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>{selectedAppraisal.teaching.feedback.courses.reduce((sum, c) => sum + (Number(c.givenStudents) || 0), 0)}</TableCell>
                                 <TableCell align="center" sx={{ fontWeight: 900, color: "var(--color-primary)" }}>
-                                  {(selectedAppraisal.teaching.feedback.courses.reduce((sum, c) => sum + (Number(c.noOfStudents) || 0), 0) > 0
-                                    ? (selectedAppraisal.teaching.feedback.courses.reduce((sum, c) => sum + ((Number(c.noOfStudents) || 0) * (Number(c.feedbackPercentage) || 0)), 0) / selectedAppraisal.teaching.feedback.courses.reduce((sum, c) => sum + (Number(c.noOfStudents) || 0), 0)).toFixed(2)
+                                  {(selectedAppraisal.teaching.feedback.courses.reduce((sum, c) => sum + (Number(c.totalStudents || c.noOfStudents) || 0), 0) > 0
+                                    ? (selectedAppraisal.teaching.feedback.courses.reduce((sum, c) => sum + ((Number(c.totalStudents || c.noOfStudents) || 0) * (Number(c.feedbackPercentage) || 0)), 0) / selectedAppraisal.teaching.feedback.courses.reduce((sum, c) => sum + (Number(c.totalStudents || c.noOfStudents) || 0), 0)).toFixed(2)
                                     : "0.00")}%
                                 </TableCell>
                                 <TableCell align="center" sx={{ fontWeight: 900, color: "var(--color-primary)" }}>{selectedAppraisal.teaching.feedback.averagePoints}</TableCell>
