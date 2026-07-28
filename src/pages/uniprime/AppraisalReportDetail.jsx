@@ -507,7 +507,19 @@ const AppraisalReportDetail = () => {
 
         const confRes = await axiosInstance.get(`/api/appraisal/config/${appr.academicYearId._id || appr.academicYearId}`);
         if (confRes.data && confRes.data.success) {
-          setAppraisalConfig(confRes.data.data);
+          const conf = confRes.data.data;
+          setAppraisalConfig(conf);
+
+          const initPoints = {};
+          appr.resourceUtilizationDetails?.forEach(r => {
+              const role = (r.activityType || '').toLowerCase();
+              if (role.includes('participant') || role.includes('participated')) {
+                  initPoints[r._id] = r.awardedPoints !== undefined && r.awardedPoints !== null 
+                      ? r.awardedPoints 
+                      : calculateResourceUtilizationPoints(r, conf);
+              }
+          });
+          setAwardedResUtilPoints(initPoints);
         }
       }
     } catch (err) {
