@@ -133,18 +133,24 @@ export default function ResourceUtilization() {
 
   const [isDocumentRemoved, setIsDocumentRemoved] = useState(false);
 
+  const formRole = (form.activityType || '').toLowerCase();
+  const showSessionsField = formRole.includes("resource person") || formRole.includes("resourceperson");
+  const showDaysField = formRole.includes("participant") || formRole.includes("participated");
+  const showOrganizedDaysField = !showSessionsField && !showDaysField;
+
+
   const [editingId, setEditingId] = useState(null); // stores ID when editing
   const [form, setForm] = useState({
     academicYear: "",
     activityCategory: "",
     activityType: "",
     organizationName: "",
-    fromDate: "",
-    toDate: "",
-    duration: "",
+    eventStartDate: "",
+    eventEndDate: "",
+    numberOfDaysOrganized: "",
     remarks: "",
-    sessionsConducted: "",
-    daysParticipated: "",
+    numberOfSessions: "",
+    numberOfDaysParticipated: "",
     courseFdpName: "",
     organizingInstitutionCategory: "",
     location: "",
@@ -194,18 +200,7 @@ export default function ResourceUtilization() {
     fetchActivities();
   }, [selectedYear]);
 
-  // Recalculate duration automatically when fromDate/toDate change
-  useEffect(() => {
-    if (form.fromDate && form.toDate) {
-      const start = new Date(form.fromDate);
-      const end = new Date(form.toDate);
-      if (start <= end) {
-        const diffTime = Math.abs(end - start);
-        const days = Math.max(0, Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1);
-        setForm(prev => ({ ...prev, duration: String(days) }));
-      }
-    }
-  }, [form.fromDate, form.toDate]);
+  // Recalculate duration automatically (Removed)
 
   const fetchActivities = () => {
     const url = selectedYear
@@ -261,8 +256,7 @@ export default function ResourceUtilization() {
     }));
   };
 
-  const showSessionsField = form.activityType?.includes("Resource Person");
-  const showDaysField = form.activityType?.includes("Participant");
+  
 
   const handleOpenAddModal = () => {
     const activeYearDoc = academicYears[0];
@@ -276,12 +270,12 @@ export default function ResourceUtilization() {
       activityCategory: "",
       activityType: "",
       organizationName: "",
-      fromDate: "",
-      toDate: "",
-      duration: "",
+      eventStartDate: "",
+      eventEndDate: "",
+      numberOfDaysOrganized: "",
       remarks: "",
-      sessionsConducted: "",
-      daysParticipated: "",
+      numberOfSessions: "",
+      numberOfDaysParticipated: "",
       courseFdpName: "",
       organizingInstitutionCategory: "",
       location: "",
@@ -304,12 +298,12 @@ export default function ResourceUtilization() {
       activityCategory: activity.activityCategory,
       activityType: activity.activityType,
       organizationName: activity.organizationName,
-      fromDate: activity.fromDate ? activity.fromDate.substring(0, 10) : "",
-      toDate: activity.toDate ? activity.toDate.substring(0, 10) : "",
-      duration: String(activity.duration),
+      eventStartDate: activity.eventStartDate ? activity.eventStartDate.substring(0, 10) : (activity.fromDate ? activity.fromDate.substring(0, 10) : ""),
+      eventEndDate: activity.eventEndDate ? activity.eventEndDate.substring(0, 10) : (activity.toDate ? activity.toDate.substring(0, 10) : ""),
+      numberOfDaysOrganized: activity.numberOfDaysOrganized !== undefined ? String(activity.numberOfDaysOrganized) : "",
       remarks: activity.remarks || "",
-      sessionsConducted: activity.sessionsConducted !== undefined ? String(activity.sessionsConducted) : "",
-      daysParticipated: activity.daysParticipated !== undefined ? String(activity.daysParticipated) : "",
+      numberOfSessions: (activity.numberOfSessions !== undefined ? String(activity.numberOfSessions) : (activity.sessionsConducted !== undefined ? String(activity.sessionsConducted) : "")),
+      numberOfDaysParticipated: (activity.numberOfDaysParticipated !== undefined ? String(activity.numberOfDaysParticipated) : (activity.daysParticipated !== undefined ? String(activity.daysParticipated) : "")),
       courseFdpName: activity.courseFdpName || "",
       organizingInstitutionCategory: activity.organizingInstitutionCategory || "",
       location: activity.location || "",
@@ -339,8 +333,8 @@ export default function ResourceUtilization() {
   const handleSaveDraft = async () => {
     const isFdpParticipant = form.activityCategory === "FDP" && form.activityType === "FDP Participant";
     const basicFieldsValid = isFdpParticipant
-      ? (form.academicYear && form.activityCategory && form.activityType && form.courseFdpName && form.fromDate && form.toDate)
-      : (form.academicYear && form.activityCategory && form.activityType && form.organizationName && form.fromDate && form.toDate);
+      ? (form.academicYear && form.activityCategory && form.activityType && form.courseFdpName && form.eventStartDate && form.eventEndDate)
+      : (form.academicYear && form.activityCategory && form.activityType && form.organizationName && form.eventStartDate && form.eventEndDate);
 
     if (!basicFieldsValid) {
       toast.error("Please fill all required fields");
@@ -381,12 +375,16 @@ export default function ResourceUtilization() {
       }
     }
 
-    if (showSessionsField && !form.sessionsConducted) {
+    if (showOrganizedDaysField && !form.numberOfDaysOrganized) {
+      toast.error("Number of Days Organized is required");
+      return;
+    }
+    if (showSessionsField && !form.numberOfSessions) {
       toast.error("Number of Sessions Conducted is required for Resource Person role");
       return;
     }
 
-    if (showDaysField && !form.daysParticipated) {
+    if (showDaysField && !form.numberOfDaysParticipated) {
       toast.error("Number of Days Participated is required for Participant role");
       return;
     }
@@ -398,8 +396,8 @@ export default function ResourceUtilization() {
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    const from = new Date(form.fromDate);
-    const to = new Date(form.toDate);
+    const from = new Date(form.eventStartDate);
+    const to = new Date(form.eventEndDate);
 
     if (from > today || to > today) {
       toast.error("Activity dates cannot be in the future");
@@ -411,13 +409,7 @@ export default function ResourceUtilization() {
       return;
     }
 
-    const durationDays = parseInt(form.duration, 10) || 0;
-    if (form.activityCategory === "STTP" || form.activityCategory === "Refresher Course") {
-      if (durationDays < 10) {
-        toast.error(`${form.activityCategory} must have a minimum duration of 10 days.`);
-        return;
-      }
-    } else if (form.activityCategory === "FDP" || form.activityCategory === "SYMPOSIUM") {
+     else if (form.activityCategory === "FDP" || form.activityCategory === "SYMPOSIUM") {
       if (durationDays < 5) {
         toast.error(`${form.activityCategory} must have a minimum duration of 5 days.`);
         return;
@@ -430,9 +422,11 @@ export default function ResourceUtilization() {
       fd.append("academicYear", form.academicYear);
       fd.append("activityCategory", form.activityCategory);
       fd.append("activityType", form.activityType);
-      fd.append("fromDate", form.fromDate);
-      fd.append("toDate", form.toDate);
-      fd.append("duration", form.duration);
+      fd.append("eventStartDate", form.eventStartDate);
+      fd.append("eventEndDate", form.eventEndDate);
+      if (showOrganizedDaysField) {
+        fd.append("numberOfDaysOrganized", form.numberOfDaysOrganized);
+      }
       fd.append("remarks", form.remarks || "");
 
       if (isFdpParticipant) {
@@ -456,11 +450,11 @@ export default function ResourceUtilization() {
         fd.append("organizationName", form.organizationName);
       }
 
-      if (showSessionsField && form.sessionsConducted) {
-        fd.append("sessionsConducted", form.sessionsConducted);
+      if (showSessionsField && form.numberOfSessions) {
+        fd.append("numberOfSessions", form.numberOfSessions);
       }
-      if (showDaysField && form.daysParticipated) {
-        fd.append("daysParticipated", form.daysParticipated);
+      if (showDaysField && form.numberOfDaysParticipated) {
+        fd.append("numberOfDaysParticipated", form.numberOfDaysParticipated);
       }
 
       if (proofFile) {
@@ -653,8 +647,10 @@ export default function ResourceUtilization() {
               <TableBody>
                 {activitiesList.map((activity, i) => {
                   const isDraft = activity.status === 'Draft';
-                  const fromDateFormatted = new Date(activity.fromDate).toLocaleDateString("en-IN", { day: '2-digit', month: '2-digit', year: 'numeric' });
-                  const toDateFormatted = new Date(activity.toDate).toLocaleDateString("en-IN", { day: '2-digit', month: '2-digit', year: 'numeric' });
+                  const startDate = activity.eventStartDate || activity.fromDate;
+    const endDate = activity.eventEndDate || activity.toDate;
+    const fromDateFormatted = startDate ? new Date(startDate).toLocaleDateString("en-IN", { day: '2-digit', month: '2-digit', year: 'numeric' }) : "";
+    const toDateFormatted = endDate ? new Date(endDate).toLocaleDateString("en-IN", { day: '2-digit', month: '2-digit', year: 'numeric' }) : "";
                   const statusStyle = getStatusColor(activity.status);
 
                   return (
@@ -664,7 +660,21 @@ export default function ResourceUtilization() {
                       <TableCell sx={{ color: "var(--text-secondary)", py: 2 }}>{activity.activityType}</TableCell>
                       <TableCell sx={{ color: "var(--text-secondary)", py: 2 }}>{activity.organizationName}</TableCell>
                       <TableCell sx={{ color: "var(--text-secondary)", py: 2 }}>{fromDateFormatted} - {toDateFormatted}</TableCell>
-                      <TableCell sx={{ color: "var(--text-secondary)", py: 2 }}>{activity.duration} Days</TableCell>
+                      <TableCell sx={{ color: "var(--text-secondary)", py: 2 }}>
+        {(() => {
+          const role = (activity.activityType || '').toLowerCase();
+          if (role.includes('resource person') || role.includes('resourceperson')) {
+            const num = activity.numberOfSessions || activity.sessionsConducted || 0;
+            return `${num} session${num === 1 ? '' : 's'}`;
+          } else if (role.includes('participant') || role.includes('participated')) {
+            const num = activity.numberOfDaysParticipated || activity.daysParticipated || activity.duration || 0;
+            return `${num} day${num === 1 ? '' : 's'}`;
+          } else {
+            const num = activity.numberOfDaysOrganized || activity.duration || 0;
+            return `${num} day${num === 1 ? '' : 's'}`;
+          }
+        })()}
+      </TableCell>
                       <TableCell sx={{ py: 2 }}>
                         <Typography
                           variant="body2"
@@ -738,7 +748,7 @@ export default function ResourceUtilization() {
       const category = (data.activityCategory || "").toLowerCase();
       const sessions = Number(data.sessionsConducted) || 0;
       // Use server-auto-calculated duration as authoritative; daysParticipated is manually entered fallback
-      const days = Number(data.duration) || Number(data.daysParticipated) || 0;
+      const days = Number(data.numberOfDaysParticipated) || Number(data.daysParticipated) || Number(data.duration) || 0;
 
       if (role.includes("resource person") || role.includes("resourceperson")) {
         score = sessions * 2;
@@ -952,8 +962,22 @@ export default function ResourceUtilization() {
 
                   {/* Duration & Days Participated */}
                   <Box sx={{ display: "grid", gridTemplateColumns: "180px 1fr", gap: 2 }}>
-                    <Typography sx={{ fontWeight: 600, color: "#475569", fontSize: "0.9rem" }}>Duration (Days)</Typography>
-                    <Typography sx={{ color: "#0f172a", fontSize: "0.9rem", fontWeight: 700 }}>{data.duration || 0} Days</Typography>
+                    <Typography sx={{ fontWeight: 600, color: "#475569", fontSize: "0.9rem" }}>Duration</Typography>
+                    <Typography sx={{ color: "#0f172a", fontSize: "0.9rem", fontWeight: 700 }}>
+                      {(() => {
+                        const role = (data.activityType || '').toLowerCase();
+                        if (role.includes('resource person') || role.includes('resourceperson')) {
+                          const num = data.numberOfSessions || data.sessionsConducted || 0;
+                          return `${num} session${num === 1 ? '' : 's'}`;
+                        } else if (role.includes('participant') || role.includes('participated')) {
+                          const num = data.numberOfDaysParticipated || data.daysParticipated || data.duration || 0;
+                          return `${num} day${num === 1 ? '' : 's'}`;
+                        } else {
+                          const num = data.numberOfDaysOrganized || data.duration || 0;
+                          return `${num} day${num === 1 ? '' : 's'}`;
+                        }
+                      })()}
+                    </Typography>
                     
                     {data.activityType?.includes("Participant") && data.daysParticipated && (
                       <>
@@ -1322,19 +1346,19 @@ export default function ResourceUtilization() {
               fullWidth
               value={form.organizationName}
               onChange={setVal("organizationName")}
-              placeholder="Enter Name of Event or Organization"
+            placeholder="Enter Name of Event or Organization"
             />
           </Box>
         )}
 
         <Box>
-          <Typography sx={labelStyle}>From Date: *</Typography>
+          <Typography sx={labelStyle}>Event Start Date: *</Typography>
           <TextField
             size="small"
             fullWidth
             type="date"
-            value={form.fromDate}
-            onChange={setVal("fromDate")}
+            value={form.eventStartDate}
+            onChange={setVal("eventStartDate")}
             slotProps={{
               inputLabel: { shrink: true },
               htmlInput: { max: new Date().toISOString().split("T")[0] }
@@ -1343,13 +1367,13 @@ export default function ResourceUtilization() {
         </Box>
 
         <Box>
-          <Typography sx={labelStyle}>To Date: *</Typography>
+          <Typography sx={labelStyle}>Event End Date: *</Typography>
           <TextField
             size="small"
             fullWidth
             type="date"
-            value={form.toDate}
-            onChange={setVal("toDate")}
+            value={form.eventEndDate}
+            onChange={setVal("eventEndDate")}
             slotProps={{
               inputLabel: { shrink: true },
               htmlInput: { max: new Date().toISOString().split("T")[0] }
@@ -1357,16 +1381,19 @@ export default function ResourceUtilization() {
           />
         </Box>
 
-        <Box>
-          <Typography sx={labelStyle}>Duration (Days): *</Typography>
-          <TextField
-            size="small"
-            fullWidth
-            disabled
-            value={form.duration || ""}
-            placeholder="Calculated automatically"
-          />
-        </Box>
+        {showOrganizedDaysField && (
+          <Box>
+            <Typography sx={labelStyle}>Number of Days Organized: *</Typography>
+            <TextField
+              size="small"
+              fullWidth
+              type="number"
+              value={form.numberOfDaysOrganized}
+              onChange={setVal("numberOfDaysOrganized")}
+              placeholder="e.g. 5"
+            />
+          </Box>
+        )}
 
         {showSessionsField && (
           <Box>
@@ -1375,8 +1402,8 @@ export default function ResourceUtilization() {
               size="small"
               fullWidth
               type="number"
-              value={form.sessionsConducted}
-              onChange={setVal("sessionsConducted")}
+              value={form.numberOfSessions}
+              onChange={setVal("numberOfSessions")}
               placeholder="e.g. 3"
             />
           </Box>
@@ -1389,8 +1416,8 @@ export default function ResourceUtilization() {
               size="small"
               fullWidth
               type="number"
-              value={form.daysParticipated}
-              onChange={setVal("daysParticipated")}
+              value={form.numberOfDaysParticipated}
+              onChange={setVal("numberOfDaysParticipated")}
               placeholder="e.g. 5"
             />
           </Box>
