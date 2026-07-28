@@ -1517,6 +1517,14 @@ const SelfAppraisal = () => {
     return pts;
   };
 
+  const getResourceUtilizationPoints = (r) => {
+    const appraisalItem = appraisal?.valueAddition?.resourceUtilization?.items?.find(i => i.eventId?.toString() === r._id?.toString());
+    if (appraisalItem?.awardedPoints !== undefined && appraisalItem?.awardedPoints !== null) {
+      return appraisalItem.awardedPoints;
+    }
+    return calculateResourceUtilizationPoints(r, appraisalConfig);
+  };
+
   const calculateContributionPoints = (item, config) => {
     const expPointsConf = config?.valueAddition?.expertisePoints || {
       memberBOS: 5,
@@ -1696,7 +1704,8 @@ const SelfAppraisal = () => {
     const R_sum = Number(appraisal.research?.totalClaimed) || 0;
 
     // Compute V live from sub-sections (each capped at 10) so it always reflects latest calculations
-    const resUtilTotal = resourceUtilizationDetails?.reduce((sum, r) => r.status !== 'Rejected' ? sum + calculateResourceUtilizationPoints(r, appraisalConfig) : sum, 0) || 0;
+    // Helper gets awardedPoints or falls back to calculateResourceUtilizationPoints
+    const resUtilTotal = resourceUtilizationDetails?.reduce((sum, r) => r.status !== 'Rejected' ? sum + getResourceUtilizationPoints(r) : sum, 0) || 0;
     const contribTotal = contributionDetails?.reduce((sum, r) => r.status !== 'Rejected' ? sum + calculateContributionPoints(r, appraisalConfig) : sum, 0) || 0;
     const cappedResUtil = Math.min(10, resUtilTotal);
     const cappedContrib = Math.min(10, contribTotal);
@@ -3769,16 +3778,20 @@ const SelfAppraisal = () => {
                                             </TableCell>
                                             <TableCell sx={{ color: "var(--text-primary)" }}>{activity.activityType}</TableCell>
                                             <TableCell align="center" sx={{ fontWeight: 800, color: "var(--color-primary)" }}>
-                                              {activity.awardedPoints !== undefined && activity.awardedPoints !== null ? (
-                                                <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.5 }}>
-                                                    <span>{activity.awardedPoints}</span>
-                                                    <Typography variant="caption" sx={{ color: 'var(--text-secondary)', fontSize: '0.65rem', lineHeight: 1 }}>
-                                                        (Auto: {calculateResourceUtilizationPoints(activity, appraisalConfig)})
-                                                    </Typography>
-                                                </Box>
-                                              ) : (
-                                                  calculateResourceUtilizationPoints(activity, appraisalConfig)
-                                              )}
+                                              {(() => {
+                                                const appraisalItem = appraisal?.valueAddition?.resourceUtilization?.items?.find(i => i.eventId?.toString() === activity._id?.toString());
+                                                if (appraisalItem?.awardedPoints !== undefined && appraisalItem?.awardedPoints !== null) {
+                                                    return (
+                                                        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                                                            <span>{appraisalItem.awardedPoints}</span>
+                                                            <Typography variant="caption" sx={{ color: 'var(--text-secondary)', fontSize: '0.65rem' }}>
+                                                                (Auto: {calculateResourceUtilizationPoints(activity, appraisalConfig)})
+                                                            </Typography>
+                                                        </Box>
+                                                    );
+                                                }
+                                                return getResourceUtilizationPoints(activity);
+                                              })()}
                                             </TableCell>
                                             <TableCell>
                                               <Chip
@@ -3832,7 +3845,7 @@ const SelfAppraisal = () => {
                                           </Box>
                                         </TableCell>
                                         <TableCell align="center" sx={{ fontWeight: 800, color: "var(--color-primary)", fontSize: "0.95rem" }}>
-                                          {Math.min(10, resourceUtilizationDetails.reduce((sum, r) => r.status !== 'Rejected' ? sum + calculateResourceUtilizationPoints(r, appraisalConfig) : sum, 0))}
+                                          {Math.min(10, resourceUtilizationDetails.reduce((sum, r) => r.status !== 'Rejected' ? sum + getResourceUtilizationPoints(r) : sum, 0))}
                                         </TableCell>
                                         <TableCell colSpan={2}></TableCell>
                                       </TableRow>

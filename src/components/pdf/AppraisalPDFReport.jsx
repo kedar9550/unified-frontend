@@ -610,7 +610,21 @@ const AppraisalPDFReport = forwardRef(({ data, hideInterpersonal }, ref) => {
                 <tr key={i} style={styles.tr}>
                   <td style={styles.td}>{i + 1}</td>
                   <td style={styles.tdLeft}>{r.courseFdpName || r.event || r.organizationName || r.eventName || r.topic} {r.fromDate ? '(' + new Date(r.fromDate).toLocaleDateString('en-GB') + (r.toDate ? ' to ' + new Date(r.toDate).toLocaleDateString('en-GB') : '') + ')' : (r.date ? '(' + r.date + ')' : '')}</td>
-                  <td style={styles.td}>{r.duration || r.daysParticipated || ''}</td>
+                  <td style={styles.td}>
+                    {(() => {
+                      const role = (r.activityType || '').toLowerCase();
+                      if (role.includes('resource person') || role.includes('resourceperson')) {
+                        const num = r.numberOfSessions || r.sessionsConducted || 0;
+                        return num ? `${num} session${num === 1 ? '' : 's'}` : '';
+                      } else if (role.includes('participant') || role.includes('participated')) {
+                        const num = r.numberOfDaysParticipated || r.daysParticipated || r.duration || 0;
+                        return num ? `${num} day${num === 1 ? '' : 's'}` : '';
+                      } else {
+                        const num = r.numberOfDaysOrganized || r.duration || 0;
+                        return num ? `${num} day${num === 1 ? '' : 's'}` : '';
+                      }
+                    })()}
+                  </td>
                   <td style={styles.td}>{(r.activityCategory || r.natureOfEvent || '') + ' - ' + (r.activityType || r.roleOfFaculty || r.activityRole || '')}</td>
                   <td style={styles.td}>{r.pointsClaimed || ''}</td>
                 </tr>

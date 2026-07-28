@@ -514,8 +514,9 @@ const AppraisalReportDetail = () => {
           appr.resourceUtilizationDetails?.forEach(r => {
               const role = (r.activityType || '').toLowerCase();
               if (role.includes('participant') || role.includes('participated')) {
-                  initPoints[r._id] = r.awardedPoints !== undefined && r.awardedPoints !== null 
-                      ? r.awardedPoints 
+                  const appraisalItem = appr.valueAddition?.resourceUtilization?.items?.find(i => i.eventId?.toString() === r._id?.toString());
+                  initPoints[r._id] = appraisalItem?.awardedPoints !== undefined && appraisalItem?.awardedPoints !== null 
+                      ? appraisalItem.awardedPoints 
                       : calculateResourceUtilizationPoints(r, conf);
               }
           });
@@ -567,8 +568,9 @@ const AppraisalReportDetail = () => {
         appr.resourceUtilizationDetails?.forEach(r => {
             const role = (r.activityType || '').toLowerCase();
             if (role.includes('participant') || role.includes('participated')) {
-                initPoints[r._id] = r.awardedPoints !== undefined && r.awardedPoints !== null 
-                    ? r.awardedPoints 
+                const appraisalItem = appr.valueAddition?.resourceUtilization?.items?.find(i => i.eventId?.toString() === r._id?.toString());
+                initPoints[r._id] = appraisalItem?.awardedPoints !== undefined && appraisalItem?.awardedPoints !== null 
+                    ? appraisalItem.awardedPoints 
                     : calculateResourceUtilizationPoints(r, conf);
             }
         });
@@ -1692,6 +1694,7 @@ const AppraisalReportDetail = () => {
                               <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 1, width: "120px" }}>Duration</TableCell>
                               <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 1, width: "180px" }}>Role</TableCell>
                               <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 1, width: "130px" }} align="center">Points claimed</TableCell>
+                              <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 1, width: "130px" }} align="center">Approved points</TableCell>
                               <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 1, width: "120px" }}>Status</TableCell>
                               <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 1, width: "80px" }} align="center">Actions</TableCell>
                             </TableRow>
@@ -1754,27 +1757,36 @@ const AppraisalReportDetail = () => {
                                         </TableCell>
                                         <TableCell sx={{ color: "var(--text-primary)" }}>{item.activityType}</TableCell>
                                         <TableCell align="center" sx={{ fontWeight: 800, color: "var(--color-primary)" }}>
-                                          {awardedResUtilPoints[item._id] !== undefined ? (
                                             <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.5 }}>
-                                                {selectedAppraisal.status === 'Pending at HOD' && item.status !== 'Rejected' ? (
-                                                    <TextField
-                                                        size="small"
-                                                        type="number"
-                                                        value={awardedResUtilPoints[item._id]}
-                                                        onChange={(e) => setAwardedResUtilPoints(prev => ({ ...prev, [item._id]: e.target.value === '' ? '' : Number(e.target.value) }))}
-                                                        inputProps={{ min: 0, step: 0.1, style: { textAlign: 'center', fontWeight: 'bold', padding: '4px' } }}
-                                                        sx={{ width: '70px', '& .MuiOutlinedInput-root': { borderRadius: '6px' } }}
-                                                    />
-                                                ) : (
-                                                    <span>{awardedResUtilPoints[item._id]}</span>
-                                                )}
-                                                <Typography variant="caption" sx={{ color: 'var(--text-secondary)', fontSize: '0.65rem', lineHeight: 1 }}>
-                                                    Auto: {calculateResourceUtilizationPoints(item, appraisalConfig)}
-                                                </Typography>
+                                                <span>{calculateResourceUtilizationPoints(item, appraisalConfig)}</span>
                                             </Box>
-                                          ) : (
-                                              calculateResourceUtilizationPoints(item, appraisalConfig)
-                                          )}
+                                        </TableCell>
+                                        <TableCell align="center" sx={{ fontWeight: 800, color: "var(--color-primary)" }}>
+                                          {(() => {
+                                              const role = (item.activityType || '').toLowerCase();
+                                              const isParticipated = role.includes('participant') || role.includes('participated');
+                                              const isEditableStatus = ['Submitted to HOD'].includes(selectedAppraisal.status) && item.status !== 'Rejected';
+
+                                              if (awardedResUtilPoints[item._id] !== undefined) {
+                                                  return (
+                                                      <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.5 }}>
+                                                          {isEditableStatus && isParticipated ? (
+                                                              <TextField
+                                                                  size="small"
+                                                                  type="number"
+                                                                  value={awardedResUtilPoints[item._id]}
+                                                                  onChange={(e) => setAwardedResUtilPoints(prev => ({ ...prev, [item._id]: e.target.value === '' ? '' : Number(e.target.value) }))}
+                                                                  inputProps={{ min: 0, step: 0.1, style: { textAlign: 'center', fontWeight: 'bold', padding: '4px' } }}
+                                                                  sx={{ width: '70px', '& .MuiOutlinedInput-root': { borderRadius: '6px' } }}
+                                                              />
+                                                          ) : (
+                                                              <span>{awardedResUtilPoints[item._id]}</span>
+                                                          )}
+                                                      </Box>
+                                                  );
+                                              }
+                                              return <span>{calculateResourceUtilizationPoints(item, appraisalConfig)}</span>;
+                                          })()}
                                         </TableCell>
                                         <TableCell>
                                           <Chip label={item.status} size="small" sx={{ bgcolor: statusColor.bg, color: statusColor.color, fontWeight: 800, borderRadius: "6px" }} />
@@ -1796,7 +1808,7 @@ const AppraisalReportDetail = () => {
                                       {/* Inline Actions Row */}
                                       {(item.status === "Pending" || item.status === "Pending at HOD") ? (
                                         <TableRow sx={{ background: "rgba(232, 160, 0, 0.02)" }}>
-                                          <TableCell colSpan={7} sx={{ py: 1.5 }}>
+                                          <TableCell colSpan={8} sx={{ py: 1.5 }}>
                                             <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5, alignItems: "flex-start", px: 1 }}>
                                               <TextField
                                                 size="small"
@@ -1820,20 +1832,20 @@ const AppraisalReportDetail = () => {
                                   );
                                 })}
                                 <TableRow sx={{ background: "rgba(0, 78, 146, 0.04)" }}>
-                                  <TableCell colSpan={4} sx={{ fontWeight: 800, pl: 2, color: "var(--text-primary)" }}>
+                                  <TableCell colSpan={5} sx={{ fontWeight: 800, pl: 2, color: "var(--text-primary)" }}>
                                     <Box component="span" sx={{ position: "sticky", left: 16, display: "inline-block", whiteSpace: "nowrap" }}>
                                       Self-Assessment Points (Max:10)
                                     </Box>
                                   </TableCell>
                                   <TableCell align="center" sx={{ fontWeight: 900, color: "var(--color-primary)" }}>
-                                    {Math.min(10, selectedAppraisal.resourceUtilizationDetails.reduce((sum, r) => r.status !== 'Rejected' ? sum + calculateResourceUtilizationPoints(r, appraisalConfig) : sum, 0))}
+                                    {Math.min(10, liveResUtilPoints)}
                                   </TableCell>
                                   <TableCell colSpan={2}></TableCell>
                                 </TableRow>
                               </>
                             ) : (
                               <TableRow>
-                                <TableCell colSpan={6} align="center" sx={{ py: 2, color: "var(--text-secondary)", fontStyle: "italic" }}>
+                                <TableCell colSpan={8} align="center" sx={{ py: 2, color: "var(--text-secondary)", fontStyle: "italic" }}>
                                   No resource utilization entries claimed.
                                 </TableCell>
                               </TableRow>
