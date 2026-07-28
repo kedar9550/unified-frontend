@@ -87,9 +87,9 @@ const calculateResourceUtilizationPoints = (r, config) => {
   const activityCat = (r.activityCategory || '').toLowerCase();
 
   if (activityRole.includes('resource person') || activityRole.includes('resourceperson')) {
-    pts = (parseInt(r.sessionsConducted) || 1) * (resourceUtConf.resourcePerson ?? 2);
+    pts = (parseInt(r.numberOfSessions) || parseInt(r.sessionsConducted) || 1) * (resourceUtConf.resourcePerson ?? 2);
   } else if (activityRole.includes('participant') || activityRole.includes('participated')) {
-    pts = (parseInt(r.daysParticipated) || 1) * (resourceUtConf.participated ?? 1);
+    pts = (parseInt(r.numberOfDaysParticipated) || parseInt(r.daysParticipated) || parseInt(r.duration) || 1) * (resourceUtConf.participated ?? 1);
   } else if (activityRole.includes('guest lecture') || activityRole.includes('workshop') || activityRole.includes('event')) {
     pts = resourceUtConf.guestLecture ?? 2;
   } else {
@@ -1737,12 +1737,26 @@ const AppraisalReportDetail = () => {
                                             {/* Removed remarks and proof buttons as they are available in eye-icon dialog */}
                                           </Box>
                                         </TableCell>
-                                        <TableCell sx={{ color: "var(--text-primary)" }}>{item.duration} Days</TableCell>
+                                        <TableCell sx={{ color: "var(--text-primary)" }}>
+                                          {(() => {
+                                            const role = (item.activityType || '').toLowerCase();
+                                            if (role.includes('resource person') || role.includes('resourceperson')) {
+                                              const num = item.numberOfSessions || item.sessionsConducted || 0;
+                                              return `${num} session${num === 1 ? '' : 's'}`;
+                                            } else if (role.includes('participant') || role.includes('participated')) {
+                                              const num = item.numberOfDaysParticipated || item.daysParticipated || item.duration || 0;
+                                              return `${num} day${num === 1 ? '' : 's'}`;
+                                            } else {
+                                              const num = item.numberOfDaysOrganized || item.duration || 0;
+                                              return `${num} day${num === 1 ? '' : 's'}`;
+                                            }
+                                          })()}
+                                        </TableCell>
                                         <TableCell sx={{ color: "var(--text-primary)" }}>{item.activityType}</TableCell>
                                         <TableCell align="center" sx={{ fontWeight: 800, color: "var(--color-primary)" }}>
                                           {awardedResUtilPoints[item._id] !== undefined ? (
                                             <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.5 }}>
-                                                {item.status === 'Pending at HOD' ? (
+                                                {selectedAppraisal.status === 'Pending at HOD' && item.status !== 'Rejected' ? (
                                                     <TextField
                                                         size="small"
                                                         type="number"
