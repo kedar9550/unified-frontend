@@ -1492,8 +1492,8 @@ const SelfAppraisal = () => {
     if (activityRole.includes('resource person') || activityRole.includes('resourceperson')) {
       pts = (parseInt(r.sessionsConducted) || 1) * (resourceUtConf.resourcePerson ?? 2);
     } else if (activityRole.includes('participant') || activityRole.includes('participated')) {
-      // Use server-auto-calculated duration as authoritative; daysParticipated is manually entered fallback
-      const participantDays = Number(r.duration) || parseInt(r.daysParticipated) || 1;
+      // Use manually entered daysParticipated as authoritative; duration is auto-calculated fallback
+      const participantDays = parseInt(r.daysParticipated) || Number(r.duration) || 1;
       pts = participantDays * (resourceUtConf.participated ?? 1);
     } else if (activityRole.includes('guest lecture') || activityRole.includes('workshop') || activityRole.includes('event')) {
       pts = resourceUtConf.guestLecture ?? 2;
@@ -3090,6 +3090,24 @@ const SelfAppraisal = () => {
                                       ))}
                                       {/* Summary / Average Row */}
                                       {(() => {
+                                        const totalSt = appraisal.teaching.feedback.courses.reduce((sum, c) => sum + (Number(c.totalStudents || c.noOfStudents) || 0), 0);
+                                        const givenSt = appraisal.teaching.feedback.courses.reduce((sum, c) => sum + (Number(c.givenStudents) || 0), 0);
+                                        const avgFb = appraisal.teaching.feedback.courses.length > 0 
+                                          ? (appraisal.teaching.feedback.courses.reduce((sum, c) => sum + (Number(c.feedbackPercentage) || 0), 0) / appraisal.teaching.feedback.courses.length).toFixed(2)
+                                          : "0.00";
+                                        return (
+                                          <TableRow sx={{ background: "rgba(0, 78, 146, 0.04)", "&:hover": { bgcolor: "rgba(0, 78, 146, 0.06) !important" } }}>
+                                            <TableCell colSpan={2} sx={{ fontWeight: 800, color: "var(--text-primary)", pl: 2 }}>
+                                              <Box component="span" sx={{ position: "sticky", left: 16, display: "inline-block", whiteSpace: "nowrap" }}>
+                                                Overall Performance
+                                              </Box>
+                                            </TableCell>
+                                            <TableCell align="center" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>{totalSt}</TableCell>
+                                            <TableCell align="center" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>{givenSt}</TableCell>
+                                            <TableCell align="center" sx={{ fontWeight: 900, color: "var(--color-primary)" }}>{avgFb}%</TableCell>
+                                            <TableCell align="center" sx={{ fontWeight: 900, color: "var(--color-primary)", fontSize: "0.95rem" }}>{appraisal.teaching.feedback.averagePoints} Points</TableCell>
+                                          </TableRow>
+                                        );
                                       })()}
                                     </>
                                   ) : (
