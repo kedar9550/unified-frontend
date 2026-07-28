@@ -559,6 +559,11 @@ const SelfAppraisal = () => {
       return;
     }
 
+    if (!eligibility.canSubmit) {
+      toast.error("You do not meet the minimum eligibility criteria to submit this appraisal (check FDP/Coursera & Metric 2.1).");
+      return;
+    }
+
     // Check for rejected items in proctoring, resource utilization, contributions, and administrative responsibilities
     const hasRejectedProc = proctoringDetail?.status === "Rejected";
     const hasRejectedResUt = resourceUtilizationDetails?.some(r => r.status === "Rejected");
@@ -776,7 +781,7 @@ const SelfAppraisal = () => {
   useEffect(() => {
     const initialForm = {};
     const usedBackendRoles = new Set();
-    
+
     ADMINISTRATIVE_ROLES_LIST.forEach((r) => {
       let matchedRole = null;
       if (administrationDetail && administrationDetail.roles) {
@@ -794,12 +799,12 @@ const SelfAppraisal = () => {
     if (administrationDetail && administrationDetail.roles) {
       administrationDetail.roles.forEach((r, idx) => {
         if (!usedBackendRoles.has(r._id || r.roleName) && r.roleName.startsWith("Any other remarkable event / activity coordinator")) {
-           initialForm[`other_custom_${idx}`] = {
-             roleName: r.roleName,
-             isResponsible: r.isResponsible,
-             level: r.level || "",
-             details: r.details || ""
-           };
+          initialForm[`other_custom_${idx}`] = {
+            roleName: r.roleName,
+            isResponsible: r.isResponsible,
+            level: r.level || "",
+            details: r.details || ""
+          };
         }
       });
     }
@@ -847,9 +852,9 @@ const SelfAppraisal = () => {
 
     if (roleId) {
       updatedForm[roleId] = {
-        roleName: adminForm.roleName === "Any other remarkable event / activity coordinator" 
-                  ? "Any other remarkable event / activity coordinator - " + adminForm.customRoleName.trim() 
-                  : adminForm.roleName,
+        roleName: adminForm.roleName === "Any other remarkable event / activity coordinator"
+          ? "Any other remarkable event / activity coordinator - " + adminForm.customRoleName.trim()
+          : adminForm.roleName,
         isResponsible: true,
         level: adminForm.level,
         details: adminForm.details
@@ -977,7 +982,7 @@ const SelfAppraisal = () => {
   };
 
   const handleResUtSaveDraft = async () => {
-    
+
 
     const isFdpParticipant = resUtForm.activityCategory === "FDP" && resUtForm.activityType === "FDP Participant";
     const basicFieldsValid = isFdpParticipant
@@ -2249,7 +2254,7 @@ const SelfAppraisal = () => {
                 variant="contained"
                 startIcon={<Send />}
                 onClick={handleSubmit}
-                disabled={loading || !eligibility.canSubmit || !profileComplete || appraisal.research.scopusCitations === null || appraisal.research.scopusCitations === undefined}
+                disabled={loading}
                 sx={{
                   whiteSpace: "nowrap",
 
@@ -3092,7 +3097,7 @@ const SelfAppraisal = () => {
                                       {(() => {
                                         const totalSt = appraisal.teaching.feedback.courses.reduce((sum, c) => sum + (Number(c.totalStudents || c.noOfStudents) || 0), 0);
                                         const givenSt = appraisal.teaching.feedback.courses.reduce((sum, c) => sum + (Number(c.givenStudents) || 0), 0);
-                                        const avgFb = appraisal.teaching.feedback.courses.length > 0 
+                                        const avgFb = appraisal.teaching.feedback.courses.length > 0
                                           ? (appraisal.teaching.feedback.courses.reduce((sum, c) => sum + (Number(c.feedbackPercentage) || 0), 0) / appraisal.teaching.feedback.courses.length).toFixed(2)
                                           : "0.00";
                                         return (
@@ -3731,9 +3736,9 @@ const SelfAppraisal = () => {
                                         const statusStyle = getStatusColor(activity.status);
                                         const isEditable = activity.status === 'Draft' || activity.status === 'Rejected';
                                         const startDate = activity.eventStartDate || activity.fromDate;
-    const endDate = activity.eventEndDate || activity.toDate;
-    const fromDateFormatted = startDate ? new Date(startDate).toLocaleDateString("en-IN", { day: '2-digit', month: '2-digit', year: 'numeric' }) : "";
-    const toDateFormatted = endDate ? new Date(endDate).toLocaleDateString("en-IN", { day: '2-digit', month: '2-digit', year: 'numeric' }) : "";
+                                        const endDate = activity.eventEndDate || activity.toDate;
+                                        const fromDateFormatted = startDate ? new Date(startDate).toLocaleDateString("en-IN", { day: '2-digit', month: '2-digit', year: 'numeric' }) : "";
+                                        const toDateFormatted = endDate ? new Date(endDate).toLocaleDateString("en-IN", { day: '2-digit', month: '2-digit', year: 'numeric' }) : "";
 
                                         return (
                                           <TableRow key={activity._id || i} sx={{ "&:hover": { bgcolor: "var(--bg-hover)" } }}>
@@ -3747,20 +3752,20 @@ const SelfAppraisal = () => {
                                               )}
                                             </TableCell>
                                             <TableCell sx={{ color: "var(--text-primary)" }}>
-        {(() => {
-          const role = (activity.activityType || '').toLowerCase();
-          if (role.includes('resource person') || role.includes('resourceperson')) {
-            const num = activity.numberOfSessions || activity.sessionsConducted || 0;
-            return `${num} session${num === 1 ? '' : 's'}`;
-          } else if (role.includes('participant') || role.includes('participated')) {
-            const num = activity.numberOfDaysParticipated || activity.daysParticipated || activity.duration || 0;
-            return `${num} day${num === 1 ? '' : 's'}`;
-          } else {
-            const num = activity.numberOfDaysOrganized || activity.duration || 0;
-            return `${num} day${num === 1 ? '' : 's'}`;
-          }
-        })()}
-      </TableCell>
+                                              {(() => {
+                                                const role = (activity.activityType || '').toLowerCase();
+                                                if (role.includes('resource person') || role.includes('resourceperson')) {
+                                                  const num = activity.numberOfSessions || activity.sessionsConducted || 0;
+                                                  return `${num} session${num === 1 ? '' : 's'}`;
+                                                } else if (role.includes('participant') || role.includes('participated')) {
+                                                  const num = activity.numberOfDaysParticipated || activity.daysParticipated || activity.duration || 0;
+                                                  return `${num} day${num === 1 ? '' : 's'}`;
+                                                } else {
+                                                  const num = activity.numberOfDaysOrganized || activity.duration || 0;
+                                                  return `${num} day${num === 1 ? '' : 's'}`;
+                                                }
+                                              })()}
+                                            </TableCell>
                                             <TableCell sx={{ color: "var(--text-primary)" }}>{activity.activityType}</TableCell>
                                             <TableCell align="center" sx={{ fontWeight: 800, color: "var(--color-primary)" }}>
                                               {calculateResourceUtilizationPoints(activity, appraisalConfig)}
@@ -4672,7 +4677,7 @@ const SelfAppraisal = () => {
                   </Box>
                 ) : (
                   <FileField
-                    label="Supporting Proof (PDF/Image, Max 500KB) *"
+                    label="Supporting Proof (PDF/Image, Max 200KB) *"
                     name="proof"
                     onChange={(e) => setResUtProof(e.target.files[0])}
                   />
@@ -5194,7 +5199,7 @@ const SelfAppraisal = () => {
                   </Box>
                 ) : (
                   <FileField
-                    label="Supporting Proof (PDF/Image, Max 500KB) *"
+                    label="Supporting Proof (PDF/Image, Max 200KB) *"
                     name="proof"
                     onChange={(e) => setContProof(e.target.files[0])}
                   />

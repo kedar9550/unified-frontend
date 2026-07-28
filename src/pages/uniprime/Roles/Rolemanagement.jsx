@@ -75,6 +75,7 @@ const RoleManagement = () => {
     const [inlineSearchResults, setInlineSearchResults] = useState([]);
     const [editingEmployee, setEditingEmployee] = useState(null);
     const [editableEmail, setEditableEmail] = useState("");
+    const [editableLeadership, setEditableLeadership] = useState("");
     const [editableCoreDept, setEditableCoreDept] = useState("");
     const [isUpdatingEmail, setIsUpdatingEmail] = useState(false);
     const [showCreateIndividualSearch, setShowCreateIndividualSearch] = useState(false);
@@ -279,6 +280,10 @@ const RoleManagement = () => {
 
         if (editableCoreDept && editableCoreDept !== editingEmployee.coreDepartment) {
             updates.coreDepartment = editableCoreDept;
+        }
+
+        if (editableLeadership && editableLeadership !== editingEmployee.leadership) {
+            updates.leadership = editableLeadership;
         }
 
         if (editingEmployee.isEcapFetched) {
@@ -1322,6 +1327,7 @@ const RoleManagement = () => {
                                                                                 setEditingEmployee(user);
                                                                                 setEditableEmail(user.email || "");
                                                                                 setEditableCoreDept(user.coreDepartment || user.department || "");
+                                                                                setEditableLeadership(user.leadership || "no");
 
                                                                                 const loadingToast = toast.loading("Fetching latest details from ECAP...");
                                                                                 try {
@@ -1481,13 +1487,32 @@ const RoleManagement = () => {
                                                                 ))}
                                                         </TextField>
                                                     </Grid>
+                                                    <Grid size={{ xs: 12, sm: 6 }}>
+                                                        <TextField
+                                                            fullWidth
+                                                            select
+                                                            label="Leadership Role"
+                                                            value={editableLeadership || "no"}
+                                                            onChange={(e) => setEditableLeadership(e.target.value)}
+                                                            size="small"
+                                                            slotProps={{ select: { native: false } }}
+                                                            sx={{
+                                                                bgcolor: 'var(--bg-glass)',
+                                                                borderRadius: '10px',
+                                                                "& .MuiOutlinedInput-root": { borderRadius: '10px' }
+                                                            }}
+                                                        >
+                                                            <MenuItem value="yes">Yes</MenuItem>
+                                                            <MenuItem value="no">No</MenuItem>
+                                                        </TextField>
+                                                    </Grid>
                                                 </Grid>
 
                                                 <Box sx={{ display: 'flex', justifyContent: { xs: 'center', sm: 'flex-end' }, mt: 3 }}>
                                                     <Button
                                                         variant="contained"
                                                         onClick={handleUpdateEmployeeAdmin}
-                                                        disabled={isUpdatingEmail || (!editableEmail && !editableCoreDept)}
+                                                        disabled={isUpdatingEmail || (!editableEmail && !editableCoreDept && !editableLeadership)}
                                                         startIcon={isUpdatingEmail ? <Loader size={16} color="inherit" /> : <Save />}
                                                         fullWidth={false}
                                                         sx={{
@@ -1985,6 +2010,7 @@ const RoleManagement = () => {
                                                                                 setEditingEmployee(emp);
                                                                                 setEditableEmail(emp.email || "");
                                                                                 setEditableCoreDept(emp.coreDepartment || emp.department || "");
+                                                                                setEditableLeadership(emp.leadership || "no");
                                                                                 setShowUpdateOptions(true);
                                                                                 setShowCreateOptions(false);
                                                                                 window.scrollTo({ top: 0, behavior: 'smooth' });
