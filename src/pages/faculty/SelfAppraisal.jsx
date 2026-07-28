@@ -1634,10 +1634,11 @@ const SelfAppraisal = () => {
 
   const getFacultyCategory = (fac) => {
     if (!fac) return "Non-Doctorate Faculty";
-    const doc = (fac.doctorate || "").toLowerCase().trim();
     const lead = (fac.leadership || "").toLowerCase().trim();
-    if (doc === "yes" && lead === "no") return "Doctorate Faculty";
+    const qual = (fac.qualification || "").toLowerCase().trim();
+    
     if (lead === "yes") return "Leadership Team";
+    if (qual.includes("phd") || qual.includes("ph.d")) return "Doctorate Faculty";
     return "Non-Doctorate Faculty";
   };
 
@@ -3768,7 +3769,16 @@ const SelfAppraisal = () => {
                                             </TableCell>
                                             <TableCell sx={{ color: "var(--text-primary)" }}>{activity.activityType}</TableCell>
                                             <TableCell align="center" sx={{ fontWeight: 800, color: "var(--color-primary)" }}>
-                                              {calculateResourceUtilizationPoints(activity, appraisalConfig)}
+                                              {activity.awardedPoints !== undefined && activity.awardedPoints !== null ? (
+                                                <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.5 }}>
+                                                    <span>{activity.awardedPoints}</span>
+                                                    <Typography variant="caption" sx={{ color: 'var(--text-secondary)', fontSize: '0.65rem', lineHeight: 1 }}>
+                                                        (Auto: {calculateResourceUtilizationPoints(activity, appraisalConfig)})
+                                                    </Typography>
+                                                </Box>
+                                              ) : (
+                                                  calculateResourceUtilizationPoints(activity, appraisalConfig)
+                                              )}
                                             </TableCell>
                                             <TableCell>
                                               <Chip

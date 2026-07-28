@@ -55,10 +55,11 @@ const PARAMETERS = [
 
 const getFacultyCategory = (fac) => {
   if (!fac) return "Non-Doctorate Faculty";
-  const doc = (fac.doctorate || "").toLowerCase().trim();
   const lead = (fac.leadership || "").toLowerCase().trim();
-  if (doc === "yes" && lead === "no") return "Doctorate Faculty";
+  const qual = (fac.qualification || "").toLowerCase().trim();
+  
   if (lead === "yes") return "Leadership Team";
+  if (qual.includes("phd") || qual.includes("ph.d")) return "Doctorate Faculty";
   return "Non-Doctorate Faculty";
 };
 
@@ -234,6 +235,7 @@ const AppraisalReportDetail = () => {
   const [resUtRemarks, setResUtRemarks] = useState({}); // { itemId: remarks }
   const [contRemarks, setContRemarks] = useState({}); // { itemId: remarks }
   const [adminRemarks, setAdminRemarks] = useState({}); // { roleName: remarks }
+  const [awardedResUtilPoints, setAwardedResUtilPoints] = useState({}); // { recordId: awardedPoints }
 
   // Details dialog states
   const [selectedResUtDetails, setSelectedResUtDetails] = useState(null);
@@ -546,7 +548,19 @@ const AppraisalReportDetail = () => {
     try {
       const res = await axiosInstance.get(`/api/appraisal/config/${appr.academicYearId._id}`);
       if (res.data && res.data.success) {
-        setAppraisalConfig(res.data.data);
+        const conf = res.data.data;
+        setAppraisalConfig(conf);
+
+        const initPoints = {};
+        appr.resourceUtilizationDetails?.forEach(r => {
+            const role = (r.activityType || '').toLowerCase();
+            if (role.includes('participant') || role.includes('participated')) {
+                initPoints[r._id] = r.awardedPoints !== undefined && r.awardedPoints !== null 
+                    ? r.awardedPoints 
+                    : calculateResourceUtilizationPoints(r, conf);
+            }
+        });
+        setAwardedResUtilPoints(initPoints);
       }
     } catch (err) {
       console.error("Failed to load config:", err);
@@ -584,7 +598,8 @@ const AppraisalReportDetail = () => {
       const res = await axiosInstance.put(`/api/appraisal/hod-evaluate/${selectedAppraisal._id}`, {
         interpersonalRatings: formattedRatings,
         comments: finalComment,
-        action // 'Approve' or 'Reject'
+        action, // 'Approve' or 'Reject'
+        awardedResUtilPoints // Pass the manually awarded points for Participated roles
       });
       if (res.data && res.data.success) {
         toast.dismiss(); // Clear any existing toasts to prevent overlapping
@@ -606,7 +621,15 @@ const AppraisalReportDetail = () => {
   });
 
   // Live calculations for Section 3 & 4 points in HOD Appraisal Evaluation
-  const liveResUtilPoints = selectedAppraisal?.resourceUtilizationDetails?.reduce((sum, r) => r.status !== 'Rejected' ? sum + calculateResourceUtilizationPoints(r, appraisalConfig) : sum, 0) || 0;
+  const liveResUtilPoints = selectedAppraisal?.resourceUtilizationDetails?.reduce((sum, r) => {
+    if (r.status === 'Rejected') return sum;
+    const role = (r.activityType || '').toLowerCase();
+    if (role.includes('participant') || role.includes('participated')) {
+        const manualPoints = awardedResUtilPoints[r._id];
+        return sum + (manualPoints !== undefined ? Number(manualPoints) : calculateResourceUtilizationPoints(r, appraisalConfig));
+    }
+    return sum + calculateResourceUtilizationPoints(r, appraisalConfig);
+  }, 0) || 0;
   const liveContPoints = selectedAppraisal?.contributionDetails?.reduce((sum, r) => r.status !== 'Rejected' ? sum + calculateContributionPoints(r, appraisalConfig) : sum, 0) || 0;
   const liveValueAdditionPoints = Math.min(10, liveResUtilPoints) + Math.min(10, liveContPoints);
 
@@ -651,7 +674,15 @@ const AppraisalReportDetail = () => {
       researchTotal: Number(selectedAppraisal.research?.totalClaimed || 0)
     },
     valueAddition: {
-      resourceUtilization: (selectedAppraisal.resourceUtilizationDetails || []).filter(r => r.status !== 'Rejected').map(r => ({ ...r, pointsClaimed: calculateResourceUtilizationPoints(r, appraisalConfig) })),
+      resourceUtilization: (selectedAppraisal.resourceUtilizationDetails || []).filter(r => r.status !== 'Rejected').map(r => {
+        const role = (r.activityType || '').toLowerCase();
+        let finalPts = calculateResourceUtilizationPoints(r, appraisalConfig);
+        if (role.includes('participant') || role.includes('participated')) {
+            const manualPoints = awardedResUtilPoints[r._id];
+            if (manualPoints !== undefined) finalPts = Number(manualPoints);
+        }
+        return { ...r, pointsClaimed: finalPts };
+      }),
       contributions: (selectedAppraisal.contributionDetails || []).filter(r => r.status !== 'Rejected').map(r => ({ ...r, pointsClaimed: calculateContributionPoints(r, appraisalConfig) })),
       valueAdditionTotal: liveValueAdditionPoints
     },
@@ -1697,7 +1728,27 @@ const AppraisalReportDetail = () => {
                                         <TableCell sx={{ color: "var(--text-primary)" }}>{item.duration} Days</TableCell>
                                         <TableCell sx={{ color: "var(--text-primary)" }}>{item.activityType}</TableCell>
                                         <TableCell align="center" sx={{ fontWeight: 800, color: "var(--color-primary)" }}>
-                                          {calculateResourceUtilizationPoints(item, appraisalConfig)}
+                                          {awardedResUtilPoints[item._id] !== undefined ? (
+                                            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.5 }}>
+                                                {item.status === 'Pending at HOD' ? (
+                                                    <TextField
+                                                        size="small"
+                                                        type="number"
+                                                        value={awardedResUtilPoints[item._id]}
+                                                        onChange={(e) => setAwardedResUtilPoints(prev => ({ ...prev, [item._id]: e.target.value === '' ? '' : Number(e.target.value) }))}
+                                                        inputProps={{ min: 0, step: 0.1, style: { textAlign: 'center', fontWeight: 'bold', padding: '4px' } }}
+                                                        sx={{ width: '70px', '& .MuiOutlinedInput-root': { borderRadius: '6px' } }}
+                                                    />
+                                                ) : (
+                                                    <span>{awardedResUtilPoints[item._id]}</span>
+                                                )}
+                                                <Typography variant="caption" sx={{ color: 'var(--text-secondary)', fontSize: '0.65rem', lineHeight: 1 }}>
+                                                    Auto: {calculateResourceUtilizationPoints(item, appraisalConfig)}
+                                                </Typography>
+                                            </Box>
+                                          ) : (
+                                              calculateResourceUtilizationPoints(item, appraisalConfig)
+                                          )}
                                         </TableCell>
                                         <TableCell>
                                           <Chip label={item.status} size="small" sx={{ bgcolor: statusColor.bg, color: statusColor.color, fontWeight: 800, borderRadius: "6px" }} />
