@@ -1411,11 +1411,11 @@ const AppraisalSettings = () => {
               </Box>
 
               <Box sx={{ display: "flex", flexWrap: "wrap", gap: 3 }}>
-                {["doctorates", "nonDoctorates", "leadershipTeam"].map((category) => (
+                {["Doctorate Faculty", "Non-Doctorate Faculty", "Leadership Team"].map((category) => (
                   <Box key={category} sx={{ flex: "1 1 420px", minWidth: { xs: "100%", sm: "380px" } }}>
                     {renderSettingsCard({
                       id: `min_points_${category}`,
-                      title: `Minimum Points for ${category === "doctorates" ? "Doctorates" : category === "nonDoctorates" ? "Non-Doctorates" : "Leadership Team"}`,
+                      title: `Minimum Points for ${category}`,
                       icon: <Stars fontSize="small" />,
                       items: [
                         { label: "Teaching", value: config.minimumPoints?.[category]?.teaching ?? 0, setter: (val) => setConfig(prev => ({ ...prev, minimumPoints: { ...prev.minimumPoints, [category]: { ...prev.minimumPoints?.[category], teaching: Number(val) } } })) },

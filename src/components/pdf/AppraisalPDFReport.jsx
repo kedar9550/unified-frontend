@@ -101,6 +101,19 @@ const AppraisalPDFReport = forwardRef(({ data, hideInterpersonal }, ref) => {
 
   return (
     <div ref={ref} style={styles.container}>
+      <style type="text/css" media="print">
+        {`
+          @page {
+            size: A4;
+            margin: 15mm 15mm; 
+          }
+          /* Ensures background colors are printed */
+          body {
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
+        `}
+      </style>
       <div style={styles.header}>
         <img src={ausLogo} alt="Aditya University" style={styles.logo} />
         <div style={styles.title}>Faculty Appraisal Report ({year})</div>
@@ -768,10 +781,7 @@ const AppraisalPDFReport = forwardRef(({ data, hideInterpersonal }, ref) => {
       {/* 6. MINIMUM POINTS SUMMARY TABLE */}
       {!hideInterpersonal && (() => {
         const facultyCategory = data.facultyCategory || "Non-Doctorate Faculty";
-        const minPointsCategoryKey = facultyCategory === "Doctorate Faculty" ? "doctorates"
-          : facultyCategory === "Leadership Team" ? "leadershipTeam"
-            : "nonDoctorates";
-        const minPoints = data.minimumPoints?.[minPointsCategoryKey] || {};
+        const minPoints = data.minimumPoints?.[facultyCategory] || {};
 
         const minTeaching = minPoints.teaching || 0;
         const minResearch21 = minPoints.research21 || 0;

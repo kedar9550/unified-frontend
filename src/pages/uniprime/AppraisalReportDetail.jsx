@@ -53,17 +53,7 @@ const PARAMETERS = [
   { id: 10, text: "Student Mentoring - Demonstrates empathy, approachability, and support for students’ academic and personal development." }
 ];
 
-const getFacultyCategory = (fac, userDoc) => {
-  const merged = { ...fac, ...userDoc };
-  if (!merged) return "Non-Doctorate Faculty";
-  const lead = (merged.leadership || "").toLowerCase().trim();
-  const qual = (merged.qualification || "").toLowerCase().trim();
-  const doct = (merged.doctorate || "").toLowerCase().trim();
-  
-  if (lead === "yes" || lead === "true") return "Leadership Team";
-  if (qual.includes("phd") || qual.includes("ph.d") || doct === "yes" || doct === "true") return "Doctorate Faculty";
-  return "Non-Doctorate Faculty";
-};
+
 
 const getCategoryThresholds = (category) => {
   if (category === "Doctorate Faculty") {
@@ -513,13 +503,13 @@ const AppraisalReportDetail = () => {
 
           const initPoints = {};
           appr.resourceUtilizationDetails?.forEach(r => {
-              const role = (r.activityType || '').toLowerCase();
-              if (role.includes('participant') || role.includes('participated')) {
-                  const appraisalItem = appr.valueAddition?.resourceUtilization?.items?.find(i => i.eventId?.toString() === r._id?.toString());
-                  initPoints[r._id] = appraisalItem?.awardedPoints !== undefined && appraisalItem?.awardedPoints !== null 
-                      ? appraisalItem.awardedPoints 
-                      : calculateResourceUtilizationPoints(r, conf);
-              }
+            const role = (r.activityType || '').toLowerCase();
+            if (role.includes('participant') || role.includes('participated')) {
+              const appraisalItem = appr.valueAddition?.resourceUtilization?.items?.find(i => i.eventId?.toString() === r._id?.toString());
+              initPoints[r._id] = appraisalItem?.awardedPoints !== undefined && appraisalItem?.awardedPoints !== null
+                ? appraisalItem.awardedPoints
+                : calculateResourceUtilizationPoints(r, conf);
+            }
           });
           setAwardedResUtilPoints(initPoints);
         }
@@ -567,13 +557,13 @@ const AppraisalReportDetail = () => {
 
         const initPoints = {};
         appr.resourceUtilizationDetails?.forEach(r => {
-            const role = (r.activityType || '').toLowerCase();
-            if (role.includes('participant') || role.includes('participated')) {
-                const appraisalItem = appr.valueAddition?.resourceUtilization?.items?.find(i => i.eventId?.toString() === r._id?.toString());
-                initPoints[r._id] = appraisalItem?.awardedPoints !== undefined && appraisalItem?.awardedPoints !== null 
-                    ? appraisalItem.awardedPoints 
-                    : calculateResourceUtilizationPoints(r, conf);
-            }
+          const role = (r.activityType || '').toLowerCase();
+          if (role.includes('participant') || role.includes('participated')) {
+            const appraisalItem = appr.valueAddition?.resourceUtilization?.items?.find(i => i.eventId?.toString() === r._id?.toString());
+            initPoints[r._id] = appraisalItem?.awardedPoints !== undefined && appraisalItem?.awardedPoints !== null
+              ? appraisalItem.awardedPoints
+              : calculateResourceUtilizationPoints(r, conf);
+          }
         });
         setAwardedResUtilPoints(initPoints);
       }
@@ -640,8 +630,8 @@ const AppraisalReportDetail = () => {
     if (r.status === 'Rejected') return sum;
     const role = (r.activityType || '').toLowerCase();
     if (role.includes('participant') || role.includes('participated')) {
-        const manualPoints = awardedResUtilPoints[r._id];
-        return sum + (manualPoints !== undefined ? Number(manualPoints) : calculateResourceUtilizationPoints(r, appraisalConfig));
+      const manualPoints = awardedResUtilPoints[r._id];
+      return sum + (manualPoints !== undefined ? Number(manualPoints) : calculateResourceUtilizationPoints(r, appraisalConfig));
     }
     return sum + calculateResourceUtilizationPoints(r, appraisalConfig);
   }, 0) || 0;
@@ -658,7 +648,7 @@ const AppraisalReportDetail = () => {
     academicYearId: selectedAppraisal.academicYearId,
     status: selectedAppraisal.status,
     hodEvaluation: selectedAppraisal.hodEvaluation,
-    facultyCategory: selectedAppraisal.facultyCategory || getFacultyCategory(selectedAppraisal.personalInfoSnapshot, selectedAppraisal.facultyId),
+    facultyCategory: selectedAppraisal.facultyCategory || "Non-Doctorate Faculty",
     minimumPoints: appraisalConfig?.minimumPoints,
     teaching: {
       passPercentage: selectedAppraisal.teaching?.passPercentage || {},
@@ -693,8 +683,8 @@ const AppraisalReportDetail = () => {
         const role = (r.activityType || '').toLowerCase();
         let finalPts = calculateResourceUtilizationPoints(r, appraisalConfig);
         if (role.includes('participant') || role.includes('participated')) {
-            const manualPoints = awardedResUtilPoints[r._id];
-            if (manualPoints !== undefined) finalPts = Number(manualPoints);
+          const manualPoints = awardedResUtilPoints[r._id];
+          if (manualPoints !== undefined) finalPts = Number(manualPoints);
         }
         return { ...r, pointsClaimed: finalPts };
       }),
@@ -1760,35 +1750,35 @@ const AppraisalReportDetail = () => {
                                         </TableCell>
                                         <TableCell sx={{ color: "var(--text-primary)" }}>{item.activityType}</TableCell>
                                         <TableCell align="center" sx={{ fontWeight: 800, color: "var(--color-primary)" }}>
-                                            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.5 }}>
-                                                <span>{calculateResourceUtilizationPoints(item, appraisalConfig)}</span>
-                                            </Box>
+                                          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.5 }}>
+                                            <span>{calculateResourceUtilizationPoints(item, appraisalConfig)}</span>
+                                          </Box>
                                         </TableCell>
                                         <TableCell align="center" sx={{ fontWeight: 800, color: "var(--color-primary)" }}>
                                           {(() => {
-                                              const role = (item.activityType || '').toLowerCase();
-                                              const isParticipated = role.includes('participant') || role.includes('participated');
-                                              const isEditableStatus = ['Submitted to HOD'].includes(selectedAppraisal.status) && item.status !== 'Rejected';
+                                            const role = (item.activityType || '').toLowerCase();
+                                            const isParticipated = role.includes('participant') || role.includes('participated');
+                                            const isEditableStatus = ['Submitted to HOD'].includes(selectedAppraisal.status) && item.status !== 'Rejected';
 
-                                              if (awardedResUtilPoints[item._id] !== undefined) {
-                                                  return (
-                                                      <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.5 }}>
-                                                          {isEditableStatus && isParticipated ? (
-                                                              <TextField
-                                                                  size="small"
-                                                                  type="number"
-                                                                  value={awardedResUtilPoints[item._id]}
-                                                                  onChange={(e) => setAwardedResUtilPoints(prev => ({ ...prev, [item._id]: e.target.value === '' ? '' : Number(e.target.value) }))}
-                                                                  inputProps={{ min: 0, step: 0.1, style: { textAlign: 'center', fontWeight: 'bold', padding: '4px' } }}
-                                                                  sx={{ width: '70px', '& .MuiOutlinedInput-root': { borderRadius: '6px' } }}
-                                                              />
-                                                          ) : (
-                                                              <span>{awardedResUtilPoints[item._id]}</span>
-                                                          )}
-                                                      </Box>
-                                                  );
-                                              }
-                                              return <span>{calculateResourceUtilizationPoints(item, appraisalConfig)}</span>;
+                                            if (awardedResUtilPoints[item._id] !== undefined) {
+                                              return (
+                                                <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.5 }}>
+                                                  {isEditableStatus && isParticipated ? (
+                                                    <TextField
+                                                      size="small"
+                                                      type="number"
+                                                      value={awardedResUtilPoints[item._id]}
+                                                      onChange={(e) => setAwardedResUtilPoints(prev => ({ ...prev, [item._id]: e.target.value === '' ? '' : Number(e.target.value) }))}
+                                                      inputProps={{ min: 0, step: 0.1, style: { textAlign: 'center', fontWeight: 'bold', padding: '4px' } }}
+                                                      sx={{ width: '70px', '& .MuiOutlinedInput-root': { borderRadius: '6px' } }}
+                                                    />
+                                                  ) : (
+                                                    <span>{awardedResUtilPoints[item._id]}</span>
+                                                  )}
+                                                </Box>
+                                              );
+                                            }
+                                            return <span>{calculateResourceUtilizationPoints(item, appraisalConfig)}</span>;
                                           })()}
                                         </TableCell>
                                         <TableCell>
