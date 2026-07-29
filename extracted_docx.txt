@@ -84,7 +84,7 @@ Web of Science ID:
 ORCID ID:
  
 PART-B: Performance Attributes
-Teaching (80 points)
+Teaching
 --- TABLE START ---
 Met r ic | Category | Average p oints  claimed
 1.1 | Course  average  pass percentage | 

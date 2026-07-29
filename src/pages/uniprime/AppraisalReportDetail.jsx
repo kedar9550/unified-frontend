@@ -254,13 +254,12 @@ const AppraisalReportDetail = () => {
     pageStyle: `
       @page {
         size: auto;
-        margin: 0mm;
+        margin: 15mm;
       }
       @media print {
         body { 
           -webkit-print-color-adjust: exact; 
           print-color-adjust: exact; 
-          margin: 15mm !important; 
         }
       }
     `,
@@ -698,6 +697,8 @@ const AppraisalReportDetail = () => {
         return { ...r, pointsClaimed: finalPts };
       }),
       contributions: (selectedAppraisal.contributionDetails || []).filter(r => r.status !== 'Rejected').map(r => ({ ...r, pointsClaimed: calculateContributionPoints(r, appraisalConfig) })),
+      resourceUtilizationTotal: Math.min(10, liveResUtilPoints),
+      contributionsTotal: Math.min(10, liveContPoints),
       valueAdditionTotal: liveValueAdditionPoints
     },
     administrativeResponsibilities: {
