@@ -96,10 +96,10 @@ const HODDashboard = () => {
   const totalPublicationsCount = dashboard.researchStats.reduce((sum, item) => sum + item.value, 0);
 
   const topCards = [
-    { title: "Department Faculty", value: dashboard.totalFaculty, subtitle: "Total Active", icon: <People />, color: "#3B82F6", bgColor: "rgba(59, 130, 246, 0.1)" },
-    { title: "Academic Programs", value: dashboard.totalPrograms, subtitle: "Branches Managed", icon: <Assignment />, color: "#10B981", bgColor: "rgba(16, 185, 129, 0.1)" },
-    { title: "Pending Reviews", value: dashboard.pendingCounts.total, subtitle: "Actions Required", icon: <WarningAmber />, color: "#F59E0B", bgColor: "rgba(245, 158, 11, 0.1)" },
-    { title: "Total Research Work", value: totalPublicationsCount, subtitle: "Submitted & Approved", icon: <Science />, color: "#8B5CF6", bgColor: "rgba(139, 92, 246, 0.1)" },
+    { title: "Department Faculty", value: dashboard.totalFaculty, subtitle: "Total Active", icon: <People />, color: "#3B82F6", linkText: "Manage Faculty" },
+    { title: "Academic Programs", value: dashboard.totalPrograms, subtitle: "Branches Managed", icon: <Assignment />, color: "#A855F7", linkText: "View Programs" },
+    { title: "Pending Reviews", value: dashboard.pendingCounts.total, subtitle: "Actions Required", icon: <WarningAmber />, color: "#F59E0B", linkText: "View Pending" },
+    { title: "Total Research Work", value: totalPublicationsCount, subtitle: "Submitted & Approved", icon: <Science />, color: "#EF4444", linkText: "View Research" },
   ];
 
   const pendingActions = [
@@ -177,74 +177,97 @@ const HODDashboard = () => {
       </Box>
 
       {/* Summary Cards Row */}
-      <Grid container spacing={3} sx={{ mb: 4 }}>
+      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 3, mb: 4 }}>
         {topCards.map((card, i) => (
-          <Grid xs={12} sm={6} md={3} key={i}>
+          <Box
+            key={i}
+            sx={{
+              flex: { xs: '1 1 100%', sm: '1 1 calc(50% - 24px)', md: '1 1 calc(25% - 24px)' },
+              boxSizing: 'border-box'
+            }}
+          >
             <Card sx={{
               borderRadius: "16px",
               background: 'var(--bg-panel)',
               border: '1px solid var(--border-color)',
               p: 2.5,
               display: "flex",
-              flexDirection: "row",
-              alignItems: "center",
-              gap: 2,
+              flexDirection: "column",
               position: "relative",
               overflow: "hidden",
-              height: "160px",
-              boxSizing: "border-box",
               transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+              boxShadow: "var(--shadow-premium)",
               '&:hover': {
                 transform: 'translateY(-5px)',
                 boxShadow: '0 12px 40px rgba(0,0,0,0.12)',
-              },
-              '&::after': {
-                content: '""',
-                position: 'absolute',
-                top: 0,
-                right: 0,
-                width: '120px',
-                height: '120px',
-                background: `radial-gradient(circle at top right, ${card.color}20, transparent 70%)`,
-                zIndex: 0,
-                pointerEvents: 'none'
               }
             }}>
-              <Box sx={{
-                width: 56,
-                height: 56,
-                borderRadius: "16px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                backgroundColor: card.bgColor,
-                color: card.color,
-                flexShrink: 0,
-                zIndex: 1
-              }}>
-                {card.icon}
+              {/* Top Section */}
+              <Box sx={{ display: "flex", alignItems: "flex-start", gap: 2, mb: 3, position: "relative", zIndex: 1 }}>
+                {/* Icon */}
+                <Box sx={{
+                  width: 48,
+                  height: 48,
+                  borderRadius: "12px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  backgroundColor: card.color,
+                  color: "#fff",
+                  flexShrink: 0,
+                  position: "relative",
+                  boxShadow: "0 8px 16px rgba(0,0,0,0.1)",
+                  "&::after": {
+                    content: '""',
+                    position: "absolute",
+                    inset: 0,
+                    background: "linear-gradient(180deg, #ffffff30, transparent)",
+                    borderRadius: "12px",
+                  },
+                }}>
+                  {card.icon}
+                </Box>
+                {/* Text */}
+                <Box sx={{ textAlign: "left", flex: 1 }}>
+                  <Typography variant="caption" sx={{ color: "var(--text-secondary)", fontWeight: 700, fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: 0.5, display: 'block' }}>
+                    {card.title}
+                  </Typography>
+                  <Typography variant="h4" sx={{ fontWeight: 800, color: "var(--text-primary)", my: 0.5, fontSize: '2.125rem', lineHeight: 1 }}>
+                    {card.value}
+                  </Typography>
+                  <Typography variant="caption" sx={{ color: "var(--text-secondary)", fontWeight: 500, fontSize: '0.75rem' }}>
+                    {card.subtitle}
+                  </Typography>
+                </Box>
               </Box>
-              <Box sx={{ textAlign: "left", zIndex: 1 }}>
-                <Typography variant="caption" sx={{ color: "var(--text-secondary)", fontWeight: 700, fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: 0.5 }}>
-                  {card.title}
-                </Typography>
-                <Typography variant="h4" sx={{ fontWeight: 800, color: "var(--text-primary)", my: 0.2, fontSize: '1.6rem' }}>
-                  {card.value}
-                </Typography>
-                <Typography variant="caption" sx={{ color: "var(--text-secondary)", opacity: 0.8, fontSize: '0.7rem' }}>
-                  {card.subtitle}
-                </Typography>
+              
+              {/* Divider */}
+              <Box sx={{ borderTop: "1px solid var(--border-color)", mt: 1, pt: 2, display: 'flex', justifyContent: 'flex-end' }}>
+                {/* Bottom Link */}
+                <Button
+                  size="small"
+                  endIcon={<ArrowForward sx={{ fontSize: 16 }} />}
+                  sx={{
+                    textTransform: "none",
+                    fontWeight: 700,
+                    color: "var(--color-primary)",
+                    "&:hover": {
+                      background: "transparent",
+                      textDecoration: "underline",
+                    },
+                  }}
+                >
+                  {card.linkText}
+                </Button>
               </Box>
             </Card>
-          </Grid>
+          </Box>
         ))}
-      </Grid>
+      </Box>
 
-      {/* Main Grid: Pending Approval Hub & Side Stats */}
-      <Grid container spacing={4}>
-        {/* Left Side: Pending Actions Hub */}
-        <Grid xs={12} lg={8}>
-          <Box sx={{ mb: 4 }}>
+      {/* Main Container: Pending Approval Hub */}
+      <Box sx={{ width: '100%' }}>
+        <Box sx={{ mb: 4 }}>
             <Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)", mb: 2 }}>
               Pending Action Items Hub
             </Typography>
@@ -336,157 +359,7 @@ const HODDashboard = () => {
               ))}
             </Stack>
           </Box>
-        </Grid>
-
-        {/* Right Side: Publications PieChart & Faculty Leaderboard */}
-        <Grid xs={12} lg={4}>
-          {/* Recharts PieChart Card */}
-          {/* <Card sx={{
-            p: 3,
-            borderRadius: '24px',
-            background: 'var(--bg-panel)',
-            border: '1px solid var(--border-color)',
-            mb: 4,
-            height: 'fit-content'
-          }}>
-            <Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)", mb: 2 }}>
-              Publications by Type
-            </Typography>
-            {dashboard.researchStats.length > 0 ? (
-              <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
-                <Box sx={{ height: 200, width: '100%', position: 'relative' }}>
-                  <ResponsiveContainer width="100%" height={200}>
-                    <PieChart>
-                      <Pie
-                        data={dashboard.researchStats}
-                        cx="50%"
-                        cy="50%"
-                        innerRadius={60}
-                        outerRadius={80}
-                        paddingAngle={5}
-                        dataKey="value"
-                      >
-                        {dashboard.researchStats.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.color} cornerRadius={4} />
-                        ))}
-                      </Pie>
-                      <RechartsTooltip
-                        contentStyle={{
-                          borderRadius: '12px',
-                          background: 'var(--bg-panel)',
-                          border: '1px solid var(--border-color)',
-                          boxShadow: 'var(--shadow-premium)',
-                          fontSize: '0.8rem'
-                        }}
-                      />
-                    </PieChart>
-                  </ResponsiveContainer>
-                  <Box sx={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', textAlign: 'center' }}>
-                    <Typography variant="h5" sx={{ fontWeight: 800, color: 'var(--text-primary)' }}>
-                      {totalPublicationsCount}
-                    </Typography>
-                    <Typography variant="caption" sx={{ color: 'var(--text-secondary)', fontWeight: 600 }}>
-                      Total
-                    </Typography>
-                  </Box>
-                </Box>
-                
-                
-                <Stack spacing={1} sx={{ width: '100%' }}>
-                  {dashboard.researchStats.map((item, i) => (
-                    <Box key={i} sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <Box sx={{ width: 10, height: 10, borderRadius: '50%', backgroundColor: item.color }} />
-                        <Typography sx={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
-                          {item.name}
-                        </Typography>
-                      </Box>
-                      <Typography sx={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-primary)' }}>
-                        {item.value} ({Math.round((item.value / totalPublicationsCount) * 100)}%)
-                      </Typography>
-                    </Box>
-                  ))}
-                </Stack>
-              </Box>
-            ) : (
-              <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 200 }}>
-                <Typography variant="body2" sx={{ color: "var(--text-secondary)", fontStyle: 'italic' }}>
-                  No publication data available yet.
-                </Typography>
-              </Box>
-            )}
-          </Card> */}
-
-          {/* Top Faculty Leaderboard */}
-          {/* <Card sx={{
-            p: 3,
-            borderRadius: '24px',
-            background: 'var(--bg-panel)',
-            border: '1px solid var(--border-color)',
-          }}>
-            <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2.5 }}>
-              <TrendingUp sx={{ color: "var(--color-primary)" }} />
-              <Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>
-                Active Research Faculty
-              </Typography>
-            </Box>
-            {dashboard.topFaculty.length > 0 ? (
-              <List sx={{ p: 0 }}>
-                {dashboard.topFaculty.map((fac, idx) => (
-                  <React.Fragment key={fac._id}>
-                    <ListItem sx={{ px: 0, py: 1.5, alignItems: 'center' }}>
-                      <ListItemAvatar>
-                        <Avatar
-                          src={fac.profileImage ? `/uploads/profile/${fac.profileImage}` : ""}
-                          sx={{
-                            bgcolor: 'var(--color-primary)',
-                            color: '#fff',
-                            fontWeight: 700,
-                            fontSize: '0.85rem',
-                            border: '2px solid var(--border-color)'
-                          }}
-                        >
-                          {getInitials(fac.name)}
-                        </Avatar>
-                      </ListItemAvatar>
-                      <ListItemText
-                        primary={
-                          <Typography sx={{ fontWeight: 750, color: 'var(--text-primary)', fontSize: '0.85rem' }}>
-                            {fac.name}
-                          </Typography>
-                        }
-                        secondary={
-                          <Typography sx={{ color: 'var(--text-secondary)', fontSize: '0.7rem', opacity: 0.8 }}>
-                            {fac.designation || 'Faculty'} • {fac.institutionId}
-                          </Typography>
-                        }
-                      />
-                      <Box sx={{ textAlign: 'right' }}>
-                        <Chip
-                          label={`${fac.activityCount} Work`}
-                          size="small"
-                          sx={{
-                            fontWeight: 800,
-                            fontSize: '0.7rem',
-                            bgcolor: idx === 0 ? 'rgba(245, 158, 11, 0.15)' : 'var(--bg-accent-4)',
-                            color: idx === 0 ? '#F59E0B' : 'var(--text-primary)',
-                            border: `1px solid ${idx === 0 ? 'rgba(245, 158, 11, 0.3)' : 'var(--border-color)'}`
-                          }}
-                        />
-                      </Box>
-                    </ListItem>
-                    {idx < dashboard.topFaculty.length - 1 && <Divider component="li" sx={{ opacity: 0.5 }} />}
-                  </React.Fragment>
-                ))}
-              </List>
-            ) : (
-              <Typography variant="body2" sx={{ color: "var(--text-secondary)", fontStyle: 'italic', textAlign: 'center', py: 2 }}>
-                No active faculty stats recorded.
-              </Typography>
-            )}
-          </Card> */}
-        </Grid>
-      </Grid>
+        </Box>
 
       {/* Recent Activities Log */}
       <Box sx={{ mt: 4, mb: 2 }}>
