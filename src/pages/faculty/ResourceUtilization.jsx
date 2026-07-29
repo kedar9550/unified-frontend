@@ -132,13 +132,6 @@ export default function ResourceUtilization() {
   }, [selectedActivityDetails]);
 
   const [isDocumentRemoved, setIsDocumentRemoved] = useState(false);
-
-  const formRole = (form.activityType || '').toLowerCase();
-  const showSessionsField = formRole.includes("resource person") || formRole.includes("resourceperson");
-  const showDaysField = formRole.includes("participant") || formRole.includes("participated");
-  const showOrganizedDaysField = !showSessionsField && !showDaysField;
-
-
   const [editingId, setEditingId] = useState(null); // stores ID when editing
   const [form, setForm] = useState({
     academicYear: "",
@@ -161,6 +154,11 @@ export default function ResourceUtilization() {
     certificateNumber: "",
     existingProof: ""
   });
+
+  const formRole = (form.activityType || '').toLowerCase();
+  const showSessionsField = formRole.includes("resource person") || formRole.includes("resourceperson");
+  const showDaysField = formRole.includes("participant") || formRole.includes("participated");
+  const showOrganizedDaysField = !showSessionsField && !showDaysField;
 
   const [proofFile, setProofFile] = useState(null);
   const [loading, setLoading] = useState(false);

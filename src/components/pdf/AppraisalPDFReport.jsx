@@ -101,6 +101,19 @@ const AppraisalPDFReport = forwardRef(({ data, hideInterpersonal }, ref) => {
 
   return (
     <div ref={ref} style={styles.container}>
+      <style type="text/css" media="print">
+        {`
+          @page {
+            size: A4;
+            margin: 15mm 15mm; 
+          }
+          /* Ensures background colors are printed */
+          body {
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
+        `}
+      </style>
       <div style={styles.header}>
         <img src={ausLogo} alt="Aditya University" style={styles.logo} />
         <div style={styles.title}>Faculty Appraisal Report ({year})</div>
@@ -140,7 +153,7 @@ const AppraisalPDFReport = forwardRef(({ data, hideInterpersonal }, ref) => {
 
       {/* 1. TEACHING SUMMARY */}
       <div style={{ fontWeight: 'bold', fontSize: '15px', marginTop: '20px', marginBottom: '5px' }}>
-        1. Teaching (80 points)
+        1. Teaching
       </div>
       <table style={styles.table}>
         <thead>
@@ -610,12 +623,30 @@ const AppraisalPDFReport = forwardRef(({ data, hideInterpersonal }, ref) => {
                 <tr key={i} style={styles.tr}>
                   <td style={styles.td}>{i + 1}</td>
                   <td style={styles.tdLeft}>{r.courseFdpName || r.event || r.organizationName || r.eventName || r.topic} {r.fromDate ? '(' + new Date(r.fromDate).toLocaleDateString('en-GB') + (r.toDate ? ' to ' + new Date(r.toDate).toLocaleDateString('en-GB') : '') + ')' : (r.date ? '(' + r.date + ')' : '')}</td>
-                  <td style={styles.td}>{r.duration || r.daysParticipated || ''}</td>
+                  <td style={styles.td}>
+                    {(() => {
+                      const role = (r.activityType || '').toLowerCase();
+                      if (role.includes('resource person') || role.includes('resourceperson')) {
+                        const num = r.numberOfSessions || r.sessionsConducted || 0;
+                        return num ? `${num} session${num === 1 ? '' : 's'}` : '';
+                      } else if (role.includes('participant') || role.includes('participated')) {
+                        const num = r.numberOfDaysParticipated || r.daysParticipated || r.duration || 0;
+                        return num ? `${num} day${num === 1 ? '' : 's'}` : '';
+                      } else {
+                        const num = r.numberOfDaysOrganized || r.duration || 0;
+                        return num ? `${num} day${num === 1 ? '' : 's'}` : '';
+                      }
+                    })()}
+                  </td>
                   <td style={styles.td}>{(r.activityCategory || r.natureOfEvent || '') + ' - ' + (r.activityType || r.roleOfFaculty || r.activityRole || '')}</td>
                   <td style={styles.td}>{r.pointsClaimed || ''}</td>
                 </tr>
               ))}
               {/* Max capped points are already calculated and can be added if needed separately */}
+              <tr style={styles.tr}>
+                <td colSpan="4" style={{ ...styles.td, fontWeight: 'bold', textAlign: 'right' }}>Self-Assessment Points (Max:10)</td>
+                <td style={{ ...styles.td, fontWeight: 'bold' }}>{vData.resourceUtilizationTotal !== undefined ? vData.resourceUtilizationTotal : (Math.min(10, vData.resourceUtilization.reduce((sum, r) => sum + (Number(r.pointsClaimed) || 0), 0)) || 0)}</td>
+              </tr>
             </tbody>
           </table>
         </div>
@@ -638,7 +669,7 @@ const AppraisalPDFReport = forwardRef(({ data, hideInterpersonal }, ref) => {
             <tbody>
               {vData.contributions.map((c, i) => {
                 const getDesc = () => {
-                  switch(c.category) {
+                  switch (c.category) {
                     case 1: return `Member of BOG/GB/AC/BOS: ${c.organizationName || ''}`;
                     case 2: case 3: return `Editorial Board: ${c.journalName || c.journalConferenceName || ''}`;
                     case 4: case 5: return `Award: ${c.awardName || ''}`;
@@ -660,22 +691,16 @@ const AppraisalPDFReport = forwardRef(({ data, hideInterpersonal }, ref) => {
                   </tr>
                 )
               })}
+              <tr style={styles.tr}>
+                <td colSpan="2" style={{ ...styles.td, fontWeight: 'bold', textAlign: 'right' }}>Self-Assessment Points (Max:10)</td>
+                <td style={{ ...styles.td, fontWeight: 'bold' }}>{vData.contributionsTotal !== undefined ? vData.contributionsTotal : (Math.min(10, vData.contributions.reduce((sum, c) => sum + (Number(c.pointsClaimed) || 0), 0)) || 0)}</td>
+              </tr>
             </tbody>
           </table>
         </div>
       )}
 
-      {/* 3 Total Row */}
-      {(vData?.resourceUtilization?.length > 0 || vData?.contributions?.length > 0) && (
-        <table style={styles.table}>
-          <tbody>
-            <tr style={styles.tr}>
-              <td style={{ ...styles.td, fontWeight: 'bold', textAlign: 'right' }}>Self-Assessment Points (Max: 20)</td>
-              <td style={{ ...styles.td, fontWeight: 'bold', width: '15%' }}>{vData.valueAdditionTotal || 0}</td>
-            </tr>
-          </tbody>
-        </table>
-      )}
+      {/* 3 Total Row (Removed as per user request to show max 10 in sub-tables) */}
 
       {/* 4. ADMINISTRATION */}
       {adminData?.roles?.length > 0 && (
@@ -738,13 +763,13 @@ const AppraisalPDFReport = forwardRef(({ data, hideInterpersonal }, ref) => {
               {data.hodEvaluation.interpersonalRatings.map((r, i) => (
                 <tr key={i} style={styles.tr}>
                   <td style={styles.td}>{i + 1}</td>
-                  <td style={styles.tdLeft}>{r.parameterText || r.parameterName || `Parameter ${r.parameterId || i+1}`}</td>
+                  <td style={styles.tdLeft}>{r.parameterText || r.parameterName || `Parameter ${r.parameterId || i + 1}`}</td>
                   <td style={styles.td}>{r.rating}</td>
                 </tr>
               ))}
               <tr style={styles.tr}>
-                <td style={{...styles.td, fontWeight: 'bold'}} colSpan="2" align="right">Total points</td>
-                <td style={{...styles.td, fontWeight: 'bold'}}>
+                <td style={{ ...styles.td, fontWeight: 'bold' }} colSpan="2" align="right">Total points</td>
+                <td style={{ ...styles.td, fontWeight: 'bold' }}>
                   {data.hodEvaluation.interpersonalRatings.reduce((sum, r) => sum + (Number(r.rating) || 0), 0)}
                 </td>
               </tr>
@@ -756,11 +781,8 @@ const AppraisalPDFReport = forwardRef(({ data, hideInterpersonal }, ref) => {
       {/* 6. MINIMUM POINTS SUMMARY TABLE */}
       {!hideInterpersonal && (() => {
         const facultyCategory = data.facultyCategory || "Non-Doctorate Faculty";
-        const minPointsCategoryKey = facultyCategory === "Doctorate Faculty" ? "doctorates" 
-                                   : facultyCategory === "Leadership Team" ? "leadershipTeam" 
-                                   : "nonDoctorates";
-        const minPoints = data.minimumPoints?.[minPointsCategoryKey] || {};
-        
+        const minPoints = data.minimumPoints?.[facultyCategory] || {};
+
         const minTeaching = minPoints.teaching || 0;
         const minResearch21 = minPoints.research21 || 0;
         const minResearch22_28 = minPoints.research22_28 || 0;
