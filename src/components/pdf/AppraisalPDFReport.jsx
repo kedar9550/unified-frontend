@@ -516,7 +516,7 @@ const AppraisalPDFReport = forwardRef(({ data, hideInterpersonal }, ref) => {
               {rData.patents.items.map((p, i) => (
                 <tr key={i} style={styles.tr}>
                   <td style={styles.td}>{i + 1}</td>
-                  <td style={styles.tdLeft}>{p.title} {p.patentNumber ? `(${p.patentNumber})` : ''} {p.date ? `[${p.date}]` : ''}</td>
+                  <td style={styles.tdLeft}>{p.title} {p.filingNo || p.patentNumber ? `(${p.filingNo || p.patentNumber})` : ''} {p.dateOfFiling || p.date ? `[${new Date(p.dateOfFiling || p.date).toLocaleDateString("en-GB")}]` : ''}</td>
                   <td style={styles.td}>{p.country || ''}</td>
                   <td style={styles.td}>{p.status || ''}</td>
                   <td style={styles.td}>{p.pointsClaimed || ''}</td>
@@ -622,7 +622,19 @@ const AppraisalPDFReport = forwardRef(({ data, hideInterpersonal }, ref) => {
               {vData.resourceUtilization.map((r, i) => (
                 <tr key={i} style={styles.tr}>
                   <td style={styles.td}>{i + 1}</td>
-                  <td style={styles.tdLeft}>{r.courseFdpName || r.event || r.organizationName || r.eventName || r.topic} {r.fromDate ? '(' + new Date(r.fromDate).toLocaleDateString('en-GB') + (r.toDate ? ' to ' + new Date(r.toDate).toLocaleDateString('en-GB') : '') + ')' : (r.date ? '(' + r.date + ')' : '')}</td>
+                  <td style={styles.tdLeft}>
+                    {r.courseFdpName || r.event || r.organizationName || r.eventName || r.topic}{" "}
+                    {(() => {
+                      const fromDate = r.fromDate || r.eventStartDate;
+                      const toDate = r.toDate || r.eventEndDate;
+                      if (fromDate) {
+                        return '(' + new Date(fromDate).toLocaleDateString('en-GB') + (toDate ? ' to ' + new Date(toDate).toLocaleDateString('en-GB') : '') + ')';
+                      } else if (r.date) {
+                        return '(' + r.date + ')';
+                      }
+                      return '';
+                    })()}
+                  </td>
                   <td style={styles.td}>
                     {(() => {
                       const role = (r.activityType || '').toLowerCase();
