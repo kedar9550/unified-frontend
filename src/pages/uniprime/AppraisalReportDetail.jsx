@@ -658,7 +658,7 @@ const AppraisalReportDetail = () => {
     academicYearId: selectedAppraisal.academicYearId,
     status: selectedAppraisal.status,
     hodEvaluation: selectedAppraisal.hodEvaluation,
-    facultyCategory: getFacultyCategory(selectedAppraisal.personalInfoSnapshot, selectedAppraisal.facultyId),
+    facultyCategory: selectedAppraisal.facultyCategory || getFacultyCategory(selectedAppraisal.personalInfoSnapshot, selectedAppraisal.facultyId),
     minimumPoints: appraisalConfig?.minimumPoints,
     teaching: {
       passPercentage: selectedAppraisal.teaching?.passPercentage || {},
