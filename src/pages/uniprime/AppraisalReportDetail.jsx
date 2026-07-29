@@ -53,13 +53,15 @@ const PARAMETERS = [
   { id: 10, text: "Student Mentoring - Demonstrates empathy, approachability, and support for students’ academic and personal development." }
 ];
 
-const getFacultyCategory = (fac) => {
-  if (!fac) return "Non-Doctorate Faculty";
-  const lead = (fac.leadership || "").toLowerCase().trim();
-  const qual = (fac.qualification || "").toLowerCase().trim();
+const getFacultyCategory = (fac, userDoc) => {
+  const merged = { ...fac, ...userDoc };
+  if (!merged) return "Non-Doctorate Faculty";
+  const lead = (merged.leadership || "").toLowerCase().trim();
+  const qual = (merged.qualification || "").toLowerCase().trim();
+  const doct = (merged.doctorate || "").toLowerCase().trim();
   
-  if (lead === "yes") return "Leadership Team";
-  if (qual.includes("phd") || qual.includes("ph.d")) return "Doctorate Faculty";
+  if (lead === "yes" || lead === "true") return "Leadership Team";
+  if (qual.includes("phd") || qual.includes("ph.d") || doct === "yes" || doct === "true") return "Doctorate Faculty";
   return "Non-Doctorate Faculty";
 };
 
@@ -656,7 +658,7 @@ const AppraisalReportDetail = () => {
     academicYearId: selectedAppraisal.academicYearId,
     status: selectedAppraisal.status,
     hodEvaluation: selectedAppraisal.hodEvaluation,
-    facultyCategory: getFacultyCategory(selectedAppraisal.personalInfoSnapshot),
+    facultyCategory: getFacultyCategory(selectedAppraisal.personalInfoSnapshot, selectedAppraisal.facultyId),
     minimumPoints: appraisalConfig?.minimumPoints,
     teaching: {
       passPercentage: selectedAppraisal.teaching?.passPercentage || {},

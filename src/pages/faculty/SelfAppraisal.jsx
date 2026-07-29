@@ -1644,9 +1644,10 @@ const SelfAppraisal = () => {
     if (!fac) return "Non-Doctorate Faculty";
     const lead = (fac.leadership || "").toLowerCase().trim();
     const qual = (fac.qualification || "").toLowerCase().trim();
+    const doct = (fac.doctorate || "").toLowerCase().trim();
     
-    if (lead === "yes") return "Leadership Team";
-    if (qual.includes("phd") || qual.includes("ph.d")) return "Doctorate Faculty";
+    if (lead === "yes" || lead === "true") return "Leadership Team";
+    if (qual.includes("phd") || qual.includes("ph.d") || doct === "yes" || doct === "true") return "Doctorate Faculty";
     return "Non-Doctorate Faculty";
   };
 
