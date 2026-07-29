@@ -68,31 +68,34 @@ const Payments = () => {
     setDialogOpen(true);
   };
 
-  const rows = payments.map((payment) => [
-    payment.receipt || '-',
-    payment.eventName || payment.category || '-',
-    payment.amount != null ? `₹ ${payment.amount}` : '-',
-    payment.currency || 'INR',
+  const rows = payments.map((payment) => {
+    const amountValue = payment.amountRupees ?? payment.amount;
+    return [
+      payment.receipt || '-',
+      payment.eventName || payment.category || '-',
+      amountValue != null ? `₹ ${Number(amountValue).toLocaleString('en-IN')}` : '-',
+      payment.currency || 'INR',
     payment.paymentStatus || (payment.verified ? 'PAID' : 'PENDING'),
-    {
-      value: payment.teamSize || 1,
-      display: (
-        <Button
-          variant="text"
-          size="small"
-          onClick={() => handleTeamSizeClick(payment)}
-          sx={{
-            textTransform: 'none',
-            fontWeight: 700,
-            color: 'var(--color-primary)',
-          }}
-        >
-          {payment.teamSize || 1}
-        </Button>
-      ),
-    },
-    formatDate(payment.createdAt || payment.paidAt),
-  ]);
+      {
+        value: payment.teamSize || 1,
+        display: (
+          <Button
+            variant="text"
+            size="small"
+            onClick={() => handleTeamSizeClick(payment)}
+            sx={{
+              textTransform: 'none',
+              fontWeight: 700,
+              color: 'var(--color-primary)',
+            }}
+          >
+            {payment.teamSize || 1}
+          </Button>
+        ),
+      },
+      formatDate(payment.createdAt || payment.paidAt),
+    ];
+  });
 
   return (
     <Box sx={{ p: { xs: 2, md: 3, lg: 4 } }}>
@@ -150,7 +153,9 @@ const Payments = () => {
           <DialogContent dividers>
             <Box sx={{ mb: 1 }}>
               <Typography variant="body2">Receipt: {selectedPayment.receipt || '-'}</Typography>
-              <Typography variant="body2">Amount: {selectedPayment.amount != null ? `₹ ${selectedPayment.amount}` : '-'}</Typography>
+              <Typography variant="body2">
+                Amount: {selectedPayment.amountRupees != null || selectedPayment.amount != null ? `₹ ${Number(selectedPayment.amountRupees ?? selectedPayment.amount).toLocaleString('en-IN')}` : '-'}
+              </Typography>
             </Box>
 
             {Array.isArray(selectedPayment.participants) && selectedPayment.participants.length > 0 ? (
