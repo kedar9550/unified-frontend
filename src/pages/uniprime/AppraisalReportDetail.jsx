@@ -265,17 +265,31 @@ const AppraisalReportDetail = () => {
       toast.warning("Please provide remarks for rejection.");
       return;
     }
+
+    const formattedRatings = typeof PARAMETERS !== 'undefined' ? PARAMETERS.map(p => ({
+      parameterId: p.id,
+      parameterText: p.text,
+      rating: ratings[p.id] || 5
+    })) : [];
+
+    setLoading(true);
     try {
       const res = await axiosInstance.put(`/api/appraisal/hod-evaluate/${id}`, {
         action,
-        comments: mainAppraisalRemarks
+        comments: mainAppraisalRemarks,
+        interpersonalRatings: formattedRatings,
+        awardedResUtilPoints
       });
       if (res.data?.success) {
-        toast.success(`Appraisal ${action === 'Approve' ? 'approved' : 'rejected'} successfully.`);
+        toast.dismiss();
+        toast.success(`Appraisal ${action === 'Approve' ? 'approved and finalized' : 'rejected and sent back'} successfully.`);
+        setSelectedAppraisal(null);
         fetchDetail();
       }
     } catch (err) {
       toast.error(err.response?.data?.message || `Failed to ${action} appraisal.`);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -698,6 +712,11 @@ const AppraisalReportDetail = () => {
       adminTotal: liveAdminPoints
     }
   } : null;
+
+  const validationStatus = getAppraisalValidationStatus();
+  const allRatingsProvided = typeof PARAMETERS !== 'undefined' 
+    ? PARAMETERS.every(p => ratings[p.id] !== undefined && ratings[p.id] !== null && ratings[p.id] !== "")
+    : true; // fallback
 
   return (
     <Box p={4} sx={{ maxWidth: 1200, margin: "0 auto", animation: "fadeIn 0.5s ease" }}>
@@ -1699,8 +1718,10 @@ const AppraisalReportDetail = () => {
                                   const statusColor = getStatusColor(item.status);
                                   const backendURL = (import.meta.env.VITE_BACKEND_URL || "http://localhost:9000").replace(/\/$/, "");
                                   const fileUrl = item.proof ? (item.proof.startsWith('http') ? item.proof : `${backendURL}${item.proof}`) : null;
-                                  const fromDateFormatted = item.fromDate ? new Date(item.fromDate).toLocaleDateString("en-IN", { day: '2-digit', month: '2-digit', year: 'numeric' }) : "";
-                                  const toDateFormatted = item.toDate ? new Date(item.toDate).toLocaleDateString("en-IN", { day: '2-digit', month: '2-digit', year: 'numeric' }) : "";
+                                  const fromDate = item.fromDate || item.eventStartDate;
+                                  const toDate = item.toDate || item.eventEndDate;
+                                  const fromDateFormatted = fromDate ? new Date(fromDate).toLocaleDateString("en-IN", { day: '2-digit', month: '2-digit', year: 'numeric' }) : "";
+                                  const toDateFormatted = toDate ? new Date(toDate).toLocaleDateString("en-IN", { day: '2-digit', month: '2-digit', year: 'numeric' }) : "";
 
                                   return (
                                     <React.Fragment key={item._id || i}>
@@ -2121,7 +2142,7 @@ const AppraisalReportDetail = () => {
                     <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3, flexWrap: "wrap", gap: 2 }}>
                       <Box>
                         <Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)", display: "flex", alignItems: "center", gap: 1.5 }}>
-                          <Groups sx={{ color: "#3b82f6" }} /> 5. HOD Interpersonal Skills
+                          <Groups sx={{ color: "#3b82f6" }} /> 5. Interpersonal Skills
                         </Typography>
                         <Typography variant="caption" sx={{ color: "var(--text-secondary)", fontWeight: 500, display: "block", ml: 5 }}>
                           Maximum Points: 50
@@ -2176,20 +2197,56 @@ const AppraisalReportDetail = () => {
                       </Typography>
                     )}
 
-                    <Box sx={{ maxHeight: "450px", overflowY: "auto", position: "relative", pr: 1, mb: 3, display: "flex", flexDirection: "column", gap: 2 }}>
+                    <Box sx={{ maxHeight: "450px", overflowY: "auto", position: "relative", pr: 1, mb: 3 }}>
                       {PARAMETERS.map((p) => (
                         <Box
                           key={p.id}
                           sx={{
-                            p: selectedAppraisal.status !== "Submitted to HOD" ? 2 : 0,
-                            borderRadius: selectedAppraisal.status !== "Submitted to HOD" ? "12px" : "0",
-                            background: selectedAppraisal.status !== "Submitted to HOD" ? "var(--bg-paper)" : "transparent",
-                            border: selectedAppraisal.status !== "Submitted to HOD" ? "1px solid var(--border-color)" : "none",
-                            mb: selectedAppraisal.status !== "Submitted to HOD" ? 0 : 2.5
+                            p: 2.5,
+                            borderRadius: "12px",
+                            background: "var(--bg-paper)",
+                            border: "1px solid var(--border-color)",
+                            mb: 2,
+                            position: "relative",
+                            boxShadow: "0 4px 12px rgba(0,0,0,0.03)",
+                            transition: "all 0.3s ease",
+                            "&:hover": {
+                              boxShadow: "0 6px 16px rgba(0,0,0,0.06)",
+                              transform: "translateY(-2px)"
+                            },
+                            "&::before": {
+                              content: '""',
+                              position: "absolute",
+                              left: 0,
+                              top: 0,
+                              bottom: 0,
+                              width: "4px",
+                              background: "var(--gradient-primary)",
+                              borderTopLeftRadius: "12px",
+                              borderBottomLeftRadius: "12px"
+                            }
                           }}
                         >
-                          <Typography variant="body2" sx={{ fontWeight: 700, mb: selectedAppraisal.status !== "Submitted to HOD" ? 1.5 : 0.5, color: "var(--text-primary)", fontSize: "0.85rem", lineHeight: 1.4 }}>
-                            {p.id}. {p.text}
+                          <Typography variant="body2" sx={{ fontWeight: 500, mb: 2, color: "var(--text-primary)", fontSize: "1rem", lineHeight: 1.6 }}>
+                            {(() => {
+                              const match = p.text.match(/^(.*?[-–—]\s*)(.*)$/);
+                              if (match) {
+                                return (
+                                  <>
+                                    <Box component="span" sx={{ 
+                                      fontWeight: 800, 
+                                      background: "var(--gradient-primary)", 
+                                      WebkitBackgroundClip: "text", 
+                                      WebkitTextFillColor: "transparent" 
+                                    }}>
+                                      {p.id}. {match[1]}
+                                    </Box>
+                                    {match[2]}
+                                  </>
+                                );
+                              }
+                              return `${p.id}. ${p.text}`;
+                            })()}
                           </Typography>
 
                           {selectedAppraisal.status !== "Submitted to HOD" ? (
@@ -2212,6 +2269,7 @@ const AppraisalReportDetail = () => {
                             <FormControl component="fieldset">
                               <RadioGroup
                                 row
+                                sx={{ gap: 2 }}
                                 value={ratings[p.id] !== undefined && ratings[p.id] !== null ? ratings[p.id] : ""}
                                 onChange={(e) => handleRatingChange(p.id, e.target.value)}
                               >
@@ -2219,9 +2277,17 @@ const AppraisalReportDetail = () => {
                                   <FormControlLabel
                                     key={val}
                                     value={val}
-                                    control={<Radio size="small" />}
-                                    label={<Typography sx={{ fontSize: "0.78rem", fontWeight: 700 }}>{val}</Typography>}
-                                    sx={{ mr: 2 }}
+                                    control={
+                                      <Radio 
+                                        size="small" 
+                                        sx={{ 
+                                          color: "var(--text-secondary)", 
+                                          "&.Mui-checked": { color: "#3b82f6" } 
+                                        }} 
+                                      />
+                                    }
+                                    label={<Typography sx={{ fontSize: "0.85rem", fontWeight: 700, color: "var(--text-primary)" }}>{val}</Typography>}
+                                    sx={{ mr: 3 }}
                                   />
                                 ))}
                               </RadioGroup>
@@ -2231,88 +2297,6 @@ const AppraisalReportDetail = () => {
                       ))}
                     </Box>
 
-                    <TextField
-                      label="HOD Evaluation Remarks / Comments"
-                      multiline
-                      rows={2}
-                      fullWidth
-                      value={comments}
-                      onChange={(e) => setComments(e.target.value)}
-                      disabled={selectedAppraisal.status !== "Submitted to HOD"}
-                      InputProps={{ readOnly: selectedAppraisal.status !== "Submitted to HOD" }}
-                      sx={{ mb: 2 }}
-                    />
-
-                    {selectedAppraisal.status !== "Submitted to HOD" ? (
-                      <Alert
-                        severity={selectedAppraisal.status === "Rejected by HOD" ? "error" : "success"}
-                        sx={{ mb: 2, borderRadius: "10px", py: 1 }}
-                      >
-                        <Typography variant="body2" sx={{ fontWeight: 700 }}>
-                          {selectedAppraisal.status === "Rejected by HOD"
-                            ? `This appraisal was rejected and sent back to the faculty member.`
-                            : `This appraisal has been verified and finalized.`}
-                        </Typography>
-                        {selectedAppraisal.hodEvaluation?.evaluationDate && (
-                          <Typography variant="caption" sx={{ color: "text.secondary", display: "block", mt: 0.5 }}>
-                            Evaluation Date: {new Date(selectedAppraisal.hodEvaluation.evaluationDate).toLocaleString("en-IN")}
-                          </Typography>
-                        )}
-                      </Alert>
-                    ) : (
-                      (() => {
-                        const validationStatus = getAppraisalValidationStatus();
-                        const allRatingsProvided = PARAMETERS.every(p => ratings[p.id] !== undefined && ratings[p.id] !== null && ratings[p.id] !== "");
-                        return (
-                          <>
-                            {validationStatus.hasPending && (
-                              <Alert severity="warning" sx={{ mb: 2, borderRadius: "10px", py: 0.5 }}>
-                                <Typography variant="caption" sx={{ fontWeight: 700 }}>
-                                  Please approve or reject all pending sections first.
-                                </Typography>
-                              </Alert>
-                            )}
-                            {!allRatingsProvided && (
-                              <Alert severity="warning" sx={{ mb: 2, borderRadius: "10px", py: 0.5 }}>
-                                <Typography variant="caption" sx={{ fontWeight: 700 }}>
-                                  Please rate all 10 Interpersonal Skills parameters.
-                                </Typography>
-                              </Alert>
-                            )}
-                            {validationStatus.hasRejected && (
-                              <Alert severity="error" sx={{ mb: 2, borderRadius: "10px", py: 0.5 }}>
-                                <Typography variant="caption" sx={{ fontWeight: 700 }}>
-                                  Some sections have been rejected. Click "Send Back for Corrections" to return the form to the faculty member.
-                                </Typography>
-                              </Alert>
-                            )}
-                            <Box display="flex" gap={1.5} justifyContent="flex-end">
-                              <Button
-                                variant="outlined"
-                                color="error"
-                                size="small"
-                                onClick={() => handleSubmitEvaluation("Reject")}
-                                disabled={loading}
-                                sx={{ textTransform: "none", fontWeight: 700 }}
-                              >
-                                Send Back for Corrections
-                              </Button>
-                              <Button
-                                variant="contained"
-                                color="success"
-                                size="small"
-                                startIcon={<CheckCircle />}
-                                onClick={() => handleSubmitEvaluation("Approve")}
-                                disabled={loading || validationStatus.hasPending || validationStatus.hasRejected || !allRatingsProvided}
-                                sx={{ textTransform: "none", fontWeight: 700, color: "#fff" }}
-                              >
-                                Approve
-                              </Button>
-                            </Box>
-                          </>
-                        );
-                      })()
-                    )}
                   </CardContent>
                 </Card>
               </Grid>
@@ -2675,6 +2659,29 @@ const AppraisalReportDetail = () => {
           <Typography variant="body2" sx={{ color: "var(--text-secondary)" }}>
             Ensure you have reviewed all individual sections (Journals, Patents, Duties, etc.) before taking the final action on this appraisal.
           </Typography>
+
+          {validationStatus.hasPending && (
+            <Alert severity="warning" sx={{ borderRadius: "10px", py: 0.5 }}>
+              <Typography variant="caption" sx={{ fontWeight: 700 }}>
+                Please approve or reject all pending sections first.
+              </Typography>
+            </Alert>
+          )}
+          {!allRatingsProvided && (
+            <Alert severity="warning" sx={{ borderRadius: "10px", py: 0.5 }}>
+              <Typography variant="caption" sx={{ fontWeight: 700 }}>
+                Please rate all 10 Interpersonal Skills parameters.
+              </Typography>
+            </Alert>
+          )}
+          {validationStatus.hasRejected && (
+            <Alert severity="error" sx={{ borderRadius: "10px", py: 0.5 }}>
+              <Typography variant="caption" sx={{ fontWeight: 700 }}>
+                Some sections have been rejected. You must "Reject Appraisal" to return the form to the faculty member.
+              </Typography>
+            </Alert>
+          )}
+
           <TextField
             fullWidth
             multiline
@@ -2688,6 +2695,7 @@ const AppraisalReportDetail = () => {
               variant="outlined"
               color="error"
               size="large"
+              disabled={loading}
               onClick={() => handleMainHODAction("Reject")}
               sx={{ fontWeight: 700, px: 4 }}
             >
@@ -2697,6 +2705,7 @@ const AppraisalReportDetail = () => {
               variant="contained"
               color="success"
               size="large"
+              disabled={loading || validationStatus.hasPending || validationStatus.hasRejected || !allRatingsProvided}
               onClick={() => handleMainHODAction("Approve")}
               sx={{ fontWeight: 700, px: 4, color: "#fff" }}
             >
