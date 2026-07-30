@@ -86,6 +86,7 @@ import MajorEventGroups from "./pages/majorEventAdmin/MajorEventGroups";
 import FormAssign from "./pages/majorEventAdmin/FormAssign";
 import FormPreview from "./pages/majorEventAdmin/FormPreview";
 import Payments from "./pages/studenteventsadmin/Payments";
+import Participants from "./pages/studenteventsadmin/Participants";
 
 const PublicOnlyRoute = ({ children }) => {
   const { user } = useAuth();
@@ -236,6 +237,7 @@ function App() {
         <Route path="/Eventveda/events" element={<ProtectedRoute element={<EventCreation />} />} />
         <Route path="/Eventveda/departments" element={<ProtectedRoute element={<DepartmentManagement />} />} />
         <Route path="/Eventveda/payments" element={<ProtectedRoute element={<Payments />} />} />
+        <Route path="/Eventveda/participants" element={<ProtectedRoute element={<Participants />} />} />
         <Route path="/major-event-admin/groups" element={<ProtectedRoute element={<MajorEventGroups />} />} />
         <Route path="/major-event-admin/form-assign" element={<ProtectedRoute element={<FormAssign />} />} />
         <Route path="/major-event-admin/form-preview" element={<ProtectedRoute element={<FormPreview />} />} />
