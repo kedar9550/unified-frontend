@@ -404,7 +404,8 @@ export const ROLE_ROUTES = {
         { text: "Groups", path: "/Eventveda/groups", icon: <Groups /> },
         { text: "Events", path: "/Eventveda/events", icon: <EventAvailable /> },
         { text: "Payments", path: "/Eventveda/payments", icon: <Payment /> },
-        { text: "Participants", path: "/Eventveda/participants", icon: <PeopleAlt /> },
+        { text: "Registrations", path: "/Eventveda/registrations", icon: <PeopleAlt /> },
+        { text: "Scan Pass", path: "/Eventveda/scan-pass", icon: <QrCode /> },
       ]
     }
     // {
@@ -450,5 +451,13 @@ export const ROLE_ROUTES = {
         { text: "My Tickets", path: "/service-desk/my-tickets" },
       ]
     }
+  ],
+
+  EVENT_COORDINATOR: [
+    { text: "Dashboard", path: "/dashboard", icon: <Dashboard /> },
+    { text: "Events", path: "/Eventveda/events", icon: <EventAvailable /> },
+    { text: "Payments", path: "/Eventveda/payments", icon: <Payment /> },
+    { text: "Registrations", path: "/Eventveda/registrations", icon: <PeopleAlt /> },
+    { text: "Scan Pass", path: "/Eventveda/scan-pass", icon: <QrCode /> }
   ],
 };
