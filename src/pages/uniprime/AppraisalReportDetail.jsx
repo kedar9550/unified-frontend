@@ -1,6 +1,5 @@
 import Loader from "../../components/common/Loader";
 import React, { useState, useEffect, useRef } from "react";
-import { useReactToPrint } from "react-to-print";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   Box,
@@ -34,7 +33,7 @@ import {
   Select,
   MenuItem
 } from "@mui/material";
-import { RateReview, CheckCircle, Reply, Visibility, OpenInNew, School, Science, CardMembership, Work, Groups, Person, MenuBook, Badge, Description, Public, Fingerprint, Cancel, BarChart, Close, Search } from "@mui/icons-material";
+import { RateReview, CheckCircle, Reply, Visibility, OpenInNew, School, Science, CardMembership, Work, Groups, Person, MenuBook, Badge, Description, Public, Fingerprint, Cancel, BarChart, Close, Search, Edit } from "@mui/icons-material";
 import axiosInstance from "../../api/axios";
 import { toast } from "sonner";
 import DataTable from "../../components/data/DataTable";
@@ -228,6 +227,7 @@ const AppraisalReportDetail = () => {
   const [contRemarks, setContRemarks] = useState({}); // { itemId: remarks }
   const [adminRemarks, setAdminRemarks] = useState({}); // { roleName: remarks }
   const [awardedResUtilPoints, setAwardedResUtilPoints] = useState({}); // { recordId: awardedPoints }
+  const [editingResUtilId, setEditingResUtilId] = useState(null);
 
   // Details dialog states
   const [selectedResUtDetails, setSelectedResUtDetails] = useState(null);
@@ -240,22 +240,57 @@ const AppraisalReportDetail = () => {
 
   // Print Ref
   const printRef = useRef();
-  const handlePrint = useReactToPrint({
-    contentRef: printRef,
-    documentTitle: "Faculty_Appraisal_Report_2025-26",
-    pageStyle: `
-      @page {
-        size: auto;
-        margin: 15mm;
-      }
-      @media print {
-        body { 
-          -webkit-print-color-adjust: exact; 
-          print-color-adjust: exact; 
-        }
-      }
-    `,
-  });
+  const [isDownloading, setIsDownloading] = useState(false);
+
+  const handleDownloadPDF = async () => {
+    if (!printRef.current) return;
+    try {
+      setIsDownloading(true);
+      const rawHtml = printRef.current.outerHTML;
+      const htmlContent = `
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <base href="${window.location.origin}">
+            <style>
+              * { box-sizing: border-box; }
+              body { margin: 0; padding: 0; }
+              table { max-width: 100%; word-break: break-word; }
+            </style>
+          </head>
+          <body>
+            ${rawHtml}
+          </body>
+        </html>
+      `;
+
+      const facultyName = selectedAppraisal?.personalInfoSnapshot?.name || selectedAppraisal?.facultyId?.name || 'Faculty';
+      const academicYear = selectedAppraisal?.academicYearId?.year || '2025-26';
+      const fileName = `${facultyName.replace(/\s+/g, '_')}_Appraisal_Report_${academicYear}.pdf`;
+
+      const response = await axiosInstance.post(
+        '/api/appraisal/generate-pdf',
+        { html: htmlContent },
+        { responseType: 'blob' }
+      );
+
+      const blob = new Blob([response.data], { type: 'application/pdf' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      a.remove();
+      toast.success("PDF Downloaded successfully!");
+    } catch (error) {
+      console.error("PDF Generation failed:", error);
+      toast.error("Failed to generate PDF. Please try again.");
+    } finally {
+      setIsDownloading(false);
+    }
+  };
 
   // Main Appraisal Actions
   const [mainAppraisalRemarks, setMainAppraisalRemarks] = useState("");
@@ -714,7 +749,7 @@ const AppraisalReportDetail = () => {
   } : null;
 
   const validationStatus = getAppraisalValidationStatus();
-  const allRatingsProvided = typeof PARAMETERS !== 'undefined' 
+  const allRatingsProvided = typeof PARAMETERS !== 'undefined'
     ? PARAMETERS.every(p => ratings[p.id] !== undefined && ratings[p.id] !== null && ratings[p.id] !== "")
     : true; // fallback
 
@@ -833,8 +868,8 @@ const AppraisalReportDetail = () => {
                     </Typography>
                     <Box sx={{ display: "flex", gap: 1 }}>
                       {selectedAppraisal.status === "Approved" || selectedAppraisal.status === "Completed" || selectedAppraisal.status === "Pending Research Admin" ? (
-                        <Button size="small" variant="contained" onClick={handlePrint} sx={{ textTransform: "none", fontWeight: 700, bgcolor: "#e8a000", color: "#fff", '&:hover': { bgcolor: "#cc8d00" } }}>
-                          Download PDF
+                        <Button size="small" variant="contained" disabled={isDownloading} onClick={handleDownloadPDF} sx={{ textTransform: "none", fontWeight: 700, bgcolor: "#e8a000", color: "#fff", '&:hover': { bgcolor: "#cc8d00" } }}>
+                          {isDownloading ? "Generating PDF..." : "Download PDF"}
                         </Button>
                       ) : null}
                       <Button size="small" startIcon={<Reply />} onClick={() => navigate(-1)} sx={{ textTransform: "none", fontWeight: 700 }}>
@@ -1785,14 +1820,37 @@ const AppraisalReportDetail = () => {
                                               return (
                                                 <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.5 }}>
                                                   {isEditableStatus && isParticipated ? (
-                                                    <TextField
-                                                      size="small"
-                                                      type="number"
-                                                      value={awardedResUtilPoints[item._id]}
-                                                      onChange={(e) => setAwardedResUtilPoints(prev => ({ ...prev, [item._id]: e.target.value === '' ? '' : Number(e.target.value) }))}
-                                                      inputProps={{ min: 0, step: 0.1, style: { textAlign: 'center', fontWeight: 'bold', padding: '4px' } }}
-                                                      sx={{ width: '70px', '& .MuiOutlinedInput-root': { borderRadius: '6px' } }}
-                                                    />
+                                                    editingResUtilId === item._id ? (
+                                                      <TextField
+                                                        size="small"
+                                                        type="number"
+                                                        autoFocus
+                                                        onBlur={() => setEditingResUtilId(null)}
+                                                        value={awardedResUtilPoints[item._id]}
+                                                        onChange={(e) => {
+                                                          let val = e.target.value === '' ? '' : Number(e.target.value);
+                                                          if (val !== '') {
+                                                            if (val < 0) val = 0;
+                                                            if (val > 10) val = 10;
+                                                          }
+                                                          setAwardedResUtilPoints(prev => ({ ...prev, [item._id]: val }));
+                                                        }}
+                                                        inputProps={{ min: 0, max: 10, step: 0.1, style: { textAlign: 'center', fontWeight: 'bold', padding: '4px' } }}
+                                                        sx={{ width: '70px', '& .MuiOutlinedInput-root': { borderRadius: '6px' } }}
+                                                      />
+                                                    ) : (
+                                                      <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }} onClick={() => setEditingResUtilId(item._id)}>
+                                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, cursor: 'pointer' }}>
+                                                          <span>{awardedResUtilPoints[item._id]}</span>
+                                                          <IconButton size="small" sx={{ padding: '2px' }}>
+                                                            <Edit fontSize="small" sx={{ fontSize: '14px', color: 'var(--text-secondary)' }} />
+                                                          </IconButton>
+                                                        </Box>
+                                                        <Typography variant="caption" sx={{ fontSize: '12px', color: '#d32f2f', cursor: 'pointer', mt: -0.5 }}>
+                                                          edit if required
+                                                        </Typography>
+                                                      </Box>
+                                                    )
                                                   ) : (
                                                     <span>{awardedResUtilPoints[item._id]}</span>
                                                   )}
@@ -2233,11 +2291,11 @@ const AppraisalReportDetail = () => {
                               if (match) {
                                 return (
                                   <>
-                                    <Box component="span" sx={{ 
-                                      fontWeight: 800, 
-                                      background: "var(--gradient-primary)", 
-                                      WebkitBackgroundClip: "text", 
-                                      WebkitTextFillColor: "transparent" 
+                                    <Box component="span" sx={{
+                                      fontWeight: 800,
+                                      background: "var(--gradient-primary)",
+                                      WebkitBackgroundClip: "text",
+                                      WebkitTextFillColor: "transparent"
                                     }}>
                                       {p.id}. {match[1]}
                                     </Box>
@@ -2278,12 +2336,12 @@ const AppraisalReportDetail = () => {
                                     key={val}
                                     value={val}
                                     control={
-                                      <Radio 
-                                        size="small" 
-                                        sx={{ 
-                                          color: "var(--text-secondary)", 
-                                          "&.Mui-checked": { color: "#3b82f6" } 
-                                        }} 
+                                      <Radio
+                                        size="small"
+                                        sx={{
+                                          color: "var(--text-secondary)",
+                                          "&.Mui-checked": { color: "#3b82f6" }
+                                        }}
                                       />
                                     }
                                     label={<Typography sx={{ fontSize: "0.85rem", fontWeight: 700, color: "var(--text-primary)" }}>{val}</Typography>}
