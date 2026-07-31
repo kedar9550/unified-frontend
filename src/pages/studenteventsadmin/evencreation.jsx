@@ -33,8 +33,10 @@ import PageHeader from '../../components/common/PageHeader';
 import DataTable from '../../components/data/DataTable';
 import API from '../../api/axios';
 import { toast } from 'sonner';
+import { useAuth } from '../../context/AuthContext';
 
 const EventCreation = () => {
+  const { activeRole } = useAuth();
   const [view, setView] = useState('list');
   const [events, setEvents] = useState([]);
   const [groups, setGroups] = useState([]);
@@ -65,11 +67,15 @@ const EventCreation = () => {
       const response = await API.get('/api/groups');
       const activeGroups = (response.data?.groups || []).filter((group) => group.status === 'Active');
       setGroups(activeGroups);
+      if (activeRole === 'EVENT_COORDINATOR' && activeGroups.length > 0) {
+        setSelectedGroup(activeGroups[0]);
+        setDepartmentName(activeGroups[0]?.department?.name || '');
+      }
     } catch (error) {
       console.error('Failed to load groups', error);
       toast.error('Failed to load groups');
     }
-  }, []);
+  }, [activeRole]);
 
   const fetchEvents = useCallback(async () => {
     setLoading(true);
@@ -116,8 +122,13 @@ const EventCreation = () => {
 
   const resetForm = () => {
     setEditingEvent(null);
-    setSelectedGroup(null);
-    setDepartmentName('');
+    if (activeRole === 'EVENT_COORDINATOR' && groups.length > 0) {
+      setSelectedGroup(groups[0]);
+      setDepartmentName(groups[0]?.department?.name || '');
+    } else {
+      setSelectedGroup(null);
+      setDepartmentName('');
+    }
     setEventName('');
     setPrice('');
     setMaxTeamSize('');
@@ -386,6 +397,7 @@ const EventCreation = () => {
                 labelId="group-label"
                 value={selectedGroup?._id || ''}
                 label="Group"
+                disabled={activeRole === 'EVENT_COORDINATOR'}
                 onChange={(e) => {
                   const group = groups.find((g) => g._id === e.target.value) || null;
                   setSelectedGroup(group);

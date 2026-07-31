@@ -36,7 +36,7 @@ import DataTable from '../../components/data/DataTable';
 import API from '../../api/axios';
 import { toast } from 'sonner';
 
-const Participants = () => {
+const Registrations = () => {
   const navigate = useNavigate();
   const [payments, setPayments] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -54,8 +54,8 @@ const Participants = () => {
       const response = await API.get('/api/razorpay/registrations');
       setPayments(response.data?.payments || []);
     } catch (error) {
-      console.error('Error fetching event participants:', error);
-      toast.error(error.response?.data?.message || 'Failed to load participants');
+      console.error('Error fetching event registrations:', error);
+      toast.error(error.response?.data?.message || 'Failed to load registrations');
     } finally {
       setLoading(false);
     }
@@ -153,7 +153,7 @@ const Participants = () => {
   // CSV Export handler
   const handleExportCSV = () => {
     if (filteredParticipants.length === 0) {
-      toast.error('No participants data to export.');
+      toast.error('No registrations data to export.');
       return;
     }
 
@@ -186,12 +186,12 @@ const Participants = () => {
     a.download = `VEDA_Event_Participants_${new Date().toISOString().slice(0, 10)}.csv`;
     a.click();
     window.URL.revokeObjectURL(url);
-    toast.success('Participants data exported successfully!');
+    toast.success('registrations data exported successfully!');
   };
 
   const columns = [
     'S.No',
-    'Participant Name',
+    'Name',
     'Roll Number',
     'Event Name',
     'College',
@@ -281,8 +281,8 @@ const Participants = () => {
   return (
     <Box sx={{ p: { xs: 2, md: 3, lg: 4 } }}>
       <PageHeader
-        title="VEDA Event Participants"
-        subtitle="View and manage all registered student event participants"
+        title="VEDA Event Registrations"
+        subtitle="View and manage all registered student event registrations"
         action={
           <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap' }}>
             <Button
@@ -334,7 +334,7 @@ const Participants = () => {
               </Box>
               <Box>
                 <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase', fontWeight: 700 }}>
-                  Total Participants
+                  Total Registrations
                 </Typography>
                 <Typography variant="h5" sx={{ fontWeight: 900 }}>
                   {allParticipants.length}
@@ -344,7 +344,7 @@ const Participants = () => {
           </Paper>
         </Grid>
 
-        <Grid item xs={12} sm={6} md={3}>
+        {/* <Grid item xs={12} sm={6} md={3}>
           <Paper
             variant="outlined"
             sx={{
@@ -379,7 +379,7 @@ const Participants = () => {
               </Box>
             </Box>
           </Paper>
-        </Grid>
+        </Grid> */}
 
         <Grid item xs={12} sm={6} md={3}>
           <Paper
@@ -502,7 +502,7 @@ const Participants = () => {
           onChange={(e) => setAccommodationFilter(e.target.value)}
           sx={{ minWidth: 160 }}
         >
-          <MenuItem value="ALL">All Participants</MenuItem>
+          <MenuItem value="ALL">All Registrations</MenuItem>
           <MenuItem value="YES">Requested (Yes)</MenuItem>
           <MenuItem value="NO">No Accommodation</MenuItem>
         </TextField>
@@ -537,7 +537,7 @@ const Participants = () => {
               }}
             >
               <Typography variant="h6" sx={{ mb: 1 }}>
-                No participants found
+                No Registrations found
               </Typography>
               <Typography variant="body2" color="text.secondary">
                 Try adjusting your search query or filter criteria.
@@ -579,7 +579,7 @@ const Participants = () => {
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               <BadgeIcon sx={{ color: '#38bdf8' }} />
               <Typography variant="h6" sx={{ fontWeight: 800, color: '#fff' }}>
-                Participant Profile
+                Student Profile
               </Typography>
             </Box>
             <IconButton
@@ -693,4 +693,4 @@ const Participants = () => {
   );
 };
 
-export default Participants;
+export default Registrations;

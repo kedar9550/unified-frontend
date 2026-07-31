@@ -235,7 +235,7 @@ const Payments = () => {
           {/* Header Bar */}
           <DialogTitle
             sx={{
-              background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
+              background: 'var(--gradient-primary)',
               color: '#ffffff',
               py: 2.5,
               px: 3,

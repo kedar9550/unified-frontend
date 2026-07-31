@@ -27,6 +27,11 @@ API.interceptors.request.use((config) => {
     config.skipGlobalLoader = true;
   }
 
+  const activeRole = localStorage.getItem('activeRole');
+  if (activeRole) {
+    config.headers['active-role'] = activeRole;
+  }
+
   if (!config.skipGlobalLoader) {
     _startLoading();
   }
