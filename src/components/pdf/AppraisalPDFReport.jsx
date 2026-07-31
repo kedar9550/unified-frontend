@@ -38,7 +38,7 @@ const AppraisalPDFReport = forwardRef(({ data, hideInterpersonal }, ref) => {
     },
     table: {
       width: '100%',
-      borderCollapse: 'collapse',
+      borderCollapse: 'separate', borderSpacing: 0,
       marginBottom: '15px',
       pageBreakInside: 'auto',
     },
@@ -121,7 +121,7 @@ const AppraisalPDFReport = forwardRef(({ data, hideInterpersonal }, ref) => {
 
       <div style={styles.sectionTitle}>PART A: PERSONAL INFORMATION</div>
       <table style={styles.table}>
-        <tbody>
+        <tbody style={{ display: 'table-row-group', pageBreakInside: 'auto' }}>
           <tr style={styles.tr}>
             <td style={{ ...styles.td, ...styles.rowLabel }}>Name of the Faculty</td>
             <td style={styles.tdLeft}>{pInfo.name || 'N/A'}</td>
@@ -152,18 +152,18 @@ const AppraisalPDFReport = forwardRef(({ data, hideInterpersonal }, ref) => {
       <div style={styles.sectionTitle}>PART B: PERFORMANCE ATTRIBUTES</div>
 
       {/* 1. TEACHING SUMMARY */}
-      <div style={{ fontWeight: 'bold', fontSize: '15px', marginTop: '20px', marginBottom: '5px' }}>
+      <div style={{ fontWeight: 'bold', fontSize: '15px', marginTop: '20px', marginBottom: '5px', pageBreakAfter: 'avoid' }}>
         1. Teaching
       </div>
       <table style={styles.table}>
-        <thead>
+        <thead style={{ display: 'table-header-group' }}>
           <tr style={styles.tr}>
             <th style={styles.th}>Metric</th>
             <th style={styles.th}>Category</th>
             <th style={styles.th}>Average points claimed</th>
           </tr>
         </thead>
-        <tbody>
+        <tbody style={{ display: 'table-row-group', pageBreakInside: 'auto' }}>
           <tr style={styles.tr}>
             <td style={styles.td}>1.1</td>
             <td style={styles.tdLeft}>Course average pass percentage</td>
@@ -193,14 +193,14 @@ const AppraisalPDFReport = forwardRef(({ data, hideInterpersonal }, ref) => {
 
       {/* 1.1 Course Average Pass Percentage */}
       {teaching?.passPercentage?.courses?.length > 0 && (
-        <div style={{ pageBreakInside: 'avoid' }}>
-          <div style={{ fontSize: '14px', marginTop: '15px', marginBottom: '5px' }}>
+        <div>
+          <div style={{ fontSize: '14px', marginTop: '15px', marginBottom: '5px', pageBreakAfter: 'avoid' }}>
             1.1 Course Average Pass Percentage :
           </div>
           <table style={styles.table}>
-            <thead>
+            <thead style={{ display: 'table-header-group' }}>
               <tr style={styles.tr}>
-                <th style={styles.th}>S. No</th>
+                <th style={{ ...styles.th, whiteSpace: 'nowrap', width: '50px' }}>S. No</th>
                 <th style={styles.th}>Course Name</th>
                 <th style={styles.th}>Sem- Branch- Sec</th>
                 <th style={styles.th}>No. of students appeared (A)</th>
@@ -210,7 +210,7 @@ const AppraisalPDFReport = forwardRef(({ data, hideInterpersonal }, ref) => {
                 <th style={styles.th}>Average points</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody style={{ display: 'table-row-group', pageBreakInside: 'auto' }}>
               {teaching.passPercentage.courses.map((t, i) => (
                 <tr key={i} style={styles.tr}>
                   <td style={styles.td}>{i + 1}</td>
@@ -234,14 +234,14 @@ const AppraisalPDFReport = forwardRef(({ data, hideInterpersonal }, ref) => {
 
       {/* 1.2 Course feedback */}
       {teaching?.courseFeedback?.courses?.length > 0 && (
-        <div style={{ pageBreakInside: 'avoid' }}>
-          <div style={{ fontSize: '14px', marginTop: '15px', marginBottom: '5px' }}>
+        <div>
+          <div style={{ fontSize: '14px', marginTop: '15px', marginBottom: '5px', pageBreakAfter: 'avoid' }}>
             1.2 Course feedback:
           </div>
           <table style={styles.table}>
-            <thead>
+            <thead style={{ display: 'table-header-group' }}>
               <tr style={styles.tr}>
-                <th style={styles.th}>S. No</th>
+                <th style={{ ...styles.th, whiteSpace: 'nowrap', width: '50px' }}>S. No</th>
                 <th style={styles.th}>Course Name</th>
                 <th style={styles.th}>Sem- Branch- Sec</th>
                 <th style={styles.th}>Total Students</th>
@@ -251,7 +251,7 @@ const AppraisalPDFReport = forwardRef(({ data, hideInterpersonal }, ref) => {
                 <th style={styles.th}>Average points</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody style={{ display: 'table-row-group', pageBreakInside: 'auto' }}>
               {teaching.courseFeedback.courses.map((t, i) => (
                 <tr key={i} style={styles.tr}>
                   <td style={styles.td}>{i + 1}</td>
@@ -275,14 +275,14 @@ const AppraisalPDFReport = forwardRef(({ data, hideInterpersonal }, ref) => {
 
       {/* 1.3 Proctoring Students Average pass percentage */}
       {teaching?.proctoring?.entries?.length > 0 && (
-        <div style={{ pageBreakInside: 'avoid' }}>
-          <div style={{ fontSize: '14px', marginTop: '15px', marginBottom: '5px' }}>
+        <div>
+          <div style={{ fontSize: '14px', marginTop: '15px', marginBottom: '5px', pageBreakAfter: 'avoid' }}>
             1.3 Proctoring Students Average pass percentage:
           </div>
           <table style={styles.table}>
-            <thead>
+            <thead style={{ display: 'table-header-group' }}>
               <tr style={styles.tr}>
-                <th style={styles.th}>S. No</th>
+                <th style={{ ...styles.th, whiteSpace: 'nowrap', width: '50px' }}>S. No</th>
                 <th style={styles.th}>No. of students allotted for proctoring</th>
                 <th style={styles.th}>Sem- Branch-Sec</th>
                 <th style={styles.th}>No. of students eligible for end exams (A)</th>
@@ -292,7 +292,7 @@ const AppraisalPDFReport = forwardRef(({ data, hideInterpersonal }, ref) => {
                 <th style={styles.th}>Average points</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody style={{ display: 'table-row-group', pageBreakInside: 'auto' }}>
               {teaching.proctoring.entries.map((e, i) => (
                 <tr key={i} style={styles.tr}>
                   <td style={styles.td}>{i + 1}</td>
@@ -316,14 +316,14 @@ const AppraisalPDFReport = forwardRef(({ data, hideInterpersonal }, ref) => {
 
       {/* 1.4 CO attainment */}
       {teaching?.coAttainment?.courses?.length > 0 && (
-        <div style={{ pageBreakInside: 'avoid' }}>
-          <div style={{ fontSize: '14px', marginTop: '15px', marginBottom: '5px' }}>
+        <div>
+          <div style={{ fontSize: '14px', marginTop: '15px', marginBottom: '5px', pageBreakAfter: 'avoid' }}>
             1.4 CO attainment:
           </div>
           <table style={styles.table}>
-            <thead>
+            <thead style={{ display: 'table-header-group' }}>
               <tr style={styles.tr}>
-                <th style={styles.th}>S. No</th>
+                <th style={{ ...styles.th, whiteSpace: 'nowrap', width: '50px' }}>S. No</th>
                 <th style={styles.th}>Course Name</th>
                 <th style={styles.th}>Sem- Branch- Sec</th>
                 <th style={styles.th}>No. of CO’s</th>
@@ -332,7 +332,7 @@ const AppraisalPDFReport = forwardRef(({ data, hideInterpersonal }, ref) => {
                 <th style={styles.th}>Average points</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody style={{ display: 'table-row-group', pageBreakInside: 'auto' }}>
               {teaching.coAttainment.courses.map((t, i) => (
                 <tr key={i} style={styles.tr}>
                   <td style={styles.td}>{i + 1}</td>
@@ -354,18 +354,18 @@ const AppraisalPDFReport = forwardRef(({ data, hideInterpersonal }, ref) => {
       )}
 
       {/* 2. RESEARCH SUMMARY */}
-      <div style={{ fontWeight: 'bold', fontSize: '15px', marginTop: '20px', marginBottom: '5px' }}>
+      <div style={{ fontWeight: 'bold', fontSize: '15px', marginTop: '20px', marginBottom: '5px', pageBreakAfter: 'avoid' }}>
         2. Research Contributions:
       </div>
       <table style={styles.table}>
-        <thead>
+        <thead style={{ display: 'table-header-group' }}>
           <tr style={styles.tr}>
             <th style={styles.th}>Metric</th>
             <th style={styles.th}>Research Item</th>
             <th style={styles.th}>Points claimed</th>
           </tr>
         </thead>
-        <tbody>
+        <tbody style={{ display: 'table-row-group', pageBreakInside: 'auto' }}>
           {[
             { m: '2.1', label: 'Papers publication', val: r21 },
             { m: '2.2', label: 'Guiding Ph.D. scholars', val: r22 },
@@ -391,21 +391,21 @@ const AppraisalPDFReport = forwardRef(({ data, hideInterpersonal }, ref) => {
 
       {/* 2.1 Paper publication */}
       {rData?.papers?.items?.length > 0 && (
-        <div style={{ pageBreakInside: 'avoid' }}>
-          <div style={{ fontSize: '14px', marginTop: '15px', marginBottom: '5px' }}>
+        <div>
+          <div style={{ fontSize: '14px', marginTop: '15px', marginBottom: '5px', pageBreakAfter: 'avoid' }}>
             2.1 Paper publication: (only for one Aditya author)
           </div>
           <table style={styles.table}>
-            <thead>
+            <thead style={{ display: 'table-header-group' }}>
               <tr style={styles.tr}>
-                <th style={styles.th}>S. No</th>
+                <th style={{ ...styles.th, whiteSpace: 'nowrap', width: '50px' }}>S. No</th>
                 <th style={styles.th}>Article details in IEEE format</th>
                 <th style={styles.th}>Category of the Journal</th>
                 <th style={styles.th}>JCR Impact Factor</th>
                 <th style={styles.th}>Points claimed</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody style={{ display: 'table-row-group', pageBreakInside: 'auto' }}>
               {rData.papers.items.map((j, i) => (
                 <tr key={i} style={styles.tr}>
                   <td style={styles.td}>{i + 1}</td>
@@ -426,14 +426,14 @@ const AppraisalPDFReport = forwardRef(({ data, hideInterpersonal }, ref) => {
 
       {/* 2.2 Guiding Ph.D Scholars */}
       {rData?.phdGuidance?.items?.length > 0 && (
-        <div style={{ pageBreakInside: 'avoid' }}>
-          <div style={{ fontSize: '14px', marginTop: '15px', marginBottom: '5px' }}>
+        <div>
+          <div style={{ fontSize: '14px', marginTop: '15px', marginBottom: '5px', pageBreakAfter: 'avoid' }}>
             2.2 Guiding Ph. D Scholars:
           </div>
           <table style={styles.table}>
-            <thead>
+            <thead style={{ display: 'table-header-group' }}>
               <tr style={styles.tr}>
-                <th style={styles.th}>S.No.</th>
+                <th style={{ ...styles.th, whiteSpace: 'nowrap', width: '50px' }}>S. No</th>
                 <th style={styles.th}>Name of the Research Scholar (FT/PT)</th>
                 <th style={styles.th}>University</th>
                 <th style={styles.th}>Month & Year of Admission / Award</th>
@@ -441,7 +441,7 @@ const AppraisalPDFReport = forwardRef(({ data, hideInterpersonal }, ref) => {
                 <th style={styles.th}>Points claimed</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody style={{ display: 'table-row-group', pageBreakInside: 'auto' }}>
               {rData.phdGuidance.items.map((p, i) => (
                 <tr key={i} style={styles.tr}>
                   <td style={styles.td}>{i + 1}</td>
@@ -463,21 +463,21 @@ const AppraisalPDFReport = forwardRef(({ data, hideInterpersonal }, ref) => {
 
       {/* 2.3 Books/Chapters */}
       {rData?.booksChapters?.items?.length > 0 && (
-        <div style={{ pageBreakInside: 'avoid' }}>
-          <div style={{ fontSize: '14px', marginTop: '15px', marginBottom: '5px' }}>
+        <div>
+          <div style={{ fontSize: '14px', marginTop: '15px', marginBottom: '5px', pageBreakAfter: 'avoid' }}>
             2.3 Books/Chapters/Scopus Conference proceedings:
           </div>
           <table style={styles.table}>
-            <thead>
+            <thead style={{ display: 'table-header-group' }}>
               <tr style={styles.tr}>
-                <th style={styles.th}>S.No</th>
+                <th style={{ ...styles.th, whiteSpace: 'nowrap', width: '50px' }}>S. No</th>
                 <th style={styles.th}>Details of Books/Chapter/conference Proceedings published along with ISBN/ISSN number</th>
                 <th style={styles.th}>Category (Book/chapter/ Proceedings)</th>
                 <th style={styles.th}>Publisher</th>
                 <th style={styles.th}>Points claimed</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody style={{ display: 'table-row-group', pageBreakInside: 'auto' }}>
               {rData.booksChapters.items.map((b, i) => (
                 <tr key={i} style={styles.tr}>
                   <td style={styles.td}>{i + 1}</td>
@@ -498,21 +498,21 @@ const AppraisalPDFReport = forwardRef(({ data, hideInterpersonal }, ref) => {
 
       {/* 2.4 Patents */}
       {rData?.patents?.items?.length > 0 && (
-        <div style={{ pageBreakInside: 'avoid' }}>
-          <div style={{ fontSize: '14px', marginTop: '15px', marginBottom: '5px' }}>
+        <div>
+          <div style={{ fontSize: '14px', marginTop: '15px', marginBottom: '5px', pageBreakAfter: 'avoid' }}>
             2.4 Patents Published/Granted:
           </div>
           <table style={styles.table}>
-            <thead>
+            <thead style={{ display: 'table-header-group' }}>
               <tr style={styles.tr}>
-                <th style={styles.th}>S. No</th>
+                <th style={{ ...styles.th, whiteSpace: 'nowrap', width: '50px' }}>S. No</th>
                 <th style={styles.th}>Patent Title along with Number and date</th>
                 <th style={styles.th}>Patent filed Country</th>
                 <th style={styles.th}>Published/Granted</th>
                 <th style={styles.th}>Points claimed</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody style={{ display: 'table-row-group', pageBreakInside: 'auto' }}>
               {rData.patents.items.map((p, i) => (
                 <tr key={i} style={styles.tr}>
                   <td style={styles.td}>{i + 1}</td>
@@ -533,20 +533,20 @@ const AppraisalPDFReport = forwardRef(({ data, hideInterpersonal }, ref) => {
 
       {/* 2.5 Novel products */}
       {rData?.novelProducts?.items?.length > 0 && (
-        <div style={{ pageBreakInside: 'avoid' }}>
-          <div style={{ fontSize: '14px', marginTop: '15px', marginBottom: '5px' }}>
+        <div>
+          <div style={{ fontSize: '14px', marginTop: '15px', marginBottom: '5px', pageBreakAfter: 'avoid' }}>
             2.5 Novel products/Technology:
           </div>
           <table style={styles.table}>
-            <thead>
+            <thead style={{ display: 'table-header-group' }}>
               <tr style={styles.tr}>
-                <th style={styles.th}>S.No</th>
+                <th style={{ ...styles.th, whiteSpace: 'nowrap', width: '50px' }}>S. No</th>
                 <th style={styles.th}>Details of the Novel Product/Technology</th>
                 <th style={styles.th}>Name of the Implemented organization</th>
                 <th style={styles.th}>Points claimed</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody style={{ display: 'table-row-group', pageBreakInside: 'auto' }}>
               {rData.novelProducts.items.map((n, i) => (
                 <tr key={i} style={styles.tr}>
                   <td style={styles.td}>{i + 1}</td>
@@ -566,21 +566,21 @@ const AppraisalPDFReport = forwardRef(({ data, hideInterpersonal }, ref) => {
 
       {/* 2.6 Project/Consultancy Proposals */}
       {rData?.projectsConsultancies?.items?.length > 0 && (
-        <div style={{ pageBreakInside: 'avoid' }}>
-          <div style={{ fontSize: '14px', marginTop: '15px', marginBottom: '5px' }}>
+        <div>
+          <div style={{ fontSize: '14px', marginTop: '15px', marginBottom: '5px', pageBreakAfter: 'avoid' }}>
             2.6 Project/Consultancy Proposals:
           </div>
           <table style={styles.table}>
-            <thead>
+            <thead style={{ display: 'table-header-group' }}>
               <tr style={styles.tr}>
-                <th style={styles.th}>S. No</th>
+                <th style={{ ...styles.th, whiteSpace: 'nowrap', width: '50px' }}>S. No</th>
                 <th style={styles.th}>Details of the Research Project/Consultancy</th>
                 <th style={styles.th}>Funding Agency/Industry</th>
                 <th style={styles.th}>Total worth (in lakhs)</th>
                 <th style={styles.th}>Points claimed</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody style={{ display: 'table-row-group', pageBreakInside: 'auto' }}>
               {rData.projectsConsultancies.items.map((fp, i) => (
                 <tr key={i} style={styles.tr}>
                   <td style={styles.td}>{i + 1}</td>
@@ -601,24 +601,24 @@ const AppraisalPDFReport = forwardRef(({ data, hideInterpersonal }, ref) => {
 
       {/* 3.1 Faculty resource utilization */}
       {vData?.resourceUtilization?.length > 0 && (
-        <div style={{ pageBreakInside: 'avoid' }}>
-          <div style={{ fontSize: '14px', marginTop: '20px', marginBottom: '5px', fontWeight: 'bold' }}>
+        <div>
+          <div style={{ fontSize: '14px', marginTop: '20px', marginBottom: '5px', pageBreakAfter: 'avoid', fontWeight: 'bold' }}>
             3. Extension/Value addition:
           </div>
-          <div style={{ fontSize: '14px', marginBottom: '5px' }}>
+          <div style={{ fontSize: '14px', marginBottom: '5px', pageBreakAfter: 'avoid' }}>
             3.1 Faculty resource utilization
           </div>
           <table style={styles.table}>
-            <thead>
+            <thead style={{ display: 'table-header-group' }}>
               <tr style={styles.tr}>
-                <th style={styles.th}>S. No</th>
+                <th style={{ ...styles.th, whiteSpace: 'nowrap', width: '50px' }}>S. No</th>
                 <th style={styles.th}>Details of the Event along with dates</th>
                 <th style={styles.th}>Duration</th>
                 <th style={styles.th}>Role</th>
                 <th style={styles.th}>Points claimed</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody style={{ display: 'table-row-group', pageBreakInside: 'auto' }}>
               {vData.resourceUtilization.map((r, i) => (
                 <tr key={i} style={styles.tr}>
                   <td style={styles.td}>{i + 1}</td>
@@ -666,19 +666,19 @@ const AppraisalPDFReport = forwardRef(({ data, hideInterpersonal }, ref) => {
 
       {/* 3.2 Faculty Expertise */}
       {vData?.contributions?.length > 0 && (
-        <div style={{ pageBreakInside: 'avoid' }}>
-          <div style={{ fontSize: '14px', marginTop: '15px', marginBottom: '5px' }}>
+        <div>
+          <div style={{ fontSize: '14px', marginTop: '15px', marginBottom: '5px', pageBreakAfter: 'avoid' }}>
             3.2 Faculty Expertise/Recognition/Contribution
           </div>
           <table style={styles.table}>
-            <thead>
+            <thead style={{ display: 'table-header-group' }}>
               <tr style={styles.tr}>
-                <th style={styles.th}>S. No</th>
+                <th style={{ ...styles.th, whiteSpace: 'nowrap', width: '50px' }}>S. No</th>
                 <th style={styles.th}>Details of the Faculty Expertise/Recognition/Contribution</th>
                 <th style={styles.th}>Points claimed</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody style={{ display: 'table-row-group', pageBreakInside: 'auto' }}>
               {vData.contributions.map((c, i) => {
                 const getDesc = () => {
                   switch (c.category) {
@@ -716,20 +716,20 @@ const AppraisalPDFReport = forwardRef(({ data, hideInterpersonal }, ref) => {
 
       {/* 4. ADMINISTRATION */}
       {adminData?.roles?.length > 0 && (
-        <div style={{ pageBreakInside: 'avoid' }}>
-          <div style={{ fontWeight: 'bold', fontSize: '15px', marginTop: '20px', marginBottom: '5px' }}>
+        <div>
+          <div style={{ fontWeight: 'bold', fontSize: '15px', marginTop: '20px', marginBottom: '5px', pageBreakAfter: 'avoid' }}>
             4. Administrative Responsibilities:
           </div>
           <table style={styles.table}>
-            <thead>
+            <thead style={{ display: 'table-header-group' }}>
               <tr style={styles.tr}>
-                <th style={styles.th}>S. No</th>
+                <th style={{ ...styles.th, whiteSpace: 'nowrap', width: '50px' }}>S. No</th>
                 <th style={styles.th}>Details of the Administrative Responsibility</th>
                 <th style={styles.th}>Assigned by</th>
                 <th style={styles.th}>Points claimed</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody style={{ display: 'table-row-group', pageBreakInside: 'auto' }}>
               {adminData.roles.map((r, i) => (
                 <tr key={i} style={styles.tr}>
                   <td style={styles.td}>{i + 1}</td>
@@ -760,18 +760,18 @@ const AppraisalPDFReport = forwardRef(({ data, hideInterpersonal }, ref) => {
       {/* 5. INTERPERSONAL SKILLS */}
       {!hideInterpersonal && data.hodEvaluation?.interpersonalRatings?.length > 0 && (
         <div style={{ pageBreakBefore: 'always' }}>
-          <div style={{ fontWeight: 'bold', fontSize: '15px', marginTop: '20px', marginBottom: '5px' }}>
+          <div style={{ fontWeight: 'bold', fontSize: '15px', marginTop: '20px', marginBottom: '5px', pageBreakAfter: 'avoid' }}>
             5. Interpersonal Skills
           </div>
           <table style={styles.table}>
-            <thead>
+            <thead style={{ display: 'table-header-group' }}>
               <tr style={styles.tr}>
-                <th style={styles.th}>S. No</th>
+                <th style={{ ...styles.th, whiteSpace: 'nowrap', width: '50px' }}>S. No</th>
                 <th style={styles.th}>PARAMETER</th>
                 <th style={styles.th}>HoD Score</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody style={{ display: 'table-row-group', pageBreakInside: 'auto' }}>
               {data.hodEvaluation.interpersonalRatings.map((r, i) => (
                 <tr key={i} style={styles.tr}>
                   <td style={styles.td}>{i + 1}</td>
@@ -819,16 +819,16 @@ const AppraisalPDFReport = forwardRef(({ data, hideInterpersonal }, ref) => {
               6. Minimum Points Summary
             </div>
             <table style={styles.table}>
-              <thead>
+              <thead style={{ display: 'table-header-group' }}>
                 <tr style={{ ...styles.tr, backgroundColor: '#f0f0f0' }}>
-                  <th style={styles.th}>S. No</th>
+                  <th style={{ ...styles.th, whiteSpace: 'nowrap', width: '50px' }}>S. No</th>
                   <th style={{ ...styles.th, textAlign: 'left' }}>Metrics</th>
                   <th style={styles.th}>Max Score</th>
                   <th style={styles.th}>Minimum points for {facultyCategory}</th>
                   <th style={styles.th}>Points Awarded</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody style={{ display: 'table-row-group', pageBreakInside: 'auto' }}>
                 <tr style={styles.tr}>
                   <td style={styles.td}>1</td>
                   <td style={styles.tdLeft}>Teaching</td>
@@ -896,19 +896,19 @@ const AppraisalPDFReport = forwardRef(({ data, hideInterpersonal }, ref) => {
 
       {/* EVALUATION & STATUS */}
       {!hideInterpersonal && data.status !== "Submitted to HOD" && (
-        <div style={{ pageBreakInside: 'avoid' }}>
-          <div style={{ fontWeight: 'bold', fontSize: '15px', marginTop: '20px', marginBottom: '5px' }}>
+        <div>
+          <div style={{ fontWeight: 'bold', fontSize: '15px', marginTop: '20px', marginBottom: '5px', pageBreakAfter: 'avoid' }}>
             EVALUATION & STATUS
           </div>
           <table style={styles.table}>
-            <tbody>
+            <tbody style={{ display: 'table-row-group', pageBreakInside: 'auto' }}>
               <tr style={styles.tr}>
                 <td style={{ ...styles.td, ...styles.rowLabel }}>Final Status</td>
-                <td style={{ ...styles.tdLeft, fontWeight: 'bold' }}>{data.status}</td>
+                <td style={{ ...styles.tdLeft, fontWeight: 'bold' }}>{data.status === 'Completed' ? 'Approved' : data.status}</td>
               </tr>
               <tr style={styles.tr}>
                 <td style={{ ...styles.td, ...styles.rowLabel }}>HOD Comments</td>
-                <td style={styles.tdLeft}>{data.hodEvaluation?.comments || 'N/A'}</td>
+                <td style={styles.tdLeft}>{data.hodEvaluation?.comments || 'No remarks'}</td>
               </tr>
             </tbody>
           </table>

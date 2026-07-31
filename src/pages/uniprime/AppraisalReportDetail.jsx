@@ -33,7 +33,7 @@ import {
   Select,
   MenuItem
 } from "@mui/material";
-import { RateReview, CheckCircle, Reply, Visibility, OpenInNew, School, Science, CardMembership, Work, Groups, Person, MenuBook, Badge, Description, Public, Fingerprint, Cancel, BarChart, Close, Search } from "@mui/icons-material";
+import { RateReview, CheckCircle, Reply, Visibility, OpenInNew, School, Science, CardMembership, Work, Groups, Person, MenuBook, Badge, Description, Public, Fingerprint, Cancel, BarChart, Close, Search, Edit } from "@mui/icons-material";
 import axiosInstance from "../../api/axios";
 import { toast } from "sonner";
 import DataTable from "../../components/data/DataTable";
@@ -227,6 +227,7 @@ const AppraisalReportDetail = () => {
   const [contRemarks, setContRemarks] = useState({}); // { itemId: remarks }
   const [adminRemarks, setAdminRemarks] = useState({}); // { roleName: remarks }
   const [awardedResUtilPoints, setAwardedResUtilPoints] = useState({}); // { recordId: awardedPoints }
+  const [editingResUtilId, setEditingResUtilId] = useState(null);
 
   // Details dialog states
   const [selectedResUtDetails, setSelectedResUtDetails] = useState(null);
@@ -1819,21 +1820,37 @@ const AppraisalReportDetail = () => {
                                               return (
                                                 <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.5 }}>
                                                   {isEditableStatus && isParticipated ? (
-                                                    <TextField
-                                                      size="small"
-                                                      type="number"
-                                                      value={awardedResUtilPoints[item._id]}
-                                                      onChange={(e) => {
-                                                        let val = e.target.value === '' ? '' : Number(e.target.value);
-                                                        if (val !== '') {
-                                                          if (val < 0) val = 0;
-                                                          if (val > 10) val = 10;
-                                                        }
-                                                        setAwardedResUtilPoints(prev => ({ ...prev, [item._id]: val }));
-                                                      }}
-                                                      inputProps={{ min: 0, max: 10, step: 0.1, style: { textAlign: 'center', fontWeight: 'bold', padding: '4px' } }}
-                                                      sx={{ width: '70px', '& .MuiOutlinedInput-root': { borderRadius: '6px' } }}
-                                                    />
+                                                    editingResUtilId === item._id ? (
+                                                      <TextField
+                                                        size="small"
+                                                        type="number"
+                                                        autoFocus
+                                                        onBlur={() => setEditingResUtilId(null)}
+                                                        value={awardedResUtilPoints[item._id]}
+                                                        onChange={(e) => {
+                                                          let val = e.target.value === '' ? '' : Number(e.target.value);
+                                                          if (val !== '') {
+                                                            if (val < 0) val = 0;
+                                                            if (val > 10) val = 10;
+                                                          }
+                                                          setAwardedResUtilPoints(prev => ({ ...prev, [item._id]: val }));
+                                                        }}
+                                                        inputProps={{ min: 0, max: 10, step: 0.1, style: { textAlign: 'center', fontWeight: 'bold', padding: '4px' } }}
+                                                        sx={{ width: '70px', '& .MuiOutlinedInput-root': { borderRadius: '6px' } }}
+                                                      />
+                                                    ) : (
+                                                      <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }} onClick={() => setEditingResUtilId(item._id)}>
+                                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, cursor: 'pointer' }}>
+                                                          <span>{awardedResUtilPoints[item._id]}</span>
+                                                          <IconButton size="small" sx={{ padding: '2px' }}>
+                                                            <Edit fontSize="small" sx={{ fontSize: '14px', color: 'var(--text-secondary)' }} />
+                                                          </IconButton>
+                                                        </Box>
+                                                        <Typography variant="caption" sx={{ fontSize: '12px', color: '#d32f2f', cursor: 'pointer', mt: -0.5 }}>
+                                                          edit if required
+                                                        </Typography>
+                                                      </Box>
+                                                    )
                                                   ) : (
                                                     <span>{awardedResUtilPoints[item._id]}</span>
                                                   )}
