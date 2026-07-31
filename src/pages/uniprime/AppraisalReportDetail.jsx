@@ -1,6 +1,5 @@
 import Loader from "../../components/common/Loader";
 import React, { useState, useEffect, useRef } from "react";
-import { useReactToPrint } from "react-to-print";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   Box,
@@ -240,22 +239,57 @@ const AppraisalReportDetail = () => {
 
   // Print Ref
   const printRef = useRef();
-  const handlePrint = useReactToPrint({
-    contentRef: printRef,
-    documentTitle: "Faculty_Appraisal_Report_2025-26",
-    pageStyle: `
-      @page {
-        size: auto;
-        margin: 15mm;
-      }
-      @media print {
-        body { 
-          -webkit-print-color-adjust: exact; 
-          print-color-adjust: exact; 
-        }
-      }
-    `,
-  });
+  const [isDownloading, setIsDownloading] = useState(false);
+
+  const handleDownloadPDF = async () => {
+    if (!printRef.current) return;
+    try {
+      setIsDownloading(true);
+      const rawHtml = printRef.current.outerHTML;
+      const htmlContent = `
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <base href="${window.location.origin}">
+            <style>
+              * { box-sizing: border-box; }
+              body { margin: 0; padding: 0; }
+              table { max-width: 100%; word-break: break-word; }
+            </style>
+          </head>
+          <body>
+            ${rawHtml}
+          </body>
+        </html>
+      `;
+
+      const facultyName = selectedAppraisal?.personalInfoSnapshot?.name || selectedAppraisal?.facultyId?.name || 'Faculty';
+      const academicYear = selectedAppraisal?.academicYearId?.year || '2025-26';
+      const fileName = `${facultyName.replace(/\s+/g, '_')}_Appraisal_Report_${academicYear}.pdf`;
+
+      const response = await axiosInstance.post(
+        '/api/appraisal/generate-pdf',
+        { html: htmlContent },
+        { responseType: 'blob' }
+      );
+
+      const blob = new Blob([response.data], { type: 'application/pdf' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      a.remove();
+      toast.success("PDF Downloaded successfully!");
+    } catch (error) {
+      console.error("PDF Generation failed:", error);
+      toast.error("Failed to generate PDF. Please try again.");
+    } finally {
+      setIsDownloading(false);
+    }
+  };
 
   // Main Appraisal Actions
   const [mainAppraisalRemarks, setMainAppraisalRemarks] = useState("");
@@ -714,7 +748,7 @@ const AppraisalReportDetail = () => {
   } : null;
 
   const validationStatus = getAppraisalValidationStatus();
-  const allRatingsProvided = typeof PARAMETERS !== 'undefined' 
+  const allRatingsProvided = typeof PARAMETERS !== 'undefined'
     ? PARAMETERS.every(p => ratings[p.id] !== undefined && ratings[p.id] !== null && ratings[p.id] !== "")
     : true; // fallback
 
@@ -833,8 +867,8 @@ const AppraisalReportDetail = () => {
                     </Typography>
                     <Box sx={{ display: "flex", gap: 1 }}>
                       {selectedAppraisal.status === "Approved" || selectedAppraisal.status === "Completed" || selectedAppraisal.status === "Pending Research Admin" ? (
-                        <Button size="small" variant="contained" onClick={handlePrint} sx={{ textTransform: "none", fontWeight: 700, bgcolor: "#e8a000", color: "#fff", '&:hover': { bgcolor: "#cc8d00" } }}>
-                          Download PDF
+                        <Button size="small" variant="contained" disabled={isDownloading} onClick={handleDownloadPDF} sx={{ textTransform: "none", fontWeight: 700, bgcolor: "#e8a000", color: "#fff", '&:hover': { bgcolor: "#cc8d00" } }}>
+                          {isDownloading ? "Generating PDF..." : "Download PDF"}
                         </Button>
                       ) : null}
                       <Button size="small" startIcon={<Reply />} onClick={() => navigate(-1)} sx={{ textTransform: "none", fontWeight: 700 }}>
@@ -2233,11 +2267,11 @@ const AppraisalReportDetail = () => {
                               if (match) {
                                 return (
                                   <>
-                                    <Box component="span" sx={{ 
-                                      fontWeight: 800, 
-                                      background: "var(--gradient-primary)", 
-                                      WebkitBackgroundClip: "text", 
-                                      WebkitTextFillColor: "transparent" 
+                                    <Box component="span" sx={{
+                                      fontWeight: 800,
+                                      background: "var(--gradient-primary)",
+                                      WebkitBackgroundClip: "text",
+                                      WebkitTextFillColor: "transparent"
                                     }}>
                                       {p.id}. {match[1]}
                                     </Box>
@@ -2278,12 +2312,12 @@ const AppraisalReportDetail = () => {
                                     key={val}
                                     value={val}
                                     control={
-                                      <Radio 
-                                        size="small" 
-                                        sx={{ 
-                                          color: "var(--text-secondary)", 
-                                          "&.Mui-checked": { color: "#3b82f6" } 
-                                        }} 
+                                      <Radio
+                                        size="small"
+                                        sx={{
+                                          color: "var(--text-secondary)",
+                                          "&.Mui-checked": { color: "#3b82f6" }
+                                        }}
                                       />
                                     }
                                     label={<Typography sx={{ fontSize: "0.85rem", fontWeight: 700, color: "var(--text-primary)" }}>{val}</Typography>}
