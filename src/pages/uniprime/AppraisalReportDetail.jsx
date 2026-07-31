@@ -1823,8 +1823,15 @@ const AppraisalReportDetail = () => {
                                                       size="small"
                                                       type="number"
                                                       value={awardedResUtilPoints[item._id]}
-                                                      onChange={(e) => setAwardedResUtilPoints(prev => ({ ...prev, [item._id]: e.target.value === '' ? '' : Number(e.target.value) }))}
-                                                      inputProps={{ min: 0, step: 0.1, style: { textAlign: 'center', fontWeight: 'bold', padding: '4px' } }}
+                                                      onChange={(e) => {
+                                                        let val = e.target.value === '' ? '' : Number(e.target.value);
+                                                        if (val !== '') {
+                                                          if (val < 0) val = 0;
+                                                          if (val > 10) val = 10;
+                                                        }
+                                                        setAwardedResUtilPoints(prev => ({ ...prev, [item._id]: val }));
+                                                      }}
+                                                      inputProps={{ min: 0, max: 10, step: 0.1, style: { textAlign: 'center', fontWeight: 'bold', padding: '4px' } }}
                                                       sx={{ width: '70px', '& .MuiOutlinedInput-root': { borderRadius: '6px' } }}
                                                     />
                                                   ) : (
