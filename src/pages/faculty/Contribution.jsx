@@ -332,8 +332,8 @@ export default function Contribution() {
         const to = new Date(form.toDate);
         if (from > today) {
           fieldErr = "From Date cannot be in the future.";
-        } else if (from >= to) {
-          fieldErr = "To Date must be greater than From Date.";
+        } else if (from > to) {
+          fieldErr = "To Date must be greater than or equal to From Date.";
         } else {
           // Category 7, 10, 12, 13 do NOT allow future toDate
           if ([7, 10, 12, 13].includes(cat) && to > today) {

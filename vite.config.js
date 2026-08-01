@@ -11,7 +11,7 @@ export default defineConfig({
       filename: 'firebase-messaging-sw.js',
       registerType: 'autoUpdate', // <-- CHANGE TO autoUpdate
       injectManifest: {
-        maximumFileSizeToCacheInBytes: 5 * 1024 * 1024
+        maximumFileSizeToCacheInBytes: 10 * 1024 * 1024
       },
       manifest: {
         name: 'AUS | Digital Services',
