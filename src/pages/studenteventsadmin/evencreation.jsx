@@ -36,7 +36,7 @@ import { toast } from 'sonner';
 import { useAuth } from '../../context/AuthContext';
 
 const EventCreation = () => {
-  const { activeRole } = useAuth();
+  const { activeRole, user } = useAuth();
   const [view, setView] = useState('list');
   const [events, setEvents] = useState([]);
   const [groups, setGroups] = useState([]);
@@ -69,7 +69,7 @@ const EventCreation = () => {
       setGroups(activeGroups);
       if (activeRole === 'EVENT_COORDINATOR' && activeGroups.length > 0) {
         setSelectedGroup(activeGroups[0]);
-        setDepartmentName(activeGroups[0]?.department?.name || '');
+        setDepartmentName(Array.isArray(activeGroups[0]?.department) ? activeGroups[0].department.map(d => d?.name).join(' & ') : activeGroups[0]?.department?.name || '');
       }
     } catch (error) {
       console.error('Failed to load groups', error);
@@ -81,14 +81,30 @@ const EventCreation = () => {
     setLoading(true);
     try {
       const response = await API.get('/api/events');
-      setEvents(response.data?.events || []);
+      let fetchedEvents = response.data?.events || [];
+
+      if (activeRole === 'FACULTY_COORDINATOR' && user) {
+        fetchedEvents = fetchedEvents.filter(event => {
+          const coordinators = Array.isArray(event.facultyCoordinators) && event.facultyCoordinators.length > 0
+            ? event.facultyCoordinators
+            : (event.facultyCoordinator ? [event.facultyCoordinator] : []);
+
+          return coordinators.some(c =>
+            c.employeeId === user.institutionId ||
+            c.employeeId === user.employeeId ||
+            c.employeeId === user.employeeCode
+          );
+        });
+      }
+
+      setEvents(fetchedEvents);
     } catch (error) {
       console.error('Failed to load events', error);
       toast.error('Failed to load events');
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [activeRole, user]);
 
   useEffect(() => {
     fetchGroups();
@@ -124,7 +140,7 @@ const EventCreation = () => {
     setEditingEvent(null);
     if (activeRole === 'EVENT_COORDINATOR' && groups.length > 0) {
       setSelectedGroup(groups[0]);
-      setDepartmentName(groups[0]?.department?.name || '');
+      setDepartmentName(Array.isArray(groups[0]?.department) ? groups[0].department.map(d => d?.name).join(' & ') : groups[0]?.department?.name || '');
     } else {
       setSelectedGroup(null);
       setDepartmentName('');
@@ -153,7 +169,7 @@ const EventCreation = () => {
     const group = groups.find((g) => String(g._id) === String(event.group?._id || event.group)) || null;
     setEditingEvent(event);
     setSelectedGroup(group || null);
-    setDepartmentName(group?.department?.name || event.department || '');
+    setDepartmentName(Array.isArray(group?.department) ? group.department.map(d => d?.name).join(' & ') : group?.department?.name || event.department || '');
     setSelectedCoordinators(event.facultyCoordinators?.length > 0 ? event.facultyCoordinators.map((coordinator) => ({
       employeeId: coordinator.employeeId || coordinator.institutionId || '',
       employeeName: coordinator.employeeName || '',
@@ -223,7 +239,7 @@ const EventCreation = () => {
         employeeName: coordinator?.employeeName || coordinator?.name || '',
         department: coordinator?.department || '',
         designation: coordinator?.designation || '',
-      })) ),
+      }))),
     };
 
     try {
@@ -290,7 +306,7 @@ const EventCreation = () => {
     setView('list');
   };
 
-  const tableColumns = ['#', 'Group', 'Department', 'Coordinators', 'Event Name', 'Venue', 'Max Team Size', 'Price', 'Actions'];
+  const tableColumns = ['#', 'Group', 'Department', 'FACULTY Coordinators', 'Event Name', 'Venue', 'Max Team Size', 'Price', 'Actions'];
 
   const tableRows = events.map((event, index) => {
     const coordinators = Array.isArray(event.facultyCoordinators) && event.facultyCoordinators.length > 0
@@ -304,7 +320,7 @@ const EventCreation = () => {
     return [
       index + 1,
       event.group?.name || '',
-      event.department || event.group?.department?.name || '',
+      event.department ? event.department.replace(/,\s*/g, ' & ') : (Array.isArray(event.group?.department) ? event.group.department.map(d => d?.name).join(' & ') : event.group?.department?.name || ''),
       coordinatorLabel,
       event.eventName,
       event.venue,
@@ -401,7 +417,7 @@ const EventCreation = () => {
                 onChange={(e) => {
                   const group = groups.find((g) => g._id === e.target.value) || null;
                   setSelectedGroup(group);
-                  setDepartmentName(group?.department?.name || '');
+                  setDepartmentName(Array.isArray(group?.department) ? group.department.map(d => d?.name).join(' & ') : group?.department?.name || '');
                 }}
               >
                 <MenuItem value="">Select Group</MenuItem>
@@ -431,15 +447,15 @@ const EventCreation = () => {
               onChange={(_, newValue) => {
                 const normalized = Array.isArray(newValue)
                   ? newValue.map((item) => {
-                      const code = item.institutionId || item.employeeId || item.employeeCode || '';
-                      return {
-                        ...item,
-                        employeeId: code,
-                        institutionId: code,
-                        employeeName: item.employeeName || item.name || '',
-                        name: item.employeeName || item.name || '',
-                      };
-                    })
+                    const code = item.institutionId || item.employeeId || item.employeeCode || '';
+                    return {
+                      ...item,
+                      employeeId: code,
+                      institutionId: code,
+                      employeeName: item.employeeName || item.name || '',
+                      name: item.employeeName || item.name || '',
+                    };
+                  })
                   : [];
 
                 setSelectedCoordinators(normalized);
