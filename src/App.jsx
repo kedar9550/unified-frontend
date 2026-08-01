@@ -87,7 +87,9 @@ import FormAssign from "./pages/majorEventAdmin/FormAssign";
 import FormPreview from "./pages/majorEventAdmin/FormPreview";
 import Payments from "./pages/studenteventsadmin/Payments";
 import Registrations from "./pages/studenteventsadmin/Registrations";
+import Participants from "./pages/studenteventsadmin/Participants";
 import ScanPass from "./pages/studenteventsadmin/ScanPass";
+import Passes from "./pages/studenteventsadmin/Passes";
 
 const PublicOnlyRoute = ({ children }) => {
   const { user } = useAuth();
@@ -239,7 +241,9 @@ function App() {
         <Route path="/Eventveda/departments" element={<ProtectedRoute element={<DepartmentManagement />} />} />
         <Route path="/Eventveda/payments" element={<ProtectedRoute element={<Payments />} />} />
         <Route path="/Eventveda/registrations" element={<ProtectedRoute element={<Registrations />} />} />
+        <Route path="/Eventveda/participants" element={<ProtectedRoute element={<Participants />} />} />
         <Route path="/Eventveda/scan-pass" element={<ProtectedRoute element={<ScanPass />} />} />
+        <Route path="/Eventveda/passes" element={<ProtectedRoute element={<Passes />} />} />
         <Route path="/major-event-admin/groups" element={<ProtectedRoute element={<MajorEventGroups />} />} />
         <Route path="/major-event-admin/form-assign" element={<ProtectedRoute element={<FormAssign />} />} />
         <Route path="/major-event-admin/form-preview" element={<ProtectedRoute element={<FormPreview />} />} />

@@ -29,6 +29,8 @@ import {
   Email as EmailIcon,
   Event as EventIcon,
   Badge as BadgeIcon,
+  CheckCircle as CheckCircleIcon,
+  Cancel as CancelIcon,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import PageHeader from '../../components/common/PageHeader';
@@ -39,7 +41,7 @@ import { QRCodeSVG } from 'qrcode.react';
 import { useAuth } from '../../context/AuthContext';
 import EventPassCard from '../../components/EventPass/EventPassCard';
 
-const Registrations = () => {
+const Participants = () => {
   const navigate = useNavigate();
   const { activeRole, user } = useAuth();
   const [payments, setPayments] = useState([]);
@@ -53,6 +55,7 @@ const Registrations = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [eventFilter, setEventFilter] = useState('ALL');
   const [accommodationFilter, setAccommodationFilter] = useState('ALL');
+  const [attendanceFilter, setAttendanceFilter] = useState('ALL');
 
   const fetchPayments = useCallback(async () => {
     setLoading(true);
@@ -90,8 +93,8 @@ const Registrations = () => {
       
       setPayments(fetchedPayments);
     } catch (error) {
-      console.error('Error fetching event registrations:', error);
-      toast.error(error.response?.data?.message || 'Failed to load registrations');
+      console.error('Error fetching event participants:', error);
+      toast.error(error.response?.data?.message || 'Failed to load participants');
     } finally {
       setLoading(false);
     }
@@ -146,6 +149,10 @@ const Registrations = () => {
       if (accommodationFilter === 'YES' && p.accommodation?.toLowerCase() !== 'yes') return false;
       if (accommodationFilter === 'NO' && p.accommodation?.toLowerCase() === 'yes') return false;
 
+      // Attendance filter
+      if (attendanceFilter === 'PRESENT' && !p.attended) return false;
+      if (attendanceFilter === 'ABSENT' && p.attended) return false;
+
       // Search query
       if (searchQuery.trim()) {
         const query = searchQuery.toLowerCase();
@@ -172,7 +179,7 @@ const Registrations = () => {
 
       return true;
     });
-  }, [allParticipants, eventFilter, accommodationFilter, searchQuery]);
+  }, [allParticipants, eventFilter, accommodationFilter, attendanceFilter, searchQuery]);
 
   // Metrics
   const accommodationCount = useMemo(() => {
@@ -187,14 +194,22 @@ const Registrations = () => {
     return set.size;
   }, [allParticipants]);
 
+  const presentCount = useMemo(() => {
+    return allParticipants.filter((p) => p.attended).length;
+  }, [allParticipants]);
+
+  const absentCount = useMemo(() => {
+    return allParticipants.filter((p) => !p.attended).length;
+  }, [allParticipants]);
+
   // CSV Export handler
   const handleExportCSV = () => {
     if (filteredParticipants.length === 0) {
-      toast.error('No registrations data to export.');
+      toast.error('No participants data to export.');
       return;
     }
 
-    const headers = ['S.No', 'Name', 'Roll No', 'Event Name', 'College', 'Other College', 'Department', 'Year', 'Gender', 'Mobile', 'Email', 'Accommodation', 'Receipt No'];
+    const headers = ['S.No', 'Name', 'Roll No', 'Event Name', 'College', 'Department', 'Contact', 'Attended'];
     const csvRows = [headers.join(',')];
 
     filteredParticipants.forEach((p, idx) => {
@@ -204,14 +219,9 @@ const Registrations = () => {
         `"${p.roll || ''}"`,
         `"${p.eventName || ''}"`,
         `"${p.college || ''}"`,
-        `"${p.otherCollege || ''}"`,
         `"${p.department || ''}"`,
-        `"${p.year || ''}"`,
-        `"${p.gender || ''}"`,
         `"${p.mobile || ''}"`,
-        `"${p.email || ''}"`,
-        `"${p.accommodation || 'No'}"`,
-        `"${p.receipt || ''}"`,
+        `"${p.attended ? 'Yes' : 'No'}"`,
       ];
       csvRows.push(row.join(','));
     });
@@ -223,7 +233,7 @@ const Registrations = () => {
     a.download = `VEDA_Event_Participants_${new Date().toISOString().slice(0, 10)}.csv`;
     a.click();
     window.URL.revokeObjectURL(url);
-    toast.success('registrations data exported successfully!');
+    toast.success('participants data exported successfully!');
   };
 
   const columns = [
@@ -234,8 +244,7 @@ const Registrations = () => {
     'College',
     'Department / Year',
     'Contact Info',
-    'Accommodation',
-    'Action',
+    'Attended',
   ];
 
   const handleOpenDetails = (participant) => {
@@ -289,51 +298,14 @@ const Registrations = () => {
         ) : null}
       </Box>,
       {
-        value: p.accommodation || 'No',
+        value: p.attended ? 'Yes' : 'No',
         display: (
           <Chip
-            label={isAccomm ? 'Requested' : 'No'}
-            color={isAccomm ? 'primary' : 'default'}
+            label={p.attended ? 'Yes' : 'No'}
+            color={p.attended ? 'success' : 'error'}
             size="small"
             sx={{ fontWeight: 700, borderRadius: '6px' }}
           />
-        ),
-      },
-      {
-        value: 'Details',
-        display: (
-          <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center' }}>
-            <Button
-              variant="outlined"
-              size="small"
-              onClick={() => handleOpenDetails(p)}
-              startIcon={<ViewIcon sx={{ fontSize: 16 }} />}
-              sx={{
-                borderRadius: '8px',
-                textTransform: 'none',
-                fontWeight: 600,
-              }}
-            >
-              Details
-            </Button>
-            <Button
-              variant="contained"
-              size="small"
-              onClick={() => handleOpenPass(p)}
-              startIcon={<BadgeIcon sx={{ fontSize: 16 }} />}
-              sx={{
-                borderRadius: '8px',
-                textTransform: 'none',
-                fontWeight: 600,
-                boxShadow: 'none',
-                '&:hover': {
-                  boxShadow: 'none',
-                }
-              }}
-            >
-              View Pass
-            </Button>
-          </Box>
         ),
       },
     ];
@@ -342,18 +314,10 @@ const Registrations = () => {
   return (
     <Box sx={{ p: { xs: 2, md: 3, lg: 4 } }}>
       <PageHeader
-        title="VEDA Event Registrations"
-        subtitle="View and manage all registered student event registrations"
+        title="Participants List"
+        subtitle="View all event participants and their attendance status"
         action={
           <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap' }}>
-            <Button
-              variant="outlined"
-              onClick={() => navigate('/Eventveda/payments')}
-              startIcon={<PaymentIcon />}
-              sx={{ borderRadius: '12px', textTransform: 'none', px: 2.5, py: 1 }}
-            >
-              View Payments
-            </Button>
             <Button
               variant="contained"
               onClick={fetchPayments}
@@ -395,7 +359,7 @@ const Registrations = () => {
               </Box>
               <Box>
                 <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase', fontWeight: 700 }}>
-                  Total Registrations
+                  Total Participants
                 </Typography>
                 <Typography variant="h5" sx={{ fontWeight: 900 }}>
                   {allParticipants.length}
@@ -432,7 +396,7 @@ const Registrations = () => {
               </Box>
               <Box>
                 <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase', fontWeight: 700 }}>
-                  Paid Registrations
+                  Paid participants
                 </Typography>
                 <Typography variant="h5" sx={{ fontWeight: 900 }}>
                   {payments.length}
@@ -515,6 +479,80 @@ const Registrations = () => {
             </Box>
           </Paper>
         </Grid>
+
+        <Grid item xs={12} sm={6} md={3}>
+          <Paper
+            variant="outlined"
+            sx={{
+              p: 2.5,
+              borderRadius: '16px',
+              background: 'linear-gradient(135deg, rgba(34, 197, 94, 0.08) 0%, rgba(16, 185, 129, 0.08) 100%)',
+              borderColor: 'rgba(34, 197, 94, 0.2)',
+            }}
+          >
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+              <Box
+                sx={{
+                  width: 44,
+                  height: 44,
+                  borderRadius: '12px',
+                  background: '#16a34a',
+                  color: '#fff',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <CheckCircleIcon />
+              </Box>
+              <Box>
+                <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase', fontWeight: 700 }}>
+                  Present
+                </Typography>
+                <Typography variant="h5" sx={{ fontWeight: 900 }}>
+                  {presentCount}
+                </Typography>
+              </Box>
+            </Box>
+          </Paper>
+        </Grid>
+
+        <Grid item xs={12} sm={6} md={3}>
+          <Paper
+            variant="outlined"
+            sx={{
+              p: 2.5,
+              borderRadius: '16px',
+              background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.08) 0%, rgba(220, 38, 38, 0.08) 100%)',
+              borderColor: 'rgba(239, 68, 68, 0.2)',
+            }}
+          >
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+              <Box
+                sx={{
+                  width: 44,
+                  height: 44,
+                  borderRadius: '12px',
+                  background: '#dc2626',
+                  color: '#fff',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <CancelIcon />
+              </Box>
+              <Box>
+                <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase', fontWeight: 700 }}>
+                  Absent
+                </Typography>
+                <Typography variant="h5" sx={{ fontWeight: 900 }}>
+                  {absentCount}
+                </Typography>
+              </Box>
+            </Box>
+          </Paper>
+        </Grid>
       </Grid>
 
       {/* Filter Controls Bar */}
@@ -563,9 +601,22 @@ const Registrations = () => {
           onChange={(e) => setAccommodationFilter(e.target.value)}
           sx={{ minWidth: 160 }}
         >
-          <MenuItem value="ALL">All Registrations</MenuItem>
+          <MenuItem value="ALL">All Participants</MenuItem>
           <MenuItem value="YES">Requested (Yes)</MenuItem>
           <MenuItem value="NO">No Accommodation</MenuItem>
+        </TextField>
+
+        <TextField
+          select
+          label="Attendance"
+          size="small"
+          value={attendanceFilter}
+          onChange={(e) => setAttendanceFilter(e.target.value)}
+          sx={{ minWidth: 160 }}
+        >
+          <MenuItem value="ALL">All Status</MenuItem>
+          <MenuItem value="PRESENT">Present</MenuItem>
+          <MenuItem value="ABSENT">Absent</MenuItem>
         </TextField>
 
         <Box sx={{ ml: 'auto' }}>
@@ -598,7 +649,7 @@ const Registrations = () => {
               }}
             >
               <Typography variant="h6" sx={{ mb: 1 }}>
-                No Registrations found
+                No Participants found
               </Typography>
               <Typography variant="body2" color="text.secondary">
                 Try adjusting your search query or filter criteria.
@@ -608,8 +659,8 @@ const Registrations = () => {
             <DataTable
               columns={columns}
               rows={rows}
-              nonSortableColumns={[0, 8]}
-              alignments={['center', 'left', 'left', 'left', 'left', 'left', 'left', 'center', 'center']}
+              nonSortableColumns={[0, 7]}
+              alignments={['center', 'left', 'left', 'left', 'left', 'left', 'left', 'center']}
             />
           )}
         </Box>
@@ -796,7 +847,7 @@ const Registrations = () => {
               fullWidth
               variant="outlined"
               onClick={() => {
-                 window.print();
+                window.print();
               }}
               sx={{ borderRadius: '12px', textTransform: 'none', fontWeight: 600 }}
             >
@@ -809,4 +860,4 @@ const Registrations = () => {
   );
 };
 
-export default Registrations;
+export default Participants;

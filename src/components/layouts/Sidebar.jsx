@@ -207,7 +207,7 @@ const Sidebar = ({ mobileOpen, onDrawerToggle, isCollapsed, onToggleSidebar }) =
     const effectiveRole = activeRole || (user?.roles && user.roles[0]?.role) || "STUDENT";
     const items = ROLE_ROUTES[effectiveRole] || ROLE_ROUTES.STUDENT;
 
-    let initialOpenStates = {};
+    let initialOpenStates = { "VEDA EVENT ": true };
     items.forEach((item) => {
       if (item.nested) {
         const isSubActive = item.nested.some(sub =>

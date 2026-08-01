@@ -15,8 +15,10 @@ import QrCodeScannerIcon from '@mui/icons-material/QrCodeScanner';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import { Html5QrcodeScanner } from 'html5-qrcode';
 import api from '../../api/axios';
+import { useAuth } from '../../context/AuthContext';
 
 const ScanPass = () => {
+  const { activeRole, user } = useAuth();
   const [barcode, setBarcode] = useState('');
   const [loading, setLoading] = useState(false);
   const [scannedParticipants, setScannedParticipants] = useState([]);
@@ -37,8 +39,28 @@ const ScanPass = () => {
   useEffect(() => {
     const loadPreviousScans = async () => {
       try {
+        let allowedEventNames = null;
+        if (activeRole === 'FACULTY_COORDINATOR' && user) {
+          const eventsRes = await api.get('/api/events');
+          const events = eventsRes.data?.events || [];
+          const userEvents = events.filter(e => {
+            const coords = e.facultyCoordinators || (e.facultyCoordinator ? [e.facultyCoordinator] : []);
+            return coords.some(c => 
+              c.employeeId === user.institutionId || 
+              c.employeeId === user.employeeId || 
+              c.employeeId === user.employeeCode
+            );
+          });
+          allowedEventNames = userEvents.map(e => e.eventName);
+        }
+
         const response = await api.get('/api/razorpay/registrations');
-        const payments = response.data.payments || [];
+        let payments = response.data.payments || [];
+        
+        if (allowedEventNames) {
+          payments = payments.filter(p => allowedEventNames.includes(p.eventName || p.category));
+        }
+
         const previousScans = [];
         
         payments.forEach(payment => {
@@ -65,7 +87,7 @@ const ScanPass = () => {
     };
 
     loadPreviousScans();
-  }, []);
+  }, [activeRole, user]);
 
   const processScan = async (codeToScan) => {
     if (!codeToScan || !codeToScan.trim()) return;

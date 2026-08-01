@@ -35,6 +35,7 @@ import PageHeader from '../../components/common/PageHeader';
 import DataTable from '../../components/data/DataTable';
 import API from '../../api/axios';
 import { toast } from 'sonner';
+import { useAuth } from '../../context/AuthContext';
 
 const formatDate = (value) => {
   if (!value) return '-';
@@ -50,6 +51,7 @@ const formatDate = (value) => {
 
 const Payments = () => {
   const navigate = useNavigate();
+  const { activeRole, user } = useAuth();
   const [payments, setPayments] = useState([]);
   const [loading, setLoading] = useState(false);
   const [selectedPayment, setSelectedPayment] = useState(null);
@@ -58,15 +60,36 @@ const Payments = () => {
   const fetchPayments = useCallback(async () => {
     setLoading(true);
     try {
+      let allowedEventNames = null;
+      if (activeRole === 'FACULTY_COORDINATOR' && user) {
+        const eventsRes = await API.get('/api/events');
+        const events = eventsRes.data?.events || [];
+        const userEvents = events.filter(e => {
+          const coords = e.facultyCoordinators || (e.facultyCoordinator ? [e.facultyCoordinator] : []);
+          return coords.some(c => 
+            c.employeeId === user.institutionId || 
+            c.employeeId === user.employeeId || 
+            c.employeeId === user.employeeCode
+          );
+        });
+        allowedEventNames = userEvents.map(e => e.eventName);
+      }
+
       const response = await API.get('/api/razorpay/registrations');
-      setPayments(response.data?.payments || []);
+      let fetchedPayments = response.data?.payments || [];
+      
+      if (allowedEventNames) {
+        fetchedPayments = fetchedPayments.filter(p => allowedEventNames.includes(p.eventName || p.category));
+      }
+      
+      setPayments(fetchedPayments);
     } catch (error) {
       console.error('Error fetching event payments:', error);
       toast.error(error.response?.data?.message || 'Failed to load payments');
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [activeRole, user]);
 
   useEffect(() => {
     fetchPayments();
@@ -419,7 +442,7 @@ const Payments = () => {
                           <TableCell sx={{ fontFamily: 'monospace', fontWeight: 700 }}>{p.roll || '-'}</TableCell>
                           <TableCell>
                             <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                              {p.college || '-'}{p.otherCollege ? ` (${p.otherCollege})` : ''}
+                              {p.college === 'Other College' && p.otherCollege ? p.otherCollege : (p.college || '-')}
                             </Typography>
                             <Typography variant="caption" color="text.secondary">
                               {p.department ? `Dept: ${p.department}` : ''}{p.year ? ` | Yr: ${p.year}` : ''}{p.location ? ` | Loc: ${p.location}` : ''}
