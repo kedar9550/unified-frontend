@@ -32,6 +32,8 @@ import {
   EventAvailable,
   Payment,
   PeopleAlt,
+  CardMembership,
+  Badge as BadgeIcon,
 } from "@mui/icons-material";
 import PersonIcon from '@mui/icons-material/Person';
 import React from "react";
@@ -405,7 +407,9 @@ export const ROLE_ROUTES = {
         { text: "Events", path: "/Eventveda/events", icon: <EventAvailable /> },
         { text: "Payments", path: "/Eventveda/payments", icon: <Payment /> },
         { text: "Registrations", path: "/Eventveda/registrations", icon: <PeopleAlt /> },
+        { text: "Participants", path: "/Eventveda/participants", icon: <Groups /> },
         { text: "Scan Pass", path: "/Eventveda/scan-pass", icon: <QrCode /> },
+        { text: "Passes", path: "/Eventveda/passes", icon: <CardMembership /> }
       ]
     }
     // {
@@ -458,6 +462,19 @@ export const ROLE_ROUTES = {
     { text: "Events", path: "/Eventveda/events", icon: <EventAvailable /> },
     { text: "Payments", path: "/Eventveda/payments", icon: <Payment /> },
     { text: "Registrations", path: "/Eventveda/registrations", icon: <PeopleAlt /> },
-    { text: "Scan Pass", path: "/Eventveda/scan-pass", icon: <QrCode /> }
+    { text: "Participants", path: "/Eventveda/participants", icon: <Groups /> },
+    { text: "Passes", path: "/Eventveda/passes", icon: <CardMembership /> }
   ],
+
+  FACULTY_COORDINATOR: [
+    { text: "Dashboard", path: "/dashboard", icon: <Dashboard /> },
+    { text: "Events", path: "/Eventveda/events", icon: <EventAvailable /> },
+    { text: "Payments", path: "/Eventveda/payments", icon: <Payment /> },
+    { text: "Registrations", path: "/Eventveda/registrations", icon: <PeopleAlt /> },
+    { text: "Participants", path: "/Eventveda/participants", icon: <Groups /> },
+    { text: "Scan Pass", path: "/Eventveda/scan-pass", icon: <QrCode /> },
+    { text: "Passes", path: "/Eventveda/passes", icon: <CardMembership /> }
+  ],
+
+
 };
