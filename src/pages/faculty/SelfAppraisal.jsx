@@ -95,21 +95,7 @@ const ADMINISTRATIVE_ROLES_LIST = [
   { id: "other", label: "Any other remarkable event / activity coordinator", hasDetails: true }
 ];
 
-const CONTRIBUTION_CATEGORIES = [
-  { id: 1, name: "Member of BOG / GB / AC / BOS" },
-  { id: 2, name: "Editorial Board Member (SCIE / Q1 / Q2)" },
-  { id: 3, name: "Editorial Board Member (ESCI / Q3 / Q4 / Conference Proceedings)" },
-  { id: 4, name: "Awards (MHRD / AICTE / UGC / State Govt / Top Institutions)" },
-  { id: 5, name: "Awards (NGO / Trust / Others)" },
-  { id: 6, name: "Developed E-Content" },
-  { id: 7, name: "Certification on New Age Technologies" },
-  { id: 8, name: "Students Trained and Shortlisted for Finals" },
-  { id: 9, name: "Articles Published in Magazine / Newspaper" },
-  { id: 10, name: "Research Facility Establishment / Maintenance" },
-  { id: 11, name: "NPTEL Course Completion" },
-  { id: 12, name: "Coursera Course Completion" },
-  { id: 13, name: "FDP / Seminar Grant Sanctioned" }
-];
+// Contribution Categories are now fetched from the database
 
 const RESOURCE_UTILIZATION_CATEGORIES = [
   "CONFERENCE",
@@ -274,7 +260,7 @@ const SelfAppraisal = () => {
     }
   };
   const [appraisalConfig, setAppraisalConfig] = useState(null);
-
+  const [contributionCategories, setContributionCategories] = useState([]);
   // Claim research publication modal states
   const [claimModalOpen, setClaimModalOpen] = useState(false);
   const [selectedPaper, setSelectedPaper] = useState(null);
@@ -395,6 +381,9 @@ const SelfAppraisal = () => {
 
   useEffect(() => {
     fetchMyAppraisals();
+    axiosInstance.get("/api/value-addition/contribution-category")
+      .then(res => setContributionCategories(res.data?.data || []))
+      .catch(err => console.log("Failed to fetch contribution categories", err));
   }, []);
 
   const handleApplyNew = async () => {
@@ -1179,6 +1168,10 @@ const SelfAppraisal = () => {
       sanctionDate: "",
       courseHours: "",
       certificateNumber: "",
+      memberType: "",
+      journalType: "",
+      eventType: "",
+      studentNames: "",
       existingProof: ""
     });
     setIsContDocumentRemoved(false);
@@ -1212,6 +1205,10 @@ const SelfAppraisal = () => {
       sanctionDate: item.sanctionDate ? item.sanctionDate.substring(0, 10) : "",
       courseHours: item.courseHours || "",
       certificateNumber: item.certificateNumber || "",
+      memberType: item.memberType || "",
+      journalType: item.journalType || "",
+      eventType: item.eventType || "",
+      studentNames: item.studentNames || "",
       existingProof: item.proof || ""
     });
     setIsContDocumentRemoved(false);
@@ -1240,7 +1237,7 @@ const SelfAppraisal = () => {
       return;
     }
 
-    const cat = parseInt(contForm.category);
+    const cat = getCategoryCode(contForm.category);
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
@@ -1338,7 +1335,7 @@ const SelfAppraisal = () => {
     try {
       const fd = new FormData();
       fd.append("academicYear", selectedYear);
-      fd.append("category", String(cat));
+      fd.append("category", contForm.category);
 
       if ([1, 2, 3, 7, 10, 12, 13].includes(cat)) {
         fd.append("fromDate", contForm.fromDate);
@@ -1352,12 +1349,16 @@ const SelfAppraisal = () => {
 
       if (cat === 1) {
         fd.append("organizationName", contForm.organizationName);
+        if (contForm.memberType) fd.append("memberType", contForm.memberType);
       } else if (cat === 2) {
         fd.append("journalName", contForm.journalName);
+        if (contForm.journalType) fd.append("journalType", contForm.journalType);
       } else if (cat === 3) {
         fd.append("journalConferenceName", contForm.journalConferenceName);
+        if (contForm.journalType) fd.append("journalType", contForm.journalType);
       } else if (cat === 4 || cat === 5) {
         fd.append("awardName", contForm.awardName);
+        if (contForm.awardingAgency) fd.append("awardingAgency", contForm.awardingAgency);
         fd.append("awardDate", contForm.awardDate);
       } else if (cat === 6) {
         fd.append("courseName", contForm.courseName);
@@ -1367,6 +1368,8 @@ const SelfAppraisal = () => {
       } else if (cat === 8) {
         fd.append("eventName", contForm.eventName);
         fd.append("eventDate", contForm.eventDate);
+        if (contForm.eventType) fd.append("eventType", contForm.eventType);
+        if (contForm.studentNames) fd.append("studentNames", contForm.studentNames);
       } else if (cat === 9) {
         fd.append("articleTitle", contForm.articleTitle);
         fd.append("publicationName", contForm.publicationName);
@@ -1468,29 +1471,15 @@ const SelfAppraisal = () => {
       grantName: "",
       sanctionDate: "",
       courseHours: "",
-      certificateNumber: ""
+      certificateNumber: "",
+      memberType: "",
+      journalType: "",
+      eventType: "",
+      studentNames: ""
     });
   };
 
-  const getContributionNameField = (category, data) => {
-    const cat = parseInt(category);
-    switch (cat) {
-      case 1: return { field: 'organizationName', value: data.organizationName };
-      case 2: return { field: 'journalName', value: data.journalName };
-      case 3: return { field: 'journalConferenceName', value: data.journalConferenceName };
-      case 4:
-      case 5: return { field: 'awardName', value: data.awardName };
-      case 6: return { field: 'courseName', value: data.courseName };
-      case 7: return { field: 'certificationName', value: data.certificationName };
-      case 8: return { field: 'eventName', value: data.eventName };
-      case 9: return { field: 'articleTitle', value: data.articleTitle };
-      case 10: return { field: 'facilityName', value: data.facilityName };
-      case 11:
-      case 12: return { field: 'courseName', value: data.courseName };
-      case 13: return { field: 'grantName', value: data.grantName };
-      default: return { field: '', value: '' };
-    }
-  };
+  // getContributionNameField removed as it's replaced by getContributionDetailsString
 
   const getStatusColor = (status) => {
     if (status === 'Approved') return { bg: "rgba(16, 185, 129, 0.1)", color: "#10b981" };
@@ -1562,7 +1551,7 @@ const SelfAppraisal = () => {
       grantSanctioned: 5
     };
 
-    const cat = parseInt(item.category);
+    const cat = item.category?.code || parseInt(item.category);
     switch (cat) {
       case 1: return expPointsConf.memberBOS ?? 5;
       case 2: return expPointsConf.editorialBoardSCIE ?? 5;
@@ -1651,9 +1640,54 @@ const SelfAppraisal = () => {
     return pts;
   };
 
+  const getCategoryCode = (id) => {
+    if (!id) return null;
+    if (typeof id === 'object' && id.code) return id.code;
+    const searchId = String(typeof id === 'object' ? id._id : id);
+    const isNum = /^\d+$/.test(searchId);
+    const found = contributionCategories.find(c => String(c._id) === searchId || (isNum && c.code === parseInt(searchId, 10)));
+    return found ? found.code : (isNum ? parseInt(searchId, 10) : null);
+  };
+
   const getCategoryName = (catId) => {
-    const found = CONTRIBUTION_CATEGORIES.find(c => c.id === catId);
+    if (typeof catId === 'object' && catId?.name) return catId.name;
+    let found = contributionCategories.find(c => c._id === catId);
+    if (!found) found = contributionCategories.find(c => c.code === parseInt(catId));
     return found ? found.name : `Category ${catId}`;
+  };
+
+  const getContributionDetailsString = (item) => {
+    if (!item) return "N/A";
+    const catCode = getCategoryCode(item.category);
+    const catName = getCategoryName(item.category);
+    const fDate = item.fromDate ? new Date(item.fromDate).toLocaleDateString('en-GB') : "";
+    const tDate = item.toDate ? new Date(item.toDate).toLocaleDateString('en-GB') : "";
+    
+    switch (catCode) {
+      case 1: {
+        const typeMap = {
+          'BOG': 'the Board of Governance',
+          'GB': 'the Governing Body',
+          'AC': 'the Academic Council',
+          'BOS': 'the Board of Studies'
+        };
+        const mType = typeMap[item.memberType] || item.memberType || 'N/A';
+        return `Member of ${mType} of ${item.organizationName || 'N/A'}. (From ${fDate} to ${tDate})`;
+      }
+      case 2:
+      case 3: return `Member of the Editorial Board of ${item.journalName || 'N/A'} (Type: ${item.journalType || 'N/A'}) (${fDate} to ${tDate})`;
+      case 4:
+      case 5: return `Award: ${item.awardName || 'N/A'} on ${item.awardDate ? new Date(item.awardDate).toLocaleDateString('en-GB') : 'N/A'}`;
+      case 6: return `Developed e-content: ${item.courseName || 'N/A'} - ${item.url || 'N/A'}`;
+      case 7: return `Certification: ${item.certificationName || 'N/A'} (${fDate} to ${tDate})`;
+      case 8: return `Trained students (${item.studentNames || 'N/A'}) for ${item.eventType || 'N/A'}: ${item.eventName || 'N/A'} on ${item.eventDate ? new Date(item.eventDate).toLocaleDateString('en-GB') : 'N/A'}`;
+      case 9: return `Article: "${item.articleTitle || 'N/A'}" published in ${item.publicationName || 'N/A'} on ${item.publicationDate ? new Date(item.publicationDate).toLocaleDateString('en-GB') : 'N/A'}`;
+      case 10: return `Established/Maintained facility: ${item.facilityName || 'N/A'} (${fDate} to ${tDate})`;
+      case 11: return `NPTEL Course: ${item.courseName || 'N/A'} (${item.duration || 'N/A'})`;
+      case 12: return `Coursera Course: ${item.courseName || 'N/A'} - ${item.courseHours || 'N/A'} Hours (${fDate} to ${tDate})`;
+      case 13: return `Grant Sanctioned: ${item.grantName || 'N/A'} (${fDate} to ${tDate})`;
+      default: return catName;
+    }
   };
 
   const getFacultyCategory = (fac) => {
@@ -1704,7 +1738,7 @@ const SelfAppraisal = () => {
 
     const hasValidCoursera40Hours = contributionDetails.some(c => {
       if (c.status === 'Rejected') return false;
-      const cat = parseInt(c.category);
+      const cat = getCategoryCode(c.category);
       return cat === 12 && Number(c.courseHours) >= 40;
     });
 
@@ -3917,12 +3951,11 @@ const SelfAppraisal = () => {
                                       {contributionDetails.map((item, i) => {
                                         const statusStyle = getStatusColor(item.status);
                                         const isEditable = item.status === 'Draft' || item.status === 'Rejected';
-                                        const { value } = getContributionNameField(item.category, item);
                                         return (
                                           <TableRow key={item._id || i} sx={{ "&:hover": { bgcolor: "var(--bg-hover)" } }}>
                                             <TableCell sx={{ color: "var(--text-primary)" }}>{i + 1}</TableCell>
                                             <TableCell sx={{ fontWeight: 600, color: "var(--text-primary)" }}>
-                                              {getCategoryName(item.category)} - {value || "N/A"}
+                                              {getContributionDetailsString(item)}
                                               {item.status === "Rejected" && item.hodComment && (
                                                 <Typography variant="caption" sx={{ color: "error.main", mt: 0.5, display: "block", fontWeight: 700 }}>
                                                   Rejection Reason: {item.hodComment}
@@ -4982,15 +5015,15 @@ const SelfAppraisal = () => {
                   disabled={!!contEditingId}
                 >
                   <MenuItem value="" disabled>--Select Category--</MenuItem>
-                  {CONTRIBUTION_CATEGORIES.map(cat => (
-                    <MenuItem key={cat.id} value={cat.id}>{cat.name}</MenuItem>
+                  {contributionCategories.map(cat => (
+                    <MenuItem key={cat._id} value={cat._id}>{cat.name}</MenuItem>
                   ))}
                 </Select>
               </Box>
 
               {/* Render fields conditionally based on category selection */}
               {contForm.category && (() => {
-                const cat = parseInt(contForm.category);
+                const cat = getCategoryCode(contForm.category);
                 const isFutureAllowed = [1, 2, 3].includes(cat);
                 const todayStr = new Date().toISOString().split("T")[0];
 
@@ -5024,17 +5057,7 @@ const SelfAppraisal = () => {
                         }}
                       />
                     </Box>
-                    <Box>
-                      <Typography sx={labelStyle}>Auto Duration (Days):</Typography>
-                      <TextField
-                        size="small"
-                        fullWidth
-                        disabled
-                        value={contForm.duration || ""}
-                        placeholder="Calculated automatically"
-                      />
-                    </Box>
-                  </>
+                    </>
                 );
 
                 switch (cat) {
@@ -5042,8 +5065,18 @@ const SelfAppraisal = () => {
                     return (
                       <>
                         <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
+                          <Typography sx={labelStyle}>Member Type: *</Typography>
+                          <Select size="small" fullWidth displayEmpty value={contForm.memberType || ""} onChange={(e) => setContForm(p => ({ ...p, memberType: e.target.value }))}>
+                            <MenuItem value="" disabled>--Select Role--</MenuItem>
+                            <MenuItem value="BOG">Board of Governance (BOG)</MenuItem>
+                            <MenuItem value="GB">Governing Body (GB)</MenuItem>
+                            <MenuItem value="AC">Academic Council (AC)</MenuItem>
+                            <MenuItem value="BOS">Board of Studies (BOS)</MenuItem>
+                          </Select>
+                        </Box>
+                        <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
                           <Typography sx={labelStyle}>Organization Name: *</Typography>
-                          <TextField size="small" fullWidth value={contForm.organizationName} onChange={(e) => setContForm(p => ({ ...p, organizationName: e.target.value }))} />
+                          <TextField size="small" fullWidth value={contForm.organizationName || ""} onChange={(e) => setContForm(p => ({ ...p, organizationName: e.target.value }))} />
                         </Box>
                         {renderDateFields()}
                       </>
@@ -5052,8 +5085,17 @@ const SelfAppraisal = () => {
                     return (
                       <>
                         <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
-                          <Typography sx={labelStyle}>Journal Name (SCIE / Q1 / Q2): *</Typography>
-                          <TextField size="small" fullWidth value={contForm.journalName} onChange={(e) => setContForm(p => ({ ...p, journalName: e.target.value }))} />
+                          <Typography sx={labelStyle}>Journal Name: *</Typography>
+                          <TextField size="small" fullWidth value={contForm.journalName || ""} onChange={(e) => setContForm(p => ({ ...p, journalName: e.target.value }))} />
+                        </Box>
+                        <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
+                          <Typography sx={labelStyle}>Journal Type: *</Typography>
+                          <Select size="small" fullWidth displayEmpty value={contForm.journalType || ""} onChange={(e) => setContForm(p => ({ ...p, journalType: e.target.value }))}>
+                            <MenuItem value="" disabled>--Select Type--</MenuItem>
+                            <MenuItem value="SCIE">SCIE</MenuItem>
+                            <MenuItem value="Q1">Q1</MenuItem>
+                            <MenuItem value="Q2">Q2</MenuItem>
+                          </Select>
                         </Box>
                         {renderDateFields()}
                       </>
@@ -5063,7 +5105,17 @@ const SelfAppraisal = () => {
                       <>
                         <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
                           <Typography sx={labelStyle}>Journal / Conference Name: *</Typography>
-                          <TextField size="small" fullWidth value={contForm.journalConferenceName} onChange={(e) => setContForm(p => ({ ...p, journalConferenceName: e.target.value }))} />
+                          <TextField size="small" fullWidth value={contForm.journalName || ""} onChange={(e) => setContForm(p => ({ ...p, journalName: e.target.value }))} />
+                        </Box>
+                        <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
+                          <Typography sx={labelStyle}>Journal Type: *</Typography>
+                          <Select size="small" fullWidth displayEmpty value={contForm.journalType || ""} onChange={(e) => setContForm(p => ({ ...p, journalType: e.target.value }))}>
+                            <MenuItem value="" disabled>--Select Type--</MenuItem>
+                            <MenuItem value="ESCI">ESCI</MenuItem>
+                            <MenuItem value="Q3">Q3</MenuItem>
+                            <MenuItem value="Q4">Q4</MenuItem>
+                            <MenuItem value="Conference proceedings">Conference proceedings</MenuItem>
+                          </Select>
                         </Box>
                         {renderDateFields()}
                       </>
@@ -5072,13 +5124,28 @@ const SelfAppraisal = () => {
                   case 5:
                     return (
                       <>
+                        <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
+                          <Typography sx={labelStyle}>Awarding Agency: *</Typography>
+                          {cat === 4 ? (
+                            <Select size="small" fullWidth displayEmpty value={contForm.awardingAgency || ""} onChange={(e) => setContForm(p => ({ ...p, awardingAgency: e.target.value }))}>
+                              <MenuItem value="" disabled>--Select Awarding Agency--</MenuItem>
+                              <MenuItem value="MHRD">MHRD</MenuItem>
+                              <MenuItem value="AICTE">AICTE</MenuItem>
+                              <MenuItem value="UGC">UGC</MenuItem>
+                              <MenuItem value="State Govt.">State Govt.</MenuItem>
+                              <MenuItem value="Top 2%">Top 2%</MenuItem>
+                            </Select>
+                          ) : (
+                            <TextField size="small" fullWidth value={contForm.awardingAgency || ""} onChange={(e) => setContForm(p => ({ ...p, awardingAgency: e.target.value }))} placeholder="NGO / Trust / Other name" />
+                          )}
+                        </Box>
                         <Box>
                           <Typography sx={labelStyle}>Award Name: *</Typography>
-                          <TextField size="small" fullWidth value={contForm.awardName} onChange={(e) => setContForm(p => ({ ...p, awardName: e.target.value }))} />
+                          <TextField size="small" fullWidth value={contForm.awardName || ""} onChange={(e) => setContForm(p => ({ ...p, awardName: e.target.value }))} />
                         </Box>
                         <Box>
                           <Typography sx={labelStyle}>Award Date: *</Typography>
-                          <TextField size="small" fullWidth type="date" value={contForm.awardDate} onChange={(e) => setContForm(p => ({ ...p, awardDate: e.target.value }))} slotProps={{ inputLabel: { shrink: true }, htmlInput: { max: todayStr } }} />
+                          <TextField size="small" fullWidth type="date" value={contForm.awardDate || ""} onChange={(e) => setContForm(p => ({ ...p, awardDate: e.target.value }))} slotProps={{ inputLabel: { shrink: true }, htmlInput: { max: todayStr } }} />
                         </Box>
                       </>
                     );
@@ -5109,8 +5176,21 @@ const SelfAppraisal = () => {
                     return (
                       <>
                         <Box>
+                          <Typography sx={labelStyle}>Event Type: *</Typography>
+                          <Select size="small" fullWidth displayEmpty value={contForm.eventType || ""} onChange={(e) => setContForm(p => ({ ...p, eventType: e.target.value }))}>
+                            <MenuItem value="" disabled>--Select Event Type--</MenuItem>
+                            <MenuItem value="Hackathon">Hackathon</MenuItem>
+                            <MenuItem value="Startup">Startup</MenuItem>
+                            <MenuItem value="Events">Events</MenuItem>
+                          </Select>
+                        </Box>
+                        <Box>
                           <Typography sx={labelStyle}>Event Name: *</Typography>
-                          <TextField size="small" fullWidth value={contForm.eventName} onChange={(e) => setContForm(p => ({ ...p, eventName: e.target.value }))} />
+                          <TextField size="small" fullWidth value={contForm.eventName || ""} onChange={(e) => setContForm(p => ({ ...p, eventName: e.target.value }))} />
+                        </Box>
+                        <Box>
+                          <Typography sx={labelStyle}>Student Names: *</Typography>
+                          <TextField size="small" fullWidth value={contForm.studentNames || ""} onChange={(e) => setContForm(p => ({ ...p, studentNames: e.target.value }))} placeholder="John, Jane, etc." />
                         </Box>
                         <Box>
                           <Typography sx={labelStyle}>Event Date: *</Typography>
@@ -5264,9 +5344,8 @@ const SelfAppraisal = () => {
         {/* 3.2 Contribution Details View Dialog */}
         {selectedContDetails && (() => {
           const data = selectedContDetails;
+          const submitDate = new Date(data.createdAt).toLocaleDateString("en-IN", { day: '2-digit', month: '2-digit', year: 'numeric' });
           const statusStyle = getStatusColor(data.status);
-          const { value } = getContributionNameField(data.category, data);
-
           const backendURL = (import.meta.env.VITE_BACKEND_URL || "http://localhost:9000").replace(/\/$/, "");
           const fileUrl = data.proof ? (data.proof.startsWith('http') ? data.proof : `${backendURL}${data.proof}`) : null;
           const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(data.proof || "");
@@ -5299,7 +5378,7 @@ const SelfAppraisal = () => {
                   {getCategoryName(data.category)}
                 </Typography>
                 <Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)", mb: 2, mt: 0.5 }}>
-                  {value}
+                  {getContributionDetailsString(data)}
                 </Typography>
 
                 <Grid container spacing={2}>

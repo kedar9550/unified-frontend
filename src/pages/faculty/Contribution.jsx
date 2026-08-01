@@ -15,28 +15,14 @@ import { labelStyle } from "../../components/faculty/publicationConstants";
 import { useAuth } from "../../context/AuthContext";
 import API from "../../api/axios";
 
-// 13 Categories definitions
-const CONTRIBUTION_CATEGORIES = [
-  { id: 1, name: "Member of BOG / GB / AC / BOS" },
-  { id: 2, name: "Editorial Board Member (SCIE / Q1 / Q2)" },
-  { id: 3, name: "Editorial Board Member (ESCI / Q3 / Q4 / Conference Proceedings)" },
-  { id: 4, name: "Awards (MHRD / AICTE / UGC / State Govt / Top Institutions)" },
-  { id: 5, name: "Awards (NGO / Trust / Others)" },
-  { id: 6, name: "Developed E-Content" },
-  { id: 7, name: "Certification on New Age Technologies" },
-  { id: 8, name: "Students Trained and Shortlisted for Finals" },
-  { id: 9, name: "Articles Published in Magazine / Newspaper" },
-  { id: 10, name: "Research Facility Establishment / Maintenance" },
-  { id: 11, name: "NPTEL Course Completion" },
-  { id: 12, name: "Coursera Course Completion" },
-  { id: 13, name: "FDP / Seminar Grant Sanctioned" }
-];
+// Contribution Categories are now fetched from the database
 
 export default function Contribution() {
   const { user } = useAuth();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const [academicYears, setAcademicYears] = useState([]);
+  const [contributionCategories, setContributionCategories] = useState([]);
   const [selectedYear, setSelectedYear] = useState("");
   const [contributionsList, setContributionsList] = useState([]);
 
@@ -109,6 +95,10 @@ export default function Contribution() {
     sanctionDate: "",
     courseHours: "",
     certificateNumber: "",
+    memberType: "",
+    journalType: "",
+    eventType: "",
+    studentNames: "",
     existingProof: ""
   });
 
@@ -143,7 +133,20 @@ export default function Contribution() {
         }
       })
       .catch(err => console.log("Failed to fetch academic years", err));
+
+    API.get("/api/value-addition/contribution-category")
+      .then(res => setContributionCategories(res.data?.data || []))
+      .catch(err => console.log("Failed to fetch contribution categories", err));
   }, []);
+
+  const getCategoryCode = (id) => {
+    if (!id) return null;
+    if (typeof id === 'object' && id.code) return id.code;
+    const searchId = String(typeof id === 'object' ? id._id : id);
+    const isNum = /^\d+$/.test(searchId);
+    const found = contributionCategories.find(c => String(c._id) === searchId || (isNum && c.code === parseInt(searchId, 10)));
+    return found ? found.code : (isNum ? parseInt(searchId, 10) : null);
+  };
 
   // Fetch contributions when year changes
   useEffect(() => {
@@ -310,7 +313,7 @@ export default function Contribution() {
       return;
     }
 
-    const cat = parseInt(form.category);
+    const cat = getCategoryCode(form.category);
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
@@ -421,7 +424,7 @@ export default function Contribution() {
     try {
       const fd = new FormData();
       fd.append("academicYear", form.academicYear);
-      fd.append("category", String(cat));
+      fd.append("category", form.category);
 
       // Append From Date, To Date, Duration for categories that use them
       if ([1, 2, 3, 7, 10, 12, 13].includes(cat)) {
@@ -432,12 +435,16 @@ export default function Contribution() {
 
       if (cat === 1) {
         fd.append("organizationName", form.organizationName);
+        if (form.memberType) fd.append("memberType", form.memberType);
       } else if (cat === 2) {
         fd.append("journalName", form.journalName);
+        if (form.journalType) fd.append("journalType", form.journalType);
       } else if (cat === 3) {
         fd.append("journalConferenceName", form.journalConferenceName);
+        if (form.journalType) fd.append("journalType", form.journalType);
       } else if (cat === 4 || cat === 5) {
         fd.append("awardName", form.awardName);
+        if (form.awardingAgency) fd.append("awardingAgency", form.awardingAgency);
         fd.append("awardDate", form.awardDate);
       } else if (cat === 6) {
         fd.append("courseName", form.courseName);
@@ -447,6 +454,8 @@ export default function Contribution() {
       } else if (cat === 8) {
         fd.append("eventName", form.eventName);
         fd.append("eventDate", form.eventDate);
+        if (form.eventType) fd.append("eventType", form.eventType);
+        if (form.studentNames) fd.append("studentNames", form.studentNames);
       } else if (cat === 9) {
         fd.append("articleTitle", form.articleTitle);
         fd.append("publicationName", form.publicationName);
@@ -556,12 +565,49 @@ export default function Contribution() {
   };
 
   const getCategoryName = (catId) => {
-    const found = CONTRIBUTION_CATEGORIES.find(c => c.id === catId);
+    let found = contributionCategories.find(c => c._id === catId);
+    if (!found) found = contributionCategories.find(c => c.code === parseInt(catId));
     return found ? found.name : `Category ${catId}`;
   };
 
+
+
+  const getContributionDetailsString = (item) => {
+    if (!item) return "N/A";
+    const catCode = getCategoryCode(item.category);
+    const catName = item.category?.name || "Unknown Category";
+    const fDate = item.fromDate ? new Date(item.fromDate).toLocaleDateString('en-GB') : "";
+    const tDate = item.toDate ? new Date(item.toDate).toLocaleDateString('en-GB') : "";
+    
+    switch (catCode) {
+      case 1: {
+        const typeMap = {
+          'BOG': 'the Board of Governance',
+          'GB': 'the Governing Body',
+          'AC': 'the Academic Council',
+          'BOS': 'the Board of Studies'
+        };
+        const mType = typeMap[item.memberType] || item.memberType || 'N/A';
+        return `Member of ${mType} of ${item.organizationName || 'N/A'}. (From ${fDate} to ${tDate})`;
+      }
+      case 2:
+      case 3: return `Member of the Editorial Board of ${item.journalName || 'N/A'} (Type: ${item.journalType || 'N/A'}) (${fDate} to ${tDate})`;
+      case 4:
+      case 5: return `Award: ${item.awardName || 'N/A'} on ${item.awardDate ? new Date(item.awardDate).toLocaleDateString('en-GB') : 'N/A'}`;
+      case 6: return `Developed e-content: ${item.courseName || 'N/A'} - ${item.url || 'N/A'}`;
+      case 7: return `Certification: ${item.certificationName || 'N/A'} (${fDate} to ${tDate})`;
+      case 8: return `Trained students (${item.studentNames || 'N/A'}) for ${item.eventType || 'N/A'}: ${item.eventName || 'N/A'} on ${item.eventDate ? new Date(item.eventDate).toLocaleDateString('en-GB') : 'N/A'}`;
+      case 9: return `Article: "${item.articleTitle || 'N/A'}" published in ${item.publicationName || 'N/A'} on ${item.publicationDate ? new Date(item.publicationDate).toLocaleDateString('en-GB') : 'N/A'}`;
+      case 10: return `Established/Maintained facility: ${item.facilityName || 'N/A'} (${fDate} to ${tDate})`;
+      case 11: return `NPTEL Course: ${item.courseName || 'N/A'} (${item.duration || 'N/A'})`;
+      case 12: return `Coursera Course: ${item.courseName || 'N/A'} - ${item.courseHours || 'N/A'} Hours (${fDate} to ${tDate})`;
+      case 13: return `Grant Sanctioned: ${item.grantName || 'N/A'} (${fDate} to ${tDate})`;
+      default: return catName;
+    }
+  };
+
   const getContributionNameField = (category, data) => {
-    const cat = parseInt(category);
+    const cat = getCategoryCode(category);
     switch (cat) {
       case 1: return { field: 'organizationName', value: data.organizationName };
       case 2: return { field: 'journalName', value: data.journalName };
@@ -581,7 +627,7 @@ export default function Contribution() {
   };
 
   const renderDateFields = () => {
-    const isFutureAllowed = [1, 2, 3].includes(parseInt(form.category));
+    const isFutureAllowed = [1, 2, 3].includes(getCategoryCode(form.category));
     const todayStr = new Date().toISOString().split("T")[0];
     return (
       <>
@@ -613,16 +659,12 @@ export default function Contribution() {
             }}
           />
         </Box>
-        <Box>
-          <Typography sx={labelStyle}>Auto Duration (Days):</Typography>
-          <TextField size="small" fullWidth disabled value={form.duration || ""} placeholder="Calculated automatically" />
-        </Box>
       </>
     );
   };
 
   const renderCategorySpecificFields = () => {
-    const cat = parseInt(form.category);
+    const cat = getCategoryCode(form.category);
     if (isNaN(cat)) return null;
 
     switch (cat) {
@@ -630,8 +672,18 @@ export default function Contribution() {
         return (
           <>
             <Box>
+              <Typography sx={labelStyle}>Member Type: *</Typography>
+              <Select size="small" fullWidth displayEmpty value={form.memberType || ""} onChange={(e) => setForm(p => ({ ...p, memberType: e.target.value }))}>
+                <MenuItem value="" disabled>--Select Role--</MenuItem>
+                <MenuItem value="BOG">Board of Governance (BOG)</MenuItem>
+                <MenuItem value="GB">Governing Body (GB)</MenuItem>
+                <MenuItem value="AC">Academic Council (AC)</MenuItem>
+                <MenuItem value="BOS">Board of Studies (BOS)</MenuItem>
+              </Select>
+            </Box>
+            <Box>
               <Typography sx={labelStyle}>Organization Name: *</Typography>
-              <TextField size="small" fullWidth value={form.organizationName} onChange={setVal("organizationName")} />
+              <TextField size="small" fullWidth value={form.organizationName || ""} onChange={setVal("organizationName")} />
             </Box>
             {renderDateFields()}
           </>
@@ -640,8 +692,17 @@ export default function Contribution() {
         return (
           <>
             <Box>
-              <Typography sx={labelStyle}>Journal Name (SCIE / Q1 / Q2): *</Typography>
-              <TextField size="small" fullWidth value={form.journalName} onChange={setVal("journalName")} />
+              <Typography sx={labelStyle}>Journal Name: *</Typography>
+              <TextField size="small" fullWidth value={form.journalName || ""} onChange={setVal("journalName")} />
+            </Box>
+            <Box>
+              <Typography sx={labelStyle}>Journal Type: *</Typography>
+              <Select size="small" fullWidth displayEmpty value={form.journalType || ""} onChange={(e) => setForm(p => ({ ...p, journalType: e.target.value }))}>
+                <MenuItem value="" disabled>--Select Type--</MenuItem>
+                <MenuItem value="SCIE">SCIE</MenuItem>
+                <MenuItem value="Q1">Q1</MenuItem>
+                <MenuItem value="Q2">Q2</MenuItem>
+              </Select>
             </Box>
             {renderDateFields()}
           </>
@@ -651,7 +712,17 @@ export default function Contribution() {
           <>
             <Box>
               <Typography sx={labelStyle}>Journal / Conference Name: *</Typography>
-              <TextField size="small" fullWidth value={form.journalConferenceName} onChange={setVal("journalConferenceName")} />
+              <TextField size="small" fullWidth value={form.journalName || ""} onChange={setVal("journalName")} />
+            </Box>
+            <Box>
+              <Typography sx={labelStyle}>Journal Type: *</Typography>
+              <Select size="small" fullWidth displayEmpty value={form.journalType || ""} onChange={(e) => setForm(p => ({ ...p, journalType: e.target.value }))}>
+                <MenuItem value="" disabled>--Select Type--</MenuItem>
+                <MenuItem value="ESCI">ESCI</MenuItem>
+                <MenuItem value="Q3">Q3</MenuItem>
+                <MenuItem value="Q4">Q4</MenuItem>
+                <MenuItem value="Conference proceedings">Conference proceedings</MenuItem>
+              </Select>
             </Box>
             {renderDateFields()}
           </>
@@ -660,13 +731,28 @@ export default function Contribution() {
       case 5:
         return (
           <>
+            <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
+              <Typography sx={labelStyle}>Awarding Agency: *</Typography>
+              {cat === 4 ? (
+                <Select size="small" fullWidth displayEmpty value={form.awardingAgency || ""} onChange={setVal("awardingAgency")}>
+                  <MenuItem value="" disabled>--Select Awarding Agency--</MenuItem>
+                  <MenuItem value="MHRD">MHRD</MenuItem>
+                  <MenuItem value="AICTE">AICTE</MenuItem>
+                  <MenuItem value="UGC">UGC</MenuItem>
+                  <MenuItem value="State Govt.">State Govt.</MenuItem>
+                  <MenuItem value="Top 2%">Top 2%</MenuItem>
+                </Select>
+              ) : (
+                <TextField size="small" fullWidth value={form.awardingAgency || ""} onChange={setVal("awardingAgency")} placeholder="NGO / Trust / Other name" />
+              )}
+            </Box>
             <Box>
               <Typography sx={labelStyle}>Award Name: *</Typography>
-              <TextField size="small" fullWidth value={form.awardName} onChange={setVal("awardName")} />
+              <TextField size="small" fullWidth value={form.awardName || ""} onChange={setVal("awardName")} />
             </Box>
             <Box>
               <Typography sx={labelStyle}>Award Date: *</Typography>
-              <TextField size="small" fullWidth type="date" value={form.awardDate} onChange={setVal("awardDate")} slotProps={{ inputLabel: { shrink: true }, htmlInput: { max: new Date().toISOString().split("T")[0] } }} />
+              <TextField size="small" fullWidth type="date" value={form.awardDate || ""} onChange={setVal("awardDate")} slotProps={{ inputLabel: { shrink: true }, htmlInput: { max: new Date().toISOString().split("T")[0] } }} />
             </Box>
           </>
         );
@@ -697,8 +783,21 @@ export default function Contribution() {
         return (
           <>
             <Box>
+              <Typography sx={labelStyle}>Event Type: *</Typography>
+              <Select size="small" fullWidth displayEmpty value={form.eventType || ""} onChange={(e) => setForm(p => ({ ...p, eventType: e.target.value }))}>
+                <MenuItem value="" disabled>--Select Event Type--</MenuItem>
+                <MenuItem value="Hackathon">Hackathon</MenuItem>
+                <MenuItem value="Startup">Startup</MenuItem>
+                <MenuItem value="Events">Events</MenuItem>
+              </Select>
+            </Box>
+            <Box>
               <Typography sx={labelStyle}>Event Name: *</Typography>
-              <TextField size="small" fullWidth value={form.eventName} onChange={setVal("eventName")} />
+              <TextField size="small" fullWidth value={form.eventName || ""} onChange={setVal("eventName")} />
+            </Box>
+            <Box>
+              <Typography sx={labelStyle}>Student Names: *</Typography>
+              <TextField size="small" fullWidth value={form.studentNames || ""} onChange={setVal("studentNames")} placeholder="John, Jane, etc." />
             </Box>
             <Box>
               <Typography sx={labelStyle}>Event Date: *</Typography>
@@ -926,7 +1025,9 @@ export default function Contribution() {
                         {item.academicYear?.year || "N/A"}
                       </TableCell>
                       <TableCell sx={{ color: "var(--text-primary)", fontWeight: 500, py: 2, maxWidth: 350, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                        {getCategoryName(item.category)}
+                        <Typography sx={{ color: "var(--text-secondary)", fontSize: "0.85rem", mt: 0.5 }}>
+                          {getContributionDetailsString(item)}
+                        </Typography>
                       </TableCell>
                       <TableCell sx={{ color: "var(--text-secondary)", py: 2 }}>{submitDate}</TableCell>
                       <TableCell sx={{ py: 2 }}>
@@ -1128,15 +1229,7 @@ export default function Contribution() {
                 </Typography>
                 
                 <Box sx={{ display: "grid", gridTemplateColumns: { xs: "120px 1fr", sm: "220px 1fr" }, gap: 2 }}>
-                  <Typography sx={{ fontWeight: 600, color: "#475569", fontSize: "0.9rem" }}>Contribution Category</Typography>
-                  <Typography sx={{ color: "#0f172a", fontSize: "0.9rem" }}>{getCategoryName(data.category)}</Typography>
-                  
-                  {value && (
-                    <>
-                      <Typography sx={{ fontWeight: 600, color: "#475569", fontSize: "0.9rem" }}>Title / Details</Typography>
-                      <Typography sx={{ color: "#0f172a", fontSize: "0.9rem" }}>{value}</Typography>
-                    </>
-                  )}
+                  <Typography sx={{ color: "#0f172a", fontSize: "0.9rem", fontWeight: 600, gridColumn: "1 / -1" }}>{getContributionDetailsString(data)}</Typography>
 
                   <Typography sx={{ fontWeight: 600, color: "#475569", fontSize: "0.9rem" }}>Academic Year</Typography>
                   <Typography sx={{ color: "#0f172a", fontSize: "0.9rem" }}>{data.academicYear?.year || "N/A"}</Typography>
@@ -1398,8 +1491,8 @@ export default function Contribution() {
           disabled={!!editingId}
         >
           <MenuItem value="" disabled>--Select Category (1 to 13)--</MenuItem>
-          {CONTRIBUTION_CATEGORIES.map(cat => (
-            <MenuItem key={cat.id} value={cat.id}>{cat.name}</MenuItem>
+          {contributionCategories.map(cat => (
+            <MenuItem key={cat._id} value={cat._id}>{cat.name}</MenuItem>
           ))}
         </Select>
       </Box>

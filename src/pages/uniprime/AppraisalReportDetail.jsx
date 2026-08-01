@@ -116,7 +116,7 @@ const calculateContributionPoints = (item, config) => {
     grantSanctioned: 5
   };
 
-  const cat = parseInt(item.category);
+  const cat = item.category?.code || parseInt(item.category);
   switch (cat) {
     case 1: return expPointsConf.memberBOS ?? 5;
     case 2: return expPointsConf.editorialBoardSCIE ?? 5;
@@ -474,42 +474,49 @@ const AppraisalReportDetail = () => {
     return { bg: "rgba(100, 116, 139, 0.1)", color: "#64748b" }; // Draft
   };
 
-  const getContCategoryName = (catId) => {
-    const categories = {
-      1: "Member of BOG / GB / AC / BOS",
-      2: "Editorial Board Member (SCIE / Q1 / Q2)",
-      3: "Editorial Board Member (ESCI / Q3 / Q4 / Proceedings)",
-      4: "Awards (MHRD / AICTE / UGC / State / Top Inst)",
-      5: "Awards (NGO / Trust / Others)",
-      6: "Developed E-Content",
-      7: "Certification on New Age Technologies",
-      8: "Students Trained and Shortlisted for Finals",
-      9: "Articles Published in Magazine / Newspaper",
-      10: "Research Facility Establishment / Maintenance",
-      11: "NPTEL Course Completion",
-      12: "Coursera Course Completion",
-      13: "FDP / Seminar Grant Sanctioned"
-    };
-    return categories[catId] || `Category ${catId}`;
-  };
 
-  const getContDescription = (category, item) => {
-    const cat = parseInt(category);
-    switch (cat) {
-      case 1: return item.organizationName;
-      case 2: return item.journalName;
-      case 3: return item.journalConferenceName;
+
+  const getContributionDetailsString = (item) => {
+    if (!item) return "N/A";
+    const catCode = item.category?.code || parseInt(item.category);
+    const fDate = item.fromDate ? new Date(item.fromDate).toLocaleDateString('en-GB') : "";
+    const tDate = item.toDate ? new Date(item.toDate).toLocaleDateString('en-GB') : "";
+    
+    switch (catCode) {
+      case 1: {
+        const typeMap = {
+          'BOG': 'the Board of Governance',
+          'GB': 'the Governing Body',
+          'AC': 'the Academic Council',
+          'BOS': 'the Board of Studies',
+          'Other': 'an Other Committee'
+        };
+        const mType = typeMap[item.memberType] || item.memberType || "a Committee";
+        return `Member of ${mType} of ${item.organizationName || "Unknown Organization"}. ${fDate && tDate ? `(From ${fDate} to ${tDate})` : ""}`;
+      }
+      case 2:
+      case 3:
+        return `${item.journalType === 'Reviewer' ? 'Reviewer for' : 'Editorial Board Member of'} the journal "${item.journalName || item.journalConferenceName || "Unknown Journal"}". ${fDate && tDate ? `(From ${fDate} to ${tDate})` : ""}`;
       case 4:
-      case 5: return item.awardName;
-      case 6: return item.courseName;
-      case 7: return item.certificationName;
-      case 8: return item.eventName;
-      case 9: return item.articleTitle;
-      case 10: return item.facilityName;
+      case 5:
+        return `Received the award "${item.awardName || "Unknown Award"}" from ${item.awardingAgency || "Unknown Agency"}. ${item.awardDate ? `Awarded on: ${new Date(item.awardDate).toLocaleDateString('en-GB')}` : ""}`;
+      case 6:
+        return `Developed e-content for the course "${item.courseName || "Unknown Course"}" uploaded to ${item.websiteName || "Unknown Website"}. ${item.url ? `(URL: ${item.url})` : ""}`;
+      case 7:
+        return `Certified in "${item.certificationName || "Unknown Certification"}" by ${item.awardingAgency || "Unknown Agency"}. ${fDate && tDate ? `(From ${fDate} to ${tDate})` : ""} Duration: ${item.duration || "N/A"}`;
+      case 8:
+        return `Trained students for the event "${item.eventName || "Unknown Event"}" organized by ${item.organizationName || "Unknown Organization"}. ${item.studentNames ? `Students: ${item.studentNames}` : ""}`;
+      case 9:
+        return `Published an article titled "${item.articleTitle || "Unknown Article"}" in ${item.magazineName || "Unknown Magazine/Newspaper"}. Published on: ${item.publicationDate ? new Date(item.publicationDate).toLocaleDateString('en-GB') : "N/A"}`;
+      case 10:
+        return `Established/Maintained the research facility "${item.facilityName || "Unknown Facility"}". ${fDate && tDate ? `(From ${fDate} to ${tDate})` : ""}`;
       case 11:
-      case 12: return item.courseName;
-      case 13: return item.grantName;
-      default: return "";
+      case 12:
+        return `Completed the course "${item.courseName || "Unknown Course"}" by ${item.organizationName || "Unknown Organization"}. ${fDate && tDate ? `(From ${fDate} to ${tDate})` : ""} Duration: ${item.duration || "N/A"}`;
+      case 13:
+        return `Sanctioned the grant "${item.grantName || "Unknown Grant"}" by ${item.sponsoringAgency || "Unknown Agency"}. Sanctioned on: ${item.sanctionDate ? new Date(item.sanctionDate).toLocaleDateString('en-GB') : "N/A"}`;
+      default:
+        return item.organizationName || item.journalName || item.eventName || item.courseName || "Expertise / Contribution Detail";
     }
   };
 
@@ -1952,25 +1959,15 @@ const AppraisalReportDetail = () => {
                                   const statusColor = getStatusColor(item.status);
                                   const backendURL = (import.meta.env.VITE_BACKEND_URL || "http://localhost:9000").replace(/\/$/, "");
                                   const fileUrl = item.proof ? (item.proof.startsWith('http') ? item.proof : `${backendURL}${item.proof}`) : null;
-                                  const descText = getContDescription(item.category, item);
+
 
                                   return (
                                     <React.Fragment key={item._id || i}>
                                       <TableRow sx={{ "&:hover": { bgcolor: "rgba(0, 0, 0, 0.015)" } }}>
                                         <TableCell sx={{ color: "var(--text-primary)", fontWeight: 600 }}>{i + 1}</TableCell>
                                         <TableCell sx={{ fontWeight: 600, color: "var(--text-primary)" }}>
-                                          <Box>
-                                            <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)" }}>
-                                              {getContCategoryName(item.category)}
-                                            </Typography>
-                                            <Typography variant="caption" color="var(--text-secondary)" sx={{ display: "block", mt: 0.25 }}>
-                                              Detail: {descText}
-                                            </Typography>
-                                            {item.duration && <Typography variant="caption" color="var(--text-secondary)" display="block" sx={{ fontSize: "0.7rem" }}>Duration: {item.duration}</Typography>}
-                                            {item.fromDate && <Typography variant="caption" color="var(--text-secondary)" display="block" sx={{ fontSize: "0.7rem" }}>Dates: {new Date(item.fromDate).toLocaleDateString("en-IN")} to {new Date(item.toDate).toLocaleDateString("en-IN")}</Typography>}
-                                            {item.url && <Typography variant="caption" color="var(--text-secondary)" display="block" sx={{ fontSize: "0.7rem" }}>Link: <a href={item.url} target="_blank" rel="noopener noreferrer" style={{ color: "var(--color-primary)" }}>{item.url}</a></Typography>}
-                                            {/* Removed proof button as it is available in eye-icon dialog */}
-                                          </Box>
+                                          {getContributionDetailsString(item)}
+                                          {item.url && <Typography variant="caption" color="var(--text-secondary)" display="block" sx={{ fontSize: "0.7rem", mt: 0.5 }}>Link: <a href={item.url} target="_blank" rel="noopener noreferrer" style={{ color: "var(--color-primary)" }}>{item.url}</a></Typography>}
                                         </TableCell>
                                         <TableCell align="center" sx={{ fontWeight: 800, color: "var(--color-primary)" }}>
                                           {calculateContributionPoints(item, appraisalConfig)}
@@ -2571,27 +2568,9 @@ const AppraisalReportDetail = () => {
           {selectedContDetails && (
             <Stack spacing={2} sx={{ mt: 1 }}>
               <Box>
-                <Typography variant="caption" color="textSecondary" sx={{ fontWeight: 600 }}>Contribution Category</Typography>
-                <Typography variant="body1" sx={{ fontWeight: 700, color: "var(--text-primary)" }}>{getContCategoryName(selectedContDetails.category)}</Typography>
-              </Box>
-              <Box>
                 <Typography variant="caption" color="textSecondary" sx={{ fontWeight: 600 }}>Detail Information</Typography>
-                <Typography variant="body1" sx={{ fontWeight: 700, color: "var(--text-primary)" }}>{getContDescription(selectedContDetails.category, selectedContDetails)}</Typography>
+                <Typography variant="body1" sx={{ fontWeight: 700, color: "var(--text-primary)" }}>{getContributionDetailsString(selectedContDetails)}</Typography>
               </Box>
-              {selectedContDetails.duration && (
-                <Box>
-                  <Typography variant="caption" color="textSecondary" sx={{ fontWeight: 600 }}>Duration</Typography>
-                  <Typography variant="body1" sx={{ fontWeight: 700, color: "var(--text-primary)" }}>{selectedContDetails.duration}</Typography>
-                </Box>
-              )}
-              {selectedContDetails.fromDate && (
-                <Box>
-                  <Typography variant="caption" color="textSecondary" sx={{ fontWeight: 600 }}>Dates</Typography>
-                  <Typography variant="body1" sx={{ fontWeight: 700, color: "var(--text-primary)" }}>
-                    {new Date(selectedContDetails.fromDate).toLocaleDateString("en-IN")} to {new Date(selectedContDetails.toDate).toLocaleDateString("en-IN")}
-                  </Typography>
-                </Box>
-              )}
               {selectedContDetails.url && (
                 <Box>
                   <Typography variant="caption" color="textSecondary" sx={{ fontWeight: 600 }}>Link / URL</Typography>
