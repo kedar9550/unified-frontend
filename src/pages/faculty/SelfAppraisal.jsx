@@ -1028,9 +1028,27 @@ const SelfAppraisal = () => {
       }
     }
 
-    if (showOrganizedDaysField && !resUtForm.numberOfDaysOrganized) {
-      toast.error("Number of Days Organized is required");
-      return;
+    if (showOrganizedDaysField) {
+      if (!resUtForm.numberOfDaysOrganized) {
+        toast.error("Number of Days Organized is required");
+        return;
+      }
+      const days = parseInt(resUtForm.numberOfDaysOrganized, 10);
+      if (isNaN(days) || days < 0) {
+        toast.error("Number of days cannot be negative");
+        return;
+      }
+      if (resUtForm.eventStartDate && resUtForm.eventEndDate) {
+        const fromDate = new Date(resUtForm.eventStartDate);
+        const toDate = new Date(resUtForm.eventEndDate);
+        fromDate.setHours(0, 0, 0, 0);
+        toDate.setHours(0, 0, 0, 0);
+        const maxDays = Math.round((toDate - fromDate) / (1000 * 60 * 60 * 24)) + 1;
+        if (days > maxDays) {
+          toast.error(`Number of days cannot exceed the event duration (${maxDays} days)`);
+          return;
+        }
+      }
     }
     if (showSessionsField && !resUtForm.numberOfSessions) {
       toast.error("Number of Sessions Conducted is required for Resource Person role");
@@ -1054,8 +1072,8 @@ const SelfAppraisal = () => {
       toast.error("Activity dates cannot be in the future");
       return;
     }
-    if (from >= to) {
-      toast.error("To Date must be greater than From Date");
+    if (from > to) {
+      toast.error("To Date must be greater than or equal to From Date");
       return;
     }
 
@@ -1243,8 +1261,8 @@ const SelfAppraisal = () => {
         const to = new Date(contForm.toDate);
         if (from > today) {
           fieldErr = "From Date cannot be in the future.";
-        } else if (from >= to) {
-          fieldErr = "To Date must be greater than From Date.";
+        } else if (from > to) {
+          fieldErr = "To Date must be greater than or equal to From Date.";
         } else {
           if ([7, 10, 12, 13].includes(cat) && to > today) {
             fieldErr = "To Date cannot be in the future.";

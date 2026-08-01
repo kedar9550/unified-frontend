@@ -373,9 +373,27 @@ export default function ResourceUtilization() {
       }
     }
 
-    if (showOrganizedDaysField && !form.numberOfDaysOrganized) {
-      toast.error("Number of Days Organized is required");
-      return;
+    if (showOrganizedDaysField) {
+      if (!form.numberOfDaysOrganized) {
+        toast.error("Number of Days Organized is required");
+        return;
+      }
+      const days = parseInt(form.numberOfDaysOrganized, 10);
+      if (isNaN(days) || days < 0) {
+        toast.error("Number of days cannot be negative");
+        return;
+      }
+      if (form.eventStartDate && form.eventEndDate) {
+        const fromDate = new Date(form.eventStartDate);
+        const toDate = new Date(form.eventEndDate);
+        fromDate.setHours(0, 0, 0, 0);
+        toDate.setHours(0, 0, 0, 0);
+        const maxDays = Math.round((toDate - fromDate) / (1000 * 60 * 60 * 24)) + 1;
+        if (days > maxDays) {
+          toast.error(`Number of days cannot exceed the event duration (${maxDays} days)`);
+          return;
+        }
+      }
     }
     if (showSessionsField && !form.numberOfSessions) {
       toast.error("Number of Sessions Conducted is required for Resource Person role");
@@ -402,8 +420,8 @@ export default function ResourceUtilization() {
       return;
     }
 
-    if (from >= to) {
-      toast.error("To Date must be greater than From Date");
+    if (from > to) {
+      toast.error("To Date must be greater than or equal to From Date");
       return;
     }
 
