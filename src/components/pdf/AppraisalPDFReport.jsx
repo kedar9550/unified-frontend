@@ -743,14 +743,23 @@ const AppraisalPDFReport = forwardRef(({ data, hideInterpersonal }, ref) => {
               </tr>
             </thead>
             <tbody style={{ display: 'table-row-group', pageBreakInside: 'auto' }}>
-              {adminData.roles.map((r, i) => (
-                <tr key={i} style={styles.tr}>
-                  <td style={styles.td}>{i + 1}</td>
-                  <td style={styles.tdLeft}>{r.roleName} ({r.level})</td>
-                  <td style={styles.td}>{r.assignedBy || 'HOD / Principal'}</td>
-                  <td style={styles.td}>{r.pointsClaimed || ''}</td>
-                </tr>
-              ))}
+              {adminData.roles.map((r, i) => {
+                const assignedByType = typeof r.assignedBy === 'object' ? r.assignedBy.type : (r.assignedBy || "");
+                const assignedByOtherText = typeof r.assignedBy === 'object' ? r.assignedBy.otherText : "";
+                let assignedByText = "";
+                if (assignedByType) {
+                  assignedByText = assignedByType === "Others" && assignedByOtherText ? assignedByOtherText : assignedByType;
+                }
+
+                return (
+                  <tr key={i} style={styles.tr}>
+                    <td style={styles.td}>{i + 1}</td>
+                    <td style={styles.tdLeft}>{r.roleLabel || r.roleName} {r.level ? `(${r.level})` : ''}</td>
+                    <td style={styles.td}>{assignedByText || 'HOD / Principal'}</td>
+                    <td style={styles.td}>{r.pointsClaimed || ''}</td>
+                  </tr>
+                );
+              })}
               <tr style={styles.tr}>
                 <td colSpan="3" style={{ ...styles.td, fontWeight: 'bold', textAlign: 'right' }}>Self-Assessment points (Max: 20)</td>
                 <td style={{ ...styles.td, fontWeight: 'bold' }}>

@@ -1,5 +1,6 @@
 import Loader from "../../components/common/Loader";
 import React, { useState, useEffect, useRef } from "react";
+import { ADMIN_ROLE_CATALOG } from "../../constants/adminRoleCatalog";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   Box,
@@ -167,37 +168,16 @@ const calculateAdministrativePoints = (r, config) => {
   };
 
   let pts = 5;
-  const name = r.roleName.toLowerCase();
   const level = (r.level || '').toLowerCase();
   const isCentral = level.includes('central') || level.includes('institute');
 
-  if (name === 'deans / assoc deans / coe') {
-    pts = adminConf.deanCentral ?? 20;
-  } else if (name === 'hod / dy. coe / coordinator (univ. office)') {
-    pts = isCentral ? (adminConf.hodCentral ?? 15) : (adminConf.hodDept ?? 15);
-  } else if (name === 'dy. hod / dept. exam cell incharge') {
-    pts = adminConf.dyHodDept ?? 10;
-  } else if (name === 'time table / project coordinator / curriculum coordinator') {
-    pts = adminConf.timetableDept ?? 10;
-  } else if (name === 'placement / internship / alumni coordinator') {
-    pts = isCentral ? (adminConf.placementCentral ?? 10) : (adminConf.placementDept ?? 10);
-  } else if (name === 'coursera / linkedin coordinator / ala') {
-    pts = isCentral ? (adminConf.courseraCentral ?? 10) : (adminConf.courseraDept ?? 5);
-  } else if (name === 'edc / iic / iqac coordinator') {
-    pts = isCentral ? (adminConf.edcCentral ?? 10) : (adminConf.edcDept ?? 5);
-  } else if (name === 'course coordinator') {
-    pts = adminConf.courseDept ?? 5;
-  } else if (name === 'website coordinator') {
-    pts = isCentral ? (adminConf.websiteCentral ?? 10) : 0;
-  } else if (name === 'nss / any clubs / professional chapters coordinator') {
-    pts = isCentral ? (adminConf.nssCentral ?? 10) : (adminConf.nssDept ?? 5);
-  } else if (name === 'any training program coordinator (smart interviews / gpp / etc.)') {
-    pts = isCentral ? (adminConf.trainingCentral ?? 10) : (adminConf.trainingDept ?? 5);
-  } else if (name === 'drc / research coordinator') {
-    pts = adminConf.drcDept ?? 5;
-  } else if (name === 'anti-ragging committee coordinator') {
-    pts = isCentral ? (adminConf.antiRaggingCentral ?? 5) : (adminConf.antiRaggingDept ?? 3);
-  } else if (name.startsWith('any other remarkable event')) {
+  const catalogEntry = ADMIN_ROLE_CATALOG.find(c => c.roleId === r.roleId);
+
+  if (catalogEntry) {
+    const pg = catalogEntry.pointsGroup;
+    const key = pg + (isCentral ? 'Central' : 'Dept');
+    pts = adminConf[key] ?? pts;
+  } else if (r.roleName && r.roleName.toLowerCase().startsWith('any other')) {
     pts = isCentral ? (adminConf.otherCentral ?? 10) : (adminConf.otherDept ?? 5);
   } else {
     pts = isCentral ? (adminConf.otherCentral ?? 10) : (adminConf.otherDept ?? 5);
@@ -2128,7 +2108,17 @@ const AppraisalReportDetail = () => {
                           <>
                             {selectedAppraisal.administrationDetail.roles.filter(r => r.isResponsible).map((role, i) => {
                               const statusColor = getStatusColor(role.status);
-                              const assignedByText = role.level && (role.level.toLowerCase().includes("central") || role.level.toLowerCase().includes("institute")) ? "Central" : "Dept";
+                              
+                              const levelText = role.level || "";
+                              const assignedByType = typeof role.assignedBy === 'object' ? role.assignedBy.type : (role.assignedBy || "");
+                              const assignedByOtherText = typeof role.assignedBy === 'object' ? role.assignedBy.otherText : "";
+                              
+                              let assignedByTextVal = "";
+                              if (assignedByType) {
+                                assignedByTextVal = assignedByType === "Others" && assignedByOtherText ? assignedByOtherText : assignedByType;
+                              }
+                              
+                              const displayAssignedBy = levelText ? `${levelText}${assignedByTextVal ? ` (Assigned By: ${assignedByTextVal})` : ""}` : (assignedByTextVal || "N/A");
 
                               return (
                                 <React.Fragment key={i}>
@@ -2136,11 +2126,11 @@ const AppraisalReportDetail = () => {
                                     <TableCell sx={{ color: "var(--text-primary)", fontWeight: 600 }}>{i + 1}</TableCell>
                                     <TableCell sx={{ fontWeight: 600, color: "var(--text-primary)" }}>
                                       <Box>
-                                        <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)" }}>{role.roleName}</Typography>
+                                        <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)" }}>{role.roleLabel || role.roleName}</Typography>
                                         {role.details && <Typography variant="caption" sx={{ color: "var(--text-secondary)", display: "block", mt: 0.25 }}>Details: {role.details}</Typography>}
                                       </Box>
                                     </TableCell>
-                                    <TableCell sx={{ color: "var(--text-primary)" }}>{assignedByText}</TableCell>
+                                    <TableCell sx={{ color: "var(--text-primary)" }}>{displayAssignedBy}</TableCell>
                                     <TableCell align="center" sx={{ fontWeight: 800, color: "var(--color-primary)" }}>
                                       {calculateAdministrativePoints(role, appraisalConfig)}
                                     </TableCell>
@@ -2158,10 +2148,10 @@ const AppraisalReportDetail = () => {
                                             size="small"
                                             fullWidth
                                             placeholder="HOD comments/remarks..."
-                                            value={adminRemarks[role.roleName] || ""}
+                                            value={adminRemarks[role.roleId || role.roleName] || ""}
                                             onChange={(e) => {
                                               const val = e.target.value;
-                                              setAdminRemarks(p => ({ ...p, [role.roleName]: val }));
+                                              setAdminRemarks(p => ({ ...p, [role.roleId || role.roleName]: val }));
                                             }}
                                           />
                                           <Stack direction="row" spacing={1} sx={{ mt: 1.5 }}>

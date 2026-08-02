@@ -1,5 +1,6 @@
 import Loader from "../../components/common/Loader";
 import React, { useState, useEffect } from "react";
+import { ADMIN_ROLE_CATALOG, ASSIGNED_BY_OPTIONS } from "../../constants/adminRoleCatalog";
 import { useNavigate } from "react-router-dom";
 import {
   Box,
@@ -78,22 +79,7 @@ import { SubLabel, Grid2, NoteBox, FileField } from "../../components/faculty/Pu
 import { labelStyle } from "../../components/faculty/publicationConstants";
 import PageHeader from "../../components/common/PageHeader";
 
-const ADMINISTRATIVE_ROLES_LIST = [
-  { id: "dean", label: "Deans / Assoc Deans / CoE" },
-  { id: "hod", label: "HoD / Dy. CoE / Coordinator (Univ. Office)" },
-  { id: "dy_hod", label: "Dy. HoD / Dept. Exam Cell Incharge" },
-  { id: "timetable", label: "Time Table / Project Coordinator / Curriculum Coordinator" },
-  { id: "placement", label: "Placement / Internship / Alumni Coordinator" },
-  { id: "coursera", label: "Coursera / LinkedIn Coordinator / ALA" },
-  { id: "edc", label: "EDC / IIC / IQAC Coordinator" },
-  { id: "course_coord", label: "Course Coordinator" },
-  { id: "website", label: "Website Coordinator" },
-  { id: "nss", label: "NSS / Any Clubs / Professional Chapters Coordinator" },
-  { id: "training", label: "Any Training Program Coordinator (Smart Interviews / GPP / Etc.)" },
-  { id: "drc", label: "DRC / Research Coordinator" },
-  { id: "antiragging", label: "Anti-Ragging Committee Coordinator" },
-  { id: "other", label: "Any other remarkable event / activity coordinator", hasDetails: true }
-];
+
 
 // Contribution Categories are now fetched from the database
 
@@ -293,8 +279,12 @@ const SelfAppraisal = () => {
   const [submittingAdmin, setSubmittingAdmin] = useState(false);
   const [adminOpen, setAdminOpen] = useState(false);
   const [adminForm, setAdminForm] = useState({
-    roleName: "",
-    level: "Department level",
+    primaryRoleType: "",
+    roleId: "",
+    roleLabel: "",
+    level: "",
+    assignedByType: "",
+    assignedByOtherText: "",
     details: ""
   });
   const [adminEditingRole, setAdminEditingRole] = useState(null);
@@ -767,101 +757,78 @@ const SelfAppraisal = () => {
   };
 
   // 4. Administration Sync and Submit Handlers
-  useEffect(() => {
-    const initialForm = {};
-    const usedBackendRoles = new Set();
-
-    ADMINISTRATIVE_ROLES_LIST.forEach((r) => {
-      let matchedRole = null;
-      if (administrationDetail && administrationDetail.roles) {
-        matchedRole = administrationDetail.roles.find((x) => x.roleName === r.label);
-        if (matchedRole) usedBackendRoles.add(matchedRole._id || matchedRole.roleName);
-      }
-      initialForm[r.id] = {
-        roleName: r.label,
-        isResponsible: matchedRole ? matchedRole.isResponsible : false,
-        level: matchedRole ? matchedRole.level : "",
-        details: matchedRole ? matchedRole.details : ""
-      };
-    });
-
-    if (administrationDetail && administrationDetail.roles) {
-      administrationDetail.roles.forEach((r, idx) => {
-        if (!usedBackendRoles.has(r._id || r.roleName) && r.roleName.startsWith("Any other remarkable event / activity coordinator")) {
-          initialForm[`other_custom_${idx}`] = {
-            roleName: r.roleName,
-            isResponsible: r.isResponsible,
-            level: r.level || "",
-            details: r.details || ""
-          };
-        }
-      });
-    }
-
-    setAdminRolesForm(initialForm);
-  }, [selectedYear, administrationDetail]);
-
   const openAdminModalAdd = () => {
     setAdminEditingRole(null);
-    setAdminForm({ roleName: "", customRoleName: "", level: "Department level", details: "" });
+    setAdminForm({ primaryRoleType: "", roleId: "", roleLabel: "", level: "", assignedByType: "", assignedByOtherText: "", details: "" });
     setAdminOpen(true);
   };
 
   const openAdminModalEdit = (role) => {
-    setAdminEditingRole(role.roleName);
-    const isCustom = role.roleName.startsWith("Any other remarkable event / activity coordinator - ");
-    const baseRoleName = role.roleName.startsWith("Any other remarkable event") ? "Any other remarkable event / activity coordinator" : role.roleName;
-    const customRoleName = isCustom ? role.roleName.replace("Any other remarkable event / activity coordinator - ", "") : "";
-    setAdminForm({ roleName: baseRoleName, customRoleName: customRoleName, level: role.level || "Department level", details: role.details || "" });
+    setAdminEditingRole(role.roleId || role.roleName);
+    
+    let pType = role.roleId;
+    if (role.roleId) {
+       const catalogEntry = ADMIN_ROLE_CATALOG.find((r) => r.roleId === role.roleId);
+       if (catalogEntry && catalogEntry.category === "Coordinator") {
+          pType = "COORDINATOR";
+       }
+    }
+
+    setAdminForm({
+      primaryRoleType: pType || "",
+      roleId: role.roleId || "",
+      roleLabel: role.roleLabel || role.roleName || "",
+      level: role.level || "",
+      assignedByType: role.assignedBy?.type || role.assignedBy || "",
+      assignedByOtherText: role.assignedBy?.otherText || "",
+      details: role.details || ""
+    });
     setAdminOpen(true);
   };
 
   const handleAdminSave = async (e) => {
     e.preventDefault();
-    if (!adminForm.roleName) {
-      toast.error("Please select an administrative role");
-      return;
+    if (!adminForm.roleId) { toast.error("Please select an administrative role"); return; }
+    if (!adminForm.level) { toast.error("Please select a level"); return; }
+    if (!adminForm.assignedByType) { toast.error("Please select who assigned this role"); return; }
+    if (adminForm.assignedByType === "Others" && (!adminForm.assignedByOtherText || !adminForm.assignedByOtherText.trim())) {
+      toast.error("Please specify the assigning authority"); return;
     }
-    const roleConfig = ADMINISTRATIVE_ROLES_LIST.find((r) => r.label === adminForm.roleName);
-    if (adminForm.roleName === "Any other remarkable event / activity coordinator" && (!adminForm.customRoleName || !adminForm.customRoleName.trim())) {
-      toast.error("Please specify the custom role name");
-      return;
-    }
-
-    const updatedForm = { ...adminRolesForm };
-    let roleId = roleConfig ? roleConfig.id : null;
-
-    if (roleId === 'other') {
-      if (adminEditingRole) {
-        roleId = Object.keys(updatedForm).find(key => updatedForm[key].roleName === adminEditingRole) || roleId;
-      } else {
-        roleId = 'other_' + Date.now();
-      }
+    if ((adminForm.roleId === "other" || adminForm.roleId === "other_coord") && (!adminForm.roleLabel || !adminForm.roleLabel.trim())) {
+      toast.error("Please specify the custom role name"); return;
     }
 
-    if (roleId) {
-      updatedForm[roleId] = {
-        roleName: adminForm.roleName === "Any other remarkable event / activity coordinator"
-          ? "Any other remarkable event / activity coordinator - " + adminForm.customRoleName.trim()
-          : adminForm.roleName,
-        isResponsible: true,
-        level: adminForm.level,
-        details: adminForm.details
-      };
+    const catalogEntry = ADMIN_ROLE_CATALOG.find((r) => r.roleId === adminForm.roleId);
+    if (catalogEntry && !catalogEntry.allowedLevels.includes(adminForm.level)) {
+      toast.error(`Level ${adminForm.level} is not allowed for this role`); return;
+    }
+
+    const existingRoles = administrationDetail?.roles?.filter(r => r.isResponsible) || [];
+    let updatedRoles;
+
+    const newRole = {
+      roleId: adminForm.roleId,
+      roleLabel: (adminForm.roleId === "other" || adminForm.roleId === "other_coord") ? adminForm.roleLabel.trim() : (catalogEntry?.label || adminForm.roleLabel),
+      isResponsible: true,
+      level: adminForm.level,
+      assignedBy: {
+        type: adminForm.assignedByType,
+        otherText: adminForm.assignedByType === "Others" ? adminForm.assignedByOtherText.trim() : ""
+      },
+      details: adminForm.details
+    };
+
+    if (adminEditingRole) {
+      updatedRoles = existingRoles.map(r => (r.roleId === adminEditingRole || r.roleName === adminEditingRole) ? { ...r, ...newRole, status: 'Pending' } : r);
+    } else {
+      updatedRoles = [...existingRoles, { ...newRole, status: 'Pending' }];
     }
 
     try {
-      const rolesPayload = Object.values(updatedForm).map((role) => ({
-        roleName: role.roleName,
-        isResponsible: role.isResponsible,
-        level: role.isResponsible ? role.level : "",
-        details: role.isResponsible ? role.details : ""
-      }));
-
       setSubmittingAdmin(true);
       const res = await axiosInstance.post("/api/faculty-administration", {
         academicYear: selectedYear,
-        roles: rolesPayload
+        roles: updatedRoles
       });
       if (res.data?.success) {
         toast.success("Administrative role saved successfully!");
@@ -875,26 +842,16 @@ const SelfAppraisal = () => {
     }
   };
 
-  const handleAdminDelete = async (roleName) => {
+  const handleAdminDelete = async (roleIdentifier) => {
     if (!window.confirm("Are you sure you want to delete this administrative role?")) return;
-
-    const updatedForm = { ...adminRolesForm };
-    const roleId = Object.keys(updatedForm).find(key => updatedForm[key].roleName === roleName);
-    if (roleId && updatedForm[roleId]) {
-      updatedForm[roleId].isResponsible = false;
-    }
+    
+    const existingRoles = administrationDetail?.roles || [];
+    const updatedRoles = existingRoles.map(r => (r.roleId === roleIdentifier || r.roleName === roleIdentifier) ? { ...r, isResponsible: false } : r);
 
     try {
-      const rolesPayload = Object.values(updatedForm).map((role) => ({
-        roleName: role.roleName,
-        isResponsible: role.isResponsible,
-        level: role.isResponsible ? role.level : "",
-        details: role.isResponsible ? role.details : ""
-      }));
-
       const res = await axiosInstance.post("/api/faculty-administration", {
         academicYear: selectedYear,
-        roles: rolesPayload
+        roles: updatedRoles
       });
       if (res.data?.success) {
         toast.success("Administrative role deleted successfully!");
@@ -1627,38 +1584,19 @@ const SelfAppraisal = () => {
       otherDept: 5
     };
 
-    let pts = 5; // default fallback
-    const name = r.roleName.toLowerCase();
+    if (!r.isResponsible || r.status === "Rejected") return 0;
+
+    let pts = 5;
     const level = (r.level || '').toLowerCase();
     const isCentral = level.includes('central') || level.includes('institute');
 
-    if (name === 'deans / assoc deans / coe') {
-      pts = adminConf.deanCentral ?? 20;
-    } else if (name === 'hod / dy. coe / coordinator (univ. office)') {
-      pts = isCentral ? (adminConf.hodCentral ?? 15) : (adminConf.hodDept ?? 15);
-    } else if (name === 'dy. hod / dept. exam cell incharge') {
-      pts = adminConf.dyHodDept ?? 10;
-    } else if (name === 'time table / project coordinator / curriculum coordinator') {
-      pts = adminConf.timetableDept ?? 10;
-    } else if (name === 'placement / internship / alumni coordinator') {
-      pts = isCentral ? (adminConf.placementCentral ?? 10) : (adminConf.placementDept ?? 10);
-    } else if (name === 'coursera / linkedin coordinator / ala') {
-      pts = isCentral ? (adminConf.courseraCentral ?? 10) : (adminConf.courseraDept ?? 5);
-    } else if (name === 'edc / iic / iqac coordinator') {
-      pts = isCentral ? (adminConf.edcCentral ?? 10) : (adminConf.edcDept ?? 5);
-    } else if (name === 'course coordinator') {
-      pts = adminConf.courseDept ?? 5;
-    } else if (name === 'website coordinator') {
-      pts = isCentral ? (adminConf.websiteCentral ?? 10) : 0; // Central only per form
-    } else if (name === 'nss / any clubs / professional chapters coordinator') {
-      pts = isCentral ? (adminConf.nssCentral ?? 10) : (adminConf.nssDept ?? 5);
-    } else if (name === 'any training program coordinator (smart interviews / gpp / etc.)') {
-      pts = isCentral ? (adminConf.trainingCentral ?? 10) : (adminConf.trainingDept ?? 5);
-    } else if (name === 'drc / research coordinator') {
-      pts = adminConf.drcDept ?? 5;
-    } else if (name === 'anti-ragging committee coordinator') {
-      pts = isCentral ? (adminConf.antiRaggingCentral ?? 5) : (adminConf.antiRaggingDept ?? 3);
-    } else if (name.startsWith('any other remarkable event')) {
+    const catalogEntry = ADMIN_ROLE_CATALOG.find(c => c.roleId === r.roleId);
+
+    if (catalogEntry) {
+      const pg = catalogEntry.pointsGroup;
+      const key = pg + (isCentral ? 'Central' : 'Dept');
+      pts = adminConf[key] ?? pts;
+    } else if (r.roleName && r.roleName.toLowerCase().startsWith('any other')) {
       pts = isCentral ? (adminConf.otherCentral ?? 10) : (adminConf.otherDept ?? 5);
     } else {
       pts = isCentral ? (adminConf.otherCentral ?? 10) : (adminConf.otherDept ?? 5);
@@ -4165,20 +4103,28 @@ const SelfAppraisal = () => {
                                 {administrationDetail && administrationDetail.roles?.filter(r => r.isResponsible).length > 0 ? (
                                   <>
                                     {administrationDetail.roles.filter(r => r.isResponsible).map((role, i) => {
-                                      const assignedByText = role.level && (role.level.toLowerCase().includes("central") || role.level.toLowerCase().includes("institute")) ? "Central" : "Dept";
+                                      let assignedByDisplay = "-";
+                                      if (role.assignedBy) {
+                                        if (typeof role.assignedBy === 'string') assignedByDisplay = role.assignedBy;
+                                        else if (role.assignedBy.type) {
+                                          assignedByDisplay = role.assignedBy.type === "Others" 
+                                            ? `Others (${role.assignedBy.otherText})` 
+                                            : role.assignedBy.type;
+                                        }
+                                      }
                                       const isEditable = role.status === 'Pending' || role.status === 'Rejected';
                                       return (
                                         <TableRow key={i} sx={{ "&:hover": { bgcolor: "var(--bg-hover)" } }}>
                                           <TableCell sx={{ color: "var(--text-primary)" }}>{i + 1}</TableCell>
                                           <TableCell sx={{ fontWeight: 600, color: "var(--text-primary)" }}>
-                                            {role.roleName.startsWith("Any other remarkable event") ? "Any other remarkable event / activity coordinator" : role.roleName} {role.details ? `(${role.details})` : ""}
+                                            {role.roleLabel || role.roleName} {role.level ? `(${role.level})` : ""} {role.details ? `[${role.details}]` : ""}
                                             {role.status === "Rejected" && role.remarks && (
                                               <Typography variant="caption" sx={{ color: "error.main", mt: 0.5, display: "block", fontWeight: 700 }}>
                                                 Rejection Reason: {role.remarks}
                                               </Typography>
                                             )}
                                           </TableCell>
-                                          <TableCell sx={{ color: "var(--text-primary)" }}>{assignedByText}</TableCell>
+                                          <TableCell sx={{ color: "var(--text-primary)" }}>{assignedByDisplay}</TableCell>
                                           <TableCell align="center" sx={{ fontWeight: 800, color: "var(--color-primary)" }}>
                                             {calculateAdministrativePoints(role, appraisalConfig)}
                                           </TableCell>
@@ -4201,7 +4147,7 @@ const SelfAppraisal = () => {
                                                   <IconButton size="small" color="info" onClick={() => openAdminModalEdit(role)}>
                                                     <Edit fontSize="small" />
                                                   </IconButton>
-                                                  <IconButton size="small" color="error" onClick={() => handleAdminDelete(role.roleName)}>
+                                                  <IconButton size="small" color="error" onClick={() => handleAdminDelete(role.roleId || role.roleName)}>
                                                     <Delete fontSize="small" />
                                                   </IconButton>
                                                 </>
@@ -5589,52 +5535,132 @@ const SelfAppraisal = () => {
           <DialogContent sx={{ p: 3, mt: 1 }}>
             <Grid2 sx={{ mb: 2 }}>
               <Box sx={{ gridColumn: "1 / -1", mb: 2 }}>
-                <Typography sx={labelStyle}>Select Administrative Role / Responsibility: *</Typography>
+                <Typography sx={labelStyle}>Select Responsibility Category: *</Typography>
                 <Select
                   size="small"
                   fullWidth
-                  value={adminForm.roleName}
-                  onChange={(e) => setAdminForm(p => ({ ...p, roleName: e.target.value }))}
+                  value={adminForm.primaryRoleType}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    if (val === 'COORDINATOR') {
+                      setAdminForm(p => ({ ...p, primaryRoleType: val, roleId: "", roleLabel: "", level: "" }));
+                    } else {
+                      const sel = ADMIN_ROLE_CATALOG.find(r => r.roleId === val);
+                      setAdminForm(p => ({
+                        ...p,
+                        primaryRoleType: val,
+                        roleId: sel.roleId,
+                        roleLabel: sel.roleId === 'other' ? '' : sel.label,
+                        level: sel.allowedLevels.length === 1 ? sel.allowedLevels[0] : "",
+                      }));
+                    }
+                  }}
                   disabled={!!adminEditingRole}
                 >
-                  {ADMINISTRATIVE_ROLES_LIST.map(role => (
-                    <MenuItem key={role.id} value={role.label} disabled={role.id !== 'other' && !adminEditingRole && adminRolesForm[role.id]?.isResponsible && (administrationDetail?.roles?.find(r => r.roleName === role.label)?.status !== 'Rejected')}>
-                      {role.label}
-                    </MenuItem>
-                  ))}
+                  {ADMIN_ROLE_CATALOG.filter(r => r.category === 'Direct').map(role => {
+                    const isClaimed = administrationDetail?.roles?.find(r => r.roleId === role.roleId)?.isResponsible;
+                    const isRejected = administrationDetail?.roles?.find(r => r.roleId === role.roleId)?.status === 'Rejected';
+                    const isDisabled = !adminEditingRole && isClaimed && !isRejected;
+                    return <MenuItem key={role.roleId} value={role.roleId} disabled={isDisabled}>{role.label}</MenuItem>;
+                  })}
+                  
+                  <MenuItem value="COORDINATOR" sx={{ fontWeight: 700, color: "var(--color-primary)" }}>Coordinator</MenuItem>
+
+                  {ADMIN_ROLE_CATALOG.filter(r => r.category === 'Other').map(role => {
+                    return <MenuItem key={role.roleId} value={role.roleId}>{role.label}</MenuItem>;
+                  })}
                 </Select>
               </Box>
 
-              {adminForm.roleName === "Any other remarkable event / activity coordinator" && (
+              {adminForm.primaryRoleType === 'COORDINATOR' && (
+                <Box sx={{ gridColumn: "1 / -1", mb: 2 }}>
+                  <Typography sx={labelStyle}>Select Coordinator Role: *</Typography>
+                  <Select
+                    size="small"
+                    fullWidth
+                    value={adminForm.roleId}
+                    onChange={(e) => {
+                      const sel = ADMIN_ROLE_CATALOG.find(r => r.roleId === e.target.value);
+                      setAdminForm(p => ({
+                        ...p,
+                        roleId: sel.roleId,
+                        roleLabel: sel.roleId === 'other_coord' ? '' : sel.label,
+                        level: sel.allowedLevels.length === 1 ? sel.allowedLevels[0] : "",
+                      }));
+                    }}
+                    disabled={!!adminEditingRole}
+                  >
+                    {ADMIN_ROLE_CATALOG.filter(r => r.category === 'Coordinator').map(role => {
+                      const isClaimed = administrationDetail?.roles?.find(r => r.roleId === role.roleId)?.isResponsible;
+                      const isRejected = administrationDetail?.roles?.find(r => r.roleId === role.roleId)?.status === 'Rejected';
+                      const isDisabled = role.roleId !== 'other_coord' && !adminEditingRole && isClaimed && !isRejected;
+                      return <MenuItem key={role.roleId} value={role.roleId} disabled={isDisabled}>{role.label}</MenuItem>;
+                    })}
+                  </Select>
+                </Box>
+              )}
+
+              {(adminForm.roleId === "other" || adminForm.roleId === "other_coord") && (
                 <Box sx={{ gridColumn: "1 / -1", mb: 2 }}>
                   <Typography sx={labelStyle}>Specify Custom Role Name: *</Typography>
                   <TextField
                     size="small"
                     fullWidth
                     placeholder="Enter custom role name"
-                    value={adminForm.customRoleName || ""}
-                    onChange={(e) => setAdminForm(p => ({ ...p, customRoleName: e.target.value }))}
+                    value={adminForm.roleLabel || ""}
+                    onChange={(e) => setAdminForm(p => ({ ...p, roleLabel: e.target.value }))}
                   />
                 </Box>
               )}
 
               <Box sx={{ gridColumn: "1 / -1", mb: 2 }}>
-                <Typography sx={labelStyle}>Level (Assigned By): *</Typography>
+                <Typography sx={labelStyle}>Assigned By: *</Typography>
                 <Select
                   size="small"
                   fullWidth
-                  value={adminForm.level}
-                  onChange={(e) => setAdminForm(p => ({ ...p, level: e.target.value }))}
+                  value={adminForm.assignedByType}
+                  onChange={(e) => setAdminForm(p => ({ ...p, assignedByType: e.target.value, assignedByOtherText: "" }))}
                 >
-                  <MenuItem value="Department level">Serving Department level</MenuItem>
-                  <MenuItem value="Institute level">Institute / Central level</MenuItem>
+                  {ASSIGNED_BY_OPTIONS.map((opt, i) => (
+                    <MenuItem key={i} value={opt}>{opt}</MenuItem>
+                  ))}
                 </Select>
               </Box>
 
+              {adminForm.assignedByType === "Others" && (
+                <Box sx={{ gridColumn: "1 / -1", mb: 2 }}>
+                  <Typography sx={labelStyle}>Please Specify (Assigned By): *</Typography>
+                  <TextField
+                    size="small"
+                    fullWidth
+                    placeholder="E.g., Principal, Management, etc."
+                    value={adminForm.assignedByOtherText}
+                    onChange={(e) => setAdminForm(p => ({ ...p, assignedByOtherText: e.target.value }))}
+                  />
+                </Box>
+              )}
+
               {(() => {
-                const roleConfig = ADMINISTRATIVE_ROLES_LIST.find((r) => r.label === adminForm.roleName);
-                if (roleConfig && roleConfig.hasDetails) {
-                  return (
+                const catalogEntry = ADMIN_ROLE_CATALOG.find((r) => r.roleId === adminForm.roleId);
+                const showLevel = catalogEntry && catalogEntry.allowedLevels.length > 1;
+                
+                return (
+                  <>
+                    {showLevel && (
+                      <Box sx={{ gridColumn: "1 / -1", mb: 2 }}>
+                        <Typography sx={labelStyle}>Level of Service: *</Typography>
+                        <Select
+                          size="small"
+                          fullWidth
+                          value={adminForm.level}
+                          onChange={(e) => setAdminForm(p => ({ ...p, level: e.target.value }))}
+                        >
+                          {catalogEntry.allowedLevels.map(lvl => (
+                            <MenuItem key={lvl} value={lvl}>{lvl}</MenuItem>
+                          ))}
+                        </Select>
+                      </Box>
+                    )}
                     <Box sx={{ gridColumn: "1 / -1", mb: 2 }}>
                       <Typography sx={labelStyle}>Remarks / Details (Optional):</Typography>
                       <TextField
@@ -5642,22 +5668,10 @@ const SelfAppraisal = () => {
                         fullWidth
                         value={adminForm.details}
                         onChange={(e) => setAdminForm(p => ({ ...p, details: e.target.value }))}
-                        placeholder="Enter work description"
+                        placeholder={catalogEntry?.category === 'Other' ? "Enter work description" : "Any specific remarks"}
                       />
                     </Box>
-                  );
-                }
-                return (
-                  <Box sx={{ gridColumn: "1 / -1", mb: 2 }}>
-                    <Typography sx={labelStyle}>Remarks / Details (Optional):</Typography>
-                    <TextField
-                      size="small"
-                      fullWidth
-                      value={adminForm.details}
-                      onChange={(e) => setAdminForm(p => ({ ...p, details: e.target.value }))}
-                      placeholder="Any specific remarks"
-                    />
-                  </Box>
+                  </>
                 );
               })()}
             </Grid2>
