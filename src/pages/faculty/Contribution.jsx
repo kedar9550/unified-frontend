@@ -240,8 +240,12 @@ export default function Contribution() {
       publicationName: "",
       publicationDate: "",
       facilityName: "",
+      contributionType: "",
       facilityDate: "",
-      grantName: "",
+      grantType: "",
+      grantTitle: "",
+      fundingAgency: "",
+      grantAmount: "",
       sanctionDate: "",
       courseHours: "",
       certificateNumber: "",
@@ -275,8 +279,12 @@ export default function Contribution() {
       publicationName: item.publicationName || "",
       publicationDate: item.publicationDate ? item.publicationDate.substring(0, 10) : "",
       facilityName: item.facilityName || "",
+      contributionType: item.contributionType || "",
       facilityDate: item.facilityDate ? item.facilityDate.substring(0, 10) : "",
-      grantName: item.grantName || "",
+      grantType: item.grantType || "",
+      grantTitle: item.grantTitle || "",
+      fundingAgency: item.fundingAgency || "",
+      grantAmount: item.grantAmount || "",
       sanctionDate: item.sanctionDate ? item.sanctionDate.substring(0, 10) : "",
       courseHours: item.courseHours !== undefined ? String(item.courseHours) : "",
       certificateNumber: item.certificateNumber || "",
@@ -326,8 +334,8 @@ export default function Contribution() {
 
     let fieldErr = null;
 
-    // Unified check for categories that use From Date, To Date and Auto Duration: 1, 2, 3, 7, 10, 12, 13
-    if ([1, 2, 3, 7, 10, 12, 13].includes(cat)) {
+    // Unified check for categories that use From Date, To Date and Auto Duration: 1, 2, 3, 7, 10 (Maintenance), 12
+    if ([1, 2, 3, 7, 12].includes(cat) || (cat === 10 && form.contributionType === "Maintenance")) {
       if (!form.fromDate || !form.toDate) {
         fieldErr = "From Date and To Date are required.";
       } else {
@@ -338,8 +346,7 @@ export default function Contribution() {
         } else if (from > to) {
           fieldErr = "To Date must be greater than or equal to From Date.";
         } else {
-          // Category 7, 10, 12, 13 do NOT allow future toDate
-          if ([7, 10, 12, 13].includes(cat) && to > today) {
+          if (([7, 12].includes(cat) || cat === 10) && to > today) {
             fieldErr = "To Date cannot be in the future.";
           }
         }
@@ -370,6 +377,9 @@ export default function Contribution() {
           break;
         case 7:
           if (!form.certificationName) fieldErr = "Certification Name is required.";
+          else if (!form.fromDate || !form.toDate) fieldErr = "From and To dates are required.";
+          else if (!form.courseHours) fieldErr = "Hours are required.";
+          else if (isNaN(Number(form.courseHours)) || Number(form.courseHours) < 40) fieldErr = "Minimum 40 hours is required.";
           break;
         case 8:
           if (!form.eventName) fieldErr = "Event Name is required.";
@@ -382,6 +392,10 @@ export default function Contribution() {
           break;
         case 10:
           if (!form.facilityName) fieldErr = "Facility Name is required.";
+          else if (!form.contributionType) fieldErr = "Contribution Type is required.";
+          else if (form.contributionType === "Establishment") {
+            fieldErr = validateDate(form.fromDate, "Establishment Date");
+          }
           break;
         case 11:
           if (!form.courseName || !form.duration) {
@@ -408,7 +422,11 @@ export default function Contribution() {
           }
           break;
         case 13:
-          if (!form.grantName) fieldErr = "Grant Name is required.";
+          if (!form.grantType || !form.grantTitle || !form.fundingAgency || !form.grantAmount) {
+            fieldErr = "Grant Type, Title, Funding Agency, and Amount are required.";
+          } else {
+            fieldErr = validateDate(form.sanctionDate, "Sanction Date");
+          }
           break;
         default:
           fieldErr = "Invalid Category.";
@@ -451,6 +469,7 @@ export default function Contribution() {
         fd.append("url", form.url);
       } else if (cat === 7) {
         fd.append("certificationName", form.certificationName);
+        fd.append("courseHours", form.courseHours);
       } else if (cat === 8) {
         fd.append("eventName", form.eventName);
         fd.append("eventDate", form.eventDate);
@@ -462,6 +481,7 @@ export default function Contribution() {
         fd.append("publicationDate", form.publicationDate);
       } else if (cat === 10) {
         fd.append("facilityName", form.facilityName);
+        fd.append("contributionType", form.contributionType);
       } else if (cat === 11) {
         fd.append("courseName", form.courseName);
         fd.append("duration", form.duration);
@@ -471,7 +491,11 @@ export default function Contribution() {
         fd.append("courseHours", form.courseHours);
         fd.append("certificateNumber", form.certificateNumber);
       } else if (cat === 13) {
-        fd.append("grantName", form.grantName);
+        fd.append("grantType", form.grantType);
+        fd.append("grantTitle", form.grantTitle);
+        fd.append("fundingAgency", form.fundingAgency);
+        fd.append("grantAmount", form.grantAmount);
+        fd.append("sanctionDate", form.sanctionDate);
       }
 
       if (proofFile) {
@@ -593,15 +617,28 @@ export default function Contribution() {
       case 2:
       case 3: return `Member of the Editorial Board of ${item.journalName || 'N/A'} (Type: ${item.journalType || 'N/A'}) (${fDate} to ${tDate})`;
       case 4:
-      case 5: return `Award: ${item.awardName || 'N/A'} on ${item.awardDate ? new Date(item.awardDate).toLocaleDateString('en-GB') : 'N/A'}`;
-      case 6: return `Developed e-content: ${item.courseName || 'N/A'} - ${item.url || 'N/A'}`;
-      case 7: return `Certification: ${item.certificationName || 'N/A'} (${fDate} to ${tDate})`;
-      case 8: return `Trained students (${item.studentNames || 'N/A'}) for ${item.eventType || 'N/A'}: ${item.eventName || 'N/A'} on ${item.eventDate ? new Date(item.eventDate).toLocaleDateString('en-GB') : 'N/A'}`;
-      case 9: return `Article: "${item.articleTitle || 'N/A'}" published in ${item.publicationName || 'N/A'} on ${item.publicationDate ? new Date(item.publicationDate).toLocaleDateString('en-GB') : 'N/A'}`;
-      case 10: return `Established/Maintained facility: ${item.facilityName || 'N/A'} (${fDate} to ${tDate})`;
-      case 11: return `NPTEL Course: ${item.courseName || 'N/A'} (${item.duration || 'N/A'})`;
-      case 12: return `Coursera Course: ${item.courseName || 'N/A'} - ${item.courseHours || 'N/A'} Hours (${fDate} to ${tDate})`;
-      case 13: return `Grant Sanctioned: ${item.grantName || 'N/A'} (${fDate} to ${tDate})`;
+      case 5: return `Awarded as ${item.awardName || 'N/A'} by ${item.awardingAgency || 'N/A'} on ${item.awardDate ? new Date(item.awardDate).toLocaleDateString('en-GB') : 'N/A'}`;
+      case 6: return (
+        <span>
+          Developed e-content for the course {item.courseName || 'N/A'}
+          {item.url && (
+            <>
+              {" "}
+              &bull;{" "}
+              <a href={item.url} target="_blank" rel="noreferrer" style={{ color: "inherit", textDecoration: "underline" }}>
+                View Resource
+              </a>
+            </>
+          )}
+        </span>
+      );
+      case 7: return `Completed the certification ${item.certificationName || 'N/A'} from ${fDate} to ${tDate} (${item.courseHours || 'N/A'} hours).`;
+      case 8: return `Trained student(s) ${item.studentNames || 'N/A'} shortlisted for the finals of the ${item.eventType || 'N/A'} "${item.eventName || 'N/A'}" on ${item.eventDate ? new Date(item.eventDate).toLocaleDateString('en-GB') : 'N/A'}.`;
+      case 9: return `Published the article "${item.articleTitle || 'N/A'}" in ${item.publicationName || 'N/A'} on ${item.publicationDate ? new Date(item.publicationDate).toLocaleDateString('en-GB') : 'N/A'}.`;
+      case 10: return item.contributionType === "Establishment" ? `Established the research facility ${item.facilityName || 'N/A'} on ${fDate}.` : `Maintained the research facility ${item.facilityName || 'N/A'} from ${fDate} to ${tDate}.`;
+      case 11: return `Completed the NPTEL course ${item.courseName || 'N/A'} with a duration of ${item.duration || 'N/A'}.`;
+      case 12: return `Completed the Coursera course ${item.courseName || 'N/A'} from ${fDate} to ${tDate} (${item.courseHours || 'N/A'} hours).`;
+      case 13: return `Received a ${item.grantType?.toLowerCase() || 'grant'} of ₹${item.grantAmount || 0} from ${item.fundingAgency || 'N/A'} for "${item.grantTitle || 'N/A'}" on ${item.sanctionDate ? new Date(item.sanctionDate).toLocaleDateString('en-GB') : 'N/A'}.`;
       default: return catName;
     }
   };
@@ -621,7 +658,7 @@ export default function Contribution() {
       case 10: return { field: 'facilityName', value: data.facilityName };
       case 11:
       case 12: return { field: 'courseName', value: data.courseName };
-      case 13: return { field: 'grantName', value: data.grantName };
+      case 13: return { field: 'grantTitle', value: data.grantTitle };
       default: return { field: '', value: '' };
     }
   };
@@ -776,6 +813,10 @@ export default function Contribution() {
               <Typography sx={labelStyle}>Certification Name: *</Typography>
               <TextField size="small" fullWidth value={form.certificationName} onChange={setVal("certificationName")} />
             </Box>
+            <Box>
+              <Typography sx={labelStyle}>Duration (Hours): *</Typography>
+              <TextField type="number" size="small" fullWidth value={form.courseHours} onChange={setVal("courseHours")} placeholder="e.g. 40" />
+            </Box>
             {renderDateFields()}
           </>
         );
@@ -826,10 +867,24 @@ export default function Contribution() {
         return (
           <>
             <Box>
+              <Typography sx={labelStyle}>Contribution Type: *</Typography>
+              <Select size="small" fullWidth displayEmpty value={form.contributionType || ""} onChange={(e) => setForm(p => ({ ...p, contributionType: e.target.value }))}>
+                <MenuItem value="" disabled>--Select Type--</MenuItem>
+                <MenuItem value="Establishment">Establishment</MenuItem>
+                <MenuItem value="Maintenance">Maintenance</MenuItem>
+              </Select>
+            </Box>
+            <Box>
               <Typography sx={labelStyle}>Facility Name: *</Typography>
               <TextField size="small" fullWidth value={form.facilityName} onChange={setVal("facilityName")} />
             </Box>
-            {renderDateFields()}
+            {form.contributionType === "Establishment" && (
+              <Box>
+                <Typography sx={labelStyle}>Establishment Date: *</Typography>
+                <TextField size="small" fullWidth type="date" value={form.fromDate} onChange={setVal("fromDate")} slotProps={{ inputLabel: { shrink: true }, htmlInput: { max: new Date().toISOString().split("T")[0] } }} />
+              </Box>
+            )}
+            {form.contributionType === "Maintenance" && renderDateFields()}
           </>
         );
       case 11:
@@ -907,10 +962,29 @@ export default function Contribution() {
         return (
           <>
             <Box>
-              <Typography sx={labelStyle}>Grant Name: *</Typography>
-              <TextField size="small" fullWidth value={form.grantName} onChange={setVal("grantName")} />
+              <Typography sx={labelStyle}>Grant Type: *</Typography>
+              <Select size="small" fullWidth displayEmpty value={form.grantType || ""} onChange={setVal("grantType")}>
+                <MenuItem value="" disabled>--Select Type--</MenuItem>
+                <MenuItem value="FDP">FDP</MenuItem>
+                <MenuItem value="Seminar">Seminar</MenuItem>
+              </Select>
             </Box>
-            {renderDateFields()}
+            <Box>
+              <Typography sx={labelStyle}>Title of FDP / Seminar: *</Typography>
+              <TextField size="small" fullWidth value={form.grantTitle} onChange={setVal("grantTitle")} />
+            </Box>
+            <Box>
+              <Typography sx={labelStyle}>Funding Agency: *</Typography>
+              <TextField size="small" fullWidth value={form.fundingAgency} onChange={setVal("fundingAgency")} />
+            </Box>
+            <Box>
+              <Typography sx={labelStyle}>Grant Amount (₹): *</Typography>
+              <TextField size="small" fullWidth type="number" value={form.grantAmount} onChange={setVal("grantAmount")} />
+            </Box>
+            <Box>
+              <Typography sx={labelStyle}>Sanction Date: *</Typography>
+              <TextField size="small" fullWidth type="date" value={form.sanctionDate} onChange={setVal("sanctionDate")} slotProps={{ inputLabel: { shrink: true }, htmlInput: { max: new Date().toISOString().split("T")[0] } }} />
+            </Box>
           </>
         );
       default:

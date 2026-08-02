@@ -1163,8 +1163,12 @@ const SelfAppraisal = () => {
       publicationName: "",
       publicationDate: "",
       facilityName: "",
+      contributionType: "",
       facilityDate: "",
-      grantName: "",
+      grantType: "",
+      grantTitle: "",
+      fundingAgency: "",
+      grantAmount: "",
       sanctionDate: "",
       courseHours: "",
       certificateNumber: "",
@@ -1200,8 +1204,12 @@ const SelfAppraisal = () => {
       publicationName: item.publicationName || "",
       publicationDate: item.publicationDate ? item.publicationDate.substring(0, 10) : "",
       facilityName: item.facilityName || "",
+      contributionType: item.contributionType || "",
       facilityDate: item.facilityDate ? item.facilityDate.substring(0, 10) : "",
-      grantName: item.grantName || "",
+      grantType: item.grantType || "",
+      grantTitle: item.grantTitle || "",
+      fundingAgency: item.fundingAgency || "",
+      grantAmount: item.grantAmount || "",
       sanctionDate: item.sanctionDate ? item.sanctionDate.substring(0, 10) : "",
       courseHours: item.courseHours || "",
       certificateNumber: item.certificateNumber || "",
@@ -1250,7 +1258,7 @@ const SelfAppraisal = () => {
 
     let fieldErr = null;
 
-    if ([1, 2, 3, 7, 10, 12, 13].includes(cat)) {
+    if ([1, 2, 3, 7, 12].includes(cat) || (cat === 10 && contForm.contributionType === "Maintenance")) {
       if (!contForm.fromDate || !contForm.toDate) {
         fieldErr = "From Date and To Date are required.";
       } else {
@@ -1261,7 +1269,7 @@ const SelfAppraisal = () => {
         } else if (from > to) {
           fieldErr = "To Date must be greater than or equal to From Date.";
         } else {
-          if ([7, 10, 12, 13].includes(cat) && to > today) {
+          if (([7, 12].includes(cat) || cat === 10) && to > today) {
             fieldErr = "To Date cannot be in the future.";
           }
         }
@@ -1291,6 +1299,9 @@ const SelfAppraisal = () => {
           break;
         case 7:
           if (!contForm.certificationName) fieldErr = "Certification Name is required.";
+          else if (!contForm.fromDate || !contForm.toDate) fieldErr = "From and To dates are required.";
+          else if (!contForm.courseHours) fieldErr = "Hours are required.";
+          else if (isNaN(Number(contForm.courseHours)) || Number(contForm.courseHours) < 40) fieldErr = "Minimum 40 hours is required.";
           break;
         case 8:
           if (!contForm.eventName) fieldErr = "Event Name is required.";
@@ -1303,6 +1314,10 @@ const SelfAppraisal = () => {
           break;
         case 10:
           if (!contForm.facilityName) fieldErr = "Facility Name is required.";
+          else if (!contForm.contributionType) fieldErr = "Contribution Type is required.";
+          else if (contForm.contributionType === "Establishment") {
+            fieldErr = validateDate(contForm.fromDate, "Establishment Date");
+          }
           break;
         case 11:
           if (!contForm.courseName || !contForm.duration) {
@@ -1319,7 +1334,11 @@ const SelfAppraisal = () => {
           }
           break;
         case 13:
-          if (!contForm.grantName) fieldErr = "Grant Name is required.";
+          if (!contForm.grantType || !contForm.grantTitle || !contForm.fundingAgency || !contForm.grantAmount) {
+            fieldErr = "Grant Type, Title, Funding Agency, and Amount are required.";
+          } else {
+            fieldErr = validateDate(contForm.sanctionDate, "Sanction Date");
+          }
           break;
         default:
           fieldErr = "Invalid Category.";
@@ -1365,6 +1384,7 @@ const SelfAppraisal = () => {
         fd.append("url", contForm.url);
       } else if (cat === 7) {
         fd.append("certificationName", contForm.certificationName);
+        fd.append("courseHours", contForm.courseHours);
       } else if (cat === 8) {
         fd.append("eventName", contForm.eventName);
         fd.append("eventDate", contForm.eventDate);
@@ -1376,14 +1396,20 @@ const SelfAppraisal = () => {
         fd.append("publicationDate", contForm.publicationDate);
       } else if (cat === 10) {
         fd.append("facilityName", contForm.facilityName);
+        fd.append("contributionType", contForm.contributionType);
       } else if (cat === 11) {
         fd.append("courseName", contForm.courseName);
         fd.append("duration", contForm.duration);
       } else if (cat === 12) {
         fd.append("courseName", contForm.courseName);
         fd.append("courseHours", contForm.courseHours);
+        fd.append("certificateNumber", contForm.certificateNumber);
       } else if (cat === 13) {
-        fd.append("grantName", contForm.grantName);
+        fd.append("grantType", contForm.grantType);
+        fd.append("grantTitle", contForm.grantTitle);
+        fd.append("fundingAgency", contForm.fundingAgency);
+        fd.append("grantAmount", contForm.grantAmount);
+        fd.append("sanctionDate", contForm.sanctionDate);
       }
 
       if (contProof) {
@@ -1677,15 +1703,28 @@ const SelfAppraisal = () => {
       case 2:
       case 3: return `Member of the Editorial Board of ${item.journalName || 'N/A'} (Type: ${item.journalType || 'N/A'}) (${fDate} to ${tDate})`;
       case 4:
-      case 5: return `Award: ${item.awardName || 'N/A'} on ${item.awardDate ? new Date(item.awardDate).toLocaleDateString('en-GB') : 'N/A'}`;
-      case 6: return `Developed e-content: ${item.courseName || 'N/A'} - ${item.url || 'N/A'}`;
-      case 7: return `Certification: ${item.certificationName || 'N/A'} (${fDate} to ${tDate})`;
-      case 8: return `Trained students (${item.studentNames || 'N/A'}) for ${item.eventType || 'N/A'}: ${item.eventName || 'N/A'} on ${item.eventDate ? new Date(item.eventDate).toLocaleDateString('en-GB') : 'N/A'}`;
-      case 9: return `Article: "${item.articleTitle || 'N/A'}" published in ${item.publicationName || 'N/A'} on ${item.publicationDate ? new Date(item.publicationDate).toLocaleDateString('en-GB') : 'N/A'}`;
-      case 10: return `Established/Maintained facility: ${item.facilityName || 'N/A'} (${fDate} to ${tDate})`;
-      case 11: return `NPTEL Course: ${item.courseName || 'N/A'} (${item.duration || 'N/A'})`;
-      case 12: return `Coursera Course: ${item.courseName || 'N/A'} - ${item.courseHours || 'N/A'} Hours (${fDate} to ${tDate})`;
-      case 13: return `Grant Sanctioned: ${item.grantName || 'N/A'} (${fDate} to ${tDate})`;
+      case 5: return `Awarded as ${item.awardName || 'N/A'} by ${item.awardingAgency || 'N/A'} on ${item.awardDate ? new Date(item.awardDate).toLocaleDateString('en-GB') : 'N/A'}`;
+      case 6: return (
+        <span>
+          Developed e-content for the course {item.courseName || 'N/A'}
+          {item.url && (
+            <>
+              {" "}
+              &bull;{" "}
+              <a href={item.url} target="_blank" rel="noreferrer" style={{ color: "inherit", textDecoration: "underline" }}>
+                View Resource
+              </a>
+            </>
+          )}
+        </span>
+      );
+      case 7: return `Completed the certification ${item.certificationName || 'N/A'} from ${fDate} to ${tDate} (${item.courseHours || 'N/A'} hours).`;
+      case 8: return `Trained student(s) ${item.studentNames || 'N/A'} shortlisted for the finals of the ${item.eventType || 'N/A'} "${item.eventName || 'N/A'}" on ${item.eventDate ? new Date(item.eventDate).toLocaleDateString('en-GB') : 'N/A'}.`;
+      case 9: return `Published the article "${item.articleTitle || 'N/A'}" in ${item.publicationName || 'N/A'} on ${item.publicationDate ? new Date(item.publicationDate).toLocaleDateString('en-GB') : 'N/A'}.`;
+      case 10: return item.contributionType === "Establishment" ? `Established the research facility ${item.facilityName || 'N/A'} on ${fDate}.` : `Maintained the research facility ${item.facilityName || 'N/A'} from ${fDate} to ${tDate}.`;
+      case 11: return `Completed the NPTEL course ${item.courseName || 'N/A'} with a duration of ${item.duration || 'N/A'}.`;
+      case 12: return `Completed the Coursera course ${item.courseName || 'N/A'} from ${fDate} to ${tDate} (${item.courseHours || 'N/A'} hours).`;
+      case 13: return `Received a ${item.grantType?.toLowerCase() || 'grant'} of ₹${item.grantAmount || 0} from ${item.fundingAgency || 'N/A'} for "${item.grantTitle || 'N/A'}" on ${item.sanctionDate ? new Date(item.sanctionDate).toLocaleDateString('en-GB') : 'N/A'}.`;
       default: return catName;
     }
   };
@@ -5169,6 +5208,10 @@ const SelfAppraisal = () => {
                           <Typography sx={labelStyle}>Certification Name: *</Typography>
                           <TextField size="small" fullWidth value={contForm.certificationName} onChange={(e) => setContForm(p => ({ ...p, certificationName: e.target.value }))} />
                         </Box>
+                        <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
+                          <Typography sx={labelStyle}>Duration (Hours): *</Typography>
+                          <TextField type="number" size="small" fullWidth value={contForm.courseHours || ""} onChange={(e) => setContForm(p => ({ ...p, courseHours: e.target.value }))} placeholder="e.g. 40" />
+                        </Box>
                         {renderDateFields()}
                       </>
                     );
@@ -5219,10 +5262,24 @@ const SelfAppraisal = () => {
                     return (
                       <>
                         <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
+                          <Typography sx={labelStyle}>Contribution Type: *</Typography>
+                          <Select size="small" fullWidth displayEmpty value={contForm.contributionType || ""} onChange={(e) => setContForm(p => ({ ...p, contributionType: e.target.value }))}>
+                            <MenuItem value="" disabled>--Select Type--</MenuItem>
+                            <MenuItem value="Establishment">Establishment</MenuItem>
+                            <MenuItem value="Maintenance">Maintenance</MenuItem>
+                          </Select>
+                        </Box>
+                        <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
                           <Typography sx={labelStyle}>Facility Name: *</Typography>
                           <TextField size="small" fullWidth value={contForm.facilityName} onChange={(e) => setContForm(p => ({ ...p, facilityName: e.target.value }))} />
                         </Box>
-                        {renderDateFields()}
+                        {contForm.contributionType === "Establishment" && (
+                          <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
+                            <Typography sx={labelStyle}>Establishment Date: *</Typography>
+                            <TextField size="small" fullWidth type="date" value={contForm.fromDate} onChange={(e) => setContForm(p => ({ ...p, fromDate: e.target.value }))} slotProps={{ inputLabel: { shrink: true }, htmlInput: { max: todayStr } }} />
+                          </Box>
+                        )}
+                        {contForm.contributionType === "Maintenance" && renderDateFields()}
                       </>
                     );
                   case 11:
@@ -5280,10 +5337,29 @@ const SelfAppraisal = () => {
                     return (
                       <>
                         <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
-                          <Typography sx={labelStyle}>Grant Name: *</Typography>
-                          <TextField size="small" fullWidth value={contForm.grantName} onChange={(e) => setContForm(p => ({ ...p, grantName: e.target.value }))} />
+                          <Typography sx={labelStyle}>Grant Type: *</Typography>
+                          <Select size="small" fullWidth displayEmpty value={contForm.grantType || ""} onChange={(e) => setContForm(p => ({ ...p, grantType: e.target.value }))}>
+                            <MenuItem value="" disabled>--Select Type--</MenuItem>
+                            <MenuItem value="FDP">FDP</MenuItem>
+                            <MenuItem value="Seminar">Seminar</MenuItem>
+                          </Select>
                         </Box>
-                        {renderDateFields()}
+                        <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
+                          <Typography sx={labelStyle}>Title of FDP / Seminar: *</Typography>
+                          <TextField size="small" fullWidth value={contForm.grantTitle} onChange={(e) => setContForm(p => ({ ...p, grantTitle: e.target.value }))} />
+                        </Box>
+                        <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
+                          <Typography sx={labelStyle}>Funding Agency: *</Typography>
+                          <TextField size="small" fullWidth value={contForm.fundingAgency} onChange={(e) => setContForm(p => ({ ...p, fundingAgency: e.target.value }))} />
+                        </Box>
+                        <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
+                          <Typography sx={labelStyle}>Grant Amount (₹): *</Typography>
+                          <TextField size="small" fullWidth type="number" value={contForm.grantAmount} onChange={(e) => setContForm(p => ({ ...p, grantAmount: e.target.value }))} />
+                        </Box>
+                        <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
+                          <Typography sx={labelStyle}>Sanction Date: *</Typography>
+                          <TextField size="small" fullWidth type="date" value={contForm.sanctionDate} onChange={(e) => setContForm(p => ({ ...p, sanctionDate: e.target.value }))} slotProps={{ inputLabel: { shrink: true }, htmlInput: { max: todayStr } }} />
+                        </Box>
                       </>
                     );
                   default:

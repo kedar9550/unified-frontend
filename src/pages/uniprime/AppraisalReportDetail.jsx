@@ -499,22 +499,37 @@ const AppraisalReportDetail = () => {
         return `${item.journalType === 'Reviewer' ? 'Reviewer for' : 'Editorial Board Member of'} the journal "${item.journalName || item.journalConferenceName || "Unknown Journal"}". ${fDate && tDate ? `(From ${fDate} to ${tDate})` : ""}`;
       case 4:
       case 5:
-        return `Received the award "${item.awardName || "Unknown Award"}" from ${item.awardingAgency || "Unknown Agency"}. ${item.awardDate ? `Awarded on: ${new Date(item.awardDate).toLocaleDateString('en-GB')}` : ""}`;
+        return `Awarded as ${item.awardName || 'N/A'} by ${item.awardingAgency || 'N/A'} on ${item.awardDate ? new Date(item.awardDate).toLocaleDateString('en-GB') : 'N/A'}`;
       case 6:
-        return `Developed e-content for the course "${item.courseName || "Unknown Course"}" uploaded to ${item.websiteName || "Unknown Website"}. ${item.url ? `(URL: ${item.url})` : ""}`;
+        return (
+          <span>
+            Developed e-content for the course {item.courseName || 'N/A'}
+            {item.url && (
+              <>
+                {" "}
+                &bull;{" "}
+                <a href={item.url} target="_blank" rel="noreferrer" style={{ color: "inherit", textDecoration: "underline" }}>
+                  View Resource
+                </a>
+              </>
+            )}
+          </span>
+        );
       case 7:
-        return `Certified in "${item.certificationName || "Unknown Certification"}" by ${item.awardingAgency || "Unknown Agency"}. ${fDate && tDate ? `(From ${fDate} to ${tDate})` : ""} Duration: ${item.duration || "N/A"}`;
+        return `Completed the certification ${item.certificationName || "Unknown Certification"} from ${fDate} to ${tDate} (${item.courseHours || "N/A"} hours).`;
       case 8:
-        return `Trained students for the event "${item.eventName || "Unknown Event"}" organized by ${item.organizationName || "Unknown Organization"}. ${item.studentNames ? `Students: ${item.studentNames}` : ""}`;
+        return `Trained student(s) ${item.studentNames || 'N/A'} shortlisted for the finals of the ${item.eventType || 'N/A'} "${item.eventName || 'N/A'}" on ${item.eventDate ? new Date(item.eventDate).toLocaleDateString('en-GB') : 'N/A'}.`;
       case 9:
-        return `Published an article titled "${item.articleTitle || "Unknown Article"}" in ${item.magazineName || "Unknown Magazine/Newspaper"}. Published on: ${item.publicationDate ? new Date(item.publicationDate).toLocaleDateString('en-GB') : "N/A"}`;
+        return `Published the article "${item.articleTitle || 'Unknown Article'}" in ${item.publicationName || 'Unknown Magazine/Newspaper'} on ${item.publicationDate ? new Date(item.publicationDate).toLocaleDateString('en-GB') : 'N/A'}.`;
       case 10:
-        return `Established/Maintained the research facility "${item.facilityName || "Unknown Facility"}". ${fDate && tDate ? `(From ${fDate} to ${tDate})` : ""}`;
+        if (item.contributionType === "Establishment") return `Established the research facility ${item.facilityName || "Unknown Facility"} on ${fDate}.`;
+        return `Maintained the research facility ${item.facilityName || "Unknown Facility"} from ${fDate} to ${tDate}.`;
       case 11:
+        return `Completed the NPTEL course ${item.courseName || 'N/A'} with a duration of ${item.duration || 'N/A'}.`;
       case 12:
-        return `Completed the course "${item.courseName || "Unknown Course"}" by ${item.organizationName || "Unknown Organization"}. ${fDate && tDate ? `(From ${fDate} to ${tDate})` : ""} Duration: ${item.duration || "N/A"}`;
+        return `Completed the Coursera course ${item.courseName || 'N/A'} from ${fDate} to ${tDate} (${item.courseHours || 'N/A'} hours).`;
       case 13:
-        return `Sanctioned the grant "${item.grantName || "Unknown Grant"}" by ${item.sponsoringAgency || "Unknown Agency"}. Sanctioned on: ${item.sanctionDate ? new Date(item.sanctionDate).toLocaleDateString('en-GB') : "N/A"}`;
+        return `Received a ${item.grantType?.toLowerCase() || 'grant'} of ₹${item.grantAmount || 0} from ${item.fundingAgency || 'N/A'} for "${item.grantTitle || 'N/A'}" on ${item.sanctionDate ? new Date(item.sanctionDate).toLocaleDateString('en-GB') : 'N/A'}.`;
       default:
         return item.organizationName || item.journalName || item.eventName || item.courseName || "Expertise / Contribution Detail";
     }
