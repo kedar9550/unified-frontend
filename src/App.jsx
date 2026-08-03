@@ -56,6 +56,7 @@ import AppraisalReportDetail from "./pages/uniprime/AppraisalReportDetail";
 import AppraisalEvaluation from "./pages/hod/AppraisalEvaluation";
 import AppraisalResearchScoring from "./pages/research/AppraisalResearchScoring";
 import StaffList from "./pages/hod/StaffList";
+import MyResearchMetrics from "./pages/faculty/MyResearchMetrics";
 
 // Utilities Modules
 import ShortenUrl from "./pages/utilities/ShortenUrl";
@@ -148,6 +149,7 @@ function App() {
         <Route path="/research/textbook-publication" element={<ProtectedRoute element={<TextbookPublication />} />} />
         <Route path="/research/book-chapter-publication" element={<ProtectedRoute element={<BookChapterPublication />} />} />
         <Route path="/research/journal-publication" element={<ProtectedRoute element={<JournalPublication />} />} />
+        <Route path="/faculty/my-research-metrics" element={<ProtectedRoute element={<MyResearchMetrics />} />} />
         <Route path="/research/patent-publication" element={<ProtectedRoute element={<PatentPublication />} />} />
         <Route path="/research/funded-project" element={<ProtectedRoute element={<FundedProject />} />} />
         <Route path="/research/consultancy-publication" element={<ProtectedRoute element={<ConsultancyPublication />} />} />
