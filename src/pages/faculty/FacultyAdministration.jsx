@@ -142,6 +142,20 @@ export default function FacultyAdministration() {
         matchedRole = matched.roles.find((x) => x.roleId === r.roleId);
       }
 
+      let tType = "";
+      let tOther = "";
+      if (r.roleId === "training_coord" && matchedRole?.roleLabel) {
+        if (matchedRole.roleLabel.includes(" - ")) {
+          const type = matchedRole.roleLabel.split(" - ")[1].trim();
+          if (type === "Smart Interviews" || type === "GPP") {
+            tType = type;
+          } else {
+            tType = "Others";
+            tOther = type;
+          }
+        }
+      }
+
       initialForm[r.roleId] = {
         roleId: r.roleId,
         roleLabel: r.label,
@@ -149,7 +163,9 @@ export default function FacultyAdministration() {
         level: matchedRole ? matchedRole.level : "",
         assignedByType: matchedRole?.assignedBy?.type || "",
         assignedByOtherText: matchedRole?.assignedBy?.otherText || "",
-        details: matchedRole ? matchedRole.details : ""
+        details: matchedRole ? matchedRole.details : "",
+        trainingProgramType: tType,
+        trainingProgramOther: tOther
       };
     });
 
@@ -236,9 +252,22 @@ export default function FacultyAdministration() {
           throw new Error(`Please select the responsibility level for: ${role.roleLabel}`);
         }
 
+        if (role.roleId === "training_coord") {
+          if (!role.trainingProgramType) {
+            throw new Error(`Please select a training program for: ${role.roleLabel}`);
+          }
+          if (role.trainingProgramType === "Others" && (!role.trainingProgramOther || !role.trainingProgramOther.trim())) {
+            throw new Error(`Please specify the other training program for: ${role.roleLabel}`);
+          }
+        }
+
+        const finalRoleLabel = role.roleId === "training_coord" 
+          ? `Training Program Coordinator - ${role.trainingProgramType === "Others" ? role.trainingProgramOther.trim() : role.trainingProgramType}`
+          : role.roleLabel;
+
         return {
           roleId: role.roleId,
-          roleLabel: role.roleLabel,
+          roleLabel: finalRoleLabel,
           isResponsible: role.isResponsible,
           level: role.level,
           assignedBy: {
@@ -479,17 +508,19 @@ export default function FacultyAdministration() {
                                 borderRadius: "8px"
                               }}
                             />
-                            <Chip
-                              label={role.level}
-                              size="small"
-                              variant="outlined"
-                              sx={{
-                                fontWeight: 700,
-                                fontSize: "0.7rem",
-                                color: "var(--text-secondary)",
-                                borderColor: "var(--border-color)"
-                              }}
-                            />
+                            {!['dean', 'assoc_dean', 'coe', 'hod', 'dy_coe', 'univ_office_coord', 'dy_hod', 'dept_exam_cell'].includes(role.roleId) && (
+                              <Chip
+                                label={role.level}
+                                size="small"
+                                variant="outlined"
+                                sx={{
+                                  fontWeight: 700,
+                                  fontSize: "0.7rem",
+                                  color: "var(--text-secondary)",
+                                  borderColor: "var(--border-color)"
+                                }}
+                              />
+                            )}
                             {role.assignedBy && (role.assignedBy.type || role.assignedBy) && (
                               <Chip
                                 label={`Assigned By: ${typeof role.assignedBy === 'object' ? (role.assignedBy.type === "Others" ? role.assignedBy.otherText : role.assignedBy.type) : role.assignedBy}`}
@@ -652,44 +683,46 @@ export default function FacultyAdministration() {
 
                         {formData.isResponsible && !isCardDisabled && (
                           <Box sx={{ mt: 3, pt: 2.5, borderTop: "1px dashed var(--border-color)" }}>
-                            <FormControl component="fieldset" disabled={saving}>
-                              <FormLabel
-                                component="legend"
-                                sx={{
-                                  fontSize: "0.8rem",
-                                  fontWeight: 800,
-                                  color: "var(--text-secondary)",
-                                  textTransform: "uppercase",
-                                  mb: 1.5,
-                                  letterSpacing: "0.5px"
-                                }}
-                              >
-                                Select Responsibility Level:
-                              </FormLabel>
-                              <RadioGroup
-                                row
-                                value={formData.level}
-                                onChange={(e) => handleLevelChange(role.roleId, e.target.value)}
-                              >
-                                {role.allowedLevels.includes("Central") && (
-                                  <FormControlLabel
-                                    value="Central"
-                                    control={<Radio sx={{ color: "var(--border-color)", "&.Mui-checked": { color: "var(--color-primary)" } }} />}
-                                    label={<Typography sx={{ fontSize: "0.9rem", fontWeight: 700, color: "var(--text-primary)" }}>Central Level</Typography>}
-                                    sx={{ mr: 4 }}
-                                  />
-                                )}
-                                {role.allowedLevels.includes("Department") && (
-                                  <FormControlLabel
-                                    value="Department"
-                                    control={<Radio sx={{ color: "var(--border-color)", "&.Mui-checked": { color: "var(--color-primary)" } }} />}
-                                    label={<Typography sx={{ fontSize: "0.9rem", fontWeight: 700, color: "var(--text-primary)" }}>Department Level</Typography>}
-                                  />
-                                )}
-                              </RadioGroup>
-                            </FormControl>
+                            {!['dean', 'assoc_dean', 'coe', 'hod', 'dy_coe', 'univ_office_coord', 'dy_hod', 'dept_exam_cell'].includes(role.roleId) && (
+                              <FormControl component="fieldset" disabled={saving}>
+                                <FormLabel
+                                  component="legend"
+                                  sx={{
+                                    fontSize: "0.8rem",
+                                    fontWeight: 800,
+                                    color: "var(--text-secondary)",
+                                    textTransform: "uppercase",
+                                    mb: 1.5,
+                                    letterSpacing: "0.5px"
+                                  }}
+                                >
+                                  Select Responsibility Level:
+                                </FormLabel>
+                                <RadioGroup
+                                  row
+                                  value={formData.level}
+                                  onChange={(e) => handleLevelChange(role.roleId, e.target.value)}
+                                >
+                                  {role.allowedLevels.includes("Central") && (
+                                    <FormControlLabel
+                                      value="Central"
+                                      control={<Radio sx={{ color: "var(--border-color)", "&.Mui-checked": { color: "var(--color-primary)" } }} />}
+                                      label={<Typography sx={{ fontSize: "0.9rem", fontWeight: 700, color: "var(--text-primary)" }}>Central Level</Typography>}
+                                      sx={{ mr: 4 }}
+                                    />
+                                  )}
+                                  {role.allowedLevels.includes("Department") && (
+                                    <FormControlLabel
+                                      value="Department"
+                                      control={<Radio sx={{ color: "var(--border-color)", "&.Mui-checked": { color: "var(--color-primary)" } }} />}
+                                      label={<Typography sx={{ fontSize: "0.9rem", fontWeight: 700, color: "var(--text-primary)" }}>Department Level</Typography>}
+                                    />
+                                  )}
+                                </RadioGroup>
+                              </FormControl>
+                            )}
 
-                            <Box sx={{ mt: 3 }}>
+                            <Box sx={{ mt: !['dean', 'assoc_dean', 'coe', 'hod', 'dy_coe', 'univ_office_coord', 'dy_hod', 'dept_exam_cell'].includes(role.roleId) ? 3 : 0 }}>
                               <FormControl fullWidth size="small" sx={{ maxWidth: 300 }}>
                                 <InputLabel>Assigned By</InputLabel>
                                 <Select
@@ -754,6 +787,54 @@ export default function FacultyAdministration() {
                                   }}
                                 />
                               </Box>
+                            )}
+
+                            {role.roleId === 'training_coord' && (
+                              <>
+                                <Box sx={{ mt: 2.5 }}>
+                                  <FormControl fullWidth size="small" sx={{ maxWidth: 300 }}>
+                                    <InputLabel>Select Training Program</InputLabel>
+                                    <Select
+                                      value={formData.trainingProgramType || ""}
+                                      label="Select Training Program"
+                                      disabled={saving}
+                                      onChange={(e) => {
+                                        handleDetailsChange(role.roleId, "trainingProgramType", e.target.value);
+                                        handleDetailsChange(role.roleId, "trainingProgramOther", "");
+                                      }}
+                                      sx={{
+                                        borderRadius: "12px",
+                                        bgcolor: "var(--bg-glass)"
+                                      }}
+                                    >
+                                      <MenuItem value="Smart Interviews">Smart Interviews</MenuItem>
+                                      <MenuItem value="GPP">GPP</MenuItem>
+                                      <MenuItem value="Others">Others</MenuItem>
+                                    </Select>
+                                  </FormControl>
+                                </Box>
+                                {formData.trainingProgramType === "Others" && (
+                                  <Box sx={{ mt: 2.5 }}>
+                                    <TextField
+                                      fullWidth
+                                      label="Specify Training Program"
+                                      variant="outlined"
+                                      size="small"
+                                      value={formData.trainingProgramOther || ""}
+                                      disabled={saving}
+                                      required
+                                      onChange={(e) => handleDetailsChange(role.roleId, "trainingProgramOther", e.target.value)}
+                                      sx={{
+                                        maxWidth: 600,
+                                        "& .MuiOutlinedInput-root": {
+                                          borderRadius: "12px",
+                                          bgcolor: "var(--bg-glass)"
+                                        }
+                                      }}
+                                    />
+                                  </Box>
+                                )}
+                              </>
                             )}
                           </Box>
                         )}

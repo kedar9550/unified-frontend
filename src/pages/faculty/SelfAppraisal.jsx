@@ -759,7 +759,7 @@ const SelfAppraisal = () => {
   // 4. Administration Sync and Submit Handlers
   const openAdminModalAdd = () => {
     setAdminEditingRole(null);
-    setAdminForm({ primaryRoleType: "", roleId: "", roleLabel: "", level: "", assignedByType: "", assignedByOtherText: "", details: "" });
+    setAdminForm({ primaryRoleType: "", roleId: "", roleLabel: "", level: "", assignedByType: "", assignedByOtherText: "", details: "", trainingProgramType: "", trainingProgramOther: "" });
     setAdminOpen(true);
   };
 
@@ -774,6 +774,21 @@ const SelfAppraisal = () => {
        }
     }
 
+    let tType = "";
+    let tOther = "";
+    if (role.roleId === "training_coord" && (role.roleLabel || role.roleName)) {
+      const label = role.roleLabel || role.roleName;
+      if (label.includes(" - ")) {
+        const type = label.split(" - ")[1].trim();
+        if (type === "Smart Interviews" || type === "GPP") {
+          tType = type;
+        } else {
+          tType = "Others";
+          tOther = type;
+        }
+      }
+    }
+
     setAdminForm({
       primaryRoleType: pType || "",
       roleId: role.roleId || "",
@@ -781,7 +796,9 @@ const SelfAppraisal = () => {
       level: role.level || "",
       assignedByType: role.assignedBy?.type || role.assignedBy || "",
       assignedByOtherText: role.assignedBy?.otherText || "",
-      details: role.details || ""
+      details: role.details || "",
+      trainingProgramType: tType,
+      trainingProgramOther: tOther
     });
     setAdminOpen(true);
   };
@@ -797,6 +814,14 @@ const SelfAppraisal = () => {
     if ((adminForm.roleId === "other" || adminForm.roleId === "other_coord") && (!adminForm.roleLabel || !adminForm.roleLabel.trim())) {
       toast.error("Please specify the custom role name"); return;
     }
+    if (adminForm.roleId === "training_coord") {
+      if (!adminForm.trainingProgramType) {
+        toast.error("Please select a training program"); return;
+      }
+      if (adminForm.trainingProgramType === "Others" && (!adminForm.trainingProgramOther || !adminForm.trainingProgramOther.trim())) {
+        toast.error("Please specify the other training program"); return;
+      }
+    }
 
     const catalogEntry = ADMIN_ROLE_CATALOG.find((r) => r.roleId === adminForm.roleId);
     if (catalogEntry && !catalogEntry.allowedLevels.includes(adminForm.level)) {
@@ -808,7 +833,14 @@ const SelfAppraisal = () => {
 
     const newRole = {
       roleId: adminForm.roleId,
-      roleLabel: (adminForm.roleId === "other" || adminForm.roleId === "other_coord") ? adminForm.roleLabel.trim() : (catalogEntry?.label || adminForm.roleLabel),
+      roleLabel: (() => {
+        if (adminForm.roleId === "other" || adminForm.roleId === "other_coord") return adminForm.roleLabel.trim();
+        if (adminForm.roleId === "training_coord") {
+           const suffix = adminForm.trainingProgramType === "Others" ? adminForm.trainingProgramOther.trim() : adminForm.trainingProgramType;
+           return `Training Program Coordinator - ${suffix}`;
+        }
+        return catalogEntry?.label || adminForm.roleLabel;
+      })(),
       isResponsible: true,
       level: adminForm.level,
       assignedBy: {
@@ -4117,7 +4149,12 @@ const SelfAppraisal = () => {
                                         <TableRow key={i} sx={{ "&:hover": { bgcolor: "var(--bg-hover)" } }}>
                                           <TableCell sx={{ color: "var(--text-primary)" }}>{i + 1}</TableCell>
                                           <TableCell sx={{ fontWeight: 600, color: "var(--text-primary)" }}>
-                                            {role.roleLabel || role.roleName} {role.level ? `(${role.level})` : ""} {role.details ? `[${role.details}]` : ""}
+                                            {(() => {
+                                              const catalogEntry = ADMIN_ROLE_CATALOG.find(c => c.roleId === role.roleId);
+                                              return (catalogEntry && !['other', 'other_coord', 'training_coord'].includes(role.roleId)) 
+                                                ? catalogEntry.label 
+                                                : (role.roleLabel || role.roleName);
+                                            })()} {!['dean', 'assoc_dean', 'coe', 'hod', 'dy_coe', 'univ_office_coord', 'dy_hod', 'dept_exam_cell'].includes(role.roleId) && role.level ? `(${role.level})` : ""} {role.details ? `[${role.details}]` : ""}
                                             {role.status === "Rejected" && role.remarks && (
                                               <Typography variant="caption" sx={{ color: "error.main", mt: 0.5, display: "block", fontWeight: 700 }}>
                                                 Rejection Reason: {role.remarks}
@@ -5613,6 +5650,36 @@ const SelfAppraisal = () => {
                 </Box>
               )}
 
+              {adminForm.roleId === "training_coord" && (
+                <>
+                  <Box sx={{ gridColumn: "1 / -1", mb: 2 }}>
+                    <Typography sx={labelStyle}>Select Training Program: *</Typography>
+                    <Select
+                      size="small"
+                      fullWidth
+                      value={adminForm.trainingProgramType}
+                      onChange={(e) => setAdminForm(p => ({ ...p, trainingProgramType: e.target.value, trainingProgramOther: "" }))}
+                    >
+                      <MenuItem value="Smart Interviews">Smart Interviews</MenuItem>
+                      <MenuItem value="GPP">GPP</MenuItem>
+                      <MenuItem value="Others">Others</MenuItem>
+                    </Select>
+                  </Box>
+                  {adminForm.trainingProgramType === "Others" && (
+                    <Box sx={{ gridColumn: "1 / -1", mb: 2 }}>
+                      <Typography sx={labelStyle}>Specify Training Program: *</Typography>
+                      <TextField
+                        size="small"
+                        fullWidth
+                        placeholder="Enter specific training program"
+                        value={adminForm.trainingProgramOther || ""}
+                        onChange={(e) => setAdminForm(p => ({ ...p, trainingProgramOther: e.target.value }))}
+                      />
+                    </Box>
+                  )}
+                </>
+              )}
+
               <Box sx={{ gridColumn: "1 / -1", mb: 2 }}>
                 <Typography sx={labelStyle}>Assigned By: *</Typography>
                 <Select
@@ -5642,8 +5709,9 @@ const SelfAppraisal = () => {
 
               {(() => {
                 const catalogEntry = ADMIN_ROLE_CATALOG.find((r) => r.roleId === adminForm.roleId);
-                const showLevel = catalogEntry && catalogEntry.allowedLevels.length > 1;
-                
+                const hideLevelForRoles = ['dean', 'assoc_dean', 'coe', 'hod', 'dy_coe', 'univ_office_coord', 'dy_hod', 'dept_exam_cell'];
+                const showLevel = catalogEntry && catalogEntry.allowedLevels.length > 1 && !hideLevelForRoles.includes(adminForm.roleId);
+
                 return (
                   <>
                     {showLevel && (

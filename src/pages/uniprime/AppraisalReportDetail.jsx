@@ -2109,7 +2109,8 @@ const AppraisalReportDetail = () => {
                             {selectedAppraisal.administrationDetail.roles.filter(r => r.isResponsible).map((role, i) => {
                               const statusColor = getStatusColor(role.status);
                               
-                              const levelText = role.level || "";
+                              const hideLevel = ['dean', 'assoc_dean', 'coe', 'hod', 'dy_coe', 'univ_office_coord', 'dy_hod', 'dept_exam_cell'].includes(role.roleId);
+                              const levelText = hideLevel ? "" : (role.level || "");
                               const assignedByType = typeof role.assignedBy === 'object' ? role.assignedBy.type : (role.assignedBy || "");
                               const assignedByOtherText = typeof role.assignedBy === 'object' ? role.assignedBy.otherText : "";
                               
@@ -2126,7 +2127,14 @@ const AppraisalReportDetail = () => {
                                     <TableCell sx={{ color: "var(--text-primary)", fontWeight: 600 }}>{i + 1}</TableCell>
                                     <TableCell sx={{ fontWeight: 600, color: "var(--text-primary)" }}>
                                       <Box>
-                                        <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)" }}>{role.roleLabel || role.roleName}</Typography>
+                                        <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)" }}>
+                                          {(() => {
+                                            const catalogEntry = ADMIN_ROLE_CATALOG.find(c => c.roleId === role.roleId);
+                                            return (catalogEntry && !['other', 'other_coord', 'training_coord'].includes(role.roleId)) 
+                                              ? catalogEntry.label 
+                                              : (role.roleLabel || role.roleName);
+                                          })()}
+                                        </Typography>
                                         {role.details && <Typography variant="caption" sx={{ color: "var(--text-secondary)", display: "block", mt: 0.25 }}>Details: {role.details}</Typography>}
                                       </Box>
                                     </TableCell>

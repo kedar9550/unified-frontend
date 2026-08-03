@@ -1,5 +1,6 @@
 import React, { forwardRef } from 'react';
 import ausLogo from '../../assets/AUS Long Logo.png';
+import { ADMIN_ROLE_CATALOG } from '../../constants/adminRoleCatalog';
 
 const AppraisalPDFReport = forwardRef(({ data, hideInterpersonal }, ref) => {
   if (!data) return null;
@@ -754,7 +755,14 @@ const AppraisalPDFReport = forwardRef(({ data, hideInterpersonal }, ref) => {
                 return (
                   <tr key={i} style={styles.tr}>
                     <td style={styles.td}>{i + 1}</td>
-                    <td style={styles.tdLeft}>{r.roleLabel || r.roleName} {r.level ? `(${r.level})` : ''}</td>
+                    <td style={styles.tdLeft}>
+                      {(() => {
+                        const catalogEntry = ADMIN_ROLE_CATALOG.find(c => c.roleId === r.roleId);
+                        return (catalogEntry && !['other', 'other_coord', 'training_coord'].includes(r.roleId)) 
+                          ? catalogEntry.label 
+                          : (r.roleLabel || r.roleName);
+                      })()} {!['dean', 'assoc_dean', 'coe', 'hod', 'dy_coe', 'univ_office_coord', 'dy_hod', 'dept_exam_cell'].includes(r.roleId) && r.level ? `(${r.level})` : ''} {r.details ? `[${r.details}]` : ""}
+                    </td>
                     <td style={styles.td}>{assignedByText || 'HOD / Principal'}</td>
                     <td style={styles.td}>{r.pointsClaimed || ''}</td>
                   </tr>
