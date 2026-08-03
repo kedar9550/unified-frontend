@@ -208,38 +208,49 @@ const Sidebar = ({ mobileOpen, onDrawerToggle, isCollapsed, onToggleSidebar }) =
     const items = ROLE_ROUTES[effectiveRole] || ROLE_ROUTES.STUDENT;
 
     let initialOpenStates = { "VEDA EVENT ": true };
-    items.forEach((item) => {
-      if (item.nested) {
-        const isSubActive = item.nested.some(sub =>
-          sub.path && location.pathname.startsWith(sub.path)
-        );
-        if (isSubActive) {
-          initialOpenStates[item.text] = true;
+    
+    const checkActive = (itemList) => {
+      let found = false;
+      itemList.forEach(i => {
+        if (i.path && location.pathname.startsWith(i.path)) found = true;
+        if (i.nested) {
+          if (checkActive(i.nested)) {
+            found = true;
+            initialOpenStates[i.text] = true;
+          }
         }
-      }
-    });
-    setOpenStates(initialOpenStates);
-  }, []); // Run only on mount
+      });
+      return found;
+    };
+    checkActive(items);
+    
+    setOpenStates((prev) => ({ ...prev, ...initialOpenStates }));
+  }, [location.pathname]);
 
   React.useEffect(() => {
     let currentText = "Dashboard";
     const effectiveRole = activeRole || (user?.roles && user.roles[0]?.role) || "STUDENT";
     const items = ROLE_ROUTES[effectiveRole] || ROLE_ROUTES.STUDENT;
-    items.forEach((item) => {
-      if (item.path && location.pathname.startsWith(item.path))
-        currentText = item.text;
-      if (item.nested) {
-        item.nested.forEach((sub) => {
-          if (sub.path && location.pathname.startsWith(sub.path))
-            currentText = sub.text;
-        });
-      }
-    });
+    
+    const findActiveText = (itemList) => {
+      itemList.forEach(i => {
+        if (i.path && location.pathname === i.path) {
+          currentText = i.text;
+        } else if (i.path && location.pathname.startsWith(i.path) && currentText === "Dashboard") {
+           currentText = i.text;
+        }
+        if (i.nested) {
+          findActiveText(i.nested);
+        }
+      });
+    };
+    
+    findActiveText(items);
     setActive(currentText);
   }, [location.pathname, activeRole, user]);
 
   const handleToggle = (text) => {
-    setOpenStates((prev) => ({ [text]: !prev[text] }));
+    setOpenStates((prev) => ({ ...prev, [text]: !prev[text] }));
   };
 
   const effectiveRole = activeRole || (user?.roles && user.roles[0]?.role) || "STUDENT";
@@ -505,17 +516,77 @@ const Sidebar = ({ mobileOpen, onDrawerToggle, isCollapsed, onToggleSidebar }) =
                     }}
                   >
                     <List component="div" disablePadding>
-                      {item.nested.map((subItem) => (
-                        <Item
-                          key={`${item.text}-${subItem.text}`}
-                          nested
-                          icon={subItem.icon || ITEM_METADATA[subItem.text]?.icon || null}
-                          text={subItem.text}
-                          active={active}
-                          isCollapsed={isCollapsed}
-                          onClick={() => navigateTo(subItem.path, subItem.text, true)}
-                        />
-                      ))}
+                      {item.nested.map((subItem) => {
+                        if (subItem.nested) {
+                          const isSubParentActive = subItem.nested.some(deepSub => active === deepSub.text);
+                          return (
+                            <Box key={`${item.text}-${subItem.text}`} sx={{ width: '100%', pl: isCollapsed ? 0 : 4 }}>
+                              <ListItemButton
+                                onClick={(e) => {
+                                  if (isCollapsed) {
+                                    setSubmenuAnchor(e.currentTarget);
+                                    setActiveSubmenuItem(subItem);
+                                  } else {
+                                    handleToggle(subItem.text);
+                                  }
+                                }}
+                                disableRipple
+                                sx={{
+                                  borderRadius: "12px",
+                                  mb: 0.8,
+                                  p: 1.2,
+                                  background: (isSubParentActive) ? "var(--bg-accent-4)" : "transparent",
+                                  "&:hover": { background: "var(--bg-panel)" }
+                                }}
+                              >
+                                <ListItemIcon sx={{ minWidth: 0, mr: 2 }}>
+                                  <Box sx={{
+                                    width: 32, height: 32, borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                    background: 'var(--bg-accent-4)', color: 'var(--color-primary)'
+                                  }}>
+                                    {React.cloneElement(subItem.icon || ITEM_METADATA[subItem.text]?.icon || <Dashboard/>, { sx: { fontSize: 18 } })}
+                                  </Box>
+                                </ListItemIcon>
+                                {!isCollapsed && (
+                                  <>
+                                    <ListItemText primary={<Typography sx={{ fontSize: "0.875rem", fontWeight: 600, color: "var(--text-secondary)" }}>{subItem.text}</Typography>} />
+                                    {openStates[subItem.text] ? <ExpandLess sx={{ fontSize: 18 }} /> : <ExpandMore sx={{ fontSize: 18 }} />}
+                                  </>
+                                )}
+                              </ListItemButton>
+                              {!isCollapsed && (
+                                <Collapse in={!!openStates[subItem.text]} timeout="auto" unmountOnExit>
+                                  <List component="div" disablePadding>
+                                    {subItem.nested.map((deepSub) => (
+                                      <Item
+                                        key={`${subItem.text}-${deepSub.text}`}
+                                        nested
+                                        icon={deepSub.icon || ITEM_METADATA[deepSub.text]?.icon || null}
+                                        text={deepSub.text}
+                                        active={active}
+                                        isCollapsed={isCollapsed}
+                                        onClick={() => navigateTo(deepSub.path, deepSub.text, true)}
+                                      />
+                                    ))}
+                                  </List>
+                                </Collapse>
+                              )}
+                            </Box>
+                          );
+                        }
+
+                        return (
+                          <Item
+                            key={`${item.text}-${subItem.text}`}
+                            nested
+                            icon={subItem.icon || ITEM_METADATA[subItem.text]?.icon || null}
+                            text={subItem.text}
+                            active={active}
+                            isCollapsed={isCollapsed}
+                            onClick={() => navigateTo(subItem.path, subItem.text, true)}
+                          />
+                        );
+                      })}
                     </List>
                   </Collapse>
                 )}

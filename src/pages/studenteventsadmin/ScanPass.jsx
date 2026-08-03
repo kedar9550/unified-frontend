@@ -9,7 +9,14 @@ import {
   CircularProgress,
   Card,
   CardContent,
-  Grid
+  Grid,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Chip
 } from '@mui/material';
 import QrCodeScannerIcon from '@mui/icons-material/QrCodeScanner';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
@@ -109,7 +116,6 @@ const ScanPass = () => {
     } catch (err) {
       setError(err.response?.data?.error || 'Failed to scan barcode.');
       if (err.response?.data?.participant) {
-         setScannedParticipants(prev => [{ ...err.response.data, scannedAt: Date.now(), isDuplicate: true }, ...prev]);
          setBarcode(''); // Reset even if already scanned
       }
     } finally {
@@ -154,7 +160,7 @@ const ScanPass = () => {
   }, [cameraActive]);
 
   return (
-    <Box p={3} maxWidth="lg" mx="auto">
+    <Box p={3} maxWidth="xl" mx="auto">
       <Typography variant="h4" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
         <QrCodeScannerIcon fontSize="large" color="primary" />
         Scan Event Pass
@@ -162,7 +168,7 @@ const ScanPass = () => {
 
       <Grid container spacing={4}>
         {/* Left Side: Scanner */}
-        <Grid item xs={12} md={6}>
+        <Grid item xs={12} sm={5} md={4}>
           <Paper sx={{ p: 3, mb: 4, textAlign: 'center', height: '100%' }}>
         <Typography variant="body1" color="textSecondary" mb={3}>
           Use your device camera to scan the pass, or manually enter the pass code.
@@ -210,7 +216,7 @@ const ScanPass = () => {
         </Grid>
 
         {/* Right Side: Results */}
-        <Grid item xs={12} md={6} sx={{ maxHeight: '85vh', overflowY: 'auto', pb: 2 }}>
+        <Grid item xs={12} sm={7} md={8} sx={{ maxHeight: '85vh', overflowY: 'auto', pb: 2 }}>
           {error && (
             <Alert severity="error" sx={{ mb: 3 }}>
               {error}
@@ -218,43 +224,49 @@ const ScanPass = () => {
           )}
 
           {scannedParticipants.length > 0 ? (
-            <Box display="flex" flexDirection="column" gap={2}>
-              {scannedParticipants.map((data, index) => (
-                <Card key={data.scannedAt + '-' + index} sx={{ border: index === 0 ? '2px solid #4caf50' : '1px solid #ccc', borderRadius: 2 }}>
-                  <CardContent>
-                    <Box display="flex" alignItems="center" gap={2} mb={2}>
-                      <CheckCircleIcon color={index === 0 ? (data.isDuplicate ? "warning" : "success") : "action"} fontSize="large" />
-                      <Typography variant="h6" color={index === 0 ? (data.isDuplicate ? "warning.main" : "success.main") : "textPrimary"}>
-                        {data.isDuplicate ? "Already Verified" : "Pass Verified"}
-                      </Typography>
-                    </Box>
-
-                    <Grid container spacing={2}>
-                      <Grid item xs={12} sm={6}>
-                        <Typography variant="subtitle2" color="textSecondary">Participant Name</Typography>
-                        <Typography variant="body1" fontWeight="bold">{data.participant.name}</Typography>
-                      </Grid>
-                      <Grid item xs={12} sm={6}>
-                        <Typography variant="subtitle2" color="textSecondary">Roll Number</Typography>
-                        <Typography variant="body1">{data.participant.roll}</Typography>
-                      </Grid>
-                      <Grid item xs={12} sm={6}>
-                        <Typography variant="subtitle2" color="textSecondary">Event</Typography>
-                        <Typography variant="body1">{data.eventName}</Typography>
-                      </Grid>
-                      <Grid item xs={12} sm={6}>
-                        <Typography variant="subtitle2" color="textSecondary">College</Typography>
-                        <Typography variant="body1">
-                          {data.participant.college === 'Other College' 
-                            ? data.participant.otherCollege 
-                            : data.participant.college}
-                        </Typography>
-                      </Grid>
-                    </Grid>
-                  </CardContent>
-                </Card>
-              ))}
-            </Box>
+            <TableContainer component={Paper} elevation={3} sx={{ borderRadius: 2, overflow: 'hidden' }}>
+              <Table stickyHeader>
+                <TableHead>
+                  <TableRow>
+                    <TableCell sx={{ fontWeight: 'bold', bgcolor: '#f8fafc' }}>Status</TableCell>
+                    <TableCell sx={{ fontWeight: 'bold', bgcolor: '#f8fafc' }}>Name</TableCell>
+                    <TableCell sx={{ fontWeight: 'bold', bgcolor: '#f8fafc' }}>Roll No</TableCell>
+                    <TableCell sx={{ fontWeight: 'bold', bgcolor: '#f8fafc' }}>Event</TableCell>
+                    <TableCell sx={{ fontWeight: 'bold', bgcolor: '#f8fafc' }}>College</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {scannedParticipants.map((data, index) => (
+                    <TableRow 
+                      key={data.scannedAt + '-' + index}
+                      sx={{ 
+                        bgcolor: index === 0 ? '#f0fdf4' : 'inherit', // highlight latest scan
+                        '&:hover': { bgcolor: '#f1f5f9' },
+                        transition: 'background-color 0.2s'
+                      }}
+                    >
+                      <TableCell>
+                        <Chip 
+                          icon={<CheckCircleIcon />} 
+                          label={data.isDuplicate ? "Already Verified" : "Pass Verified"} 
+                          color={index === 0 ? (data.isDuplicate ? "warning" : "success") : (data.isDuplicate ? "warning" : "default")}
+                          variant={index === 0 ? "filled" : "outlined"}
+                          size="small"
+                        />
+                      </TableCell>
+                      <TableCell sx={{ fontWeight: index === 0 ? 'bold' : 'normal' }}>{data.participant.name}</TableCell>
+                      <TableCell>{data.participant.roll}</TableCell>
+                      <TableCell>{data.eventName}</TableCell>
+                      <TableCell>
+                        {data.participant.college === 'Other College' 
+                          ? data.participant.otherCollege 
+                          : data.participant.college}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
           ) : !error && (
             <Paper sx={{ p: 3, height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 200, bgcolor: 'transparent', border: '1px dashed grey' }} elevation={0}>
               <Typography variant="body1" color="textSecondary">

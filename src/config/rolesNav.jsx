@@ -34,6 +34,7 @@ import {
   PeopleAlt,
   CardMembership,
   Badge as BadgeIcon,
+  Person,
 } from "@mui/icons-material";
 import PersonIcon from '@mui/icons-material/Person';
 import React from "react";
@@ -403,13 +404,27 @@ export const ROLE_ROUTES = {
       icon: <SupportAgent />,
       nested: [
         { text: "Departments", path: "/Eventveda/departments", icon: <AccountTree /> },
-        { text: "Groups", path: "/Eventveda/groups", icon: <Groups /> },
-        { text: "Events", path: "/Eventveda/events", icon: <EventAvailable /> },
+        {
+          text: "Groups",
+          icon: <Groups />,
+          nested: [
+            { text: "List", path: "/Eventveda/groups", icon: <Groups /> },
+            { text: "Coordinators", path: "/Eventveda/groups/coordinators", icon: <Person /> }
+          ]
+        },
+        {
+          text: "Events",
+          icon: <EventAvailable />,
+          nested: [
+            { text: "List", path: "/Eventveda/events", icon: <EventAvailable /> },
+            { text: "Faculty Coordinators", path: "/Eventveda/events/coordinators", icon: <Person /> }
+          ]
+        },
         { text: "Payments", path: "/Eventveda/payments", icon: <Payment /> },
         { text: "Registrations", path: "/Eventveda/registrations", icon: <PeopleAlt /> },
         { text: "Participants", path: "/Eventveda/participants", icon: <Groups /> },
-        { text: "Scan Pass", path: "/Eventveda/scan-pass", icon: <QrCode /> },
-        { text: "Passes", path: "/Eventveda/passes", icon: <CardMembership /> }
+        // { text: "Scan Pass", path: "/Eventveda/scan-pass", icon: <QrCode /> },
+        // { text: "Passes", path: "/Eventveda/passes", icon: <CardMembership /> }
       ]
     }
     // {
@@ -459,11 +474,25 @@ export const ROLE_ROUTES = {
 
   EVENT_COORDINATOR: [
     { text: "Dashboard", path: "/dashboard", icon: <Dashboard /> },
-    { text: "Events", path: "/Eventveda/events", icon: <EventAvailable /> },
+    {
+      text: "Events",
+      icon: <EventAvailable />,
+      nested: [
+        { text: "List", path: "/Eventveda/events", icon: <EventAvailable /> },
+        { text: "Faculty Coordinators", path: "/Eventveda/events/coordinators", icon: <Person /> }
+      ]
+    },
     { text: "Payments", path: "/Eventveda/payments", icon: <Payment /> },
     { text: "Registrations", path: "/Eventveda/registrations", icon: <PeopleAlt /> },
     { text: "Participants", path: "/Eventveda/participants", icon: <Groups /> },
-    { text: "Passes", path: "/Eventveda/passes", icon: <CardMembership /> }
+    {
+      text: "Student Passes",
+      icon: <SupportAgent />,
+      nested: [
+        { text: "Passes", path: "/Eventveda/passes", icon: <CardMembership /> },
+        { text: "Update Passes", path: "/Eventveda/update-passes", icon: <CardMembership /> }
+      ]
+    }
   ],
 
   FACULTY_COORDINATOR: [
@@ -472,8 +501,15 @@ export const ROLE_ROUTES = {
     { text: "Payments", path: "/Eventveda/payments", icon: <Payment /> },
     { text: "Registrations", path: "/Eventveda/registrations", icon: <PeopleAlt /> },
     { text: "Participants", path: "/Eventveda/participants", icon: <Groups /> },
-    { text: "Scan Pass", path: "/Eventveda/scan-pass", icon: <QrCode /> },
-    { text: "Passes", path: "/Eventveda/passes", icon: <CardMembership /> }
+    {
+      text: "Student Passes",
+      icon: <SupportAgent />,
+      nested: [
+        { text: "Scan for Attendance", path: "/Eventveda/scan-pass", icon: <QrCode /> },
+        { text: "Passes", path: "/Eventveda/passes", icon: <CardMembership /> },
+        { text: "Update Passes", path: "/Eventveda/update-passes", icon: <CardMembership /> }
+      ]
+    }
   ],
 
 

@@ -306,7 +306,10 @@ const EventCreation = () => {
     setView('list');
   };
 
-  const tableColumns = ['#', 'Group', 'Department', 'FACULTY Coordinators', 'Event Name', 'Venue', 'Max Team Size', 'Price', 'Actions'];
+  const tableColumns = ['#', 'Group', 'Department', 'FACULTY Coordinators', 'Event Name', 'Venue', 'Max Team Size', 'Price'];
+  if (activeRole !== 'FACULTY_COORDINATOR') {
+    tableColumns.push('Actions');
+  }
 
   const tableRows = events.map((event, index) => {
     const coordinators = Array.isArray(event.facultyCoordinators) && event.facultyCoordinators.length > 0
@@ -317,7 +320,7 @@ const EventCreation = () => {
       ? coordinators.map((coordinator) => `${coordinator.employeeName || ''} (${coordinator.employeeId || coordinator.institutionId || ''})`).join(', ')
       : 'N/A';
 
-    return [
+    const row = [
       index + 1,
       event.group?.name || '',
       event.department ? event.department.replace(/,\s*/g, ' & ') : (Array.isArray(event.group?.department) ? event.group.department.map(d => d?.name).join(' & ') : event.group?.department?.name || ''),
@@ -326,7 +329,10 @@ const EventCreation = () => {
       event.venue,
       event.maxTeamSize || '',
       event.price != null && event.price > 0 ? `₹${event.price}` : '',
-      {
+    ];
+    
+    if (activeRole !== 'FACULTY_COORDINATOR') {
+      row.push({
         value: '',
         display: (
           <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center' }}>
@@ -346,8 +352,10 @@ const EventCreation = () => {
             </IconButton>
           </Box>
         ),
-      },
-    ];
+      });
+    }
+    
+    return row;
   });
 
   if (view === 'list') {
@@ -357,22 +365,28 @@ const EventCreation = () => {
           title="Event Management"
           subtitle="Create and manage VEDA events"
           action={
-            <Button
-              variant="contained"
-              startIcon={<AddIcon />}
-              onClick={openCreateForm}
-              sx={{ borderRadius: '12px', px: 3, py: 1.2, textTransform: 'none' }}
-            >
-              Create Event
-            </Button>
+            activeRole !== 'FACULTY_COORDINATOR' && (
+              <Button
+                variant="contained"
+                startIcon={<AddIcon />}
+                onClick={openCreateForm}
+                sx={{ borderRadius: '12px', px: 3, py: 1.2, textTransform: 'none' }}
+              >
+                Create Event
+              </Button>
+            )
           }
         />
 
         <DataTable
           columns={tableColumns}
           rows={tableRows}
-          nonSortableColumns={[7]}
-          alignments={['center', 'left', 'left', 'left', 'left', 'center', 'center', 'center']}
+          nonSortableColumns={activeRole !== 'FACULTY_COORDINATOR' ? [8] : []}
+          alignments={
+            activeRole !== 'FACULTY_COORDINATOR' 
+              ? ['center', 'left', 'left', 'left', 'left', 'center', 'center', 'center', 'center']
+              : ['center', 'left', 'left', 'left', 'left', 'center', 'center', 'center']
+          }
         />
 
         <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>

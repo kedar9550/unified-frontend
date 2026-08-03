@@ -11,6 +11,7 @@ import {
   Refresh as RefreshIcon,
   Download as DownloadIcon,
 } from '@mui/icons-material';
+import { Card, CardContent, Chip } from '@mui/material';
 import PageHeader from '../../components/common/PageHeader';
 import API from '../../api/axios';
 import { toast } from 'sonner';
@@ -37,9 +38,9 @@ const Passes = () => {
       if (activeRole === 'FACULTY_COORDINATOR' && user) {
         const userEvents = allEvents.filter(e => {
           const coords = e.facultyCoordinators || (e.facultyCoordinator ? [e.facultyCoordinator] : []);
-          return coords.some(c => 
-            c.employeeId === user.institutionId || 
-            c.employeeId === user.employeeId || 
+          return coords.some(c =>
+            c.employeeId === user.institutionId ||
+            c.employeeId === user.employeeId ||
             c.employeeId === user.employeeCode
           );
         });
@@ -48,7 +49,7 @@ const Passes = () => {
 
       const response = await API.get('/api/razorpay/registrations');
       let fetchedPayments = response.data?.payments || [];
-      
+
       if (allowedEventNames) {
         fetchedPayments = fetchedPayments.filter(p => allowedEventNames.includes(p.eventName || p.category));
       }
@@ -60,7 +61,7 @@ const Passes = () => {
           venue: eventMatch ? eventMatch.venue : null
         };
       });
-      
+
       setPayments(fetchedPayments);
     } catch (error) {
       console.error('Error fetching event participants:', error);
@@ -151,12 +152,12 @@ const Passes = () => {
     element.style.display = 'block';
 
     const opt = {
-      margin:       0,
-      filename:     'Eventveda_Passes.pdf',
-      image:        { type: 'jpeg', quality: 0.98 },
-      html2canvas:  { scale: 2, useCORS: true, logging: false },
-      jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' },
-      pagebreak:    { mode: 'css', before: '.html2pdf__page-break' }
+      margin: 0,
+      filename: 'Eventveda_Passes.pdf',
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2, useCORS: true, logging: false },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+      pagebreak: { mode: 'css', before: '.html2pdf__page-break' }
     };
 
     toast.promise(
@@ -239,14 +240,39 @@ const Passes = () => {
           <Box
             sx={{
               display: 'grid',
-              gap: 2,
-              gridTemplateColumns: { xs: '1fr', lg: '1fr 1fr' },
+              gap: 3,
+              gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: 'repeat(3, 1fr)', lg: 'repeat(4, 1fr)' },
             }}
+            className="no-print"
           >
             {filteredParticipants.map((participant) => (
-              <Box key={participant.id}>
-                <EventPassCard participant={participant} />
-              </Box>
+              <Card key={participant.id} sx={{ borderRadius: '16px', boxShadow: '0 4px 20px rgba(0,0,0,0.05)', display: 'flex', flexDirection: 'column', height: '100%' }}>
+                <CardContent sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', gap: 1.5, p: 2.5 }}>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 1 }}>
+                    <Typography variant="h6" sx={{ fontWeight: 700, fontSize: '1.1rem', lineHeight: 1.2, color: 'var(--text-primary)', wordBreak: 'break-word' }}>
+                      {participant.name}
+                    </Typography>
+                    <Chip 
+                      label={participant.attended ? 'Verified' : 'Not Verified'} 
+                      color={participant.attended ? 'success' : 'default'}
+                      variant={participant.attended ? 'filled' : 'outlined'}
+                      size="small" 
+                      sx={{ fontWeight: 600, fontSize: '0.7rem', height: '24px' }} 
+                    />
+                  </Box>
+                  <Typography variant="body2" sx={{ color: 'var(--text-secondary)', fontWeight: 500 }}>
+                    {participant.roll || 'N/A'} • {participant.college || 'N/A'}
+                  </Typography>
+                  <Box sx={{ mt: 'auto', p: 1.5, bgcolor: 'rgba(59, 130, 246, 0.08)', borderRadius: '10px', border: '1px solid rgba(59, 130, 246, 0.1)' }}>
+                    <Typography variant="caption" sx={{ fontWeight: 700, color: '#3b82f6', letterSpacing: '0.5px' }}>
+                      EVENT
+                    </Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 700, color: 'var(--text-primary)', mt: 0.5 }}>
+                      {participant.eventName}
+                    </Typography>
+                  </Box>
+                </CardContent>
+              </Card>
             ))}
           </Box>
 
@@ -274,35 +300,58 @@ const Passes = () => {
                         height: '295mm', // Slightly under 297mm to prevent double page breaks
                         boxSizing: 'border-box',
                         padding: '10mm 5mm', // Padding around the page
-                        display: 'grid',
-                        gridTemplateColumns: '1fr 1fr',
-                        gridTemplateRows: 'repeat(4, 1fr)',
-                        gap: '5mm', // Space between passes
+                        display: 'flex',
+                        flexWrap: 'wrap',
+                        alignContent: 'flex-start',
                       }}
                     >
-                      {page.map((participant) => (
+                      {page.map((participant, index) => (
                         <Box
                           key={`pdf-${participant.id}`}
                           sx={{
-                            width: '100%',
-                            height: '100%',
+                            width: '50%',
+                            height: '68.75mm', // (295 - 20 padding) / 4 rows
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
+                            position: 'relative',
+                            boxSizing: 'border-box',
+                            borderBottom: 'none',
+                            borderRight: index % 2 === 0 ? '1.5px dashed #94a3b8' : 'none',
                           }}
                         >
+                          {/* Horizontal Cut Line */}
+                          {Math.floor(index / 2) < 3 && (
+                            <Box sx={{ position: 'absolute', bottom: '-15px', left: 0, right: 0, borderBottom: '1.5px dashed #94a3b8', zIndex: 0 }} />
+                          )}
+                          {/* Horizontal Cut Mark (Scissor) */}
+                          {Math.floor(index / 2) < 3 && (
+                            <Box sx={{ position: 'absolute', bottom: '-15px', left: '50%', transform: 'translate(-50%, 50%)', color: '#94a3b8', fontSize: '14px', backgroundColor: '#fff', px: 1, zIndex: 1, lineHeight: 1 }}>
+                              ✂
+                            </Box>
+                          )}
+                          {/* Vertical Cut Mark (Scissor) */}
+                          {index % 2 === 0 && (
+                            <Box sx={{ position: 'absolute', right: '-8px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8', fontSize: '14px', backgroundColor: '#fff', py: 1, zIndex: 1 }}>
+                              ✂
+                            </Box>
+                          )}
+
                           <Box
                             sx={{
-                              width: '350px',
-                              height: '225px', // Scale down space wrapper
+                              width: '315px',
+                              height: '205px', // Scaled space wrapper
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
                             }}
                           >
                             <Box
                               sx={{
-                                transform: 'scale(0.5)',
-                                transformOrigin: 'top left',
+                                transform: 'scale(0.45)',
+                                transformOrigin: 'center center',
                                 width: '700px',
-                                minHeight: '450px',
+                                height: '450px',
                               }}
                             >
                               <EventPassCard participant={participant} />
