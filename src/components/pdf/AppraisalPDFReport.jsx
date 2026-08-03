@@ -1,5 +1,6 @@
 import React, { forwardRef } from 'react';
 import ausLogo from '../../assets/AUS Long Logo.png';
+import { ADMIN_ROLE_CATALOG } from '../../constants/adminRoleCatalog';
 
 const AppraisalPDFReport = forwardRef(({ data, hideInterpersonal }, ref) => {
   if (!data) return null;
@@ -684,14 +685,27 @@ const AppraisalPDFReport = forwardRef(({ data, hideInterpersonal }, ref) => {
                   switch (c.category) {
                     case 1: return `Member of BOG/GB/AC/BOS: ${c.organizationName || ''}`;
                     case 2: case 3: return `Editorial Board: ${c.journalName || c.journalConferenceName || ''}`;
-                    case 4: case 5: return `Award: ${c.awardName || ''}`;
-                    case 6: return `E-content: ${c.courseName || ''}`;
-                    case 7: return `Certification: ${c.certificationName || ''}`;
-                    case 8: return `Hackathon/Event: ${c.eventName || ''}`;
-                    case 9: return `Article: ${c.articleTitle || ''}`;
-                    case 10: return `Research Facility: ${c.facilityName || ''}`;
-                    case 11: case 12: return `Course: ${c.courseName || ''}`;
-                    case 13: return `Grant: ${c.grantName || ''}`;
+                    case 4: case 5: return `Awarded as ${c.awardName || 'N/A'} by ${c.awardingAgency || 'N/A'} on ${c.awardDate ? new Date(c.awardDate).toLocaleDateString('en-GB') : 'N/A'}`;
+                    case 6: return `Developed e-content for the course ${c.courseName || 'N/A'}${c.url ? ` • View Resource (${c.url})` : ''}`;
+                    case 7: {
+                      const fDate = c.fromDate ? new Date(c.fromDate).toLocaleDateString('en-GB') : "";
+                      const tDate = c.toDate ? new Date(c.toDate).toLocaleDateString('en-GB') : "";
+                      return `Completed the certification ${c.certificationName || 'N/A'} from ${fDate} to ${tDate} (${c.courseHours || 'N/A'} hours).`;
+                    }
+                    case 8: return `Trained student(s) ${c.studentNames || 'N/A'} shortlisted for the finals of the ${c.eventType || 'N/A'} "${c.eventName || 'N/A'}" on ${c.eventDate ? new Date(c.eventDate).toLocaleDateString('en-GB') : 'N/A'}.`;
+                    case 9: return `Published the article "${c.articleTitle || 'N/A'}" in ${c.publicationName || 'N/A'} on ${c.publicationDate ? new Date(c.publicationDate).toLocaleDateString('en-GB') : 'N/A'}.`;
+                    case 10: {
+                      const fDate = c.fromDate ? new Date(c.fromDate).toLocaleDateString('en-GB') : "";
+                      const tDate = c.toDate ? new Date(c.toDate).toLocaleDateString('en-GB') : "";
+                      return c.contributionType === "Establishment" ? `Established the research facility ${c.facilityName || 'N/A'} on ${fDate}.` : `Maintained the research facility ${c.facilityName || 'N/A'} from ${fDate} to ${tDate}.`;
+                    }
+                    case 11: return `Completed the NPTEL course ${c.courseName || 'N/A'} with a duration of ${c.duration || 'N/A'}.`;
+                    case 12: {
+                      const fDate = c.fromDate ? new Date(c.fromDate).toLocaleDateString('en-GB') : "";
+                      const tDate = c.toDate ? new Date(c.toDate).toLocaleDateString('en-GB') : "";
+                      return `Completed the Coursera course ${c.courseName || 'N/A'} from ${fDate} to ${tDate} (${c.courseHours || 'N/A'} hours).`;
+                    }
+                    case 13: return `Received a ${c.grantType?.toLowerCase() || 'grant'} of ₹${c.grantAmount || 0} from ${c.fundingAgency || 'N/A'} for "${c.grantTitle || 'N/A'}" on ${c.sanctionDate ? new Date(c.sanctionDate).toLocaleDateString('en-GB') : 'N/A'}.`;
                     default: return c.details || "Detail";
                   }
                 };
@@ -730,14 +744,30 @@ const AppraisalPDFReport = forwardRef(({ data, hideInterpersonal }, ref) => {
               </tr>
             </thead>
             <tbody style={{ display: 'table-row-group', pageBreakInside: 'auto' }}>
-              {adminData.roles.map((r, i) => (
-                <tr key={i} style={styles.tr}>
-                  <td style={styles.td}>{i + 1}</td>
-                  <td style={styles.tdLeft}>{r.roleName} ({r.level})</td>
-                  <td style={styles.td}>{r.assignedBy || 'HOD / Principal'}</td>
-                  <td style={styles.td}>{r.pointsClaimed || ''}</td>
-                </tr>
-              ))}
+              {adminData.roles.map((r, i) => {
+                const assignedByType = typeof r.assignedBy === 'object' ? r.assignedBy.type : (r.assignedBy || "");
+                const assignedByOtherText = typeof r.assignedBy === 'object' ? r.assignedBy.otherText : "";
+                let assignedByText = "";
+                if (assignedByType) {
+                  assignedByText = assignedByType === "Others" && assignedByOtherText ? assignedByOtherText : assignedByType;
+                }
+
+                return (
+                  <tr key={i} style={styles.tr}>
+                    <td style={styles.td}>{i + 1}</td>
+                    <td style={styles.tdLeft}>
+                      {(() => {
+                        const catalogEntry = ADMIN_ROLE_CATALOG.find(c => c.roleId === r.roleId);
+                        return (catalogEntry && !['other', 'other_coord', 'training_coord'].includes(r.roleId)) 
+                          ? catalogEntry.label 
+                          : (r.roleLabel || r.roleName);
+                      })()} {!['dean', 'assoc_dean', 'coe', 'hod', 'dy_coe', 'univ_office_coord', 'dy_hod', 'dept_exam_cell'].includes(r.roleId) && r.level ? `(${r.level})` : ''} {r.details ? `[${r.details}]` : ""}
+                    </td>
+                    <td style={styles.td}>{assignedByText || 'HOD / Principal'}</td>
+                    <td style={styles.td}>{r.pointsClaimed || ''}</td>
+                  </tr>
+                );
+              })}
               <tr style={styles.tr}>
                 <td colSpan="3" style={{ ...styles.td, fontWeight: 'bold', textAlign: 'right' }}>Self-Assessment points (Max: 20)</td>
                 <td style={{ ...styles.td, fontWeight: 'bold' }}>

@@ -1,5 +1,6 @@
 import Loader from "../../components/common/Loader";
 import React, { useState, useEffect } from "react";
+import { ADMIN_ROLE_CATALOG, ASSIGNED_BY_OPTIONS } from "../../constants/adminRoleCatalog";
 import { useNavigate } from "react-router-dom";
 import {
   Box,
@@ -78,38 +79,9 @@ import { SubLabel, Grid2, NoteBox, FileField } from "../../components/faculty/Pu
 import { labelStyle } from "../../components/faculty/publicationConstants";
 import PageHeader from "../../components/common/PageHeader";
 
-const ADMINISTRATIVE_ROLES_LIST = [
-  { id: "dean", label: "Deans / Assoc Deans / CoE" },
-  { id: "hod", label: "HoD / Dy. CoE / Coordinator (Univ. Office)" },
-  { id: "dy_hod", label: "Dy. HoD / Dept. Exam Cell Incharge" },
-  { id: "timetable", label: "Time Table / Project Coordinator / Curriculum Coordinator" },
-  { id: "placement", label: "Placement / Internship / Alumni Coordinator" },
-  { id: "coursera", label: "Coursera / LinkedIn Coordinator / ALA" },
-  { id: "edc", label: "EDC / IIC / IQAC Coordinator" },
-  { id: "course_coord", label: "Course Coordinator" },
-  { id: "website", label: "Website Coordinator" },
-  { id: "nss", label: "NSS / Any Clubs / Professional Chapters Coordinator" },
-  { id: "training", label: "Any Training Program Coordinator (Smart Interviews / GPP / Etc.)" },
-  { id: "drc", label: "DRC / Research Coordinator" },
-  { id: "antiragging", label: "Anti-Ragging Committee Coordinator" },
-  { id: "other", label: "Any other remarkable event / activity coordinator", hasDetails: true }
-];
 
-const CONTRIBUTION_CATEGORIES = [
-  { id: 1, name: "Member of BOG / GB / AC / BOS" },
-  { id: 2, name: "Editorial Board Member (SCIE / Q1 / Q2)" },
-  { id: 3, name: "Editorial Board Member (ESCI / Q3 / Q4 / Conference Proceedings)" },
-  { id: 4, name: "Awards (MHRD / AICTE / UGC / State Govt / Top Institutions)" },
-  { id: 5, name: "Awards (NGO / Trust / Others)" },
-  { id: 6, name: "Developed E-Content" },
-  { id: 7, name: "Certification on New Age Technologies" },
-  { id: 8, name: "Students Trained and Shortlisted for Finals" },
-  { id: 9, name: "Articles Published in Magazine / Newspaper" },
-  { id: 10, name: "Research Facility Establishment / Maintenance" },
-  { id: 11, name: "NPTEL Course Completion" },
-  { id: 12, name: "Coursera Course Completion" },
-  { id: 13, name: "FDP / Seminar Grant Sanctioned" }
-];
+
+// Contribution Categories are now fetched from the database
 
 const RESOURCE_UTILIZATION_CATEGORIES = [
   "CONFERENCE",
@@ -274,7 +246,7 @@ const SelfAppraisal = () => {
     }
   };
   const [appraisalConfig, setAppraisalConfig] = useState(null);
-
+  const [contributionCategories, setContributionCategories] = useState([]);
   // Claim research publication modal states
   const [claimModalOpen, setClaimModalOpen] = useState(false);
   const [selectedPaper, setSelectedPaper] = useState(null);
@@ -307,8 +279,12 @@ const SelfAppraisal = () => {
   const [submittingAdmin, setSubmittingAdmin] = useState(false);
   const [adminOpen, setAdminOpen] = useState(false);
   const [adminForm, setAdminForm] = useState({
-    roleName: "",
-    level: "Department level",
+    primaryRoleType: "",
+    roleId: "",
+    roleLabel: "",
+    level: "",
+    assignedByType: "",
+    assignedByOtherText: "",
     details: ""
   });
   const [adminEditingRole, setAdminEditingRole] = useState(null);
@@ -395,6 +371,9 @@ const SelfAppraisal = () => {
 
   useEffect(() => {
     fetchMyAppraisals();
+    axiosInstance.get("/api/value-addition/contribution-category")
+      .then(res => setContributionCategories(res.data?.data || []))
+      .catch(err => console.log("Failed to fetch contribution categories", err));
   }, []);
 
   const handleApplyNew = async () => {
@@ -778,101 +757,110 @@ const SelfAppraisal = () => {
   };
 
   // 4. Administration Sync and Submit Handlers
-  useEffect(() => {
-    const initialForm = {};
-    const usedBackendRoles = new Set();
-
-    ADMINISTRATIVE_ROLES_LIST.forEach((r) => {
-      let matchedRole = null;
-      if (administrationDetail && administrationDetail.roles) {
-        matchedRole = administrationDetail.roles.find((x) => x.roleName === r.label);
-        if (matchedRole) usedBackendRoles.add(matchedRole._id || matchedRole.roleName);
-      }
-      initialForm[r.id] = {
-        roleName: r.label,
-        isResponsible: matchedRole ? matchedRole.isResponsible : false,
-        level: matchedRole ? matchedRole.level : "",
-        details: matchedRole ? matchedRole.details : ""
-      };
-    });
-
-    if (administrationDetail && administrationDetail.roles) {
-      administrationDetail.roles.forEach((r, idx) => {
-        if (!usedBackendRoles.has(r._id || r.roleName) && r.roleName.startsWith("Any other remarkable event / activity coordinator")) {
-          initialForm[`other_custom_${idx}`] = {
-            roleName: r.roleName,
-            isResponsible: r.isResponsible,
-            level: r.level || "",
-            details: r.details || ""
-          };
-        }
-      });
-    }
-
-    setAdminRolesForm(initialForm);
-  }, [selectedYear, administrationDetail]);
-
   const openAdminModalAdd = () => {
     setAdminEditingRole(null);
-    setAdminForm({ roleName: "", customRoleName: "", level: "Department level", details: "" });
+    setAdminForm({ primaryRoleType: "", roleId: "", roleLabel: "", level: "", assignedByType: "", assignedByOtherText: "", details: "", trainingProgramType: "", trainingProgramOther: "" });
     setAdminOpen(true);
   };
 
   const openAdminModalEdit = (role) => {
-    setAdminEditingRole(role.roleName);
-    const isCustom = role.roleName.startsWith("Any other remarkable event / activity coordinator - ");
-    const baseRoleName = role.roleName.startsWith("Any other remarkable event") ? "Any other remarkable event / activity coordinator" : role.roleName;
-    const customRoleName = isCustom ? role.roleName.replace("Any other remarkable event / activity coordinator - ", "") : "";
-    setAdminForm({ roleName: baseRoleName, customRoleName: customRoleName, level: role.level || "Department level", details: role.details || "" });
+    setAdminEditingRole(role.roleId || role.roleName);
+    
+    let pType = role.roleId;
+    if (role.roleId) {
+       const catalogEntry = ADMIN_ROLE_CATALOG.find((r) => r.roleId === role.roleId);
+       if (catalogEntry && catalogEntry.category === "Coordinator") {
+          pType = "COORDINATOR";
+       }
+    }
+
+    let tType = "";
+    let tOther = "";
+    if (role.roleId === "training_coord" && (role.roleLabel || role.roleName)) {
+      const label = role.roleLabel || role.roleName;
+      if (label.includes(" - ")) {
+        const type = label.split(" - ")[1].trim();
+        if (type === "Smart Interviews" || type === "GPP") {
+          tType = type;
+        } else {
+          tType = "Others";
+          tOther = type;
+        }
+      }
+    }
+
+    setAdminForm({
+      primaryRoleType: pType || "",
+      roleId: role.roleId || "",
+      roleLabel: role.roleLabel || role.roleName || "",
+      level: role.level || "",
+      assignedByType: role.assignedBy?.type || role.assignedBy || "",
+      assignedByOtherText: role.assignedBy?.otherText || "",
+      details: role.details || "",
+      trainingProgramType: tType,
+      trainingProgramOther: tOther
+    });
     setAdminOpen(true);
   };
 
   const handleAdminSave = async (e) => {
     e.preventDefault();
-    if (!adminForm.roleName) {
-      toast.error("Please select an administrative role");
-      return;
+    if (!adminForm.roleId) { toast.error("Please select an administrative role"); return; }
+    if (!adminForm.level) { toast.error("Please select a level"); return; }
+    if (!adminForm.assignedByType) { toast.error("Please select who assigned this role"); return; }
+    if (adminForm.assignedByType === "Others" && (!adminForm.assignedByOtherText || !adminForm.assignedByOtherText.trim())) {
+      toast.error("Please specify the assigning authority"); return;
     }
-    const roleConfig = ADMINISTRATIVE_ROLES_LIST.find((r) => r.label === adminForm.roleName);
-    if (adminForm.roleName === "Any other remarkable event / activity coordinator" && (!adminForm.customRoleName || !adminForm.customRoleName.trim())) {
-      toast.error("Please specify the custom role name");
-      return;
+    if ((adminForm.roleId === "other" || adminForm.roleId === "other_coord") && (!adminForm.roleLabel || !adminForm.roleLabel.trim())) {
+      toast.error("Please specify the custom role name"); return;
     }
-
-    const updatedForm = { ...adminRolesForm };
-    let roleId = roleConfig ? roleConfig.id : null;
-
-    if (roleId === 'other') {
-      if (adminEditingRole) {
-        roleId = Object.keys(updatedForm).find(key => updatedForm[key].roleName === adminEditingRole) || roleId;
-      } else {
-        roleId = 'other_' + Date.now();
+    if (adminForm.roleId === "training_coord") {
+      if (!adminForm.trainingProgramType) {
+        toast.error("Please select a training program"); return;
+      }
+      if (adminForm.trainingProgramType === "Others" && (!adminForm.trainingProgramOther || !adminForm.trainingProgramOther.trim())) {
+        toast.error("Please specify the other training program"); return;
       }
     }
 
-    if (roleId) {
-      updatedForm[roleId] = {
-        roleName: adminForm.roleName === "Any other remarkable event / activity coordinator"
-          ? "Any other remarkable event / activity coordinator - " + adminForm.customRoleName.trim()
-          : adminForm.roleName,
-        isResponsible: true,
-        level: adminForm.level,
-        details: adminForm.details
-      };
+    const catalogEntry = ADMIN_ROLE_CATALOG.find((r) => r.roleId === adminForm.roleId);
+    if (catalogEntry && !catalogEntry.allowedLevels.includes(adminForm.level)) {
+      toast.error(`Level ${adminForm.level} is not allowed for this role`); return;
+    }
+
+    const existingRoles = administrationDetail?.roles?.filter(r => r.isResponsible) || [];
+    let updatedRoles;
+
+    const newRole = {
+      roleId: adminForm.roleId,
+      roleLabel: (() => {
+        if (adminForm.roleId === "other" || adminForm.roleId === "other_coord") return adminForm.roleLabel.trim();
+        if (adminForm.roleId === "training_coord") {
+           const suffix = adminForm.trainingProgramType === "Others" ? adminForm.trainingProgramOther.trim() : adminForm.trainingProgramType;
+           return `Training Program Coordinator - ${suffix}`;
+        }
+        return catalogEntry?.label || adminForm.roleLabel;
+      })(),
+      isResponsible: true,
+      level: adminForm.level,
+      assignedBy: {
+        type: adminForm.assignedByType,
+        otherText: adminForm.assignedByType === "Others" ? adminForm.assignedByOtherText.trim() : ""
+      },
+      details: adminForm.details
+    };
+
+    if (adminEditingRole) {
+      updatedRoles = existingRoles.map(r => (r.roleId === adminEditingRole || r.roleName === adminEditingRole) ? { ...r, ...newRole, status: 'Pending' } : r);
+    } else {
+      updatedRoles = [...existingRoles, { ...newRole, status: 'Pending' }];
     }
 
     try {
-      const rolesPayload = Object.values(updatedForm).map((role) => ({
-        roleName: role.roleName,
-        isResponsible: role.isResponsible,
-        level: role.isResponsible ? role.level : "",
-        details: role.isResponsible ? role.details : ""
-      }));
-
       setSubmittingAdmin(true);
       const res = await axiosInstance.post("/api/faculty-administration", {
         academicYear: selectedYear,
-        roles: rolesPayload
+        roles: updatedRoles
       });
       if (res.data?.success) {
         toast.success("Administrative role saved successfully!");
@@ -886,26 +874,16 @@ const SelfAppraisal = () => {
     }
   };
 
-  const handleAdminDelete = async (roleName) => {
+  const handleAdminDelete = async (roleIdentifier) => {
     if (!window.confirm("Are you sure you want to delete this administrative role?")) return;
-
-    const updatedForm = { ...adminRolesForm };
-    const roleId = Object.keys(updatedForm).find(key => updatedForm[key].roleName === roleName);
-    if (roleId && updatedForm[roleId]) {
-      updatedForm[roleId].isResponsible = false;
-    }
+    
+    const existingRoles = administrationDetail?.roles || [];
+    const updatedRoles = existingRoles.map(r => (r.roleId === roleIdentifier || r.roleName === roleIdentifier) ? { ...r, isResponsible: false } : r);
 
     try {
-      const rolesPayload = Object.values(updatedForm).map((role) => ({
-        roleName: role.roleName,
-        isResponsible: role.isResponsible,
-        level: role.isResponsible ? role.level : "",
-        details: role.isResponsible ? role.details : ""
-      }));
-
       const res = await axiosInstance.post("/api/faculty-administration", {
         academicYear: selectedYear,
-        roles: rolesPayload
+        roles: updatedRoles
       });
       if (res.data?.success) {
         toast.success("Administrative role deleted successfully!");
@@ -1174,11 +1152,19 @@ const SelfAppraisal = () => {
       publicationName: "",
       publicationDate: "",
       facilityName: "",
+      contributionType: "",
       facilityDate: "",
-      grantName: "",
+      grantType: "",
+      grantTitle: "",
+      fundingAgency: "",
+      grantAmount: "",
       sanctionDate: "",
       courseHours: "",
       certificateNumber: "",
+      memberType: "",
+      journalType: "",
+      eventType: "",
+      studentNames: "",
       existingProof: ""
     });
     setIsContDocumentRemoved(false);
@@ -1207,11 +1193,19 @@ const SelfAppraisal = () => {
       publicationName: item.publicationName || "",
       publicationDate: item.publicationDate ? item.publicationDate.substring(0, 10) : "",
       facilityName: item.facilityName || "",
+      contributionType: item.contributionType || "",
       facilityDate: item.facilityDate ? item.facilityDate.substring(0, 10) : "",
-      grantName: item.grantName || "",
+      grantType: item.grantType || "",
+      grantTitle: item.grantTitle || "",
+      fundingAgency: item.fundingAgency || "",
+      grantAmount: item.grantAmount || "",
       sanctionDate: item.sanctionDate ? item.sanctionDate.substring(0, 10) : "",
       courseHours: item.courseHours || "",
       certificateNumber: item.certificateNumber || "",
+      memberType: item.memberType || "",
+      journalType: item.journalType || "",
+      eventType: item.eventType || "",
+      studentNames: item.studentNames || "",
       existingProof: item.proof || ""
     });
     setIsContDocumentRemoved(false);
@@ -1240,7 +1234,7 @@ const SelfAppraisal = () => {
       return;
     }
 
-    const cat = parseInt(contForm.category);
+    const cat = getCategoryCode(contForm.category);
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
@@ -1253,7 +1247,7 @@ const SelfAppraisal = () => {
 
     let fieldErr = null;
 
-    if ([1, 2, 3, 7, 10, 12, 13].includes(cat)) {
+    if ([1, 2, 3, 7, 12].includes(cat) || (cat === 10 && contForm.contributionType === "Maintenance")) {
       if (!contForm.fromDate || !contForm.toDate) {
         fieldErr = "From Date and To Date are required.";
       } else {
@@ -1264,7 +1258,7 @@ const SelfAppraisal = () => {
         } else if (from > to) {
           fieldErr = "To Date must be greater than or equal to From Date.";
         } else {
-          if ([7, 10, 12, 13].includes(cat) && to > today) {
+          if (([7, 12].includes(cat) || cat === 10) && to > today) {
             fieldErr = "To Date cannot be in the future.";
           }
         }
@@ -1294,6 +1288,9 @@ const SelfAppraisal = () => {
           break;
         case 7:
           if (!contForm.certificationName) fieldErr = "Certification Name is required.";
+          else if (!contForm.fromDate || !contForm.toDate) fieldErr = "From and To dates are required.";
+          else if (!contForm.courseHours) fieldErr = "Hours are required.";
+          else if (isNaN(Number(contForm.courseHours)) || Number(contForm.courseHours) < 40) fieldErr = "Minimum 40 hours is required.";
           break;
         case 8:
           if (!contForm.eventName) fieldErr = "Event Name is required.";
@@ -1306,6 +1303,10 @@ const SelfAppraisal = () => {
           break;
         case 10:
           if (!contForm.facilityName) fieldErr = "Facility Name is required.";
+          else if (!contForm.contributionType) fieldErr = "Contribution Type is required.";
+          else if (contForm.contributionType === "Establishment") {
+            fieldErr = validateDate(contForm.fromDate, "Establishment Date");
+          }
           break;
         case 11:
           if (!contForm.courseName || !contForm.duration) {
@@ -1322,7 +1323,11 @@ const SelfAppraisal = () => {
           }
           break;
         case 13:
-          if (!contForm.grantName) fieldErr = "Grant Name is required.";
+          if (!contForm.grantType || !contForm.grantTitle || !contForm.fundingAgency || !contForm.grantAmount) {
+            fieldErr = "Grant Type, Title, Funding Agency, and Amount are required.";
+          } else {
+            fieldErr = validateDate(contForm.sanctionDate, "Sanction Date");
+          }
           break;
         default:
           fieldErr = "Invalid Category.";
@@ -1338,7 +1343,7 @@ const SelfAppraisal = () => {
     try {
       const fd = new FormData();
       fd.append("academicYear", selectedYear);
-      fd.append("category", String(cat));
+      fd.append("category", contForm.category);
 
       if ([1, 2, 3, 7, 10, 12, 13].includes(cat)) {
         fd.append("fromDate", contForm.fromDate);
@@ -1352,35 +1357,48 @@ const SelfAppraisal = () => {
 
       if (cat === 1) {
         fd.append("organizationName", contForm.organizationName);
+        if (contForm.memberType) fd.append("memberType", contForm.memberType);
       } else if (cat === 2) {
         fd.append("journalName", contForm.journalName);
+        if (contForm.journalType) fd.append("journalType", contForm.journalType);
       } else if (cat === 3) {
         fd.append("journalConferenceName", contForm.journalConferenceName);
+        if (contForm.journalType) fd.append("journalType", contForm.journalType);
       } else if (cat === 4 || cat === 5) {
         fd.append("awardName", contForm.awardName);
+        if (contForm.awardingAgency) fd.append("awardingAgency", contForm.awardingAgency);
         fd.append("awardDate", contForm.awardDate);
       } else if (cat === 6) {
         fd.append("courseName", contForm.courseName);
         fd.append("url", contForm.url);
       } else if (cat === 7) {
         fd.append("certificationName", contForm.certificationName);
+        fd.append("courseHours", contForm.courseHours);
       } else if (cat === 8) {
         fd.append("eventName", contForm.eventName);
         fd.append("eventDate", contForm.eventDate);
+        if (contForm.eventType) fd.append("eventType", contForm.eventType);
+        if (contForm.studentNames) fd.append("studentNames", contForm.studentNames);
       } else if (cat === 9) {
         fd.append("articleTitle", contForm.articleTitle);
         fd.append("publicationName", contForm.publicationName);
         fd.append("publicationDate", contForm.publicationDate);
       } else if (cat === 10) {
         fd.append("facilityName", contForm.facilityName);
+        fd.append("contributionType", contForm.contributionType);
       } else if (cat === 11) {
         fd.append("courseName", contForm.courseName);
         fd.append("duration", contForm.duration);
       } else if (cat === 12) {
         fd.append("courseName", contForm.courseName);
         fd.append("courseHours", contForm.courseHours);
+        fd.append("certificateNumber", contForm.certificateNumber);
       } else if (cat === 13) {
-        fd.append("grantName", contForm.grantName);
+        fd.append("grantType", contForm.grantType);
+        fd.append("grantTitle", contForm.grantTitle);
+        fd.append("fundingAgency", contForm.fundingAgency);
+        fd.append("grantAmount", contForm.grantAmount);
+        fd.append("sanctionDate", contForm.sanctionDate);
       }
 
       if (contProof) {
@@ -1468,29 +1486,15 @@ const SelfAppraisal = () => {
       grantName: "",
       sanctionDate: "",
       courseHours: "",
-      certificateNumber: ""
+      certificateNumber: "",
+      memberType: "",
+      journalType: "",
+      eventType: "",
+      studentNames: ""
     });
   };
 
-  const getContributionNameField = (category, data) => {
-    const cat = parseInt(category);
-    switch (cat) {
-      case 1: return { field: 'organizationName', value: data.organizationName };
-      case 2: return { field: 'journalName', value: data.journalName };
-      case 3: return { field: 'journalConferenceName', value: data.journalConferenceName };
-      case 4:
-      case 5: return { field: 'awardName', value: data.awardName };
-      case 6: return { field: 'courseName', value: data.courseName };
-      case 7: return { field: 'certificationName', value: data.certificationName };
-      case 8: return { field: 'eventName', value: data.eventName };
-      case 9: return { field: 'articleTitle', value: data.articleTitle };
-      case 10: return { field: 'facilityName', value: data.facilityName };
-      case 11:
-      case 12: return { field: 'courseName', value: data.courseName };
-      case 13: return { field: 'grantName', value: data.grantName };
-      default: return { field: '', value: '' };
-    }
-  };
+  // getContributionNameField removed as it's replaced by getContributionDetailsString
 
   const getStatusColor = (status) => {
     if (status === 'Approved') return { bg: "rgba(16, 185, 129, 0.1)", color: "#10b981" };
@@ -1562,7 +1566,7 @@ const SelfAppraisal = () => {
       grantSanctioned: 5
     };
 
-    const cat = parseInt(item.category);
+    const cat = item.category?.code || parseInt(item.category);
     switch (cat) {
       case 1: return expPointsConf.memberBOS ?? 5;
       case 2: return expPointsConf.editorialBoardSCIE ?? 5;
@@ -1612,38 +1616,19 @@ const SelfAppraisal = () => {
       otherDept: 5
     };
 
-    let pts = 5; // default fallback
-    const name = r.roleName.toLowerCase();
+    if (!r.isResponsible || r.status === "Rejected") return 0;
+
+    let pts = 5;
     const level = (r.level || '').toLowerCase();
     const isCentral = level.includes('central') || level.includes('institute');
 
-    if (name === 'deans / assoc deans / coe') {
-      pts = adminConf.deanCentral ?? 20;
-    } else if (name === 'hod / dy. coe / coordinator (univ. office)') {
-      pts = isCentral ? (adminConf.hodCentral ?? 15) : (adminConf.hodDept ?? 15);
-    } else if (name === 'dy. hod / dept. exam cell incharge') {
-      pts = adminConf.dyHodDept ?? 10;
-    } else if (name === 'time table / project coordinator / curriculum coordinator') {
-      pts = adminConf.timetableDept ?? 10;
-    } else if (name === 'placement / internship / alumni coordinator') {
-      pts = isCentral ? (adminConf.placementCentral ?? 10) : (adminConf.placementDept ?? 10);
-    } else if (name === 'coursera / linkedin coordinator / ala') {
-      pts = isCentral ? (adminConf.courseraCentral ?? 10) : (adminConf.courseraDept ?? 5);
-    } else if (name === 'edc / iic / iqac coordinator') {
-      pts = isCentral ? (adminConf.edcCentral ?? 10) : (adminConf.edcDept ?? 5);
-    } else if (name === 'course coordinator') {
-      pts = adminConf.courseDept ?? 5;
-    } else if (name === 'website coordinator') {
-      pts = isCentral ? (adminConf.websiteCentral ?? 10) : 0; // Central only per form
-    } else if (name === 'nss / any clubs / professional chapters coordinator') {
-      pts = isCentral ? (adminConf.nssCentral ?? 10) : (adminConf.nssDept ?? 5);
-    } else if (name === 'any training program coordinator (smart interviews / gpp / etc.)') {
-      pts = isCentral ? (adminConf.trainingCentral ?? 10) : (adminConf.trainingDept ?? 5);
-    } else if (name === 'drc / research coordinator') {
-      pts = adminConf.drcDept ?? 5;
-    } else if (name === 'anti-ragging committee coordinator') {
-      pts = isCentral ? (adminConf.antiRaggingCentral ?? 5) : (adminConf.antiRaggingDept ?? 3);
-    } else if (name.startsWith('any other remarkable event')) {
+    const catalogEntry = ADMIN_ROLE_CATALOG.find(c => c.roleId === r.roleId);
+
+    if (catalogEntry) {
+      const pg = catalogEntry.pointsGroup;
+      const key = pg + (isCentral ? 'Central' : 'Dept');
+      pts = adminConf[key] ?? pts;
+    } else if (r.roleName && r.roleName.toLowerCase().startsWith('any other')) {
       pts = isCentral ? (adminConf.otherCentral ?? 10) : (adminConf.otherDept ?? 5);
     } else {
       pts = isCentral ? (adminConf.otherCentral ?? 10) : (adminConf.otherDept ?? 5);
@@ -1651,9 +1636,67 @@ const SelfAppraisal = () => {
     return pts;
   };
 
+  const getCategoryCode = (id) => {
+    if (!id) return null;
+    if (typeof id === 'object' && id.code) return id.code;
+    const searchId = String(typeof id === 'object' ? id._id : id);
+    const isNum = /^\d+$/.test(searchId);
+    const found = contributionCategories.find(c => String(c._id) === searchId || (isNum && c.code === parseInt(searchId, 10)));
+    return found ? found.code : (isNum ? parseInt(searchId, 10) : null);
+  };
+
   const getCategoryName = (catId) => {
-    const found = CONTRIBUTION_CATEGORIES.find(c => c.id === catId);
+    if (typeof catId === 'object' && catId?.name) return catId.name;
+    let found = contributionCategories.find(c => c._id === catId);
+    if (!found) found = contributionCategories.find(c => c.code === parseInt(catId));
     return found ? found.name : `Category ${catId}`;
+  };
+
+  const getContributionDetailsString = (item) => {
+    if (!item) return "N/A";
+    const catCode = getCategoryCode(item.category);
+    const catName = getCategoryName(item.category);
+    const fDate = item.fromDate ? new Date(item.fromDate).toLocaleDateString('en-GB') : "";
+    const tDate = item.toDate ? new Date(item.toDate).toLocaleDateString('en-GB') : "";
+    
+    switch (catCode) {
+      case 1: {
+        const typeMap = {
+          'BOG': 'the Board of Governance',
+          'GB': 'the Governing Body',
+          'AC': 'the Academic Council',
+          'BOS': 'the Board of Studies'
+        };
+        const mType = typeMap[item.memberType] || item.memberType || 'N/A';
+        return `Member of ${mType} of ${item.organizationName || 'N/A'}. (From ${fDate} to ${tDate})`;
+      }
+      case 2:
+      case 3: return `Member of the Editorial Board of ${item.journalName || 'N/A'} (Type: ${item.journalType || 'N/A'}) (${fDate} to ${tDate})`;
+      case 4:
+      case 5: return `Awarded as ${item.awardName || 'N/A'} by ${item.awardingAgency || 'N/A'} on ${item.awardDate ? new Date(item.awardDate).toLocaleDateString('en-GB') : 'N/A'}`;
+      case 6: return (
+        <span>
+          Developed e-content for the course {item.courseName || 'N/A'}
+          {item.url && (
+            <>
+              {" "}
+              &bull;{" "}
+              <a href={item.url} target="_blank" rel="noreferrer" style={{ color: "inherit", textDecoration: "underline" }}>
+                View Resource
+              </a>
+            </>
+          )}
+        </span>
+      );
+      case 7: return `Completed the certification ${item.certificationName || 'N/A'} from ${fDate} to ${tDate} (${item.courseHours || 'N/A'} hours).`;
+      case 8: return `Trained student(s) ${item.studentNames || 'N/A'} shortlisted for the finals of the ${item.eventType || 'N/A'} "${item.eventName || 'N/A'}" on ${item.eventDate ? new Date(item.eventDate).toLocaleDateString('en-GB') : 'N/A'}.`;
+      case 9: return `Published the article "${item.articleTitle || 'N/A'}" in ${item.publicationName || 'N/A'} on ${item.publicationDate ? new Date(item.publicationDate).toLocaleDateString('en-GB') : 'N/A'}.`;
+      case 10: return item.contributionType === "Establishment" ? `Established the research facility ${item.facilityName || 'N/A'} on ${fDate}.` : `Maintained the research facility ${item.facilityName || 'N/A'} from ${fDate} to ${tDate}.`;
+      case 11: return `Completed the NPTEL course ${item.courseName || 'N/A'} with a duration of ${item.duration || 'N/A'}.`;
+      case 12: return `Completed the Coursera course ${item.courseName || 'N/A'} from ${fDate} to ${tDate} (${item.courseHours || 'N/A'} hours).`;
+      case 13: return `Received a ${item.grantType?.toLowerCase() || 'grant'} of ₹${item.grantAmount || 0} from ${item.fundingAgency || 'N/A'} for "${item.grantTitle || 'N/A'}" on ${item.sanctionDate ? new Date(item.sanctionDate).toLocaleDateString('en-GB') : 'N/A'}.`;
+      default: return catName;
+    }
   };
 
   const getFacultyCategory = (fac) => {
@@ -1704,7 +1747,7 @@ const SelfAppraisal = () => {
 
     const hasValidCoursera40Hours = contributionDetails.some(c => {
       if (c.status === 'Rejected') return false;
-      const cat = parseInt(c.category);
+      const cat = getCategoryCode(c.category);
       return cat === 12 && Number(c.courseHours) >= 40;
     });
 
@@ -3917,12 +3960,11 @@ const SelfAppraisal = () => {
                                       {contributionDetails.map((item, i) => {
                                         const statusStyle = getStatusColor(item.status);
                                         const isEditable = item.status === 'Draft' || item.status === 'Rejected';
-                                        const { value } = getContributionNameField(item.category, item);
                                         return (
                                           <TableRow key={item._id || i} sx={{ "&:hover": { bgcolor: "var(--bg-hover)" } }}>
                                             <TableCell sx={{ color: "var(--text-primary)" }}>{i + 1}</TableCell>
                                             <TableCell sx={{ fontWeight: 600, color: "var(--text-primary)" }}>
-                                              {getCategoryName(item.category)} - {value || "N/A"}
+                                              {getContributionDetailsString(item)}
                                               {item.status === "Rejected" && item.hodComment && (
                                                 <Typography variant="caption" sx={{ color: "error.main", mt: 0.5, display: "block", fontWeight: 700 }}>
                                                   Rejection Reason: {item.hodComment}
@@ -4093,20 +4135,33 @@ const SelfAppraisal = () => {
                                 {administrationDetail && administrationDetail.roles?.filter(r => r.isResponsible).length > 0 ? (
                                   <>
                                     {administrationDetail.roles.filter(r => r.isResponsible).map((role, i) => {
-                                      const assignedByText = role.level && (role.level.toLowerCase().includes("central") || role.level.toLowerCase().includes("institute")) ? "Central" : "Dept";
+                                      let assignedByDisplay = "-";
+                                      if (role.assignedBy) {
+                                        if (typeof role.assignedBy === 'string') assignedByDisplay = role.assignedBy;
+                                        else if (role.assignedBy.type) {
+                                          assignedByDisplay = role.assignedBy.type === "Others" 
+                                            ? `Others (${role.assignedBy.otherText})` 
+                                            : role.assignedBy.type;
+                                        }
+                                      }
                                       const isEditable = role.status === 'Pending' || role.status === 'Rejected';
                                       return (
                                         <TableRow key={i} sx={{ "&:hover": { bgcolor: "var(--bg-hover)" } }}>
                                           <TableCell sx={{ color: "var(--text-primary)" }}>{i + 1}</TableCell>
                                           <TableCell sx={{ fontWeight: 600, color: "var(--text-primary)" }}>
-                                            {role.roleName.startsWith("Any other remarkable event") ? "Any other remarkable event / activity coordinator" : role.roleName} {role.details ? `(${role.details})` : ""}
+                                            {(() => {
+                                              const catalogEntry = ADMIN_ROLE_CATALOG.find(c => c.roleId === role.roleId);
+                                              return (catalogEntry && !['other', 'other_coord', 'training_coord'].includes(role.roleId)) 
+                                                ? catalogEntry.label 
+                                                : (role.roleLabel || role.roleName);
+                                            })()} {!['dean', 'assoc_dean', 'coe', 'hod', 'dy_coe', 'univ_office_coord', 'dy_hod', 'dept_exam_cell'].includes(role.roleId) && role.level ? `(${role.level})` : ""} {role.details ? `[${role.details}]` : ""}
                                             {role.status === "Rejected" && role.remarks && (
                                               <Typography variant="caption" sx={{ color: "error.main", mt: 0.5, display: "block", fontWeight: 700 }}>
                                                 Rejection Reason: {role.remarks}
                                               </Typography>
                                             )}
                                           </TableCell>
-                                          <TableCell sx={{ color: "var(--text-primary)" }}>{assignedByText}</TableCell>
+                                          <TableCell sx={{ color: "var(--text-primary)" }}>{assignedByDisplay}</TableCell>
                                           <TableCell align="center" sx={{ fontWeight: 800, color: "var(--color-primary)" }}>
                                             {calculateAdministrativePoints(role, appraisalConfig)}
                                           </TableCell>
@@ -4129,7 +4184,7 @@ const SelfAppraisal = () => {
                                                   <IconButton size="small" color="info" onClick={() => openAdminModalEdit(role)}>
                                                     <Edit fontSize="small" />
                                                   </IconButton>
-                                                  <IconButton size="small" color="error" onClick={() => handleAdminDelete(role.roleName)}>
+                                                  <IconButton size="small" color="error" onClick={() => handleAdminDelete(role.roleId || role.roleName)}>
                                                     <Delete fontSize="small" />
                                                   </IconButton>
                                                 </>
@@ -4982,15 +5037,15 @@ const SelfAppraisal = () => {
                   disabled={!!contEditingId}
                 >
                   <MenuItem value="" disabled>--Select Category--</MenuItem>
-                  {CONTRIBUTION_CATEGORIES.map(cat => (
-                    <MenuItem key={cat.id} value={cat.id}>{cat.name}</MenuItem>
+                  {contributionCategories.map(cat => (
+                    <MenuItem key={cat._id} value={cat._id}>{cat.name}</MenuItem>
                   ))}
                 </Select>
               </Box>
 
               {/* Render fields conditionally based on category selection */}
               {contForm.category && (() => {
-                const cat = parseInt(contForm.category);
+                const cat = getCategoryCode(contForm.category);
                 const isFutureAllowed = [1, 2, 3].includes(cat);
                 const todayStr = new Date().toISOString().split("T")[0];
 
@@ -5024,17 +5079,7 @@ const SelfAppraisal = () => {
                         }}
                       />
                     </Box>
-                    <Box>
-                      <Typography sx={labelStyle}>Auto Duration (Days):</Typography>
-                      <TextField
-                        size="small"
-                        fullWidth
-                        disabled
-                        value={contForm.duration || ""}
-                        placeholder="Calculated automatically"
-                      />
-                    </Box>
-                  </>
+                    </>
                 );
 
                 switch (cat) {
@@ -5042,8 +5087,18 @@ const SelfAppraisal = () => {
                     return (
                       <>
                         <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
+                          <Typography sx={labelStyle}>Member Type: *</Typography>
+                          <Select size="small" fullWidth displayEmpty value={contForm.memberType || ""} onChange={(e) => setContForm(p => ({ ...p, memberType: e.target.value }))}>
+                            <MenuItem value="" disabled>--Select Role--</MenuItem>
+                            <MenuItem value="BOG">Board of Governance (BOG)</MenuItem>
+                            <MenuItem value="GB">Governing Body (GB)</MenuItem>
+                            <MenuItem value="AC">Academic Council (AC)</MenuItem>
+                            <MenuItem value="BOS">Board of Studies (BOS)</MenuItem>
+                          </Select>
+                        </Box>
+                        <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
                           <Typography sx={labelStyle}>Organization Name: *</Typography>
-                          <TextField size="small" fullWidth value={contForm.organizationName} onChange={(e) => setContForm(p => ({ ...p, organizationName: e.target.value }))} />
+                          <TextField size="small" fullWidth value={contForm.organizationName || ""} onChange={(e) => setContForm(p => ({ ...p, organizationName: e.target.value }))} />
                         </Box>
                         {renderDateFields()}
                       </>
@@ -5052,8 +5107,17 @@ const SelfAppraisal = () => {
                     return (
                       <>
                         <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
-                          <Typography sx={labelStyle}>Journal Name (SCIE / Q1 / Q2): *</Typography>
-                          <TextField size="small" fullWidth value={contForm.journalName} onChange={(e) => setContForm(p => ({ ...p, journalName: e.target.value }))} />
+                          <Typography sx={labelStyle}>Journal Name: *</Typography>
+                          <TextField size="small" fullWidth value={contForm.journalName || ""} onChange={(e) => setContForm(p => ({ ...p, journalName: e.target.value }))} />
+                        </Box>
+                        <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
+                          <Typography sx={labelStyle}>Journal Type: *</Typography>
+                          <Select size="small" fullWidth displayEmpty value={contForm.journalType || ""} onChange={(e) => setContForm(p => ({ ...p, journalType: e.target.value }))}>
+                            <MenuItem value="" disabled>--Select Type--</MenuItem>
+                            <MenuItem value="SCIE">SCIE</MenuItem>
+                            <MenuItem value="Q1">Q1</MenuItem>
+                            <MenuItem value="Q2">Q2</MenuItem>
+                          </Select>
                         </Box>
                         {renderDateFields()}
                       </>
@@ -5063,7 +5127,17 @@ const SelfAppraisal = () => {
                       <>
                         <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
                           <Typography sx={labelStyle}>Journal / Conference Name: *</Typography>
-                          <TextField size="small" fullWidth value={contForm.journalConferenceName} onChange={(e) => setContForm(p => ({ ...p, journalConferenceName: e.target.value }))} />
+                          <TextField size="small" fullWidth value={contForm.journalName || ""} onChange={(e) => setContForm(p => ({ ...p, journalName: e.target.value }))} />
+                        </Box>
+                        <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
+                          <Typography sx={labelStyle}>Journal Type: *</Typography>
+                          <Select size="small" fullWidth displayEmpty value={contForm.journalType || ""} onChange={(e) => setContForm(p => ({ ...p, journalType: e.target.value }))}>
+                            <MenuItem value="" disabled>--Select Type--</MenuItem>
+                            <MenuItem value="ESCI">ESCI</MenuItem>
+                            <MenuItem value="Q3">Q3</MenuItem>
+                            <MenuItem value="Q4">Q4</MenuItem>
+                            <MenuItem value="Conference proceedings">Conference proceedings</MenuItem>
+                          </Select>
                         </Box>
                         {renderDateFields()}
                       </>
@@ -5072,13 +5146,28 @@ const SelfAppraisal = () => {
                   case 5:
                     return (
                       <>
+                        <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
+                          <Typography sx={labelStyle}>Awarding Agency: *</Typography>
+                          {cat === 4 ? (
+                            <Select size="small" fullWidth displayEmpty value={contForm.awardingAgency || ""} onChange={(e) => setContForm(p => ({ ...p, awardingAgency: e.target.value }))}>
+                              <MenuItem value="" disabled>--Select Awarding Agency--</MenuItem>
+                              <MenuItem value="MHRD">MHRD</MenuItem>
+                              <MenuItem value="AICTE">AICTE</MenuItem>
+                              <MenuItem value="UGC">UGC</MenuItem>
+                              <MenuItem value="State Govt.">State Govt.</MenuItem>
+                              <MenuItem value="Top 2%">Top 2%</MenuItem>
+                            </Select>
+                          ) : (
+                            <TextField size="small" fullWidth value={contForm.awardingAgency || ""} onChange={(e) => setContForm(p => ({ ...p, awardingAgency: e.target.value }))} placeholder="NGO / Trust / Other name" />
+                          )}
+                        </Box>
                         <Box>
                           <Typography sx={labelStyle}>Award Name: *</Typography>
-                          <TextField size="small" fullWidth value={contForm.awardName} onChange={(e) => setContForm(p => ({ ...p, awardName: e.target.value }))} />
+                          <TextField size="small" fullWidth value={contForm.awardName || ""} onChange={(e) => setContForm(p => ({ ...p, awardName: e.target.value }))} />
                         </Box>
                         <Box>
                           <Typography sx={labelStyle}>Award Date: *</Typography>
-                          <TextField size="small" fullWidth type="date" value={contForm.awardDate} onChange={(e) => setContForm(p => ({ ...p, awardDate: e.target.value }))} slotProps={{ inputLabel: { shrink: true }, htmlInput: { max: todayStr } }} />
+                          <TextField size="small" fullWidth type="date" value={contForm.awardDate || ""} onChange={(e) => setContForm(p => ({ ...p, awardDate: e.target.value }))} slotProps={{ inputLabel: { shrink: true }, htmlInput: { max: todayStr } }} />
                         </Box>
                       </>
                     );
@@ -5102,6 +5191,10 @@ const SelfAppraisal = () => {
                           <Typography sx={labelStyle}>Certification Name: *</Typography>
                           <TextField size="small" fullWidth value={contForm.certificationName} onChange={(e) => setContForm(p => ({ ...p, certificationName: e.target.value }))} />
                         </Box>
+                        <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
+                          <Typography sx={labelStyle}>Duration (Hours): *</Typography>
+                          <TextField type="number" size="small" fullWidth value={contForm.courseHours || ""} onChange={(e) => setContForm(p => ({ ...p, courseHours: e.target.value }))} placeholder="e.g. 40" />
+                        </Box>
                         {renderDateFields()}
                       </>
                     );
@@ -5109,8 +5202,21 @@ const SelfAppraisal = () => {
                     return (
                       <>
                         <Box>
+                          <Typography sx={labelStyle}>Event Type: *</Typography>
+                          <Select size="small" fullWidth displayEmpty value={contForm.eventType || ""} onChange={(e) => setContForm(p => ({ ...p, eventType: e.target.value }))}>
+                            <MenuItem value="" disabled>--Select Event Type--</MenuItem>
+                            <MenuItem value="Hackathon">Hackathon</MenuItem>
+                            <MenuItem value="Startup">Startup</MenuItem>
+                            <MenuItem value="Events">Events</MenuItem>
+                          </Select>
+                        </Box>
+                        <Box>
                           <Typography sx={labelStyle}>Event Name: *</Typography>
-                          <TextField size="small" fullWidth value={contForm.eventName} onChange={(e) => setContForm(p => ({ ...p, eventName: e.target.value }))} />
+                          <TextField size="small" fullWidth value={contForm.eventName || ""} onChange={(e) => setContForm(p => ({ ...p, eventName: e.target.value }))} />
+                        </Box>
+                        <Box>
+                          <Typography sx={labelStyle}>Student Names: *</Typography>
+                          <TextField size="small" fullWidth value={contForm.studentNames || ""} onChange={(e) => setContForm(p => ({ ...p, studentNames: e.target.value }))} placeholder="John, Jane, etc." />
                         </Box>
                         <Box>
                           <Typography sx={labelStyle}>Event Date: *</Typography>
@@ -5139,10 +5245,24 @@ const SelfAppraisal = () => {
                     return (
                       <>
                         <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
+                          <Typography sx={labelStyle}>Contribution Type: *</Typography>
+                          <Select size="small" fullWidth displayEmpty value={contForm.contributionType || ""} onChange={(e) => setContForm(p => ({ ...p, contributionType: e.target.value }))}>
+                            <MenuItem value="" disabled>--Select Type--</MenuItem>
+                            <MenuItem value="Establishment">Establishment</MenuItem>
+                            <MenuItem value="Maintenance">Maintenance</MenuItem>
+                          </Select>
+                        </Box>
+                        <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
                           <Typography sx={labelStyle}>Facility Name: *</Typography>
                           <TextField size="small" fullWidth value={contForm.facilityName} onChange={(e) => setContForm(p => ({ ...p, facilityName: e.target.value }))} />
                         </Box>
-                        {renderDateFields()}
+                        {contForm.contributionType === "Establishment" && (
+                          <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
+                            <Typography sx={labelStyle}>Establishment Date: *</Typography>
+                            <TextField size="small" fullWidth type="date" value={contForm.fromDate} onChange={(e) => setContForm(p => ({ ...p, fromDate: e.target.value }))} slotProps={{ inputLabel: { shrink: true }, htmlInput: { max: todayStr } }} />
+                          </Box>
+                        )}
+                        {contForm.contributionType === "Maintenance" && renderDateFields()}
                       </>
                     );
                   case 11:
@@ -5200,10 +5320,29 @@ const SelfAppraisal = () => {
                     return (
                       <>
                         <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
-                          <Typography sx={labelStyle}>Grant Name: *</Typography>
-                          <TextField size="small" fullWidth value={contForm.grantName} onChange={(e) => setContForm(p => ({ ...p, grantName: e.target.value }))} />
+                          <Typography sx={labelStyle}>Grant Type: *</Typography>
+                          <Select size="small" fullWidth displayEmpty value={contForm.grantType || ""} onChange={(e) => setContForm(p => ({ ...p, grantType: e.target.value }))}>
+                            <MenuItem value="" disabled>--Select Type--</MenuItem>
+                            <MenuItem value="FDP">FDP</MenuItem>
+                            <MenuItem value="Seminar">Seminar</MenuItem>
+                          </Select>
                         </Box>
-                        {renderDateFields()}
+                        <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
+                          <Typography sx={labelStyle}>Title of FDP / Seminar: *</Typography>
+                          <TextField size="small" fullWidth value={contForm.grantTitle} onChange={(e) => setContForm(p => ({ ...p, grantTitle: e.target.value }))} />
+                        </Box>
+                        <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
+                          <Typography sx={labelStyle}>Funding Agency: *</Typography>
+                          <TextField size="small" fullWidth value={contForm.fundingAgency} onChange={(e) => setContForm(p => ({ ...p, fundingAgency: e.target.value }))} />
+                        </Box>
+                        <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
+                          <Typography sx={labelStyle}>Grant Amount (₹): *</Typography>
+                          <TextField size="small" fullWidth type="number" value={contForm.grantAmount} onChange={(e) => setContForm(p => ({ ...p, grantAmount: e.target.value }))} />
+                        </Box>
+                        <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
+                          <Typography sx={labelStyle}>Sanction Date: *</Typography>
+                          <TextField size="small" fullWidth type="date" value={contForm.sanctionDate} onChange={(e) => setContForm(p => ({ ...p, sanctionDate: e.target.value }))} slotProps={{ inputLabel: { shrink: true }, htmlInput: { max: todayStr } }} />
+                        </Box>
                       </>
                     );
                   default:
@@ -5264,9 +5403,8 @@ const SelfAppraisal = () => {
         {/* 3.2 Contribution Details View Dialog */}
         {selectedContDetails && (() => {
           const data = selectedContDetails;
+          const submitDate = new Date(data.createdAt).toLocaleDateString("en-IN", { day: '2-digit', month: '2-digit', year: 'numeric' });
           const statusStyle = getStatusColor(data.status);
-          const { value } = getContributionNameField(data.category, data);
-
           const backendURL = (import.meta.env.VITE_BACKEND_URL || "http://localhost:9000").replace(/\/$/, "");
           const fileUrl = data.proof ? (data.proof.startsWith('http') ? data.proof : `${backendURL}${data.proof}`) : null;
           const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(data.proof || "");
@@ -5299,7 +5437,7 @@ const SelfAppraisal = () => {
                   {getCategoryName(data.category)}
                 </Typography>
                 <Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)", mb: 2, mt: 0.5 }}>
-                  {value}
+                  {getContributionDetailsString(data)}
                 </Typography>
 
                 <Grid container spacing={2}>
@@ -5434,52 +5572,163 @@ const SelfAppraisal = () => {
           <DialogContent sx={{ p: 3, mt: 1 }}>
             <Grid2 sx={{ mb: 2 }}>
               <Box sx={{ gridColumn: "1 / -1", mb: 2 }}>
-                <Typography sx={labelStyle}>Select Administrative Role / Responsibility: *</Typography>
+                <Typography sx={labelStyle}>Select Responsibility Category: *</Typography>
                 <Select
                   size="small"
                   fullWidth
-                  value={adminForm.roleName}
-                  onChange={(e) => setAdminForm(p => ({ ...p, roleName: e.target.value }))}
+                  value={adminForm.primaryRoleType}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    if (val === 'COORDINATOR') {
+                      setAdminForm(p => ({ ...p, primaryRoleType: val, roleId: "", roleLabel: "", level: "" }));
+                    } else {
+                      const sel = ADMIN_ROLE_CATALOG.find(r => r.roleId === val);
+                      setAdminForm(p => ({
+                        ...p,
+                        primaryRoleType: val,
+                        roleId: sel.roleId,
+                        roleLabel: sel.roleId === 'other' ? '' : sel.label,
+                        level: sel.allowedLevels.length === 1 ? sel.allowedLevels[0] : "",
+                      }));
+                    }
+                  }}
                   disabled={!!adminEditingRole}
                 >
-                  {ADMINISTRATIVE_ROLES_LIST.map(role => (
-                    <MenuItem key={role.id} value={role.label} disabled={role.id !== 'other' && !adminEditingRole && adminRolesForm[role.id]?.isResponsible && (administrationDetail?.roles?.find(r => r.roleName === role.label)?.status !== 'Rejected')}>
-                      {role.label}
-                    </MenuItem>
-                  ))}
+                  {ADMIN_ROLE_CATALOG.filter(r => r.category === 'Direct').map(role => {
+                    const isClaimed = administrationDetail?.roles?.find(r => r.roleId === role.roleId)?.isResponsible;
+                    const isRejected = administrationDetail?.roles?.find(r => r.roleId === role.roleId)?.status === 'Rejected';
+                    const isDisabled = !adminEditingRole && isClaimed && !isRejected;
+                    return <MenuItem key={role.roleId} value={role.roleId} disabled={isDisabled}>{role.label}</MenuItem>;
+                  })}
+                  
+                  <MenuItem value="COORDINATOR" sx={{ fontWeight: 700, color: "var(--color-primary)" }}>Coordinator</MenuItem>
+
+                  {ADMIN_ROLE_CATALOG.filter(r => r.category === 'Other').map(role => {
+                    return <MenuItem key={role.roleId} value={role.roleId}>{role.label}</MenuItem>;
+                  })}
                 </Select>
               </Box>
 
-              {adminForm.roleName === "Any other remarkable event / activity coordinator" && (
+              {adminForm.primaryRoleType === 'COORDINATOR' && (
+                <Box sx={{ gridColumn: "1 / -1", mb: 2 }}>
+                  <Typography sx={labelStyle}>Select Coordinator Role: *</Typography>
+                  <Select
+                    size="small"
+                    fullWidth
+                    value={adminForm.roleId}
+                    onChange={(e) => {
+                      const sel = ADMIN_ROLE_CATALOG.find(r => r.roleId === e.target.value);
+                      setAdminForm(p => ({
+                        ...p,
+                        roleId: sel.roleId,
+                        roleLabel: sel.roleId === 'other_coord' ? '' : sel.label,
+                        level: sel.allowedLevels.length === 1 ? sel.allowedLevels[0] : "",
+                      }));
+                    }}
+                    disabled={!!adminEditingRole}
+                  >
+                    {ADMIN_ROLE_CATALOG.filter(r => r.category === 'Coordinator').map(role => {
+                      const isClaimed = administrationDetail?.roles?.find(r => r.roleId === role.roleId)?.isResponsible;
+                      const isRejected = administrationDetail?.roles?.find(r => r.roleId === role.roleId)?.status === 'Rejected';
+                      const isDisabled = role.roleId !== 'other_coord' && !adminEditingRole && isClaimed && !isRejected;
+                      return <MenuItem key={role.roleId} value={role.roleId} disabled={isDisabled}>{role.label}</MenuItem>;
+                    })}
+                  </Select>
+                </Box>
+              )}
+
+              {(adminForm.roleId === "other" || adminForm.roleId === "other_coord") && (
                 <Box sx={{ gridColumn: "1 / -1", mb: 2 }}>
                   <Typography sx={labelStyle}>Specify Custom Role Name: *</Typography>
                   <TextField
                     size="small"
                     fullWidth
                     placeholder="Enter custom role name"
-                    value={adminForm.customRoleName || ""}
-                    onChange={(e) => setAdminForm(p => ({ ...p, customRoleName: e.target.value }))}
+                    value={adminForm.roleLabel || ""}
+                    onChange={(e) => setAdminForm(p => ({ ...p, roleLabel: e.target.value }))}
                   />
                 </Box>
               )}
 
+              {adminForm.roleId === "training_coord" && (
+                <>
+                  <Box sx={{ gridColumn: "1 / -1", mb: 2 }}>
+                    <Typography sx={labelStyle}>Select Training Program: *</Typography>
+                    <Select
+                      size="small"
+                      fullWidth
+                      value={adminForm.trainingProgramType}
+                      onChange={(e) => setAdminForm(p => ({ ...p, trainingProgramType: e.target.value, trainingProgramOther: "" }))}
+                    >
+                      <MenuItem value="Smart Interviews">Smart Interviews</MenuItem>
+                      <MenuItem value="GPP">GPP</MenuItem>
+                      <MenuItem value="Others">Others</MenuItem>
+                    </Select>
+                  </Box>
+                  {adminForm.trainingProgramType === "Others" && (
+                    <Box sx={{ gridColumn: "1 / -1", mb: 2 }}>
+                      <Typography sx={labelStyle}>Specify Training Program: *</Typography>
+                      <TextField
+                        size="small"
+                        fullWidth
+                        placeholder="Enter specific training program"
+                        value={adminForm.trainingProgramOther || ""}
+                        onChange={(e) => setAdminForm(p => ({ ...p, trainingProgramOther: e.target.value }))}
+                      />
+                    </Box>
+                  )}
+                </>
+              )}
+
               <Box sx={{ gridColumn: "1 / -1", mb: 2 }}>
-                <Typography sx={labelStyle}>Level (Assigned By): *</Typography>
+                <Typography sx={labelStyle}>Assigned By: *</Typography>
                 <Select
                   size="small"
                   fullWidth
-                  value={adminForm.level}
-                  onChange={(e) => setAdminForm(p => ({ ...p, level: e.target.value }))}
+                  value={adminForm.assignedByType}
+                  onChange={(e) => setAdminForm(p => ({ ...p, assignedByType: e.target.value, assignedByOtherText: "" }))}
                 >
-                  <MenuItem value="Department level">Serving Department level</MenuItem>
-                  <MenuItem value="Institute level">Institute / Central level</MenuItem>
+                  {ASSIGNED_BY_OPTIONS.map((opt, i) => (
+                    <MenuItem key={i} value={opt}>{opt}</MenuItem>
+                  ))}
                 </Select>
               </Box>
 
+              {adminForm.assignedByType === "Others" && (
+                <Box sx={{ gridColumn: "1 / -1", mb: 2 }}>
+                  <Typography sx={labelStyle}>Please Specify (Assigned By): *</Typography>
+                  <TextField
+                    size="small"
+                    fullWidth
+                    placeholder="E.g., Principal, Management, etc."
+                    value={adminForm.assignedByOtherText}
+                    onChange={(e) => setAdminForm(p => ({ ...p, assignedByOtherText: e.target.value }))}
+                  />
+                </Box>
+              )}
+
               {(() => {
-                const roleConfig = ADMINISTRATIVE_ROLES_LIST.find((r) => r.label === adminForm.roleName);
-                if (roleConfig && roleConfig.hasDetails) {
-                  return (
+                const catalogEntry = ADMIN_ROLE_CATALOG.find((r) => r.roleId === adminForm.roleId);
+                const hideLevelForRoles = ['dean', 'assoc_dean', 'coe', 'hod', 'dy_coe', 'univ_office_coord', 'dy_hod', 'dept_exam_cell'];
+                const showLevel = catalogEntry && catalogEntry.allowedLevels.length > 1 && !hideLevelForRoles.includes(adminForm.roleId);
+
+                return (
+                  <>
+                    {showLevel && (
+                      <Box sx={{ gridColumn: "1 / -1", mb: 2 }}>
+                        <Typography sx={labelStyle}>Level of Service: *</Typography>
+                        <Select
+                          size="small"
+                          fullWidth
+                          value={adminForm.level}
+                          onChange={(e) => setAdminForm(p => ({ ...p, level: e.target.value }))}
+                        >
+                          {catalogEntry.allowedLevels.map(lvl => (
+                            <MenuItem key={lvl} value={lvl}>{lvl}</MenuItem>
+                          ))}
+                        </Select>
+                      </Box>
+                    )}
                     <Box sx={{ gridColumn: "1 / -1", mb: 2 }}>
                       <Typography sx={labelStyle}>Remarks / Details (Optional):</Typography>
                       <TextField
@@ -5487,22 +5736,10 @@ const SelfAppraisal = () => {
                         fullWidth
                         value={adminForm.details}
                         onChange={(e) => setAdminForm(p => ({ ...p, details: e.target.value }))}
-                        placeholder="Enter work description"
+                        placeholder={catalogEntry?.category === 'Other' ? "Enter work description" : "Any specific remarks"}
                       />
                     </Box>
-                  );
-                }
-                return (
-                  <Box sx={{ gridColumn: "1 / -1", mb: 2 }}>
-                    <Typography sx={labelStyle}>Remarks / Details (Optional):</Typography>
-                    <TextField
-                      size="small"
-                      fullWidth
-                      value={adminForm.details}
-                      onChange={(e) => setAdminForm(p => ({ ...p, details: e.target.value }))}
-                      placeholder="Any specific remarks"
-                    />
-                  </Box>
+                  </>
                 );
               })()}
             </Grid2>
