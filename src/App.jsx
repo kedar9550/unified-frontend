@@ -78,10 +78,12 @@ import FeedbackOverview from "./pages/serviceDesk/FeedbackOverview";
 
 //Student Event Admin
 import EventCreation from "./pages/studenteventsadmin/evencreation";
+import EventCoordinators from "./pages/studenteventsadmin/EventCoordinators";
 import ClubManagement from "./pages/studenteventsadmin/ClubManagement";
 import EventAssignment from "./pages/studenteventsadmin/EventAssignment";
 import FestManagement from "./pages/convener/FestManagement";
 import GroupManagement from "./pages/studenteventsadmin/Groupmanagement";
+import GroupCoordinators from "./pages/studenteventsadmin/GroupCoordinators";
 import DepartmentManagement from "./pages/studenteventsadmin/Departmentmanagement";
 import MajorEventGroups from "./pages/majorEventAdmin/MajorEventGroups";
 import FormAssign from "./pages/majorEventAdmin/FormAssign";
@@ -91,6 +93,7 @@ import Registrations from "./pages/studenteventsadmin/Registrations";
 import Participants from "./pages/studenteventsadmin/Participants";
 import ScanPass from "./pages/studenteventsadmin/ScanPass";
 import Passes from "./pages/studenteventsadmin/Passes";
+import UpdatePasses from "./pages/studenteventsadmin/UpdatePasses";
 
 const PublicOnlyRoute = ({ children }) => {
   const { user } = useAuth();
@@ -239,13 +242,16 @@ function App() {
 
 
         <Route path="/Eventveda/groups" element={<ProtectedRoute element={<GroupManagement />} />} />
+        <Route path="/Eventveda/groups/coordinators" element={<ProtectedRoute element={<GroupCoordinators />} />} />
         <Route path="/Eventveda/events" element={<ProtectedRoute element={<EventCreation />} />} />
+        <Route path="/Eventveda/events/coordinators" element={<ProtectedRoute element={<EventCoordinators />} />} />
         <Route path="/Eventveda/departments" element={<ProtectedRoute element={<DepartmentManagement />} />} />
         <Route path="/Eventveda/payments" element={<ProtectedRoute element={<Payments />} />} />
         <Route path="/Eventveda/registrations" element={<ProtectedRoute element={<Registrations />} />} />
         <Route path="/Eventveda/participants" element={<ProtectedRoute element={<Participants />} />} />
         <Route path="/Eventveda/scan-pass" element={<ProtectedRoute element={<ScanPass />} />} />
         <Route path="/Eventveda/passes" element={<ProtectedRoute element={<Passes />} />} />
+        <Route path="/Eventveda/update-passes" element={<ProtectedRoute element={<UpdatePasses />} />} />
         <Route path="/major-event-admin/groups" element={<ProtectedRoute element={<MajorEventGroups />} />} />
         <Route path="/major-event-admin/form-assign" element={<ProtectedRoute element={<FormAssign />} />} />
         <Route path="/major-event-admin/form-preview" element={<ProtectedRoute element={<FormPreview />} />} />

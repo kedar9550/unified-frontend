@@ -39,118 +39,125 @@ const EventPassCard = ({ participant }) => {
           top: '50%',
           left: '50%',
           transform: 'translate(-50%, -50%)',
-          opacity: 0.05,
           pointerEvents: 'none',
           zIndex: 0,
         }}
       >
-        <Typography variant="h1" sx={{ fontSize: '200px', fontWeight: 900, color: '#1d4ed8' }}>
-          A
-        </Typography>
+        <Box 
+          component="img" 
+          src={adityaLogo} 
+          alt="Watermark" 
+          sx={{ width: '400px', opacity: 0.1 }} 
+        />
       </Box>
 
       {/* Top Section */}
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', p: 3, zIndex: 1, position: 'relative' }}>
-        {/* Left Logo */}
-        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', width: '220px' }}>
-          <Box component="img" src={adityaLogo} alt="Aditya University" sx={{ width: '100%', height: '60px', objectFit: 'contain', objectPosition: 'left' }} />
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', px: 3, pt: 2, pb: 1, zIndex: 1, position: 'relative' }}>
+        {/* Left Spacing */}
+        <Box sx={{ width: '220px', display: 'flex', justifyContent: 'flex-start' }}>
         </Box>
 
         {/* Center Title */}
-        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 1, mt: 1 }}>
-          <Typography sx={{ color: '#1d4ed8', fontWeight: 900, fontSize: '36px', letterSpacing: '1px', lineHeight: 1, whiteSpace: 'nowrap' }}>
+        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 1, mt: 0 }}>
+          <Typography sx={{ color: '#1d4ed8', fontWeight: 900, fontSize: '32px', letterSpacing: '1px', lineHeight: 1, whiteSpace: 'nowrap' }}>
             VEDA 2K26
           </Typography>
-          <Typography sx={{ color: '#000', fontWeight: 600, fontSize: '18px', letterSpacing: '4px', mt: 1, whiteSpace: 'nowrap' }}>
+          <Typography sx={{ color: '#000', fontWeight: 600, fontSize: '16px', letterSpacing: '4px', mt: 1, whiteSpace: 'nowrap' }}>
             EVENT PASS
           </Typography>
-          <Box sx={{ backgroundColor: '#1d4ed8', borderRadius: '24px', px: 4, py: 0.5, mt: 2 }}>
-            <Typography sx={{ color: '#fff', fontWeight: 700, fontSize: '15px', whiteSpace: 'nowrap' }}>
+          <Box sx={{ backgroundColor: '#1d4ed8', borderRadius: '24px', px: 3, py: 0.5, mt: 1.5 }}>
+            <Typography sx={{ color: '#fff', fontWeight: 700, fontSize: '14px', whiteSpace: 'nowrap' }}>
               {participant.eventName || 'Code Reto'}
             </Typography>
           </Box>
         </Box>
 
-        {/* Right Avatar */}
+        {/* Right Spacing */}
         <Box sx={{ width: '220px', display: 'flex', justifyContent: 'flex-end' }}>
-          <Box
-            sx={{
-              width: 90,
-              height: 90,
-              borderRadius: '50%',
-              border: '3px solid #1d4ed8',
-              overflow: 'hidden',
-              backgroundColor: '#f1f5f9',
-            }}
-          >
-            <Avatar sx={{ width: '100%', height: '100%' }} />
-          </Box>
         </Box>
       </Box>
 
       {/* Middle Section */}
-      <Box sx={{ display: 'flex', px: 3, pb: 3, pt: 1, zIndex: 1, position: 'relative' }}>
+      <Box sx={{ display: 'flex', px: 3, pb: 1, pt: 0, zIndex: 1, position: 'relative' }}>
         {/* Left Details */}
         <Box sx={{ flex: 1, pr: 2 }}>
           {[
-            { icon: <PersonIcon sx={{ color: '#1d4ed8' }} />, label: 'Name', value: participant.name },
-            { icon: <BadgeIcon sx={{ color: '#1d4ed8' }} />, label: 'Roll', value: participant.roll },
-            { icon: <SchoolIcon sx={{ color: '#1d4ed8' }} />, label: 'College', value: getCollegeName(participant) },
-            { icon: <PhoneIcon sx={{ color: '#1d4ed8' }} />, label: 'Phone', value: participant.mobile },
+            { icon: <PersonIcon sx={{ color: '#1d4ed8', fontSize: '20px' }} />, label: 'Name', value: participant.name },
+            { icon: <BadgeIcon sx={{ color: '#1d4ed8', fontSize: '20px' }} />, label: 'Roll', value: participant.roll },
+            { icon: <SchoolIcon sx={{ color: '#1d4ed8', fontSize: '20px' }} />, label: 'College', value: getCollegeName(participant) },
+            { icon: <PhoneIcon sx={{ color: '#1d4ed8', fontSize: '20px' }} />, label: 'Phone', value: participant.mobile },
+            { icon: <LocationOnIcon sx={{ color: '#1d4ed8', fontSize: '20px' }} />, label: 'Venue', value: participant.venue || 'Aditya University, Kakinada, Andhra Pradesh – 533437' },
           ].map((item, index) => (
             <Box key={index}>
-              <Box sx={{ display: 'flex', alignItems: 'center', py: 1.5 }}>
-                <Box sx={{ width: 40, display: 'flex', justifyContent: 'center' }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', py: 1 }}>
+                <Box sx={{ width: 36, display: 'flex', justifyContent: 'center' }}>
                   <Box sx={{ backgroundColor: '#eff6ff', borderRadius: '50%', p: 0.5, display: 'flex' }}>
                     {item.icon}
                   </Box>
                 </Box>
-                <Typography sx={{ color: '#1d4ed8', width: '80px', fontWeight: 600, ml: 1 }}>
+                <Typography sx={{ color: '#1d4ed8', width: '70px', fontWeight: 600, ml: 1, fontSize: '14px' }}>
                   {item.label}
                 </Typography>
-                <Typography sx={{ color: '#000', fontWeight: 500 }}>
+                <Typography sx={{ color: item.label === 'Venue' ? '#a52a2a' : '#000', fontWeight: 700, fontSize: '16px' }}>
                   : {item.value || '-'}
                 </Typography>
               </Box>
-              {index < 3 && <Divider sx={{ borderColor: '#e2e8f0', ml: 6 }} />}
+              {index < 4 && <Divider sx={{ borderColor: '#e2e8f0', ml: 5 }} />}
             </Box>
           ))}
         </Box>
 
-        {/* Right Barcode */}
-        <Box sx={{ width: '220px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', borderLeft: '1px solid #e2e8f0', pl: 2 }}>
-          <Box sx={{ border: '2px solid #1d4ed8', borderRadius: '24px', px: 3, py: 0.5, mb: 2 }}>
-            <Typography sx={{ color: '#1d4ed8', fontWeight: 700, fontSize: '14px' }}>
-              CODER ID
-            </Typography>
+
+        {/* Right Photo */}
+        <Box sx={{ width: '160px', display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>
+          <Box
+            sx={{
+              width: 105,
+              height: 130,
+              borderRadius: '8px',
+              overflow: 'hidden',
+              backgroundColor: '#f1f5f9',
+              border: '2px solid #e2e8f0',
+              boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
+            }}
+          >
+            <Box
+              component="img"
+              crossOrigin="anonymous"
+              src={`${import.meta.env.VITE_BACKEND_URL || "http://localhost:9000"}/api/proxy/student-photo/${participant.roll}`}
+              alt={participant.name}
+              onError={(e) => {
+                e.target.onerror = null;
+                e.target.src = 'https://via.placeholder.com/105x130?text=No+Photo';
+              }}
+              sx={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+            />
           </Box>
-          {participant.barcode ? (
+        </Box>
+      </Box>
+
+      {/* Bottom Section (Barcode) */}
+      <Box sx={{ borderTop: '2px solid #1d4ed8', py: 1.5, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', backgroundColor: '#f8fafc', px: 1, width: '100%' }}>
+        {participant.barcode ? (
+          <Box sx={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
             <Barcode 
               value={participant.barcode} 
-              width={1.5} 
-              height={60} 
+              width={4} 
+              height={100} 
               displayValue={false} 
               background="transparent" 
               lineColor="#000" 
               margin={0}
             />
-          ) : (
-            <Box sx={{ height: 60, width: '100%', backgroundColor: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <Typography variant="caption" color="text.secondary">No Barcode</Typography>
-            </Box>
-          )}
-          <Typography sx={{ color: '#000', fontWeight: 700, fontSize: '18px', mt: 1, letterSpacing: '2px' }}>
-            {participant.barcode || '-'}
-          </Typography>
-        </Box>
-      </Box>
-
-      {/* Bottom Section */}
-      <Box sx={{ borderTop: '2px solid #1d4ed8', py: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#f8fafc', px: 2, textAlign: 'center' }}>
-        <LocationOnIcon sx={{ color: '#1d4ed8', fontSize: '28px', mr: 1, flexShrink: 0 }} />
-        <Typography sx={{ color: '#1d4ed8', fontWeight: 800, fontSize: '14px' }}>
-          VENUE : <span style={{ color: '#334155', fontWeight: 500 }}>{participant.venue || 'Aditya University, Kakinada, Andhra Pradesh – 533437'}</span>
-        </Typography>
+            <Typography sx={{ color: '#000', fontWeight: 700, fontSize: '16px', mt: 0.5, letterSpacing: '4px' }}>
+              {participant.barcode || '-'}
+            </Typography>
+          </Box>
+        ) : (
+          <Box sx={{ height: 60, width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <Typography variant="caption" color="text.secondary">No Barcode</Typography>
+          </Box>
+        )}
       </Box>
     </Box>
   );
