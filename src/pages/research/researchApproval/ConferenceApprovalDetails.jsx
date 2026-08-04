@@ -2,7 +2,7 @@ import Loader from "../../../components/common/Loader";
 import React, { useState, useEffect } from "react";
 import {
     Box, Typography, Grid, Card, Button, TextField,
-    Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Chip, IconButton, Stack
+    Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Chip, IconButton, Stack, Select, MenuItem
 } from "@mui/material";
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import SchoolIcon from '@mui/icons-material/School';
@@ -21,6 +21,7 @@ const ConferenceApprovalDetails = ({ id, onBack, role }) => {
     const [loading, setLoading] = useState(true);
     const [remarks, setRemarks] = useState("");
     const [approvedAmount, setApprovedAmount] = useState("");
+    const [appraisalEligible, setAppraisalEligible] = useState("");
     const [actionLoading, setActionLoading] = useState(false);
     const [imgError, setImgError] = useState(false);
 
@@ -38,6 +39,7 @@ const ConferenceApprovalDetails = ({ id, onBack, role }) => {
                     if (res.data.data.rndComment) setRemarks(res.data.data.rndComment);
                     else if (res.data.data.hodComment) setRemarks(res.data.data.hodComment);
                     if (res.data.data.approvedAmount) setApprovedAmount(res.data.data.approvedAmount);
+                    if (res.data.data.appraisalEligible) setAppraisalEligible(res.data.data.appraisalEligible);
                 }
             } catch (error) {
                 console.error("Failed to fetch conference details", error);
@@ -55,13 +57,25 @@ const ConferenceApprovalDetails = ({ id, onBack, role }) => {
             return;
         }
 
+        if (action === 'Approve') {
+            if (isResearchAdmin && data.applyIncentive === 'Yes' && !approvedAmount) {
+                toast.error('Please enter the approved incentive amount');
+                return;
+            }
+            if (isResearchAdmin && !appraisalEligible) {
+                toast.error('Please select Appraisal Eligible status');
+                return;
+            }
+        }
+
         setActionLoading(true);
         try {
             const endpoint = isResearchAdmin ? `/api/research/conference/rnd-action/${id}` : `/api/research/conference/hod-action/${id}`;
             const res = await API.put(endpoint, {
                 action,
                 comment: remarks,
-                approvedAmount: isResearchAdmin && data.applyIncentive === 'Yes' ? approvedAmount : undefined
+                approvedAmount: isResearchAdmin && data.applyIncentive === 'Yes' ? approvedAmount : undefined,
+                appraisalEligible: isResearchAdmin ? appraisalEligible : undefined
             });
             if (res.data?.success) {
                 toast.success(`Request ${action === 'Approve' ? 'Approved' : 'Rejected'} successfully`);
@@ -377,6 +391,17 @@ const ConferenceApprovalDetails = ({ id, onBack, role }) => {
                                         onChange={e => setApprovedAmount(e.target.value)} 
                                         sx={{ maxWidth: 250, "& .MuiOutlinedInput-root": { borderRadius: "10px", bgcolor: "var(--bg-panel)" } }} 
                                     />
+                                </Box>
+                            )}
+
+                            {isResearchAdmin && (
+                                <Box sx={{ mb: 3 }}>
+                                    <Typography variant="subtitle2" sx={{ fontWeight: 900, mb: 1, color: "var(--color-primary)", fontSize: "0.75rem" }}>APPRAISAL ELIGIBLE *</Typography>
+                                    <Select fullWidth size="small" value={appraisalEligible} onChange={e => setAppraisalEligible(e.target.value)} displayEmpty sx={{ maxWidth: 250, borderRadius: "10px", bgcolor: "var(--bg-panel)" }}>
+                                        <MenuItem value="" disabled>Select Eligibility</MenuItem>
+                                        <MenuItem value="Yes">Yes</MenuItem>
+                                        <MenuItem value="No">No</MenuItem>
+                                    </Select>
                                 </Box>
                             )}
 
