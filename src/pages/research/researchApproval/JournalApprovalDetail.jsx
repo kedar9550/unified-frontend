@@ -56,6 +56,7 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
     const [citations, setCitations] = useState("");
     const [quartile, setQuartile] = useState("");
     const [journalType, setJournalType] = useState("");
+    const [appraisalEligible, setAppraisalEligible] = useState("");
     const [actionLoading, setActionLoading] = useState(false);
     const [imgError, setImgError] = useState(false);
 
@@ -79,6 +80,7 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
                     if (journal.journalQuartile) setQuartile(journal.journalQuartile);
                     else if (journal.categoryOfJournal) setQuartile(journal.categoryOfJournal);
                     if (journal.journalType) setJournalType(journal.journalType);
+                    if (journal.appraisalEligible) setAppraisalEligible(journal.appraisalEligible);
 
                     const jcrIFValue = journal.jcrImpactFactor || journal.impactFactor;
                     if (jcrIFValue) {
@@ -122,6 +124,10 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
                     toast.error('Please enter the approved incentive amount');
                     return;
                 }
+                if (!appraisalEligible) {
+                    toast.error('Please select Appraisal Eligible status');
+                    return;
+                }
             }
         }
 
@@ -136,7 +142,8 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
                 jcrImpactFactor: isResearchAdmin ? jcrImpactFactor : undefined,
                 citations: isResearchAdmin ? citations : undefined,
                 journalQuartile: isResearchAdmin ? quartile : undefined,
-                journalType: isResearchAdmin ? journalType : undefined
+                journalType: isResearchAdmin ? journalType : undefined,
+                appraisalEligible: isResearchAdmin ? appraisalEligible : undefined
             };
             const res = await API.put(endpoint, payload);
             if (res.data?.success) {
@@ -565,6 +572,14 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
                                 onChange={e => setCitations(e.target.value)}
                                 sx={{ "& .MuiOutlinedInput-root": { borderRadius: "10px", bgcolor: "var(--bg-panel)" } }}
                             />
+                        </Box>
+                        <Box sx={{ flex: "1 1 150px" }}>
+                            <Typography variant="subtitle2" sx={{ fontWeight: 900, mb: 1, color: "var(--color-primary)", fontSize: "0.75rem" }}>APPRAISAL ELIGIBLE *</Typography>
+                            <Select fullWidth size="small" value={appraisalEligible} onChange={e => setAppraisalEligible(e.target.value)} displayEmpty sx={{ borderRadius: "10px", bgcolor: "var(--bg-panel)" }}>
+                                <MenuItem value="" disabled>Select Eligibility</MenuItem>
+                                <MenuItem value="Yes">Yes</MenuItem>
+                                <MenuItem value="No">No</MenuItem>
+                            </Select>
                         </Box>
                     </Box>
                 )}
