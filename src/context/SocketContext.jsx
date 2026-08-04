@@ -22,9 +22,13 @@ export const SocketProvider = ({ children }) => {
             return;
         }
 
+        const token = localStorage.getItem('token') || localStorage.getItem('authToken');
         // Initialize Socket
         const newSocket = io(import.meta.env.VITE_BACKEND_URL || 'http://localhost:9000', {
-            withCredentials: true
+            withCredentials: true,
+            auth: {
+                token: token
+            }
         });
 
         newSocket.on('connect', () => {

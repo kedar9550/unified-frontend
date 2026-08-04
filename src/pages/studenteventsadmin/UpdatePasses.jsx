@@ -89,7 +89,13 @@ const UpdatePasses = () => {
         const eventMatch = allEvents.find(e => e.eventName === (p.eventName || p.category));
         return {
           ...p,
-          venue: eventMatch ? eventMatch.venue : null
+          venue: eventMatch ? (
+            eventMatch.venueType === 'Indoor' && eventMatch.building && eventMatch.floor 
+              ? `${eventMatch.roomNo ? `Room No: ${eventMatch.roomNo}, ` : ''}${eventMatch.building.name || eventMatch.building} - ${eventMatch.floor.name || eventMatch.floor}` 
+              : eventMatch.venueType === 'Outdoor' && eventMatch.ground 
+                ? `${eventMatch.roomNo ? `Room No: ${eventMatch.roomNo}, ` : ''}${eventMatch.ground.name || eventMatch.ground}` 
+                : eventMatch.venue
+          ) : null
         };
       });
       

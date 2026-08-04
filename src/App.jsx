@@ -92,8 +92,14 @@ import Payments from "./pages/studenteventsadmin/Payments";
 import Registrations from "./pages/studenteventsadmin/Registrations";
 import Participants from "./pages/studenteventsadmin/Participants";
 import ScanPass from "./pages/studenteventsadmin/ScanPass";
+import ScanAccommodation from "./pages/studenteventsadmin/ScanAccommodation";
 import Passes from "./pages/studenteventsadmin/Passes";
 import UpdatePasses from "./pages/studenteventsadmin/UpdatePasses";
+
+// Infrastructure
+import Building from "./pages/Infrastructure/Building";
+import Floor from "./pages/Infrastructure/Floor";
+import Ground from "./pages/Infrastructure/Ground";
 
 const PublicOnlyRoute = ({ children }) => {
   const { user } = useAuth();
@@ -248,13 +254,22 @@ function App() {
         <Route path="/Eventveda/departments" element={<ProtectedRoute element={<DepartmentManagement />} />} />
         <Route path="/Eventveda/payments" element={<ProtectedRoute element={<Payments />} />} />
         <Route path="/Eventveda/registrations" element={<ProtectedRoute element={<Registrations />} />} />
-        <Route path="/Eventveda/participants" element={<ProtectedRoute element={<Participants />} />} />
+        <Route path="/Eventveda/participants" element={<ProtectedRoute element={<Participants mode="all" />} />} />
+        <Route path="/Eventveda/participants/all" element={<ProtectedRoute element={<Participants mode="all" />} />} />
+        <Route path="/Eventveda/participants/accommodation" element={<ProtectedRoute element={<Participants mode="accommodation" />} />} />
+        <Route path="/Eventveda/participants/no-accommodation" element={<ProtectedRoute element={<Participants mode="no-accommodation" />} />} />
         <Route path="/Eventveda/scan-pass" element={<ProtectedRoute element={<ScanPass />} />} />
+        <Route path="/Eventveda/scan-accommodation" element={<ProtectedRoute element={<ScanAccommodation />} />} />
         <Route path="/Eventveda/passes" element={<ProtectedRoute element={<Passes />} />} />
         <Route path="/Eventveda/update-passes" element={<ProtectedRoute element={<UpdatePasses />} />} />
         <Route path="/major-event-admin/groups" element={<ProtectedRoute element={<MajorEventGroups />} />} />
         <Route path="/major-event-admin/form-assign" element={<ProtectedRoute element={<FormAssign />} />} />
         <Route path="/major-event-admin/form-preview" element={<ProtectedRoute element={<FormPreview />} />} />
+
+        {/* Infrastructure */}
+        <Route path="/infrastructure/building" element={<ProtectedRoute element={<Building />} />} />
+        <Route path="/infrastructure/floors" element={<ProtectedRoute element={<Floor />} />} />
+        <Route path="/infrastructure/grounds" element={<ProtectedRoute element={<Ground />} />} />
 
         <Route path="*" element={<ProtectedRoute element={<Box p={4}><Typography variant="h4">Page Content</Typography></Box>} />} />
       </Routes>

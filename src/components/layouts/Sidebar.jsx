@@ -228,25 +228,25 @@ const Sidebar = ({ mobileOpen, onDrawerToggle, isCollapsed, onToggleSidebar }) =
   }, [location.pathname]);
 
   React.useEffect(() => {
-    let currentText = "Dashboard";
+    let currentPath = "/dashboard";
     const effectiveRole = activeRole || (user?.roles && user.roles[0]?.role) || "STUDENT";
     const items = ROLE_ROUTES[effectiveRole] || ROLE_ROUTES.STUDENT;
     
-    const findActiveText = (itemList) => {
+    const findActiveItem = (itemList) => {
       itemList.forEach(i => {
         if (i.path && location.pathname === i.path) {
-          currentText = i.text;
-        } else if (i.path && location.pathname.startsWith(i.path) && currentText === "Dashboard") {
-           currentText = i.text;
+          currentPath = i.path;
+        } else if (i.path && location.pathname.startsWith(i.path) && currentPath === "/dashboard") {
+           currentPath = i.path;
         }
         if (i.nested) {
-          findActiveText(i.nested);
+          findActiveItem(i.nested);
         }
       });
     };
     
-    findActiveText(items);
-    setActive(currentText);
+    findActiveItem(items);
+    setActive(currentPath);
   }, [location.pathname, activeRole, user]);
 
   const handleToggle = (text) => {
@@ -257,7 +257,7 @@ const Sidebar = ({ mobileOpen, onDrawerToggle, isCollapsed, onToggleSidebar }) =
   const menuItems = ROLE_ROUTES[effectiveRole] || ROLE_ROUTES.STUDENT;
 
   const navigateTo = (path, text, isNested = false) => {
-    setActive(text);
+    setActive(path);
     if (!isNested) {
       setOpenStates({});
     }
@@ -518,7 +518,7 @@ const Sidebar = ({ mobileOpen, onDrawerToggle, isCollapsed, onToggleSidebar }) =
                     <List component="div" disablePadding>
                       {item.nested.map((subItem) => {
                         if (subItem.nested) {
-                          const isSubParentActive = subItem.nested.some(deepSub => active === deepSub.text);
+                          const isSubParentActive = subItem.nested.some(deepSub => active === deepSub.path);
                           return (
                             <Box key={`${item.text}-${subItem.text}`} sx={{ width: '100%', pl: isCollapsed ? 0 : 4 }}>
                               <ListItemButton
@@ -563,6 +563,7 @@ const Sidebar = ({ mobileOpen, onDrawerToggle, isCollapsed, onToggleSidebar }) =
                                         nested
                                         icon={deepSub.icon || ITEM_METADATA[deepSub.text]?.icon || null}
                                         text={deepSub.text}
+                                        path={deepSub.path}
                                         active={active}
                                         isCollapsed={isCollapsed}
                                         onClick={() => navigateTo(deepSub.path, deepSub.text, true)}
@@ -581,6 +582,7 @@ const Sidebar = ({ mobileOpen, onDrawerToggle, isCollapsed, onToggleSidebar }) =
                             nested
                             icon={subItem.icon || ITEM_METADATA[subItem.text]?.icon || null}
                             text={subItem.text}
+                            path={subItem.path}
                             active={active}
                             isCollapsed={isCollapsed}
                             onClick={() => navigateTo(subItem.path, subItem.text, true)}
@@ -592,7 +594,7 @@ const Sidebar = ({ mobileOpen, onDrawerToggle, isCollapsed, onToggleSidebar }) =
                 )}
               </Box>
             ) : (
-              <Item icon={item.icon} text={item.text} active={active} isCollapsed={isCollapsed} onClick={() => navigateTo(item.path, item.text)} />
+              <Item icon={item.icon} text={item.text} path={item.path} active={active} isCollapsed={isCollapsed} onClick={() => navigateTo(item.path, item.text)} />
             )}
           </React.Fragment>
         ))}
@@ -765,7 +767,8 @@ const Sidebar = ({ mobileOpen, onDrawerToggle, isCollapsed, onToggleSidebar }) =
   );
 };
 
-const Item = ({ icon, text, active, onClick, nested, isCollapsed }) => {
+const Item = ({ icon, text, path, active, onClick, nested, isCollapsed }) => {
+  const isActive = active === path;
   return (
     <ListItemButton
       onClick={onClick}
@@ -785,14 +788,14 @@ const Item = ({ icon, text, active, onClick, nested, isCollapsed }) => {
         py: isCollapsed ? undefined : 0.8,
         transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
         overflow: "hidden",
-        background: active === text ? "var(--bg-accent-4)" : "transparent",
-        border: active === text ? "1px solid var(--border-color)" : "1px solid transparent",
+        background: isActive ? "var(--bg-accent-4)" : "transparent",
+        border: isActive ? "1px solid var(--border-color)" : "1px solid transparent",
         "&:hover": {
           background: "var(--bg-panel)",
         },
       }}
     >
-      {!isCollapsed && active === text && (
+      {!isCollapsed && isActive && (
         <Box
           sx={{
             position: "absolute",
@@ -829,8 +832,8 @@ const Item = ({ icon, text, active, onClick, nested, isCollapsed }) => {
         primary={
           <Typography sx={{
             fontSize: isCollapsed ? "0.6rem" : "0.875rem",
-            fontWeight: active === text ? 700 : 500,
-            color: active === text ? "var(--color-primary)" : "var(--text-secondary)",
+            fontWeight: isActive ? 700 : 500,
+            color: isActive ? "var(--color-primary)" : "var(--text-secondary)",
             transition: 'all 0.2s ease',
             textAlign: isCollapsed ? "center" : "left",
             lineHeight: isCollapsed ? 1.1 : 1,
