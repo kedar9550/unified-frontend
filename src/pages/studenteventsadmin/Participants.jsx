@@ -41,7 +41,7 @@ import { QRCodeSVG } from 'qrcode.react';
 import { useAuth } from '../../context/AuthContext';
 import EventPassCard from '../../components/EventPass/EventPassCard';
 
-const Participants = () => {
+const Participants = ({ mode = 'all' }) => {
   const navigate = useNavigate();
   const { activeRole, user } = useAuth();
   const [payments, setPayments] = useState([]);
@@ -54,8 +54,20 @@ const Participants = () => {
   // Filters
   const [searchQuery, setSearchQuery] = useState('');
   const [eventFilter, setEventFilter] = useState('ALL');
-  const [accommodationFilter, setAccommodationFilter] = useState('ALL');
+  const [accommodationFilter, setAccommodationFilter] = useState(
+    mode === 'accommodation' ? 'YES' : mode === 'no-accommodation' ? 'NO' : 'ALL'
+  );
   const [attendanceFilter, setAttendanceFilter] = useState('ALL');
+
+  useEffect(() => {
+    if (mode === 'accommodation') {
+      setAccommodationFilter('YES');
+    } else if (mode === 'no-accommodation') {
+      setAccommodationFilter('NO');
+    } else {
+      setAccommodationFilter('ALL');
+    }
+  }, [mode]);
 
   const fetchPayments = useCallback(async () => {
     setLoading(true);
@@ -87,7 +99,13 @@ const Participants = () => {
         const eventMatch = allEvents.find(e => e.eventName === (p.eventName || p.category));
         return {
           ...p,
-          venue: eventMatch ? eventMatch.venue : null
+          venue: eventMatch ? (
+            eventMatch.venueType === 'Indoor' && eventMatch.building && eventMatch.floor 
+              ? `${eventMatch.roomNo ? `Room No: ${eventMatch.roomNo}, ` : ''}${eventMatch.building.name || eventMatch.building} - ${eventMatch.floor.name || eventMatch.floor}` 
+              : eventMatch.venueType === 'Outdoor' && eventMatch.ground 
+                ? `${eventMatch.roomNo ? `Room No: ${eventMatch.roomNo}, ` : ''}${eventMatch.ground.name || eventMatch.ground}` 
+                : eventMatch.venue
+          ) : null
         };
       });
       
@@ -201,6 +219,14 @@ const Participants = () => {
   const absentCount = useMemo(() => {
     return allParticipants.filter((p) => !p.attended).length;
   }, [allParticipants]);
+
+  const maleCount = useMemo(() => {
+    return filteredParticipants.filter((p) => p.gender?.toLowerCase() === 'male').length;
+  }, [filteredParticipants]);
+
+  const femaleCount = useMemo(() => {
+    return filteredParticipants.filter((p) => p.gender?.toLowerCase() === 'female').length;
+  }, [filteredParticipants]);
 
   // CSV Export handler
   const handleExportCSV = () => {
@@ -359,10 +385,10 @@ const Participants = () => {
               </Box>
               <Box>
                 <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase', fontWeight: 700 }}>
-                  Total Participants
+                  {mode === 'all' ? 'Total Participants' : mode === 'accommodation' ? 'Accommodation Needed' : 'No Accommodation'}
                 </Typography>
                 <Typography variant="h5" sx={{ fontWeight: 900 }}>
-                  {allParticipants.length}
+                  {mode === 'all' ? allParticipants.length : filteredParticipants.length}
                 </Typography>
               </Box>
             </Box>
@@ -406,8 +432,9 @@ const Participants = () => {
           </Paper>
         </Grid> */}
 
-        <Grid item xs={12} sm={6} md={3}>
-          <Paper
+        {mode === 'all' && (
+          <Grid item xs={12} sm={6} md={3}>
+            <Paper
             variant="outlined"
             sx={{
               p: 2.5,
@@ -442,6 +469,84 @@ const Participants = () => {
             </Box>
           </Paper>
         </Grid>
+        )}
+
+        {mode !== 'all' && (
+          <>
+            <Grid item xs={12} sm={6} md={3}>
+              <Paper
+                variant="outlined"
+                sx={{
+                  p: 2.5,
+                  borderRadius: '16px',
+                  background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.08) 0%, rgba(37, 99, 235, 0.08) 100%)',
+                  borderColor: 'rgba(59, 130, 246, 0.2)',
+                }}
+              >
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                  <Box
+                    sx={{
+                      width: 44,
+                      height: 44,
+                      borderRadius: '12px',
+                      background: '#2563eb',
+                      color: '#fff',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    <PeopleIcon />
+                  </Box>
+                  <Box>
+                    <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase', fontWeight: 700 }}>
+                      Male Participants
+                    </Typography>
+                    <Typography variant="h5" sx={{ fontWeight: 900 }}>
+                      {maleCount}
+                    </Typography>
+                  </Box>
+                </Box>
+              </Paper>
+            </Grid>
+            <Grid item xs={12} sm={6} md={3}>
+              <Paper
+                variant="outlined"
+                sx={{
+                  p: 2.5,
+                  borderRadius: '16px',
+                  background: 'linear-gradient(135deg, rgba(236, 72, 153, 0.08) 0%, rgba(219, 39, 119, 0.08) 100%)',
+                  borderColor: 'rgba(236, 72, 153, 0.2)',
+                }}
+              >
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                  <Box
+                    sx={{
+                      width: 44,
+                      height: 44,
+                      borderRadius: '12px',
+                      background: '#db2777',
+                      color: '#fff',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    <PeopleIcon />
+                  </Box>
+                  <Box>
+                    <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase', fontWeight: 700 }}>
+                      Female Participants
+                    </Typography>
+                    <Typography variant="h5" sx={{ fontWeight: 900 }}>
+                      {femaleCount}
+                    </Typography>
+                  </Box>
+                </Box>
+              </Paper>
+            </Grid>
+          </>
+        )}
 
         <Grid item xs={12} sm={6} md={3}>
           <Paper
@@ -593,23 +698,25 @@ const Participants = () => {
           ))}
         </TextField>
 
-        <TextField
-          select
-          label="Accommodation"
-          size="small"
-          value={accommodationFilter}
-          onChange={(e) => setAccommodationFilter(e.target.value)}
-          sx={{ minWidth: 160 }}
-        >
-          <MenuItem value="ALL">All Participants</MenuItem>
-          <MenuItem value="YES">Requested (Yes)</MenuItem>
-          <MenuItem value="NO">No Accommodation</MenuItem>
-        </TextField>
+        {mode === 'all' && (
+          <TextField
+            select
+            label="Accommodation"
+            size="small"
+            value={accommodationFilter}
+            onChange={(e) => setAccommodationFilter(e.target.value)}
+            sx={{ minWidth: 160 }}
+          >
+            <MenuItem value="ALL">All Participants</MenuItem>
+            <MenuItem value="YES">Requested (Yes)</MenuItem>
+            <MenuItem value="NO">No Accommodation</MenuItem>
+          </TextField>
+        )}
 
         <TextField
           select
-          label="Attendance"
           size="small"
+          label="Attendance"
           value={attendanceFilter}
           onChange={(e) => setAttendanceFilter(e.target.value)}
           sx={{ minWidth: 160 }}

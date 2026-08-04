@@ -98,7 +98,7 @@ const EventPassCard = ({ participant }) => {
                 <Typography sx={{ color: '#1d4ed8', width: '70px', fontWeight: 600, ml: 1, fontSize: '14px' }}>
                   {item.label}
                 </Typography>
-                <Typography sx={{ color: item.label === 'Venue' ? '#a52a2a' : '#000', fontWeight: 700, fontSize: '16px' }}>
+                <Typography sx={{ color: item.label === 'Venue' ? '#a52a2a' : '#000', fontWeight: 700, fontSize: '16px', whiteSpace: 'nowrap' }}>
                   : {item.value || '-'}
                 </Typography>
               </Box>

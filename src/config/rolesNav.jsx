@@ -34,6 +34,7 @@ import {
   PeopleAlt,
   CardMembership,
   Badge as BadgeIcon,
+  Hotel,
   Person,
 } from "@mui/icons-material";
 import PersonIcon from '@mui/icons-material/Person';
@@ -80,7 +81,7 @@ export const ROLE_ROUTES = {
       ],
     },
     // { text: "Administration", path: "/faculty/administration", icon: <AccountBalance /> },
-    { text: "Event Coordination", path: "/faculty/event-coordination", icon: <Groups /> },
+    // { text: "Event Coordination", path: "/faculty/event-coordination", icon: <Groups /> },
     { text: "Self Appraisal", path: "/faculty/appraisal", icon: <Description /> },
     {
       text: "Utilities",
@@ -406,6 +407,15 @@ export const ROLE_ROUTES = {
       nested: [
         { text: "Departments", path: "/Eventveda/departments", icon: <AccountTree /> },
         {
+          text: "Infrastructure",
+          icon: <AccountBalance />,
+          nested: [
+            { text: "Building", path: "/infrastructure/building", icon: <AccountBalance /> },
+            { text: "Floors", path: "/infrastructure/floors", icon: <AccountBalance /> },
+            { text: "Grounds for outdoor", path: "/infrastructure/grounds", icon: <AccountBalance /> }
+          ]
+        },
+        {
           text: "Groups",
           icon: <Groups />,
           nested: [
@@ -423,14 +433,19 @@ export const ROLE_ROUTES = {
         },
         { text: "Payments", path: "/Eventveda/payments", icon: <Payment /> },
         { text: "Registrations", path: "/Eventveda/registrations", icon: <PeopleAlt /> },
-        { text: "Participants", path: "/Eventveda/participants", icon: <Groups /> },
+        {
+          text: "Participants",
+          icon: <Groups />,
+          nested: [
+            { text: "All", path: "/Eventveda/participants/all", icon: <Groups /> },
+            { text: "Accommodation", path: "/Eventveda/participants/accommodation", icon: <Hotel /> },
+            { text: "No Accommodation", path: "/Eventveda/participants/no-accommodation", icon: <Hotel /> }
+          ]
+        },
         // { text: "Scan Pass", path: "/Eventveda/scan-pass", icon: <QrCode /> },
         // { text: "Passes", path: "/Eventveda/passes", icon: <CardMembership /> }
       ]
     }
-    // {
-    //   text: "Service Desk",
-    //   icon: <SupportAgent />,
     //   nested: [
     //     { text: "Raise Ticket", path: "/service-desk/raise" },
     //     { text: "My Tickets", path: "/service-desk/my-tickets" },
@@ -476,6 +491,15 @@ export const ROLE_ROUTES = {
   EVENT_COORDINATOR: [
     { text: "Dashboard", path: "/dashboard", icon: <Dashboard /> },
     {
+      text: "Infrastructure",
+      icon: <AccountBalance />,
+      nested: [
+        { text: "Building", path: "/infrastructure/building", icon: <AccountBalance /> },
+        { text: "Floors", path: "/infrastructure/floors", icon: <AccountBalance /> },
+        { text: "Grounds for outdoor", path: "/infrastructure/grounds", icon: <AccountBalance /> }
+      ]
+    },
+    {
       text: "Events",
       icon: <EventAvailable />,
       nested: [
@@ -485,7 +509,15 @@ export const ROLE_ROUTES = {
     },
     { text: "Payments", path: "/Eventveda/payments", icon: <Payment /> },
     { text: "Registrations", path: "/Eventveda/registrations", icon: <PeopleAlt /> },
-    { text: "Participants", path: "/Eventveda/participants", icon: <Groups /> },
+    {
+      text: "Participants",
+      icon: <Groups />,
+      nested: [
+        { text: "All", path: "/Eventveda/participants/all", icon: <Groups /> },
+        { text: "Accommodation", path: "/Eventveda/participants/accommodation", icon: <Hotel /> },
+        { text: "No Accommodation", path: "/Eventveda/participants/no-accommodation", icon: <Hotel /> }
+      ]
+    },
     {
       text: "Student Passes",
       icon: <SupportAgent />,
@@ -511,6 +543,21 @@ export const ROLE_ROUTES = {
         { text: "Update Passes", path: "/Eventveda/update-passes", icon: <CardMembership /> }
       ]
     }
+  ],
+
+  // ACCOMMODATION Coordinator
+  ACCOMMODATION_COORDINATOR: [
+    { text: "Dashboard", path: "/dashboard", icon: <Dashboard /> },
+    {
+      text: "Participants",
+      icon: <Groups />,
+      nested: [
+        { text: "All", path: "/Eventveda/participants/all", icon: <Groups /> },
+        { text: "Accommodation", path: "/Eventveda/participants/accommodation", icon: <Hotel /> },
+        { text: "No Accommodation", path: "/Eventveda/participants/no-accommodation", icon: <Hotel /> }
+      ]
+    },
+    { text: "Scan for Accommodation", path: "/Eventveda/scan-accommodation", icon: <QrCode /> }
   ],
 
 

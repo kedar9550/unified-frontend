@@ -52,6 +52,16 @@ const EventCreation = () => {
   const [price, setPrice] = useState('');
   const [maxTeamSize, setMaxTeamSize] = useState('');
   const [venue, setVenue] = useState('');
+  const [venueType, setVenueType] = useState('');
+  const [buildingId, setBuildingId] = useState('');
+  const [floorId, setFloorId] = useState('');
+  const [groundId, setGroundId] = useState('');
+  const [roomNo, setRoomNo] = useState('');
+
+  const [buildingsList, setBuildingsList] = useState([]);
+  const [floorsList, setFloorsList] = useState([]);
+  const [groundsList, setGroundsList] = useState([]);
+
   const [extraTeamSize, setExtraTeamSize] = useState('');
   const [extraAmountPerHead, setExtraAmountPerHead] = useState('');
   const [overview, setOverview] = useState('');
@@ -61,6 +71,21 @@ const EventCreation = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [employeeOptions, setEmployeeOptions] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
+
+  const fetchInfrastructure = useCallback(async () => {
+    try {
+      const [bRes, fRes, gRes] = await Promise.all([
+        API.get('/api/infrastructure/buildings'),
+        API.get('/api/infrastructure/floors'),
+        API.get('/api/infrastructure/grounds'),
+      ]);
+      setBuildingsList(bRes.data?.data?.filter((b) => b.status?.toLowerCase() === 'active') || []);
+      setFloorsList(fRes.data?.data?.filter((f) => f.status?.toLowerCase() === 'active') || []);
+      setGroundsList(gRes.data?.data?.filter((g) => g.status?.toLowerCase() === 'active') || []);
+    } catch (error) {
+      console.error('Failed to load infrastructure data', error);
+    }
+  }, []);
 
   const fetchGroups = useCallback(async () => {
     try {
@@ -109,7 +134,8 @@ const EventCreation = () => {
   useEffect(() => {
     fetchGroups();
     fetchEvents();
-  }, [fetchGroups, fetchEvents]);
+    fetchInfrastructure();
+  }, [fetchGroups, fetchEvents, fetchInfrastructure]);
 
   useEffect(() => {
     if (!searchQuery || searchQuery.trim() === '') {
@@ -149,6 +175,11 @@ const EventCreation = () => {
     setPrice('');
     setMaxTeamSize('');
     setVenue('');
+    setVenueType('');
+    setBuildingId('');
+    setFloorId('');
+    setGroundId('');
+    setRoomNo('');
     setExtraTeamSize('');
     setExtraAmountPerHead('');
     setOverview('');
@@ -188,7 +219,11 @@ const EventCreation = () => {
     setEventName(event.eventName || '');
     setPrice(event.price != null ? String(event.price) : '');
     setMaxTeamSize(event.maxTeamSize != null ? String(event.maxTeamSize) : '');
-    setVenue(event.venue || '');
+    setVenueType(event.venueType || '');
+    setBuildingId(event.building?._id || event.building || '');
+    setFloorId(event.floor?._id || event.floor || '');
+    setGroundId(event.ground?._id || event.ground || '');
+    setRoomNo(event.roomNo || '');
     setExtraTeamSize(event.extraTeamSize != null ? String(event.extraTeamSize) : '');
     setExtraAmountPerHead(event.extraAmountPerHead != null ? String(event.extraAmountPerHead) : '');
     setOverview(event.overview || '');
@@ -205,7 +240,19 @@ const EventCreation = () => {
     if (eventName.length > 200) newErrors.eventName = 'Event Name cannot exceed 200 characters.';
     if (!price || Number(price) < 0) newErrors.price = 'Enter a valid price.';
     if (!maxTeamSize || Number(maxTeamSize) <= 0) newErrors.maxTeamSize = 'Enter a valid max team size.';
-    if (!venue.trim()) newErrors.venue = 'Venue is required.';
+    
+    if (!venueType) {
+      newErrors.venueType = 'Venue Type is required.';
+    } else {
+      if (venueType === 'Indoor') {
+        if (!buildingId) newErrors.buildingId = 'Building is required.';
+        if (!floorId) newErrors.floorId = 'Floor is required.';
+      } else if (venueType === 'Outdoor') {
+        if (!groundId) newErrors.groundId = 'Ground is required.';
+      }
+      if (!roomNo.trim()) newErrors.roomNo = 'Room No is required.';
+    }
+
     if (!selectedCoordinators || selectedCoordinators.length === 0) newErrors.facultyCoordinator = 'At least one Faculty Coordinator is required.';
     if (extraTeamSize === '' || Number(extraTeamSize) < 0) newErrors.extraTeamSize = 'Enter a valid extra team size.';
     if (extraAmountPerHead === '' || Number(extraAmountPerHead) < 0) newErrors.extraAmountPerHead = 'Enter a valid amount per head.';
@@ -230,6 +277,11 @@ const EventCreation = () => {
       price: Number(price),
       maxTeamSize: Number(maxTeamSize),
       venue: venue.trim(),
+      venueType: venueType,
+      building: buildingId || undefined,
+      floor: floorId || undefined,
+      ground: groundId || undefined,
+      roomNo: roomNo.trim(),
       extraTeamSize: Number(extraTeamSize),
       extraAmountPerHead: Number(extraAmountPerHead),
       overview: overview.trim(),
@@ -326,7 +378,11 @@ const EventCreation = () => {
       event.department ? event.department.replace(/,\s*/g, ' & ') : (Array.isArray(event.group?.department) ? event.group.department.map(d => d?.name).join(' & ') : event.group?.department?.name || ''),
       coordinatorLabel,
       event.eventName,
-      event.venue,
+      event.venueType === 'Indoor' && event.building && event.floor 
+          ? `${event.roomNo ? `Room No: ${event.roomNo}, ` : ''}${event.building.name} - ${event.floor.name}` 
+          : event.venueType === 'Outdoor' && event.ground 
+            ? `${event.roomNo ? `Room No: ${event.roomNo}, ` : ''}${event.ground.name}` 
+            : event.venue || 'N/A',
       event.maxTeamSize || '',
       event.price != null && event.price > 0 ? `₹${event.price}` : '',
     ];
@@ -555,15 +611,89 @@ const EventCreation = () => {
                 error={!!errors.maxTeamSize}
                 helperText={errors.maxTeamSize}
               />
-              <TextField
-                fullWidth
-                label="Venue"
-                value={venue}
-                onChange={(e) => setVenue(e.target.value)}
-                error={!!errors.venue}
-                helperText={errors.venue}
-              />
+              <FormControl fullWidth error={!!errors.venueType}>
+                <InputLabel>Venue Type</InputLabel>
+                <Select
+                  value={venueType}
+                  label="Venue Type"
+                  onChange={(e) => {
+                    setVenueType(e.target.value);
+                    setBuildingId('');
+                    setFloorId('');
+                    setGroundId('');
+                    setRoomNo('');
+                  }}
+                >
+                  <MenuItem value="Indoor">Indoor</MenuItem>
+                  <MenuItem value="Outdoor">Outdoor</MenuItem>
+                </Select>
+                {errors.venueType && <FormHelperText>{errors.venueType}</FormHelperText>}
+              </FormControl>
             </Box>
+
+            {venueType === 'Indoor' && (
+              <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 2 }}>
+                <FormControl fullWidth error={!!errors.buildingId}>
+                  <InputLabel>Building</InputLabel>
+                  <Select
+                    value={buildingId}
+                    label="Building"
+                    onChange={(e) => setBuildingId(e.target.value)}
+                  >
+                    {buildingsList.map((b) => (
+                      <MenuItem key={b._id} value={b._id}>{b.name}</MenuItem>
+                    ))}
+                  </Select>
+                  {errors.buildingId && <FormHelperText>{errors.buildingId}</FormHelperText>}
+                </FormControl>
+                <FormControl fullWidth error={!!errors.floorId}>
+                  <InputLabel>Floor</InputLabel>
+                  <Select
+                    value={floorId}
+                    label="Floor"
+                    onChange={(e) => setFloorId(e.target.value)}
+                  >
+                    {floorsList.map((f) => (
+                      <MenuItem key={f._id} value={f._id}>{f.name}</MenuItem>
+                    ))}
+                  </Select>
+                  {errors.floorId && <FormHelperText>{errors.floorId}</FormHelperText>}
+                </FormControl>
+              </Box>
+            )}
+
+            {venueType === 'Outdoor' && (
+              <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 2 }}>
+                <FormControl fullWidth error={!!errors.groundId}>
+                  <InputLabel>Ground</InputLabel>
+                  <Select
+                    value={groundId}
+                    label="Ground"
+                    onChange={(e) => setGroundId(e.target.value)}
+                  >
+                    {groundsList.map((g) => (
+                      <MenuItem key={g._id} value={g._id}>{g.name}</MenuItem>
+                    ))}
+                  </Select>
+                  {errors.groundId && <FormHelperText>{errors.groundId}</FormHelperText>}
+                </FormControl>
+                <Box />
+              </Box>
+            )}
+
+            {venueType && (
+              <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 2 }}>
+                <TextField
+                  fullWidth
+                  label="Room No"
+                  value={roomNo}
+                  onChange={(e) => setRoomNo(e.target.value)}
+                  error={!!errors.roomNo}
+                  helperText={errors.roomNo}
+                />
+                <Box />
+              </Box>
+            )}
 
             <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 2 }}>
               <TextField
@@ -600,13 +730,10 @@ const EventCreation = () => {
             />
 
             <Box>
-              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+              <Box sx={{ mb: 2 }}>
                 <Typography variant="subtitle1" fontWeight={600}>
                   Rules (Enter the regulation in form of points.)
                 </Typography>
-                <Button variant="outlined" startIcon={<AddIcon />} onClick={addRule}>
-                  Add Regulation
-                </Button>
               </Box>
 
               <Stack spacing={2}>
@@ -631,6 +758,21 @@ const EventCreation = () => {
                   </Box>
                 ))}
               </Stack>
+              
+              <Box sx={{ mt: 2 }}>
+                <Button 
+                  variant="contained" 
+                  onClick={addRule}
+                  sx={{ 
+                    bgcolor: '#0d9488', 
+                    '&:hover': { bgcolor: '#0f766e' },
+                    textTransform: 'none',
+                    px: 3
+                  }}
+                >
+                  Add Regulation
+                </Button>
+              </Box>
             </Box>
 
             <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2, mt: 1 }}>
