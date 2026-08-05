@@ -53,6 +53,7 @@ const Registrations = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [eventFilter, setEventFilter] = useState('ALL');
   const [accommodationFilter, setAccommodationFilter] = useState('ALL');
+  const [genderFilter, setGenderFilter] = useState('ALL');
 
   const fetchPayments = useCallback(async () => {
     setLoading(true);
@@ -152,6 +153,9 @@ const Registrations = () => {
       if (accommodationFilter === 'YES' && p.accommodation?.toLowerCase() !== 'yes') return false;
       if (accommodationFilter === 'NO' && p.accommodation?.toLowerCase() === 'yes') return false;
 
+      // Gender filter
+      if (genderFilter !== 'ALL' && p.gender?.toLowerCase() !== genderFilter.toLowerCase()) return false;
+
       // Search query
       if (searchQuery.trim()) {
         const query = searchQuery.toLowerCase();
@@ -178,11 +182,19 @@ const Registrations = () => {
 
       return true;
     });
-  }, [allParticipants, eventFilter, accommodationFilter, searchQuery]);
+  }, [allParticipants, eventFilter, accommodationFilter, genderFilter, searchQuery]);
 
   // Metrics
   const accommodationCount = useMemo(() => {
     return allParticipants.filter((p) => p.accommodation?.toLowerCase() === 'yes').length;
+  }, [allParticipants]);
+
+  const maleAccommodationCount = useMemo(() => {
+    return allParticipants.filter((p) => p.accommodation?.toLowerCase() === 'yes' && p.gender?.toLowerCase() === 'male').length;
+  }, [allParticipants]);
+
+  const femaleAccommodationCount = useMemo(() => {
+    return allParticipants.filter((p) => p.accommodation?.toLowerCase() === 'yes' && p.gender?.toLowerCase() === 'female').length;
   }, [allParticipants]);
 
   const uniqueCollegesCount = useMemo(() => {
@@ -200,24 +212,23 @@ const Registrations = () => {
       return;
     }
 
-    const headers = ['S.No', 'Name', 'Roll No', 'Event Name', 'College', 'Other College', 'Department', 'Year', 'Gender', 'Mobile', 'Email', 'Accommodation', 'Receipt No'];
+    const headers = ['S.No', 'Name', 'Roll No', 'Event Name', 'College', 'Department', 'Year', 'Gender', 'Mobile', 'Email', 'Accommodation'];
     const csvRows = [headers.join(',')];
 
     filteredParticipants.forEach((p, idx) => {
+      const collegeName = p.college === 'Other College' && p.otherCollege ? p.otherCollege : (p.college || '');
       const row = [
         idx + 1,
         `"${p.name || ''}"`,
         `"${p.roll || ''}"`,
         `"${p.eventName || ''}"`,
-        `"${p.college || ''}"`,
-        `"${p.otherCollege || ''}"`,
+        `"${collegeName}"`,
         `"${p.department || ''}"`,
         `"${p.year || ''}"`,
         `"${p.gender || ''}"`,
         `"${p.mobile || ''}"`,
         `"${p.email || ''}"`,
-        `"${p.accommodation || 'No'}"`,
-        `"${p.receipt || ''}"`,
+        `"${p.accommodation || 'No'}"`
       ];
       csvRows.push(row.join(','));
     });
@@ -521,6 +532,80 @@ const Registrations = () => {
             </Box>
           </Paper>
         </Grid>
+
+        <Grid item xs={12} sm={6} md={3}>
+          <Paper
+            variant="outlined"
+            sx={{
+              p: 2.5,
+              borderRadius: '16px',
+              background: 'linear-gradient(135deg, rgba(234, 88, 12, 0.08) 0%, rgba(194, 65, 12, 0.08) 100%)',
+              borderColor: 'rgba(234, 88, 12, 0.2)',
+            }}
+          >
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+              <Box
+                sx={{
+                  width: 44,
+                  height: 44,
+                  borderRadius: '12px',
+                  background: '#ea580c',
+                  color: '#fff',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <AccommodationIcon />
+              </Box>
+              <Box>
+                <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase', fontWeight: 700 }}>
+                  Accomm. (Male)
+                </Typography>
+                <Typography variant="h5" sx={{ fontWeight: 900 }}>
+                  {maleAccommodationCount}
+                </Typography>
+              </Box>
+            </Box>
+          </Paper>
+        </Grid>
+
+        <Grid item xs={12} sm={6} md={3}>
+          <Paper
+            variant="outlined"
+            sx={{
+              p: 2.5,
+              borderRadius: '16px',
+              background: 'linear-gradient(135deg, rgba(236, 72, 153, 0.08) 0%, rgba(219, 39, 119, 0.08) 100%)',
+              borderColor: 'rgba(236, 72, 153, 0.2)',
+            }}
+          >
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+              <Box
+                sx={{
+                  width: 44,
+                  height: 44,
+                  borderRadius: '12px',
+                  background: '#db2777',
+                  color: '#fff',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <AccommodationIcon />
+              </Box>
+              <Box>
+                <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase', fontWeight: 700 }}>
+                  Accomm. (Female)
+                </Typography>
+                <Typography variant="h5" sx={{ fontWeight: 900 }}>
+                  {femaleAccommodationCount}
+                </Typography>
+              </Box>
+            </Box>
+          </Paper>
+        </Grid>
       </Grid>
 
       {/* Filter Controls Bar */}
@@ -572,6 +657,19 @@ const Registrations = () => {
           <MenuItem value="ALL">All Registrations</MenuItem>
           <MenuItem value="YES">Requested (Yes)</MenuItem>
           <MenuItem value="NO">No Accommodation</MenuItem>
+        </TextField>
+
+        <TextField
+          select
+          label="Gender"
+          size="small"
+          value={genderFilter}
+          onChange={(e) => setGenderFilter(e.target.value)}
+          sx={{ minWidth: 120 }}
+        >
+          <MenuItem value="ALL">All Genders</MenuItem>
+          <MenuItem value="MALE">Male</MenuItem>
+          <MenuItem value="FEMALE">Female</MenuItem>
         </TextField>
 
         <Box sx={{ ml: 'auto' }}>
