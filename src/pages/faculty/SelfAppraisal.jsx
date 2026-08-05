@@ -1174,8 +1174,9 @@ const SelfAppraisal = () => {
 
   const handleContOpenEdit = (item) => {
     setContEditingId(item._id);
+    const cat = item.category;
     setContForm({
-      category: item.category,
+      category: cat?._id || cat || "",
       organizationName: item.organizationName || "",
       fromDate: item.fromDate ? item.fromDate.substring(0, 10) : "",
       toDate: item.toDate ? item.toDate.substring(0, 10) : "",
