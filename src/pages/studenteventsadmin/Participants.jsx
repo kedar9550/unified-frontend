@@ -58,6 +58,7 @@ const Participants = ({ mode = 'all' }) => {
     mode === 'accommodation' ? 'YES' : mode === 'no-accommodation' ? 'NO' : 'ALL'
   );
   const [attendanceFilter, setAttendanceFilter] = useState('ALL');
+  const [genderFilter, setGenderFilter] = useState('ALL');
 
   useEffect(() => {
     if (mode === 'accommodation') {
@@ -171,6 +172,9 @@ const Participants = ({ mode = 'all' }) => {
       if (attendanceFilter === 'PRESENT' && !p.attended) return false;
       if (attendanceFilter === 'ABSENT' && p.attended) return false;
 
+      // Gender filter
+      if (genderFilter !== 'ALL' && p.gender?.toLowerCase() !== genderFilter.toLowerCase()) return false;
+
       // Search query
       if (searchQuery.trim()) {
         const query = searchQuery.toLowerCase();
@@ -197,7 +201,7 @@ const Participants = ({ mode = 'all' }) => {
 
       return true;
     });
-  }, [allParticipants, eventFilter, accommodationFilter, attendanceFilter, searchQuery]);
+  }, [allParticipants, eventFilter, accommodationFilter, attendanceFilter, genderFilter, searchQuery]);
 
   // Metrics
   const accommodationCount = useMemo(() => {
@@ -235,17 +239,19 @@ const Participants = ({ mode = 'all' }) => {
       return;
     }
 
-    const headers = ['S.No', 'Name', 'Roll No', 'Event Name', 'College', 'Department', 'Contact', 'Attended'];
+    const headers = ['S.No', 'Name', 'Roll No', 'Event Name', 'College', 'Department', 'Gender', 'Contact', 'Attended'];
     const csvRows = [headers.join(',')];
 
     filteredParticipants.forEach((p, idx) => {
+      const collegeName = p.college === 'Other College' && p.otherCollege ? p.otherCollege : (p.college || '');
       const row = [
         idx + 1,
         `"${p.name || ''}"`,
         `"${p.roll || ''}"`,
         `"${p.eventName || ''}"`,
-        `"${p.college || ''}"`,
+        `"${collegeName}"`,
         `"${p.department || ''}"`,
+        `"${p.gender || ''}"`,
         `"${p.mobile || ''}"`,
         `"${p.attended ? 'Yes' : 'No'}"`,
       ];
@@ -724,6 +730,19 @@ const Participants = ({ mode = 'all' }) => {
           <MenuItem value="ALL">All Status</MenuItem>
           <MenuItem value="PRESENT">Present</MenuItem>
           <MenuItem value="ABSENT">Absent</MenuItem>
+        </TextField>
+
+        <TextField
+          select
+          label="Gender"
+          size="small"
+          value={genderFilter}
+          onChange={(e) => setGenderFilter(e.target.value)}
+          sx={{ minWidth: 120 }}
+        >
+          <MenuItem value="ALL">All Genders</MenuItem>
+          <MenuItem value="MALE">Male</MenuItem>
+          <MenuItem value="FEMALE">Female</MenuItem>
         </TextField>
 
         <Box sx={{ ml: 'auto' }}>

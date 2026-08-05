@@ -405,6 +405,7 @@ export const ROLE_ROUTES = {
       text: "VEDA EVENT ",
       icon: <SupportAgent />,
       nested: [
+        { text: "Organisation Committee", path: "/Eventveda/organisation-committee", icon: <Groups /> },
         { text: "Departments", path: "/Eventveda/departments", icon: <AccountTree /> },
         {
           text: "Infrastructure",

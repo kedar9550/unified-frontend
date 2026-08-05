@@ -85,6 +85,7 @@ import FestManagement from "./pages/convener/FestManagement";
 import GroupManagement from "./pages/studenteventsadmin/Groupmanagement";
 import GroupCoordinators from "./pages/studenteventsadmin/GroupCoordinators";
 import DepartmentManagement from "./pages/studenteventsadmin/Departmentmanagement";
+import OrganisationCommittee from "./pages/studenteventsadmin/OrganisationCommittee";
 import MajorEventGroups from "./pages/majorEventAdmin/MajorEventGroups";
 import FormAssign from "./pages/majorEventAdmin/FormAssign";
 import FormPreview from "./pages/majorEventAdmin/FormPreview";
@@ -251,6 +252,7 @@ function App() {
         <Route path="/Eventveda/groups/coordinators" element={<ProtectedRoute element={<GroupCoordinators />} />} />
         <Route path="/Eventveda/events" element={<ProtectedRoute element={<EventCreation />} />} />
         <Route path="/Eventveda/events/coordinators" element={<ProtectedRoute element={<EventCoordinators />} />} />
+        <Route path="/Eventveda/organisation-committee" element={<ProtectedRoute element={<OrganisationCommittee />} />} />
         <Route path="/Eventveda/departments" element={<ProtectedRoute element={<DepartmentManagement />} />} />
         <Route path="/Eventveda/payments" element={<ProtectedRoute element={<Payments />} />} />
         <Route path="/Eventveda/registrations" element={<ProtectedRoute element={<Registrations />} />} />
