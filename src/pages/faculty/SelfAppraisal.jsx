@@ -2817,12 +2817,78 @@ const SelfAppraisal = () => {
                           </>
                         )}
 
-                        {/* 1.2 Proctoring Students' Average Pass Percentage */}
+                        {/* 1.2 Course Feedback */}
+                        {!(appraisal.status === "Completed" && (!appraisal.teaching.feedback?.courses || appraisal.teaching.feedback.courses.length === 0)) && (
+                          <>
+                            <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 1.5, color: "var(--color-primary)" }}>
+                              1.2 Course Feedback
+                            </Typography>
+                            <TableContainer component={Paper} elevation={0} sx={{ mb: 3.5, borderRadius: "16px", background: "var(--bg-paper)", border: "1px solid var(--border-color)", overflowX: "auto", boxShadow: "none", width: "100%" }}>
+                              <Table size="small" sx={{ minWidth: 650, mx: "auto" }}>
+                                <TableHead sx={{ background: "var(--gradient-primary)" }}>
+                                  <TableRow>
+                                    <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }}>Course Name</TableCell>
+                                    <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }}>Sem-Branch-Sec</TableCell>
+                                    <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }} align="center">Total Students</TableCell>
+                                    <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }} align="center">Given Students</TableCell>
+                                    <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }} align="center">Feedback %</TableCell>
+                                    <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }} align="center">Points claimed</TableCell>
+                                  </TableRow>
+                                </TableHead>
+                                <TableBody>
+                                  {appraisal.teaching.feedback.courses.length > 0 ? (
+                                    <>
+                                      {appraisal.teaching.feedback.courses.map((c, i) => (
+                                        <TableRow key={i} sx={{ "&:hover": { bgcolor: "var(--bg-hover)" } }}>
+                                          <TableCell sx={{ fontWeight: 600, color: "var(--text-primary)" }}>{c.courseName}</TableCell>
+                                          <TableCell sx={{ color: "var(--text-primary)" }}>{c.secBranchSem}</TableCell>
+                                          <TableCell align="center" sx={{ color: "var(--text-primary)" }}>{c.totalStudents || c.noOfStudents}</TableCell>
+                                          <TableCell align="center" sx={{ color: "var(--text-primary)" }}>{c.givenStudents || ''}</TableCell>
+                                          <TableCell align="center" sx={{ color: "var(--text-primary)" }}>{c.feedbackPercentage}%</TableCell>
+                                          <TableCell align="center" sx={{ fontWeight: 800, color: "var(--color-primary)" }}>{c.pointsClaimed}</TableCell>
+                                        </TableRow>
+                                      ))}
+                                      {/* Summary / Average Row */}
+                                      {(() => {
+                                        const totalSt = appraisal.teaching.feedback.courses.reduce((sum, c) => sum + (Number(c.totalStudents || c.noOfStudents) || 0), 0);
+                                        const givenSt = appraisal.teaching.feedback.courses.reduce((sum, c) => sum + (Number(c.givenStudents) || 0), 0);
+                                        const avgFb = appraisal.teaching.feedback.courses.length > 0
+                                          ? (appraisal.teaching.feedback.courses.reduce((sum, c) => sum + (Number(c.feedbackPercentage) || 0), 0) / appraisal.teaching.feedback.courses.length).toFixed(2)
+                                          : "0.00";
+                                        return (
+                                          <TableRow sx={{ background: "rgba(0, 78, 146, 0.04)", "&:hover": { bgcolor: "rgba(0, 78, 146, 0.06) !important" } }}>
+                                            <TableCell colSpan={2} sx={{ fontWeight: 800, color: "var(--text-primary)", pl: 2 }}>
+                                              <Box component="span" sx={{ position: "sticky", left: 16, display: "inline-block", whiteSpace: "nowrap" }}>
+                                                Overall Performance
+                                              </Box>
+                                            </TableCell>
+                                            <TableCell align="center" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>{totalSt}</TableCell>
+                                            <TableCell align="center" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>{givenSt}</TableCell>
+                                            <TableCell align="center" sx={{ fontWeight: 900, color: "var(--color-primary)" }}>{avgFb}%</TableCell>
+                                            <TableCell align="center" sx={{ fontWeight: 900, color: "var(--color-primary)", fontSize: "0.95rem" }}>{appraisal.teaching.feedback.averagePoints} Points</TableCell>
+                                          </TableRow>
+                                        );
+                                      })()}
+                                    </>
+                                  ) : (
+                                    <TableRow>
+                                      <TableCell colSpan={5} align="center" sx={{ py: 3, color: "var(--text-secondary)", fontStyle: "italic" }}>
+                                        No course feedbacks found.
+                                      </TableCell>
+                                    </TableRow>
+                                  )}
+                                </TableBody>
+                              </Table>
+                            </TableContainer>
+                          </>
+                        )}
+
+                        {/* 1.3 Proctoring Students' Average Pass Percentage */}
                         {!(appraisal.status === "Completed" && (!appraisal.teaching.proctoring?.entries || appraisal.teaching.proctoring.entries.length === 0)) && (
                           <Box sx={{ mb: 4 }}>
                             <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 2 }}>
                               <Typography variant="subtitle1" sx={{ fontWeight: 700, color: "var(--color-primary)" }}>
-                                1.2 Proctoring Students' Average Pass Percentage
+                                1.3 Proctoring Students' Average Pass Percentage
                               </Typography>
                             </Box>
 
@@ -3132,71 +3198,6 @@ const SelfAppraisal = () => {
                           </form>
                         </Dialog>
 
-                        {/* 1.3 Course Feedback */}
-                        {!(appraisal.status === "Completed" && (!appraisal.teaching.feedback?.courses || appraisal.teaching.feedback.courses.length === 0)) && (
-                          <>
-                            <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 1.5, color: "var(--color-primary)" }}>
-                              1.3 Course Feedback
-                            </Typography>
-                            <TableContainer component={Paper} elevation={0} sx={{ mb: 3.5, borderRadius: "16px", background: "var(--bg-paper)", border: "1px solid var(--border-color)", overflowX: "auto", boxShadow: "none", width: "100%" }}>
-                              <Table size="small" sx={{ minWidth: 650, mx: "auto" }}>
-                                <TableHead sx={{ background: "var(--gradient-primary)" }}>
-                                  <TableRow>
-                                    <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }}>Course Name</TableCell>
-                                    <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }}>Sem-Branch-Sec</TableCell>
-                                    <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }} align="center">Total Students</TableCell>
-                                    <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }} align="center">Given Students</TableCell>
-                                    <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }} align="center">Feedback %</TableCell>
-                                    <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }} align="center">Points claimed</TableCell>
-                                  </TableRow>
-                                </TableHead>
-                                <TableBody>
-                                  {appraisal.teaching.feedback.courses.length > 0 ? (
-                                    <>
-                                      {appraisal.teaching.feedback.courses.map((c, i) => (
-                                        <TableRow key={i} sx={{ "&:hover": { bgcolor: "var(--bg-hover)" } }}>
-                                          <TableCell sx={{ fontWeight: 600, color: "var(--text-primary)" }}>{c.courseName}</TableCell>
-                                          <TableCell sx={{ color: "var(--text-primary)" }}>{c.secBranchSem}</TableCell>
-                                          <TableCell align="center" sx={{ color: "var(--text-primary)" }}>{c.totalStudents || c.noOfStudents}</TableCell>
-                                          <TableCell align="center" sx={{ color: "var(--text-primary)" }}>{c.givenStudents || ''}</TableCell>
-                                          <TableCell align="center" sx={{ color: "var(--text-primary)" }}>{c.feedbackPercentage}%</TableCell>
-                                          <TableCell align="center" sx={{ fontWeight: 800, color: "var(--color-primary)" }}>{c.pointsClaimed}</TableCell>
-                                        </TableRow>
-                                      ))}
-                                      {/* Summary / Average Row */}
-                                      {(() => {
-                                        const totalSt = appraisal.teaching.feedback.courses.reduce((sum, c) => sum + (Number(c.totalStudents || c.noOfStudents) || 0), 0);
-                                        const givenSt = appraisal.teaching.feedback.courses.reduce((sum, c) => sum + (Number(c.givenStudents) || 0), 0);
-                                        const avgFb = appraisal.teaching.feedback.courses.length > 0
-                                          ? (appraisal.teaching.feedback.courses.reduce((sum, c) => sum + (Number(c.feedbackPercentage) || 0), 0) / appraisal.teaching.feedback.courses.length).toFixed(2)
-                                          : "0.00";
-                                        return (
-                                          <TableRow sx={{ background: "rgba(0, 78, 146, 0.04)", "&:hover": { bgcolor: "rgba(0, 78, 146, 0.06) !important" } }}>
-                                            <TableCell colSpan={2} sx={{ fontWeight: 800, color: "var(--text-primary)", pl: 2 }}>
-                                              <Box component="span" sx={{ position: "sticky", left: 16, display: "inline-block", whiteSpace: "nowrap" }}>
-                                                Overall Performance
-                                              </Box>
-                                            </TableCell>
-                                            <TableCell align="center" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>{totalSt}</TableCell>
-                                            <TableCell align="center" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>{givenSt}</TableCell>
-                                            <TableCell align="center" sx={{ fontWeight: 900, color: "var(--color-primary)" }}>{avgFb}%</TableCell>
-                                            <TableCell align="center" sx={{ fontWeight: 900, color: "var(--color-primary)", fontSize: "0.95rem" }}>{appraisal.teaching.feedback.averagePoints} Points</TableCell>
-                                          </TableRow>
-                                        );
-                                      })()}
-                                    </>
-                                  ) : (
-                                    <TableRow>
-                                      <TableCell colSpan={5} align="center" sx={{ py: 3, color: "var(--text-secondary)", fontStyle: "italic" }}>
-                                        No course feedbacks found.
-                                      </TableCell>
-                                    </TableRow>
-                                  )}
-                                </TableBody>
-                              </Table>
-                            </TableContainer>
-                          </>
-                        )}
 
                         {/* 1.4 CO Attainment */}
                         {!(appraisal.status === "Completed" && (!appraisal.teaching.coAttainment?.courses || appraisal.teaching.coAttainment.courses.length === 0)) && (
