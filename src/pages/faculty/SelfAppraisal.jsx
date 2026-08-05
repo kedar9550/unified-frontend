@@ -765,13 +765,13 @@ const SelfAppraisal = () => {
 
   const openAdminModalEdit = (role) => {
     setAdminEditingRole(role.roleId || role.roleName);
-    
+
     let pType = role.roleId;
     if (role.roleId) {
-       const catalogEntry = ADMIN_ROLE_CATALOG.find((r) => r.roleId === role.roleId);
-       if (catalogEntry && catalogEntry.category === "Coordinator") {
-          pType = "COORDINATOR";
-       }
+      const catalogEntry = ADMIN_ROLE_CATALOG.find((r) => r.roleId === role.roleId);
+      if (catalogEntry && catalogEntry.category === "Coordinator") {
+        pType = "COORDINATOR";
+      }
     }
 
     let tType = "";
@@ -836,8 +836,8 @@ const SelfAppraisal = () => {
       roleLabel: (() => {
         if (adminForm.roleId === "other" || adminForm.roleId === "other_coord") return adminForm.roleLabel.trim();
         if (adminForm.roleId === "training_coord") {
-           const suffix = adminForm.trainingProgramType === "Others" ? adminForm.trainingProgramOther.trim() : adminForm.trainingProgramType;
-           return `Training Program Coordinator - ${suffix}`;
+          const suffix = adminForm.trainingProgramType === "Others" ? adminForm.trainingProgramOther.trim() : adminForm.trainingProgramType;
+          return `Training Program Coordinator - ${suffix}`;
         }
         return catalogEntry?.label || adminForm.roleLabel;
       })(),
@@ -876,7 +876,7 @@ const SelfAppraisal = () => {
 
   const handleAdminDelete = async (roleIdentifier) => {
     if (!window.confirm("Are you sure you want to delete this administrative role?")) return;
-    
+
     const existingRoles = administrationDetail?.roles || [];
     const updatedRoles = existingRoles.map(r => (r.roleId === roleIdentifier || r.roleName === roleIdentifier) ? { ...r, isResponsible: false } : r);
 
@@ -1174,8 +1174,9 @@ const SelfAppraisal = () => {
 
   const handleContOpenEdit = (item) => {
     setContEditingId(item._id);
+    const cat = item.category;
     setContForm({
-      category: item.category,
+      category: cat?._id || cat || "",
       organizationName: item.organizationName || "",
       fromDate: item.fromDate ? item.fromDate.substring(0, 10) : "",
       toDate: item.toDate ? item.toDate.substring(0, 10) : "",
@@ -1658,7 +1659,7 @@ const SelfAppraisal = () => {
     const catName = getCategoryName(item.category);
     const fDate = item.fromDate ? new Date(item.fromDate).toLocaleDateString('en-GB') : "";
     const tDate = item.toDate ? new Date(item.toDate).toLocaleDateString('en-GB') : "";
-    
+
     switch (catCode) {
       case 1: {
         const typeMap = {
@@ -1704,7 +1705,7 @@ const SelfAppraisal = () => {
     const lead = (fac.leadership || "").toLowerCase().trim();
     const qual = (fac.qualification || "").toLowerCase().trim();
     const doct = (fac.doctorate || "").toLowerCase().trim();
-    
+
     if (lead === "yes" || lead === "true") return "Leadership Team";
     if (qual.includes("phd") || qual.includes("ph.d") || doct === "yes" || doct === "true") return "Doctorate Faculty";
     return "Non-Doctorate Faculty";
@@ -2817,22 +2818,88 @@ const SelfAppraisal = () => {
                           </>
                         )}
 
-                        {/* 1.2 Proctoring Students' Average Pass Percentage */}
+                        {/* 1.2 Course Feedback */}
+                        {!(appraisal.status === "Completed" && (!appraisal.teaching.feedback?.courses || appraisal.teaching.feedback.courses.length === 0)) && (
+                          <>
+                            <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 1.5, color: "var(--color-primary)" }}>
+                              1.2 Course Feedback
+                            </Typography>
+                            <TableContainer component={Paper} elevation={0} sx={{ mb: 3.5, borderRadius: "16px", background: "var(--bg-paper)", border: "1px solid var(--border-color)", overflowX: "auto", boxShadow: "none", width: "100%" }}>
+                              <Table size="small" sx={{ minWidth: 650, mx: "auto" }}>
+                                <TableHead sx={{ background: "var(--gradient-primary)" }}>
+                                  <TableRow>
+                                    <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }}>Course Name</TableCell>
+                                    <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }}>Sem-Branch-Sec</TableCell>
+                                    <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }} align="center">Total Students</TableCell>
+                                    <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }} align="center">Given Students</TableCell>
+                                    <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }} align="center">Feedback %</TableCell>
+                                    <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }} align="center">Points claimed</TableCell>
+                                  </TableRow>
+                                </TableHead>
+                                <TableBody>
+                                  {appraisal.teaching.feedback.courses.length > 0 ? (
+                                    <>
+                                      {appraisal.teaching.feedback.courses.map((c, i) => (
+                                        <TableRow key={i} sx={{ "&:hover": { bgcolor: "var(--bg-hover)" } }}>
+                                          <TableCell sx={{ fontWeight: 600, color: "var(--text-primary)" }}>{c.courseName}</TableCell>
+                                          <TableCell sx={{ color: "var(--text-primary)" }}>{c.secBranchSem}</TableCell>
+                                          <TableCell align="center" sx={{ color: "var(--text-primary)" }}>{c.totalStudents || c.noOfStudents}</TableCell>
+                                          <TableCell align="center" sx={{ color: "var(--text-primary)" }}>{c.givenStudents || ''}</TableCell>
+                                          <TableCell align="center" sx={{ color: "var(--text-primary)" }}>{c.feedbackPercentage}%</TableCell>
+                                          <TableCell align="center" sx={{ fontWeight: 800, color: "var(--color-primary)" }}>{c.pointsClaimed}</TableCell>
+                                        </TableRow>
+                                      ))}
+                                      {/* Summary / Average Row */}
+                                      {(() => {
+                                        const totalSt = appraisal.teaching.feedback.courses.reduce((sum, c) => sum + (Number(c.totalStudents || c.noOfStudents) || 0), 0);
+                                        const givenSt = appraisal.teaching.feedback.courses.reduce((sum, c) => sum + (Number(c.givenStudents) || 0), 0);
+                                        const avgFb = appraisal.teaching.feedback.courses.length > 0
+                                          ? (appraisal.teaching.feedback.courses.reduce((sum, c) => sum + (Number(c.feedbackPercentage) || 0), 0) / appraisal.teaching.feedback.courses.length).toFixed(2)
+                                          : "0.00";
+                                        return (
+                                          <TableRow sx={{ background: "rgba(0, 78, 146, 0.04)", "&:hover": { bgcolor: "rgba(0, 78, 146, 0.06) !important" } }}>
+                                            <TableCell colSpan={2} sx={{ fontWeight: 800, color: "var(--text-primary)", pl: 2 }}>
+                                              <Box component="span" sx={{ position: "sticky", left: 16, display: "inline-block", whiteSpace: "nowrap" }}>
+                                                Overall Performance
+                                              </Box>
+                                            </TableCell>
+                                            <TableCell align="center" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>{totalSt}</TableCell>
+                                            <TableCell align="center" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>{givenSt}</TableCell>
+                                            <TableCell align="center" sx={{ fontWeight: 900, color: "var(--color-primary)" }}>{avgFb}%</TableCell>
+                                            <TableCell align="center" sx={{ fontWeight: 900, color: "var(--color-primary)", fontSize: "0.95rem" }}>{appraisal.teaching.feedback.averagePoints} Points</TableCell>
+                                          </TableRow>
+                                        );
+                                      })()}
+                                    </>
+                                  ) : (
+                                    <TableRow>
+                                      <TableCell colSpan={5} align="center" sx={{ py: 3, color: "var(--text-secondary)", fontStyle: "italic" }}>
+                                        No course feedbacks found.
+                                      </TableCell>
+                                    </TableRow>
+                                  )}
+                                </TableBody>
+                              </Table>
+                            </TableContainer>
+                          </>
+                        )}
+
+                        {/* 1.3 Proctoring Students' Average Pass Percentage */}
                         {!(appraisal.status === "Completed" && (!appraisal.teaching.proctoring?.entries || appraisal.teaching.proctoring.entries.length === 0)) && (
                           <Box sx={{ mb: 4 }}>
                             <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 2 }}>
                               <Typography variant="subtitle1" sx={{ fontWeight: 700, color: "var(--color-primary)" }}>
-                                1.2 Proctoring Students' Average Pass Percentage
+                                1.3 Proctoring Students' Average Pass Percentage
                               </Typography>
                             </Box>
 
-                            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
+                            {/* <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
                               <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
                                 <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-secondary)" }}>
                                   Proctoring Records for this cycle:
                                 </Typography>
                               </Box>
-                            </Box>
+                            </Box> */}
 
                             <TableContainer component={Paper} elevation={0} sx={{ mb: 3.5, borderRadius: "16px", background: "var(--bg-paper)", border: "1px solid var(--border-color)", overflowX: "auto", boxShadow: "none", width: "100%" }}>
                               <Table size="small" sx={{ minWidth: 650, mx: "auto" }}>
@@ -3132,71 +3199,6 @@ const SelfAppraisal = () => {
                           </form>
                         </Dialog>
 
-                        {/* 1.3 Course Feedback */}
-                        {!(appraisal.status === "Completed" && (!appraisal.teaching.feedback?.courses || appraisal.teaching.feedback.courses.length === 0)) && (
-                          <>
-                            <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 1.5, color: "var(--color-primary)" }}>
-                              1.3 Course Feedback
-                            </Typography>
-                            <TableContainer component={Paper} elevation={0} sx={{ mb: 3.5, borderRadius: "16px", background: "var(--bg-paper)", border: "1px solid var(--border-color)", overflowX: "auto", boxShadow: "none", width: "100%" }}>
-                              <Table size="small" sx={{ minWidth: 650, mx: "auto" }}>
-                                <TableHead sx={{ background: "var(--gradient-primary)" }}>
-                                  <TableRow>
-                                    <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }}>Course Name</TableCell>
-                                    <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }}>Sem-Branch-Sec</TableCell>
-                                    <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }} align="center">Total Students</TableCell>
-                                    <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }} align="center">Given Students</TableCell>
-                                    <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }} align="center">Feedback %</TableCell>
-                                    <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 2 }} align="center">Points claimed</TableCell>
-                                  </TableRow>
-                                </TableHead>
-                                <TableBody>
-                                  {appraisal.teaching.feedback.courses.length > 0 ? (
-                                    <>
-                                      {appraisal.teaching.feedback.courses.map((c, i) => (
-                                        <TableRow key={i} sx={{ "&:hover": { bgcolor: "var(--bg-hover)" } }}>
-                                          <TableCell sx={{ fontWeight: 600, color: "var(--text-primary)" }}>{c.courseName}</TableCell>
-                                          <TableCell sx={{ color: "var(--text-primary)" }}>{c.secBranchSem}</TableCell>
-                                          <TableCell align="center" sx={{ color: "var(--text-primary)" }}>{c.totalStudents || c.noOfStudents}</TableCell>
-                                          <TableCell align="center" sx={{ color: "var(--text-primary)" }}>{c.givenStudents || ''}</TableCell>
-                                          <TableCell align="center" sx={{ color: "var(--text-primary)" }}>{c.feedbackPercentage}%</TableCell>
-                                          <TableCell align="center" sx={{ fontWeight: 800, color: "var(--color-primary)" }}>{c.pointsClaimed}</TableCell>
-                                        </TableRow>
-                                      ))}
-                                      {/* Summary / Average Row */}
-                                      {(() => {
-                                        const totalSt = appraisal.teaching.feedback.courses.reduce((sum, c) => sum + (Number(c.totalStudents || c.noOfStudents) || 0), 0);
-                                        const givenSt = appraisal.teaching.feedback.courses.reduce((sum, c) => sum + (Number(c.givenStudents) || 0), 0);
-                                        const avgFb = appraisal.teaching.feedback.courses.length > 0
-                                          ? (appraisal.teaching.feedback.courses.reduce((sum, c) => sum + (Number(c.feedbackPercentage) || 0), 0) / appraisal.teaching.feedback.courses.length).toFixed(2)
-                                          : "0.00";
-                                        return (
-                                          <TableRow sx={{ background: "rgba(0, 78, 146, 0.04)", "&:hover": { bgcolor: "rgba(0, 78, 146, 0.06) !important" } }}>
-                                            <TableCell colSpan={2} sx={{ fontWeight: 800, color: "var(--text-primary)", pl: 2 }}>
-                                              <Box component="span" sx={{ position: "sticky", left: 16, display: "inline-block", whiteSpace: "nowrap" }}>
-                                                Overall Performance
-                                              </Box>
-                                            </TableCell>
-                                            <TableCell align="center" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>{totalSt}</TableCell>
-                                            <TableCell align="center" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>{givenSt}</TableCell>
-                                            <TableCell align="center" sx={{ fontWeight: 900, color: "var(--color-primary)" }}>{avgFb}%</TableCell>
-                                            <TableCell align="center" sx={{ fontWeight: 900, color: "var(--color-primary)", fontSize: "0.95rem" }}>{appraisal.teaching.feedback.averagePoints} Points</TableCell>
-                                          </TableRow>
-                                        );
-                                      })()}
-                                    </>
-                                  ) : (
-                                    <TableRow>
-                                      <TableCell colSpan={5} align="center" sx={{ py: 3, color: "var(--text-secondary)", fontStyle: "italic" }}>
-                                        No course feedbacks found.
-                                      </TableCell>
-                                    </TableRow>
-                                  )}
-                                </TableBody>
-                              </Table>
-                            </TableContainer>
-                          </>
-                        )}
 
                         {/* 1.4 CO Attainment */}
                         {!(appraisal.status === "Completed" && (!appraisal.teaching.coAttainment?.courses || appraisal.teaching.coAttainment.courses.length === 0)) && (
@@ -3841,14 +3843,14 @@ const SelfAppraisal = () => {
                                               {(() => {
                                                 const appraisalItem = appraisal?.valueAddition?.resourceUtilization?.items?.find(i => i.eventId?.toString() === activity._id?.toString());
                                                 if (appraisalItem?.awardedPoints !== undefined && appraisalItem?.awardedPoints !== null) {
-                                                    return (
-                                                        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                                                            <span>{appraisalItem.awardedPoints}</span>
-                                                            <Typography variant="caption" sx={{ color: 'var(--text-secondary)', fontSize: '0.65rem' }}>
-                                                                (Auto: {calculateResourceUtilizationPoints(activity, appraisalConfig)})
-                                                            </Typography>
-                                                        </Box>
-                                                    );
+                                                  return (
+                                                    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                                                      <span>{appraisalItem.awardedPoints}</span>
+                                                      <Typography variant="caption" sx={{ color: 'var(--text-secondary)', fontSize: '0.65rem' }}>
+                                                        (Auto: {calculateResourceUtilizationPoints(activity, appraisalConfig)})
+                                                      </Typography>
+                                                    </Box>
+                                                  );
                                                 }
                                                 return getResourceUtilizationPoints(activity);
                                               })()}
@@ -4139,8 +4141,8 @@ const SelfAppraisal = () => {
                                       if (role.assignedBy) {
                                         if (typeof role.assignedBy === 'string') assignedByDisplay = role.assignedBy;
                                         else if (role.assignedBy.type) {
-                                          assignedByDisplay = role.assignedBy.type === "Others" 
-                                            ? `Others (${role.assignedBy.otherText})` 
+                                          assignedByDisplay = role.assignedBy.type === "Others"
+                                            ? `Others (${role.assignedBy.otherText})`
                                             : role.assignedBy.type;
                                         }
                                       }
@@ -4151,8 +4153,8 @@ const SelfAppraisal = () => {
                                           <TableCell sx={{ fontWeight: 600, color: "var(--text-primary)" }}>
                                             {(() => {
                                               const catalogEntry = ADMIN_ROLE_CATALOG.find(c => c.roleId === role.roleId);
-                                              return (catalogEntry && !['other', 'other_coord', 'training_coord'].includes(role.roleId)) 
-                                                ? catalogEntry.label 
+                                              return (catalogEntry && !['other', 'other_coord', 'training_coord'].includes(role.roleId))
+                                                ? catalogEntry.label
                                                 : (role.roleLabel || role.roleName);
                                             })()} {!['dean', 'assoc_dean', 'coe', 'hod', 'dy_coe', 'univ_office_coord', 'dy_hod', 'dept_exam_cell'].includes(role.roleId) && role.level ? `(${role.level})` : ""} {role.details ? `[${role.details}]` : ""}
                                             {role.status === "Rejected" && role.remarks && (
@@ -5079,7 +5081,7 @@ const SelfAppraisal = () => {
                         }}
                       />
                     </Box>
-                    </>
+                  </>
                 );
 
                 switch (cat) {
@@ -5600,7 +5602,7 @@ const SelfAppraisal = () => {
                     const isDisabled = !adminEditingRole && isClaimed && !isRejected;
                     return <MenuItem key={role.roleId} value={role.roleId} disabled={isDisabled}>{role.label}</MenuItem>;
                   })}
-                  
+
                   <MenuItem value="COORDINATOR" sx={{ fontWeight: 700, color: "var(--color-primary)" }}>Coordinator</MenuItem>
 
                   {ADMIN_ROLE_CATALOG.filter(r => r.category === 'Other').map(role => {

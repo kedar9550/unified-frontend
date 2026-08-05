@@ -5,7 +5,7 @@ import {
   DialogContent, DialogActions, Grid, Chip, Divider, Stack, useTheme, useMediaQuery
 } from "@mui/material";
 import { toast } from "sonner";
-import { Description, WorkspacePremium, Close, AddCircle, Edit, Delete, Visibility, CheckCircle, CalendarToday, Download, Comment, FormatQuote, DateRange, School } from "@mui/icons-material";
+import { Description, WorkspacePremium, Close, AddCircle, Edit, Delete, Visibility, CheckCircle, CalendarToday, Download, Comment, FormatQuote, DateRange, School, FilePresent } from "@mui/icons-material";
 import PageHeader from "../../components/common/PageHeader";
 import NoActiveYearDialog from "../../components/common/NoActiveYearDialog";
 import {
@@ -261,7 +261,7 @@ export default function Contribution() {
     const cat = item.category;
     setForm({
       academicYear: item.academicYear?._id || item.academicYear || "",
-      category: cat,
+      category: cat?._id || cat || "",
       organizationName: item.organizationName || "",
       fromDate: item.fromDate ? item.fromDate.substring(0, 10) : "",
       toDate: item.toDate ? item.toDate.substring(0, 10) : "",
@@ -288,6 +288,10 @@ export default function Contribution() {
       sanctionDate: item.sanctionDate ? item.sanctionDate.substring(0, 10) : "",
       courseHours: item.courseHours !== undefined ? String(item.courseHours) : "",
       certificateNumber: item.certificateNumber || "",
+      memberType: item.memberType || "",
+      journalType: item.journalType || "",
+      eventType: item.eventType || "",
+      studentNames: item.studentNames || "",
       existingProof: item.proof || ""
     });
     setIsDocumentRemoved(false);
