@@ -98,6 +98,7 @@ const GroupCoordinators = () => {
               name: c.employeeName || c.name || 'N/A',
               department: deptName,
               designation: c.designation || 'Coordinator',
+              phone: c.phone || c.mobile || 'N/A',
               groups: []
             });
           }
@@ -161,8 +162,11 @@ const GroupCoordinators = () => {
                   <Typography variant="body2" color="text.secondary" gutterBottom>
                     {coord.designation} {coord.department && coord.department !== 'N/A' ? `- ${coord.department}` : ''}
                   </Typography>
-                  <Typography variant="caption" sx={{ display: 'block', mb: 2, color: 'text.secondary', fontWeight: 600 }}>
+                  <Typography variant="caption" sx={{ display: 'block', color: 'text.secondary', fontWeight: 600 }}>
                     ID: {coord.id}
+                  </Typography>
+                  <Typography variant="caption" sx={{ display: 'block', mb: 2, color: 'text.secondary', fontWeight: 600 }}>
+                    Ph: {coord.phone}
                   </Typography>
                   
                   <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, justifyContent: 'center', mt: 2 }}>
