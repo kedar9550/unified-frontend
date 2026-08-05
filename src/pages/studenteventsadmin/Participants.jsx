@@ -106,7 +106,9 @@ const Participants = ({ mode = 'all' }) => {
               : eventMatch.venueType === 'Outdoor' && eventMatch.ground 
                 ? `${eventMatch.roomNo ? `Room No: ${eventMatch.roomNo}, ` : ''}${eventMatch.ground.name || eventMatch.ground}` 
                 : eventMatch.venue
-          ) : null
+          ) : null,
+          eventGroup: eventMatch?.group?.name || eventMatch?.group || '-',
+          eventCategory: eventMatch?.category?.name || eventMatch?.category || p.category || '-'
         };
       });
       
@@ -142,6 +144,8 @@ const Participants = ({ mode = 'all' }) => {
             amount: payment.amountRupees ?? payment.amount,
             paidAt: payment.createdAt || payment.paidAt,
             venue: payment.venue,
+            eventGroup: payment.eventGroup || '-',
+            eventCategory: payment.eventCategory || '-',
           });
         });
       }
@@ -160,7 +164,7 @@ const Participants = ({ mode = 'all' }) => {
 
   // Apply filters
   const filteredParticipants = useMemo(() => {
-    return allParticipants.filter((p) => {
+    let filtered = allParticipants.filter((p) => {
       // Event filter
       if (eventFilter !== 'ALL' && p.eventName !== eventFilter) return false;
 
@@ -201,7 +205,39 @@ const Participants = ({ mode = 'all' }) => {
 
       return true;
     });
-  }, [allParticipants, eventFilter, accommodationFilter, attendanceFilter, genderFilter, searchQuery]);
+
+    if (mode === 'accommodation') {
+      const grouped = {};
+      filtered.forEach(p => {
+        const key = p.roll || p.email || p.id;
+        if (!grouped[key]) {
+          grouped[key] = { 
+            ...p, 
+            eventNames: [p.eventName || ''], 
+            eventGroups: [p.eventGroup || ''], 
+            eventCategories: [p.eventCategory || ''],
+            combinedGroups: [`${p.eventGroup || ''} / ${p.eventCategory || ''}`] 
+          };
+        } else {
+          if (!grouped[key].eventNames.includes(p.eventName)) grouped[key].eventNames.push(p.eventName || '');
+          if (!grouped[key].eventGroups.includes(p.eventGroup)) grouped[key].eventGroups.push(p.eventGroup || '');
+          if (!grouped[key].eventCategories.includes(p.eventCategory)) grouped[key].eventCategories.push(p.eventCategory || '');
+          
+          const grpCat = `${p.eventGroup || ''} / ${p.eventCategory || ''}`;
+          if (!grouped[key].combinedGroups.includes(grpCat)) grouped[key].combinedGroups.push(grpCat);
+        }
+      });
+      filtered = Object.values(grouped).map(g => ({
+        ...g,
+        eventName: g.eventNames.filter(Boolean).join(', '),
+        eventGroup: g.eventGroups.filter(Boolean).join(', '),
+        eventCategory: g.eventCategories.filter(Boolean).join(', '),
+        eventGroupString: g.combinedGroups.filter(Boolean).join(', ')
+      }));
+    }
+
+    return filtered;
+  }, [allParticipants, eventFilter, accommodationFilter, attendanceFilter, genderFilter, searchQuery, mode]);
 
   // Metrics
   const accommodationCount = useMemo(() => {
@@ -239,7 +275,7 @@ const Participants = ({ mode = 'all' }) => {
       return;
     }
 
-    const headers = ['S.No', 'Name', 'Roll No', 'Event Name', 'College', 'Department', 'Gender', 'Contact', 'Attended'];
+    const headers = ['S.No', 'Name', 'Roll No', 'Group', 'Category', 'Event Name', 'College', 'Department', 'Gender', 'Contact', 'Attended'];
     const csvRows = [headers.join(',')];
 
     filteredParticipants.forEach((p, idx) => {
@@ -248,6 +284,8 @@ const Participants = ({ mode = 'all' }) => {
         idx + 1,
         `"${p.name || ''}"`,
         `"${p.roll || ''}"`,
+        `"${p.eventGroup || ''}"`,
+        `"${p.eventCategory || ''}"`,
         `"${p.eventName || ''}"`,
         `"${collegeName}"`,
         `"${p.department || ''}"`,
@@ -272,7 +310,8 @@ const Participants = ({ mode = 'all' }) => {
     'S.No',
     'Name',
     'Roll Number',
-    'Event Name',
+    'MAIN GROUP / CATEGORY',
+    'EVENT NAME',
     'College',
     'Department / Year',
     'Contact Info',
@@ -314,6 +353,7 @@ const Participants = ({ mode = 'all' }) => {
           {p.roll}
         </Typography>
       ) : '-',
+      p.eventGroupString ? p.eventGroupString : `${p.eventGroup} / ${p.eventCategory}`,
       p.eventName || '-',
       p.college ? (p.college === 'Other College' && p.otherCollege ? p.otherCollege : p.college) : '-',
       p.department ? `Dept: ${p.department}${p.year ? ' | Yr: ' + p.year : ''}` : (p.year ? `Yr: ${p.year}` : '-'),
@@ -785,8 +825,8 @@ const Participants = ({ mode = 'all' }) => {
             <DataTable
               columns={columns}
               rows={rows}
-              nonSortableColumns={[0, 7]}
-              alignments={['center', 'left', 'left', 'left', 'left', 'left', 'left', 'center']}
+              nonSortableColumns={[0, 8]}
+              alignments={['center', 'left', 'left', 'left', 'left', 'left', 'left', 'left', 'center']}
             />
           )}
         </Box>

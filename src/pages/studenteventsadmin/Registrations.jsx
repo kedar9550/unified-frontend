@@ -91,7 +91,9 @@ const Registrations = () => {
               : eventMatch.venueType === 'Outdoor' && eventMatch.ground 
                 ? `${eventMatch.roomNo ? `Room No: ${eventMatch.roomNo}, ` : ''}${eventMatch.ground.name || eventMatch.ground}` 
                 : eventMatch.venue
-          ) : null
+          ) : null,
+          eventGroup: eventMatch?.group?.name || eventMatch?.group || '-',
+          eventCategory: eventMatch?.category?.name || eventMatch?.category || p.category || '-'
         };
       });
       
@@ -127,6 +129,8 @@ const Registrations = () => {
             amount: payment.amountRupees ?? payment.amount,
             paidAt: payment.createdAt || payment.paidAt,
             venue: payment.venue,
+            eventGroup: payment.eventGroup || '-',
+            eventCategory: payment.eventCategory || '-',
           });
         });
       }
@@ -212,7 +216,7 @@ const Registrations = () => {
       return;
     }
 
-    const headers = ['S.No', 'Name', 'Roll No', 'Event Name', 'College', 'Department', 'Year', 'Gender', 'Mobile', 'Email', 'Accommodation'];
+    const headers = ['S.No', 'Name', 'Roll No', 'Group', 'Category', 'Event Name', 'College', 'Department', 'Year', 'Gender', 'Mobile', 'Email', 'Accommodation'];
     const csvRows = [headers.join(',')];
 
     filteredParticipants.forEach((p, idx) => {
@@ -221,6 +225,8 @@ const Registrations = () => {
         idx + 1,
         `"${p.name || ''}"`,
         `"${p.roll || ''}"`,
+        `"${p.eventGroup || ''}"`,
+        `"${p.eventCategory || ''}"`,
         `"${p.eventName || ''}"`,
         `"${collegeName}"`,
         `"${p.department || ''}"`,
@@ -247,7 +253,8 @@ const Registrations = () => {
     'S.No',
     'Name',
     'Roll Number',
-    'Event Name',
+    'MAIN GROUP / CATEGORY',
+    'EVENT NAME',
     'College',
     'Department / Year',
     'Contact Info',
@@ -290,6 +297,7 @@ const Registrations = () => {
           {p.roll}
         </Typography>
       ) : '-',
+      `${p.eventGroup} / ${p.eventCategory}`,
       p.eventName || '-',
       p.college ? (p.college === 'Other College' && p.otherCollege ? p.otherCollege : p.college) : '-',
       p.department ? `Dept: ${p.department}${p.year ? ' | Yr: ' + p.year : ''}` : (p.year ? `Yr: ${p.year}` : '-'),
@@ -712,8 +720,8 @@ const Registrations = () => {
             <DataTable
               columns={columns}
               rows={rows}
-              nonSortableColumns={[0, 8]}
-              alignments={['center', 'left', 'left', 'left', 'left', 'left', 'left', 'center', 'center']}
+              nonSortableColumns={[0, 9]}
+              alignments={['center', 'left', 'left', 'left', 'left', 'left', 'left', 'left', 'center', 'center']}
             />
           )}
         </Box>
