@@ -765,13 +765,13 @@ const SelfAppraisal = () => {
 
   const openAdminModalEdit = (role) => {
     setAdminEditingRole(role.roleId || role.roleName);
-    
+
     let pType = role.roleId;
     if (role.roleId) {
-       const catalogEntry = ADMIN_ROLE_CATALOG.find((r) => r.roleId === role.roleId);
-       if (catalogEntry && catalogEntry.category === "Coordinator") {
-          pType = "COORDINATOR";
-       }
+      const catalogEntry = ADMIN_ROLE_CATALOG.find((r) => r.roleId === role.roleId);
+      if (catalogEntry && catalogEntry.category === "Coordinator") {
+        pType = "COORDINATOR";
+      }
     }
 
     let tType = "";
@@ -836,8 +836,8 @@ const SelfAppraisal = () => {
       roleLabel: (() => {
         if (adminForm.roleId === "other" || adminForm.roleId === "other_coord") return adminForm.roleLabel.trim();
         if (adminForm.roleId === "training_coord") {
-           const suffix = adminForm.trainingProgramType === "Others" ? adminForm.trainingProgramOther.trim() : adminForm.trainingProgramType;
-           return `Training Program Coordinator - ${suffix}`;
+          const suffix = adminForm.trainingProgramType === "Others" ? adminForm.trainingProgramOther.trim() : adminForm.trainingProgramType;
+          return `Training Program Coordinator - ${suffix}`;
         }
         return catalogEntry?.label || adminForm.roleLabel;
       })(),
@@ -876,7 +876,7 @@ const SelfAppraisal = () => {
 
   const handleAdminDelete = async (roleIdentifier) => {
     if (!window.confirm("Are you sure you want to delete this administrative role?")) return;
-    
+
     const existingRoles = administrationDetail?.roles || [];
     const updatedRoles = existingRoles.map(r => (r.roleId === roleIdentifier || r.roleName === roleIdentifier) ? { ...r, isResponsible: false } : r);
 
@@ -1658,7 +1658,7 @@ const SelfAppraisal = () => {
     const catName = getCategoryName(item.category);
     const fDate = item.fromDate ? new Date(item.fromDate).toLocaleDateString('en-GB') : "";
     const tDate = item.toDate ? new Date(item.toDate).toLocaleDateString('en-GB') : "";
-    
+
     switch (catCode) {
       case 1: {
         const typeMap = {
@@ -1704,7 +1704,7 @@ const SelfAppraisal = () => {
     const lead = (fac.leadership || "").toLowerCase().trim();
     const qual = (fac.qualification || "").toLowerCase().trim();
     const doct = (fac.doctorate || "").toLowerCase().trim();
-    
+
     if (lead === "yes" || lead === "true") return "Leadership Team";
     if (qual.includes("phd") || qual.includes("ph.d") || doct === "yes" || doct === "true") return "Doctorate Faculty";
     return "Non-Doctorate Faculty";
@@ -2892,13 +2892,13 @@ const SelfAppraisal = () => {
                               </Typography>
                             </Box>
 
-                            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
+                            {/* <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
                               <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
                                 <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-secondary)" }}>
                                   Proctoring Records for this cycle:
                                 </Typography>
                               </Box>
-                            </Box>
+                            </Box> */}
 
                             <TableContainer component={Paper} elevation={0} sx={{ mb: 3.5, borderRadius: "16px", background: "var(--bg-paper)", border: "1px solid var(--border-color)", overflowX: "auto", boxShadow: "none", width: "100%" }}>
                               <Table size="small" sx={{ minWidth: 650, mx: "auto" }}>
@@ -3842,14 +3842,14 @@ const SelfAppraisal = () => {
                                               {(() => {
                                                 const appraisalItem = appraisal?.valueAddition?.resourceUtilization?.items?.find(i => i.eventId?.toString() === activity._id?.toString());
                                                 if (appraisalItem?.awardedPoints !== undefined && appraisalItem?.awardedPoints !== null) {
-                                                    return (
-                                                        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                                                            <span>{appraisalItem.awardedPoints}</span>
-                                                            <Typography variant="caption" sx={{ color: 'var(--text-secondary)', fontSize: '0.65rem' }}>
-                                                                (Auto: {calculateResourceUtilizationPoints(activity, appraisalConfig)})
-                                                            </Typography>
-                                                        </Box>
-                                                    );
+                                                  return (
+                                                    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                                                      <span>{appraisalItem.awardedPoints}</span>
+                                                      <Typography variant="caption" sx={{ color: 'var(--text-secondary)', fontSize: '0.65rem' }}>
+                                                        (Auto: {calculateResourceUtilizationPoints(activity, appraisalConfig)})
+                                                      </Typography>
+                                                    </Box>
+                                                  );
                                                 }
                                                 return getResourceUtilizationPoints(activity);
                                               })()}
@@ -4140,8 +4140,8 @@ const SelfAppraisal = () => {
                                       if (role.assignedBy) {
                                         if (typeof role.assignedBy === 'string') assignedByDisplay = role.assignedBy;
                                         else if (role.assignedBy.type) {
-                                          assignedByDisplay = role.assignedBy.type === "Others" 
-                                            ? `Others (${role.assignedBy.otherText})` 
+                                          assignedByDisplay = role.assignedBy.type === "Others"
+                                            ? `Others (${role.assignedBy.otherText})`
                                             : role.assignedBy.type;
                                         }
                                       }
@@ -4152,8 +4152,8 @@ const SelfAppraisal = () => {
                                           <TableCell sx={{ fontWeight: 600, color: "var(--text-primary)" }}>
                                             {(() => {
                                               const catalogEntry = ADMIN_ROLE_CATALOG.find(c => c.roleId === role.roleId);
-                                              return (catalogEntry && !['other', 'other_coord', 'training_coord'].includes(role.roleId)) 
-                                                ? catalogEntry.label 
+                                              return (catalogEntry && !['other', 'other_coord', 'training_coord'].includes(role.roleId))
+                                                ? catalogEntry.label
                                                 : (role.roleLabel || role.roleName);
                                             })()} {!['dean', 'assoc_dean', 'coe', 'hod', 'dy_coe', 'univ_office_coord', 'dy_hod', 'dept_exam_cell'].includes(role.roleId) && role.level ? `(${role.level})` : ""} {role.details ? `[${role.details}]` : ""}
                                             {role.status === "Rejected" && role.remarks && (
@@ -5080,7 +5080,7 @@ const SelfAppraisal = () => {
                         }}
                       />
                     </Box>
-                    </>
+                  </>
                 );
 
                 switch (cat) {
@@ -5601,7 +5601,7 @@ const SelfAppraisal = () => {
                     const isDisabled = !adminEditingRole && isClaimed && !isRejected;
                     return <MenuItem key={role.roleId} value={role.roleId} disabled={isDisabled}>{role.label}</MenuItem>;
                   })}
-                  
+
                   <MenuItem value="COORDINATOR" sx={{ fontWeight: 700, color: "var(--color-primary)" }}>Coordinator</MenuItem>
 
                   {ADMIN_ROLE_CATALOG.filter(r => r.category === 'Other').map(role => {
