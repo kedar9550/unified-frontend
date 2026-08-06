@@ -401,13 +401,13 @@ const AppraisalReportDetail = () => {
     }
   };
 
-  const handleAdminHODAction = async (id, roleName, action, remarks) => {
+  const handleAdminHODAction = async (id, roleId, roleName, action, remarks) => {
     if (action === "Reject" && (!remarks || !remarks.trim())) {
       toast.warning("Please provide a rejection reason/remarks");
       return;
     }
     try {
-      const res = await axiosInstance.put(`/api/faculty-administration/hod-action-role/${id}`, { roleName, action, remarks });
+      const res = await axiosInstance.put(`/api/faculty-administration/hod-action-role/${id}`, { roleId, action, remarks });
       if (res.data?.success) {
         const actionText = action === "Approve" ? "approved" : "rejected";
         toast.success(`Administrative role '${roleName}' ${actionText} successfully.`);
@@ -2357,7 +2357,7 @@ const AppraisalReportDetail = () => {
                                               />
                                               <Stack direction="row" spacing={1} sx={{ mt: 1.5 }}>
                                                 <Button size="small" variant="contained" color="error" onClick={() => {
-                                                  handleAdminHODAction(selectedAppraisal.administrationDetail._id, role.roleName, "Reject", adminRemarks[role.roleName] || "");
+                                                  handleAdminHODAction(selectedAppraisal.administrationDetail._id, role.roleId, role.roleName, "Reject", adminRemarks[role.roleId || role.roleName] || "");
                                                   setShowRejectInput(p => ({ ...p, [role.roleId || role.roleName]: false }));
                                                 }}>Confirm Reject</Button>
                                                 <Button size="small" variant="text" color="inherit" onClick={() => setShowRejectInput(p => ({ ...p, [role.roleId || role.roleName]: false }))}>Cancel</Button>
@@ -2366,7 +2366,7 @@ const AppraisalReportDetail = () => {
                                           ) : (
                                             <Stack direction="row" spacing={1} sx={{ mt: 0 }}>
                                               <Button size="small" variant="outlined" color="error" onClick={() => setShowRejectInput(p => ({ ...p, [role.roleId || role.roleName]: true }))}>Reject</Button>
-                                              <Button size="small" variant="contained" color="success" sx={{ color: "#fff" }} onClick={() => handleAdminHODAction(selectedAppraisal.administrationDetail._id, role.roleName, "Approve", adminRemarks[role.roleName] || "")}>Approve</Button>
+                                              <Button size="small" variant="contained" color="success" sx={{ color: "#fff" }} onClick={() => handleAdminHODAction(selectedAppraisal.administrationDetail._id, role.roleId, role.roleName, "Approve", adminRemarks[role.roleId || role.roleName] || "")}>Approve</Button>
                                             </Stack>
                                           )}
                                         </Box>
