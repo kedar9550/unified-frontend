@@ -543,6 +543,14 @@ export const ROLE_ROUTES = {
         { text: "Passes", path: "/Eventveda/passes", icon: <CardMembership /> },
         { text: "Update Passes", path: "/Eventveda/update-passes", icon: <CardMembership /> }
       ]
+    },
+    {
+      text: "Certificates",
+      icon: <WorkspacePremium />,
+      nested: [
+        { text: "Winning Certificates", path: "/Eventveda/winning-certificates", icon: <WorkspacePremium /> },
+        { text: "Participation Certificates", path: "/Eventveda/participation-certificates", icon: <WorkspacePremium /> }
+      ]
     }
   ],
 
