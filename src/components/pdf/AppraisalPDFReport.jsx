@@ -2,7 +2,7 @@ import React, { forwardRef } from 'react';
 import ausLogo from '../../assets/AUS Long Logo.png';
 import { ADMIN_ROLE_CATALOG } from '../../constants/adminRoleCatalog';
 
-const AppraisalPDFReport = forwardRef(({ data, hideInterpersonal }, ref) => {
+const AppraisalPDFReport = forwardRef(({ data, hideInterpersonal, eligibilityDetails, isEligible }, ref) => {
   if (!data) return null;
 
   const styles = {
@@ -149,6 +149,50 @@ const AppraisalPDFReport = forwardRef(({ data, hideInterpersonal }, ref) => {
           </tr>
         </tbody>
       </table>
+
+      {eligibilityDetails && (
+        <>
+          <div style={{ fontSize: '18px', fontWeight: 'bold', marginTop: '20px', marginBottom: '10px', color: '#002060' }}>Eligibility Status</div>
+          <table style={styles.table}>
+            <thead style={{ display: 'table-header-group' }}>
+              <tr style={styles.tr}>
+                <th style={{ ...styles.th, width: '5%' }}>S.no</th>
+                <th style={{ ...styles.th, width: '55%' }}>Eligibility Criteria</th>
+                <th style={{ ...styles.th, width: '20%' }}>Status</th>
+                <th style={{ ...styles.th, width: '20%' }}>Final Eligibility Result</th>
+              </tr>
+            </thead>
+            <tbody style={{ display: 'table-row-group', pageBreakInside: 'auto' }}>
+              <tr style={styles.tr}>
+                <td style={styles.td}>1</td>
+                <td style={styles.tdLeft}>
+                  Attending an FDP of at least 5 days, organised by UGC / AICTE / IITs / IIMs / NITs / MHRD R&D labs / NITTTR / NIPER / ICMR / NIRF-ranked Institutes (below 200) / Govt. Universities / NPTEL / completing Coursera course (Min. 40 Hrs).
+                </td>
+                <td style={styles.td}>{eligibilityDetails.fdpCourseraPassed ? "Fulfilled" : "Unfulfilled"}</td>
+                <td style={{ ...styles.td, fontWeight: 'bold', verticalAlign: 'middle' }} rowSpan={eligibilityDetails.showInterpersonal ? 3 : 2}>
+                  {isEligible ? "Eligible" : "Not Eligible"}
+                </td>
+              </tr>
+              <tr style={styles.tr}>
+                <td style={styles.td}>2</td>
+                <td style={styles.tdLeft}>
+                  Acquisition of the minimum required points in Metric 2.1 (Papers Published). (Min {eligibilityDetails.metric21Threshold} points)
+                </td>
+                <td style={styles.td}>{eligibilityDetails.metric21Passed ? "Fulfilled" : "Unfulfilled"}</td>
+              </tr>
+              {eligibilityDetails.showInterpersonal && (
+                <tr style={styles.tr}>
+                  <td style={styles.td}>3</td>
+                  <td style={styles.tdLeft}>
+                    A minimum of 30 points in the Interpersonal Skills category.
+                  </td>
+                  <td style={styles.td}>{eligibilityDetails.interpersonalPassed ? "Fulfilled" : "Unfulfilled"}</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </>
+      )}
 
       <div style={styles.sectionTitle}>PART B: PERFORMANCE ATTRIBUTES</div>
 

@@ -71,7 +71,9 @@ import {
   Groups,
   BarChart,
   WorkspacePremium,
-  SupervisorAccount
+  SupervisorAccount,
+  ThumbUp,
+  Flag
 } from "@mui/icons-material";
 import axiosInstance from "../../api/axios";
 import { toast } from "sonner";
@@ -538,10 +540,7 @@ const SelfAppraisal = () => {
       return;
     }
 
-    if (!eligibility.canSubmit) {
-      toast.error("You do not meet the minimum eligibility criteria to submit this appraisal (check FDP/Coursera & Metric 2.1).");
-      return;
-    }
+
 
     // Check for rejected items in proctoring, resource utilization, contributions, and administrative responsibilities
     const hasRejectedProc = proctoringDetail?.status === "Rejected";
@@ -1870,18 +1869,6 @@ const SelfAppraisal = () => {
           desc: `Current: ${metric21Score}`,
           passed: metric21Passed,
           isGating: true
-        },
-        // teaching: {
-        //   label: `Teaching Score (Min ${thresholds.teaching})`,
-        //   desc: `Current: ${scores.T} / 80`,
-        //   passed: teachingPassed,
-        //   isGating: false
-        // },
-        total1to4: {
-          label: `Total (1-4) Score (Min ${thresholds.total1to4})`,
-          desc: `Current: ${scores.total1to4} / 200`,
-          passed: total1to4Passed,
-          isGating: false
         }
       }
     };
@@ -4258,28 +4245,16 @@ const SelfAppraisal = () => {
             <Box
               sx={{
                 display: "grid",
-                gridTemplateColumns: { xs: "1fr", md: "1fr 1fr", lg: "1fr 1fr 1fr" },
+                gridTemplateColumns: "1fr",
                 gap: 3,
                 mb: 4
               }}
             >
               {Object.entries(eligibility.checklist).map(([key, item]) => {
-                let icon = <CheckCircle sx={{ fontSize: 24 }} />;
-                let color = "#10b981";
-                let iconBg = "rgba(16, 185, 129, 0.08)";
-                let cardBorder = "rgba(16, 185, 129, 0.2)";
-
-                if (item.isPending) {
-                  icon = <HourglassEmpty sx={{ fontSize: 24 }} />;
-                  color = "#e8a000";
-                  iconBg = "rgba(232, 160, 0, 0.08)";
-                  cardBorder = "rgba(232, 160, 0, 0.2)";
-                } else if (!item.passed) {
-                  icon = <Cancel sx={{ fontSize: 24 }} />;
-                  color = "#ef4444";
-                  iconBg = "rgba(239, 68, 68, 0.08)";
-                  cardBorder = "rgba(239, 68, 68, 0.2)";
-                }
+                let icon = item.passed ? <ThumbUp sx={{ fontSize: 24 }} /> : <HourglassEmpty sx={{ fontSize: 24 }} />;
+                let color = "#3b82f6";
+                let iconBg = "rgba(59, 130, 246, 0.08)";
+                let cardBorder = "rgba(59, 130, 246, 0.2)";
 
                 return (
                   <Box
@@ -4322,69 +4297,77 @@ const SelfAppraisal = () => {
                       <Typography variant="body2" sx={{ color: "var(--text-secondary)", mt: 0.75, display: "block", lineHeight: 1.4 }}>
                         {item.desc}
                       </Typography>
-                      {item.isGating && !item.passed && (
-                        <Chip
-                          label="Required to Submit"
-                          size="small"
-                          color="error"
-                          sx={{ mt: 1.5, fontWeight: 800, height: 22, fontSize: "0.7rem" }}
-                        />
-                      )}
+
                     </Box>
                   </Box>
                 );
               })}
             </Box>
 
-            {/* Status banner card at the bottom */}
-            <Divider sx={{ mx: -4, mb: 0, borderColor: "var(--border-color)" }} />
-            {eligibility.canSubmit ? (
+
+          </Card>
+        </Box>
+
+        <Box sx={{ mb: 5, width: "100%" }}>
+          <Card
+            sx={{
+              p: 2.5,
+              borderRadius: "16px",
+              border: "1px solid var(--border-color)",
+              boxShadow: "none",
+              background: "var(--bg-paper)",
+              display: "flex",
+              flexDirection: "column",
+              gap: 2,
+              width: "100%"
+            }}
+          >
+            <Box sx={{ display: "flex", alignItems: "flex-start", gap: 2 }}>
               <Box
                 sx={{
-                  p: 3,
-                  borderRadius: "0 0 24px 24px",
-                  background: "rgba(16, 185, 129, 0.08)",
+                  width: 48,
+                  height: 48,
+                  borderRadius: "50%",
+                  bgcolor: "rgba(59, 130, 246, 0.08)",
+                  color: "#3b82f6",
                   display: "flex",
                   alignItems: "center",
-                  gap: 2,
-                  mx: -4,
-                  mb: -4
+                  justifyContent: "center",
+                  flexShrink: 0
                 }}
               >
-                <Box sx={{ fontSize: 32, flexShrink: 0 }}>🎉</Box>
-                <Box>
-                  <Typography variant="h6" sx={{ fontWeight: 800, color: "#10b981" }}>
-                    You are eligible!
-                  </Typography>
-                  <Typography variant="body2" sx={{ color: "var(--text-secondary)", display: "block", mt: 0.5, fontWeight: 500 }}>
-                    All gating requirements satisfied.
-                  </Typography>
-                </Box>
+                <Flag sx={{ fontSize: 24 }} />
               </Box>
-            ) : (
-              <Box
-                sx={{
-                  p: 3,
-                  borderRadius: "0 0 24px 24px",
-                  background: "rgba(232, 160, 0, 0.08)",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 2,
-                  mx: -4,
-                  mb: -4
-                }}
-              >
-                <Box sx={{ fontSize: 32, flexShrink: 0 }}>🎉</Box>
-                <Box>
-                  <Typography variant="h6" sx={{ fontWeight: 800, color: "#e8a000" }}>
-                    You are almost there!
-                  </Typography>
-                  <Typography variant="body2" sx={{ color: "var(--text-secondary)", display: "block", mt: 0.5, fontWeight: 500 }}>
-                    Complete the pending criteria to become eligible.
-                  </Typography>
-                </Box>
+              <Box sx={{ flexGrow: 1 }}>
+                <Typography variant="body1" sx={{ fontWeight: 800, color: "var(--text-primary)", lineHeight: 1.3 }}>
+                  Total (1-4) Score (Min {eligibility.thresholds.total1to4})
+                </Typography>
+                <Typography variant="body2" sx={{ color: "var(--text-secondary)", mt: 0.75, display: "block", lineHeight: 1.4 }}>
+                  Current: {eligibility.scores.total1to4} / 200
+                </Typography>
               </Box>
-            )}
+            </Box>
+
+            <Divider sx={{ my: 1, borderColor: "var(--border-color)" }} />
+            
+            <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr 1fr 1fr" }, gap: 3 }}>
+              <Box>
+                <Typography variant="caption" sx={{ color: "var(--text-secondary)", fontWeight: 600, display: "block", mb: 0.5 }}>1. Teaching</Typography>
+                <Typography variant="body2" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>{eligibility.scores.T} / 80</Typography>
+              </Box>
+              <Box>
+                <Typography variant="caption" sx={{ color: "var(--text-secondary)", fontWeight: 600, display: "block", mb: 0.5 }}>2. Research</Typography>
+                <Typography variant="body2" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>{eligibility.scores.R_sum}</Typography>
+              </Box>
+              <Box>
+                <Typography variant="caption" sx={{ color: "var(--text-secondary)", fontWeight: 600, display: "block", mb: 0.5 }}>3. Value Addition</Typography>
+                <Typography variant="body2" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>{eligibility.scores.V} / 20</Typography>
+              </Box>
+              <Box>
+                <Typography variant="caption" sx={{ color: "var(--text-secondary)", fontWeight: 600, display: "block", mb: 0.5 }}>4. Administration</Typography>
+                <Typography variant="body2" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>{eligibility.scores.A} / 20</Typography>
+              </Box>
+            </Box>
           </Card>
         </Box>
 
