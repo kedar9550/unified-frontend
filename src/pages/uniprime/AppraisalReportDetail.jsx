@@ -32,9 +32,10 @@ import {
   DialogActions,
   InputAdornment,
   Select,
-  MenuItem
+  MenuItem,
+  Collapse
 } from "@mui/material";
-import { RateReview, CheckCircle, Reply, Visibility, OpenInNew, School, Science, CardMembership, Work, Groups, Person, MenuBook, Badge, Description, Public, Fingerprint, Cancel, BarChart, Close, Search, Edit } from "@mui/icons-material";
+import { RateReview, CheckCircle, Reply, Visibility, OpenInNew, School, Science, CardMembership, Work, Groups, Person, MenuBook, Badge, Description, Public, Fingerprint, Cancel, BarChart, Close, Search, Edit, KeyboardArrowDown, KeyboardArrowUp } from "@mui/icons-material";
 import axiosInstance from "../../api/axios";
 import { toast } from "sonner";
 import DataTable from "../../components/data/DataTable";
@@ -204,6 +205,7 @@ const AppraisalReportDetail = () => {
   const [resUtRemarks, setResUtRemarks] = useState({}); // { itemId: remarks }
   const [contRemarks, setContRemarks] = useState({}); // { itemId: remarks }
   const [adminRemarks, setAdminRemarks] = useState({}); // { roleName: remarks }
+  const [showRejectInput, setShowRejectInput] = useState({}); // { itemId: boolean }
   const [awardedResUtilPoints, setAwardedResUtilPoints] = useState({}); // { recordId: awardedPoints }
   const [editingResUtilId, setEditingResUtilId] = useState(null);
 
@@ -219,6 +221,7 @@ const AppraisalReportDetail = () => {
   // Print Ref
   const printRef = useRef();
   const [isDownloading, setIsDownloading] = useState(false);
+  const [showEligibilityDetails, setShowEligibilityDetails] = useState(false);
 
   const handleDownloadPDF = async () => {
     if (!printRef.current) return;
@@ -398,13 +401,13 @@ const AppraisalReportDetail = () => {
     }
   };
 
-  const handleAdminHODAction = async (id, roleName, action, remarks) => {
+  const handleAdminHODAction = async (id, roleId, roleName, action, remarks) => {
     if (action === "Reject" && (!remarks || !remarks.trim())) {
       toast.warning("Please provide a rejection reason/remarks");
       return;
     }
     try {
-      const res = await axiosInstance.put(`/api/faculty-administration/hod-action-role/${id}`, { roleName, action, remarks });
+      const res = await axiosInstance.put(`/api/faculty-administration/hod-action-role/${id}`, { roleId, action, remarks });
       if (res.data?.success) {
         const actionText = action === "Approve" ? "approved" : "rejected";
         toast.success(`Administrative role '${roleName}' ${actionText} successfully.`);
@@ -461,7 +464,7 @@ const AppraisalReportDetail = () => {
     const catCode = item.category?.code || parseInt(item.category);
     const fDate = item.fromDate ? new Date(item.fromDate).toLocaleDateString('en-GB') : "";
     const tDate = item.toDate ? new Date(item.toDate).toLocaleDateString('en-GB') : "";
-    
+
     switch (catCode) {
       case 1: {
         const typeMap = {
@@ -748,6 +751,70 @@ const AppraisalReportDetail = () => {
     }
   } : null;
 
+  const checkEligibilityStatus = () => {
+    if (!selectedAppraisal || !calculatedPrintData) return false;
+
+    // FDP/Coursera check
+    const allowedOrg = [
+      "ugc", "aicte", "iit", "iim", "nit", "mhrd r&d lab", "mhrd r&d labs",
+      "nitttr", "niper", "icmr", "nirf ranked institute (below 200)",
+      "nirf ranked institute (below rank 200)", "govt. university", "government university", "nptel"
+    ];
+    const hasValidFdp = selectedAppraisal.resourceUtilizationDetails?.some(r => {
+      if (r.status === 'Rejected') return false;
+      const cat = (r.activityCategory || '').toLowerCase().trim();
+      const type = (r.activityType || '').toLowerCase().trim();
+      const org = (r.organizingInstitutionCategory || '').toLowerCase().trim();
+      const days = Number(r.numberOfDaysParticipated) || Number(r.daysParticipated) || Number(r.duration) || 0;
+      if (cat === 'fdp' && type === 'fdp participant' && days >= 5 && allowedOrg.includes(org)) {
+        if (org.includes("nirf")) {
+          const rank = Number(r.nirfRank);
+          return !isNaN(rank) && rank > 0 && rank < 200;
+        }
+        return true;
+      }
+      return false;
+    });
+
+    const hasValidCoursera40Hours = selectedAppraisal.contributionDetails?.some(c => {
+      if (c.status === 'Rejected') return false;
+      const catCode = typeof c.category === 'object' ? c.category?.code : parseInt(c.category);
+      return catCode === 12 && Number(c.courseHours) >= 40;
+    });
+
+    const fdpCourseraPassed = hasValidFdp || hasValidCoursera40Hours;
+
+    // Metric 2.1 check
+    const metric21Score = selectedAppraisal.research?.papers?.totalClaimed || 0;
+    const catThresholds = getCategoryThresholds(selectedAppraisal.facultyCategory || "Non-Doctorate Faculty");
+    const metric21Passed = metric21Score >= catThresholds.metric21;
+
+    // Interpersonal Skills Check
+    const showInterpersonal = ["Approved", "Completed", "Pending Research Admin"].includes(selectedAppraisal.status);
+    let interpersonalScore = 0;
+    if (showInterpersonal && selectedAppraisal.hodEvaluation?.interpersonalRatings?.length > 0) {
+      interpersonalScore = selectedAppraisal.hodEvaluation.interpersonalRatings.reduce((sum, item) => sum + (Number(item.rating) || 0), 0);
+    }
+    const interpersonalPassed = interpersonalScore >= 30;
+
+    const isEligible = fdpCourseraPassed && metric21Passed && (!showInterpersonal || interpersonalPassed);
+
+    return {
+      isEligible,
+      details: {
+        fdpCourseraPassed,
+        metric21Score,
+        metric21Threshold: catThresholds.metric21,
+        metric21Passed,
+        showInterpersonal,
+        interpersonalScore,
+        interpersonalPassed
+      }
+    };
+  };
+
+  const { isEligible, details: eligibilityDetails } = checkEligibilityStatus();
+
   const validationStatus = getAppraisalValidationStatus();
   const allRatingsProvided = typeof PARAMETERS !== 'undefined'
     ? PARAMETERS.every(p => ratings[p.id] !== undefined && ratings[p.id] !== null && ratings[p.id] !== "")
@@ -853,12 +920,103 @@ const AppraisalReportDetail = () => {
         <Box sx={{ width: '100%' }}>
 
           <div style={{ display: 'none' }}>
-            <AppraisalPDFReport data={calculatedPrintData} ref={printRef} hideInterpersonal={role === "FACULTY"} />
+            <AppraisalPDFReport
+              data={calculatedPrintData}
+              ref={printRef}
+              hideInterpersonal={role === "FACULTY"}
+              eligibilityDetails={eligibilityDetails}
+              isEligible={isEligible}
+            />
           </div>
 
           <Grid container spacing={4}>
             {/* Left Column: Full Appraisal Preview (xs={12} lg={7.5}) */}
             <Grid xs={12} lg={role === "FACULTY" ? 12 : 7.5}>
+              {/* Eligibility Status */}
+              <Card sx={{ borderRadius: "20px", background: "var(--bg-panel)", border: "1px solid var(--border-color)", mb: 4, boxShadow: "var(--shadow-premium)" }}>
+                <CardContent sx={{ p: 3 }}>
+                  <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                      <Box sx={{ width: 48, height: 48, borderRadius: "50%", bgcolor: isEligible ? "rgba(16, 185, 129, 0.08)" : "rgba(239, 68, 68, 0.08)", color: isEligible ? "#10b981" : "#ef4444", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                        {isEligible ? <CheckCircle sx={{ fontSize: 28 }} /> : <Cancel sx={{ fontSize: 28 }} />}
+                      </Box>
+                      <Box>
+                        <Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>
+                          Eligibility Status
+                        </Typography>
+                        <Typography variant="body2" sx={{ color: "var(--text-secondary)", mt: 0.5 }}>
+                          {isEligible ? "Fulfilled the minimum eligibility criteria." : "Unfulfilled the minimum eligibility criteria."}
+                        </Typography>
+                      </Box>
+                    </Box>
+                    <IconButton onClick={() => setShowEligibilityDetails(!showEligibilityDetails)}>
+                      {showEligibilityDetails ? <KeyboardArrowUp /> : <KeyboardArrowDown />}
+                    </IconButton>
+                  </Box>
+
+                  <Collapse in={showEligibilityDetails}>
+                    <Box sx={{ mt: 3 }}>
+                      <Divider sx={{ mb: 2 }} />
+                      <Stack spacing={3} sx={{ width: "100%" }}>
+                        <Box sx={{ p: 2, borderRadius: "12px", border: "1px solid var(--border-color)", background: "var(--bg-paper)", display: "flex", alignItems: "flex-start", gap: 2, width: "100%", boxSizing: "border-box" }}>
+                          <Box sx={{ width: 40, height: 40, borderRadius: "8px", bgcolor: eligibilityDetails?.fdpCourseraPassed ? "rgba(16, 185, 129, 0.08)" : "rgba(239, 68, 68, 0.08)", color: eligibilityDetails?.fdpCourseraPassed ? "#10b981" : "#ef4444", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, mt: 0.5 }}>
+                            {eligibilityDetails?.fdpCourseraPassed ? <CheckCircle fontSize="small" /> : <Cancel fontSize="small" />}
+                          </Box>
+                          <Box sx={{ flex: 1, width: "100%" }}>
+                            <Typography variant="subtitle2" sx={{ fontWeight: 500, color: "var(--text-primary)", mb: 0.5 }}>
+                              1. Attending an FDP of at least 5 days, organised by UGC / AICTE / IITs / IIMs / NITs / MHRD R&D labs / NITTTR / NIPER / ICMR / NIRF-ranked Institutes (below 200) / Govt. Universities / NPTEL / completing Coursera course (Min. 40 Hrs).
+                            </Typography>
+                            <Typography variant="caption" sx={{ color: eligibilityDetails?.fdpCourseraPassed ? "#10b981" : "#ef4444", fontWeight: 700 }}>
+                              {eligibilityDetails?.fdpCourseraPassed ? "Fulfilled" : "Unfulfilled"}
+                            </Typography>
+                          </Box>
+                        </Box>
+
+                        <Box sx={{ p: 2, borderRadius: "12px", border: "1px solid var(--border-color)", background: "var(--bg-paper)", display: "flex", alignItems: "flex-start", gap: 2, width: "100%", boxSizing: "border-box" }}>
+                          <Box sx={{ width: 40, height: 40, borderRadius: "8px", bgcolor: eligibilityDetails?.metric21Passed ? "rgba(16, 185, 129, 0.08)" : "rgba(239, 68, 68, 0.08)", color: eligibilityDetails?.metric21Passed ? "#10b981" : "#ef4444", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, mt: 0.5 }}>
+                            {eligibilityDetails?.metric21Passed ? <CheckCircle fontSize="small" /> : <Cancel fontSize="small" />}
+                          </Box>
+                          <Box sx={{ flex: 1, width: "100%" }}>
+                            <Typography variant="subtitle2" sx={{ fontWeight: 500, color: "var(--text-primary)", mb: 0.5 }}>
+                              2. Acquisition of the minimum required points in Metric 2.1 (Papers Published). (Min {eligibilityDetails?.metric21Threshold} points)
+                            </Typography>
+                            <Typography variant="caption" sx={{ color: "var(--text-secondary)", fontWeight: 700, display: "block" }}>
+                              {eligibilityDetails?.metric21Passed ? (
+                                <span style={{ color: "#10b981" }}>Fulfilled</span>
+                              ) : (
+                                <span style={{ color: "#ef4444" }}>Unfulfilled</span>
+                              )}
+                              <span style={{ marginLeft: "8px", fontWeight: 600 }}>[Scored: {eligibilityDetails?.metric21Score} points]</span>
+                            </Typography>
+                          </Box>
+                        </Box>
+
+                        {eligibilityDetails?.showInterpersonal && (
+                          <Box sx={{ p: 2, borderRadius: "12px", border: "1px solid var(--border-color)", background: "var(--bg-paper)", display: "flex", alignItems: "flex-start", gap: 2, width: "100%", boxSizing: "border-box" }}>
+                            <Box sx={{ width: 40, height: 40, borderRadius: "8px", bgcolor: eligibilityDetails.interpersonalPassed ? "rgba(16, 185, 129, 0.08)" : "rgba(239, 68, 68, 0.08)", color: eligibilityDetails.interpersonalPassed ? "#10b981" : "#ef4444", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, mt: 0.5 }}>
+                              {eligibilityDetails.interpersonalPassed ? <CheckCircle fontSize="small" /> : <Cancel fontSize="small" />}
+                            </Box>
+                            <Box sx={{ flex: 1, width: "100%" }}>
+                              <Typography variant="subtitle2" sx={{ fontWeight: 500, color: "var(--text-primary)", mb: 0.5 }}>
+                                3. A minimum of 30 points in the Interpersonal Skills category.
+                              </Typography>
+                              <Typography variant="caption" sx={{ color: "var(--text-secondary)", fontWeight: 700, display: "block" }}>
+                                {eligibilityDetails.interpersonalPassed ? (
+                                  <span style={{ color: "#10b981" }}>Fulfilled</span>
+                                ) : (
+                                  <span style={{ color: "#ef4444" }}>Unfulfilled</span>
+                                )}
+                                <span style={{ marginLeft: "8px", fontWeight: 600 }}>[Scored: {eligibilityDetails.interpersonalScore} points]</span>
+                              </Typography>
+                            </Box>
+                          </Box>
+                        )}
+                      </Stack>
+                    </Box>
+                  </Collapse>
+                </CardContent>
+              </Card>
+
               {/* PART-A: Personal Information */}
               <Card sx={{ borderRadius: "20px", background: "var(--bg-panel)", border: "1px solid var(--border-color)", mb: 4, boxShadow: "var(--shadow-premium)" }}>
                 <CardContent sx={{ p: 3 }}>
@@ -1167,19 +1325,29 @@ const AppraisalReportDetail = () => {
                               <Chip label="Pending Review" size="small" sx={{ bgcolor: "rgba(232, 160, 0, 0.1)", color: "#e8a000", fontWeight: 800, borderRadius: "6px" }} />
                             </Box>
                             <Box>
-                              <TextField
-                                size="small"
-                                fullWidth
-                                placeholder="Provide rejection reason or approval remarks for all pending proctoring entries..."
-                                value={proctoringRemarks}
-                                onChange={(e) => setProctoringRemarks(e.target.value)}
-                                sx={{ mb: 1.5 }}
-                              />
-                              <Stack direction="row" spacing={2} justifyContent="flex-end">
-                                <Button size="small" variant="outlined" color="error" onClick={() => handleProctoringHODBulkAction("Reject", proctoringRemarks)}>Reject All</Button>
-                                <Button size="small" variant="contained" color="success" sx={{ color: "#fff" }} onClick={() => handleProctoringHODBulkAction("Approve", proctoringRemarks)}>Approve All</Button>
-                              </Stack>
-                            </Box>
+                              {showRejectInput["proctoring"] ? (
+                                <>
+                                  <TextField
+                                    size="small"
+                                    fullWidth
+                                    placeholder="HOD comments/remarks..."
+                                    value={proctoringRemarks}
+                                    onChange={(e) => setProctoringRemarks(e.target.value)}
+                                  />
+                                  <Stack direction="row" spacing={1} sx={{ mt: 1.5 }}>
+                                    <Button size="small" variant="contained" color="error" onClick={() => {
+                                      handleProctoringHODBulkAction("Reject", proctoringRemarks);
+                                      setShowRejectInput(p => ({ ...p, "proctoring": false }));
+                                    }}>Confirm Reject</Button>
+                                    <Button size="small" variant="text" color="inherit" onClick={() => setShowRejectInput(p => ({ ...p, "proctoring": false }))}>Cancel</Button>
+                                  </Stack>
+                                </>
+                              ) : (
+                                <Stack direction="row" spacing={1} sx={{ mt: 0 }}>
+                                  <Button size="small" variant="outlined" color="error" onClick={() => setShowRejectInput(p => ({ ...p, "proctoring": true }))}>Reject All</Button>
+                                  <Button size="small" variant="contained" color="success" sx={{ color: "#fff" }} onClick={() => handleProctoringHODBulkAction("Approve", proctoringRemarks)}>Approve All</Button>
+                                </Stack>
+                              )}              </Box>
                           </Box>
                         );
                       })()}
@@ -1683,7 +1851,7 @@ const AppraisalReportDetail = () => {
                         Maximum Points: 20
                       </Typography>
                     </Box>
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 2, bgcolor: "rgba(16, 185, 129, 0.04)", p: "8px 16px", borderRadius: "12px", border: "1px solid rgba(16, 185, 129, 0.1)" }}>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 2, bgcolor: "rgba(10, 185, 129, 0.04)", p: "8px 16px", borderRadius: "12px", border: "1px solid rgba(10, 185, 129, 0.1)" }}>
                       <Box>
                         <Typography variant="caption" sx={{ color: "var(--text-secondary)", fontWeight: 700, display: "block", fontSize: "0.7rem", textTransform: "uppercase" }}>
                           Total Points Earned
@@ -1786,7 +1954,6 @@ const AppraisalReportDetail = () => {
                                                 )}
                                               </Box>
                                             )}
-                                            {/* Removed remarks and proof buttons as they are available in eye-icon dialog */}
                                           </Box>
                                         </TableCell>
                                         <TableCell sx={{ color: "var(--text-primary)" }}>
@@ -1882,20 +2049,32 @@ const AppraisalReportDetail = () => {
                                         <TableRow sx={{ background: "rgba(232, 160, 0, 0.02)" }}>
                                           <TableCell colSpan={8} sx={{ py: 1.5 }}>
                                             <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5, alignItems: "flex-start", px: 1 }}>
-                                              <TextField
-                                                size="small"
-                                                fullWidth
-                                                placeholder="HOD comments/remarks..."
-                                                value={resUtRemarks[item._id] || ""}
-                                                onChange={(e) => {
-                                                  const val = e.target.value;
-                                                  setResUtRemarks(p => ({ ...p, [item._id]: val }));
-                                                }}
-                                              />
-                                              <Stack direction="row" spacing={1} sx={{ mt: 1.5 }}>
-                                                <Button size="small" variant="outlined" color="error" onClick={() => handleResUtHODAction(item._id, "Reject", resUtRemarks[item._id] || "")}>Reject</Button>
-                                                <Button size="small" variant="contained" color="success" sx={{ color: "#fff" }} onClick={() => handleResUtHODAction(item._id, "Approve", resUtRemarks[item._id] || "")}>Approve</Button>
-                                              </Stack>
+                                              {showRejectInput[item._id] ? (
+                                                <>
+                                                  <TextField
+                                                    size="small"
+                                                    fullWidth
+                                                    placeholder="HOD comments/remarks..."
+                                                    value={resUtRemarks[item._id] || ""}
+                                                    onChange={(e) => {
+                                                      const val = e.target.value;
+                                                      setResUtRemarks(p => ({ ...p, [item._id]: val }));
+                                                    }}
+                                                  />
+                                                  <Stack direction="row" spacing={1} sx={{ mt: 1.5 }}>
+                                                    <Button size="small" variant="contained" color="error" onClick={() => {
+                                                      handleResUtHODAction(item._id, "Reject", resUtRemarks[item._id] || "");
+                                                      setShowRejectInput(p => ({ ...p, [item._id]: false }));
+                                                    }}>Confirm Reject</Button>
+                                                    <Button size="small" variant="text" color="inherit" onClick={() => setShowRejectInput(p => ({ ...p, [item._id]: false }))}>Cancel</Button>
+                                                  </Stack>
+                                                </>
+                                              ) : (
+                                                <Stack direction="row" spacing={1} sx={{ mt: 0 }}>
+                                                  <Button size="small" variant="outlined" color="error" onClick={() => setShowRejectInput(p => ({ ...p, [item._id]: true }))}>Reject</Button>
+                                                  <Button size="small" variant="contained" color="success" sx={{ color: "#fff" }} onClick={() => handleResUtHODAction(item._id, "Approve", resUtRemarks[item._id] || "")}>Approve</Button>
+                                                </Stack>
+                                              )}
                                             </Box>
                                           </TableCell>
                                         </TableRow>
@@ -1989,20 +2168,32 @@ const AppraisalReportDetail = () => {
                                         <TableRow sx={{ background: "rgba(232, 160, 0, 0.02)" }}>
                                           <TableCell colSpan={5} sx={{ py: 1.5 }}>
                                             <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5, alignItems: "flex-start", px: 1 }}>
-                                              <TextField
-                                                size="small"
-                                                fullWidth
-                                                placeholder="HOD comments/remarks..."
-                                                value={contRemarks[item._id] || ""}
-                                                onChange={(e) => {
-                                                  const val = e.target.value;
-                                                  setContRemarks(p => ({ ...p, [item._id]: val }));
-                                                }}
-                                              />
-                                              <Stack direction="row" spacing={1} sx={{ mt: 1.5 }}>
-                                                <Button size="small" variant="outlined" color="error" onClick={() => handleContHODAction(item._id, "Reject", contRemarks[item._id] || "")}>Reject</Button>
-                                                <Button size="small" variant="contained" color="success" sx={{ color: "#fff" }} onClick={() => handleContHODAction(item._id, "Approve", contRemarks[item._id] || "")}>Approve</Button>
-                                              </Stack>
+                                              {showRejectInput[item._id] ? (
+                                                <>
+                                                  <TextField
+                                                    size="small"
+                                                    fullWidth
+                                                    placeholder="HOD comments/remarks..."
+                                                    value={contRemarks[item._id] || ""}
+                                                    onChange={(e) => {
+                                                      const val = e.target.value;
+                                                      setContRemarks(p => ({ ...p, [item._id]: val }));
+                                                    }}
+                                                  />
+                                                  <Stack direction="row" spacing={1} sx={{ mt: 1.5 }}>
+                                                    <Button size="small" variant="contained" color="error" onClick={() => {
+                                                      handleContHODAction(item._id, "Reject", contRemarks[item._id] || "");
+                                                      setShowRejectInput(p => ({ ...p, [item._id]: false }));
+                                                    }}>Confirm Reject</Button>
+                                                    <Button size="small" variant="text" color="inherit" onClick={() => setShowRejectInput(p => ({ ...p, [item._id]: false }))}>Cancel</Button>
+                                                  </Stack>
+                                                </>
+                                              ) : (
+                                                <Stack direction="row" spacing={1} sx={{ mt: 0 }}>
+                                                  <Button size="small" variant="outlined" color="error" onClick={() => setShowRejectInput(p => ({ ...p, [item._id]: true }))}>Reject</Button>
+                                                  <Button size="small" variant="contained" color="success" sx={{ color: "#fff" }} onClick={() => handleContHODAction(item._id, "Approve", contRemarks[item._id] || "")}>Approve</Button>
+                                                </Stack>
+                                              )}
                                             </Box>
                                           </TableCell>
                                         </TableRow>
@@ -2108,17 +2299,17 @@ const AppraisalReportDetail = () => {
                           <>
                             {selectedAppraisal.administrationDetail.roles.filter(r => r.isResponsible).map((role, i) => {
                               const statusColor = getStatusColor(role.status);
-                              
+
                               const hideLevel = ['dean', 'assoc_dean', 'coe', 'hod', 'dy_coe', 'univ_office_coord', 'dy_hod', 'dept_exam_cell'].includes(role.roleId);
                               const levelText = hideLevel ? "" : (role.level || "");
                               const assignedByType = typeof role.assignedBy === 'object' ? role.assignedBy.type : (role.assignedBy || "");
                               const assignedByOtherText = typeof role.assignedBy === 'object' ? role.assignedBy.otherText : "";
-                              
+
                               let assignedByTextVal = "";
                               if (assignedByType) {
                                 assignedByTextVal = assignedByType === "Others" && assignedByOtherText ? assignedByOtherText : assignedByType;
                               }
-                              
+
                               const displayAssignedBy = levelText ? `${levelText}${assignedByTextVal ? ` (Assigned By: ${assignedByTextVal})` : ""}` : (assignedByTextVal || "N/A");
 
                               return (
@@ -2130,8 +2321,8 @@ const AppraisalReportDetail = () => {
                                         <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)" }}>
                                           {(() => {
                                             const catalogEntry = ADMIN_ROLE_CATALOG.find(c => c.roleId === role.roleId);
-                                            return (catalogEntry && !['other', 'other_coord', 'training_coord'].includes(role.roleId)) 
-                                              ? catalogEntry.label 
+                                            return (catalogEntry && !['other', 'other_coord', 'training_coord'].includes(role.roleId))
+                                              ? catalogEntry.label
                                               : (role.roleLabel || role.roleName);
                                           })()}
                                         </Typography>
@@ -2152,20 +2343,32 @@ const AppraisalReportDetail = () => {
                                     <TableRow sx={{ background: "rgba(232, 160, 0, 0.02)" }}>
                                       <TableCell colSpan={5} sx={{ py: 1.5 }}>
                                         <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5, alignItems: "flex-start", px: 1 }}>
-                                          <TextField
-                                            size="small"
-                                            fullWidth
-                                            placeholder="HOD comments/remarks..."
-                                            value={adminRemarks[role.roleId || role.roleName] || ""}
-                                            onChange={(e) => {
-                                              const val = e.target.value;
-                                              setAdminRemarks(p => ({ ...p, [role.roleId || role.roleName]: val }));
-                                            }}
-                                          />
-                                          <Stack direction="row" spacing={1} sx={{ mt: 1.5 }}>
-                                            <Button size="small" variant="outlined" color="error" onClick={() => handleAdminHODAction(selectedAppraisal.administrationDetail._id, role.roleName, "Reject", adminRemarks[role.roleName] || "")}>Reject</Button>
-                                            <Button size="small" variant="contained" color="success" sx={{ color: "#fff" }} onClick={() => handleAdminHODAction(selectedAppraisal.administrationDetail._id, role.roleName, "Approve", adminRemarks[role.roleName] || "")}>Approve</Button>
-                                          </Stack>
+                                          {showRejectInput[role.roleId || role.roleName] ? (
+                                            <>
+                                              <TextField
+                                                size="small"
+                                                fullWidth
+                                                placeholder="HOD comments/remarks..."
+                                                value={adminRemarks[role.roleId || role.roleName] || ""}
+                                                onChange={(e) => {
+                                                  const val = e.target.value;
+                                                  setAdminRemarks(p => ({ ...p, [role.roleId || role.roleName]: val }));
+                                                }}
+                                              />
+                                              <Stack direction="row" spacing={1} sx={{ mt: 1.5 }}>
+                                                <Button size="small" variant="contained" color="error" onClick={() => {
+                                                  handleAdminHODAction(selectedAppraisal.administrationDetail._id, role.roleId, role.roleName, "Reject", adminRemarks[role.roleId || role.roleName] || "");
+                                                  setShowRejectInput(p => ({ ...p, [role.roleId || role.roleName]: false }));
+                                                }}>Confirm Reject</Button>
+                                                <Button size="small" variant="text" color="inherit" onClick={() => setShowRejectInput(p => ({ ...p, [role.roleId || role.roleName]: false }))}>Cancel</Button>
+                                              </Stack>
+                                            </>
+                                          ) : (
+                                            <Stack direction="row" spacing={1} sx={{ mt: 0 }}>
+                                              <Button size="small" variant="outlined" color="error" onClick={() => setShowRejectInput(p => ({ ...p, [role.roleId || role.roleName]: true }))}>Reject</Button>
+                                              <Button size="small" variant="contained" color="success" sx={{ color: "#fff" }} onClick={() => handleAdminHODAction(selectedAppraisal.administrationDetail._id, role.roleId, role.roleName, "Approve", adminRemarks[role.roleId || role.roleName] || "")}>Approve</Button>
+                                            </Stack>
+                                          )}
                                         </Box>
                                       </TableCell>
                                     </TableRow>
@@ -2689,7 +2892,6 @@ const AppraisalReportDetail = () => {
             position: "sticky",
             bottom: 20,
             zIndex: 1000,
-            mx: { xs: 2, md: 4 },
             mt: 4,
             p: 3,
             borderRadius: "16px",
@@ -2702,7 +2904,7 @@ const AppraisalReportDetail = () => {
           }}
         >
           <Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>
-            Final HOD Verification
+            Final HOD/Dean Verification
           </Typography>
           <Typography variant="body2" sx={{ color: "var(--text-secondary)" }}>
             Ensure you have reviewed all individual sections (Journals, Patents, Duties, etc.) before taking the final action on this appraisal.
