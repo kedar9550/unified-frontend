@@ -39,7 +39,7 @@ function Dashboard() {
       {(activeRole === "RESEARCH_DEAN" || activeRole === "RESEARCH_COORDINATOR") && <RnDDeanDashboard activeRole={activeRole} />}
       {activeRole === "SERVICE_ADMIN" && <ServiceAdminDashboard />}
       {activeRole === "SERVICE_EMP" && <ServiceEmpDashboard />}
-      {(activeRole === "STUDENT_EVENT_ADMIN" || activeRole === "EVENT_COORDINATOR") && <StudentEventAdminDashboard />}
+      {(activeRole === "STUDENT_EVENT_ADMIN" || activeRole === "EVENT_COORDINATOR" || activeRole === "FACULTY_COORDINATOR") && <StudentEventAdminDashboard />}
     </Box>
   );
 }

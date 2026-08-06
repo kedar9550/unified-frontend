@@ -1007,19 +1007,6 @@ const Participants = ({ mode = 'all' }) => {
           <DialogContent sx={{ p: 4, background: '#f8fafc', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
             <EventPassCard participant={selectedPassParticipant} />
           </DialogContent>
-
-          <DialogActions sx={{ p: 2, px: 3, background: '#f8fafc', borderTop: '1px solid #e2e8f0' }}>
-            <Button
-              fullWidth
-              variant="outlined"
-              onClick={() => {
-                window.print();
-              }}
-              sx={{ borderRadius: '12px', textTransform: 'none', fontWeight: 600 }}
-            >
-              Print Pass
-            </Button>
-          </DialogActions>
         </Dialog>
       )}
     </Box>
