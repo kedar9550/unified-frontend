@@ -755,7 +755,11 @@ const AppraisalReportDetail = () => {
     if (!selectedAppraisal || !calculatedPrintData) return false;
 
     // FDP/Coursera check
-    const allowedOrg = ["nitttr", "niper", "icmr", "nirf ranked institute (below 200)", "nirf ranked institute (below rank 200)", "govt. university", "government university", "nptel"];
+    const allowedOrg = [
+      "ugc", "aicte", "iit", "iim", "nit", "mhrd r&d lab", "mhrd r&d labs",
+      "nitttr", "niper", "icmr", "nirf ranked institute (below 200)",
+      "nirf ranked institute (below rank 200)", "govt. university", "government university", "nptel"
+    ];
     const hasValidFdp = selectedAppraisal.resourceUtilizationDetails?.some(r => {
       if (r.status === 'Rejected') return false;
       const cat = (r.activityCategory || '').toLowerCase().trim();
