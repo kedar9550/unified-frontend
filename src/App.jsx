@@ -96,6 +96,9 @@ import ScanPass from "./pages/studenteventsadmin/ScanPass";
 import ScanAccommodation from "./pages/studenteventsadmin/ScanAccommodation";
 import Passes from "./pages/studenteventsadmin/Passes";
 import UpdatePasses from "./pages/studenteventsadmin/UpdatePasses";
+import WinningCertificates from "./pages/studenteventsadmin/WinningCertificates";
+import ParticipationCertificates from "./pages/studenteventsadmin/ParticipationCertificates";
+import VerifyCertificate from "./pages/public/VerifyCertificate";
 
 // Infrastructure
 import Building from "./pages/Infrastructure/Building";
@@ -227,6 +230,9 @@ function App() {
 
         {/* Public Redirect Route */}
         <Route path="/go/:shortCode" element={<RedirectHandler />} />
+        
+        {/* Public Certificate Verification Route */}
+        <Route path="/verify/certificate/:receipt/:roll" element={<VerifyCertificate />} />
 
         <Route path="/doi-test" element={<DOIFetcher />} />
 
@@ -264,6 +270,8 @@ function App() {
         <Route path="/Eventveda/scan-accommodation" element={<ProtectedRoute element={<ScanAccommodation />} />} />
         <Route path="/Eventveda/passes" element={<ProtectedRoute element={<Passes />} />} />
         <Route path="/Eventveda/update-passes" element={<ProtectedRoute element={<UpdatePasses />} />} />
+        <Route path="/Eventveda/winning-certificates" element={<ProtectedRoute element={<WinningCertificates />} />} />
+        <Route path="/Eventveda/participation-certificates" element={<ProtectedRoute element={<ParticipationCertificates />} />} />
         <Route path="/major-event-admin/groups" element={<ProtectedRoute element={<MajorEventGroups />} />} />
         <Route path="/major-event-admin/form-assign" element={<ProtectedRoute element={<FormAssign />} />} />
         <Route path="/major-event-admin/form-preview" element={<ProtectedRoute element={<FormPreview />} />} />

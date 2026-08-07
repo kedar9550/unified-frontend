@@ -24,6 +24,8 @@ const EventPassCard = ({ participant }) => {
         minWidth: 700, // force it to prevent squishing in PDF
         minHeight: 450, // ensure enough space for bottom venue section
         margin: '0 auto',
+        marginTop: '24px',
+        marginBottom: '16px',
         backgroundColor: '#fff',
         borderRadius: '16px',
         border: '3px solid #1d4ed8', // blue border
