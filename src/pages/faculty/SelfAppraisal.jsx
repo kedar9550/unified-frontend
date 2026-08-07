@@ -524,22 +524,15 @@ const SelfAppraisal = () => {
 
   // Submit Appraisal
   const handleSubmit = async () => {
-    if (!profileComplete) {
-      const hasCoreDeptMissing = missingFields.includes("Parent Department");
-      const otherMissingFields = missingFields.filter(f => f !== "Parent Department");
-      if (hasCoreDeptMissing && otherMissingFields.length === 0) {
-        toast.error("Your Parent Department is not set. Please contact the Administrator to assign it.");
-      } else {
-        toast.error("Please complete your faculty profile details before submitting");
-      }
+    if (missingFields.includes("Qualification")) {
+      toast.error("Please update your profile qualification before submitting the appraisal.");
       return;
     }
 
-    if (appraisal?.research?.scopusCitations === null || appraisal?.research?.scopusCitations === undefined) {
-      toast.error("Scopus Citations and H-Index data not found. Please contact the Research Team to update your records before submitting.");
+    if (missingFields.includes("Parent Department")) {
+      toast.error("Your Parent Department is not set. Please contact the Administrator to assign it.");
       return;
     }
-
 
 
     // Check for rejected items in proctoring, resource utilization, contributions, and administrative responsibilities
