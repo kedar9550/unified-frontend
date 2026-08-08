@@ -23,7 +23,7 @@ import { useNavigate } from 'react-router-dom';
 import axiosInstance from '../../api/axios';
 import { toast } from 'sonner';
 import { Visibility, Assessment, Download } from '@mui/icons-material';
-import * as XLSX from 'xlsx';
+import * as XLSX from 'xlsx-js-style';
 import Loader from '../../components/common/Loader';
 
 const AppraisalReports = () => {
@@ -111,33 +111,30 @@ const AppraisalReports = () => {
   };
 
   const getFacultyTypeInfo = (faculty) => {
-    if (!faculty) return { type: 'N/A', minPoints: 0 };
+    if (!faculty) return { type: 'N/A', minPoints: 0, mins: {} };
     
     const desig = (faculty.designation || '').toLowerCase();
     const qual = (faculty.qualification || '').toLowerCase();
     
     // Determine Type
-    let type = 'Non-Doctorate';
-    let configKey = 'nonDoctorates';
+    let type = 'Non-Doctorate Faculty';
     
     const leadershipKeywords = ['principal', 'dean', 'director', 'hod', 'head of department'];
     const isLeadership = leadershipKeywords.some(kw => desig.includes(kw));
     
     if (isLeadership) {
       type = 'Leadership Team';
-      configKey = 'leadershipTeam';
     } else if (qual.includes('ph.d') || qual.includes('phd') || qual.includes('doctorate')) {
-      type = 'Doctorate';
-      configKey = 'doctorates';
+      type = 'Doctorate Faculty';
     }
     
     // Get Min Points from Config
-    let minPoints = 0;
-    if (appraisalConfig && appraisalConfig.minimumPoints && appraisalConfig.minimumPoints[configKey]) {
-      minPoints = appraisalConfig.minimumPoints[configKey].total || 0;
+    let mins = {};
+    if (appraisalConfig && appraisalConfig.minimumPoints && appraisalConfig.minimumPoints[type]) {
+      mins = appraisalConfig.minimumPoints[type];
     }
     
-    return { type, minPoints };
+    return { type, minPoints: mins.total || 0, mins };
   };
 
   const handleRequestSort = (property) => {
@@ -182,31 +179,195 @@ const AppraisalReports = () => {
       return;
     }
 
-    const exportData = appraisals.map(row => {
-      const { type, minPoints } = getFacultyTypeInfo(row.facultyId);
-      const teaching = row.teaching?.totalClaimed || 0;
-      const research = row.research?.totalClaimed || 0;
-      const valueAdd = row.valueAddition?.totalClaimed || 0;
-      const admin = row.administrativeResponsibilities?.totalClaimed || 0;
-      const interpersonal = row.interpersonalSkills?.totalClaimed || 0;
-      const grandTotal = parseFloat((teaching + research + valueAdd + admin + interpersonal).toFixed(2));
+    const headers1 = [
+      "Personal Details", "", "", "", "", 
+      "Teaching", "", "", "", "", "", 
+      "Research", "", "", "", "", "", "", "", "", "", "", 
+      "Value Addition", "", "", "", 
+      "Administration", "", 
+      "Interpersonal Skills", "", 
+      "Final Totals", "", ""
+    ];
 
-      return {
-        "Emp ID": row.facultyId?.institutionId || 'N/A',
-        "Faculty Name": row.facultyId?.name || 'N/A',
-        "Designation": row.facultyId?.designation || 'N/A',
-        "Type": type,
-        "Min. Points": minPoints,
-        "Teaching": teaching,
-        "Research": research,
-        "Value Addition": valueAdd,
-        "Administration": admin,
-        "Interpersonal Skills": interpersonal,
-        "Total Points": grandTotal
-      };
+    const headers2 = [
+      "Emp ID", "Faculty Name", "Designation", "Department", "Type",
+      "Course pass %", "Course Feedback", "Proctoring pass %", "CO attainment", "Teaching min", "Teaching obtained",
+      "2.1 Minimum points", "2.1 obtained points", "2.2", "2.3", "2.4", "2.5", "2.6", "2.7", "2.8", "Research min", "Research obtained",
+      "3.1", "3.2", "3 minimum points", "3 obtained points",
+      "4 minimum", "4 obtained",
+      "5 minimum", "5 obtained",
+      "Total min points", "Total obtained points", "Eligibility"
+    ];
+
+    const exportDataAOA = [headers1, headers2];
+
+    appraisals.forEach(row => {
+      const { type, mins } = getFacultyTypeInfo(row.facultyId);
+      
+      // Teaching Breakdown
+      const teaching = row.teaching || {};
+      const coursePassPercent = teaching.passPercentage?.averagePoints || 0;
+      const courseFeedback = teaching.feedback?.averagePoints || 0;
+      const proctoringPassPercent = teaching.proctoring?.averagePoints || 0;
+      const coAttainment = teaching.coAttainment?.averagePoints || 0;
+      const teachingObtained = teaching.totalClaimed || 0;
+      const teachingMin = mins.teaching || 0;
+
+      // Research Breakdown
+      const research = row.research || {};
+      const r21Obtained = research.papers?.totalClaimed || 0;
+      const r22 = research.phdGuiding?.totalClaimed || 0;
+      const r23 = research.booksChapters?.totalClaimed || 0;
+      const r24 = research.patents?.totalClaimed || 0;
+      const r25 = research.novelProducts?.totalClaimed || 0;
+      const r26 = research.projectsConsultancies?.totalClaimed || 0;
+      const r27 = research.scopusCitationScore || 0;
+      const r28 = research.scopusHIndexScore || 0;
+      const researchObtained = research.totalClaimed || 0;
+      
+      const r21Min = mins.research21 || 0;
+      const researchTotalMin = (mins.research21 || 0) + (mins.research22_28 || 0);
+
+      // Value Addition & Admin & Interpersonal
+      const valueAdd = row.valueAddition || {};
+      const v31 = valueAdd.resourceUtilization?.totalClaimed || 0;
+      const v32 = valueAdd.expertiseContribution?.totalClaimed || 0;
+      const v3Obtained = v31 + v32;
+
+      const aRaw = row.administration?.totalClaimed || 0;
+      const iRaw = row.hodEvaluation?.totalInterpersonalPoints || 0;
+
+      const grandTotal = parseFloat((teachingObtained + researchObtained + v3Obtained + aRaw + iRaw).toFixed(2));
+      const totalMin = mins.total || 0;
+
+      // --- Eligibility Logic ---
+      
+      // 1. FDP / Coursera 40 Hours
+      const allowedOrg = [
+        "ugc", "aicte", "iit", "iim", "nit", "mhrd r&d lab", "mhrd r&d labs",
+        "nitttr", "niper", "icmr", "nirf ranked institute (below 200)",
+        "nirf ranked institute (below rank 200)", "govt. university", "government university", "nptel"
+      ];
+      
+      const resUtilItems = valueAdd.resourceUtilization?.items || [];
+      const hasValidFdp = resUtilItems.some(r => {
+        if (!r.eventId) return false;
+        if (r.eventId.status === 'Rejected') return false;
+        
+        const cat = (r.eventId.activityCategory || '').toLowerCase().trim();
+        const evType = (r.eventId.activityType || '').toLowerCase().trim();
+        const org = (r.eventId.organizingInstitutionCategory || '').toLowerCase().trim();
+        const days = Number(r.eventId.numberOfDaysParticipated) || Number(r.eventId.duration) || 0;
+        
+        if (cat === 'fdp' && evType === 'fdp participant' && days >= 5 && allowedOrg.includes(org)) {
+          if (org.includes("nirf")) {
+            const rank = Number(r.eventId.nirfRank);
+            return !isNaN(rank) && rank > 0 && rank < 200;
+          }
+          return true;
+        }
+        return false;
+      });
+
+      const contribItems = valueAdd.expertiseContribution?.items || [];
+      const hasValidCoursera = contribItems.some(c => {
+        if (!c.contributionId) return false;
+        if (c.contributionId.status === 'Rejected') return false;
+        
+        const catObj = c.contributionId.category;
+        if (!catObj) return false;
+        const match = catObj.name?.match(/^(\d+)\./);
+        const catCode = match ? parseInt(match[1], 10) : 0;
+        
+        return catCode === 12 && Number(c.contributionId.courseHours) >= 40;
+      });
+
+      const fdpPassed = hasValidFdp || hasValidCoursera;
+      const r21Passed = r21Obtained >= r21Min;
+      const interpersonalPassed = iRaw >= 30;
+
+      const isEligible = (fdpPassed && r21Passed && interpersonalPassed) ? "eligible" : "in eligible";
+
+      exportDataAOA.push([
+        row.facultyId?.institutionId || 'N/A',
+        row.facultyId?.name || 'N/A',
+        row.facultyId?.designation || 'N/A',
+        row.facultyId?.department?.name || row.facultyId?.coreDepartment?.name || 'N/A',
+        type,
+        coursePassPercent,
+        courseFeedback,
+        proctoringPassPercent,
+        coAttainment,
+        teachingMin,
+        teachingObtained,
+        r21Min,
+        r21Obtained,
+        r22,
+        r23,
+        r24,
+        r25,
+        r26,
+        r27,
+        r28,
+        researchTotalMin,
+        researchObtained,
+        v31,
+        v32,
+        mins.valueAddition || 0,
+        v3Obtained,
+        mins.administration || 0,
+        aRaw,
+        mins.interpersonalSkills || 0,
+        iRaw,
+        totalMin,
+        grandTotal,
+        isEligible
+      ]);
     });
 
-    const worksheet = XLSX.utils.json_to_sheet(exportData);
+    const worksheet = XLSX.utils.aoa_to_sheet(exportDataAOA);
+    
+    // Add multi-column merges for the top header row
+    worksheet['!merges'] = [
+      { s: { r: 0, c: 0 }, e: { r: 0, c: 4 } },    // Personal Details
+      { s: { r: 0, c: 5 }, e: { r: 0, c: 10 } },   // Teaching
+      { s: { r: 0, c: 11 }, e: { r: 0, c: 21 } },  // Research
+      { s: { r: 0, c: 22 }, e: { r: 0, c: 25 } },  // Value Addition
+      { s: { r: 0, c: 26 }, e: { r: 0, c: 27 } },  // Administration
+      { s: { r: 0, c: 28 }, e: { r: 0, c: 29 } },  // Interpersonal Skills
+      { s: { r: 0, c: 30 }, e: { r: 0, c: 32 } }   // Final Totals
+    ];
+
+    // Apply color styling to the headers
+    const colColors = [
+      ...Array(5).fill("4F81BD"), // Personal Details (Blue)
+      ...Array(6).fill("9BBB59"), // Teaching (Green)
+      ...Array(11).fill("F79646"), // Research (Orange)
+      ...Array(4).fill("8064A2"), // Value Addition (Purple)
+      ...Array(2).fill("4BACC6"), // Administration (Teal)
+      ...Array(2).fill("C0504D"), // Interpersonal (Red)
+      ...Array(3).fill("404040")  // Final Totals (Dark Grey)
+    ];
+
+    for (let c = 0; c < 33; c++) {
+      const headerColor = colColors[c];
+      const styleObj = {
+        font: { bold: true, color: { rgb: "FFFFFF" } },
+        fill: { fgColor: { rgb: headerColor } },
+        alignment: { horizontal: "center", vertical: "center" }
+      };
+
+      const cell1Ref = XLSX.utils.encode_cell({ r: 0, c });
+      if (worksheet[cell1Ref]) {
+        worksheet[cell1Ref].s = styleObj;
+      }
+      
+      const cell2Ref = XLSX.utils.encode_cell({ r: 1, c });
+      if (worksheet[cell2Ref]) {
+        worksheet[cell2Ref].s = styleObj;
+      }
+    }
+
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Appraisals");
     XLSX.writeFile(workbook, `Appraisal_Reports_${academicYears.find(y => y._id === selectedYear)?.year || 'Export'}.xlsx`);
