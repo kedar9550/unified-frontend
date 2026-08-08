@@ -131,6 +131,7 @@ const Registrations = () => {
             venue: payment.venue,
             eventGroup: payment.eventGroup || '-',
             eventCategory: payment.eventCategory || '-',
+            teamId: payment.teamId,
           });
         });
       }
@@ -216,7 +217,7 @@ const Registrations = () => {
       return;
     }
 
-    const headers = ['S.No', 'Name', 'Roll No', 'Group', 'Category', 'Event Name', 'College', 'Department', 'Year', 'Gender', 'Mobile', 'Email', 'Accommodation'];
+    const headers = ['S.No', 'Name', 'Roll No', 'Team ID', 'Group', 'Category', 'Event Name', 'College', 'Department', 'Year', 'Gender', 'Mobile', 'Email', 'Accommodation'];
     const csvRows = [headers.join(',')];
 
     filteredParticipants.forEach((p, idx) => {
@@ -225,6 +226,7 @@ const Registrations = () => {
         idx + 1,
         `"${p.name || ''}"`,
         `"${p.roll || ''}"`,
+        `"${p.teamId || ''}"`,
         `"${p.eventGroup || ''}"`,
         `"${p.eventCategory || ''}"`,
         `"${p.eventName || ''}"`,
@@ -253,6 +255,7 @@ const Registrations = () => {
     'S.No',
     'Name',
     'Roll Number',
+    'Team ID',
     'MAIN GROUP / CATEGORY',
     'EVENT NAME',
     'College',
@@ -297,6 +300,7 @@ const Registrations = () => {
           {p.roll}
         </Typography>
       ) : '-',
+      p.teamId || '-',
       `${p.eventGroup} / ${p.eventCategory}`,
       p.eventName || '-',
       p.college ? (p.college === 'Other College' && p.otherCollege ? p.otherCollege : p.college) : '-',
@@ -720,8 +724,8 @@ const Registrations = () => {
             <DataTable
               columns={columns}
               rows={rows}
-              nonSortableColumns={[0, 9]}
-              alignments={['center', 'left', 'left', 'left', 'left', 'left', 'left', 'left', 'center', 'center']}
+              nonSortableColumns={[0, 10]}
+              alignments={['center', 'left', 'left', 'center', 'left', 'left', 'left', 'left', 'left', 'center', 'center']}
             />
           )}
         </Box>

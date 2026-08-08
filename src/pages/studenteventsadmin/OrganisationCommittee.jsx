@@ -160,9 +160,9 @@ const CommitteeRoleManager = ({ role }) => {
                 members.map((member) => (
                   <TableRow key={member._id}>
                     <TableCell>
-                      <CoordinatorPhoto 
-                        employeeCode={member.employee?.institutionId || member.employee?.employeeCode} 
-                        name={member.employee?.name} 
+                      <CoordinatorPhoto
+                        employeeCode={member.employee?.institutionId || member.employee?.employeeCode}
+                        name={member.employee?.name}
                         sx={{ width: 50, height: 50, borderRadius: '50%' }}
                       />
                     </TableCell>
@@ -229,6 +229,186 @@ const CommitteeRoleManager = ({ role }) => {
 };
 
 // ----------------------------------------------------------------------
+// StudentCoordinatorManager Component
+// ----------------------------------------------------------------------
+const StudentPhoto = ({ rollNo, name, sx }) => {
+  const initials = (name || '').split(' ').filter(Boolean).slice(0, 2).map(n => n[0]).join('').toUpperCase() || 'SC';
+  const placeholderSvg = `<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120'><rect width='100%' height='100%' fill='%231e40af'/><text x='50%' y='50%' dy='.35em' text-anchor='middle' font-family='Inter, Arial, Helvetica, sans-serif' font-size='46' fill='%23ffffff'>${initials}</text></svg>`;
+  const placeholderDataUrl = `data:image/svg+xml;utf8,${encodeURIComponent(placeholderSvg)}`;
+  const backendUrl = import.meta.env.VITE_BACKEND_URL || "http://localhost:9000";
+
+  return (
+    <Box
+      component="img"
+      src={rollNo ? `${backendUrl}/api/proxy/student-photo/${rollNo}` : placeholderDataUrl}
+      alt="Photo"
+      sx={{ ...sx, objectFit: 'cover' }}
+      onError={(e) => { e.target.onerror = null; e.target.src = placeholderDataUrl; }}
+    />
+  );
+};
+
+const StudentCoordinatorManager = () => {
+  const role = 'Student Coordinator';
+  const [members, setMembers] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [openModal, setOpenModal] = useState(false);
+  const [formData, setFormData] = useState({ rollNo: '', status: 'Active' });
+  const [editingId, setEditingId] = useState(null);
+
+  const fetchMembers = useCallback(async () => {
+    setLoading(true);
+    try {
+      const response = await API.get(`/api/organisation-committee?role=${role}`);
+      setMembers(response.data?.data || []);
+    } catch (error) {
+      toast.error(`Failed to load ${role}s`);
+    } finally {
+      setLoading(false);
+    }
+  }, [role]);
+
+  useEffect(() => {
+    fetchMembers();
+  }, [fetchMembers]);
+
+  const handleOpen = (member = null) => {
+    if (member) {
+      setEditingId(member._id);
+      setFormData({ rollNo: member.rollNo || '', status: member.status });
+    } else {
+      setEditingId(null);
+      setFormData({ rollNo: '', status: 'Active' });
+    }
+    setOpenModal(true);
+  };
+
+  const handleClose = () => {
+    setOpenModal(false);
+    setEditingId(null);
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      if (editingId) {
+        await API.put(`/api/organisation-committee/${editingId}`, formData);
+        toast.success(`${role} updated successfully`);
+      } else {
+        await API.post('/api/organisation-committee', { ...formData, role });
+        toast.success(`${role} added successfully`);
+      }
+      fetchMembers();
+      handleClose();
+    } catch (error) {
+      toast.error(error.response?.data?.message || `Failed to save ${role}`);
+    }
+  };
+
+  const handleDelete = async (id) => {
+    if (window.confirm(`Are you sure you want to delete this ${role}?`)) {
+      try {
+        await API.delete(`/api/organisation-committee/${id}`);
+        toast.success(`${role} deleted successfully`);
+        fetchMembers();
+      } catch (error) {
+        toast.error(`Failed to delete ${role}`);
+      }
+    }
+  };
+
+  return (
+    <Box sx={{ mt: 2 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
+        <Typography variant="h6">{role}s List</Typography>
+        <Button variant="contained" startIcon={<AddIcon />} onClick={() => handleOpen()}>
+          Add {role}
+        </Button>
+      </Box>
+
+      {loading ? (
+        <Box sx={{ display: 'flex', justifyContent: 'center', py: 5 }}><CircularProgress /></Box>
+      ) : (
+        <TableContainer component={Paper} sx={{ borderRadius: 2 }}>
+          <Table>
+            <TableHead sx={{ backgroundColor: 'background.default' }}>
+              <TableRow>
+                <TableCell>Photo</TableCell>
+                <TableCell>Student Details</TableCell>
+                <TableCell>Status</TableCell>
+                <TableCell align="right">Actions</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {members.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={4} align="center" sx={{ py: 3 }}>No {role}s found.</TableCell>
+                </TableRow>
+              ) : (
+                members.map((member) => (
+                  <TableRow key={member._id}>
+                    <TableCell>
+                      <StudentPhoto
+                        rollNo={member.rollNo}
+                        name={member.rollNo}
+                        sx={{ width: 50, height: 50, borderRadius: '50%' }}
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Typography variant="body1" fontWeight={600}>{member.studentName || 'Name not found'}</Typography>
+                      <Typography variant="body2" color="textSecondary">Roll No: {member.rollNo || 'N/A'}</Typography>
+                      {member.mobileNumber && <Typography variant="caption" color="textSecondary" display="block">Ph: {member.mobileNumber}</Typography>}
+                    </TableCell>
+                    <TableCell>
+                      <Chip label={member.status} color={member.status === 'Active' ? 'success' : 'default'} size="small" />
+                    </TableCell>
+                    <TableCell align="right">
+                      <IconButton color="primary" onClick={() => handleOpen(member)}><EditIcon /></IconButton>
+                      <IconButton color="error" onClick={() => handleDelete(member._id)}><DeleteIcon /></IconButton>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      )}
+
+      <Dialog open={openModal} onClose={handleClose} maxWidth="sm" fullWidth>
+        <form onSubmit={handleSubmit}>
+          <DialogTitle>{editingId ? `Edit ${role}` : `Add ${role}`}</DialogTitle>
+          <DialogContent dividers>
+            <TextField
+              fullWidth
+              label="Roll Number"
+              value={formData.rollNo}
+              onChange={(e) => setFormData({ ...formData, rollNo: e.target.value })}
+              required
+              sx={{ mb: 3, mt: 1 }}
+            />
+            <TextField
+              select
+              fullWidth
+              label="Status"
+              value={formData.status}
+              onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+              required
+            >
+              <MenuItem value="Active">Active</MenuItem>
+              <MenuItem value="Inactive">Inactive</MenuItem>
+            </TextField>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={handleClose}>Cancel</Button>
+            <Button type="submit" variant="contained">Save</Button>
+          </DialogActions>
+        </form>
+      </Dialog>
+    </Box>
+  );
+};
+
+// ----------------------------------------------------------------------
 // ReadOnlyCoordinators Component (For Event & Faculty Coordinators)
 // ----------------------------------------------------------------------
 const ReadOnlyCoordinators = ({ type }) => {
@@ -254,7 +434,7 @@ const ReadOnlyCoordinators = ({ type }) => {
 
   const coordinators = useMemo(() => {
     const coordsMap = new Map();
-    
+
     dataList.forEach(item => {
       let coordsList = [];
       if (type === 'Event') {
@@ -305,7 +485,7 @@ const ReadOnlyCoordinators = ({ type }) => {
         <Grid container spacing={3} sx={{ mt: 1 }}>
           {coordinators.map(coord => (
             <Grid item xs={12} sm={6} md={4} lg={3} key={coord.id}>
-              <Card sx={{ 
+              <Card sx={{
                 height: '100%', display: 'flex', flexDirection: 'column',
                 borderRadius: '16px', boxShadow: '0 4px 20px rgba(0,0,0,0.05)',
                 transition: 'transform 0.2s', '&:hover': { transform: 'translateY(-4px)', boxShadow: '0 8px 30px rgba(0,0,0,0.1)' }
@@ -355,6 +535,7 @@ const OrganisationCommittee = () => {
           <Tab label="Co-conveners" />
           <Tab label="Event Coordinators" />
           <Tab label="Faculty Coordinators" />
+          <Tab label="Student Coordinators" />
         </Tabs>
       </Box>
 
@@ -363,6 +544,7 @@ const OrganisationCommittee = () => {
         {tabValue === 1 && <CommitteeRoleManager role="Co-convener" />}
         {tabValue === 2 && <ReadOnlyCoordinators type="Event" />}
         {tabValue === 3 && <ReadOnlyCoordinators type="Faculty" />}
+        {tabValue === 4 && <StudentCoordinatorManager />}
       </Box>
     </Box>
   );

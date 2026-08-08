@@ -225,8 +225,10 @@ const StudentEventAdminDashboard = () => {
       <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr 1fr', md: 'repeat(5, 1fr)' }, gap: 2 }}>
         <SummaryCard label="Total Teams" value={stats?.totalTeams} color="#0d9488" icon={<GroupsIcon />} />
         <SummaryCard label="Total Students" value={stats?.totalStudents} color="#2563eb" icon={<PeopleIcon />} />
+        <SummaryCard label="Total Attended" value={stats?.totalAttended} color="#16a34a" icon={<PeopleIcon />} />
         <SummaryCard label="Total Revenue (₹)" value={stats?.revenue?.total} color="#7c3aed" icon={<CurrencyRupeeIcon />} />
         <SummaryCard label="Accommodation Needed" value={stats?.accommodation?.yes} color="#d97706" icon={<HotelIcon />} />
+        <SummaryCard label="Accom. Checked In" value={stats?.accommodation?.checkedIn} color="#059669" icon={<HotelIcon />} />
         <SummaryCard label="Departments" value={stats?.departmentStats?.length} color="#9333ea" icon={<SchoolIcon />} />
       </Box>
 
