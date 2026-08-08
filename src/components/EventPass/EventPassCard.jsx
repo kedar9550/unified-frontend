@@ -55,8 +55,13 @@ const EventPassCard = ({ participant }) => {
 
       {/* Top Section */}
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', px: 3, pt: 2, pb: 1, zIndex: 1, position: 'relative' }}>
-        {/* Left Spacing */}
-        <Box sx={{ width: '220px', display: 'flex', justifyContent: 'flex-start' }}>
+        {/* Left Spacing / Team ID */}
+        <Box sx={{ width: '220px', display: 'flex', justifyContent: 'flex-start', mt: 1 }}>
+          {participant.teamId && (
+            <Typography sx={{ color: '#1d4ed8', fontWeight: 700, fontSize: '14px', border: '1px solid #1d4ed8', padding: '4px 8px', borderRadius: '6px', backgroundColor: '#eff6ff' }}>
+              Team ID: {participant.teamId}
+            </Typography>
+          )}
         </Box>
 
         {/* Center Title */}

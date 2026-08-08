@@ -38,6 +38,7 @@ import {
   Person,
 } from "@mui/icons-material";
 import PersonIcon from '@mui/icons-material/Person';
+import EmailIcon from '@mui/icons-material/Email';
 import React from "react";
 
 // Configuration for which side navigation items each role should see.
@@ -446,7 +447,8 @@ export const ROLE_ROUTES = {
         // { text: "Scan Pass", path: "/Eventveda/scan-pass", icon: <QrCode /> },
         // { text: "Passes", path: "/Eventveda/passes", icon: <CardMembership /> }
       ]
-    }
+    },
+    // { text: "Send Mail", path: "/Eventveda/send-mail", icon: <EmailIcon /> }
     //   nested: [
     //     { text: "Raise Ticket", path: "/service-desk/raise" },
     //     { text: "My Tickets", path: "/service-desk/my-tickets" },

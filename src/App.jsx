@@ -98,6 +98,7 @@ import Passes from "./pages/studenteventsadmin/Passes";
 import UpdatePasses from "./pages/studenteventsadmin/UpdatePasses";
 import WinningCertificates from "./pages/studenteventsadmin/WinningCertificates";
 import ParticipationCertificates from "./pages/studenteventsadmin/ParticipationCertificates";
+import SendMail from "./pages/studenteventsadmin/SendMail";
 import VerifyCertificate from "./pages/public/VerifyCertificate";
 
 // Infrastructure
@@ -272,6 +273,7 @@ function App() {
         <Route path="/Eventveda/update-passes" element={<ProtectedRoute element={<UpdatePasses />} />} />
         <Route path="/Eventveda/winning-certificates" element={<ProtectedRoute element={<WinningCertificates />} />} />
         <Route path="/Eventveda/participation-certificates" element={<ProtectedRoute element={<ParticipationCertificates />} />} />
+        <Route path="/Eventveda/send-mail" element={<ProtectedRoute element={<SendMail />} />} />
         <Route path="/major-event-admin/groups" element={<ProtectedRoute element={<MajorEventGroups />} />} />
         <Route path="/major-event-admin/form-assign" element={<ProtectedRoute element={<FormAssign />} />} />
         <Route path="/major-event-admin/form-preview" element={<ProtectedRoute element={<FormPreview />} />} />

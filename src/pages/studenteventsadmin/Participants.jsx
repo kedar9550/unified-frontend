@@ -146,6 +146,7 @@ const Participants = ({ mode = 'all' }) => {
             venue: payment.venue,
             eventGroup: payment.eventGroup || '-',
             eventCategory: payment.eventCategory || '-',
+            teamId: payment.teamId,
           });
         });
       }
@@ -275,7 +276,7 @@ const Participants = ({ mode = 'all' }) => {
       return;
     }
 
-    const headers = ['S.No', 'Name', 'Roll No', 'Group', 'Category', 'Event Name', 'College', 'Department', 'Gender', 'Contact', 'Attended'];
+    const headers = ['S.No', 'Name', 'Roll No', 'Team ID', 'Group', 'Category', 'Event Name', 'College', 'Department', 'Gender', 'Contact', 'Attended'];
     const csvRows = [headers.join(',')];
 
     filteredParticipants.forEach((p, idx) => {
@@ -284,6 +285,7 @@ const Participants = ({ mode = 'all' }) => {
         idx + 1,
         `"${p.name || ''}"`,
         `"${p.roll || ''}"`,
+        `"${p.teamId || ''}"`,
         `"${p.eventGroup || ''}"`,
         `"${p.eventCategory || ''}"`,
         `"${p.eventName || ''}"`,
@@ -310,6 +312,7 @@ const Participants = ({ mode = 'all' }) => {
     'S.No',
     'Name',
     'Roll Number',
+    'Team ID',
     'MAIN GROUP / CATEGORY',
     'EVENT NAME',
     'College',
@@ -353,6 +356,7 @@ const Participants = ({ mode = 'all' }) => {
           {p.roll}
         </Typography>
       ) : '-',
+      p.teamId || '-',
       p.eventGroupString ? p.eventGroupString : `${p.eventGroup} / ${p.eventCategory}`,
       p.eventName || '-',
       p.college ? (p.college === 'Other College' && p.otherCollege ? p.otherCollege : p.college) : '-',
@@ -825,8 +829,8 @@ const Participants = ({ mode = 'all' }) => {
             <DataTable
               columns={columns}
               rows={rows}
-              nonSortableColumns={[0, 8]}
-              alignments={['center', 'left', 'left', 'left', 'left', 'left', 'left', 'left', 'center']}
+              nonSortableColumns={[0, 9]}
+              alignments={['center', 'left', 'left', 'center', 'left', 'left', 'left', 'left', 'left', 'center']}
             />
           )}
         </Box>

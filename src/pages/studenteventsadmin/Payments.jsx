@@ -97,6 +97,7 @@ const Payments = () => {
 
   const columns = [
     'S.No',
+    'Team ID',
     'Main Group / Category',
     'Event Name',
     'Amount',
@@ -124,6 +125,7 @@ const Payments = () => {
 
     return [
       index + 1,
+      payment.teamId || '-',
       schoolCategory,
       payment.eventName || '-',
       amountValue != null ? `₹ ${Number(amountValue).toLocaleString('en-IN')}` : '-',
@@ -232,8 +234,8 @@ const Payments = () => {
             <DataTable
               columns={columns}
               rows={rows}
-              nonSortableColumns={[0, 7]}
-              alignments={['center', 'left', 'left', 'right', 'center', 'center', 'center', 'center']}
+              nonSortableColumns={[0, 8]}
+              alignments={['center', 'center', 'left', 'left', 'right', 'center', 'center', 'center', 'center']}
             />
           )}
         </Box>
