@@ -2885,7 +2885,7 @@ const AppraisalReportDetail = () => {
       </Dialog>
 
       {/* Main HOD Action Bar */}
-      {role === "HOD" && selectedAppraisal?.status === "Submitted to HOD" && (
+      {["HOD", "SCHOOL_DEAN"].includes(role) && selectedAppraisal?.status === "Submitted to HOD" && (
         <Paper
           elevation={4}
           sx={{
