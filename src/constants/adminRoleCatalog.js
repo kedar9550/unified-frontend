@@ -31,4 +31,4 @@ export const ADMIN_ROLE_CATALOG = [
     { roleId: 'other', label: 'Any other remarkable event / activity coordinator', category: 'Other', pointsGroup: 'other', allowedLevels: ['Central', 'Department'] }
 ];
 
-export const ASSIGNED_BY_OPTIONS = ["Pro Chancellor", "Deputy Pro Chancellor", "Vice Chancellor", "Registrar", "HOD", "Others"];
+export const ASSIGNED_BY_OPTIONS = ["Registrar", "HOD", "Others"];

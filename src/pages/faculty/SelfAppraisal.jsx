@@ -4085,7 +4085,7 @@ const SelfAppraisal = () => {
                                         if (typeof role.assignedBy === 'string') assignedByDisplay = role.assignedBy;
                                         else if (role.assignedBy.type) {
                                           assignedByDisplay = role.assignedBy.type === "Others"
-                                            ? `Others (${role.assignedBy.otherText})`
+                                            ? role.assignedBy.otherText
                                             : role.assignedBy.type;
                                         }
                                       }
@@ -5629,9 +5629,18 @@ const SelfAppraisal = () => {
                   value={adminForm.assignedByType}
                   onChange={(e) => setAdminForm(p => ({ ...p, assignedByType: e.target.value, assignedByOtherText: "" }))}
                 >
-                  {ASSIGNED_BY_OPTIONS.map((opt, i) => (
-                    <MenuItem key={i} value={opt}>{opt}</MenuItem>
-                  ))}
+                  {(() => {
+                    let baseOptions = [...ASSIGNED_BY_OPTIONS];
+                    if (adminForm.roleId === 'training_coord') {
+                      baseOptions.unshift("Dean - Career Development");
+                    }
+                    if (adminForm.assignedByType && !baseOptions.includes(adminForm.assignedByType)) {
+                      baseOptions.push(adminForm.assignedByType);
+                    }
+                    return baseOptions.map((opt, i) => (
+                      <MenuItem key={i} value={opt}>{opt}</MenuItem>
+                    ));
+                  })()}
                 </Select>
               </Box>
 

@@ -177,7 +177,18 @@ const AppraisalReports = () => {
       "Total min points", "Total obtained points"
     ];
 
-    const exportDataAOA = [headers1, headers2];
+    const yearName = academicYears.find(y => y._id === selectedYear)?.year || "N/A";
+    
+    const now = new Date();
+    const dateStr = now.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).replace(/ /g, '-');
+    const timeStr = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true }).toUpperCase();
+    const timestamp = `${dateStr}, ${timeStr}`;
+
+    const topRow1 = ["CONSOLIDATED FACULTY SELF-APPRAISAL REPORT"];
+    const topRow2 = [`Academic Year: ${yearName}`];
+    const topRow3 = [`Generated On: ${timestamp}`];
+
+    const exportDataAOA = [topRow1, topRow2, topRow3, headers1, headers2];
 
     appraisals.forEach(row => {
       const type = row.eligibility?.type || 'N/A';
@@ -268,14 +279,18 @@ const AppraisalReports = () => {
 
     // Add multi-column merges for the top header row
     worksheet['!merges'] = [
-      { s: { r: 0, c: 0 }, e: { r: 0, c: 4 } },    // Personal Details
-      { s: { r: 0, c: 5 }, e: { r: 0, c: 10 } },   // Teaching
-      { s: { r: 0, c: 11 }, e: { r: 0, c: 21 } },  // Research
-      { s: { r: 0, c: 22 }, e: { r: 0, c: 25 } },  // Value Addition
-      { s: { r: 0, c: 26 }, e: { r: 0, c: 27 } },  // Administration
-      { s: { r: 0, c: 28 }, e: { r: 0, c: 29 } },  // Interpersonal Skills
-      { s: { r: 0, c: 30 }, e: { r: 0, c: 32 } },  // Eligibility Status
-      { s: { r: 0, c: 33 }, e: { r: 0, c: 34 } }   // Final Totals
+      { s: { r: 0, c: 0 }, e: { r: 0, c: 34 } }, // Report Title
+      { s: { r: 1, c: 0 }, e: { r: 1, c: 34 } }, // Academic Year
+      { s: { r: 2, c: 0 }, e: { r: 2, c: 34 } }, // Timestamp
+
+      { s: { r: 3, c: 0 }, e: { r: 3, c: 4 } },    // Personal Details
+      { s: { r: 3, c: 5 }, e: { r: 3, c: 10 } },   // Teaching
+      { s: { r: 3, c: 11 }, e: { r: 3, c: 21 } },  // Research
+      { s: { r: 3, c: 22 }, e: { r: 3, c: 25 } },  // Value Addition
+      { s: { r: 3, c: 26 }, e: { r: 3, c: 27 } },  // Administration
+      { s: { r: 3, c: 28 }, e: { r: 3, c: 29 } },  // Interpersonal Skills
+      { s: { r: 3, c: 30 }, e: { r: 3, c: 32 } },  // Eligibility Status
+      { s: { r: 3, c: 33 }, e: { r: 3, c: 34 } }   // Final Totals
     ];
 
     // Apply color styling to the headers
@@ -321,7 +336,7 @@ const AppraisalReports = () => {
         border: borderStyle
       };
 
-      const cell1Ref = XLSX.utils.encode_cell({ r: 0, c });
+      const cell1Ref = XLSX.utils.encode_cell({ r: 3, c });
       if (worksheet[cell1Ref]) {
         worksheet[cell1Ref].s = styleObj1;
       }
@@ -347,7 +362,7 @@ const AppraisalReports = () => {
         border: borderStyle
       };
 
-      const cell2Ref = XLSX.utils.encode_cell({ r: 1, c });
+      const cell2Ref = XLSX.utils.encode_cell({ r: 4, c });
       if (worksheet[cell2Ref]) {
         worksheet[cell2Ref].s = styleObj2;
       }
@@ -355,7 +370,7 @@ const AppraisalReports = () => {
       // Apply light color variants to the data cells
       const dataColor = lightColors[cell2Color] || "FFFFFF";
 
-      for (let r = 2; r < exportDataAOA.length; r++) {
+      for (let r = 5; r < exportDataAOA.length; r++) {
         const cellDataRef = XLSX.utils.encode_cell({ r, c });
         if (worksheet[cellDataRef]) {
           worksheet[cellDataRef].s = {
@@ -365,6 +380,33 @@ const AppraisalReports = () => {
           };
         }
       }
+    }
+
+    // Apply styles to the new top headers across all merged columns
+    const topStyleBold14 = {
+      font: { bold: true, sz: 14, color: { rgb: "FFFFFF" } },
+      fill: { fgColor: { rgb: "1F497D" } }, // Professional Dark Blue
+      alignment: { horizontal: "center", vertical: "center" }
+    };
+    const topStyleBold12 = {
+      font: { bold: true, sz: 12, color: { rgb: "FFFFFF" } },
+      fill: { fgColor: { rgb: "1F497D" } },
+      alignment: { horizontal: "center", vertical: "center" }
+    };
+
+    for (let c = 0; c < 35; c++) {
+      const ref0 = XLSX.utils.encode_cell({ r: 0, c });
+      const ref1 = XLSX.utils.encode_cell({ r: 1, c });
+      const ref2 = XLSX.utils.encode_cell({ r: 2, c });
+      
+      if (!worksheet[ref0]) worksheet[ref0] = { t: "s", v: "" };
+      worksheet[ref0].s = topStyleBold14;
+      
+      if (!worksheet[ref1]) worksheet[ref1] = { t: "s", v: "" };
+      worksheet[ref1].s = topStyleBold12;
+
+      if (!worksheet[ref2]) worksheet[ref2] = { t: "s", v: "" };
+      worksheet[ref2].s = topStyleBold12;
     }
 
     const workbook = XLSX.utils.book_new();

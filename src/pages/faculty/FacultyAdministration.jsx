@@ -737,9 +737,18 @@ export default function FacultyAdministration() {
                                   }}
                                 >
                                   <MenuItem value=""><em>Select Authority</em></MenuItem>
-                                  {ASSIGNED_BY_OPTIONS.map(opt => (
-                                    <MenuItem key={opt} value={opt}>{opt}</MenuItem>
-                                  ))}
+                                  {(() => {
+                                    let baseOptions = [...ASSIGNED_BY_OPTIONS];
+                                    if (role.roleId === 'training_coord') {
+                                      baseOptions.unshift("Dean - Career Development");
+                                    }
+                                    if (formData.assignedByType && !baseOptions.includes(formData.assignedByType)) {
+                                      baseOptions.push(formData.assignedByType);
+                                    }
+                                    return baseOptions.map(opt => (
+                                      <MenuItem key={opt} value={opt}>{opt}</MenuItem>
+                                    ));
+                                  })()}
                                 </Select>
                               </FormControl>
                             </Box>
