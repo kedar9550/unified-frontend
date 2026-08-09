@@ -110,32 +110,7 @@ const AppraisalReports = () => {
     }
   };
 
-  const getFacultyTypeInfo = (faculty) => {
-    if (!faculty) return { type: 'N/A', minPoints: 0, mins: {} };
 
-    const desig = (faculty.designation || '').toLowerCase();
-    const qual = (faculty.qualification || '').toLowerCase();
-
-    // Determine Type
-    let type = 'Non-Doctorate Faculty';
-
-    const leadershipKeywords = ['principal', 'dean', 'director', 'hod', 'head of department'];
-    const isLeadership = leadershipKeywords.some(kw => desig.includes(kw));
-
-    if (isLeadership) {
-      type = 'Leadership Team';
-    } else if (qual.includes('ph.d') || qual.includes('phd') || qual.includes('doctorate')) {
-      type = 'Doctorate Faculty';
-    }
-
-    // Get Min Points from Config
-    let mins = {};
-    if (appraisalConfig && appraisalConfig.minimumPoints && appraisalConfig.minimumPoints[type]) {
-      mins = appraisalConfig.minimumPoints[type];
-    }
-
-    return { type, minPoints: mins.total || 0, mins };
-  };
 
   const handleRequestSort = (property) => {
     const isAsc = orderBy === property && order === 'asc';
@@ -144,7 +119,8 @@ const AppraisalReports = () => {
   };
 
   const getSortValue = (row, property) => {
-    const { type, minPoints } = getFacultyTypeInfo(row.facultyId);
+    const type = row.eligibility?.type || 'N/A';
+    const minPoints = row.eligibility?.mins?.total || 0;
 
     const teaching = row.teaching?.totalClaimed || 0;
     const research = row.research?.totalClaimed || 0;
@@ -204,7 +180,8 @@ const AppraisalReports = () => {
     const exportDataAOA = [headers1, headers2];
 
     appraisals.forEach(row => {
-      const { type, mins } = getFacultyTypeInfo(row.facultyId);
+      const type = row.eligibility?.type || 'N/A';
+      const mins = row.eligibility?.mins || {};
 
       // Teaching Breakdown
       const teaching = row.teaching || {};
@@ -242,55 +219,11 @@ const AppraisalReports = () => {
       const grandTotal = parseFloat((teachingObtained + researchObtained + v3Obtained + aRaw + iRaw).toFixed(2));
       const totalMin = mins.total || 0;
 
-      // --- Eligibility Logic ---
 
-      // 1. FDP / Coursera 40 Hours
-      const allowedOrg = [
-        "ugc", "aicte", "iit", "iim", "nit", "mhrd r&d lab", "mhrd r&d labs",
-        "nitttr", "niper", "icmr", "nirf ranked institute (below 200)",
-        "nirf ranked institute (below rank 200)", "govt. university", "government university", "nptel"
-      ];
 
-      const resUtilItems = valueAdd.resourceUtilization?.items || [];
-      const hasValidFdp = resUtilItems.some(r => {
-        if (!r.eventId) return false;
-        if (r.eventId.status === 'Rejected') return false;
-
-        const cat = (r.eventId.activityCategory || '').toLowerCase().trim();
-        const evType = (r.eventId.activityType || '').toLowerCase().trim();
-        const org = (r.eventId.organizingInstitutionCategory || '').toLowerCase().trim();
-        const days = Number(r.eventId.numberOfDaysParticipated) || Number(r.eventId.duration) || 0;
-
-        if (cat === 'fdp' && evType === 'fdp participant' && days >= 5 && allowedOrg.includes(org)) {
-          if (org.includes("nirf")) {
-            const rank = Number(r.eventId.nirfRank);
-            return !isNaN(rank) && rank > 0 && rank < 200;
-          }
-          return true;
-        }
-        return false;
-      });
-
-      const contribItems = valueAdd.expertiseContribution?.items || [];
-      const hasValidCoursera = contribItems.some(c => {
-        if (!c.contributionId) return false;
-        if (c.contributionId.status === 'Rejected') return false;
-
-        const catObj = c.contributionId.category;
-        if (!catObj) return false;
-        const match = catObj.name?.match(/^(\d+)\./);
-        const catCode = match ? parseInt(match[1], 10) : 0;
-
-        return catCode === 12 && Number(c.contributionId.courseHours) >= 40;
-      });
-
-      const fdpPassed = hasValidFdp || hasValidCoursera;
-      const r21Passed = r21Obtained >= r21Min;
-      const interpersonalPassed = iRaw >= 30;
-
-      const fdpStatus = fdpPassed ? "Fulfilled" : "Unfulfilled";
-      const r21Status = r21Passed ? "Fulfilled" : "Unfulfilled";
-      const interpersonalStatus = interpersonalPassed ? "Fulfilled" : "Unfulfilled";
+      const fdpStatus = row.eligibility?.details?.fdpStatus || "Unfulfilled";
+      const r21Status = row.eligibility?.details?.r21Status || "Unfulfilled";
+      const interpersonalStatus = row.eligibility?.details?.interpersonalStatus || "Unfulfilled";
 
       exportDataAOA.push([
         row.facultyId?.institutionId || 'N/A',
@@ -539,7 +472,8 @@ const AppraisalReports = () => {
               </TableHead>
               <TableBody>
                 {paginatedAppraisals.map((row) => {
-                  const { type, minPoints } = getFacultyTypeInfo(row.facultyId);
+                  const type = row.eligibility?.type || 'N/A';
+                  const minPoints = row.eligibility?.mins?.total || 0;
 
                   const teaching = row.teaching?.totalClaimed || 0;
                   const research = row.research?.totalClaimed || 0;

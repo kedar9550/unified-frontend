@@ -1692,59 +1692,22 @@ const SelfAppraisal = () => {
     }
   };
 
-  const getFacultyCategory = (fac) => {
-    if (!fac) return "Non-Doctorate Faculty";
-    const lead = (fac.leadership || "").toLowerCase().trim();
-    const qual = (fac.qualification || "").toLowerCase().trim();
-    const doct = (fac.doctorate || "").toLowerCase().trim();
+  const getFacultyCategory = () => appraisal?.eligibility?.type || "Non-Doctorate Faculty";
 
-    if (lead === "yes" || lead === "true") return "Leadership Team";
-    if (qual.includes("phd") || qual.includes("ph.d") || doct === "yes" || doct === "true") return "Doctorate Faculty";
-    return "Non-Doctorate Faculty";
-  };
-
-  const getCategoryThresholds = (category) => {
-    if (category === "Doctorate Faculty") {
-      return { teaching: 50, metric21: 40, total1to4: 135, grandTotal: 165 };
-    }
-    if (category === "Leadership Team") {
-      return { teaching: 40, metric21: 30, total1to4: 110, grandTotal: 140 };
-    }
-    return { teaching: 50, metric21: 30, total1to4: 110, grandTotal: 140 };
+  const getCategoryThresholds = () => {
+    const mins = appraisal?.eligibility?.mins || {};
+    return { 
+      teaching: mins.teaching || 50, 
+      metric21: mins.research21 || 30, 
+      total1to4: (mins.total || 140) - (mins.interpersonalSkills || 30), 
+      grandTotal: mins.total || 140 
+    };
   };
 
 
 
   const checkFdpCourseraRequirement = () => {
-    const allowedOrg = [
-      "ugc", "aicte", "iit", "iim", "nit", "mhrd r&d lab", "mhrd r&d labs",
-      "nitttr", "niper", "icmr", "nirf ranked institute (below 200)",
-      "nirf ranked institute (below rank 200)", "govt. university", "government university", "nptel"
-    ];
-
-    const hasValidFdp = resourceUtilizationDetails.some(r => {
-      if (r.status === 'Rejected') return false;
-      const cat = (r.activityCategory || '').toLowerCase().trim();
-      const type = (r.activityType || '').toLowerCase().trim();
-      const org = (r.organizingInstitutionCategory || '').toLowerCase().trim();
-      const days = Number(r.numberOfDaysParticipated) || Number(r.daysParticipated) || Number(r.duration) || 0;
-      if (cat === 'fdp' && type === 'fdp participant' && days >= 5 && allowedOrg.includes(org)) {
-        if (org.includes("nirf")) {
-          const rank = Number(r.nirfRank);
-          return !isNaN(rank) && rank > 0 && rank < 200;
-        }
-        return true;
-      }
-      return false;
-    });
-
-    const hasValidCoursera40Hours = contributionDetails.some(c => {
-      if (c.status === 'Rejected') return false;
-      const cat = getCategoryCode(c.category);
-      return cat === 12 && Number(c.courseHours) >= 40;
-    });
-
-    return hasValidFdp || hasValidCoursera40Hours;
+    return appraisal?.eligibility?.details?.fdpStatus === "Fulfilled";
   };
 
   const getMetric21Score = () => {
@@ -1779,8 +1742,8 @@ const SelfAppraisal = () => {
 
   const calculateProgressPercentage = () => {
     if (!appraisal) return 0;
-    const category = getFacultyCategory(faculty);
-    const thresholds = getCategoryThresholds(category);
+    const category = getFacultyCategory();
+    const thresholds = getCategoryThresholds();
     const scores = calculateOverallScores();
 
     // 1. Profile Completeness: 100% if complete, 0% if not
@@ -1830,8 +1793,8 @@ const SelfAppraisal = () => {
   };
 
   const getEligibilityChecklist = () => {
-    const category = getFacultyCategory(faculty);
-    const thresholds = getCategoryThresholds(category);
+    const category = getFacultyCategory();
+    const thresholds = getCategoryThresholds();
     const scores = calculateOverallScores();
 
     const fdpCourseraPassed = checkFdpCourseraRequirement();

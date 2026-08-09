@@ -752,63 +752,18 @@ const AppraisalReportDetail = () => {
   } : null;
 
   const checkEligibilityStatus = () => {
-    if (!selectedAppraisal || !calculatedPrintData) return false;
+    if (!selectedAppraisal || !selectedAppraisal.eligibility) return { isEligible: false, details: {} };
 
-    // FDP/Coursera check
-    const allowedOrg = [
-      "ugc", "aicte", "iit", "iim", "nit", "mhrd r&d lab", "mhrd r&d labs",
-      "nitttr", "niper", "icmr", "nirf ranked institute (below 200)",
-      "nirf ranked institute (below rank 200)", "govt. university", "government university", "nptel"
-    ];
-    const hasValidFdp = selectedAppraisal.resourceUtilizationDetails?.some(r => {
-      if (r.status === 'Rejected') return false;
-      const cat = (r.activityCategory || '').toLowerCase().trim();
-      const type = (r.activityType || '').toLowerCase().trim();
-      const org = (r.organizingInstitutionCategory || '').toLowerCase().trim();
-      const days = Number(r.numberOfDaysParticipated) || Number(r.daysParticipated) || Number(r.duration) || 0;
-      if (cat === 'fdp' && type === 'fdp participant' && days >= 5 && allowedOrg.includes(org)) {
-        if (org.includes("nirf")) {
-          const rank = Number(r.nirfRank);
-          return !isNaN(rank) && rank > 0 && rank < 200;
-        }
-        return true;
-      }
-      return false;
-    });
-
-    const hasValidCoursera40Hours = selectedAppraisal.contributionDetails?.some(c => {
-      if (c.status === 'Rejected') return false;
-      const catCode = typeof c.category === 'object' ? c.category?.code : parseInt(c.category);
-      return catCode === 12 && Number(c.courseHours) >= 40;
-    });
-
-    const fdpCourseraPassed = hasValidFdp || hasValidCoursera40Hours;
-
-    // Metric 2.1 check
-    const metric21Score = selectedAppraisal.research?.papers?.totalClaimed || 0;
-    const catThresholds = getCategoryThresholds(selectedAppraisal.facultyCategory || "Non-Doctorate Faculty");
-    const metric21Passed = metric21Score >= catThresholds.metric21;
-
-    // Interpersonal Skills Check
-    const showInterpersonal = ["Approved", "Completed", "Pending Research Admin"].includes(selectedAppraisal.status);
-    let interpersonalScore = 0;
-    if (showInterpersonal && selectedAppraisal.hodEvaluation?.interpersonalRatings?.length > 0) {
-      interpersonalScore = selectedAppraisal.hodEvaluation.interpersonalRatings.reduce((sum, item) => sum + (Number(item.rating) || 0), 0);
-    }
-    const interpersonalPassed = interpersonalScore >= 30;
-
-    const isEligible = fdpCourseraPassed && metric21Passed && (!showInterpersonal || interpersonalPassed);
-
+    const elig = selectedAppraisal.eligibility;
+    const isEligible = elig.status === "Fulfilled";
+    
     return {
       isEligible,
       details: {
-        fdpCourseraPassed,
-        metric21Score,
-        metric21Threshold: catThresholds.metric21,
-        metric21Passed,
-        showInterpersonal,
-        interpersonalScore,
-        interpersonalPassed
+        fdpCourseraPassed: elig.details?.fdpStatus === "Fulfilled",
+        metric21Passed: elig.details?.r21Status === "Fulfilled",
+        interpersonalPassed: elig.details?.interpersonalStatus === "Fulfilled",
+        showInterpersonal: ["Approved", "Completed", "Pending Research Admin"].includes(selectedAppraisal.status)
       }
     };
   };
