@@ -1707,7 +1707,53 @@ const SelfAppraisal = () => {
 
 
   const checkFdpCourseraRequirement = () => {
-    return appraisal?.eligibility?.details?.fdpStatus === "Fulfilled";
+    // 1. Check if backend already confirmed it (from an earlier sync)
+    if (appraisal?.eligibility?.details?.fdpStatus === "Fulfilled") return true;
+
+    // 2. Check local Draft/Pending resourceUtilizationDetails for FDP
+    const allowedOrg = [
+        "ugc", "aicte", "iit", "iim", "nit", "mhrd r&d lab", "mhrd r&d labs",
+        "nitttr", "niper", "icmr", "nirf ranked institute (below 200)",
+        "nirf ranked institute (below rank 200)", "govt. university", "government university", "nptel"
+    ];
+
+    if (resourceUtilizationDetails && Array.isArray(resourceUtilizationDetails)) {
+        for (const r of resourceUtilizationDetails) {
+            if (r.status !== "Rejected") {
+                const cat = (r.activityCategory || '').toLowerCase().trim();
+                const evType = (r.activityType || '').toLowerCase().trim();
+                const org = (r.organizingInstitutionCategory || '').toLowerCase().trim();
+                const days = Number(r.numberOfDaysParticipated) || Number(r.daysParticipated) || Number(r.duration) || 0;
+
+                if (cat === 'fdp' && evType === 'fdp participant' && days >= 5 && allowedOrg.includes(org)) {
+                    if (org.includes("nirf")) {
+                        const rank = Number(r.nirfRank);
+                        if (!isNaN(rank) && rank > 0 && rank < 200) {
+                            return true;
+                        }
+                    } else {
+                        return true;
+                    }
+                }
+            }
+        }
+    }
+
+    // 3. Check local Draft/Pending contributionDetails for Coursera >= 40hrs
+    if (contributionDetails && Array.isArray(contributionDetails)) {
+        for (const c of contributionDetails) {
+            if (c.status !== "Rejected") {
+                const catCode = typeof c.category === 'object' ? c.category?.code : parseInt(c.category);
+                const catName = (typeof c.category === 'object' ? c.category?.name : '').toLowerCase();
+                
+                if ((catCode === 12 || catName.includes('coursera')) && Number(c.courseHours) >= 40) {
+                    return true;
+                }
+            }
+        }
+    }
+
+    return false;
   };
 
   const getMetric21Score = () => {
