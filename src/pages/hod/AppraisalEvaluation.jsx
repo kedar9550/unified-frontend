@@ -10,12 +10,14 @@ import {
   Select,
   MenuItem,
   Chip,
-  IconButton
+  IconButton,
+  Stack
 } from "@mui/material";
 import { RateReview, Visibility } from "@mui/icons-material";
 import axiosInstance from "../../api/axios";
 import { toast } from "sonner";
 import DataTable from "../../components/data/DataTable";
+import PageHeader from "../../components/common/PageHeader";
 
 const AppraisalEvaluation = () => {
   const navigate = useNavigate();
@@ -65,18 +67,16 @@ const AppraisalEvaluation = () => {
   return (
     <Box p={4} sx={{ maxWidth: 1200, margin: "0 auto", animation: "fadeIn 0.5s ease" }}>
       {loading && <Loader />}
-      <Typography variant="h5" sx={{ fontWeight: 800, mb: 4, color: "var(--text-primary)" }}>
-        HOD Appraisal Verification Desk
-      </Typography>
+      
+      <Stack spacing={3} sx={{ width: "100%", mb: 3 }}>
+        <PageHeader
+          title="Appraisal Verification Desk"
+          subtitle="Review and evaluate faculty self-appraisal submissions"
+        />
+      </Stack>
 
       <Box>
         <Card sx={{ borderRadius: "16px", background: "var(--bg-panel)", border: "1px solid var(--border-color)", boxShadow: "var(--shadow-premium)", p: 3 }}>
-          <Box sx={{ px: 0, pb: 2.5, borderBottom: "1px solid var(--border-color)", mb: 2 }}>
-            <Typography variant="subtitle1" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>
-              Faculty Appraisals List
-            </Typography>
-          </Box>
-
           <DataTable
             columns={["FACULTY NAME", "EMPLOYEE ID", "DEPARTMENT", "ACADEMIC YEAR", "STATUS", "ACTION"]}
             rows={filteredList.map((appr) => {
@@ -149,9 +149,9 @@ const AppraisalEvaluation = () => {
                     "& .MuiOutlinedInput-notchedOutline": { borderColor: "var(--border-color)" }
                   }}
                 >
-                  <MenuItem value="Pending">Pending Verification</MenuItem>
-                  <MenuItem value="Approved">Approved & Finalized</MenuItem>
-                  <MenuItem value="Rejected">Rejected by HOD</MenuItem>
+                  <MenuItem value="Pending">Pending</MenuItem>
+                  <MenuItem value="Approved">Approved</MenuItem>
+                  <MenuItem value="Rejected">Rejected</MenuItem>
                   <MenuItem value="All">All Requests</MenuItem>
                 </Select>
               </FormControl>

@@ -128,20 +128,20 @@ export const ROLE_ROUTES = {
       path: "/role-management",
       icon: <People />
     },
-    {
-      text: "Students",
-      icon: <PersonIcon />,
-      nested: [
-        {
-          text: "Student Data Management",
-          path: "/student/student-uploads"
-        },
-        {
-          text: "Assigned Students",
-          path: "/student/assigned-students"
-        }
-      ]
-    },
+    // {
+    //   text: "Students",
+    //   icon: <PersonIcon />,
+    //   nested: [
+    //     {
+    //       text: "Student Data Management",
+    //       path: "/student/student-uploads"
+    //     },
+    //     {
+    //       text: "Assigned Students",
+    //       path: "/student/assigned-students"
+    //     }
+    //   ]
+    // },
     {
       text: "SDG Management",
       path: "/uniprime/sdg-management",
@@ -212,10 +212,12 @@ export const ROLE_ROUTES = {
 
         {
           text: "Resource Utilization",
+          path: "/hod/value-addition/resource-utilization",
           icon: <Assignment />
         },
         {
           text: "Contribution",
+          path: "/hod/value-addition/contribution",
           icon: <WorkspacePremium />
         },
         // {
@@ -246,10 +248,12 @@ export const ROLE_ROUTES = {
         },
         {
           text: "Resource Utilization",
+          path: "/hod/value-addition/resource-utilization",
           icon: <Assignment />
         },
         {
           text: "Contribution",
+          path: "/hod/value-addition/contribution",
           icon: <WorkspacePremium />
         },
         {

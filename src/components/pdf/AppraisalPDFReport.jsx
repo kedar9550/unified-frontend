@@ -156,10 +156,9 @@ const AppraisalPDFReport = forwardRef(({ data, hideInterpersonal, eligibilityDet
           <table style={styles.table}>
             <thead style={{ display: 'table-header-group' }}>
               <tr style={styles.tr}>
-                <th style={{ ...styles.th, width: '5%' }}>S.no</th>
-                <th style={{ ...styles.th, width: '55%' }}>Eligibility Criteria</th>
+                <th style={{ ...styles.th, width: '10%' }}>S.No</th>
+                <th style={{ ...styles.th, width: '70%' }}>Eligibility Criteria</th>
                 <th style={{ ...styles.th, width: '20%' }}>Status</th>
-                <th style={{ ...styles.th, width: '20%' }}>Final Eligibility Result</th>
               </tr>
             </thead>
             <tbody style={{ display: 'table-row-group', pageBreakInside: 'auto' }}>
@@ -169,9 +168,6 @@ const AppraisalPDFReport = forwardRef(({ data, hideInterpersonal, eligibilityDet
                   Attending an FDP of at least 5 days, organised by UGC / AICTE / IITs / IIMs / NITs / MHRD R&D labs / NITTTR / NIPER / ICMR / NIRF-ranked Institutes (below 200) / Govt. Universities / NPTEL / completing Coursera course (Min. 40 Hrs).
                 </td>
                 <td style={styles.td}>{eligibilityDetails.fdpCourseraPassed ? "Fulfilled" : "Unfulfilled"}</td>
-                <td style={{ ...styles.td, fontWeight: 'bold', verticalAlign: 'middle' }} rowSpan={eligibilityDetails.showInterpersonal ? 3 : 2}>
-                  {isEligible ? "Eligible" : "Not Eligible"}
-                </td>
               </tr>
               <tr style={styles.tr}>
                 <td style={styles.td}>2</td>

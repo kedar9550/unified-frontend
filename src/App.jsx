@@ -41,6 +41,8 @@ import EventCoordination from "./pages/faculty/EventCoordination";
 
 import ResourceUtilization from "./pages/faculty/ResourceUtilization";
 import Contribution from "./pages/faculty/Contribution";
+import ResourceUtilizationApproval from "./pages/hod/ResourceUtilizationApproval";
+import ContributionApproval from "./pages/hod/ContributionApproval";
 
 import ResearchApprovalList from './pages/research/researchApproval/ResearchApprovalList';
 import ResearchApprovalDetailWrapper from './pages/research/researchApproval/ResearchApprovalDetailWrapper';
@@ -193,6 +195,8 @@ function App() {
         {/* Value Addition Modules */}
         <Route path="/value-addition/resource-utilization" element={<ProtectedRoute element={<ResourceUtilization />} />} />
         <Route path="/value-addition/contribution" element={<ProtectedRoute element={<Contribution />} />} />
+        <Route path="/hod/value-addition/resource-utilization" element={<ProtectedRoute element={<ResourceUtilizationApproval />} />} />
+        <Route path="/hod/value-addition/contribution" element={<ProtectedRoute element={<ContributionApproval />} />} />
 
         <Route path="/hod/research-approvals" element={<ProtectedRoute element={<ResearchApprovalList role="HOD" />} />} />
         <Route path="/hod/research-request/:type/:id" element={<ProtectedRoute element={<ResearchApprovalDetailWrapper role="HOD" />} />} />

@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Box, 
-  Typography, 
-  FormControl, 
-  Select, 
-  MenuItem, 
-  InputLabel, 
+import {
+  Box,
+  Typography,
+  FormControl,
+  Select,
+  MenuItem,
+  InputLabel,
   Tooltip,
   Table,
   TableBody,
@@ -56,9 +56,9 @@ const AppraisalReports = () => {
         axiosInstance.get('/api/academic-years'),
         axiosInstance.get('/api/appraisal/active-year')
       ]);
-      
-      const activeAppraisalYearId = resActive.data?.data;
-      
+
+      const activeAppraisalYearId = resActive.data?.data?._id || resActive.data?.data;
+
       if (resYears.data && resYears.data.years) {
         const years = resYears.data.years;
         if (years.length > 0) {
@@ -66,7 +66,7 @@ const AppraisalReports = () => {
             ...y,
             isAppraisalActive: activeAppraisalYearId === y._id
           }));
-          
+
           const sortedYears = [...mappedYears].sort((a, b) => {
             if (a.isAppraisalActive && !b.isAppraisalActive) return -1;
             if (!a.isAppraisalActive && b.isAppraisalActive) return 1;
@@ -112,28 +112,28 @@ const AppraisalReports = () => {
 
   const getFacultyTypeInfo = (faculty) => {
     if (!faculty) return { type: 'N/A', minPoints: 0, mins: {} };
-    
+
     const desig = (faculty.designation || '').toLowerCase();
     const qual = (faculty.qualification || '').toLowerCase();
-    
+
     // Determine Type
     let type = 'Non-Doctorate Faculty';
-    
+
     const leadershipKeywords = ['principal', 'dean', 'director', 'hod', 'head of department'];
     const isLeadership = leadershipKeywords.some(kw => desig.includes(kw));
-    
+
     if (isLeadership) {
       type = 'Leadership Team';
     } else if (qual.includes('ph.d') || qual.includes('phd') || qual.includes('doctorate')) {
       type = 'Doctorate Faculty';
     }
-    
+
     // Get Min Points from Config
     let mins = {};
     if (appraisalConfig && appraisalConfig.minimumPoints && appraisalConfig.minimumPoints[type]) {
       mins = appraisalConfig.minimumPoints[type];
     }
-    
+
     return { type, minPoints: mins.total || 0, mins };
   };
 
@@ -145,7 +145,7 @@ const AppraisalReports = () => {
 
   const getSortValue = (row, property) => {
     const { type, minPoints } = getFacultyTypeInfo(row.facultyId);
-    
+
     const teaching = row.teaching?.totalClaimed || 0;
     const research = row.research?.totalClaimed || 0;
     const valueAdd = row.valueAddition?.totalClaimed || 0;
@@ -180,30 +180,32 @@ const AppraisalReports = () => {
     }
 
     const headers1 = [
-      "Personal Details", "", "", "", "", 
-      "Teaching", "", "", "", "", "", 
-      "Research", "", "", "", "", "", "", "", "", "", "", 
-      "Value Addition", "", "", "", 
-      "Administration", "", 
-      "Interpersonal Skills", "", 
-      "Final Totals", "", ""
+      "Personal Details", "", "", "", "",
+      "Teaching", "", "", "", "", "",
+      "Research", "", "", "", "", "", "", "", "", "", "",
+      "Value Addition", "", "", "",
+      "Administration", "",
+      "Interpersonal Skills", "",
+      "Eligibility Status", "", "",
+      "Final Totals", ""
     ];
 
     const headers2 = [
       "Emp ID", "Faculty Name", "Designation", "Department", "Type",
-      "Course pass %", "Course Feedback", "Proctoring pass %", "CO attainment", "Teaching min", "Teaching obtained",
-      "2.1 Minimum points", "2.1 obtained points", "2.2", "2.3", "2.4", "2.5", "2.6", "2.7", "2.8", "Research min", "Research obtained",
-      "3.1", "3.2", "3 minimum points", "3 obtained points",
-      "4 minimum", "4 obtained",
-      "5 minimum", "5 obtained",
-      "Total min points", "Total obtained points", "Eligibility"
+      "Course pass% (1.1)", "Course Feedback (1.2)", "Proctoring pass %(1.3)", "CO attainment(1.4)", "Teaching min", "Teaching obtained",
+      "Paper publication (2.1) minimum required", "Paper publication (2.1) obtained", "Guiding Ph. D Scholars(2.2)", "Books/Chapters/Scopus Conference proceedings(2.3)", "Patents(2.4)", "Novel products/Technology (2.5)", "Project/Consultancy Proposals(2.6)", "Scopus Citation score points(2.7)", "Scopus h-index score points(2.8)", "Research min", "Research obtained",
+      "Faculty resource utilization(3.1)", "Faculty Contribution(3.2)", "3 minimum points", "3 obtained points",
+      "Administrative Responsibilities(4) minimum", "Administrative Responsibilities(4) obtained",
+      "Interpersonal Skills (5) minimum", "Interpersonal Skills (5) obtained",
+      "FDP(5+days) – Recognized Institutes / Coursera (40min)", "min points in Papers Publications(2.1)", "min points in interpersonal skill",
+      "Total min points", "Total obtained points"
     ];
 
     const exportDataAOA = [headers1, headers2];
 
     appraisals.forEach(row => {
       const { type, mins } = getFacultyTypeInfo(row.facultyId);
-      
+
       // Teaching Breakdown
       const teaching = row.teaching || {};
       const coursePassPercent = teaching.passPercentage?.averagePoints || 0;
@@ -224,7 +226,7 @@ const AppraisalReports = () => {
       const r27 = research.scopusCitationScore || 0;
       const r28 = research.scopusHIndexScore || 0;
       const researchObtained = research.totalClaimed || 0;
-      
+
       const r21Min = mins.research21 || 0;
       const researchTotalMin = (mins.research21 || 0) + (mins.research22_28 || 0);
 
@@ -241,24 +243,24 @@ const AppraisalReports = () => {
       const totalMin = mins.total || 0;
 
       // --- Eligibility Logic ---
-      
+
       // 1. FDP / Coursera 40 Hours
       const allowedOrg = [
         "ugc", "aicte", "iit", "iim", "nit", "mhrd r&d lab", "mhrd r&d labs",
         "nitttr", "niper", "icmr", "nirf ranked institute (below 200)",
         "nirf ranked institute (below rank 200)", "govt. university", "government university", "nptel"
       ];
-      
+
       const resUtilItems = valueAdd.resourceUtilization?.items || [];
       const hasValidFdp = resUtilItems.some(r => {
         if (!r.eventId) return false;
         if (r.eventId.status === 'Rejected') return false;
-        
+
         const cat = (r.eventId.activityCategory || '').toLowerCase().trim();
         const evType = (r.eventId.activityType || '').toLowerCase().trim();
         const org = (r.eventId.organizingInstitutionCategory || '').toLowerCase().trim();
         const days = Number(r.eventId.numberOfDaysParticipated) || Number(r.eventId.duration) || 0;
-        
+
         if (cat === 'fdp' && evType === 'fdp participant' && days >= 5 && allowedOrg.includes(org)) {
           if (org.includes("nirf")) {
             const rank = Number(r.eventId.nirfRank);
@@ -273,12 +275,12 @@ const AppraisalReports = () => {
       const hasValidCoursera = contribItems.some(c => {
         if (!c.contributionId) return false;
         if (c.contributionId.status === 'Rejected') return false;
-        
+
         const catObj = c.contributionId.category;
         if (!catObj) return false;
         const match = catObj.name?.match(/^(\d+)\./);
         const catCode = match ? parseInt(match[1], 10) : 0;
-        
+
         return catCode === 12 && Number(c.contributionId.courseHours) >= 40;
       });
 
@@ -286,7 +288,9 @@ const AppraisalReports = () => {
       const r21Passed = r21Obtained >= r21Min;
       const interpersonalPassed = iRaw >= 30;
 
-      const isEligible = (fdpPassed && r21Passed && interpersonalPassed) ? "eligible" : "in eligible";
+      const fdpStatus = fdpPassed ? "Fulfilled" : "Unfulfilled";
+      const r21Status = r21Passed ? "Fulfilled" : "Unfulfilled";
+      const interpersonalStatus = interpersonalPassed ? "Fulfilled" : "Unfulfilled";
 
       exportDataAOA.push([
         row.facultyId?.institutionId || 'N/A',
@@ -319,14 +323,16 @@ const AppraisalReports = () => {
         aRaw,
         mins.interpersonalSkills || 0,
         iRaw,
+        fdpStatus,
+        r21Status,
+        interpersonalStatus,
         totalMin,
-        grandTotal,
-        isEligible
+        grandTotal
       ]);
     });
 
     const worksheet = XLSX.utils.aoa_to_sheet(exportDataAOA);
-    
+
     // Add multi-column merges for the top header row
     worksheet['!merges'] = [
       { s: { r: 0, c: 0 }, e: { r: 0, c: 4 } },    // Personal Details
@@ -335,7 +341,8 @@ const AppraisalReports = () => {
       { s: { r: 0, c: 22 }, e: { r: 0, c: 25 } },  // Value Addition
       { s: { r: 0, c: 26 }, e: { r: 0, c: 27 } },  // Administration
       { s: { r: 0, c: 28 }, e: { r: 0, c: 29 } },  // Interpersonal Skills
-      { s: { r: 0, c: 30 }, e: { r: 0, c: 32 } }   // Final Totals
+      { s: { r: 0, c: 30 }, e: { r: 0, c: 32 } },  // Eligibility Status
+      { s: { r: 0, c: 33 }, e: { r: 0, c: 34 } }   // Final Totals
     ];
 
     // Apply color styling to the headers
@@ -346,25 +353,84 @@ const AppraisalReports = () => {
       ...Array(4).fill("8064A2"), // Value Addition (Purple)
       ...Array(2).fill("4BACC6"), // Administration (Teal)
       ...Array(2).fill("C0504D"), // Interpersonal (Red)
-      ...Array(3).fill("404040")  // Final Totals (Dark Grey)
+      ...Array(3).fill("FFC000"), // Eligibility Status (Yellow)
+      ...Array(2).fill("404040")  // Final Totals (Dark Grey)
     ];
 
-    for (let c = 0; c < 33; c++) {
+    const borderStyle = {
+      top: { style: "thin", color: { auto: 1 } },
+      bottom: { style: "thin", color: { auto: 1 } },
+      left: { style: "thin", color: { auto: 1 } },
+      right: { style: "thin", color: { auto: 1 } }
+    };
+
+    const lightColors = {
+      "4F81BD": "DCE6F1", // Blue
+      "9BBB59": "EBF1DE", // Green
+      "F79646": "FDE9D9", // Orange
+      "8064A2": "E4DFEC", // Purple
+      "4BACC6": "DAEEF3", // Teal
+      "C0504D": "F2DCDB", // Red
+      "FFC000": "FFF2CC", // Yellow
+      "404040": "D9D9D9", // Dark Grey -> Light Grey
+      "7F7F7F": "F2F2F2", // Gray -> Very Light Gray
+      "1F497D": "D9E1F2"  // Dark Blue -> Very Light Blue
+    };
+
+    for (let c = 0; c < 35; c++) {
       const headerColor = colColors[c];
-      const styleObj = {
+
+      // Style for the top header row (headers1)
+      const styleObj1 = {
         font: { bold: true, color: { rgb: "FFFFFF" } },
         fill: { fgColor: { rgb: headerColor } },
-        alignment: { horizontal: "center", vertical: "center" }
+        alignment: { horizontal: "center", vertical: "center" },
+        border: borderStyle
       };
 
       const cell1Ref = XLSX.utils.encode_cell({ r: 0, c });
       if (worksheet[cell1Ref]) {
-        worksheet[cell1Ref].s = styleObj;
+        worksheet[cell1Ref].s = styleObj1;
       }
-      
+
+      // Determine specific color for 'minimum' or 'obtained' columns in headers2
+      let cell2Color = headerColor;
+      const h2Text = (headers2[c] || "").toLowerCase();
+
+      if (c >= 30 && c <= 32) {
+        // Eligibility Status section: Keep the section color (Yellow)
+        cell2Color = headerColor;
+      } else if (h2Text.includes("min")) {
+        cell2Color = "7F7F7F"; // Gray for Minimum Points
+      } else if (h2Text.includes("obtain")) {
+        cell2Color = "1F497D"; // Dark Blue for Obtained Points
+      }
+
+      // Style for the second header row (headers2)
+      const styleObj2 = {
+        font: { bold: true, color: { rgb: "FFFFFF" } },
+        fill: { fgColor: { rgb: cell2Color } },
+        alignment: { horizontal: "center", vertical: "center" },
+        border: borderStyle
+      };
+
       const cell2Ref = XLSX.utils.encode_cell({ r: 1, c });
       if (worksheet[cell2Ref]) {
-        worksheet[cell2Ref].s = styleObj;
+        worksheet[cell2Ref].s = styleObj2;
+      }
+
+      // Apply light color variants to the data cells
+      const dataColor = lightColors[cell2Color] || "FFFFFF";
+
+      for (let r = 2; r < exportDataAOA.length; r++) {
+        const cellDataRef = XLSX.utils.encode_cell({ r, c });
+        if (worksheet[cellDataRef]) {
+          worksheet[cellDataRef].s = {
+            fill: { fgColor: { rgb: dataColor } },
+            border: borderStyle,
+            alignment: { horizontal: "center", vertical: "center" }
+          };
+        }
       }
     }
 
@@ -386,7 +452,7 @@ const AppraisalReports = () => {
             View approved faculty performance appraisals
           </Typography>
         </Box>
-        
+
         <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
           <FormControl sx={{ minWidth: 250, bgcolor: "var(--bg-paper)", borderRadius: "12px" }} size="small">
             <InputLabel id="academic-year-select-label" sx={{ fontWeight: 700 }}>Academic Year</InputLabel>
@@ -431,107 +497,107 @@ const AppraisalReports = () => {
           </Box>
         ) : (
           <>
-          <Table>
-            <TableHead sx={{ background: "var(--gradient-primary)" }}>
-              <TableRow>
-                {[
-                  { id: 'empId', label: 'Emp ID' },
-                  { id: 'facultyName', label: 'Faculty Name' },
-                  { id: 'type', label: 'Type' },
-                  { id: 'minPoints', label: 'Min. Points', align: 'center' },
-                  { id: 'total', label: 'Total Points', align: 'center' },
-                  { id: 'actions', label: 'Actions', align: 'center', sortable: false }
-                ].map(headCell => (
-                  <TableCell
-                    key={headCell.id}
-                    align={headCell.align || 'left'}
-                    sx={{
-                      fontWeight: 700,
-                      py: 2,
-                      color: "#fff !important",
-                      '& .MuiTableSortLabel-root': { color: '#fff !important', '&:hover': { color: '#e0e0e0 !important' } },
-                      '& .MuiTableSortLabel-root.Mui-active': { color: '#fff !important' },
-                      '& .MuiTableSortLabel-icon': { color: '#fff !important' },
-                      whiteSpace: "nowrap"
-                    }}
-                    sortDirection={orderBy === headCell.id ? order : false}
-                  >
-                    {headCell.sortable !== false ? (
-                      <TableSortLabel
-                        active={orderBy === headCell.id}
-                        direction={orderBy === headCell.id ? order : 'asc'}
-                        onClick={() => handleRequestSort(headCell.id)}
-                      >
-                        {headCell.label}
-                      </TableSortLabel>
-                    ) : (
-                      headCell.label
-                    )}
-                  </TableCell>
-                ))}
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {paginatedAppraisals.map((row) => {
-                const { type, minPoints } = getFacultyTypeInfo(row.facultyId);
-                
-                const teaching = row.teaching?.totalClaimed || 0;
-                const research = row.research?.totalClaimed || 0;
-                const valueAdd = row.valueAddition?.totalClaimed || 0;
-                const admin = row.administrativeResponsibilities?.totalClaimed || 0;
-                const interpersonal = row.interpersonalSkills?.totalClaimed || 0;
-                const grandTotal = parseFloat((teaching + research + valueAdd + admin + interpersonal).toFixed(2));
-                
-                const isMet = grandTotal >= minPoints;
-                
-                return (
-                  <TableRow key={row._id} sx={{ "&:hover": { background: "var(--bg-accent-1)" }, transition: "background 0.15s", "&:last-child td, &:last-child th": { border: 0 } }}>
-                    <TableCell sx={{ fontWeight: 700, color: "var(--color-primary)" }}>{row.facultyId?.institutionId || 'N/A'}</TableCell>
-                    <TableCell>
-                      <Box sx={{ display: "flex", flexDirection: "column" }}>
-                        <Typography sx={{ fontWeight: 700, color: "var(--text-primary)" }}>{row.facultyId?.name || 'N/A'}</Typography>
-                        <Typography variant="caption" sx={{ color: "var(--text-secondary)", fontWeight: 550 }}>{row.facultyId?.designation || 'N/A'}</Typography>
-                      </Box>
-                    </TableCell>
-                    <TableCell sx={{ fontWeight: 600, color: "var(--text-secondary)" }}>{type}</TableCell>
-                    <TableCell align="center" sx={{ fontWeight: 700 }}>{minPoints}</TableCell>
-                    <TableCell align="center" sx={{ fontWeight: 800, color: isMet ? "#10b981" : "error.main", bgcolor: isMet ? "rgba(16, 185, 129, 0.05)" : "rgba(239, 68, 68, 0.05)" }}>
-                      {grandTotal}
-                    </TableCell>
-                    <TableCell align="center">
-                      <Tooltip title="View Details">
-                        <IconButton 
-                          onClick={() => navigate(`/appraisal/details/${row._id}`)} 
-                          color="primary" 
-                          size="small" 
-                          sx={{ border: "1px solid rgba(79, 70, 229, 0.15)", bgcolor: "rgba(79, 70, 229, 0.05)" }}
+            <Table>
+              <TableHead sx={{ background: "var(--gradient-primary)" }}>
+                <TableRow>
+                  {[
+                    { id: 'empId', label: 'Emp ID' },
+                    { id: 'facultyName', label: 'Faculty Name' },
+                    { id: 'type', label: 'Type' },
+                    { id: 'minPoints', label: 'Min. Points', align: 'center' },
+                    { id: 'total', label: 'Total Points', align: 'center' },
+                    { id: 'actions', label: 'Actions', align: 'center', sortable: false }
+                  ].map(headCell => (
+                    <TableCell
+                      key={headCell.id}
+                      align={headCell.align || 'left'}
+                      sx={{
+                        fontWeight: 700,
+                        py: 2,
+                        color: "#fff !important",
+                        '& .MuiTableSortLabel-root': { color: '#fff !important', '&:hover': { color: '#e0e0e0 !important' } },
+                        '& .MuiTableSortLabel-root.Mui-active': { color: '#fff !important' },
+                        '& .MuiTableSortLabel-icon': { color: '#fff !important' },
+                        whiteSpace: "nowrap"
+                      }}
+                      sortDirection={orderBy === headCell.id ? order : false}
+                    >
+                      {headCell.sortable !== false ? (
+                        <TableSortLabel
+                          active={orderBy === headCell.id}
+                          direction={orderBy === headCell.id ? order : 'asc'}
+                          onClick={() => handleRequestSort(headCell.id)}
                         >
-                          <Visibility fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
+                          {headCell.label}
+                        </TableSortLabel>
+                      ) : (
+                        headCell.label
+                      )}
                     </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
-          <TablePagination
-            component="div"
-            count={appraisals.length}
-            page={page}
-            onPageChange={(_, newPage) => setPage(newPage)}
-            rowsPerPage={rowsPerPage}
-            onRowsPerPageChange={(e) => { setRowsPerPage(parseInt(e.target.value, 10)); setPage(0); }}
-            rowsPerPageOptions={[5, 10, 25, 50]}
-            sx={{
-              borderTop: "1px solid var(--border-color)",
-              color: "var(--text-secondary)",
-              ".MuiTablePagination-select": { color: "var(--text-primary)" },
-              ".MuiTablePagination-selectIcon": { color: "var(--text-secondary)" },
-              ".MuiIconButton-root": { color: "var(--text-secondary)" },
-              ".MuiIconButton-root.Mui-disabled": { opacity: 0.3 }
-            }}
-          />
+                  ))}
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {paginatedAppraisals.map((row) => {
+                  const { type, minPoints } = getFacultyTypeInfo(row.facultyId);
+
+                  const teaching = row.teaching?.totalClaimed || 0;
+                  const research = row.research?.totalClaimed || 0;
+                  const valueAdd = row.valueAddition?.totalClaimed || 0;
+                  const admin = row.administrativeResponsibilities?.totalClaimed || 0;
+                  const interpersonal = row.interpersonalSkills?.totalClaimed || 0;
+                  const grandTotal = parseFloat((teaching + research + valueAdd + admin + interpersonal).toFixed(2));
+
+                  const isMet = grandTotal >= minPoints;
+
+                  return (
+                    <TableRow key={row._id} sx={{ "&:hover": { background: "var(--bg-accent-1)" }, transition: "background 0.15s", "&:last-child td, &:last-child th": { border: 0 } }}>
+                      <TableCell sx={{ fontWeight: 700, color: "var(--color-primary)" }}>{row.facultyId?.institutionId || 'N/A'}</TableCell>
+                      <TableCell>
+                        <Box sx={{ display: "flex", flexDirection: "column" }}>
+                          <Typography sx={{ fontWeight: 700, color: "var(--text-primary)" }}>{row.facultyId?.name || 'N/A'}</Typography>
+                          <Typography variant="caption" sx={{ color: "var(--text-secondary)", fontWeight: 550 }}>{row.facultyId?.designation || 'N/A'}</Typography>
+                        </Box>
+                      </TableCell>
+                      <TableCell sx={{ fontWeight: 600, color: "var(--text-secondary)" }}>{type}</TableCell>
+                      <TableCell align="center" sx={{ fontWeight: 700 }}>{minPoints}</TableCell>
+                      <TableCell align="center" sx={{ fontWeight: 800, color: isMet ? "#10b981" : "error.main", bgcolor: isMet ? "rgba(16, 185, 129, 0.05)" : "rgba(239, 68, 68, 0.05)" }}>
+                        {grandTotal}
+                      </TableCell>
+                      <TableCell align="center">
+                        <Tooltip title="View Details">
+                          <IconButton
+                            onClick={() => navigate(`/appraisal/details/${row._id}`)}
+                            color="primary"
+                            size="small"
+                            sx={{ border: "1px solid rgba(79, 70, 229, 0.15)", bgcolor: "rgba(79, 70, 229, 0.05)" }}
+                          >
+                            <Visibility fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+            <TablePagination
+              component="div"
+              count={appraisals.length}
+              page={page}
+              onPageChange={(_, newPage) => setPage(newPage)}
+              rowsPerPage={rowsPerPage}
+              onRowsPerPageChange={(e) => { setRowsPerPage(parseInt(e.target.value, 10)); setPage(0); }}
+              rowsPerPageOptions={[5, 10, 25, 50]}
+              sx={{
+                borderTop: "1px solid var(--border-color)",
+                color: "var(--text-secondary)",
+                ".MuiTablePagination-select": { color: "var(--text-primary)" },
+                ".MuiTablePagination-selectIcon": { color: "var(--text-secondary)" },
+                ".MuiIconButton-root": { color: "var(--text-secondary)" },
+                ".MuiIconButton-root.Mui-disabled": { opacity: 0.3 }
+              }}
+            />
           </>
         )}
       </TableContainer>

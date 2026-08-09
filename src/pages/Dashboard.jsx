@@ -31,7 +31,7 @@ function Dashboard() {
       {/*  ROLE-BASED DASHBOARD */}
       {activeRole === "FACULTY" && <FacultyDashboard />}
       {activeRole === "UNIPRIME" && <UniprimeDashboard />}
-      {activeRole === "HOD" && <HODDashboard />}
+      {(activeRole === "HOD" || activeRole === "SCHOOL_DEAN") && <HODDashboard />}
       {activeRole === "EXAMSECTION" && <ExamDashboard />}
       {activeRole === "STUDENT" && <StudentDashboard />}
       {activeRole === "RESEARCH_FEEDBACK_COMMITTEE" && <ResearchFeedbackDashboard />}
