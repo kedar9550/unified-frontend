@@ -16,13 +16,20 @@ const EventPassCard = ({ participant }) => {
   };
 
   return (
-    <Box
-      id="event-pass-card"
-      sx={{
-        width: '100%',
-        maxWidth: 700,
-        minWidth: 700, // force it to prevent squishing in PDF
-        minHeight: 450, // ensure enough space for bottom venue section
+    <Box sx={{ 
+      width: '100%', 
+      display: 'flex', 
+      justifyContent: 'center', 
+      overflow: 'hidden',
+      zoom: { xs: 0.45, sm: 0.7, md: 1 } 
+    }}>
+      <Box
+        id="event-pass-card"
+        sx={{
+          width: '100%',
+          maxWidth: 700,
+          minWidth: 700, // force it to prevent squishing in PDF
+          minHeight: 450, // ensure enough space for bottom venue section
         margin: '0 auto',
         marginTop: '24px',
         marginBottom: '16px',
@@ -166,6 +173,7 @@ const EventPassCard = ({ participant }) => {
           </Box>
         )}
       </Box>
+    </Box>
     </Box>
   );
 };
