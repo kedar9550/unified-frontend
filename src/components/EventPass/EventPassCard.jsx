@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Box, Typography, Divider, Avatar } from '@mui/material';
 import Barcode from 'react-barcode';
 import PersonIcon from '@mui/icons-material/Person';
@@ -6,14 +6,20 @@ import BadgeIcon from '@mui/icons-material/Badge';
 import SchoolIcon from '@mui/icons-material/School';
 import PhoneIcon from '@mui/icons-material/Phone';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
+import FaceIcon from '@mui/icons-material/Face';
+import Face3Icon from '@mui/icons-material/Face3';
 import adityaLogo from '../../assets/Aditya University Gold Logo.png';
 
 const EventPassCard = ({ participant }) => {
+  const [imageError, setImageError] = useState(false);
+
   if (!participant) return null;
 
   const getCollegeName = (p) => {
     return p.college === 'Other College' && p.otherCollege ? p.otherCollege : (p.college || '-');
   };
+
+  const isFemale = participant.gender?.toLowerCase() === 'female';
 
   return (
     <Box sx={{ 
@@ -121,7 +127,6 @@ const EventPassCard = ({ participant }) => {
           ))}
         </Box>
 
-
         {/* Right Photo */}
         <Box sx={{ width: '160px', display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>
           <Box
@@ -133,19 +138,36 @@ const EventPassCard = ({ participant }) => {
               backgroundColor: '#f1f5f9',
               border: '2px solid #e2e8f0',
               boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
             }}
           >
-            <Box
-              component="img"
-              crossOrigin="anonymous"
-              src={`${import.meta.env.VITE_BACKEND_URL || "http://localhost:9000"}/api/proxy/student-photo/${participant.roll}`}
-              alt={participant.name}
-              onError={(e) => {
-                e.target.onerror = null;
-                e.target.src = 'https://via.placeholder.com/105x130?text=No+Photo';
-              }}
-              sx={{ width: '100%', height: '100%', objectFit: 'cover' }} 
-            />
+            {!imageError ? (
+              <Box
+                component="img"
+                crossOrigin="anonymous"
+                src={`${import.meta.env.VITE_BACKEND_URL || "http://localhost:9000"}/api/proxy/student-photo/${participant.roll}`}
+                alt={participant.name}
+                onError={() => setImageError(true)}
+                sx={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+              />
+            ) : (
+              <Avatar 
+                sx={{ 
+                  width: '100%', 
+                  height: '100%', 
+                  borderRadius: 0, 
+                  bgcolor: isFemale ? '#fdf2f8' : '#eff6ff', 
+                  color: isFemale ? '#db2777' : '#2563eb', 
+                  fontSize: '3rem', 
+                  fontWeight: 800,
+                  textTransform: 'uppercase'
+                }}
+              >
+                {participant.name ? participant.name.charAt(0) : <PersonIcon sx={{ fontSize: 60 }} />}
+              </Avatar>
+            )}
           </Box>
         </Box>
       </Box>
