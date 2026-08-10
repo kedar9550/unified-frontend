@@ -879,7 +879,8 @@ const AppraisalPDFReport = forwardRef(({ data, hideInterpersonal, eligibilityDet
         const awdResearch22_28 = (researchTotal || 0) - awdResearch21;
         const awdValAdd = vData.valueAdditionTotal || 0;
         const awdAdmin = adminData.adminTotal || 0;
-        const awdTotal1to4 = awdTeaching + awdResearch21 + awdResearch22_28 + awdValAdd + awdAdmin;
+        const rawTotal1to4 = awdTeaching + awdResearch21 + awdResearch22_28 + awdValAdd + awdAdmin;
+        const awdTotal1to4 = Math.min(200, rawTotal1to4);
         const awdInterpersonal = data.hodEvaluation?.interpersonalRatings?.reduce((sum, r) => sum + (Number(r.rating) || 0), 0) || 0;
         const awdGrandTotal = awdTotal1to4 + awdInterpersonal;
 
