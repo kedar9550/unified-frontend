@@ -109,8 +109,26 @@ import Floor from "./pages/Infrastructure/Floor";
 import Ground from "./pages/Infrastructure/Ground";
 
 const PublicOnlyRoute = ({ children }) => {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
+  const location = useLocation();
+
+  useEffect(() => {
+    if (user) {
+      const params = new URLSearchParams(location.search);
+      const urlEmpId = params.get("empId");
+      if (urlEmpId && String(user.institutionId) !== String(urlEmpId)) {
+        logout();
+      }
+    }
+  }, [user, location.search, logout]);
+
   if (user) {
+    const params = new URLSearchParams(location.search);
+    const urlEmpId = params.get("empId");
+    if (urlEmpId && String(user.institutionId) !== String(urlEmpId)) {
+      // Wait for useEffect to log out, don't redirect to dashboard
+      return null;
+    }
     return <Navigate to="/dashboard" replace />;
   }
   return children;

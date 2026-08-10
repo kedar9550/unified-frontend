@@ -32,6 +32,8 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem("user");
     localStorage.removeItem("activeRole");
     localStorage.removeItem("fcmToken");
+    localStorage.removeItem("authToken");
+    delete API.defaults.headers.common["Authorization"];
   };
 
   // Initialize from storage on first load
