@@ -226,6 +226,15 @@ export default function Login({ defaultSignUp = false }) {
   const [loginData, setLoginData] = useState({ id: '', password: '' });
   const [loginMsg, setLoginMsg] = useState({ text: '', type: '' });
 
+  // Read empId from URL if provided
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const empIdFromUrl = params.get('empId');
+    if (empIdFromUrl) {
+      setLoginData(prev => ({ ...prev, id: empIdFromUrl }));
+    }
+  }, [location.search]);
+
   // ── forgot password state ──
   const [fpStep, setFpStep] = useState(1);
   const [isIdValid, setIsIdValid] = useState(false);
