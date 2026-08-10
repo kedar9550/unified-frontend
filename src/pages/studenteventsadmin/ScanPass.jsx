@@ -7,29 +7,26 @@ import {
   Button,
   Alert,
   CircularProgress,
-  Card,
-  CardContent,
-  Grid,
   Table,
   TableBody,
   TableCell,
   TableContainer,
-  TableHead,
   TableRow,
-  Chip
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  IconButton
 } from '@mui/material';
 import QrCodeScannerIcon from '@mui/icons-material/QrCodeScanner';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import CloseIcon from '@mui/icons-material/Close';
 import { Html5QrcodeScanner } from 'html5-qrcode';
 import api from '../../api/axios';
-import { useAuth } from '../../context/AuthContext';
 
 const ScanPass = () => {
-  const { activeRole, user } = useAuth();
   const [barcode, setBarcode] = useState('');
   const [loading, setLoading] = useState(false);
-  const [scannedParticipants, setScannedParticipants] = useState([]);
-  const [error, setError] = useState('');
+  const [scanResult, setScanResult] = useState(null);
   const [cameraActive, setCameraActive] = useState(false);
   const inputRef = useRef(null);
   const loadingRef = useRef(false);
@@ -42,60 +39,6 @@ const ScanPass = () => {
     }
   }, []);
 
-  // Fetch all previous scans from backend
-  useEffect(() => {
-    const loadPreviousScans = async () => {
-      try {
-        let allowedEventNames = null;
-        if (activeRole === 'FACULTY_COORDINATOR' && user) {
-          const eventsRes = await api.get('/api/events');
-          const events = eventsRes.data?.events || [];
-          const userEvents = events.filter(e => {
-            const coords = e.facultyCoordinators || (e.facultyCoordinator ? [e.facultyCoordinator] : []);
-            return coords.some(c => 
-              c.employeeId === user.institutionId || 
-              c.employeeId === user.employeeId || 
-              c.employeeId === user.employeeCode
-            );
-          });
-          allowedEventNames = userEvents.map(e => e.eventName);
-        }
-
-        const response = await api.get('/api/razorpay/registrations');
-        let payments = response.data.payments || [];
-        
-        if (allowedEventNames) {
-          payments = payments.filter(p => allowedEventNames.includes(p.eventName || p.category));
-        }
-
-        const previousScans = [];
-        
-        payments.forEach(payment => {
-          if (payment.participants && Array.isArray(payment.participants)) {
-            payment.participants.forEach(p => {
-              if (p.attended) {
-                previousScans.push({
-                  participant: p,
-                  eventName: payment.eventName,
-                  scannedAt: new Date(payment.updatedAt || payment.createdAt).getTime(),
-                  isDuplicate: false
-                });
-              }
-            });
-          }
-        });
-        
-        // Sort descending by simulated scannedAt (updatedAt)
-        previousScans.sort((a, b) => b.scannedAt - a.scannedAt);
-        setScannedParticipants(previousScans);
-      } catch (err) {
-        console.error('Failed to load previous scans:', err);
-      }
-    };
-
-    loadPreviousScans();
-  }, [activeRole, user]);
-
   const processScan = async (codeToScan) => {
     if (!codeToScan || !codeToScan.trim()) return;
     if (loadingRef.current) return;
@@ -106,15 +49,25 @@ const ScanPass = () => {
 
     setLoading(true);
     loadingRef.current = true;
-    setError('');
-    // Do not clear scannedParticipants here to keep the history
 
     try {
       const response = await api.post('/api/razorpay/scan-barcode', { barcode: codeToScan.trim() });
-      setScannedParticipants(prev => [{ ...response.data, scannedAt: Date.now() }, ...prev]);
+      setScanResult({ 
+        type: 'success', 
+        message: response.data.isDuplicate ? 'Pass Already Verified' : 'Pass Verified Successfully',
+        data: response.data 
+      });
       setBarcode(''); // Reset for next scan
     } catch (err) {
-      setError(err.response?.data?.error || 'Failed to scan barcode.');
+      setScanResult({
+        type: 'error',
+        message: err.response?.data?.error || 'Failed to scan barcode.',
+        data: err.response?.data?.participant ? { 
+            participant: err.response.data.participant, 
+            eventName: err.response.data.eventName, 
+            isDuplicate: true 
+        } : null
+      });
       if (err.response?.data?.participant) {
          setBarcode(''); // Reset even if already scanned
       }
@@ -131,6 +84,14 @@ const ScanPass = () => {
   const handleScan = async (e) => {
     e.preventDefault();
     processScan(barcode);
+  };
+
+  const handleCloseDialog = () => {
+    setScanResult(null);
+    lastScannedRef.current = ''; // Reset so the same barcode can be scanned again if needed
+    if (!cameraActive && inputRef.current) {
+      setTimeout(() => inputRef.current.focus(), 100);
+    }
   };
 
   useEffect(() => {
@@ -160,26 +121,24 @@ const ScanPass = () => {
   }, [cameraActive]);
 
   return (
-    <Box p={3} maxWidth="xl" mx="auto">
-      <Typography variant="h4" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+    <Box p={3} maxWidth="md" mx="auto">
+      <Typography variant="h4" gutterBottom sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1 }}>
         <QrCodeScannerIcon fontSize="large" color="primary" />
         Scan Event Pass
       </Typography>
 
-      <Grid container spacing={4}>
-        {/* Left Side: Scanner */}
-        <Grid item xs={12} sm={5} md={4}>
-          <Paper sx={{ p: 3, mb: 4, textAlign: 'center', height: '100%' }}>
-        <Typography variant="body1" color="textSecondary" mb={3}>
+      <Paper sx={{ p: 4, mt: 4, textAlign: 'center' }}>
+        <Typography variant="body1" color="textSecondary" mb={4}>
           Use your device camera to scan the pass, or manually enter the pass code.
         </Typography>
 
-        <Box display="flex" justifyContent="center" mb={3}>
+        <Box display="flex" justifyContent="center" mb={4}>
           <Button
             variant={cameraActive ? "outlined" : "contained"}
             color="secondary"
             onClick={() => setCameraActive(!cameraActive)}
             startIcon={<QrCodeScannerIcon />}
+            size="large"
           >
             {cameraActive ? 'Turn Off Camera' : 'Turn On Camera'}
           </Button>
@@ -190,7 +149,7 @@ const ScanPass = () => {
         )}
 
         {!cameraActive && (
-        <form onSubmit={handleScan} style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
+        <form onSubmit={handleScan} style={{ display: 'flex', gap: '1rem', justifyContent: 'center', maxWidth: 600, margin: '0 auto' }}>
           <TextField
             inputRef={inputRef}
             label="Barcode / Pass Code"
@@ -199,83 +158,75 @@ const ScanPass = () => {
             onChange={(e) => setBarcode(e.target.value)}
             disabled={loading}
             autoFocus
-            sx={{ flexGrow: 1, maxWidth: 400 }}
+            fullWidth
           />
           <Button
             type="submit"
             variant="contained"
             color="primary"
             disabled={loading || !barcode.trim()}
-            sx={{ minWidth: 120 }}
+            sx={{ minWidth: 120, height: 56 }}
           >
             {loading ? <CircularProgress size={24} color="inherit" /> : 'Scan'}
           </Button>
         </form>
         )}
-          </Paper>
-        </Grid>
+      </Paper>
 
-        {/* Right Side: Results */}
-        <Grid item xs={12} sm={7} md={8} sx={{ maxHeight: '85vh', overflowY: 'auto', pb: 2 }}>
-          {error && (
-            <Alert severity="error" sx={{ mb: 3 }}>
-              {error}
-            </Alert>
+      {/* Result Dialog */}
+      <Dialog open={!!scanResult} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
+        <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', pb: 1 }}>
+          Scan Result
+          <IconButton onClick={handleCloseDialog} size="small">
+            <CloseIcon />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent dividers>
+          {scanResult && (
+            <Box>
+              <Alert 
+                severity={scanResult.type === 'error' ? 'error' : (scanResult.data?.isDuplicate ? 'warning' : 'success')} 
+                sx={{ mb: 3, fontSize: '1.1rem', py: 1 }}
+              >
+                {scanResult.message}
+              </Alert>
+              {scanResult.data && scanResult.data.participant && (
+                <TableContainer component={Paper} variant="outlined">
+                  <Table size="medium">
+                    <TableBody>
+                      <TableRow>
+                        <TableCell component="th" sx={{ fontWeight: 'bold', width: '30%', bgcolor: '#f8fafc' }}>Name</TableCell>
+                        <TableCell>{scanResult.data.participant.name}</TableCell>
+                      </TableRow>
+                      <TableRow>
+                        <TableCell component="th" sx={{ fontWeight: 'bold', bgcolor: '#f8fafc' }}>Roll No</TableCell>
+                        <TableCell>{scanResult.data.participant.roll}</TableCell>
+                      </TableRow>
+                      <TableRow>
+                        <TableCell component="th" sx={{ fontWeight: 'bold', bgcolor: '#f8fafc' }}>Event</TableCell>
+                        <TableCell>{scanResult.data.eventName}</TableCell>
+                      </TableRow>
+                      <TableRow>
+                        <TableCell component="th" sx={{ fontWeight: 'bold', bgcolor: '#f8fafc' }}>College</TableCell>
+                        <TableCell>
+                          {scanResult.data.participant.college === 'Other College' 
+                            ? scanResult.data.participant.otherCollege 
+                            : scanResult.data.participant.college}
+                        </TableCell>
+                      </TableRow>
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+              )}
+            </Box>
           )}
-
-          {scannedParticipants.length > 0 ? (
-            <TableContainer component={Paper} elevation={3} sx={{ borderRadius: 2, overflow: 'hidden' }}>
-              <Table stickyHeader>
-                <TableHead>
-                  <TableRow>
-                    <TableCell sx={{ fontWeight: 'bold', bgcolor: '#f8fafc' }}>Status</TableCell>
-                    <TableCell sx={{ fontWeight: 'bold', bgcolor: '#f8fafc' }}>Name</TableCell>
-                    <TableCell sx={{ fontWeight: 'bold', bgcolor: '#f8fafc' }}>Roll No</TableCell>
-                    <TableCell sx={{ fontWeight: 'bold', bgcolor: '#f8fafc' }}>Event</TableCell>
-                    <TableCell sx={{ fontWeight: 'bold', bgcolor: '#f8fafc' }}>College</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {scannedParticipants.map((data, index) => (
-                    <TableRow 
-                      key={data.scannedAt + '-' + index}
-                      sx={{ 
-                        bgcolor: index === 0 ? '#f0fdf4' : 'inherit', // highlight latest scan
-                        '&:hover': { bgcolor: '#f1f5f9' },
-                        transition: 'background-color 0.2s'
-                      }}
-                    >
-                      <TableCell>
-                        <Chip 
-                          icon={<CheckCircleIcon />} 
-                          label={data.isDuplicate ? "Already Verified" : "Pass Verified"} 
-                          color={index === 0 ? (data.isDuplicate ? "warning" : "success") : (data.isDuplicate ? "warning" : "default")}
-                          variant={index === 0 ? "filled" : "outlined"}
-                          size="small"
-                        />
-                      </TableCell>
-                      <TableCell sx={{ fontWeight: index === 0 ? 'bold' : 'normal' }}>{data.participant.name}</TableCell>
-                      <TableCell>{data.participant.roll}</TableCell>
-                      <TableCell>{data.eventName}</TableCell>
-                      <TableCell>
-                        {data.participant.college === 'Other College' 
-                          ? data.participant.otherCollege 
-                          : data.participant.college}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </TableContainer>
-          ) : !error && (
-            <Paper sx={{ p: 3, height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 200, bgcolor: 'transparent', border: '1px dashed grey' }} elevation={0}>
-              <Typography variant="body1" color="textSecondary">
-                Scanned participant details will appear here.
-              </Typography>
-            </Paper>
-          )}
-        </Grid>
-      </Grid>
+        </DialogContent>
+        <DialogActions sx={{ p: 2, pt: 1 }}>
+          <Button onClick={handleCloseDialog} color="primary" variant="contained" size="large" fullWidth>
+            OK
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };
