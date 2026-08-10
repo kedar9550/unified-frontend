@@ -125,9 +125,10 @@ const AppraisalReports = () => {
     const teaching = row.teaching?.totalClaimed || 0;
     const research = row.research?.totalClaimed || 0;
     const valueAdd = row.valueAddition?.totalClaimed || 0;
-    const admin = row.administrativeResponsibilities?.totalClaimed || 0;
-    const interpersonal = row.interpersonalSkills?.totalClaimed || 0;
-    const grandTotal = parseFloat((teaching + research + valueAdd + admin + interpersonal).toFixed(2));
+    const admin = row.administration?.totalClaimed || 0;
+    const interpersonal = row.hodEvaluation?.totalInterpersonalPoints || 0;
+    const cappedTotal1to4 = Math.min(200, teaching + research + valueAdd + admin);
+    const grandTotal = parseFloat((cappedTotal1to4 + interpersonal).toFixed(2));
 
     switch (property) {
       case 'empId': return row.facultyId?.institutionId?.toString().toLowerCase() || '';
@@ -522,9 +523,10 @@ const AppraisalReports = () => {
                   const teaching = row.teaching?.totalClaimed || 0;
                   const research = row.research?.totalClaimed || 0;
                   const valueAdd = row.valueAddition?.totalClaimed || 0;
-                  const admin = row.administrativeResponsibilities?.totalClaimed || 0;
-                  const interpersonal = row.interpersonalSkills?.totalClaimed || 0;
-                  const grandTotal = parseFloat((teaching + research + valueAdd + admin + interpersonal).toFixed(2));
+                  const admin = row.administration?.totalClaimed || 0;
+                  const interpersonal = row.hodEvaluation?.totalInterpersonalPoints || 0;
+                  const cappedTotal1to4 = Math.min(200, teaching + research + valueAdd + admin);
+                  const grandTotal = parseFloat((cappedTotal1to4 + interpersonal).toFixed(2));
 
                   const isMet = grandTotal >= minPoints;
 
