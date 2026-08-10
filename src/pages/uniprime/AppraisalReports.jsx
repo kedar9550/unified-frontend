@@ -227,7 +227,9 @@ const AppraisalReports = () => {
       const aRaw = row.administration?.totalClaimed || 0;
       const iRaw = row.hodEvaluation?.totalInterpersonalPoints || 0;
 
-      const grandTotal = parseFloat((teachingObtained + researchObtained + v3Obtained + aRaw + iRaw).toFixed(2));
+      const rawTotal1to4 = teachingObtained + researchObtained + v3Obtained + aRaw;
+      const cappedTotal1to4 = Math.min(200, rawTotal1to4);
+      const grandTotal = parseFloat((cappedTotal1to4 + iRaw).toFixed(2));
       const totalMin = mins.total || 0;
 
 
