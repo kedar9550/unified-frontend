@@ -9,7 +9,7 @@ import {
     List, ListItem, ListItemText, ListItemSecondaryAction,
     Divider, Avatar, Checkbox, FormControlLabel, FormGroup,
     ListItemButton, Menu, MenuItem, ListItemIcon, Grid,
-    Tabs, Tab, TablePagination
+    Tabs, Tab, TablePagination, Switch
 } from "@mui/material";
 import { toast } from "sonner";
 import {
@@ -30,12 +30,13 @@ const RoleManagement = () => {
     const [loadingEmployees, setLoadingEmployees] = useState(false);
     const [employeesSearchQuery, setEmployeesSearchQuery] = useState("");
     const [selectedDepartment, setSelectedDepartment] = useState("");
+    const [selectedRoleFilter, setSelectedRoleFilter] = useState("");
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(10);
 
     useEffect(() => {
         setPage(0);
-    }, [employeesSearchQuery, selectedDepartment]);
+    }, [employeesSearchQuery, selectedDepartment, selectedRoleFilter]);
 
     // Roles State
     const [roles, setRoles] = useState([]);
@@ -58,6 +59,7 @@ const RoleManagement = () => {
 
     // Modal State - Role
     const [isRoleModalOpen, setIsRoleModalOpen] = useState(false);
+    const [assignRoleDialogOpen, setAssignRoleDialogOpen] = useState(false);
     const [submitting, setSubmitting] = useState(false);
     const [formData, setFormData] = useState({ name: "", key: "", description: "", defaultRole: false });
 
@@ -77,6 +79,7 @@ const RoleManagement = () => {
     const [editableEmail, setEditableEmail] = useState("");
     const [editableLeadership, setEditableLeadership] = useState("");
     const [editableCoreDept, setEditableCoreDept] = useState("");
+    const [editableServingDept, setEditableServingDept] = useState("");
     const [isUpdatingEmail, setIsUpdatingEmail] = useState(false);
     const [showCreateIndividualSearch, setShowCreateIndividualSearch] = useState(false);
     const [createIndividualQuery, setCreateIndividualQuery] = useState("");
@@ -286,9 +289,13 @@ const RoleManagement = () => {
             updates.leadership = editableLeadership;
         }
 
+        if (editableServingDept && editableServingDept !== editingEmployee.department) {
+            updates.department = editableServingDept;
+        }
+
         if (editingEmployee.isEcapFetched) {
             updates.name = editingEmployee.name;
-            updates.department = editingEmployee.department;
+            updates.department = updates.department || editingEmployee.department;
             updates.designation = editingEmployee.designation;
         }
 
@@ -659,6 +666,20 @@ const RoleManagement = () => {
     };
 
     // Checkbox Logic
+    const toggleEmployeeStatus = async (empId, currentStatus) => {
+        try {
+            const res = await API.put(`/api/employees/${empId}/admin-update`, {
+                isActive: !currentStatus
+            });
+            if (res.data.success) {
+                toast.success(`Employee status updated to ${!currentStatus ? 'Active' : 'Inactive'}`);
+                setAllEmployees(prev => prev.map(emp => emp._id === empId ? { ...emp, isActive: !currentStatus } : emp));
+            }
+        } catch (error) {
+            toast.error(error.response?.data?.message || "Error updating employee status");
+        }
+    };
+
     const handleRoleToggle = (roleId) => {
         if (!selectedUser) return;
         const id = roleId.toString();
@@ -800,6 +821,14 @@ const RoleManagement = () => {
                 return false;
             }
         }
+        
+        if (selectedRoleFilter) {
+            const hasRole = emp.roles && emp.roles.some(r => r.name === selectedRoleFilter);
+            if (!hasRole) {
+                return false;
+            }
+        }
+
         const query = employeesSearchQuery.toLowerCase().trim();
         if (!query) return true;
         return (
@@ -887,7 +916,7 @@ const RoleManagement = () => {
                     }
                 }}
             >
-                <Tab label="Assign & Create Roles" icon={<Security />} iconPosition="start" />
+                <Tab label="Add/Update Employees" icon={<PersonAdd />} iconPosition="start" />
                 <Tab label="All Users" icon={<People />} iconPosition="start" />
                 <Tab label="All Roles" icon={<AdminPanelSettings />} iconPosition="start" />
             </Tabs>
@@ -1225,7 +1254,7 @@ const RoleManagement = () => {
                                                         disabled={isSyncingBulk}
                                                         sx={{ width: { xs: '100%', sm: 'auto' }, borderRadius: '50px', textTransform: 'none', fontWeight: 700, border: '1.5px solid var(--color-primary)', background: 'transparent', color: 'var(--color-primary)', py: { xs: 1.2, sm: 0.5 }, transition: '0.3s', '&:hover': { background: 'rgba(0, 78, 146, 0.05)', boxShadow: '0 4px 10px rgba(0, 78, 146, 0.1)' } }}
                                                     >
-                                                        {isSyncingBulk ? 'Updating...' : 'Bulk Update'}
+                                                        {isSyncingBulk ? 'Syncing...' : 'Sync with ERP'}
                                                     </Button>
                                                     <Button
                                                         variant="outlined"
@@ -1327,6 +1356,7 @@ const RoleManagement = () => {
                                                                                 setEditingEmployee(user);
                                                                                 setEditableEmail(user.email || "");
                                                                                 setEditableCoreDept(user.coreDepartment || user.department || "");
+                                                                                setEditableServingDept(user.department || "");
                                                                                 setEditableLeadership(user.leadership || "no");
 
                                                                                 const loadingToast = toast.loading("Fetching latest details from ECAP...");
@@ -1360,13 +1390,14 @@ const RoleManagement = () => {
                                                                                             designation: ecapDesig,
                                                                                             isEcapFetched: true
                                                                                         });
+                                                                                        setEditableServingDept(mappedDeptId);
                                                                                         toast.success("Fetched details from ECAP", { id: loadingToast });
                                                                                     } else {
-                                                                                        toast.error("Employee not found in ECAP", { id: loadingToast });
+                                                                                        toast.error("Employee not found in ECAP. Showing details from database.", { id: loadingToast });
                                                                                     }
                                                                                 } catch (e) {
                                                                                     console.error("Failed to fetch ECAP data", e);
-                                                                                    toast.error("Failed to connect to ECAP", { id: loadingToast });
+                                                                                    toast.error("Failed to connect to ECAP. Showing details from database.", { id: loadingToast });
                                                                                 }
                                                                             }}
                                                                             sx={{
@@ -1400,469 +1431,13 @@ const RoleManagement = () => {
                                             </Collapse>
                                         </Collapse>
 
-                                        {/* Employee Edit Form */}
-                                        <Collapse in={!!editingEmployee}>
-                                            <Box sx={{ mt: 3, p: 3, borderRadius: '15px', background: 'var(--border-color)', border: '1px solid var(--border-color)' }}>
-                                                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-                                                    <Typography variant="subtitle2" fontWeight={800} color="var(--text-primary)">Employee Details</Typography>
-                                                    <IconButton onClick={() => setEditingEmployee(null)} size="small"><Close sx={{ fontSize: 18 }} /></IconButton>
-                                                </Box>
-
-                                                <Grid container spacing={2}>
-                                                    <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-                                                        <TextField
-                                                            fullWidth
-                                                            label="Name"
-                                                            value={editingEmployee?.name || ""}
-                                                            disabled
-                                                            size="small"
-                                                            sx={{ "& .MuiInputBase-input.Mui-disabled": { WebkitTextFillColor: "var(--text-secondary)", fontWeight: 600 } }}
-                                                        />
-                                                    </Grid>
-                                                    <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-                                                        <TextField
-                                                            fullWidth
-                                                            label="ID"
-                                                            value={editingEmployee?.institutionId || ""}
-                                                            disabled
-                                                            size="small"
-                                                            sx={{ "& .MuiInputBase-input.Mui-disabled": { WebkitTextFillColor: "var(--text-secondary)", fontWeight: 600 } }}
-                                                        />
-                                                    </Grid>
-                                                    <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-                                                        <TextField
-                                                            fullWidth
-                                                            label="Serving Department"
-                                                            value={allDepartments.find(d => d._id === editingEmployee?.department)?.name || editingEmployee?.ecapDeptName || editingEmployee?.department || ""}
-                                                            disabled
-                                                            size="small"
-                                                            sx={{ "& .MuiInputBase-input.Mui-disabled": { WebkitTextFillColor: "var(--text-secondary)", fontWeight: 600 } }}
-                                                        />
-                                                    </Grid>
-                                                    <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-                                                        <TextField
-                                                            fullWidth
-                                                            label="Designation"
-                                                            value={editingEmployee?.designation || ""}
-                                                            disabled
-                                                            size="small"
-                                                            sx={{ "& .MuiInputBase-input.Mui-disabled": { WebkitTextFillColor: "var(--text-secondary)", fontWeight: 600 } }}
-                                                        />
-                                                    </Grid>
-                                                    <Grid size={{ xs: 12, sm: 6 }}>
-                                                        <TextField
-                                                            fullWidth
-                                                            label="Email (Editable)"
-                                                            value={editableEmail}
-                                                            onChange={(e) => setEditableEmail(e.target.value)}
-                                                            size="small"
-                                                            placeholder="Enter new email..."
-                                                            sx={{
-                                                                bgcolor: 'var(--bg-glass)',
-                                                                borderRadius: '10px',
-                                                                "& .MuiOutlinedInput-root": { borderRadius: '10px' }
-                                                            }}
-                                                        />
-                                                    </Grid>
-                                                    <Grid size={{ xs: 12, sm: 6 }}>
-                                                        <TextField
-                                                            fullWidth
-                                                            select
-                                                            label="Parent Department"
-                                                            value={editableCoreDept}
-                                                            onChange={(e) => setEditableCoreDept(e.target.value)}
-                                                            size="small"
-                                                            slotProps={{ select: { native: false } }}
-                                                            sx={{
-                                                                bgcolor: 'var(--bg-glass)',
-                                                                borderRadius: '10px',
-                                                                "& .MuiOutlinedInput-root": { borderRadius: '10px' }
-                                                            }}
-                                                        >
-                                                            <MenuItem value="" disabled>Select Parent Department</MenuItem>
-                                                            {allDepartments
-                                                                .filter(d => d.type !== 'Central' && d.name.toLowerCase() !== 'freshman engineering')
-                                                                .map(d => (
-                                                                    <MenuItem key={d._id} value={d._id}>{d.name}</MenuItem>
-                                                                ))}
-                                                        </TextField>
-                                                    </Grid>
-                                                    <Grid size={{ xs: 12, sm: 6 }}>
-                                                        <TextField
-                                                            fullWidth
-                                                            select
-                                                            label="Leadership Role"
-                                                            value={editableLeadership || "no"}
-                                                            onChange={(e) => setEditableLeadership(e.target.value)}
-                                                            size="small"
-                                                            slotProps={{ select: { native: false } }}
-                                                            sx={{
-                                                                bgcolor: 'var(--bg-glass)',
-                                                                borderRadius: '10px',
-                                                                "& .MuiOutlinedInput-root": { borderRadius: '10px' }
-                                                            }}
-                                                        >
-                                                            <MenuItem value="yes">Yes</MenuItem>
-                                                            <MenuItem value="no">No</MenuItem>
-                                                        </TextField>
-                                                    </Grid>
-                                                </Grid>
-
-                                                <Box sx={{ display: 'flex', justifyContent: { xs: 'center', sm: 'flex-end' }, mt: 3 }}>
-                                                    <Button
-                                                        variant="contained"
-                                                        onClick={handleUpdateEmployeeAdmin}
-                                                        disabled={isUpdatingEmail || (!editableEmail && !editableCoreDept && !editableLeadership)}
-                                                        startIcon={isUpdatingEmail ? <Loader size={16} color="inherit" /> : <Save />}
-                                                        fullWidth={false}
-                                                        sx={{
-                                                            borderRadius: '50px',
-                                                            textTransform: 'none',
-                                                            fontWeight: 700,
-                                                            background: "var(--gradient-primary)",
-                                                            px: { xs: 8, sm: 5 },
-                                                            py: 1.2,
-                                                            boxShadow: '0 4px 15px rgba(0, 78, 146, 0.3)',
-                                                            width: { xs: '100%', sm: 'auto' },
-                                                            transition: '0.3s',
-                                                            '&:hover': {
-                                                                background: "var(--gradient-primary-hover)",
-                                                                boxShadow: "0 6px 16px rgba(0, 78, 146, 0.4)",
-                                                            }
-                                                        }}
-                                                    >
-                                                        {isUpdatingEmail ? 'Updating...' : 'Update'}
-                                                    </Button>
-                                                </Box>
-                                            </Box>
-                                        </Collapse>
+                                        
                                     </Box>
                                 </Collapse>
                             </Paper>
                         </Grid>
 
-                        <Grid size={{ xs: 12, lg: 12 }} id="search-results-section">
-                            {/* Assign Roles to User Section */}
-                            <Paper elevation={0} sx={{ p: 3, height: '100%', borderRadius: "20px", background: "var(--bg-glass)", backdropFilter: "blur(10px) saturate(150%)", border: "1px solid var(--border-color)", boxShadow: "0 4px 20px rgba(0,0,0,0.02)" }}>
-                                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                    <Box>
-                                        <Typography variant="h6" fontWeight={800} color="var(--text-primary)">Assign Roles</Typography>
-                                        <Typography variant="body2" color="textSecondary" fontWeight={500}>
-                                            Managing: <span style={{ color: 'var(--text-primary)', fontWeight: 700 }}>{selectedUser ? `${selectedUser.name} (${selectedUser.institutionId})` : "Please select"}</span>
-                                        </Typography>
-                                    </Box>
-                                    <Button
-                                        variant="outlined"
-                                        size="small"
-                                        startIcon={<Add />}
-                                        onClick={() => setIsRoleModalOpen(true)}
-                                        sx={{ borderRadius: '50px', textTransform: 'none', fontWeight: 700, border: '1.5px solid var(--color-primary)', color: 'var(--color-primary)', '&:hover': { border: '1.5px solid var(--color-primary)', background: 'var(--bg-accent-1)' } }}
-                                    >
-                                        New Role
-                                    </Button>
-                                </Box>
-                                <Box sx={{ mt: 3, display: "flex", gap: 1 }}>
-                                    <TextField
-                                        id="employee-search-input"
-                                        fullWidth
-                                        placeholder="Search employee to manage..."
-                                        size="small"
-                                        value={userSearchQuery}
-                                        onChange={(e) => setUserSearchQuery(e.target.value)}
-                                        onKeyPress={(e) => e.key === "Enter" && handleUserSearch()}
-                                        sx={{ "& .MuiOutlinedInput-root": { borderRadius: "10px", background: "var(--bg-glass)", backdropFilter: "blur(5px)" } }}
-                                        slotProps={{
-                                            input: {
-                                                startAdornment: (<InputAdornment position="start"><Search fontSize="small" sx={{ color: 'var(--color-primary)' }} /></InputAdornment>),
-                                                endAdornment: searchingUsers && (
-                                                    <InputAdornment position="end">
-                                                        <Loader size={16} color="inherit" />
-                                                    </InputAdornment>
-                                                )
-                                            }
-                                        }}
-                                    />
-                                </Box>
-                            </Paper>
-                        </Grid>
                     </Grid>
-
-                    <Collapse in={hasTypedSearch || searchingUsers}>
-                        <Card sx={{ mt: 4, borderRadius: "20px", boxShadow: "0 8px 32px rgba(31, 38, 135, 0.05)", border: "1px solid var(--border-color)", background: "var(--bg-glass)", backdropFilter: "blur(10px) saturate(150%)" }}>
-                            <CardContent sx={{ p: 0 }}>
-                                <Box sx={{ display: 'flex', flexDirection: { xs: 'column', lg: 'row' }, minHeight: { xs: 'auto', lg: 450 } }}>
-                                    <Box sx={{ flex: 1, borderRight: { xs: 'none', lg: "1px solid rgba(0,0,0,0.05)" }, borderBottom: { xs: "1px solid rgba(0,0,0,0.05)", lg: 'none' }, p: 2 }}>
-                                        <Typography variant="subtitle2" fontWeight={700} gutterBottom color="textSecondary">Search Results</Typography>
-                                        <List>
-                                            {userSearchResults.length > 0 ? userSearchResults.map((user) => (
-                                                <ListItem key={user._id} disablePadding sx={{
-                                                    mb: 1,
-                                                    borderRadius: '12px',
-                                                    overflow: 'hidden',
-                                                    position: 'relative',
-                                                    border: '1px solid transparent',
-                                                    ...(selectedUser?._id === user._id && {
-                                                        '&::before': {
-                                                            content: '""',
-                                                            position: 'absolute',
-                                                            inset: 0,
-                                                            borderRadius: 'inherit',
-                                                            padding: '1.5px',
-                                                            background: 'var(--gradient-primary)',
-                                                            WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
-                                                            WebkitMaskComposite: 'xor',
-                                                            maskComposite: 'exclude',
-                                                            pointerEvents: 'none',
-                                                            zIndex: 0
-                                                        }
-                                                    })
-                                                }}>
-                                                    <ListItemButton selected={selectedUser?._id === user._id} onClick={() => selectUser(user)} sx={{ p: 2 }}>
-                                                        <Avatar sx={{ mr: 2, background: 'var(--bg-accent-1)', color: 'var(--color-primary)' }}>{user.name.charAt(0)}</Avatar>
-                                                        <ListItemText
-                                                            disableTypography
-                                                            primary={<Typography variant="body1" fontWeight={700} sx={{ fontSize: '0.95rem', color: 'var(--text-primary)' }}>{user.name}</Typography>}
-                                                            secondary={
-                                                                <Box sx={{ mt: 0.5 }}>
-                                                                    <Typography variant="caption" display="block" color="textPrimary" fontWeight={600}>{user.institutionId} — {user.userType}</Typography>
-                                                                    <Box sx={{ mt: 1, display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                                                                        <Typography variant="caption" color="textSecondary" sx={{ mr: 1, width: '100%' }}>Present Roles:</Typography>
-                                                                        {user.roles && user.roles.length > 0 ? user.roles.map(r => (
-                                                                            <Chip key={r._id} label={r.name} size="small" sx={{ height: 22, fontSize: '10px', background: "var(--gradient-primary)", color: '#fff', fontWeight: 700, borderRadius: '50px' }} />
-                                                                        )) : <Typography variant="caption" fontStyle="italic">None</Typography>}
-                                                                    </Box>
-                                                                </Box>
-                                                            }
-                                                        />
-                                                        <ListItemSecondaryAction sx={{ right: 16 }}>
-                                                            <IconButton
-                                                                edge="end"
-                                                                onClick={() => selectUser(user)}
-                                                                sx={{
-                                                                    color: selectedUser?._id === user._id ? 'var(--color-primary)' : 'var(--text-secondary)',
-                                                                    transition: '0.3s',
-                                                                    '&:hover': { color: 'var(--color-primary)', transform: 'scale(1.1)' }
-                                                                }}
-                                                            >
-                                                                <PersonAdd />
-                                                            </IconButton>
-                                                        </ListItemSecondaryAction>
-                                                    </ListItemButton>
-                                                </ListItem>
-                                            )) : <Box sx={{ textAlign: 'center', py: 5, color: 'text.disabled' }}><People sx={{ fontSize: 40, mb: 1, opacity: 0.5 }} /><Typography variant="body2">No users found.</Typography></Box>}
-                                        </List>
-
-                                        {/* HOD Serving Department Selection UI (Under User Card) */}
-                                        <Collapse in={!!selectedUser && assignedRoleIds.some(rid => roles.find(r => r._id === rid)?.name === 'HOD')}>
-                                            <Box sx={{ mt: 2, p: 2, borderRadius: '15px', background: 'var(--bg-paper)', border: '1px solid var(--border-color)' }}>
-                                                <Typography variant="subtitle2" fontWeight={800} color="var(--text-primary)" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                                    <Security sx={{ fontSize: 18 }} /> HOD Serving Department Assignment
-                                                </Typography>
-                                                <Typography variant="caption" color="textSecondary" display="block" sx={{ mb: 2 }}>
-                                                    Assign this HOD to multiple serving departments for context-aware access.
-                                                </Typography>
-
-                                                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
-                                                    {selectedHodDepts.map(dept => (
-                                                        <Chip
-                                                            key={dept._id}
-                                                            label={dept.name}
-                                                            size="small"
-                                                            onDelete={() => setSelectedHodDepts(prev => prev.filter(d => d._id !== dept._id))}
-                                                            sx={{ background: "var(--gradient-primary)", color: '#fff', fontWeight: 700, borderRadius: '50px', '& .MuiChip-deleteIcon': { color: 'rgba(255,255,255,0.7)' } }}
-                                                        />
-                                                    ))}
-                                                </Box>
-
-                                                <FormControlLabel
-                                                    sx={{ width: '100%', m: 0 }}
-                                                    control={
-                                                        <Box sx={{ width: '100%', mt: 1 }}>
-                                                            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, p: 1, border: '1px dashed var(--text-secondary)', borderRadius: '10px' }}>
-                                                                {allDepartments.map(dept => {
-                                                                    const isSelected = selectedHodDepts.some(d => d._id === dept._id);
-                                                                    return (
-                                                                        <Chip
-                                                                            key={dept._id}
-                                                                            label={dept.name}
-                                                                            onClick={() => {
-                                                                                if (isSelected) {
-                                                                                    setSelectedHodDepts(prev => prev.filter(d => d._id !== dept._id));
-                                                                                } else {
-                                                                                    setSelectedHodDepts(prev => [...prev, dept]);
-                                                                                }
-                                                                            }}
-                                                                            variant={isSelected ? "filled" : "outlined"}
-                                                                            size="small"
-                                                                            sx={{
-                                                                                cursor: 'pointer',
-                                                                                borderRadius: '50px',
-                                                                                fontWeight: 700,
-                                                                                border: isSelected ? 'none' : '1.5px solid var(--color-primary)',
-                                                                                background: isSelected ? "var(--gradient-primary)" : 'transparent',
-                                                                                color: isSelected ? '#fff' : 'var(--color-primary)'
-                                                                            }}
-                                                                        />
-                                                                    );
-                                                                })}
-                                                            </Box>
-                                                        </Box>
-                                                    }
-                                                    label=""
-                                                />
-                                            </Box>
-                                        </Collapse>
-
-                                        {/* SCHOOL_DEAN Serving School Selection UI */}
-                                        <Collapse in={!!selectedUser && assignedRoleIds.some(rid => roles.find(r => r._id === rid)?.key === 'SCHOOL_DEAN')}>
-                                            <Box sx={{ mt: 2, p: 2, borderRadius: '15px', background: 'var(--bg-paper)', border: '1px solid var(--border-color)' }}>
-                                                <Typography variant="subtitle2" fontWeight={800} color="var(--text-primary)" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                                    <School sx={{ fontSize: 18 }} /> SCHOOL_DEAN School Assignment
-                                                </Typography>
-                                                <Typography variant="caption" color="textSecondary" display="block" sx={{ mb: 2 }}>
-                                                    Assign this Dean to multiple schools for context-aware access.
-                                                </Typography>
-
-                                                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
-                                                    {selectedDeanSchools.map(school => (
-                                                        <Chip
-                                                            key={school._id}
-                                                            label={school.name}
-                                                            size="small"
-                                                            onDelete={() => setSelectedDeanSchools(prev => prev.filter(s => s._id !== school._id))}
-                                                            sx={{ background: "var(--gradient-primary)", color: '#fff', fontWeight: 700, borderRadius: '50px', '& .MuiChip-deleteIcon': { color: 'rgba(255,255,255,0.7)' } }}
-                                                        />
-                                                    ))}
-                                                </Box>
-
-                                                <FormControlLabel
-                                                    sx={{ width: '100%', m: 0 }}
-                                                    control={
-                                                        <Box sx={{ width: '100%', mt: 1 }}>
-                                                            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, p: 1, border: '1px dashed var(--text-secondary)', borderRadius: '10px' }}>
-                                                                {allSchools.map(school => {
-                                                                    const isSelected = selectedDeanSchools.some(s => s._id === school._id);
-                                                                    return (
-                                                                        <Chip
-                                                                            key={school._id}
-                                                                            label={school.name}
-                                                                            onClick={() => {
-                                                                                if (isSelected) {
-                                                                                    setSelectedDeanSchools(prev => prev.filter(s => s._id !== school._id));
-                                                                                } else {
-                                                                                    setSelectedDeanSchools(prev => [...prev, school]);
-                                                                                }
-                                                                            }}
-                                                                            variant={isSelected ? "filled" : "outlined"}
-                                                                            size="small"
-                                                                            sx={{
-                                                                                cursor: 'pointer',
-                                                                                borderRadius: '50px',
-                                                                                fontWeight: 700,
-                                                                                border: isSelected ? 'none' : '1.5px solid var(--color-primary)',
-                                                                                background: isSelected ? "var(--gradient-primary)" : 'transparent',
-                                                                                color: isSelected ? '#fff' : 'var(--color-primary)'
-                                                                            }}
-                                                                        />
-                                                                    );
-                                                                })}
-                                                            </Box>
-                                                        </Box>
-                                                    }
-                                                    label=""
-                                                />
-                                            </Box>
-                                        </Collapse>
-                                    </Box>
-
-                                    <Box sx={{ flex: 1.2, p: 3, background: 'var(--bg-accent-1)', display: 'flex', flexDirection: 'column', borderLeft: { xs: 'none', lg: '1px solid var(--border-color)' }, borderTop: { xs: '1px solid var(--border-color)', lg: 'none' } }}>
-                                        <Typography variant="subtitle2" fontWeight={700} gutterBottom color="textSecondary">{selectedUser ? `Select Roles for ${selectedUser.name}` : "Available Roles"}</Typography>
-                                        <TextField
-                                            placeholder="Search roles to assign..."
-                                            size="small"
-                                            fullWidth
-                                            value={assignmentRolesSearchQuery}
-                                            onChange={(e) => setAssignmentRolesSearchQuery(e.target.value)}
-                                            sx={{ mb: 2, "& .MuiOutlinedInput-root": { borderRadius: "10px", background: "var(--bg-glass)" } }}
-                                            InputProps={{
-                                                startAdornment: (
-                                                    <InputAdornment position="start">
-                                                        <Search sx={{ color: 'var(--text-secondary)' }} />
-                                                    </InputAdornment>
-                                                )
-                                            }}
-                                        />
-                                        <Box sx={{ flex: 1, overflowY: 'auto' }}>
-                                            {loadingRoles ? null : (
-                                                <FormGroup>
-                                                    {filteredAssignmentRoles.length > 0 ? filteredAssignmentRoles.map((role) => {
-                                                        const isIdentityDefault = role.defaultRole;
-                                                        const isChecked = assignedRoleIds.includes(role._id.toString());
-                                                        return (
-                                                            <Box key={role._id} onClick={() => handleRoleToggle(role._id)} sx={{
-                                                                p: 1.5,
-                                                                mb: 1,
-                                                                borderRadius: '12px',
-                                                                background: 'var(--bg-glass)',
-                                                                position: 'relative',
-                                                                border: '1px solid transparent',
-                                                                ...(isChecked && {
-                                                                    '&::before': {
-                                                                        content: '""',
-                                                                        position: 'absolute',
-                                                                        inset: 0,
-                                                                        borderRadius: 'inherit',
-                                                                        padding: '1.5px',
-                                                                        background: 'var(--gradient-primary)',
-                                                                        WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
-                                                                        WebkitMaskComposite: 'xor',
-                                                                        maskComposite: 'exclude',
-                                                                        pointerEvents: 'none',
-                                                                        zIndex: 0
-                                                                    }
-                                                                }),
-                                                                cursor: selectedUser ? (isIdentityDefault ? 'not-allowed' : 'pointer') : 'default',
-                                                                opacity: selectedUser ? (isIdentityDefault ? 0.75 : 1) : 0.6,
-                                                                display: 'flex',
-                                                                alignItems: 'center',
-                                                                transition: '0.2s',
-                                                                '&:hover': selectedUser && !isIdentityDefault ? { background: 'var(--bg-panel)' } : {}
-                                                            }}>
-                                                                <Box sx={{ display: 'flex', alignItems: 'center', width: '100%' }}>
-                                                                    <Checkbox
-                                                                        checked={isChecked}
-                                                                        disabled={!selectedUser || isIdentityDefault}
-                                                                        sx={{
-                                                                            p: 0,
-                                                                            mr: 2,
-                                                                            '&.Mui-checked': { color: 'var(--color-primary)' },
-                                                                            '&.MuiCheckbox-root': { color: isChecked ? 'var(--color-primary)' : 'var(--text-secondary)' }
-                                                                        }}
-                                                                    />
-                                                                    <Box sx={{ flex: 1 }}>
-                                                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                                                            <Typography variant="body2" fontWeight={700} sx={{ color: isChecked ? 'var(--color-primary)' : 'var(--text-primary)' }}>{role.name}</Typography>
-                                                                            {role.defaultRole && <Chip label="Identity Role" size="small" color="success" sx={{ height: 16, fontSize: '0.6rem', fontWeight: 800 }} />}
-                                                                            {isIdentityDefault && <Tooltip title="Recommended Default Identity Role"><Star sx={{ fontSize: 16, color: 'var(--color-primary)' }} /></Tooltip>}
-                                                                        </Box>
-                                                                    </Box>
-                                                                </Box>
-                                                            </Box>
-                                                        );
-                                                    }) : <Typography variant="body2" color="textSecondary">No roles found.</Typography>}
-                                                </FormGroup>
-                                            )}
-                                        </Box>
-                                        {selectedUser && (
-                                            <Box sx={{ mt: 3, pt: 2, borderTop: '1px solid rgba(0,0,0,0.05)', position: 'sticky', bottom: 0, background: 'transparent', pb: 1 }}>
-                                                <Button fullWidth variant="contained" startIcon={<Save />} onClick={handleSaveAssignments} disabled={savingRoles} sx={{ borderRadius: '50px', py: 1.5, textTransform: 'none', fontWeight: 800, fontSize: '1rem', background: "var(--gradient-primary)", boxShadow: '0 4px 14px 0 rgba(0, 78, 146, 0.3)', transition: '0.3s', '&:hover': { background: "var(--gradient-primary-hover)", boxShadow: '0 6px 16px rgba(0, 78, 146, 0.4)' } }}>Save Role Assignments</Button>
-                                            </Box>
-                                        )}
-                                    </Box>
-                                </Box>
-                            </CardContent>
-                        </Card>
-                    </Collapse>
                 </>
             )}
 
@@ -1877,6 +1452,26 @@ const RoleManagement = () => {
                                 </Typography>
                             </Box>
                             <Box sx={{ display: 'flex', gap: 2, flexDirection: { xs: 'column', sm: 'row' }, width: { xs: '100%', sm: 'auto' } }}>
+                                <TextField
+                                    select
+                                    value={selectedRoleFilter}
+                                    onChange={(e) => setSelectedRoleFilter(e.target.value)}
+                                    size="small"
+                                    slotProps={{ select: { displayEmpty: true } }}
+                                    sx={{
+                                        width: { xs: '100%', sm: '180px' },
+                                        "& .MuiOutlinedInput-root": {
+                                            borderRadius: "10px",
+                                            background: "var(--bg-glass)",
+                                            backdropFilter: "blur(5px)"
+                                        }
+                                    }}
+                                >
+                                    <MenuItem value="">All Roles</MenuItem>
+                                    {roles.map(r => (
+                                        <MenuItem key={r._id} value={r.name}>{r.name}</MenuItem>
+                                    ))}
+                                </TextField>
                                 <TextField
                                     select
                                     value={selectedDepartment}
@@ -1931,15 +1526,15 @@ const RoleManagement = () => {
                             <>
                                 <TableContainer component={Paper} elevation={0} sx={{ background: 'transparent', border: '1px solid var(--border-color)', borderRadius: '15px', overflowX: 'auto' }}>
                                     <Table>
-                                        <TableHead sx={{ bgcolor: 'var(--bg-accent-1)' }}>
+                                        <TableHead sx={{ background: 'var(--gradient-primary)' }}>
                                             <TableRow>
-                                                <TableCell sx={{ fontWeight: 800, color: 'var(--text-primary)' }}>Name</TableCell>
-                                                <TableCell sx={{ fontWeight: 800, color: 'var(--text-primary)' }}>Institution ID</TableCell>
-                                                <TableCell sx={{ fontWeight: 800, color: 'var(--text-primary)' }}>Email</TableCell>
-                                                <TableCell sx={{ fontWeight: 800, color: 'var(--text-primary)' }}>Serving Department</TableCell>
-                                                <TableCell sx={{ fontWeight: 800, color: 'var(--text-primary)' }}>Designation</TableCell>
-                                                <TableCell sx={{ fontWeight: 800, color: 'var(--text-primary)' }}>Assigned Roles</TableCell>
-                                                <TableCell align="right" sx={{ fontWeight: 800, color: 'var(--text-primary)', pr: 3 }}>Actions</TableCell>
+                                                <TableCell sx={{ fontWeight: 800, color: '#ffffff', py: 2 }}>Name</TableCell>
+                                                <TableCell sx={{ fontWeight: 800, color: '#ffffff', py: 2 }}>Institution ID</TableCell>
+                                                <TableCell sx={{ fontWeight: 800, color: '#ffffff', py: 2 }}>Serving Department</TableCell>
+                                                <TableCell sx={{ fontWeight: 800, color: '#ffffff', py: 2 }}>Designation</TableCell>
+                                                <TableCell sx={{ fontWeight: 800, color: '#ffffff', py: 2 }}>Assigned Roles</TableCell>
+                                                <TableCell sx={{ fontWeight: 800, color: '#ffffff', py: 2, textAlign: 'center' }}>Status</TableCell>
+                                                <TableCell align="right" sx={{ fontWeight: 800, color: '#ffffff', pr: 3, py: 2 }}>Actions</TableCell>
                                             </TableRow>
                                         </TableHead>
                                         <TableBody>
@@ -1949,15 +1544,9 @@ const RoleManagement = () => {
                                                     return (
                                                         <TableRow key={emp._id} hover sx={{ '&:last-child td, &:last-child th': { border: 0 } }}>
                                                             <TableCell sx={{ fontWeight: 700, color: 'var(--text-primary)' }}>
-                                                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                                                                    <Avatar sx={{ width: 32, height: 32, bgcolor: 'var(--bg-accent-2)', color: 'var(--color-primary)', fontSize: '0.85rem', fontWeight: 800 }}>
-                                                                        {emp.name.charAt(0)}
-                                                                    </Avatar>
-                                                                    {emp.name}
-                                                                </Box>
+                                                                {emp.name}
                                                             </TableCell>
                                                             <TableCell sx={{ fontWeight: 600, color: 'var(--text-primary)' }}>{emp.institutionId}</TableCell>
-                                                            <TableCell sx={{ fontWeight: 500 }}>{emp.email}</TableCell>
                                                             <TableCell sx={{ fontWeight: 500 }}>{deptName}</TableCell>
                                                             <TableCell sx={{ fontWeight: 500 }}>{emp.designation || 'N/A'}</TableCell>
                                                             <TableCell>
@@ -1983,6 +1572,16 @@ const RoleManagement = () => {
                                                                     )}
                                                                 </Box>
                                                             </TableCell>
+                                                            <TableCell align="center">
+                                                                <Tooltip title={emp.isActive !== false ? "Click to Deactivate" : "Click to Activate"}>
+                                                                    <Switch
+                                                                        checked={emp.isActive !== false}
+                                                                        onChange={() => toggleEmployeeStatus(emp._id, emp.isActive !== false)}
+                                                                        color="success"
+                                                                        size="small"
+                                                                    />
+                                                                </Tooltip>
+                                                            </TableCell>
                                                             <TableCell align="right" sx={{ pr: 2 }}>
                                                                 <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
                                                                     <Tooltip title="Assign Roles">
@@ -1990,11 +1589,8 @@ const RoleManagement = () => {
                                                                             size="small"
                                                                             color="primary"
                                                                             onClick={() => {
-                                                                                setActiveTab(0);
                                                                                 selectUser(emp);
-                                                                                setUserSearchQuery(emp.name);
-                                                                                setUserSearchResults([emp]);
-                                                                                setHasTypedSearch(true);
+                                                                                setAssignRoleDialogOpen(true);
                                                                             }}
                                                                             sx={{ border: '1.5px solid var(--border-color)', borderRadius: '10px' }}
                                                                         >
@@ -2005,15 +1601,53 @@ const RoleManagement = () => {
                                                                         <IconButton
                                                                             size="small"
                                                                             color="secondary"
-                                                                            onClick={() => {
-                                                                                setActiveTab(0);
+                                                                            onClick={async () => {
                                                                                 setEditingEmployee(emp);
                                                                                 setEditableEmail(emp.email || "");
                                                                                 setEditableCoreDept(emp.coreDepartment || emp.department || "");
+                                                                                setEditableServingDept(emp.department || "");
                                                                                 setEditableLeadership(emp.leadership || "no");
-                                                                                setShowUpdateOptions(true);
-                                                                                setShowCreateOptions(false);
-                                                                                window.scrollTo({ top: 0, behavior: 'smooth' });
+
+                                                                                const loadingToast = toast.loading("Fetching latest details from ECAP...");
+                                                                                try {
+                                                                                    const res = await API.post("/api/employees/ecap-data", {
+                                                                                        institutionId: emp.institutionId,
+                                                                                        role: "Employee"
+                                                                                    });
+                                                                                    if (res.data && !res.data.error) {
+                                                                                        const ecapName = res.data.employeename || res.data.EmployeeName || emp.name;
+                                                                                        const ecapDept = res.data.departmentname || res.data.DepartmentName;
+                                                                                        const ecapDesig = res.data.designation || res.data.Designation || emp.designation;
+
+                                                                                        let mappedDeptId = emp.department;
+                                                                                        if (ecapDept) {
+                                                                                            const escapedEcapDept = ecapDept.trim().toLowerCase();
+                                                                                            const foundDept = allDepartments.find(d =>
+                                                                                                d.name.toLowerCase() === escapedEcapDept ||
+                                                                                                d.code.toLowerCase() === escapedEcapDept
+                                                                                            );
+                                                                                            if (foundDept) {
+                                                                                                mappedDeptId = foundDept._id;
+                                                                                            }
+                                                                                        }
+
+                                                                                        setEditingEmployee({
+                                                                                            ...emp,
+                                                                                            name: ecapName,
+                                                                                            department: mappedDeptId,
+                                                                                            ecapDeptName: ecapDept,
+                                                                                            designation: ecapDesig,
+                                                                                            isEcapFetched: true
+                                                                                        });
+                                                                                        setEditableServingDept(mappedDeptId);
+                                                                                        toast.success("Fetched details from ECAP", { id: loadingToast });
+                                                                                    } else {
+                                                                                        toast.error("Employee not found in ECAP. Showing details from database.", { id: loadingToast });
+                                                                                    }
+                                                                                } catch (e) {
+                                                                                    console.error("Failed to fetch ECAP data", e);
+                                                                                    toast.error("Failed to connect to ECAP. Showing details from database.", { id: loadingToast });
+                                                                                }
                                                                             }}
                                                                             sx={{ border: '1.5px solid var(--border-color)', borderRadius: '10px' }}
                                                                         >
@@ -2169,15 +1803,15 @@ const RoleManagement = () => {
                                     }}
                                 >
                                     <Table>
-                                        <TableHead sx={{ bgcolor: 'var(--bg-accent-1)' }}>
+                                        <TableHead sx={{ background: 'var(--gradient-primary)' }}>
                                             <TableRow>
-                                                <TableCell sx={{ fontWeight: 800, color: 'var(--text-primary)' }}>Role Name</TableCell>
-                                                <TableCell sx={{ fontWeight: 800, color: 'var(--text-primary)' }}>Role Key</TableCell>
-                                                <TableCell sx={{ fontWeight: 800, color: 'var(--text-primary)' }}>Description</TableCell>
-                                                <TableCell sx={{ fontWeight: 800, color: 'var(--text-primary)' }}>Type</TableCell>
-                                                <TableCell sx={{ fontWeight: 800, color: 'var(--text-primary)' }}>App Scope</TableCell>
-                                                <TableCell sx={{ fontWeight: 800, color: 'var(--text-primary)' }}>Created At</TableCell>
-                                                <TableCell align="right" sx={{ fontWeight: 800, color: 'var(--text-primary)', pr: 3 }}>Actions</TableCell>
+                                                <TableCell sx={{ fontWeight: 800, color: '#ffffff', py: 2 }}>Role Name</TableCell>
+                                                <TableCell sx={{ fontWeight: 800, color: '#ffffff', py: 2 }}>Role Key</TableCell>
+                                                <TableCell sx={{ fontWeight: 800, color: '#ffffff', py: 2 }}>Description</TableCell>
+                                                <TableCell sx={{ fontWeight: 800, color: '#ffffff', py: 2 }}>Type</TableCell>
+                                                <TableCell sx={{ fontWeight: 800, color: '#ffffff', py: 2 }}>App Scope</TableCell>
+                                                <TableCell sx={{ fontWeight: 800, color: '#ffffff', py: 2 }}>Created At</TableCell>
+                                                <TableCell align="right" sx={{ fontWeight: 800, color: '#ffffff', pr: 3, py: 2 }}>Actions</TableCell>
                                             </TableRow>
                                         </TableHead>
                                         <TableBody>
@@ -2300,6 +1934,244 @@ const RoleManagement = () => {
                     </Paper>
                 </Box>
             )}
+
+            
+            {/* Edit Employee Dialog */}
+                                        <Dialog open={!!editingEmployee} onClose={() => setEditingEmployee(null)} maxWidth="md" fullWidth PaperProps={{ sx: { borderRadius: "20px", background: "var(--bg-glass)", backdropFilter: "blur(20px) saturate(200%)" } }}>
+                <DialogTitle sx={{ fontWeight: 800, color: "var(--text-primary)", borderBottom: "1px solid rgba(0,0,0,0.05)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    Edit Employee Details
+                    <IconButton onClick={() => setEditingEmployee(null)} size="small" sx={{ color: "var(--text-secondary)" }}><Close /></IconButton>
+                </DialogTitle>
+                <DialogContent sx={{ p: 3 }}>
+                                            <Box sx={{ p: 1 }}>
+
+
+                                                <Grid container spacing={2}>
+                                                    <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+                                                        <TextField
+                                                            fullWidth
+                                                            label="Name"
+                                                            value={editingEmployee?.name || ""}
+                                                            disabled
+                                                            size="small"
+                                                            sx={{ "& .MuiInputBase-input.Mui-disabled": { WebkitTextFillColor: "var(--text-secondary)", fontWeight: 600 } }}
+                                                        />
+                                                    </Grid>
+                                                    <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+                                                        <TextField
+                                                            fullWidth
+                                                            label="ID"
+                                                            value={editingEmployee?.institutionId || ""}
+                                                            disabled
+                                                            size="small"
+                                                            sx={{ "& .MuiInputBase-input.Mui-disabled": { WebkitTextFillColor: "var(--text-secondary)", fontWeight: 600 } }}
+                                                        />
+                                                    </Grid>
+                                                    <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+                                                        <TextField
+                                                            fullWidth
+                                                            select
+                                                            label="Serving Department"
+                                                            value={editableServingDept}
+                                                            onChange={(e) => setEditableServingDept(e.target.value)}
+                                                            size="small"
+                                                            slotProps={{ select: { native: false } }}
+                                                            sx={{
+                                                                bgcolor: 'var(--bg-glass)',
+                                                                borderRadius: '10px',
+                                                                "& .MuiOutlinedInput-root": { borderRadius: '10px' }
+                                                            }}
+                                                        >
+                                                            <MenuItem value="" disabled>Select Serving Department</MenuItem>
+                                                            {allDepartments.map(d => (
+                                                                <MenuItem key={d._id} value={d._id}>{d.name}</MenuItem>
+                                                            ))}
+                                                        </TextField>
+                                                    </Grid>
+                                                    <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+                                                        <TextField
+                                                            fullWidth
+                                                            label="Designation"
+                                                            value={editingEmployee?.designation || ""}
+                                                            disabled
+                                                            size="small"
+                                                            sx={{ "& .MuiInputBase-input.Mui-disabled": { WebkitTextFillColor: "var(--text-secondary)", fontWeight: 600 } }}
+                                                        />
+                                                    </Grid>
+                                                    <Grid size={{ xs: 12, sm: 6 }}>
+                                                        <TextField
+                                                            fullWidth
+                                                            label="Email (Editable)"
+                                                            value={editableEmail}
+                                                            onChange={(e) => setEditableEmail(e.target.value)}
+                                                            size="small"
+                                                            placeholder="Enter new email..."
+                                                            sx={{
+                                                                bgcolor: 'var(--bg-glass)',
+                                                                borderRadius: '10px',
+                                                                "& .MuiOutlinedInput-root": { borderRadius: '10px' }
+                                                            }}
+                                                        />
+                                                    </Grid>
+                                                    <Grid size={{ xs: 12, sm: 6 }}>
+                                                        <TextField
+                                                            fullWidth
+                                                            select
+                                                            label="Parent Department"
+                                                            value={editableCoreDept}
+                                                            onChange={(e) => setEditableCoreDept(e.target.value)}
+                                                            size="small"
+                                                            slotProps={{ select: { native: false } }}
+                                                            sx={{
+                                                                bgcolor: 'var(--bg-glass)',
+                                                                borderRadius: '10px',
+                                                                "& .MuiOutlinedInput-root": { borderRadius: '10px' }
+                                                            }}
+                                                        >
+                                                            <MenuItem value="" disabled>Select Parent Department</MenuItem>
+                                                            {allDepartments
+                                                                .filter(d => d.type !== 'Central' && d.name.toLowerCase() !== 'freshman engineering')
+                                                                .map(d => (
+                                                                    <MenuItem key={d._id} value={d._id}>{d.name}</MenuItem>
+                                                                ))}
+                                                        </TextField>
+                                                    </Grid>
+                                                    <Grid size={{ xs: 12, sm: 6 }}>
+                                                        <TextField
+                                                            fullWidth
+                                                            select
+                                                            label="Leadership Role"
+                                                            value={editableLeadership || "no"}
+                                                            onChange={(e) => setEditableLeadership(e.target.value)}
+                                                            size="small"
+                                                            slotProps={{ select: { native: false } }}
+                                                            sx={{
+                                                                bgcolor: 'var(--bg-glass)',
+                                                                borderRadius: '10px',
+                                                                "& .MuiOutlinedInput-root": { borderRadius: '10px' }
+                                                            }}
+                                                        >
+                                                            <MenuItem value="yes">Yes</MenuItem>
+                                                            <MenuItem value="no">No</MenuItem>
+                                                        </TextField>
+                                                    </Grid>
+                                                </Grid>
+
+                                                <Box sx={{ display: 'flex', justifyContent: { xs: 'center', sm: 'flex-end' }, mt: 3 }}>
+                                                    <Button
+                                                        variant="contained"
+                                                        onClick={handleUpdateEmployeeAdmin}
+                                                        disabled={isUpdatingEmail || (!editableEmail && !editableCoreDept && !editableLeadership && !editableServingDept)}
+                                                        startIcon={isUpdatingEmail ? <Loader size={16} color="inherit" /> : <Save />}
+                                                        fullWidth={false}
+                                                        sx={{
+                                                            borderRadius: '50px',
+                                                            textTransform: 'none',
+                                                            fontWeight: 700,
+                                                            background: "var(--gradient-primary)",
+                                                            px: { xs: 8, sm: 5 },
+                                                            py: 1.2,
+                                                            boxShadow: '0 4px 15px rgba(0, 78, 146, 0.3)',
+                                                            width: { xs: '100%', sm: 'auto' },
+                                                            transition: '0.3s',
+                                                            '&:hover': {
+                                                                background: "var(--gradient-primary-hover)",
+                                                                boxShadow: "0 6px 16px rgba(0, 78, 146, 0.4)",
+                                                            }
+                                                        }}
+                                                    >
+                                                        {isUpdatingEmail ? 'Updating...' : 'Update'}
+                                                    </Button>
+                                                </Box>
+                                            </Box>
+                                        </DialogContent>
+            </Dialog>
+            {/* Assign Roles Dialog */}
+            <Dialog open={assignRoleDialogOpen} onClose={() => setAssignRoleDialogOpen(false)} maxWidth="md" fullWidth PaperProps={{ sx: { borderRadius: "20px", background: "var(--bg-glass)", backdropFilter: "blur(20px) saturate(200%)" } }}>
+                <DialogTitle sx={{ fontWeight: 800, color: 'var(--text-primary)', borderBottom: '1px solid rgba(0,0,0,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    {selectedUser ? `Assign Roles for ${selectedUser.name}` : "Assign Roles"}
+                    <IconButton onClick={() => setAssignRoleDialogOpen(false)} size="small" sx={{ color: 'var(--text-secondary)' }}><Close /></IconButton>
+                </DialogTitle>
+                <DialogContent sx={{ p: 0, display: 'flex', flexDirection: 'column', minHeight: '60vh' }}>
+                    <Box sx={{ px: 3, pt: 1, pb: 0 }}>
+
+                        <Collapse in={!!selectedUser && assignedRoleIds.some(rid => roles.find(r => r._id === rid)?.name === 'HOD')}>
+                            <Box sx={{ mt: 2, p: 2, borderRadius: '15px', background: 'var(--bg-paper)', border: '1px solid var(--border-color)' }}>
+                                <Typography variant="subtitle2" fontWeight={800} color="var(--text-primary)" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                    <Security sx={{ fontSize: 18 }} /> HOD Serving Department Assignment
+                                </Typography>
+                                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
+                                    {selectedHodDepts.map(dept => (
+                                        <Chip key={dept._id} label={dept.name} size="small" onDelete={() => setSelectedHodDepts(prev => prev.filter(d => d._id !== dept._id))} sx={{ background: "var(--gradient-primary)", color: '#fff', fontWeight: 700, borderRadius: '50px' }} />
+                                    ))}
+                                </Box>
+                                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, p: 1, border: '1px dashed var(--text-secondary)', borderRadius: '10px' }}>
+                                    {allDepartments.map(dept => {
+                                        const isSelected = selectedHodDepts.some(d => d._id === dept._id);
+                                        return (
+                                            <Chip key={dept._id} label={dept.name} onClick={() => { if (isSelected) setSelectedHodDepts(prev => prev.filter(d => d._id !== dept._id)); else setSelectedHodDepts(prev => [...prev, dept]); }} variant={isSelected ? "filled" : "outlined"} size="small" sx={{ cursor: 'pointer', borderRadius: '50px', fontWeight: 700, border: isSelected ? 'none' : '1.5px solid var(--color-primary)', background: isSelected ? "var(--gradient-primary)" : 'transparent', color: isSelected ? '#fff' : 'var(--color-primary)' }} />
+                                        );
+                                    })}
+                                </Box>
+                            </Box>
+                        </Collapse>
+
+                        <Collapse in={!!selectedUser && assignedRoleIds.some(rid => roles.find(r => r._id === rid)?.key === 'SCHOOL_DEAN')}>
+                            <Box sx={{ mt: 2, p: 2, borderRadius: '15px', background: 'var(--bg-paper)', border: '1px solid var(--border-color)' }}>
+                                <Typography variant="subtitle2" fontWeight={800} color="var(--text-primary)" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                    <School sx={{ fontSize: 18 }} /> SCHOOL_DEAN School Assignment
+                                </Typography>
+                                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
+                                    {selectedDeanSchools.map(school => (
+                                        <Chip key={school._id} label={school.name} size="small" onDelete={() => setSelectedDeanSchools(prev => prev.filter(s => s._id !== school._id))} sx={{ background: "var(--gradient-primary)", color: '#fff', fontWeight: 700, borderRadius: '50px' }} />
+                                    ))}
+                                </Box>
+                                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, p: 1, border: '1px dashed var(--text-secondary)', borderRadius: '10px' }}>
+                                    {allSchools.map(school => {
+                                        const isSelected = selectedDeanSchools.some(s => s._id === school._id);
+                                        return (
+                                            <Chip key={school._id} label={school.name} onClick={() => { if (isSelected) setSelectedDeanSchools(prev => prev.filter(s => s._id !== school._id)); else setSelectedDeanSchools(prev => [...prev, school]); }} variant={isSelected ? "filled" : "outlined"} size="small" sx={{ cursor: 'pointer', borderRadius: '50px', fontWeight: 700, border: isSelected ? 'none' : '1.5px solid var(--color-primary)', background: isSelected ? "var(--gradient-primary)" : 'transparent', color: isSelected ? '#fff' : 'var(--color-primary)' }} />
+                                        );
+                                    })}
+                                </Box>
+                            </Box>
+                        </Collapse>
+
+                    </Box>
+                    <Box sx={{ flex: 1, p: 3, background: 'var(--bg-accent-1)', display: 'flex', flexDirection: 'column' }}>
+                        <TextField placeholder="Search roles to assign..." size="small" fullWidth value={assignmentRolesSearchQuery} onChange={(e) => setAssignmentRolesSearchQuery(e.target.value)} sx={{ mb: 2, "& .MuiOutlinedInput-root": { borderRadius: "10px", background: "var(--bg-glass)" } }} InputProps={{ startAdornment: ( <InputAdornment position="start"> <Search sx={{ color: 'var(--text-secondary)' }} /> </InputAdornment> ) }} />
+                        <Box sx={{ flex: 1, overflowY: 'auto' }}>
+                            {loadingRoles ? null : (
+                                <FormGroup>
+                                    {filteredAssignmentRoles.length > 0 ? filteredAssignmentRoles.map((role) => {
+                                        const isIdentityDefault = role.defaultRole;
+                                        const isChecked = assignedRoleIds.includes(role._id.toString());
+                                        return (
+                                            <Box key={role._id} onClick={() => handleRoleToggle(role._id)} sx={{ p: 1.5, mb: 1, borderRadius: '12px', background: 'var(--bg-glass)', position: 'relative', border: '1px solid transparent', ...(isChecked && { '&::before': { content: '""', position: 'absolute', inset: 0, borderRadius: 'inherit', padding: '1.5px', background: 'var(--gradient-primary)', WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)', WebkitMaskComposite: 'xor', maskComposite: 'exclude', pointerEvents: 'none', zIndex: 0 } }), cursor: selectedUser ? (isIdentityDefault ? 'not-allowed' : 'pointer') : 'default', opacity: selectedUser ? (isIdentityDefault ? 0.75 : 1) : 0.6, display: 'flex', alignItems: 'center', transition: '0.2s', '&:hover': selectedUser && !isIdentityDefault ? { background: 'var(--bg-panel)' } : {} }}>
+                                                <Box sx={{ display: 'flex', alignItems: 'center', width: '100%' }}>
+                                                    <Checkbox checked={isChecked} disabled={!selectedUser || isIdentityDefault} sx={{ p: 0, mr: 2, '&.Mui-checked': { color: 'var(--color-primary)' }, '&.MuiCheckbox-root': { color: isChecked ? 'var(--color-primary)' : 'var(--text-secondary)' } }} />
+                                                    <Box sx={{ flex: 1 }}>
+                                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                            <Typography variant="body2" fontWeight={700} sx={{ color: isChecked ? 'var(--color-primary)' : 'var(--text-primary)' }}>{role.name}</Typography>
+                                                            {role.defaultRole && <Chip label="Identity Role" size="small" color="success" sx={{ height: 16, fontSize: '0.6rem', fontWeight: 800 }} />}
+                                                            {isIdentityDefault && <Tooltip title="Recommended Default Identity Role"><Star sx={{ fontSize: 16, color: 'var(--color-primary)' }} /></Tooltip>}
+                                                        </Box>
+                                                    </Box>
+                                                </Box>
+                                            </Box>
+                                        );
+                                    }) : <Typography variant="body2" color="textSecondary">No roles found.</Typography>}
+                                </FormGroup>
+                            )}
+                        </Box>
+                        {selectedUser && (
+                            <Box sx={{ mt: 3, pt: 2, borderTop: '1px solid rgba(0,0,0,0.05)', position: 'sticky', bottom: 0, background: 'transparent', pb: 1 }}>
+                                <Button fullWidth variant="contained" startIcon={<Save />} onClick={handleSaveAssignments} disabled={savingRoles} sx={{ borderRadius: '50px', py: 1.5, textTransform: 'none', fontWeight: 800, fontSize: '1rem', background: "var(--gradient-primary)", boxShadow: '0 4px 14px 0 rgba(0, 78, 146, 0.3)', transition: '0.3s', '&:hover': { background: "var(--gradient-primary-hover)", boxShadow: '0 6px 16px rgba(0, 78, 146, 0.4)' } }}>Save Role Assignments</Button>
+                            </Box>
+                        )}
+                    </Box>
+                </DialogContent>
+            </Dialog>
 
             {/* Create / Edit Role Modal */}
             <Dialog open={isRoleModalOpen} onClose={handleCloseRoleModal} maxWidth="xs" fullWidth slotProps={{ paper: { sx: { borderRadius: "16px", p: 1 } } }}>

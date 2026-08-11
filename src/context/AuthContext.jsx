@@ -14,7 +14,7 @@ export const AuthProvider = ({ children }) => {
     if (userData && userData.roles) {
       userData.roles = userData.roles.map(r => {
         const upperRole = r.role ? r.role.toUpperCase() : r.role;
-        return upperRole === "STAFF" ? { ...r, role: "FACULTY", name: "FACULTY" } : { ...r, role: upperRole };
+        return { ...r, role: upperRole };
       });
     }
     return userData;
