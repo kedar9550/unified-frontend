@@ -532,7 +532,7 @@ function MetricTab({ type }) {
     }
   }, [type]);
 
-  useEffect(() => { fetchRecords(searchQuery); /* eslint-disable-next-line */ }, [type]);
+  useEffect(() => { fetchRecords(searchQuery);   }, [type]);
 
   const handleSearchChange = (e) => {
     const val = e.target.value;

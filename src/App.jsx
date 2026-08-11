@@ -176,7 +176,7 @@ function App() {
       {isLoading && <Loader fullScreen />}
       <Routes>
         <Route path="/" element={<PublicOnlyRoute><Login /></PublicOnlyRoute>} />
-        <Route path="/signup" element={<PublicOnlyRoute><Login defaultSignUp={true} /></PublicOnlyRoute>} />
+
 
         <Route path="/dashboard" element={<ProtectedRoute element={<Dashboard />} />} />
         <Route path="/teaching" element={<ProtectedRoute element={<Teaching />} />} />
