@@ -403,11 +403,11 @@ const Passes = () => {
                         >
                           {/* Horizontal Cut Line */}
                           {Math.floor(index / 2) < 3 && (
-                            <Box sx={{ position: 'absolute', bottom: '-15px', left: 0, right: 0, borderBottom: '1.5px dashed #94a3b8', zIndex: 0 }} />
+                            <Box sx={{ position: 'absolute', bottom: '-20px', left: 0, right: 0, borderBottom: '1.5px dashed #94a3b8', zIndex: 0 }} />
                           )}
                           {/* Horizontal Cut Mark (Scissor) */}
                           {Math.floor(index / 2) < 3 && (
-                            <Box sx={{ position: 'absolute', bottom: '-15px', left: '50%', transform: 'translate(-50%, 50%)', color: '#94a3b8', fontSize: '14px', backgroundColor: '#fff', px: 1, zIndex: 1, lineHeight: 1 }}>
+                            <Box sx={{ position: 'absolute', bottom: '-20px', left: '50%', transform: 'translate(-50%, 50%)', color: '#94a3b8', fontSize: '14px', backgroundColor: '#fff', px: 1, zIndex: 1, lineHeight: 1 }}>
                               ✂
                             </Box>
                           )}
@@ -429,7 +429,7 @@ const Passes = () => {
                           >
                             <Box
                               sx={{
-                                transform: 'scale(0.45)',
+                                transform: 'scale(0.41)',
                                 transformOrigin: 'center center',
                                 width: '700px',
                                 height: '450px',
