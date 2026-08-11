@@ -106,7 +106,6 @@ const EventPassCard = ({ participant }) => {
             { icon: <BadgeIcon sx={{ color: '#1d4ed8', fontSize: '20px' }} />, label: 'Roll', value: participant.roll },
             { icon: <SchoolIcon sx={{ color: '#1d4ed8', fontSize: '20px' }} />, label: 'College', value: getCollegeName(participant) },
             { icon: <PhoneIcon sx={{ color: '#1d4ed8', fontSize: '20px' }} />, label: 'Phone', value: participant.mobile },
-            { icon: <LocationOnIcon sx={{ color: '#1d4ed8', fontSize: '20px' }} />, label: 'Venue', value: participant.venue || 'Aditya University, Kakinada, Andhra Pradesh – 533437' },
           ].map((item, index) => (
             <Box key={index}>
               <Box sx={{ display: 'flex', alignItems: 'center', py: 1 }}>
@@ -115,14 +114,14 @@ const EventPassCard = ({ participant }) => {
                     {item.icon}
                   </Box>
                 </Box>
-                <Typography sx={{ color: '#1d4ed8', width: '70px', fontWeight: 600, ml: 1, fontSize: '14px' }}>
+                <Typography sx={{ color: '#1d4ed8', width: '85px', fontWeight: 600, ml: 1, fontSize: item.label === 'Venue' ? '16px' : '20px' }}>
                   {item.label}
                 </Typography>
-                <Typography sx={{ color: item.label === 'Venue' ? '#a52a2a' : '#000', fontWeight: 700, fontSize: '16px', whiteSpace: 'nowrap' }}>
+                <Typography sx={{ color: item.label === 'Venue' ? '#a52a2a' : '#000', fontWeight: 700, fontSize: item.label === 'Venue' ? '16px' : '20px', wordBreak: 'break-word' }}>
                   : {item.value || '-'}
                 </Typography>
               </Box>
-              {index < 4 && <Divider sx={{ borderColor: '#e2e8f0', ml: 5 }} />}
+              {index < 3 && <Divider sx={{ borderColor: '#e2e8f0', ml: 5 }} />}
             </Box>
           ))}
         </Box>
@@ -165,11 +164,27 @@ const EventPassCard = ({ participant }) => {
                   textTransform: 'uppercase'
                 }}
               >
-                {participant.name ? participant.name.charAt(0) : <PersonIcon sx={{ fontSize: 60 }} />}
+                {/* Display default person icon instead of name initial */}
+                <PersonIcon sx={{ fontSize: 80 }} />
               </Avatar>
             )}
           </Box>
         </Box>
+      </Box>
+
+      {/* Full-width Venue Section */}
+      <Box sx={{ px: 3, py: 1.5, borderTop: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', zIndex: 1, position: 'relative', backgroundColor: '#f8fafc' }}>
+        <Box sx={{ width: 36, display: 'flex', justifyContent: 'center' }}>
+          <Box sx={{ backgroundColor: '#eff6ff', borderRadius: '50%', p: 0.5, display: 'flex' }}>
+            <LocationOnIcon sx={{ color: '#1d4ed8', fontSize: '20px' }} />
+          </Box>
+        </Box>
+        <Typography sx={{ color: '#1d4ed8', width: '85px', fontWeight: 600, ml: 1, fontSize: '16px' }}>
+          Venue
+        </Typography>
+        <Typography sx={{ color: '#a52a2a', fontWeight: 700, fontSize: '16px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+          : {participant.venue || 'Aditya University, Kakinada, Andhra Pradesh – 533437'}
+        </Typography>
       </Box>
 
       {/* Bottom Section (Barcode) */}
