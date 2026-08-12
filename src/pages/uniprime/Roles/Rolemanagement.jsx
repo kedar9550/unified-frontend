@@ -23,6 +23,12 @@ import PageHeader from "../../../components/common/PageHeader";
 import API from "../../../api/axios";
 import { useLocation } from "react-router-dom";
 
+const QUALIFICATION_MAP = {
+  "UG": ["B.Tech.", "B.Ed."],
+  "PG": ["M.Tech.", "M.E.", "M.Sc.", "M.A.", "M.Com.", "MCA", "MBA", "M.Phil.", "M.Pharm", "PGDM", "MMS", "M.S."],
+  "Doctoral": ["Pharm.D.", "Ph.D."]
+};
+
 const RoleManagement = () => {
     const location = useLocation();
     const [activeTab, setActiveTab] = useState(0);
@@ -81,6 +87,7 @@ const RoleManagement = () => {
     const [editableCoreDept, setEditableCoreDept] = useState("");
     const [editableServingDept, setEditableServingDept] = useState("");
     const [editableDefaultRole, setEditableDefaultRole] = useState("");
+    const [editableQualifications, setEditableQualifications] = useState([]);
     const [isUpdatingEmail, setIsUpdatingEmail] = useState(false);
     const [showCreateIndividualSearch, setShowCreateIndividualSearch] = useState(false);
     const [createIndividualQuery, setCreateIndividualQuery] = useState("");
@@ -91,13 +98,15 @@ const RoleManagement = () => {
     // Individual Signup State
     const [signupData, setSignupData] = useState({
         id: '', fullname: '', department: '', coreDepartment: '', designation: '',
-        email: '', phone: '', password: 'Aditya@123', confirmPassword: 'Aditya@123', role: 'Employee', roleId: ''
+        email: '', phone: '', password: 'Aditya@123', confirmPassword: 'Aditya@123', role: 'Employee', roleId: '',
+        qualifications: [], dateOfJoining: '', leadership: 'no'
     });
     const [signupError, setSignupError] = useState('');
     const [disabledFields, setDisabledFields] = useState({});
     const [isEcapVerified, setIsEcapVerified] = useState(false);
     const [isVerifying, setIsVerifying] = useState(false);
     const [isIndividualSubmitting, setIsIndividualSubmitting] = useState(false);
+    const [editableDoj, setEditableDoj] = useState("");
 
     // HOD Department Context
     const [allDepartments, setAllDepartments] = useState([]);
@@ -270,6 +279,28 @@ const RoleManagement = () => {
         }
     };
 
+    const handleAddEditableQualification = () => {
+        setEditableQualifications(prev => [
+            ...prev,
+            { level: "", qualification: "", completedMonth: "", completedYear: new Date().getFullYear() }
+        ]);
+    };
+
+    const handleRemoveEditableQualification = (index) => {
+        setEditableQualifications(prev => prev.filter((_, i) => i !== index));
+    };
+
+    const handleEditableQualificationChange = (index, field, value) => {
+        setEditableQualifications(prev => {
+            const newQuals = [...prev];
+            newQuals[index] = { ...newQuals[index], [field]: value };
+            if (field === "level") {
+                newQuals[index].qualification = ""; // reset qualification when level changes
+            }
+            return newQuals;
+        });
+    };
+
     const handleUpdateEmployeeAdmin = async () => {
         if (!editingEmployee) return;
 
@@ -304,6 +335,9 @@ const RoleManagement = () => {
             updates.department = updates.department || editingEmployee.department;
             updates.designation = editingEmployee.designation;
         }
+
+        updates.qualifications = editableQualifications;
+        updates.dateOfJoining = editableDoj;
 
         if (Object.keys(updates).length === 0) {
             toast.info("No changes to update");
@@ -390,6 +424,31 @@ const RoleManagement = () => {
 
     // --- INDIVIDUAL REGISTRATION LOGIC ---
 
+    const handleAddQualification = () => {
+        setSignupData(prev => ({
+            ...prev,
+            qualifications: [...(prev.qualifications || []), { level: "", qualification: "", completedMonth: "", completedYear: new Date().getFullYear() }]
+        }));
+    };
+
+    const handleRemoveQualification = (index) => {
+        setSignupData(prev => ({
+            ...prev,
+            qualifications: (prev.qualifications || []).filter((_, i) => i !== index)
+        }));
+    };
+
+    const handleQualificationChange = (index, field, value) => {
+        setSignupData(prev => {
+            const newQuals = [...(prev.qualifications || [])];
+            newQuals[index] = { ...newQuals[index], [field]: value };
+            if (field === "level") {
+                newQuals[index].qualification = ""; // reset qualification when level changes
+            }
+            return { ...prev, qualifications: newQuals };
+        });
+    };
+
     const validateIndividual = (data) => {
         if (!data.id?.trim()) return "ID is required";
         if (!data.fullname?.trim()) return "Full name is required";
@@ -475,6 +534,21 @@ const RoleManagement = () => {
         }
     };
 
+    const isLeadershipDesignation = (designation) => {
+        if (!designation) return false;
+        const cleanDesig = designation.toLowerCase().replace(/[^a-z0-9]/g, ' ');
+        const leadershipRoles = ['Deans', 'Associate Deans', 'CoE', 'HoD', 'Chancellor', 'Pro-chancellor', 'Registrar', 'Vice-chancellor', 'Director Academics', 'Head'];
+        return leadershipRoles.some(role => {
+            if (!role) return false;
+            let cleanRole = role.toLowerCase().trim();
+            if (cleanRole.endsWith('s') && !['coe', 'chancellor', 'pro-chancellor', 'vice-chancellor', 'registrar'].includes(cleanRole)) {
+                cleanRole = cleanRole.slice(0, -1);
+            }
+            cleanRole = cleanRole.replace(/[^a-z0-9]/g, ' ');
+            return cleanDesig.includes(cleanRole);
+        });
+    };
+
     const handleStartSignup = () => {
         if (!createIndividualPreview) return;
         const data = createIndividualPreview.ecapData;
@@ -486,7 +560,15 @@ const RoleManagement = () => {
             coreDepartment: "",
             designation: data.designation || data.Designation || (signupData.role === "Student" ? "Student" : "Staff"),
             phone: data.mobileno || data.MobileNo || data.mobilenumber || "",
-            email: ""
+            email: "",
+            dateOfJoining: (() => {
+                const dojRaw = data.dateofjoin || data.DateOfJoin;
+                if (!dojRaw) return "";
+                const parts = dojRaw.split('/');
+                if (parts.length === 3) return `${parts[2]}-${parts[1]}-${parts[0]}`;
+                return dojRaw;
+            })(),
+            leadership: isLeadershipDesignation(data.designation || data.Designation) ? "yes" : "no"
         });
         setIsShowingSignupForm(true);
     };
@@ -1190,6 +1272,8 @@ const RoleManagement = () => {
                                                                                 setEditableCoreDept(emp.coreDepartment || emp.department || "");
                                                                                 setEditableServingDept(emp.department || "");
                                                                                 setEditableLeadership(emp.leadership || "no");
+                                                                                setEditableQualifications(emp.qualifications || []);
+                                                                                setEditableDoj(emp.dateOfJoining || "");
                                                                                 
                                                                                 const defRole = emp.roles?.find(r => r.defaultRole);
                                                                                 setEditableDefaultRole(defRole ? defRole._id : "");
@@ -1662,6 +1746,87 @@ const RoleManagement = () => {
                                                             ))}
                                                         </TextField>
                                                     </Grid>
+                                                    <Grid size={{ xs: 12, sm: 6 }}>
+                                                        <TextField
+                                                            fullWidth
+                                                            type="date"
+                                                            label="Date of Joining"
+                                                            value={editableDoj || ""}
+                                                            onChange={(e) => setEditableDoj(e.target.value)}
+                                                            size="small"
+                                                            slotProps={{ inputLabel: { shrink: true } }}
+                                                            sx={{
+                                                                bgcolor: 'var(--bg-glass)',
+                                                                borderRadius: '10px',
+                                                                "& .MuiOutlinedInput-root": { borderRadius: '10px' }
+                                                            }}
+                                                        />
+                                                    </Grid>
+
+                                                    <Grid size={{ xs: 12 }}>
+                                                        <Box sx={{ mt: 1 }}>
+                                                            <Typography sx={{ fontSize: "0.85rem", fontWeight: 600, color: "var(--text-secondary)", mb: 1 }}>
+                                                                Qualifications
+                                                            </Typography>
+                                                            <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
+                                                                {(editableQualifications || []).map((qual, index) => (
+                                                                    <Box key={index} sx={{ display: "flex", gap: 1.5, alignItems: "center", flexWrap: "wrap", p: 1.5, background: "rgba(0,0,0,0.02)", borderRadius: "10px", border: "1px solid rgba(0,0,0,0.05)" }}>
+                                                                        <TextField
+                                                                            select
+                                                                            size="small"
+                                                                            label="Level"
+                                                                            value={qual.level}
+                                                                            onChange={(e) => handleEditableQualificationChange(index, "level", e.target.value)}
+                                                                            sx={{ minWidth: 120, bgcolor: 'var(--bg-glass)', "& .MuiOutlinedInput-root": { borderRadius: '8px' } }}
+                                                                        >
+                                                                            {Object.keys(QUALIFICATION_MAP).map(level => (
+                                                                                <MenuItem key={level} value={level}>{level}</MenuItem>
+                                                                            ))}
+                                                                        </TextField>
+                                                                        <TextField
+                                                                            select
+                                                                            size="small"
+                                                                            label="Qualification"
+                                                                            value={qual.qualification}
+                                                                            onChange={(e) => handleEditableQualificationChange(index, "qualification", e.target.value)}
+                                                                            disabled={!qual.level}
+                                                                            sx={{ minWidth: 160, bgcolor: 'var(--bg-glass)', "& .MuiOutlinedInput-root": { borderRadius: '8px' } }}
+                                                                        >
+                                                                            {(QUALIFICATION_MAP[qual.level] || []).map(q => (
+                                                                                <MenuItem key={q} value={q}>{q}</MenuItem>
+                                                                            ))}
+                                                                        </TextField>
+                                                                        <TextField
+                                                                            select
+                                                                            size="small"
+                                                                            label="Month"
+                                                                            value={qual.completedMonth}
+                                                                            onChange={(e) => handleEditableQualificationChange(index, "completedMonth", e.target.value)}
+                                                                            sx={{ minWidth: 140, bgcolor: 'var(--bg-glass)', "& .MuiOutlinedInput-root": { borderRadius: '8px' } }}
+                                                                        >
+                                                                            {["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"].map(m => (
+                                                                                <MenuItem key={m} value={m}>{m}</MenuItem>
+                                                                            ))}
+                                                                        </TextField>
+                                                                        <TextField
+                                                                            size="small"
+                                                                            type="number"
+                                                                            label="Year"
+                                                                            value={qual.completedYear || ""}
+                                                                            onChange={(e) => handleEditableQualificationChange(index, "completedYear", e.target.value)}
+                                                                            sx={{ minWidth: 100, width: 100, bgcolor: 'var(--bg-glass)', "& .MuiOutlinedInput-root": { borderRadius: '8px' } }}
+                                                                        />
+                                                                        <IconButton onClick={() => handleRemoveEditableQualification(index)} color="error" size="small" sx={{ bgcolor: 'rgba(239,68,68,0.1)' }}>
+                                                                            <Close fontSize="small" />
+                                                                        </IconButton>
+                                                                    </Box>
+                                                                ))}
+                                                                <Button variant="outlined" size="small" onClick={handleAddEditableQualification} sx={{ alignSelf: "flex-start", borderRadius: '50px', textTransform: 'none', fontWeight: 600 }}>
+                                                                    + Add Qualification
+                                                                </Button>
+                                                            </Box>
+                                                        </Box>
+                                                    </Grid>
                                                 </Grid>
 
                                                 <Box sx={{ display: 'flex', justifyContent: { xs: 'center', sm: 'flex-end' }, mt: 3 }}>
@@ -1973,8 +2138,92 @@ const RoleManagement = () => {
                                 ))}
                             </TextField>
                             <TextField label="Designation" value={signupData.designation} onChange={(e) => setSignupData({ ...signupData, designation: e.target.value })} disabled={disabledFields.designation} size="small" fullWidth />
+                            <TextField
+                                select
+                                label="Leadership Role"
+                                value={signupData.leadership || "no"}
+                                onChange={(e) => setSignupData({ ...signupData, leadership: e.target.value })}
+                                size="small"
+                                fullWidth
+                                slotProps={{ select: { native: false } }}
+                            >
+                                <MenuItem value="yes">Yes</MenuItem>
+                                <MenuItem value="no">No</MenuItem>
+                            </TextField>
+                            <TextField
+                                type="date"
+                                label="Date of Joining"
+                                value={signupData.dateOfJoining || ""}
+                                onChange={(e) => setSignupData({ ...signupData, dateOfJoining: e.target.value })}
+                                size="small"
+                                fullWidth
+                                slotProps={{ inputLabel: { shrink: true } }}
+                            />
                             <TextField label="Password" type="password" value={signupData.password} onChange={(e) => setSignupData({ ...signupData, password: e.target.value })} size="small" fullWidth />
                             <TextField label="Confirm Password" type="password" value={signupData.confirmPassword} onChange={(e) => setSignupData({ ...signupData, confirmPassword: e.target.value })} size="small" fullWidth />
+                            
+                            <Box sx={{ gridColumn: "1 / -1", mt: 2 }}>
+                                <Typography sx={{ fontSize: "0.9rem", fontWeight: 700, color: "var(--text-primary)", mb: 2 }}>
+                                    Qualifications
+                                </Typography>
+                                <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                                    {(signupData.qualifications || []).map((qual, index) => (
+                                        <Box key={index} sx={{ display: "flex", gap: 2, alignItems: "center", flexWrap: "wrap", p: 2, background: "rgba(0,0,0,0.02)", borderRadius: "8px", border: "1px solid rgba(0,0,0,0.05)" }}>
+                                            <TextField
+                                                select
+                                                size="small"
+                                                label="Level"
+                                                value={qual.level}
+                                                onChange={(e) => handleQualificationChange(index, "level", e.target.value)}
+                                                sx={{ minWidth: 120 }}
+                                            >
+                                                {Object.keys(QUALIFICATION_MAP).map(level => (
+                                                    <MenuItem key={level} value={level}>{level}</MenuItem>
+                                                ))}
+                                            </TextField>
+                                            <TextField
+                                                select
+                                                size="small"
+                                                label="Qualification"
+                                                value={qual.qualification}
+                                                onChange={(e) => handleQualificationChange(index, "qualification", e.target.value)}
+                                                disabled={!qual.level}
+                                                sx={{ minWidth: 160 }}
+                                            >
+                                                {(QUALIFICATION_MAP[qual.level] || []).map(q => (
+                                                    <MenuItem key={q} value={q}>{q}</MenuItem>
+                                                ))}
+                                            </TextField>
+                                            <TextField
+                                                select
+                                                size="small"
+                                                label="Month"
+                                                value={qual.completedMonth}
+                                                onChange={(e) => handleQualificationChange(index, "completedMonth", e.target.value)}
+                                                sx={{ minWidth: 140 }}
+                                            >
+                                                {["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"].map(m => (
+                                                    <MenuItem key={m} value={m}>{m}</MenuItem>
+                                                ))}
+                                            </TextField>
+                                            <TextField
+                                                size="small"
+                                                type="number"
+                                                label="Year"
+                                                value={qual.completedYear || ""}
+                                                onChange={(e) => handleQualificationChange(index, "completedYear", e.target.value)}
+                                                sx={{ minWidth: 100, width: 100 }}
+                                            />
+                                            <IconButton onClick={() => handleRemoveQualification(index)} color="error" size="small">
+                                                <Close fontSize="small" />
+                                            </IconButton>
+                                        </Box>
+                                    ))}
+                                    <Button variant="outlined" size="small" onClick={handleAddQualification} sx={{ alignSelf: "flex-start", borderRadius: '50px', textTransform: 'none', fontWeight: 600 }}>
+                                        + Add Qualification
+                                    </Button>
+                                </Box>
+                            </Box>
                         </Box>
                     </Box>
                     <Box sx={{ px: 4, pb: 4, display: 'flex', gap: 2 }}>

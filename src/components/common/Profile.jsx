@@ -96,7 +96,7 @@ const EditableField = ({
       <Icon sx={{ fontSize: 18 }} />
     </Box>
     <Box sx={{ minWidth: 0, flex: 1 }}>
-      <Typography sx={{ fontSize: "0.7rem", color: "var(--text-secondary)", fontWeight: 500, mb: 0.5, textTransform: "uppercase" }}>
+      <Typography sx={{ fontSize: "0.7rem", color: "var(--text-secondary)", fontWeight: 500, mb: 0.5, whiteSpace: "nowrap" }}>
         {label}
       </Typography>
       {children || (
@@ -118,6 +118,12 @@ const EditableField = ({
 );
 // ──────────────────────────────────────────────────────────────────────────────
 
+const QUALIFICATION_MAP = {
+  "UG": ["B.Tech.", "B.Ed."],
+  "PG": ["M.Tech.", "M.E.", "M.Sc.", "M.A.", "M.Com.", "MCA", "MBA", "M.Phil.", "M.Pharm", "PGDM", "MMS", "M.S."],
+  "Doctoral": ["Pharm.D.", "Ph.D."]
+};
+
 const Profile = () => {
   const { user, activeRole } = useAuth();
   const [isEditing, setIsEditing] = React.useState(false);
@@ -131,7 +137,7 @@ const Profile = () => {
     googleScholarId: "",
     panNumber: "",
     college: "",
-    qualification: ""
+    qualifications: []
   });
   const [loading, setLoading] = React.useState(false);
   const [errors, setErrors] = React.useState({});
@@ -159,7 +165,7 @@ const Profile = () => {
           googleScholarId: res.data.user.googleScholarId || "",
           panNumber: res.data.user.panNumber || "",
           college: res.data.user.college || "",
-          qualification: res.data.user.qualification || ""
+          qualifications: res.data.user.qualifications || []
         });
         toast.success("Profile details synced  successfully!");
       } else {
@@ -213,35 +219,33 @@ const Profile = () => {
           googleScholarId: fresh.googleScholarId || "",
           panNumber: fresh.panNumber || "",
           college: fresh.college || "",
-          qualification: fresh.qualification || ""
+          qualifications: fresh.qualifications || []
         });
 
-        // Fetch DOJ from ECAP
-        try {
-          const ecapRes = await API.post("/api/employees/ecap-data", {
-            institutionId: fresh.institutionId,
-            role: fresh.userType || "Employee"
-          });
-          if (ecapRes.data) {
-            setDoj(ecapRes.data.dateofjoin || ecapRes.data.dateofjoining || ecapRes.data.DateOfJoining);
+        // Fetch DOJ from DB
+        if (fresh.dateOfJoining) {
+          // Format from YYYY-MM-DD to DD/MM/YYYY if needed
+          const parts = fresh.dateOfJoining.split('-');
+          if (parts.length === 3) {
+            setDoj(`${parts[2]}/${parts[1]}/${parts[0]}`);
+          } else {
+            setDoj(fresh.dateOfJoining);
           }
-        } catch (ecapErr) {
-          console.error("Failed to fetch ECAP data for DOJ", ecapErr);
         }
       } catch (err) {
         console.error("Failed to load profile", err);
         // Fallback to localStorage user
         setProfileData(user);
         setForm({
-          email: profile?.email || "",
-          phone: profile?.phone || "",
-          scopusId: profile?.scopusId || "",
-          wosId: profile?.wosId || "",
-          orcidId: profile?.orcidId || "",
-          googleScholarId: profile?.googleScholarId || "",
-          panNumber: profile?.panNumber || "",
-          college: profile?.college || "",
-          qualification: profile?.qualification || ""
+          email: user?.email || "",
+          phone: user?.phone || "",
+          scopusId: user?.scopusId || "",
+          wosId: user?.wosId || "",
+          orcidId: user?.orcidId || "",
+          googleScholarId: user?.googleScholarId || "",
+          panNumber: user?.panNumber || "",
+          college: user?.college || "",
+          qualifications: user?.qualifications || []
         });
       }
     };
@@ -251,6 +255,31 @@ const Profile = () => {
   // Use fresh DB data where available, fall back to localStorage
   const profile = profileData || user;
   const isStudent = user?.userType === "Student" || activeRole === "Student";
+
+  const handleAddQualification = () => {
+    setForm(prev => ({
+      ...prev,
+      qualifications: [...prev.qualifications, { level: "", qualification: "", completedMonth: "", completedYear: new Date().getFullYear() }]
+    }));
+  };
+
+  const handleRemoveQualification = (index) => {
+    setForm(prev => ({
+      ...prev,
+      qualifications: prev.qualifications.filter((_, i) => i !== index)
+    }));
+  };
+
+  const handleQualificationChange = (index, field, value) => {
+    setForm(prev => {
+      const newQuals = [...prev.qualifications];
+      newQuals[index] = { ...newQuals[index], [field]: value };
+      if (field === "level") {
+        newQuals[index].qualification = ""; // reset qualification when level changes
+      }
+      return { ...prev, qualifications: newQuals };
+    });
+  };
 
   const handleSave = async () => {
     setLoading(true);
@@ -317,7 +346,7 @@ const Profile = () => {
       googleScholarId: profile?.googleScholarId || "",
       panNumber: profile?.panNumber || "",
       college: profile?.college || "",
-      qualification: profile?.qualification || ""
+      qualifications: profile?.qualifications || []
     });
     setErrors({});
     setIsEditing(false);
@@ -606,29 +635,11 @@ const Profile = () => {
                       >
                         <MenuItem value="">Select College</MenuItem>
                         <MenuItem value="Aditya University">Aditya University</MenuItem>
-                        {/* <MenuItem value="Aditya college of engineering and technology">Aditya college of engineering and technology</MenuItem> */}
+                        <MenuItem value="Aditya College of Engineering and Technology">Aditya College of Engineering and Technology</MenuItem>
                         <MenuItem value="Aditya College of Pharmacy">Aditya College of Pharmacy</MenuItem>
                       </Select>
                     ) : (
                       <Typography sx={{ fontSize: "0.85rem", fontWeight: 700, color: "var(--text-primary)" }}>{profile?.college || "N/A"}</Typography>
-                    )}
-                  </EditableField>
-                  <EditableField icon={AutoStories} label="Qualification" fieldKey="qualification" value={profile?.qualification} isEditing={isEditing}>
-                    {isEditing ? (
-                      <Select
-                        size="small"
-                        fullWidth
-                        value={form.qualification}
-                        onChange={handleChange("qualification")}
-                        sx={{ borderRadius: "8px", height: "35px", fontSize: "0.85rem", background: "var(--bg-accent-1)" }}
-                      >
-                        <MenuItem value="">Select Qualification</MenuItem>
-                        <MenuItem value="UG">UG</MenuItem>
-                        <MenuItem value="PG">PG</MenuItem>
-                        <MenuItem value="PHD">PHD</MenuItem>
-                      </Select>
-                    ) : (
-                      <Typography sx={{ fontSize: "0.85rem", fontWeight: 700, color: "var(--text-primary)" }}>{profile?.qualification || "N/A"}</Typography>
                     )}
                   </EditableField>
                   <EditableField
@@ -658,6 +669,86 @@ const Profile = () => {
                     isEditing={isEditing} fieldValue={form.googleScholarId} fieldError={errors.googleScholarId}
                     onFieldChange={handleChange("googleScholarId")} maxLength={validationRules.googleScholarId.maxLength}
                   />
+
+                  <Box sx={{ gridColumn: "1 / -1", mt: 2 }}>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 2 }}>
+                      <AutoStories sx={{ color: "var(--color-primary)" }} />
+                      <Typography sx={{ fontSize: "0.9rem", fontWeight: 700, color: "var(--text-primary)" }}>
+                        Qualifications
+                      </Typography>
+                    </Box>
+                    {isEditing ? (
+                      <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                        {form.qualifications.map((qual, index) => (
+                          <Box key={index} sx={{ display: "flex", gap: 2, alignItems: "center", flexWrap: "wrap", p: 2, background: "var(--bg-accent-1)", borderRadius: "8px" }}>
+                            <Select
+                              size="small"
+                              value={qual.level}
+                              onChange={(e) => handleQualificationChange(index, "level", e.target.value)}
+                              displayEmpty
+                              sx={{ minWidth: 120, borderRadius: "8px", height: "35px", fontSize: "0.85rem", background: "var(--bg-paper)" }}
+                            >
+                              <MenuItem value="" disabled>Select Level</MenuItem>
+                              {Object.keys(QUALIFICATION_MAP).map(level => (
+                                <MenuItem key={level} value={level}>{level}</MenuItem>
+                              ))}
+                            </Select>
+                            <Select
+                              size="small"
+                              value={qual.qualification}
+                              onChange={(e) => handleQualificationChange(index, "qualification", e.target.value)}
+                              disabled={!qual.level}
+                              displayEmpty
+                              sx={{ minWidth: 160, borderRadius: "8px", height: "35px", fontSize: "0.85rem", background: "var(--bg-paper)" }}
+                            >
+                              <MenuItem value="" disabled>Select Qualification</MenuItem>
+                              {(QUALIFICATION_MAP[qual.level] || []).map(q => (
+                                <MenuItem key={q} value={q}>{q}</MenuItem>
+                              ))}
+                            </Select>
+                            <Select
+                              size="small"
+                              value={qual.completedMonth}
+                              onChange={(e) => handleQualificationChange(index, "completedMonth", e.target.value)}
+                              displayEmpty
+                              sx={{ minWidth: 140, borderRadius: "8px", height: "35px", fontSize: "0.85rem", background: "var(--bg-paper)" }}
+                            >
+                              <MenuItem value="" disabled>Select Month</MenuItem>
+                              {["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"].map(m => (
+                                <MenuItem key={m} value={m}>{m}</MenuItem>
+                              ))}
+                            </Select>
+                            <TextField
+                              size="small"
+                              type="number"
+                              placeholder="Year"
+                              value={qual.completedYear || ""}
+                              onChange={(e) => handleQualificationChange(index, "completedYear", e.target.value)}
+                              sx={{ minWidth: 100, width: 100, background: "var(--bg-paper)", borderRadius: "8px", "& .MuiInputBase-root": { height: "35px", fontSize: "0.85rem" } }}
+                            />
+                            <IconButton onClick={() => handleRemoveQualification(index)} color="error" size="small">
+                              <Close fontSize="small" />
+                            </IconButton>
+                          </Box>
+                        ))}
+                        <Button variant="outlined" size="small" onClick={handleAddQualification} sx={{ alignSelf: "flex-start" }}>
+                          + Add Qualification
+                        </Button>
+                      </Box>
+                    ) : (
+                      <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+                        {(profile?.qualifications && profile.qualifications.length > 0) ? (
+                          profile.qualifications.map((q, i) => (
+                            <Typography key={i} sx={{ fontSize: "0.85rem", fontWeight: 700, color: "var(--text-primary)" }}>
+                              {q.level} - {q.qualification} ({q.completedMonth} {q.completedYear})
+                            </Typography>
+                          ))
+                        ) : (
+                          <Typography sx={{ fontSize: "0.85rem", fontWeight: 700, color: "var(--text-secondary)" }}>N/A</Typography>
+                        )}
+                      </Box>
+                    )}
+                  </Box>
                 </>
               )}
             </Box>

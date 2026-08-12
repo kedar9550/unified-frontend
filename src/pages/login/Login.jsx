@@ -65,6 +65,12 @@ import Footer from '../../components/Footer';
 import loginLogo from '../../assets/Aditya University Gold Logo.png';
 import './Login.css';
 
+const QUALIFICATION_MAP = {
+  "UG": ["B.Tech.", "B.Ed."],
+  "PG": ["M.Tech.", "M.E.", "M.Sc.", "M.A.", "M.Com.", "MCA", "MBA", "M.Phil.", "M.Pharm", "PGDM", "MMS", "M.S."],
+  "Doctoral": ["Pharm.D.", "Ph.D."]
+};
+
 // ── Password Eye Icons ──
 const EyeIcon = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -162,7 +168,8 @@ export default function Login({ defaultSignUp = false }) {
     fullname: '',
     department: '',
     designation: '',
-    phone: ''
+    phone: '',
+    qualifications: []
   });
   const [signupMsg, setSignupMsg] = useState({ text: '', type: '' });
   const [signupLoading, setSignupLoading] = useState(false);
@@ -190,7 +197,8 @@ export default function Login({ defaultSignUp = false }) {
       fullname: '',
       department: '',
       designation: '',
-      phone: ''
+      phone: '',
+      qualifications: []
     });
     setSignupOtp('');
     setSignupSignature('');
@@ -413,6 +421,31 @@ export default function Login({ defaultSignUp = false }) {
     }
   };
 
+  const handleAddQualification = () => {
+    setSignupDetails(prev => ({
+      ...prev,
+      qualifications: [...(prev.qualifications || []), { level: "", qualification: "", completedMonth: "", completedYear: new Date().getFullYear() }]
+    }));
+  };
+
+  const handleRemoveQualification = (index) => {
+    setSignupDetails(prev => ({
+      ...prev,
+      qualifications: (prev.qualifications || []).filter((_, i) => i !== index)
+    }));
+  };
+
+  const handleQualificationChange = (index, field, value) => {
+    setSignupDetails(prev => {
+      const newQuals = [...(prev.qualifications || [])];
+      newQuals[index] = { ...newQuals[index], [field]: value };
+      if (field === "level") {
+        newQuals[index].qualification = ""; // reset qualification when level changes
+      }
+      return { ...prev, qualifications: newQuals };
+    });
+  };
+
   const handleSignUpSubmit = async (e) => {
     e.preventDefault();
     
@@ -461,7 +494,8 @@ export default function Login({ defaultSignUp = false }) {
         otp: signupOtp.trim(),
         signature: signupSignature,
         expiry: signupExpiry,
-        coreDepartment: signupData.coreDepartment
+        coreDepartment: signupData.coreDepartment,
+        qualifications: signupDetails.qualifications
       });
       resetSignUpState();
       setIsSignUp(false);
