@@ -9,7 +9,7 @@ import {
     List, ListItem, ListItemText, ListItemSecondaryAction,
     Divider, Avatar, Checkbox, FormControlLabel, FormGroup,
     ListItemButton, Menu, MenuItem, ListItemIcon, Grid,
-    Tabs, Tab, TablePagination, Switch
+    Tabs, Tab, TablePagination, Switch, Alert
 } from "@mui/material";
 import { toast } from "sonner";
 import {
@@ -22,6 +22,12 @@ import {
 import PageHeader from "../../../components/common/PageHeader";
 import API from "../../../api/axios";
 import { useLocation } from "react-router-dom";
+
+const QUALIFICATION_MAP = {
+  "UG": ["B.Tech.", "B.Ed."],
+  "PG": ["M.Tech.", "M.E.", "M.Sc.", "M.A.", "M.Com.", "MCA", "MBA", "M.Phil.", "M.Pharm", "PGDM", "MMS", "M.S."],
+  "Doctoral": ["Pharm.D.", "Ph.D."]
+};
 
 const RoleManagement = () => {
     const location = useLocation();
@@ -65,7 +71,7 @@ const RoleManagement = () => {
 
     // Modal State - User Choice
     const [isUserChoiceModalOpen, setIsUserChoiceModalOpen] = useState(false);
-    const [registrationView, setRegistrationView] = useState("selection"); // selection or individual
+
     const [uploadingBulk, setUploadingBulk] = useState(false);
     const [bulkResults, setBulkResults] = useState(null);
     const fileInputRef = useRef(null);
@@ -80,6 +86,8 @@ const RoleManagement = () => {
     const [editableLeadership, setEditableLeadership] = useState("");
     const [editableCoreDept, setEditableCoreDept] = useState("");
     const [editableServingDept, setEditableServingDept] = useState("");
+    const [editableDefaultRole, setEditableDefaultRole] = useState("");
+    const [editableQualifications, setEditableQualifications] = useState([]);
     const [isUpdatingEmail, setIsUpdatingEmail] = useState(false);
     const [showCreateIndividualSearch, setShowCreateIndividualSearch] = useState(false);
     const [createIndividualQuery, setCreateIndividualQuery] = useState("");
@@ -90,13 +98,15 @@ const RoleManagement = () => {
     // Individual Signup State
     const [signupData, setSignupData] = useState({
         id: '', fullname: '', department: '', coreDepartment: '', designation: '',
-        email: '', phone: '', password: 'Aditya@123', confirmPassword: 'Aditya@123', role: 'Employee',
+        email: '', phone: '', password: 'Aditya@123', confirmPassword: 'Aditya@123', role: 'Employee', roleId: '',
+        qualifications: [], dateOfJoining: '', leadership: 'no'
     });
     const [signupError, setSignupError] = useState('');
     const [disabledFields, setDisabledFields] = useState({});
     const [isEcapVerified, setIsEcapVerified] = useState(false);
     const [isVerifying, setIsVerifying] = useState(false);
     const [isIndividualSubmitting, setIsIndividualSubmitting] = useState(false);
+    const [editableDoj, setEditableDoj] = useState("");
 
     // HOD Department Context
     const [allDepartments, setAllDepartments] = useState([]);
@@ -269,6 +279,28 @@ const RoleManagement = () => {
         }
     };
 
+    const handleAddEditableQualification = () => {
+        setEditableQualifications(prev => [
+            ...prev,
+            { level: "", qualification: "", completedMonth: "", completedYear: new Date().getFullYear() }
+        ]);
+    };
+
+    const handleRemoveEditableQualification = (index) => {
+        setEditableQualifications(prev => prev.filter((_, i) => i !== index));
+    };
+
+    const handleEditableQualificationChange = (index, field, value) => {
+        setEditableQualifications(prev => {
+            const newQuals = [...prev];
+            newQuals[index] = { ...newQuals[index], [field]: value };
+            if (field === "level") {
+                newQuals[index].qualification = ""; // reset qualification when level changes
+            }
+            return newQuals;
+        });
+    };
+
     const handleUpdateEmployeeAdmin = async () => {
         if (!editingEmployee) return;
 
@@ -293,11 +325,19 @@ const RoleManagement = () => {
             updates.department = editableServingDept;
         }
 
+        const defRole = editingEmployee.roles?.find(r => r.defaultRole);
+        if (editableDefaultRole && editableDefaultRole !== (defRole ? defRole._id : "")) {
+            updates.defaultRoleId = editableDefaultRole;
+        }
+
         if (editingEmployee.isEcapFetched) {
             updates.name = editingEmployee.name;
             updates.department = updates.department || editingEmployee.department;
             updates.designation = editingEmployee.designation;
         }
+
+        updates.qualifications = editableQualifications;
+        updates.dateOfJoining = editableDoj;
 
         if (Object.keys(updates).length === 0) {
             toast.info("No changes to update");
@@ -384,6 +424,31 @@ const RoleManagement = () => {
 
     // --- INDIVIDUAL REGISTRATION LOGIC ---
 
+    const handleAddQualification = () => {
+        setSignupData(prev => ({
+            ...prev,
+            qualifications: [...(prev.qualifications || []), { level: "", qualification: "", completedMonth: "", completedYear: new Date().getFullYear() }]
+        }));
+    };
+
+    const handleRemoveQualification = (index) => {
+        setSignupData(prev => ({
+            ...prev,
+            qualifications: (prev.qualifications || []).filter((_, i) => i !== index)
+        }));
+    };
+
+    const handleQualificationChange = (index, field, value) => {
+        setSignupData(prev => {
+            const newQuals = [...(prev.qualifications || [])];
+            newQuals[index] = { ...newQuals[index], [field]: value };
+            if (field === "level") {
+                newQuals[index].qualification = ""; // reset qualification when level changes
+            }
+            return { ...prev, qualifications: newQuals };
+        });
+    };
+
     const validateIndividual = (data) => {
         if (!data.id?.trim()) return "ID is required";
         if (!data.fullname?.trim()) return "Full name is required";
@@ -469,6 +534,21 @@ const RoleManagement = () => {
         }
     };
 
+    const isLeadershipDesignation = (designation) => {
+        if (!designation) return false;
+        const cleanDesig = designation.toLowerCase().replace(/[^a-z0-9]/g, ' ');
+        const leadershipRoles = ['Deans', 'Associate Deans', 'CoE', 'HoD', 'Chancellor', 'Pro-chancellor', 'Registrar', 'Vice-chancellor', 'Director Academics', 'Head'];
+        return leadershipRoles.some(role => {
+            if (!role) return false;
+            let cleanRole = role.toLowerCase().trim();
+            if (cleanRole.endsWith('s') && !['coe', 'chancellor', 'pro-chancellor', 'vice-chancellor', 'registrar'].includes(cleanRole)) {
+                cleanRole = cleanRole.slice(0, -1);
+            }
+            cleanRole = cleanRole.replace(/[^a-z0-9]/g, ' ');
+            return cleanDesig.includes(cleanRole);
+        });
+    };
+
     const handleStartSignup = () => {
         if (!createIndividualPreview) return;
         const data = createIndividualPreview.ecapData;
@@ -480,7 +560,15 @@ const RoleManagement = () => {
             coreDepartment: "",
             designation: data.designation || data.Designation || (signupData.role === "Student" ? "Student" : "Staff"),
             phone: data.mobileno || data.MobileNo || data.mobilenumber || "",
-            email: ""
+            email: "",
+            dateOfJoining: (() => {
+                const dojRaw = data.dateofjoin || data.DateOfJoin;
+                if (!dojRaw) return "";
+                const parts = dojRaw.split('/');
+                if (parts.length === 3) return `${parts[2]}-${parts[1]}-${parts[0]}`;
+                return dojRaw;
+            })(),
+            leadership: isLeadershipDesignation(data.designation || data.Designation) ? "yes" : "no"
         });
         setIsShowingSignupForm(true);
     };
@@ -544,16 +632,14 @@ const RoleManagement = () => {
                 email: signupData.email,
                 phone: signupData.phone,
                 password: signupData.password,
-                userType: signupData.role,
+                roleId: signupData.roleId,
             };
             const res = await API.post("/api/employees/register", payload);
             if (res.data) {
                 toast.success("User added successfully!");
-                setIsUserChoiceModalOpen(false);
-                setRegistrationView("selection");
-                setSignupData({
+                setIsUserChoiceModalOpen(false);    setSignupData({
                     id: '', fullname: '', department: '', coreDepartment: '', designation: '',
-                    email: '', phone: '', password: 'Aditya@123', confirmPassword: 'Aditya@123', role: 'Employee',
+                    email: '', phone: '', password: 'Aditya@123', confirmPassword: 'Aditya@123', role: 'Employee', roleId: ''
                 });
                 fetchRoles();
                 fetchAllEmployees();
@@ -916,7 +1002,7 @@ const RoleManagement = () => {
                     }
                 }}
             >
-                <Tab label="Add/Update Employees" icon={<PersonAdd />} iconPosition="start" />
+                <Tab label="Add Employees" icon={<PersonAdd />} iconPosition="start" />
                 <Tab label="All Users" icon={<People />} iconPosition="start" />
                 <Tab label="All Roles" icon={<AdminPanelSettings />} iconPosition="start" />
             </Tabs>
@@ -931,7 +1017,7 @@ const RoleManagement = () => {
                                     <Box>
                                         <Typography variant="h6" fontWeight={800} color="var(--text-primary)">Add Employee</Typography>
                                         <Typography variant="body2" color="textSecondary" fontWeight={500}>
-                                            Add and update data
+                                            Add data
                                         </Typography>
                                     </Box>
                                     <Button
@@ -960,34 +1046,38 @@ const RoleManagement = () => {
                                 </Box>
                                 <Box sx={{ mt: 3, display: 'flex', gap: 2 }}>
                                     <Button
-                                        variant="contained"
-                                        startIcon={<Add />}
-                                        onClick={handleCreateClick}
+                                        variant="outlined"
+                                        startIcon={uploadingBulk ? <Loader size={16} color="inherit" /> : <UploadFile />}
+                                        onClick={() => fileInputRef.current.click()}
+                                        disabled={uploadingBulk}
                                         sx={{
                                             flex: 1,
-                                            background: "var(--gradient-primary)",
                                             borderRadius: "50px",
                                             textTransform: "none",
                                             px: { xs: 1, sm: 4 },
                                             fontWeight: 700,
+                                            border: '1.5px solid var(--color-primary)',
+                                            color: 'var(--color-primary)',
                                             fontSize: { xs: '0.85rem', sm: '0.9rem' },
-                                            boxShadow: "0 4px 12px rgba(0, 78, 146, 0.3)",
                                             transition: '0.3s',
                                             '&:hover': {
-                                                background: "var(--gradient-primary-hover)",
-                                                boxShadow: "0 6px 16px rgba(0, 78, 146, 0.4)",
-                                                transform: 'translateY(-1px)'
+                                                background: "rgba(0, 78, 146, 0.05)",
+                                                boxShadow: "0 4px 10px rgba(0, 78, 146, 0.1)"
                                             }
                                         }}
                                     >
-                                        Add
+                                        {uploadingBulk ? 'Uploading...' : 'Bulk Upload'}
                                     </Button>
                                     <Button
                                         variant="contained"
-                                        startIcon={<Sync />}
+                                        startIcon={<PersonAdd />}
                                         onClick={() => {
-                                            setShowUpdateOptions(!showUpdateOptions);
-                                            setShowCreateOptions(false);
+                                            const facultyRole = roles.find(r => r.key === "FACULTY" && r.defaultRole);
+                                            setSignupData(prev => ({
+                                                ...prev,
+                                                roleId: facultyRole ? facultyRole._id : ''
+                                            }));
+                                            setIsUserChoiceModalOpen(true);
                                         }}
                                         sx={{
                                             flex: 1,
@@ -1006,434 +1096,9 @@ const RoleManagement = () => {
                                             }
                                         }}
                                     >
-                                        Update
+                                        Add Employee
                                     </Button>
                                 </Box>
-
-                                {/* Create Options Card */}
-                                <Collapse in={showCreateOptions}>
-                                    <Box sx={{ mt: 3, p: 2, borderRadius: '15px', background: 'var(--bg-glass)', border: '1px solid var(--border-color)', backdropFilter: 'blur(5px)' }}>
-                                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                                            <Typography variant="subtitle2" fontWeight={800} color="var(--text-primary)">Add Options</Typography>
-                                            <IconButton onClick={() => setShowCreateOptions(false)} size="small"><Close sx={{ fontSize: 18 }} /></IconButton>
-                                        </Box>
-                                        <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 2, alignItems: { xs: 'stretch', sm: 'center' }, justifyContent: 'space-between', width: '100%' }}>
-                                            <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 2, flex: 1 }}>
-                                                <Button
-                                                    variant="outlined"
-                                                    size="small"
-                                                    startIcon={uploadingBulk ? <Loader size={16} color="inherit" /> : <UploadFile />}
-                                                    onClick={() => fileInputRef.current.click()}
-                                                    disabled={uploadingBulk}
-                                                    sx={{ width: { xs: '100%', sm: 'auto' }, borderRadius: '50px', textTransform: 'none', fontWeight: 700, border: '1.5px solid var(--color-primary)', background: 'transparent', color: 'var(--color-primary)', py: { xs: 1.2, sm: 0.5 }, transition: '0.3s', '&:hover': { background: 'rgba(0, 78, 146, 0.05)', boxShadow: '0 4px 10px rgba(0, 78, 146, 0.1)' } }}
-                                                >
-                                                    {uploadingBulk ? 'Uploading...' : 'Bulk Upload'}
-                                                </Button>
-                                                <Button
-                                                    variant="outlined"
-                                                    size="small"
-                                                    startIcon={<PersonAdd />}
-                                                    onClick={() => {
-                                                        if (showCreateIndividualSearch) {
-                                                            setCreateIndividualQuery("");
-                                                        }
-                                                        setShowCreateIndividualSearch(!showCreateIndividualSearch);
-                                                    }}
-                                                    sx={{ width: { xs: '100%', sm: 'auto' }, borderRadius: '50px', textTransform: 'none', fontWeight: 700, border: '1.5px solid var(--color-primary)', background: showCreateIndividualSearch ? 'rgba(0, 78, 146, 0.1)' : 'transparent', color: 'var(--color-primary)', transition: '0.3s', py: { xs: 1.2, sm: 0.5 }, '&:hover': { background: 'rgba(0, 78, 146, 0.05)' } }}
-                                                >
-                                                    Add Individual
-                                                </Button>
-                                            </Box>
-
-                                            <Collapse in={showCreateIndividualSearch} orientation={window.innerWidth < 600 ? "vertical" : "horizontal"} sx={{ width: { xs: '100%', sm: 'auto' }, mt: { xs: 2, sm: 0 } }}>
-                                                <TextField
-                                                    placeholder="Enter ID to verify..."
-                                                    size="small"
-                                                    fullWidth={window.innerWidth < 600}
-                                                    value={createIndividualQuery}
-                                                    onChange={(e) => setCreateIndividualQuery(e.target.value)}
-                                                    onKeyPress={(e) => {
-                                                        if (e.key === "Enter") {
-                                                            handleVerifyCreate();
-                                                        }
-                                                    }}
-                                                    sx={{
-                                                        width: { xs: '100%', sm: '280px' },
-                                                        "& .MuiOutlinedInput-root": {
-                                                            borderRadius: "10px",
-                                                            background: "var(--bg-glass)",
-                                                            backdropFilter: "blur(5px)"
-                                                        }
-                                                    }}
-                                                    slotProps={{
-                                                        input: {
-                                                            startAdornment: (
-                                                                <InputAdornment position="start">
-                                                                    <Search fontSize="small" />
-                                                                </InputAdornment>
-                                                            ),
-                                                            endAdornment: (
-                                                                <InputAdornment position="end">
-                                                                    <IconButton
-                                                                        size="small"
-                                                                        onClick={handleVerifyCreate}
-                                                                        disabled={isVerifyingCreate || !createIndividualQuery.trim()}
-                                                                    >
-                                                                        {isVerifyingCreate ? <Loader size={16} /> : <ArrowForward fontSize="small" />}
-                                                                    </IconButton>
-                                                                    <IconButton size="small" onClick={() => { setShowCreateIndividualSearch(false); setCreateIndividualQuery(""); setCreateIndividualPreview(null); setIsShowingSignupForm(false); }}><Close fontSize="small" /></IconButton>
-                                                                </InputAdornment>
-                                                            )
-                                                        }
-                                                    }}
-                                                />
-                                            </Collapse>
-                                        </Box>
-
-                                        {/* Verification Preview Row */}
-                                        <Collapse in={!!createIndividualPreview && !isShowingSignupForm}>
-                                            <Box sx={{ mt: 2 }}>
-                                                <Paper
-                                                    elevation={0}
-                                                    sx={{
-                                                        borderRadius: '15px',
-                                                        background: 'var(--border-color)',
-                                                        backdropFilter: 'blur(10px)',
-                                                        border: '1px solid var(--border-color)',
-                                                        px: 3,
-                                                        py: 1.5,
-                                                        display: 'flex',
-                                                        flexDirection: { xs: 'column', sm: 'row' },
-                                                        justifyContent: 'space-between',
-                                                        alignItems: { xs: 'stretch', sm: 'center' },
-                                                        gap: { xs: 2, sm: 0 }
-                                                    }}
-                                                >
-                                                    <Box>
-                                                        <Typography variant="body2" fontWeight={800} sx={{ color: 'var(--text-primary)' }}>{createIndividualPreview?.name}</Typography>
-                                                        <Typography variant="caption" sx={{ fontWeight: 700, color: 'text.secondary' }}>ID: {createIndividualPreview?.id}</Typography>
-                                                    </Box>
-                                                    <Button
-                                                        variant="contained"
-                                                        size="small"
-                                                        onClick={handleStartSignup}
-                                                        sx={{
-                                                            textTransform: 'none',
-                                                            borderRadius: '50px',
-                                                            background: "var(--gradient-primary)",
-                                                            boxShadow: "0 4px 12px rgba(0, 78, 146, 0.3)",
-                                                            px: 4,
-                                                            width: { xs: '100%', sm: 'auto' },
-                                                            transition: '0.3s',
-                                                            '&:hover': {
-                                                                background: "var(--gradient-primary-hover)",
-                                                                boxShadow: "0 6px 16px rgba(0, 78, 146, 0.4)",
-                                                            }
-                                                        }}
-                                                    >
-                                                        Add
-                                                    </Button>
-                                                </Paper>
-                                            </Box>
-                                        </Collapse>
-
-                                        {/* Inline Signup Form */}
-                                        <Collapse in={isShowingSignupForm}>
-                                            <Box sx={{ mt: 3, p: 3, borderRadius: '20px', background: 'var(--bg-glass)', border: '1px solid var(--border-color)', backdropFilter: 'blur(10px)' }}>
-                                                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-                                                    <Typography variant="subtitle1" fontWeight={800} color="var(--text-primary)">Complete Registration</Typography>
-                                                    <IconButton size="small" onClick={() => setIsShowingSignupForm(false)}><Close /></IconButton>
-                                                </Box>
-
-                                                <Grid container spacing={3}>
-                                                    <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-                                                        <TextField label="Name" fullWidth value={signupData.fullname} slotProps={{ input: { readOnly: true } }} size="small" variant="filled" sx={{ "& .MuiInputBase-input": { fontWeight: 700, color: 'var(--text-primary)' } }} />
-                                                    </Grid>
-                                                    <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-                                                        <TextField label="Employee ID" fullWidth value={signupData.id} slotProps={{ input: { readOnly: true } }} size="small" variant="filled" sx={{ "& .MuiInputBase-input": { fontWeight: 700, color: 'var(--text-primary)' } }} />
-                                                    </Grid>
-                                                    <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-                                                        <TextField
-                                                            label="Email Address"
-                                                            fullWidth
-                                                            required
-                                                            value={signupData.email}
-                                                            onChange={(e) => setSignupData({ ...signupData, email: e.target.value })}
-                                                            placeholder="Enter official email"
-                                                            size="small"
-                                                            sx={{ "& .MuiOutlinedInput-root": { borderRadius: "10px", background: "white" } }}
-                                                        />
-                                                    </Grid>
-                                                    <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-                                                        <TextField
-                                                            fullWidth
-                                                            select
-                                                            required
-                                                            label="Serving Department"
-                                                            value={signupData.department || ""}
-                                                            onChange={(e) => setSignupData({ ...signupData, department: e.target.value })}
-                                                            size="small"
-                                                            slotProps={{ select: { native: false } }}
-                                                            sx={{ "& .MuiOutlinedInput-root": { borderRadius: "10px", background: "white" } }}
-                                                        >
-                                                            <MenuItem value="" disabled sx={{ fontWeight: 'bold' }}>Select Serving Department</MenuItem>
-                                                            {allDepartments.map(d => (
-                                                                <MenuItem key={d._id} value={d.name}>{d.name}</MenuItem>
-                                                            ))}
-                                                        </TextField>
-                                                    </Grid>
-                                                    <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-                                                        <TextField
-                                                            fullWidth
-                                                            select
-                                                            required
-                                                            label="Parent Department"
-                                                            value={signupData.coreDepartment || ""}
-                                                            onChange={(e) => setSignupData({ ...signupData, coreDepartment: e.target.value })}
-                                                            size="small"
-                                                            slotProps={{ select: { native: false } }}
-                                                            sx={{ "& .MuiOutlinedInput-root": { borderRadius: "10px", background: "white" } }}
-                                                        >
-                                                            <MenuItem value="" disabled sx={{ fontWeight: 'bold' }}>Select Parent Department</MenuItem>
-                                                            {allDepartments.map(d => (
-                                                                <MenuItem key={d._id} value={d.name}>{d.name}</MenuItem>
-                                                            ))}
-                                                        </TextField>
-                                                    </Grid>
-                                                    <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-                                                        <TextField label="Phone" fullWidth value={signupData.phone} slotProps={{ input: { readOnly: true } }} size="small" variant="filled" sx={{ "& .MuiInputBase-input": { fontWeight: 700 } }} />
-                                                    </Grid>
-                                                    <Grid size={{ xs: 12, sm: 6, md: 4 }} sx={{ display: 'flex', alignItems: 'flex-end', justifyContent: { xs: 'center', sm: 'flex-end' } }}>
-                                                        <Button
-                                                            variant="contained"
-                                                            disabled={isIndividualSubmitting}
-                                                            onClick={handleIndividualSignupSubmit}
-                                                            sx={{
-                                                                borderRadius: '50px',
-                                                                textTransform: 'none',
-                                                                fontWeight: 800,
-                                                                px: 5,
-                                                                py: 1.2,
-                                                                background: "var(--gradient-primary)",
-                                                                boxShadow: "0 4px 15px rgba(0, 78, 146, 0.3)",
-                                                                transition: '0.3s',
-                                                                '&:hover': {
-                                                                    background: "var(--gradient-primary-hover)",
-                                                                    boxShadow: "0 6px 16px rgba(0, 78, 146, 0.4)",
-                                                                }
-                                                            }}
-                                                        >
-                                                            {isIndividualSubmitting ? <Loader size={20} color="inherit" /> : 'Register'}
-                                                        </Button>
-                                                    </Grid>
-                                                </Grid>
-                                            </Box>
-                                        </Collapse>
-                                    </Box>
-                                </Collapse>
-
-                                <Collapse in={showUpdateOptions}>
-                                    <Box sx={{ mt: 3, p: 2, borderRadius: '15px', background: 'var(--bg-glass)', border: '1px solid var(--border-color)', backdropFilter: 'blur(5px)' }}>
-                                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                                            <Typography variant="subtitle2" fontWeight={800} color="var(--text-primary)">Update Options</Typography>
-                                            <IconButton onClick={() => {
-                                                setShowUpdateOptions(false);
-                                                setShowIndividualSearch(false);
-                                                setInlineSearchQuery("");
-                                                setInlineSearchResults([]);
-                                            }} size="small"><Close sx={{ fontSize: 18 }} /></IconButton>
-                                        </Box>
-                                        <Collapse in={!editingEmployee}>
-                                            <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 2, alignItems: { xs: 'stretch', sm: 'center' }, justifyContent: 'space-between', width: '100%' }}>
-                                                <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 2, flex: 1 }}>
-                                                    <Button
-                                                        variant="outlined"
-                                                        size="small"
-                                                        startIcon={isSyncingBulk ? <Loader size={16} color="inherit" /> : <Sync />}
-                                                        onClick={handleBulkSync}
-                                                        disabled={isSyncingBulk}
-                                                        sx={{ width: { xs: '100%', sm: 'auto' }, borderRadius: '50px', textTransform: 'none', fontWeight: 700, border: '1.5px solid var(--color-primary)', background: 'transparent', color: 'var(--color-primary)', py: { xs: 1.2, sm: 0.5 }, transition: '0.3s', '&:hover': { background: 'rgba(0, 78, 146, 0.05)', boxShadow: '0 4px 10px rgba(0, 78, 146, 0.1)' } }}
-                                                    >
-                                                        {isSyncingBulk ? 'Syncing...' : 'Sync with ERP'}
-                                                    </Button>
-                                                    <Button
-                                                        variant="outlined"
-                                                        size="small"
-                                                        startIcon={<Person />}
-                                                        onClick={() => {
-                                                            if (showIndividualSearch) {
-                                                                setInlineSearchQuery("");
-                                                                setInlineSearchResults([]);
-                                                            }
-                                                            setShowIndividualSearch(!showIndividualSearch);
-                                                        }}
-                                                        sx={{ width: { xs: '100%', sm: 'auto' }, borderRadius: '50px', textTransform: 'none', fontWeight: 700, border: '1.5px solid var(--color-primary)', background: showIndividualSearch ? 'rgba(0, 78, 146, 0.1)' : 'transparent', color: 'var(--color-primary)', transition: '0.3s', py: { xs: 1.2, sm: 0.5 }, '&:hover': { background: 'rgba(0, 78, 146, 0.05)' } }}
-                                                    >
-                                                        Individual Update
-                                                    </Button>
-                                                </Box>
-
-                                                <Collapse in={showIndividualSearch} orientation={window.innerWidth < 600 ? "vertical" : "horizontal"} sx={{ width: { xs: '100%', sm: 'auto' }, mt: { xs: 2, sm: 0 } }}>
-                                                    <TextField
-                                                        placeholder="Search name or ID..."
-                                                        size="small"
-                                                        fullWidth={window.innerWidth < 600}
-                                                        value={inlineSearchQuery}
-                                                        onChange={(e) => {
-                                                            setInlineSearchQuery(e.target.value);
-                                                        }}
-                                                        onKeyPress={(e) => {
-                                                            if (e.key === "Enter") {
-                                                                handleInlineSearch();
-                                                            }
-                                                        }}
-                                                        sx={{
-                                                            width: { xs: '100%', sm: '280px' },
-                                                            "& .MuiOutlinedInput-root": {
-                                                                borderRadius: "10px",
-                                                                background: "var(--bg-glass)",
-                                                                backdropFilter: "blur(5px)"
-                                                            }
-                                                        }}
-                                                        slotProps={{
-                                                            input: {
-                                                                startAdornment: (
-                                                                    <InputAdornment position="start">
-                                                                        <Search fontSize="small" />
-                                                                    </InputAdornment>
-                                                                ),
-                                                                endAdornment: (
-                                                                    <InputAdornment position="end">
-                                                                        <IconButton size="small" onClick={() => { setShowIndividualSearch(false); setInlineSearchQuery(""); }}><Close fontSize="small" /></IconButton>
-                                                                    </InputAdornment>
-                                                                )
-                                                            }
-                                                        }}
-                                                    />
-                                                </Collapse>
-                                            </Box>
-
-                                            {/* Integrated search results below the action row */}
-                                            <Collapse in={!!inlineSearchQuery}>
-                                                <Box sx={{ mt: 2 }}>
-                                                    {inlineSearchResults.length > 0 ? (
-                                                        <Paper
-                                                            elevation={0}
-                                                            sx={{
-                                                                borderRadius: '15px',
-                                                                background: 'var(--border-color)',
-                                                                backdropFilter: 'blur(10px)',
-                                                                border: '1px solid var(--border-color)',
-                                                                overflow: 'hidden'
-                                                            }}
-                                                        >
-                                                            <List size="small" disablePadding>
-                                                                {inlineSearchResults.slice(0, 5).map((user) => (
-                                                                    <ListItem
-                                                                        key={user._id}
-                                                                        divider
-                                                                        sx={{
-                                                                            display: 'flex',
-                                                                            flexDirection: { xs: 'column', sm: 'row' },
-                                                                            justifyContent: 'space-between',
-                                                                            alignItems: { xs: 'stretch', sm: 'center' },
-                                                                            gap: { xs: 2, sm: 0 },
-                                                                            px: 3,
-                                                                            py: 1.5,
-                                                                            '&:hover': { bgcolor: 'var(--bg-glass)' },
-                                                                            transition: '0.2s'
-                                                                        }}
-                                                                    >
-                                                                        <Box sx={{ flex: 1 }}>
-                                                                            <Typography variant="body2" fontWeight={800} sx={{ color: 'var(--text-primary)', fontSize: '0.9rem' }}>{user.name}</Typography>
-                                                                            <Typography variant="caption" sx={{ fontWeight: 700, color: 'text.secondary' }}>ID: {user.institutionId}</Typography>
-                                                                        </Box>
-                                                                        <Button
-                                                                            size="small"
-                                                                            variant="contained"
-                                                                            startIcon={<Edit sx={{ fontSize: 14 }} />}
-                                                                            onClick={async () => {
-                                                                                setEditingEmployee(user);
-                                                                                setEditableEmail(user.email || "");
-                                                                                setEditableCoreDept(user.coreDepartment || user.department || "");
-                                                                                setEditableServingDept(user.department || "");
-                                                                                setEditableLeadership(user.leadership || "no");
-
-                                                                                const loadingToast = toast.loading("Fetching latest details from ECAP...");
-                                                                                try {
-                                                                                    const res = await API.post("/api/employees/ecap-data", {
-                                                                                        institutionId: user.institutionId,
-                                                                                        role: "Employee"
-                                                                                    });
-                                                                                    if (res.data && !res.data.error) {
-                                                                                        const ecapName = res.data.employeename || res.data.EmployeeName || user.name;
-                                                                                        const ecapDept = res.data.departmentname || res.data.DepartmentName;
-                                                                                        const ecapDesig = res.data.designation || res.data.Designation || user.designation;
-
-                                                                                        let mappedDeptId = user.department;
-                                                                                        if (ecapDept) {
-                                                                                            const escapedEcapDept = ecapDept.trim().toLowerCase();
-                                                                                            const foundDept = allDepartments.find(d =>
-                                                                                                d.name.toLowerCase() === escapedEcapDept ||
-                                                                                                d.code.toLowerCase() === escapedEcapDept
-                                                                                            );
-                                                                                            if (foundDept) {
-                                                                                                mappedDeptId = foundDept._id;
-                                                                                            }
-                                                                                        }
-
-                                                                                        setEditingEmployee({
-                                                                                            ...user,
-                                                                                            name: ecapName,
-                                                                                            department: mappedDeptId,
-                                                                                            ecapDeptName: ecapDept,
-                                                                                            designation: ecapDesig,
-                                                                                            isEcapFetched: true
-                                                                                        });
-                                                                                        setEditableServingDept(mappedDeptId);
-                                                                                        toast.success("Fetched details from ECAP", { id: loadingToast });
-                                                                                    } else {
-                                                                                        toast.error("Employee not found in ECAP. Showing details from database.", { id: loadingToast });
-                                                                                    }
-                                                                                } catch (e) {
-                                                                                    console.error("Failed to fetch ECAP data", e);
-                                                                                    toast.error("Failed to connect to ECAP. Showing details from database.", { id: loadingToast });
-                                                                                }
-                                                                            }}
-                                                                            sx={{
-                                                                                textTransform: 'none',
-                                                                                borderRadius: '50px',
-                                                                                background: "var(--gradient-primary)",
-                                                                                px: 4,
-                                                                                width: { xs: '100%', sm: 'auto' },
-                                                                                boxShadow: '0 4px 10px rgba(0, 78, 146, 0.3)',
-                                                                                transition: '0.3s',
-                                                                                '&:hover': {
-                                                                                    background: "var(--gradient-primary-hover)",
-                                                                                    boxShadow: "0 6px 16px rgba(0, 78, 146, 0.4)",
-                                                                                }
-                                                                            }}
-                                                                        >
-                                                                            Edit
-                                                                        </Button>
-                                                                    </ListItem>
-                                                                ))}
-                                                            </List>
-                                                        </Paper>
-                                                    ) : (
-                                                        inlineSearchQuery.length >= 2 && (
-                                                            <Box sx={{ p: 2, textAlign: 'center', background: 'var(--bg-glass)', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
-                                                                <Typography variant="body2" fontWeight={700} color="textSecondary">No Data Found</Typography>
-                                                            </Box>
-                                                        )
-                                                    )}
-                                                </Box>
-                                            </Collapse>
-                                        </Collapse>
-
-                                        
-                                    </Box>
-                                </Collapse>
                             </Paper>
                         </Grid>
 
@@ -1607,6 +1272,11 @@ const RoleManagement = () => {
                                                                                 setEditableCoreDept(emp.coreDepartment || emp.department || "");
                                                                                 setEditableServingDept(emp.department || "");
                                                                                 setEditableLeadership(emp.leadership || "no");
+                                                                                setEditableQualifications(emp.qualifications || []);
+                                                                                setEditableDoj(emp.dateOfJoining || "");
+                                                                                
+                                                                                const defRole = emp.roles?.find(r => r.defaultRole);
+                                                                                setEditableDefaultRole(defRole ? defRole._id : "");
 
                                                                                 const loadingToast = toast.loading("Fetching latest details from ECAP...");
                                                                                 try {
@@ -2055,6 +1725,108 @@ const RoleManagement = () => {
                                                             <MenuItem value="no">No</MenuItem>
                                                         </TextField>
                                                     </Grid>
+                                                    <Grid size={{ xs: 12, sm: 6 }}>
+                                                        <TextField
+                                                            fullWidth
+                                                            select
+                                                            label="Default Role"
+                                                            value={editableDefaultRole}
+                                                            onChange={(e) => setEditableDefaultRole(e.target.value)}
+                                                            size="small"
+                                                            slotProps={{ select: { native: false } }}
+                                                            sx={{
+                                                                bgcolor: 'var(--bg-glass)',
+                                                                borderRadius: '10px',
+                                                                "& .MuiOutlinedInput-root": { borderRadius: '10px' }
+                                                            }}
+                                                        >
+                                                            <MenuItem value="" disabled>Select Default Role</MenuItem>
+                                                            {roles.filter(r => r.defaultRole).map(r => (
+                                                                <MenuItem key={r._id} value={r._id}>{r.name}</MenuItem>
+                                                            ))}
+                                                        </TextField>
+                                                    </Grid>
+                                                    <Grid size={{ xs: 12, sm: 6 }}>
+                                                        <TextField
+                                                            fullWidth
+                                                            type="date"
+                                                            label="Date of Joining"
+                                                            value={editableDoj || ""}
+                                                            onChange={(e) => setEditableDoj(e.target.value)}
+                                                            size="small"
+                                                            slotProps={{ inputLabel: { shrink: true } }}
+                                                            sx={{
+                                                                bgcolor: 'var(--bg-glass)',
+                                                                borderRadius: '10px',
+                                                                "& .MuiOutlinedInput-root": { borderRadius: '10px' }
+                                                            }}
+                                                        />
+                                                    </Grid>
+
+                                                    <Grid size={{ xs: 12 }}>
+                                                        <Box sx={{ mt: 1 }}>
+                                                            <Typography sx={{ fontSize: "0.85rem", fontWeight: 600, color: "var(--text-secondary)", mb: 1 }}>
+                                                                Qualifications
+                                                            </Typography>
+                                                            <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
+                                                                {(editableQualifications || []).map((qual, index) => (
+                                                                    <Box key={index} sx={{ display: "flex", gap: 1.5, alignItems: "center", flexWrap: "wrap", p: 1.5, background: "rgba(0,0,0,0.02)", borderRadius: "10px", border: "1px solid rgba(0,0,0,0.05)" }}>
+                                                                        <TextField
+                                                                            select
+                                                                            size="small"
+                                                                            label="Level"
+                                                                            value={qual.level}
+                                                                            onChange={(e) => handleEditableQualificationChange(index, "level", e.target.value)}
+                                                                            sx={{ minWidth: 120, bgcolor: 'var(--bg-glass)', "& .MuiOutlinedInput-root": { borderRadius: '8px' } }}
+                                                                        >
+                                                                            {Object.keys(QUALIFICATION_MAP).map(level => (
+                                                                                <MenuItem key={level} value={level}>{level}</MenuItem>
+                                                                            ))}
+                                                                        </TextField>
+                                                                        <TextField
+                                                                            select
+                                                                            size="small"
+                                                                            label="Qualification"
+                                                                            value={qual.qualification}
+                                                                            onChange={(e) => handleEditableQualificationChange(index, "qualification", e.target.value)}
+                                                                            disabled={!qual.level}
+                                                                            sx={{ minWidth: 160, bgcolor: 'var(--bg-glass)', "& .MuiOutlinedInput-root": { borderRadius: '8px' } }}
+                                                                        >
+                                                                            {(QUALIFICATION_MAP[qual.level] || []).map(q => (
+                                                                                <MenuItem key={q} value={q}>{q}</MenuItem>
+                                                                            ))}
+                                                                        </TextField>
+                                                                        <TextField
+                                                                            select
+                                                                            size="small"
+                                                                            label="Month"
+                                                                            value={qual.completedMonth}
+                                                                            onChange={(e) => handleEditableQualificationChange(index, "completedMonth", e.target.value)}
+                                                                            sx={{ minWidth: 140, bgcolor: 'var(--bg-glass)', "& .MuiOutlinedInput-root": { borderRadius: '8px' } }}
+                                                                        >
+                                                                            {["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"].map(m => (
+                                                                                <MenuItem key={m} value={m}>{m}</MenuItem>
+                                                                            ))}
+                                                                        </TextField>
+                                                                        <TextField
+                                                                            size="small"
+                                                                            type="number"
+                                                                            label="Year"
+                                                                            value={qual.completedYear || ""}
+                                                                            onChange={(e) => handleEditableQualificationChange(index, "completedYear", e.target.value)}
+                                                                            sx={{ minWidth: 100, width: 100, bgcolor: 'var(--bg-glass)', "& .MuiOutlinedInput-root": { borderRadius: '8px' } }}
+                                                                        />
+                                                                        <IconButton onClick={() => handleRemoveEditableQualification(index)} color="error" size="small" sx={{ bgcolor: 'rgba(239,68,68,0.1)' }}>
+                                                                            <Close fontSize="small" />
+                                                                        </IconButton>
+                                                                    </Box>
+                                                                ))}
+                                                                <Button variant="outlined" size="small" onClick={handleAddEditableQualification} sx={{ alignSelf: "flex-start", borderRadius: '50px', textTransform: 'none', fontWeight: 600 }}>
+                                                                    + Add Qualification
+                                                                </Button>
+                                                            </Box>
+                                                        </Box>
+                                                    </Grid>
                                                 </Grid>
 
                                                 <Box sx={{ display: 'flex', justifyContent: { xs: 'center', sm: 'flex-end' }, mt: 3 }}>
@@ -2142,26 +1914,28 @@ const RoleManagement = () => {
                         <TextField placeholder="Search roles to assign..." size="small" fullWidth value={assignmentRolesSearchQuery} onChange={(e) => setAssignmentRolesSearchQuery(e.target.value)} sx={{ mb: 2, "& .MuiOutlinedInput-root": { borderRadius: "10px", background: "var(--bg-glass)" } }} InputProps={{ startAdornment: ( <InputAdornment position="start"> <Search sx={{ color: 'var(--text-secondary)' }} /> </InputAdornment> ) }} />
                         <Box sx={{ flex: 1, overflowY: 'auto' }}>
                             {loadingRoles ? null : (
-                                <FormGroup>
+                                <Grid container spacing={2} sx={{ pb: 1 }}>
                                     {filteredAssignmentRoles.length > 0 ? filteredAssignmentRoles.map((role) => {
                                         const isIdentityDefault = role.defaultRole;
                                         const isChecked = assignedRoleIds.includes(role._id.toString());
                                         return (
-                                            <Box key={role._id} onClick={() => handleRoleToggle(role._id)} sx={{ p: 1.5, mb: 1, borderRadius: '12px', background: 'var(--bg-glass)', position: 'relative', border: '1px solid transparent', ...(isChecked && { '&::before': { content: '""', position: 'absolute', inset: 0, borderRadius: 'inherit', padding: '1.5px', background: 'var(--gradient-primary)', WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)', WebkitMaskComposite: 'xor', maskComposite: 'exclude', pointerEvents: 'none', zIndex: 0 } }), cursor: selectedUser ? (isIdentityDefault ? 'not-allowed' : 'pointer') : 'default', opacity: selectedUser ? (isIdentityDefault ? 0.75 : 1) : 0.6, display: 'flex', alignItems: 'center', transition: '0.2s', '&:hover': selectedUser && !isIdentityDefault ? { background: 'var(--bg-panel)' } : {} }}>
-                                                <Box sx={{ display: 'flex', alignItems: 'center', width: '100%' }}>
-                                                    <Checkbox checked={isChecked} disabled={!selectedUser || isIdentityDefault} sx={{ p: 0, mr: 2, '&.Mui-checked': { color: 'var(--color-primary)' }, '&.MuiCheckbox-root': { color: isChecked ? 'var(--color-primary)' : 'var(--text-secondary)' } }} />
-                                                    <Box sx={{ flex: 1 }}>
-                                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                                            <Typography variant="body2" fontWeight={700} sx={{ color: isChecked ? 'var(--color-primary)' : 'var(--text-primary)' }}>{role.name}</Typography>
-                                                            {role.defaultRole && <Chip label="Identity Role" size="small" color="success" sx={{ height: 16, fontSize: '0.6rem', fontWeight: 800 }} />}
-                                                            {isIdentityDefault && <Tooltip title="Recommended Default Identity Role"><Star sx={{ fontSize: 16, color: 'var(--color-primary)' }} /></Tooltip>}
+                                            <Grid size={{ xs: 12, sm: 6, md: 4 }} key={role._id}>
+                                                <Box onClick={() => handleRoleToggle(role._id)} sx={{ p: 1.5, height: '100%', borderRadius: '12px', background: 'var(--bg-glass)', position: 'relative', border: '1px solid transparent', ...(isChecked && { '&::before': { content: '""', position: 'absolute', inset: 0, borderRadius: 'inherit', padding: '1.5px', background: 'var(--gradient-primary)', WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)', WebkitMaskComposite: 'xor', maskComposite: 'exclude', pointerEvents: 'none', zIndex: 0 } }), cursor: selectedUser ? (isIdentityDefault ? 'not-allowed' : 'pointer') : 'default', opacity: selectedUser ? (isIdentityDefault ? 0.75 : 1) : 0.6, display: 'flex', alignItems: 'center', transition: '0.2s', '&:hover': selectedUser && !isIdentityDefault ? { background: 'var(--bg-panel)' } : {} }}>
+                                                    <Box sx={{ display: 'flex', alignItems: 'center', width: '100%' }}>
+                                                        <Checkbox checked={isChecked} disabled={!selectedUser || isIdentityDefault} sx={{ p: 0, mr: 1.5, '&.Mui-checked': { color: 'var(--color-primary)' }, '&.MuiCheckbox-root': { color: isChecked ? 'var(--color-primary)' : 'var(--text-secondary)' } }} />
+                                                        <Box sx={{ flex: 1, minWidth: 0 }}>
+                                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, flexWrap: 'wrap' }}>
+                                                                <Typography variant="body2" fontWeight={700} sx={{ color: isChecked ? 'var(--color-primary)' : 'var(--text-primary)', wordBreak: 'break-word' }}>{role.name}</Typography>
+                                                                {role.defaultRole && <Chip label="Identity Role" size="small" color="success" sx={{ height: 16, fontSize: '0.6rem', fontWeight: 800 }} />}
+                                                                {isIdentityDefault && <Tooltip title="Recommended Default Identity Role"><Star sx={{ fontSize: 16, color: 'var(--color-primary)' }} /></Tooltip>}
+                                                            </Box>
                                                         </Box>
                                                     </Box>
                                                 </Box>
-                                            </Box>
+                                            </Grid>
                                         );
                                     }) : <Typography variant="body2" color="textSecondary">No roles found.</Typography>}
-                                </FormGroup>
+                                </Grid>
                             )}
                         </Box>
                         {selectedUser && (
@@ -2296,111 +2070,174 @@ const RoleManagement = () => {
                 </DialogActions>
             </Dialog>
 
-            {/* User Choice Modal (Bulk vs Individual) */}
-            <Dialog open={isUserChoiceModalOpen} onClose={() => { setIsUserChoiceModalOpen(false); setRegistrationView("selection"); }} maxWidth={registrationView === "selection" ? "sm" : "md"} fullWidth slotProps={{ paper: { sx: { borderRadius: "20px", p: registrationView === "selection" ? 2 : 0 } } }}>
-                {registrationView === "selection" ? (
-                    <>
-                        <DialogTitle component="div" sx={{ textAlign: 'center', pb: 0 }}>
-                            <Typography variant="h5" fontWeight={800} color="var(--text-primary)">Add New Employee</Typography>
-                            <Typography variant="body2" color="textSecondary">Select your preferred registration method</Typography>
-                        </DialogTitle>
-                        <DialogContent sx={{ mt: 3 }}>
-                            <Box sx={{ display: 'flex', gap: 3, justifyContent: 'center' }}>
-                                <Card
-                                    onClick={() => fileInputRef.current.click()}
-                                    sx={{ flex: 1, cursor: 'pointer', borderRadius: '18px', border: '2px solid transparent', '&:hover': { borderColor: 'primary.main', bgcolor: '#f8fbfc' }, transition: '0.3s' }}
-                                >
-                                    <CardContent sx={{ textAlign: 'center', p: 3 }}>
-                                        <Avatar sx={{ width: 60, height: 60, bgcolor: '#e8eaf6', color: '#3f51b5', mx: 'auto', mb: 2 }}><UploadFile fontSize="large" /></Avatar>
-                                        <Typography variant="h6" fontWeight={700}>Bulk Upload</Typography>
-                                        <Typography variant="caption" color="textSecondary">Upload a CSV file. Format: institutionId, email, serving_department, parent_department</Typography>
-                                    </CardContent>
-                                </Card>
-                                <Card
-                                    onClick={() => setRegistrationView("individual")}
-                                    sx={{ flex: 1, cursor: 'pointer', borderRadius: '18px', border: '2px solid transparent', '&:hover': { borderColor: 'secondary.main', bgcolor: '#fff8f8' }, transition: '0.3s' }}
-                                >
-                                    <CardContent sx={{ textAlign: 'center', p: 3 }}>
-                                        <Avatar sx={{ width: 60, height: 60, bgcolor: '#fce4ec', color: '#e91e63', mx: 'auto', mb: 2 }}><Person fontSize="large" /></Avatar>
-                                        <Typography variant="h6" fontWeight={700}>Individual</Typography>
-                                        <Typography variant="caption" color="textSecondary">Register a single employee manually through a form</Typography>
-                                    </CardContent>
-                                </Card>
-                            </Box>
-                        </DialogContent>
-                        <DialogActions sx={{ justifyContent: 'center', pb: 2, display: 'flex', gap: 2 }}>
-                            <Button onClick={() => setIsUserChoiceModalOpen(false)} color="inherit" sx={{ textTransform: 'none' }}>Close</Button>
-                        </DialogActions>
-                    </>
-                ) : (
-                    <Box sx={{ display: 'flex', flexDirection: 'column' }}>
-                        <Box sx={{ p: 4, background: 'var(--bg-main)', borderBottom: '1px solid rgba(0,0,0,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <Box>
-                                <Typography variant="h5" fontWeight={800} color="var(--text-primary)">Individual Registration</Typography>
-                                <Typography variant="body2" color="textSecondary">Register a new employee by providing their details manually</Typography>
-                            </Box>
-                            <IconButton onClick={() => setRegistrationView("selection")}><Close /></IconButton>
+            {/* Individual Registration Modal */}
+            <Dialog open={isUserChoiceModalOpen} onClose={() => setIsUserChoiceModalOpen(false)} maxWidth="md" fullWidth slotProps={{ paper: { sx: { borderRadius: "20px", p: 0 } } }}>
+                <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+                    <Box sx={{ p: 4, background: 'var(--bg-main)', borderBottom: '1px solid rgba(0,0,0,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <Box>
+                            <Typography variant="h5" fontWeight={800} color="var(--text-primary)">Individual Registration</Typography>
+                            <Typography variant="body2" color="textSecondary">Register a new employee by providing their details manually</Typography>
                         </Box>
-                        <Box sx={{ p: 4 }}>
-                            {signupError && <Alert severity="error" sx={{ mb: 3, borderRadius: '12px' }}>{signupError}</Alert>}
-                            <Box component="form" sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 3 }}>
-                                <TextField
-                                    label="Institution ID" value={signupData.id}
-                                    onChange={(e) => setSignupData({ ...signupData, id: e.target.value.toUpperCase() })}
-                                    onBlur={handleUserIdBlur} size="small" fullWidth
-                                    helperText={isVerifying ? "Checking ECAP..." : "Type ID and click away to verify"}
-                                />
-                                <TextField label="Full Name" value={signupData.fullname} onChange={(e) => setSignupData({ ...signupData, fullname: e.target.value })} disabled={disabledFields.fullname} size="small" fullWidth />
-                                <TextField label="Email Address" value={signupData.email} onChange={(e) => setSignupData({ ...signupData, email: e.target.value })} disabled={disabledFields.email} size="small" fullWidth />
-                                <TextField label="Phone Number" value={signupData.phone} onChange={(e) => setSignupData({ ...signupData, phone: e.target.value })} disabled={disabledFields.phone} size="small" fullWidth placeholder="9876543210" />
-                                <TextField
-                                    select
-                                    required
-                                    label="Serving Department"
-                                    value={signupData.department || ""}
-                                    onChange={(e) => setSignupData({ ...signupData, department: e.target.value })}
-                                    size="small"
-                                    fullWidth
-                                    slotProps={{ select: { native: false } }}
-                                >
-                                    <MenuItem value="" disabled sx={{ fontWeight: 'bold' }}>Select Serving Department</MenuItem>
-                                    {allDepartments.map(d => (
-                                        <MenuItem key={d._id} value={d.name}>{d.name}</MenuItem>
-                                    ))}
-                                </TextField>
-                                <TextField
-                                    select
-                                    required
-                                    label="Parent Department"
-                                    value={signupData.coreDepartment || ""}
-                                    onChange={(e) => setSignupData({ ...signupData, coreDepartment: e.target.value })}
-                                    size="small"
-                                    fullWidth
-                                    slotProps={{ select: { native: false } }}
-                                >
-                                    <MenuItem value="" disabled sx={{ fontWeight: 'bold' }}>Select Parent Department</MenuItem>
-                                    {allDepartments.map(d => (
-                                        <MenuItem key={d._id} value={d.name}>{d.name}</MenuItem>
-                                    ))}
-                                </TextField>
-                                <TextField label="Designation" value={signupData.designation} onChange={(e) => setSignupData({ ...signupData, designation: e.target.value })} disabled={disabledFields.designation} size="small" fullWidth />
-                                <TextField label="Password" type="password" value={signupData.password} onChange={(e) => setSignupData({ ...signupData, password: e.target.value })} size="small" fullWidth />
-                                <TextField label="Confirm Password" type="password" value={signupData.confirmPassword} onChange={(e) => setSignupData({ ...signupData, confirmPassword: e.target.value })} size="small" fullWidth />
-                            </Box>
-                        </Box>
-                        <Box sx={{ px: 4, pb: 4, display: 'flex', gap: 2 }}>
-                            <Button fullWidth variant="outlined" onClick={() => setRegistrationView("selection")} sx={{ borderRadius: '50px', py: 1.5, textTransform: 'none', fontWeight: 700, border: '1.5px solid var(--color-primary)', color: 'var(--color-primary)', background: 'transparent' }}>Back</Button>
-                            <Button
-                                fullWidth variant="contained"
-                                onClick={handleIndividualSubmit}
-                                disabled={isIndividualSubmitting || !isEcapVerified}
-                                sx={{ borderRadius: '50px', py: 1.5, textTransform: 'none', fontWeight: 700, background: "var(--gradient-primary)", boxShadow: '0 4px 15px rgba(0, 78, 146, 0.3)', transition: '0.3s', '&:hover': { background: "var(--gradient-primary-hover)", boxShadow: '0 6px 16px rgba(0, 78, 146, 0.4)' } }}
+                        <IconButton onClick={() => setIsUserChoiceModalOpen(false)}><Close /></IconButton>
+                    </Box>
+                    <Box sx={{ p: 4 }}>
+                        {signupError && <Alert severity="error" sx={{ mb: 3, borderRadius: '12px' }}>{signupError}</Alert>}
+                        <Box component="form" sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 3 }}>
+                            <TextField
+                                label="Institution ID" value={signupData.id}
+                                onChange={(e) => setSignupData({ ...signupData, id: e.target.value.toUpperCase() })}
+                                onBlur={handleUserIdBlur} size="small" fullWidth
+                                helperText={isVerifying ? "Checking ECAP..." : "Type ID and click away to verify"}
+                            />
+                            <TextField label="Full Name" value={signupData.fullname} onChange={(e) => setSignupData({ ...signupData, fullname: e.target.value })} disabled={disabledFields.fullname} size="small" fullWidth />
+                            <TextField label="Email Address" value={signupData.email} onChange={(e) => setSignupData({ ...signupData, email: e.target.value })} disabled={disabledFields.email} size="small" fullWidth />
+                            <TextField label="Phone Number" value={signupData.phone} onChange={(e) => setSignupData({ ...signupData, phone: e.target.value })} disabled={disabledFields.phone} size="small" fullWidth placeholder="9876543210" />
+                            <TextField
+                                select
+                                required
+                                label="Serving Department"
+                                value={signupData.department || ""}
+                                onChange={(e) => setSignupData({ ...signupData, department: e.target.value })}
+                                size="small"
+                                fullWidth
+                                slotProps={{ select: { native: false } }}
                             >
-                                Register Employee
-                            </Button>
+                                <MenuItem value="" disabled sx={{ fontWeight: 'bold' }}>Select Serving Department</MenuItem>
+                                {allDepartments.map(d => (
+                                    <MenuItem key={d._id} value={d.name}>{d.name}</MenuItem>
+                                ))}
+                            </TextField>
+                            <TextField
+                                select
+                                required
+                                label="Parent Department"
+                                value={signupData.coreDepartment || ""}
+                                onChange={(e) => setSignupData({ ...signupData, coreDepartment: e.target.value })}
+                                size="small"
+                                fullWidth
+                                slotProps={{ select: { native: false } }}
+                            >
+                                <MenuItem value="" disabled sx={{ fontWeight: 'bold' }}>Select Parent Department</MenuItem>
+                                {allDepartments.map(d => (
+                                    <MenuItem key={d._id} value={d.name}>{d.name}</MenuItem>
+                                ))}
+                            </TextField>
+                            <TextField
+                                select
+                                required
+                                label="Default Role"
+                                value={signupData.roleId || ""}
+                                onChange={(e) => setSignupData({ ...signupData, roleId: e.target.value })}
+                                size="small"
+                                fullWidth
+                                slotProps={{ select: { native: false } }}
+                            >
+                                <MenuItem value="" disabled sx={{ fontWeight: 'bold' }}>Select Default Role</MenuItem>
+                                {roles.filter(r => r.defaultRole).map(r => (
+                                    <MenuItem key={r._id} value={r._id}>{r.name}</MenuItem>
+                                ))}
+                            </TextField>
+                            <TextField label="Designation" value={signupData.designation} onChange={(e) => setSignupData({ ...signupData, designation: e.target.value })} disabled={disabledFields.designation} size="small" fullWidth />
+                            <TextField
+                                select
+                                label="Leadership Role"
+                                value={signupData.leadership || "no"}
+                                onChange={(e) => setSignupData({ ...signupData, leadership: e.target.value })}
+                                size="small"
+                                fullWidth
+                                slotProps={{ select: { native: false } }}
+                            >
+                                <MenuItem value="yes">Yes</MenuItem>
+                                <MenuItem value="no">No</MenuItem>
+                            </TextField>
+                            <TextField
+                                type="date"
+                                label="Date of Joining"
+                                value={signupData.dateOfJoining || ""}
+                                onChange={(e) => setSignupData({ ...signupData, dateOfJoining: e.target.value })}
+                                size="small"
+                                fullWidth
+                                slotProps={{ inputLabel: { shrink: true } }}
+                            />
+                            <TextField label="Password" type="password" value={signupData.password} onChange={(e) => setSignupData({ ...signupData, password: e.target.value })} size="small" fullWidth />
+                            <TextField label="Confirm Password" type="password" value={signupData.confirmPassword} onChange={(e) => setSignupData({ ...signupData, confirmPassword: e.target.value })} size="small" fullWidth />
+                            
+                            <Box sx={{ gridColumn: "1 / -1", mt: 2 }}>
+                                <Typography sx={{ fontSize: "0.9rem", fontWeight: 700, color: "var(--text-primary)", mb: 2 }}>
+                                    Qualifications
+                                </Typography>
+                                <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                                    {(signupData.qualifications || []).map((qual, index) => (
+                                        <Box key={index} sx={{ display: "flex", gap: 2, alignItems: "center", flexWrap: "wrap", p: 2, background: "rgba(0,0,0,0.02)", borderRadius: "8px", border: "1px solid rgba(0,0,0,0.05)" }}>
+                                            <TextField
+                                                select
+                                                size="small"
+                                                label="Level"
+                                                value={qual.level}
+                                                onChange={(e) => handleQualificationChange(index, "level", e.target.value)}
+                                                sx={{ minWidth: 120 }}
+                                            >
+                                                {Object.keys(QUALIFICATION_MAP).map(level => (
+                                                    <MenuItem key={level} value={level}>{level}</MenuItem>
+                                                ))}
+                                            </TextField>
+                                            <TextField
+                                                select
+                                                size="small"
+                                                label="Qualification"
+                                                value={qual.qualification}
+                                                onChange={(e) => handleQualificationChange(index, "qualification", e.target.value)}
+                                                disabled={!qual.level}
+                                                sx={{ minWidth: 160 }}
+                                            >
+                                                {(QUALIFICATION_MAP[qual.level] || []).map(q => (
+                                                    <MenuItem key={q} value={q}>{q}</MenuItem>
+                                                ))}
+                                            </TextField>
+                                            <TextField
+                                                select
+                                                size="small"
+                                                label="Month"
+                                                value={qual.completedMonth}
+                                                onChange={(e) => handleQualificationChange(index, "completedMonth", e.target.value)}
+                                                sx={{ minWidth: 140 }}
+                                            >
+                                                {["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"].map(m => (
+                                                    <MenuItem key={m} value={m}>{m}</MenuItem>
+                                                ))}
+                                            </TextField>
+                                            <TextField
+                                                size="small"
+                                                type="number"
+                                                label="Year"
+                                                value={qual.completedYear || ""}
+                                                onChange={(e) => handleQualificationChange(index, "completedYear", e.target.value)}
+                                                sx={{ minWidth: 100, width: 100 }}
+                                            />
+                                            <IconButton onClick={() => handleRemoveQualification(index)} color="error" size="small">
+                                                <Close fontSize="small" />
+                                            </IconButton>
+                                        </Box>
+                                    ))}
+                                    <Button variant="outlined" size="small" onClick={handleAddQualification} sx={{ alignSelf: "flex-start", borderRadius: '50px', textTransform: 'none', fontWeight: 600 }}>
+                                        + Add Qualification
+                                    </Button>
+                                </Box>
+                            </Box>
                         </Box>
                     </Box>
-                )}
+                    <Box sx={{ px: 4, pb: 4, display: 'flex', gap: 2 }}>
+                        <Button fullWidth variant="outlined" onClick={() => setIsUserChoiceModalOpen(false)} sx={{ borderRadius: '50px', py: 1.5, textTransform: 'none', fontWeight: 700, border: '1.5px solid var(--color-primary)', color: 'var(--color-primary)', background: 'transparent' }}>Cancel</Button>
+                        <Button
+                            fullWidth variant="contained"
+                            onClick={handleIndividualSubmit}
+                            disabled={isIndividualSubmitting || !isEcapVerified}
+                            sx={{ borderRadius: '50px', py: 1.5, textTransform: 'none', fontWeight: 700, background: "var(--gradient-primary)", boxShadow: '0 4px 15px rgba(0, 78, 146, 0.3)', transition: '0.3s', '&:hover': { background: "var(--gradient-primary-hover)", boxShadow: '0 6px 16px rgba(0, 78, 146, 0.4)' } }}
+                        >
+                            Register Employee
+                        </Button>
+                    </Box>
+                </Box>
             </Dialog>
 
             {/* Bulk Results Dialog */}
