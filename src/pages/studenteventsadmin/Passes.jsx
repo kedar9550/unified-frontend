@@ -431,11 +431,11 @@ const Passes = () => {
                               sx={{
                                 transform: 'scale(0.41)',
                                 transformOrigin: 'center center',
-                                width: '700px',
-                                height: '450px',
+                                width: '750px',
+                                height: '480px',
                               }}
                             >
-                              <EventPassCard participant={participant} />
+                              <EventPassCard participant={participant} isPdf={true} />
                             </Box>
                           </Box>
                         </Box>

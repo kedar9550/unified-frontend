@@ -448,8 +448,23 @@ export const ROLE_ROUTES = {
             { text: "No Accommodation", path: "/Eventveda/participants/no-accommodation", icon: <Hotel /> }
           ]
         },
-        // { text: "Scan Pass", path: "/Eventveda/scan-pass", icon: <QrCode /> },
-        // { text: "Passes", path: "/Eventveda/passes", icon: <CardMembership /> }
+        {
+          text: "Student Passes",
+          icon: <SupportAgent />,
+          nested: [
+            { text: "Scan for Attendance", path: "/Eventveda/scan-pass", icon: <QrCode /> },
+            { text: "Passes", path: "/Eventveda/passes", icon: <CardMembership /> },
+            { text: "Update Passes", path: "/Eventveda/update-passes", icon: <CardMembership /> }
+          ]
+        },
+        {
+          text: "Certificates",
+          icon: <WorkspacePremium />,
+          nested: [
+            { text: "Winning Certificates", path: "/Eventveda/winning-certificates", icon: <WorkspacePremium /> },
+            { text: "Participation Certificates", path: "/Eventveda/participation-certificates", icon: <WorkspacePremium /> }
+          ]
+        }
       ]
     },
     // { text: "Send Mail", path: "/Eventveda/send-mail", icon: <EmailIcon /> }
