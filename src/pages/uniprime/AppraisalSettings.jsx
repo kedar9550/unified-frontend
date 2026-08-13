@@ -138,7 +138,8 @@ const AppraisalSettings = () => {
         valueAddition: config.valueAddition,
         administration: config.administration,
         minimumPoints: config.minimumPoints,
-        isActive: config.isActive || false
+        isActive: config.isActive || false,
+        cutoffDate: config.cutoffDate || null
       });
       if (res.data && res.data.success) {
         toast.success("Points configurations saved successfully!");
@@ -1044,6 +1045,21 @@ const AppraisalSettings = () => {
                   ))}
                 </Select>
               </FormControl>
+              <TextField
+                label="Cutoff Date (Appraisal Creation Lock)"
+                type="date"
+                size="small"
+                value={config.cutoffDate ? new Date(config.cutoffDate).toISOString().split('T')[0] : ""}
+                onChange={(e) => setConfig(prev => ({ ...prev, cutoffDate: e.target.value }))}
+                InputLabelProps={{ shrink: true }}
+                sx={{
+                  minWidth: { xs: 150, sm: 200 },
+                  "& .MuiOutlinedInput-root": {
+                    borderRadius: "10px",
+                    backgroundColor: "var(--bg-paper)"
+                  }
+                }}
+              />
             </Box>
 
             <Button
