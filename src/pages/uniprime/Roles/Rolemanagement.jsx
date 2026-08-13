@@ -380,9 +380,12 @@ const RoleManagement = () => {
         const file = e.target.files[0];
         if (!file) return;
 
-        // Restriction: Only CSV
-        if (file.type !== "text/csv" && !file.name.endsWith(".csv")) {
-            toast.error("Please select a valid CSV file");
+        // Restriction: Allow CSV and XLSX
+        if (file.type !== "text/csv" && 
+            file.type !== "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" && 
+            !file.name.endsWith(".csv") && 
+            !file.name.endsWith(".xlsx")) {
+            toast.error("Please select a valid CSV or XLSX file");
             return;
         }
 
@@ -412,7 +415,23 @@ const RoleManagement = () => {
     };
 
     const handleDownloadTemplate = () => {
-        const csvContent = "data:text/csv;charset=utf-8,institutionId,email,serving_department,parent_department\n";
+        const headers = [
+            "Institution ID", "Email Address", "Serving Dept Code", 
+            "Parent Dept Code", "Date of Joining", "Leadership", "Default Role",
+            "PAN Number", "Scopus ID", "Web of Science ID", "ORC ID", "Google Scholar ID",
+            "Qual 1 Level", "Qual 1 Degree", "Qual 1 Month", "Qual 1 Year",
+            "Qual 2 Level", "Qual 2 Degree", "Qual 2 Month", "Qual 2 Year",
+            "Qual 3 Level", "Qual 3 Degree", "Qual 3 Month", "Qual 3 Year"
+        ];
+        const sampleRow = [
+            "12345", "test@adityauniversity.in", "CSE", "CSE", "01-01-2025", "no", "FACULTY",
+            "ABCDE1234F", "123456789", "A-1234-5678", "0000-0002-1825-0097", "abcd123",
+            "UG", "B.Tech.", "May", "2019",
+            "PG", "M.Tech.", "June", "2021",
+            "Doctoral", "Ph.D.", "January", "2025"
+        ];
+        const csvContent = "data:text/csv;charset=utf-8," + headers.join(",") + "\n" + sampleRow.join(",");
+        
         const encodedUri = encodeURI(csvContent);
         const link = document.createElement("a");
         link.setAttribute("href", encodedUri);
@@ -957,7 +976,7 @@ const RoleManagement = () => {
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                         {uploadingBulk && <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, px: 2, py: 1, bgcolor: '#e3f2fd', borderRadius: '10px' }}><Typography variant="caption" fontWeight={700} color="primary">Uploading Employees...</Typography></Box>}
                         {/* Hidden CSV Input */}
-                        <input type="file" ref={fileInputRef} style={{ display: 'none' }} accept=".csv" onChange={handleBulkFileSelect} />
+                        <input type="file" ref={fileInputRef} style={{ display: 'none' }} accept=".csv, .xlsx" onChange={handleBulkFileSelect} />
 
                         <Menu
                             anchorEl={createAnchorEl}
