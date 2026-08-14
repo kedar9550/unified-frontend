@@ -524,10 +524,6 @@ const SelfAppraisal = () => {
 
   // Submit Appraisal
   const handleSubmit = async () => {
-    if (missingFields.includes("Qualification")) {
-      toast.error("Please update your profile qualification before submitting the appraisal.");
-      return;
-    }
 
     if (missingFields.includes("Parent Department")) {
       toast.error("Your Parent Department is not set. Please contact the Administrator to assign it.");
@@ -2465,12 +2461,12 @@ const SelfAppraisal = () => {
         </Box>
 
         {/* Completeness Warning Banner */}
-        {!profileComplete && (
+        {!profileComplete && missingFields.filter(f => f !== "Qualification").length > 0 && (
           <Alert severity="warning" variant="filled" sx={{ mb: 4, borderRadius: "16px" }}>
             <AlertTitle sx={{ fontWeight: 700 }}>Profile Details Incomplete</AlertTitle>
             {(() => {
               const hasCoreDeptMissing = missingFields.includes("Parent Department");
-              const otherMissingFields = missingFields.filter(f => f !== "Parent Department");
+              const otherMissingFields = missingFields.filter(f => f !== "Parent Department" && f !== "Qualification");
               return (
                 <Box>
                   {otherMissingFields.length > 0 && (
