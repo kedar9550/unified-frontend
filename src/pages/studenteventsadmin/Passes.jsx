@@ -59,10 +59,10 @@ const Passes = () => {
         return {
           ...p,
           venue: eventMatch ? (
-            eventMatch.venueType === 'Indoor' && eventMatch.building && eventMatch.floor 
-              ? `${eventMatch.roomNo ? `Room No: ${eventMatch.roomNo}, ` : ''}${eventMatch.building.name || eventMatch.building} - ${eventMatch.floor.name || eventMatch.floor}` 
-              : eventMatch.venueType === 'Outdoor' && eventMatch.ground 
-                ? `${eventMatch.roomNo ? `Room No: ${eventMatch.roomNo}, ` : ''}${eventMatch.ground.name || eventMatch.ground}` 
+            eventMatch.venueType === 'Indoor' && eventMatch.building && eventMatch.floor
+              ? `${eventMatch.roomNo ? `Room No: ${eventMatch.roomNo}, ` : ''}${eventMatch.building.name || eventMatch.building} - ${eventMatch.floor.name || eventMatch.floor}`
+              : eventMatch.venueType === 'Outdoor' && eventMatch.ground
+                ? `${eventMatch.roomNo ? `Room No: ${eventMatch.roomNo}, ` : ''}${eventMatch.ground.name || eventMatch.ground}`
                 : eventMatch.venue
           ) : null
         };
@@ -253,14 +253,14 @@ const Passes = () => {
             className="no-print"
           >
             {filteredParticipants.map((participant) => (
-              <Card 
-                key={participant.id} 
-                sx={{ 
+              <Card
+                key={participant.id}
+                sx={{
                   position: 'relative',
-                  borderRadius: '20px', 
-                  boxShadow: '0 10px 30px rgba(0,0,0,0.06)', 
-                  display: 'flex', 
-                  flexDirection: 'column', 
+                  borderRadius: '20px',
+                  boxShadow: '0 10px 30px rgba(0,0,0,0.06)',
+                  display: 'flex',
+                  flexDirection: 'column',
                   height: '100%',
                   overflow: 'hidden',
                   transition: 'transform 0.3s ease, box-shadow 0.3s ease',
@@ -274,33 +274,33 @@ const Passes = () => {
               >
                 {/* Top Accent Bar */}
                 <Box sx={{ height: '6px', width: '100%', background: 'linear-gradient(90deg, #3b82f6, #8b5cf6)' }} />
-                
+
                 <CardContent sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', gap: 2, p: 3, pt: 3 }}>
                   <Box sx={{ display: 'flex', gap: 2.5, alignItems: 'center' }}>
                     <Box sx={{ position: 'relative' }}>
                       <Avatar
                         src={`${import.meta.env.VITE_BACKEND_URL || "http://localhost:9000"}/api/proxy/student-photo/${participant.roll}`}
                         alt={participant.name}
-                        sx={{ 
-                          width: 64, 
-                          height: 64, 
-                          border: '3px solid #fff', 
+                        sx={{
+                          width: 64,
+                          height: 64,
+                          border: '3px solid #fff',
                           boxShadow: '0 4px 14px rgba(0,0,0,0.1)',
-                          bgcolor: 'primary.main', 
+                          bgcolor: 'primary.main',
                           color: '#fff',
                           fontWeight: 'bold'
                         }}
                       >
                         {participant.name?.charAt(0)?.toUpperCase()}
                       </Avatar>
-                      <Box 
-                        sx={{ 
-                          position: 'absolute', 
-                          bottom: -2, 
-                          right: -2, 
-                          width: 20, 
-                          height: 20, 
-                          borderRadius: '50%', 
+                      <Box
+                        sx={{
+                          position: 'absolute',
+                          bottom: -2,
+                          right: -2,
+                          width: 20,
+                          height: 20,
+                          borderRadius: '50%',
                           bgcolor: participant.attended ? '#10b981' : '#f59e0b',
                           border: '3px solid #fff',
                           display: 'flex',
@@ -312,7 +312,7 @@ const Passes = () => {
                         {participant.attended && <i className="bi bi-check" style={{ color: '#fff', fontSize: '14px', lineHeight: 1 }} />}
                       </Box>
                     </Box>
-                    
+
                     <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 0.5 }}>
                       <Typography variant="h6" sx={{ fontWeight: 800, fontSize: '1.15rem', lineHeight: 1.2, color: '#1e293b', wordBreak: 'break-word', letterSpacing: '-0.01em' }}>
                         {participant.name}
@@ -329,14 +329,14 @@ const Passes = () => {
                     </Box>
                   </Box>
 
-                  <Box 
-                    sx={{ 
-                      mt: 'auto', 
-                      p: 2, 
-                      borderRadius: '14px', 
+                  <Box
+                    sx={{
+                      mt: 'auto',
+                      p: 2,
+                      borderRadius: '14px',
                       background: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)',
                       border: '1px solid #e2e8f0',
-                      display: 'flex', 
+                      display: 'flex',
                       flexDirection: 'column',
                       gap: 1.5
                     }}
@@ -403,36 +403,25 @@ const Passes = () => {
                         >
                           {/* Horizontal Cut Line */}
                           {Math.floor(index / 2) < 3 && (
-                            <Box sx={{ position: 'absolute', bottom: '-20px', left: 0, right: 0, borderBottom: '1.5px dashed #94a3b8', zIndex: 0 }} />
-                          )}
-                          {/* Horizontal Cut Mark (Scissor) */}
-                          {Math.floor(index / 2) < 3 && (
-                            <Box sx={{ position: 'absolute', bottom: '-20px', left: '50%', transform: 'translate(-50%, 50%)', color: '#94a3b8', fontSize: '14px', backgroundColor: '#fff', px: 1, zIndex: 1, lineHeight: 1 }}>
-                              ✂
-                            </Box>
-                          )}
-                          {/* Vertical Cut Mark (Scissor) */}
-                          {index % 2 === 0 && (
-                            <Box sx={{ position: 'absolute', right: '-8px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8', fontSize: '14px', backgroundColor: '#fff', py: 1, zIndex: 1 }}>
-                              ✂
-                            </Box>
+                            <Box sx={{ position: 'absolute', bottom: 0, left: 0, right: 0, borderBottom: '1.5px dashed #94a3b8', zIndex: 0 }} />
                           )}
 
                           <Box
                             sx={{
-                              width: '315px',
-                              height: '205px', // Scaled space wrapper
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
+                              width: '367px',
+                              height: '240px',
+                              position: 'relative',
                             }}
                           >
                             <Box
                               sx={{
-                                transform: 'scale(0.41)',
-                                transformOrigin: 'center center',
-                                width: '750px',
+                                transform: 'scale(0.5)',
+                                transformOrigin: 'top left',
+                                width: '734px',
                                 height: '480px',
+                                position: 'absolute',
+                                top: 0,
+                                left: 0,
                               }}
                             >
                               <EventPassCard participant={participant} isPdf={true} />

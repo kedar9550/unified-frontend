@@ -35,14 +35,14 @@ const EventPassCard = ({ participant, isPdf = false }) => {
       <Box
         id="event-pass-card"
         sx={{
-          width: '750px',
+          width: isPdf ? '734px' : '750px',
           height: '480px',
           margin: '0 auto',
-          marginTop: '24px',
-          marginBottom: '16px',
+          marginTop: isPdf ? 0 : '24px',
+          marginBottom: isPdf ? 0 : '16px',
           backgroundColor: '#fff',
           borderRadius: '16px',
-          boxShadow: '0 10px 30px rgba(0,0,0,0.15)',
+          boxShadow: isPdf ? 'none' : '0 10px 30px rgba(0,0,0,0.15)',
           position: 'relative',
           overflow: 'hidden',
           fontFamily: "'Inter', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
@@ -57,10 +57,12 @@ const EventPassCard = ({ participant, isPdf = false }) => {
             <pattern id="dots" x="0" y="0" width="15" height="15" patternUnits="userSpaceOnUse">
               <circle fill="rgba(6, 22, 56, 0.1)" cx="2" cy="2" r="2"></circle>
             </pattern>
-            <rect x="0" y="0" width="750" height="480" fill="url(#dots)" />
+            {/* Solid white base to prevent grey transparency in PDF */}
+            <rect x="0" y="0" width={isPdf ? 734 : 750} height="480" fill="#ffffff" />
+            <rect x="0" y="0" width={isPdf ? 734 : 750} height="480" fill="url(#dots)" />
 
             {/* Main Dark Blue L-Shape */}
-            <path d="M 0 0 L 250 0 C 180 30, 160 80, 160 160 L 160 380 L 750 380 L 750 480 L 0 480 Z" fill={primaryDark} />
+            <path d={`M 0 0 L 250 0 C 180 30, 160 80, 160 160 L 160 380 L ${isPdf ? 734 : 750} 380 L ${isPdf ? 734 : 750} 480 L 0 480 Z`} fill={primaryDark} />
 
             {/* Thick Gold Accent Curve on the outside */}
             <path d="M 250 0 C 180 30, 160 80, 160 160 L 172 160 C 172 85, 190 35, 262 0 Z" fill={primaryGold} />
@@ -83,7 +85,7 @@ const EventPassCard = ({ participant, isPdf = false }) => {
         {/* --- FOREGROUND CONTENT --- */}
 
         {/* Top Right Logo */}
-        <Box sx={{ position: 'absolute', top: 30, right: 30, zIndex: 2, backgroundColor: '#fff', padding: '4px', borderRadius: '8px' }}>
+        <Box sx={{ position: 'absolute', top: 30, right: 30, zIndex: 2 }}>
           <Box component="img" src={adityaLogo} alt="Aditya Logo" sx={{ width: '150px' }} />
         </Box>
 
@@ -100,7 +102,7 @@ const EventPassCard = ({ participant, isPdf = false }) => {
             <CalendarMonthIcon sx={{ color: '#fff', fontSize: 28, mr: 1 }} />
             <Box>
               <Typography sx={{ color: '#fff', fontSize: '14px', fontWeight: 700, letterSpacing: '0.5px', lineHeight: 1.2 }}>EVENT DATE</Typography>
-              <Typography sx={{ color: primaryGold, fontSize: '15px', fontWeight: 800, lineHeight: 1.2, mt: 0.3 }}>SEP. 2026</Typography>
+              <Typography sx={{ color: primaryGold, fontSize: '15px', fontWeight: 800, lineHeight: 1.2, mt: 0.3 }}>SEP 15. 2026</Typography>
             </Box>
           </Box>
         </Box>
@@ -128,14 +130,14 @@ const EventPassCard = ({ participant, isPdf = false }) => {
         <Box sx={{ position: 'absolute', top: 140, left: 190, right: 35, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', zIndex: 2 }}>
 
           {/* Details List */}
-          <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 1.5, pr: 2 }}>
+          <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 1.2, pr: 2 }}>
             {[
               { icon: <PersonIcon />, label: 'Name', value: participant.name ? participant.name.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(' ') : participant.name },
               { icon: <BadgeIcon />, label: 'Roll', value: participant.roll },
               { icon: <SchoolIcon />, label: 'College', value: getCollegeName(participant) },
               { icon: <PhoneIcon />, label: 'Phone', value: participant.mobile },
             ].map((item, idx) => (
-              <Box key={idx} sx={{ display: 'flex', alignItems: 'center', position: 'relative', pb: 1 }}>
+              <Box key={idx} sx={{ display: 'flex', alignItems: 'center', position: 'relative', pb: 0.8 }}>
                 <Box sx={{
                   backgroundColor: primaryDark,
                   color: '#fff',
@@ -144,18 +146,18 @@ const EventPassCard = ({ participant, isPdf = false }) => {
                   display: 'flex',
                   mr: 2,
                 }}>
-                  {React.cloneElement(item.icon, { sx: { fontSize: 22 } })}
+                  {React.cloneElement(item.icon, { sx: { fontSize: 20 } })}
                 </Box>
-                <Typography sx={{ color: primaryDark, fontWeight: 800, fontSize: '18px', width: '95px', flexShrink: 0 }}>
+                <Typography sx={{ color: primaryDark, fontWeight: 800, fontSize: '16px', width: '90px', flexShrink: 0 }}>
                   {item.label}
                 </Typography>
-                <Typography sx={{ color: primaryDark, fontWeight: 800, fontSize: '18px', mr: 1.5 }}>:</Typography>
+                <Typography sx={{ color: primaryDark, fontWeight: 800, fontSize: '16px', mr: 1.5 }}>:</Typography>
                 <Typography sx={{
                   color: '#000',
                   fontWeight: 800,
-                  fontSize: '18px',
+                  fontSize: '16px',
                   flex: 1,
-                  lineHeight: 1.3,
+                  lineHeight: 1.2,
                   pt: 0.2,
                   whiteSpace: 'pre-line'
                 }}>
@@ -163,7 +165,7 @@ const EventPassCard = ({ participant, isPdf = false }) => {
                 </Typography>
                 {/* Divider */}
                 {idx < 3 && (
-                  <Box sx={{ position: 'absolute', bottom: -4, left: 45, right: 0, borderBottom: '1px solid rgba(0,0,0,0.15)' }} />
+                  <Box sx={{ position: 'absolute', bottom: -4, left: 45, right: 0, borderBottom: '2px dashed #cbd5e1' }} />
                 )}
               </Box>
             ))}
@@ -179,7 +181,7 @@ const EventPassCard = ({ participant, isPdf = false }) => {
             backgroundColor: '#f1f5f9',
             flexShrink: 0,
             boxShadow: '0 4px 10px rgba(0,0,0,0.1)',
-            mt: 2
+            mt: 0
           }}>
             {!imageError ? (
               <Box
