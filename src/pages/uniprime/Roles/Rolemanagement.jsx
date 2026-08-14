@@ -414,31 +414,25 @@ const RoleManagement = () => {
         }
     };
 
-    const handleDownloadTemplate = () => {
-        const headers = [
-            "Institution ID", "Email Address", "Serving Dept Code", 
-            "Parent Dept Code", "Date of Joining", "Leadership", "Default Role",
-            "PAN Number", "Scopus ID", "Web of Science ID", "ORC ID", "Google Scholar ID",
-            "Qual 1 Level", "Qual 1 Degree", "Qual 1 Month", "Qual 1 Year",
-            "Qual 2 Level", "Qual 2 Degree", "Qual 2 Month", "Qual 2 Year",
-            "Qual 3 Level", "Qual 3 Degree", "Qual 3 Month", "Qual 3 Year"
-        ];
-        const sampleRow = [
-            "12345", "test@adityauniversity.in", "CSE", "CSE", "01-01-2025", "no", "FACULTY",
-            "ABCDE1234F", "123456789", "A-1234-5678", "0000-0002-1825-0097", "abcd123",
-            "UG", "B.Tech.", "May", "2019",
-            "PG", "M.Tech.", "June", "2021",
-            "Doctoral", "Ph.D.", "January", "2025"
-        ];
-        const csvContent = "data:text/csv;charset=utf-8," + headers.join(",") + "\n" + sampleRow.join(",");
-        
-        const encodedUri = encodeURI(csvContent);
-        const link = document.createElement("a");
-        link.setAttribute("href", encodedUri);
-        link.setAttribute("download", "employee_bulk_upload_template.csv");
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+    const handleDownloadTemplate = async () => {
+        const toastId = toast.loading("Generating template...");
+        try {
+            const response = await API.get("/api/employees/bulk-template", {
+                responseType: 'blob'
+            });
+            const url = window.URL.createObjectURL(new Blob([response.data]));
+            const link = document.createElement("a");
+            link.href = url;
+            link.setAttribute("download", "employee_bulk_upload_template.xlsx");
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            window.URL.revokeObjectURL(url);
+            toast.success("Template downloaded!", { id: toastId });
+        } catch (error) {
+            console.error(error);
+            toast.error("Failed to download template", { id: toastId });
+        }
     };
 
     // --- INDIVIDUAL REGISTRATION LOGIC ---
@@ -1288,8 +1282,8 @@ const RoleManagement = () => {
                                                                             onClick={async () => {
                                                                                 setEditingEmployee(emp);
                                                                                 setEditableEmail(emp.email || "");
-                                                                                setEditableCoreDept(emp.coreDepartment || emp.department || "");
-                                                                                setEditableServingDept(emp.department || "");
+                                                                                setEditableCoreDept(emp.coreDepartment?._id || emp.coreDepartment || emp.department?._id || emp.department || "");
+                                                                                setEditableServingDept(emp.department?._id || emp.department || "");
                                                                                 setEditableLeadership(emp.leadership || "no");
                                                                                 setEditableQualifications(emp.qualifications || []);
                                                                                 setEditableDoj(emp.dateOfJoining || "");
@@ -1308,27 +1302,17 @@ const RoleManagement = () => {
                                                                                         const ecapDept = res.data.departmentname || res.data.DepartmentName;
                                                                                         const ecapDesig = res.data.designation || res.data.Designation || emp.designation;
 
-                                                                                        let mappedDeptId = emp.department;
-                                                                                        if (ecapDept) {
-                                                                                            const escapedEcapDept = ecapDept.trim().toLowerCase();
-                                                                                            const foundDept = allDepartments.find(d =>
-                                                                                                d.name.toLowerCase() === escapedEcapDept ||
-                                                                                                d.code.toLowerCase() === escapedEcapDept
-                                                                                            );
-                                                                                            if (foundDept) {
-                                                                                                mappedDeptId = foundDept._id;
-                                                                                            }
-                                                                                        }
-
+                                                                                        const dbServingDept = emp.department?._id || emp.department;
+                                                                                        
                                                                                         setEditingEmployee({
                                                                                             ...emp,
                                                                                             name: ecapName,
-                                                                                            department: mappedDeptId,
+                                                                                            department: dbServingDept,
                                                                                             ecapDeptName: ecapDept,
                                                                                             designation: ecapDesig,
                                                                                             isEcapFetched: true
                                                                                         });
-                                                                                        setEditableServingDept(mappedDeptId);
+                                                                                        setEditableServingDept(dbServingDept);
                                                                                         toast.success("Fetched details from ECAP", { id: loadingToast });
                                                                                     } else {
                                                                                         toast.error("Employee not found in ECAP. Showing details from database.", { id: loadingToast });

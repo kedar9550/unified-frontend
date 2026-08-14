@@ -157,7 +157,7 @@ const AppraisalReports = () => {
     }
 
     const headers1 = [
-      "Personal Details", "", "", "", "",
+      "Personal Details", "", "", "", "", "", "", "", "",
       "Teaching", "", "", "", "", "",
       "Research", "", "", "", "", "", "", "", "", "", "",
       "Value Addition", "", "", "",
@@ -169,6 +169,7 @@ const AppraisalReports = () => {
 
     const headers2 = [
       "Emp ID", "Faculty Name", "Designation", "Department", "Type",
+      "Date of Joining", "Highest Qualification", "Month of Pass", "Year of Pass",
       "Course pass% (1.1)", "Course Feedback (1.2)", "Proctoring pass %(1.3)", "CO attainment(1.4)", "Teaching min", "Teaching obtained",
       "Paper publication (2.1) minimum required", "Paper publication (2.1) obtained", "Guiding Ph. D Scholars(2.2)", "Books/Chapters/Scopus Conference proceedings(2.3)", "Patents(2.4)", "Novel products/Technology (2.5)", "Project/Consultancy Proposals(2.6)", "Scopus Citation score points(2.7)", "Scopus h-index score points(2.8)", "Research min", "Research obtained",
       "Faculty resource utilization(3.1)", "Faculty Contribution(3.2)", "3 minimum points", "3 obtained points",
@@ -239,12 +240,32 @@ const AppraisalReports = () => {
       const r21Status = row.eligibility?.details?.r21Status || "Unfulfilled";
       const interpersonalStatus = row.eligibility?.details?.interpersonalStatus || "Unfulfilled";
 
+      // Highest Qualification Logic
+      let highestQualObj = null;
+      if (row.personalInfoSnapshot?.qualifications && row.personalInfoSnapshot.qualifications.length > 0) {
+        const priority = { "Doctoral": 3, "PG": 2, "UG": 1 };
+        highestQualObj = row.personalInfoSnapshot.qualifications.reduce((prev, current) => {
+          return (priority[current.level] > (priority[prev.level] || 0)) ? current : prev;
+        }, {});
+      }
+
+      const formattedDOJ = row.personalInfoSnapshot?.dateOfJoining 
+        ? new Date(row.personalInfoSnapshot.dateOfJoining).toLocaleDateString('en-GB')
+        : 'N/A';
+      const highestQual = highestQualObj?.qualification || row.personalInfoSnapshot?.qualification || 'N/A';
+      const highestQualMonth = highestQualObj?.completedMonth || 'N/A';
+      const highestQualYear = highestQualObj?.completedYear || 'N/A';
+
       exportDataAOA.push([
-        row.facultyId?.institutionId || 'N/A',
-        row.facultyId?.name || 'N/A',
-        row.facultyId?.designation || 'N/A',
-        row.facultyId?.department?.name || row.facultyId?.coreDepartment?.name || 'N/A',
+        row.personalInfoSnapshot?.institutionId || row.facultyId?.institutionId || 'N/A',
+        row.personalInfoSnapshot?.name || row.facultyId?.name || 'N/A',
+        row.personalInfoSnapshot?.designation || row.facultyId?.designation || 'N/A',
+        row.personalInfoSnapshot?.departmentName || row.facultyId?.department?.name || row.facultyId?.coreDepartment?.name || 'N/A',
         type,
+        formattedDOJ,
+        highestQual,
+        highestQualMonth,
+        highestQualYear,
         coursePassPercent,
         courseFeedback,
         proctoringPassPercent,
@@ -282,30 +303,38 @@ const AppraisalReports = () => {
 
     // Add multi-column merges for the top header row
     worksheet['!merges'] = [
-      { s: { r: 0, c: 0 }, e: { r: 0, c: 34 } }, // Report Title
-      { s: { r: 1, c: 0 }, e: { r: 1, c: 34 } }, // Academic Year
-      { s: { r: 2, c: 0 }, e: { r: 2, c: 34 } }, // Timestamp
+      { s: { r: 0, c: 0 }, e: { r: 0, c: 38 } }, // Report Title
+      { s: { r: 1, c: 0 }, e: { r: 1, c: 38 } }, // Academic Year
+      { s: { r: 2, c: 0 }, e: { r: 2, c: 38 } }, // Timestamp
 
-      { s: { r: 3, c: 0 }, e: { r: 3, c: 4 } },    // Personal Details
-      { s: { r: 3, c: 5 }, e: { r: 3, c: 10 } },   // Teaching
-      { s: { r: 3, c: 11 }, e: { r: 3, c: 21 } },  // Research
-      { s: { r: 3, c: 22 }, e: { r: 3, c: 25 } },  // Value Addition
-      { s: { r: 3, c: 26 }, e: { r: 3, c: 27 } },  // Administration
-      { s: { r: 3, c: 28 }, e: { r: 3, c: 29 } },  // Interpersonal Skills
-      { s: { r: 3, c: 30 }, e: { r: 3, c: 32 } },  // Eligibility Status
-      { s: { r: 3, c: 33 }, e: { r: 3, c: 34 } }   // Final Totals
+      { s: { r: 3, c: 0 }, e: { r: 3, c: 8 } },    // Personal Details
+      { s: { r: 3, c: 9 }, e: { r: 3, c: 14 } },   // Teaching
+      { s: { r: 3, c: 15 }, e: { r: 3, c: 25 } },  // Research
+      { s: { r: 3, c: 26 }, e: { r: 3, c: 29 } },  // Value Addition
+      { s: { r: 3, c: 30 }, e: { r: 3, c: 31 } },  // Administration
+      { s: { r: 3, c: 32 }, e: { r: 3, c: 33 } },  // Interpersonal Skills
+      { s: { r: 3, c: 34 }, e: { r: 3, c: 36 } },  // Eligibility Status
+      { s: { r: 3, c: 37 }, e: { r: 3, c: 38 } }   // Final Totals
     ];
 
     // Apply color styling to the headers
     const colColors = [
-      ...Array(5).fill("4F81BD"), // Personal Details (Blue)
-      ...Array(6).fill("9BBB59"), // Teaching (Green)
-      ...Array(11).fill("F79646"), // Research (Orange)
-      ...Array(4).fill("8064A2"), // Value Addition (Purple)
-      ...Array(2).fill("4BACC6"), // Administration (Teal)
-      ...Array(2).fill("C0504D"), // Interpersonal (Red)
-      ...Array(3).fill("FFC000"), // Eligibility Status (Yellow)
-      ...Array(2).fill("404040")  // Final Totals (Dark Grey)
+      // Personal Details (9 cols)
+      ...Array(9).fill("4F81BD"), // Blue
+      // Teaching (6 cols)
+      ...Array(6).fill("9BBB59"), // Green
+      // Research (11 cols)
+      ...Array(11).fill("F79646"), // Orange
+      // Value Addition (4 cols)
+      ...Array(4).fill("8064A2"), // Purple
+      // Administration (2 cols)
+      ...Array(2).fill("4BACC6"), // Teal
+      // Interpersonal (2 cols)
+      ...Array(2).fill("C0504D"), // Red
+      // Eligibility Status (3 cols)
+      ...Array(3).fill("FFC000"), // Yellow
+      // Final Totals (2 cols)
+      ...Array(2).fill("404040")  // Dark Grey
     ];
 
     const borderStyle = {
@@ -328,7 +357,7 @@ const AppraisalReports = () => {
       "1F497D": "D9E1F2"  // Dark Blue -> Very Light Blue
     };
 
-    for (let c = 0; c < 35; c++) {
+    for (let c = 0; c < 39; c++) {
       const headerColor = colColors[c];
 
       // Style for the top header row (headers1)
@@ -348,7 +377,7 @@ const AppraisalReports = () => {
       let cell2Color = headerColor;
       const h2Text = (headers2[c] || "").toLowerCase();
 
-      if (c >= 30 && c <= 32) {
+      if (c >= 34 && c <= 36) {
         // Eligibility Status section: Keep the section color (Yellow)
         cell2Color = headerColor;
       } else if (h2Text.includes("min")) {
@@ -397,7 +426,7 @@ const AppraisalReports = () => {
       alignment: { horizontal: "center", vertical: "center" }
     };
 
-    for (let c = 0; c < 35; c++) {
+    for (let c = 0; c < 39; c++) {
       const ref0 = XLSX.utils.encode_cell({ r: 0, c });
       const ref1 = XLSX.utils.encode_cell({ r: 1, c });
       const ref2 = XLSX.utils.encode_cell({ r: 2, c });
