@@ -59,6 +59,7 @@ import AppraisalEvaluation from "./pages/hod/AppraisalEvaluation";
 import AppraisalResearchScoring from "./pages/research/AppraisalResearchScoring";
 import StaffList from "./pages/hod/StaffList";
 import MyResearchMetrics from "./pages/faculty/MyResearchMetrics";
+import ManagementAppraisalEvaluation from "./pages/management/ManagementAppraisalEvaluation";
 
 // Utilities Modules
 import ShortenUrl from "./pages/utilities/ShortenUrl";
@@ -226,6 +227,8 @@ function App() {
         <Route path="/faculty/appraisal" element={<ProtectedRoute element={<SelfAppraisal />} />} />
         <Route path="/hod/appraisal-verification" element={<ProtectedRoute element={<AppraisalEvaluation />} />} />
         <Route path="/uniprime/appraisal-settings" element={<ProtectedRoute element={<AppraisalSettings />} />} />
+        <Route path="/appraisal/evaluate" element={<ProtectedRoute element={<AppraisalEvaluation />} />} />
+        <Route path="/appraisal/management-evaluate" element={<ProtectedRoute element={<ManagementAppraisalEvaluation />} />} />
         <Route path="/uniprime/appraisal-reports" element={<ProtectedRoute element={<AppraisalReports />} />} />
         <Route path="/appraisal/details/:id" element={<ProtectedRoute element={<AppraisalReportDetail />} />} />
         <Route path="/research-dean/appraisal-finalization" element={<ProtectedRoute element={<AppraisalResearchScoring />} />} />

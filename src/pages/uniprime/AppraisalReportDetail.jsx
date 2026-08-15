@@ -670,6 +670,35 @@ const AppraisalReportDetail = () => {
       setLoading(false);
     }
   };
+
+  const handleManagementAction = async (action) => {
+    if (!selectedAppraisal) return;
+
+    // Check if the user is a Dean who is trying to reject an HOD-evaluated appraisal
+    const isDean = ["Dean", "Associate Dean", "SCHOOL_DEAN"].some(r => role.includes(r) || (user?.designation && user.designation.includes(r)));
+    if (isDean && action === "Reject" && selectedAppraisal.hodEvaluation?.evaluatedBy) {
+      toast.error("Deans cannot reject an appraisal that has already been evaluated by an HOD.");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const res = await axiosInstance.put(`/api/appraisal/management-evaluate/${selectedAppraisal._id}`, {
+        action,
+        comments: mainAppraisalRemarks
+      });
+      if (res.data && res.data.success) {
+        toast.dismiss();
+        toast.success(`Appraisal successfully ${action.toLowerCase()}ed.`);
+        setSelectedAppraisal(null);
+        fetchDetail();
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to process management action.");
+    } finally {
+      setLoading(false);
+    }
+  };
   const filteredList = pendingList.filter(appr => {
     if (statusFilter === "Pending") return appr.status === "Submitted to HOD";
     if (statusFilter === "Approved") return appr.status === "Pending Research Admin" || appr.status === "Completed";
@@ -2912,6 +2941,70 @@ const AppraisalReportDetail = () => {
               size="large"
               disabled={loading || validationStatus.hasPending || validationStatus.hasRejected || !allRatingsProvided}
               onClick={() => handleMainHODAction("Approve")}
+              sx={{ fontWeight: 700, px: 4, color: "#fff" }}
+            >
+              Approve Appraisal
+            </Button>
+          </Box>
+        </Paper>
+      )}
+
+      {/* Main Management Verification Action Bar */}
+      {selectedAppraisal?.status.startsWith("Submitted to ") && selectedAppraisal?.status !== "Submitted to HOD" && (
+        <Paper
+          elevation={4}
+          sx={{
+            position: "sticky",
+            bottom: 20,
+            zIndex: 1000,
+            mt: 4,
+            p: 3,
+            borderRadius: "16px",
+            border: "1px solid rgba(59, 130, 246, 0.3)",
+            background: "var(--bg-glass)",
+            backdropFilter: "blur(20px)",
+            display: "flex",
+            flexDirection: "column",
+            gap: 2
+          }}
+        >
+          <Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>
+            Management Verification
+          </Typography>
+          <Typography variant="body2" sx={{ color: "var(--text-secondary)" }}>
+            Review the appraisal and the evaluation remarks made by previous levels before approving.
+          </Typography>
+
+          <TextField
+            fullWidth
+            multiline
+            rows={2}
+            placeholder="Enter management remarks..."
+            value={mainAppraisalRemarks}
+            onChange={(e) => setMainAppraisalRemarks(e.target.value)}
+          />
+          <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 2, mt: 1 }}>
+            {!(
+              ["Dean", "Associate Dean", "SCHOOL_DEAN"].some(r => role.includes(r) || (user?.designation && user.designation.includes(r))) &&
+              selectedAppraisal.hodEvaluation?.evaluatedBy
+            ) && (
+              <Button
+                variant="outlined"
+                color="error"
+                size="large"
+                disabled={loading}
+                onClick={() => handleManagementAction("Reject")}
+                sx={{ fontWeight: 700, px: 4 }}
+              >
+                Reject Appraisal
+              </Button>
+            )}
+            <Button
+              variant="contained"
+              color="success"
+              size="large"
+              disabled={loading}
+              onClick={() => handleManagementAction("Approve")}
               sx={{ fontWeight: 700, px: 4, color: "#fff" }}
             >
               Approve Appraisal
