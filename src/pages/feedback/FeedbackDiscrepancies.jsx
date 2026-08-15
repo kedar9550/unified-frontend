@@ -127,12 +127,57 @@ export default function FeedbackDiscrepancies() {
           semester:     item.semesterTypeId?._id,
         },
       });
-      const rows = (res.data || []).map(r => ({ 
-        ...r, 
-        _edited: false,
-        programId: r.programId?._id || r.programId || "",
-        branchId: r.branchId?._id || r.branchId || ""
-      }));
+      const STALE_BRANCH_MAP = {
+        "computer science & engineering": "cse",
+        "electrical & electronics engineering": "eee",
+        "electronics & communication engineering": "ece",
+        "mechanical engineering": "me",
+        "agricultural engineering": "ag.e",
+        "b.sc": "b.sc",
+        "cse": "cse",
+        "eee": "eee",
+        "ece": "ece",
+        "me": "me",
+        "ag.e": "ag.e"
+      };
+      const STALE_PROGRAM_MAP = {
+        "6a23a992a010811886476e37": "b.tech",
+        "6a26416ebced1820c520ccd4": "b.sc",
+        "6a23a992a010811886476e38": "m.tech"
+      };
+
+      const rows = (res.data || []).map(r => {
+        let matchedBranchId = r.branchId?._id || r.branchId || "";
+        let br = null;
+        if (r.branch) {
+          const norm = r.branch.toLowerCase().trim();
+          const targetCode = STALE_BRANCH_MAP[norm] || norm;
+          br = branches.find(b => b.code.toLowerCase() === targetCode || b.name.toLowerCase() === targetCode || b.name.toLowerCase().includes(targetCode) || targetCode.includes(b.name.toLowerCase()));
+          if (br) matchedBranchId = br._id;
+        }
+
+        let matchedProgramId = r.programId?._id || r.programId || "";
+        const progIdStr = String(matchedProgramId);
+        if (STALE_PROGRAM_MAP[progIdStr]) {
+          const targetCode = STALE_PROGRAM_MAP[progIdStr];
+          const prog = programs.find(p => p.code.toLowerCase() === targetCode || p.name.toLowerCase() === targetCode);
+          if (prog) matchedProgramId = prog._id;
+        } else if (r.programme) {
+          const prog = programs.find(p => p.name.toLowerCase() === r.programme.toLowerCase() || p.code.toLowerCase() === r.programme.toLowerCase());
+          if (prog) matchedProgramId = prog._id;
+        }
+
+        if (!matchedProgramId && br && br.programIds && br.programIds.length > 0) {
+          matchedProgramId = br.programIds[0];
+        }
+
+        return {
+          ...r,
+          _edited: false,
+          programId: matchedProgramId,
+          branchId: matchedBranchId
+        };
+      });
       setResultData(rows);
     } catch (err) {
       console.error("Failed to fetch faculty feedback results:", err);
@@ -155,12 +200,7 @@ export default function FeedbackDiscrepancies() {
         }
       }
 
-      // Auto-recalculate percentage when givenStudents or totalStudents edits occur
-      if (field === "givenStudents" || field === "totalStudents") {
-        const given = Number(field === "givenStudents" ? value : newRow.givenStudents) || 0;
-        const total = Number(field === "totalStudents" ? value : newRow.totalStudents) || 0;
-        newRow.percentage = total > 0 ? parseFloat(((given / total) * 100).toFixed(1)) : 0;
-      }
+
       
       updated[index] = newRow;
       return updated;
@@ -183,8 +223,8 @@ export default function FeedbackDiscrepancies() {
         branch:         "",
         section:        "",
         phase:          1,
-        totalStudents:  0,
-        givenStudents:  0,
+        totalStudents:  "",
+        givenStudents:  "",
         percentage:     0,
         semesterNumber: selected.semester || "",
         yearNumber:     selected.semester || "", 
@@ -219,8 +259,8 @@ export default function FeedbackDiscrepancies() {
           yearNumber:        row.yearNumber,
           section:           row.section,
           phase:             Number(row.phase),
-          totalStudents:     Number(row.totalStudents),
-          givenStudents:     Number(row.givenStudents),
+          totalStudents:     row.totalStudents !== "" && row.totalStudents !== null && row.totalStudents !== undefined ? Number(row.totalStudents) : null,
+          givenStudents:     row.givenStudents !== "" && row.givenStudents !== null && row.givenStudents !== undefined ? Number(row.givenStudents) : null,
           percentage:        Number(row.percentage),
         });
       }
@@ -243,8 +283,8 @@ export default function FeedbackDiscrepancies() {
           phase:             Number(row.phase),
           academicYearId:    selected.academicYearId?._id,
           semesterTypeId:    selected.semesterTypeId?._id,
-          totalStudents:     Number(row.totalStudents),
-          givenStudents:     Number(row.givenStudents),
+          totalStudents:     row.totalStudents !== "" && row.totalStudents !== null && row.totalStudents !== undefined ? Number(row.totalStudents) : null,
+          givenStudents:     row.givenStudents !== "" && row.givenStudents !== null && row.givenStudents !== undefined ? Number(row.givenStudents) : null,
           percentage:        Number(row.percentage),
         });
       }
@@ -657,7 +697,7 @@ export default function FeedbackDiscrepancies() {
                                     disableUnderline={!row._edited}
                                 >
                                     <MenuItem value="">—</MenuItem>
-                                    {branches.filter(b => !row.programId || b.programId?._id === row.programId || b.programId === row.programId).map(b => <MenuItem key={b._id} value={b._id}>{b.name}</MenuItem>)}
+                                     {branches.filter(b => !row.programId || (b.programIds && b.programIds.some(p => (p?._id || p) === row.programId)) || (b.programId?._id || b.programId) === row.programId).map(b => <MenuItem key={b._id} value={b._id}>{b.name}</MenuItem>)}
                                 </Select>
                             </TableCell>
                             <TableCell>
