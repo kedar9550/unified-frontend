@@ -49,7 +49,7 @@ const AppraisalEvaluation = () => {
 
   const filteredList = pendingList.filter(appr => {
     if (statusFilter === "Pending") return appr.status === "Submitted to HOD";
-    if (statusFilter === "Approved") return appr.status === "Pending Research Admin" || appr.status === "Completed";
+    if (statusFilter === "Approved") return appr.status !== "Submitted to HOD" && appr.status !== "Rejected by HOD";
     if (statusFilter === "Rejected") return appr.status === "Rejected by HOD";
     return true; // "All"
   });
@@ -82,7 +82,7 @@ const AppraisalEvaluation = () => {
             rows={filteredList.map((appr) => {
               const displayStatus = appr.status === "Submitted to HOD"
                 ? "Pending"
-                : (appr.status === "Pending Research Admin" || appr.status === "Completed" ? "Approved" : "Rejected");
+                : (appr.status === "Rejected by HOD" ? "Rejected" : "Approved");
               const statusColor = getStatusColor(displayStatus === "Pending" ? "Pending at HOD" : displayStatus);
               const name = appr.facultyId?.name || "N/A";
               const empId = appr.facultyId?.institutionId || "N/A";

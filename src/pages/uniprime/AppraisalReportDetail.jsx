@@ -799,6 +799,17 @@ const AppraisalReportDetail = () => {
 
   const { isEligible, details: eligibilityDetails } = checkEligibilityStatus();
 
+  const isAuthorizedForManagementAction = () => {
+    const status = selectedAppraisal?.status;
+    if (!status || status === "Submitted to HOD" || !status.startsWith("Submitted to ")) return false;
+    const targetRole = status.replace("Submitted to ", "");
+    if (targetRole === "Dean") {
+      return ["Dean", "Associate Dean", "SCHOOL_DEAN"].some(r => role.includes(r) || (user?.designation && user.designation.includes(r)));
+    } else {
+      return user?.designation === targetRole || role.includes(targetRole);
+    }
+  };
+
   const validationStatus = getAppraisalValidationStatus();
   const allRatingsProvided = typeof PARAMETERS !== 'undefined'
     ? PARAMETERS.every(p => ratings[p.id] !== undefined && ratings[p.id] !== null && ratings[p.id] !== "")
@@ -2950,7 +2961,7 @@ const AppraisalReportDetail = () => {
       )}
 
       {/* Main Management Verification Action Bar */}
-      {selectedAppraisal?.status.startsWith("Submitted to ") && selectedAppraisal?.status !== "Submitted to HOD" && (
+      {isAuthorizedForManagementAction() && (
         <Paper
           elevation={4}
           sx={{
