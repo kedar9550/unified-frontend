@@ -169,15 +169,14 @@ export default function ProctoringUpload() {
       "Programme",
       "Branch",
       "Sem/Year",
-      "Sec",
       "No. of students allotted for proctoring",
       "No. of students eligible for end exams (A)",
       "No. of students passed (B)"
     ];
     const sampleRows = [
-      ["1", "2025-2026", "FAC123", "B.Tech", "CSE", "5", "A", "30", "28", "25"],
-      ["2", "2025-2026", "FAC124", "B.Tech", "ECE", "3", "B", "20", "19", "18"],
-      ["3", "2025-2026", "FAC125", "M.Tech", "CSE", "1", "A", "15", "15", "14"],
+      ["1", "2025-2026", "FAC123", "B.Tech", "CSE", "5", "30", "28", "25"],
+      ["2", "2025-2026", "FAC124", "B.Tech", "ECE", "3", "20", "19", "18"],
+      ["3", "2025-2026", "FAC125", "M.Tech", "CSE", "1", "15", "15", "14"],
     ];
     const csvContent = headers.join(",") + "\n" + sampleRows.map(row => row.join(",")).join("\n");
     const blob = new Blob([csvContent], { type: "text/csv" });

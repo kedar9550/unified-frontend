@@ -465,10 +465,10 @@ export default function FeedbackManagement() {
                 ),
               },
               {
-                value: r.givenStudents,
+                value: r.givenStudents ?? 0,
                 display: (
                     <Box sx={{ fontWeight: 700 }}>
-                        {r.givenStudents} <span style={{ color: "var(--text-secondary)", fontWeight: 400 }}>/</span> {r.totalStudents}
+                        {r.givenStudents !== null && r.givenStudents !== undefined ? r.givenStudents : "—"} <span style={{ color: "var(--text-secondary)", fontWeight: 400 }}>/</span> {r.totalStudents !== null && r.totalStudents !== undefined ? r.totalStudents : "—"}
                     </Box>
                 )
               },

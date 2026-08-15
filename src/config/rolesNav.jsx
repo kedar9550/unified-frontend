@@ -36,6 +36,7 @@ import {
   Badge as BadgeIcon,
   Hotel,
   Person,
+  FlagCircleRounded,
 } from "@mui/icons-material";
 import PersonIcon from '@mui/icons-material/Person';
 import EmailIcon from '@mui/icons-material/Email';
@@ -148,11 +149,6 @@ export const ROLE_ROUTES = {
       icon: <Public />
     },
     {
-      text: "Proctoring Upload",
-      path: "/uniprime/proctoring-upload",
-      icon: <Assignment />
-    },
-    {
       text: "Appraisal",
       icon: <ManageAccounts />,
       nested: [
@@ -169,11 +165,6 @@ export const ROLE_ROUTES = {
       ]
     },
     { text: "Research Uploads", path: "/uniprime/research-uploads", icon: <CloudUpload /> },
-    {
-      text: "Discrepancies",
-      path: "/uniprime/discrepancies",
-      icon: <Flag />
-    },
     {
       text: "Utilities",
       icon: <Build />,
@@ -292,7 +283,15 @@ export const ROLE_ROUTES = {
   FEEDBACK_COORDINATOR: [
     { text: "Dashboard", path: "/dashboard", icon: <Dashboard /> },
     { text: "Feedback Management", path: "/feedback-management", icon: <MenuBook /> },
-    { text: "Discrepancies", path: "/feedback-management/discrepancies", icon: <Flag /> },
+    { text: "Proctoring Upload", path: "/uniprime/proctoring-upload", icon: <Assignment /> },
+    {
+      text: "Discrepancies",
+      icon: <Flag />,
+      nested: [
+        { text: "Feedback", path: "/feedback-management/discrepancies", icon: <Flag /> },
+        { text: "Proctoring", path: "/uniprime/discrepancies", icon: <FlagCircleRounded /> },
+      ],
+    },
   ],
 
   "RESEARCH_DEAN": [
