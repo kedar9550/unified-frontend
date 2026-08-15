@@ -1707,11 +1707,7 @@ const SelfAppraisal = () => {
     if (appraisal?.eligibility?.details?.fdpStatus === "Fulfilled") return true;
 
     // 2. Check local Draft/Pending resourceUtilizationDetails for FDP
-    const allowedOrg = [
-        "ugc", "aicte", "iit", "iim", "nit", "mhrd r&d lab", "mhrd r&d labs",
-        "nitttr", "niper", "icmr", "nirf ranked institute (below 200)",
-        "nirf ranked institute (below rank 200)", "govt. university", "government university", "nptel"
-    ];
+    const disallowedOrg = ["other / host institute", "other", "host institute"];
 
     if (resourceUtilizationDetails && Array.isArray(resourceUtilizationDetails)) {
         for (const r of resourceUtilizationDetails) {
@@ -1721,7 +1717,7 @@ const SelfAppraisal = () => {
                 const org = (r.organizingInstitutionCategory || '').toLowerCase().trim();
                 const days = Number(r.numberOfDaysParticipated) || Number(r.daysParticipated) || Number(r.duration) || 0;
 
-                if (cat === 'fdp' && evType === 'fdp participant' && days >= 5 && allowedOrg.includes(org)) {
+                if (cat === 'fdp' && evType === 'fdp participant' && days >= 5 && !disallowedOrg.includes(org)) {
                     if (org.includes("nirf")) {
                         const rank = Number(r.nirfRank);
                         if (!isNaN(rank) && rank > 0 && rank < 200) {
@@ -1775,8 +1771,8 @@ const SelfAppraisal = () => {
     const A = Math.min(20, adminRaw);
 
     const I = Number(appraisal.hodEvaluation?.totalInterpersonalPoints) || 0;
-
-    const total1to4 = parseFloat((Math.min(200, T + R_sum + V + A)).toFixed(2));
+    const maxTotal1to4 = appraisal.personalInfoSnapshot?.hasCos !== false ? 200 : 180;
+    const total1to4 = parseFloat((Math.min(maxTotal1to4, T + R_sum + V + A)).toFixed(2));
     const grandTotal = parseFloat((total1to4 + I).toFixed(2));
 
     return { T, R_sum, V, A, I, total1to4, grandTotal };
@@ -2280,10 +2276,10 @@ const SelfAppraisal = () => {
       />
       <Box p={4} sx={{ maxWidth: 1300, margin: "0 auto", animation: "fadeIn 0.5s ease" }}>
 
-        {appraisal.status === 'Rejected' && appraisal.hodComment && (
+        {appraisal.status === 'Rejected by HOD' && appraisal.hodEvaluation?.comments && (
           <Alert severity="error" sx={{ mb: 4, borderRadius: "12px", border: "1px solid rgba(239, 68, 68, 0.3)", '& .MuiAlert-message': { width: '100%' } }}>
             <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>Appraisal Rejected by HOD</Typography>
-            <Typography variant="body2" sx={{ mt: 0.5 }}><strong>Remarks:</strong> {appraisal.hodComment}</Typography>
+            <Typography variant="body2" sx={{ mt: 0.5 }}><strong>Remarks:</strong> {appraisal.hodEvaluation.comments}</Typography>
             <Typography variant="caption" sx={{ display: 'block', mt: 1 }}>Please fix the mentioned issues and resubmit your appraisal.</Typography>
           </Alert>
         )}
@@ -2691,7 +2687,7 @@ const SelfAppraisal = () => {
                               <MenuBook sx={{ color: "var(--color-primary)" }} /> 1. Teaching & Learning
                             </Typography>
                             <Typography variant="caption" sx={{ color: "var(--text-secondary)", fontWeight: 500, display: "block", ml: 5 }}>
-                              Maximum Points: 80
+                              Maximum Points: {appraisal.personalInfoSnapshot?.hasCos !== false ? 80 : 60}
                             </Typography>
                           </Box>
                           <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 2, bgcolor: "rgba(59, 130, 246, 0.04)", p: "8px 16px", borderRadius: "12px", border: "1px solid rgba(59, 130, 246, 0.1)", width: { xs: "100%", sm: "auto" } }}>
@@ -2704,7 +2700,7 @@ const SelfAppraisal = () => {
                                   {eligibility.scores.T}
                                 </Typography>
                                 <Typography variant="body2" sx={{ color: "var(--text-secondary)", fontWeight: 700 }}>
-                                  / 80
+                                  / {appraisal.personalInfoSnapshot?.hasCos !== false ? 80 : 60}
                                 </Typography>
                               </Box>
                             </Box>
@@ -2718,7 +2714,7 @@ const SelfAppraisal = () => {
                               />
                               <Loader
                                 variant="determinate"
-                                value={Math.min(100, Math.round((eligibility.scores.T / 80) * 100))}
+                                value={Math.min(100, Math.round((eligibility.scores.T / (appraisal.personalInfoSnapshot?.hasCos !== false ? 80 : 60)) * 100))}
                                 size={40}
                                 thickness={4}
                                 sx={{
@@ -2729,7 +2725,7 @@ const SelfAppraisal = () => {
                               />
                               <Box sx={{ top: 0, left: 0, bottom: 0, right: 0, position: "absolute", display: "flex", alignItems: "center", justifyContent: "center" }}>
                                 <Typography variant="caption" sx={{ fontWeight: 800, color: "var(--text-primary)", fontSize: "0.7rem" }}>
-                                  {Math.min(100, Math.round((eligibility.scores.T / 80) * 100))}%
+                                  {Math.min(100, Math.round((eligibility.scores.T / (appraisal.personalInfoSnapshot?.hasCos !== false ? 80 : 60)) * 100))}%
                                 </Typography>
                               </Box>
                             </Box>
@@ -3262,7 +3258,7 @@ const SelfAppraisal = () => {
                               <Science sx={{ color: "#a855f7" }} /> 2. Research Contributions
                             </Typography>
                             <Typography variant="caption" sx={{ color: "var(--text-secondary)", fontWeight: 500, display: "block", ml: 5 }}>
-                              Maximum Points: 80*
+                              Maximum Points: {appraisal.personalInfoSnapshot?.hasCos !== false ? 80 : 60}*
                             </Typography>
                           </Box>
                           <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 2, bgcolor: "rgba(168, 85, 247, 0.04)", p: "8px 16px", borderRadius: "12px", border: "1px solid rgba(168, 85, 247, 0.1)", width: { xs: "100%", sm: "auto" } }}>
@@ -4341,7 +4337,7 @@ const SelfAppraisal = () => {
                   Total (1-4) Score (Min {eligibility.thresholds.total1to4})
                 </Typography>
                 <Typography variant="body2" sx={{ color: "var(--text-secondary)", mt: 0.75, display: "block", lineHeight: 1.4 }}>
-                  Current: {eligibility.scores.total1to4} / 200
+                  Current: {eligibility.scores.total1to4} / {appraisal.personalInfoSnapshot?.hasCos !== false ? 200 : 180}
                 </Typography>
               </Box>
             </Box>
@@ -4351,7 +4347,7 @@ const SelfAppraisal = () => {
             <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr 1fr 1fr" }, gap: 3 }}>
               <Box>
                 <Typography variant="caption" sx={{ color: "var(--text-secondary)", fontWeight: 600, display: "block", mb: 0.5 }}>1. Teaching</Typography>
-                <Typography variant="body2" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>{eligibility.scores.T} / 80</Typography>
+                <Typography variant="body2" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>{eligibility.scores.T} / {appraisal.personalInfoSnapshot?.hasCos !== false ? 80 : 60}</Typography>
               </Box>
               <Box>
                 <Typography variant="caption" sx={{ color: "var(--text-secondary)", fontWeight: 600, display: "block", mb: 0.5 }}>2. Research</Typography>

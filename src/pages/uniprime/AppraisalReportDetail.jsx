@@ -1024,7 +1024,7 @@ const AppraisalReportDetail = () => {
                         <MenuBook sx={{ color: "var(--color-primary)" }} /> 1. Teaching & Learning
                       </Typography>
                       <Typography variant="caption" sx={{ color: "var(--text-secondary)", fontWeight: 500, display: "block", ml: 5 }}>
-                        Maximum Points: 80
+                        Maximum Points: {selectedAppraisal.personalInfoSnapshot?.hasCos !== false ? 80 : 60}
                       </Typography>
                     </Box>
                     <Box sx={{ display: "flex", alignItems: "center", gap: 2, bgcolor: "rgba(59, 130, 246, 0.04)", p: "8px 16px", borderRadius: "12px", border: "1px solid rgba(59, 130, 246, 0.1)" }}>
@@ -1037,7 +1037,7 @@ const AppraisalReportDetail = () => {
                             {selectedAppraisal.teaching?.totalClaimed || 0}
                           </Typography>
                           <Typography variant="body2" sx={{ color: "var(--text-secondary)", fontWeight: 700 }}>
-                            / 80
+                            / {selectedAppraisal.personalInfoSnapshot?.hasCos !== false ? 80 : 60}
                           </Typography>
                         </Box>
                       </Box>
@@ -1051,7 +1051,7 @@ const AppraisalReportDetail = () => {
                         />
                         <Loader
                           variant="determinate"
-                          value={Math.min(100, Math.round(((selectedAppraisal.teaching?.totalClaimed || 0) / 80) * 100))}
+                          value={Math.min(100, Math.round(((selectedAppraisal.teaching?.totalClaimed || 0) / (selectedAppraisal.personalInfoSnapshot?.hasCos !== false ? 80 : 60)) * 100))}
                           size={40}
                           thickness={4}
                           sx={{
@@ -1062,7 +1062,7 @@ const AppraisalReportDetail = () => {
                         />
                         <Box sx={{ top: 0, left: 0, bottom: 0, right: 0, position: "absolute", display: "flex", alignItems: "center", justifyContent: "center" }}>
                           <Typography variant="caption" sx={{ fontWeight: 800, color: "var(--text-primary)", fontSize: "0.7rem" }}>
-                            {Math.min(100, Math.round(((selectedAppraisal.teaching?.totalClaimed || 0) / 80) * 100))}%
+                            {Math.min(100, Math.round(((selectedAppraisal.teaching?.totalClaimed || 0) / (selectedAppraisal.personalInfoSnapshot?.hasCos !== false ? 80 : 60)) * 100))}%
                           </Typography>
                         </Box>
                       </Box>
