@@ -125,6 +125,25 @@ export default function Discrepancies() {
 
     try {
       let rows = [];
+      const STALE_BRANCH_MAP = {
+        "computer science & engineering": "cse",
+        "electrical & electronics engineering": "eee",
+        "electronics & communication engineering": "ece",
+        "mechanical engineering": "me",
+        "agricultural engineering": "ag.e",
+        "b.sc": "b.sc",
+        "cse": "cse",
+        "eee": "eee",
+        "ece": "ece",
+        "me": "me",
+        "ag.e": "ag.e"
+      };
+      const STALE_PROGRAM_MAP = {
+        "6a23a992a010811886476e37": "b.tech",
+        "6a26416ebced1820c520ccd4": "b.sc",
+        "6a23a992a010811886476e38": "m.tech"
+      };
+
       if (item.section === "PROCTORING") {
         const res = await API.get("/api/faculty-proctoring/all", {
           params: {
@@ -132,12 +151,38 @@ export default function Discrepancies() {
             academicYearId: item.academicYearId?._id,
           },
         });
-        rows = (res.data?.data || []).map(r => ({
-          ...r,
-          _edited: false,
-          programId: r.programId?._id || r.programId || "",
-          branchId: r.branchId?._id || r.branchId || ""
-        }));
+        rows = (res.data?.data || []).map(r => {
+          let matchedBranchId = r.branchId?._id || r.branchId || "";
+          let br = null;
+          if (r.branch) {
+            const normVal = r.branch.toLowerCase().trim();
+            const targetCode = STALE_BRANCH_MAP[normVal] || normVal;
+            br = branches.find(b => b.code.toLowerCase() === targetCode || b.name.toLowerCase() === targetCode || b.name.toLowerCase().includes(targetCode) || targetCode.includes(b.name.toLowerCase()));
+            if (br) matchedBranchId = br._id;
+          }
+
+          let matchedProgramId = r.programId?._id || r.programId || "";
+          const progIdStr = String(matchedProgramId);
+          if (STALE_PROGRAM_MAP[progIdStr]) {
+            const targetCode = STALE_PROGRAM_MAP[progIdStr];
+            const prog = programs.find(p => p.code.toLowerCase() === targetCode || p.name.toLowerCase() === targetCode);
+            if (prog) matchedProgramId = prog._id;
+          } else if (r.programme) {
+            const prog = programs.find(p => p.name.toLowerCase() === r.programme.toLowerCase() || p.code.toLowerCase() === r.programme.toLowerCase());
+            if (prog) matchedProgramId = prog._id;
+          }
+
+          if (!matchedProgramId && br && br.programIds && br.programIds.length > 0) {
+            matchedProgramId = br.programIds[0];
+          }
+
+          return {
+            ...r,
+            _edited: false,
+            programId: matchedProgramId,
+            branchId: matchedBranchId
+          };
+        });
       } else {
         // Fetch faculty subject results for this emp + year
         const res = await API.get("/api/faculty-subject-results", {
@@ -146,12 +191,38 @@ export default function Discrepancies() {
             academicYear: item.academicYearId?._id,
           },
         });
-        rows = (res.data || []).map(r => ({
-          ...r,
-          _edited: false,
-          programId: r.programId?._id || r.programId || "",
-          branchId: r.branchId?._id || r.branchId || ""
-        }));
+        rows = (res.data || []).map(r => {
+          let matchedBranchId = r.branchId?._id || r.branchId || "";
+          let br = null;
+          if (r.branch) {
+            const normVal = r.branch.toLowerCase().trim();
+            const targetCode = STALE_BRANCH_MAP[normVal] || normVal;
+            br = branches.find(b => b.code.toLowerCase() === targetCode || b.name.toLowerCase() === targetCode || b.name.toLowerCase().includes(targetCode) || targetCode.includes(b.name.toLowerCase()));
+            if (br) matchedBranchId = br._id;
+          }
+
+          let matchedProgramId = r.programId?._id || r.programId || "";
+          const progIdStr = String(matchedProgramId);
+          if (STALE_PROGRAM_MAP[progIdStr]) {
+            const targetCode = STALE_PROGRAM_MAP[progIdStr];
+            const prog = programs.find(p => p.code.toLowerCase() === targetCode || p.name.toLowerCase() === targetCode);
+            if (prog) matchedProgramId = prog._id;
+          } else if (r.programme) {
+            const prog = programs.find(p => p.name.toLowerCase() === r.programme.toLowerCase() || p.code.toLowerCase() === r.programme.toLowerCase());
+            if (prog) matchedProgramId = prog._id;
+          }
+
+          if (!matchedProgramId && br && br.programIds && br.programIds.length > 0) {
+            matchedProgramId = br.programIds[0];
+          }
+
+          return {
+            ...r,
+            _edited: false,
+            programId: matchedProgramId,
+            branchId: matchedBranchId
+          };
+        });
       }
       setResultData(rows);
     } catch (err) {
@@ -800,8 +871,12 @@ export default function Discrepancies() {
                                 ["#", "Program", "Branch", "Sem", "Yr", "Sec", "Total Allotted", "Eligible (A)", "Passed (B)", "Pass %", ""].map(h => (
                                   <TableCell key={h} sx={{ fontWeight: 600, fontSize: 12, color: "#444" }}>{h}</TableCell>
                                 ))
+                              ) : selected.section === "CO_ATTAINMENT" ? (
+                                ["#", "Subject", "Code", "Type", "Prog", "Branch", "Sem", "Sec", "No. of COs", "COs Attained", "Attainment %", ""].map(h => (
+                                  <TableCell key={h} sx={{ fontWeight: 600, fontSize: 12, color: "#444" }}>{h}</TableCell>
+                                ))
                               ) : (
-                                ["#", "Subject", "Code", "Type", "Prog", "Branch", "Sem", "Sec", "Appeared", "Passed", "Pass %", "No. of COs", "COs Attained", "Attainment %", ""].map(h => (
+                                ["#", "Subject", "Code", "Type", "Prog", "Branch", "Sem", "Sec", "Appeared", "Passed", "Pass %", ""].map(h => (
                                   <TableCell key={h} sx={{ fontWeight: 600, fontSize: 12, color: "#444" }}>{h}</TableCell>
                                 ))
                               )}
@@ -847,7 +922,7 @@ export default function Discrepancies() {
                                         disableUnderline={!row._edited}
                                       >
                                         <MenuItem value="">—</MenuItem>
-                                        {branches.filter(b => !row.programId || b.programId?._id === row.programId || b.programId === row.programId).map(b => (
+                                        {branches.filter(b => !row.programId || (b.programIds && b.programIds.some(p => (p?._id || p) === row.programId)) || (b.programId?._id || b.programId) === row.programId).map(b => (
                                           <MenuItem key={b._id} value={b._id}>{b.code}</MenuItem>
                                         ))}
                                       </Select>
@@ -987,7 +1062,7 @@ export default function Discrepancies() {
                                         disableUnderline={!row._edited}
                                       >
                                         <MenuItem value="">—</MenuItem>
-                                        {branches.filter(b => !row.programId || b.programId?._id === row.programId || b.programId === row.programId).map(b => (
+                                        {branches.filter(b => !row.programId || (b.programIds && b.programIds.some(p => (p?._id || p) === row.programId)) || (b.programId?._id || b.programId) === row.programId).map(b => (
                                           <MenuItem key={b._id} value={b._id}>{b.code}</MenuItem>
                                         ))}
                                       </Select>
@@ -1015,69 +1090,77 @@ export default function Discrepancies() {
                                       />
                                     </TableCell>
 
-                                    {/* Appeared */}
-                                    <TableCell>
-                                      <TextField
-                                        variant="standard"
-                                        type="number"
-                                        value={row.appeared ?? ""}
-                                        onChange={e => handleResultEdit(idx, "appeared", e.target.value)}
-                                        slotProps={{ input: { sx: { fontSize: 13, fontWeight: 600 } } }}
-                                        sx={{ width: 65 }}
-                                      />
-                                    </TableCell>
+                                                                         {selected.section !== "CO_ATTAINMENT" && (
+                                       <>
+                                         {/* Appeared */}
+                                         <TableCell>
+                                           <TextField
+                                             variant="standard"
+                                             type="number"
+                                             value={row.appeared ?? ""}
+                                             onChange={e => handleResultEdit(idx, "appeared", e.target.value)}
+                                             slotProps={{ input: { sx: { fontSize: 13, fontWeight: 600 } } }}
+                                             sx={{ width: 65 }}
+                                           />
+                                         </TableCell>
 
-                                    {/* Passed */}
-                                    <TableCell>
-                                      <TextField
-                                        variant="standard"
-                                        type="number"
-                                        value={row.passed ?? ""}
-                                        onChange={e => handleResultEdit(idx, "passed", e.target.value)}
-                                        slotProps={{ input: { sx: { fontSize: 13, fontWeight: 600 } } }}
-                                        sx={{ width: 65 }}
-                                      />
-                                    </TableCell>
+                                         {/* Passed */}
+                                         <TableCell>
+                                           <TextField
+                                             variant="standard"
+                                             type="number"
+                                             value={row.passed ?? ""}
+                                             onChange={e => handleResultEdit(idx, "passed", e.target.value)}
+                                             slotProps={{ input: { sx: { fontSize: 13, fontWeight: 600 } } }}
+                                             sx={{ width: 65 }}
+                                           />
+                                         </TableCell>
 
-                                    {/* Pass % */}
-                                    <TableCell>
-                                      <Typography fontSize={13} fontWeight={700} color={Number(row.passPercentage) >= 80 ? "#2e7d32" : "#e65100"}>
-                                        {Number(row.passPercentage || 0).toFixed(1)}%
-                                      </Typography>
-                                    </TableCell>
+                                         {/* Pass % */}
+                                         <TableCell>
+                                           <Typography fontSize={13} fontWeight={700} color={Number(row.passPercentage) >= 80 ? "#2e7d32" : "#e65100"}>
+                                             {Number(row.passPercentage || 0).toFixed(1)}%
+                                           </Typography>
+                                         </TableCell>
+                                       </>
+                                     )}
 
-                                    {/* No. of COs */}
-                                    <TableCell>
-                                      <TextField
-                                        variant="standard"
-                                        type="number"
-                                        value={row.noOfCos ?? ""}
-                                        onChange={e => handleResultEdit(idx, "noOfCos", e.target.value)}
-                                        slotProps={{ input: { sx: { fontSize: 13, fontWeight: 600 } } }}
-                                        sx={{ width: 55 }}
-                                      />
-                                    </TableCell>
+                                     {selected.section === "CO_ATTAINMENT" && (
+                                       <>
+                                         {/* No. of COs */}
+                                         <TableCell>
+                                           <TextField
+                                             variant="standard"
+                                             type="number"
+                                             value={row.noOfCos ?? ""}
+                                             onChange={e => handleResultEdit(idx, "noOfCos", e.target.value)}
+                                             slotProps={{ input: { sx: { fontSize: 13, fontWeight: 600 } } }}
+                                             sx={{ width: 55 }}
+                                           />
+                                         </TableCell>
 
-                                    {/* COs Attained */}
-                                    <TableCell>
-                                      <TextField
-                                        variant="standard"
-                                        type="number"
-                                        value={row.noOfCosAttained ?? ""}
-                                        onChange={e => handleResultEdit(idx, "noOfCosAttained", e.target.value)}
-                                        slotProps={{ input: { sx: { fontSize: 13, fontWeight: 600 } } }}
-                                        sx={{ width: 55 }}
-                                      />
-                                    </TableCell>
+                                         {/* COs Attained */}
+                                         <TableCell>
+                                           <TextField
+                                             variant="standard"
+                                             type="number"
+                                             value={row.noOfCosAttained ?? ""}
+                                             onChange={e => handleResultEdit(idx, "noOfCosAttained", e.target.value)}
+                                             slotProps={{ input: { sx: { fontSize: 13, fontWeight: 600 } } }}
+                                             sx={{ width: 55 }}
+                                           />
+                                         </TableCell>
 
-                                    {/* Attainment % */}
-                                    <TableCell>
-                                      <Typography fontSize={13} fontWeight={700} color={row.noOfCos > 0 && (row.noOfCosAttained / row.noOfCos * 100) >= 80 ? "#2e7d32" : "#e65100"}>
-                                        {row.noOfCos > 0 ? ((row.noOfCosAttained / row.noOfCos) * 100).toFixed(1) : "0.0"}%
-                                      </Typography>
-                                    </TableCell>
-                                  </>
-                                )}
+                                         {/* Attainment % */}
+                                         <TableCell>
+                                           <Typography fontSize={13} fontWeight={700} color={row.noOfCos > 0 && (row.noOfCosAttained / row.noOfCos * 100) >= 80 ? "#2e7d32" : "#e65100"}>
+                                             {row.noOfCos > 0 ? ((row.noOfCosAttained / row.noOfCos) * 100).toFixed(1) : "0.0"}%
+                                           </Typography>
+                                         </TableCell>
+                                       </>
+                                     )}
+                                   </>
+                                 )}
 
                                 <TableCell>
                                   {row._isNew && (
