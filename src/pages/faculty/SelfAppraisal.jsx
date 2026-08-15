@@ -2275,8 +2275,7 @@ const SelfAppraisal = () => {
         onBack={() => setViewMode("list")}
       />
       <Box p={4} sx={{ maxWidth: 1300, margin: "0 auto", animation: "fadeIn 0.5s ease" }}>
-
-        {appraisal.status === 'Rejected by HOD' && appraisal.hodEvaluation?.comments && (
+        {(appraisal.status === 'Rejected by HOD' && appraisal.hodEvaluation?.comments) && (
           <Alert severity="error" sx={{ mb: 4, borderRadius: "12px", border: "1px solid rgba(239, 68, 68, 0.3)", '& .MuiAlert-message': { width: '100%' } }}>
             <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>Appraisal Rejected by HOD</Typography>
             <Typography variant="body2" sx={{ mt: 0.5 }}><strong>Remarks:</strong> {appraisal.hodEvaluation.comments}</Typography>
