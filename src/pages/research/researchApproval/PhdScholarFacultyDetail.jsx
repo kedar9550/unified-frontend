@@ -12,12 +12,15 @@ import ArticleIcon from '@mui/icons-material/Article';
 import DescriptionIcon from '@mui/icons-material/Description';
 import { toast } from "sonner";
 import API from "../../../api/axios";
+import EditResearchDetailsDialog from "./EditResearchDetailsDialog";
 
 const PhdScholarFacultyDetail = ({ facultyId, onBack, role }) => {
     const [applications, setApplications] = useState([]);
     const [loading, setLoading] = useState(true);
     const [facultyInfo, setFacultyInfo] = useState(null);
     const [actionLoadingId, setActionLoadingId] = useState(null);
+    const [editOpen, setEditOpen] = useState(false);
+    const [selectedScholar, setSelectedScholar] = useState(null);
 
     const isHOD = !role || role === 'HOD';
     const isDean = role === 'RESEARCH_DEAN';
@@ -177,7 +180,29 @@ const PhdScholarFacultyDetail = ({ facultyId, onBack, role }) => {
                             <Typography variant="subtitle1" sx={{ fontWeight: 800, color: "var(--color-primary)" }}>
                                 {index + 1}. {app.studentName} ({app.rollNumber})
                             </Typography>
-                            <Chip label={app.status} size="small" sx={{ bgcolor: statusStyle.bg, color: statusStyle.color, fontWeight: 700 }} />
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                                {isResearchAdmin && (
+                                    <Button
+                                        size="small"
+                                        variant="outlined"
+                                        onClick={() => {
+                                            setSelectedScholar(app);
+                                            setEditOpen(true);
+                                        }}
+                                        sx={{
+                                            borderColor: "var(--color-primary)",
+                                            color: "var(--color-primary)",
+                                            fontWeight: 700,
+                                            textTransform: "none",
+                                            borderRadius: "8px",
+                                            "&:hover": { bgcolor: "rgba(190, 147, 55, 0.1)", borderColor: "var(--color-primary)" }
+                                        }}
+                                    >
+                                        Correct Info
+                                    </Button>
+                                )}
+                                <Chip label={app.status} size="small" sx={{ bgcolor: statusStyle.bg, color: statusStyle.color, fontWeight: 700 }} />
+                            </Box>
                         </Box>
                         <Grid container>
                             <Grid item xs={12} md={8} sx={{ p: 3, borderRight: { md: "1px solid var(--border-color)" } }}>
@@ -260,6 +285,20 @@ const PhdScholarFacultyDetail = ({ facultyId, onBack, role }) => {
                     </Card>
                 );
             })}
+            {isResearchAdmin && selectedScholar && (
+                <EditResearchDetailsDialog
+                    open={editOpen}
+                    onClose={() => {
+                        setEditOpen(false);
+                        setSelectedScholar(null);
+                    }}
+                    type="Phd Scholar"
+                    currentData={selectedScholar}
+                    onSave={() => {
+                        fetchDetails();
+                    }}
+                />
+            )}
         </Box>
     );
 };
