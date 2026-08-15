@@ -18,6 +18,7 @@ import CloseIcon from '@mui/icons-material/Close';
 import ArticleIcon from '@mui/icons-material/Article';
 import { toast } from "sonner";
 import API from "../../../api/axios";
+import EditResearchDetailsDialog from "./EditResearchDetailsDialog";
 
 const getSdgName = (sdgCode) => {
     const mapping = {
@@ -59,6 +60,7 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
     const [appraisalEligible, setAppraisalEligible] = useState("");
     const [actionLoading, setActionLoading] = useState(false);
     const [imgError, setImgError] = useState(false);
+    const [editOpen, setEditOpen] = useState(false);
 
     const isHOD = !role || role === 'HOD';
     const isDean = role === 'RESEARCH_DEAN';
@@ -253,7 +255,14 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
 
     return (
         <Box sx={{ width: "100%", pb: 5 }}>
-            <Button startIcon={<ArrowBackIcon />} onClick={onBack} sx={{ mb: 2, color: "var(--color-primary)", fontWeight: 700, textTransform: "none" }}>Back to Request List</Button>
+            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
+                <Button startIcon={<ArrowBackIcon />} onClick={onBack} sx={{ color: "var(--color-primary)", fontWeight: 700, textTransform: "none" }}>Back to Request List</Button>
+                {isResearchAdmin && !/pending/i.test(data.status) && (
+                    <Button variant="outlined" onClick={() => setEditOpen(true)} sx={{ borderColor: "var(--color-primary)", color: "var(--color-primary)", fontWeight: 700, textTransform: "none", borderRadius: "10px", "&:hover": { bgcolor: "rgba(190, 147, 55, 0.1)", borderColor: "var(--color-primary)" } }}>
+                        Correct Research Details
+                    </Button>
+                )}
+            </Box>
 
             {/* Header Card */}
             <Card sx={cardStyle}>
@@ -617,83 +626,29 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
                         </Box>
                     )}
                 </Card>
-
-                {isResearchAdmin && (
-                    <Card sx={{ ...cardStyle, borderTop: "4px solid var(--color-primary)", mb: 0 }}>
-                        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 3 }}>
-                            <GavelIcon sx={{ color: "var(--color-primary)" }} />
-                            <Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>Update Journal Metrics</Typography>
-                        </Box>
-
-                        <Box sx={{ display: "flex", gap: 3, mb: 3, flexWrap: "wrap" }}>
-                            <Box sx={{ flex: "1 1 150px" }}>
-                                <Typography variant="subtitle2" sx={{ fontWeight: 900, mb: 1, color: "var(--color-primary)", fontSize: "0.75rem" }}>QUARTILE</Typography>
-                                <Select fullWidth size="small" value={quartile} onChange={e => setQuartile(e.target.value)} displayEmpty sx={{ borderRadius: "10px", bgcolor: "var(--bg-panel)" }}>
-                                    <MenuItem value="" disabled>Select Quartile</MenuItem>
-                                    <MenuItem value="Q1">Q1</MenuItem>
-                                    <MenuItem value="Q2">Q2</MenuItem>
-                                    <MenuItem value="Q3">Q3</MenuItem>
-                                    <MenuItem value="Q4">Q4</MenuItem>
-                                </Select>
-                            </Box>
-                            <Box sx={{ flex: "1 1 150px" }}>
-                                <Typography variant="subtitle2" sx={{ fontWeight: 900, mb: 1, color: "var(--color-primary)", fontSize: "0.75rem" }}>JOURNAL TYPE</Typography>
-                                <Select fullWidth size="small" value={journalType} onChange={e => setJournalType(e.target.value)} displayEmpty sx={{ borderRadius: "10px", bgcolor: "var(--bg-panel)" }}>
-                                    <MenuItem value="" disabled>Select Type</MenuItem>
-                                    <MenuItem value="SCI">SCI</MenuItem>
-                                    <MenuItem value="SCIE">SCIE</MenuItem>
-                                    <MenuItem value="SCOPUS">SCOPUS</MenuItem>
-                                    <MenuItem value="ESCI">ESCI</MenuItem>
-                                </Select>
-                            </Box>
-                            <Box sx={{ flex: "1 1 150px" }}>
-                                <Typography variant="subtitle2" sx={{ fontWeight: 900, mb: 1, color: "var(--color-primary)", fontSize: "0.75rem" }}>JOURNAL H-INDEX</Typography>
-                                <TextField
-                                    fullWidth size="small"
-                                    placeholder="Enter Journal H-Index"
-                                    value={hIndex}
-                                    onChange={e => setHIndex(e.target.value)}
-                                    sx={{ "& .MuiOutlinedInput-root": { borderRadius: "10px", bgcolor: "var(--bg-panel)" } }}
-                                />
-                            </Box>
-                            <Box sx={{ flex: "1 1 150px" }}>
-                                <Typography variant="subtitle2" sx={{ fontWeight: 900, mb: 1, color: "var(--color-primary)", fontSize: "0.75rem" }}>IMPACT FACTOR (JCR)</Typography>
-                                <TextField
-                                    fullWidth size="small"
-                                    placeholder="Enter Impact Factor (JCR)"
-                                    value={jcrImpactFactor}
-                                    onChange={e => setJcrImpactFactor(e.target.value)}
-                                    sx={{ "& .MuiOutlinedInput-root": { borderRadius: "10px", bgcolor: "var(--bg-panel)" } }}
-                                />
-                            </Box>
-                            <Box sx={{ flex: "1 1 150px" }}>
-                                <Typography variant="subtitle2" sx={{ fontWeight: 900, mb: 1, color: "var(--color-primary)", fontSize: "0.75rem" }}>CITATIONS</Typography>
-                                <TextField
-                                    fullWidth size="small"
-                                    placeholder="Enter Citations"
-                                    value={citations}
-                                    onChange={e => setCitations(e.target.value)}
-                                    sx={{ "& .MuiOutlinedInput-root": { borderRadius: "10px", bgcolor: "var(--bg-panel)" } }}
-                                />
-                            </Box>
-                        </Box>
-
-                        <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
-                            <Button
-                                variant="contained"
-                                disabled={actionLoading}
-                                onClick={handleUpdateMetrics}
-                                sx={{ bgcolor: "var(--color-primary)", color: "#fff", fontWeight: 800, textTransform: "none", px: 4, "&:hover": { opacity: 0.9 } }}
-                            >
-                                Update Metrics
-                            </Button>
-                        </Box>
-                    </Card>
-                )}
             </Stack>
         )}
     </Box>
 </Box>
+            {isResearchAdmin && (
+                <EditResearchDetailsDialog
+                    open={editOpen}
+                    onClose={() => setEditOpen(false)}
+                    type="Journal"
+                    currentData={data}
+                    onSave={(updated) => {
+                        setData(updated);
+                        if (updated.hIndex) setHIndex(updated.hIndex);
+                        const updatedIF = updated.jcrImpactFactor || updated.impactFactor;
+                        if (updatedIF) setJcrImpactFactor(updatedIF);
+                        if (updated.citations) setCitations(updated.citations);
+                        if (updated.journalQuartile) setQuartile(updated.journalQuartile);
+                        if (updated.journalType) setJournalType(updated.journalType);
+                        if (updated.appraisalEligible) setAppraisalEligible(updated.appraisalEligible);
+                        if (updated.approvedAmount) setApprovedAmount(updated.approvedAmount);
+                    }}
+                />
+            )}
         </Box >
     );
 };

@@ -17,6 +17,7 @@ import CheckIcon from '@mui/icons-material/Check';
 import CloseIcon from '@mui/icons-material/Close';
 import { toast } from "sonner";
 import API from "../../../api/axios";
+import EditResearchDetailsDialog from "./EditResearchDetailsDialog";
 
 const TextBookApprovalDetail = ({ id, onBack, role }) => {
     const [data, setData] = useState(null);
@@ -25,6 +26,7 @@ const TextBookApprovalDetail = ({ id, onBack, role }) => {
     const [approvedAmount, setApprovedAmount] = useState("");
     const [actionLoading, setActionLoading] = useState(false);
     const [imgError, setImgError] = useState(false);
+    const [editOpen, setEditOpen] = useState(false);
 
     const isHOD = !role || role === 'HOD';
     const isDean = role === 'RESEARCH_DEAN';
@@ -253,13 +255,20 @@ const TextBookApprovalDetail = ({ id, onBack, role }) => {
                 xs: 1.5, sm: 2, md: 3
             }, pb: 5
         }}>
-            <Button
-                startIcon={<ArrowBackIcon />}
-                onClick={onBack}
-                sx={{ mb: 3, color: "var(--color-primary)", fontWeight: 600, textTransform: "none" }}
-            >
-                Back to Request List
-            </Button>
+            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
+                <Button
+                    startIcon={<ArrowBackIcon />}
+                    onClick={onBack}
+                    sx={{ color: "var(--color-primary)", fontWeight: 600, textTransform: "none" }}
+                >
+                    Back to Request List
+                </Button>
+                {isResearchAdmin && !/pending/i.test(data.status) && (
+                    <Button variant="outlined" onClick={() => setEditOpen(true)} sx={{ borderColor: "var(--color-primary)", color: "var(--color-primary)", fontWeight: 700, textTransform: "none", borderRadius: "10px", "&:hover": { bgcolor: "rgba(190, 147, 55, 0.1)", borderColor: "var(--color-primary)" } }}>
+                        Correct Research Details
+                    </Button>
+                )}
+            </Box>
 
             {/* Title Card */}
             <Card sx={cardStyle}>
@@ -605,6 +614,18 @@ const TextBookApprovalDetail = ({ id, onBack, role }) => {
                     )}
                 </Box>
             </Box>
+            {isResearchAdmin && (
+                <EditResearchDetailsDialog
+                    open={editOpen}
+                    onClose={() => setEditOpen(false)}
+                    type="Textbook"
+                    currentData={data}
+                    onSave={(updated) => {
+                        setData(updated);
+                        if (updated.approvedAmount) setApprovedAmount(updated.approvedAmount);
+                    }}
+                />
+            )}
         </Box >
     );
 };
