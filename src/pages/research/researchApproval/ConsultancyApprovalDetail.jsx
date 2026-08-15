@@ -14,6 +14,7 @@ import AttachFileIcon from '@mui/icons-material/AttachFile';
 import GroupsIcon from '@mui/icons-material/Groups';
 import { toast } from "sonner";
 import API from "../../../api/axios";
+import EditResearchDetailsDialog from "./EditResearchDetailsDialog";
 
 const ConsultancyApprovalDetail = ({ id, onBack, role }) => {
     const [data, setData] = useState(null);
@@ -22,6 +23,7 @@ const ConsultancyApprovalDetail = ({ id, onBack, role }) => {
     const [approvedAmount, setApprovedAmount] = useState("");
     const [actionLoading, setActionLoading] = useState(false);
     const [imgError, setImgError] = useState(false);
+    const [editOpen, setEditOpen] = useState(false);
 
     const isHOD = !role || role === 'HOD';
     const isDean = role === 'RESEARCH_DEAN';
@@ -126,7 +128,14 @@ const ConsultancyApprovalDetail = ({ id, onBack, role }) => {
 
     return (
         <Box sx={{ width: "100%", pb: 5 }}>
-            <Button startIcon={<ArrowBackIcon />} onClick={onBack} sx={{ mb: 2, color: "var(--color-primary)", fontWeight: 700, textTransform: "none" }}>Back to Request List</Button>
+            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
+                <Button startIcon={<ArrowBackIcon />} onClick={onBack} sx={{ color: "var(--color-primary)", fontWeight: 700, textTransform: "none" }}>Back to Request List</Button>
+                {isResearchAdmin && !/pending/i.test(data.status) && (
+                    <Button variant="outlined" onClick={() => setEditOpen(true)} sx={{ borderColor: "var(--color-primary)", color: "var(--color-primary)", fontWeight: 700, textTransform: "none", borderRadius: "10px", "&:hover": { bgcolor: "rgba(190, 147, 55, 0.1)", borderColor: "var(--color-primary)" } }}>
+                        Correct Research Details
+                    </Button>
+                )}
+            </Box>
 
             <Card sx={cardStyle}>
                 <Box sx={{ display: "flex", flexDirection: { xs: "column", sm: "row" }, justifyContent: "space-between", alignItems: { xs: "center", sm: "flex-start" }, gap: 2, mb: 4 }}>
@@ -302,6 +311,17 @@ const ConsultancyApprovalDetail = ({ id, onBack, role }) => {
                     )}
                 </Box>
             </Box>
+            {isResearchAdmin && (
+                <EditResearchDetailsDialog
+                    open={editOpen}
+                    onClose={() => setEditOpen(false)}
+                    type="Consultancy"
+                    currentData={data}
+                    onSave={(updated) => {
+                        setData(updated);
+                    }}
+                />
+            )}
         </Box>
     );
 };
