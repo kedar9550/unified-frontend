@@ -2090,7 +2090,7 @@ const SelfAppraisal = () => {
                         <IconButton
                           color="primary"
                           onClick={() => {
-                            if (app.status === 'Completed') {
+                            if (app.status?.startsWith('Approved by')) {
                               navigate(`/appraisal/details/${app._id}`);
                             } else {
                               setAcademicYears([app.academicYearId]);
@@ -2361,7 +2361,7 @@ const SelfAppraisal = () => {
                     boxShadow: "0 4px 14px rgba(0, 78, 146, 0.3)"
                   }}
                 />
-                {appraisal.status === 'Completed' && (
+                {appraisal.status?.startsWith('Approved by') && (
                   <Button
                     variant="outlined"
                     onClick={() => navigate(`/appraisal/details/${appraisal._id}`)}
@@ -2747,7 +2747,7 @@ const SelfAppraisal = () => {
                         <Divider sx={{ mb: 3 }} />
 
                         {/* 1.1 Course pass percentage */}
-                        {!(appraisal.status === "Completed" && (!appraisal.teaching.passPercentage?.courses || appraisal.teaching.passPercentage.courses.length === 0)) && (
+                        {!(appraisal.status?.startsWith("Approved by") && (!appraisal.teaching.passPercentage?.courses || appraisal.teaching.passPercentage.courses.length === 0)) && (
                           <>
                             <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 1, color: "var(--color-primary)" }}>
                               1.1 Course Average Pass Percentage
@@ -2813,7 +2813,7 @@ const SelfAppraisal = () => {
                         )}
 
                         {/* 1.2 Course Feedback */}
-                        {!(appraisal.status === "Completed" && (!appraisal.teaching.feedback?.courses || appraisal.teaching.feedback.courses.length === 0)) && (
+                        {!(appraisal.status?.startsWith("Approved by") && (!appraisal.teaching.feedback?.courses || appraisal.teaching.feedback.courses.length === 0)) && (
                           <>
                             <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 1.5, color: "var(--color-primary)" }}>
                               1.2 Course Feedback
@@ -2879,7 +2879,7 @@ const SelfAppraisal = () => {
                         )}
 
                         {/* 1.3 Proctoring Students' Average Pass Percentage */}
-                        {!(appraisal.status === "Completed" && (!appraisal.teaching.proctoring?.entries || appraisal.teaching.proctoring.entries.length === 0)) && (
+                        {!(appraisal.status?.startsWith("Approved by") && (!appraisal.teaching.proctoring?.entries || appraisal.teaching.proctoring.entries.length === 0)) && (
                           <Box sx={{ mb: 4 }}>
                             <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 2 }}>
                               <Typography variant="subtitle1" sx={{ fontWeight: 700, color: "var(--color-primary)" }}>
@@ -3195,7 +3195,7 @@ const SelfAppraisal = () => {
 
 
                         {/* 1.4 CO Attainment */}
-                        {!(appraisal.status === "Completed" && (!appraisal.teaching.coAttainment?.courses || appraisal.teaching.coAttainment.courses.length === 0)) && (
+                        {!(appraisal.status?.startsWith("Approved by") && (!appraisal.teaching.coAttainment?.courses || appraisal.teaching.coAttainment.courses.length === 0)) && (
                           <>
                             <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 1.5, color: "var(--color-primary)" }}>
                               1.4 CO Attainment
@@ -3318,7 +3318,7 @@ const SelfAppraisal = () => {
                         <Divider sx={{ mb: 3 }} />
 
                         {/* 2.1 Papers Publication with Claims Coordination */}
-                        {!(appraisal.status === "Completed" && (!appraisal.research.papers?.items || appraisal.research.papers.items.length === 0)) && (
+                        {!(appraisal.status?.startsWith("Approved by") && (!appraisal.research.papers?.items || appraisal.research.papers.items.length === 0)) && (
                           <>
                             <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 1.5, color: "var(--color-primary)" }}>
                               2.1 Paper Publication: (only for one Aditya author)
@@ -3763,7 +3763,7 @@ const SelfAppraisal = () => {
                         <Divider sx={{ mb: 3 }} />
 
                         {/* 3.1 Resource Utilization */}
-                        {!(appraisal.status === "Completed" && (!resourceUtilizationDetails || resourceUtilizationDetails.length === 0)) && (
+                        {!(appraisal.status?.startsWith("Approved by") && (!resourceUtilizationDetails || resourceUtilizationDetails.length === 0)) && (
                           <>
                             <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
                               <Typography variant="subtitle1" sx={{ fontWeight: 700, color: "var(--color-primary)" }}>
@@ -3920,7 +3920,7 @@ const SelfAppraisal = () => {
                         )}
 
                         {/* 3.2 Expertise / Contribution */}
-                        {!(appraisal.status === "Completed" && (!appraisal.extension?.contributions || appraisal.extension.contributions.length === 0)) && (
+                        {!(appraisal.status?.startsWith("Approved by") && (!appraisal.extension?.contributions || appraisal.extension.contributions.length === 0)) && (
                           <>
                             <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
                               <Typography variant="subtitle1" sx={{ fontWeight: 700, color: "var(--color-primary)" }}>
@@ -4047,7 +4047,7 @@ const SelfAppraisal = () => {
                 {activeTab === 4 && (
                   <Box sx={{ animation: "fadeIn 0.3s ease" }}>
                     {/* 4. Administrative Responsibilities */}
-                    {!(appraisal.status === "Completed" && (!administrationDetail?.roles || administrationDetail.roles.length === 0)) ? (
+                    {!(appraisal.status?.startsWith("Approved by") && (!administrationDetail?.roles || administrationDetail.roles.length === 0)) ? (
                       <Card sx={{ borderRadius: "20px", background: "var(--bg-paper)", border: "1px solid var(--border-color)", mb: 0, boxShadow: "none" }}>
                         <CardContent sx={{ p: 3.5 }}>
                           <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3, flexWrap: "wrap", gap: 2 }}>

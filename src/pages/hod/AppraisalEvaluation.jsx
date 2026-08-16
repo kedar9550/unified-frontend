@@ -59,7 +59,7 @@ const AppraisalEvaluation = () => {
       return { bg: "rgba(245, 158, 11, 0.12)", color: "#f59e0b" }; // Amber
     } else if (status === "Rejected by HOD" || status === "Rejected") {
       return { bg: "rgba(239, 68, 68, 0.12)", color: "#ef4444" }; // Red
-    } else if (status === "Completed" || status === "Approved") {
+    } else if (status?.startsWith("Approved by") || status === "Approved") {
       return { bg: "rgba(34, 197, 94, 0.12)", color: "#22c55e" }; // Green
     } else {
       // For "Pending at Dean", "Pending Research Admin" etc.

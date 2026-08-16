@@ -725,7 +725,7 @@ const AppraisalReportDetail = () => {
   };
   const filteredList = pendingList.filter(appr => {
     if (statusFilter === "Pending") return appr.status === "Submitted to HOD";
-    if (statusFilter === "Approved") return appr.status === "Pending Research Admin" || appr.status === "Completed";
+    if (statusFilter === "Approved") return appr.status === "Pending Research Admin" || appr.status?.startsWith("Approved by");
     if (statusFilter === "Rejected") return appr.status === "Rejected by HOD";
     return true; // "All"
   });
@@ -859,7 +859,7 @@ const AppraisalReportDetail = () => {
               rows={filteredList.map((appr) => {
                 const displayStatus = appr.status === "Submitted to HOD"
                   ? "Pending"
-                  : (appr.status === "Pending Research Admin" || appr.status === "Completed" ? "Approved" : "Rejected");
+                  : (appr.status === "Pending Research Admin" || appr.status?.startsWith("Approved by") ? "Approved" : "Rejected");
                 const statusColor = getStatusColor(displayStatus === "Pending" ? "Pending at HOD" : displayStatus);
                 const name = appr.facultyId?.name || "N/A";
                 const empId = appr.facultyId?.institutionId || "N/A";
@@ -875,7 +875,7 @@ const AppraisalReportDetail = () => {
                     value: displayStatus,
                     display: (
                       <Chip
-                        label={displayStatus === "Pending" ? "Pending at HOD / Dean" : displayStatus === "Pending at HOD" ? "Pending at HOD / Dean" : displayStatus}
+                        label={displayStatus === "Pending" ? "Pending at Primary Evaluator" : displayStatus === "Pending at HOD" ? "Pending at Primary Evaluator" : displayStatus}
                         size="small"
                         sx={{
                           bgcolor: statusColor.bg,
@@ -1088,7 +1088,7 @@ const AppraisalReportDetail = () => {
                       <Person sx={{ color: "#e8a000" }} /> PART-A: Personal Information
                     </Typography>
                     <Box sx={{ display: "flex", gap: 1 }}>
-                      {selectedAppraisal.status === "Approved" || selectedAppraisal.status === "Completed" || selectedAppraisal.status === "Pending Research Admin" ? (
+                      {selectedAppraisal.status === "Approved" || selectedAppraisal.status?.startsWith("Approved by") || selectedAppraisal.status === "Pending Research Admin" ? (
                         <Button size="small" variant="contained" disabled={isDownloading} onClick={handleDownloadPDF} sx={{ textTransform: "none", fontWeight: 700, bgcolor: "#e8a000", color: "#fff", '&:hover': { bgcolor: "#cc8d00" } }}>
                           {isDownloading ? "Generating PDF..." : "Download PDF"}
                         </Button>
@@ -1179,7 +1179,7 @@ const AppraisalReportDetail = () => {
                   <Divider sx={{ mb: 2.5 }} />
 
                   {/* 1.1 Theory Pass Percentage Table */}
-                  {!(selectedAppraisal.status === "Completed" && (!selectedAppraisal.teaching?.passPercentage?.courses || selectedAppraisal.teaching.passPercentage.courses.length === 0)) && (
+                  {!(selectedAppraisal.status?.startsWith("Approved by") && (!selectedAppraisal.teaching?.passPercentage?.courses || selectedAppraisal.teaching.passPercentage.courses.length === 0)) && (
                     <>
                       <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 1, color: "var(--color-primary)", display: "block" }}>
                         1.1 Course Average Pass Percentage (Theory only)
@@ -1237,7 +1237,7 @@ const AppraisalReportDetail = () => {
                   )}
 
                   {/* 1.2 Subject Feedback Table */}
-                  {!(selectedAppraisal.status === "Completed" && (!selectedAppraisal.teaching?.feedback?.courses || selectedAppraisal.teaching.feedback.courses.length === 0)) && (
+                  {!(selectedAppraisal.status?.startsWith("Approved by") && (!selectedAppraisal.teaching?.feedback?.courses || selectedAppraisal.teaching.feedback.courses.length === 0)) && (
                     <>
                       <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 1, color: "var(--color-primary)", display: "block" }}>
                         1.2 Course Student Feedback Points
@@ -1295,7 +1295,7 @@ const AppraisalReportDetail = () => {
                   )}
 
                   {/* 1.3 Proctoring Students' average Pass percentage */}
-                  {!(selectedAppraisal.status === "Completed" && (!selectedAppraisal.teaching?.proctoring?.entries || selectedAppraisal.teaching.proctoring.entries.length === 0)) && (
+                  {!(selectedAppraisal.status?.startsWith("Approved by") && (!selectedAppraisal.teaching?.proctoring?.entries || selectedAppraisal.teaching.proctoring.entries.length === 0)) && (
                     <>
                       <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 1, color: "var(--color-primary)", display: "block" }}>
                         1.3 Proctoring Students' Average Pass Percentage
@@ -1418,7 +1418,7 @@ const AppraisalReportDetail = () => {
                   )}
 
                   {/* 1.4 Theory Courses CO Attainment Table */}
-                  {!(selectedAppraisal.status === "Completed" && (!selectedAppraisal.teaching?.coAttainment?.courses || selectedAppraisal.teaching.coAttainment.courses.length === 0)) && (
+                  {!(selectedAppraisal.status?.startsWith("Approved by") && (!selectedAppraisal.teaching?.coAttainment?.courses || selectedAppraisal.teaching.coAttainment.courses.length === 0)) && (
                     <>
                       <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 1, color: "var(--color-primary)", display: "block" }}>
                         1.4 Course CO Attainment Points
@@ -1526,7 +1526,7 @@ const AppraisalReportDetail = () => {
                   <Divider sx={{ mb: 2.5 }} />
 
                   {/* 2.1 Journals/Conferences */}
-                  {!(selectedAppraisal.status === "Completed" && (!selectedAppraisal.research?.papers?.items || selectedAppraisal.research.papers.items.length === 0)) && (
+                  {!(selectedAppraisal.status?.startsWith("Approved by") && (!selectedAppraisal.research?.papers?.items || selectedAppraisal.research.papers.items.length === 0)) && (
                     <>
                       <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 1, color: "var(--color-primary)", display: "block" }}>
                         2.1 Journal / Conference Publications
@@ -1958,7 +1958,7 @@ const AppraisalReportDetail = () => {
                   <Divider sx={{ mb: 2.5 }} />
 
                   {/* 3.1 Resource Utilization */}
-                  {!(selectedAppraisal.status === "Completed" && (!selectedAppraisal.resourceUtilizationDetails || selectedAppraisal.resourceUtilizationDetails.length === 0)) && (
+                  {!(selectedAppraisal.status?.startsWith("Approved by") && (!selectedAppraisal.resourceUtilizationDetails || selectedAppraisal.resourceUtilizationDetails.length === 0)) && (
                     <>
                       <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 1, color: "var(--color-primary)", display: "block" }}>
                         3.1 Resource Utilization (Max 10 points)
@@ -2173,7 +2173,7 @@ const AppraisalReportDetail = () => {
                   <Divider sx={{ my: 3 }} />
 
                   {/* 3.2 Expertise / Contribution */}
-                  {!(selectedAppraisal.status === "Completed" && (!selectedAppraisal.contributionDetails || selectedAppraisal.contributionDetails.length === 0)) && (
+                  {!(selectedAppraisal.status?.startsWith("Approved by") && (!selectedAppraisal.contributionDetails || selectedAppraisal.contributionDetails.length === 0)) && (
                     <>
                       <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 1, color: "var(--color-primary)", display: "block" }}>
                         3.2 Expertise / Contribution (Max 10 points)
@@ -2649,7 +2649,7 @@ const AppraisalReportDetail = () => {
                 {selectedAppraisal.hodEvaluation?.comments && (
                   <Box sx={{ mb: selectedAppraisal.managementEvaluation?.comments ? 2 : 0, p: 2.5, borderRadius: "12px", background: "rgba(59, 130, 246, 0.05)", border: "1px solid rgba(59, 130, 246, 0.2)" }}>
                     <Typography variant="caption" sx={{ color: "#3b82f6", fontWeight: 800, textTransform: "uppercase", display: "block", mb: 1 }}>
-                      Primary Evaluator (HOD / Dean) Remarks
+                      Primary Evaluator Remarks
                     </Typography>
                     <Typography variant="body2" sx={{ color: "var(--text-primary)", fontWeight: 500, lineHeight: 1.6 }}>
                       {selectedAppraisal.hodEvaluation.comments}
@@ -2794,7 +2794,7 @@ const AppraisalReportDetail = () => {
 
               {(selectedResUtDetails.status === "Pending" || selectedResUtDetails.status === "Pending at HOD") && isPrimaryEvaluator ? (
                 <Box>
-                  <Typography variant="caption" color="textSecondary" sx={{ fontWeight: 600, display: "block", mb: 1 }}>HOD Evaluation Action</Typography>
+                  <Typography variant="caption" color="textSecondary" sx={{ fontWeight: 600, display: "block", mb: 1 }}>Primary Evaluator Action</Typography>
                   <TextField
                     size="small"
                     fullWidth
@@ -2920,7 +2920,7 @@ const AppraisalReportDetail = () => {
 
               {(selectedContDetails.status === "Pending" || selectedContDetails.status === "Pending at HOD") && isPrimaryEvaluator ? (
                 <Box>
-                  <Typography variant="caption" color="textSecondary" sx={{ fontWeight: 600, display: "block", mb: 1 }}>HOD Evaluation Action</Typography>
+                  <Typography variant="caption" color="textSecondary" sx={{ fontWeight: 600, display: "block", mb: 1 }}>Primary Evaluator Action</Typography>
                   <TextField
                     size="small"
                     fullWidth
@@ -3003,7 +3003,7 @@ const AppraisalReportDetail = () => {
           }}
         >
           <Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>
-            Final HOD/Dean Verification
+            Primary Evaluation / Verification
           </Typography>
           <Typography variant="body2" sx={{ color: "var(--text-secondary)" }}>
             Ensure you have reviewed all individual sections (Journals, Patents, Duties, etc.) before taking the final action on this appraisal.

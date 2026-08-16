@@ -975,7 +975,7 @@ const AppraisalPDFReport = forwardRef(({ data, hideInterpersonal, eligibilityDet
             <tbody style={{ display: 'table-row-group', pageBreakInside: 'auto' }}>
               <tr style={styles.tr}>
                 <td style={{ ...styles.td, ...styles.rowLabel }}>Final Status</td>
-                <td style={{ ...styles.tdLeft, fontWeight: 'bold' }}>{data.status === 'Completed' ? 'Approved' : data.status}</td>
+                <td style={{ ...styles.tdLeft, fontWeight: 'bold' }}>{data.status?.startsWith('Approved by') ? 'Approved' : data.status}</td>
               </tr>
               <tr style={styles.tr}>
                 <td style={{ ...styles.td, ...styles.rowLabel }}>HOD Comments</td>

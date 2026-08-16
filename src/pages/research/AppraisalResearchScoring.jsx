@@ -303,7 +303,7 @@ const AppraisalResearchScoring = () => {
   const filteredList = pendingList.filter(appr => {
     // 1. Status Filter
     if (statusFilter === "Pending") return appr.status === "Pending Research Admin";
-    if (statusFilter === "Approved") return appr.status === "Completed";
+    if (statusFilter === "Approved") return appr.status?.startsWith("Approved by");
     return true; // "All"
   });
 
@@ -345,10 +345,10 @@ const AppraisalResearchScoring = () => {
                 const dept = appr.personalInfoSnapshot?.departmentName || "N/A";
                 const year = appr.academicYearId?.year || "N/A";
                 const status = appr.status;
-                const statusVal = status === "Pending Research Admin" ? "Pending" : status === "Completed" ? "Approved" : status;
+                const statusVal = status === "Pending Research Admin" ? "Pending" : status?.startsWith("Approved by") ? "Approved" : status;
 
                 const getStatusColor = (statusVal) => {
-                  if (statusVal === 'Completed') return { bg: "rgba(16, 185, 129, 0.1)", color: "#10b981" };
+                  if (statusVal?.startsWith('Approved by')) return { bg: "rgba(16, 185, 129, 0.1)", color: "#10b981" };
                   if (statusVal === 'Pending Research Admin') return { bg: "rgba(232, 160, 0, 0.1)", color: "#e8a000" };
                   return { bg: "rgba(100, 116, 139, 0.1)", color: "#64748b" };
                 };
@@ -378,9 +378,9 @@ const AppraisalResearchScoring = () => {
                     value: "",
                     display: (
                       <Button
- variant={status === "Completed" ? "outlined" : "contained"}
+ variant={status?.startsWith("Approved by") ? "outlined" : "contained"}
  size="small"
- startIcon={status === "Completed" ? <Visibility sx={{ fontSize: "1rem" }} /> : <Person sx={{ fontSize: "1rem" }} />}
+ startIcon={status?.startsWith("Approved by") ? <Visibility sx={{ fontSize: "1rem" }} /> : <Person sx={{ fontSize: "1rem" }} />}
  onClick={() => handleScoreResearch(appr)}
  disabled={loading}
  sx={{
@@ -390,18 +390,18 @@ const AppraisalResearchScoring = () => {
  
  px: 2,
  py: 0.8,
- bgcolor: status === "Completed" ? "transparent" : "#1e3a5f",
- color: status === "Completed" ? "var(--text-primary)" : "#fff",
- borderColor: status === "Completed" ? "var(--border-color)" : "transparent",
+ bgcolor: status?.startsWith("Approved by") ? "transparent" : "#1e3a5f",
+ color: status?.startsWith("Approved by") ? "var(--text-primary)" : "#fff",
+ borderColor: status?.startsWith("Approved by") ? "var(--border-color)" : "transparent",
  boxShadow: "none",
  "&:hover": {
- bgcolor: status === "Completed" ? "var(--bg-panel)" : "#2563eb",
- borderColor: status === "Completed" ? "var(--text-secondary)" : "transparent",
- boxShadow: status === "Completed" ? "none" : "0 4px 12px rgba(59,130,246,0.25)"
+ bgcolor: status?.startsWith("Approved by") ? "var(--bg-panel)" : "#2563eb",
+ borderColor: status?.startsWith("Approved by") ? "var(--text-secondary)" : "transparent",
+ boxShadow: status?.startsWith("Approved by") ? "none" : "0 4px 12px rgba(59,130,246,0.25)"
  }
  }}
  >
-                        {status === "Completed" ? "View Details" : "Score Research"}
+                        {status?.startsWith("Approved by") ? "View Details" : "Score Research"}
                       </Button>
                     )
                   }
@@ -634,8 +634,8 @@ const AppraisalResearchScoring = () => {
                       {selectedAppraisal.personalInfoSnapshot?.name || selectedAppraisal.facultyId?.name}
                     </Typography>
                     <Box sx={{
-                      bgcolor: selectedAppraisal.status === "Completed" ? "rgba(16, 185, 129, 0.08)" : "rgba(245, 158, 11, 0.08)",
-                      color: selectedAppraisal.status === "Completed" ? "#10b981" : "#f59e0b",
+                      bgcolor: selectedAppraisal.status?.startsWith("Approved by") ? "rgba(16, 185, 129, 0.08)" : "rgba(245, 158, 11, 0.08)",
+                      color: selectedAppraisal.status?.startsWith("Approved by") ? "#10b981" : "#f59e0b",
                       px: 1,
                       py: 0.25,
                       borderRadius: "4px",
@@ -643,7 +643,7 @@ const AppraisalResearchScoring = () => {
                       fontWeight: 800,
                       textTransform: "uppercase"
                     }}>
-                      {selectedAppraisal.status === "Completed" ? "Approved" : "Pending Review"}
+                      {selectedAppraisal.status?.startsWith("Approved by") ? "Approved" : "Pending Review"}
                     </Box>
                   </Box>
 
@@ -781,7 +781,7 @@ const AppraisalResearchScoring = () => {
                       type="number"
                       value={citations}
                       onChange={(e) => setCitations(e.target.value)}
-                      disabled={selectedAppraisal?.status === "Completed"}
+                      disabled={selectedAppraisal?.status?.startsWith("Approved by")}
                       fullWidth
                       placeholder="e.g. 120"
                       InputProps={{
@@ -840,7 +840,7 @@ const AppraisalResearchScoring = () => {
                           type="number"
                           value={hIndexPrevYear}
                           onChange={(e) => setHIndexPrevYear(e.target.value)}
-                          disabled={selectedAppraisal?.status === "Completed"}
+                          disabled={selectedAppraisal?.status?.startsWith("Approved by")}
                           fullWidth
                           placeholder="e.g. 8"
                           InputProps={{ sx: { borderRadius: "10px", fontWeight: 750, background: "var(--bg-paper)" } }}
@@ -855,7 +855,7 @@ const AppraisalResearchScoring = () => {
                           type="number"
                           value={hIndexCurrentYear}
                           onChange={(e) => setHIndexCurrentYear(e.target.value)}
-                          disabled={selectedAppraisal?.status === "Completed"}
+                          disabled={selectedAppraisal?.status?.startsWith("Approved by")}
                           fullWidth
                           placeholder="e.g. 10"
                           InputProps={{ sx: { borderRadius: "10px", fontWeight: 750, background: "var(--bg-paper)" } }}
@@ -937,7 +937,7 @@ const AppraisalResearchScoring = () => {
                         fullWidth
                         value={comments}
                         onChange={(e) => setComments(e.target.value.slice(0, 1000))}
-                        disabled={selectedAppraisal.status === "Completed"}
+                        disabled={selectedAppraisal.status?.startsWith("Approved by")}
                         InputProps={{
                           sx: {
                             borderRadius: "12px",
