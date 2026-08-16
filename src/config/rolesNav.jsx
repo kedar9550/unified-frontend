@@ -201,16 +201,6 @@ export const ROLE_ROUTES = {
         //   icon: <SupervisorAccount />
         // },
 
-        {
-          text: "Resource Utilization",
-          path: "/hod/value-addition/resource-utilization",
-          icon: <Assignment />
-        },
-        {
-          text: "Contribution",
-          path: "/hod/value-addition/contribution",
-          icon: <WorkspacePremium />
-        },
         // {
         //   text: "Administration Verification",
         //   icon: <AccountBalance />
@@ -236,16 +226,6 @@ export const ROLE_ROUTES = {
           text: "Research",
           path: "/hod/research-approvals",
           icon: <Science />
-        },
-        {
-          text: "Resource Utilization",
-          path: "/hod/value-addition/resource-utilization",
-          icon: <Assignment />
-        },
-        {
-          text: "Contribution",
-          path: "/hod/value-addition/contribution",
-          icon: <WorkspacePremium />
         },
         {
           text: "Appraisal Verification",

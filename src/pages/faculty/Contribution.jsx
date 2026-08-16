@@ -167,12 +167,10 @@ export default function Contribution() {
   }, [form.fromDate, form.toDate]);
 
   const fetchContributions = () => {
-    const url = selectedYear
-      ? `/api/value-addition/contribution?academicYear=${selectedYear}`
-      : `/api/value-addition/contribution`;
-    API.get(url)
+    API.get(`/api/value-addition/contribution`)
       .then(res => {
-        setContributionsList(res.data?.data || []);
+        const allContributions = res.data?.data || [];
+        setContributionsList(allContributions.filter(c => c.status === 'Approved' || c.status === 'Completed'));
       })
       .catch(err => console.log("Failed to fetch contributions", err));
   };
@@ -1006,56 +1004,7 @@ export default function Contribution() {
             <Typography variant="h6" sx={{ color: "var(--text-primary)", fontWeight: 800 }}>
               Expertise / Contribution Records
             </Typography>
-            <Select
-              size="small"
-              value={selectedYear}
-              onChange={(e) => {
-                setSelectedYear(e.target.value);
-                blurActiveElement();
-              }}
-              onClose={blurActiveElement}
-              MenuProps={selectMenuProps}
-              displayEmpty
-              sx={{ width: { xs: "100%", sm: "auto" }, minWidth: { xs: "100%", sm: 180 }, borderRadius: "8px", background: "var(--bg-glass)" }}
-            >
-              <MenuItem value="">All Academic Years</MenuItem>
-              {academicYears.map(y => (
-                <MenuItem key={y._id} value={y._id}>{y.year}</MenuItem>
-              ))}
-            </Select>
           </Box>
-
-          <Stack direction={{ xs: "column", sm: "row" }} spacing={2} sx={{ width: { xs: "100%", sm: "auto" } }}>
-            <Button
-              variant="outlined"
-              color="primary"
-              onClick={handleOpenAddModal}
-              startIcon={<AddCircle />}
-              sx={{ textTransform: "none", fontWeight: 700, width: { xs: "100%", sm: "auto" } }}
-            >
-              Add Contribution
-            </Button>
-            <Button
-              variant="contained"
-              color="success"
-              disabled={activeDrafts.length === 0 || loading}
-              onClick={handleBulkSubmit}
-              sx={{
-                background: "var(--gradient-primary)",
-                px: 3,
-                fontWeight: 800,
-                textTransform: "none",
-                width: { xs: "100%", sm: "auto" },
-                "&:hover": { opacity: 0.9 },
-                "&.Mui-disabled": {
-                  background: "var(--disabled-bg)",
-                  color: "var(--disabled-text)",
-                }
-              }}
-            >
-              Submit Academic Year Data ({activeDrafts.length} Drafts)
-            </Button>
-          </Stack>
         </Box>
 
         {contributionsList.length === 0 ? (
@@ -1133,24 +1082,6 @@ export default function Contribution() {
                           >
                             <Visibility fontSize="small" />
                           </IconButton>
-                          {isDraft && (
-                            <>
-                              <IconButton
-                                size="small"
-                                color="info"
-                                onClick={() => handleOpenEditModal(item)}
-                              >
-                                <Edit fontSize="small" />
-                              </IconButton>
-                              <IconButton
-                                size="small"
-                                color="error"
-                                onClick={() => handleDelete(item._id)}
-                              >
-                                <Delete fontSize="small" />
-                              </IconButton>
-                            </>
-                          )}
                         </Stack>
                       </TableCell>
                     </TableRow>

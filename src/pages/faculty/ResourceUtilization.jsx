@@ -201,12 +201,10 @@ export default function ResourceUtilization() {
   // Recalculate duration automatically (Removed)
 
   const fetchActivities = () => {
-    const url = selectedYear
-      ? `/api/value-addition/resource-utilization?academicYear=${selectedYear}`
-      : `/api/value-addition/resource-utilization`;
-    API.get(url)
+    API.get(`/api/value-addition/resource-utilization`)
       .then(res => {
-        setActivitiesList(res.data?.data || []);
+        const allActivities = res.data?.data || [];
+        setActivitiesList(allActivities.filter(a => a.status === 'Approved' || a.status === 'Completed'));
       })
       .catch(err => console.log("Failed to fetch activities", err));
   };
@@ -573,55 +571,7 @@ export default function ResourceUtilization() {
             <Typography variant="h6" sx={{ color: "var(--text-primary)", fontWeight: 800 }}>
               Resource Utilization Records
             </Typography>
-            <Select
-              size="small"
-              value={selectedYear}
-              onChange={(e) => {
-                setSelectedYear(e.target.value);
-                blurActiveElement();
-              }}
-              onClose={blurActiveElement}
-              displayEmpty
-              MenuProps={selectMenuProps}
-              sx={{ width: { xs: "100%", sm: "auto" }, minWidth: { xs: "100%", sm: 180 }, borderRadius: "8px", background: "var(--bg-glass)" }}
-            >
-              <MenuItem value="">All Academic Years</MenuItem>
-              {academicYears.map(y => (
-                <MenuItem key={y._id} value={y._id}>{y.year}</MenuItem>
-              ))}
-            </Select>
           </Box>
-          <Stack direction={{ xs: "column", sm: "row" }} spacing={2} sx={{ width: { xs: "100%", sm: "auto" } }}>
-            <Button
-              variant="outlined"
-              color="primary"
-              onClick={handleOpenAddModal}
-              startIcon={<AddCircle />}
-              sx={{ textTransform: "none", fontWeight: 700, width: { xs: "100%", sm: "auto" } }}
-            >
-              Add Resource Utilization
-            </Button>
-            <Button
-              variant="contained"
-              color="success"
-              disabled={activeDrafts.length === 0 || loading}
-              onClick={handleBulkSubmit}
-              sx={{
-                background: "var(--gradient-primary)",
-                px: 3,
-                fontWeight: 800,
-                textTransform: "none",
-                width: { xs: "100%", sm: "auto" },
-                "&:hover": { opacity: 0.9 },
-                "&.Mui-disabled": {
-                  background: "var(--disabled-bg)",
-                  color: "var(--disabled-text)",
-                }
-              }}
-            >
-              Submit Academic Year Data ({activeDrafts.length} Drafts)
-            </Button>
-          </Stack>
         </Box>
 
         {activitiesList.length === 0 ? (
@@ -716,24 +666,6 @@ export default function ResourceUtilization() {
                           >
                             <Visibility fontSize="small" />
                           </IconButton>
-                          {isDraft && (
-                            <>
-                              <IconButton
-                                size="small"
-                                color="info"
-                                onClick={() => handleOpenEditModal(activity)}
-                              >
-                                <Edit fontSize="small" />
-                              </IconButton>
-                              <IconButton
-                                size="small"
-                                color="error"
-                                onClick={() => handleDelete(activity._id)}
-                              >
-                                <Delete fontSize="small" />
-                              </IconButton>
-                            </>
-                          )}
                         </Stack>
                       </TableCell>
                     </TableRow>

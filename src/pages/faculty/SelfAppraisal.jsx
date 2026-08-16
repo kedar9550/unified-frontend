@@ -2269,12 +2269,32 @@ const SelfAppraisal = () => {
         onBack={() => setViewMode("list")}
       />
       <Box p={4} sx={{ maxWidth: 1300, margin: "0 auto", animation: "fadeIn 0.5s ease" }}>
-        {(appraisal.status === 'Rejected by HOD' && appraisal.hodEvaluation?.comments) && (
+        {(!appraisal.rejectionHistory || appraisal.rejectionHistory.length === 0) && (appraisal.status === 'Rejected by HOD' && appraisal.hodEvaluation?.comments) && (
           <Alert severity="error" sx={{ mb: 4, borderRadius: "12px", border: "1px solid rgba(239, 68, 68, 0.3)", '& .MuiAlert-message': { width: '100%' } }}>
             <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>Appraisal Rejected by HOD</Typography>
             <Typography variant="body2" sx={{ mt: 0.5 }}><strong>Remarks:</strong> {appraisal.hodEvaluation.comments}</Typography>
             <Typography variant="caption" sx={{ display: 'block', mt: 1 }}>Please fix the mentioned issues and resubmit your appraisal.</Typography>
           </Alert>
+        )}
+
+        {(!appraisal.rejectionHistory || appraisal.rejectionHistory.length === 0) && (appraisal.status.startsWith('Rejected') && appraisal.status !== 'Rejected by HOD' && appraisal.managementEvaluation?.comments) && (
+          <Alert severity="error" sx={{ mb: 4, borderRadius: "12px", border: "1px solid rgba(239, 68, 68, 0.3)", '& .MuiAlert-message': { width: '100%' } }}>
+            <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>Appraisal {appraisal.status}</Typography>
+            <Typography variant="body2" sx={{ mt: 0.5 }}><strong>Remarks:</strong> {appraisal.managementEvaluation.comments}</Typography>
+            <Typography variant="caption" sx={{ display: 'block', mt: 1 }}>Please fix the mentioned issues and resubmit your appraisal.</Typography>
+          </Alert>
+        )}
+
+        {appraisal.status.includes('Rejected') && appraisal.rejectionHistory && appraisal.rejectionHistory.length > 0 && (
+          <Box sx={{ mb: 4 }}>
+            {appraisal.rejectionHistory.slice().reverse().map((rej, idx) => (
+              <Alert key={idx} severity="error" sx={{ mb: 2, borderRadius: "12px", border: "1px solid rgba(239, 68, 68, 0.3)", '& .MuiAlert-message': { width: '100%' } }}>
+                <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>Appraisal Rejected by {rej.roleLabel || rej.role}</Typography>
+                <Typography variant="body2" sx={{ mt: 0.5 }}><strong>Remarks:</strong> {rej.comments}</Typography>
+                <Typography variant="caption" sx={{ display: 'block', mt: 1 }}>Date: {new Date(rej.date).toLocaleDateString()}</Typography>
+              </Alert>
+            ))}
+          </Box>
         )}
 
         {/* Header Panel */}
@@ -2294,7 +2314,7 @@ const SelfAppraisal = () => {
         >
           {/* Top Row: Status and Academic Year */}
           <Box sx={{ display: "flex", flexDirection: { xs: "column", md: "row" }, gap: 3, alignItems: { xs: "stretch", md: "center" }, justifyContent: "space-between", width: "100%" }}>
-            {appraisal.status === "Draft" || appraisal.status === "Rejected by HOD" ? (
+            {appraisal.status === "Draft" || appraisal.status.includes("Rejected") ? (
               <Button
                 variant="contained"
                 startIcon={<Send />}
@@ -3749,7 +3769,7 @@ const SelfAppraisal = () => {
                               <Typography variant="subtitle1" sx={{ fontWeight: 700, color: "var(--color-primary)" }}>
                                 3.1 Resource Utilization (Max 10 points)
                               </Typography>
-                              {(appraisal.status === "Draft" || appraisal.status === "Rejected by HOD") && (
+                              {(appraisal.status === "Draft" || appraisal.status.includes("Rejected")) && (
                                 <Button
                                   variant="outlined"
                                   size="small"
@@ -3850,7 +3870,7 @@ const SelfAppraisal = () => {
                                                 >
                                                   <Visibility fontSize="small" />
                                                 </IconButton>
-                                                {isEditable && (appraisal.status === "Draft" || appraisal.status === "Rejected by HOD") && (
+                                                {isEditable && (appraisal.status === "Draft" || appraisal.status.includes("Rejected")) && (
                                                   <>
                                                     <IconButton
                                                       size="small"
@@ -3906,7 +3926,7 @@ const SelfAppraisal = () => {
                               <Typography variant="subtitle1" sx={{ fontWeight: 700, color: "var(--color-primary)" }}>
                                 3.2 Expertise / Contribution (Max 10 points)
                               </Typography>
-                              {(appraisal.status === "Draft" || appraisal.status === "Rejected by HOD") && (
+                              {(appraisal.status === "Draft" || appraisal.status.includes("Rejected")) && (
                                 <Button
                                   variant="outlined"
                                   size="small"
@@ -3971,7 +3991,7 @@ const SelfAppraisal = () => {
                                                 >
                                                   <Visibility fontSize="small" />
                                                 </IconButton>
-                                                {isEditable && (appraisal.status === "Draft" || appraisal.status === "Rejected by HOD") && (
+                                                {isEditable && (appraisal.status === "Draft" || appraisal.status.includes("Rejected")) && (
                                                   <>
                                                     <IconButton
                                                       size="small"
@@ -4155,7 +4175,7 @@ const SelfAppraisal = () => {
                                           </TableCell>
                                           <TableCell align="center">
                                             <Stack direction="row" spacing={1} sx={{ justifyContent: "center" }}>
-                                              {isEditable && (appraisal.status === "Draft" || appraisal.status === "Rejected by HOD") && (
+                                              {isEditable && (appraisal.status === "Draft" || appraisal.status.includes("Rejected")) && (
                                                 <>
                                                   <IconButton size="small" color="info" onClick={() => openAdminModalEdit(role)}>
                                                     <Edit fontSize="small" />

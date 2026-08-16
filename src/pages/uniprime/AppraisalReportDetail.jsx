@@ -35,7 +35,7 @@ import {
   MenuItem,
   Collapse
 } from "@mui/material";
-import { RateReview, CheckCircle, Reply, Visibility, OpenInNew, School, Science, CardMembership, Work, Groups, Person, MenuBook, Badge, Description, Public, Fingerprint, Cancel, BarChart, Close, Search, Edit, KeyboardArrowDown, KeyboardArrowUp } from "@mui/icons-material";
+import { RateReview, CheckCircle, Reply, Visibility, OpenInNew, School, Science, CardMembership, Work, Groups, Person, MenuBook, Badge, Description, Public, Fingerprint, Cancel, BarChart, Close, Search, Edit, KeyboardArrowDown, KeyboardArrowUp, Warning } from "@mui/icons-material";
 import axiosInstance from "../../api/axios";
 import { toast } from "sonner";
 import DataTable from "../../components/data/DataTable";
@@ -226,9 +226,11 @@ const AppraisalReportDetail = () => {
   const needsPrimaryEvaluation = 
     selectedAppraisal &&
     role !== "FACULTY" && 
+    selectedAppraisal.status.startsWith("Submitted to ") &&
     selectedAppraisal.status !== "Submitted to HOD" &&
     (!selectedAppraisal.hodEvaluation || selectedAppraisal.hodEvaluation.totalInterpersonalPoints === 0 || (selectedAppraisal.hodEvaluation.interpersonalRatings && selectedAppraisal.hodEvaluation.interpersonalRatings.length === 0) || !selectedAppraisal.hodEvaluation.interpersonalRatings);
 
+  const isPrimaryEvaluator = (selectedAppraisal?.status === "Submitted to HOD" && ["HOD", "DEPARTMENT_HOD", "DEPARTMENT HOD"].includes(role)) || needsPrimaryEvaluation;
 
   const handleDownloadPDF = async () => {
     if (!printRef.current) return;
@@ -361,8 +363,9 @@ const AppraisalReportDetail = () => {
       toast.warning("Please provide a rejection reason/remarks");
       return;
     }
+    const isFinalApproval = selectedAppraisal.status !== "Submitted to HOD";
     try {
-      const res = await axiosInstance.put(`/api/value-addition/resource-utilization/hod-action/${id}`, { action, comment });
+      const res = await axiosInstance.put(`/api/value-addition/resource-utilization/hod-action/${id}`, { action, comment, isFinalApproval });
       if (res.data?.success) {
         const actionText = action === "Approve" ? "approved" : "rejected";
         toast.success(`Resource Utilization entry ${actionText} successfully.`);
@@ -372,7 +375,7 @@ const AppraisalReportDetail = () => {
           setSelectedAppraisal(prev => ({
             ...prev,
             resourceUtilizationDetails: prev.resourceUtilizationDetails.map(item =>
-              item._id === id ? { ...item, status: "Approved", hodComment: comment } : item
+              item._id === id ? { ...item, status: isFinalApproval ? "Approved" : "Approved by HOD", hodComment: comment } : item
             )
           }));
         }
@@ -387,8 +390,9 @@ const AppraisalReportDetail = () => {
       toast.warning("Please provide a rejection reason/remarks");
       return;
     }
+    const isFinalApproval = selectedAppraisal.status !== "Submitted to HOD";
     try {
-      const res = await axiosInstance.put(`/api/value-addition/contribution/hod-action/${id}`, { action, comment });
+      const res = await axiosInstance.put(`/api/value-addition/contribution/hod-action/${id}`, { action, comment, isFinalApproval });
       if (res.data?.success) {
         const actionText = action === "Approve" ? "approved" : "rejected";
         toast.success(`Expertise / Contribution entry ${actionText} successfully.`);
@@ -398,7 +402,7 @@ const AppraisalReportDetail = () => {
           setSelectedAppraisal(prev => ({
             ...prev,
             contributionDetails: prev.contributionDetails.map(item =>
-              item._id === id ? { ...item, status: "Approved", hodComment: comment } : item
+              item._id === id ? { ...item, status: isFinalApproval ? "Approved" : "Approved by HOD", hodComment: comment } : item
             )
           }));
         }
@@ -413,8 +417,9 @@ const AppraisalReportDetail = () => {
       toast.warning("Please provide a rejection reason/remarks");
       return;
     }
+    const isFinalApproval = selectedAppraisal.status !== "Submitted to HOD";
     try {
-      const res = await axiosInstance.put(`/api/faculty-administration/hod-action-role/${id}`, { roleId, action, remarks });
+      const res = await axiosInstance.put(`/api/faculty-administration/hod-action-role/${id}`, { roleId, action, remarks, isFinalApproval });
       if (res.data?.success) {
         const actionText = action === "Approve" ? "approved" : "rejected";
         toast.success(`Administrative role '${roleName}' ${actionText} successfully.`);
@@ -681,12 +686,7 @@ const AppraisalReportDetail = () => {
   const handleManagementAction = async (action) => {
     if (!selectedAppraisal) return;
 
-    // Check if the user is a Dean who is trying to reject an HOD-evaluated appraisal
-    const isDean = ["Dean", "Associate Dean", "SCHOOL_DEAN"].some(r => role.includes(r) || (user?.designation && user.designation.includes(r)));
-    if (isDean && action === "Reject" && selectedAppraisal.hodEvaluation?.evaluatedBy) {
-      toast.error("Deans cannot reject an appraisal that has already been evaluated by an HOD.");
-      return;
-    }
+    // Proceed without Dean restriction
 
     let payload = {
       action,
@@ -824,6 +824,7 @@ const AppraisalReportDetail = () => {
   const { isEligible, details: eligibilityDetails } = checkEligibilityStatus();
 
   const isAuthorizedForManagementAction = () => {
+    if (isPrimaryEvaluator) return false;
     const status = selectedAppraisal?.status;
     if (!status || status === "Submitted to HOD" || !status.startsWith("Submitted to ")) return false;
     const targetRole = status.replace("Submitted to ", "");
@@ -1038,6 +1039,46 @@ const AppraisalReportDetail = () => {
                   </Collapse>
                 </CardContent>
               </Card>
+
+              {/* Previous Rejection Remarks Section */}
+              {selectedAppraisal.rejectionHistory && selectedAppraisal.rejectionHistory.length > 0 && (() => {
+                const getRoleRank = (r) => {
+                  if (r === 'HOD') return 1;
+                  if (r === 'SCHOOL_DEAN' || r === 'Dean') return 2;
+                  return 3;
+                };
+                const currentRank = getRoleRank(role);
+                const visibleRejections = selectedAppraisal.rejectionHistory.filter(rej => getRoleRank(rej.role) >= currentRank);
+
+                if (visibleRejections.length === 0) return null;
+
+                return (
+                  <Card sx={{ borderRadius: "20px", background: "var(--bg-panel)", border: "1px solid rgba(239, 68, 68, 0.3)", mb: 4, boxShadow: "var(--shadow-premium)" }}>
+                    <CardContent sx={{ p: 3 }}>
+                      <Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)", display: "flex", alignItems: "center", gap: 1.5, mb: 2 }}>
+                        <Warning sx={{ color: "#ef4444" }} /> Previous Rejection Remarks
+                      </Typography>
+                      <Divider sx={{ mb: 2.5 }} />
+
+                      {visibleRejections.slice().reverse().map((rej, idx) => (
+                        <Box key={idx} sx={{ mb: 2, p: 2.5, borderRadius: "12px", background: "rgba(239, 68, 68, 0.05)", border: "1px solid rgba(239, 68, 68, 0.2)" }}>
+                          <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                            <Typography variant="caption" sx={{ color: "#ef4444", fontWeight: 800, textTransform: "uppercase" }}>
+                              Rejected By: {rej.roleLabel || rej.role}
+                            </Typography>
+                            <Typography variant="caption" sx={{ color: "var(--text-secondary)", fontWeight: 600 }}>
+                              {new Date(rej.date).toLocaleDateString()}
+                            </Typography>
+                          </Box>
+                          <Typography variant="body2" sx={{ color: "var(--text-primary)", fontWeight: 500, lineHeight: 1.6 }}>
+                            {rej.comments}
+                          </Typography>
+                        </Box>
+                      ))}
+                    </CardContent>
+                  </Card>
+                );
+              })()}
 
               {/* PART-A: Personal Information */}
               <Card sx={{ borderRadius: "20px", background: "var(--bg-panel)", border: "1px solid var(--border-color)", mb: 4, boxShadow: "var(--shadow-premium)" }}>
@@ -1334,7 +1375,7 @@ const AppraisalReportDetail = () => {
                           ? selectedAppraisal.proctoringDetail.filter(e => e.status === "Pending" || e.status === "Pending at HOD")
                           : (selectedAppraisal.proctoringDetail?.status === "Pending" || selectedAppraisal.proctoringDetail?.status === "Pending at HOD" ? [selectedAppraisal.proctoringDetail] : []);
 
-                        if (pendingProcEntries.length === 0) {
+                        if (pendingProcEntries.length === 0 || !isPrimaryEvaluator) {
                           return null;
                         }
 
@@ -2067,7 +2108,7 @@ const AppraisalReportDetail = () => {
                                       </TableRow>
 
                                       {/* Inline Actions Row */}
-                                      {(item.status === "Pending" || item.status === "Pending at HOD") ? (
+                                      {(item.status === "Pending" || item.status === "Pending at HOD") && isPrimaryEvaluator ? (
                                         <TableRow sx={{ background: "rgba(232, 160, 0, 0.02)" }}>
                                           <TableCell colSpan={8} sx={{ py: 1.5 }}>
                                             <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5, alignItems: "flex-start", px: 1 }}>
@@ -2186,7 +2227,7 @@ const AppraisalReportDetail = () => {
                                       </TableRow>
 
                                       {/* Inline Actions Row */}
-                                      {(item.status === "Pending" || item.status === "Pending at HOD") ? (
+                                      {(item.status === "Pending" || item.status === "Pending at HOD") && isPrimaryEvaluator ? (
                                         <TableRow sx={{ background: "rgba(232, 160, 0, 0.02)" }}>
                                           <TableCell colSpan={5} sx={{ py: 1.5 }}>
                                             <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5, alignItems: "flex-start", px: 1 }}>
@@ -2319,13 +2360,13 @@ const AppraisalReportDetail = () => {
                       <TableBody>
                         {selectedAppraisal.administrationDetail && selectedAppraisal.administrationDetail.roles?.some(r => r.isResponsible) ? (
                           <>
-                            {selectedAppraisal.administrationDetail.roles.filter(r => r.isResponsible).map((role, i) => {
-                              const statusColor = getStatusColor(role.status);
+                            {selectedAppraisal.administrationDetail.roles.filter(r => r.isResponsible).map((adminItem, i) => {
+                              const statusColor = getStatusColor(adminItem.status);
 
-                              const hideLevel = ['dean', 'assoc_dean', 'coe', 'hod', 'dy_coe', 'univ_office_coord', 'dy_hod', 'dept_exam_cell'].includes(role.roleId);
-                              const levelText = hideLevel ? "" : (role.level || "");
-                              const assignedByType = typeof role.assignedBy === 'object' ? role.assignedBy.type : (role.assignedBy || "");
-                              const assignedByOtherText = typeof role.assignedBy === 'object' ? role.assignedBy.otherText : "";
+                              const hideLevel = ['dean', 'assoc_dean', 'coe', 'hod', 'dy_coe', 'univ_office_coord', 'dy_hod', 'dept_exam_cell'].includes(adminItem.roleId);
+                              const levelText = hideLevel ? "" : (adminItem.level || "");
+                              const assignedByType = typeof adminItem.assignedBy === 'object' ? adminItem.assignedBy.type : (adminItem.assignedBy || "");
+                              const assignedByOtherText = typeof adminItem.assignedBy === 'object' ? adminItem.assignedBy.otherText : "";
 
                               let assignedByTextVal = "";
                               if (assignedByType) {
@@ -2342,53 +2383,53 @@ const AppraisalReportDetail = () => {
                                       <Box>
                                         <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)" }}>
                                           {(() => {
-                                            const catalogEntry = ADMIN_ROLE_CATALOG.find(c => c.roleId === role.roleId);
-                                            return (catalogEntry && !['other', 'other_coord', 'training_coord'].includes(role.roleId))
+                                            const catalogEntry = ADMIN_ROLE_CATALOG.find(c => c.roleId === adminItem.roleId);
+                                            return (catalogEntry && !['other', 'other_coord', 'training_coord'].includes(adminItem.roleId))
                                               ? catalogEntry.label
-                                              : (role.roleLabel || role.roleName);
+                                              : (adminItem.roleLabel || adminItem.roleName);
                                           })()}
                                         </Typography>
-                                        {role.details && <Typography variant="caption" sx={{ color: "var(--text-secondary)", display: "block", mt: 0.25 }}>Details: {role.details}</Typography>}
+                                        {adminItem.details && <Typography variant="caption" sx={{ color: "var(--text-secondary)", display: "block", mt: 0.25 }}>Details: {adminItem.details}</Typography>}
                                       </Box>
                                     </TableCell>
                                     <TableCell sx={{ color: "var(--text-primary)" }}>{displayAssignedBy}</TableCell>
                                     <TableCell align="center" sx={{ fontWeight: 800, color: "var(--color-primary)" }}>
-                                      {calculateAdministrativePoints(role, appraisalConfig)}
+                                      {calculateAdministrativePoints(adminItem, appraisalConfig)}
                                     </TableCell>
                                     <TableCell>
-                                      <Chip label={role.status || "Pending"} size="small" sx={{ bgcolor: statusColor.bg, color: statusColor.color, fontWeight: 800, borderRadius: "6px" }} />
+                                      <Chip label={adminItem.status || "Pending"} size="small" sx={{ bgcolor: statusColor.bg, color: statusColor.color, fontWeight: 800, borderRadius: "6px" }} />
                                     </TableCell>
                                   </TableRow>
 
                                   {/* Inline Actions Row */}
-                                  {role.status === "Pending" ? (
+                                  {adminItem.status === "Pending" && isPrimaryEvaluator ? (
                                     <TableRow sx={{ background: "rgba(232, 160, 0, 0.02)" }}>
                                       <TableCell colSpan={5} sx={{ py: 1.5 }}>
                                         <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5, alignItems: "flex-start", px: 1 }}>
-                                          {showRejectInput[role.roleId || role.roleName] ? (
+                                          {showRejectInput[adminItem.roleId || adminItem.roleName] ? (
                                             <>
                                               <TextField
                                                 size="small"
                                                 fullWidth
                                                 placeholder="HOD comments/remarks..."
-                                                value={adminRemarks[role.roleId || role.roleName] || ""}
+                                                value={adminRemarks[adminItem.roleId || adminItem.roleName] || ""}
                                                 onChange={(e) => {
                                                   const val = e.target.value;
-                                                  setAdminRemarks(p => ({ ...p, [role.roleId || role.roleName]: val }));
+                                                  setAdminRemarks(p => ({ ...p, [adminItem.roleId || adminItem.roleName]: val }));
                                                 }}
                                               />
                                               <Stack direction="row" spacing={1} sx={{ mt: 1.5 }}>
                                                 <Button size="small" variant="contained" color="error" onClick={() => {
-                                                  handleAdminHODAction(selectedAppraisal.administrationDetail._id, role.roleId, role.roleName, "Reject", adminRemarks[role.roleId || role.roleName] || "");
-                                                  setShowRejectInput(p => ({ ...p, [role.roleId || role.roleName]: false }));
+                                                  handleAdminHODAction(selectedAppraisal.administrationDetail._id, adminItem.roleId, adminItem.roleName, "Reject", adminRemarks[adminItem.roleId || adminItem.roleName] || "");
+                                                  setShowRejectInput(p => ({ ...p, [adminItem.roleId || adminItem.roleName]: false }));
                                                 }}>Confirm Reject</Button>
-                                                <Button size="small" variant="text" color="inherit" onClick={() => setShowRejectInput(p => ({ ...p, [role.roleId || role.roleName]: false }))}>Cancel</Button>
+                                                <Button size="small" variant="text" color="inherit" onClick={() => setShowRejectInput(p => ({ ...p, [adminItem.roleId || adminItem.roleName]: false }))}>Cancel</Button>
                                               </Stack>
                                             </>
                                           ) : (
                                             <Stack direction="row" spacing={1} sx={{ mt: 0 }}>
-                                              <Button size="small" variant="outlined" color="error" onClick={() => setShowRejectInput(p => ({ ...p, [role.roleId || role.roleName]: true }))}>Reject</Button>
-                                              <Button size="small" variant="contained" color="success" sx={{ color: "#fff" }} onClick={() => handleAdminHODAction(selectedAppraisal.administrationDetail._id, role.roleId, role.roleName, "Approve", adminRemarks[role.roleId || role.roleName] || "")}>Approve</Button>
+                                              <Button size="small" variant="outlined" color="error" onClick={() => setShowRejectInput(p => ({ ...p, [adminItem.roleId || adminItem.roleName]: true }))}>Reject</Button>
+                                              <Button size="small" variant="contained" color="success" sx={{ color: "#fff" }} onClick={() => handleAdminHODAction(selectedAppraisal.administrationDetail._id, adminItem.roleId, adminItem.roleName, "Approve", adminRemarks[adminItem.roleId || adminItem.roleName] || "")}>Approve</Button>
                                             </Stack>
                                           )}
                                         </Box>
@@ -2482,7 +2523,7 @@ const AppraisalReportDetail = () => {
                     </Box>
                     <Divider sx={{ mb: 2.5 }} />
 
-                    {(selectedAppraisal.status === "Submitted to HOD" || needsPrimaryEvaluation) && (
+                    {((selectedAppraisal.status === "Submitted to HOD" && (role === "HOD" || role === "DEPARTMENT_HOD" || role === "DEPARTMENT HOD")) || needsPrimaryEvaluation) && (
                       <Typography variant="caption" color="var(--text-secondary)" sx={{ display: "block", mb: 2 }}>
                         Rate the faculty on a 5-point scale (5 - Best, 1 - Poorest) for each parameter.
                       </Typography>
@@ -2540,7 +2581,7 @@ const AppraisalReportDetail = () => {
                             })()}
                           </Typography>
 
-                          {!(selectedAppraisal.status === "Submitted to HOD" || needsPrimaryEvaluation) ? (
+                          {!( (selectedAppraisal.status === "Submitted to HOD" && (role === "HOD" || role === "DEPARTMENT_HOD" || role === "DEPARTMENT HOD")) || needsPrimaryEvaluation ) ? (
                             <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                               <Chip
                                 label={`${ratings[p.id] || 0} Points`}
@@ -2594,6 +2635,8 @@ const AppraisalReportDetail = () => {
             )}
           </Grid>
 
+
+
           {/* Evaluation Remarks Section - Placed outside the grid so it spans full width at the bottom */}
           {(selectedAppraisal.hodEvaluation?.comments || selectedAppraisal.managementEvaluation?.comments) && (
             <Card sx={{ borderRadius: "20px", background: "var(--bg-panel)", border: "1px solid var(--border-color)", mt: 4, mb: 2, boxShadow: "var(--shadow-premium)" }}>
@@ -2606,7 +2649,7 @@ const AppraisalReportDetail = () => {
                 {selectedAppraisal.hodEvaluation?.comments && (
                   <Box sx={{ mb: selectedAppraisal.managementEvaluation?.comments ? 2 : 0, p: 2.5, borderRadius: "12px", background: "rgba(59, 130, 246, 0.05)", border: "1px solid rgba(59, 130, 246, 0.2)" }}>
                     <Typography variant="caption" sx={{ color: "#3b82f6", fontWeight: 800, textTransform: "uppercase", display: "block", mb: 1 }}>
-                      HOD Remarks
+                      Primary Evaluator (HOD / Dean) Remarks
                     </Typography>
                     <Typography variant="body2" sx={{ color: "var(--text-primary)", fontWeight: 500, lineHeight: 1.6 }}>
                       {selectedAppraisal.hodEvaluation.comments}
@@ -2749,7 +2792,7 @@ const AppraisalReportDetail = () => {
 
               <Divider sx={{ my: 1 }} />
 
-              {(selectedResUtDetails.status === "Pending" || selectedResUtDetails.status === "Pending at HOD") ? (
+              {(selectedResUtDetails.status === "Pending" || selectedResUtDetails.status === "Pending at HOD") && isPrimaryEvaluator ? (
                 <Box>
                   <Typography variant="caption" color="textSecondary" sx={{ fontWeight: 600, display: "block", mb: 1 }}>HOD Evaluation Action</Typography>
                   <TextField
@@ -2875,7 +2918,7 @@ const AppraisalReportDetail = () => {
 
               <Divider sx={{ my: 1 }} />
 
-              {(selectedContDetails.status === "Pending" || selectedContDetails.status === "Pending at HOD") ? (
+              {(selectedContDetails.status === "Pending" || selectedContDetails.status === "Pending at HOD") && isPrimaryEvaluator ? (
                 <Box>
                   <Typography variant="caption" color="textSecondary" sx={{ fontWeight: 600, display: "block", mb: 1 }}>HOD Evaluation Action</Typography>
                   <TextField
@@ -2941,7 +2984,7 @@ const AppraisalReportDetail = () => {
       </Dialog>
 
       {/* Main HOD Action Bar */}
-      {["HOD", "SCHOOL_DEAN"].includes(role) && selectedAppraisal?.status === "Submitted to HOD" && (
+      {isPrimaryEvaluator && (
         <Paper
           elevation={4}
           sx={{
@@ -2973,7 +3016,7 @@ const AppraisalReportDetail = () => {
               </Typography>
             </Alert>
           )}
-          {(!allRatingsProvided && (selectedAppraisal.status === "Submitted to HOD" || needsPrimaryEvaluation)) && (
+          {(!allRatingsProvided && ((selectedAppraisal.status === "Submitted to HOD" && (role === "HOD" || role === "DEPARTMENT_HOD" || role === "DEPARTMENT HOD")) || needsPrimaryEvaluation)) && (
             <Alert severity="warning" sx={{ borderRadius: "10px", py: 0.5 }}>
               <Typography variant="caption" sx={{ fontWeight: 700 }}>
                 Please rate all 10 Interpersonal Skills parameters.
@@ -3060,21 +3103,16 @@ const AppraisalReportDetail = () => {
             helperText={!mainAppraisalRemarks.trim() ? "Remarks are mandatory for approval or rejection." : ""}
           />
           <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 2, mt: 1 }}>
-            {!(
-              ["Dean", "Associate Dean", "SCHOOL_DEAN"].some(r => role.includes(r) || (user?.designation && user.designation.includes(r))) &&
-              selectedAppraisal.hodEvaluation?.evaluatedBy
-            ) && (
-              <Button
-                variant="outlined"
-                color="error"
-                size="large"
-                disabled={loading || !mainAppraisalRemarks.trim()}
-                onClick={() => handleManagementAction("Reject")}
-                sx={{ fontWeight: 700, px: 4 }}
-              >
-                Reject Appraisal
-              </Button>
-            )}
+            <Button
+              variant="outlined"
+              color="error"
+              size="large"
+              disabled={loading || !mainAppraisalRemarks.trim()}
+              onClick={() => handleManagementAction("Reject")}
+              sx={{ fontWeight: 700, px: 4 }}
+            >
+              Reject Appraisal
+            </Button>
             <Button
               variant="contained"
               color="success"
