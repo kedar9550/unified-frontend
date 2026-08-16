@@ -223,6 +223,13 @@ const AppraisalReportDetail = () => {
   const [isDownloading, setIsDownloading] = useState(false);
   const [showEligibilityDetails, setShowEligibilityDetails] = useState(false);
 
+  const needsPrimaryEvaluation = 
+    selectedAppraisal &&
+    role !== "FACULTY" && 
+    selectedAppraisal.status !== "Submitted to HOD" &&
+    (!selectedAppraisal.hodEvaluation || selectedAppraisal.hodEvaluation.totalInterpersonalPoints === 0 || (selectedAppraisal.hodEvaluation.interpersonalRatings && selectedAppraisal.hodEvaluation.interpersonalRatings.length === 0) || !selectedAppraisal.hodEvaluation.interpersonalRatings);
+
+
   const handleDownloadPDF = async () => {
     if (!printRef.current) return;
     try {
@@ -681,12 +688,29 @@ const AppraisalReportDetail = () => {
       return;
     }
 
+    let payload = {
+      action,
+      comments: mainAppraisalRemarks
+    };
+
+    if (needsPrimaryEvaluation) {
+      const formattedRatings = PARAMETERS.map(p => ({
+        parameterId: p.id,
+        parameterText: p.text,
+        rating: ratings[p.id] || 5
+      }));
+      payload.interpersonalRatings = formattedRatings;
+      
+      let totalInter = 0;
+      formattedRatings.forEach(r => {
+          totalInter += Number(r.rating) || 0;
+      });
+      payload.totalInterpersonalPoints = totalInter;
+    }
+
     setLoading(true);
     try {
-      const res = await axiosInstance.put(`/api/appraisal/management-evaluate/${selectedAppraisal._id}`, {
-        action,
-        comments: mainAppraisalRemarks
-      });
+      const res = await axiosInstance.put(`/api/appraisal/management-evaluate/${selectedAppraisal._id}`, payload);
       if (res.data && res.data.success) {
         toast.dismiss();
         toast.success(`Appraisal successfully ${action.toLowerCase()}ed.`);
@@ -930,7 +954,10 @@ const AppraisalReportDetail = () => {
               {/* Eligibility Status */}
               <Card sx={{ borderRadius: "20px", background: "var(--bg-panel)", border: "1px solid var(--border-color)", mb: 4, boxShadow: "var(--shadow-premium)" }}>
                 <CardContent sx={{ p: 3 }}>
-                  <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                  <Box 
+                    sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", cursor: "pointer" }}
+                    onClick={() => setShowEligibilityDetails(!showEligibilityDetails)}
+                  >
                     <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
                       <Box sx={{ width: 48, height: 48, borderRadius: "50%", bgcolor: isEligible ? "rgba(16, 185, 129, 0.08)" : "rgba(239, 68, 68, 0.08)", color: isEligible ? "#10b981" : "#ef4444", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                         {isEligible ? <CheckCircle sx={{ fontSize: 28 }} /> : <Cancel sx={{ fontSize: 28 }} />}
@@ -944,7 +971,7 @@ const AppraisalReportDetail = () => {
                         </Typography>
                       </Box>
                     </Box>
-                    <IconButton onClick={() => setShowEligibilityDetails(!showEligibilityDetails)}>
+                    <IconButton>
                       {showEligibilityDetails ? <KeyboardArrowUp /> : <KeyboardArrowDown />}
                     </IconButton>
                   </Box>
@@ -2455,13 +2482,13 @@ const AppraisalReportDetail = () => {
                     </Box>
                     <Divider sx={{ mb: 2.5 }} />
 
-                    {selectedAppraisal.status === "Submitted to HOD" && (
+                    {(selectedAppraisal.status === "Submitted to HOD" || needsPrimaryEvaluation) && (
                       <Typography variant="caption" color="var(--text-secondary)" sx={{ display: "block", mb: 2 }}>
                         Rate the faculty on a 5-point scale (5 - Best, 1 - Poorest) for each parameter.
                       </Typography>
                     )}
 
-                    <Box sx={{ maxHeight: "450px", overflowY: "auto", position: "relative", pr: 1, mb: 3 }}>
+                    <Box sx={{ position: "relative", mb: 3 }}>
                       {PARAMETERS.map((p) => (
                         <Box
                           key={p.id}
@@ -2513,7 +2540,7 @@ const AppraisalReportDetail = () => {
                             })()}
                           </Typography>
 
-                          {selectedAppraisal.status !== "Submitted to HOD" ? (
+                          {!(selectedAppraisal.status === "Submitted to HOD" || needsPrimaryEvaluation) ? (
                             <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                               <Chip
                                 label={`${ratings[p.id] || 0} Points`}
@@ -2566,6 +2593,40 @@ const AppraisalReportDetail = () => {
               </Grid>
             )}
           </Grid>
+
+          {/* Evaluation Remarks Section - Placed outside the grid so it spans full width at the bottom */}
+          {(selectedAppraisal.hodEvaluation?.comments || selectedAppraisal.managementEvaluation?.comments) && (
+            <Card sx={{ borderRadius: "20px", background: "var(--bg-panel)", border: "1px solid var(--border-color)", mt: 4, mb: 2, boxShadow: "var(--shadow-premium)" }}>
+              <CardContent sx={{ p: 3 }}>
+                <Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)", display: "flex", alignItems: "center", gap: 1.5, mb: 2 }}>
+                  <RateReview sx={{ color: "#8b5cf6" }} /> Evaluation Remarks
+                </Typography>
+                <Divider sx={{ mb: 2.5 }} />
+
+                {selectedAppraisal.hodEvaluation?.comments && (
+                  <Box sx={{ mb: selectedAppraisal.managementEvaluation?.comments ? 2 : 0, p: 2.5, borderRadius: "12px", background: "rgba(59, 130, 246, 0.05)", border: "1px solid rgba(59, 130, 246, 0.2)" }}>
+                    <Typography variant="caption" sx={{ color: "#3b82f6", fontWeight: 800, textTransform: "uppercase", display: "block", mb: 1 }}>
+                      HOD Remarks
+                    </Typography>
+                    <Typography variant="body2" sx={{ color: "var(--text-primary)", fontWeight: 500, lineHeight: 1.6 }}>
+                      {selectedAppraisal.hodEvaluation.comments}
+                    </Typography>
+                  </Box>
+                )}
+
+                {selectedAppraisal.managementEvaluation?.comments && (
+                  <Box sx={{ p: 2.5, borderRadius: "12px", background: "rgba(139, 92, 246, 0.05)", border: "1px solid rgba(139, 92, 246, 0.2)" }}>
+                    <Typography variant="caption" sx={{ color: "#8b5cf6", fontWeight: 800, textTransform: "uppercase", display: "block", mb: 1 }}>
+                      Dean / Management Remarks
+                    </Typography>
+                    <Typography variant="body2" sx={{ color: "var(--text-primary)", fontWeight: 500, lineHeight: 1.6 }}>
+                      {selectedAppraisal.managementEvaluation.comments}
+                    </Typography>
+                  </Box>
+                )}
+              </CardContent>
+            </Card>
+          )}
         </Box>
       )}
 
@@ -2912,7 +2973,7 @@ const AppraisalReportDetail = () => {
               </Typography>
             </Alert>
           )}
-          {!allRatingsProvided && (
+          {(!allRatingsProvided && (selectedAppraisal.status === "Submitted to HOD" || needsPrimaryEvaluation)) && (
             <Alert severity="warning" sx={{ borderRadius: "10px", py: 0.5 }}>
               <Typography variant="caption" sx={{ fontWeight: 700 }}>
                 Please rate all 10 Interpersonal Skills parameters.
@@ -2931,16 +2992,18 @@ const AppraisalReportDetail = () => {
             fullWidth
             multiline
             rows={2}
-            placeholder="Enter final remarks (Required for rejection)..."
+            placeholder="Enter final remarks (Required)..."
             value={mainAppraisalRemarks}
             onChange={(e) => setMainAppraisalRemarks(e.target.value)}
+            error={!mainAppraisalRemarks.trim()}
+            helperText={!mainAppraisalRemarks.trim() ? "Remarks are mandatory for approval or rejection." : ""}
           />
           <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 2, mt: 1 }}>
             <Button
               variant="outlined"
               color="error"
               size="large"
-              disabled={loading}
+              disabled={loading || !mainAppraisalRemarks.trim()}
               onClick={() => handleMainHODAction("Reject")}
               sx={{ fontWeight: 700, px: 4 }}
             >
@@ -2950,7 +3013,7 @@ const AppraisalReportDetail = () => {
               variant="contained"
               color="success"
               size="large"
-              disabled={loading || validationStatus.hasPending || validationStatus.hasRejected || !allRatingsProvided}
+              disabled={loading || validationStatus.hasPending || validationStatus.hasRejected || !allRatingsProvided || !mainAppraisalRemarks.trim()}
               onClick={() => handleMainHODAction("Approve")}
               sx={{ fontWeight: 700, px: 4, color: "#fff" }}
             >
@@ -2990,9 +3053,11 @@ const AppraisalReportDetail = () => {
             fullWidth
             multiline
             rows={2}
-            placeholder="Enter management remarks..."
+            placeholder="Enter management remarks (Required)..."
             value={mainAppraisalRemarks}
             onChange={(e) => setMainAppraisalRemarks(e.target.value)}
+            error={!mainAppraisalRemarks.trim()}
+            helperText={!mainAppraisalRemarks.trim() ? "Remarks are mandatory for approval or rejection." : ""}
           />
           <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 2, mt: 1 }}>
             {!(
@@ -3003,7 +3068,7 @@ const AppraisalReportDetail = () => {
                 variant="outlined"
                 color="error"
                 size="large"
-                disabled={loading}
+                disabled={loading || !mainAppraisalRemarks.trim()}
                 onClick={() => handleManagementAction("Reject")}
                 sx={{ fontWeight: 700, px: 4 }}
               >
@@ -3014,7 +3079,7 @@ const AppraisalReportDetail = () => {
               variant="contained"
               color="success"
               size="large"
-              disabled={loading}
+              disabled={loading || !mainAppraisalRemarks.trim() || (needsPrimaryEvaluation && !allRatingsProvided)}
               onClick={() => handleManagementAction("Approve")}
               sx={{ fontWeight: 700, px: 4, color: "#fff" }}
             >

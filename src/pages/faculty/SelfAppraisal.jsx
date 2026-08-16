@@ -525,12 +525,6 @@ const SelfAppraisal = () => {
   // Submit Appraisal
   const handleSubmit = async () => {
 
-    if (missingFields.includes("Parent Department")) {
-      toast.error("Your Parent Department is not set. Please contact the Administrator to assign it.");
-      return;
-    }
-
-
     // Check for rejected items in proctoring, resource utilization, contributions, and administrative responsibilities
     const hasRejectedProc = proctoringDetail?.status === "Rejected";
     const hasRejectedResUt = resourceUtilizationDetails?.some(r => r.status === "Rejected");
@@ -547,7 +541,7 @@ const SelfAppraisal = () => {
         academicYearId: selectedYear
       });
       if (res.data && res.data.success) {
-        toast.success("Appraisal submitted to HOD successfully!");
+        toast.success(res.data.message || "Appraisal submitted successfully!");
         fetchAppraisal(); // reload
       }
     } catch (err) {

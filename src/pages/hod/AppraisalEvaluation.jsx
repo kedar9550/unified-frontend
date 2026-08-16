@@ -55,12 +55,15 @@ const AppraisalEvaluation = () => {
   });
 
   const getStatusColor = (status) => {
-    switch (status) {
-      case "Pending at HOD":
-      case "Pending": return { bg: "rgba(245, 158, 11, 0.12)", color: "#f59e0b" };
-      case "Approved": return { bg: "rgba(34, 197, 94, 0.12)", color: "#22c55e" };
-      case "Rejected": return { bg: "rgba(239, 68, 68, 0.12)", color: "#ef4444" };
-      default: return { bg: "rgba(100, 116, 139, 0.12)", color: "#64748b" };
+    if (status === "Submitted to HOD" || status === "Pending at HOD") {
+      return { bg: "rgba(245, 158, 11, 0.12)", color: "#f59e0b" }; // Amber
+    } else if (status === "Rejected by HOD" || status === "Rejected") {
+      return { bg: "rgba(239, 68, 68, 0.12)", color: "#ef4444" }; // Red
+    } else if (status === "Completed" || status === "Approved") {
+      return { bg: "rgba(34, 197, 94, 0.12)", color: "#22c55e" }; // Green
+    } else {
+      // For "Pending at Dean", "Pending Research Admin" etc.
+      return { bg: "rgba(59, 130, 246, 0.12)", color: "#3b82f6" }; // Blue
     }
   };
 
@@ -81,9 +84,9 @@ const AppraisalEvaluation = () => {
             columns={["FACULTY NAME", "EMPLOYEE ID", "DEPARTMENT", "ACADEMIC YEAR", "STATUS", "ACTION"]}
             rows={filteredList.map((appr) => {
               const displayStatus = appr.status === "Submitted to HOD"
-                ? "Pending"
-                : (appr.status === "Rejected by HOD" ? "Rejected" : "Approved");
-              const statusColor = getStatusColor(displayStatus === "Pending" ? "Pending at HOD" : displayStatus);
+                ? "Pending at HOD"
+                : appr.status; // Show the actual backend status (e.g., Pending at Dean)
+              const statusColor = getStatusColor(displayStatus);
               const name = appr.facultyId?.name || "N/A";
               const empId = appr.facultyId?.institutionId || "N/A";
               const dept = appr.personalInfoSnapshot?.departmentName || "N/A";
@@ -98,7 +101,7 @@ const AppraisalEvaluation = () => {
                   value: displayStatus,
                   display: (
                     <Chip
-                      label={displayStatus === "Pending" ? "Pending at HOD / Dean" : displayStatus === "Pending at HOD" ? "Pending at HOD / Dean" : displayStatus}
+                      label={displayStatus}
                       size="small"
                       sx={{
                         bgcolor: statusColor.bg,
@@ -149,9 +152,9 @@ const AppraisalEvaluation = () => {
                     "& .MuiOutlinedInput-notchedOutline": { borderColor: "var(--border-color)" }
                   }}
                 >
-                  <MenuItem value="Pending">Pending</MenuItem>
-                  <MenuItem value="Approved">Approved</MenuItem>
-                  <MenuItem value="Rejected">Rejected</MenuItem>
+                  <MenuItem value="Pending">Pending at HOD</MenuItem>
+                  <MenuItem value="Approved">Approved by HOD</MenuItem>
+                  <MenuItem value="Rejected">Rejected by HOD</MenuItem>
                   <MenuItem value="All">All Requests</MenuItem>
                 </Select>
               </FormControl>
