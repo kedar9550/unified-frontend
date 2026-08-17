@@ -22,6 +22,7 @@ import { toast } from 'sonner';
 const StaffList = () => {
   const [loading, setLoading] = useState(true);
   const [staff, setStaff] = useState([]);
+  const [canAddStaff, setCanAddStaff] = useState(false);
 
   // Add Staff Dialog State
   const [openAddDialog, setOpenAddDialog] = useState(false);
@@ -36,7 +37,14 @@ const StaffList = () => {
     setLoading(true);
     try {
       const res = await API.get('/api/employees/hod/staff');
-      setStaff(res.data || []);
+      if (res.data && Array.isArray(res.data)) {
+        setStaff(res.data);
+      } else if (res.data && res.data.staff) {
+        setStaff(res.data.staff);
+        setCanAddStaff(res.data.canAddStaff);
+      } else {
+        setStaff([]);
+      }
     } catch (err) {
       console.error('Failed to load  staff', err);
     } finally {
@@ -241,25 +249,27 @@ const EmployeeAvatar = ({ item }) => {
             </Box>
           </Box>
           
-          <Button
-            variant="contained"
-            startIcon={<AddIcon />}
-            onClick={() => setOpenAddDialog(true)}
-            sx={{
-              textTransform: 'none',
-              fontWeight: 700,
-              borderRadius: '12px',
-              px: 3,
-              py: 1,
-              bgcolor: 'var(--color-primary)',
-              color: '#fff',
-              '&:hover': {
-                bgcolor: 'var(--color-primary-dark, #1d4ed8)',
-              }
-            }}
-          >
-            Add Staff
-          </Button>
+          {canAddStaff && (
+            <Button
+              variant="contained"
+              startIcon={<AddIcon />}
+              onClick={() => setOpenAddDialog(true)}
+              sx={{
+                textTransform: 'none',
+                fontWeight: 700,
+                borderRadius: '12px',
+                px: 3,
+                py: 1,
+                bgcolor: 'var(--color-primary)',
+                color: '#fff',
+                '&:hover': {
+                  bgcolor: 'var(--color-primary-dark, #1d4ed8)',
+                }
+              }}
+            >
+              Add Staff
+            </Button>
+          )}
         </Box>
 
         {loading ? null : (
