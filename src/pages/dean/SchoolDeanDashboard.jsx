@@ -96,10 +96,10 @@ const SchoolDeanDashboard = () => {
   const totalPublicationsCount = dashboard.researchStats.reduce((sum, item) => sum + item.value, 0);
 
   const topCards = [
-    { title: "Department Faculty", value: dashboard.totalFaculty, subtitle: "Total Active", icon: <People />, color: "#3B82F6", linkText: "Manage Faculty" },
-    { title: "Academic Programs", value: dashboard.totalPrograms, subtitle: "Branches Managed", icon: <Assignment />, color: "#A855F7", linkText: "View Programs" },
-    { title: "Pending Reviews", value: dashboard.pendingCounts.total, subtitle: "Actions Required", icon: <WarningAmber />, color: "#F59E0B", linkText: "View Pending" },
-    { title: "Total Research Work", value: totalPublicationsCount, subtitle: "Submitted & Approved", icon: <Science />, color: "#EF4444", linkText: "View Research" },
+    { title: "Department Faculty", value: dashboard.totalFaculty, subtitle: "Total Active", icon: <People />, color: "#3B82F6", linkText: "Manage Faculty", path: "/hod/staff" },
+    { title: "Academic Programs", value: dashboard.totalPrograms, subtitle: "Branches Managed", icon: <Assignment />, color: "#A855F7", linkText: "View Programs", path: "/dashboard" },
+    { title: "Pending Reviews", value: dashboard.pendingCounts.total, subtitle: "Actions Required", icon: <WarningAmber />, color: "#F59E0B", linkText: "View Pending", path: "/hod/research-approvals" },
+    { title: "Total Research Work", value: totalPublicationsCount, subtitle: "Submitted & Approved", icon: <Science />, color: "#EF4444", linkText: "View Research", path: "/hod/research-approvals" },
   ];
 
   const pendingActions = [
@@ -247,6 +247,7 @@ const SchoolDeanDashboard = () => {
                 <Button
                   size="small"
                   endIcon={<ArrowForward sx={{ fontSize: 16 }} />}
+                  onClick={() => navigate(card.path)}
                   sx={{
                     textTransform: "none",
                     fontWeight: 700,

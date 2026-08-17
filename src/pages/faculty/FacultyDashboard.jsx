@@ -17,6 +17,8 @@ import {
   MenuItem,
   Select,
   Tooltip as MuiTooltip,
+  Skeleton,
+  LinearProgress
 } from "@mui/material";
 import {
   MenuBook,
@@ -94,8 +96,7 @@ const FacultyDashboard = () => {
 
         setAcademicYears(sortedUniqueYears);
 
-        // Default to the active year if available
-        const active = sortedUniqueYears.find((y) => y.isGlobalActive);
+        const active = sortedUniqueYears.find((y) => y.active);
         if (active) setSelectedYear(active.year);
         else if (sortedUniqueYears.length > 0) setSelectedYear(sortedUniqueYears[0].year);
       } catch (err) {
@@ -149,6 +150,7 @@ const FacultyDashboard = () => {
       title: "Appraisal Status",
       value: dashboardData?.appraisalStatus || "Not Started",
       subtitle: `Claimed Score: ${dashboardData?.appraisalScore || 0} pts`,
+      progress: Math.min(((dashboardData?.appraisalScore || 0) / 100) * 100, 100),
       icon: <AssignmentTurnedIn />,
       gradient: "linear-gradient(135deg, #F59E0B, #D97706)",
       color: "#F59E0B",
@@ -243,9 +245,14 @@ const FacultyDashboard = () => {
         </Box>
       </Box>
 
-      {/* Row 1: Summary Cards */}
-      <Box
-        sx={{
+      {/* Main Content Area */}
+      {loadingDashboard ? (
+        <FacultyDashboardSkeleton />
+      ) : (
+        <>
+          {/* Row 1: Summary Cards */}
+          <Box
+            sx={{
           display: "flex",
           flexWrap: "wrap",
           gap: 2.5,
@@ -355,6 +362,23 @@ const FacultyDashboard = () => {
                   >
                     {card.subtitle}
                   </Typography>
+                  {card.progress !== undefined && (
+                    <Box sx={{ width: '100%', mt: 1 }}>
+                      <LinearProgress 
+                        variant="determinate" 
+                        value={card.progress} 
+                        sx={{ 
+                          height: 6, 
+                          borderRadius: 3,
+                          bgcolor: `${card.color}30`,
+                          '& .MuiLinearProgress-bar': {
+                            bgcolor: card.color,
+                            borderRadius: 3
+                          }
+                        }} 
+                      />
+                    </Box>
+                  )}
                 </Box>
               </Box>
               <Box
@@ -470,60 +494,69 @@ const FacultyDashboard = () => {
                   Submissions by Type
                 </Typography>
                 <Box sx={{ position: "relative", width: 160, height: 160, minWidth: 0 }}>
-                  <ResponsiveContainer width="100%" height={160}>
-                    <PieChart>
-                      <Pie
-                        data={dashboardData?.researchTypeDistribution || []}
-                        dataKey="value"
-                        nameKey="name"
-                        cx="50%"
-                        cy="50%"
-                        innerRadius={55}
-                        outerRadius={75}
-                        paddingAngle={4}
-                        stroke="none"
+                  {dashboardData?.totalResearch > 0 ? (
+                    <>
+                      <ResponsiveContainer width="100%" height={160}>
+                        <PieChart>
+                          <Pie
+                            data={dashboardData?.researchTypeDistribution || []}
+                            dataKey="value"
+                            nameKey="name"
+                            cx="50%"
+                            cy="50%"
+                            innerRadius={55}
+                            outerRadius={75}
+                            paddingAngle={4}
+                            stroke="none"
+                          >
+                            {(dashboardData?.researchTypeDistribution || []).map((entry, index) => (
+                              <Cell
+                                key={`cell-${index}`}
+                                fill={CHART_COLORS[index % CHART_COLORS.length]}
+                              />
+                            ))}
+                          </Pie>
+                          <Tooltip />
+                        </PieChart>
+                      </ResponsiveContainer>
+                      <Box
+                        sx={{
+                          position: "absolute",
+                          top: "50%",
+                          left: "50%",
+                          transform: "translate(-50%, -50%)",
+                          textAlign: "center",
+                        }}
                       >
-                        {(dashboardData?.researchTypeDistribution || []).map((entry, index) => (
-                          <Cell
-                            key={`cell-${index}`}
-                            fill={CHART_COLORS[index % CHART_COLORS.length]}
-                          />
-                        ))}
-                      </Pie>
-                      <Tooltip />
-                    </PieChart>
-                  </ResponsiveContainer>
-                  <Box
-                    sx={{
-                      position: "absolute",
-                      top: "50%",
-                      left: "50%",
-                      transform: "translate(-50%, -50%)",
-                      textAlign: "center",
-                    }}
-                  >
-                    <Typography
-                      sx={{
-                        fontSize: 28,
-                        fontWeight: 800,
-                        color: "var(--text-primary)",
-                        lineHeight: 1,
-                      }}
-                    >
-                      {dashboardData?.totalResearch || 0}
-                    </Typography>
-                    <Typography
-                      sx={{
-                        fontSize: 10,
-                        fontWeight: 600,
-                        color: "var(--text-secondary)",
-                        textTransform: "uppercase",
-                        mt: 0.5,
-                      }}
-                    >
-                      Submissions
-                    </Typography>
-                  </Box>
+                        <Typography
+                          sx={{
+                            fontSize: 28,
+                            fontWeight: 800,
+                            color: "var(--text-primary)",
+                            lineHeight: 1,
+                          }}
+                        >
+                          {dashboardData?.totalResearch || 0}
+                        </Typography>
+                        <Typography
+                          sx={{
+                            fontSize: 10,
+                            fontWeight: 600,
+                            color: "var(--text-secondary)",
+                            textTransform: "uppercase",
+                            mt: 0.5,
+                          }}
+                        >
+                          Submissions
+                        </Typography>
+                      </Box>
+                    </>
+                  ) : (
+                    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', opacity: 0.5, background: 'var(--bg-accent-1)', borderRadius: '50%' }}>
+                      <Science sx={{ fontSize: 32, color: 'var(--text-secondary)', mb: 0.5 }} />
+                      <Typography sx={{ fontSize: 10, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>No Data</Typography>
+                    </Box>
+                  )}
                 </Box>
                 <Box sx={{ mt: 2, width: "100%", maxWidth: 180, maxHeight: 150, overflowY: "auto" }}>
                   {(dashboardData?.researchTypeDistribution || [])
@@ -807,67 +840,84 @@ const FacultyDashboard = () => {
           </Button>
         </Box>
 
-        <DataTable
-          columns={["TITLE / NAME", "TYPE", "ACADEMIC YEAR", "STATUS", "DATE SUBMITTED"]}
-          alignments={["left", "center", "center", "center", "center"]}
-          rows={(dashboardData?.recentResearchList || []).map(item => [
-            {
-              display: (
-                <MuiTooltip title={item.title} arrow placement="top">
-                  <Typography
+        {(dashboardData?.recentResearchList || []).length > 0 ? (
+          <DataTable
+            columns={["TITLE / NAME", "TYPE", "ACADEMIC YEAR", "STATUS", "DATE SUBMITTED"]}
+            alignments={["left", "center", "center", "center", "center"]}
+            rows={(dashboardData?.recentResearchList || []).map(item => [
+              {
+                display: (
+                  <MuiTooltip title={item.title} arrow placement="top">
+                    <Typography
+                      sx={{
+                        maxWidth: { xs: "180px", sm: "300px", md: "450px" },
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                        fontSize: "0.875rem",
+                        fontWeight: 600,
+                        color: "var(--text-primary)",
+                        textAlign: "left"
+                      }}
+                    >
+                      {item.title}
+                    </Typography>
+                  </MuiTooltip>
+                ),
+                value: item.title
+              },
+              item.type,
+              item.year,
+              {
+                display: (
+                  <Chip
+                    label={item.status}
+                    size="small"
                     sx={{
-                      maxWidth: { xs: "180px", sm: "300px", md: "450px" },
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                      whiteSpace: "nowrap",
-                      fontSize: "0.875rem",
-                      fontWeight: 600,
-                      color: "var(--text-primary)",
-                      textAlign: "left"
+                      fontWeight: 700,
+                      fontSize: "0.75rem",
+                      bgcolor:
+                        item.status === "Approved"
+                          ? "#dcfce7"
+                          : item.status.startsWith("Pending")
+                            ? "#fef3c7"
+                            : "#fee2e2",
+                      color:
+                        item.status === "Approved"
+                          ? "#166534"
+                          : item.status.startsWith("Pending")
+                            ? "#92400e"
+                            : "#991b1b",
+                      textTransform: "capitalize"
                     }}
-                  >
-                    {item.title}
-                  </Typography>
-                </MuiTooltip>
-              ),
-              value: item.title
-            },
-            item.type,
-            item.year,
-            {
-              display: (
-                <Chip
-                  label={item.status}
-                  size="small"
-                  sx={{
-                    fontWeight: 700,
-                    fontSize: "0.75rem",
-                    bgcolor:
-                      item.status === "Approved"
-                        ? "#dcfce7"
-                        : item.status.startsWith("Pending")
-                          ? "#fef3c7"
-                          : "#fee2e2",
-                    color:
-                      item.status === "Approved"
-                        ? "#166534"
-                        : item.status.startsWith("Pending")
-                          ? "#92400e"
-                          : "#991b1b",
-                    textTransform: "capitalize"
-                  }}
-                />
-              ),
-              value: item.status
-            },
-            new Date(item.createdAt).toLocaleDateString("en-IN", {
-              day: "2-digit",
-              month: "short",
-              year: "numeric"
-            })
-          ])}
-        />
+                  />
+                ),
+                value: item.status
+              },
+              new Date(item.createdAt).toLocaleDateString("en-IN", {
+                day: "2-digit",
+                month: "short",
+                year: "numeric"
+              })
+            ])}
+          />
+        ) : (
+          <Box sx={{ py: 6, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', background: 'var(--bg-accent-1)', borderRadius: 2, border: '1px dashed var(--border-color)' }}>
+            <Science sx={{ fontSize: 64, color: 'var(--color-primary)', opacity: 0.5, mb: 2 }} />
+            <Typography variant="h6" sx={{ fontWeight: 800, color: 'var(--text-primary)', mb: 1 }}>
+              No Research Submissions Found
+            </Typography>
+            <Typography variant="body2" sx={{ color: 'var(--text-secondary)', mb: 3, maxWidth: 400 }}>
+              Looks like you haven't published anything for this academic year yet. Click below to submit your first journal or patent!
+            </Typography>
+            <Button variant="contained" onClick={() => navigate("/research/journal-publication")} sx={{ borderRadius: '8px', fontWeight: 700, textTransform: 'none', px: 3, boxShadow: 'none' }}>
+              Submit Research
+            </Button>
+          </Box>
+        )}
       </Card>
+      </>
+      )}
 
       {/* Proctoring Students Modal */}
       <ProctorStudentsModal
@@ -895,3 +945,27 @@ const filterBox = {
   border: "1px solid var(--border-color)",
   fontSize: 14,
 };
+
+const FacultyDashboardSkeleton = () => (
+  <Box>
+    {/* Row 1 Skeletons */}
+    <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2.5, mb: 4, width: "100%" }}>
+      {[1, 2, 3, 4].map((i) => (
+        <Box key={i} sx={{ flex: { xs: "1 1 100%", sm: "1 1 calc(50% - 10px)", md: "1 1 calc(50% - 10px)", lg: "1 1 calc(50% - 10px)", xl: "1 1 calc(25% - 19px)" }, minWidth: 0 }}>
+          <Skeleton variant="rounded" height={175} sx={{ borderRadius: "16px" }} />
+        </Box>
+      ))}
+    </Box>
+    {/* Row 2 Skeletons */}
+    <Box sx={{ display: "flex", gap: 3, flexWrap: { xs: "wrap", xl: "nowrap" }, mb: 4 }}>
+      <Box sx={{ width: { xs: "100%", xl: "50%" }, display: "flex" }}>
+        <Skeleton variant="rounded" height={320} width="100%" sx={{ borderRadius: 2 }} />
+      </Box>
+      <Box sx={{ width: { xs: "100%", xl: "50%" }, display: "flex" }}>
+        <Skeleton variant="rounded" height={320} width="100%" sx={{ borderRadius: 2 }} />
+      </Box>
+    </Box>
+    {/* Row 3 Skeleton */}
+    <Skeleton variant="rounded" height={250} width="100%" sx={{ borderRadius: 2 }} />
+  </Box>
+);

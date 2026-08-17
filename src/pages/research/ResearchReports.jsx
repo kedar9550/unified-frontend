@@ -36,7 +36,7 @@ export default function ResearchReports() {
         API.get("/api/academic-years").then(res => {
             const yearsList = res.data?.years || res.data?.data || [];
             setAcademicYears(yearsList);
-            const active = yearsList.find(y => y.isGlobalActive);
+            const active = yearsList.find(y => y.active);
             setSelectedYear(active ? active._id : "All");
         }).catch(err => {
             console.log("Failed to fetch academic years", err);
