@@ -2342,7 +2342,7 @@ const SelfAppraisal = () => {
                   }
                 }}
               >
-                Submit to HOD
+                Submit
               </Button>
             ) : (
               <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>

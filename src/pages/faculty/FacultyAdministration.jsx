@@ -910,7 +910,7 @@ export default function FacultyAdministration() {
  }
  }}
  >
-                  {saving ? "Saving Changes..." : "Submit to HOD for Approval"}
+                  {saving ? "Saving Changes..." : "Submit"}
                 </Button>
               </Box>
             </form>
