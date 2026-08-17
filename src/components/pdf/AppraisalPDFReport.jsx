@@ -136,7 +136,7 @@ const AppraisalPDFReport = forwardRef(({ data, hideInterpersonal, eligibilityDet
             <td style={styles.tdLeft}>{pInfo.departmentName || 'N/A'}</td>
           </tr>
           <tr style={styles.tr}>
-            <td style={{ ...styles.td, ...styles.rowLabel }}>Qualification</td>
+            <td style={{ ...styles.td, ...styles.rowLabel }}>Highest Qualification</td>
             <td style={styles.tdLeft}>{pInfo.qualification || 'N/A'}</td>
             <td style={{ ...styles.td, ...styles.rowLabel }}>Scopus ID</td>
             <td style={styles.tdLeft}>{pInfo.scopusId || 'N/A'}</td>
@@ -146,6 +146,12 @@ const AppraisalPDFReport = forwardRef(({ data, hideInterpersonal, eligibilityDet
             <td style={styles.tdLeft}>{pInfo.wosId || 'N/A'}</td>
             <td style={{ ...styles.td, ...styles.rowLabel }}>ORCID ID</td>
             <td style={styles.tdLeft}>{pInfo.orcidId || 'N/A'}</td>
+          </tr>
+          <tr style={styles.tr}>
+            <td style={{ ...styles.td, ...styles.rowLabel }}>Date of Joining</td>
+            <td style={styles.tdLeft} colSpan={3}>
+              {pInfo.dateOfJoining ? new Date(pInfo.dateOfJoining).toLocaleDateString("en-IN", { day: '2-digit', month: '2-digit', year: 'numeric' }) : 'N/A'}
+            </td>
           </tr>
         </tbody>
       </table>
@@ -974,27 +980,23 @@ const AppraisalPDFReport = forwardRef(({ data, hideInterpersonal, eligibilityDet
           <table style={styles.table}>
             <tbody style={{ display: 'table-row-group', pageBreakInside: 'auto' }}>
               <tr style={styles.tr}>
-                <td style={{ ...styles.td, ...styles.rowLabel }}>Final Status</td>
-                <td style={{ ...styles.tdLeft, fontWeight: 'bold' }}>{data.status?.startsWith('Approved by') ? 'Approved' : data.status}</td>
+                <td style={{ ...styles.td, ...styles.rowLabel, width: '30%' }}>Final Status</td>
+                <td style={{ ...styles.tdLeft, fontWeight: 'bold' }}>{data.status}</td>
               </tr>
-              <tr style={styles.tr}>
-                <td style={{ ...styles.td, ...styles.rowLabel }}>HOD Comments</td>
-                <td style={styles.tdLeft}>{data.hodEvaluation?.comments || 'No remarks'}</td>
-              </tr>
+              {data.hodEvaluation?.comments && (
+                <tr style={styles.tr}>
+                  <td style={{ ...styles.td, ...styles.rowLabel }}>Primary Evaluator / HOD Comments</td>
+                  <td style={styles.tdLeft}>{data.hodEvaluation.comments}</td>
+                </tr>
+              )}
+              {data.status?.startsWith('Approved by') && (
+                <tr style={styles.tr}>
+                  <td style={{ ...styles.td, ...styles.rowLabel }}>{data.status.replace('Approved by ', '')} Comments</td>
+                  <td style={styles.tdLeft}>{data.managementEvaluation?.comments || 'No remarks'}</td>
+                </tr>
+              )}
             </tbody>
           </table>
-          <div style={{ marginTop: '80px', display: 'flex', justifyContent: 'space-between' }}>
-            <div style={{ textAlign: 'center' }}>
-              <div style={{ borderTop: '1px solid #000', width: '200px', paddingTop: '5px', fontWeight: 'bold' }}>
-                Signature of HOD
-              </div>
-            </div>
-            <div style={{ textAlign: 'center' }}>
-              <div style={{ borderTop: '1px solid #000', width: '200px', paddingTop: '5px', fontWeight: 'bold' }}>
-                Principal / Dean
-              </div>
-            </div>
-          </div>
         </div>
       )}
     </div>

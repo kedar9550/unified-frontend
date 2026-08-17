@@ -210,16 +210,16 @@ const SelfAppraisal = () => {
     let color = "#64748b";
     let label = status || "Pending";
 
-    if (status === "Approved") {
+    if (status === "Approved" || status?.startsWith("Approved by")) {
       bg = "rgba(16, 185, 129, 0.08)";
       color = "#10b981";
-    } else if (status === "Rejected") {
+    } else if (status === "Rejected" || status?.startsWith("Rejected by")) {
       bg = "rgba(239, 68, 68, 0.08)";
       color = "#ef4444";
-    } else if (status === "Pending") {
+    } else if (status === "Pending" || status?.startsWith("Submitted to") || status?.startsWith("Pending at")) {
       bg = "rgba(245, 158, 11, 0.08)";
       color = "#f59e0b";
-      label = "Pending Verification";
+      label = status === "Pending" ? "Pending Verification" : status;
     }
 
     return (

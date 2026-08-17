@@ -40,6 +40,7 @@ import axiosInstance from "../../api/axios";
 import { toast } from "sonner";
 import DataTable from "../../components/data/DataTable";
 import AppraisalPDFReport from "../../components/pdf/AppraisalPDFReport";
+import AppraisalBriefPDFReport from "../../components/pdf/AppraisalBriefPDFReport";
 
 const PARAMETERS = [
   { id: 1, text: "Commitment- Unwavering dedication to student growth and institutional progress, consistently completing all work with diligence." },
@@ -220,6 +221,7 @@ const AppraisalReportDetail = () => {
 
   // Print Ref
   const printRef = useRef();
+  const briefPrintRef = useRef();
   const [isDownloading, setIsDownloading] = useState(false);
   const [showEligibilityDetails, setShowEligibilityDetails] = useState(false);
 
@@ -282,6 +284,54 @@ const AppraisalReportDetail = () => {
     }
   };
 
+  const handleDownloadBriefPDF = async () => {
+    if (!briefPrintRef.current) return;
+    try {
+      setIsDownloading(true);
+      const rawHtml = briefPrintRef.current.outerHTML;
+      const htmlContent = `
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <base href="${window.location.origin}">
+            <style>
+              * { box-sizing: border-box; }
+              body { margin: 0; padding: 0; }
+              table { max-width: 100%; word-break: break-word; }
+            </style>
+          </head>
+          <body>
+            ${rawHtml}
+          </body>
+        </html>
+      `;
+
+      const facultyName = selectedAppraisal?.personalInfoSnapshot?.name || selectedAppraisal?.facultyId?.name || 'Faculty';
+      const academicYear = selectedAppraisal?.academicYearId?.year || '2025-26';
+      const fileName = `${facultyName.replace(/\s+/g, '_')}_Appraisal_Brief_Report_${academicYear}.pdf`;
+
+      const response = await axiosInstance.post(
+        '/api/appraisal/generate-pdf',
+        { html: htmlContent },
+        { responseType: 'blob' }
+      );
+
+      const blob = new Blob([response.data], { type: 'application/pdf' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      a.remove();
+    } catch (error) {
+      console.error("Brief PDF Generation failed:", error);
+    } finally {
+      setIsDownloading(false);
+    }
+  };
+
   // Main Appraisal Actions
   const [mainAppraisalRemarks, setMainAppraisalRemarks] = useState("");
 
@@ -309,7 +359,8 @@ const AppraisalReportDetail = () => {
         toast.dismiss();
         toast.success(`Appraisal ${action === 'Approve' ? 'approved and finalized' : 'rejected and sent back'} successfully.`);
         setSelectedAppraisal(null);
-        fetchDetail();
+        if (id) navigate(-1);
+        else fetchDetail();
       }
     } catch (err) {
       toast.error(err.response?.data?.message || `Failed to ${action} appraisal.`);
@@ -463,9 +514,9 @@ const AppraisalReportDetail = () => {
   };
 
   const getStatusColor = (status) => {
-    if (status === 'Approved') return { bg: "rgba(16, 185, 129, 0.1)", color: "#10b981" };
-    if (status === 'Rejected') return { bg: "rgba(239, 68, 68, 0.1)", color: "#ef4444" };
-    if (status === 'Pending at HOD' || status === 'Pending') return { bg: "rgba(232, 160, 0, 0.1)", color: "#e8a000" };
+    if (status === 'Approved' || status?.startsWith('Approved by')) return { bg: "rgba(16, 185, 129, 0.1)", color: "#10b981" };
+    if (status === 'Rejected' || status?.startsWith('Rejected by')) return { bg: "rgba(239, 68, 68, 0.1)", color: "#ef4444" };
+    if (status === 'Pending at HOD' || status === 'Pending' || status?.startsWith('Submitted to')) return { bg: "rgba(232, 160, 0, 0.1)", color: "#e8a000" };
     return { bg: "rgba(100, 116, 139, 0.1)", color: "#64748b" }; // Draft
   };
 
@@ -672,9 +723,10 @@ const AppraisalReportDetail = () => {
       });
       if (res.data && res.data.success) {
         toast.dismiss(); // Clear any existing toasts to prevent overlapping
-        toast.success(action === "Approve" ? "Appraisal approved and finalized successfully!" : "Appraisal sent back to faculty for corrections.");
+        toast.success(action === "Approve" ? "Appraisal approved successfully and moved to the next stage!" : "Appraisal sent back to faculty for corrections.");
         setSelectedAppraisal(null);
-        fetchDetail();
+        if (id) navigate(-1);
+        else fetchDetail();
       }
     } catch (err) {
       toast.error(err.response?.data?.message || "Failed to process appraisal action.");
@@ -714,8 +766,19 @@ const AppraisalReportDetail = () => {
       if (res.data && res.data.success) {
         toast.dismiss();
         toast.success(`Appraisal successfully ${action.toLowerCase()}ed.`);
+        if (action === "Approve") {
+          setSelectedAppraisal(res.data.data);
+          setTimeout(async () => {
+            await handleDownloadBriefPDF();
+            setSelectedAppraisal(null);
+            if (id) navigate(-1);
+            else fetchDetail();
+          }, 500);
+          return;
+        }
         setSelectedAppraisal(null);
-        fetchDetail();
+        if (id) navigate(-1);
+        else fetchDetail();
       }
     } catch (err) {
       toast.error(err.response?.data?.message || "Failed to process management action.");
@@ -816,7 +879,7 @@ const AppraisalReportDetail = () => {
         fdpCourseraPassed: elig.details?.fdpStatus === "Fulfilled",
         metric21Passed: elig.details?.r21Status === "Fulfilled",
         interpersonalPassed: elig.details?.interpersonalStatus === "Fulfilled",
-        showInterpersonal: ["Approved", "Completed", "Pending Research Admin"].includes(selectedAppraisal.status)
+        showInterpersonal: ["Approved", "Completed", "Pending Research Admin"].includes(selectedAppraisal.status) || !!selectedAppraisal.hodEvaluation
       }
     };
   };
@@ -946,6 +1009,12 @@ const AppraisalReportDetail = () => {
               hideInterpersonal={role === "FACULTY"}
               eligibilityDetails={eligibilityDetails}
               isEligible={isEligible}
+            />
+            <AppraisalBriefPDFReport
+              data={calculatedPrintData}
+              ref={briefPrintRef}
+              hideInterpersonal={role === "FACULTY"}
+              eligibilityDetails={eligibilityDetails}
             />
           </div>
 
@@ -1089,9 +1158,16 @@ const AppraisalReportDetail = () => {
                     </Typography>
                     <Box sx={{ display: "flex", gap: 1 }}>
                       {selectedAppraisal.status === "Approved" || selectedAppraisal.status?.startsWith("Approved by") || selectedAppraisal.status === "Pending Research Admin" ? (
-                        <Button size="small" variant="contained" disabled={isDownloading} onClick={handleDownloadPDF} sx={{ textTransform: "none", fontWeight: 700, bgcolor: "#e8a000", color: "#fff", '&:hover': { bgcolor: "#cc8d00" } }}>
-                          {isDownloading ? "Generating PDF..." : "Download PDF"}
-                        </Button>
+                        <>
+                          <Button size="small" variant="contained" disabled={isDownloading} onClick={handleDownloadPDF} sx={{ textTransform: "none", fontWeight: 700, bgcolor: "#e8a000", color: "#fff", '&:hover': { bgcolor: "#cc8d00" } }}>
+                            {isDownloading ? "Generating..." : "Download Report"}
+                          </Button>
+                          {role !== "FACULTY" && !["HOD", "DEPARTMENT_HOD", "DEPARTMENT HOD"].includes(role) && (
+                            <Button size="small" variant="outlined" disabled={isDownloading} onClick={handleDownloadBriefPDF} sx={{ textTransform: "none", fontWeight: 700, borderColor: "#e8a000", color: "#e8a000", '&:hover': { borderColor: "#cc8d00", bgcolor: "rgba(232, 160, 0, 0.08)" } }}>
+                              {isDownloading ? "Generating..." : "Download Brief Report"}
+                            </Button>
+                          )}
+                        </>
                       ) : null}
                       <Button size="small" startIcon={<Reply />} onClick={() => navigate(-1)} sx={{ textTransform: "none", fontWeight: 700 }}>
                         Back to Reports
