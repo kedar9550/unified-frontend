@@ -121,7 +121,7 @@ export default function Teaching() {
 
         // Set active year as default if selectedYearLabel is empty
         if (years.length > 0 && !selectedYearLabel) {
-          const active = years.find(y => y.isGlobalActive);
+          const active = years.find(y => y.active);
           setSelectedYearLabel(active ? active.year : years[0].year);
         }
       } catch (err) {

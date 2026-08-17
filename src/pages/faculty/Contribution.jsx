@@ -126,7 +126,7 @@ export default function Contribution() {
       .then(res => {
         const years = res.data?.years || res.data?.data || [];
         setAcademicYears(years);
-        const active = years.find(y => y.isGlobalActive);
+        const active = years.find(y => y.active);
         if (active) {
           setSelectedYear(active._id);
           setForm(p => ({ ...p, academicYear: active._id }));

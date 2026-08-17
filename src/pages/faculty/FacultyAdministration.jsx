@@ -58,7 +58,7 @@ export default function FacultyAdministration() {
   // Form representation
   const [rolesFormData, setRolesFormData] = useState({});
 
-  const activeYear = academicYears.find((y) => y.isGlobalActive);
+  const activeYear = academicYears.find((y) => y.active);
 
   // Helper to check if role is already submitted and active
   const isPreExistingActive = (roleId) => {
@@ -82,7 +82,7 @@ export default function FacultyAdministration() {
         setAcademicYears(years);
 
         if (years.length > 0 && (!selectedYearLabel || selectedYearLabel === "")) {
-          const active = years.find(y => y.isGlobalActive);
+          const active = years.find(y => y.active);
           setSelectedYearLabel(active ? active.year : "all");
         }
       } catch (err) {
