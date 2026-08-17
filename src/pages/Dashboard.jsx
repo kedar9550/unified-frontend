@@ -5,6 +5,7 @@ import { Box, Typography } from "@mui/material";
 import FacultyDashboard from "./faculty/FacultyDashboard";
 import UniprimeDashboard from "./uniprime/UniprimeDashboard";
 import HODDashboard from "./hod/HODDashboard";
+import SchoolDeanDashboard from "./dean/SchoolDeanDashboard";
 import ExamDashboard from "./examAdmin/ExamDashboard";
 import StudentDashboard from "./student/StudentDashboard";
 import ResearchFeedbackDashboard from "./feedback/ResearchFeedbackDashboard";
@@ -31,7 +32,8 @@ function Dashboard() {
       {/*  ROLE-BASED DASHBOARD */}
       {activeRole === "FACULTY" && <FacultyDashboard />}
       {activeRole === "UNIPRIME" && <UniprimeDashboard />}
-      {(activeRole === "HOD" || activeRole === "SCHOOL_DEAN") && <HODDashboard />}
+      {activeRole === "HOD" && <HODDashboard />}
+      {activeRole === "SCHOOL_DEAN" && <SchoolDeanDashboard />}
       {activeRole === "EXAMSECTION" && <ExamDashboard />}
       {activeRole === "STUDENT" && <StudentDashboard />}
       {activeRole === "RESEARCH_FEEDBACK_COMMITTEE" && <ResearchFeedbackDashboard />}
