@@ -97,9 +97,9 @@ const HODDashboard = () => {
 
   const topCards = [
     { title: "Department Faculty", value: dashboard.totalFaculty, subtitle: "Total Active", icon: <People />, color: "#3B82F6", linkText: "Manage Faculty" },
-    { title: "Academic Programs", value: dashboard.totalPrograms, subtitle: "Branches Managed", icon: <Assignment />, color: "#A855F7", linkText: "View Programs" },
+    { title: "Expected Appraisals", value: dashboard.totalFaculty, subtitle: "Total to verify", icon: <Assignment />, color: "#10B981", linkText: "View Appraisals" },
+    { title: "Academic Programs", value: dashboard.totalPrograms, subtitle: "Branches Managed", icon: <School />, color: "#A855F7", linkText: "View Programs" },
     { title: "Pending Reviews", value: dashboard.pendingCounts.total, subtitle: "Actions Required", icon: <WarningAmber />, color: "#F59E0B", linkText: "View Pending" },
-    { title: "Total Research Work", value: totalPublicationsCount, subtitle: "Submitted & Approved", icon: <Science />, color: "#EF4444", linkText: "View Research" },
   ];
 
   const pendingActions = [

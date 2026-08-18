@@ -60,7 +60,7 @@ const SchoolDeanDashboard = () => {
         setLoading(false);
       }
     };
-    fetchDashboardData();
+    fetchDashboardData();   
   }, [user]);
 
   const getStatusStyle = (status) => {
@@ -97,9 +97,9 @@ const SchoolDeanDashboard = () => {
 
   const topCards = [
     { title: "Department Faculty", value: dashboard.totalFaculty, subtitle: "Total Active", icon: <People />, color: "#3B82F6", linkText: "Manage Faculty", path: "/hod/staff" },
-    { title: "Academic Programs", value: dashboard.totalPrograms, subtitle: "Branches Managed", icon: <Assignment />, color: "#A855F7", linkText: "View Programs", path: "/dashboard" },
+    { title: "Expected Appraisals", value: dashboard.totalFaculty, subtitle: "Total to verify", icon: <Assignment />, color: "#10B981", linkText: "View Appraisals", path: "/appraisal/management-evaluate" },
+    { title: "Academic Programs", value: dashboard.totalPrograms, subtitle: "Branches Managed", icon: <School />, color: "#A855F7", linkText: "View Programs", path: "/dashboard" },
     { title: "Pending Reviews", value: dashboard.pendingCounts.total, subtitle: "Actions Required", icon: <WarningAmber />, color: "#F59E0B", linkText: "View Pending", path: "/hod/research-approvals" },
-    { title: "Total Research Work", value: totalPublicationsCount, subtitle: "Submitted & Approved", icon: <Science />, color: "#EF4444", linkText: "View Research", path: "/hod/research-approvals" },
   ];
 
   const pendingActions = [
@@ -182,7 +182,7 @@ const SchoolDeanDashboard = () => {
           <Box
             key={i}
             sx={{
-              flex: { xs: '1 1 100%', sm: '1 1 calc(50% - 24px)', md: '1 1 calc(25% - 24px)' },
+              flex: { xs: '1 1 100%', sm: '1 1 calc(50% - 24px)', md: '1 1 calc(33.333% - 24px)', lg: '1 1 calc(20% - 24px)' },
               boxSizing: 'border-box'
             }}
           >

@@ -366,15 +366,16 @@ const Sidebar = ({ mobileOpen, onDrawerToggle, isCollapsed, onToggleSidebar }) =
                 sx={{
                   display: "inline-flex",
                   alignItems: "center",
-                  justifyContent: "center",
-                  gap: isCollapsed ? 0 : 1.2,
-                  px: isCollapsed ? 1 : 2.5,
+                  justifyContent: "flex-start",
+                  gap: isCollapsed ? 0 : 1.5,
+                  px: isCollapsed ? 1 : 2,
                   py: isCollapsed ? 1 : 1,
                   borderRadius: "999px",
                   background: "var(--bg-panel)",
                   border: "1px solid var(--border-color)",
                   color: "var(--text-primary)",
-                  width: isCollapsed ? "44px" : "90%",
+                  width: isCollapsed ? "44px" : "fit-content",
+                  maxWidth: "95%",
                   height: isCollapsed ? "44px" : "auto",
                   boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
                   mb: 1,
@@ -383,7 +384,17 @@ const Sidebar = ({ mobileOpen, onDrawerToggle, isCollapsed, onToggleSidebar }) =
               >
                 <Box sx={{ display: "flex", color: "var(--color-primary)" }}>{roleIcon}</Box>
                 {!isCollapsed && (
-                  <Typography sx={{ fontSize: "0.85rem", fontWeight: 700, letterSpacing: "0.5px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                  <Typography sx={{ 
+                    fontSize: displayedRoleName.length > 20 ? "0.75rem" : "0.85rem", 
+                    fontWeight: 700, 
+                    letterSpacing: "0.5px", 
+                    textAlign: "left",
+                    lineHeight: 1.2,
+                    display: "-webkit-box",
+                    WebkitLineClamp: 2,
+                    WebkitBoxOrient: "vertical",
+                    overflow: "hidden"
+                  }}>
                     {displayedRoleName}
                   </Typography>
                 )}
