@@ -98,7 +98,7 @@ const AppraisalReports = () => {
 
       if (resAppraisals.data && resAppraisals.data.success) {
         // Filter out drafts or non-approved ones. User said: "need only the approved ones can show hear"
-        const approvedOnly = resAppraisals.data.data.filter(app => ['Pending Research Admin', 'Completed'].includes(app.status));
+        const approvedOnly = resAppraisals.data.data.filter(app => ['Pending Research Admin', 'Completed'].includes(app.status) || (app.status && app.status.startsWith('Approved')));
         setAppraisals(approvedOnly);
         setPage(0);
       }

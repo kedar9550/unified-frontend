@@ -1686,11 +1686,11 @@ const SelfAppraisal = () => {
 
   const getCategoryThresholds = () => {
     const mins = appraisal?.eligibility?.mins || {};
-    return { 
-      teaching: mins.teaching || 50, 
-      metric21: mins.research21 || 30, 
-      total1to4: (mins.total || 140) - (mins.interpersonalSkills || 30), 
-      grandTotal: mins.total || 140 
+    return {
+      teaching: mins.teaching || 50,
+      metric21: mins.research21 || 30,
+      total1to4: (mins.total || 140) - (mins.interpersonalSkills || 30),
+      grandTotal: mins.total || 140
     };
   };
 
@@ -1704,39 +1704,39 @@ const SelfAppraisal = () => {
     const disallowedOrg = ["other / host institute", "other", "host institute"];
 
     if (resourceUtilizationDetails && Array.isArray(resourceUtilizationDetails)) {
-        for (const r of resourceUtilizationDetails) {
-            if (r.status !== "Rejected") {
-                const cat = (r.activityCategory || '').toLowerCase().trim();
-                const evType = (r.activityType || '').toLowerCase().trim();
-                const org = (r.organizingInstitutionCategory || '').toLowerCase().trim();
-                const days = Number(r.numberOfDaysParticipated) || Number(r.daysParticipated) || Number(r.duration) || 0;
+      for (const r of resourceUtilizationDetails) {
+        if (r.status !== "Rejected") {
+          const cat = (r.activityCategory || '').toLowerCase().trim();
+          const evType = (r.activityType || '').toLowerCase().trim();
+          const org = (r.organizingInstitutionCategory || '').toLowerCase().trim();
+          const days = Number(r.numberOfDaysParticipated) || Number(r.daysParticipated) || Number(r.duration) || 0;
 
-                if (cat === 'fdp' && evType === 'fdp participant' && days >= 5 && !disallowedOrg.includes(org)) {
-                    if (org.includes("nirf")) {
-                        const rank = Number(r.nirfRank);
-                        if (!isNaN(rank) && rank > 0 && rank < 200) {
-                            return true;
-                        }
-                    } else {
-                        return true;
-                    }
-                }
+          if (cat === 'fdp' && evType === 'fdp participant' && days >= 5 && !disallowedOrg.includes(org)) {
+            if (org.includes("nirf")) {
+              const rank = Number(r.nirfRank);
+              if (!isNaN(rank) && rank > 0 && rank < 200) {
+                return true;
+              }
+            } else {
+              return true;
             }
+          }
         }
+      }
     }
 
     // 3. Check local Draft/Pending contributionDetails for Coursera >= 40hrs
     if (contributionDetails && Array.isArray(contributionDetails)) {
-        for (const c of contributionDetails) {
-            if (c.status !== "Rejected") {
-                const catCode = typeof c.category === 'object' ? c.category?.code : parseInt(c.category);
-                const catName = (typeof c.category === 'object' ? c.category?.name : '').toLowerCase();
-                
-                if ((catCode === 12 || catName.includes('coursera')) && Number(c.courseHours) >= 40) {
-                    return true;
-                }
-            }
+      for (const c of contributionDetails) {
+        if (c.status !== "Rejected") {
+          const catCode = typeof c.category === 'object' ? c.category?.code : parseInt(c.category);
+          const catName = (typeof c.category === 'object' ? c.category?.name : '').toLowerCase();
+
+          if ((catCode === 12 || catName.includes('coursera')) && Number(c.courseHours) >= 40) {
+            return true;
+          }
         }
+      }
     }
 
     return false;
@@ -4356,7 +4356,7 @@ const SelfAppraisal = () => {
             </Box>
 
             <Divider sx={{ my: 1, borderColor: "var(--border-color)" }} />
-            
+
             <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr 1fr 1fr" }, gap: 3 }}>
               <Box>
                 <Typography variant="caption" sx={{ color: "var(--text-secondary)", fontWeight: 600, display: "block", mb: 0.5 }}>1. Teaching</Typography>

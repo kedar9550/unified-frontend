@@ -378,29 +378,29 @@ const AppraisalResearchScoring = () => {
                     value: "",
                     display: (
                       <Button
- variant={status?.startsWith("Approved by") ? "outlined" : "contained"}
- size="small"
- startIcon={status?.startsWith("Approved by") ? <Visibility sx={{ fontSize: "1rem" }} /> : <Person sx={{ fontSize: "1rem" }} />}
- onClick={() => handleScoreResearch(appr)}
- disabled={loading}
- sx={{
- textTransform: "none",
- fontWeight: 700,
- fontSize: "0.8rem",
- 
- px: 2,
- py: 0.8,
- bgcolor: status?.startsWith("Approved by") ? "transparent" : "#1e3a5f",
- color: status?.startsWith("Approved by") ? "var(--text-primary)" : "#fff",
- borderColor: status?.startsWith("Approved by") ? "var(--border-color)" : "transparent",
- boxShadow: "none",
- "&:hover": {
- bgcolor: status?.startsWith("Approved by") ? "var(--bg-panel)" : "#2563eb",
- borderColor: status?.startsWith("Approved by") ? "var(--text-secondary)" : "transparent",
- boxShadow: status?.startsWith("Approved by") ? "none" : "0 4px 12px rgba(59,130,246,0.25)"
- }
- }}
- >
+                        variant={status?.startsWith("Approved by") ? "outlined" : "contained"}
+                        size="small"
+                        startIcon={status?.startsWith("Approved by") ? <Visibility sx={{ fontSize: "1rem" }} /> : <Person sx={{ fontSize: "1rem" }} />}
+                        onClick={() => handleScoreResearch(appr)}
+                        disabled={loading}
+                        sx={{
+                          textTransform: "none",
+                          fontWeight: 700,
+                          fontSize: "0.8rem",
+
+                          px: 2,
+                          py: 0.8,
+                          bgcolor: status?.startsWith("Approved by") ? "transparent" : "#1e3a5f",
+                          color: status?.startsWith("Approved by") ? "var(--text-primary)" : "#fff",
+                          borderColor: status?.startsWith("Approved by") ? "var(--border-color)" : "transparent",
+                          boxShadow: "none",
+                          "&:hover": {
+                            bgcolor: status?.startsWith("Approved by") ? "var(--bg-panel)" : "#2563eb",
+                            borderColor: status?.startsWith("Approved by") ? "var(--text-secondary)" : "transparent",
+                            boxShadow: status?.startsWith("Approved by") ? "none" : "0 4px 12px rgba(59,130,246,0.25)"
+                          }
+                        }}
+                      >
                         {status?.startsWith("Approved by") ? "View Details" : "Score Research"}
                       </Button>
                     )
@@ -1243,26 +1243,26 @@ const AppraisalResearchScoring = () => {
             {selectedAppraisal.status !== "Completed" ? (
               <Box sx={{ display: "flex", gap: 2 }}>
                 <Button
- variant="contained"
- startIcon={<CheckCircle sx={{ fontSize: "1.1rem" }} />}
- onClick={() => handleSaveScoring(false)}
- disabled={loading}
- sx={{
- textTransform: "none",
- fontWeight: 700,
- 
- px: 3.5,
- py: 1.2,
- color: "#fff",
- bgcolor: "#3b82f6",
- fontSize: "0.85rem",
- boxShadow: "0 4px 12px rgba(59, 130, 246, 0.2)",
- "&:hover": {
- bgcolor: "#2563eb",
- boxShadow: "0 6px 16px rgba(59, 130, 246, 0.3)"
- }
- }}
- >
+                  variant="contained"
+                  startIcon={<CheckCircle sx={{ fontSize: "1.1rem" }} />}
+                  onClick={() => handleSaveScoring(false)}
+                  disabled={loading}
+                  sx={{
+                    textTransform: "none",
+                    fontWeight: 700,
+
+                    px: 3.5,
+                    py: 1.2,
+                    color: "#fff",
+                    bgcolor: "#3b82f6",
+                    fontSize: "0.85rem",
+                    boxShadow: "0 4px 12px rgba(59, 130, 246, 0.2)",
+                    "&:hover": {
+                      bgcolor: "#2563eb",
+                      boxShadow: "0 6px 16px rgba(59, 130, 246, 0.3)"
+                    }
+                  }}
+                >
                   Finalize Evaluation
                 </Button>
               </Box>

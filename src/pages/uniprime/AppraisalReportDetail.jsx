@@ -225,9 +225,9 @@ const AppraisalReportDetail = () => {
   const [isDownloading, setIsDownloading] = useState(false);
   const [showEligibilityDetails, setShowEligibilityDetails] = useState(false);
 
-  const needsPrimaryEvaluation = 
+  const needsPrimaryEvaluation =
     selectedAppraisal &&
-    role !== "FACULTY" && 
+    role !== "FACULTY" &&
     selectedAppraisal.status.startsWith("Submitted to ") &&
     selectedAppraisal.status !== "Submitted to HOD" &&
     (!selectedAppraisal.hodEvaluation || selectedAppraisal.hodEvaluation.totalInterpersonalPoints === 0 || (selectedAppraisal.hodEvaluation.interpersonalRatings && selectedAppraisal.hodEvaluation.interpersonalRatings.length === 0) || !selectedAppraisal.hodEvaluation.interpersonalRatings);
@@ -752,10 +752,10 @@ const AppraisalReportDetail = () => {
         rating: ratings[p.id] || 5
       }));
       payload.interpersonalRatings = formattedRatings;
-      
+
       let totalInter = 0;
       formattedRatings.forEach(r => {
-          totalInter += Number(r.rating) || 0;
+        totalInter += Number(r.rating) || 0;
       });
       payload.totalInterpersonalPoints = totalInter;
     }
@@ -872,7 +872,7 @@ const AppraisalReportDetail = () => {
 
     const elig = selectedAppraisal.eligibility;
     const isEligible = elig.status === "Fulfilled";
-    
+
     return {
       isEligible,
       details: {
@@ -1024,7 +1024,7 @@ const AppraisalReportDetail = () => {
               {/* Eligibility Status */}
               <Card sx={{ borderRadius: "20px", background: "var(--bg-panel)", border: "1px solid var(--border-color)", mb: 4, boxShadow: "var(--shadow-premium)" }}>
                 <CardContent sx={{ p: 3 }}>
-                  <Box 
+                  <Box
                     sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", cursor: "pointer" }}
                     onClick={() => setShowEligibilityDetails(!showEligibilityDetails)}
                   >
@@ -2657,7 +2657,7 @@ const AppraisalReportDetail = () => {
                             })()}
                           </Typography>
 
-                          {!( (selectedAppraisal.status === "Submitted to HOD" && (role === "HOD" || role === "DEPARTMENT_HOD" || role === "DEPARTMENT HOD")) || needsPrimaryEvaluation ) ? (
+                          {!((selectedAppraisal.status === "Submitted to HOD" && (role === "HOD" || role === "DEPARTMENT_HOD" || role === "DEPARTMENT HOD")) || needsPrimaryEvaluation) ? (
                             <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                               <Chip
                                 label={`${ratings[p.id] || 0} Points`}
