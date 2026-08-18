@@ -68,7 +68,7 @@ const AppraisalEvaluation = () => {
   };
 
   return (
-    <Box p={4} sx={{ maxWidth: 1200, margin: "0 auto", animation: "fadeIn 0.5s ease" }}>
+    <Box p={4} sx={{ maxWidth: "100%", margin: "0 auto", animation: "fadeIn 0.5s ease" }}>
       {loading && <Loader />}
       
       <Stack spacing={3} sx={{ width: "100%", mb: 3 }}>

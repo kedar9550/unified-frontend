@@ -25,6 +25,9 @@ import { toast } from 'sonner';
 import { Visibility, Assessment, Download } from '@mui/icons-material';
 import * as XLSX from 'xlsx-js-style';
 import Loader from '../../components/common/Loader';
+import DataTable from '../../components/data/DataTable';
+import PageHeader from '../../components/common/PageHeader';
+import { Card } from '@mui/material';
 
 const AppraisalReports = () => {
   const navigate = useNavigate();
@@ -33,12 +36,7 @@ const AppraisalReports = () => {
   const [appraisals, setAppraisals] = useState([]);
   const [appraisalConfig, setAppraisalConfig] = useState(null);
   const [loading, setLoading] = useState(false);
-
-  // Pagination and Sorting State
-  const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(10);
-  const [order, setOrder] = useState('asc');
-  const [orderBy, setOrderBy] = useState('empId');
+  const [deptFilter, setDeptFilter] = useState('All');
 
   useEffect(() => {
     fetchAcademicYears();
@@ -112,43 +110,12 @@ const AppraisalReports = () => {
 
 
 
-  const handleRequestSort = (property) => {
-    const isAsc = orderBy === property && order === 'asc';
-    setOrder(isAsc ? 'desc' : 'asc');
-    setOrderBy(property);
-  };
-
-  const getSortValue = (row, property) => {
-    const type = row.eligibility?.type || 'N/A';
-    const minPoints = row.eligibility?.mins?.total || 0;
-
-    const teaching = row.teaching?.totalClaimed || 0;
-    const research = row.research?.totalClaimed || 0;
-    const valueAdd = row.valueAddition?.totalClaimed || 0;
-    const admin = row.administration?.totalClaimed || 0;
-    const interpersonal = row.hodEvaluation?.totalInterpersonalPoints || 0;
-    const cappedTotal1to4 = Math.min(200, teaching + research + valueAdd + admin);
-    const grandTotal = parseFloat((cappedTotal1to4 + interpersonal).toFixed(2));
-
-    switch (property) {
-      case 'empId': return row.facultyId?.institutionId?.toString().toLowerCase() || '';
-      case 'facultyName': return row.facultyId?.name?.toLowerCase() || '';
-      case 'type': return type.toLowerCase();
-      case 'minPoints': return minPoints;
-      case 'total': return grandTotal;
-      default: return '';
-    }
-  };
-
-  const sortedAppraisals = [...appraisals].sort((a, b) => {
-    const aValue = getSortValue(a, orderBy);
-    const bValue = getSortValue(b, orderBy);
-    if (aValue < bValue) return order === 'asc' ? -1 : 1;
-    if (aValue > bValue) return order === 'asc' ? 1 : -1;
-    return 0;
+  const uniqueDepts = Array.from(new Set(appraisals.map(a => a.personalInfoSnapshot?.departmentName || "N/A")));
+  
+  const filteredList = appraisals.filter(appr => {
+    const dept = appr.personalInfoSnapshot?.departmentName || "N/A";
+    return deptFilter === "All" || dept === deptFilter;
   });
-
-  const paginatedAppraisals = sortedAppraisals.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
 
   const handleDownloadExcel = () => {
     if (!appraisals || appraisals.length === 0) {
@@ -447,169 +414,126 @@ const AppraisalReports = () => {
   };
 
   return (
-    <Box sx={{ p: 4, maxWidth: "1600px", margin: "0 auto" }}>
-      {/* Header */}
-      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 4 }}>
-        <Box>
-          <Typography variant="h4" sx={{ fontWeight: 850, color: "var(--text-primary)", display: "flex", alignItems: "center", gap: 1.5 }}>
-            <Assessment sx={{ fontSize: "2.5rem", color: "var(--color-primary)" }} />
-            Appraisal Reports (Approved)
-          </Typography>
-          <Typography variant="subtitle1" sx={{ color: "var(--text-secondary)", mt: 0.5, fontWeight: 550 }}>
-            View approved faculty performance appraisals
-          </Typography>
-        </Box>
+    <Box p={4} sx={{ maxWidth: "100%", margin: "0 auto", animation: "fadeIn 0.5s ease" }}>
+      {loading && <Loader />}
+      
+      <Stack spacing={3} sx={{ width: "100%", mb: 3 }}>
+        <PageHeader
+          title="Appraisal Reports (Approved)"
+          subtitle="View approved faculty performance appraisals"
+        />
+      </Stack>
 
-        <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
-          <FormControl sx={{ minWidth: 250, bgcolor: "var(--bg-paper)", borderRadius: "12px" }} size="small">
-            <InputLabel id="academic-year-select-label" sx={{ fontWeight: 700 }}>Academic Year</InputLabel>
-            <Select
-              labelId="academic-year-select-label"
-              id="academic-year-select"
-              value={selectedYear}
-              label="Academic Year"
-              onChange={(e) => setSelectedYear(e.target.value)}
-              sx={{ borderRadius: "12px", fontWeight: 700 }}
-            >
-              {academicYears.map((year) => (
-                <MenuItem key={year._id} value={year._id} sx={{ fontWeight: year.isAppraisalActive ? 800 : 500 }}>
-                  {year.year} {year.isAppraisalActive ? ' (Active)' : ''}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-          <Tooltip title="Download Excel">
-            <IconButton onClick={handleDownloadExcel} sx={{ bgcolor: "var(--bg-paper)", border: "1px solid var(--border-color)", borderRadius: "12px", width: 40, height: 40, '&:hover': { bgcolor: 'var(--bg-accent-1)' } }}>
-              <Download color="primary" />
-            </IconButton>
-          </Tooltip>
-        </Box>
+      <Box>
+        <Card sx={{ borderRadius: "16px", background: "var(--bg-panel)", border: "1px solid var(--border-color)", boxShadow: "var(--shadow-premium)", p: 3 }}>
+          <DataTable
+            columns={["EMP ID", "FACULTY NAME", "DEPARTMENT", "TYPE", "MIN. POINTS", "TOTAL POINTS", "ACTIONS"]}
+            rows={filteredList.map((row) => {
+              const type = row.eligibility?.type || 'N/A';
+              const minPoints = row.eligibility?.mins?.total || 0;
+              const teaching = row.teaching?.totalClaimed || 0;
+              const research = row.research?.totalClaimed || 0;
+              const valueAdd = row.valueAddition?.totalClaimed || 0;
+              const admin = row.administration?.totalClaimed || 0;
+              const interpersonal = row.hodEvaluation?.totalInterpersonalPoints || 0;
+              const cappedTotal1to4 = Math.min(200, teaching + research + valueAdd + admin);
+              const grandTotal = parseFloat((cappedTotal1to4 + interpersonal).toFixed(2));
+              const isMet = grandTotal >= minPoints;
+              const name = row.facultyId?.name || 'N/A';
+              const empId = row.facultyId?.institutionId || 'N/A';
+              const dept = row.personalInfoSnapshot?.departmentName || 'N/A';
+              
+              return [
+                { value: empId, display: <Typography sx={{ fontWeight: 600 }}>{empId}</Typography> },
+                { 
+                  value: name, 
+                  display: (
+                    <Box>
+                      <Typography sx={{ fontWeight: 700, color: "var(--text-primary)", fontSize: "0.88rem" }}>{name}</Typography>
+                      <Typography variant="caption" sx={{ color: "var(--text-secondary)", display: "block", mt: 0.25 }}>
+                        {row.facultyId?.designation || "N/A"}
+                      </Typography>
+                    </Box>
+                  ) 
+                },
+                { value: dept, display: dept },
+                { value: type, display: type },
+                { value: minPoints, display: <Typography sx={{ fontWeight: 700 }}>{minPoints}</Typography> },
+                { 
+                  value: grandTotal, 
+                  display: (
+                    <Typography sx={{ fontWeight: 800, color: isMet ? "#10b981" : "error.main", p: 1, borderRadius: 1, bgcolor: isMet ? "rgba(16, 185, 129, 0.05)" : "rgba(239, 68, 68, 0.05)", display: "inline-block" }}>
+                      {grandTotal}
+                    </Typography>
+                  ) 
+                },
+                {
+                  value: "",
+                  display: (
+                    <Tooltip title="View Details">
+                      <IconButton
+                        onClick={() => navigate(`/appraisal/details/${row._id}`)}
+                        color="primary"
+                        size="small"
+                        sx={{ border: "1px solid rgba(79, 70, 229, 0.15)", bgcolor: "rgba(79, 70, 229, 0.05)" }}
+                      >
+                        <Visibility fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
+                  )
+                }
+              ];
+            })}
+            alignments={["left", "left", "left", "left", "center", "center", "center"]}
+            columnWidths={["100px", "auto", "auto", "auto", "auto", "auto", "auto"]}
+            nonSortableColumns={[6]}
+            toolbarLeft={(
+              <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
+                <FormControl sx={{ minWidth: 200 }} size="small">
+                  <Typography variant="caption" sx={{ fontWeight: 700, mb: 0.5, color: "var(--text-secondary)" }}>Academic Year</Typography>
+                  <Select
+                    value={selectedYear}
+                    onChange={(e) => setSelectedYear(e.target.value)}
+                    sx={{ borderRadius: "10px", fontWeight: 700, bgcolor: "var(--bg-paper)", "& .MuiOutlinedInput-notchedOutline": { borderColor: "var(--border-color)" } }}
+                  >
+                    {academicYears.map((year) => (
+                      <MenuItem key={year._id} value={year._id} sx={{ fontWeight: year.isAppraisalActive ? 800 : 500 }}>
+                        {year.year} {year.isAppraisalActive ? ' (Active)' : ''}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+                
+                <FormControl size="small" sx={{ minWidth: 200 }}>
+                  <Typography variant="caption" sx={{ fontWeight: 700, mb: 0.5, color: "var(--text-secondary)" }}>Department</Typography>
+                  <Select
+                    value={deptFilter}
+                    onChange={(e) => setDeptFilter(e.target.value)}
+                    sx={{
+                      borderRadius: "10px",
+                      background: "var(--bg-paper)",
+                      "& .MuiOutlinedInput-notchedOutline": { borderColor: "var(--border-color)" }
+                    }}
+                  >
+                    <MenuItem value="All">All Departments</MenuItem>
+                    {uniqueDepts.map(d => (
+                      <MenuItem key={d} value={d}>{d}</MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+                
+                <Box sx={{ display: 'flex', flexDirection: 'column', alignSelf: 'flex-end', pb: '2px' }}>
+                  <Tooltip title="Download Excel">
+                    <IconButton onClick={handleDownloadExcel} sx={{ bgcolor: "var(--bg-paper)", border: "1px solid var(--border-color)", borderRadius: "10px", width: 40, height: 40, '&:hover': { bgcolor: 'var(--bg-accent-1)' } }}>
+                      <Download color="primary" />
+                    </IconButton>
+                  </Tooltip>
+                </Box>
+              </Box>
+            )}
+          />
+        </Card>
       </Box>
-
-      {/* Data Table */}
-      <TableContainer component={Paper} sx={{ borderRadius: "16px", background: "var(--bg-panel)", border: "1px solid var(--border-color)", boxShadow: "var(--shadow-premium)", overflowX: "auto" }}>
-        {loading ? (
-          <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>
-            <Loader size={80} />
-          </Box>
-        ) : appraisals.length === 0 ? (
-          <Box sx={{ py: 8, textAlign: "center" }}>
-            <Assessment sx={{ fontSize: "4rem", color: "var(--text-secondary)", opacity: 0.3, mb: 2 }} />
-            <Typography variant="h6" sx={{ color: "var(--text-secondary)", fontWeight: 650 }}>
-              No approved appraisals found
-            </Typography>
-            <Typography variant="body2" sx={{ color: "var(--text-secondary)", mt: 0.5 }}>
-              Try selecting a different academic year.
-            </Typography>
-          </Box>
-        ) : (
-          <>
-            <Table>
-              <TableHead sx={{ background: "var(--gradient-primary)" }}>
-                <TableRow>
-                  {[
-                    { id: 'empId', label: 'Emp ID' },
-                    { id: 'facultyName', label: 'Faculty Name' },
-                    { id: 'type', label: 'Type' },
-                    { id: 'minPoints', label: 'Min. Points', align: 'center' },
-                    { id: 'total', label: 'Total Points', align: 'center' },
-                    { id: 'actions', label: 'Actions', align: 'center', sortable: false }
-                  ].map(headCell => (
-                    <TableCell
-                      key={headCell.id}
-                      align={headCell.align || 'left'}
-                      sx={{
-                        fontWeight: 700,
-                        py: 2,
-                        color: "#fff !important",
-                        '& .MuiTableSortLabel-root': { color: '#fff !important', '&:hover': { color: '#e0e0e0 !important' } },
-                        '& .MuiTableSortLabel-root.Mui-active': { color: '#fff !important' },
-                        '& .MuiTableSortLabel-icon': { color: '#fff !important' },
-                        whiteSpace: "nowrap"
-                      }}
-                      sortDirection={orderBy === headCell.id ? order : false}
-                    >
-                      {headCell.sortable !== false ? (
-                        <TableSortLabel
-                          active={orderBy === headCell.id}
-                          direction={orderBy === headCell.id ? order : 'asc'}
-                          onClick={() => handleRequestSort(headCell.id)}
-                        >
-                          {headCell.label}
-                        </TableSortLabel>
-                      ) : (
-                        headCell.label
-                      )}
-                    </TableCell>
-                  ))}
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {paginatedAppraisals.map((row) => {
-                  const type = row.eligibility?.type || 'N/A';
-                  const minPoints = row.eligibility?.mins?.total || 0;
-
-                  const teaching = row.teaching?.totalClaimed || 0;
-                  const research = row.research?.totalClaimed || 0;
-                  const valueAdd = row.valueAddition?.totalClaimed || 0;
-                  const admin = row.administration?.totalClaimed || 0;
-                  const interpersonal = row.hodEvaluation?.totalInterpersonalPoints || 0;
-                  const cappedTotal1to4 = Math.min(200, teaching + research + valueAdd + admin);
-                  const grandTotal = parseFloat((cappedTotal1to4 + interpersonal).toFixed(2));
-
-                  const isMet = grandTotal >= minPoints;
-
-                  return (
-                    <TableRow key={row._id} sx={{ "&:hover": { background: "var(--bg-accent-1)" }, transition: "background 0.15s", "&:last-child td, &:last-child th": { border: 0 } }}>
-                      <TableCell sx={{ fontWeight: 700, color: "var(--color-primary)" }}>{row.facultyId?.institutionId || 'N/A'}</TableCell>
-                      <TableCell>
-                        <Box sx={{ display: "flex", flexDirection: "column" }}>
-                          <Typography sx={{ fontWeight: 700, color: "var(--text-primary)" }}>{row.facultyId?.name || 'N/A'}</Typography>
-                          <Typography variant="caption" sx={{ color: "var(--text-secondary)", fontWeight: 550 }}>{row.facultyId?.designation || 'N/A'}</Typography>
-                        </Box>
-                      </TableCell>
-                      <TableCell sx={{ fontWeight: 600, color: "var(--text-secondary)" }}>{type}</TableCell>
-                      <TableCell align="center" sx={{ fontWeight: 700 }}>{minPoints}</TableCell>
-                      <TableCell align="center" sx={{ fontWeight: 800, color: isMet ? "#10b981" : "error.main", bgcolor: isMet ? "rgba(16, 185, 129, 0.05)" : "rgba(239, 68, 68, 0.05)" }}>
-                        {grandTotal}
-                      </TableCell>
-                      <TableCell align="center">
-                        <Tooltip title="View Details">
-                          <IconButton
-                            onClick={() => navigate(`/appraisal/details/${row._id}`)}
-                            color="primary"
-                            size="small"
-                            sx={{ border: "1px solid rgba(79, 70, 229, 0.15)", bgcolor: "rgba(79, 70, 229, 0.05)" }}
-                          >
-                            <Visibility fontSize="small" />
-                          </IconButton>
-                        </Tooltip>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
-            <TablePagination
-              component="div"
-              count={appraisals.length}
-              page={page}
-              onPageChange={(_, newPage) => setPage(newPage)}
-              rowsPerPage={rowsPerPage}
-              onRowsPerPageChange={(e) => { setRowsPerPage(parseInt(e.target.value, 10)); setPage(0); }}
-              rowsPerPageOptions={[5, 10, 25, 50]}
-              sx={{
-                borderTop: "1px solid var(--border-color)",
-                color: "var(--text-secondary)",
-                ".MuiTablePagination-select": { color: "var(--text-primary)" },
-                ".MuiTablePagination-selectIcon": { color: "var(--text-secondary)" },
-                ".MuiIconButton-root": { color: "var(--text-secondary)" },
-                ".MuiIconButton-root.Mui-disabled": { opacity: 0.3 }
-              }}
-            />
-          </>
-        )}
-      </TableContainer>
     </Box>
   );
 };

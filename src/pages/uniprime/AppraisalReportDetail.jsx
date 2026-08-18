@@ -932,7 +932,7 @@ const AppraisalReportDetail = () => {
     : true; // fallback
 
   return (
-    <Box p={4} sx={{ maxWidth: 1200, margin: "0 auto", animation: "fadeIn 0.5s ease" }}>
+    <Box p={4} sx={{ maxWidth: "100%", margin: "0 auto", animation: "fadeIn 0.5s ease" }}>
 
       <Typography variant="h5" sx={{ fontWeight: 800, mb: 4, color: "var(--text-primary)" }}> Appraisal Report Details </Typography>
 

@@ -13,7 +13,7 @@ import { useState, useMemo, useEffect } from "react";
 import { InputAdornment } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 
-export default function DataTable({ columns, rows, toolbarLeft, nonSortableColumns = [], alignments = [], defaultRowsPerPage = 10 }) {
+export default function DataTable({ columns, rows, toolbarLeft, nonSortableColumns = [], alignments = [], columnWidths = [], defaultRowsPerPage = 10 }) {
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(defaultRowsPerPage);
   const [search, setSearch] = useState("");
@@ -162,6 +162,7 @@ export default function DataTable({ columns, rows, toolbarLeft, nonSortableColum
                     onClick={() => isSortable && handleSort(index)}
                     align={alignments[index] || "center"}
                     sx={{
+                      width: columnWidths[index] || "auto",
                       textAlign: alignments[index] || "center",
                       cursor: isSortable ? "pointer" : "default",
                       "&:first-of-type": {
@@ -226,6 +227,7 @@ export default function DataTable({ columns, rows, toolbarLeft, nonSortableColum
                       key={j}
                       align={alignments[j] || "center"}
                       sx={{
+                        width: columnWidths[j] || "auto",
                         textAlign: alignments[j] || "center",
                         py: 2,
                         px: 3,

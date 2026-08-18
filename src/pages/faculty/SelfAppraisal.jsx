@@ -2272,7 +2272,7 @@ const SelfAppraisal = () => {
         subtitle="Fill, review, and submit your performance appraisal form."
         onBack={() => setViewMode("list")}
       />
-      <Box p={4} sx={{ maxWidth: 1300, margin: "0 auto", animation: "fadeIn 0.5s ease" }}>
+      <Box p={4} sx={{ maxWidth: "100%", margin: "0 auto", animation: "fadeIn 0.5s ease" }}>
         {(
           (appraisal.status.includes('Rejected') && appraisal.rejectionHistory && appraisal.rejectionHistory.length > 0) ||
           ((!appraisal.rejectionHistory || appraisal.rejectionHistory.length === 0) && appraisal.status === 'Rejected by HOD' && appraisal.hodEvaluation?.comments) ||
