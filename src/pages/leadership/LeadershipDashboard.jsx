@@ -41,10 +41,20 @@ const LeadershipDashboard = () => {
     approvedCount: 0,
     rejectedCount: 0,
     totalHandled: 0,
+    totalExpectedAppraisals: 0,
     recentSubmissions: []
   };
 
   const topCards = [
+    { 
+      title: "Expected Appraisals", 
+      value: dashboard.totalExpectedAppraisals, 
+      icon: <FolderOutlined />, 
+      gradient: "linear-gradient(135deg, #F59E0B, #D97706)",
+      color: "#F59E0B", 
+      linkText: "All Reports",
+      path: "/appraisal-reports"
+    },
     { 
       title: "Pending Approvals", 
       value: dashboard.pendingCount, 
@@ -64,21 +74,12 @@ const LeadershipDashboard = () => {
       path: "/appraisal-reports"
     },
     { 
-      title: "Rejected", 
-      value: dashboard.rejectedCount, 
-      icon: <CancelOutlined />, 
-      gradient: "linear-gradient(135deg, #EF4444, #DC2626)",
-      color: "#EF4444", 
-      linkText: "View Rejected",
-      path: "/appraisal-reports"
-    },
-    { 
-      title: "Total Appraisals", 
+      title: "Total", 
       value: dashboard.totalHandled, 
-      icon: <FolderOutlined />, 
-      gradient: "linear-gradient(135deg, #F59E0B, #D97706)",
-      color: "#F59E0B", 
-      linkText: "All Reports",
+      icon: <AssignmentTurnedIn />, 
+      gradient: "linear-gradient(135deg, #8B5CF6, #6D28D9)",
+      color: "#8B5CF6", 
+      linkText: "View All",
       path: "/appraisal-reports"
     }
   ];
