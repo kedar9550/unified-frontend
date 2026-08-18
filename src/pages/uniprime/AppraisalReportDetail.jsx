@@ -816,6 +816,7 @@ const AppraisalReportDetail = () => {
     academicYearId: selectedAppraisal.academicYearId,
     status: selectedAppraisal.status,
     hodEvaluation: selectedAppraisal.hodEvaluation,
+    managementEvaluation: selectedAppraisal.managementEvaluation,
     facultyCategory: selectedAppraisal.facultyCategory || "Non-Doctorate Faculty",
     minimumPoints: appraisalConfig?.minimumPoints,
     teaching: {

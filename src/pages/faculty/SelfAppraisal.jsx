@@ -2480,7 +2480,7 @@ const SelfAppraisal = () => {
                 <Box>
                   {otherMissingFields.length > 0 && (
                     <Typography variant="body2" sx={{ mb: hasCoreDeptMissing ? 1.5 : 0 }}>
-                      You must complete the following fields in your profile before you can submit this appraisal to HOD:
+                      You must complete the following fields in your profile before you submit:
                       <strong> {otherMissingFields.join(", ")}</strong>. Please navigate to the Profile settings to update them.
                     </Typography>
                   )}
