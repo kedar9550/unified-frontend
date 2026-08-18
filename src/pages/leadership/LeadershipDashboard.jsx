@@ -380,12 +380,12 @@ const LeadershipDashboard = () => {
                 >
                   Verification Status
                 </Typography>
-                <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
+                <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
                   {[
-                    { label: "Total Submissions", value: dashboard.totalHandled, icon: <DescriptionOutlined sx={{ fontSize: 18, color: "var(--color-primary)" }} />, bgColor: "rgba(59, 130, 246, 0.1)" },
-                    { label: "Approved Items", value: dashboard.approvedCount, icon: <CheckCircleOutlined sx={{ fontSize: 18, color: "#10B981" }} />, bgColor: "rgba(16, 185, 129, 0.1)" },
-                    { label: "Pending Verification", value: dashboard.pendingCount, icon: <AssignmentTurnedIn sx={{ fontSize: 18, color: "#F59E0B" }} />, bgColor: "rgba(245, 158, 11, 0.1)" },
-                    { label: "Rejected / Returned", value: dashboard.rejectedCount, icon: <CancelOutlined sx={{ fontSize: 18, color: "#EF4444" }} />, bgColor: "rgba(239, 68, 68, 0.1)" },
+                    { label: "Total Submissions", value: dashboard.totalHandled, icon: <DescriptionOutlined sx={{ fontSize: 16, color: "var(--color-primary)" }} />, bgColor: "rgba(59, 130, 246, 0.1)" },
+                    { label: "Approved Items", value: dashboard.approvedCount, icon: <CheckCircleOutlined sx={{ fontSize: 16, color: "#10B981" }} />, bgColor: "rgba(16, 185, 129, 0.1)" },
+                    { label: "Pending Verification", value: dashboard.pendingCount, icon: <AssignmentTurnedIn sx={{ fontSize: 16, color: "#F59E0B" }} />, bgColor: "rgba(245, 158, 11, 0.1)" },
+                    { label: "Rejected / Returned", value: dashboard.rejectedCount, icon: <CancelOutlined sx={{ fontSize: 16, color: "#EF4444" }} />, bgColor: "rgba(239, 68, 68, 0.1)" },
                   ].map((stat, i) => (
                     <Box
                       key={i}
@@ -393,17 +393,8 @@ const LeadershipDashboard = () => {
                         display: "flex",
                         justifyContent: "space-between",
                         alignItems: "center",
-                        p: 1.5,
-                        px: 2,
-                        borderRadius: "12px",
-                        border: "1px solid var(--border-color)",
-                        background: "var(--bg-glass)",
-                        transition: "all 0.2s ease-in-out",
-                        "&:hover": {
-                          borderColor: "var(--color-primary-alpha)",
-                          background: "var(--bg-accent-1)",
-                          transform: "translateX(4px)",
-                        }
+                        py: 0.75,
+                        borderBottom: i !== 3 ? "1px solid var(--border-color)" : "none"
                       }}
                     >
                       <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
@@ -412,9 +403,9 @@ const LeadershipDashboard = () => {
                             display: "flex",
                             justifyContent: "center",
                             alignItems: "center",
-                            width: 32,
-                            height: 32,
-                            borderRadius: "8px",
+                            width: 28,
+                            height: 28,
+                            borderRadius: "6px",
                             backgroundColor: stat.bgColor,
                           }}
                         >
@@ -473,8 +464,10 @@ const LeadershipDashboard = () => {
             <Box
               sx={{
                 display: "flex",
-                flexWrap: "wrap",
-                gap: 2,
+                flexDirection: "column",
+                justifyContent: "center",
+                flexGrow: 1,
+                gap: 3,
                 width: "100%",
                 position: "relative",
                 zIndex: 1,
@@ -483,14 +476,11 @@ const LeadershipDashboard = () => {
               {[
                 { title: "Review Pending", desc: "Approve or reject", icon: <AssignmentTurnedIn sx={{ color: "#3B82F6" }} />, path: "/appraisal/management-evaluate" },
                 { title: "View All Reports", desc: "Detailed reports", icon: <InsertDriveFileOutlined sx={{ color: "#10B981" }} />, path: "/appraisal-reports" },
-                { title: "Department Summary", desc: "Performance overview", icon: <AssuredWorkloadOutlined sx={{ color: "#8B5CF6" }} />, path: "/appraisal-reports" },
-                { title: "Download Reports", desc: "Export data", icon: <DownloadOutlined sx={{ color: "#F59E0B" }} />, path: "/appraisal-reports" },
               ].map((action, i) => (
                 <Box
                   key={i}
                   sx={{
-                    flex: { xs: "1 1 100%", sm: "1 1 calc(50% - 8px)" },
-                    minWidth: 0,
+                    width: "100%",
                   }}
                 >
                   <Paper

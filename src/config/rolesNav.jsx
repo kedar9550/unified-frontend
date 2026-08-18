@@ -275,6 +275,14 @@ export const ROLE_ROUTES = {
     { text: "Dashboard", path: "/dashboard", icon: <Dashboard /> },
     { text: "Appraisal", icon: <ManageAccounts />, nested: [{ text: "Appraisal Verification", path: "/appraisal/management-evaluate", icon: <Verified /> }, { text: "Appraisal Reports", path: "/appraisal-reports", icon: <Assessment /> }] }
   ],
+  CONTROLLER_OF_EXAMINATIONS: [
+    { text: "Dashboard", path: "/dashboard", icon: <Dashboard /> },
+    { text: "Appraisal", icon: <ManageAccounts />, nested: [{ text: "Appraisal Verification", path: "/appraisal/management-evaluate", icon: <Verified /> }, { text: "Appraisal Reports", path: "/appraisal-reports", icon: <Assessment /> }] }
+  ],
+  "CONTROLLER OF EXAMINATIONS": [
+    { text: "Dashboard", path: "/dashboard", icon: <Dashboard /> },
+    { text: "Appraisal", icon: <ManageAccounts />, nested: [{ text: "Appraisal Verification", path: "/appraisal/management-evaluate", icon: <Verified /> }, { text: "Appraisal Reports", path: "/appraisal-reports", icon: <Assessment /> }] }
+  ],
   DEAN_IQAC: [
     { text: "Dashboard", path: "/dashboard", icon: <Dashboard /> },
     { text: "Appraisal", icon: <ManageAccounts />, nested: [{ text: "Appraisal Verification", path: "/appraisal/management-evaluate", icon: <Verified /> }, { text: "Appraisal Reports", path: "/appraisal-reports", icon: <Assessment /> }] }
