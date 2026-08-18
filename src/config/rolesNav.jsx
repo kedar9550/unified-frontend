@@ -195,21 +195,23 @@ export const ROLE_ROUTES = {
           text: "Research",
           path: "/hod/research-approvals",
           icon: <Science />
-        },
-        // {
-        //   text: "Proctoring Verification",
-        //   icon: <SupervisorAccount />
-        // },
-
-        // {
-        //   text: "Administration Verification",
-        //   icon: <AccountBalance />
-        // },
+        }
+      ]
+    },
+    {
+      text: "Appraisal",
+      icon: <ManageAccounts />,
+      nested: [
         {
           text: "Appraisal Verification",
           path: "/hod/appraisal-verification",
-          icon: <Description />
+          icon: <Verified />
         },
+        {
+          text: "Appraisal Reports",
+          path: "/appraisal-reports",
+          icon: <Assessment />
+        }
       ]
     },
     { text: "Staff Directory", path: "/hod/staff", icon: <People /> },
@@ -226,12 +228,23 @@ export const ROLE_ROUTES = {
           text: "Research",
           path: "/hod/research-approvals",
           icon: <Science />
-        },
+        }
+      ]
+    },
+    {
+      text: "Appraisal",
+      icon: <ManageAccounts />,
+      nested: [
         {
           text: "Appraisal Verification",
           path: "/appraisal/management-evaluate",
-          icon: <Description />
+          icon: <Verified />
         },
+        {
+          text: "Appraisal Reports",
+          path: "/appraisal-reports",
+          icon: <Assessment />
+        }
       ]
     },
     { text: "Staff Directory", path: "/hod/staff", icon: <People /> },
