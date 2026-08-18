@@ -230,6 +230,7 @@ function App() {
         <Route path="/appraisal/evaluate" element={<ProtectedRoute element={<AppraisalEvaluation />} />} />
         <Route path="/appraisal/management-evaluate" element={<ProtectedRoute element={<ManagementAppraisalEvaluation />} />} />
         <Route path="/uniprime/appraisal-reports" element={<ProtectedRoute element={<AppraisalReports />} />} />
+        <Route path="/appraisal-reports" element={<ProtectedRoute element={<AppraisalReports />} />} />
         <Route path="/appraisal/details/:id" element={<ProtectedRoute element={<AppraisalReportDetail />} />} />
         <Route path="/research-dean/appraisal-finalization" element={<ProtectedRoute element={<AppraisalResearchScoring />} />} />
         <Route path="/research-coordinator/appraisal-finalization" element={<ProtectedRoute element={<AppraisalResearchScoring />} />} />

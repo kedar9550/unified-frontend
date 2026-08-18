@@ -820,6 +820,7 @@ const RoleManagement = () => {
                 setSelectedHodDepts([]);
                 setSelectedDeanSchools([]);
                 setHodConfirm({ open: false, message: "" });
+                setAssignRoleDialogOpen(false);
                 fetchAllEmployees();
             }
         } catch (error) {
