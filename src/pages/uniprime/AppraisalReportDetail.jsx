@@ -224,6 +224,8 @@ const AppraisalReportDetail = () => {
   const briefPrintRef = useRef();
   const [isDownloading, setIsDownloading] = useState(false);
   const [showEligibilityDetails, setShowEligibilityDetails] = useState(false);
+  const [downloadPending, setDownloadPending] = useState(false);
+  const [showRejectionHistory, setShowRejectionHistory] = useState(false);
 
   const needsPrimaryEvaluation =
     selectedAppraisal &&
@@ -332,6 +334,22 @@ const AppraisalReportDetail = () => {
     }
   };
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (downloadPending && selectedAppraisal) {
+      const runDownload = async () => {
+        await handleDownloadBriefPDF();
+        setDownloadPending(false);
+        setSelectedAppraisal(null);
+        if (id) navigate(-1);
+        else fetchDetail();
+      };
+      // Give React a tick to flush the DOM with the new state
+      const timer = setTimeout(runDownload, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [downloadPending, selectedAppraisal]);
+
   // Main Appraisal Actions
   const [mainAppraisalRemarks, setMainAppraisalRemarks] = useState("");
 
@@ -357,7 +375,16 @@ const AppraisalReportDetail = () => {
       });
       if (res.data?.success) {
         toast.dismiss();
-        toast.success(`Appraisal ${action === 'Approve' ? 'approved and finalized' : 'rejected and sent back'} successfully.`);
+        if (action === 'Approve') {
+          const newStatus = res.data.data?.status || '';
+          if (newStatus === 'Submitted to Dean') {
+            toast.success('Appraisal approved and sent to Dean successfully.');
+          } else {
+            toast.success('Appraisal approved and finalized successfully.');
+          }
+        } else {
+          toast.success('Appraisal rejected and sent back successfully.');
+        }
         setSelectedAppraisal(null);
         if (id) navigate(-1);
         else fetchDetail();
@@ -768,12 +795,7 @@ const AppraisalReportDetail = () => {
         toast.success(`Appraisal successfully ${action.toLowerCase()}ed.`);
         if (action === "Approve") {
           setSelectedAppraisal(res.data.data);
-          setTimeout(async () => {
-            await handleDownloadBriefPDF();
-            setSelectedAppraisal(null);
-            if (id) navigate(-1);
-            else fetchDetail();
-          }, 500);
+          setDownloadPending(true);
           return;
         }
         setSelectedAppraisal(null);
@@ -874,13 +896,18 @@ const AppraisalReportDetail = () => {
     const elig = selectedAppraisal.eligibility;
     const isEligible = elig.status === "Fulfilled";
 
+    const interpersonalScore = elig.details?.interpersonalScore || selectedAppraisal.hodEvaluation?.totalInterpersonalPoints || 0;
+
     return {
       isEligible,
       details: {
         fdpCourseraPassed: elig.details?.fdpStatus === "Fulfilled",
         metric21Passed: elig.details?.r21Status === "Fulfilled",
+        metric21Threshold: elig.details?.metric21Threshold,
+        metric21Score: elig.details?.metric21Score,
         interpersonalPassed: elig.details?.interpersonalStatus === "Fulfilled",
-        showInterpersonal: ["Approved", "Completed", "Pending Research Admin"].includes(selectedAppraisal.status) || !!selectedAppraisal.hodEvaluation
+        interpersonalScore: interpersonalScore,
+        showInterpersonal: interpersonalScore > 0
       }
     };
   };
@@ -1111,7 +1138,7 @@ const AppraisalReportDetail = () => {
               </Card>
 
               {/* Previous Rejection Remarks Section */}
-              {selectedAppraisal.rejectionHistory && selectedAppraisal.rejectionHistory.length > 0 && (() => {
+              {selectedAppraisal.rejectionHistory && selectedAppraisal.rejectionHistory.length > 0 && !selectedAppraisal.status?.startsWith("Approved") && selectedAppraisal.status !== "Completed" && (() => {
                 const getRoleRank = (r) => {
                   if (r === 'HOD') return 1;
                   if (r === 'SCHOOL_DEAN' || r === 'Dean') return 2;
@@ -1125,26 +1152,38 @@ const AppraisalReportDetail = () => {
                 return (
                   <Card sx={{ borderRadius: "20px", background: "var(--bg-panel)", border: "1px solid rgba(239, 68, 68, 0.3)", mb: 4, boxShadow: "var(--shadow-premium)" }}>
                     <CardContent sx={{ p: 3 }}>
-                      <Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)", display: "flex", alignItems: "center", gap: 1.5, mb: 2 }}>
-                        <Warning sx={{ color: "#ef4444" }} /> Previous Rejection Remarks
-                      </Typography>
-                      <Divider sx={{ mb: 2.5 }} />
-
-                      {visibleRejections.slice().reverse().map((rej, idx) => (
-                        <Box key={idx} sx={{ mb: 2, p: 2.5, borderRadius: "12px", background: "rgba(239, 68, 68, 0.05)", border: "1px solid rgba(239, 68, 68, 0.2)" }}>
-                          <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                            <Typography variant="caption" sx={{ color: "#ef4444", fontWeight: 800, textTransform: "uppercase" }}>
-                              Rejected By: {rej.roleLabel || rej.role}
-                            </Typography>
-                            <Typography variant="caption" sx={{ color: "var(--text-secondary)", fontWeight: 600 }}>
-                              {new Date(rej.date).toLocaleDateString()}
-                            </Typography>
-                          </Box>
-                          <Typography variant="body2" sx={{ color: "var(--text-primary)", fontWeight: 500, lineHeight: 1.6 }}>
-                            {rej.comments}
-                          </Typography>
+                      <Box
+                        sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", cursor: "pointer" }}
+                        onClick={() => setShowRejectionHistory(!showRejectionHistory)}
+                      >
+                        <Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)", display: "flex", alignItems: "center", gap: 1.5 }}>
+                          <Warning sx={{ color: "#ef4444" }} /> Previous Rejection Remarks
+                        </Typography>
+                        <IconButton>
+                          {showRejectionHistory ? <KeyboardArrowUp /> : <KeyboardArrowDown />}
+                        </IconButton>
+                      </Box>
+                      
+                      <Collapse in={showRejectionHistory}>
+                        <Box sx={{ mt: 2.5 }}>
+                          <Divider sx={{ mb: 2.5 }} />
+                          {visibleRejections.slice().reverse().map((rej, idx) => (
+                            <Box key={idx} sx={{ mb: 2, p: 2.5, borderRadius: "12px", background: "rgba(239, 68, 68, 0.05)", border: "1px solid rgba(239, 68, 68, 0.2)" }}>
+                              <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                                <Typography variant="caption" sx={{ color: "#ef4444", fontWeight: 800, textTransform: "uppercase" }}>
+                                  Rejected By: {rej.roleLabel || rej.role}
+                                </Typography>
+                                <Typography variant="caption" sx={{ color: "var(--text-secondary)", fontWeight: 600 }}>
+                                  {new Date(rej.date).toLocaleDateString()}
+                                </Typography>
+                              </Box>
+                              <Typography variant="body2" sx={{ color: "var(--text-primary)", fontWeight: 500, lineHeight: 1.6 }}>
+                                {rej.comments}
+                              </Typography>
+                            </Box>
+                          ))}
                         </Box>
-                      ))}
+                      </Collapse>
                     </CardContent>
                   </Card>
                 );
@@ -2794,12 +2833,20 @@ const AppraisalReportDetail = () => {
               <Box display="flex" gap={4}>
                 <Box>
                   <Typography variant="caption" color="textSecondary" sx={{ fontWeight: 600 }}>Duration</Typography>
-                  <Typography variant="body1" sx={{ fontWeight: 700, color: "var(--text-primary)" }}>{selectedResUtDetails.duration} Days</Typography>
+                  <Typography variant="body1" sx={{ fontWeight: 700, color: "var(--text-primary)" }}>
+                    {selectedResUtDetails.numberOfDaysParticipated || selectedResUtDetails.numberOfDaysOrganized || selectedResUtDetails.duration || "-"} Days
+                  </Typography>
                 </Box>
                 <Box>
                   <Typography variant="caption" color="textSecondary" sx={{ fontWeight: 600 }}>Dates</Typography>
                   <Typography variant="body1" sx={{ fontWeight: 700, color: "var(--text-primary)" }}>
-                    {selectedResUtDetails.fromDate ? new Date(selectedResUtDetails.fromDate).toLocaleDateString("en-IN") : ""} - {selectedResUtDetails.toDate ? new Date(selectedResUtDetails.toDate).toLocaleDateString("en-IN") : ""}
+                    {(() => {
+                      const fromDate = selectedResUtDetails.fromDate || selectedResUtDetails.eventStartDate;
+                      const toDate = selectedResUtDetails.toDate || selectedResUtDetails.eventEndDate;
+                      const fromDateFormatted = fromDate ? new Date(fromDate).toLocaleDateString("en-IN", { day: '2-digit', month: '2-digit', year: 'numeric' }) : "";
+                      const toDateFormatted = toDate ? new Date(toDate).toLocaleDateString("en-IN", { day: '2-digit', month: '2-digit', year: 'numeric' }) : "";
+                      return fromDateFormatted && toDateFormatted ? `${fromDateFormatted} - ${toDateFormatted}` : "-";
+                    })()}
                   </Typography>
                 </Box>
               </Box>
@@ -3080,7 +3127,7 @@ const AppraisalReportDetail = () => {
           }}
         >
           <Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>
-            Primary Evaluation / Verification
+            Evaluation & Review
           </Typography>
           <Typography variant="body2" sx={{ color: "var(--text-secondary)" }}>
             Ensure you have reviewed all individual sections (Journals, Patents, Duties, etc.) before taking the final action on this appraisal.

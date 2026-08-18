@@ -39,7 +39,8 @@ import {
   FormLabel,
   TablePagination,
   Tabs,
-  Tab
+  Tab,
+  Collapse
 } from "@mui/material";
 import {
   Send,
@@ -73,7 +74,9 @@ import {
   WorkspacePremium,
   SupervisorAccount,
   ThumbUp,
-  Flag
+  Flag,
+  KeyboardArrowDown,
+  KeyboardArrowUp
 } from "@mui/icons-material";
 import axiosInstance from "../../api/axios";
 import { toast } from "sonner";
@@ -160,6 +163,7 @@ const SelfAppraisal = () => {
   const [profileComplete, setProfileComplete] = useState(true);
   const [missingFields, setMissingFields] = useState([]);
   const [activeTab, setActiveTab] = useState(0);
+  const [showRejectionHistory, setShowRejectionHistory] = useState(false);
 
   const horizontalTabStyle = {
     textTransform: "none",
@@ -2269,33 +2273,61 @@ const SelfAppraisal = () => {
         onBack={() => setViewMode("list")}
       />
       <Box p={4} sx={{ maxWidth: 1300, margin: "0 auto", animation: "fadeIn 0.5s ease" }}>
-        {(!appraisal.rejectionHistory || appraisal.rejectionHistory.length === 0) && (appraisal.status === 'Rejected by HOD' && appraisal.hodEvaluation?.comments) && (
-          <Alert severity="error" sx={{ mb: 4, borderRadius: "12px", border: "1px solid rgba(239, 68, 68, 0.3)", '& .MuiAlert-message': { width: '100%' } }}>
-            <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>Appraisal Rejected by HOD</Typography>
-            <Typography variant="body2" sx={{ mt: 0.5 }}><strong>Remarks:</strong> {appraisal.hodEvaluation.comments}</Typography>
-            <Typography variant="caption" sx={{ display: 'block', mt: 1 }}>Please fix the mentioned issues and resubmit your appraisal.</Typography>
-          </Alert>
-        )}
+        {(
+          (appraisal.status.includes('Rejected') && appraisal.rejectionHistory && appraisal.rejectionHistory.length > 0) ||
+          ((!appraisal.rejectionHistory || appraisal.rejectionHistory.length === 0) && appraisal.status === 'Rejected by HOD' && appraisal.hodEvaluation?.comments) ||
+          ((!appraisal.rejectionHistory || appraisal.rejectionHistory.length === 0) && appraisal.status.startsWith('Rejected') && appraisal.status !== 'Rejected by HOD' && appraisal.managementEvaluation?.comments)
+        ) && (
+            <Card sx={{ borderRadius: "20px", background: "var(--bg-panel)", border: "1px solid rgba(239, 68, 68, 0.3)", mb: 4, boxShadow: "var(--shadow-premium)" }}>
+              <CardContent sx={{ p: 3 }}>
+                <Box
+                  sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", cursor: "pointer" }}
+                  onClick={() => setShowRejectionHistory(!showRejectionHistory)}
+                >
+                  <Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)", display: "flex", alignItems: "center", gap: 1.5 }}>
+                    <Warning sx={{ color: "#ef4444" }} /> Rejection Remarks
+                  </Typography>
+                  <IconButton>
+                    {showRejectionHistory ? <KeyboardArrowUp /> : <KeyboardArrowDown />}
+                  </IconButton>
+                </Box>
 
-        {(!appraisal.rejectionHistory || appraisal.rejectionHistory.length === 0) && (appraisal.status.startsWith('Rejected') && appraisal.status !== 'Rejected by HOD' && appraisal.managementEvaluation?.comments) && (
-          <Alert severity="error" sx={{ mb: 4, borderRadius: "12px", border: "1px solid rgba(239, 68, 68, 0.3)", '& .MuiAlert-message': { width: '100%' } }}>
-            <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>Appraisal {appraisal.status}</Typography>
-            <Typography variant="body2" sx={{ mt: 0.5 }}><strong>Remarks:</strong> {appraisal.managementEvaluation.comments}</Typography>
-            <Typography variant="caption" sx={{ display: 'block', mt: 1 }}>Please fix the mentioned issues and resubmit your appraisal.</Typography>
-          </Alert>
-        )}
+                <Collapse in={showRejectionHistory}>
+                  <Box sx={{ mt: 2.5 }}>
+                    <Divider sx={{ mb: 2.5 }} />
 
-        {appraisal.status.includes('Rejected') && appraisal.rejectionHistory && appraisal.rejectionHistory.length > 0 && (
-          <Box sx={{ mb: 4 }}>
-            {appraisal.rejectionHistory.slice().reverse().map((rej, idx) => (
-              <Alert key={idx} severity="error" sx={{ mb: 2, borderRadius: "12px", border: "1px solid rgba(239, 68, 68, 0.3)", '& .MuiAlert-message': { width: '100%' } }}>
-                <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>Appraisal Rejected by {rej.roleLabel || rej.role}</Typography>
-                <Typography variant="body2" sx={{ mt: 0.5 }}><strong>Remarks:</strong> {rej.comments}</Typography>
-                <Typography variant="caption" sx={{ display: 'block', mt: 1 }}>Date: {new Date(rej.date).toLocaleDateString()}</Typography>
-              </Alert>
-            ))}
-          </Box>
-        )}
+                    {(!appraisal.rejectionHistory || appraisal.rejectionHistory.length === 0) && (appraisal.status === 'Rejected by HOD' && appraisal.hodEvaluation?.comments) && (
+                      <Alert severity="error" sx={{ mb: 2, borderRadius: "12px", border: "1px solid rgba(239, 68, 68, 0.3)", '& .MuiAlert-message': { width: '100%' } }}>
+                        <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>Appraisal Rejected by HOD</Typography>
+                        <Typography variant="body2" sx={{ mt: 0.5 }}><strong>Remarks:</strong> {appraisal.hodEvaluation.comments}</Typography>
+                        <Typography variant="caption" sx={{ display: 'block', mt: 1 }}>Please fix the mentioned issues and resubmit your appraisal.</Typography>
+                      </Alert>
+                    )}
+
+                    {(!appraisal.rejectionHistory || appraisal.rejectionHistory.length === 0) && (appraisal.status.startsWith('Rejected') && appraisal.status !== 'Rejected by HOD' && appraisal.managementEvaluation?.comments) && (
+                      <Alert severity="error" sx={{ mb: 2, borderRadius: "12px", border: "1px solid rgba(239, 68, 68, 0.3)", '& .MuiAlert-message': { width: '100%' } }}>
+                        <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>Appraisal {appraisal.status}</Typography>
+                        <Typography variant="body2" sx={{ mt: 0.5 }}><strong>Remarks:</strong> {appraisal.managementEvaluation.comments}</Typography>
+                        <Typography variant="caption" sx={{ display: 'block', mt: 1 }}>Please fix the mentioned issues and resubmit your appraisal.</Typography>
+                      </Alert>
+                    )}
+
+                    {appraisal.status.includes('Rejected') && appraisal.rejectionHistory && appraisal.rejectionHistory.length > 0 && (
+                      <Box>
+                        {appraisal.rejectionHistory.slice().reverse().map((rej, idx) => (
+                          <Alert key={idx} severity="error" sx={{ mb: 2, borderRadius: "12px", border: "1px solid rgba(239, 68, 68, 0.3)", '& .MuiAlert-message': { width: '100%' } }}>
+                            <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>Appraisal Rejected by {rej.roleLabel || rej.role}</Typography>
+                            <Typography variant="body2" sx={{ mt: 0.5 }}><strong>Remarks:</strong> {rej.comments}</Typography>
+                            <Typography variant="caption" sx={{ display: 'block', mt: 1 }}>Date: {new Date(rej.date).toLocaleDateString()}</Typography>
+                          </Alert>
+                        ))}
+                      </Box>
+                    )}
+                  </Box>
+                </Collapse>
+              </CardContent>
+            </Card>
+          )}
 
         {/* Header Panel */}
         <Box
@@ -4881,14 +4913,22 @@ const SelfAppraisal = () => {
                     <Box sx={{ p: 1.5, borderRadius: "10px", background: "var(--bg-paper)", border: "1px solid var(--border-color)" }}>
                       <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", fontWeight: 800 }}>Dates</Typography>
                       <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>
-                        {new Date(data.fromDate).toLocaleDateString("en-IN")} to {new Date(data.toDate).toLocaleDateString("en-IN")}
+                        {(() => {
+                          const fromDate = data.fromDate || data.eventStartDate;
+                          const toDate = data.toDate || data.eventEndDate;
+                          const fromDateFormatted = fromDate ? new Date(fromDate).toLocaleDateString("en-IN", { day: '2-digit', month: '2-digit', year: 'numeric' }) : "";
+                          const toDateFormatted = toDate ? new Date(toDate).toLocaleDateString("en-IN", { day: '2-digit', month: '2-digit', year: 'numeric' }) : "";
+                          return fromDateFormatted && toDateFormatted ? `${fromDateFormatted} to ${toDateFormatted}` : "-";
+                        })()}
                       </Typography>
                     </Box>
                   </Grid>
                   <Grid size={{ xs: 12, sm: 4 }}>
                     <Box sx={{ p: 1.5, borderRadius: "10px", background: "var(--bg-paper)", border: "1px solid var(--border-color)" }}>
                       <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", fontWeight: 800 }}>Duration</Typography>
-                      <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>{data.duration} Days</Typography>
+                      <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>
+                        {data.numberOfDaysParticipated || data.numberOfDaysOrganized || data.duration || "-"} Days
+                      </Typography>
                     </Box>
                   </Grid>
                   <Grid size={{ xs: 12, sm: 4 }}>

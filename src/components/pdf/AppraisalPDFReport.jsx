@@ -985,7 +985,7 @@ const AppraisalPDFReport = forwardRef(({ data, hideInterpersonal, eligibilityDet
               </tr>
               {data.hodEvaluation?.comments && (
                 <tr style={styles.tr}>
-                  <td style={{ ...styles.td, ...styles.rowLabel }}>Primary Evaluator / HOD Comments</td>
+                  <td style={{ ...styles.td, ...styles.rowLabel }}>HOD Comments</td>
                   <td style={styles.tdLeft}>{data.hodEvaluation.comments}</td>
                 </tr>
               )}
