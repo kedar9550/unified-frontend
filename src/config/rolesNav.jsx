@@ -238,14 +238,38 @@ export const ROLE_ROUTES = {
   ],
 
   // Common Management appraisal layout
-  PRO_VICE_CHANCELLOR_E_S: [{ text: "Dashboard", path: "/dashboard", icon: <Dashboard /> }, { text: "Appraisal Verification", path: "/appraisal/management-evaluate", icon: <Description /> }],
-  PRO_VICE_CHANCELLOR_A: [{ text: "Dashboard", path: "/dashboard", icon: <Dashboard /> }, { text: "Appraisal Verification", path: "/appraisal/management-evaluate", icon: <Description /> }],
-  PRO_VICE_CHANCELLOR_S_P: [{ text: "Dashboard", path: "/dashboard", icon: <Dashboard /> }, { text: "Appraisal Verification", path: "/appraisal/management-evaluate", icon: <Description /> }],
-  VICE_CHANCELLOR: [{ text: "Dashboard", path: "/dashboard", icon: <Dashboard /> }, { text: "Appraisal Verification", path: "/appraisal/management-evaluate", icon: <Description /> }],
-  DY_PRO_CHANCELLOR: [{ text: "Dashboard", path: "/dashboard", icon: <Dashboard /> }, { text: "Appraisal Verification", path: "/appraisal/management-evaluate", icon: <Description /> }],
-  REGISTRAR: [{ text: "Dashboard", path: "/dashboard", icon: <Dashboard /> }, { text: "Appraisal Verification", path: "/appraisal/management-evaluate", icon: <Description /> }],
-  DEAN_IQAC: [{ text: "Dashboard", path: "/dashboard", icon: <Dashboard /> }, { text: "Appraisal Verification", path: "/appraisal/management-evaluate", icon: <Description /> }],
-  DEAN_ADMISSIONS: [{ text: "Dashboard", path: "/dashboard", icon: <Dashboard /> }, { text: "Appraisal Verification", path: "/appraisal/management-evaluate", icon: <Description /> }],
+  PRO_VICE_CHANCELLOR_E_S: [
+    { text: "Dashboard", path: "/dashboard", icon: <Dashboard /> },
+    { text: "Appraisal", icon: <ManageAccounts />, nested: [{ text: "Appraisal Verification", path: "/appraisal/management-evaluate", icon: <Verified /> }, { text: "Appraisal Reports", path: "/appraisal-reports", icon: <Assessment /> }] }
+  ],
+  PRO_VICE_CHANCELLOR_A: [
+    { text: "Dashboard", path: "/dashboard", icon: <Dashboard /> },
+    { text: "Appraisal", icon: <ManageAccounts />, nested: [{ text: "Appraisal Verification", path: "/appraisal/management-evaluate", icon: <Verified /> }, { text: "Appraisal Reports", path: "/appraisal-reports", icon: <Assessment /> }] }
+  ],
+  PRO_VICE_CHANCELLOR_S_P: [
+    { text: "Dashboard", path: "/dashboard", icon: <Dashboard /> },
+    { text: "Appraisal", icon: <ManageAccounts />, nested: [{ text: "Appraisal Verification", path: "/appraisal/management-evaluate", icon: <Verified /> }, { text: "Appraisal Reports", path: "/appraisal-reports", icon: <Assessment /> }] }
+  ],
+  VICE_CHANCELLOR: [
+    { text: "Dashboard", path: "/dashboard", icon: <Dashboard /> },
+    { text: "Appraisal", icon: <ManageAccounts />, nested: [{ text: "Appraisal Verification", path: "/appraisal/management-evaluate", icon: <Verified /> }, { text: "Appraisal Reports", path: "/appraisal-reports", icon: <Assessment /> }] }
+  ],
+  DY_PRO_CHANCELLOR: [
+    { text: "Dashboard", path: "/dashboard", icon: <Dashboard /> },
+    { text: "Appraisal", icon: <ManageAccounts />, nested: [{ text: "Appraisal Verification", path: "/appraisal/management-evaluate", icon: <Verified /> }, { text: "Appraisal Reports", path: "/appraisal-reports", icon: <Assessment /> }] }
+  ],
+  REGISTRAR: [
+    { text: "Dashboard", path: "/dashboard", icon: <Dashboard /> },
+    { text: "Appraisal", icon: <ManageAccounts />, nested: [{ text: "Appraisal Verification", path: "/appraisal/management-evaluate", icon: <Verified /> }, { text: "Appraisal Reports", path: "/appraisal-reports", icon: <Assessment /> }] }
+  ],
+  DEAN_IQAC: [
+    { text: "Dashboard", path: "/dashboard", icon: <Dashboard /> },
+    { text: "Appraisal", icon: <ManageAccounts />, nested: [{ text: "Appraisal Verification", path: "/appraisal/management-evaluate", icon: <Verified /> }, { text: "Appraisal Reports", path: "/appraisal-reports", icon: <Assessment /> }] }
+  ],
+  DEAN_ADMISSIONS: [
+    { text: "Dashboard", path: "/dashboard", icon: <Dashboard /> },
+    { text: "Appraisal", icon: <ManageAccounts />, nested: [{ text: "Appraisal Verification", path: "/appraisal/management-evaluate", icon: <Verified /> }, { text: "Appraisal Reports", path: "/appraisal-reports", icon: <Assessment /> }] }
+  ],
 
   // Example for "Exam Section" role
   EXAMSECTION: [

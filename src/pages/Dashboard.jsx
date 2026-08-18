@@ -14,6 +14,7 @@ import RnDDeanDashboard from "./research/RnDDeanDashboard";
 import ServiceAdminDashboard from "./serviceDesk/ServiceAdminDashboard";
 import ServiceEmpDashboard from "./serviceDesk/ServiceEmpDashboard";
 import StudentEventAdminDashboard from "./studenteventsadmin/StudentEventAdminDashboard";
+import LeadershipDashboard from "./leadership/LeadershipDashboard";
 
 function Dashboard() {
   const { activeRole } = useAuth();
@@ -42,6 +43,8 @@ function Dashboard() {
       {activeRole === "SERVICE_ADMIN" && <ServiceAdminDashboard />}
       {activeRole === "SERVICE_EMP" && <ServiceEmpDashboard />}
       {(activeRole === "STUDENT_EVENT_ADMIN" || activeRole === "EVENT_COORDINATOR" || activeRole === "FACULTY_COORDINATOR" || activeRole === "ACCOMMODATION_COORDINATOR") && <StudentEventAdminDashboard />}
+      {["VICE_CHANCELLOR", "DY_PRO_CHANCELLOR", "REGISTRAR", "PRO_VICE_CHANCELLOR_E_S", "PRO_VICE_CHANCELLOR_A", "PRO_VICE_CHANCELLOR_S_P", "DEAN_IQAC", "DEAN_ADMISSIONS",
+        "VICE CHANCELLOR", "DY. PRO CHANCELLOR", "PRO VICE-CHANCELLOR (E & S)", "PRO VICE-CHANCELLOR (A)", "PRO VICE-CHANCELLOR (S & P)", "DEAN - (IQAC)", "DEAN - (ADMISSIONS)"].includes(activeRole) && <LeadershipDashboard />}
     </Box>
   );
 }
