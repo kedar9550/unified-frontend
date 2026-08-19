@@ -696,7 +696,7 @@ export default function Login({ defaultSignUp = false }) {
                   </div>
 
                   <button type="button" className="auth-forgot auth-forgot-center" onClick={toggleForgot}>
-                    Back to Sign In
+                    BACK TO LOGIN
                   </button>
                 </form>
               )}
@@ -758,7 +758,7 @@ export default function Login({ defaultSignUp = false }) {
               <p className="overlay-sub">Already have an account? Sign in to access your portal.</p>
             </>
           )}
-          <button className="btn-overlay" onClick={goSignIn}>BACK TO LOGIN</button>
+          {/* <button className="btn-overlay" onClick={goSignIn}>BACK TO LOGIN</button> */}
         </div>
         {/* Right half — visible by default */}
         <div className="overlay-side overlay-right">
