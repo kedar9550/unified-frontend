@@ -311,11 +311,7 @@ export default function Discrepancies() {
 
   // ── Handle resolve submit ──────────────────────────────────────────
   const handleResolve = async () => {
-    if (!proofFile) {
-      toast.warning("Please upload a proof document before submitting");
-      return;
-    }
-    if (proofFile.size > 500 * 1024) {
+    if (proofFile && proofFile.size > 500 * 1024) {
       toast.error("Proof document must be under 500kb");
       return;
     }
