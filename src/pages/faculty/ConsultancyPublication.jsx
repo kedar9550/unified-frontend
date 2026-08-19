@@ -102,8 +102,8 @@ export default function ConsultancyPublication() {
       const res = await API.get(`/api/employees/staff/${empId}`);
       if (res.data && res.data.success) {
         const staff = res.data.data;
-        const name = staff.employeename || staff.EmployeeName || "";
-        const dept = staff.departmentname || staff.DepartmentName || "";
+        const name = staff.employeename || staff.EmployeeName || staff.employeeName || staff.name || staff.Name || "";
+        const dept = staff.departmentname || staff.DepartmentName || staff.departmentName || staff.department || "";
         const desig = staff.designation || staff.Designation || "";
 
         setForm(prev => {
