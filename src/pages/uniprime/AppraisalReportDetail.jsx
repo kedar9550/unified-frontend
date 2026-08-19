@@ -224,7 +224,6 @@ const AppraisalReportDetail = () => {
   const briefPrintRef = useRef();
   const [isDownloading, setIsDownloading] = useState(false);
   const [showEligibilityDetails, setShowEligibilityDetails] = useState(false);
-  const [downloadPending, setDownloadPending] = useState(false);
   const [showRejectionHistory, setShowRejectionHistory] = useState(false);
 
   const needsPrimaryEvaluation =
@@ -334,21 +333,7 @@ const AppraisalReportDetail = () => {
     }
   };
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => {
-    if (downloadPending && selectedAppraisal) {
-      const runDownload = async () => {
-        await handleDownloadBriefPDF();
-        setDownloadPending(false);
-        setSelectedAppraisal(null);
-        if (id) navigate(-1);
-        else fetchDetail();
-      };
-      // Give React a tick to flush the DOM with the new state
-      const timer = setTimeout(runDownload, 100);
-      return () => clearTimeout(timer);
-    }
-  }, [downloadPending, selectedAppraisal]);
+
 
   // Main Appraisal Actions
   const [mainAppraisalRemarks, setMainAppraisalRemarks] = useState("");
@@ -793,11 +778,7 @@ const AppraisalReportDetail = () => {
       if (res.data && res.data.success) {
         toast.dismiss();
         toast.success(`Appraisal successfully ${action.toLowerCase()}ed.`);
-        if (action === "Approve") {
-          setSelectedAppraisal(res.data.data);
-          setDownloadPending(true);
-          return;
-        }
+
         setSelectedAppraisal(null);
         if (id) navigate(-1);
         else fetchDetail();
@@ -832,6 +813,27 @@ const AppraisalReportDetail = () => {
   const liveAdminPointsRaw = liveAdminRoles.reduce((sum, r) => r.status !== 'Rejected' ? sum + calculateAdministrativePoints(r, appraisalConfig) : sum, 0);
   const liveAdminPoints = Math.min(20, liveAdminPointsRaw);
 
+  const facultyCategory = selectedAppraisal?.facultyCategory || "Non-Doctorate Faculty";
+  const hasCos = selectedAppraisal?.personalInfoSnapshot?.hasCos !== false;
+  
+  const baseThresholds = getCategoryThresholds(facultyCategory);
+  
+  const dynamicMins = {
+      ...baseThresholds,
+      teaching: hasCos ? baseThresholds.teaching : (facultyCategory === "Leadership Team" ? 30 : 38),
+      total1to4: hasCos ? baseThresholds.total1to4 : baseThresholds.total1to4 - 20,
+      grandTotal: hasCos ? baseThresholds.grandTotal : baseThresholds.grandTotal - 20,
+      valueAddition: 20,
+      administration: 10,
+      interpersonal: 30
+  };
+
+  const dynamicMax = {
+      teaching: hasCos ? 80 : 60,
+      total1to4: hasCos ? 200 : 180,
+      grandTotal: hasCos ? 250 : 230
+  };
+
   // PDF Pre-calculated Data Object
   const calculatedPrintData = selectedAppraisal ? {
     personalInfoSnapshot: selectedAppraisal.personalInfoSnapshot,
@@ -841,6 +843,10 @@ const AppraisalReportDetail = () => {
     managementEvaluation: selectedAppraisal.managementEvaluation,
     facultyCategory: selectedAppraisal.facultyCategory || "Non-Doctorate Faculty",
     minimumPoints: appraisalConfig?.minimumPoints,
+    eligibility: selectedAppraisal.eligibility,
+    facultyId: selectedAppraisal.facultyId,
+    dynamicMins,
+    dynamicMax,
     teaching: {
       passPercentage: selectedAppraisal.teaching?.passPercentage || {},
       courseFeedback: selectedAppraisal.teaching?.feedback || {},
@@ -2207,7 +2213,7 @@ const AppraisalReportDetail = () => {
                                           })()}
                                         </TableCell>
                                         <TableCell>
-                                          <Chip label={item.status} size="small" sx={{ bgcolor: statusColor.bg, color: statusColor.color, fontWeight: 800, borderRadius: "6px" }} />
+                                          <Chip label={item.status === "Pending at HOD" ? "Pending" : item.status} size="small" sx={{ bgcolor: statusColor.bg, color: statusColor.color, fontWeight: 800, borderRadius: "6px" }} />
                                         </TableCell>
                                         <TableCell align="center">
                                           <IconButton
@@ -2326,7 +2332,7 @@ const AppraisalReportDetail = () => {
                                           {calculateContributionPoints(item, appraisalConfig)}
                                         </TableCell>
                                         <TableCell>
-                                          <Chip label={item.status} size="small" sx={{ bgcolor: statusColor.bg, color: statusColor.color, fontWeight: 800, borderRadius: "6px" }} />
+                                          <Chip label={item.status === "Pending at HOD" ? "Pending" : item.status} size="small" sx={{ bgcolor: statusColor.bg, color: statusColor.color, fontWeight: 800, borderRadius: "6px" }} />
                                         </TableCell>
                                         <TableCell align="center">
                                           <IconButton

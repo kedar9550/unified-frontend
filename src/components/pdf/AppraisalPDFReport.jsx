@@ -868,17 +868,22 @@ const AppraisalPDFReport = forwardRef(({ data, hideInterpersonal, eligibilityDet
 
       {/* 6. MINIMUM POINTS SUMMARY TABLE */}
       {!hideInterpersonal && (() => {
+        const dynamicMins = data.dynamicMins || {};
+        const dynamicMax = data.dynamicMax || {};
         const facultyCategory = data.facultyCategory || "Non-Doctorate Faculty";
-        const minPoints = data.minimumPoints?.[facultyCategory] || {};
 
-        const minTeaching = minPoints.teaching || 0;
-        const minResearch21 = minPoints.research21 || 0;
-        const minResearch22_28 = minPoints.research22_28 || 0;
-        const minValAdd = minPoints.valueAddition || 0;
-        const minAdmin = minPoints.administration || 0;
-        const minTotal1to4 = minTeaching + minResearch21 + minResearch22_28 + minValAdd + minAdmin;
-        const minInterpersonal = minPoints.interpersonalSkills || 0;
-        const minGrandTotal = minTotal1to4 + minInterpersonal;
+        const minTeaching = dynamicMins.teaching || 0;
+        const minResearch21 = dynamicMins.metric21 || 0;
+        const minResearch22_28 = 0;
+        const minValAdd = dynamicMins.valueAddition || 20;
+        const minAdmin = dynamicMins.administration || 10;
+        const minTotal1to4 = dynamicMins.total1to4 || 0;
+        const minInterpersonal = dynamicMins.interpersonal || 30;
+        const minGrandTotal = dynamicMins.grandTotal || 0;
+
+        const maxTeaching = dynamicMax.teaching || 80;
+        const maxTotal1to4 = dynamicMax.total1to4 || 200;
+        const maxGrandTotal = dynamicMax.grandTotal || 250;
 
         const awdTeaching = teachingTotal || 0;
         const awdResearch21 = r21 || 0;
@@ -886,7 +891,7 @@ const AppraisalPDFReport = forwardRef(({ data, hideInterpersonal, eligibilityDet
         const awdValAdd = vData.valueAdditionTotal || 0;
         const awdAdmin = adminData.adminTotal || 0;
         const rawTotal1to4 = awdTeaching + awdResearch21 + awdResearch22_28 + awdValAdd + awdAdmin;
-        const awdTotal1to4 = Math.min(200, rawTotal1to4);
+        const awdTotal1to4 = Math.min(maxTotal1to4, rawTotal1to4);
         const awdInterpersonal = data.hodEvaluation?.interpersonalRatings?.reduce((sum, r) => sum + (Number(r.rating) || 0), 0) || 0;
         const awdGrandTotal = awdTotal1to4 + awdInterpersonal;
 
@@ -909,7 +914,7 @@ const AppraisalPDFReport = forwardRef(({ data, hideInterpersonal, eligibilityDet
                 <tr style={styles.tr}>
                   <td style={styles.td}>1</td>
                   <td style={styles.tdLeft}>Teaching</td>
-                  <td style={styles.td}>80</td>
+                  <td style={styles.td}>{maxTeaching}</td>
                   <td style={styles.td}>{minTeaching}</td>
                   <td style={styles.td}>{awdTeaching.toFixed(2)}</td>
                 </tr>
@@ -944,7 +949,7 @@ const AppraisalPDFReport = forwardRef(({ data, hideInterpersonal, eligibilityDet
                 </tr>
                 <tr style={{ ...styles.tr, fontWeight: 'bold', backgroundColor: '#f9f9f9' }}>
                   <td style={styles.td} colSpan={2}>Total</td>
-                  <td style={styles.td}>200</td>
+                  <td style={styles.td}>{maxTotal1to4}</td>
                   <td style={styles.td}>{minTotal1to4}</td>
                   <td style={styles.td}>{awdTotal1to4.toFixed(2)}</td>
                 </tr>
@@ -959,7 +964,7 @@ const AppraisalPDFReport = forwardRef(({ data, hideInterpersonal, eligibilityDet
                     </tr>
                     <tr style={{ ...styles.tr, fontWeight: 'bold', backgroundColor: '#e5e7eb' }}>
                       <td style={styles.td} colSpan={2}>Grand Total</td>
-                      <td style={styles.td}>250</td>
+                      <td style={styles.td}>{maxGrandTotal}</td>
                       <td style={styles.td}>{minGrandTotal}</td>
                       <td style={styles.td}>{awdGrandTotal.toFixed(2)}</td>
                     </tr>
