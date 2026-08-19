@@ -82,7 +82,7 @@ const ManagementAppraisalEvaluation = () => {
       
       <Stack spacing={3} sx={{ width: "100%", mb: 3 }}>
         <PageHeader
-          title="Management Verification Desk"
+          title="Appraisal Verification Desk"
           subtitle="Review and evaluate faculty appraisals for approval"
         />
       </Stack>
