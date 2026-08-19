@@ -370,9 +370,11 @@ const AppraisalReportDetail = () => {
         } else {
           toast.success('Appraisal rejected and sent back successfully.');
         }
-        setSelectedAppraisal(null);
-        if (id) navigate(-1);
-        else fetchDetail();
+        if (!id) {
+          setSelectedAppraisal(null);
+        }
+        fetchDetail();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
       }
     } catch (err) {
       toast.error(err.response?.data?.message || `Failed to ${action} appraisal.`);
@@ -736,9 +738,11 @@ const AppraisalReportDetail = () => {
       if (res.data && res.data.success) {
         toast.dismiss(); // Clear any existing toasts to prevent overlapping
         toast.success(action === "Approve" ? "Appraisal approved successfully and moved to the next stage!" : "Appraisal sent back to faculty for corrections.");
-        setSelectedAppraisal(null);
-        if (id) navigate(-1);
-        else fetchDetail();
+        if (!id) {
+          setSelectedAppraisal(null);
+        }
+        fetchDetail();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
       }
     } catch (err) {
       toast.error(err.response?.data?.message || "Failed to process appraisal action.");
@@ -779,9 +783,11 @@ const AppraisalReportDetail = () => {
         toast.dismiss();
         toast.success(`Appraisal successfully ${action.toLowerCase()}ed.`);
 
-        setSelectedAppraisal(null);
-        if (id) navigate(-1);
-        else fetchDetail();
+        if (!id) {
+          setSelectedAppraisal(null);
+        }
+        fetchDetail();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
       }
     } catch (err) {
       toast.error(err.response?.data?.message || "Failed to process management action.");
