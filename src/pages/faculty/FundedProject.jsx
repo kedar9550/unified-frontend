@@ -367,7 +367,7 @@ export default function FundedProject() {
         mb: 3
       }}>
         <Typography variant="h6" sx={{ color: "var(--text-primary)", fontWeight: 800, textAlign: { xs: "center", sm: "left" } }}>My Funded Projects</Typography>
-        <Button
+        {/* <Button
           variant="contained"
           onClick={() => {
             const activeYear = academicYears.length > 0;
@@ -393,7 +393,7 @@ export default function FundedProject() {
           }}
         >
           Apply New
-        </Button>
+        </Button> */}
       </Box>
       {(!publicationsList || publicationsList.length === 0) ? (
         <Box sx={{
