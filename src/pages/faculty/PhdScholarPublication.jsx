@@ -277,7 +277,7 @@ export default function PhdScholarPublication() {
         mb: 3
       }}>
         <Typography variant="h6" sx={{ color: "var(--text-primary)", fontWeight: 800, textAlign: { xs: "center", sm: "left" } }}>My Guided Ph.D. Scholars</Typography>
-        <Button
+        {/* <Button
           variant="contained"
           onClick={() => {
             const activeYear = academicYears.length > 0;
@@ -303,7 +303,7 @@ export default function PhdScholarPublication() {
           }}
         >
           Add Student
-        </Button>
+        </Button> */}
       </Box>
       {(!publicationsList || publicationsList.length === 0) ? (
         <Box sx={{

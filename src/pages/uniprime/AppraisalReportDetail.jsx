@@ -2166,7 +2166,7 @@ const AppraisalReportDetail = () => {
                                           {(() => {
                                             const role = (item.activityType || '').toLowerCase();
                                             const isParticipated = role.includes('participant') || role.includes('participated');
-                                            const isEditableStatus = ['Submitted to HOD'].includes(selectedAppraisal.status) && item.status !== 'Rejected';
+                                            const isEditableStatus = (isPrimaryEvaluator || isAuthorizedForManagementAction()) && item.status !== 'Rejected';
 
                                             if (awardedResUtilPoints[item._id] !== undefined) {
                                               return (

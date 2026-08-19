@@ -307,7 +307,7 @@ export default function ConsultancyPublication() {
         mb: 3
       }}>
         <Typography variant="h6" sx={{ color: "var(--text-primary)", fontWeight: 800, textAlign: { xs: "center", sm: "left" } }}>My Consultancy Work</Typography>
-        <Button
+        {/* <Button
           variant="contained"
           onClick={() => {
             const activeYear = academicYears.length > 0;
@@ -333,7 +333,7 @@ export default function ConsultancyPublication() {
           }}
         >
           Apply New
-        </Button>
+        </Button> */}
       </Box>
       {(!publicationsList || publicationsList.length === 0) ? (
         <Box sx={{
