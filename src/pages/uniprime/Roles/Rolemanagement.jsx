@@ -932,10 +932,10 @@ const RoleManagement = () => {
         const query = employeesSearchQuery.toLowerCase().trim();
         if (!query) return true;
         return (
-            emp.name.toLowerCase().includes(query) ||
-            emp.institutionId.toLowerCase().includes(query) ||
-            emp.email.toLowerCase().includes(query) ||
-            (emp.designation && emp.designation.toLowerCase().includes(query))
+            String(emp.name || "").toLowerCase().includes(query) ||
+            String(emp.institutionId || "").toLowerCase().includes(query) ||
+            String(emp.email || "").toLowerCase().includes(query) ||
+            String(emp.designation || "").toLowerCase().includes(query)
         );
     });
 
@@ -1123,14 +1123,14 @@ const RoleManagement = () => {
             {activeTab === 1 && (
                 <Box sx={{ mt: 3 }}>
                     <Paper elevation={0} sx={{ p: 3, borderRadius: "20px", background: "var(--bg-glass)", backdropFilter: "blur(10px) saturate(150%)", border: "1px solid var(--border-color)", boxShadow: "0 4px 20px rgba(0,0,0,0.02)" }}>
-                        <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, justifyContent: 'space-between', alignItems: { xs: 'stretch', sm: 'center' }, gap: 2, mb: 3 }}>
-                            <Box>
+                        <Box sx={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: 3, mb: 3 }}>
+                            <Box sx={{ minWidth: "250px" }}>
                                 <Typography variant="h6" fontWeight={800} color="var(--text-primary)">All Registered Employees</Typography>
                                 <Typography variant="body2" color="textSecondary" fontWeight={500}>
                                     Total: {allEmployees.length} employees
                                 </Typography>
                             </Box>
-                            <Box sx={{ display: 'flex', gap: 2, flexDirection: { xs: 'column', sm: 'row' }, width: { xs: '100%', sm: 'auto' } }}>
+                            <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', flex: 1, flexDirection: { xs: 'column', sm: 'row' }, justifyContent: { xs: 'flex-start', sm: 'flex-end' } }}>
                                 <TextField
                                     select
                                     value={selectedRoleFilter}
@@ -1386,14 +1386,14 @@ const RoleManagement = () => {
                         <Box
                             sx={{
                                 display: 'flex',
-                                flexDirection: { xs: 'column', sm: 'row' },
+                                flexWrap: 'wrap',
                                 justifyContent: 'space-between',
-                                alignItems: { xs: 'stretch', sm: 'center' },
-                                gap: 2,
+                                alignItems: 'center',
+                                gap: 3,
                                 mb: 3
                             }}
                         >
-                            <Box>
+                            <Box sx={{ minWidth: "200px" }}>
                                 <Typography variant="h6" fontWeight={800} color="var(--text-primary)">
                                     All System Roles
                                 </Typography>
@@ -1406,8 +1406,10 @@ const RoleManagement = () => {
                                 sx={{
                                     display: 'flex',
                                     gap: 2,
+                                    flexWrap: 'wrap',
+                                    flex: 1,
                                     flexDirection: { xs: 'column', sm: 'row' },
-                                    width: { xs: '100%', sm: 'auto' }
+                                    justifyContent: { xs: 'flex-start', sm: 'flex-end' }
                                 }}
                             >
                                 <TextField
@@ -1869,51 +1871,7 @@ const RoleManagement = () => {
                     <IconButton onClick={() => setAssignRoleDialogOpen(false)} size="small" sx={{ color: 'var(--text-secondary)' }}><Close /></IconButton>
                 </DialogTitle>
                 <DialogContent sx={{ p: 0, display: 'flex', flexDirection: 'column', minHeight: '60vh' }}>
-                    <Box sx={{ px: 3, pt: 1, pb: 0 }}>
 
-                        <Collapse in={!!selectedUser && assignedRoleIds.some(rid => roles.find(r => r._id === rid)?.name === 'HOD')}>
-                            <Box sx={{ mt: 2, p: 2, borderRadius: '15px', background: 'var(--bg-paper)', border: '1px solid var(--border-color)' }}>
-                                <Typography variant="subtitle2" fontWeight={800} color="var(--text-primary)" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                    <Security sx={{ fontSize: 18 }} /> HOD Serving Department Assignment
-                                </Typography>
-                                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
-                                    {selectedHodDepts.map(dept => (
-                                        <Chip key={dept._id} label={dept.name} size="small" onDelete={() => setSelectedHodDepts(prev => prev.filter(d => d._id !== dept._id))} sx={{ background: "var(--gradient-primary)", color: '#fff', fontWeight: 700, borderRadius: '50px' }} />
-                                    ))}
-                                </Box>
-                                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, p: 1, border: '1px dashed var(--text-secondary)', borderRadius: '10px' }}>
-                                    {allDepartments.map(dept => {
-                                        const isSelected = selectedHodDepts.some(d => d._id === dept._id);
-                                        return (
-                                            <Chip key={dept._id} label={dept.name} onClick={() => { if (isSelected) setSelectedHodDepts(prev => prev.filter(d => d._id !== dept._id)); else setSelectedHodDepts(prev => [...prev, dept]); }} variant={isSelected ? "filled" : "outlined"} size="small" sx={{ cursor: 'pointer', borderRadius: '50px', fontWeight: 700, border: isSelected ? 'none' : '1.5px solid var(--color-primary)', background: isSelected ? "var(--gradient-primary)" : 'transparent', color: isSelected ? '#fff' : 'var(--color-primary)' }} />
-                                        );
-                                    })}
-                                </Box>
-                            </Box>
-                        </Collapse>
-
-                        <Collapse in={!!selectedUser && assignedRoleIds.some(rid => roles.find(r => r._id === rid)?.key === 'SCHOOL_DEAN')}>
-                            <Box sx={{ mt: 2, p: 2, borderRadius: '15px', background: 'var(--bg-paper)', border: '1px solid var(--border-color)' }}>
-                                <Typography variant="subtitle2" fontWeight={800} color="var(--text-primary)" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                    <School sx={{ fontSize: 18 }} /> SCHOOL_DEAN School Assignment
-                                </Typography>
-                                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
-                                    {selectedDeanSchools.map(school => (
-                                        <Chip key={school._id} label={school.name} size="small" onDelete={() => setSelectedDeanSchools(prev => prev.filter(s => s._id !== school._id))} sx={{ background: "var(--gradient-primary)", color: '#fff', fontWeight: 700, borderRadius: '50px' }} />
-                                    ))}
-                                </Box>
-                                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, p: 1, border: '1px dashed var(--text-secondary)', borderRadius: '10px' }}>
-                                    {allSchools.map(school => {
-                                        const isSelected = selectedDeanSchools.some(s => s._id === school._id);
-                                        return (
-                                            <Chip key={school._id} label={school.name} onClick={() => { if (isSelected) setSelectedDeanSchools(prev => prev.filter(s => s._id !== school._id)); else setSelectedDeanSchools(prev => [...prev, school]); }} variant={isSelected ? "filled" : "outlined"} size="small" sx={{ cursor: 'pointer', borderRadius: '50px', fontWeight: 700, border: isSelected ? 'none' : '1.5px solid var(--color-primary)', background: isSelected ? "var(--gradient-primary)" : 'transparent', color: isSelected ? '#fff' : 'var(--color-primary)' }} />
-                                        );
-                                    })}
-                                </Box>
-                            </Box>
-                        </Collapse>
-
-                    </Box>
                     <Box sx={{ flex: 1, p: 3, background: 'var(--bg-accent-1)', display: 'flex', flexDirection: 'column' }}>
                         <TextField placeholder="Search roles to assign..." size="small" fullWidth value={assignmentRolesSearchQuery} onChange={(e) => setAssignmentRolesSearchQuery(e.target.value)} sx={{ mb: 2, "& .MuiOutlinedInput-root": { borderRadius: "10px", background: "var(--bg-glass)" } }} InputProps={{ startAdornment: ( <InputAdornment position="start"> <Search sx={{ color: 'var(--text-secondary)' }} /> </InputAdornment> ) }} />
                         <Box sx={{ flex: 1, overflowY: 'auto' }}>
@@ -1922,9 +1880,10 @@ const RoleManagement = () => {
                                     {filteredAssignmentRoles.length > 0 ? filteredAssignmentRoles.map((role) => {
                                         const isIdentityDefault = role.defaultRole;
                                         const isChecked = assignedRoleIds.includes(role._id.toString());
+                                        const expands = isChecked && (role.name === 'HOD' || role.key === 'SCHOOL_DEAN');
                                         return (
-                                            <Grid size={{ xs: 12, sm: 6, md: 4 }} key={role._id}>
-                                                <Box onClick={() => handleRoleToggle(role._id)} sx={{ p: 1.5, height: '100%', borderRadius: '12px', background: 'var(--bg-glass)', position: 'relative', border: '1px solid transparent', ...(isChecked && { '&::before': { content: '""', position: 'absolute', inset: 0, borderRadius: 'inherit', padding: '1.5px', background: 'var(--gradient-primary)', WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)', WebkitMaskComposite: 'xor', maskComposite: 'exclude', pointerEvents: 'none', zIndex: 0 } }), cursor: selectedUser ? (isIdentityDefault ? 'not-allowed' : 'pointer') : 'default', opacity: selectedUser ? (isIdentityDefault ? 0.75 : 1) : 0.6, display: 'flex', alignItems: 'center', transition: '0.2s', '&:hover': selectedUser && !isIdentityDefault ? { background: 'var(--bg-panel)' } : {} }}>
+                                            <Grid size={{ xs: 12, sm: expands ? 12 : 6, md: expands ? 12 : 4 }} key={role._id}>
+                                                <Box onClick={() => handleRoleToggle(role._id)} sx={{ p: 1.5, height: '100%', borderRadius: '12px', background: 'var(--bg-glass)', position: 'relative', border: '1px solid transparent', ...(isChecked && { '&::before': { content: '""', position: 'absolute', inset: 0, borderRadius: 'inherit', padding: '1.5px', background: 'var(--gradient-primary)', WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)', WebkitMaskComposite: 'xor', maskComposite: 'exclude', pointerEvents: 'none', zIndex: 0 } }), cursor: selectedUser ? (isIdentityDefault ? 'not-allowed' : 'pointer') : 'default', opacity: selectedUser ? (isIdentityDefault ? 0.75 : 1) : 0.6, display: 'flex', flexDirection: 'column', transition: '0.2s', '&:hover': selectedUser && !isIdentityDefault ? { background: 'var(--bg-panel)' } : {} }}>
                                                     <Box sx={{ display: 'flex', alignItems: 'center', width: '100%' }}>
                                                         <Checkbox checked={isChecked} disabled={!selectedUser || isIdentityDefault} sx={{ p: 0, mr: 1.5, '&.Mui-checked': { color: 'var(--color-primary)' }, '&.MuiCheckbox-root': { color: isChecked ? 'var(--color-primary)' : 'var(--text-secondary)' } }} />
                                                         <Box sx={{ flex: 1, minWidth: 0 }}>
@@ -1935,6 +1894,52 @@ const RoleManagement = () => {
                                                             </Box>
                                                         </Box>
                                                     </Box>
+
+                                                    {role.name === 'HOD' && (
+                                                        <Collapse in={!!selectedUser && isChecked}>
+                                                            <Box onClick={(e) => e.stopPropagation()} sx={{ mt: 2, pt: 2, borderTop: '1px dashed var(--border-color)', cursor: 'default' }}>
+                                                                <Typography variant="subtitle2" fontWeight={800} color="var(--text-primary)" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                                    <Security sx={{ fontSize: 18 }} /> HOD Serving Department Assignment
+                                                                </Typography>
+                                                                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
+                                                                    {selectedHodDepts.map(dept => (
+                                                                        <Chip key={dept._id} label={dept.name} size="small" onDelete={() => setSelectedHodDepts(prev => prev.filter(d => d._id !== dept._id))} sx={{ background: "var(--gradient-primary)", color: '#fff', fontWeight: 700, borderRadius: '50px' }} />
+                                                                    ))}
+                                                                </Box>
+                                                                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, p: 1, border: '1px dashed var(--text-secondary)', borderRadius: '10px' }}>
+                                                                    {allDepartments.map(dept => {
+                                                                        const isSelected = selectedHodDepts.some(d => d._id === dept._id);
+                                                                        return (
+                                                                            <Chip key={dept._id} label={dept.name} onClick={() => { if (isSelected) setSelectedHodDepts(prev => prev.filter(d => d._id !== dept._id)); else setSelectedHodDepts(prev => [...prev, dept]); }} variant={isSelected ? "filled" : "outlined"} size="small" sx={{ cursor: 'pointer', borderRadius: '50px', fontWeight: 700, border: isSelected ? 'none' : '1.5px solid var(--color-primary)', background: isSelected ? "var(--gradient-primary)" : 'transparent', color: isSelected ? '#fff' : 'var(--color-primary)' }} />
+                                                                        );
+                                                                    })}
+                                                                </Box>
+                                                            </Box>
+                                                        </Collapse>
+                                                    )}
+
+                                                    {role.key === 'SCHOOL_DEAN' && (
+                                                        <Collapse in={!!selectedUser && isChecked}>
+                                                            <Box onClick={(e) => e.stopPropagation()} sx={{ mt: 2, pt: 2, borderTop: '1px dashed var(--border-color)', cursor: 'default' }}>
+                                                                <Typography variant="subtitle2" fontWeight={800} color="var(--text-primary)" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                                    <School sx={{ fontSize: 18 }} /> SCHOOL_DEAN School Assignment
+                                                                </Typography>
+                                                                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
+                                                                    {selectedDeanSchools.map(school => (
+                                                                        <Chip key={school._id} label={school.name} size="small" onDelete={() => setSelectedDeanSchools(prev => prev.filter(s => s._id !== school._id))} sx={{ background: "var(--gradient-primary)", color: '#fff', fontWeight: 700, borderRadius: '50px' }} />
+                                                                    ))}
+                                                                </Box>
+                                                                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, p: 1, border: '1px dashed var(--text-secondary)', borderRadius: '10px' }}>
+                                                                    {allSchools.map(school => {
+                                                                        const isSelected = selectedDeanSchools.some(s => s._id === school._id);
+                                                                        return (
+                                                                            <Chip key={school._id} label={school.name} onClick={() => { if (isSelected) setSelectedDeanSchools(prev => prev.filter(s => s._id !== school._id)); else setSelectedDeanSchools(prev => [...prev, school]); }} variant={isSelected ? "filled" : "outlined"} size="small" sx={{ cursor: 'pointer', borderRadius: '50px', fontWeight: 700, border: isSelected ? 'none' : '1.5px solid var(--color-primary)', background: isSelected ? "var(--gradient-primary)" : 'transparent', color: isSelected ? '#fff' : 'var(--color-primary)' }} />
+                                                                        );
+                                                                    })}
+                                                                </Box>
+                                                            </Box>
+                                                        </Collapse>
+                                                    )}
                                                 </Box>
                                             </Grid>
                                         );
@@ -1942,6 +1947,8 @@ const RoleManagement = () => {
                                 </Grid>
                             )}
                         </Box>
+
+
                         {selectedUser && (
                             <Box sx={{ mt: 3, pt: 2, borderTop: '1px solid rgba(0,0,0,0.05)', position: 'sticky', bottom: 0, background: 'transparent', pb: 1 }}>
                                 <Button fullWidth variant="contained" startIcon={<Save />} onClick={handleSaveAssignments} disabled={savingRoles} sx={{ borderRadius: '50px', py: 1.5, textTransform: 'none', fontWeight: 800, fontSize: '1rem', background: "var(--gradient-primary)", boxShadow: '0 4px 14px 0 rgba(0, 78, 146, 0.3)', transition: '0.3s', '&:hover': { background: "var(--gradient-primary-hover)", boxShadow: '0 6px 16px rgba(0, 78, 146, 0.4)' } }}>Save Role Assignments</Button>
