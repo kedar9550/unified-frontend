@@ -398,7 +398,7 @@ export default function Discrepancies() {
 
       // 3. Resolve the discrepancy with proof document
       const formData = new FormData();
-      formData.append("proof", proofFile);
+      if (proofFile) formData.append("proof", proofFile);
       formData.append("status", "RESOLVED");
       formData.append("resolutionNote", `Edited ${editedRows.length} record(s), added ${newRows.length} new record(s).`);
 
@@ -783,7 +783,7 @@ export default function Discrepancies() {
             <Box sx={{ textAlign: "center", py: 5 }}>
               <Typography fontSize={44}>✅</Typography>
               <Typography fontWeight={600} mt={1}>Resolved Successfully!</Typography>
-              <Typography fontSize={13} color="#888">Data updated and proof uploaded.</Typography>
+              <Typography fontSize={13} color="#888">Data updated.</Typography>
             </Box>
           ) : (
             selected && (
@@ -1181,7 +1181,7 @@ export default function Discrepancies() {
                 {/* ── Proof Upload (required) ── */}
                 <Box>
                   <Typography sx={{ fontSize: 13, fontWeight: 600, color: "#444", mb: 0.5 }}>
-                    Upload Proof Document <span style={{ color: "#e53935" }}>*</span>
+                    Upload Proof Document
                   </Typography>
                   <input
                     type="file"
@@ -1211,7 +1211,7 @@ export default function Discrepancies() {
                   >
                     <UploadIcon sx={{ color: proofFile ? "#2e7d32" : "#90a4ae", fontSize: 32 }} />
                     <Typography fontSize={13} mt={0.5} color={proofFile ? "#2e7d32" : "#888"}>
-                      {proofFile ? `✅ ${proofFile.name}` : "Click to upload PDF or image (required)"}
+                      {proofFile ? `✅ ${proofFile.name}` : "Click to upload PDF or image"}
                     </Typography>
                     <Typography fontSize={11} color="#aaa">Max 500KB</Typography>
                   </Box>
@@ -1234,7 +1234,7 @@ export default function Discrepancies() {
             <Button
               variant="contained"
               onClick={handleResolve}
-              disabled={submitting || !proofFile}
+              disabled={submitting}
             >
               ✓ Submit & Resolve
             </Button>
@@ -1258,20 +1258,22 @@ export default function Discrepancies() {
           },
         }}
       >
-        <DialogTitle sx={{ pb: 0 }}>
-          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <Typography fontWeight={700} fontSize={17} color="#b71c1c">
-              ✕ Reject Discrepancy
-            </Typography>
-            <IconButton size="small" onClick={() => setRejectItem(null)} disabled={rejecting}>
-              <CloseIcon fontSize="small" />
-            </IconButton>
-          </Box>
-        </DialogTitle>
+        {!rejectDone && (
+          <DialogTitle sx={{ pb: 0 }}>
+            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <Typography fontWeight={700} fontSize={17} color="#b71c1c">
+                ✕ Reject Discrepancy
+              </Typography>
+              <IconButton size="small" onClick={() => setRejectItem(null)} disabled={rejecting}>
+                <CloseIcon fontSize="small" />
+              </IconButton>
+            </Box>
+          </DialogTitle>
+        )}
 
         <DialogContent>
           {rejectDone ? (
-            <Box sx={{ textAlign: "center", py: 5 }}>
+            <Box sx={{ textAlign: "center", py: 5, minWidth: 320 }}>
               <Typography fontSize={44}>❌</Typography>
               <Typography fontWeight={600} mt={1}>Discrepancy Rejected</Typography>
             </Box>

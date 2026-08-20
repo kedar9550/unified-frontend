@@ -216,7 +216,6 @@ export default function UniprimeDiscrepancies() {
         branch: "",
         semesterNumber: "",
         yearNumber: "",
-        section: "",
         totalStudents: 0,
         eligibleStudents: 0,
         passedStudents: 0,
@@ -232,11 +231,7 @@ export default function UniprimeDiscrepancies() {
 
   // ── Handle resolve submit ──────────────────────────────────────────
   const handleResolve = async () => {
-    if (!proofFile) {
-      toast.warning("Please upload a proof document before submitting");
-      return;
-    }
-    if (proofFile.size > 500 * 1024) {
+    if (proofFile && proofFile.size > 500 * 1024) {
       toast.error("Proof document must be under 500kb");
       return;
     }
@@ -253,7 +248,6 @@ export default function UniprimeDiscrepancies() {
           branch: branchName,
           semesterNumber: row.semesterNumber ? Number(row.semesterNumber) : null,
           yearNumber: row.yearNumber ? Number(row.yearNumber) : null,
-          section: row.section,
           totalStudents: Number(row.totalStudents),
           eligibleStudents: Number(row.eligibleStudents),
           passedStudents: Number(row.passedStudents),
@@ -273,7 +267,6 @@ export default function UniprimeDiscrepancies() {
           branchId: row.branchId,
           semesterNumber: row.semesterNumber ? Number(row.semesterNumber) : null,
           yearNumber: row.yearNumber ? Number(row.yearNumber) : null,
-          section: row.section,
           totalStudents: Number(row.totalStudents),
           eligibleStudents: Number(row.eligibleStudents),
           passedStudents: Number(row.passedStudents),
@@ -282,7 +275,7 @@ export default function UniprimeDiscrepancies() {
 
       // 3. Resolve the discrepancy with proof document
       const formData = new FormData();
-      formData.append("proof", proofFile);
+      if (proofFile) formData.append("proof", proofFile);
       formData.append("status", "RESOLVED");
       formData.append("resolutionNote", `Edited ${editedRows.length} record(s), added ${newRows.length} new record(s).`);
 
@@ -471,7 +464,7 @@ export default function UniprimeDiscrepancies() {
                   <Table sx={{ minWidth: 800 }}>
                     <TableHead sx={{ background: "var(--gradient-primary)" }}>
                       <TableRow>
-                        {["#", "Faculty", "Academic Year", "Section", "Note", "Raised At", "Status", "Action"].map(col => (
+                        {["#", "Faculty", "Academic Year", "Note", "Raised At", "Status", "Action"].map(col => (
                           <TableCell
                             key={col}
                             sx={{
@@ -518,21 +511,7 @@ export default function UniprimeDiscrepancies() {
                               </Typography>
                             </TableCell>
 
-                            {/* Section */}
-                            <TableCell>
-                              <Box
-                                sx={{
-                                  px: 1.5, py: 0.4, borderRadius: "10px",
-                                  background: "var(--bg-glass)",
-                                  border: "1px solid var(--border-color)",
-                                  fontSize: 12, fontWeight: 700,
-                                  color: "var(--text-primary)",
-                                  display: "inline-block",
-                                }}
-                              >
-                                {SECTION_LABEL[item.section] || item.section}
-                              </Box>
-                            </TableCell>
+                            {/* Removed redundant section cell */}
 
                             {/* Note */}
                             <TableCell sx={{ maxWidth: 220 }}>
@@ -650,7 +629,7 @@ export default function UniprimeDiscrepancies() {
             <Box sx={{ textAlign: "center", py: 5 }}>
               <Typography fontSize={44}>✅</Typography>
               <Typography fontWeight={600} mt={1} sx={{ color: "var(--text-primary)" }}>Resolved Successfully!</Typography>
-              <Typography fontSize={13} color="text.secondary">Data updated and proof uploaded.</Typography>
+              <Typography fontSize={13} color="text.secondary">Data updated.</Typography>
             </Box>
           ) : (
             selected && (
@@ -677,15 +656,6 @@ export default function UniprimeDiscrepancies() {
                       <Typography fontWeight={600} fontSize={14} sx={{ color: "var(--text-primary)" }}>
                         {selected.academicYearId?.year} — {selected.semesterTypeId?.name}
                       </Typography>
-                      <Box
-                        sx={{
-                          mt: 0.5, px: 1.5, py: 0.3, borderRadius: "8px",
-                          background: "var(--bg-accent-2)", fontSize: 12, fontWeight: 600,
-                          color: "var(--text-primary)", display: "inline-block",
-                        }}
-                      >
-                        {SECTION_LABEL[selected.section] || selected.section}
-                      </Box>
                     </Box>
                   </Box>
                   <Divider sx={{ my: 1.5, borderColor: "var(--border-color)" }} />
@@ -735,7 +705,7 @@ export default function UniprimeDiscrepancies() {
                       <Table size="small">
                         <TableHead sx={{ background: "var(--bg-accent-1)" }}>
                           <TableRow>
-                            {["#", "Program", "Branch", "Sem", "Yr", "Sec", "Total Allotted", "Eligible (A)", "Passed (B)", "Pass %", ""].map(h => (
+                            {["#", "Program", "Branch", "Sem/Yr", "Total Allotted", "Eligible (A)", "Passed (B)", "Pass %", ""].map(h => (
                               <TableCell key={h} sx={{ fontWeight: 600, fontSize: 12, color: "var(--text-primary)", borderColor: "var(--border-color)" }}>{h}</TableCell>
                             ))}
                           </TableRow>
@@ -778,46 +748,39 @@ export default function UniprimeDiscrepancies() {
                                   disableUnderline={!row._edited}
                                 >
                                   <MenuItem value="">—</MenuItem>
-                                  {branches.filter(b => !row.programId || (b.programIds && b.programIds.some(p => (p?._id || p) === row.programId)) || (b.programId?._id || b.programId) === row.programId).map(b => (
+                                  {branches.filter(b => b._id === row.branchId || !row.programId || (b.programIds && b.programIds.some(p => (p?._id || p) === row.programId)) || (b.programId?._id || b.programId) === row.programId).map(b => (
                                     <MenuItem key={b._id} value={b._id}>{b.code}</MenuItem>
                                   ))}
                                 </Select>
                               </TableCell>
 
                               <TableCell sx={{ borderColor: "var(--border-color)" }}>
-                                <TextField
-                                  variant="standard"
-                                  type="number"
-                                  value={row.semesterNumber ?? ""}
-                                  onChange={e => handleResultEdit(idx, "semesterNumber", e.target.value)}
-                                  slotProps={{ input: { disableUnderline: !row._edited, sx: { fontSize: 13, color: "var(--text-primary)" } } }}
-                                  placeholder="Sem"
-                                  sx={{ width: 45 }}
-                                />
+                                {(() => {
+                                  const progObj = programs.find(p => p._id === row.programId);
+                                  const isYearPattern = progObj ? progObj.programPattern === "YEAR" : false;
+                                  return (
+                                    <TextField
+                                      variant="standard"
+                                      type="number"
+                                      value={isYearPattern ? (row.yearNumber ?? "") : (row.semesterNumber ?? "")}
+                                      onChange={e => {
+                                        if (isYearPattern) {
+                                          handleResultEdit(idx, "yearNumber", e.target.value);
+                                          handleResultEdit(idx, "semesterNumber", null);
+                                        } else {
+                                          handleResultEdit(idx, "semesterNumber", e.target.value);
+                                          handleResultEdit(idx, "yearNumber", null);
+                                        }
+                                      }}
+                                      slotProps={{ input: { disableUnderline: !row._edited, sx: { fontSize: 13, color: "var(--text-primary)" } } }}
+                                      placeholder={isYearPattern ? "Yr" : "Sem"}
+                                      sx={{ width: 45 }}
+                                    />
+                                  );
+                                })()}
                               </TableCell>
 
-                              <TableCell sx={{ borderColor: "var(--border-color)" }}>
-                                <TextField
-                                  variant="standard"
-                                  type="number"
-                                  value={row.yearNumber ?? ""}
-                                  onChange={e => handleResultEdit(idx, "yearNumber", e.target.value)}
-                                  slotProps={{ input: { disableUnderline: !row._edited, sx: { fontSize: 13, color: "var(--text-primary)" } } }}
-                                  placeholder="Yr"
-                                  sx={{ width: 45 }}
-                                />
-                              </TableCell>
-
-                              <TableCell sx={{ borderColor: "var(--border-color)" }}>
-                                <TextField
-                                  variant="standard"
-                                  value={row.section || ""}
-                                  onChange={e => handleResultEdit(idx, "section", e.target.value)}
-                                  slotProps={{ input: { disableUnderline: !row._edited, sx: { fontSize: 13, color: "var(--text-primary)" } } }}
-                                  placeholder="Sec"
-                                  sx={{ width: 45 }}
-                                />
-                              </TableCell>
+                              {/* Removed Sec cell */}
 
                               <TableCell sx={{ borderColor: "var(--border-color)" }}>
                                 <TextField
@@ -898,7 +861,7 @@ export default function UniprimeDiscrepancies() {
                     {proofFile ? `Selected: ${proofFile.name}` : "Upload Resolution Proof / Signed Memo"}
                   </Typography>
                   <Typography fontSize={12} color="text.secondary" mt={0.5}>
-                    PDF, PNG, or JPG under 500kb. Required to resolve.
+                    PDF, PNG, or JPG under 500kb. Optional.
                   </Typography>
                 </Box>
               </Box>
@@ -913,7 +876,7 @@ export default function UniprimeDiscrepancies() {
             </Button>
             <Button
               variant="contained"
-              disabled={submitting || !proofFile}
+              disabled={submitting}
               onClick={handleResolve}
               sx={{ textTransform: "none", borderRadius: "10px", fontWeight: 700, px: 3 }}
             >
@@ -937,18 +900,19 @@ export default function UniprimeDiscrepancies() {
           },
         }}
       >
-        <DialogTitle sx={{ pb: 0 }}>
-          <Typography fontWeight={800} fontSize={18} sx={{ color: "var(--text-primary)" }}>
-            Reject Discrepancy
-          </Typography>
-        </DialogTitle>
+        {!rejectDone && (
+          <DialogTitle sx={{ pb: 0 }}>
+            <Typography fontWeight={800} fontSize={18} sx={{ color: "var(--text-primary)" }}>
+              Reject Discrepancy
+            </Typography>
+          </DialogTitle>
+        )}
 
         <DialogContent sx={{ pt: 2 }}>
           {rejectDone ? (
-            <Box sx={{ textAlign: "center", py: 3 }}>
+            <Box sx={{ textAlign: "center", py: 3, minWidth: 320 }}>
               <Typography fontSize={40}>❌</Typography>
               <Typography fontWeight={700} mt={1} sx={{ color: "var(--text-primary)" }}>Discrepancy Rejected</Typography>
-              <Typography fontSize={13} color="text.secondary">Resolution cancelled.</Typography>
             </Box>
           ) : (
             <Box sx={{ display: "flex", flexDirection: "column", gap: 2, pt: 1.5, minWidth: 320 }}>
