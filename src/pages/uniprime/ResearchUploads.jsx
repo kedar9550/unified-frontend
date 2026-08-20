@@ -59,10 +59,28 @@ const ResearchUploads = () => {
       if (res.data.success) {
         toast.success(res.data.message || `${categoryId} data uploaded successfully!`);
       } else {
-        toast.error(res.data.message || `Failed to upload ${categoryId}`);
+        const errorMessage = res.data.message || `Failed to upload ${categoryId}`;
+        if (errorMessage.includes("Details:")) {
+          const [mainMsg, details] = errorMessage.split("Details:");
+          toast.error(mainMsg.trim(), {
+            description: details.trim(),
+            duration: 8000,
+          });
+        } else {
+          toast.error(errorMessage, { duration: 5000 });
+        }
       }
     } catch (err) {
-      toast.error(err.response?.data?.message || `An error occurred while uploading ${categoryId}`);
+      const errorMessage = err.response?.data?.message || `An error occurred while uploading ${categoryId}`;
+      if (errorMessage.includes("Details:")) {
+        const [mainMsg, details] = errorMessage.split("Details:");
+        toast.error(mainMsg.trim(), {
+          description: details.trim(),
+          duration: 8000,
+        });
+      } else {
+        toast.error(errorMessage, { duration: 5000 });
+      }
     } finally {
       setUploading((prev) => ({ ...prev, [categoryId]: false }));
       // Reset input value to allow uploading same file again
