@@ -115,13 +115,13 @@ export default function HODDiscrepancies() {
 
   // ── Handle resolve submit ──────────────────────────────────────────
   const handleResolve = async () => {
-    if (!proofFile) return toast.warning("Please upload a proof document before submitting");
-
     setSubmitting(true);
     try {
       // Resolve the discrepancy with proof document
       const formData = new FormData();
-      formData.append("proof", proofFile);
+      if (proofFile) {
+        formData.append("proof", proofFile);
+      }
       formData.append("status", "RESOLVED");
       formData.append("resolutionNote", "Proctoring assigned count verified by HOD.");
 
@@ -380,7 +380,7 @@ export default function HODDiscrepancies() {
               </Box>
 
               <Box>
-                <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 700 }}>Upload Proof Document (Required):</Typography>
+                <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 700 }}>Upload Proof Document:</Typography>
                 <input type="file" ref={fileRef} style={{ display: "none" }} onChange={e => setProofFile(e.target.files[0])} />
                 <Button variant="outlined" fullWidth onClick={() => fileRef.current?.click()} sx={{ height: 60, borderStyle: "dashed" }}>
                   {proofFile ? `Selected: ${proofFile.name}` : "Click to select proof document"}
@@ -392,7 +392,7 @@ export default function HODDiscrepancies() {
         {!success && (
           <DialogActions sx={{ p: 3 }}>
             <Button onClick={() => setSelected(null)}>Cancel</Button>
-            <Button variant="contained" disabled={!proofFile || submitting} onClick={handleResolve}>
+            <Button variant="contained" disabled={submitting} onClick={handleResolve}>
               {submitting ? <Loader size={20} /> : "Resolve Discrepancy"}
             </Button>
           </DialogActions>
@@ -401,10 +401,10 @@ export default function HODDiscrepancies() {
 
       {/* Reject Dialog */}
       <Dialog open={Boolean(rejectItem)} onClose={() => setRejectItem(null)} maxWidth="xs" fullWidth PaperProps={{ sx: { borderRadius: "24px" } }}>
-        <DialogTitle>Reject Discrepancy</DialogTitle>
+        {!rejectDone && <DialogTitle>Reject Discrepancy</DialogTitle>}
         <DialogContent>
           {rejectDone ? (
-            <Box sx={{ textAlign: "center", py: 3 }}>
+            <Box sx={{ textAlign: "center", py: 3, minWidth: 320 }}>
               <Typography fontSize={44}>❌</Typography>
               <Typography fontWeight={700}>Rejected</Typography>
             </Box>

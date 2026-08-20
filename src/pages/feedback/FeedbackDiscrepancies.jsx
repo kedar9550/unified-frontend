@@ -239,11 +239,6 @@ export default function FeedbackDiscrepancies() {
 
   // ── Handle resolve submit ──────────────────────────────────────────
   const handleResolve = async () => {
-    if (!proofFile) {
-      toast.warning("Please upload a proof document before submitting");
-      return;
-    }
-
     setSubmitting(true);
     try {
       const editedRows = resultData.filter(r => r._edited && !r._isNew);
@@ -290,7 +285,7 @@ export default function FeedbackDiscrepancies() {
       }
 
       const formData = new FormData();
-      formData.append("proof", proofFile);
+      if (proofFile) formData.append("proof", proofFile);
       formData.append("status", "RESOLVED");
       formData.append("resolutionNote", `Edited ${editedRows.length} feedback record(s), added ${newRows.length} new record(s).`);
 
@@ -589,7 +584,7 @@ export default function FeedbackDiscrepancies() {
             <Box sx={{ textAlign: "center", py: 6 }}>
               <Typography fontSize={44}>✅</Typography>
               <Typography fontWeight={800} fontSize={20} mt={1} color="var(--text-primary)">Resolved Successfully!</Typography>
-              <Typography fontSize={14} color="var(--text-secondary)">Data updated and proof uploaded.</Typography>
+              <Typography fontSize={14} color="var(--text-secondary)">Data updated.</Typography>
             </Box>
           ) : selected && (
             <Box sx={{ display: "flex", flexDirection: "column", gap: 3, pt: 2 }}>
@@ -652,7 +647,7 @@ export default function FeedbackDiscrepancies() {
                     <Table size="small" sx={{ minWidth: 1000 }}>
                       <TableHead sx={{ background: "var(--bg-accent-1)" }}>
                         <TableRow>
-                          {["#", "Subject", "Code", "Type", "Prog", "Branch", "Sem", "Sec", "Ph", "G/T", "%", ""].map(h => (
+                          {["#", "Subject", "Code", "Type", "Prog", "Branch", "Sem/Yr", "Sec", "Ph", "G/T", "%", ""].map(h => (
                             <TableCell key={h} sx={{ fontWeight: 800, fontSize: 12, color: "var(--text-primary)", py: 1.5 }}>{h}</TableCell>
                           ))}
                         </TableRow>
@@ -697,7 +692,7 @@ export default function FeedbackDiscrepancies() {
                                     disableUnderline={!row._edited}
                                 >
                                     <MenuItem value="">—</MenuItem>
-                                     {branches.filter(b => !row.programId || (b.programIds && b.programIds.some(p => (p?._id || p) === row.programId)) || (b.programId?._id || b.programId) === row.programId).map(b => <MenuItem key={b._id} value={b._id}>{b.name}</MenuItem>)}
+                                     {branches.filter(b => b._id === row.branchId || !row.programId || (b.programIds && b.programIds.some(p => (p?._id || p) === row.programId)) || (b.programId?._id || b.programId) === row.programId).map(b => <MenuItem key={b._id} value={b._id}>{b.name}</MenuItem>)}
                                 </Select>
                             </TableCell>
                             <TableCell>
@@ -717,6 +712,10 @@ export default function FeedbackDiscrepancies() {
                                     }} 
                                     InputProps={{ disableUnderline: !row._edited, sx: { fontSize: 13, fontWeight: 600 } }} 
                                     sx={{ width: 40 }} 
+                                    placeholder={(() => {
+                                        const progObj = programs.find(p => p._id === row.programId);
+                                        return (progObj && progObj.programPattern === "YEAR") ? "Yr" : "Sem";
+                                    })()}
                                 />
                             </TableCell>
                             <TableCell><TextField variant="standard" value={row.section} onChange={e => handleResultEdit(idx, "section", e.target.value)} InputProps={{ disableUnderline: !row._edited, sx: { fontSize: 13, fontWeight: 600 } }} sx={{ width: 40 }} /></TableCell>
@@ -742,7 +741,7 @@ export default function FeedbackDiscrepancies() {
 
               <Box>
                 <Typography sx={{ fontSize: 14, fontWeight: 800, color: "var(--text-primary)", mb: 1 }}>
-                  Upload Proof Document <span style={{ color: "#ef4444" }}>*</span>
+                  Upload Proof Document
                 </Typography>
                 <input type="file" ref={fileRef} style={{ display: "none" }} accept=".pdf,.jpg,.jpeg,.png,.webp" onChange={e => setProofFile(e.target.files[0])} />
                 <Box
@@ -760,7 +759,7 @@ export default function FeedbackDiscrepancies() {
                   <Typography fontSize={14} mt={1} fontWeight={700} color={proofFile ? "#10b981" : "var(--text-primary)"}>
                     {proofFile ? `✅ ${proofFile.name}` : "Click to upload PDF or image proof"}
                   </Typography>
-                  <Typography fontSize={12} color="var(--text-secondary)" sx={{ opacity: 0.6 }}>Mandatory for resolution • Max 10MB</Typography>
+                  <Typography fontSize={12} color="var(--text-secondary)" sx={{ opacity: 0.6 }}>Optional • Max 10MB</Typography>
                 </Box>
               </Box>
             </Box>
@@ -780,7 +779,7 @@ export default function FeedbackDiscrepancies() {
             <Button
               variant="contained"
               onClick={handleResolve}
-              disabled={submitting || !proofFile}
+              disabled={submitting}
             >
               {submitting ? <Loader size={20} color="inherit" /> : "✓ Submit & Resolve"}
             </Button>
@@ -806,20 +805,22 @@ export default function FeedbackDiscrepancies() {
           },
         }}
       >
-        <DialogTitle sx={{ pb: 0 }}>
-          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <Typography fontWeight={900} fontSize={20} color="#ef4444">
-              ✕ Reject Discrepancy
-            </Typography>
-            <IconButton size="small" onClick={() => setRejectItem(null)} disabled={rejecting}>
-              <CloseIcon fontSize="small" />
-            </IconButton>
-          </Box>
-        </DialogTitle>
+        {!rejectDone && (
+          <DialogTitle sx={{ pb: 0 }}>
+            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <Typography fontWeight={900} fontSize={20} color="#ef4444">
+                ✕ Reject Discrepancy
+              </Typography>
+              <IconButton size="small" onClick={() => setRejectItem(null)} disabled={rejecting}>
+                <CloseIcon fontSize="small" />
+              </IconButton>
+            </Box>
+          </DialogTitle>
+        )}
 
         <DialogContent>
           {rejectDone ? (
-            <Box sx={{ textAlign: "center", py: 6 }}>
+            <Box sx={{ textAlign: "center", py: 6, minWidth: 320 }}>
               <Typography fontSize={44}>❌</Typography>
               <Typography fontWeight={800} fontSize={20} mt={1} color="var(--text-primary)">Discrepancy Rejected</Typography>
             </Box>
