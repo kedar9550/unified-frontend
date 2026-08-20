@@ -1235,8 +1235,8 @@ export default function JournalPublication() {
   const LabelValue = ({ label, value, chip, horizontal = false }) => (
     <Box sx={{
       p: 2,
-      borderRadius: "12px",
-      background: horizontal ? "transparent" : "var(--bg-accent-1)",
+      borderRadius: "16px",
+      background: horizontal ? "transparent" : "linear-gradient(145deg, var(--bg-paper) 0%, var(--bg-panel) 100%)",
       border: horizontal ? "none" : "1px solid var(--border-color)",
       borderBottom: horizontal ? "1px solid var(--border-color)" : "1px solid var(--border-color)",
       display: "flex",
@@ -1245,17 +1245,21 @@ export default function JournalPublication() {
       justifyContent: horizontal ? "flex-start" : "center",
       gap: horizontal ? 2 : 1,
       height: "100%",
-      boxShadow: horizontal ? "none" : "var(--shadow-premium)",
-      transition: "all 0.2s ease-in-out",
+      boxShadow: horizontal ? "none" : "0 4px 20px rgba(0,0,0,0.03)",
+      transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
       "&:hover": horizontal ? {} : {
         borderColor: "var(--color-primary)",
-        transform: "translateY(-1px)"
+        transform: "translateY(-2px)",
+        boxShadow: "0 8px 25px rgba(0,0,0,0.08)",
       },
       "&:last-child": horizontal ? { borderBottom: "none" } : {},
     }}>
-      <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", letterSpacing: "0.05em", fontWeight: 800, fontSize: "0.65rem" }}>{label}</Typography>
-      <Box sx={{ flex: horizontal ? 1 : "none", display: "flex", alignItems: "center" }}>
-        {chip ? chip : <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", fontSize: "0.85rem", wordBreak: "break-all" }}>{value || "-"}</Typography>}
+      <Typography variant="caption" sx={{ color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 700, fontSize: "0.65rem", display: "flex", alignItems: "center", gap: 1 }}>
+        <Box component="span" sx={{ width: 6, height: 6, borderRadius: "50%", bgcolor: "var(--color-primary)", opacity: 0.8 }} />
+        {label}
+      </Typography>
+      <Box sx={{ flex: horizontal ? 1 : "none", display: "flex", alignItems: "center", mt: horizontal ? 0 : 0.5, ml: horizontal ? 0 : 1.5 }}>
+        {chip ? chip : <Typography variant="body2" sx={{ fontWeight: 800, color: "var(--text-primary)", fontSize: "0.95rem", wordBreak: "break-word", lineHeight: 1.4 }}>{value || "-"}</Typography>}
       </Box>
     </Box>
   );
