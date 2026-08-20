@@ -292,7 +292,7 @@ const FacultyDashboard = () => {
                 display: "flex",
                 flexDirection: "column",
                 justifyContent: "space-between",
-                p: 2.5,
+                p: 2,
                 "&::after": {
                   content: '""',
                   position: "absolute",
@@ -305,11 +305,11 @@ const FacultyDashboard = () => {
                 }
               }}
             >
-              <Box sx={{ display: "flex", alignItems: "flex-start", gap: 2, position: "relative", zIndex: 1 }}>
+              <Box sx={{ display: "flex", alignItems: "flex-start", gap: 1.5, position: "relative", zIndex: 1 }}>
                 <Box
                   sx={{
-                    width: 52,
-                    height: 52,
+                    width: 48,
+                    height: 48,
                     borderRadius: 1,
                     display: "flex",
                     alignItems: "center",
@@ -351,7 +351,9 @@ const FacultyDashboard = () => {
                       fontWeight: 800,
                       color: "var(--text-primary)",
                       mt: 0.5,
-                      fontSize: typeof card.value === "string" && card.value.length > 8 ? "1.5rem" : "2.125rem"
+                      lineHeight: 1.2,
+                      wordBreak: "break-word",
+                      fontSize: typeof card.value === "string" ? (card.value.length > 15 ? "1.15rem" : card.value.length > 8 ? "1.4rem" : "2rem") : "2rem"
                     }}
                   >
                     {card.value}
@@ -558,7 +560,16 @@ const FacultyDashboard = () => {
                     </Box>
                   )}
                 </Box>
-                <Box sx={{ mt: 2, width: "100%", maxWidth: 180, maxHeight: 150, overflowY: "auto" }}>
+                <Box sx={{ 
+                  mt: 2, 
+                  width: "100%", 
+                  maxWidth: 180, 
+                  maxHeight: 150, 
+                  overflowY: "auto",
+                  "&::-webkit-scrollbar": { display: "none" },
+                  msOverflowStyle: "none",
+                  scrollbarWidth: "none"
+                }}>
                   {(dashboardData?.researchTypeDistribution || [])
                     .map((item, idx) => ({ ...item, originalIndex: idx }))
                     .filter(item => item.value > 0)
