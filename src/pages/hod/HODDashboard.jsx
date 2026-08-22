@@ -85,6 +85,7 @@ const HODDashboard = () => {
 
   const dashboard = data || {
     totalFaculty: 0,
+    expectedAppraisals: 0,
     totalPrograms: 0,
     departments: [],
     pendingCounts: { research: 0, proctoring: 0, administration: 0, resourceUtilization: 0, contribution: 0, total: 0 },
@@ -96,10 +97,10 @@ const HODDashboard = () => {
   const totalPublicationsCount = dashboard.researchStats.reduce((sum, item) => sum + item.value, 0);
 
   const topCards = [
-    { title: "Department Faculty", value: dashboard.totalFaculty, subtitle: "Total Active", icon: <People />, color: "#3B82F6", linkText: "Manage Faculty" },
-    { title: "Expected Appraisals", value: dashboard.totalFaculty, subtitle: "Total to verify", icon: <Assignment />, color: "#10B981", linkText: "View Appraisals" },
-    { title: "Academic Programs", value: dashboard.totalPrograms, subtitle: "Branches Managed", icon: <School />, color: "#A855F7", linkText: "View Programs" },
-    { title: "Pending Reviews", value: dashboard.pendingCounts.total, subtitle: "Actions Required", icon: <WarningAmber />, color: "#F59E0B", linkText: "View Pending" },
+    { title: "Department Faculty", value: dashboard.totalFaculty, subtitle: "Total Active", icon: <People />, color: "#3B82F6", linkText: "Manage Faculty", path: "/hod/staff" },
+    { title: "Expected Appraisals", value: dashboard.expectedAppraisals !== undefined ? dashboard.expectedAppraisals : dashboard.totalFaculty, subtitle: "Total to verify", icon: <Assignment />, color: "#10B981", linkText: "View Appraisals", path: "/hod/appraisal-verification" },
+    { title: "Academic Programs", value: dashboard.totalPrograms, subtitle: "Branches Managed", icon: <School />, color: "#A855F7", linkText: "View Programs", path: "/academics/programs" },
+    { title: "Pending Reviews", value: dashboard.pendingCounts.total, subtitle: "Actions Required", icon: <WarningAmber />, color: "#F59E0B", linkText: "View Pending", path: "/hod/research-approvals" },
   ];
 
   const pendingActions = [
@@ -246,6 +247,7 @@ const HODDashboard = () => {
                 {/* Bottom Link */}
                 <Button
                   size="small"
+                  onClick={() => card.path && navigate(card.path)}
                   endIcon={<ArrowForward sx={{ fontSize: 16 }} />}
                   sx={{
                     textTransform: "none",

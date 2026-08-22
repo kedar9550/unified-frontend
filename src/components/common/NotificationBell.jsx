@@ -85,10 +85,26 @@ const NotificationBell = forwardRef((props, ref) => {
             // Fallback auto-detection for old notifications or missing metadata
             if (!targetRole && user?.roles) {
                 const userRoles = user.roles.map(r => r.role?.toUpperCase()).filter(Boolean);
-                const link = notif.link.toLowerCase();
+                let link = notif.link.toLowerCase();
                 const title = (notif.title || '').toLowerCase();
                 const msg = (notif.message || '').toLowerCase();
-
+                
+                // --- Fix old invalid appraisal links ---
+                if (link.includes('/uniprime/appraisals/my-appraisals')) {
+                    link = '/faculty/appraisal';
+                    notif.link = link; // update so navigate uses it
+                } else if (link.includes('/uniprime/appraisals/pending')) {
+                    if (userRoles.includes('SCHOOL_DEAN') || userRoles.includes('SCHOOL DEAN') || userRoles.includes('VICE CHANCELLOR')) {
+                        link = '/appraisal/management-evaluate';
+                    } else if (userRoles.includes('HOD') || userRoles.includes('DEPARTMENT_HOD') || userRoles.includes('DEPARTMENT HOD')) {
+                        link = '/hod/appraisal-verification';
+                    } else {
+                        link = '/appraisal/management-evaluate';
+                    }
+                    notif.link = link; // update so navigate uses it
+                }
+                
+                // --- Auto role detection ---
                 if (link.includes('/service-desk')) {
                     if (link.includes('/admin') || link.includes('/reports')) {
                         if (userRoles.includes('SERVICE_ADMIN')) {
@@ -109,6 +125,15 @@ const NotificationBell = forwardRef((props, ref) => {
                             const clientRoles = ['FACULTY', 'STAFF', 'TECHNICAL STAFF', 'EXAMSECTION', 'HOD', 'STUDENT'];
                             targetRole = clientRoles.find(r => userRoles.includes(r));
                         }
+                    }
+                } else if (link.includes('/appraisal')) {
+                    if (link.includes('/management-evaluate')) {
+                        const mgtRoles = ['SCHOOL_DEAN', 'SCHOOL DEAN', 'VICE CHANCELLOR', 'PRO VICE-CHANCELLOR (E & S)', 'PRO_VICE_CHANCELLOR_E_S', 'REGISTRAR', 'DEAN - (IQAC)', 'DEAN - (ADMISSIONS)'];
+                        targetRole = mgtRoles.find(r => userRoles.includes(r));
+                    } else if (link.includes('/hod/')) {
+                        targetRole = ['HOD', 'DEPARTMENT_HOD', 'DEPARTMENT HOD'].find(r => userRoles.includes(r)) || 'HOD';
+                    } else if (link.includes('/faculty/')) {
+                        targetRole = 'FACULTY';
                     }
                 } else if (link.includes('/research') || link.includes('/hod') || link.includes('/research-dean') || link.includes('/research-coordinator')) {
                     if (link.includes('/hod/')) {
@@ -136,9 +161,14 @@ const NotificationBell = forwardRef((props, ref) => {
             if (targetRole && targetRole !== activeRole) {
                 switchRole(targetRole);
                 toast.success(`Role switched to ${targetRole}`);
+                handleClose();
+                setTimeout(() => {
+                    navigate(notif.link);
+                }, 150);
+            } else {
+                handleClose();
+                navigate(notif.link);
             }
-            handleClose();
-            navigate(notif.link);
         }
     };
 

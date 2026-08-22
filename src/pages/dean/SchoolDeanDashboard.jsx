@@ -85,8 +85,10 @@ const SchoolDeanDashboard = () => {
 
   const dashboard = data || {
     totalFaculty: 0,
+    expectedAppraisals: 0,
     totalPrograms: 0,
     departments: [],
+    schools: [],
     pendingCounts: { research: 0, proctoring: 0, administration: 0, resourceUtilization: 0, contribution: 0, total: 0 },
     researchStats: [],
     recentActivities: [],
@@ -97,7 +99,7 @@ const SchoolDeanDashboard = () => {
 
   const topCards = [
     { title: "Department Faculty", value: dashboard.totalFaculty, subtitle: "Total Active", icon: <People />, color: "#3B82F6", linkText: "Manage Faculty", path: "/hod/staff" },
-    { title: "Expected Appraisals", value: dashboard.totalFaculty, subtitle: "Total to verify", icon: <Assignment />, color: "#10B981", linkText: "View Appraisals", path: "/appraisal/management-evaluate" },
+    { title: "Expected Appraisals", value: dashboard.expectedAppraisals !== undefined ? dashboard.expectedAppraisals : dashboard.totalFaculty, subtitle: "Total to verify", icon: <Assignment />, color: "#10B981", linkText: "View Appraisals", path: "/appraisal/management-evaluate" },
     { title: "Academic Programs", value: dashboard.totalPrograms, subtitle: "Branches Managed", icon: <School />, color: "#A855F7", linkText: "View Programs", path: "/dashboard" },
     { title: "Pending Reviews", value: dashboard.pendingCounts.total, subtitle: "Actions Required", icon: <WarningAmber />, color: "#F59E0B", linkText: "View Pending", path: "/hod/research-approvals" },
   ];
@@ -157,9 +159,23 @@ const SchoolDeanDashboard = () => {
             Monitor department performance, track research achievements, and review faculty declarations.
           </Typography>
           <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mt: 1.5 }}>
+            {dashboard.schools && dashboard.schools.map((school, index) => (
+              <Chip
+                key={`school-${index}`}
+                label={school}
+                size="small"
+                sx={{
+                  fontWeight: 800,
+                  fontSize: '0.75rem',
+                  background: 'var(--color-primary)',
+                  color: '#fff',
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                }}
+              />
+            ))}
             {dashboard.departments.map((dept, index) => (
               <Chip
-                key={index}
+                key={`dept-${index}`}
                 label={dept}
                 size="small"
                 variant="outlined"
