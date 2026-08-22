@@ -62,6 +62,8 @@ export default function FeedbackDiscrepancies() {
   const [proofFile,     setProofFile]     = useState(null);
   const [submitting,    setSubmitting]    = useState(false);
   const [success,       setSuccess]       = useState(false);
+  const [rowToDelete,   setRowToDelete]   = useState(null);
+  const [deletedRows,   setDeletedRows]   = useState([]);
   const fileRef = useRef(null);
 
   // ── Reject dialog state ────────────────────────────────────────────
@@ -117,6 +119,7 @@ export default function FeedbackDiscrepancies() {
     setProofFile(null);
     setSuccess(false);
     setResultData([]);
+    setDeletedRows([]);
     setResultLoading(true);
 
     try {
@@ -234,7 +237,18 @@ export default function FeedbackDiscrepancies() {
 
   // ── Remove a new (unsaved) row ─────────────────────────────────────
   const handleRemoveRow = (index) => {
-    setResultData(prev => prev.filter((_, i) => i !== index));
+    setRowToDelete(index);
+  };
+
+  const confirmRemoveRow = () => {
+    if (rowToDelete !== null) {
+      const row = resultData[rowToDelete];
+      if (row._id) {
+        setDeletedRows(prev => [...prev, row]);
+      }
+      setResultData(prev => prev.filter((_, i) => i !== rowToDelete));
+      setRowToDelete(null);
+    }
   };
 
   // ── Handle resolve submit ──────────────────────────────────────────
@@ -282,6 +296,10 @@ export default function FeedbackDiscrepancies() {
           givenStudents:     row.givenStudents !== "" && row.givenStudents !== null && row.givenStudents !== undefined ? Number(row.givenStudents) : null,
           percentage:        Number(row.percentage),
         });
+      }
+
+      for (const row of deletedRows) {
+        await API.delete(`/api/faculty-feedback-results/${row._id}`);
       }
 
       const formData = new FormData();
@@ -729,7 +747,7 @@ export default function FeedbackDiscrepancies() {
                             </TableCell>
                             <TableCell><TextField variant="standard" type="number" value={row.percentage} onChange={e => handleResultEdit(idx, "percentage", e.target.value)} sx={{ width: 45 }} InputProps={{ sx: { fontSize: 13, fontWeight: 800, color: "var(--color-primary)" } }} /></TableCell>
                             <TableCell>
-                                {row._isNew && <IconButton size="small" onClick={() => handleRemoveRow(idx)} sx={{ color: "#ef4444" }}><CloseIcon fontSize="small" /></IconButton>}
+                                <IconButton size="small" onClick={() => handleRemoveRow(idx)} sx={{ color: "#ef4444" }}><CloseIcon fontSize="small" /></IconButton>
                             </TableCell>
                           </TableRow>
                         ))}
@@ -890,6 +908,56 @@ export default function FeedbackDiscrepancies() {
             </Button>
           </DialogActions>
         )}
+      </Dialog>
+
+      {/* ── Confirm Delete Row Dialog ── */}
+      <Dialog 
+        open={rowToDelete !== null} 
+        onClose={() => setRowToDelete(null)}
+        PaperProps={{ sx: { borderRadius: "24px", p: 2, minWidth: 400 } }}
+      >
+        <DialogTitle sx={{ display: "flex", alignItems: "center", gap: 1.5, pb: 1 }}>
+          <Box sx={{ width: 40, height: 40, borderRadius: "50%", background: "rgba(239, 68, 68, 0.1)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <CloseIcon sx={{ color: "#EF4444" }} />
+          </Box>
+          <Typography variant="h6" fontWeight={800} color="var(--text-primary)">
+            Remove Row
+          </Typography>
+        </DialogTitle>
+        <DialogContent sx={{ pt: 1, pb: 3 }}>
+          <Typography color="var(--text-secondary)" sx={{ fontSize: 15, fontWeight: 500 }}>
+            Are you sure you want to remove this row? This record will be permanently deleted from the database once you submit and resolve the discrepancy.
+          </Typography>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button 
+            variant="text" 
+            onClick={() => setRowToDelete(null)}
+            sx={{ 
+                color: "var(--text-secondary)", 
+                fontWeight: 600,
+                borderRadius: "12px",
+                textTransform: "none",
+                px: 3
+            }}
+          >
+            Cancel
+          </Button>
+          <Button 
+            variant="contained"
+            color="error"
+            onClick={confirmRemoveRow}
+            sx={{ 
+                borderRadius: "12px", 
+                fontWeight: 700, 
+                textTransform: "none",
+                px: 4,
+                boxShadow: "0 4px 12px rgba(239, 68, 68, 0.2)"
+            }}
+          >
+            Yes, Remove
+          </Button>
+        </DialogActions>
       </Dialog>
     </>
   );

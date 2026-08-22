@@ -73,6 +73,8 @@ export default function Discrepancies() {
   const [rejectNote, setRejectNote] = useState("");
   const [rejecting, setRejecting] = useState(false);
   const [rejectDone, setRejectDone] = useState(false);
+  const [rowToDelete, setRowToDelete] = useState(null);
+  const [deletedRows, setDeletedRows] = useState([]);
 
   // ── Fetch discrepancies ────────────────────────────────────────────
   const fetchItems = useCallback(async () => {
@@ -121,6 +123,7 @@ export default function Discrepancies() {
     setProofFile(null);
     setSuccess(false);
     setResultData([]);
+    setDeletedRows([]);
     setResultLoading(true);
 
     try {
@@ -304,9 +307,20 @@ export default function Discrepancies() {
     }
   };
 
-  // ── Remove a new (unsaved) row ─────────────────────────────────────
+  // ── Remove a row ─────────────────────────────────────
   const handleRemoveRow = (index) => {
-    setResultData(prev => prev.filter((_, i) => i !== index));
+    setRowToDelete(index);
+  };
+
+  const confirmRemoveRow = () => {
+    if (rowToDelete !== null) {
+      const row = resultData[rowToDelete];
+      if (row._id) {
+        setDeletedRows(prev => [...prev, row]);
+      }
+      setResultData(prev => prev.filter((_, i) => i !== rowToDelete));
+      setRowToDelete(null);
+    }
   };
 
   // ── Handle resolve submit ──────────────────────────────────────────
@@ -396,7 +410,16 @@ export default function Discrepancies() {
         }
       }
 
-      // 3. Resolve the discrepancy with proof document
+      // 3. Delete removed rows from database
+      for (const row of deletedRows) {
+        if (selected.section === "PROCTORING") {
+          await API.delete(`/api/faculty-proctoring/${row._id}`);
+        } else {
+          await API.delete(`/api/faculty-subject-results/${row._id}`);
+        }
+      }
+
+      // 4. Resolve the discrepancy with proof document
       const formData = new FormData();
       if (proofFile) formData.append("proof", proofFile);
       formData.append("status", "RESOLVED");
@@ -713,6 +736,7 @@ export default function Discrepancies() {
                                 size="small"
                                 variant="contained"
                                 onClick={() => openResolve(item)}
+                                sx={{ whiteSpace: "nowrap", borderRadius: "20px" }}
                               >
                                 ✓ Resolve
                               </Button>
@@ -721,6 +745,7 @@ export default function Discrepancies() {
                                 variant="outlined"
                                 color="error"
                                 onClick={() => openReject(item)}
+                                sx={{ whiteSpace: "nowrap", borderRadius: "20px" }}
                               >
                                 ✕ Reject
                               </Button>
@@ -1159,15 +1184,13 @@ export default function Discrepancies() {
                                  )}
 
                                 <TableCell>
-                                  {row._isNew && (
-                                    <IconButton
-                                      size="small"
-                                      onClick={() => handleRemoveRow(idx)}
-                                      sx={{ color: "#b71c1c", p: 0.3 }}
-                                    >
-                                      <CloseIcon sx={{ fontSize: 16 }} />
-                                    </IconButton>
-                                  )}
+                                  <IconButton
+                                    size="small"
+                                    onClick={() => handleRemoveRow(idx)}
+                                    sx={{ color: "#b71c1c", p: 0.3 }}
+                                  >
+                                    <CloseIcon sx={{ fontSize: 16 }} />
+                                  </IconButton>
                                 </TableCell>
                               </TableRow>
                             ))}
@@ -1344,6 +1367,56 @@ export default function Discrepancies() {
             </Button>
           </DialogActions>
         )}
+      </Dialog>
+
+      {/* ── Confirm Delete Row Dialog ────────────────────────────────── */}
+      <Dialog 
+        open={rowToDelete !== null} 
+        onClose={() => setRowToDelete(null)}
+        PaperProps={{ sx: { borderRadius: "24px", p: 2, minWidth: 400 } }}
+      >
+        <DialogTitle sx={{ display: "flex", alignItems: "center", gap: 1.5, pb: 1 }}>
+          <Box sx={{ width: 40, height: 40, borderRadius: "50%", background: "rgba(239, 68, 68, 0.1)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <CloseIcon sx={{ color: "#EF4444" }} />
+          </Box>
+          <Typography variant="h6" fontWeight={800} color="var(--text-primary)">
+            Remove Row
+          </Typography>
+        </DialogTitle>
+        <DialogContent sx={{ pt: 1, pb: 3 }}>
+          <Typography color="var(--text-secondary)" sx={{ fontSize: 15, fontWeight: 500 }}>
+            Are you sure you want to remove this row? This record will be permanently deleted from the database once you submit and resolve the discrepancy.
+          </Typography>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button 
+            variant="text" 
+            onClick={() => setRowToDelete(null)}
+            sx={{ 
+                color: "var(--text-secondary)", 
+                fontWeight: 600,
+                borderRadius: "12px",
+                textTransform: "none",
+                px: 3
+            }}
+          >
+            Cancel
+          </Button>
+          <Button 
+            variant="contained"
+            color="error"
+            onClick={confirmRemoveRow}
+            sx={{ 
+                borderRadius: "12px", 
+                fontWeight: 700, 
+                textTransform: "none",
+                px: 4,
+                boxShadow: "0 4px 12px rgba(239, 68, 68, 0.2)"
+            }}
+          >
+            Yes, Remove
+          </Button>
+        </DialogActions>
       </Dialog>
     </>
   );
