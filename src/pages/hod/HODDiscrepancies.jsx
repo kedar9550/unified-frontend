@@ -391,6 +391,18 @@ export default function HODDiscrepancies() {
         </DialogContent>
         {!success && (
           <DialogActions sx={{ p: 3 }}>
+            <Button
+              variant="outlined"
+              color="error"
+              onClick={() => {
+                setRejectItem(selected);
+                setSelected(null);
+              }}
+              disabled={submitting}
+              sx={{ mr: "auto" }}
+            >
+              ✕ Reject
+            </Button>
             <Button onClick={() => setSelected(null)}>Cancel</Button>
             <Button variant="contained" disabled={submitting} onClick={handleResolve}>
               {submitting ? <Loader size={20} /> : "Resolve Discrepancy"}
