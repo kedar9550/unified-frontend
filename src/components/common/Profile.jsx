@@ -189,7 +189,7 @@ const Profile = () => {
 
   // Validation rules for each field (pattern + maxLength)
   const validationRules = {
-    orcidId: { pattern: /^\d{4}-\d{4}-\d{4}-\d{4}$/, maxLength: 19, msg: "Format: 0000-0002-1825-0097 (19 chars)" },
+    orcidId: { pattern: /^[A-Za-z0-9]{4}-[A-Za-z0-9]{4}-[A-Za-z0-9]{4}-[A-Za-z0-9]{4}$/, maxLength: 19, msg: "Format: 0000-0002-1825-0097 (19 chars)" },
     scopusId: { pattern: /^\d{8,11}$/, maxLength: 11, msg: "8 to 11 digits only" },
     wosId: { pattern: /^[A-Za-z0-9-]{8,15}$/, maxLength: 15, msg: "Alphanumeric + hyphens, 8–15 chars (e.g. A-1234-2019)" },
     googleScholarId: { pattern: /^[A-Za-z0-9]{10,12}$/, maxLength: 12, msg: "Alphanumeric only, 10–12 chars" },
@@ -328,10 +328,11 @@ const Profile = () => {
     setErrors({ ...errors, [field]: validateField(field, value) });
   };
 
-  // Auto-format ORCID: insert hyphens after every 4 digits (0000-0002-1825-0097)
+  // Auto-format ORCID: insert hyphens after every 4 characters (0000-0002-1825-0097)
   const handleOrcidChange = (e) => {
-    const digits = e.target.value.replace(/\D/g, '').slice(0, 16);
-    const formatted = digits.match(/.{1,4}/g)?.join('-') ?? '';
+    let chars = e.target.value.replace(/[^A-Za-z0-9]/g, '').slice(0, 16);
+    chars = chars.toUpperCase();
+    const formatted = chars.match(/.{1,4}/g)?.join('-') ?? '';
     setForm(prev => ({ ...prev, orcidId: formatted }));
     setErrors(prev => ({ ...prev, orcidId: validateField('orcidId', formatted) }));
   };
