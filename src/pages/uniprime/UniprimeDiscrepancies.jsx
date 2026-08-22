@@ -21,6 +21,7 @@ import {
   Tooltip,
   Select,
   MenuItem,
+  TablePagination,
 } from "@mui/material";
 import {
   Close as CloseIcon,
@@ -51,6 +52,9 @@ export default function UniprimeDiscrepancies() {
   const { activeRole } = useAuth();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [searchQuery, setSearchQuery] = useState("");
 
   // ── Programs & Branches State ──────────────────────────────────────
   const [programs, setPrograms] = useState([]);
@@ -470,6 +474,25 @@ export default function UniprimeDiscrepancies() {
                 <Typography fontSize={13} sx={{ opacity: 0.8 }}>All clear!</Typography>
               </Box>
             ) : (
+              <>
+                <Box sx={{ display: "flex", justifyContent: "flex-end", mb: 2, px: 1 }}>
+                  <TextField
+                    size="small"
+                    placeholder="Search faculty, ID, year..."
+                    value={searchQuery}
+                    onChange={(e) => {
+                      setSearchQuery(e.target.value);
+                      setPage(0);
+                    }}
+                    sx={{
+                      width: { xs: '100%', sm: 300 },
+                      "& .MuiOutlinedInput-root": {
+                        borderRadius: "12px",
+                        background: "var(--bg-glass)",
+                      }
+                    }}
+                  />
+                </Box>
               <Paper
                 sx={{
                   borderRadius: "18px",
@@ -500,18 +523,28 @@ export default function UniprimeDiscrepancies() {
                       </TableRow>
                     </TableHead>
                     <TableBody>
-                      {items.map((item, i) => {
-                        const cfg = STATUS_CONFIG[item.status] || STATUS_CONFIG.PENDING;
-                        return (
+                      {items
+                        .filter((item) => {
+                          const term = searchQuery.toLowerCase();
+                          return (
+                            (item.facultyName || "").toLowerCase().includes(term) ||
+                            (item.facultyInstitutionId || "").toLowerCase().includes(term) ||
+                            (item.academicYearId?.year || "").toLowerCase().includes(term)
+                          );
+                        })
+                        .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+                        .map((item, i) => {
+                          const cfg = STATUS_CONFIG[item.status] || STATUS_CONFIG.PENDING;
+                          return (
                           <TableRow
                             key={item._id}
                             sx={{
-                              background: i % 2 === 0 ? "var(--bg-accent-1)" : "transparent",
+                              background: (page * rowsPerPage + i) % 2 === 0 ? "var(--bg-accent-1)" : "transparent",
                               height: 70,
                               "&:hover": { background: "var(--bg-accent-2)" }
                             }}
                           >
-                            <TableCell sx={{ fontWeight: 600 }}>{i + 1}</TableCell>
+                            <TableCell sx={{ fontWeight: 600 }}>{page * rowsPerPage + i + 1}</TableCell>
 
                             {/* Faculty */}
                             <TableCell>
@@ -529,8 +562,6 @@ export default function UniprimeDiscrepancies() {
                                 {item.academicYearId?.year || "—"}
                               </Typography>
                             </TableCell>
-
-                            {/* Removed redundant section cell */}
 
                             {/* Note */}
                             <TableCell sx={{ maxWidth: 220 }}>
@@ -608,7 +639,33 @@ export default function UniprimeDiscrepancies() {
                     </TableBody>
                   </Table>
                 </Box>
+                <TablePagination
+                  rowsPerPageOptions={[5, 10, 25, 50]}
+                  component="div"
+                  count={items.filter((item) => {
+                    const term = searchQuery.toLowerCase();
+                    return (item.facultyName || "").toLowerCase().includes(term) || (item.facultyInstitutionId || "").toLowerCase().includes(term) || (item.academicYearId?.year || "").toLowerCase().includes(term);
+                  }).length}
+                  rowsPerPage={rowsPerPage}
+                  page={page}
+                  onPageChange={(e, newPage) => setPage(newPage)}
+                  onRowsPerPageChange={(e) => {
+                    setRowsPerPage(parseInt(e.target.value, 10));
+                    setPage(0);
+                  }}
+                  sx={{
+                    borderTop: "1px solid var(--border-color)",
+                    color: "var(--text-primary)",
+                    ".MuiTablePagination-select": { color: "var(--text-primary)" },
+                    ".MuiTablePagination-selectIcon": { color: "var(--text-secondary)" },
+                    ".MuiTablePagination-selectLabel, .MuiTablePagination-displayedRows": {
+                      fontWeight: 600,
+                      color: "var(--text-secondary)",
+                    },
+                  }}
+                />
               </Paper>
+              </>
             )}
           </Box>
         </>
@@ -888,6 +945,18 @@ export default function UniprimeDiscrepancies() {
 
         {!success && selected && (
           <DialogActions sx={{ px: 3, pb: 3 }}>
+            <Button
+              variant="outlined"
+              color="error"
+              onClick={() => {
+                setRejectItem(selected);
+                setSelected(null);
+              }}
+              disabled={submitting}
+              sx={{ mr: "auto" }}
+            >
+              ✕ Reject
+            </Button>
             <Button onClick={() => setSelected(null)} disabled={submitting} sx={{ textTransform: "none", fontWeight: 600 }}>
               Cancel
             </Button>
