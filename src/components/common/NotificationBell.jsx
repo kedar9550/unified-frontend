@@ -103,10 +103,16 @@ const NotificationBell = forwardRef((props, ref) => {
                     }
                     notif.link = link; // update so navigate uses it
                 } else if (link.includes('/hod/appraisal-verification')) {
-                    if (userRoles.includes('SCHOOL_DEAN') || userRoles.includes('SCHOOL DEAN') || userRoles.includes('VICE CHANCELLOR') || userRoles.includes('PRO VICE-CHANCELLOR (E & S)') || userRoles.includes('PRO_VICE_CHANCELLOR_E_S') || userRoles.includes('REGISTRAR')) {
+                    if (userRoles.includes('SCHOOL_DEAN') || userRoles.includes('SCHOOL DEAN') || userRoles.includes('VICE CHANCELLOR') || userRoles.includes('PROVICE-CHANCELLOR (E & S)') || userRoles.includes('PRO_VICE_CHANCELLOR_E_S') || userRoles.includes('REGISTRAR')) {
                         link = '/appraisal/management-evaluate';
                         notif.link = link;
                     }
+                }
+                
+                // --- Fix misrouted PROCTORING discrepancy links ---
+                if (link.includes('/discrepancies') && msg.includes('proctoring')) {
+                    link = '/hod/discrepancies';
+                    notif.link = link;
                 }
                 
                 // --- Auto role detection ---

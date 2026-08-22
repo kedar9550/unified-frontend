@@ -22,6 +22,7 @@ import {
   Avatar,
   MenuItem,
   Select,
+  TablePagination,
 } from "@mui/material";
 import {
   Close as CloseIcon,
@@ -53,6 +54,9 @@ export default function FeedbackDiscrepancies() {
   const { activeRole } = useAuth();
   const [items,   setItems]   = useState([]);
   const [loading, setLoading] = useState(false);
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [searchQuery, setSearchQuery] = useState("");
   const [programs, setPrograms] = useState([]);
 
   // ── Resolve dialog state ───────────────────────────────────────────
@@ -430,7 +434,26 @@ export default function FeedbackDiscrepancies() {
             <Typography fontSize={13}>All clear!</Typography>
           </Box>
         ) : (
-          <Paper sx={{ borderRadius: "18px", overflowX: "auto", boxShadow: "none", background: "transparent" }}>
+          <>
+            <Box sx={{ display: "flex", justifyContent: "flex-end", mb: 2, px: 1 }}>
+              <TextField
+                size="small"
+                placeholder="Search faculty, ID, year..."
+                value={searchQuery}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  setPage(0);
+                }}
+                sx={{
+                  width: { xs: '100%', sm: 300 },
+                  "& .MuiOutlinedInput-root": {
+                    borderRadius: "12px",
+                    background: "var(--bg-glass)",
+                  }
+                }}
+              />
+            </Box>
+            <Paper sx={{ borderRadius: "18px", overflowX: "auto", boxShadow: "none", background: "transparent" }}>
             <Table sx={{ minWidth: 1100 }}>
               <TableHead sx={{ background: "var(--gradient-primary)" }}>
                 <TableRow>
@@ -442,14 +465,24 @@ export default function FeedbackDiscrepancies() {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {items.map((item, i) => {
-                  const cfg = STATUS_CONFIG[item.status] || STATUS_CONFIG.PENDING;
-                  return (
-                    <TableRow
-                      key={item._id}
-                      sx={{ background: i % 2 === 0 ? "var(--bg-accent-1)" : "transparent", height: 75 }}
-                    >
-                      <TableCell sx={{ fontWeight: 600 }}>{i + 1}</TableCell>
+                {items
+                  .filter((item) => {
+                    const term = searchQuery.toLowerCase();
+                    return (
+                      (item.facultyName || "").toLowerCase().includes(term) ||
+                      (item.facultyInstitutionId || "").toLowerCase().includes(term) ||
+                      (item.academicYearId?.year || "").toLowerCase().includes(term)
+                    );
+                  })
+                  .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+                  .map((item, i) => {
+                    const cfg = STATUS_CONFIG[item.status] || STATUS_CONFIG.PENDING;
+                    return (
+                      <TableRow
+                        key={item._id}
+                        sx={{ background: (page * rowsPerPage + i) % 2 === 0 ? "var(--bg-accent-1)" : "transparent", height: 75 }}
+                      >
+                        <TableCell sx={{ fontWeight: 600 }}>{page * rowsPerPage + i + 1}</TableCell>
 
                       <TableCell>
                         <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
@@ -564,7 +597,33 @@ export default function FeedbackDiscrepancies() {
                 })}
               </TableBody>
             </Table>
+            <TablePagination
+              rowsPerPageOptions={[5, 10, 25, 50]}
+              component="div"
+              count={items.filter(item => {
+                const term = searchQuery.toLowerCase();
+                return (item.facultyName || "").toLowerCase().includes(term) || (item.facultyInstitutionId || "").toLowerCase().includes(term) || (item.academicYearId?.year || "").toLowerCase().includes(term);
+              }).length}
+              rowsPerPage={rowsPerPage}
+              page={page}
+              onPageChange={(e, newPage) => setPage(newPage)}
+              onRowsPerPageChange={(e) => {
+                setRowsPerPage(parseInt(e.target.value, 10));
+                setPage(0);
+              }}
+              sx={{
+                borderTop: "1px solid var(--border-color)",
+                color: "var(--text-primary)",
+                ".MuiTablePagination-select": { color: "var(--text-primary)" },
+                ".MuiTablePagination-selectIcon": { color: "var(--text-secondary)" },
+                ".MuiTablePagination-selectLabel, .MuiTablePagination-displayedRows": {
+                  fontWeight: 600,
+                  color: "var(--text-secondary)",
+                },
+              }}
+            />
           </Paper>
+          </>
         )}
       </Box>
 
@@ -785,8 +844,20 @@ export default function FeedbackDiscrepancies() {
         </DialogContent>
 
         {!success && selected && (
-          <DialogActions sx={{ px: 4, pb: 4, pt: 1 }}>
-            <Button 
+          <DialogActions sx={{ px: 3, pb: 3 }}>
+            <Button
+              variant="outlined"
+              color="error"
+              onClick={() => {
+                setRejectItem(selected);
+                setSelected(null);
+              }}
+              disabled={submitting}
+              sx={{ mr: "auto" }}
+            >
+              ✕ Reject
+            </Button>
+            <Button
               variant="text"
               onClick={() => setSelected(null)} 
               disabled={submitting} 
