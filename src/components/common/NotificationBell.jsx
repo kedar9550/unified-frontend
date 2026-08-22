@@ -102,6 +102,11 @@ const NotificationBell = forwardRef((props, ref) => {
                         link = '/appraisal/management-evaluate';
                     }
                     notif.link = link; // update so navigate uses it
+                } else if (link.includes('/hod/appraisal-verification')) {
+                    if (userRoles.includes('SCHOOL_DEAN') || userRoles.includes('SCHOOL DEAN') || userRoles.includes('VICE CHANCELLOR') || userRoles.includes('PRO VICE-CHANCELLOR (E & S)') || userRoles.includes('PRO_VICE_CHANCELLOR_E_S') || userRoles.includes('REGISTRAR')) {
+                        link = '/appraisal/management-evaluate';
+                        notif.link = link;
+                    }
                 }
                 
                 // --- Auto role detection ---
@@ -131,7 +136,7 @@ const NotificationBell = forwardRef((props, ref) => {
                         const mgtRoles = ['SCHOOL_DEAN', 'SCHOOL DEAN', 'VICE CHANCELLOR', 'PRO VICE-CHANCELLOR (E & S)', 'PRO_VICE_CHANCELLOR_E_S', 'REGISTRAR', 'DEAN - (IQAC)', 'DEAN - (ADMISSIONS)'];
                         targetRole = mgtRoles.find(r => userRoles.includes(r));
                     } else if (link.includes('/hod/')) {
-                        targetRole = ['HOD', 'DEPARTMENT_HOD', 'DEPARTMENT HOD'].find(r => userRoles.includes(r)) || 'HOD';
+                        targetRole = ['HOD', 'DEPARTMENT_HOD', 'DEPARTMENT HOD', 'SCHOOL_DEAN', 'SCHOOL DEAN'].find(r => userRoles.includes(r)) || 'HOD';
                     } else if (link.includes('/faculty/')) {
                         targetRole = 'FACULTY';
                     }
@@ -139,6 +144,9 @@ const NotificationBell = forwardRef((props, ref) => {
                     if (link.includes('/hod/')) {
                         if (userRoles.includes('HOD')) {
                             targetRole = 'HOD';
+                        } else if (userRoles.includes('SCHOOL_DEAN') || userRoles.includes('SCHOOL DEAN')) {
+                            const activeRolesList = userRoles.includes('SCHOOL_DEAN') ? 'SCHOOL_DEAN' : 'SCHOOL DEAN';
+                            targetRole = activeRolesList;
                         }
                     } else if (link.includes('/research-dean/')) {
                         if (userRoles.includes('RESEARCH_DEAN')) {
@@ -159,7 +167,7 @@ const NotificationBell = forwardRef((props, ref) => {
                     if (link.includes('/exam-result/')) {
                         targetRole = ['EXAMSECTION', 'FACULTY'].find(r => userRoles.includes(r)) || 'FACULTY';
                     } else if (link.includes('/hod/')) {
-                        targetRole = ['HOD', 'DEPARTMENT_HOD', 'DEPARTMENT HOD'].find(r => userRoles.includes(r)) || 'HOD';
+                        targetRole = ['HOD', 'DEPARTMENT_HOD', 'DEPARTMENT HOD', 'SCHOOL_DEAN', 'SCHOOL DEAN'].find(r => userRoles.includes(r)) || 'HOD';
                     } else if (link.includes('/feedback-management/')) {
                         targetRole = ['FEEDBACK_COORDINATOR', 'FEEDBACK COORDINATOR'].find(r => userRoles.includes(r)) || 'FEEDBACK_COORDINATOR';
                     } else if (link.includes('/uniprime/')) {
