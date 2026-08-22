@@ -4645,14 +4645,19 @@ const SelfAppraisal = () => {
                       </Box>
                       <Box>
                         <Typography sx={labelStyle}>NIRF Rank: *</Typography>
-                        <TextField
+                        <Select
                           size="small"
                           fullWidth
-                          type="number"
+                          displayEmpty
                           value={resUtForm.nirfRank}
                           onChange={(e) => setResUtForm(p => ({ ...p, nirfRank: e.target.value }))}
-                          placeholder="e.g. 15"
-                        />
+                        >
+                          <MenuItem value="" disabled>--Select--</MenuItem>
+                          <MenuItem value="50">1-50</MenuItem>
+                          <MenuItem value="100">51-100</MenuItem>
+                          <MenuItem value="150">101-150</MenuItem>
+                          <MenuItem value="199">151-200</MenuItem>
+                        </Select>
                       </Box>
                     </>
                   )}
@@ -4901,7 +4906,9 @@ const SelfAppraisal = () => {
                           <Grid size={{ xs: 12, sm: 4 }}>
                             <Box sx={{ p: 1.5, borderRadius: "10px", background: "var(--bg-paper)", border: "1px solid var(--border-color)" }}>
                               <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", fontWeight: 800 }}>NIRF Rank</Typography>
-                              <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>{data.nirfRank}</Typography>
+                              <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>
+                                {data.nirfRank == 50 ? "1-50" : data.nirfRank == 100 ? "51-100" : data.nirfRank == 150 ? "101-150" : data.nirfRank == 199 ? "151-200" : data.nirfRank}
+                              </Typography>
                             </Box>
                           </Grid>
                         </>
