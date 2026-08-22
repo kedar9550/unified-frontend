@@ -986,16 +986,6 @@ export default function Teaching() {
         subtitle="Manage courses, performance, and student outcomes" action={
           <Button
             onClick={() => {
-              const hasNoAcademicsData =
-                results.length === 0 &&
-                (!proctorStats || proctorStats.assignedCount === 0 || !proctorStats.studentPassPercentages || proctorStats.studentPassPercentages.length === 0) &&
-                feedbackResults.length === 0 &&
-                coAttainmentResults.length === 0;
-
-              if (hasNoAcademicsData) {
-                toast.error("No academic data available for the selected academic year. You cannot raise a discrepancy.");
-                return;
-              }
               setDiscOpen(true);
             }}
             startIcon={<FlagIcon />}
