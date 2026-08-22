@@ -336,7 +336,9 @@ const RoleManagement = () => {
             updates.designation = editingEmployee.designation;
         }
 
-        updates.qualifications = editableQualifications;
+        updates.qualifications = (editableQualifications || []).filter(
+            q => q.level && q.qualification && q.completedMonth && q.completedYear
+        );
         updates.dateOfJoining = editableDoj;
 
         if (Object.keys(updates).length === 0) {
