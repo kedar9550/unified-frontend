@@ -359,6 +359,8 @@ const AppraisalReportDetail = () => {
         awardedResUtilPoints
       });
       if (res.data?.success) {
+        console.log("ADMIN APPROVAL RESPONSE:", res.data.data);
+        console.log("UPDATED ROLE:", res.data.data?.roles?.find(r => r.roleId === roleId));
         toast.dismiss();
         if (action === 'Approve') {
           const newStatus = res.data.data?.status || '';
@@ -477,19 +479,19 @@ const AppraisalReportDetail = () => {
     }
   };
 
-  const handleAdminHODAction = async (id, roleId, roleName, action, remarks) => {
+  const handleAdminHODAction = async (id, roleId, roleLabel, displayRoleName, action, remarks) => {
     if (action === "Reject" && (!remarks || !remarks.trim())) {
       toast.warning("Please provide a rejection reason/remarks");
       return;
     }
     const isFinalApproval = selectedAppraisal.status !== "Submitted to HOD";
     try {
-      const res = await axiosInstance.put(`/api/faculty-administration/hod-action-role/${id}`, { roleId, action, remarks, isFinalApproval });
+      const res = await axiosInstance.put(`/api/faculty-administration/hod-action-role/${id}`, { roleId, roleLabel, action, remarks, isFinalApproval });
       if (res.data?.success) {
         const actionText = action === "Approve" ? "approved" : "rejected";
-        toast.success(`Administrative role '${roleName}' ${actionText} successfully.`);
+        toast.success(`Administrative role '${displayRoleName}' ${actionText} successfully.`);
         if (action === "Reject") {
-          await handleSubmitEvaluation("Reject", `Administrative role '${roleName}' rejected: ${remarks}`);
+          await handleSubmitEvaluation("Reject", `Administrative role '${displayRoleName}' rejected: ${remarks}`);
         } else {
           setSelectedAppraisal(prev => ({
             ...prev,
@@ -2503,6 +2505,11 @@ const AppraisalReportDetail = () => {
 
                               const displayAssignedBy = levelText ? `${levelText}${assignedByTextVal ? ` (Assigned By: ${assignedByTextVal})` : ""}` : (assignedByTextVal || "N/A");
 
+                              const catalogEntry = ADMIN_ROLE_CATALOG.find(c => c.roleId === adminItem.roleId);
+                              const displayRoleName = (catalogEntry && !['other', 'other_coord', 'training_coord'].includes(adminItem.roleId))
+                                ? catalogEntry.label
+                                : (adminItem.roleLabel || adminItem.roleName);
+
                               return (
                                 <React.Fragment key={i}>
                                   <TableRow sx={{ "&:hover": { bgcolor: "rgba(0, 0, 0, 0.015)" } }}>
@@ -2510,12 +2517,7 @@ const AppraisalReportDetail = () => {
                                     <TableCell sx={{ fontWeight: 600, color: "var(--text-primary)" }}>
                                       <Box>
                                         <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)" }}>
-                                          {(() => {
-                                            const catalogEntry = ADMIN_ROLE_CATALOG.find(c => c.roleId === adminItem.roleId);
-                                            return (catalogEntry && !['other', 'other_coord', 'training_coord'].includes(adminItem.roleId))
-                                              ? catalogEntry.label
-                                              : (adminItem.roleLabel || adminItem.roleName);
-                                          })()}
+                                          {displayRoleName}
                                         </Typography>
                                         {adminItem.details && <Typography variant="caption" sx={{ color: "var(--text-secondary)", display: "block", mt: 0.25 }}>Details: {adminItem.details}</Typography>}
                                       </Box>
@@ -2534,30 +2536,30 @@ const AppraisalReportDetail = () => {
                                     <TableRow sx={{ background: "rgba(232, 160, 0, 0.02)" }}>
                                       <TableCell colSpan={5} sx={{ py: 1.5 }}>
                                         <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5, alignItems: "flex-start", px: 1 }}>
-                                          {showRejectInput[adminItem.roleId || adminItem.roleName] ? (
+                                          {showRejectInput[`${adminItem.roleId}_${i}`] ? (
                                             <>
                                               <TextField
                                                 size="small"
                                                 fullWidth
                                                 placeholder="HOD comments/remarks..."
-                                                value={adminRemarks[adminItem.roleId || adminItem.roleName] || ""}
+                                                value={adminRemarks[`${adminItem.roleId}_${i}`] || ""}
                                                 onChange={(e) => {
                                                   const val = e.target.value;
-                                                  setAdminRemarks(p => ({ ...p, [adminItem.roleId || adminItem.roleName]: val }));
+                                                  setAdminRemarks(p => ({ ...p, [`${adminItem.roleId}_${i}`]: val }));
                                                 }}
                                               />
                                               <Stack direction="row" spacing={1} sx={{ mt: 1.5 }}>
                                                 <Button size="small" variant="contained" color="error" onClick={() => {
-                                                  handleAdminHODAction(selectedAppraisal.administrationDetail._id, adminItem.roleId, adminItem.roleName, "Reject", adminRemarks[adminItem.roleId || adminItem.roleName] || "");
-                                                  setShowRejectInput(p => ({ ...p, [adminItem.roleId || adminItem.roleName]: false }));
+                                                  handleAdminHODAction(selectedAppraisal.administrationDetail._id, adminItem.roleId, adminItem.roleLabel, displayRoleName, "Reject", adminRemarks[`${adminItem.roleId}_${i}`] || "");
+                                                  setShowRejectInput(p => ({ ...p, [`${adminItem.roleId}_${i}`]: false }));
                                                 }}>Confirm Reject</Button>
-                                                <Button size="small" variant="text" color="inherit" onClick={() => setShowRejectInput(p => ({ ...p, [adminItem.roleId || adminItem.roleName]: false }))}>Cancel</Button>
+                                                <Button size="small" variant="text" color="inherit" onClick={() => setShowRejectInput(p => ({ ...p, [`${adminItem.roleId}_${i}`]: false }))}>Cancel</Button>
                                               </Stack>
                                             </>
                                           ) : (
                                             <Stack direction="row" spacing={1} sx={{ mt: 0 }}>
-                                              <Button size="small" variant="outlined" color="error" onClick={() => setShowRejectInput(p => ({ ...p, [adminItem.roleId || adminItem.roleName]: true }))}>Reject</Button>
-                                              <Button size="small" variant="contained" color="success" sx={{ color: "#fff" }} onClick={() => handleAdminHODAction(selectedAppraisal.administrationDetail._id, adminItem.roleId, adminItem.roleName, "Approve", adminRemarks[adminItem.roleId || adminItem.roleName] || "")}>Approve</Button>
+                                              <Button size="small" variant="outlined" color="error" onClick={() => setShowRejectInput(p => ({ ...p, [`${adminItem.roleId}_${i}`]: true }))}>Reject</Button>
+                                              <Button size="small" variant="contained" color="success" sx={{ color: "#fff" }} onClick={() => handleAdminHODAction(selectedAppraisal.administrationDetail._id, adminItem.roleId, adminItem.roleLabel, displayRoleName, "Approve", adminRemarks[`${adminItem.roleId}_${i}`] || "")}>Approve</Button>
                                             </Stack>
                                           )}
                                         </Box>
