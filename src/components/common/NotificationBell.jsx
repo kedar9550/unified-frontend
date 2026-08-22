@@ -155,6 +155,16 @@ const NotificationBell = forwardRef((props, ref) => {
                             targetRole = 'STUDENT';
                         }
                     }
+                } else if (link.includes('/discrepancies')) {
+                    if (link.includes('/exam-result/')) {
+                        targetRole = ['EXAMSECTION', 'FACULTY'].find(r => userRoles.includes(r)) || 'FACULTY';
+                    } else if (link.includes('/hod/')) {
+                        targetRole = ['HOD', 'DEPARTMENT_HOD', 'DEPARTMENT HOD'].find(r => userRoles.includes(r)) || 'HOD';
+                    } else if (link.includes('/feedback-management/')) {
+                        targetRole = ['FEEDBACK_COORDINATOR', 'FEEDBACK COORDINATOR'].find(r => userRoles.includes(r)) || 'FEEDBACK_COORDINATOR';
+                    } else if (link.includes('/uniprime/')) {
+                        targetRole = 'UNIPRIME';
+                    }
                 }
             }
 
