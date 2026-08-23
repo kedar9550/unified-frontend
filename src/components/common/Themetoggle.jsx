@@ -4,7 +4,11 @@ import { LightMode, DarkMode } from "@mui/icons-material";
 
 export default function ThemeToggle({ onToggle }) {
   const [isDark, setIsDark] = useState(() => {
-    return localStorage.getItem("theme") === "dark";
+    const savedTheme = localStorage.getItem("theme");
+    if (savedTheme) {
+      return savedTheme === "dark";
+    }
+    return window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
   });
 
   useEffect(() => {

@@ -156,9 +156,11 @@ function App() {
     const handleResize = () => setIsMobile(window.innerWidth < 768);
     window.addEventListener("resize", handleResize);
 
-    // Initialize theme
-    const theme = localStorage.getItem("theme");
-    if (theme === "dark") {
+    // Initialize theme based on user preference or system default
+    const savedTheme = localStorage.getItem("theme");
+    const prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+    
+    if (savedTheme === "dark" || (!savedTheme && prefersDark)) {
       document.body.classList.add("dark-mode");
     } else {
       document.body.classList.remove("dark-mode");
@@ -257,7 +259,7 @@ function App() {
 
         {/* Public Redirect Route */}
         <Route path="/go/:shortCode" element={<RedirectHandler />} />
-        
+
         {/* Public Certificate Verification Route */}
         <Route path="/verify/certificate/:receipt/:roll" element={<VerifyCertificate />} />
 
