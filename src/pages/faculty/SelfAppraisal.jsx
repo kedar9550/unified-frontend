@@ -2073,8 +2073,8 @@ const SelfAppraisal = () => {
                 <TableHead sx={{ background: "var(--gradient-primary)" }}>
                   <TableRow>
                     <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Academic Year</TableCell>
-                    <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }} align="center">Min Points Required</TableCell>
-                    <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }} align="center">Total Points Gained</TableCell>
+                    <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }} align="center">Min Points Required (1-4)</TableCell>
+                    <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }} align="center">Total Points Gained (1-4)</TableCell>
                     <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }} align="center">Status</TableCell>
                     <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }} align="center">Actions</TableCell>
                   </TableRow>
