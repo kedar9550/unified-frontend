@@ -24,6 +24,7 @@ export default function BookChapterPublication() {
   const [noActiveYearAlertOpen, setNoActiveYearAlertOpen] = useState(false);
   const [publicationsList, setPublicationsList] = useState([]);
   const [selectedPubDetails, setSelectedPubDetails] = useState(null);
+  const [appraisalConfigActive, setAppraisalConfigActive] = useState(false);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
 
@@ -791,7 +792,7 @@ export default function BookChapterPublication() {
                     <Tooltip title="View Details" arrow>
                       <IconButton
                         size="small"
-                        onClick={() => setSelectedPubDetails(pub)}
+                        onClick={() => handleOpenDetails(pub)}
                         sx={{
                           color: "var(--color-primary)",
                           "&:hover": { background: "var(--bg-accent-1)", transform: "scale(1.1)" },
@@ -1209,7 +1210,38 @@ export default function BookChapterPublication() {
     </FormCard>
   );
 
+  const handleOpenDetails = async (pub) => {
+    setSelectedPubDetails(pub);
+    try {
+      const ayId = pub.academicYear?._id || pub.academicYear;
+      if (ayId) {
+        const res = await API.get(`/api/appraisal/config/${ayId}`);
+        setAppraisalConfigActive(res.data?.data?.isActive || res.data?.data?.status === 'On');
+      }
+    } catch (err) {
+      console.error("Failed to fetch appraisal config", err);
+      setAppraisalConfigActive(false);
+    }
+  };
+
   const handleCloseDetails = () => setSelectedPubDetails(null);
+
+  const handleResolveClaim = async (researchId, researchType, claimantId) => {
+    try {
+      const res = await API.post("/api/appraisal/resolve-claim", {
+        researchId,
+        researchType,
+        claimantId
+      });
+      if (res.data.success) {
+        setSelectedPubDetails(prev => ({ ...prev, appraisalClaimant: claimantId }));
+        API.get("/api/research/book-chapter").then(r => setPublicationsList(r.data?.data || r.data || [])).catch(()=>{});
+        toast.success("Appraisal claimant successfully updated!");
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to resolve claim");
+    }
+  };
 
   const LabelValueDetails = ({ label, value, chip, horizontal = false }) => (
     <Box sx={{
@@ -1362,7 +1394,7 @@ export default function BookChapterPublication() {
                 label="Appraisal Claimant"
                 chip={
                   (() => {
-                    const isApplicant = data.visibilityRole === "Applicant";
+                    const isApplicant = data.visibilityRole === "Applicant" || (data.facultyId && (data.facultyId === user?.userId || data.facultyId._id === user?.userId));
                     const eligibleClaimants = [
                       { _id: data.facultyId?._id, name: data.facultyId?.name, institutionId: data.facultyId?.institutionId },
                       ...((data.coAuthors || [])
@@ -1387,6 +1419,27 @@ export default function BookChapterPublication() {
                       (c.institutionId && c.institutionId === (data.appraisalClaimant?.institutionId || data.appraisalClaimant || "").toString()) ||
                       (c._id && c._id.toString() === (data.appraisalClaimant?._id || data.appraisalClaimant || "").toString())
                     );
+
+                    if (!data.appraisalClaimant && isApplicant && appraisalConfigActive && uniqueClaimants.length > 1) {
+                        return (
+                            <Select
+                                size="small"
+                                fullWidth
+                                value=""
+                                displayEmpty
+                                onChange={(e) => handleResolveClaim(data._id, "BookChapter", e.target.value)}
+                                sx={{ mt: 0.5, backgroundColor: "var(--bg-paper)", fontSize: "0.875rem" }}
+                            >
+                                <MenuItem value="" disabled>Select Claimant</MenuItem>
+                                {uniqueClaimants.map(c => (
+                                    <MenuItem key={c.institutionId || c._id} value={c.institutionId || c._id}>
+                                        {c.name} ({c.institutionId})
+                                    </MenuItem>
+                                ))}
+                            </Select>
+                        );
+                    }
+
                     return (
                       <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>
                         {currentClaimantObj ? `${currentClaimantObj.name} (${currentClaimantObj.institutionId})` : "Not Yet Designated"}
