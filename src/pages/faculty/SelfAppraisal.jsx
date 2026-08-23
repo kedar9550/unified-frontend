@@ -750,7 +750,7 @@ const SelfAppraisal = () => {
   };
 
   const openAdminModalEdit = (role) => {
-    setAdminEditingRole(role.roleId || role.roleName);
+    setAdminEditingRole(role);
 
     let pType = role.roleId;
     if (role.roleId) {
@@ -814,7 +814,7 @@ const SelfAppraisal = () => {
       toast.error(`Level ${adminForm.level} is not allowed for this role`); return;
     }
 
-    const existingRoles = administrationDetail?.roles?.filter(r => r.isResponsible) || [];
+    const existingRoles = administrationDetail?.roles || [];
     let updatedRoles;
 
     const newRole = {
@@ -837,7 +837,7 @@ const SelfAppraisal = () => {
     };
 
     if (adminEditingRole) {
-      updatedRoles = existingRoles.map(r => (r.roleId === adminEditingRole || r.roleName === adminEditingRole) ? { ...r, ...newRole, status: 'Pending' } : r);
+      updatedRoles = existingRoles.map(r => (r.roleId === adminEditingRole.roleId && (r.roleLabel || r.roleName) === (adminEditingRole.roleLabel || adminEditingRole.roleName) && r.details === adminEditingRole.details) ? { ...r, ...newRole, status: 'Pending' } : r);
     } else {
       updatedRoles = [...existingRoles, { ...newRole, status: 'Pending' }];
     }
@@ -860,11 +860,11 @@ const SelfAppraisal = () => {
     }
   };
 
-  const handleAdminDelete = async (roleIdentifier) => {
+  const handleAdminDelete = async (roleToDelete) => {
     if (!window.confirm("Are you sure you want to delete this administrative role?")) return;
 
     const existingRoles = administrationDetail?.roles || [];
-    const updatedRoles = existingRoles.map(r => (r.roleId === roleIdentifier || r.roleName === roleIdentifier) ? { ...r, isResponsible: false } : r);
+    const updatedRoles = existingRoles.map(r => (r.roleId === roleToDelete.roleId && (r.roleLabel || r.roleName) === (roleToDelete.roleLabel || roleToDelete.roleName) && r.details === roleToDelete.details) ? { ...r, isResponsible: false } : r);
 
     try {
       const res = await axiosInstance.post("/api/faculty-administration", {
@@ -4212,7 +4212,7 @@ const SelfAppraisal = () => {
                                                   <IconButton size="small" color="info" onClick={() => openAdminModalEdit(role)}>
                                                     <Edit fontSize="small" />
                                                   </IconButton>
-                                                  <IconButton size="small" color="error" onClick={() => handleAdminDelete(role.roleId || role.roleName)}>
+                                                  <IconButton size="small" color="error" onClick={() => handleAdminDelete(role)}>
                                                     <Delete fontSize="small" />
                                                   </IconButton>
                                                 </>
