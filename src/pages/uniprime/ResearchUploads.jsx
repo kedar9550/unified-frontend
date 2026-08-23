@@ -6,9 +6,22 @@ import {
   Card,
   CardContent,
   Button,
-  CircularProgress
+  CircularProgress,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Paper,
+  Chip,
+  IconButton
 } from "@mui/material";
-import { CloudUpload, Download } from "@mui/icons-material";
+import { CloudUpload, Download, Close } from "@mui/icons-material";
 import { toast } from "sonner";
 import axios from "../../api/axios";
 
@@ -25,6 +38,9 @@ const uploadCategories = [
 
 const ResearchUploads = () => {
   const [uploading, setUploading] = useState({}); // Track uploading state per category
+  const [reportModalOpen, setReportModalOpen] = useState(false);
+  const [reportData, setReportData] = useState(null);
+  const [reportCategory, setReportCategory] = useState("");
 
   const handleDownload = (templateName) => {
     const link = document.createElement("a");
@@ -59,7 +75,30 @@ const ResearchUploads = () => {
       if (res.data.success) {
         toast.success(res.data.message || `${categoryId} data uploaded successfully!`);
       } else {
-        const errorMessage = res.data.message || `Failed to upload ${categoryId}`;
+        if (res.data.results && (res.data.results.skips > 0 || res.data.results.errs > 0)) {
+          setReportCategory(categoryId);
+          setReportData(res.data.results);
+          setReportModalOpen(true);
+        } else {
+          const errorMessage = res.data.message || `Failed to upload ${categoryId}`;
+          if (errorMessage.includes("Details:")) {
+            const [mainMsg, details] = errorMessage.split("Details:");
+            toast.error(mainMsg.trim(), {
+              description: details.trim(),
+              duration: 8000,
+            });
+          } else {
+            toast.error(errorMessage, { duration: 5000 });
+          }
+        }
+      }
+    } catch (err) {
+      if (err.response?.data?.results && (err.response.data.results.skips > 0 || err.response.data.results.errs > 0)) {
+        setReportCategory(categoryId);
+        setReportData(err.response.data.results);
+        setReportModalOpen(true);
+      } else {
+        const errorMessage = err.response?.data?.message || `An error occurred while uploading ${categoryId}`;
         if (errorMessage.includes("Details:")) {
           const [mainMsg, details] = errorMessage.split("Details:");
           toast.error(mainMsg.trim(), {
@@ -69,17 +108,6 @@ const ResearchUploads = () => {
         } else {
           toast.error(errorMessage, { duration: 5000 });
         }
-      }
-    } catch (err) {
-      const errorMessage = err.response?.data?.message || `An error occurred while uploading ${categoryId}`;
-      if (errorMessage.includes("Details:")) {
-        const [mainMsg, details] = errorMessage.split("Details:");
-        toast.error(mainMsg.trim(), {
-          description: details.trim(),
-          duration: 8000,
-        });
-      } else {
-        toast.error(errorMessage, { duration: 5000 });
       }
     } finally {
       setUploading((prev) => ({ ...prev, [categoryId]: false }));
@@ -156,6 +184,96 @@ const ResearchUploads = () => {
           </Grid>
         ))}
       </Grid>
+
+      {/* Upload Report Dialog */}
+      <Dialog 
+        open={reportModalOpen} 
+        onClose={() => setReportModalOpen(false)}
+        maxWidth="md"
+        fullWidth
+      >
+        <DialogTitle sx={{ m: 0, p: 2, display: "flex", justifyContent: "space-between", alignItems: "center", bgcolor: "var(--bg-panel)", color: "var(--text-primary)" }}>
+          <Typography variant="h6" fontWeight="bold">
+            Upload Report: {reportCategory.toUpperCase()}
+          </Typography>
+          <IconButton onClick={() => setReportModalOpen(false)} sx={{ color: "var(--text-secondary)" }}>
+            <Close />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent dividers sx={{ bgcolor: "var(--bg-paper)", color: "var(--text-primary)" }}>
+          {reportData && (
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+              {/* Summary Cards */}
+              <Grid container spacing={2}>
+                <Grid size={{ xs: 3 }}>
+                  <Card sx={{ bgcolor: "var(--bg-panel)", textAlign: "center", p: 2, border: "1px solid var(--border-color)" }}>
+                    <Typography variant="body2" color="text.secondary">Total Rows</Typography>
+                    <Typography variant="h5" fontWeight="bold">{reportData.totalRows || 0}</Typography>
+                  </Card>
+                </Grid>
+                <Grid size={{ xs: 3 }}>
+                  <Card sx={{ bgcolor: "var(--bg-panel)", textAlign: "center", p: 2, border: "1px solid var(--border-color)" }}>
+                    <Typography variant="body2" color="success.main">Success</Typography>
+                    <Typography variant="h5" fontWeight="bold" color="success.main">{reportData.successCount || 0}</Typography>
+                  </Card>
+                </Grid>
+                <Grid size={{ xs: 3 }}>
+                  <Card sx={{ bgcolor: "var(--bg-panel)", textAlign: "center", p: 2, border: "1px solid var(--border-color)" }}>
+                    <Typography variant="body2" color="warning.main">Skipped</Typography>
+                    <Typography variant="h5" fontWeight="bold" color="warning.main">{reportData.skips || 0}</Typography>
+                  </Card>
+                </Grid>
+                <Grid size={{ xs: 3 }}>
+                  <Card sx={{ bgcolor: "var(--bg-panel)", textAlign: "center", p: 2, border: "1px solid var(--border-color)" }}>
+                    <Typography variant="body2" color="error.main">Failed</Typography>
+                    <Typography variant="h5" fontWeight="bold" color="error.main">{reportData.errs || 0}</Typography>
+                  </Card>
+                </Grid>
+              </Grid>
+
+              {/* Error Table */}
+              {(reportData.skipDetails?.length > 0 || reportData.errorDetails?.length > 0) && (
+                <TableContainer component={Paper} sx={{ bgcolor: "var(--bg-panel)", border: "1px solid var(--border-color)", boxShadow: "none" }}>
+                  <Table size="small">
+                    <TableHead>
+                      <TableRow sx={{ bgcolor: "rgba(0,0,0,0.05)" }}>
+                        <TableCell sx={{ fontWeight: "bold", width: "100px" }}>Type</TableCell>
+                        <TableCell sx={{ fontWeight: "bold", width: "100px" }}>Row No.</TableCell>
+                        <TableCell sx={{ fontWeight: "bold" }}>Reason</TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {reportData.errorDetails?.map((err, idx) => (
+                        <TableRow key={`err-${idx}`}>
+                          <TableCell>
+                            <Chip label="Error" color="error" size="small" />
+                          </TableCell>
+                          <TableCell>{err.row}</TableCell>
+                          <TableCell>{err.reason}</TableCell>
+                        </TableRow>
+                      ))}
+                      {reportData.skipDetails?.map((skip, idx) => (
+                        <TableRow key={`skip-${idx}`}>
+                          <TableCell>
+                            <Chip label="Skipped" color="warning" size="small" />
+                          </TableCell>
+                          <TableCell>{skip.row}</TableCell>
+                          <TableCell>{skip.reason}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+              )}
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions sx={{ bgcolor: "var(--bg-panel)", p: 2 }}>
+          <Button onClick={() => setReportModalOpen(false)} variant="contained" sx={{ bgcolor: "var(--primary-color)" }}>
+            Close Report
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };
