@@ -365,7 +365,7 @@ export default function Contribution() {
           if (!form.journalName) fieldErr = "Journal Name is required.";
           break;
         case 3:
-          if (!form.journalConferenceName) fieldErr = "Journal / Conference Name is required.";
+          if (!form.journalName) fieldErr = "Journal / Conference Name is required.";
           break;
         case 4:
         case 5:
@@ -460,7 +460,7 @@ export default function Contribution() {
         fd.append("journalName", form.journalName);
         if (form.journalType) fd.append("journalType", form.journalType);
       } else if (cat === 3) {
-        fd.append("journalConferenceName", form.journalConferenceName);
+        fd.append("journalName", form.journalName);
         if (form.journalType) fd.append("journalType", form.journalType);
       } else if (cat === 4 || cat === 5) {
         fd.append("awardName", form.awardName);

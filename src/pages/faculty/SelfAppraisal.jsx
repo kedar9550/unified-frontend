@@ -1261,7 +1261,7 @@ const SelfAppraisal = () => {
           if (!contForm.journalName) fieldErr = "Journal Name is required.";
           break;
         case 3:
-          if (!contForm.journalConferenceName) fieldErr = "Journal / Conference Name is required.";
+          if (!contForm.journalName) fieldErr = "Journal / Conference Name is required.";
           break;
         case 4:
         case 5:
@@ -1349,7 +1349,7 @@ const SelfAppraisal = () => {
         fd.append("journalName", contForm.journalName);
         if (contForm.journalType) fd.append("journalType", contForm.journalType);
       } else if (cat === 3) {
-        fd.append("journalConferenceName", contForm.journalConferenceName);
+        fd.append("journalName", contForm.journalName);
         if (contForm.journalType) fd.append("journalType", contForm.journalType);
       } else if (cat === 4 || cat === 5) {
         fd.append("awardName", contForm.awardName);
