@@ -282,7 +282,7 @@ export default function FeedbackDiscrepancies() {
       for (const row of newRows) {
         const branchName = branches.find(b => b._id === row.branchId)?.name || "";
         await API.post("/api/faculty-feedback-results", {
-          facultyId:         selected.facultyInstitutionId,
+          facultyId:         selected.facultyInstitutionId || selected.raisedBy?.institutionId || selected.raisedBy?.employeeId,
           facultyName:       selected.facultyName || selected.raisedBy?.name,
           subjectName:       row.subjectName,
           subjectCode:       row.subjectCode,
@@ -294,8 +294,8 @@ export default function FeedbackDiscrepancies() {
           yearNumber:        row.yearNumber,
           section:           row.section,
           phase:             Number(row.phase),
-          academicYearId:    selected.academicYearId?._id,
-          semesterTypeId:    selected.semesterTypeId?._id,
+          academicYearId:    selected.academicYearId?._id || selected.academicYearId,
+          semesterTypeId:    selected.semesterTypeId?._id || selected.semesterTypeId,
           totalStudents:     row.totalStudents !== "" && row.totalStudents !== null && row.totalStudents !== undefined ? Number(row.totalStudents) : null,
           givenStudents:     row.givenStudents !== "" && row.givenStudents !== null && row.givenStudents !== undefined ? Number(row.givenStudents) : null,
           percentage:        Number(row.percentage),
@@ -738,14 +738,14 @@ export default function FeedbackDiscrepancies() {
                             <TableCell>
                                 <Select 
                                     variant="standard" 
-                                    value={row.subjectType || "Theory"} 
+                                    value={(row.subjectType || "theory").toLowerCase()} 
                                     onChange={e => handleResultEdit(idx, "subjectType", e.target.value)}
                                     sx={{ fontSize: 12, fontWeight: 600, minWidth: 80 }}
                                     disableUnderline={!row._edited}
                                 >
-                                    <MenuItem value="Theory">Theory</MenuItem>
-                                    <MenuItem value="Practical">Practical</MenuItem>
-                                    <MenuItem value="Integrated">Integrated</MenuItem>
+                                    <MenuItem value="theory">Theory</MenuItem>
+                                    <MenuItem value="practical">Practical</MenuItem>
+                                    <MenuItem value="integrated">Integrated</MenuItem>
                                 </Select>
                             </TableCell>
                             <TableCell>
