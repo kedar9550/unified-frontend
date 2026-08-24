@@ -438,7 +438,7 @@ const ReadOnlyCoordinators = ({ type }) => {
     dataList.forEach(item => {
       let coordsList = [];
       if (type === 'Event') {
-        if (item.eventCoordinator) coordsList = [item.eventCoordinator];
+        if (item.coordinator) coordsList = [item.coordinator];
       } else {
         coordsList = Array.isArray(item.facultyCoordinators) && item.facultyCoordinators.length > 0
           ? item.facultyCoordinators
@@ -527,12 +527,12 @@ const OrganisationCommittee = () => {
     <Box sx={{ p: { xs: 2, md: 3, lg: 4 } }}>
       <PageHeader
         title="Organisation Committee"
-        subtitle="Manage Conveners, Co-conveners, and view Coordinators"
+        subtitle="Manage Conveners, Members, and view Coordinators"
       />
       <Box sx={{ borderBottom: 1, borderColor: 'divider', mt: 3, backgroundColor: 'background.paper', borderRadius: 1 }}>
         <Tabs value={tabValue} onChange={handleTabChange} variant="scrollable" scrollButtons="auto">
           <Tab label="Conveners" />
-          <Tab label="Co-conveners" />
+          <Tab label="Members" />
           <Tab label="Event Coordinators" />
           <Tab label="Faculty Coordinators" />
           <Tab label="Student Coordinators" />
@@ -541,7 +541,7 @@ const OrganisationCommittee = () => {
 
       <Box sx={{ mt: 3 }}>
         {tabValue === 0 && <CommitteeRoleManager role="Convener" />}
-        {tabValue === 1 && <CommitteeRoleManager role="Co-convener" />}
+        {tabValue === 1 && <CommitteeRoleManager role="Member" />}
         {tabValue === 2 && <ReadOnlyCoordinators type="Event" />}
         {tabValue === 3 && <ReadOnlyCoordinators type="Faculty" />}
         {tabValue === 4 && <StudentCoordinatorManager />}

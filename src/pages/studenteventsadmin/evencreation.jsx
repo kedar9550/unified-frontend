@@ -31,6 +31,7 @@ import {
 } from '@mui/icons-material';
 import PageHeader from '../../components/common/PageHeader';
 import DataTable from '../../components/data/DataTable';
+import { fetchEventDepartments } from '../../api/eventDepartmentApi';
 import API from '../../api/axios';
 import { toast } from 'sonner';
 import { useAuth } from '../../context/AuthContext';
@@ -44,12 +45,16 @@ const EventCreation = () => {
   const [submitting, setSubmitting] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [eventToDelete, setEventToDelete] = useState(null);
+  const [departmentsDialogOpen, setDepartmentsDialogOpen] = useState(false);
+  const [departmentsToView, setDepartmentsToView] = useState([]);
 
   const [editingEvent, setEditingEvent] = useState(null);
   const [selectedGroup, setSelectedGroup] = useState(null);
-  const [departmentName, setDepartmentName] = useState('');
+  const [departments, setDepartments] = useState([]);
+  const [departmentsList, setDepartmentsList] = useState([]);
   const [eventName, setEventName] = useState('');
   const [price, setPrice] = useState('');
+  const [priceType, setPriceType] = useState('Per Head');
   const [maxTeamSize, setMaxTeamSize] = useState('');
   const [venue, setVenue] = useState('');
   const [venueType, setVenueType] = useState('');
@@ -87,14 +92,23 @@ const EventCreation = () => {
     }
   }, []);
 
+  const fetchDepartments = useCallback(async () => {
+    try {
+      const response = await fetchEventDepartments();
+      const activeDepts = (response.data?.departments || []).filter(d => d.status === 'Active');
+      setDepartmentsList(activeDepts);
+    } catch (error) {
+      console.error('Error fetching departments:', error);
+    }
+  }, []);
+
   const fetchGroups = useCallback(async () => {
     try {
       const response = await API.get('/api/groups');
       const activeGroups = (response.data?.groups || []).filter((group) => group.status === 'Active');
       setGroups(activeGroups);
-      if (activeRole === 'EVENT_COORDINATOR' && activeGroups.length > 0) {
+      if (activeRole === 'SCHOOL_COORDINATOR' && activeGroups.length > 0) {
         setSelectedGroup(activeGroups[0]);
-        setDepartmentName(Array.isArray(activeGroups[0]?.department) ? activeGroups[0].department.map(d => d?.name).join(' & ') : activeGroups[0]?.department?.name || '');
       }
     } catch (error) {
       console.error('Failed to load groups', error);
@@ -135,7 +149,8 @@ const EventCreation = () => {
     fetchGroups();
     fetchEvents();
     fetchInfrastructure();
-  }, [fetchGroups, fetchEvents, fetchInfrastructure]);
+    fetchDepartments();
+  }, [fetchGroups, fetchEvents, fetchInfrastructure, fetchDepartments]);
 
   useEffect(() => {
     if (!searchQuery || searchQuery.trim() === '') {
@@ -164,15 +179,15 @@ const EventCreation = () => {
 
   const resetForm = () => {
     setEditingEvent(null);
-    if (activeRole === 'EVENT_COORDINATOR' && groups.length > 0) {
+    if (activeRole === 'SCHOOL_COORDINATOR' && groups.length > 0) {
       setSelectedGroup(groups[0]);
-      setDepartmentName(Array.isArray(groups[0]?.department) ? groups[0].department.map(d => d?.name).join(' & ') : groups[0]?.department?.name || '');
     } else {
       setSelectedGroup(null);
-      setDepartmentName('');
     }
+    setDepartments([]);
     setEventName('');
     setPrice('');
+    setPriceType('Per Head');
     setMaxTeamSize('');
     setVenue('');
     setVenueType('');
@@ -200,7 +215,13 @@ const EventCreation = () => {
     const group = groups.find((g) => String(g._id) === String(event.group?._id || event.group)) || null;
     setEditingEvent(event);
     setSelectedGroup(group || null);
-    setDepartmentName(Array.isArray(group?.department) ? group.department.map(d => d?.name).join(' & ') : group?.department?.name || event.department || '');
+    
+    // Set departments (assuming event.department is now an array of ObjectIds or objects)
+    const eventDepartments = Array.isArray(event.department) 
+      ? event.department.map(d => d._id || d) 
+      : [];
+    setDepartments(eventDepartments);
+
     setSelectedCoordinators(event.facultyCoordinators?.length > 0 ? event.facultyCoordinators.map((coordinator) => ({
       employeeId: coordinator.employeeId || coordinator.institutionId || '',
       employeeName: coordinator.employeeName || '',
@@ -218,6 +239,7 @@ const EventCreation = () => {
     }] : []);
     setEventName(event.eventName || '');
     setPrice(event.price != null ? String(event.price) : '');
+    setPriceType(event.priceType || 'Per Head');
     setMaxTeamSize(event.maxTeamSize != null ? String(event.maxTeamSize) : '');
     setVenueType(event.venueType || '');
     setBuildingId(event.building?._id || event.building || '');
@@ -235,12 +257,13 @@ const EventCreation = () => {
   const validateForm = () => {
     const newErrors = {};
 
-    if (!selectedGroup) newErrors.group = 'Group is required.';
+    if (!selectedGroup) newErrors.group = 'School is required.';
+    if (!departments || departments.length === 0) newErrors.department = 'At least one department is required.';
     if (!eventName.trim()) newErrors.eventName = 'Event Name is required.';
     if (eventName.length > 200) newErrors.eventName = 'Event Name cannot exceed 200 characters.';
     if (!price || Number(price) < 0) newErrors.price = 'Enter a valid price.';
     if (!maxTeamSize || Number(maxTeamSize) <= 0) newErrors.maxTeamSize = 'Enter a valid max team size.';
-    
+
     if (!venueType) {
       newErrors.venueType = 'Venue Type is required.';
     } else {
@@ -275,6 +298,7 @@ const EventCreation = () => {
       groupId: selectedGroup?._id,
       eventName: eventName.trim(),
       price: Number(price),
+      priceType: priceType,
       maxTeamSize: Number(maxTeamSize),
       venue: venue.trim(),
       venueType: venueType,
@@ -286,6 +310,7 @@ const EventCreation = () => {
       extraAmountPerHead: Number(extraAmountPerHead),
       overview: overview.trim(),
       rules: rules.filter((rule) => rule.trim()),
+      department: JSON.stringify(departments),
       facultyCoordinators: JSON.stringify(selectedCoordinators.map((coordinator) => ({
         employeeId: coordinator?.employeeId || coordinator?.institutionId || coordinator?.employeeCode || '',
         employeeName: coordinator?.employeeName || coordinator?.name || '',
@@ -375,18 +400,30 @@ const EventCreation = () => {
     const row = [
       index + 1,
       event.group?.name || '',
-      event.department ? event.department.replace(/,\s*/g, ' & ') : (Array.isArray(event.group?.department) ? event.group.department.map(d => d?.name).join(' & ') : event.group?.department?.name || ''),
+      Array.isArray(event.department)
+        ? (departmentsList.length > 0 && event.department.length === departmentsList.length 
+            ? (
+                <Typography 
+                  variant="body2" 
+                  sx={{ color: '#3b82f6', cursor: 'pointer', textDecoration: 'underline' }} 
+                  onClick={() => { setDepartmentsToView(event.department); setDepartmentsDialogOpen(true); }}
+                >
+                  All Departments
+                </Typography>
+              )
+            : event.department.map(d => d?.name || d).join(' & ')) 
+        : (event.department || 'N/A'),
       coordinatorLabel,
       event.eventName,
-      event.venueType === 'Indoor' && event.building && event.floor 
-          ? `${event.roomNo ? `Room No: ${event.roomNo}, ` : ''}${event.building.name} - ${event.floor.name}` 
-          : event.venueType === 'Outdoor' && event.ground 
-            ? `${event.roomNo ? `Room No: ${event.roomNo}, ` : ''}${event.ground.name}` 
-            : event.venue || 'N/A',
+      event.venueType === 'Indoor' && event.building && event.floor
+        ? `${event.building.name}, ${event.floor.name} (Room: ${event.roomNo})`
+        : event.venueType === 'Outdoor' && event.ground
+        ? `${event.ground.name} (Room: ${event.roomNo})`
+        : event.venue || 'N/A',
       event.maxTeamSize || '',
-      event.price != null && event.price > 0 ? `₹${event.price}` : '',
+      event.price != null && event.price > 0 ? `₹${event.price} (${event.priceType || 'Per Head'})` : '',
     ];
-    
+
     if (activeRole !== 'FACULTY_COORDINATOR') {
       row.push({
         value: '',
@@ -410,7 +447,7 @@ const EventCreation = () => {
         ),
       });
     }
-    
+
     return row;
   });
 
@@ -439,7 +476,7 @@ const EventCreation = () => {
           rows={tableRows}
           nonSortableColumns={activeRole !== 'FACULTY_COORDINATOR' ? [8] : []}
           alignments={
-            activeRole !== 'FACULTY_COORDINATOR' 
+            activeRole !== 'FACULTY_COORDINATOR'
               ? ['center', 'left', 'left', 'left', 'left', 'center', 'center', 'center', 'center']
               : ['center', 'left', 'left', 'left', 'left', 'center', 'center', 'center']
           }
@@ -461,6 +498,22 @@ const EventCreation = () => {
             </Button>
           </DialogActions>
         </Dialog>
+
+        <Dialog open={departmentsDialogOpen} onClose={() => setDepartmentsDialogOpen(false)} maxWidth="sm" fullWidth>
+          <DialogTitle>All Departments</DialogTitle>
+          <DialogContent dividers>
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, p: 1 }}>
+              {departmentsToView.map((d, i) => (
+                <Chip key={i} label={d?.name || d} sx={{ bgcolor: 'rgba(59, 130, 246, 0.1)', color: '#1e40af' }} />
+              ))}
+            </Box>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setDepartmentsDialogOpen(false)} variant="contained" sx={{ textTransform: 'none' }}>
+              Close
+            </Button>
+          </DialogActions>
+        </Dialog>
       </Box>
     );
   }
@@ -478,19 +531,18 @@ const EventCreation = () => {
         <CardContent sx={{ p: 4 }}>
           <Stack spacing={3}>
             <FormControl fullWidth error={!!errors.group}>
-              <InputLabel id="group-label">Group</InputLabel>
+              <InputLabel id="group-label">School</InputLabel>
               <Select
                 labelId="group-label"
                 value={selectedGroup?._id || ''}
-                label="Group"
-                disabled={activeRole === 'EVENT_COORDINATOR'}
+                label="School"
+                disabled={activeRole === 'SCHOOL_COORDINATOR'}
                 onChange={(e) => {
                   const group = groups.find((g) => g._id === e.target.value) || null;
                   setSelectedGroup(group);
-                  setDepartmentName(Array.isArray(group?.department) ? group.department.map(d => d?.name).join(' & ') : group?.department?.name || '');
                 }}
               >
-                <MenuItem value="">Select Group</MenuItem>
+                <MenuItem value="">Select School</MenuItem>
                 {groups.map((group) => (
                   <MenuItem key={group._id} value={group._id}>
                     {group.name}
@@ -500,10 +552,67 @@ const EventCreation = () => {
               {errors.group && <FormHelperText>{errors.group}</FormHelperText>}
             </FormControl>
 
-            {selectedGroup && (
-              <TextField fullWidth label="Department" value={departmentName} InputProps={{ readOnly: true }} />
-            )}
-
+            <FormControl fullWidth error={!!errors.department}>
+              <InputLabel id="department-label">Department</InputLabel>
+              <Select
+                labelId="department-label"
+                multiple
+                value={departments}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  if (value.includes('all')) {
+                    if (departmentsList.length > 0 && departments.length === departmentsList.length) {
+                      setDepartments([]);
+                    } else {
+                      setDepartments(departmentsList.map((d) => d._id));
+                    }
+                  } else {
+                    setDepartments(value);
+                  }
+                }}
+                label="Department"
+                renderValue={(selected) => {
+                  if (!selected || selected.length === 0) {
+                    return <em>Select department(s)</em>;
+                  }
+                  if (departmentsList.length > 0 && selected.length === departmentsList.length) {
+                    return 'All Departments';
+                  }
+                  return selected
+                    .map((deptId) => departmentsList.find((dept) => dept._id === deptId)?.name || deptId)
+                    .join(', ');
+                }}
+                MenuProps={{ PaperProps: { sx: { maxHeight: 300 } } }}
+              >
+                {departmentsList.length > 0 && (
+                  <MenuItem value="all">
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <input
+                        type="checkbox"
+                        checked={departments.length === departmentsList.length}
+                        readOnly
+                        style={{ width: 16, height: 16 }}
+                      />
+                      <Typography sx={{ fontWeight: 'bold' }}>Select All</Typography>
+                    </Box>
+                  </MenuItem>
+                )}
+                {departmentsList.map((dept) => (
+                  <MenuItem key={dept._id} value={dept._id}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <input
+                        type="checkbox"
+                        checked={departments.includes(dept._id)}
+                        readOnly
+                        style={{ width: 16, height: 16 }}
+                      />
+                      <Typography>{dept.name}</Typography>
+                    </Box>
+                  </MenuItem>
+                ))}
+              </Select>
+              {errors.department && <FormHelperText>{errors.department}</FormHelperText>}
+            </FormControl>
             <Autocomplete
               multiple
               options={employeeOptions}
@@ -579,7 +688,7 @@ const EventCreation = () => {
               }
             />
 
-            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 2 }}>
+            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '2fr 1fr 1fr' }, gap: 2 }}>
               <TextField
                 fullWidth
                 label="Event Name"
@@ -598,6 +707,18 @@ const EventCreation = () => {
                 error={!!errors.price}
                 helperText={errors.price}
               />
+              <FormControl fullWidth>
+                <InputLabel id="price-type-label">Price Type</InputLabel>
+                <Select
+                  labelId="price-type-label"
+                  label="Price Type"
+                  value={priceType}
+                  onChange={(e) => setPriceType(e.target.value)}
+                >
+                  <MenuItem value="Per Head">Per Head</MenuItem>
+                  <MenuItem value="Per Team">Per Team</MenuItem>
+                </Select>
+              </FormControl>
             </Box>
 
             <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 2 }}>
@@ -758,13 +879,13 @@ const EventCreation = () => {
                   </Box>
                 ))}
               </Stack>
-              
+
               <Box sx={{ mt: 2 }}>
-                <Button 
-                  variant="contained" 
+                <Button
+                  variant="contained"
                   onClick={addRule}
-                  sx={{ 
-                    bgcolor: '#0d9488', 
+                  sx={{
+                    bgcolor: '#0d9488',
                     '&:hover': { bgcolor: '#0f766e' },
                     textTransform: 'none',
                     px: 3

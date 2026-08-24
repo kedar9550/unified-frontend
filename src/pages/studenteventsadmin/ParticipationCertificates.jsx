@@ -468,7 +468,7 @@ const ParticipationCertificates = () => {
           {(() => {
             const currentEvent = events.find(e => e.eventName === selectedCertificate.payment.eventName || e._id === selectedCertificate.payment.eventId);
             const facultyEmpId = currentEvent?.facultyCoordinator?.employeeId || currentEvent?.facultyCoordinators?.[0]?.employeeId;
-            const eventEmpId = currentEvent?.group?.eventCoordinator?.employeeId || currentEvent?.conveners?.[0]?.employeeId;
+            const eventEmpId = currentEvent?.group?.coordinator?.employeeId || currentEvent?.conveners?.[0]?.employeeId;
 
             return (
               <DialogContent sx={{ p: 0, position: 'relative', background: '#fff' }}>

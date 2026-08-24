@@ -33,7 +33,7 @@ function CoordinatorPhoto({ employeeCode, name, sx }) {
   useEffect(() => {
     setAttemptIndex(0);
     setImgSrc(employeeCode ? `${CAMPUS_PHOTO_BASES[0]}/${employeeCode}.jpg` : placeholderDataUrl);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [employeeCode]);
 
   const handleError = () => {
@@ -68,8 +68,8 @@ const GroupCoordinators = () => {
       const response = await API.get('/api/groups');
       setGroups(response.data?.groups || []);
     } catch (error) {
-      console.error('Error fetching groups:', error);
-      toast.error('Failed to load group coordinators');
+      console.error('Error fetching schools:', error);
+      toast.error('Failed to load school coordinators');
     } finally {
       setLoading(false);
     }
@@ -82,10 +82,10 @@ const GroupCoordinators = () => {
   // Extract and deduplicate coordinators
   const coordinators = useMemo(() => {
     const coordsMap = new Map();
-    
+
     groups.forEach(group => {
-      if (group.eventCoordinator) {
-        const c = group.eventCoordinator;
+      if (group.coordinator) {
+        const c = group.coordinator;
         const id = c.institutionId || c.employeeId || c.employeeCode;
         if (id) {
           let deptName = c.department || '';
@@ -115,8 +115,8 @@ const GroupCoordinators = () => {
   return (
     <Box sx={{ p: { xs: 2, md: 3, lg: 4 } }}>
       <PageHeader
-        title="Group Coordinators"
-        subtitle="List of all staff members coordinating VEDA event groups"
+        title="School Coordinators"
+        subtitle="List of all staff members coordinating VEDA event schools"
       />
 
       {loading ? (
@@ -126,16 +126,16 @@ const GroupCoordinators = () => {
       ) : coordinators.length === 0 ? (
         <Box sx={{ mt: 4, textAlign: 'center' }}>
           <Typography variant="body1" color="text.secondary">
-            No coordinators found.
+            No school coordinators found.
           </Typography>
         </Box>
       ) : (
         <Grid container spacing={3} sx={{ mt: 2 }}>
           {coordinators.map(coord => (
             <Grid item xs={12} sm={6} md={4} lg={3} key={coord.id}>
-              <Card sx={{ 
-                height: '100%', 
-                display: 'flex', 
+              <Card sx={{
+                height: '100%',
+                display: 'flex',
                 flexDirection: 'column',
                 borderRadius: '16px',
                 boxShadow: '0 4px 20px rgba(0,0,0,0.05)',
@@ -168,16 +168,16 @@ const GroupCoordinators = () => {
                   <Typography variant="caption" sx={{ display: 'block', mb: 2, color: 'text.secondary', fontWeight: 600 }}>
                     Ph: {coord.phone}
                   </Typography>
-                  
+
                   <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, justifyContent: 'center', mt: 2 }}>
                     {coord.groups.map(g => (
-                      <Chip 
-                        key={g} 
-                        label={g} 
-                        size="small" 
-                        color="primary" 
-                        variant="outlined" 
-                        sx={{ borderRadius: '8px', fontWeight: 600 }} 
+                      <Chip
+                        key={g}
+                        label={g}
+                        size="small"
+                        color="primary"
+                        variant="outlined"
+                        sx={{ borderRadius: '8px', fontWeight: 600 }}
                       />
                     ))}
                   </Box>
