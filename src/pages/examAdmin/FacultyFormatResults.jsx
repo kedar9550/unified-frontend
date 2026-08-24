@@ -15,6 +15,14 @@ import {
   Menu,
   TextField,
   InputAdornment,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  Table,
+  TableHead,
+  TableBody,
+  TableRow,
+  TableCell,
 } from "@mui/material";
 import { toast } from "sonner";
 import { useEffect, useState, useRef } from "react";
@@ -45,6 +53,7 @@ export default function FacultyFormatResults() {
   const fileInputRef = useRef(null);
 
   const [deleteMenuAnchor, setDeleteMenuAnchor] = useState(null);
+  const [uploadSummary, setUploadSummary] = useState(null);
 
   // 1. Fetch Academic Years on Mount
   useEffect(() => {
@@ -129,14 +138,10 @@ export default function FacultyFormatResults() {
         }
       );
 
-      if (res.data.failedCount > 0) {
-        const errorDetails = res.data.errors
-          .map((e) => `Row ${e.row}: ${e.message}`)
-          .join("\n");
-        toast.error(`Uploaded ${res.data.successCount} rows. ${res.data.failedCount} rows failed.`, {
-          description: errorDetails
-        });
+      if (res.data.failedCount > 0 || res.data.skippedCount > 0) {
+        setUploadSummary(res.data);
       } else {
+        setUploadSummary(res.data);
         toast.success("Upload successful!");
       }
       fetchResults();
@@ -144,13 +149,16 @@ export default function FacultyFormatResults() {
       console.error("Upload failed:", err);
       const backendError = err.response?.data?.message;
       const backendDetails = err.response?.data?.errors;
+      const skippedDetails = err.response?.data?.skipped || [];
 
-      if (Array.isArray(backendDetails)) {
-        const errorDetails = backendDetails
-          .map((e) => (typeof e === 'object' ? `Row ${e.row || '?'}: ${e.message}` : e))
-          .join("\n");
-        toast.error(backendError || "Upload failed", {
-          description: errorDetails
+      if (err.response?.data) {
+        setUploadSummary({
+            totalRecords: err.response.data.totalRecords || 0,
+            successCount: err.response.data.successCount || 0,
+            skippedCount: err.response.data.skippedCount || 0,
+            failedCount: err.response.data.failedCount || (Array.isArray(backendDetails) ? backendDetails.length : 1),
+            errors: Array.isArray(backendDetails) ? backendDetails : [{ row: '-', message: backendError || "Upload failed" }],
+            skipped: skippedDetails
         });
       } else {
         toast.error(backendError || "Upload failed. Please check CSV format.");
@@ -681,6 +689,116 @@ export default function FacultyFormatResults() {
           />
         )}
       </Box>
+
+      {/* Upload Summary Dialog */}
+      <Dialog
+        open={Boolean(uploadSummary)}
+        onClose={() => setUploadSummary(null)}
+        maxWidth="md"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: "20px",
+            background: "var(--bg-panel)",
+            boxShadow: "var(--shadow-premium)",
+            border: "1px solid var(--border-color)",
+          }
+        }}
+      >
+        <DialogTitle sx={{ 
+          pb: 2, 
+          borderBottom: "1px solid var(--border-color)",
+          display: "flex", 
+          justifyContent: "space-between", 
+          alignItems: "center" 
+        }}>
+          <Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>
+            Upload Summary
+          </Typography>
+          <IconButton onClick={() => setUploadSummary(null)} size="small" sx={{ color: "var(--text-secondary)" }}>
+            <CloseIcon />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent sx={{ p: 3 }}>
+          {uploadSummary && (
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+              {/* Summary Stats */}
+              <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
+                <Box sx={{ flex: 1, p: 2, borderRadius: "12px", background: "rgba(59, 130, 246, 0.05)", border: "1px solid rgba(59, 130, 246, 0.2)", textAlign: "center" }}>
+                  <Typography sx={{ fontSize: 24, fontWeight: 800, color: "#3b82f6" }}>{uploadSummary.totalRecords || 0}</Typography>
+                  <Typography sx={{ fontSize: 12, fontWeight: 700, color: "var(--text-secondary)", textTransform: "uppercase" }}>Total</Typography>
+                </Box>
+                <Box sx={{ flex: 1, p: 2, borderRadius: "12px", background: "rgba(16, 185, 129, 0.05)", border: "1px solid rgba(16, 185, 129, 0.2)", textAlign: "center" }}>
+                  <Typography sx={{ fontSize: 24, fontWeight: 800, color: "#10b981" }}>{uploadSummary.successCount || 0}</Typography>
+                  <Typography sx={{ fontSize: 12, fontWeight: 700, color: "var(--text-secondary)", textTransform: "uppercase" }}>Success</Typography>
+                </Box>
+                <Box sx={{ flex: 1, p: 2, borderRadius: "12px", background: "rgba(245, 158, 11, 0.05)", border: "1px solid rgba(245, 158, 11, 0.2)", textAlign: "center" }}>
+                  <Typography sx={{ fontSize: 24, fontWeight: 800, color: "#f59e0b" }}>{uploadSummary.skippedCount || 0}</Typography>
+                  <Typography sx={{ fontSize: 12, fontWeight: 700, color: "var(--text-secondary)", textTransform: "uppercase" }}>Skipped</Typography>
+                </Box>
+                <Box sx={{ flex: 1, p: 2, borderRadius: "12px", background: "rgba(239, 68, 68, 0.05)", border: "1px solid rgba(239, 68, 68, 0.2)", textAlign: "center" }}>
+                  <Typography sx={{ fontSize: 24, fontWeight: 800, color: "#ef4444" }}>{uploadSummary.failedCount || 0}</Typography>
+                  <Typography sx={{ fontSize: 12, fontWeight: 700, color: "var(--text-secondary)", textTransform: "uppercase" }}>Failed</Typography>
+                </Box>
+              </Box>
+
+              {/* Failed Rows */}
+              {uploadSummary.errors && uploadSummary.errors.length > 0 && (
+                <Box>
+                  <Typography sx={{ fontWeight: 700, color: "#ef4444", mb: 1, display: "flex", alignItems: "center", gap: 1 }}>
+                    <InfoIcon fontSize="small" /> Failed Rows
+                  </Typography>
+                  <Box sx={{ maxHeight: 200, overflow: "auto", border: "1px solid var(--border-color)", borderRadius: "12px", background: "var(--bg-glass)" }}>
+                    <Table size="small" stickyHeader>
+                      <TableHead>
+                        <TableRow>
+                          <TableCell sx={{ fontWeight: 700, width: 80 }}>Row</TableCell>
+                          <TableCell sx={{ fontWeight: 700 }}>Reason</TableCell>
+                        </TableRow>
+                      </TableHead>
+                      <TableBody>
+                        {uploadSummary.errors.map((err, i) => (
+                          <TableRow key={i}>
+                            <TableCell sx={{ fontWeight: 600 }}>{err.row || '-'}</TableCell>
+                            <TableCell sx={{ color: "var(--text-secondary)" }}>{err.message}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </Box>
+                </Box>
+              )}
+
+              {/* Skipped Rows */}
+              {uploadSummary.skipped && uploadSummary.skipped.length > 0 && (
+                <Box>
+                  <Typography sx={{ fontWeight: 700, color: "#f59e0b", mb: 1, display: "flex", alignItems: "center", gap: 1 }}>
+                    <InfoIcon fontSize="small" /> Skipped Rows
+                  </Typography>
+                  <Box sx={{ maxHeight: 200, overflow: "auto", border: "1px solid var(--border-color)", borderRadius: "12px", background: "var(--bg-glass)" }}>
+                    <Table size="small" stickyHeader>
+                      <TableHead>
+                        <TableRow>
+                          <TableCell sx={{ fontWeight: 700, width: 80 }}>Row</TableCell>
+                          <TableCell sx={{ fontWeight: 700 }}>Reason</TableCell>
+                        </TableRow>
+                      </TableHead>
+                      <TableBody>
+                        {uploadSummary.skipped.map((skip, i) => (
+                          <TableRow key={i}>
+                            <TableCell sx={{ fontWeight: 600 }}>{skip.row || '-'}</TableCell>
+                            <TableCell sx={{ color: "var(--text-secondary)" }}>{skip.message}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </Box>
+                </Box>
+              )}
+            </Box>
+          )}
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

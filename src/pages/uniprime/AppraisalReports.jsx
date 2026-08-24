@@ -159,7 +159,7 @@ const AppraisalReports = () => {
     const exportDataAOA = [topRow1, topRow2, topRow3, headers1, headers2];
 
     appraisals.forEach(row => {
-      const type = row.eligibility?.type || 'N/A';
+      const type = row.facultyCategory || row.eligibility?.type || 'N/A';
       const mins = row.eligibility?.mins || {};
 
       // Teaching Breakdown
@@ -428,7 +428,7 @@ const AppraisalReports = () => {
           <DataTable
             columns={["EMP ID", "FACULTY NAME", "DEPARTMENT", "TYPE", "MIN. POINTS", "TOTAL POINTS", "ACTIONS"]}
             rows={filteredList.map((row) => {
-              const type = row.eligibility?.type || 'N/A';
+              const type = row.facultyCategory || row.eligibility?.type || 'N/A';
               const minPoints = row.eligibility?.mins?.total || 0;
               const teaching = row.teaching?.totalClaimed || 0;
               const research = row.research?.totalClaimed || 0;

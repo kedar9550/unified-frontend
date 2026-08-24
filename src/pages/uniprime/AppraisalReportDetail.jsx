@@ -2768,7 +2768,8 @@ const AppraisalReportDetail = () => {
 
 
           {/* Evaluation Remarks Section - Placed outside the grid so it spans full width at the bottom */}
-          {(selectedAppraisal.hodEvaluation?.comments || selectedAppraisal.managementEvaluation?.comments) && (
+          {/* Hide this section for normal faculty users viewing their own report */}
+          {!(user?.role?.toUpperCase() === "FACULTY" || (Array.isArray(user?.roles) && !user.roles.some(r => ["HOD", "SCHOOL_DEAN", "DEAN", "ADMIN", "PRINCIPAL"].some(adminRole => (typeof r === 'string' ? r : (r.role || r.name || "")).toUpperCase().includes(adminRole))))) && (selectedAppraisal.hodEvaluation?.comments || selectedAppraisal.managementEvaluation?.comments) && (
             <Card sx={{ borderRadius: "20px", background: "var(--bg-panel)", border: "1px solid var(--border-color)", mt: 4, mb: 2, boxShadow: "var(--shadow-premium)" }}>
               <CardContent sx={{ p: 3 }}>
                 <Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)", display: "flex", alignItems: "center", gap: 1.5, mb: 2 }}>

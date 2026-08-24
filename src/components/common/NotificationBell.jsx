@@ -111,7 +111,7 @@ const NotificationBell = forwardRef((props, ref) => {
                 
                 // --- Fix misrouted PROCTORING discrepancy links ---
                 if (link.includes('/discrepancies') && msg.includes('proctoring')) {
-                    link = '/hod/discrepancies';
+                    link = '/feedback-management/discrepancies';
                     notif.link = link;
                 }
                 

@@ -400,6 +400,7 @@ const ReferenceJournalManagement = () => {
         setUploadResult(res.data);
         setCsvFile(null);
         fetchJournals();
+        setOpenAddJournalModal(false);
       }
     } catch (err) {
       toast.error(err.response?.data?.message || "Failed to process bulk upload.");
@@ -409,7 +410,7 @@ const ReferenceJournalManagement = () => {
   };
 
   const downloadSampleTemplate = () => {
-    const csvContent = "data:text/csv;charset=utf-8,Academy of Management Journal,10.5,FT50\nAcademy of Management Review,13.9,FT50\nAccounting Organizations and Society,4,FT50\nJournal of Accounting and Economics,NA,FT50\n";
+    const csvContent = "data:text/csv;charset=utf-8,Journal Title,Impact Factor,Type,Publisher,Link\nAcademy of Management Journal,10.5,FT50,,\nAcademy of Management Review,13.9,FT50,,\nAccounting Organizations and Society,4,FT50,,\nJournal of Accounting and Economics,NA,FT50,,\n";
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
@@ -471,6 +472,7 @@ const ReferenceJournalManagement = () => {
         setJifUploadResult(res.data);
         setJifCsvFile(null);
         fetchJifs();
+        setOpenAddJifModal(false);
       }
     } catch (err) {
       toast.error(err.response?.data?.message || "Failed to process JIF bulk upload.");
