@@ -456,7 +456,7 @@ export const ROLE_ROUTES = {
           ]
         },
         {
-          text: "Groups",
+          text: "Schools",
           icon: <Groups />,
           nested: [
             { text: "List", path: "/Eventveda/groups", icon: <Groups /> },

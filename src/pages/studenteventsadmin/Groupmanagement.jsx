@@ -30,7 +30,6 @@ import {
 } from '@mui/icons-material';
 import PageHeader from '../../components/common/PageHeader';
 import DataTable from '../../components/data/DataTable';
-import { fetchEventDepartments } from '../../api/eventDepartmentApi';
 import API from '../../api/axios';
 import { toast } from 'sonner';
 
@@ -50,8 +49,7 @@ const GroupManagement = () => {
 
   // Form state
   const [name, setName] = useState('');
-  const [departments, setDepartments] = useState([]);
-  const [departmentsList, setDepartmentsList] = useState([]);
+  const [shortName, setShortName] = useState('');
   const [content, setContent] = useState('');
   const [status, setStatus] = useState('Active');
   const [selectedCoordinator, setSelectedCoordinator] = useState(null);
@@ -59,9 +57,6 @@ const GroupManagement = () => {
   const [employeeOptions, setEmployeeOptions] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
 
-  const [logoFile, setLogoFile] = useState(null);
-  const [logoPreview, setLogoPreview] = useState(null);
-  const [logoError, setLogoError] = useState('');
 
   const [bannerFile, setBannerFile] = useState(null);
   const [bannerPreview, setBannerPreview] = useState(null);
@@ -97,20 +92,9 @@ const GroupManagement = () => {
     }
   }, []);
 
-  const fetchDepartments = useCallback(async () => {
-    try {
-      const response = await fetchEventDepartments();
-      const activeDepts = (response.data?.departments || []).filter(d => d.status === 'Active');
-      setDepartmentsList(activeDepts);
-    } catch (error) {
-      console.error('Error fetching departments:', error);
-    }
-  }, []);
-
   useEffect(() => {
     fetchGroups();
-    fetchDepartments();
-  }, [fetchGroups, fetchDepartments]);
+  }, [fetchGroups]);
 
   useEffect(() => {
     if (!searchQuery || searchQuery.trim() === '') {
@@ -147,22 +131,6 @@ const GroupManagement = () => {
     return '';
   };
 
-  const handleLogoChange = (e) => {
-    const file = e.target.files[0];
-    setLogoError('');
-    if (!file) return;
-
-    const message = validateImage(file);
-    if (message) {
-      setLogoError(message);
-      return;
-    }
-
-    setLogoFile(file);
-    setLogoPreview(URL.createObjectURL(file));
-    setErrors((prev) => ({ ...prev, logo: null }));
-  };
-
   const handleBannerChange = (e) => {
     const file = e.target.files[0];
     setBannerError('');
@@ -177,12 +145,6 @@ const GroupManagement = () => {
     setBannerFile(file);
     setBannerPreview(URL.createObjectURL(file));
     setErrors((prev) => ({ ...prev, banner: null }));
-  };
-
-  const removeLogo = () => {
-    setLogoFile(null);
-    setLogoPreview(null);
-    setLogoError('');
   };
 
   const removeBanner = () => {
@@ -201,9 +163,12 @@ const GroupManagement = () => {
       newErrors.name = 'Group Name cannot exceed 200 characters.';
     }
 
-    if (!departments || departments.length === 0) {
-      newErrors.department = 'At least one department is required.';
+    if (!shortName.trim()) {
+      newErrors.shortName = 'Short Name is required.';
+    } else if (shortName.length > 100) {
+      newErrors.shortName = 'Short Name cannot exceed 100 characters.';
     }
+
 
     if (!content.trim()) {
       newErrors.content = 'Content is required.';
@@ -212,13 +177,10 @@ const GroupManagement = () => {
     }
 
     if (!selectedCoordinator) {
-      newErrors.eventCoordinator = 'Event Coordinator is required.';
+      newErrors.coordinator = 'Coordinator is required.';
     }
 
     // Images required only when creating
-    if (!editingGroup && !logoFile) {
-      newErrors.logo = 'Group Logo is required.';
-    }
     if (!editingGroup && !bannerFile) {
       newErrors.banner = 'Banner Image is required.';
     }
@@ -230,15 +192,12 @@ const GroupManagement = () => {
   // ─── Form helpers ───
   const resetForm = () => {
     setName('');
-    setDepartments([]);
+    setShortName('');
     setContent('');
     setStatus('Active');
     setSelectedCoordinator(null);
     setSearchQuery('');
     setEmployeeOptions([]);
-    setLogoFile(null);
-    setLogoPreview(null);
-    setLogoError('');
     setBannerFile(null);
     setBannerPreview(null);
     setBannerError('');
@@ -254,25 +213,17 @@ const GroupManagement = () => {
   const openEditForm = (group) => {
     setEditingGroup(group);
     setName(group.name || '');
-    setDepartments(Array.isArray(group.department)
-      ? group.department.map((dept) => dept._id || dept)
-      : group.department
-        ? [group.department._id || group.department]
-        : []);
+    setShortName(group.shortName || '');
     setContent(group.content || '');
     setStatus(group.status || 'Active');
-    setSelectedCoordinator(group.eventCoordinator ? {
-      employeeId: group.eventCoordinator.employeeId || group.eventCoordinator.institutionId || group.eventCoordinator.employeeCode || '',
-      institutionId: group.eventCoordinator.institutionId || group.eventCoordinator.employeeId || group.eventCoordinator.employeeCode || '',
-      employeeName: group.eventCoordinator.employeeName || group.eventCoordinator.name || '',
-      name: group.eventCoordinator.employeeName || group.eventCoordinator.name || '',
-      department: group.eventCoordinator.department,
-      designation: group.eventCoordinator.designation,
+    setSelectedCoordinator(group.coordinator ? {
+      employeeId: group.coordinator.employeeId || group.coordinator.institutionId || group.coordinator.employeeCode || '',
+      institutionId: group.coordinator.institutionId || group.coordinator.employeeId || group.coordinator.employeeCode || '',
+      employeeName: group.coordinator.employeeName || group.coordinator.name || '',
+      name: group.coordinator.employeeName || group.coordinator.name || '',
+      department: group.coordinator.department,
+      designation: group.coordinator.designation,
     } : null);
-
-    setLogoFile(null);
-    setLogoPreview(group.logo ? `${BACKEND_URL}${group.logo}` : null);
-    setLogoError('');
 
     setBannerFile(null);
     setBannerPreview(group.banner ? `${BACKEND_URL}${group.banner}` : null);
@@ -295,31 +246,30 @@ const GroupManagement = () => {
     setSubmitting(true);
     const formData = new FormData();
     formData.append('name', name);
-    formData.append('department', JSON.stringify(departments));
+    formData.append('shortName', shortName);
     formData.append('content', content);
     formData.append('status', status);
-    formData.append('eventCoordinator', JSON.stringify(selectedCoordinator || {}));
+    formData.append('coordinator', JSON.stringify(selectedCoordinator || {}));
 
-    if (logoFile) formData.append('logo', logoFile);
     if (bannerFile) formData.append('banner', bannerFile);
 
     try {
       if (editingGroup) {
         const response = await API.put(`/api/groups/${editingGroup._id}`, formData);
         if (response.data.success) {
-          toast.success('Group updated successfully!');
+          toast.success('School updated successfully!');
           goBackToList();
         }
       } else {
         const response = await API.post('/api/groups', formData);
         if (response.data.success) {
-          toast.success('Group created successfully!');
+          toast.success('School created successfully!');
           goBackToList();
         }
       }
     } catch (error) {
-      console.error('Error saving group:', error);
-      toast.error(error.response?.data?.message || 'Failed to save group. Please try again.');
+      console.error('Error saving school:', error);
+      toast.error(error.response?.data?.message || 'Failed to save school. Please try again.');
     } finally {
       setSubmitting(false);
     }
@@ -336,12 +286,12 @@ const GroupManagement = () => {
     try {
       const response = await API.delete(`/api/groups/${groupToDelete._id}`);
       if (response.data.success) {
-        toast.success('Group deleted successfully!');
+        toast.success('School deleted successfully!');
         fetchGroups();
       }
     } catch (error) {
-      console.error('Error deleting group:', error);
-      toast.error(error.response?.data?.message || 'Failed to delete group.');
+      console.error('Error deleting school:', error);
+      toast.error(error.response?.data?.message || 'Failed to delete school.');
     } finally {
       setDeleteDialogOpen(false);
       setGroupToDelete(null);
@@ -349,28 +299,11 @@ const GroupManagement = () => {
   };
 
   // ─── Table columns & rows ───
-  const columns = ['#', 'Logo', 'Banner', 'Name', 'Department', 'Staff Coordinator', 'Status', 'Actions'];
+  const columns = ['#', 'Banner', 'Name', 'Short Name', 'School Coordinator', 'Status', 'Actions'];
 
   const tableRows = groups.map((group, index) => [
     index + 1,
-    {
-      value: group.name,
-      display: (
-        <Avatar
-          src={group.logo ? (group.logo.startsWith('http') ? group.logo : `${BACKEND_URL}${group.logo}`) : ''}
-          alt={group.name}
-          variant="rounded"
-          onClick={() => {
-            if (group.logo) {
-              handleImageClick(group.logo.startsWith('http') ? group.logo : `${BACKEND_URL}${group.logo}`);
-            }
-          }}
-          sx={{ width: 48, height: 48, mx: 'auto', border: '2px solid var(--border-color)', cursor: group.logo ? 'pointer' : 'default' }}
-        >
-          {!group.logo && group.name?.charAt(0)}
-        </Avatar>
-      ),
-    },
+
     {
       value: group.name,
       display: group.banner ? (
@@ -400,12 +333,10 @@ const GroupManagement = () => {
       ),
     },
     group.name,
-    Array.isArray(group.department)
-      ? group.department.map((dept) => dept?.name || '').filter(Boolean).join(', ') || 'N/A'
-      : group.department?.name || 'N/A',
+    group.shortName || 'N/A',
     (() => {
-      const code = group.eventCoordinator?.institutionId || group.eventCoordinator?.employeeId || group.eventCoordinator?.employeeCode || '';
-      const name = group.eventCoordinator?.employeeName || 'N/A';
+      const code = group.coordinator?.institutionId || group.coordinator?.employeeId || group.coordinator?.employeeCode || '';
+      const name = group.coordinator?.employeeName || 'N/A';
       return code ? `${name} (${code})` : name;
     })(),
     {
@@ -549,8 +480,8 @@ const GroupManagement = () => {
     return (
       <Box sx={{ p: 3 }}>
         <PageHeader
-          title="Group Management"
-          subtitle="Create and manage VEDA event groups"
+          title="School Management"
+          subtitle="Create and manage VEDA event schools"
           action={
             <Button
               variant="contained"
@@ -570,7 +501,7 @@ const GroupManagement = () => {
                 },
               }}
             >
-              Create Group
+              Create School
             </Button>
           }
         />
@@ -579,8 +510,8 @@ const GroupManagement = () => {
           columns={columns}
           rows={tableRows}
           loading={loading}
-          nonSortableColumns={[1, 2, 7]}
-          alignments={['center', 'center', 'center', 'left', 'left', 'left', 'center', 'center']}
+          nonSortableColumns={[1, 6]}
+          alignments={['center', 'center', 'left', 'left', 'left', 'center', 'center']}
         />
 
         {/* Delete Confirmation Dialog */}
@@ -680,11 +611,11 @@ const GroupManagement = () => {
   return (
     <Box sx={{ p: 3 }}>
       <PageHeader
-        title={editingGroup ? 'Edit Group' : 'Create Group'}
+        title={editingGroup ? 'Edit School' : 'Create School'}
         subtitle={
           editingGroup
             ? `Editing "${editingGroup.name}"`
-            : 'Fill in the details to create a new group'
+            : 'Fill in the details to create a new school'
         }
         showBack
         onBack={goBackToList}
@@ -711,11 +642,11 @@ const GroupManagement = () => {
                 mb={1}
                 sx={{ color: 'var(--text-primary)' }}
               >
-                Group Name *
+                School Name *
               </Typography>
               <TextField
                 fullWidth
-                placeholder="Enter group name"
+                placeholder="Enter school name"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 error={!!errors.name}
@@ -725,7 +656,7 @@ const GroupManagement = () => {
               />
             </Box>
 
-            {/* Department */}
+            {/* Short Name */}
             <Box>
               <Typography
                 variant="subtitle1"
@@ -733,78 +664,18 @@ const GroupManagement = () => {
                 mb={1}
                 sx={{ color: 'var(--text-primary)' }}
               >
-                Department *
+                Short Name *
               </Typography>
-              <FormControl fullWidth error={!!errors.department}>
-                <Select
-                  multiple
-                  value={departments}
-                  onChange={(e) => setDepartments(e.target.value)}
-                  displayEmpty
-                  renderValue={(selected) => {
-                    if (!selected || selected.length === 0) {
-                      return <em>Select department(s)</em>;
-                    }
-                    return selected
-                      .map((deptId) => departmentsList.find((dept) => dept._id === deptId)?.name || deptId)
-                      .join(', ');
-                  }}
-                  variant="outlined"
-                  MenuProps={{
-                    PaperProps: {
-                      sx: { maxHeight: 300 },
-                    },
-                  }}
-                >
-                  {departmentsList.map((dept) => (
-                    <MenuItem key={dept._id} value={dept._id}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <input
-                          type="checkbox"
-                          checked={departments.includes(dept._id)}
-                          readOnly
-                          style={{ width: 16, height: 16 }}
-                        />
-                        <Typography>{dept.name}</Typography>
-                      </Box>
-                    </MenuItem>
-                  ))}
-                </Select>
-                {errors.department && (
-                  <FormHelperText>{errors.department}</FormHelperText>
-                )}
-              </FormControl>
-            </Box>
-
-            {/* Logo Upload */}
-            <Box>
-              <Typography
-                variant="subtitle1"
-                fontWeight="600"
-                mb={1}
-                sx={{ color: 'var(--text-primary)' }}
-              >
-                Group Logo *
-              </Typography>
-              {renderUploader({
-                preview: logoPreview,
-                onChange: handleLogoChange,
-                onRemove: removeLogo,
-                hasError: !!errors.logo,
-                previewAlt: 'Logo Preview',
-                previewMaxHeight: 300,
-                hint: 'Supports JPG, PNG, WebP. Max size: 5MB. Square image recommended.',
-              })}
-              {logoError && (
-                <FormHelperText error sx={{ mt: 1, ml: 1 }}>
-                  {logoError}
-                </FormHelperText>
-              )}
-              {errors.logo && !logoPreview && (
-                <FormHelperText error sx={{ mt: 1, ml: 1 }}>
-                  {errors.logo}
-                </FormHelperText>
-              )}
+              <TextField
+                fullWidth
+                placeholder="Enter short name"
+                value={shortName}
+                onChange={(e) => setShortName(e.target.value)}
+                error={!!errors.shortName}
+                helperText={errors.shortName || `${shortName.length}/100`}
+                slotProps={{ htmlInput: { maxLength: 100 } }}
+                variant="outlined"
+              />
             </Box>
 
             {/* Banner Upload */}
@@ -862,7 +733,7 @@ const GroupManagement = () => {
               />
             </Box>
 
-            {/* Staff Coordinator */}
+            {/* School Coordinator */}
             <Box>
               <Typography
                 variant="subtitle1"
@@ -870,7 +741,7 @@ const GroupManagement = () => {
                 mb={1}
                 sx={{ color: 'var(--text-primary)' }}
               >
-                Staff  Coordinator *
+                School Coordinator *
               </Typography>
               <Autocomplete
                 options={employeeOptions}
@@ -893,7 +764,7 @@ const GroupManagement = () => {
                   } else {
                     setSelectedCoordinator(null);
                   }
-                  setErrors((prev) => ({ ...prev, eventCoordinator: null }));
+                  setErrors((prev) => ({ ...prev, coordinator: null }));
                 }}
                 inputValue={searchQuery}
                 onInputChange={(_, newInputValue) => {
@@ -907,8 +778,8 @@ const GroupManagement = () => {
                     <TextField
                       {...params}
                       placeholder="Search by name or ID"
-                      error={!!errors.eventCoordinator}
-                      helperText={errors.eventCoordinator}
+                      error={!!errors.coordinator}
+                      helperText={errors.coordinator}
                       InputProps={{
                         ...inputProps,
                         endAdornment: (
@@ -988,7 +859,7 @@ const GroupManagement = () => {
                     },
                   }}
                 >
-                  {submitting ? 'Saving...' : editingGroup ? 'Update Group' : 'Create Group'}
+                  {submitting ? 'Saving...' : editingGroup ? 'Update School' : 'Create School'}
                 </Button>
               </Box>
             </Box>
