@@ -120,7 +120,7 @@ const EditableField = ({
 
 const QUALIFICATION_MAP = {
   "UG": ["B.Tech.", "B.Ed."],
-  "PG": ["M.Tech.", "M.E.", "M.Sc.", "M.A.", "M.Com.", "MCA", "MBA", "M.Phil.", "M.Pharm", "PGDM", "MMS", "M.S."],
+  "PG": ["M.Tech.", "M.E.", "M.Sc.", "M.A.", "M.Com.", "MCA", "MBA", "M.Phil.", "M.Pharm", "PGDM", "MMS", "M.S.", "Pharm.D."],
   "Doctoral": ["Pharm.D.", "Ph.D."]
 };
 
