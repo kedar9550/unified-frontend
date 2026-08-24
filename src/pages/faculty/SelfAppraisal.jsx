@@ -400,7 +400,7 @@ const SelfAppraisal = () => {
         });
 
         if (existing) {
-          if (existing.status === "Draft" || existing.status === "Rejected by HOD") {
+          if (existing.status === "Draft" || existing.status.includes("Rejected")) {
             toast.info(`Opening existing ${existing.status} appraisal.`);
             setAcademicYears([activeYearObj]);
             setSelectedYear(activeYearId);
@@ -451,7 +451,7 @@ const SelfAppraisal = () => {
         const appraisalData = res.data.data;
 
         // Only check for unresolved co-authored claims if the appraisal is still a Draft or is Rejected by HOD
-        if (appraisalData.status === "Draft" || appraisalData.status === "Rejected by HOD") {
+        if (appraisalData.status === "Draft" || appraisalData.status.includes("Rejected")) {
           const claimsRes = await axiosInstance.get(`/api/appraisal/unresolved-claims/${selectedYear}`);
           if (claimsRes.data && claimsRes.data.success && claimsRes.data.data.length > 0) {
             setUnresolvedClaims(claimsRes.data.data);
@@ -4092,7 +4092,7 @@ const SelfAppraisal = () => {
                               </Typography>
                             </Box>
                             <Box sx={{ display: "flex", alignItems: "center", gap: 2, flexWrap: "wrap", width: { xs: "100%", sm: "auto" } }}>
-                              {(appraisal.status === "Draft" || appraisal.status === "Rejected by HOD") && (
+                              {(appraisal.status === "Draft" || appraisal.status?.includes("Rejected")) && (
                                 <Button
                                   variant="outlined"
                                   size="small"
