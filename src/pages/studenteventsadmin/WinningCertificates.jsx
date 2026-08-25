@@ -61,13 +61,19 @@ const WinningCertificates = () => {
   const [selectedPayment, setSelectedPayment] = useState(null);
   const [dialogOpen, setDialogOpen] = useState(false);
 
+  const [allEvents, setAllEvents] = useState([]);
+  const [departmentsDialogOpen, setDepartmentsDialogOpen] = useState(false);
+  const [departmentsToView, setDepartmentsToView] = useState([]);
+
   const fetchPayments = useCallback(async () => {
     setLoading(true);
     try {
+      const eventsRes = await API.get('/api/events');
+      const events = eventsRes.data?.events || [];
+      setAllEvents(events);
+
       let allowedEventNames = null;
       if (activeRole === 'FACULTY_COORDINATOR' && user) {
-        const eventsRes = await API.get('/api/events');
-        const events = eventsRes.data?.events || [];
         const userEvents = events.filter(e => {
           const coords = e.facultyCoordinators || (e.facultyCoordinator ? [e.facultyCoordinator] : []);
           return coords.some(c =>
@@ -109,8 +115,9 @@ const WinningCertificates = () => {
 
   const columns = [
     'S.No',
-    'Main Group / Category',
+    'School Name',
     'Event Name',
+    'Department(s)',
     'Team ID',
     'Team Size',
     'Winner Status',
@@ -126,52 +133,53 @@ const WinningCertificates = () => {
     }
 
     const headers = [
-      'S.No', 'Main Group / Category', 'Event Name', 'Team ID', 'Team Size', 'Winner Status',
-      'Participant Name', 'Gender', 'Roll Number', 'College', 'Department', 'Year', 'Mobile', 'Email', 'Accommodation'
+      'S.No', 'School Name', 'Event Name', 'Event Department(s)', 'Team ID', 'Team Size', 'Winner Status',
+      'Participant Name', 'Gender', 'Roll Number', 'College', 'Student Department', 'Student Year', 'Mobile', 'Email'
     ];
     const csvRows = [headers.join(',')];
     let sNo = 1;
 
     payments.forEach((payment) => {
-      const schoolCategory = payment.category && payment.schoolId
-        ? `${payment.schoolId.toUpperCase()} / ${payment.category}`
-        : (payment.category || payment.schoolId || '-');
+      const schoolCategory = payment.category || payment.schoolId || '-';
+      const relatedEvent = allEvents.find(e => e._id === payment.eventId);
+      let eventDepartmentStr = '-';
+      if (relatedEvent && relatedEvent.department && relatedEvent.department.length > 0) {
+        eventDepartmentStr = relatedEvent.department.map(d => d.name).join(', ');
+      }
+
       const winnerStatus = payment.isFirstWinner ? 'First' : payment.isSecondWinner ? 'Second' : payment.isThirdWinner ? 'Third' : 'No';
       const teamId = payment.teamId || payment.receipt || '-';
-      
+
       const teamBaseInfo = [
         `"${schoolCategory}"`,
         `"${payment.eventName || '-'}"`,
+        `"${eventDepartmentStr}"`,
         `"${teamId}"`,
         payment.teamSize || 1,
         winnerStatus
       ];
 
       if (payment.participants && payment.participants.length > 0) {
-        let teamSerial = sNo++;
-        payment.participants.forEach((p, idx) => {
-          const rowTeamInfo = idx === 0 ? teamBaseInfo : ['', '', '', '', ''];
-          const rowSNo = idx === 0 ? teamSerial : '';
-          const row = [
-            rowSNo,
-            ...rowTeamInfo,
-            `"${p.name || '-'}"`,
-            `"${p.gender || '-'}"`,
-            `"${p.roll || '-'}"`,
-            `"${p.college === 'Other College' && p.otherCollege ? p.otherCollege : (p.college || '-')}"`,
-            `"${p.department || '-'}"`,
-            `"${p.year || '-'}"`,
-            `"${p.mobile || '-'}"`,
-            `"${p.email || '-'}"`,
-            `"${p.accommodation || '-'}"`
+        payment.participants.forEach((p) => {
+          const participantRow = [
+            sNo++,
+            ...teamBaseInfo,
+            `"${p.name || ''}"`,
+            `"${p.gender || ''}"`,
+            `"${p.roll || ''}"`,
+            `"${p.college === 'Other College' && p.otherCollege ? p.otherCollege : (p.college || '')}"`,
+            `"${p.department || ''}"`,
+            `"${p.year || ''}"`,
+            `"${p.mobile || ''}"`,
+            `"${p.email || ''}"`
           ];
-          csvRows.push(row.join(','));
+          csvRows.push(participantRow.join(','));
         });
       } else {
         const row = [
           sNo++,
           ...teamBaseInfo,
-          '-', '-', '-', '-', '-', '-', '-', '-', '-'
+          '-', '-', '-', '-', '-', '-', '-', '-'
         ];
         csvRows.push(row.join(','));
       }
@@ -220,14 +228,35 @@ const WinningCertificates = () => {
   };
 
   const rows = payments.map((payment, index) => {
-    const schoolCategory = payment.category && payment.schoolId
-      ? `${payment.schoolId.toUpperCase()} / ${payment.category}`
-      : (payment.category || payment.schoolId || '-');
+    const schoolCategory = payment.category || payment.schoolId || '-';
+    const relatedEvent = allEvents.find(e => e._id === payment.eventId);
+    let departmentNode = '-';
+    if (relatedEvent && relatedEvent.department && relatedEvent.department.length > 0) {
+      if (relatedEvent.department.length > 1) {
+        departmentNode = {
+          value: 'All Departments',
+          display: (
+            <span 
+              style={{ color: '#3b82f6', textDecoration: 'underline', cursor: 'pointer' }}
+              onClick={() => {
+                setDepartmentsToView(relatedEvent.department);
+                setDepartmentsDialogOpen(true);
+              }}
+            >
+              All Departments
+            </span>
+          )
+        };
+      } else {
+        departmentNode = relatedEvent.department[0].name;
+      }
+    }
 
     return [
       index + 1,
       schoolCategory,
       payment.eventName || '-',
+      departmentNode,
       {
         value: payment.teamId || payment.receipt || '-',
         display: (
@@ -368,16 +397,16 @@ const WinningCertificates = () => {
             { label: '3rd Prize', value: stats.thirdPrizeCount, color: '#92400e', bg: 'rgba(180, 83, 9, 0.15)', icon: <EmojiEventsIcon /> },
           ].map((stat, idx) => (
             <Grid item xs={12} sm={6} md={2.4} key={idx}>
-              <Paper 
-                elevation={0} 
-                sx={{ 
-                  p: 2.5, 
-                  borderRadius: '20px', 
+              <Paper
+                elevation={0}
+                sx={{
+                  p: 2.5,
+                  borderRadius: '20px',
                   border: '1px solid',
                   borderColor: 'var(--border-color)',
                   background: `linear-gradient(135deg, var(--bg-panel, #ffffff) 0%, ${stat.bg} 100%)`,
-                  display: 'flex', 
-                  alignItems: 'center', 
+                  display: 'flex',
+                  alignItems: 'center',
                   gap: 2.5,
                   position: 'relative',
                   overflow: 'hidden',
@@ -388,15 +417,15 @@ const WinningCertificates = () => {
                   }
                 }}
               >
-                <Box 
-                  sx={{ 
-                    width: 48, 
-                    height: 48, 
-                    borderRadius: '14px', 
-                    background: stat.bg, 
-                    color: stat.color, 
-                    display: 'flex', 
-                    alignItems: 'center', 
+                <Box
+                  sx={{
+                    width: 48,
+                    height: 48,
+                    borderRadius: '14px',
+                    background: stat.bg,
+                    color: stat.color,
+                    display: 'flex',
+                    alignItems: 'center',
                     justifyContent: 'center',
                     boxShadow: `0 4px 12px ${stat.bg}`
                   }}
@@ -411,7 +440,7 @@ const WinningCertificates = () => {
                     {stat.value}
                   </Typography>
                 </Box>
-                
+
                 {/* Background watermark icon */}
                 <Box sx={{ position: 'absolute', right: -10, bottom: -15, opacity: 0.05, color: stat.color, transform: 'scale(2.5)' }}>
                   {React.cloneElement(stat.icon)}
@@ -426,26 +455,26 @@ const WinningCertificates = () => {
             <CircularProgress size={32} />
           </Box>
         ) : (
-        <Box sx={{ mt: 2 }}>
-          {payments.length === 0 ? (
-            <Box sx={{ p: 4, borderRadius: '20px', border: '1px solid var(--border-color)', background: 'var(--bg-panel)', textAlign: 'center' }}>
-              <Typography variant="h6" sx={{ mb: 1 }}>
-                No payment registrations found
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Payment data will appear here once registrations are created or verified.
-              </Typography>
-            </Box>
-          ) : (
-            <DataTable
-              columns={columns}
-              rows={rows}
-              nonSortableColumns={[0, 6, 7, 8]}
-              alignments={['center', 'left', 'left', 'left', 'center', 'center', 'center', 'center', 'center']}
-            />
-          )}
-        </Box>
-      )}
+          <Box sx={{ mt: 2 }}>
+            {payments.length === 0 ? (
+              <Box sx={{ p: 4, borderRadius: '20px', border: '1px solid var(--border-color)', background: 'var(--bg-panel)', textAlign: 'center' }}>
+                <Typography variant="h6" sx={{ mb: 1 }}>
+                  No payment registrations found
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Payment data will appear here once registrations are created or verified.
+                </Typography>
+              </Box>
+            ) : (
+              <DataTable
+                columns={columns}
+                rows={rows}
+                nonSortableColumns={[0, 6, 7, 8]}
+                alignments={['center', 'left', 'left', 'left', 'center', 'center', 'center', 'center', 'center']}
+              />
+            )}
+          </Box>
+        )}
       </Box>
 
       {/* Invoice Popup Dialog */}
@@ -688,6 +717,21 @@ const WinningCertificates = () => {
         </Dialog>
       )}
 
+      <Dialog open={departmentsDialogOpen} onClose={() => setDepartmentsDialogOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>All Departments</DialogTitle>
+        <DialogContent dividers>
+          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, p: 1 }}>
+            {departmentsToView.map((d, i) => (
+              <Chip key={i} label={d?.name || d} sx={{ bgcolor: 'rgba(59, 130, 246, 0.1)', color: '#1e40af' }} />
+            ))}
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDepartmentsDialogOpen(false)} variant="contained" sx={{ textTransform: 'none' }}>
+            Close
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };

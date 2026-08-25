@@ -49,6 +49,10 @@ const Registrations = () => {
   const [selectedPassParticipant, setSelectedPassParticipant] = useState(null);
   const [passDialogOpen, setPassDialogOpen] = useState(false);
 
+  const [allEvents, setAllEvents] = useState([]);
+  const [departmentsDialogOpen, setDepartmentsDialogOpen] = useState(false);
+  const [departmentsToView, setDepartmentsToView] = useState([]);
+
   // Filters
   const [searchQuery, setSearchQuery] = useState('');
   const [eventFilter, setEventFilter] = useState('ALL');
@@ -60,14 +64,15 @@ const Registrations = () => {
     try {
       const eventsRes = await API.get('/api/events');
       const allEvents = eventsRes.data?.events || [];
+      setAllEvents(allEvents);
 
       let allowedEventNames = null;
       if (activeRole === 'FACULTY_COORDINATOR' && user) {
         const userEvents = allEvents.filter(e => {
           const coords = e.facultyCoordinators || (e.facultyCoordinator ? [e.facultyCoordinator] : []);
-          return coords.some(c => 
-            c.employeeId === user.institutionId || 
-            c.employeeId === user.employeeId || 
+          return coords.some(c =>
+            c.employeeId === user.institutionId ||
+            c.employeeId === user.employeeId ||
             c.employeeId === user.employeeCode
           );
         });
@@ -76,7 +81,7 @@ const Registrations = () => {
 
       const response = await API.get('/api/razorpay/registrations');
       let fetchedPayments = response.data?.payments || [];
-      
+
       if (allowedEventNames) {
         fetchedPayments = fetchedPayments.filter(p => allowedEventNames.includes(p.eventName || p.category));
       }
@@ -86,17 +91,17 @@ const Registrations = () => {
         return {
           ...p,
           venue: eventMatch ? (
-            eventMatch.venueType === 'Indoor' && eventMatch.building && eventMatch.floor 
-              ? `${eventMatch.roomNo ? `Room No: ${eventMatch.roomNo}, ` : ''}${eventMatch.building.name || eventMatch.building} - ${eventMatch.floor.name || eventMatch.floor}` 
-              : eventMatch.venueType === 'Outdoor' && eventMatch.ground 
-                ? `${eventMatch.roomNo ? `Room No: ${eventMatch.roomNo}, ` : ''}${eventMatch.ground.name || eventMatch.ground}` 
+            eventMatch.venueType === 'Indoor' && eventMatch.building && eventMatch.floor
+              ? `${eventMatch.roomNo ? `Room No: ${eventMatch.roomNo}, ` : ''}${eventMatch.building.name || eventMatch.building} - ${eventMatch.floor.name || eventMatch.floor}`
+              : eventMatch.venueType === 'Outdoor' && eventMatch.ground
+                ? `${eventMatch.roomNo ? `Room No: ${eventMatch.roomNo}, ` : ''}${eventMatch.ground.name || eventMatch.ground}`
                 : eventMatch.venue
           ) : null,
           eventGroup: eventMatch?.group?.name || eventMatch?.group || '-',
           eventCategory: eventMatch?.category?.name || eventMatch?.category || p.category || '-'
         };
       });
-      
+
       setPayments(fetchedPayments);
     } catch (error) {
       console.error('Error fetching event registrations:', error);
@@ -124,6 +129,7 @@ const Registrations = () => {
             eventName: payment.eventName || payment.category || 'Event',
             category: payment.category,
             schoolId: payment.schoolId,
+            eventId: payment.eventId,
             razorpayPaymentId: payment.razorpayPaymentId,
             razorpayOrderId: payment.razorpayOrderId,
             amount: payment.amountRupees ?? payment.amount,
@@ -217,26 +223,33 @@ const Registrations = () => {
       return;
     }
 
-    const headers = ['S.No', 'Name', 'Roll No', 'Team ID', 'Group', 'Category', 'Event Name', 'College', 'Department', 'Year', 'Gender', 'Mobile', 'Email', 'Accommodation'];
+    const headers = ['S.No', 'Name', 'Roll No', 'Team ID', 'School Name', 'Event Name', 'Event Department(s)', 'College', 'Student Department', 'Student Year', 'Gender', 'Mobile', 'Email'];
     const csvRows = [headers.join(',')];
 
     filteredParticipants.forEach((p, idx) => {
       const collegeName = p.college === 'Other College' && p.otherCollege ? p.otherCollege : (p.college || '');
+      
+      const schoolCategory = p.category || p.schoolId || '-';
+      const relatedEvent = allEvents.find(e => e._id === p.eventId);
+      let eventDepartmentStr = '-';
+      if (relatedEvent && relatedEvent.department && relatedEvent.department.length > 0) {
+        eventDepartmentStr = relatedEvent.department.map(d => d.name).join(', ');
+      }
+
       const row = [
         idx + 1,
         `"${p.name || ''}"`,
         `"${p.roll || ''}"`,
         `"${p.teamId || ''}"`,
-        `"${p.eventGroup || ''}"`,
-        `"${p.eventCategory || ''}"`,
+        `"${schoolCategory}"`,
         `"${p.eventName || ''}"`,
+        `"${eventDepartmentStr}"`,
         `"${collegeName}"`,
         `"${p.department || ''}"`,
         `"${p.year || ''}"`,
         `"${p.gender || ''}"`,
         `"${p.mobile || ''}"`,
-        `"${p.email || ''}"`,
-        `"${p.accommodation || 'No'}"`
+        `"${p.email || ''}"`
       ];
       csvRows.push(row.join(','));
     });
@@ -256,8 +269,9 @@ const Registrations = () => {
     'Name',
     'Roll Number',
     'Team ID',
-    'MAIN GROUP / CATEGORY',
+    'School Name',
     'EVENT NAME',
+    'Department(s)',
     'College',
     'Department / Year',
     'Contact Info',
@@ -277,6 +291,30 @@ const Registrations = () => {
 
   const rows = filteredParticipants.map((p, index) => {
     const isAccomm = p.accommodation?.toLowerCase() === 'yes';
+
+    const schoolCategory = p.category || p.schoolId || '-';
+    const relatedEvent = allEvents.find(e => e._id === p.eventId);
+    let departmentNode = '-';
+    if (relatedEvent && relatedEvent.department && relatedEvent.department.length > 0) {
+      if (relatedEvent.department.length > 1) {
+        departmentNode = {
+          value: 'All Departments',
+          display: (
+            <span
+              style={{ color: '#3b82f6', textDecoration: 'underline', cursor: 'pointer' }}
+              onClick={() => {
+                setDepartmentsToView(relatedEvent.department);
+                setDepartmentsDialogOpen(true);
+              }}
+            >
+              All Departments
+            </span>
+          )
+        };
+      } else {
+        departmentNode = relatedEvent.department[0].name;
+      }
+    }
 
     return [
       index + 1,
@@ -301,8 +339,9 @@ const Registrations = () => {
         </Typography>
       ) : '-',
       p.teamId || '-',
-      `${p.eventGroup} / ${p.eventCategory}`,
+      schoolCategory,
       p.eventName || '-',
+      departmentNode,
       p.college ? (p.college === 'Other College' && p.otherCollege ? p.otherCollege : p.college) : '-',
       p.department ? `Dept: ${p.department}${p.year ? ' | Yr: ' + p.year : ''}` : (p.year ? `Yr: ${p.year}` : '-'),
       <Box>
@@ -440,43 +479,6 @@ const Registrations = () => {
             sx={{
               p: 2.5,
               borderRadius: '16px',
-              background: 'linear-gradient(135deg, rgba(34, 197, 94, 0.08) 0%, rgba(16, 185, 129, 0.08) 100%)',
-              borderColor: 'rgba(34, 197, 94, 0.2)',
-            }}
-          >
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-              <Box
-                sx={{
-                  width: 44,
-                  height: 44,
-                  borderRadius: '12px',
-                  background: '#16a34a',
-                  color: '#fff',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-              >
-                <PaymentIcon />
-              </Box>
-              <Box>
-                <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase', fontWeight: 700 }}>
-                  Paid Registrations
-                </Typography>
-                <Typography variant="h5" sx={{ fontWeight: 900 }}>
-                  {payments.length}
-                </Typography>
-              </Box>
-            </Box>
-          </Paper>
-        </Grid> */}
-
-        <Grid item xs={12} sm={6} md={3}>
-          <Paper
-            variant="outlined"
-            sx={{
-              p: 2.5,
-              borderRadius: '16px',
               background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.08) 0%, rgba(217, 119, 6, 0.08) 100%)',
               borderColor: 'rgba(245, 158, 11, 0.2)',
             }}
@@ -506,7 +508,7 @@ const Registrations = () => {
               </Box>
             </Box>
           </Paper>
-        </Grid>
+        </Grid> */}
 
         <Grid item xs={12} sm={6} md={3}>
           <Paper
@@ -545,7 +547,7 @@ const Registrations = () => {
           </Paper>
         </Grid>
 
-        <Grid item xs={12} sm={6} md={3}>
+        {/* <Grid item xs={12} sm={6} md={3}>
           <Paper
             variant="outlined"
             sx={{
@@ -580,9 +582,9 @@ const Registrations = () => {
               </Box>
             </Box>
           </Paper>
-        </Grid>
+        </Grid> */}
 
-        <Grid item xs={12} sm={6} md={3}>
+        {/* <Grid item xs={12} sm={6} md={3}>
           <Paper
             variant="outlined"
             sx={{
@@ -617,7 +619,7 @@ const Registrations = () => {
               </Box>
             </Box>
           </Paper>
-        </Grid>
+        </Grid> */}
       </Grid>
 
       {/* Filter Controls Bar */}
@@ -658,7 +660,7 @@ const Registrations = () => {
           ))}
         </TextField>
 
-        <TextField
+        {/* <TextField
           select
           label="Accommodation"
           size="small"
@@ -669,7 +671,7 @@ const Registrations = () => {
           <MenuItem value="ALL">All Registrations</MenuItem>
           <MenuItem value="YES">Requested (Yes)</MenuItem>
           <MenuItem value="NO">No Accommodation</MenuItem>
-        </TextField>
+        </TextField> */}
 
         <TextField
           select
@@ -908,6 +910,22 @@ const Registrations = () => {
           </DialogContent>
         </Dialog>
       )}
+
+      <Dialog open={departmentsDialogOpen} onClose={() => setDepartmentsDialogOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>All Departments</DialogTitle>
+        <DialogContent dividers>
+          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, p: 1 }}>
+            {departmentsToView.map((d, i) => (
+              <Chip key={i} label={d?.name || d} sx={{ bgcolor: 'rgba(59, 130, 246, 0.1)', color: '#1e40af' }} />
+            ))}
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDepartmentsDialogOpen(false)} variant="contained" sx={{ textTransform: 'none' }}>
+            Close
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };

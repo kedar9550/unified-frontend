@@ -51,6 +51,10 @@ const Participants = ({ mode = 'all' }) => {
   const [selectedPassParticipant, setSelectedPassParticipant] = useState(null);
   const [passDialogOpen, setPassDialogOpen] = useState(false);
 
+  const [allEvents, setAllEvents] = useState([]);
+  const [departmentsDialogOpen, setDepartmentsDialogOpen] = useState(false);
+  const [departmentsToView, setDepartmentsToView] = useState([]);
+
   // Filters
   const [searchQuery, setSearchQuery] = useState('');
   const [eventFilter, setEventFilter] = useState('ALL');
@@ -75,6 +79,7 @@ const Participants = ({ mode = 'all' }) => {
     try {
       const eventsRes = await API.get('/api/events');
       const allEvents = eventsRes.data?.events || [];
+      setAllEvents(allEvents);
 
       let allowedEventNames = null;
       if (activeRole === 'FACULTY_COORDINATOR' && user) {
@@ -139,6 +144,7 @@ const Participants = ({ mode = 'all' }) => {
             eventName: payment.eventName || payment.category || 'Event',
             category: payment.category,
             schoolId: payment.schoolId,
+            eventId: payment.eventId,
             razorpayPaymentId: payment.razorpayPaymentId,
             razorpayOrderId: payment.razorpayOrderId,
             amount: payment.amountRupees ?? payment.amount,
@@ -276,24 +282,34 @@ const Participants = ({ mode = 'all' }) => {
       return;
     }
 
-    const headers = ['S.No', 'Name', 'Roll No', 'Team ID', 'Group', 'Category', 'Event Name', 'College', 'Department', 'Gender', 'Contact', 'Attended'];
+    const headers = ['S.No', 'Name', 'Roll No', 'Team ID', 'School Name', 'Event Name', 'Event Department(s)', 'College', 'Student Department', 'Student Year', 'Gender', 'Mobile', 'Email', 'Attended'];
     const csvRows = [headers.join(',')];
 
     filteredParticipants.forEach((p, idx) => {
       const collegeName = p.college === 'Other College' && p.otherCollege ? p.otherCollege : (p.college || '');
+      
+      const schoolCategory = p.category || p.schoolId || '-';
+      const relatedEvent = allEvents.find(e => e._id === p.eventId);
+      let eventDepartmentStr = '-';
+      if (relatedEvent && relatedEvent.department && relatedEvent.department.length > 0) {
+        eventDepartmentStr = relatedEvent.department.map(d => d.name).join(', ');
+      }
+
       const row = [
         idx + 1,
         `"${p.name || ''}"`,
         `"${p.roll || ''}"`,
         `"${p.teamId || ''}"`,
-        `"${p.eventGroup || ''}"`,
-        `"${p.eventCategory || ''}"`,
+        `"${schoolCategory}"`,
         `"${p.eventName || ''}"`,
+        `"${eventDepartmentStr}"`,
         `"${collegeName}"`,
         `"${p.department || ''}"`,
+        `"${p.year || ''}"`,
         `"${p.gender || ''}"`,
         `"${p.mobile || ''}"`,
-        `"${p.attended ? 'Yes' : 'No'}"`,
+        `"${p.email || ''}"`,
+        `"${p.attended ? 'Yes' : 'No'}"`
       ];
       csvRows.push(row.join(','));
     });
@@ -313,8 +329,9 @@ const Participants = ({ mode = 'all' }) => {
     'Name',
     'Roll Number',
     'Team ID',
-    'MAIN GROUP / CATEGORY',
+    'School Name',
     'EVENT NAME',
+    'Department(s)',
     'College',
     'Department / Year',
     'Contact Info',
@@ -333,6 +350,30 @@ const Participants = ({ mode = 'all' }) => {
 
   const rows = filteredParticipants.map((p, index) => {
     const isAccomm = p.accommodation?.toLowerCase() === 'yes';
+
+    const schoolCategory = p.category || p.schoolId || '-';
+    const relatedEvent = allEvents.find(e => e._id === p.eventId);
+    let departmentNode = '-';
+    if (relatedEvent && relatedEvent.department && relatedEvent.department.length > 0) {
+      if (relatedEvent.department.length > 1) {
+        departmentNode = {
+          value: 'All Departments',
+          display: (
+            <span 
+              style={{ color: '#3b82f6', textDecoration: 'underline', cursor: 'pointer' }}
+              onClick={() => {
+                setDepartmentsToView(relatedEvent.department);
+                setDepartmentsDialogOpen(true);
+              }}
+            >
+              All Departments
+            </span>
+          )
+        };
+      } else {
+        departmentNode = relatedEvent.department[0].name;
+      }
+    }
 
     return [
       index + 1,
@@ -357,8 +398,9 @@ const Participants = ({ mode = 'all' }) => {
         </Typography>
       ) : '-',
       p.teamId || '-',
-      p.eventGroupString ? p.eventGroupString : `${p.eventGroup} / ${p.eventCategory}`,
+      schoolCategory,
       p.eventName || '-',
+      departmentNode,
       p.college ? (p.college === 'Other College' && p.otherCollege ? p.otherCollege : p.college) : '-',
       p.department ? `Dept: ${p.department}${p.year ? ' | Yr: ' + p.year : ''}` : (p.year ? `Yr: ${p.year}` : '-'),
       <Box>
@@ -444,43 +486,6 @@ const Participants = ({ mode = 'all' }) => {
             </Box>
           </Paper>
         </Grid>
-
-        {/* <Grid item xs={12} sm={6} md={3}>
-          <Paper
-            variant="outlined"
-            sx={{
-              p: 2.5,
-              borderRadius: '16px',
-              background: 'linear-gradient(135deg, rgba(34, 197, 94, 0.08) 0%, rgba(16, 185, 129, 0.08) 100%)',
-              borderColor: 'rgba(34, 197, 94, 0.2)',
-            }}
-          >
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-              <Box
-                sx={{
-                  width: 44,
-                  height: 44,
-                  borderRadius: '12px',
-                  background: '#16a34a',
-                  color: '#fff',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-              >
-                <PaymentIcon />
-              </Box>
-              <Box>
-                <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase', fontWeight: 700 }}>
-                  Paid participants
-                </Typography>
-                <Typography variant="h5" sx={{ fontWeight: 900 }}>
-                  {payments.length}
-                </Typography>
-              </Box>
-            </Box>
-          </Paper>
-        </Grid> */}
 
         {mode === 'all' && (
           <Grid item xs={12} sm={6} md={3}>
@@ -830,7 +835,7 @@ const Participants = ({ mode = 'all' }) => {
               columns={columns}
               rows={rows}
               nonSortableColumns={[0, 9]}
-              alignments={['center', 'left', 'left', 'center', 'left', 'left', 'left', 'left', 'left', 'center']}
+              alignments={['center', 'left', 'left', 'center', 'left', 'left', 'left', 'left', 'left', 'left', 'center']}
             />
           )}
         </Box>
@@ -1013,6 +1018,22 @@ const Participants = ({ mode = 'all' }) => {
           </DialogContent>
         </Dialog>
       )}
+
+      <Dialog open={departmentsDialogOpen} onClose={() => setDepartmentsDialogOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>All Departments</DialogTitle>
+        <DialogContent dividers>
+          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, p: 1 }}>
+            {departmentsToView.map((d, i) => (
+              <Chip key={i} label={d?.name || d} sx={{ bgcolor: 'rgba(59, 130, 246, 0.1)', color: '#1e40af' }} />
+            ))}
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDepartmentsDialogOpen(false)} variant="contained" sx={{ textTransform: 'none' }}>
+            Close
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };
