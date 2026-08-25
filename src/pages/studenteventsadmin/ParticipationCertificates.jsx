@@ -98,6 +98,9 @@ const ParticipationCertificates = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
 
+  const [departmentsDialogOpen, setDepartmentsDialogOpen] = useState(false);
+  const [departmentsToView, setDepartmentsToView] = useState([]);
+
   const fetchPayments = useCallback(async () => {
     setLoading(true);
     try {
@@ -152,8 +155,9 @@ const ParticipationCertificates = () => {
     'Participant Name',
     'Roll Number',
     'College & Dept',
-    'Main Group / Category',
+    'School Name',
     'Event Name',
+    'Department(s)',
     'Team ID',
     'Contact Info',
     'Action'
@@ -166,21 +170,26 @@ const ParticipationCertificates = () => {
     }
 
     const headers = [
-      'S.No', 'Main Group / Category', 'Event Name', 'Team ID', 'Team Size',
-      'Participant Name', 'Gender', 'Roll Number', 'College', 'Department', 'Year', 'Mobile', 'Email', 'Accommodation'
+      'S.No', 'School Name', 'Event Name', 'Event Department(s)', 'Team ID', 'Team Size',
+      'Participant Name', 'Gender', 'Roll Number', 'College', 'Student Department', 'Student Year', 'Mobile', 'Email'
     ];
     const csvRows = [headers.join(',')];
     let sNo = 1;
 
     payments.forEach((payment) => {
-      const schoolCategory = payment.category && payment.schoolId
-        ? `${payment.schoolId.toUpperCase()} / ${payment.category}`
-        : (payment.category || payment.schoolId || '-');
+      const schoolCategory = payment.category || payment.schoolId || '-';
+      const relatedEvent = events.find(e => e._id === payment.eventId);
+      let eventDepartmentStr = '-';
+      if (relatedEvent && relatedEvent.department && relatedEvent.department.length > 0) {
+        eventDepartmentStr = relatedEvent.department.map(d => d.name).join(', ');
+      }
+
       const teamId = payment.teamId || payment.receipt || '-';
       
       const teamBaseInfo = [
         `"${schoolCategory}"`,
         `"${payment.eventName || '-'}"`,
+        `"${eventDepartmentStr}"`,
         `"${teamId}"`,
         payment.teamSize || 1
       ];
@@ -200,8 +209,7 @@ const ParticipationCertificates = () => {
             `"${p.department || '-'}"`,
             `"${p.year || '-'}"`,
             `"${p.mobile || '-'}"`,
-            `"${p.email || '-'}"`,
-            `"${p.accommodation || '-'}"`
+            `"${p.email || '-'}"`
           ];
           csvRows.push(row.join(','));
         });
@@ -209,7 +217,7 @@ const ParticipationCertificates = () => {
         const row = [
           sNo++,
           ...teamBaseInfo,
-          '-', '-', '-', '-', '-', '-', '-', '-', '-'
+          '-', '-', '-', '-', '-', '-', '-', '-'
         ];
         csvRows.push(row.join(','));
       }
@@ -272,9 +280,29 @@ const ParticipationCertificates = () => {
 
   let globalIndex = 1;
   const rows = payments.flatMap((payment) => {
-    const schoolCategory = payment.category && payment.schoolId
-      ? `${payment.schoolId.toUpperCase()} / ${payment.category}`
-      : (payment.category || payment.schoolId || '-');
+    const schoolCategory = payment.category || payment.schoolId || '-';
+    const relatedEvent = events.find(e => e._id === payment.eventId);
+    let departmentNode = '-';
+    if (relatedEvent && relatedEvent.department && relatedEvent.department.length > 0) {
+      if (relatedEvent.department.length > 1) {
+        departmentNode = {
+          value: 'All Departments',
+          display: (
+            <span 
+              style={{ color: '#3b82f6', textDecoration: 'underline', cursor: 'pointer' }}
+              onClick={() => {
+                setDepartmentsToView(relatedEvent.department);
+                setDepartmentsDialogOpen(true);
+              }}
+            >
+              All Departments
+            </span>
+          )
+        };
+      } else {
+        departmentNode = relatedEvent.department[0].name;
+      }
+    }
 
     if (!payment.participants || payment.participants.length === 0) return [];
 
@@ -306,6 +334,7 @@ const ParticipationCertificates = () => {
         },
         schoolCategory,
         payment.eventName || '-',
+        departmentNode,
         payment.teamId || payment.receipt || '-',
         {
           value: p.mobile || p.email || '-',
@@ -670,6 +699,21 @@ const ParticipationCertificates = () => {
         </Dialog>
       )}
 
+      <Dialog open={departmentsDialogOpen} onClose={() => setDepartmentsDialogOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>All Departments</DialogTitle>
+        <DialogContent dividers>
+          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, p: 1 }}>
+            {departmentsToView.map((d, i) => (
+              <Chip key={i} label={d?.name || d} sx={{ bgcolor: 'rgba(59, 130, 246, 0.1)', color: '#1e40af' }} />
+            ))}
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDepartmentsDialogOpen(false)} variant="contained" sx={{ textTransform: 'none' }}>
+            Close
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };

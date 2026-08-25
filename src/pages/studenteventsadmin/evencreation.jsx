@@ -28,6 +28,7 @@ import {
   Edit as EditIcon,
   Delete as DeleteIcon,
   ArrowBack as ArrowBackIcon,
+  CloudUpload as CloudUploadIcon,
 } from '@mui/icons-material';
 import PageHeader from '../../components/common/PageHeader';
 import DataTable from '../../components/data/DataTable';
@@ -35,6 +36,10 @@ import { fetchEventDepartments } from '../../api/eventDepartmentApi';
 import API from '../../api/axios';
 import { toast } from 'sonner';
 import { useAuth } from '../../context/AuthContext';
+
+const VALID_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/jpg', 'image/webp'];
+const MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5 MB
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:9000';
 
 const EventCreation = () => {
   const { activeRole, user } = useAuth();
@@ -76,6 +81,10 @@ const EventCreation = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [employeeOptions, setEmployeeOptions] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
+
+  const [bannerFile, setBannerFile] = useState(null);
+  const [bannerPreview, setBannerPreview] = useState(null);
+  const [bannerError, setBannerError] = useState('');
 
   const fetchInfrastructure = useCallback(async () => {
     try {
@@ -203,6 +212,9 @@ const EventCreation = () => {
     setSearchQuery('');
     setEmployeeOptions([]);
     setIsSearching(false);
+    setBannerFile(null);
+    setBannerPreview(null);
+    setBannerError('');
     setErrors({});
   };
 
@@ -250,8 +262,43 @@ const EventCreation = () => {
     setExtraAmountPerHead(event.extraAmountPerHead != null ? String(event.extraAmountPerHead) : '');
     setOverview(event.overview || '');
     setRules(event.rules && event.rules.length > 0 ? event.rules : ['']);
+    setBannerFile(null);
+    setBannerPreview(event.bannerImage ? `${BACKEND_URL}${event.bannerImage}` : null);
+    setBannerError('');
     setErrors({});
     setView('form');
+  };
+
+  const validateImage = (file) => {
+    if (!VALID_IMAGE_TYPES.includes(file.type)) {
+      return 'Please upload a valid image file (JPG, JPEG, PNG, WebP).';
+    }
+    if (file.size > MAX_IMAGE_SIZE) {
+      return 'Image size should not exceed 5 MB.';
+    }
+    return '';
+  };
+
+  const handleBannerChange = (e) => {
+    const file = e.target.files[0];
+    setBannerError('');
+    if (!file) return;
+
+    const message = validateImage(file);
+    if (message) {
+      setBannerError(message);
+      return;
+    }
+
+    setBannerFile(file);
+    setBannerPreview(URL.createObjectURL(file));
+    setErrors((prev) => ({ ...prev, bannerImage: null }));
+  };
+
+  const removeBanner = () => {
+    setBannerFile(null);
+    setBannerPreview(null);
+    setBannerError('');
   };
 
   const validateForm = () => {
@@ -294,34 +341,41 @@ const EventCreation = () => {
     if (!validateForm()) return;
     setSubmitting(true);
 
-    const payload = {
-      groupId: selectedGroup?._id,
-      eventName: eventName.trim(),
-      price: Number(price),
-      priceType: priceType,
-      maxTeamSize: Number(maxTeamSize),
-      venue: venue.trim(),
-      venueType: venueType,
-      building: buildingId || undefined,
-      floor: floorId || undefined,
-      ground: groundId || undefined,
-      roomNo: roomNo.trim(),
-      extraTeamSize: Number(extraTeamSize),
-      extraAmountPerHead: Number(extraAmountPerHead),
-      overview: overview.trim(),
-      rules: rules.filter((rule) => rule.trim()),
-      department: JSON.stringify(departments),
-      facultyCoordinators: JSON.stringify(selectedCoordinators.map((coordinator) => ({
-        employeeId: coordinator?.employeeId || coordinator?.institutionId || coordinator?.employeeCode || '',
-        employeeName: coordinator?.employeeName || coordinator?.name || '',
-        department: coordinator?.department || '',
-        designation: coordinator?.designation || '',
-      }))),
-    };
+    const formData = new FormData();
+    formData.append('groupId', selectedGroup?._id || '');
+    formData.append('eventName', eventName.trim());
+    formData.append('price', Number(price));
+    formData.append('priceType', priceType);
+    formData.append('maxTeamSize', Number(maxTeamSize));
+    formData.append('venue', venue.trim());
+    formData.append('venueType', venueType);
+    if (buildingId) formData.append('building', buildingId);
+    if (floorId) formData.append('floor', floorId);
+    if (groundId) formData.append('ground', groundId);
+    formData.append('roomNo', roomNo.trim());
+    formData.append('extraTeamSize', Number(extraTeamSize));
+    formData.append('extraAmountPerHead', Number(extraAmountPerHead));
+    formData.append('overview', overview.trim());
+    rules.filter((rule) => rule.trim()).forEach(rule => {
+      formData.append('rules[]', rule);
+    });
+    formData.append('department', JSON.stringify(departments));
+    formData.append('facultyCoordinators', JSON.stringify(selectedCoordinators.map((coordinator) => ({
+      employeeId: coordinator?.employeeId || coordinator?.institutionId || coordinator?.employeeCode || '',
+      employeeName: coordinator?.employeeName || coordinator?.name || '',
+      department: coordinator?.department || '',
+      designation: coordinator?.designation || '',
+    }))));
+
+    if (bannerFile) {
+      formData.append('bannerImage', bannerFile);
+    } else if (!bannerPreview) {
+      formData.append('removeBanner', 'true');
+    }
 
     try {
       if (editingEvent) {
-        const response = await API.put(`/api/events/${editingEvent._id}`, payload);
+        const response = await API.put(`/api/events/${editingEvent._id}`, formData);
         if (response.data.success) {
           toast.success('Event updated successfully');
           fetchEvents();
@@ -330,7 +384,7 @@ const EventCreation = () => {
           toast.error(response.data.message || 'Failed to update event.');
         }
       } else {
-        const response = await API.post('/api/events', payload);
+        const response = await API.post('/api/events', formData);
         if (response.data.success) {
           toast.success('Event created successfully');
           fetchEvents();
@@ -517,6 +571,94 @@ const EventCreation = () => {
       </Box>
     );
   }
+
+  const renderUploader = ({
+    preview,
+    onChange,
+    onRemove,
+    hasError,
+    previewAlt,
+    previewMaxHeight,
+    hint,
+  }) => {
+    if (!preview) {
+      return (
+        <Box
+          component="label"
+          sx={{
+            display: 'block',
+            border: '2px dashed',
+            borderColor: hasError ? 'error.main' : 'grey.300',
+            borderRadius: 2,
+            p: 4,
+            textAlign: 'center',
+            cursor: 'pointer',
+            bgcolor: 'background.default',
+            transition: 'all 0.2s',
+            '&:hover': {
+              borderColor: 'primary.main',
+              bgcolor: 'action.hover',
+            },
+          }}
+        >
+          <input type="file" hidden accept=".jpg,.jpeg,.png,.webp" onChange={onChange} />
+          <CloudUploadIcon
+            sx={{ fontSize: 48, color: hasError ? 'error.main' : 'primary.main', mb: 1 }}
+          />
+          <Typography variant="h6" color="text.primary" gutterBottom>
+            Click or drag file to upload
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            {hint}
+          </Typography>
+        </Box>
+      );
+    }
+
+    return (
+      <Box
+        sx={{
+          position: 'relative',
+          width: '100%',
+          borderRadius: 2,
+          overflow: 'hidden',
+          border: '1px solid',
+          borderColor: 'divider',
+          bgcolor: 'background.paper',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+        }}
+      >
+        <img
+          src={preview}
+          alt={previewAlt}
+          style={{ maxWidth: '100%', maxHeight: `${previewMaxHeight}px`, objectFit: 'contain' }}
+        />
+        <Box
+          sx={{
+            position: 'absolute',
+            top: 12,
+            right: 12,
+            display: 'flex',
+            gap: 1,
+            bgcolor: 'rgba(255, 255, 255, 0.9)',
+            p: 0.5,
+            borderRadius: 1,
+            boxShadow: 1,
+          }}
+        >
+          <Button variant="contained" component="label" size="small" color="primary">
+            Replace
+            <input type="file" hidden accept=".jpg,.jpeg,.png,.webp" onChange={onChange} />
+          </Button>
+          <IconButton color="error" onClick={onRemove} size="small">
+            <DeleteIcon />
+          </IconButton>
+        </Box>
+      </Box>
+    );
+  };
 
   return (
     <Box sx={{ p: 3 }}>
@@ -837,6 +979,26 @@ const EventCreation = () => {
                 error={!!errors.extraAmountPerHead}
                 helperText={errors.extraAmountPerHead}
               />
+            </Box>
+
+            <Box sx={{ mb: 2 }}>
+              <Typography variant="subtitle1" fontWeight={600} mb={1}>
+                Event Banner (Optional)
+              </Typography>
+              {renderUploader({
+                preview: bannerPreview,
+                onChange: handleBannerChange,
+                onRemove: removeBanner,
+                hasError: !!errors.bannerImage,
+                previewAlt: 'Event Banner Preview',
+                previewMaxHeight: 260,
+                hint: 'Supports JPG, PNG, WebP. Max size: 5MB. Wide image (16:9) recommended.',
+              })}
+              {bannerError && (
+                <FormHelperText error sx={{ mt: 1, ml: 1 }}>
+                  {bannerError}
+                </FormHelperText>
+              )}
             </Box>
 
             <TextField

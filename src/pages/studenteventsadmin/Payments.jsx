@@ -53,22 +53,27 @@ const Payments = () => {
   const navigate = useNavigate();
   const { activeRole, user } = useAuth();
   const [payments, setPayments] = useState([]);
+  const [allEvents, setAllEvents] = useState([]);
   const [loading, setLoading] = useState(false);
   const [selectedPayment, setSelectedPayment] = useState(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [departmentsDialogOpen, setDepartmentsDialogOpen] = useState(false);
+  const [departmentsToView, setDepartmentsToView] = useState([]);
 
   const fetchPayments = useCallback(async () => {
     setLoading(true);
     try {
+      const eventsRes = await API.get('/api/events');
+      const events = eventsRes.data?.events || [];
+      setAllEvents(events);
+
       let allowedEventNames = null;
       if (activeRole === 'FACULTY_COORDINATOR' && user) {
-        const eventsRes = await API.get('/api/events');
-        const events = eventsRes.data?.events || [];
         const userEvents = events.filter(e => {
           const coords = e.facultyCoordinators || (e.facultyCoordinator ? [e.facultyCoordinator] : []);
-          return coords.some(c => 
-            c.employeeId === user.institutionId || 
-            c.employeeId === user.employeeId || 
+          return coords.some(c =>
+            c.employeeId === user.institutionId ||
+            c.employeeId === user.employeeId ||
             c.employeeId === user.employeeCode
           );
         });
@@ -77,11 +82,11 @@ const Payments = () => {
 
       const response = await API.get('/api/razorpay/registrations');
       let fetchedPayments = response.data?.payments || [];
-      
+
       if (allowedEventNames) {
         fetchedPayments = fetchedPayments.filter(p => allowedEventNames.includes(p.eventName || p.category));
       }
-      
+
       setPayments(fetchedPayments);
     } catch (error) {
       console.error('Error fetching event payments:', error);
@@ -98,8 +103,9 @@ const Payments = () => {
   const columns = [
     'S.No',
     'Team ID',
-    'Main Group / Category',
+    'School Name',
     'Event Name',
+    'Department(s)',
     'Amount',
     'Currency',
     'Status',
@@ -119,15 +125,35 @@ const Payments = () => {
   const rows = payments.map((payment, index) => {
     const amountValue = payment.amountRupees ?? payment.amount;
     const isPaid = (payment.paymentStatus || (payment.verified ? 'PAID' : 'PENDING')) === 'PAID';
-    const schoolCategory = payment.category && payment.schoolId
-      ? `${payment.schoolId.toUpperCase()} / ${payment.category}`
-      : (payment.category || payment.schoolId || '-');
+    const schoolCategory = payment.category || payment.schoolId || '-';
+
+    const relatedEvent = allEvents.find(e => e._id === payment.eventId);
+    let departmentNode = '-';
+    if (relatedEvent && relatedEvent.department && relatedEvent.department.length > 0) {
+      if (relatedEvent.department.length > 1) {
+        departmentNode = {
+          value: 'All Departments',
+          display: <span
+            style={{ color: '#3b82f6', textDecoration: 'underline', cursor: 'pointer' }}
+            onClick={() => {
+              setDepartmentsToView(relatedEvent.department);
+              setDepartmentsDialogOpen(true);
+            }}
+          >
+            All Departments
+          </span>
+        };
+      } else {
+        departmentNode = relatedEvent.department[0].name;
+      }
+    }
 
     return [
       index + 1,
       payment.teamId || '-',
       schoolCategory,
       payment.eventName || '-',
+      departmentNode,
       amountValue != null ? `₹ ${Number(amountValue).toLocaleString('en-IN')}` : '-',
       payment.currency || 'INR',
       {
@@ -389,7 +415,7 @@ const Payments = () => {
                     </Typography>
                   </Box>
                   <Typography variant="body2" color="text.secondary">
-                    Category: <strong>{selectedPayment.category || selectedPayment.schoolId || 'General'}</strong>
+                    School: <strong>{selectedPayment.category || selectedPayment.schoolId || 'General'}</strong>
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
                     Payment Method: <strong>{getPaymentMethod(selectedPayment)}</strong> | RRN: <strong>{getRrn(selectedPayment)}</strong>
@@ -510,6 +536,21 @@ const Payments = () => {
         </Dialog>
       )}
 
+      <Dialog open={departmentsDialogOpen} onClose={() => setDepartmentsDialogOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>All Departments</DialogTitle>
+        <DialogContent dividers>
+          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, p: 1 }}>
+            {departmentsToView.map((d, i) => (
+              <Chip key={i} label={d?.name || d} sx={{ bgcolor: 'rgba(59, 130, 246, 0.1)', color: '#1e40af' }} />
+            ))}
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDepartmentsDialogOpen(false)} variant="contained" sx={{ textTransform: 'none' }}>
+            Close
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };

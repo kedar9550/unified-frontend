@@ -180,10 +180,7 @@ const GroupManagement = () => {
       newErrors.coordinator = 'Coordinator is required.';
     }
 
-    // Images required only when creating
-    if (!editingGroup && !bannerFile) {
-      newErrors.banner = 'Banner Image is required.';
-    }
+    // Banner image is optional
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -251,7 +248,7 @@ const GroupManagement = () => {
     formData.append('status', status);
     formData.append('coordinator', JSON.stringify(selectedCoordinator || {}));
 
-    if (bannerFile) formData.append('banner', bannerFile);
+    if (bannerFile) { formData.append('banner', bannerFile); } else if (!bannerPreview) { formData.append('removeBanner', 'true'); }
 
     try {
       if (editingGroup) {
@@ -686,7 +683,7 @@ const GroupManagement = () => {
                 mb={1}
                 sx={{ color: 'var(--text-primary)' }}
               >
-                Banner Image *
+                Banner Image (Optional)
               </Typography>
               {renderUploader({
                 preview: bannerPreview,
@@ -871,3 +868,5 @@ const GroupManagement = () => {
 };
 
 export default GroupManagement;
+
+
