@@ -894,10 +894,13 @@ export default function PatentPublication() {
                     );
                   }
 
-                  const currentClaimantObj = uniqueClaimants.find(c =>
-                    (c.institutionId && c.institutionId === (data.appraisalClaimant?.institutionId || data.appraisalClaimant || "").toString()) ||
-                    (c._id && c._id.toString() === (data.appraisalClaimant?._id || data.appraisalClaimant || "").toString())
-                  );
+                  const currentClaimantObj = uniqueClaimants.find(c => {
+                    const cInst = (c.institutionId || "").toString().trim();
+                    const cId = (c._id || "").toString().trim();
+                    const acInst = (data.appraisalClaimant?.institutionId || data.appraisalClaimant || "").toString().trim();
+                    const acId = (data.appraisalClaimant?._id || data.appraisalClaimant || "").toString().trim();
+                    return (cInst && cInst === acInst) || (cId && cId === acId);
+                  });
 
                   const isApplicant = data.visibilityRole === "Applicant" || (data.facultyId && (data.facultyId === user?.userId || data.facultyId._id === user?.userId));
 
