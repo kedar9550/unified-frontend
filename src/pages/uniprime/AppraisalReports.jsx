@@ -215,9 +215,9 @@ const AppraisalReports = () => {
         }, {});
       }
 
-      const formattedDOJ = row.personalInfoSnapshot?.dateOfJoining 
+      const formattedDOJ = (row.personalInfoSnapshot?.dateOfJoining && !isNaN(new Date(row.personalInfoSnapshot.dateOfJoining).getTime()))
         ? new Date(row.personalInfoSnapshot.dateOfJoining).toLocaleDateString('en-GB')
-        : 'N/A';
+        : 'NA';
       const highestQual = highestQualObj?.qualification || row.personalInfoSnapshot?.qualification || 'N/A';
       const highestQualMonth = highestQualObj?.completedMonth || 'N/A';
       const highestQualYear = highestQualObj?.completedYear || 'N/A';
