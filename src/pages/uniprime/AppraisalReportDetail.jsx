@@ -823,23 +823,23 @@ const AppraisalReportDetail = () => {
 
   const facultyCategory = selectedAppraisal?.facultyCategory || "Non-Doctorate Faculty";
   const hasCos = selectedAppraisal?.personalInfoSnapshot?.hasCos !== false;
-  
+
   const baseThresholds = getCategoryThresholds(facultyCategory);
-  
+
   const dynamicMins = {
-      ...baseThresholds,
-      teaching: hasCos ? baseThresholds.teaching : (facultyCategory === "Leadership Team" ? 30 : 38),
-      total1to4: hasCos ? baseThresholds.total1to4 : baseThresholds.total1to4 - 20,
-      grandTotal: hasCos ? baseThresholds.grandTotal : baseThresholds.grandTotal - 20,
-      valueAddition: 20,
-      administration: 10,
-      interpersonal: 30
+    ...baseThresholds,
+    teaching: hasCos ? baseThresholds.teaching : (facultyCategory === "Leadership Team" ? 30 : 38),
+    total1to4: hasCos ? baseThresholds.total1to4 : baseThresholds.total1to4 - 20,
+    grandTotal: hasCos ? baseThresholds.grandTotal : baseThresholds.grandTotal - 20,
+    valueAddition: 20,
+    administration: 10,
+    interpersonal: 30
   };
 
   const dynamicMax = {
-      teaching: hasCos ? 80 : 60,
-      total1to4: hasCos ? 200 : 180,
-      grandTotal: hasCos ? 250 : 230
+    teaching: hasCos ? 80 : 60,
+    total1to4: hasCos ? 200 : 180,
+    grandTotal: hasCos ? 250 : 230
   };
 
   // PDF Pre-calculated Data Object
@@ -1120,7 +1120,7 @@ const AppraisalReportDetail = () => {
                               ) : (
                                 <span style={{ color: "#ef4444" }}>Unfulfilled</span>
                               )}
-                              <span style={{ marginLeft: "8px", fontWeight: 600 }}>[Scored: {eligibilityDetails?.metric21Score} points]</span>
+                              {/* <span style={{ marginLeft: "8px", fontWeight: 600 }}>[Scored: {eligibilityDetails?.metric21Score} points]</span> */}
                             </Typography>
                           </Box>
                         </Box>
@@ -1140,7 +1140,7 @@ const AppraisalReportDetail = () => {
                                 ) : (
                                   <span style={{ color: "#ef4444" }}>Unfulfilled</span>
                                 )}
-                                <span style={{ marginLeft: "8px", fontWeight: 600 }}>[Scored: {eligibilityDetails.interpersonalScore} points]</span>
+                                {/* <span style={{ marginLeft: "8px", fontWeight: 600 }}>[Scored: {eligibilityDetails.interpersonalScore} points]</span> */}
                               </Typography>
                             </Box>
                           </Box>
@@ -1177,7 +1177,7 @@ const AppraisalReportDetail = () => {
                           {showRejectionHistory ? <KeyboardArrowUp /> : <KeyboardArrowDown />}
                         </IconButton>
                       </Box>
-                      
+
                       <Collapse in={showRejectionHistory}>
                         <Box sx={{ mt: 2.5 }}>
                           <Divider sx={{ mb: 2.5 }} />

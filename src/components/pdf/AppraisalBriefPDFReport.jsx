@@ -133,7 +133,7 @@ const AppraisalBriefPDFReport = forwardRef(({ data, hideInterpersonal, eligibili
           <tr style={styles.tr}>
             <td style={{ ...styles.td, ...styles.rowLabel }}>Date of Joining</td>
             <td style={styles.tdLeft} colSpan={3}>
-              {pInfo.dateOfJoining ? new Date(pInfo.dateOfJoining).toLocaleDateString("en-IN", { day: '2-digit', month: '2-digit', year: 'numeric' }) : 'N/A'}
+              {(pInfo.dateOfJoining && !isNaN(new Date(pInfo.dateOfJoining).getTime())) ? new Date(pInfo.dateOfJoining).toLocaleDateString("en-IN", { day: '2-digit', month: '2-digit', year: 'numeric' }) : 'NA'}
             </td>
           </tr>
         </tbody>
