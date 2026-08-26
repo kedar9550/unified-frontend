@@ -478,8 +478,8 @@ export const ROLE_ROUTES = {
           icon: <Groups />,
           nested: [
             { text: "All", path: "/Eventveda/participants/all", icon: <Groups /> },
-            { text: "Accommodation", path: "/Eventveda/participants/accommodation", icon: <Hotel /> },
-            { text: "No Accommodation", path: "/Eventveda/participants/no-accommodation", icon: <Hotel /> }
+            // { text: "Accommodation", path: "/Eventveda/participants/accommodation", icon: <Hotel /> },
+            // { text: "No Accommodation", path: "/Eventveda/participants/no-accommodation", icon: <Hotel /> }
           ]
         },
         {
@@ -544,7 +544,7 @@ export const ROLE_ROUTES = {
     }
   ],
 
-  EVENT_COORDINATOR: [
+  SCHOOL_COORDINATOR: [
     { text: "Dashboard", path: "/dashboard", icon: <Dashboard /> },
     {
       text: "Infrastructure",
@@ -570,8 +570,8 @@ export const ROLE_ROUTES = {
       icon: <Groups />,
       nested: [
         { text: "All", path: "/Eventveda/participants/all", icon: <Groups /> },
-        { text: "Accommodation", path: "/Eventveda/participants/accommodation", icon: <Hotel /> },
-        { text: "No Accommodation", path: "/Eventveda/participants/no-accommodation", icon: <Hotel /> }
+        // { text: "Accommodation", path: "/Eventveda/participants/accommodation", icon: <Hotel /> },
+        // { text: "No Accommodation", path: "/Eventveda/participants/no-accommodation", icon: <Hotel /> }
       ]
     },
     {
@@ -610,19 +610,19 @@ export const ROLE_ROUTES = {
   ],
 
   // ACCOMMODATION Coordinator
-  ACCOMMODATION_COORDINATOR: [
-    { text: "Dashboard", path: "/dashboard", icon: <Dashboard /> },
-    {
-      text: "Participants",
-      icon: <Groups />,
-      nested: [
-        { text: "All", path: "/Eventveda/participants/all", icon: <Groups /> },
-        { text: "Accommodation", path: "/Eventveda/participants/accommodation", icon: <Hotel /> },
-        { text: "No Accommodation", path: "/Eventveda/participants/no-accommodation", icon: <Hotel /> }
-      ]
-    },
-    { text: "Scan for Accommodation", path: "/Eventveda/scan-accommodation", icon: <QrCode /> }
-  ],
+  // ACCOMMODATION_COORDINATOR: [
+  //   { text: "Dashboard", path: "/dashboard", icon: <Dashboard /> },
+  //   {
+  //     text: "Participants",
+  //     icon: <Groups />,
+  //     nested: [
+  //       { text: "All", path: "/Eventveda/participants/all", icon: <Groups /> },
+  //       { text: "Accommodation", path: "/Eventveda/participants/accommodation", icon: <Hotel /> },
+  //       { text: "No Accommodation", path: "/Eventveda/participants/no-accommodation", icon: <Hotel /> }
+  //     ]
+  //   },
+  //   { text: "Scan for Accommodation", path: "/Eventveda/scan-accommodation", icon: <QrCode /> }
+  // ],
 
 
 };
