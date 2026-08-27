@@ -145,8 +145,10 @@ const ProtectedRoute = ({ element: Element }) => {
 };
 
 import { Toaster } from "sonner";
+import { useVersionCheck } from "./hooks/useVersionCheck";
 
 function App() {
+  useVersionCheck();
   const { isLoading, startLoading, stopLoading } = useLoading();
   const [isMobile, setIsMobile] = React.useState(window.innerWidth < 768);
 
