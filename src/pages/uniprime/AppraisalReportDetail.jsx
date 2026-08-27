@@ -59,12 +59,12 @@ const PARAMETERS = [
 
 const getCategoryThresholds = (category) => {
   if (category === "Doctorate Faculty") {
-    return { teaching: 50, metric21: 40, total1to4: 135, grandTotal: 165 };
+    return { teaching: 50, metric21: 40, metric22_28: 10, administration: 15, total1to4: 135, grandTotal: 165 };
   }
   if (category === "Leadership Team") {
-    return { teaching: 40, metric21: 30, total1to4: 110, grandTotal: 140 };
+    return { teaching: 40, metric21: 30, metric22_28: 0, administration: 20, total1to4: 110, grandTotal: 140 };
   }
-  return { teaching: 50, metric21: 30, total1to4: 110, grandTotal: 140 };
+  return { teaching: 50, metric21: 30, metric22_28: 0, administration: 10, total1to4: 110, grandTotal: 140 };
 };
 
 const calculateResourceUtilizationPoints = (r, config) => {
@@ -829,10 +829,11 @@ const AppraisalReportDetail = () => {
   const dynamicMins = {
     ...baseThresholds,
     teaching: hasCos ? baseThresholds.teaching : (facultyCategory === "Leadership Team" ? 30 : 38),
-    total1to4: hasCos ? baseThresholds.total1to4 : baseThresholds.total1to4 - 20,
-    grandTotal: hasCos ? baseThresholds.grandTotal : baseThresholds.grandTotal - 20,
+    total1to4: hasCos ? baseThresholds.total1to4 : baseThresholds.total1to4 - (baseThresholds.teaching - (facultyCategory === "Leadership Team" ? 30 : 38)),
+    grandTotal: hasCos ? baseThresholds.grandTotal : baseThresholds.grandTotal - (baseThresholds.teaching - (facultyCategory === "Leadership Team" ? 30 : 38)),
     valueAddition: 20,
-    administration: 10,
+    metric22_28: baseThresholds.metric22_28 || 0,
+    administration: baseThresholds.administration || 10,
     interpersonal: 30
   };
 

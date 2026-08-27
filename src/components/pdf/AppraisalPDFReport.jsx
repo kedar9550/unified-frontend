@@ -874,7 +874,7 @@ const AppraisalPDFReport = forwardRef(({ data, hideInterpersonal, eligibilityDet
 
         const minTeaching = dynamicMins.teaching || 0;
         const minResearch21 = dynamicMins.metric21 || 0;
-        const minResearch22_28 = 0;
+        const minResearch22_28 = dynamicMins.metric22_28 || 0;
         const minValAdd = dynamicMins.valueAddition || 20;
         const minAdmin = dynamicMins.administration || 10;
         const minTotal1to4 = dynamicMins.total1to4 || 0;
