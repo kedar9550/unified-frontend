@@ -43,7 +43,7 @@ import DataTable from '../../components/data/DataTable';
 import API from '../../api/axios';
 import { toast } from 'sonner';
 
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:9000';
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 
 const VALID_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/jpg', 'image/webp'];
 const MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5 MB
@@ -262,21 +262,21 @@ const EventSchoolManagement = () => {
     setSelectedCoordinator(
       eventSchool.coordinator
         ? {
-            employeeId:
-              eventSchool.coordinator.employeeId ||
-              eventSchool.coordinator.institutionId ||
-              eventSchool.coordinator.employeeCode ||
-              '',
-            institutionId:
-              eventSchool.coordinator.institutionId ||
-              eventSchool.coordinator.employeeId ||
-              eventSchool.coordinator.employeeCode ||
-              '',
-            employeeName: eventSchool.coordinator.employeeName || eventSchool.coordinator.name || '',
-            name: eventSchool.coordinator.employeeName || eventSchool.coordinator.name || '',
-            department: eventSchool.coordinator.department,
-            designation: eventSchool.coordinator.designation,
-          }
+          employeeId:
+            eventSchool.coordinator.employeeId ||
+            eventSchool.coordinator.institutionId ||
+            eventSchool.coordinator.employeeCode ||
+            '',
+          institutionId:
+            eventSchool.coordinator.institutionId ||
+            eventSchool.coordinator.employeeId ||
+            eventSchool.coordinator.employeeCode ||
+            '',
+          employeeName: eventSchool.coordinator.employeeName || eventSchool.coordinator.name || '',
+          name: eventSchool.coordinator.employeeName || eventSchool.coordinator.name || '',
+          department: eventSchool.coordinator.department,
+          designation: eventSchool.coordinator.designation,
+        }
         : null
     );
 
@@ -454,11 +454,10 @@ const EventSchoolManagement = () => {
                 ? 'rgba(34, 197, 94, 0.12)'
                 : 'rgba(239, 68, 68, 0.12)',
             color: eventSchool.status === 'Active' ? '#16a34a' : '#dc2626',
-            border: `1px solid ${
-              eventSchool.status === 'Active'
-                ? 'rgba(34, 197, 94, 0.3)'
-                : 'rgba(239, 68, 68, 0.3)'
-            }`,
+            border: `1px solid ${eventSchool.status === 'Active'
+              ? 'rgba(34, 197, 94, 0.3)'
+              : 'rgba(239, 68, 68, 0.3)'
+              }`,
           }}
         />
       ),
@@ -1200,8 +1199,8 @@ const EventSchoolManagement = () => {
                 {submitting
                   ? 'Saving...'
                   : editingEventSchool
-                  ? 'Update School'
-                  : 'Create School'}
+                    ? 'Update School'
+                    : 'Create School'}
               </Button>
             </Box>
           </Stack>
