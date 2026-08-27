@@ -376,7 +376,7 @@ const AcademicStructure = () => {
         const renderDepartmentsSection = () => {
             if (!selectedSchool) return null;
             return (
-                <Box sx={{ p: { xs: 1.5, sm: 2.5 }, borderRadius: '16px', background: '#f4fbf7', border: '1px solid #d1f2e1', mb: 2, ml: { xs: 0, sm: 3, md: 4 } }}>
+                <Box sx={{ p: { xs: 1.5, sm: 2.5 }, borderRadius: '16px', background: 'var(--bg-accent-2)', border: '1px solid var(--border-color)', mb: 2, ml: { xs: 0, sm: 3, md: 4 } }}>
                     {/* Header */}
                     <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, justifyContent: 'space-between', alignItems: { xs: 'flex-start', sm: 'center' }, gap: 1.5, mb: 2.5 }}>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flexWrap: 'wrap' }}>
@@ -393,7 +393,7 @@ const AcademicStructure = () => {
                                 <Business sx={{ color: '#fff', fontSize: 16 }} />
                             </Box>
                             <Box>
-                                <Typography variant="subtitle1" fontWeight={700} sx={{ color: '#1b4332', fontSize: '1rem', lineHeight: 1.2 }}>
+                                <Typography variant="subtitle1" fontWeight={700} sx={{ color: 'var(--text-primary)', fontSize: '1rem', lineHeight: 1.2 }}>
                                     {selectedSchool.name} ({selectedSchool.code}) - Serving Departments
                                 </Typography>
                                 <Typography variant="body2" sx={{ color: 'var(--text-secondary)' }}>
@@ -401,7 +401,7 @@ const AcademicStructure = () => {
                                 </Typography>
                             </Box>
                         </Box>
-                        <Typography variant="body2" sx={{ color: '#047857', fontWeight: 700, fontSize: '0.8rem' }}>
+                        <Typography variant="body2" sx={{ color: '#10B981', fontWeight: 700, fontSize: '0.8rem' }}>
                             {schoolDepts.length} Serving Departments
                         </Typography>
                     </Box>
@@ -419,9 +419,9 @@ const AcademicStructure = () => {
                                                 display: 'flex',
                                                 flexDirection: 'column',
                                                 borderRadius: "12px",
-                                                background: "#ffffff",
-                                                border: isDeptSelected ? '1.5px solid #10B981' : '1px solid rgba(0, 0, 0, 0.06)',
-                                                boxShadow: isDeptSelected ? '0 8px 20px rgba(16, 185, 129, 0.1)' : '0 2px 8px rgba(0,0,0,0.02)',
+                                                background: "var(--bg-paper)",
+                                                border: isDeptSelected ? '1.5px solid #10B981' : '1px solid var(--border-color)',
+                                                boxShadow: isDeptSelected ? '0 8px 20px rgba(16, 185, 129, 0.15)' : '0 2px 8px rgba(0,0,0,0.02)',
                                                 cursor: 'pointer',
                                                 position: 'relative',
                                                 transition: 'all 0.2s ease-in-out',
@@ -458,10 +458,10 @@ const AcademicStructure = () => {
                                                             <Business sx={{ color: '#fff', fontSize: 16 }} />
                                                         </Box>
                                                         <Box>
-                                                            <Typography variant="subtitle1" fontWeight={700} sx={{ color: '#065f46', fontSize: '0.85rem', lineHeight: 1.2 }}>
+                                                            <Typography variant="subtitle1" fontWeight={700} sx={{ color: 'var(--text-primary)', fontSize: '0.85rem', lineHeight: 1.2 }}>
                                                                 {dept.name}
                                                             </Typography>
-                                                            <Typography variant="caption" fontWeight={600} color="textSecondary" sx={{ fontSize: '0.75rem', mt: 0.25, display: 'block' }}>
+                                                            <Typography variant="caption" fontWeight={600} sx={{ color: 'var(--text-secondary)', fontSize: '0.75rem', mt: 0.25, display: 'block' }}>
                                                                 {dept.code}
                                                             </Typography>
                                                         </Box>
@@ -472,7 +472,7 @@ const AcademicStructure = () => {
                                                         className="edit-dept-btn"
                                                         onClick={(e) => { e.stopPropagation(); openModal('department', 'edit', dept); }}
                                                         sx={{
-                                                            color: 'text.secondary',
+                                                            color: 'var(--text-secondary)',
                                                             p: 0.5,
                                                             opacity: 0,
                                                             visibility: 'hidden',
@@ -502,7 +502,7 @@ const AcademicStructure = () => {
                             <Card
                                 sx={{
                                     border: "1.5px dashed #10B981",
-                                    background: "rgba(16,185,129,0.02)",
+                                    background: "rgba(16,185,129,0.06)",
                                     display: "flex",
                                     alignItems: "center",
                                     justifyContent: "center",
@@ -512,7 +512,7 @@ const AcademicStructure = () => {
                                     cursor: 'pointer',
                                     transition: 'all 0.3s ease-in-out',
                                     "&:hover": {
-                                        background: "rgba(16,185,129,0.05)",
+                                        background: "rgba(16,185,129,0.12)",
                                         borderColor: "#059669",
                                         transform: 'translateY(-2px)'
                                     }
@@ -533,7 +533,7 @@ const AcademicStructure = () => {
         const renderProgramsSection = () => {
             if (!selectedDepartment) return null;
             return (
-                <Box sx={{ p: { xs: 1.5, sm: 2 }, borderRadius: '12px', background: '#f0f9ff', border: '1px solid #bae6fd', mb: 2, ml: { xs: 0, sm: 5, md: 8 } }}>
+                <Box sx={{ p: { xs: 1.5, sm: 2 }, borderRadius: '12px', background: 'var(--bg-accent-4)', border: '1px solid var(--border-color)', mb: 2, ml: { xs: 0, sm: 5, md: 8 } }}>
                     <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, justifyContent: 'space-between', alignItems: { xs: 'flex-start', sm: 'center' }, gap: 1.5, mb: 2 }}>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flexWrap: 'wrap' }}>
                             <Box sx={{
@@ -549,15 +549,15 @@ const AcademicStructure = () => {
                                 <School sx={{ color: '#fff', fontSize: 14 }} />
                             </Box>
                             <Box>
-                                <Typography variant="subtitle2" fontWeight={800} sx={{ color: '#0369a1', fontSize: '0.925rem', lineHeight: 1.2 }}>
+                                <Typography variant="subtitle2" fontWeight={800} sx={{ color: 'var(--text-primary)', fontSize: '0.925rem', lineHeight: 1.2 }}>
                                     {selectedDepartment.name} ({selectedDepartment.code}) - Programs
                                 </Typography>
-                                <Typography variant="caption" color="textSecondary" sx={{ fontSize: '0.7rem' }}>
+                                <Typography variant="caption" sx={{ color: 'var(--text-secondary)', fontSize: '0.7rem' }}>
                                     Click a program to view its specializations.
                                 </Typography>
                             </Box>
                         </Box>
-                        <Typography variant="body2" sx={{ color: '#0369a1', fontWeight: 700, fontSize: '0.75rem' }}>
+                        <Typography variant="body2" sx={{ color: 'var(--color-primary)', fontWeight: 700, fontSize: '0.75rem' }}>
                             {deptPrograms.length} Programs
                         </Typography>
                     </Box>
@@ -574,9 +574,9 @@ const AcademicStructure = () => {
                                                 display: 'flex',
                                                 flexDirection: 'column',
                                                 borderRadius: "10px",
-                                                background: "#ffffff",
-                                                border: isProgSelected ? '1.5px solid var(--color-primary)' : '1px solid rgba(0, 0, 0, 0.06)',
-                                                boxShadow: isProgSelected ? '0 8px 20px rgba(37, 99, 235, 0.1)' : '0 2px 8px rgba(0,0,0,0.02)',
+                                                background: "var(--bg-paper)",
+                                                border: isProgSelected ? '1.5px solid var(--color-primary)' : '1px solid var(--border-color)',
+                                                boxShadow: isProgSelected ? '0 8px 20px rgba(37, 99, 235, 0.15)' : '0 2px 8px rgba(0,0,0,0.02)',
                                                 cursor: 'pointer',
                                                 position: 'relative',
                                                 transition: 'all 0.2s ease-in-out',
@@ -598,10 +598,10 @@ const AcademicStructure = () => {
                                             <CardContent sx={{ p: '12px !important', display: 'flex', flexDirection: 'column', height: '100%', flexGrow: 1 }}>
                                                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1.5 }}>
                                                     <Box>
-                                                        <Typography variant="subtitle2" fontWeight={700} sx={{ color: 'text.primary', fontSize: '0.825rem', lineHeight: 1.2 }}>
+                                                        <Typography variant="subtitle2" fontWeight={700} sx={{ color: 'var(--text-primary)', fontSize: '0.825rem', lineHeight: 1.2 }}>
                                                             {prog.name}
                                                         </Typography>
-                                                        <Typography variant="caption" fontWeight={600} color="textSecondary" sx={{ mt: 0.25, display: 'block', fontSize: '0.725rem' }}>
+                                                        <Typography variant="caption" fontWeight={600} sx={{ color: 'var(--text-secondary)', mt: 0.25, display: 'block', fontSize: '0.725rem' }}>
                                                             {prog.type} · {prog.durationYears || 4} Years
                                                         </Typography>
                                                     </Box>
@@ -610,7 +610,7 @@ const AcademicStructure = () => {
                                                         <IconButton
                                                             size="small"
                                                             onClick={(e) => { e.stopPropagation(); openModal('program', 'edit', prog); }}
-                                                            sx={{ color: 'text.secondary', p: 0.5, '&:hover': { color: 'var(--color-primary)', background: 'rgba(37, 99, 235, 0.08)' } }}
+                                                            sx={{ color: 'var(--text-secondary)', p: 0.5, '&:hover': { color: 'var(--color-primary)', background: 'rgba(37, 99, 235, 0.08)' } }}
                                                         >
                                                             <Edit sx={{ fontSize: 14 }} />
                                                         </IconButton>
@@ -711,7 +711,7 @@ const AcademicStructure = () => {
             });
             
             return (
-                <Box sx={{ p: { xs: 1.25, sm: 1.5 }, borderRadius: '10px', background: '#faf5ff', border: '1px solid #f3e8ff', mb: 2, ml: { xs: 0, sm: 7, md: 12 } }}>
+                <Box sx={{ p: { xs: 1.25, sm: 1.5 }, borderRadius: '10px', background: 'var(--bg-accent-3)', border: '1px solid var(--border-color)', mb: 2, ml: { xs: 0, sm: 7, md: 12 } }}>
                     <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, justifyContent: 'space-between', alignItems: { xs: 'flex-start', sm: 'center' }, gap: 1.5, mb: 1.5 }}>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flexWrap: 'wrap' }}>
                             <Box sx={{
@@ -727,15 +727,15 @@ const AcademicStructure = () => {
                                 <AccountTree sx={{ color: '#fff', fontSize: 12 }} />
                             </Box>
                             <Box>
-                                <Typography variant="subtitle2" fontWeight={800} sx={{ color: '#5b21b6', fontSize: '0.85rem', lineHeight: 1.2 }}>
+                                <Typography variant="subtitle2" fontWeight={800} sx={{ color: 'var(--text-primary)', fontSize: '0.85rem', lineHeight: 1.2 }}>
                                     {selectedProgram.name} - Specializations
                                 </Typography>
-                                <Typography variant="caption" color="textSecondary" sx={{ fontSize: '0.65rem' }}>
+                                <Typography variant="caption" sx={{ color: 'var(--text-secondary)', fontSize: '0.65rem' }}>
                                     Manage the academic specializations under this program.
                                 </Typography>
                             </Box>
                         </Box>
-                        <Typography variant="body2" sx={{ color: '#6d28d9', fontWeight: 700, fontSize: '0.7rem' }}>
+                        <Typography variant="body2" sx={{ color: '#8b5cf6', fontWeight: 700, fontSize: '0.7rem' }}>
                             {filtered.length} Specializations
                         </Typography>
                     </Box>
@@ -746,8 +746,8 @@ const AcademicStructure = () => {
                                 <Card
                                     sx={{
                                         borderRadius: "8px",
-                                        background: "#ffffff",
-                                        border: '1px solid rgba(0, 0, 0, 0.08)',
+                                        background: "var(--bg-paper)",
+                                        border: '1px solid var(--border-color)',
                                         boxShadow: '0 4px 12px rgba(0,0,0,0.03)',
                                         transition: 'all 0.3s ease',
                                         minHeight: '70px',
@@ -762,10 +762,10 @@ const AcademicStructure = () => {
                                     <CardContent sx={{ p: '10px 12px !important', display: 'flex', flexDirection: 'column', height: '100%', flexGrow: 1 }}>
                                         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                                             <Box>
-                                                <Typography variant="subtitle2" fontWeight={700} sx={{ color: 'text.primary', fontSize: '0.775rem', lineHeight: 1.2 }}>
+                                                <Typography variant="subtitle2" fontWeight={700} sx={{ color: 'var(--text-primary)', fontSize: '0.775rem', lineHeight: 1.2 }}>
                                                     {spec.name}
                                                 </Typography>
-                                                <Typography variant="caption" fontWeight={600} color="textSecondary" sx={{ mt: 0.25, display: 'block', fontSize: '0.7rem' }}>
+                                                <Typography variant="caption" fontWeight={600} sx={{ color: 'var(--text-secondary)', mt: 0.25, display: 'block', fontSize: '0.7rem' }}>
                                                     CODE: {spec.code}
                                                 </Typography>
                                             </Box>
@@ -834,7 +834,7 @@ const AcademicStructure = () => {
                             <Typography variant="h6" fontWeight={800} sx={{ display: 'flex', alignItems: 'center', gap: 1.5, color: 'var(--text-primary)' }}>
                                 <School sx={{ color: 'var(--color-primary)' }} /> Schools
                             </Typography>
-                            <Typography variant="body2" color="textSecondary">
+                            <Typography variant="body2" sx={{ color: 'var(--text-secondary)' }}>
                                 Schools are the major academic divisions in the university. Click to explore.
                             </Typography>
                         </Box>
@@ -866,9 +866,9 @@ const AcademicStructure = () => {
                                                 display: 'flex',
                                                 flexDirection: 'column',
                                                 borderRadius: "12px",
-                                                background: "#ffffff",
-                                                border: isSelected ? '1.5px solid var(--color-primary)' : '1px solid rgba(0, 0, 0, 0.06)',
-                                                boxShadow: isSelected ? '0 8px 20px rgba(37, 99, 235, 0.1)' : '0 2px 8px rgba(0,0,0,0.02)',
+                                                background: "var(--bg-paper)",
+                                                border: isSelected ? '1.5px solid var(--color-primary)' : '1px solid var(--border-color)',
+                                                boxShadow: isSelected ? '0 8px 20px rgba(37, 99, 235, 0.15)' : '0 2px 8px rgba(0,0,0,0.02)',
                                                 cursor: 'pointer',
                                                 position: 'relative',
                                                 transition: 'all 0.2s ease-in-out',
@@ -906,10 +906,10 @@ const AcademicStructure = () => {
                                                             <School sx={{ color: '#fff', fontSize: 20 }} />
                                                         </Box>
                                                         <Box>
-                                                            <Typography variant="subtitle1" fontWeight={700} sx={{ color: '#1e3a8a', fontSize: '0.95rem', lineHeight: 1.2 }}>
+                                                            <Typography variant="subtitle1" fontWeight={700} sx={{ color: 'var(--text-primary)', fontSize: '0.95rem', lineHeight: 1.2 }}>
                                                                 {school.name}
                                                             </Typography>
-                                                            <Typography variant="caption" fontWeight={600} color="textSecondary" sx={{ fontSize: '0.75rem' }}>
+                                                            <Typography variant="caption" fontWeight={600} sx={{ color: 'var(--text-secondary)', fontSize: '0.75rem' }}>
                                                                 ({school.code})
                                                             </Typography>
                                                         </Box>
@@ -921,7 +921,7 @@ const AcademicStructure = () => {
                                                             className="edit-school-btn"
                                                             onClick={(e) => { e.stopPropagation(); openModal('school', 'edit', school); }}
                                                             sx={{
-                                                                color: 'text.secondary',
+                                                                color: 'var(--text-secondary)',
                                                                 p: 0.5,
                                                                 opacity: 0,
                                                                 visibility: 'hidden',
@@ -931,36 +931,36 @@ const AcademicStructure = () => {
                                                         >
                                                             <Edit sx={{ fontSize: 16 }} />
                                                         </IconButton>
-                                                        <ChevronRight sx={{ color: 'text.secondary', fontSize: 18, opacity: 0.5 }} />
+                                                        <ChevronRight sx={{ color: 'var(--text-secondary)', fontSize: 18, opacity: 0.5 }} />
                                                     </Box>
                                                 </Box>
 
-                                                <Typography variant="body2" color="textSecondary" sx={{ mb: 2.5, minHeight: 36, fontSize: '0.8rem', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                                                <Typography variant="body2" sx={{ color: 'var(--text-secondary)', mb: 2.5, minHeight: 36, fontSize: '0.8rem', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
                                                     {school.description || "Academic division for engineering, technology, and sciences."}
                                                 </Typography>
 
                                                 <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 1, textAlign: 'left', mt: 'auto' }}>
                                                     <Box>
-                                                        <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', fontSize: '0.65rem', fontWeight: 600 }}>
+                                                        <Typography variant="caption" sx={{ color: 'var(--text-secondary)', display: 'block', fontSize: '0.65rem', fontWeight: 600 }}>
                                                             Departments
                                                         </Typography>
-                                                        <Typography variant="subtitle1" sx={{ fontWeight: 800, color: 'text.primary', mt: 0.25, fontSize: '0.95rem' }}>
+                                                        <Typography variant="subtitle1" sx={{ fontWeight: 800, color: 'var(--text-primary)', mt: 0.25, fontSize: '0.95rem' }}>
                                                             {sDepts.length}
                                                         </Typography>
                                                     </Box>
                                                     <Box>
-                                                        <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', fontSize: '0.65rem', fontWeight: 600 }}>
+                                                        <Typography variant="caption" sx={{ color: 'var(--text-secondary)', display: 'block', fontSize: '0.65rem', fontWeight: 600 }}>
                                                             Programs
                                                         </Typography>
-                                                        <Typography variant="subtitle1" sx={{ fontWeight: 800, color: 'text.primary', mt: 0.25, fontSize: '0.95rem' }}>
+                                                        <Typography variant="subtitle1" sx={{ fontWeight: 800, color: 'var(--text-primary)', mt: 0.25, fontSize: '0.95rem' }}>
                                                             {sProgs.length}
                                                         </Typography>
                                                     </Box>
                                                     <Box>
-                                                        <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', fontSize: '0.65rem', fontWeight: 600 }}>
+                                                        <Typography variant="caption" sx={{ color: 'var(--text-secondary)', display: 'block', fontSize: '0.65rem', fontWeight: 600 }}>
                                                             Specializations
                                                         </Typography>
-                                                        <Typography variant="subtitle1" sx={{ fontWeight: 800, color: 'text.primary', mt: 0.25, fontSize: '0.95rem' }}>
+                                                        <Typography variant="subtitle1" sx={{ fontWeight: 800, color: 'var(--text-primary)', mt: 0.25, fontSize: '0.95rem' }}>
                                                             {sBranches.length}
                                                         </Typography>
                                                     </Box>
@@ -1066,9 +1066,9 @@ const AcademicStructure = () => {
                                                     display: 'flex',
                                                     flexDirection: 'column',
                                                     borderRadius: "12px",
-                                                    background: "#ffffff",
-                                                    border: isDeptSelected ? '1.5px solid var(--color-primary)' : '1px solid rgba(0, 0, 0, 0.08)',
-                                                    boxShadow: isDeptSelected ? '0 8px 20px rgba(37, 99, 235, 0.1)' : '0 2px 8px rgba(0,0,0,0.02)',
+                                                    background: "var(--bg-paper)",
+                                                    border: isDeptSelected ? '1.5px solid var(--color-primary)' : '1px solid var(--border-color)',
+                                                    boxShadow: isDeptSelected ? '0 8px 20px rgba(37, 99, 235, 0.15)' : '0 2px 8px rgba(0,0,0,0.02)',
                                                     cursor: 'pointer',
                                                     position: 'relative',
                                                     transition: 'all 0.3s ease',
@@ -1105,10 +1105,10 @@ const AcademicStructure = () => {
                                                                 <Business sx={{ color: '#fff', fontSize: 16 }} />
                                                             </Box>
                                                             <Box>
-                                                                <Typography variant="subtitle1" fontWeight={700} sx={{ color: '#1e3a8a', fontSize: '0.85rem', lineHeight: 1.2 }}>
+                                                                <Typography variant="subtitle1" fontWeight={700} sx={{ color: 'var(--text-primary)', fontSize: '0.85rem', lineHeight: 1.2 }}>
                                                                     {dept.name}
                                                                 </Typography>
-                                                                <Typography variant="caption" fontWeight={600} color="textSecondary" sx={{ fontSize: '0.75rem', mt: 0.25, display: 'block' }}>
+                                                                <Typography variant="caption" fontWeight={600} sx={{ color: 'var(--text-secondary)', fontSize: '0.75rem', mt: 0.25, display: 'block' }}>
                                                                     {dept.code}
                                                                 </Typography>
                                                             </Box>
@@ -1117,7 +1117,7 @@ const AcademicStructure = () => {
                                                         <IconButton
                                                             size="small"
                                                             onClick={(e) => { e.stopPropagation(); openModal('department', 'edit', dept); }}
-                                                            sx={{ color: 'text.secondary', p: 0.5, mt: -0.5, mr: -1, '&:hover': { color: 'var(--color-primary)', background: 'rgba(2, 132, 199, 0.08)' } }}
+                                                            sx={{ color: 'var(--text-secondary)', p: 0.5, mt: -0.5, mr: -1, '&:hover': { color: 'var(--color-primary)', background: 'rgba(2, 132, 199, 0.08)' } }}
                                                         >
                                                             <Edit sx={{ fontSize: 16 }} />
                                                         </IconButton>
@@ -1189,7 +1189,7 @@ const AcademicStructure = () => {
 
                 {programs.length === 0 && (
                     <Box sx={{ gridColumn: '1 / -1', py: 5 }}>
-                        <Typography variant="body1" color="textSecondary" align="center">No programs found.</Typography>
+                        <Typography variant="body1" sx={{ color: 'var(--text-secondary)' }} align="center">No programs found.</Typography>
                     </Box>
                 )}
 
@@ -1219,7 +1219,8 @@ const AcademicStructure = () => {
 
                             <Divider sx={{ mb: 1.5, mt: 'auto', opacity: 0.5 }} />
 
-                            <Typography variant="caption" color="textSecondary" sx={{
+                            <Typography variant="caption" sx={{
+                                color: 'var(--text-secondary)',
                                 fontWeight: 500,
                                 opacity: 0.8,
                                 display: '-webkit-box',
@@ -1536,8 +1537,8 @@ const AcademicStructure = () => {
 const cardStyle = {
     position: "relative",
     borderRadius: "16px",
-    background: "#ffffff",
-    border: "1px solid rgba(0, 0, 0, 0.08)",
+    background: "var(--bg-paper)",
+    border: "1px solid var(--border-color)",
     boxShadow: "0 4px 16px 0 rgba(0, 0, 0, 0.04)",
     transition: "all 0.2s ease-in-out",
     overflow: "hidden",

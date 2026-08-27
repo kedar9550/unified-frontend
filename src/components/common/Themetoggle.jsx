@@ -33,26 +33,23 @@ export default function ThemeToggle({ onToggle }) {
     //console.log("ThemeToggle: handleToggle clicked. nextDark:", nextDark, "has onToggle:", !!onToggle);
     if (onToggle) onToggle();
 
-    // Delay the theme toggle transition slightly to allow the menu close animation to execute
-    setTimeout(() => {
-      // Fallback for browsers that don't support View Transition API
-      if (!document.startViewTransition) {
-        setIsDark(nextDark);
-        return;
-      }
+    // Fallback for browsers that don't support View Transition API
+    if (!document.startViewTransition) {
+      setIsDark(nextDark);
+      return;
+    }
 
-      // Prepare transition classes
-      const transitionClass = nextDark ? 'theme-transition-expand' : 'theme-transition-collapse';
-      document.documentElement.classList.add(transitionClass);
+    // Prepare transition classes
+    const transitionClass = nextDark ? 'theme-transition-expand' : 'theme-transition-collapse';
+    document.documentElement.classList.add(transitionClass);
 
-      const transition = document.startViewTransition(() => {
-        setIsDark(nextDark);
-      });
+    const transition = document.startViewTransition(() => {
+      setIsDark(nextDark);
+    });
 
-      transition.finished.finally(() => {
-        document.documentElement.classList.remove(transitionClass);
-      });
-    }, 250);
+    transition.finished.finally(() => {
+      document.documentElement.classList.remove(transitionClass);
+    });
   };
 
   return (
