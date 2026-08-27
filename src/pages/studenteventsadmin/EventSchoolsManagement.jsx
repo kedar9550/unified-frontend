@@ -747,7 +747,8 @@ const EventSchoolManagement = () => {
       <Card
         sx={{
           mt: 3,
-          maxWidth: 860,
+          maxWidth: 1050,
+          width: '100%',
           mx: 'auto',
           boxShadow: '0 8px 30px rgba(0,0,0,0.06)',
           borderRadius: '20px',
@@ -809,8 +810,15 @@ const EventSchoolManagement = () => {
         <CardContent sx={{ p: { xs: 3, sm: 4 } }}>
           <Stack spacing={3.5}>
             {/* Row 1: School Name & Short Name */}
-            <Grid container spacing={2.5}>
-              <Grid item xs={12} sm={8}>
+            <Box
+              sx={{
+                display: 'grid',
+                gridTemplateColumns: { xs: '1fr', md: '2.5fr 1fr' },
+                gap: 3,
+                width: '100%',
+              }}
+            >
+              <Box sx={{ width: '100%' }}>
                 <Typography
                   variant="subtitle2"
                   fontWeight="600"
@@ -832,9 +840,9 @@ const EventSchoolManagement = () => {
                   }}
                   variant="outlined"
                 />
-              </Grid>
+              </Box>
 
-              <Grid item xs={12} sm={4}>
+              <Box sx={{ width: '100%' }}>
                 <Typography
                   variant="subtitle2"
                   fontWeight="600"
@@ -856,11 +864,11 @@ const EventSchoolManagement = () => {
                   }}
                   variant="outlined"
                 />
-              </Grid>
-            </Grid>
+              </Box>
+            </Box>
 
             {/* Row 2: Banner Upload */}
-            <Box>
+            <Box sx={{ width: '100%' }}>
               <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                   <Typography
@@ -894,7 +902,7 @@ const EventSchoolManagement = () => {
                 onRemove: removeBanner,
                 hasError: !!errors.banner,
                 previewAlt: 'School Banner Preview',
-                previewMaxHeight: 240,
+                previewMaxHeight: 260,
                 hint: 'Upload JPG, PNG, WebP (Max: 5MB). Leave empty if not applicable.',
               })}
 
@@ -911,7 +919,7 @@ const EventSchoolManagement = () => {
             </Box>
 
             {/* Row 3: Content / Description */}
-            <Box>
+            <Box sx={{ width: '100%' }}>
               <Typography
                 variant="subtitle2"
                 fontWeight="600"
@@ -938,8 +946,15 @@ const EventSchoolManagement = () => {
             </Box>
 
             {/* Row 4: Coordinator & Status */}
-            <Grid container spacing={2.5}>
-              <Grid item xs={12} sm={8}>
+            <Box
+              sx={{
+                display: 'grid',
+                gridTemplateColumns: { xs: '1fr', md: '2.5fr 1fr' },
+                gap: 3,
+                width: '100%',
+              }}
+            >
+              <Box sx={{ width: '100%' }}>
                 <Typography
                   variant="subtitle2"
                   fontWeight="600"
@@ -949,6 +964,8 @@ const EventSchoolManagement = () => {
                   School Coordinator *
                 </Typography>
                 <Autocomplete
+                  fullWidth
+                  sx={{ width: '100%' }}
                   options={employeeOptions}
                   getOptionLabel={(option) => {
                     if (!option) return '';
@@ -988,6 +1005,7 @@ const EventSchoolManagement = () => {
                     return (
                       <TextField
                         {...params}
+                        fullWidth
                         placeholder="Search employee by name or ID"
                         error={!!errors.coordinator}
                         helperText={errors.coordinator}
@@ -1036,9 +1054,9 @@ const EventSchoolManagement = () => {
                     </Box>
                   )}
                 />
-              </Grid>
+              </Box>
 
-              <Grid item xs={12} sm={4}>
+              <Box sx={{ width: '100%' }}>
                 <Typography
                   variant="subtitle2"
                   fontWeight="600"
@@ -1047,8 +1065,9 @@ const EventSchoolManagement = () => {
                 >
                   Status
                 </Typography>
-                <FormControl fullWidth>
+                <FormControl fullWidth sx={{ width: '100%' }}>
                   <Select
+                    fullWidth
                     value={status}
                     onChange={(e) => setStatus(e.target.value)}
                     sx={{ borderRadius: '12px' }}
@@ -1082,8 +1101,8 @@ const EventSchoolManagement = () => {
                     </MenuItem>
                   </Select>
                 </FormControl>
-              </Grid>
-            </Grid>
+              </Box>
+            </Box>
 
             <Divider sx={{ my: 1 }} />
 
