@@ -72,8 +72,8 @@ const EventCreation = () => {
   const [floorsList, setFloorsList] = useState([]);
   const [groundsList, setGroundsList] = useState([]);
 
-  const [extraTeamSize, setExtraTeamSize] = useState('');
-  const [extraAmountPerHead, setExtraAmountPerHead] = useState('');
+  const [extraTeamSize, setExtraTeamSize] = useState('0');
+  const [extraAmountPerHead, setExtraAmountPerHead] = useState('0');
   const [overview, setOverview] = useState('');
   const [rules, setRules] = useState(['']);
   const [errors, setErrors] = useState({});
@@ -207,8 +207,8 @@ const EventCreation = () => {
     setFloorId('');
     setGroundId('');
     setRoomNo('');
-    setExtraTeamSize('');
-    setExtraAmountPerHead('');
+    setExtraTeamSize('0');
+    setExtraAmountPerHead('0');
     setOverview('');
     setRules(['']);
     setSelectedCoordinators([]);
@@ -261,8 +261,8 @@ const EventCreation = () => {
     setFloorId(event.floor?._id || event.floor || '');
     setGroundId(event.ground?._id || event.ground || '');
     setRoomNo(event.roomNo || '');
-    setExtraTeamSize(event.extraTeamSize != null ? String(event.extraTeamSize) : '');
-    setExtraAmountPerHead(event.extraAmountPerHead != null ? String(event.extraAmountPerHead) : '');
+    setExtraTeamSize(event.extraTeamSize != null ? String(event.extraTeamSize) : '0');
+    setExtraAmountPerHead(event.extraAmountPerHead != null ? String(event.extraAmountPerHead) : '0');
     setOverview(event.overview || '');
     setRules(event.rules && event.rules.length > 0 ? event.rules : ['']);
     setBannerFile(null);
@@ -327,8 +327,8 @@ const EventCreation = () => {
     }
 
     if (!selectedCoordinators || selectedCoordinators.length === 0) newErrors.facultyCoordinator = 'At least one Faculty Coordinator is required.';
-    if (extraTeamSize === '' || Number(extraTeamSize) < 0) newErrors.extraTeamSize = 'Enter a valid extra team size.';
-    if (extraAmountPerHead === '' || Number(extraAmountPerHead) < 0) newErrors.extraAmountPerHead = 'Enter a valid amount per head.';
+    if (extraTeamSize !== '' && Number(extraTeamSize) < 0) newErrors.extraTeamSize = 'Enter a valid extra team size (0 or more).';
+    if (extraAmountPerHead !== '' && Number(extraAmountPerHead) < 0) newErrors.extraAmountPerHead = 'Enter a valid amount per head (0 or more).';
     if (!overview.trim()) newErrors.overview = 'Overview is required.';
 
     const ruleErrors = rules.map((rule) => !rule.trim());
@@ -970,7 +970,7 @@ const EventCreation = () => {
             <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 2 }}>
               <TextField
                 fullWidth
-                label="Extra Team Size"
+                label="Extra Team Size (Optional)"
                 type="number"
                 inputProps={{ min: 0 }}
                 value={extraTeamSize}
@@ -980,7 +980,7 @@ const EventCreation = () => {
               />
               <TextField
                 fullWidth
-                label="Extra Amount Per Head"
+                label="Extra Amount Per Head (Optional)"
                 type="number"
                 inputProps={{ min: 0 }}
                 value={extraAmountPerHead}

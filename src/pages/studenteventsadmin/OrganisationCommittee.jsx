@@ -55,7 +55,7 @@ const CommitteeRoleManager = ({ role }) => {
   const [loading, setLoading] = useState(false);
   const [employees, setEmployees] = useState([]);
   const [openModal, setOpenModal] = useState(false);
-  const [formData, setFormData] = useState({ employee: '', status: 'Active' });
+  const [formData, setFormData] = useState({ employee: '', status: 'Active', orderNumber: 0 });
   const [editingId, setEditingId] = useState(null);
 
   const fetchMembers = useCallback(async () => {
@@ -87,10 +87,10 @@ const CommitteeRoleManager = ({ role }) => {
   const handleOpen = (member = null) => {
     if (member) {
       setEditingId(member._id);
-      setFormData({ employee: member.employee?._id || '', status: member.status });
+      setFormData({ employee: member.employee?._id || '', status: member.status, orderNumber: member.orderNumber || 0 });
     } else {
       setEditingId(null);
-      setFormData({ employee: '', status: 'Active' });
+      setFormData({ employee: '', status: 'Active', orderNumber: 0 });
     }
     setOpenModal(true);
   };
@@ -169,7 +169,8 @@ const CommitteeRoleManager = ({ role }) => {
                     <TableCell>
                       <Typography variant="body1" fontWeight={600}>{member.employee?.name || member.employee?.employeeName}</Typography>
                       <Typography variant="body2" color="textSecondary">Emp ID: {member.employee?.institutionId || member.employee?.employeeCode}</Typography>
-                      <Typography variant="caption" color="textSecondary">Ph: {member.employee?.phone || 'N/A'}</Typography>
+                      <Typography variant="caption" color="textSecondary" sx={{ display: 'block' }}>Ph: {member.employee?.phone || 'N/A'}</Typography>
+                      <Typography variant="caption" color="primary" sx={{ display: 'block', fontWeight: 'bold' }}>Order No: {member.orderNumber || 0}</Typography>
                     </TableCell>
                     <TableCell>
                       <Chip label={member.status} color={member.status === 'Active' ? 'success' : 'default'} size="small" />
@@ -205,6 +206,14 @@ const CommitteeRoleManager = ({ role }) => {
                   sx={{ mb: 3, mt: 1 }}
                 />
               )}
+            />
+            <TextField
+              type="number"
+              fullWidth
+              label="Order Number"
+              value={formData.orderNumber}
+              onChange={(e) => setFormData({ ...formData, orderNumber: Number(e.target.value) })}
+              sx={{ mb: 3 }}
             />
             <TextField
               select

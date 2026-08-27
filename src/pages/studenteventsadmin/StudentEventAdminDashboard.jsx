@@ -274,7 +274,7 @@ const StudentEventAdminDashboard = () => {
       />
 
       {/* ── Summary Cards ─────────────────────────────────────────────── */}
-      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr 1fr', md: 'repeat(6, 1fr)' }, gap: 2 }}>
+      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)', xl: 'repeat(6, 1fr)' }, gap: 2 }}>
         <SummaryCard label="Total Teams" value={stats?.totalTeams} color="#0d9488" icon={<GroupsIcon />} />
         <SummaryCard label="Total Students" value={stats?.totalStudents} color="#2563eb" icon={<PeopleIcon />} />
         <SummaryCard label="Total Attended" value={stats?.totalAttended} color="#16a34a" icon={<PeopleIcon />} />
@@ -301,18 +301,22 @@ const StudentEventAdminDashboard = () => {
             </Select>
           </FormControl>
         </Box>
-        <ResponsiveContainer width="100%" height={340}>
-          <BarChart data={deptBarData} margin={{ top: 10, right: 20, left: 0, bottom: 65 }}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="name" angle={-30} textAnchor="end" tick={{ fontSize: 11 }} interval={0} />
-            <YAxis tick={{ fontSize: 11 }} />
-            <Tooltip formatter={(val, name) => [name === '₹ Revenue' ? `₹${fmt(val)}` : fmt(val), name]} />
-            <Legend verticalAlign="bottom" wrapperStyle={{ paddingTop: 10 }} />
-            <Bar dataKey="Teams count" fill={DEPT_BAR_COLORS.teams} radius={[4, 4, 0, 0]} />
-            <Bar dataKey="Student count" fill={DEPT_BAR_COLORS.students} radius={[4, 4, 0, 0]} />
-            <Bar dataKey="Events count" fill={DEPT_BAR_COLORS.events} radius={[4, 4, 0, 0]} />
-          </BarChart>
-        </ResponsiveContainer>
+        <Box sx={{ overflowX: 'auto', pb: 1 }}>
+          <Box sx={{ minWidth: 700 }}>
+            <ResponsiveContainer width="100%" height={340}>
+              <BarChart data={deptBarData} margin={{ top: 10, right: 20, left: 0, bottom: 65 }}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="name" angle={-30} textAnchor="end" tick={{ fontSize: 11 }} interval={0} />
+                <YAxis tick={{ fontSize: 11 }} />
+                <Tooltip formatter={(val, name) => [name === '₹ Revenue' ? `₹${fmt(val)}` : fmt(val), name]} />
+                <Legend verticalAlign="bottom" wrapperStyle={{ paddingTop: 10 }} />
+                <Bar dataKey="Teams count" fill={DEPT_BAR_COLORS.teams} radius={[4, 4, 0, 0]} />
+                <Bar dataKey="Student count" fill={DEPT_BAR_COLORS.students} radius={[4, 4, 0, 0]} />
+                <Bar dataKey="Events count" fill={DEPT_BAR_COLORS.events} radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </Box>
+        </Box>
         <Box sx={{ mt: 2, textAlign: 'center', p: 1.5, borderRadius: '12px', background: 'var(--bg-glass, #f8fafc)' }}>
           <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>
             Filtered Teams: {fmt(filteredTeamsTotal)}&nbsp;&nbsp;|&nbsp;&nbsp;Filtered Students: {fmt(filteredStudentsTotal)}&nbsp;&nbsp;|&nbsp;&nbsp;Filtered Revenue: ₹{fmt(filteredRevenueTotal)}
@@ -338,18 +342,22 @@ const StudentEventAdminDashboard = () => {
             </Select>
           </FormControl>
         </Box>
-        <ResponsiveContainer width="100%" height={300}>
-          <BarChart data={groupBarData} margin={{ top: 10, right: 20, left: 0, bottom: 45 }}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="name" angle={-15} textAnchor="end" tick={{ fontSize: 11 }} interval={0} />
-            <YAxis tick={{ fontSize: 11 }} />
-            <Tooltip formatter={(val, name) => [name === '₹ Revenue' ? `₹${fmt(val)}` : fmt(val), name]} />
-            <Legend verticalAlign="bottom" wrapperStyle={{ paddingTop: 10 }} />
-            <Bar dataKey="Teams count" fill={DEPT_BAR_COLORS.teams} radius={[4, 4, 0, 0]} />
-            <Bar dataKey="Student count" fill={DEPT_BAR_COLORS.students} radius={[4, 4, 0, 0]} />
-            <Bar dataKey="Events count" fill={DEPT_BAR_COLORS.events} radius={[4, 4, 0, 0]} />
-          </BarChart>
-        </ResponsiveContainer>
+        <Box sx={{ overflowX: 'auto', pb: 1 }}>
+          <Box sx={{ minWidth: 600 }}>
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={groupBarData} margin={{ top: 10, right: 20, left: 0, bottom: 45 }}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="name" angle={-15} textAnchor="end" tick={{ fontSize: 11 }} interval={0} />
+                <YAxis tick={{ fontSize: 11 }} />
+                <Tooltip formatter={(val, name) => [name === '₹ Revenue' ? `₹${fmt(val)}` : fmt(val), name]} />
+                <Legend verticalAlign="bottom" wrapperStyle={{ paddingTop: 10 }} />
+                <Bar dataKey="Teams count" fill={DEPT_BAR_COLORS.teams} radius={[4, 4, 0, 0]} />
+                <Bar dataKey="Student count" fill={DEPT_BAR_COLORS.students} radius={[4, 4, 0, 0]} />
+                <Bar dataKey="Events count" fill={DEPT_BAR_COLORS.events} radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </Box>
+        </Box>
         <Box sx={{ mt: 2, textAlign: 'center', p: 1.5, borderRadius: '12px', background: 'var(--bg-glass, #f8fafc)' }}>
           <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>
             Filtered Teams: {fmt(groupFilteredTeamsTotal)}&nbsp;&nbsp;|&nbsp;&nbsp;Filtered Students: {fmt(groupFilteredStudentsTotal)}&nbsp;&nbsp;|&nbsp;&nbsp;Filtered Revenue: ₹{fmt(groupFilteredRevenueTotal)}
@@ -397,19 +405,23 @@ const StudentEventAdminDashboard = () => {
         {/* Campus-wise years bar */}
         <Paper variant="outlined" sx={{ p: 3, borderRadius: '16px' }}>
           <SectionTitle>Campus wise Years</SectionTitle>
-          <ResponsiveContainer width="100%" height={260}>
-            <BarChart data={campusYearData} margin={{ top: 10, right: 20, left: 0, bottom: 10 }}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" tick={{ fontSize: 12 }} />
-              <YAxis tick={{ fontSize: 11 }} />
-              <Tooltip />
-              <Legend />
-              <Bar dataKey="I-Years" fill={YEAR_COLORS[0]} radius={[4, 4, 0, 0]} />
-              <Bar dataKey="II-Years" fill={YEAR_COLORS[1]} radius={[4, 4, 0, 0]} />
-              <Bar dataKey="III-Years" fill={YEAR_COLORS[2]} radius={[4, 4, 0, 0]} />
-              <Bar dataKey="IV-Years" fill={YEAR_COLORS[3]} radius={[4, 4, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
+          <Box sx={{ overflowX: 'auto', pb: 1 }}>
+            <Box sx={{ minWidth: 400 }}>
+              <ResponsiveContainer width="100%" height={260}>
+                <BarChart data={campusYearData} margin={{ top: 10, right: 20, left: 0, bottom: 10 }}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="name" tick={{ fontSize: 12 }} />
+                  <YAxis tick={{ fontSize: 11 }} />
+                  <Tooltip />
+                  <Legend />
+                  <Bar dataKey="I-Years" fill={YEAR_COLORS[0]} radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="II-Years" fill={YEAR_COLORS[1]} radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="III-Years" fill={YEAR_COLORS[2]} radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="IV-Years" fill={YEAR_COLORS[3]} radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </Box>
+          </Box>
         </Paper>
       </Box>
 
@@ -499,18 +511,22 @@ const StudentEventAdminDashboard = () => {
         {/* Campus gender line */}
         <Paper variant="outlined" sx={{ p: 3, borderRadius: '16px' }}>
           <SectionTitle>Campus Wise Gender</SectionTitle>
-          <ResponsiveContainer width="100%" height={240}>
-            <LineChart data={campusGenderLineData} margin={{ top: 10, right: 20, left: 0, bottom: 10 }}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="campus" tick={{ fontSize: 12 }} />
-              <YAxis tick={{ fontSize: 11 }} />
-              <Tooltip />
-              <Legend />
-              {Object.keys(CAMPUS_GENDER_COLORS).map((key) => (
-                <Line key={key} type="monotone" dataKey={key} stroke={CAMPUS_GENDER_COLORS[key]} strokeWidth={2} dot={{ r: 5 }} />
-              ))}
-            </LineChart>
-          </ResponsiveContainer>
+          <Box sx={{ overflowX: 'auto', pb: 1 }}>
+            <Box sx={{ minWidth: 400 }}>
+              <ResponsiveContainer width="100%" height={240}>
+                <LineChart data={campusGenderLineData} margin={{ top: 10, right: 20, left: 0, bottom: 10 }}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="campus" tick={{ fontSize: 12 }} />
+                  <YAxis tick={{ fontSize: 11 }} />
+                  <Tooltip />
+                  <Legend />
+                  {Object.keys(CAMPUS_GENDER_COLORS).map((key) => (
+                    <Line key={key} type="monotone" dataKey={key} stroke={CAMPUS_GENDER_COLORS[key]} strokeWidth={2} dot={{ r: 5 }} />
+                  ))}
+                </LineChart>
+              </ResponsiveContainer>
+            </Box>
+          </Box>
         </Paper>
 
         {/* Campus count pie */}
