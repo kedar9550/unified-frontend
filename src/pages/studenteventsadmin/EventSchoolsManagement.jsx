@@ -132,22 +132,25 @@ const EventSchoolManagement = () => {
   // ─── Image handling ───
   const validateImage = (file) => {
     if (!VALID_IMAGE_TYPES.includes(file.type)) {
-      return 'Please upload a valid image file (JPG, JPEG, PNG, WebP).';
+      return 'Invalid file type. Please upload a JPG, JPEG, PNG, or WebP image.';
     }
     if (file.size > MAX_IMAGE_SIZE) {
-      return 'Image size should not exceed 5 MB.';
+      const sizeMB = (file.size / (1024 * 1024)).toFixed(2);
+      return `Image size (${sizeMB} MB) exceeds the 5 MB limit. Please choose a smaller image under 5 MB.`;
     }
     return '';
   };
 
   const handleBannerChange = (e) => {
-    const file = e.target.files[0];
+    const file = e.target.files?.[0];
     setBannerError('');
     if (!file) return;
 
     const message = validateImage(file);
     if (message) {
       setBannerError(message);
+      toast.error(message);
+      e.target.value = '';
       return;
     }
 
@@ -160,6 +163,43 @@ const EventSchoolManagement = () => {
     setBannerFile(null);
     setBannerPreview(null);
     setBannerError('');
+  };
+
+  // ─── Helper to extract clear error message ───
+  const extractErrorMessage = (error, fallback = 'Failed to save school. Please try again.') => {
+    if (!error) return fallback;
+
+    // HTTP 413: Payload / File too large
+    if (error.response?.status === 413) {
+      return 'The uploaded image is too large for the server. Please upload an image under 5 MB.';
+    }
+
+    const data = error.response?.data;
+    if (data) {
+      if (typeof data === 'string') return data;
+      if (data.message && typeof data.message === 'string') {
+        if (data.message.includes('LIMIT_FILE_SIZE') || data.message.toLowerCase().includes('file too large')) {
+          return 'Banner image exceeds the 5 MB size limit. Please upload a smaller image under 5 MB.';
+        }
+        if (data.message.includes('ENOSPC')) {
+          return 'Server storage is full (No space left on device). Please free up disk space on the server.';
+        }
+        return data.message;
+      }
+      if (data.error && typeof data.error === 'string') return data.error;
+    }
+
+    if (error.message && typeof error.message === 'string') {
+      if (error.message.includes('Network Error')) {
+        return 'Network Error: Cannot connect to the backend server. Please check your connection.';
+      }
+      if (error.message.includes('ENOSPC')) {
+        return 'Server storage is full (No space left on device). Please free up disk space.';
+      }
+      return error.message;
+    }
+
+    return fallback;
   };
 
   // ─── Validation ───
@@ -284,17 +324,25 @@ const EventSchoolManagement = () => {
         if (response.data.success) {
           toast.success('School updated successfully!');
           goBackToList();
+        } else {
+          toast.error(response.data.message || 'Failed to update school.');
         }
       } else {
         const response = await API.post('/api/event-schools', formData);
         if (response.data.success) {
           toast.success('School created successfully!');
           goBackToList();
+        } else {
+          toast.error(response.data.message || 'Failed to create school.');
         }
       }
     } catch (error) {
       console.error('Error saving school:', error);
-      toast.error(error.response?.data?.message || 'Failed to save school. Please try again.');
+      const errMsg = extractErrorMessage(
+        error,
+        editingEventSchool ? 'Failed to update school. Please try again.' : 'Failed to create school. Please try again.'
+      );
+      toast.error(errMsg);
     } finally {
       setSubmitting(false);
     }
