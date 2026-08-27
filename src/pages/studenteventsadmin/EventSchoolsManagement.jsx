@@ -348,7 +348,7 @@ const EventSchoolManagement = () => {
     }
   };
 
-  // ─── Delete ───
+  // ─── Delete ──
   const handleDeleteClick = (eventSchool) => {
     setEventSchoolToDelete(eventSchool);
     setDeleteDialogOpen(true);
