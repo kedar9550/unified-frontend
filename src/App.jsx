@@ -108,6 +108,7 @@ import VerifyCertificate from "./pages/public/VerifyCertificate";
 import Building from "./pages/Infrastructure/Building";
 import Floor from "./pages/Infrastructure/Floor";
 import Ground from "./pages/Infrastructure/Ground";
+import NotFound from "./pages/NotFound";
 
 const PublicOnlyRoute = ({ children }) => {
   const { user, logout } = useAuth();
@@ -161,7 +162,7 @@ function App() {
     // Initialize theme based on user preference or system default
     const savedTheme = localStorage.getItem("theme");
     const prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
-    
+
     if (savedTheme === "dark" || (!savedTheme && prefersDark)) {
       document.body.classList.add("dark-mode");
     } else {
@@ -228,7 +229,7 @@ function App() {
 
         {/* Self Appraisal routes */}
         <Route path="/faculty/event-coordination" element={<ProtectedRoute element={<EventCoordination />} />} />
-        <Route path="/faculty/appraisal" element={<ProtectedRoute element={<SelfAppraisal />} />} />
+        {/* <Route path="/faculty/appraisal" element={<ProtectedRoute element={<SelfAppraisal />} />} /> */}
         <Route path="/hod/appraisal-verification" element={<ProtectedRoute element={<AppraisalEvaluation />} />} />
         <Route path="/uniprime/appraisal-settings" element={<ProtectedRoute element={<AppraisalSettings />} />} />
         <Route path="/appraisal/evaluate" element={<ProtectedRoute element={<AppraisalEvaluation />} />} />
@@ -312,8 +313,7 @@ function App() {
         <Route path="/infrastructure/building" element={<ProtectedRoute element={<Building />} />} />
         <Route path="/infrastructure/floors" element={<ProtectedRoute element={<Floor />} />} />
         <Route path="/infrastructure/grounds" element={<ProtectedRoute element={<Ground />} />} />
-
-        <Route path="*" element={<ProtectedRoute element={<Box p={4}><Typography variant="h4">Page Content</Typography></Box>} />} />
+        <Route path="*" element={<ProtectedRoute element={<NotFound />} />} />
       </Routes>
     </>
   );
