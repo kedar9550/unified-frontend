@@ -103,7 +103,7 @@ const StudentEventAdminDashboard = () => {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [deptFilter, setDeptFilter] = useState('ALL');
-  const [groupFilter, setGroupFilter] = useState('ALL');
+  const [schoolFilter, setSchoolFilter] = useState('ALL');
 
   const fetchStats = useCallback(async () => {
     setLoading(true);
@@ -126,8 +126,8 @@ const StudentEventAdminDashboard = () => {
     return stats?.departmentStats || [];
   }, [stats]);
 
-  const groupStats = useMemo(() => {
-    return stats?.groupStats || [];
+  const schoolStats = useMemo(() => {
+    return stats?.schoolStats || [];
   }, [stats]);
 
   const deptOptions = useMemo(
@@ -135,9 +135,9 @@ const StudentEventAdminDashboard = () => {
     [deptStats]
   );
 
-  const groupOptions = useMemo(
-    () => ['ALL', ...groupStats.map((g) => g.shortName || g.name || g.group)],
-    [groupStats]
+  const schoolOptions = useMemo(
+    () => ['ALL', ...schoolStats.map((g) => g.shortName || g.name || g.group)],
+    [schoolStats]
   );
 
   // Department Bar Data
@@ -158,11 +158,11 @@ const StudentEventAdminDashboard = () => {
 
   // Group Bar Data
   const groupBarData = useMemo(() => {
-    if (!groupStats.length) return [];
+    if (!schoolStats.length) return [];
     const filtered =
-      groupFilter === 'ALL'
-        ? groupStats
-        : groupStats.filter((g) => (g.shortName === groupFilter || g.name === groupFilter || g.group === groupFilter));
+      schoolFilter === 'ALL'
+        ? schoolStats
+        : schoolStats.filter((g) => (g.shortName === schoolFilter || g.name === schoolFilter || g.group === schoolFilter));
     return filtered.map((g) => ({
       name: g.shortName || g.name || g.group,
       'Teams count': g.teamCount,
@@ -170,7 +170,7 @@ const StudentEventAdminDashboard = () => {
       'Events count': g.eventCount,
       '₹ Revenue': g.revenue,
     }));
-  }, [groupStats, groupFilter]);
+  }, [schoolStats, schoolFilter]);
 
   const deptRevenueData = useMemo(() => {
     if (!deptStats.length) return [];
@@ -187,18 +187,18 @@ const StudentEventAdminDashboard = () => {
   }, [deptStats, deptFilter]);
 
   const groupRevenueData = useMemo(() => {
-    if (!groupStats.length) return [];
+    if (!schoolStats.length) return [];
     const filtered =
-      groupFilter === 'ALL'
-        ? groupStats
-        : groupStats.filter((g) => (g.shortName === groupFilter || g.name === groupFilter || g.group === groupFilter));
+      schoolFilter === 'ALL'
+        ? schoolStats
+        : schoolStats.filter((g) => (g.shortName === schoolFilter || g.name === schoolFilter || g.group === schoolFilter));
     return filtered.map((g) => ({
       name: g.shortName || g.name || g.group,
       '₹ Revenue': g.revenue,
       'Events count': g.eventCount,
       'Teams count': g.teamCount,
     })).sort((a, b) => b['₹ Revenue'] - a['₹ Revenue']);
-  }, [groupStats, groupFilter]);
+  }, [schoolStats, schoolFilter]);
 
   const campusYearData = useMemo(() => {
     if (!stats?.campusWise) return [];
@@ -279,7 +279,7 @@ const StudentEventAdminDashboard = () => {
         <SummaryCard label="Total Students" value={stats?.totalStudents} color="#2563eb" icon={<PeopleIcon />} />
         <SummaryCard label="Total Attended" value={stats?.totalAttended} color="#16a34a" icon={<PeopleIcon />} />
         <SummaryCard label="Total Revenue (₹)" value={stats?.revenue?.total} color="#7c3aed" icon={<CurrencyRupeeIcon />} />
-        <SummaryCard label="Schools (Groups)" value={groupStats?.length} color="#ea580c" icon={<SchoolIcon />} />
+        <SummaryCard label="Schools (Groups)" value={schoolStats?.length} color="#ea580c" icon={<SchoolIcon />} />
         <SummaryCard label="Departments" value={deptStats?.length} color="#9333ea" icon={<BusinessIcon />} />
       </Box>
 
@@ -331,8 +331,8 @@ const StudentEventAdminDashboard = () => {
           </Box>
           <FormControl size="small" sx={{ minWidth: 220 }}>
             <InputLabel>Choose Group</InputLabel>
-            <Select value={groupFilter} label="Choose Group" onChange={(e) => setGroupFilter(e.target.value)}>
-              {groupOptions.map((g) => (
+            <Select value={schoolFilter} label="Choose Group" onChange={(e) => setSchoolFilter(e.target.value)}>
+              {schoolOptions.map((g) => (
                 <MenuItem key={g} value={g}>{g}</MenuItem>
               ))}
             </Select>
@@ -457,7 +457,7 @@ const StudentEventAdminDashboard = () => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {groupStats.map((row, idx) => (
+              {schoolStats.map((row, idx) => (
                 <TableRow key={idx} hover>
                   <TableCell sx={{ fontWeight: 700, color: 'var(--color-primary, #ea580c)' }}>{row.shortName || row.name || row.group}</TableCell>
                   <TableCell sx={{ fontWeight: 700 }}>{row.eventCount}</TableCell>
@@ -558,10 +558,10 @@ const StudentEventAdminDashboard = () => {
             )}
           </Box>
 
-          {/* Revenue by Group (filtered by groupFilter) */}
+          {/* Revenue by Group (filtered by schoolFilter) */}
           <Box>
             <Typography variant="body2" sx={{ fontWeight: 700, mb: 1.5, color: 'text.secondary' }}>
-              Revenue by Group (School) (₹) {groupFilter !== 'ALL' ? `— ${groupFilter}` : ''}
+              Revenue by Group (School) (₹) {schoolFilter !== 'ALL' ? `— ${schoolFilter}` : ''}
             </Typography>
             {groupRevenueData.length === 0 ? (
               <Box sx={{ p: 3, textAlign: 'center', color: 'text.secondary' }}>

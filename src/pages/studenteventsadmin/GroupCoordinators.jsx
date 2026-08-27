@@ -65,8 +65,8 @@ const GroupCoordinators = () => {
   const fetchGroups = useCallback(async () => {
     setLoading(true);
     try {
-      const response = await API.get('/api/groups');
-      setGroups(response.data?.groups || []);
+      const response = await API.get('/api/event_schools');
+      setEventSchools(response.data?.event_schools || []);
     } catch (error) {
       console.error('Error fetching schools:', error);
       toast.error('Failed to load school coordinators');
@@ -99,11 +99,11 @@ const GroupCoordinators = () => {
               department: deptName,
               designation: c.designation || 'Coordinator',
               phone: c.phone || c.mobile || 'N/A',
-              groups: []
+              event_schools: []
             });
           }
-          if (!coordsMap.get(id).groups.includes(group.name)) {
-            coordsMap.get(id).groups.push(group.name);
+          if (!coordsMap.get(id).event_schools.includes(group.name)) {
+            coordsMap.get(id).event_schools.push(group.name);
           }
         }
       }
@@ -170,7 +170,7 @@ const GroupCoordinators = () => {
                   </Typography>
 
                   <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, justifyContent: 'center', mt: 2 }}>
-                    {coord.groups.map(g => (
+                    {coord.event_schools.map(g => (
                       <Chip
                         key={g}
                         label={g}
