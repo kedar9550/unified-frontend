@@ -223,7 +223,13 @@ const GroupManagement = () => {
     } : null);
 
     setBannerFile(null);
-    setBannerPreview(group.banner ? `${BACKEND_URL}${group.banner}` : null);
+    const bannerUrl =
+      group.banner && typeof group.banner === 'string' && group.banner.trim()
+        ? group.banner.startsWith('http')
+          ? group.banner
+          : `${BACKEND_URL}${group.banner}`
+        : null;
+    setBannerPreview(bannerUrl);
     setBannerError('');
 
     setErrors({});
@@ -389,38 +395,54 @@ const GroupManagement = () => {
     onChange,
     onRemove,
     hasError,
-    previewAlt,
-    previewMaxHeight,
-    hint,
+    previewAlt = 'Banner Preview',
+    previewMaxHeight = 240,
+    hint = 'Supports JPG, PNG, WebP. Max size: 5MB. Wide image (16:9) recommended.',
   }) => {
     if (!preview) {
       return (
         <Box
           component="label"
           sx={{
-            display: 'block',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
             border: '2px dashed',
-            borderColor: hasError ? 'error.main' : 'grey.300',
-            borderRadius: 2,
-            p: 4,
+            borderColor: hasError ? 'error.main' : 'var(--border-color, rgba(0, 0, 0, 0.15))',
+            borderRadius: '14px',
+            p: { xs: 3, sm: 3.5 },
             textAlign: 'center',
             cursor: 'pointer',
-            bgcolor: 'background.default',
-            transition: 'all 0.2s',
+            bgcolor: 'var(--bg-default, rgba(248, 250, 252, 0.5))',
+            transition: 'all 0.2s ease-in-out',
             '&:hover': {
               borderColor: 'primary.main',
               bgcolor: 'action.hover',
+              boxShadow: '0 4px 14px rgba(59, 130, 246, 0.08)',
+              transform: 'translateY(-1px)',
             },
           }}
         >
           <input type="file" hidden accept=".jpg,.jpeg,.png,.webp" onChange={onChange} />
-          <CloudUploadIcon
-            sx={{ fontSize: 48, color: hasError ? 'error.main' : 'primary.main', mb: 1 }}
-          />
-          <Typography variant="h6" color="text.primary" gutterBottom>
-            Click or drag file to upload
+          <Box
+            sx={{
+              width: 48,
+              height: 48,
+              borderRadius: '12px',
+              bgcolor: hasError ? 'rgba(239, 68, 68, 0.1)' : 'rgba(59, 130, 246, 0.1)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              mb: 1.25,
+            }}
+          >
+            <CloudUploadIcon sx={{ fontSize: 26, color: hasError ? 'error.main' : '#3b82f6' }} />
+          </Box>
+          <Typography variant="subtitle2" fontWeight={600} sx={{ color: 'var(--text-primary)', mb: 0.5 }}>
+            Click or drag banner image to upload
           </Typography>
-          <Typography variant="body2" color="text.secondary">
+          <Typography variant="caption" sx={{ color: 'var(--text-secondary)', maxWidth: 420 }}>
             {hint}
           </Typography>
         </Box>
@@ -432,20 +454,33 @@ const GroupManagement = () => {
         sx={{
           position: 'relative',
           width: '100%',
-          borderRadius: 2,
+          minHeight: 160,
+          maxHeight: `${previewMaxHeight}px`,
+          borderRadius: '14px',
           overflow: 'hidden',
-          border: '1px solid',
-          borderColor: 'divider',
-          bgcolor: 'background.paper',
+          border: '1px solid var(--border-color, #e2e8f0)',
+          bgcolor: '#0f172a',
           display: 'flex',
           justifyContent: 'center',
           alignItems: 'center',
+          boxShadow: '0 4px 14px rgba(0, 0, 0, 0.08)',
         }}
       >
-        <img
+        <Box
+          component="img"
           src={preview}
           alt={previewAlt}
-          style={{ maxWidth: '100%', maxHeight: `${previewMaxHeight}px`, objectFit: 'contain' }}
+          onError={() => {
+            setBannerPreview(null);
+            setBannerFile(null);
+          }}
+          sx={{
+            width: '100%',
+            height: '100%',
+            maxHeight: `${previewMaxHeight}px`,
+            objectFit: 'cover',
+            display: 'block',
+          }}
         />
         <Box
           sx={{
@@ -454,18 +489,20 @@ const GroupManagement = () => {
             right: 12,
             display: 'flex',
             gap: 1,
-            bgcolor: 'rgba(255, 255, 255, 0.9)',
-            p: 0.5,
-            borderRadius: 1,
-            boxShadow: 1,
+            bgcolor: 'rgba(15, 23, 42, 0.75)',
+            backdropFilter: 'blur(8px)',
+            p: 0.6,
+            borderRadius: '10px',
+            border: '1px solid rgba(255, 255, 255, 0.15)',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
           }}
         >
-          <Button variant="contained" component="label" size="small" color="primary">
-            Replace
+          <Button variant="contained" component="label" size="small" color="primary" sx={{ borderRadius: '8px', textTransform: 'none', fontWeight: 600, fontSize: '0.78rem' }}>
+            Change
             <input type="file" hidden accept=".jpg,.jpeg,.png,.webp" onChange={onChange} />
           </Button>
-          <IconButton color="error" onClick={onRemove} size="small">
-            <DeleteIcon />
+          <IconButton color="error" onClick={onRemove} size="small" sx={{ bgcolor: 'rgba(239, 68, 68, 0.15)', borderRadius: '8px', '&:hover': { bgcolor: 'rgba(239, 68, 68, 0.3)' } }}>
+            <DeleteIcon fontSize="small" />
           </IconButton>
         </Box>
       </Box>

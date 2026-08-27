@@ -20,6 +20,10 @@ import {
   Avatar,
   Autocomplete,
   CircularProgress,
+  Grid,
+  Stack,
+  Divider,
+  Tooltip,
 } from '@mui/material';
 import {
   CloudUpload as CloudUploadIcon,
@@ -27,6 +31,12 @@ import {
   Edit as EditIcon,
   Add as AddIcon,
   Close as CloseIcon,
+  PhotoCamera as PhotoCameraIcon,
+  Image as ImageIcon,
+  School as SchoolIcon,
+  Person as PersonIcon,
+  CheckCircle as CheckCircleIcon,
+  Cancel as CancelIcon,
 } from '@mui/icons-material';
 import PageHeader from '../../components/common/PageHeader';
 import DataTable from '../../components/data/DataTable';
@@ -56,7 +66,6 @@ const EventSchoolManagement = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [employeeOptions, setEmployeeOptions] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
-
 
   const [bannerFile, setBannerFile] = useState(null);
   const [bannerPreview, setBannerPreview] = useState(null);
@@ -120,7 +129,7 @@ const EventSchoolManagement = () => {
     return () => clearTimeout(debounce);
   }, [searchQuery]);
 
-  // ─── Image handling (shared by logo & banner) ───
+  // ─── Image handling ───
   const validateImage = (file) => {
     if (!VALID_IMAGE_TYPES.includes(file.type)) {
       return 'Please upload a valid image file (JPG, JPEG, PNG, WebP).';
@@ -158,9 +167,9 @@ const EventSchoolManagement = () => {
     const newErrors = {};
 
     if (!name.trim()) {
-      newErrors.name = 'EventSchool Name is required.';
+      newErrors.name = 'School Name is required.';
     } else if (name.length > 200) {
-      newErrors.name = 'EventSchool Name cannot exceed 200 characters.';
+      newErrors.name = 'School Name cannot exceed 200 characters.';
     }
 
     if (!shortName.trim()) {
@@ -168,7 +177,6 @@ const EventSchoolManagement = () => {
     } else if (shortName.length > 100) {
       newErrors.shortName = 'Short Name cannot exceed 100 characters.';
     }
-
 
     if (!content.trim()) {
       newErrors.content = 'Content is required.';
@@ -179,8 +187,6 @@ const EventSchoolManagement = () => {
     if (!selectedCoordinator) {
       newErrors.coordinator = 'Coordinator is required.';
     }
-
-    // Banner image is optional
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -213,19 +219,37 @@ const EventSchoolManagement = () => {
     setShortName(eventSchool.shortName || '');
     setContent(eventSchool.content || '');
     setStatus(eventSchool.status || 'Active');
-    setSelectedCoordinator(eventSchool.coordinator ? {
-      employeeId: eventSchool.coordinator.employeeId || eventSchool.coordinator.institutionId || eventSchool.coordinator.employeeCode || '',
-      institutionId: eventSchool.coordinator.institutionId || eventSchool.coordinator.employeeId || eventSchool.coordinator.employeeCode || '',
-      employeeName: eventSchool.coordinator.employeeName || eventSchool.coordinator.name || '',
-      name: eventSchool.coordinator.employeeName || eventSchool.coordinator.name || '',
-      department: eventSchool.coordinator.department,
-      designation: eventSchool.coordinator.designation,
-    } : null);
+    setSelectedCoordinator(
+      eventSchool.coordinator
+        ? {
+            employeeId:
+              eventSchool.coordinator.employeeId ||
+              eventSchool.coordinator.institutionId ||
+              eventSchool.coordinator.employeeCode ||
+              '',
+            institutionId:
+              eventSchool.coordinator.institutionId ||
+              eventSchool.coordinator.employeeId ||
+              eventSchool.coordinator.employeeCode ||
+              '',
+            employeeName: eventSchool.coordinator.employeeName || eventSchool.coordinator.name || '',
+            name: eventSchool.coordinator.employeeName || eventSchool.coordinator.name || '',
+            department: eventSchool.coordinator.department,
+            designation: eventSchool.coordinator.designation,
+          }
+        : null
+    );
 
     setBannerFile(null);
-    setBannerPreview(eventSchool.banner ? `${BACKEND_URL}${eventSchool.banner}` : null);
-    setBannerError('');
+    const bannerUrl =
+      eventSchool.banner && typeof eventSchool.banner === 'string' && eventSchool.banner.trim()
+        ? eventSchool.banner.startsWith('http')
+          ? eventSchool.banner
+          : `${BACKEND_URL}${eventSchool.banner}`
+        : null;
 
+    setBannerPreview(bannerUrl);
+    setBannerError('');
     setErrors({});
     setView('form');
   };
@@ -248,7 +272,11 @@ const EventSchoolManagement = () => {
     formData.append('status', status);
     formData.append('coordinator', JSON.stringify(selectedCoordinator || {}));
 
-    if (bannerFile) { formData.append('banner', bannerFile); } else if (!bannerPreview) { formData.append('removeBanner', 'true'); }
+    if (bannerFile) {
+      formData.append('banner', bannerFile);
+    } else if (!bannerPreview) {
+      formData.append('removeBanner', 'true');
+    }
 
     try {
       if (editingEventSchool) {
@@ -300,41 +328,69 @@ const EventSchoolManagement = () => {
 
   const tableRows = eventSchools.map((eventSchool, index) => [
     index + 1,
-
     {
       value: eventSchool.name,
       display: eventSchool.banner ? (
         <Box
           component="img"
-          src={eventSchool.banner.startsWith('http') ? eventSchool.banner : `${BACKEND_URL}${eventSchool.banner}`}
+          src={
+            eventSchool.banner.startsWith('http')
+              ? eventSchool.banner
+              : `${BACKEND_URL}${eventSchool.banner}`
+          }
           alt={eventSchool.name}
-          onError={(e) => { e.target.style.display = 'none'; }}
-          onClick={() => handleImageClick(eventSchool.banner.startsWith('http') ? eventSchool.banner : `${BACKEND_URL}${eventSchool.banner}`)}
+          onError={(e) => {
+            e.target.onerror = null;
+            e.target.style.display = 'none';
+          }}
+          onClick={() =>
+            handleImageClick(
+              eventSchool.banner.startsWith('http')
+                ? eventSchool.banner
+                : `${BACKEND_URL}${eventSchool.banner}`
+            )
+          }
           sx={{
-            width: 80,
+            width: 72,
             height: 40,
             objectFit: 'cover',
-            borderRadius: '4px',
+            borderRadius: '6px',
             border: '1px solid var(--border-color)',
             mx: 'auto',
             display: 'block',
             cursor: 'pointer',
-            transition: 'opacity 0.2s',
-            '&:hover': { opacity: 0.8 }
+            transition: 'opacity 0.2s, transform 0.2s',
+            '&:hover': { opacity: 0.85, transform: 'scale(1.04)' },
           }}
         />
       ) : (
-        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', textAlign: 'center' }}>
-          No Banner
-        </Typography>
+        <Box
+          sx={{
+            width: 72,
+            height: 40,
+            borderRadius: '6px',
+            bgcolor: 'action.hover',
+            border: '1px dashed var(--border-color)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            mx: 'auto',
+          }}
+        >
+          <ImageIcon sx={{ fontSize: 18, color: 'text.secondary', opacity: 0.4 }} />
+        </Box>
       ),
     },
     eventSchool.name,
-    eventSchool.shortName || 'N/A',
+    eventSchool.shortName || '—',
     (() => {
-      const code = eventSchool.coordinator?.institutionId || eventSchool.coordinator?.employeeId || eventSchool.coordinator?.employeeCode || '';
-      const name = eventSchool.coordinator?.employeeName || 'N/A';
-      return code ? `${name} (${code})` : name;
+      const code =
+        eventSchool.coordinator?.institutionId ||
+        eventSchool.coordinator?.employeeId ||
+        eventSchool.coordinator?.employeeCode ||
+        '';
+      const coordName = eventSchool.coordinator?.employeeName || '—';
+      return code ? `${coordName} (${code})` : coordName;
     })(),
     {
       value: eventSchool.status,
@@ -345,9 +401,16 @@ const EventSchoolManagement = () => {
           sx={{
             fontWeight: 600,
             borderRadius: '8px',
-            bgcolor: eventSchool.status === 'Active' ? 'rgba(34, 197, 94, 0.12)' : 'rgba(239, 68, 68, 0.12)',
+            bgcolor:
+              eventSchool.status === 'Active'
+                ? 'rgba(34, 197, 94, 0.12)'
+                : 'rgba(239, 68, 68, 0.12)',
             color: eventSchool.status === 'Active' ? '#16a34a' : '#dc2626',
-            border: `1px solid ${eventSchool.status === 'Active' ? 'rgba(34, 197, 94, 0.3)' : 'rgba(239, 68, 68, 0.3)'}`,
+            border: `1px solid ${
+              eventSchool.status === 'Active'
+                ? 'rgba(34, 197, 94, 0.3)'
+                : 'rgba(239, 68, 68, 0.3)'
+            }`,
           }}
         />
       ),
@@ -356,71 +419,91 @@ const EventSchoolManagement = () => {
       value: '',
       display: (
         <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center' }}>
-          <IconButton
-            size="small"
-            onClick={() => openEditForm(eventSchool)}
-            sx={{
-              color: '#3b82f6',
-              bgcolor: 'rgba(59, 130, 246, 0.1)',
-              '&:hover': { bgcolor: 'rgba(59, 130, 246, 0.2)' },
-            }}
-          >
-            <EditIcon fontSize="small" />
-          </IconButton>
-          <IconButton
-            size="small"
-            onClick={() => handleDeleteClick(eventSchool)}
-            sx={{
-              color: '#ef4444',
-              bgcolor: 'rgba(239, 68, 68, 0.1)',
-              '&:hover': { bgcolor: 'rgba(239, 68, 68, 0.2)' },
-            }}
-          >
-            <DeleteIcon fontSize="small" />
-          </IconButton>
+          <Tooltip title="Edit School">
+            <IconButton
+              size="small"
+              onClick={() => openEditForm(eventSchool)}
+              sx={{
+                color: '#3b82f6',
+                bgcolor: 'rgba(59, 130, 246, 0.1)',
+                '&:hover': { bgcolor: 'rgba(59, 130, 246, 0.2)' },
+              }}
+            >
+              <EditIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="Delete School">
+            <IconButton
+              size="small"
+              onClick={() => handleDeleteClick(eventSchool)}
+              sx={{
+                color: '#ef4444',
+                bgcolor: 'rgba(239, 68, 68, 0.1)',
+                '&:hover': { bgcolor: 'rgba(239, 68, 68, 0.2)' },
+              }}
+            >
+              <DeleteIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
         </Box>
       ),
     },
   ]);
 
-  // ─── Reusable uploader block ───
+  // ─── Reusable Uploader Block ───
   const renderUploader = ({
     preview,
     onChange,
     onRemove,
     hasError,
-    previewAlt,
-    previewMaxHeight,
-    hint,
+    previewAlt = 'Banner Preview',
+    previewMaxHeight = 240,
+    hint = 'Supports JPG, PNG, WebP. Max size: 5MB. Wide image (16:9) recommended.',
   }) => {
     if (!preview) {
       return (
         <Box
           component="label"
           sx={{
-            display: 'block',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
             border: '2px dashed',
-            borderColor: hasError ? 'error.main' : 'grey.300',
-            borderRadius: 2,
-            p: 4,
+            borderColor: hasError ? 'error.main' : 'var(--border-color, rgba(0, 0, 0, 0.15))',
+            borderRadius: '14px',
+            p: { xs: 3, sm: 3.5 },
             textAlign: 'center',
             cursor: 'pointer',
-            bgcolor: 'background.default',
-            transition: 'all 0.2s',
+            bgcolor: 'var(--bg-default, rgba(248, 250, 252, 0.5))',
+            transition: 'all 0.2s ease-in-out',
             '&:hover': {
               borderColor: 'primary.main',
               bgcolor: 'action.hover',
+              boxShadow: '0 4px 14px rgba(59, 130, 246, 0.08)',
+              transform: 'translateY(-1px)',
             },
           }}
         >
           <input type="file" hidden accept=".jpg,.jpeg,.png,.webp" onChange={onChange} />
-          <CloudUploadIcon
-            sx={{ fontSize: 48, color: hasError ? 'error.main' : 'primary.main', mb: 1 }}
-          />
-          <Typography variant="h6" color="text.primary" gutterBottom>
-            Click or drag file to upload
+          <Box
+            sx={{
+              width: 48,
+              height: 48,
+              borderRadius: '12px',
+              bgcolor: hasError ? 'rgba(239, 68, 68, 0.1)' : 'rgba(59, 130, 246, 0.1)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              mb: 1.25,
+            }}
+          >
+            <CloudUploadIcon sx={{ fontSize: 26, color: hasError ? 'error.main' : '#3b82f6' }} />
+          </Box>
+          <Typography variant="subtitle2" fontWeight={600} sx={{ color: 'var(--text-primary)', mb: 0.5 }}>
+            Click or drag banner image to upload
           </Typography>
-          <Typography variant="body2" color="text.secondary">
+          <Typography variant="caption" sx={{ color: 'var(--text-secondary)', maxWidth: 420 }}>
             {hint}
           </Typography>
         </Box>
@@ -432,20 +515,34 @@ const EventSchoolManagement = () => {
         sx={{
           position: 'relative',
           width: '100%',
-          borderRadius: 2,
+          minHeight: 160,
+          maxHeight: `${previewMaxHeight}px`,
+          borderRadius: '14px',
           overflow: 'hidden',
-          border: '1px solid',
-          borderColor: 'divider',
-          bgcolor: 'background.paper',
+          border: '1px solid var(--border-color, #e2e8f0)',
+          bgcolor: '#0f172a',
           display: 'flex',
           justifyContent: 'center',
           alignItems: 'center',
+          boxShadow: '0 4px 14px rgba(0, 0, 0, 0.08)',
         }}
       >
-        <img
+        <Box
+          component="img"
           src={preview}
           alt={previewAlt}
-          style={{ maxWidth: '100%', maxHeight: `${previewMaxHeight}px`, objectFit: 'contain' }}
+          onError={() => {
+            // When image cannot be loaded / does not exist, seamlessly fallback to upload box
+            setBannerPreview(null);
+            setBannerFile(null);
+          }}
+          sx={{
+            width: '100%',
+            height: '100%',
+            maxHeight: `${previewMaxHeight}px`,
+            objectFit: 'cover',
+            display: 'block',
+          }}
         />
         <Box
           sx={{
@@ -454,19 +551,48 @@ const EventSchoolManagement = () => {
             right: 12,
             display: 'flex',
             gap: 1,
-            bgcolor: 'rgba(255, 255, 255, 0.9)',
-            p: 0.5,
-            borderRadius: 1,
-            boxShadow: 1,
+            bgcolor: 'rgba(15, 23, 42, 0.75)',
+            backdropFilter: 'blur(8px)',
+            p: 0.6,
+            borderRadius: '10px',
+            border: '1px solid rgba(255, 255, 255, 0.15)',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
           }}
         >
-          <Button variant="contained" component="label" size="small" color="primary">
-            Replace
+          <Button
+            variant="contained"
+            component="label"
+            size="small"
+            startIcon={<PhotoCameraIcon fontSize="small" />}
+            sx={{
+              borderRadius: '8px',
+              textTransform: 'none',
+              fontWeight: 600,
+              fontSize: '0.78rem',
+              px: 1.5,
+              py: 0.4,
+              bgcolor: '#3b82f6',
+              '&:hover': { bgcolor: '#2563eb' },
+            }}
+          >
+            Change
             <input type="file" hidden accept=".jpg,.jpeg,.png,.webp" onChange={onChange} />
           </Button>
-          <IconButton color="error" onClick={onRemove} size="small">
-            <DeleteIcon />
-          </IconButton>
+          <Tooltip title="Remove Image">
+            <IconButton
+              size="small"
+              onClick={onRemove}
+              sx={{
+                color: '#ef4444',
+                bgcolor: 'rgba(239, 68, 68, 0.15)',
+                borderRadius: '8px',
+                p: 0.6,
+                '&:hover': { bgcolor: 'rgba(239, 68, 68, 0.3)' },
+              }}
+            >
+              <DeleteIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
         </Box>
       </Box>
     );
@@ -526,7 +652,7 @@ const EventSchoolManagement = () => {
           }}
         >
           <DialogTitle sx={{ fontWeight: 700, color: 'var(--text-primary)' }}>
-            Delete EventSchool
+            Delete School
           </DialogTitle>
           <DialogContent>
             <DialogContentText sx={{ color: 'var(--text-secondary)' }}>
@@ -606,13 +732,13 @@ const EventSchoolManagement = () => {
 
   // ─── FORM VIEW (Create / Edit) ───
   return (
-    <Box sx={{ p: 3 }}>
+    <Box sx={{ p: { xs: 2, sm: 3 } }}>
       <PageHeader
         title={editingEventSchool ? 'Edit School' : 'Create School'}
         subtitle={
           editingEventSchool
             ? `Editing "${editingEventSchool.name}"`
-            : 'Fill in the details to create a new school'
+            : 'Fill in the details to create a new event school'
         }
         showBack
         onBack={goBackToList}
@@ -621,79 +747,157 @@ const EventSchoolManagement = () => {
       <Card
         sx={{
           mt: 3,
-          maxWidth: 800,
+          maxWidth: 860,
           mx: 'auto',
-          boxShadow: 3,
-          borderRadius: '16px',
+          boxShadow: '0 8px 30px rgba(0,0,0,0.06)',
+          borderRadius: '20px',
           border: '1px solid var(--border-color)',
           background: 'var(--bg-paper)',
+          overflow: 'hidden',
         }}
       >
-        <CardContent sx={{ p: 4 }}>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-            {/* EventSchool Name */}
+        {/* Form Card Header Banner */}
+        <Box
+          sx={{
+            px: { xs: 3, sm: 4 },
+            py: 2.5,
+            borderBottom: '1px solid var(--border-color)',
+            bgcolor: 'var(--bg-default, rgba(0, 0, 0, 0.02))',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: 1.5,
+          }}
+        >
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+            <Avatar
+              sx={{
+                bgcolor: editingEventSchool ? 'rgba(59, 130, 246, 0.15)' : 'rgba(34, 197, 94, 0.15)',
+                color: editingEventSchool ? '#2563eb' : '#16a34a',
+                width: 42,
+                height: 42,
+                borderRadius: '12px',
+              }}
+            >
+              <SchoolIcon fontSize="small" />
+            </Avatar>
             <Box>
-              <Typography
-                variant="subtitle1"
-                fontWeight="600"
-                mb={1}
-                sx={{ color: 'var(--text-primary)' }}
-              >
-                School Name *
+              <Typography variant="subtitle1" fontWeight={700} sx={{ color: 'var(--text-primary)' }}>
+                {editingEventSchool ? 'School Configuration' : 'New School Setup'}
               </Typography>
-              <TextField
-                fullWidth
-                placeholder="Enter school name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                error={!!errors.name}
-                helperText={errors.name || `${name.length}/200`}
-                slotProps={{ htmlInput: { maxLength: 200 } }}
-                variant="outlined"
-              />
+              <Typography variant="caption" sx={{ color: 'var(--text-secondary)' }}>
+                {editingEventSchool
+                  ? 'Update details, banner image, coordinator and status'
+                  : 'Enter details to add a new event school'}
+              </Typography>
             </Box>
+          </Box>
 
-            {/* Short Name */}
-            <Box>
-              <Typography
-                variant="subtitle1"
-                fontWeight="600"
-                mb={1}
-                sx={{ color: 'var(--text-primary)' }}
-              >
-                Short Name *
-              </Typography>
-              <TextField
-                fullWidth
-                placeholder="Enter short name"
-                value={shortName}
-                onChange={(e) => setShortName(e.target.value)}
-                error={!!errors.shortName}
-                helperText={errors.shortName || `${shortName.length}/100`}
-                slotProps={{ htmlInput: { maxLength: 100 } }}
-                variant="outlined"
-              />
-            </Box>
+          <Chip
+            label={editingEventSchool ? `ID: ${editingEventSchool._id.slice(-6)}` : 'Draft'}
+            size="small"
+            sx={{
+              fontWeight: 600,
+              borderRadius: '8px',
+              bgcolor: 'action.hover',
+              color: 'var(--text-secondary)',
+            }}
+          />
+        </Box>
 
-            {/* Banner Upload */}
+        <CardContent sx={{ p: { xs: 3, sm: 4 } }}>
+          <Stack spacing={3.5}>
+            {/* Row 1: School Name & Short Name */}
+            <Grid container spacing={2.5}>
+              <Grid item xs={12} sm={8}>
+                <Typography
+                  variant="subtitle2"
+                  fontWeight="600"
+                  mb={1}
+                  sx={{ color: 'var(--text-primary)' }}
+                >
+                  School Full Name *
+                </Typography>
+                <TextField
+                  fullWidth
+                  placeholder="e.g. School of Engineering"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  error={!!errors.name}
+                  helperText={errors.name || `${name.length}/200`}
+                  slotProps={{
+                    htmlInput: { maxLength: 200 },
+                    input: { sx: { borderRadius: '12px' } },
+                  }}
+                  variant="outlined"
+                />
+              </Grid>
+
+              <Grid item xs={12} sm={4}>
+                <Typography
+                  variant="subtitle2"
+                  fontWeight="600"
+                  mb={1}
+                  sx={{ color: 'var(--text-primary)' }}
+                >
+                  Short Name *
+                </Typography>
+                <TextField
+                  fullWidth
+                  placeholder="e.g. SOE"
+                  value={shortName}
+                  onChange={(e) => setShortName(e.target.value)}
+                  error={!!errors.shortName}
+                  helperText={errors.shortName || `${shortName.length}/100`}
+                  slotProps={{
+                    htmlInput: { maxLength: 100 },
+                    input: { sx: { borderRadius: '12px' } },
+                  }}
+                  variant="outlined"
+                />
+              </Grid>
+            </Grid>
+
+            {/* Row 2: Banner Upload */}
             <Box>
-              <Typography
-                variant="subtitle1"
-                fontWeight="600"
-                mb={1}
-                sx={{ color: 'var(--text-primary)' }}
-              >
-                Banner Image (Optional)
-              </Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Typography
+                    variant="subtitle2"
+                    fontWeight="600"
+                    sx={{ color: 'var(--text-primary)' }}
+                  >
+                    Banner Image
+                  </Typography>
+                  <Chip
+                    label="Optional"
+                    size="small"
+                    sx={{
+                      height: 20,
+                      fontSize: '0.7rem',
+                      fontWeight: 600,
+                      borderRadius: '6px',
+                      bgcolor: 'action.hover',
+                      color: 'var(--text-secondary)',
+                    }}
+                  />
+                </Box>
+                <Typography variant="caption" sx={{ color: 'var(--text-secondary)' }}>
+                  16:9 aspect ratio recommended
+                </Typography>
+              </Box>
+
               {renderUploader({
                 preview: bannerPreview,
                 onChange: handleBannerChange,
                 onRemove: removeBanner,
                 hasError: !!errors.banner,
-                previewAlt: 'Banner Preview',
-                previewMaxHeight: 260,
-                hint: 'Supports JPG, PNG, WebP. Max size: 5MB. Wide image (16:9) recommended.',
+                previewAlt: 'School Banner Preview',
+                previewMaxHeight: 240,
+                hint: 'Upload JPG, PNG, WebP (Max: 5MB). Leave empty if not applicable.',
               })}
+
               {bannerError && (
                 <FormHelperText error sx={{ mt: 1, ml: 1 }}>
                   {bannerError}
@@ -706,167 +910,234 @@ const EventSchoolManagement = () => {
               )}
             </Box>
 
-            {/* Content */}
+            {/* Row 3: Content / Description */}
             <Box>
               <Typography
-                variant="subtitle1"
+                variant="subtitle2"
                 fontWeight="600"
                 mb={1}
                 sx={{ color: 'var(--text-primary)' }}
               >
-                Content *
+                Content / Description *
               </Typography>
               <TextField
                 fullWidth
                 multiline
-                rows={6}
-                placeholder="Enter eventSchool content"
+                rows={5}
+                placeholder="Enter detailed description about the event school..."
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
                 error={!!errors.content}
                 helperText={errors.content || `${content.length}/5000`}
-                slotProps={{ htmlInput: { maxLength: 5000 } }}
+                slotProps={{
+                  htmlInput: { maxLength: 5000 },
+                  input: { sx: { borderRadius: '12px' } },
+                }}
                 variant="outlined"
               />
             </Box>
 
-            {/* School Coordinator */}
-            <Box>
-              <Typography
-                variant="subtitle1"
-                fontWeight="600"
-                mb={1}
-                sx={{ color: 'var(--text-primary)' }}
-              >
-                School Coordinator *
-              </Typography>
-              <Autocomplete
-                options={employeeOptions}
-                getOptionLabel={(option) => {
-                  if (!option) return '';
-                  const name = option.employeeName || option.name || '';
-                  const code = option.institutionId || option.employeeId || option.employeeCode || '';
-                  return code ? `${name} (${code})` : name;
-                }}
-                value={selectedCoordinator}
-                onChange={(_, newValue) => {
-                  if (newValue) {
-                    const code = newValue.institutionId || newValue.employeeId || newValue.employeeCode || '';
-                    setSelectedCoordinator({
-                      ...newValue,
-                      employeeId: code,
-                      institutionId: code,
-                      employeeName: newValue.employeeName || newValue.name || '',
-                    });
-                  } else {
-                    setSelectedCoordinator(null);
-                  }
-                  setErrors((prev) => ({ ...prev, coordinator: null }));
-                }}
-                inputValue={searchQuery}
-                onInputChange={(_, newInputValue) => {
-                  setSearchQuery(newInputValue);
-                }}
-                filterOptions={(x) => x}
-                isOptionEqualToValue={(option, value) => {
-                  const optionCode = option.institutionId || option.employeeId || option.employeeCode || '';
-                  const valueCode = value.institutionId || value.employeeId || value.employeeCode || '';
-                  return optionCode === valueCode;
-                }}
-                loading={isSearching}
-                noOptionsText={searchQuery ? 'No matches found' : 'Type to search'}
-                renderInput={(params) => {
-                  const inputProps = params.InputProps || {};
-                  return (
-                    <TextField
-                      {...params}
-                      placeholder="Search by name or ID"
-                      error={!!errors.coordinator}
-                      helperText={errors.coordinator}
-                      InputProps={{
-                        ...inputProps,
-                        endAdornment: (
-                          <>
-                            {isSearching ? <CircularProgress color="inherit" size={20} /> : null}
-                            {inputProps.endAdornment}
-                          </>
-                        ),
-                      }}
-                      variant="outlined"
-                    />
-                  );
-                }}
-                renderOption={(props, option) => (
-                  <Box component="li" {...props} key={option.employeeId || option._id}>
-                    <Box sx={{ display: 'flex', flexDirection: 'column' }}>
-                      <Typography variant="body2" fontWeight={600}>{option.name}</Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        {option.designation || 'Staff'} • {option.department || 'Unknown'}
-                      </Typography>
-                    </Box>
-                  </Box>
-                )}
-                isOptionEqualToValue={(option, value) => option?.employeeId === value?.employeeId}
-              />
-            </Box>
-
-            {/* Status */}
-            <Box>
-              <Typography
-                variant="subtitle1"
-                fontWeight="600"
-                mb={1}
-                sx={{ color: 'var(--text-primary)' }}
-              >
-                Status
-              </Typography>
-              <FormControl fullWidth>
-                <Select
-                  value={status}
-                  onChange={(e) => setStatus(e.target.value)}
-                  displayEmpty
-                  sx={{ borderRadius: '12px' }}
+            {/* Row 4: Coordinator & Status */}
+            <Grid container spacing={2.5}>
+              <Grid item xs={12} sm={8}>
+                <Typography
+                  variant="subtitle2"
+                  fontWeight="600"
+                  mb={1}
+                  sx={{ color: 'var(--text-primary)' }}
                 >
-                  <MenuItem value="Active">Active</MenuItem>
-                  <MenuItem value="Inactive">Inactive</MenuItem>
-                </Select>
-              </FormControl>
-            </Box>
-
-            {/* Actions */}
-            <Box>
-              <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2, gap: 2 }}>
-                <Button
-                  variant="outlined"
-                  color="inherit"
-                  onClick={goBackToList}
-                  sx={{ borderRadius: '10px', textTransform: 'none', fontWeight: 600 }}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  variant="contained"
-                  color="primary"
-                  onClick={handleSubmit}
-                  disabled={submitting}
-                  size="large"
-                  sx={{
-                    px: 4,
-                    borderRadius: '10px',
-                    textTransform: 'none',
-                    fontWeight: 600,
-                    background: 'var(--gradient-primary)',
-                    boxShadow: '0 4px 14px rgba(59, 130, 246, 0.3)',
-                    '&:hover': {
-                      boxShadow: '0 6px 20px rgba(59, 130, 246, 0.45)',
-                    },
+                  School Coordinator *
+                </Typography>
+                <Autocomplete
+                  options={employeeOptions}
+                  getOptionLabel={(option) => {
+                    if (!option) return '';
+                    const coordName = option.employeeName || option.name || '';
+                    const code = option.institutionId || option.employeeId || option.employeeCode || '';
+                    return code ? `${coordName} (${code})` : coordName;
                   }}
+                  value={selectedCoordinator}
+                  onChange={(_, newValue) => {
+                    if (newValue) {
+                      const code = newValue.institutionId || newValue.employeeId || newValue.employeeCode || '';
+                      setSelectedCoordinator({
+                        ...newValue,
+                        employeeId: code,
+                        institutionId: code,
+                        employeeName: newValue.employeeName || newValue.name || '',
+                      });
+                    } else {
+                      setSelectedCoordinator(null);
+                    }
+                    setErrors((prev) => ({ ...prev, coordinator: null }));
+                  }}
+                  inputValue={searchQuery}
+                  onInputChange={(_, newInputValue) => {
+                    setSearchQuery(newInputValue);
+                  }}
+                  filterOptions={(x) => x}
+                  isOptionEqualToValue={(option, val) => {
+                    const optionCode = option.institutionId || option.employeeId || option.employeeCode || '';
+                    const valCode = val?.institutionId || val?.employeeId || val?.employeeCode || '';
+                    return optionCode === valCode;
+                  }}
+                  loading={isSearching}
+                  noOptionsText={searchQuery ? 'No coordinator found' : 'Type name or employee ID to search'}
+                  renderInput={(params) => {
+                    const inputProps = params.InputProps || {};
+                    return (
+                      <TextField
+                        {...params}
+                        placeholder="Search employee by name or ID"
+                        error={!!errors.coordinator}
+                        helperText={errors.coordinator}
+                        InputProps={{
+                          ...inputProps,
+                          sx: { borderRadius: '12px' },
+                          endAdornment: (
+                            <>
+                              {isSearching ? <CircularProgress color="inherit" size={20} /> : null}
+                              {inputProps.endAdornment}
+                            </>
+                          ),
+                        }}
+                        variant="outlined"
+                      />
+                    );
+                  }}
+                  renderOption={(props, option) => (
+                    <Box
+                      component="li"
+                      {...props}
+                      key={option.employeeId || option.institutionId || option._id}
+                      sx={{ py: 1.25, px: 2, display: 'flex', alignItems: 'center', gap: 1.5 }}
+                    >
+                      <Avatar
+                        sx={{
+                          width: 32,
+                          height: 32,
+                          bgcolor: 'primary.main',
+                          fontSize: '0.8rem',
+                          fontWeight: 600,
+                        }}
+                      >
+                        {(option.employeeName || option.name || 'E')[0]?.toUpperCase()}
+                      </Avatar>
+                      <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+                        <Typography variant="body2" fontWeight={600} sx={{ color: 'var(--text-primary)' }}>
+                          {option.employeeName || option.name}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          {option.designation || 'Staff'} • {option.department || 'General'}
+                          {(option.institutionId || option.employeeId || option.employeeCode) &&
+                            ` • ID: ${option.institutionId || option.employeeId || option.employeeCode}`}
+                        </Typography>
+                      </Box>
+                    </Box>
+                  )}
+                />
+              </Grid>
+
+              <Grid item xs={12} sm={4}>
+                <Typography
+                  variant="subtitle2"
+                  fontWeight="600"
+                  mb={1}
+                  sx={{ color: 'var(--text-primary)' }}
                 >
-                  {submitting ? 'Saving...' : editingEventSchool ? 'Update School' : 'Create School'}
-                </Button>
-              </Box>
+                  Status
+                </Typography>
+                <FormControl fullWidth>
+                  <Select
+                    value={status}
+                    onChange={(e) => setStatus(e.target.value)}
+                    sx={{ borderRadius: '12px' }}
+                    renderValue={(selected) => (
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Box
+                          sx={{
+                            width: 8,
+                            height: 8,
+                            borderRadius: '50%',
+                            bgcolor: selected === 'Active' ? '#16a34a' : '#dc2626',
+                          }}
+                        />
+                        <Typography variant="body2" fontWeight={600}>
+                          {selected}
+                        </Typography>
+                      </Box>
+                    )}
+                  >
+                    <MenuItem value="Active">
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <CheckCircleIcon sx={{ fontSize: 18, color: '#16a34a' }} />
+                        <Typography variant="body2" fontWeight={600}>Active</Typography>
+                      </Box>
+                    </MenuItem>
+                    <MenuItem value="Inactive">
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <CancelIcon sx={{ fontSize: 18, color: '#dc2626' }} />
+                        <Typography variant="body2" fontWeight={600}>Inactive</Typography>
+                      </Box>
+                    </MenuItem>
+                  </Select>
+                </FormControl>
+              </Grid>
+            </Grid>
+
+            <Divider sx={{ my: 1 }} />
+
+            {/* Action Buttons */}
+            <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2, pt: 1 }}>
+              <Button
+                variant="outlined"
+                color="inherit"
+                onClick={goBackToList}
+                disabled={submitting}
+                sx={{
+                  borderRadius: '12px',
+                  textTransform: 'none',
+                  fontWeight: 600,
+                  px: 3,
+                  py: 1,
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="contained"
+                onClick={handleSubmit}
+                disabled={submitting}
+                startIcon={
+                  submitting ? (
+                    <CircularProgress size={18} color="inherit" />
+                  ) : editingEventSchool ? (
+                    <EditIcon fontSize="small" />
+                  ) : (
+                    <AddIcon fontSize="small" />
+                  )
+                }
+                sx={{
+                  px: 4,
+                  py: 1,
+                  borderRadius: '12px',
+                  textTransform: 'none',
+                  fontWeight: 600,
+                  background: 'var(--gradient-primary)',
+                  boxShadow: '0 4px 14px rgba(59, 130, 246, 0.3)',
+                  '&:hover': {
+                    boxShadow: '0 6px 20px rgba(59, 130, 246, 0.45)',
+                  },
+                }}
+              >
+                {submitting
+                  ? 'Saving...'
+                  : editingEventSchool
+                  ? 'Update School'
+                  : 'Create School'}
+              </Button>
             </Box>
-          </Box>
+          </Stack>
         </CardContent>
       </Card>
     </Box>
@@ -874,5 +1145,6 @@ const EventSchoolManagement = () => {
 };
 
 export default EventSchoolManagement;
+
 
 
