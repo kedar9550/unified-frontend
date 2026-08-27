@@ -289,7 +289,7 @@ function App() {
 
         <Route path="/Eventveda/groups" element={<ProtectedRoute element={<GroupManagement />} />} />
         <Route path="/Eventveda/event-schools" element={<ProtectedRoute element={<EventSchoolsManagement />} />} />
-        <Route path="/Eventveda/groups/coordinators" element={<ProtectedRoute element={<GroupCoordinators />} />} />
+        <Route path="/Eventveda/event-schools/coordinators" element={<ProtectedRoute element={<GroupCoordinators />} />} />
         <Route path="/Eventveda/events" element={<ProtectedRoute element={<EventCreation />} />} />
         <Route path="/Eventveda/events/coordinators" element={<ProtectedRoute element={<EventCoordinators />} />} />
         <Route path="/Eventveda/organisation-committee" element={<ProtectedRoute element={<OrganisationCommittee />} />} />

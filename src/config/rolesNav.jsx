@@ -464,9 +464,12 @@ export const ROLE_ROUTES = {
         //   ]
         // },
         {
-          text: "Event Schools",
-          path: "/Eventveda/event-schools",
-          icon: <School />
+          text: "Schools",
+          icon: <School />,
+          nested: [
+            { text: "List", path: "/Eventveda/event-schools", icon: <School /> },
+            { text: "School Coordinators", path: "/Eventveda/event-schools/coordinators", icon: <Person /> }
+          ]
         },
         {
           text: "Events",

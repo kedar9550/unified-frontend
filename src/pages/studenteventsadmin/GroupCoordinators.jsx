@@ -65,8 +65,8 @@ const GroupCoordinators = () => {
   const fetchGroups = useCallback(async () => {
     setLoading(true);
     try {
-      const response = await API.get('/api/event_schools');
-      setEventSchools(response.data?.event_schools || []);
+      const response = await API.get('/api/event-schools');
+      setGroups(response.data?.eventSchools || []);
     } catch (error) {
       console.error('Error fetching schools:', error);
       toast.error('Failed to load school coordinators');
