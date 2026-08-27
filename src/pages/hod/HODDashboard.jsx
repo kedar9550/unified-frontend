@@ -98,7 +98,7 @@ const HODDashboard = () => {
 
   const topCards = [
     { title: "Department Faculty", value: dashboard.totalFaculty, subtitle: "Total Active", icon: <People />, color: "#3B82F6", linkText: "Manage Faculty", path: "/hod/staff" },
-    { title: "Expected Appraisals", value: dashboard.expectedAppraisals !== undefined ? dashboard.expectedAppraisals : dashboard.totalFaculty, subtitle: "Total to verify", icon: <Assignment />, color: "#10B981", linkText: "View Appraisals", path: "/hod/appraisal-verification" },
+    // { title: "Expected Appraisals", value: dashboard.expectedAppraisals !== undefined ? dashboard.expectedAppraisals : dashboard.totalFaculty, subtitle: "Total to verify", icon: <Assignment />, color: "#10B981", linkText: "View Appraisals", path: "/hod/appraisal-verification" },
     { title: "Academic Programs", value: dashboard.totalPrograms, subtitle: "Branches Managed", icon: <School />, color: "#A855F7", linkText: "View Programs", path: "/academics/programs" },
     { title: "Pending Reviews", value: dashboard.pendingCounts.total, subtitle: "Actions Required", icon: <WarningAmber />, color: "#F59E0B", linkText: "View Pending", path: "/hod/research-approvals" },
   ];
@@ -241,7 +241,7 @@ const HODDashboard = () => {
                   </Typography>
                 </Box>
               </Box>
-              
+
               {/* Divider */}
               <Box sx={{ borderTop: "1px solid var(--border-color)", mt: 1, pt: 2, display: 'flex', justifyContent: 'flex-end' }}>
                 {/* Bottom Link */}
@@ -270,98 +270,98 @@ const HODDashboard = () => {
       {/* Main Container: Pending Approval Hub */}
       <Box sx={{ width: '100%' }}>
         <Box sx={{ mb: 4 }}>
-            <Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)", mb: 2 }}>
-              Pending Action Items Hub
-            </Typography>
-            <Stack spacing={2}>
-              {pendingActions.map((action, i) => (
-                <Paper
-                  key={i}
-                  sx={{
-                    borderRadius: "20px",
-                    border: "1px solid var(--border-color)",
-                    background: "var(--bg-panel)",
-                    p: 2.5,
+          <Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)", mb: 2 }}>
+            Pending Action Items Hub
+          </Typography>
+          <Stack spacing={2}>
+            {pendingActions.map((action, i) => (
+              <Paper
+                key={i}
+                sx={{
+                  borderRadius: "20px",
+                  border: "1px solid var(--border-color)",
+                  background: "var(--bg-panel)",
+                  p: 2.5,
+                  display: "flex",
+                  flexDirection: { xs: "column", sm: "row" },
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  gap: 2,
+                  transition: "all 0.3s ease",
+                  position: "relative",
+                  overflow: "hidden",
+                  "&:hover": {
+                    borderColor: action.color,
+                    boxShadow: "var(--shadow-premium)",
+                    transform: "scale(1.005)"
+                  }
+                }}
+              >
+                <Box sx={{ display: "flex", alignItems: "flex-start", gap: 2, flex: 1 }}>
+                  <Box sx={{
+                    width: 44,
+                    height: 44,
+                    borderRadius: "12px",
                     display: "flex",
-                    flexDirection: { xs: "column", sm: "row" },
                     alignItems: "center",
-                    justifyContent: "space-between",
-                    gap: 2,
-                    transition: "all 0.3s ease",
-                    position: "relative",
-                    overflow: "hidden",
-                    "&:hover": {
-                      borderColor: action.color,
-                      boxShadow: "var(--shadow-premium)",
-                      transform: "scale(1.005)"
-                    }
-                  }}
-                >
-                  <Box sx={{ display: "flex", alignItems: "flex-start", gap: 2, flex: 1 }}>
-                    <Box sx={{
-                      width: 44,
-                      height: 44,
-                      borderRadius: "12px",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      backgroundColor: `${action.color}15`,
-                      color: action.color,
-                      flexShrink: 0,
-                      mt: 0.5
-                    }}>
-                      {action.icon}
-                    </Box>
-                    <Box>
-                      <Typography variant="subtitle1" sx={{ fontWeight: 800, color: "var(--text-primary)", mb: 0.5 }}>
-                        {action.title}
-                      </Typography>
-                      <Typography variant="body2" sx={{ color: "var(--text-secondary)", opacity: 0.8, fontSize: '0.8rem', lineHeight: 1.4 }}>
-                        {action.desc}
-                      </Typography>
-                    </Box>
+                    justifyContent: "center",
+                    backgroundColor: `${action.color}15`,
+                    color: action.color,
+                    flexShrink: 0,
+                    mt: 0.5
+                  }}>
+                    {action.icon}
                   </Box>
+                  <Box>
+                    <Typography variant="subtitle1" sx={{ fontWeight: 800, color: "var(--text-primary)", mb: 0.5 }}>
+                      {action.title}
+                    </Typography>
+                    <Typography variant="body2" sx={{ color: "var(--text-secondary)", opacity: 0.8, fontSize: '0.8rem', lineHeight: 1.4 }}>
+                      {action.desc}
+                    </Typography>
+                  </Box>
+                </Box>
 
-                  <Box sx={{ display: "flex", alignItems: "center", gap: 3, width: { xs: "100%", sm: "auto" }, justifyContent: "space-between" }}>
-                    <Chip
-                      label={action.count > 0 ? `${action.count} Pending` : "0 Pending"}
-                      sx={{
-                        fontWeight: 700,
-                        fontSize: "0.75rem",
-                        bgcolor: action.count > 0 ? `${action.color}20` : "var(--bg-accent-4)",
-                        color: action.count > 0 ? action.color : "var(--text-secondary)",
-                        border: `1px solid ${action.count > 0 ? `${action.color}35` : "var(--border-color)"}`,
-                        borderRadius: "8px",
-                        px: 0.5
-                      }}
-                    />
-                    <Button
- variant="contained"
- onClick={() => navigate(action.path)}
- endIcon={<ArrowForward sx={{ fontSize: 16 }} />}
- sx={{
- 
- textTransform: "none",
- fontWeight: 700,
- px: 2.5,
- py: 1,
- bgcolor: action.count > 0 ? action.color : "var(--text-secondary)",
- color: "#fff",
- boxShadow: "none",
- "&:hover": {
- bgcolor: action.count > 0 ? `${action.color}dd` : "var(--text-primary)",
- boxShadow: "none"
- }
- }}
- >
-                      Review
-                    </Button>
-                  </Box>
-                </Paper>
-              ))}
-            </Stack>
-          </Box>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 3, width: { xs: "100%", sm: "auto" }, justifyContent: "space-between" }}>
+                  <Chip
+                    label={action.count > 0 ? `${action.count} Pending` : "0 Pending"}
+                    sx={{
+                      fontWeight: 700,
+                      fontSize: "0.75rem",
+                      bgcolor: action.count > 0 ? `${action.color}20` : "var(--bg-accent-4)",
+                      color: action.count > 0 ? action.color : "var(--text-secondary)",
+                      border: `1px solid ${action.count > 0 ? `${action.color}35` : "var(--border-color)"}`,
+                      borderRadius: "8px",
+                      px: 0.5
+                    }}
+                  />
+                  <Button
+                    variant="contained"
+                    onClick={() => navigate(action.path)}
+                    endIcon={<ArrowForward sx={{ fontSize: 16 }} />}
+                    sx={{
+
+                      textTransform: "none",
+                      fontWeight: 700,
+                      px: 2.5,
+                      py: 1,
+                      bgcolor: action.count > 0 ? action.color : "var(--text-secondary)",
+                      color: "#fff",
+                      boxShadow: "none",
+                      "&:hover": {
+                        bgcolor: action.count > 0 ? `${action.color}dd` : "var(--text-primary)",
+                        boxShadow: "none"
+                      }
+                    }}
+                  >
+                    Review
+                  </Button>
+                </Box>
+              </Paper>
+            ))}
+          </Stack>
         </Box>
+      </Box>
 
       {/* Recent Activities Log */}
       <Box sx={{ mt: 4, mb: 2 }}>

@@ -224,33 +224,49 @@ body.dark-mode .MuiChip-outlined {
 
 /* Expanding (Light -> Dark) */
 .theme-transition-expand::view-transition-new(root) {
-  animation: theme-expand 800ms ease-in-out forwards;
+  animation: theme-expand 1000ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  mask-image: url('/Cursor_Light.svg');
+  -webkit-mask-image: url('/Cursor_Light.svg');
+  mask-position: center;
+  -webkit-mask-position: center;
+  mask-repeat: no-repeat;
+  -webkit-mask-repeat: no-repeat;
   z-index: 9999;
 }
 
 /* Collapsing (Dark -> Light) */
 .theme-transition-collapse::view-transition-old(root) {
-  animation: theme-collapse 800ms ease-in-out forwards;
+  animation: theme-collapse 1000ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  mask-image: url('/Cursor_Light.svg');
+  -webkit-mask-image: url('/Cursor_Light.svg');
+  mask-position: center;
+  -webkit-mask-position: center;
+  mask-repeat: no-repeat;
+  -webkit-mask-repeat: no-repeat;
   z-index: 9999;
 }
 
 @keyframes theme-expand {
-  from {
-    clip-path: circle(0% at 50% 50%);
+  0% {
+    mask-size: 0vmax 0vmax;
+    -webkit-mask-size: 0vmax 0vmax;
   }
 
-  to {
-    clip-path: circle(150% at 50% 50%);
+  100% {
+    mask-size: 550vmax 550vmax;
+    -webkit-mask-size: 550vmax 550vmax;
   }
 }
 
 @keyframes theme-collapse {
-  from {
-    clip-path: circle(150% at 50% 50%);
+  0% {
+    mask-size: 550vmax 550vmax;
+    -webkit-mask-size: 550vmax 550vmax;
   }
 
-  to {
-    clip-path: circle(0% at 50% 50%);
+  100% {
+    mask-size: 0vmax 0vmax;
+    -webkit-mask-size: 0vmax 0vmax;
   }
 }
 

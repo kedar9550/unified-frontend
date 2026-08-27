@@ -84,7 +84,7 @@ export const ROLE_ROUTES = {
     },
     // { text: "Administration", path: "/faculty/administration", icon: <AccountBalance /> },
     // { text: "Event Coordination", path: "/faculty/event-coordination", icon: <Groups /> },
-    { text: "Self Appraisal", path: "/faculty/appraisal", icon: <Description /> },
+    // { text: "Self Appraisal", path: "/faculty/appraisal", icon: <Description /> },
     {
       text: "Utilities",
       icon: <Build />,
@@ -198,22 +198,22 @@ export const ROLE_ROUTES = {
         }
       ]
     },
-    {
-      text: "Appraisal",
-      icon: <ManageAccounts />,
-      nested: [
-        {
-          text: "Appraisal Verification",
-          path: "/hod/appraisal-verification",
-          icon: <Verified />
-        },
-        {
-          text: "Appraisal Reports",
-          path: "/appraisal-reports",
-          icon: <Assessment />
-        }
-      ]
-    },
+    // {
+    //   text: "Appraisal",
+    //   icon: <ManageAccounts />,
+    //   nested: [
+    //     {
+    //       text: "Appraisal Verification",
+    //       path: "/hod/appraisal-verification",
+    //       icon: <Verified />
+    //     },
+    //     {
+    //       text: "Appraisal Reports",
+    //       path: "/appraisal-reports",
+    //       icon: <Assessment />
+    //     }
+    //   ]
+    // },
     { text: "Staff Directory", path: "/hod/staff", icon: <People /> },
   ],
 

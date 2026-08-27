@@ -196,8 +196,7 @@ const AppraisalReports = () => {
       const iRaw = row.hodEvaluation?.totalInterpersonalPoints || 0;
 
       const rawTotal1to4 = teachingObtained + researchObtained + v3Obtained + aRaw;
-      const cappedTotal1to4 = Math.min(200, rawTotal1to4);
-      const grandTotal = parseFloat((cappedTotal1to4 + iRaw).toFixed(2));
+      const grandTotal = row.eligibility?.totalObtained !== undefined ? row.eligibility.totalObtained : parseFloat((Math.min(200, rawTotal1to4) + iRaw).toFixed(2));
       const totalMin = mins.total || 0;
 
 
@@ -435,8 +434,7 @@ const AppraisalReports = () => {
               const valueAdd = row.valueAddition?.totalClaimed || 0;
               const admin = row.administration?.totalClaimed || 0;
               const interpersonal = row.hodEvaluation?.totalInterpersonalPoints || 0;
-              const cappedTotal1to4 = Math.min(200, teaching + research + valueAdd + admin);
-              const grandTotal = parseFloat((cappedTotal1to4 + interpersonal).toFixed(2));
+              const grandTotal = row.eligibility?.totalObtained !== undefined ? row.eligibility.totalObtained : parseFloat((Math.min(200, teaching + research + valueAdd + admin) + interpersonal).toFixed(2));
               const isMet = grandTotal >= minPoints;
               const name = row.facultyId?.name || 'N/A';
               const empId = row.facultyId?.institutionId || 'N/A';
