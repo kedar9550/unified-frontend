@@ -38,13 +38,13 @@ const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:9000';
 const VALID_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/jpg', 'image/webp'];
 const MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5 MB
 
-const GroupManagement = () => {
+const EventSchoolManagement = () => {
   // View state: 'list' or 'form'
   const [view, setView] = useState('list');
-  const [editingGroup, setEditingGroup] = useState(null);
+  const [editingEventSchool, setEditingEventSchool] = useState(null);
 
   // List state
-  const [groups, setGroups] = useState([]);
+  const [eventSchools, setEventSchools] = useState([]);
   const [loading, setLoading] = useState(false);
 
   // Form state
@@ -67,7 +67,7 @@ const GroupManagement = () => {
 
   // Delete dialog state
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [groupToDelete, setGroupToDelete] = useState(null);
+  const [eventSchoolToDelete, setEventSchoolToDelete] = useState(null);
 
   // Image Preview dialog state
   const [previewDialogOpen, setPreviewDialogOpen] = useState(false);
@@ -78,23 +78,23 @@ const GroupManagement = () => {
     setPreviewDialogOpen(true);
   };
 
-  // ─── Fetch groups & departments ───
-  const fetchGroups = useCallback(async () => {
+  // ─── Fetch eventSchools & departments ───
+  const fetchEventSchools = useCallback(async () => {
     setLoading(true);
     try {
-      const response = await API.get('/api/event_schools');
-      setEventSchools(response.data?.event_schools || []);
+      const response = await API.get('/api/event-schools');
+      setEventSchools(response.data?.eventSchools || []);
     } catch (error) {
-      console.error('Error fetching event_schools:', error);
-      toast.error('Failed to load groups');
+      console.error('Error fetching eventSchools:', error);
+      toast.error('Failed to load eventSchools');
     } finally {
       setLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    fetchGroups();
-  }, [fetchGroups]);
+    fetchEventSchools();
+  }, [fetchEventSchools]);
 
   useEffect(() => {
     if (!searchQuery || searchQuery.trim() === '') {
@@ -158,9 +158,9 @@ const GroupManagement = () => {
     const newErrors = {};
 
     if (!name.trim()) {
-      newErrors.name = 'Group Name is required.';
+      newErrors.name = 'EventSchool Name is required.';
     } else if (name.length > 200) {
-      newErrors.name = 'Group Name cannot exceed 200 characters.';
+      newErrors.name = 'EventSchool Name cannot exceed 200 characters.';
     }
 
     if (!shortName.trim()) {
@@ -199,7 +199,7 @@ const GroupManagement = () => {
     setBannerPreview(null);
     setBannerError('');
     setErrors({});
-    setEditingGroup(null);
+    setEditingEventSchool(null);
   };
 
   const openCreateForm = () => {
@@ -207,23 +207,23 @@ const GroupManagement = () => {
     setView('form');
   };
 
-  const openEditForm = (group) => {
-    setEditingGroup(group);
-    setName(group.name || '');
-    setShortName(group.shortName || '');
-    setContent(group.content || '');
-    setStatus(group.status || 'Active');
-    setSelectedCoordinator(group.coordinator ? {
-      employeeId: group.coordinator.employeeId || group.coordinator.institutionId || group.coordinator.employeeCode || '',
-      institutionId: group.coordinator.institutionId || group.coordinator.employeeId || group.coordinator.employeeCode || '',
-      employeeName: group.coordinator.employeeName || group.coordinator.name || '',
-      name: group.coordinator.employeeName || group.coordinator.name || '',
-      department: group.coordinator.department,
-      designation: group.coordinator.designation,
+  const openEditForm = (eventSchool) => {
+    setEditingEventSchool(eventSchool);
+    setName(eventSchool.name || '');
+    setShortName(eventSchool.shortName || '');
+    setContent(eventSchool.content || '');
+    setStatus(eventSchool.status || 'Active');
+    setSelectedCoordinator(eventSchool.coordinator ? {
+      employeeId: eventSchool.coordinator.employeeId || eventSchool.coordinator.institutionId || eventSchool.coordinator.employeeCode || '',
+      institutionId: eventSchool.coordinator.institutionId || eventSchool.coordinator.employeeId || eventSchool.coordinator.employeeCode || '',
+      employeeName: eventSchool.coordinator.employeeName || eventSchool.coordinator.name || '',
+      name: eventSchool.coordinator.employeeName || eventSchool.coordinator.name || '',
+      department: eventSchool.coordinator.department,
+      designation: eventSchool.coordinator.designation,
     } : null);
 
     setBannerFile(null);
-    setBannerPreview(group.banner ? `${BACKEND_URL}${group.banner}` : null);
+    setBannerPreview(eventSchool.banner ? `${BACKEND_URL}${eventSchool.banner}` : null);
     setBannerError('');
 
     setErrors({});
@@ -233,7 +233,7 @@ const GroupManagement = () => {
   const goBackToList = () => {
     resetForm();
     setView('list');
-    fetchGroups();
+    fetchEventSchools();
   };
 
   // ─── Submit ───
@@ -251,14 +251,14 @@ const GroupManagement = () => {
     if (bannerFile) { formData.append('banner', bannerFile); } else if (!bannerPreview) { formData.append('removeBanner', 'true'); }
 
     try {
-      if (editingGroup) {
-        const response = await API.put(`/api/event_schools/${editingGroup._id}`, formData);
+      if (editingEventSchool) {
+        const response = await API.put(`/api/event-schools/${editingEventSchool._id}`, formData);
         if (response.data.success) {
           toast.success('School updated successfully!');
           goBackToList();
         }
       } else {
-        const response = await API.post('/api/event_schools', formData);
+        const response = await API.post('/api/event-schools', formData);
         if (response.data.success) {
           toast.success('School created successfully!');
           goBackToList();
@@ -273,43 +273,43 @@ const GroupManagement = () => {
   };
 
   // ─── Delete ───
-  const handleDeleteClick = (group) => {
-    setGroupToDelete(group);
+  const handleDeleteClick = (eventSchool) => {
+    setEventSchoolToDelete(eventSchool);
     setDeleteDialogOpen(true);
   };
 
   const confirmDelete = async () => {
-    if (!groupToDelete) return;
+    if (!eventSchoolToDelete) return;
     try {
-      const response = await API.delete(`/api/event_schools/${groupToDelete._id}`);
+      const response = await API.delete(`/api/event-schools/${eventSchoolToDelete._id}`);
       if (response.data.success) {
         toast.success('School deleted successfully!');
-        fetchGroups();
+        fetchEventSchools();
       }
     } catch (error) {
       console.error('Error deleting school:', error);
       toast.error(error.response?.data?.message || 'Failed to delete school.');
     } finally {
       setDeleteDialogOpen(false);
-      setGroupToDelete(null);
+      setEventSchoolToDelete(null);
     }
   };
 
   // ─── Table columns & rows ───
   const columns = ['#', 'Banner', 'Name', 'Short Name', 'School Coordinator', 'Status', 'Actions'];
 
-  const tableRows = event_schools.map((group, index) => [
+  const tableRows = eventSchools.map((eventSchool, index) => [
     index + 1,
 
     {
-      value: group.name,
-      display: group.banner ? (
+      value: eventSchool.name,
+      display: eventSchool.banner ? (
         <Box
           component="img"
-          src={group.banner.startsWith('http') ? group.banner : `${BACKEND_URL}${group.banner}`}
-          alt={group.name}
+          src={eventSchool.banner.startsWith('http') ? eventSchool.banner : `${BACKEND_URL}${eventSchool.banner}`}
+          alt={eventSchool.name}
           onError={(e) => { e.target.style.display = 'none'; }}
-          onClick={() => handleImageClick(group.banner.startsWith('http') ? group.banner : `${BACKEND_URL}${group.banner}`)}
+          onClick={() => handleImageClick(eventSchool.banner.startsWith('http') ? eventSchool.banner : `${BACKEND_URL}${eventSchool.banner}`)}
           sx={{
             width: 80,
             height: 40,
@@ -329,25 +329,25 @@ const GroupManagement = () => {
         </Typography>
       ),
     },
-    group.name,
-    group.shortName || 'N/A',
+    eventSchool.name,
+    eventSchool.shortName || 'N/A',
     (() => {
-      const code = group.coordinator?.institutionId || group.coordinator?.employeeId || group.coordinator?.employeeCode || '';
-      const name = group.coordinator?.employeeName || 'N/A';
+      const code = eventSchool.coordinator?.institutionId || eventSchool.coordinator?.employeeId || eventSchool.coordinator?.employeeCode || '';
+      const name = eventSchool.coordinator?.employeeName || 'N/A';
       return code ? `${name} (${code})` : name;
     })(),
     {
-      value: group.status,
+      value: eventSchool.status,
       display: (
         <Chip
-          label={group.status}
+          label={eventSchool.status}
           size="small"
           sx={{
             fontWeight: 600,
             borderRadius: '8px',
-            bgcolor: group.status === 'Active' ? 'rgba(34, 197, 94, 0.12)' : 'rgba(239, 68, 68, 0.12)',
-            color: group.status === 'Active' ? '#16a34a' : '#dc2626',
-            border: `1px solid ${group.status === 'Active' ? 'rgba(34, 197, 94, 0.3)' : 'rgba(239, 68, 68, 0.3)'}`,
+            bgcolor: eventSchool.status === 'Active' ? 'rgba(34, 197, 94, 0.12)' : 'rgba(239, 68, 68, 0.12)',
+            color: eventSchool.status === 'Active' ? '#16a34a' : '#dc2626',
+            border: `1px solid ${eventSchool.status === 'Active' ? 'rgba(34, 197, 94, 0.3)' : 'rgba(239, 68, 68, 0.3)'}`,
           }}
         />
       ),
@@ -358,7 +358,7 @@ const GroupManagement = () => {
         <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center' }}>
           <IconButton
             size="small"
-            onClick={() => openEditForm(group)}
+            onClick={() => openEditForm(eventSchool)}
             sx={{
               color: '#3b82f6',
               bgcolor: 'rgba(59, 130, 246, 0.1)',
@@ -369,7 +369,7 @@ const GroupManagement = () => {
           </IconButton>
           <IconButton
             size="small"
-            onClick={() => handleDeleteClick(group)}
+            onClick={() => handleDeleteClick(eventSchool)}
             sx={{
               color: '#ef4444',
               bgcolor: 'rgba(239, 68, 68, 0.1)',
@@ -526,11 +526,11 @@ const GroupManagement = () => {
           }}
         >
           <DialogTitle sx={{ fontWeight: 700, color: 'var(--text-primary)' }}>
-            Delete Group
+            Delete EventSchool
           </DialogTitle>
           <DialogContent>
             <DialogContentText sx={{ color: 'var(--text-secondary)' }}>
-              Are you sure you want to delete <strong>{groupToDelete?.name}</strong>? This action
+              Are you sure you want to delete <strong>{eventSchoolToDelete?.name}</strong>? This action
               cannot be undone.
             </DialogContentText>
           </DialogContent>
@@ -608,10 +608,10 @@ const GroupManagement = () => {
   return (
     <Box sx={{ p: 3 }}>
       <PageHeader
-        title={editingGroup ? 'Edit School' : 'Create School'}
+        title={editingEventSchool ? 'Edit School' : 'Create School'}
         subtitle={
-          editingGroup
-            ? `Editing "${editingGroup.name}"`
+          editingEventSchool
+            ? `Editing "${editingEventSchool.name}"`
             : 'Fill in the details to create a new school'
         }
         showBack
@@ -631,7 +631,7 @@ const GroupManagement = () => {
       >
         <CardContent sx={{ p: 4 }}>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-            {/* Group Name */}
+            {/* EventSchool Name */}
             <Box>
               <Typography
                 variant="subtitle1"
@@ -720,7 +720,7 @@ const GroupManagement = () => {
                 fullWidth
                 multiline
                 rows={6}
-                placeholder="Enter group content"
+                placeholder="Enter eventSchool content"
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
                 error={!!errors.content}
@@ -862,7 +862,7 @@ const GroupManagement = () => {
                     },
                   }}
                 >
-                  {submitting ? 'Saving...' : editingGroup ? 'Update School' : 'Create School'}
+                  {submitting ? 'Saving...' : editingEventSchool ? 'Update School' : 'Create School'}
                 </Button>
               </Box>
             </Box>
@@ -873,6 +873,6 @@ const GroupManagement = () => {
   );
 };
 
-export default GroupManagement;
+export default EventSchoolManagement;
 
 

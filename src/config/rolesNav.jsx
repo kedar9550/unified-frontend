@@ -455,13 +455,18 @@ export const ROLE_ROUTES = {
             { text: "Grounds for outdoor", path: "/infrastructure/grounds", icon: <AccountBalance /> }
           ]
         },
+        // {
+        //   text: "Schools",
+        //   icon: <Groups />,
+        //   nested: [
+        //     { text: "List", path: "/Eventveda/groups", icon: <Groups /> },
+        //     { text: "Coordinators", path: "/Eventveda/groups/coordinators", icon: <Person /> }
+        //   ]
+        // },
         {
-          text: "Schools",
-          icon: <Groups />,
-          nested: [
-            { text: "List", path: "/Eventveda/groups", icon: <Groups /> },
-            { text: "Coordinators", path: "/Eventveda/groups/coordinators", icon: <Person /> }
-          ]
+          text: "Event Schools",
+          path: "/Eventveda/event-schools",
+          icon: <School />
         },
         {
           text: "Events",

@@ -65,14 +65,14 @@ const FestManagement = () => {
 
   const fetchGroups = useCallback(async () => {
     if (!selectedFest) {
-      setGroups([]);
+      setEventSchools([]);
       return;
     }
 
     setLoadingGroups(true);
     try {
       const response = await API.get('/api/event-groups', { params: { festName: selectedFest } });
-      setGroups(response.data?.groups || []);
+      setEventSchools(response.data?.event_schools || []);
     } catch (error) {
       toast.error(error.response?.data?.message || 'Failed to load groups');
     } finally {
@@ -490,14 +490,14 @@ const FestManagement = () => {
                   </Typography>
                 </Box>
 
-                {groups.length === 0 ? (
+                {event_schools.length === 0 ? (
                   <Box sx={{ gridColumn: '1 / -1', border: '1px dashed rgba(15, 118, 110, 0.28)', borderRadius: '14px', p: 3, textAlign: 'center' }}>
                     <Typography variant="body2" color="text.secondary">
                       No groups created for this fest yet.
                     </Typography>
                   </Box>
                 ) : (
-                  groups.map((group) => renderGroupCard(group))
+                  event_schools.map((group) => renderGroupCard(group))
                 )}
               </Box>
             )}

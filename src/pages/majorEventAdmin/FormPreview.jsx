@@ -31,11 +31,11 @@ const FormPreview = () => {
           
           // Fetch active events from backend to validate the saved config
           const groupsRes = await API.get('/api/major-events/groups');
-          const groups = groupsRes.data?.groups || [];
+          const event_schools = groupsRes.data?.event_schools || [];
           const targetGroup = groups.find(g => 
             g.groupName.toLowerCase().includes('cultural') || 
             g.assignedFestName.toLowerCase().includes('cultural')
-          ) || groups[0];
+          ) || event_schools[0];
 
           if (targetGroup) {
             const eventsRes = await API.get(`/api/major-events/groups/${targetGroup._id}/events`);

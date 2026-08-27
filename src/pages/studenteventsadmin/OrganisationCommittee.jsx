@@ -418,9 +418,9 @@ const ReadOnlyCoordinators = ({ type }) => {
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const endpoint = type === 'Event' ? '/api/groups' : '/api/events';
+      const endpoint = type === 'Event' ? '/api/event_schools' : '/api/events';
       const response = await API.get(endpoint);
-      setDataList(response.data?.groups || response.data?.events || []);
+      setDataList(response.data?.event_schools || response.data?.events || []);
     } catch (error) {
       toast.error(`Failed to load ${type} coordinators`);
     } finally {

@@ -55,8 +55,8 @@ const MajorEventGroups = () => {
     setLoadingGroups(true);
     try {
       const response = await API.get('/api/major-events/groups');
-      const majorGroups = response.data?.groups || [];
-      setGroups(majorGroups);
+      const majorGroups = response.data?.event_schools || [];
+      setEventSchools(majorGroups);
       setSelectedGroup((current) => current || majorGroups[0] || null);
     } catch (error) {
       toast.error(error.response?.data?.message || 'Failed to load assigned groups');
@@ -310,7 +310,7 @@ const MajorEventGroups = () => {
           </Box>
         ) : (
           <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(3, minmax(0, 1fr))' }, gap: 1.25, alignItems: 'stretch' }}>
-            {groups.map((group) => {
+            {event_schools.map((group) => {
               const isSelected = selectedGroup?._id === group._id;
               return (
                 <Card
@@ -360,7 +360,7 @@ const MajorEventGroups = () => {
             aria-hidden="true"
             sx={{
               display: 'grid',
-              gridTemplateColumns: { xs: '1fr', sm: `repeat(${Math.max(groups.length, 1)}, minmax(0, 1fr))` },
+              gridTemplateColumns: { xs: '1fr', sm: `repeat(${Math.max(event_schools.length, 1)}, minmax(0, 1fr))` },
               height: 52,
               mt: 0,
             }}

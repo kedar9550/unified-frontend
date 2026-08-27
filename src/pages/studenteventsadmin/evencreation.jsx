@@ -45,7 +45,7 @@ const EventCreation = () => {
   const { activeRole, user } = useAuth();
   const [view, setView] = useState('list');
   const [events, setEvents] = useState([]);
-  const [groups, setGroups] = useState([]);
+  const [eventSchools, setEventSchools] = useState([]);
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -111,11 +111,14 @@ const EventCreation = () => {
     }
   }, []);
 
-  const fetchGroups = useCallback(async () => {
+  const fetchSchools = useCallback(async () => {
     try {
-      const response = await API.get('/api/groups');
-      const activeGroups = (response.data?.groups || []).filter((group) => group.status === 'Active');
-      setGroups(activeGroups);
+      const response = await API.get('/api/event-schools');
+      let activeGroups = (response.data?.eventSchools || []).filter((group) => group.status === 'Active');
+      if (activeRole === 'SCHOOL_COORDINATOR' && user) {
+        activeGroups = activeGroups.filter(school => school.coordinator?.employeeId === String(user.institutionId || user.employeeId || user.employeeCode));
+      }
+      setEventSchools(activeGroups);
       if (activeRole === 'SCHOOL_COORDINATOR' && activeGroups.length > 0) {
         setSelectedGroup(activeGroups[0]);
       }
@@ -123,7 +126,7 @@ const EventCreation = () => {
       console.error('Failed to load groups', error);
       toast.error('Failed to load groups');
     }
-  }, [activeRole]);
+  }, [activeRole, user]);
 
   const fetchEvents = useCallback(async () => {
     setLoading(true);
@@ -155,11 +158,11 @@ const EventCreation = () => {
   }, [activeRole, user]);
 
   useEffect(() => {
-    fetchGroups();
+    fetchSchools();
     fetchEvents();
     fetchInfrastructure();
     fetchDepartments();
-  }, [fetchGroups, fetchEvents, fetchInfrastructure, fetchDepartments]);
+  }, [fetchSchools, fetchEvents, fetchInfrastructure, fetchDepartments]);
 
   useEffect(() => {
     if (!searchQuery || searchQuery.trim() === '') {
@@ -188,8 +191,8 @@ const EventCreation = () => {
 
   const resetForm = () => {
     setEditingEvent(null);
-    if (activeRole === 'SCHOOL_COORDINATOR' && groups.length > 0) {
-      setSelectedGroup(groups[0]);
+    if (activeRole === 'SCHOOL_COORDINATOR' && eventSchools.length > 0) {
+      setSelectedGroup(eventSchools[0]);
     } else {
       setSelectedGroup(null);
     }
@@ -224,7 +227,7 @@ const EventCreation = () => {
   };
 
   const openEditForm = (event) => {
-    const group = groups.find((g) => String(g._id) === String(event.group?._id || event.group)) || null;
+    const group = eventSchools.find((g) => String(g._id) === String(event.eventSchool?._id || event.eventSchool)) || null;
     setEditingEvent(event);
     setSelectedGroup(group || null);
     
@@ -342,7 +345,7 @@ const EventCreation = () => {
     setSubmitting(true);
 
     const formData = new FormData();
-    formData.append('groupId', selectedGroup?._id || '');
+    formData.append('eventSchoolId', selectedGroup?._id || '');
     formData.append('eventName', eventName.trim());
     formData.append('price', Number(price));
     formData.append('priceType', priceType);
@@ -437,7 +440,7 @@ const EventCreation = () => {
     setView('list');
   };
 
-  const tableColumns = ['#', 'Group', 'Department', 'FACULTY Coordinators', 'Event Name', 'Venue', 'Max Team Size', 'Price'];
+  const tableColumns = ['#', 'Event School', 'Department', 'FACULTY Coordinators', 'Event Name', 'Venue', 'Max Team Size', 'Price'];
   if (activeRole !== 'FACULTY_COORDINATOR') {
     tableColumns.push('Actions');
   }
@@ -453,7 +456,7 @@ const EventCreation = () => {
 
     const row = [
       index + 1,
-      event.group?.name || '',
+      event.eventSchool?.name || '',
       Array.isArray(event.department)
         ? (departmentsList.length > 0 && event.department.length === departmentsList.length 
             ? (
@@ -672,26 +675,26 @@ const EventCreation = () => {
       <Card sx={{ mt: 3, maxWidth: 900, mx: 'auto', boxShadow: 3 }}>
         <CardContent sx={{ p: 4 }}>
           <Stack spacing={3}>
-            <FormControl fullWidth error={!!errors.group}>
-              <InputLabel id="group-label">School</InputLabel>
+            <FormControl fullWidth error={!!errors.eventSchool}>
+              <InputLabel id="group-label">Event School</InputLabel>
               <Select
                 labelId="group-label"
                 value={selectedGroup?._id || ''}
                 label="School"
                 disabled={activeRole === 'SCHOOL_COORDINATOR'}
                 onChange={(e) => {
-                  const group = groups.find((g) => g._id === e.target.value) || null;
+                  const group = eventSchools.find((g) => g._id === e.target.value) || null;
                   setSelectedGroup(group);
                 }}
               >
                 <MenuItem value="">Select School</MenuItem>
-                {groups.map((group) => (
+                {eventSchools.map((group) => (
                   <MenuItem key={group._id} value={group._id}>
                     {group.name}
                   </MenuItem>
                 ))}
               </Select>
-              {errors.group && <FormHelperText>{errors.group}</FormHelperText>}
+              {errors.eventSchool && <FormHelperText>{errors.eventSchool}</FormHelperText>}
             </FormControl>
 
             <FormControl fullWidth error={!!errors.department}>
@@ -784,6 +787,12 @@ const EventCreation = () => {
               }}
               inputValue={searchQuery}
               onInputChange={(_, newInputValue) => setSearchQuery(newInputValue)}
+              filterOptions={(x) => x}
+              isOptionEqualToValue={(option, value) => {
+                const optionCode = option.institutionId || option.employeeId || option.employeeCode || '';
+                const valueCode = value.institutionId || value.employeeId || value.employeeCode || '';
+                return optionCode === valueCode;
+              }}
               loading={isSearching}
               noOptionsText={searchQuery ? 'No matches found' : 'Type to search'}
               renderInput={(params) => {
