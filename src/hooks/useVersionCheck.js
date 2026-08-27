@@ -13,7 +13,14 @@ export const useVersionCheck = () => {
   const checkForUpdates = async () => {
     try {
       // Append timestamp to avoid cached JSON
-      const res = await fetch(`/version.json?t=${new Date().getTime()}`);
+      const res = await fetch(`/version.json?t=${new Date().getTime()}`, {
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0'
+        }
+      });
       if (!res.ok) return;
       
       const data = await res.json();
