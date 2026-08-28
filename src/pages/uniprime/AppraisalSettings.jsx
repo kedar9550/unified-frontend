@@ -985,11 +985,11 @@ const AppraisalSettings = () => {
             gap: 2,
             width: { xs: "100%", sm: "auto" }
           }}>
-            {/* Group Switch and Academic Year Select side-by-side on mobile */}
+            {/* Group controls */}
             <Box sx={{
               display: "flex",
-              flexDirection: "row",
-              alignItems: "center",
+              flexDirection: { xs: "column", sm: "row" },
+              alignItems: { xs: "stretch", sm: "center" },
               gap: 2,
               width: { xs: "100%", sm: "auto" },
               justifyContent: "space-between"
@@ -1018,49 +1018,52 @@ const AppraisalSettings = () => {
                 sx={{ m: 0 }}
               />
 
-              <FormControl variant="outlined" size="small" sx={{ minWidth: { xs: 120, sm: 160 }, flex: { xs: 1, sm: "none" } }}>
-                <InputLabel id="academic-year-select-label">Academic Year</InputLabel>
-                <Select
-                  labelId="academic-year-select-label"
-                  value={selectedYear}
-                  onChange={(e) => setSelectedYear(e.target.value)}
-                  label="Academic Year"
+              <Box sx={{ display: "flex", flexDirection: "row", gap: 2, width: { xs: "100%", sm: "auto" } }}>
+                <FormControl variant="outlined" size="small" sx={{ flex: 1, minWidth: { xs: 0, sm: 160 } }}>
+                  <InputLabel id="academic-year-select-label">Academic Year</InputLabel>
+                  <Select
+                    labelId="academic-year-select-label"
+                    value={selectedYear}
+                    onChange={(e) => setSelectedYear(e.target.value)}
+                    label="Academic Year"
+                    sx={{
+                      borderRadius: "10px",
+                      backgroundColor: "var(--bg-paper)",
+                      "& .MuiOutlinedInput-notchedOutline": {
+                        borderColor: "var(--border-color)"
+                      },
+                      "&:hover .MuiOutlinedInput-notchedOutline": {
+                        borderColor: "var(--color-primary)"
+                      },
+                      "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                        borderColor: "var(--color-primary)"
+                      }
+                    }}
+                  >
+                    {academicYears.map((ay) => (
+                      <MenuItem key={ay._id} value={ay._id}>
+                        {ay.year}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+                <TextField
+                  label="Cutoff Date"
+                  type="date"
+                  size="small"
+                  value={config.cutoffDate ? new Date(config.cutoffDate).toISOString().split('T')[0] : ""}
+                  onChange={(e) => setConfig(prev => ({ ...prev, cutoffDate: e.target.value }))}
+                  InputLabelProps={{ shrink: true }}
                   sx={{
-                    borderRadius: "10px",
-                    backgroundColor: "var(--bg-paper)",
-                    "& .MuiOutlinedInput-notchedOutline": {
-                      borderColor: "var(--border-color)"
-                    },
-                    "&:hover .MuiOutlinedInput-notchedOutline": {
-                      borderColor: "var(--color-primary)"
-                    },
-                    "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
-                      borderColor: "var(--color-primary)"
+                    flex: 1,
+                    minWidth: { xs: 0, sm: 200 },
+                    "& .MuiOutlinedInput-root": {
+                      borderRadius: "10px",
+                      backgroundColor: "var(--bg-paper)"
                     }
                   }}
-                >
-                  {academicYears.map((ay) => (
-                    <MenuItem key={ay._id} value={ay._id}>
-                      {ay.year}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-              <TextField
-                label="Cutoff Date (Appraisal Creation Lock)"
-                type="date"
-                size="small"
-                value={config.cutoffDate ? new Date(config.cutoffDate).toISOString().split('T')[0] : ""}
-                onChange={(e) => setConfig(prev => ({ ...prev, cutoffDate: e.target.value }))}
-                InputLabelProps={{ shrink: true }}
-                sx={{
-                  minWidth: { xs: 150, sm: 200 },
-                  "& .MuiOutlinedInput-root": {
-                    borderRadius: "10px",
-                    backgroundColor: "var(--bg-paper)"
-                  }
-                }}
-              />
+                />
+              </Box>
             </Box>
 
             <Button
