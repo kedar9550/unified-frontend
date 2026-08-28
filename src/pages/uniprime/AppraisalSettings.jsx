@@ -1053,7 +1053,7 @@ const AppraisalSettings = () => {
                   size="small"
                   value={config.cutoffDate ? new Date(config.cutoffDate).toISOString().split('T')[0] : ""}
                   onChange={(e) => setConfig(prev => ({ ...prev, cutoffDate: e.target.value }))}
-                  InputLabelProps={{ shrink: true }}
+                  slotProps={{ inputLabel: { shrink: true } }}
                   sx={{
                     flex: 1,
                     minWidth: { xs: 0, sm: 200 },
