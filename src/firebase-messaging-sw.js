@@ -2,7 +2,10 @@ importScripts('https://storage.googleapis.com/workbox-cdn/releases/6.4.1/workbox
 
 if (workbox) {
     workbox.setConfig({ debug: false });
+    workbox.precaching.cleanupOutdatedCaches();
     workbox.precaching.precacheAndRoute(self.__WB_MANIFEST || []);
+    self.skipWaiting();
+    workbox.core.clientsClaim();
 }
 
 importScripts('https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js');
@@ -51,8 +54,8 @@ self.addEventListener('notificationclick', (event) => {
 });
 
 // Listen for the SKIP_WAITING message to allow the UI to trigger an update
-self.addEventListener('message', (event) => {
-    if (event.data && event.data.type === 'SKIP_WAITING') {
-        self.skipWaiting();
-    }
-});
+// self.addEventListener('message', (event) => {
+//     if (event.data && event.data.type === 'SKIP_WAITING') {
+//         self.skipWaiting();
+//     }
+// });

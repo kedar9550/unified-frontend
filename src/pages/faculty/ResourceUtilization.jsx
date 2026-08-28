@@ -896,12 +896,12 @@ export default function ResourceUtilization() {
                   <Box sx={{ display: "grid", gridTemplateColumns: "90px 1fr", gap: 2 }}>
                     <Typography sx={{ fontWeight: 600, color: "#475569", fontSize: "0.9rem" }}>From Date</Typography>
                     <Typography sx={{ color: "#0f172a", fontSize: "0.9rem" }}>
-                      {new Date(data.fromDate).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}
+                      {new Date(data.eventStartDate || data.fromDate).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}
                     </Typography>
                     
                     <Typography sx={{ fontWeight: 600, color: "#475569", fontSize: "0.9rem" }}>To Date</Typography>
                     <Typography sx={{ color: "#0f172a", fontSize: "0.9rem" }}>
-                      {new Date(data.toDate).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}
+                      {new Date(data.eventEndDate || data.toDate).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}
                     </Typography>
                   </Box>
 
