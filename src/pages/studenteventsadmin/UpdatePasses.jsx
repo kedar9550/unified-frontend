@@ -450,7 +450,7 @@ const UpdatePasses = () => {
           </Paper>
         </Grid> */}
 
-        <Grid item xs={12} sm={6} md={3}>
+        {/* <Grid item xs={12} sm={6} md={3}>
           <Paper
             variant="outlined"
             sx={{
@@ -485,7 +485,7 @@ const UpdatePasses = () => {
               </Box>
             </Box>
           </Paper>
-        </Grid>
+        </Grid> */}
 
         <Grid item xs={12} sm={6} md={3}>
           <Paper
@@ -637,7 +637,7 @@ const UpdatePasses = () => {
           ))}
         </TextField>
 
-        <TextField
+        {/* <TextField
           select
           label="Accommodation"
           size="small"
@@ -648,7 +648,7 @@ const UpdatePasses = () => {
           <MenuItem value="ALL">All Participants</MenuItem>
           <MenuItem value="YES">Requested (Yes)</MenuItem>
           <MenuItem value="NO">No Accommodation</MenuItem>
-        </TextField>
+        </TextField> */}
 
         <TextField
           select
@@ -822,7 +822,7 @@ const UpdatePasses = () => {
                 </Typography>
               </Grid>
 
-              <Grid item xs={12} sm={6}>
+              {/* <Grid item xs={12} sm={6}>
                 <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase', fontWeight: 700 }}>
                   Accommodation Requested
                 </Typography>
@@ -834,7 +834,7 @@ const UpdatePasses = () => {
                     sx={{ fontWeight: 700 }}
                   />
                 </Box>
-              </Grid>
+              </Grid> */}
             </Grid>
           </DialogContent>
 
