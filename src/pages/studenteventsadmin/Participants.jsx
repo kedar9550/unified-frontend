@@ -487,7 +487,7 @@ const Participants = ({ mode = 'all' }) => {
           </Paper>
         </Grid>
 
-        {mode === 'all' && (
+        {/* {mode === 'all' && (
           <Grid item xs={12} sm={6} md={3}>
             <Paper
             variant="outlined"
@@ -524,7 +524,7 @@ const Participants = ({ mode = 'all' }) => {
             </Box>
           </Paper>
         </Grid>
-        )}
+        )} */}
 
         {mode !== 'all' && (
           <>
@@ -753,7 +753,7 @@ const Participants = ({ mode = 'all' }) => {
           ))}
         </TextField>
 
-        {mode === 'all' && (
+        {/* {mode === 'all' && (
           <TextField
             select
             label="Accommodation"
@@ -766,7 +766,7 @@ const Participants = ({ mode = 'all' }) => {
             <MenuItem value="YES">Requested (Yes)</MenuItem>
             <MenuItem value="NO">No Accommodation</MenuItem>
           </TextField>
-        )}
+        )} */}
 
         <TextField
           select

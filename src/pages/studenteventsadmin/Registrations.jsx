@@ -228,7 +228,7 @@ const Registrations = () => {
 
     filteredParticipants.forEach((p, idx) => {
       const collegeName = p.college === 'Other College' && p.otherCollege ? p.otherCollege : (p.college || '');
-      
+
       const schoolCategory = p.category || p.schoolId || '-';
       const relatedEvent = allEvents.find(e => e._id === p.eventId);
       let eventDepartmentStr = '-';
@@ -275,7 +275,7 @@ const Registrations = () => {
     'College',
     'Department / Year',
     'Contact Info',
-    'Accommodation',
+    // 'Accommodation',
     'Action',
   ];
 
@@ -356,7 +356,7 @@ const Registrations = () => {
           </Typography>
         ) : null}
       </Box>,
-      {
+      /* {
         value: p.accommodation || 'No',
         display: (
           <Chip
@@ -366,7 +366,7 @@ const Registrations = () => {
             sx={{ fontWeight: 700, borderRadius: '6px' }}
           />
         ),
-      },
+      }, */
       {
         value: 'Details',
         display: (
@@ -845,7 +845,7 @@ const Registrations = () => {
                 </Typography>
               </Grid>
 
-              <Grid item xs={12} sm={6}>
+              {/* <Grid item xs={12} sm={6}>
                 <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase', fontWeight: 700 }}>
                   Accommodation Requested
                 </Typography>
@@ -857,7 +857,7 @@ const Registrations = () => {
                     sx={{ fontWeight: 700 }}
                   />
                 </Box>
-              </Grid>
+              </Grid> */}
             </Grid>
           </DialogContent>
 

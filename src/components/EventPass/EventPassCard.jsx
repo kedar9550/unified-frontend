@@ -102,7 +102,7 @@ const EventPassCard = ({ participant, isPdf = false }) => {
             <CalendarMonthIcon sx={{ color: '#fff', fontSize: 28, mr: 1 }} />
             <Box>
               <Typography sx={{ color: '#fff', fontSize: '14px', fontWeight: 700, letterSpacing: '0.5px', lineHeight: 1.2 }}>EVENT DATE</Typography>
-              <Typography sx={{ color: primaryGold, fontSize: '15px', fontWeight: 800, lineHeight: 1.2, mt: 0.3 }}>SEP 15. 2026</Typography>
+              <Typography sx={{ color: primaryGold, fontSize: '15px', fontWeight: 800, lineHeight: 1.2, mt: 0.3 }}>11 - 12 SEP, 2026</Typography>
             </Box>
           </Box>
         </Box>
