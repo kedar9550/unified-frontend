@@ -32,6 +32,7 @@ import {
 } from "@mui/icons-material";
 import API from "../../api/axios";
 import PageHeader from "../../components/common/PageHeader";
+import { PageContainer } from "../../components/common/design-system";
 
 // SDG Asset Imports
 import sdg1 from '../../assets/sdg-en-01.png';
@@ -283,37 +284,29 @@ const SDGManagement = () => {
   };
 
   return (
-    <Box>
+    <PageContainer px={0} py={0}>
       <PageHeader
         title="SDG Keywords Management"
-        subtitle="Manage Sustainable Development Goals and their associated keywords for document analysis." />
-
-      <Box sx={{ display: 'flex', justifyContent: { xs: 'stretch', sm: 'flex-end' }, mb: 3, mt: 1 }}>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={() => handleOpenDialog()}
-          sx={{
-            width: { xs: '100%', sm: 'auto' },
-            borderRadius: "10px",
-            px: 3,
-            background: 'var(--gradient-primary)',
-            color: '#fff',
-            fontWeight: 700,
-            textTransform: 'none',
-            boxShadow: '0 4px 12px var(--color-primary-alpha)',
-            '&:hover': {
+        subtitle="Manage Sustainable Development Goals and their associated keywords for document analysis."
+        action={
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={() => handleOpenDialog()}
+            sx={{
+              width: { xs: '100%', sm: 'auto' },
+              borderRadius: "50px",
+              px: 3,
               background: 'var(--gradient-primary)',
-              filter: 'brightness(1.1)',
-              boxShadow: '0 8px 20px var(--color-primary-alpha)',
-              transform: 'translateY(-1px)'
-            },
-            transition: 'all 0.3s ease'
-          }}
-        >
-          Add New SDG
-        </Button>
-      </Box>
+              color: '#ffffff',
+              fontWeight: 700,
+              textTransform: 'none'
+            }}
+          >
+            Add New SDG Goal
+          </Button>
+        }
+      />
 
 
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
@@ -927,7 +920,7 @@ const SDGManagement = () => {
           </Button>
         </DialogActions>
       </Dialog>
-    </Box>
+    </PageContainer>
   );
 };
 

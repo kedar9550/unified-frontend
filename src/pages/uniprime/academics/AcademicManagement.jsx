@@ -6,6 +6,7 @@ import {
 } from "@mui/material";
 import { CheckCircle, CalendarToday } from "@mui/icons-material";
 import PageHeader from "../../../components/common/PageHeader";
+import { PageContainer, ModuleCard, EmptyState } from "../../../components/common/design-system";
 
 const formatDate = (dateString) => {
   if (!dateString) return "";
@@ -31,14 +32,12 @@ const AcademicManagement = () => {
   }, []);
 
   return (
-    <Box>
+    <PageContainer px={0} py={0}>
       <PageHeader title="Academic Years" subtitle="View all academic years managed automatically by the system" />
 
       <Box sx={{ mt: 3 }}>
         {years.length === 0 ? (
-          <Typography sx={{ textAlign: "center", color: "var(--text-secondary)", mt: 6 }}>
-            No academic years found.
-          </Typography>
+          <EmptyState title="No academic years found" description="No academic years are currently registered in the system." />
         ) : (
           <Box
             sx={{
@@ -108,7 +107,7 @@ const AcademicManagement = () => {
           </Box>
         )}
       </Box>
-    </Box>
+    </PageContainer>
   );
 };
 

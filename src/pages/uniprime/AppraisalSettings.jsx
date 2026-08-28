@@ -57,6 +57,7 @@ import {
 import axiosInstance from "../../api/axios";
 import { toast } from "sonner";
 import PageHeader from "../../components/common/PageHeader";
+import { PageContainer } from "../../components/common/design-system";
 
 const AppraisalSettings = () => {
   const theme = useTheme();
@@ -971,7 +972,7 @@ const AppraisalSettings = () => {
   };
 
   return (
-    <Box sx={{ p: { xs: 2, md: 4 }, maxWidth: 1280, margin: "0 auto", animation: "fadeIn 0.5s ease" }}>
+    <PageContainer px={0} py={0}>
       {/* Redesigned Header using common PageHeader */}
       <PageHeader
         title="Appraisal Points Settings"
@@ -1487,7 +1488,7 @@ const AppraisalSettings = () => {
           </Typography>
         </Box>
       </Box>
-    </Box>
+    </PageContainer>
   );
 };
 

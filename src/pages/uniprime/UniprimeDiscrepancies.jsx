@@ -32,6 +32,7 @@ import {
   Cancel as RejectedIcon,
 } from "@mui/icons-material";
 import PageHeader from "../../components/common/PageHeader";
+import { PageContainer } from "../../components/common/design-system";
 import SectionHeader from "../../components/common/SectionHeader";
 import API from "../../api/axios";
 import { useAuth } from "../../context/AuthContext";
@@ -369,7 +370,7 @@ export default function UniprimeDiscrepancies() {
   }, { PENDING: 0, RESOLVED: 0, REJECTED: 0 });
 
   return (
-    <Box sx={{ p: { xs: 2, md: 4 }, minHeight: "100vh", background: "var(--bg-dashboard)" }}>
+    <PageContainer px={0} py={0}>
       {/* ── HEADER ──────────────────────────────────────────────────── */}
       <PageHeader
         title="Proctoring Discrepancies"
@@ -1089,6 +1090,6 @@ export default function UniprimeDiscrepancies() {
           </Button>
         </DialogActions>
       </Dialog>
-    </Box>
+    </PageContainer>
   );
 }

@@ -14,6 +14,7 @@ import {
     CheckCircle, Cancel, Warning, ArrowBack, ChevronRight
 } from "@mui/icons-material";
 import PageHeader from "../../../components/common/PageHeader";
+import { PageContainer } from "../../../components/common/design-system";
 import API from "../../../api/axios";
 
 const ConnectorLine = ({ color = "var(--color-primary)" }) => (
@@ -1239,7 +1240,7 @@ const AcademicStructure = () => {
     };
 
     return (
-        <Box>
+        <PageContainer px={0} py={0}>
             <PageHeader
                 title="Academic Structure"
                 subtitle="Configure Departments, Programs, and Specializations for the University" />
@@ -1530,7 +1531,7 @@ const AcademicStructure = () => {
                 </DialogActions>
             </Dialog>
 
-        </Box>
+        </PageContainer>
     );
 };
 

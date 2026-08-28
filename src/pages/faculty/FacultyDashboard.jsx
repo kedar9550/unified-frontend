@@ -41,6 +41,7 @@ import DataTable from "../../components/data/DataTable";
 import ProctorStudentsModal from "../../components/faculty/ProctorStudentsModal";
 
 import { useNavigate } from "react-router-dom";
+import PageHeader from "../../components/common/PageHeader";
 
 const FacultyDashboard = () => {
   const { user } = useAuth();
@@ -181,42 +182,13 @@ const FacultyDashboard = () => {
     { title: "Proctoring", desc: "Assigned students list", icon: <Group sx={{ color: "#EF4444" }} />, onClick: () => setIsProctorModalOpen(true) },
   ];
 
-
   return (
-    <Box>
+    <Box sx={{ display: "flex", flexDirection: "column", gap: "var(--space-6)" }}>
       {/* Header */}
-      <Box
-        sx={{
-          display: "flex",
-          flexDirection: { xs: "column", sm: "row" },
-          justifyContent: "space-between",
-          alignItems: { xs: "flex-start", sm: "center" },
-          gap: 2,
-          mb: 4,
-        }}
-      >
-        <Box>
-          <Typography
-            variant="h4"
-            sx={{
-              fontWeight: 800,
-              color: "var(--color-primary)",
-              letterSpacing: "-0.02em",
-              mb: 0.5,
-              fontSize: { xs: "1.75rem", sm: "2.125rem" }
-            }}
-          >
-            Welcome back, {user?.name || "Faculty"}
-          </Typography>
-          <Typography
-            variant="body2"
-            sx={{ color: "var(--text-secondary)", fontWeight: 500 }}
-          >
-            Faculty Dashboard • Manage your teaching, research and academic
-            activities
-          </Typography>
-        </Box>
-        <Box sx={{ display: "flex", gap: 2, alignItems: "center", alignSelf: { xs: "flex-end", sm: "center" } }}>
+      <PageHeader
+        title={`Welcome back, ${user?.name || "Faculty"}`}
+        subtitle="Faculty Dashboard • Manage your teaching, research and academic activities"
+        action={
           <Select
             size="small"
             value={selectedYear}
@@ -227,10 +199,10 @@ const FacultyDashboard = () => {
             onClose={blurActiveElement}
             MenuProps={selectMenuProps}
             sx={{
-              borderRadius: "12px",
+              borderRadius: "var(--radius-md)",
               borderColor: "var(--border-color)",
               color: "var(--text-primary)",
-              background: "var(--bg-glass)",
+              background: "var(--bg-paper)",
               backdropFilter: "blur(10px)",
               "& fieldset": { borderColor: "var(--border-color)" },
               "&:hover fieldset": { borderColor: "var(--color-primary)" },
@@ -242,8 +214,8 @@ const FacultyDashboard = () => {
               <MenuItem key={y._id} value={y.year}>{y.year}</MenuItem>
             ))}
           </Select>
-        </Box>
-      </Box>
+        }
+      />
 
       {/* Main Content Area */}
       {loadingDashboard ? (

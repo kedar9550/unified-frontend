@@ -50,9 +50,9 @@ const MainLayout = ({ children }) => {
             minHeight: "100vh",
             display: "flex",
             flexDirection: "column",
-            px: { xs: 0, md: 3 },
-            pt: { xs: "calc(70px + 16px)", md: "calc(88px + 24px)" },
-            pb: { xs: "calc(80px + 16px)", md: 3 },
+            px: { xs: "var(--page-padding-mobile)", md: 3 },
+            pt: { xs: "calc(70px + 12px)", md: "calc(88px + 20px)" },
+            pb: { xs: "calc(70px + 16px)", md: 3 },
             transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
             overflow: "hidden",
           }}
@@ -61,18 +61,18 @@ const MainLayout = ({ children }) => {
             sx={{
               flex: 1,
               minWidth: 0,
-              borderRadius: { xs: 0, md: "16px" },
+              borderRadius: { xs: "8px", md: "var(--radius-xl)" },
               background: "var(--bg-glass)",
               backdropFilter: "blur(2px) saturate(160%)",
               WebkitBackdropFilter: "blur(2px) saturate(160%)",
-              boxShadow: { xs: "none", md: "0 8px 32px rgba(31, 38, 135, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.5)" },
-              border: { xs: "none", md: "1px solid var(--border-color)" },
+              boxShadow: "var(--shadow-premium)",
+              border: "1px solid var(--border-color)",
               display: "flex",
               flexDirection: "column",
               overflow: "hidden",
             }}
           >
-            <Box sx={{ flex: 1, minWidth: 0, px: { xs: 0.5, md: 4 }, py: { xs: 1.5, md: 4 }, overflowY: "auto", overflowX: "hidden" }}>
+            <Box sx={{ flex: 1, minWidth: 0, px: { xs: "var(--mobile-padding-x)", md: "var(--page-padding-x)" }, py: { xs: "var(--mobile-padding-y)", md: "var(--page-padding-y)" }, overflowY: "auto", overflowX: "hidden" }}>
               {children}
             </Box>
             <Footer />

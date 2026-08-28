@@ -102,24 +102,23 @@ const GenerateQR = () => {
 
 
     return (
-        <Box>
-            <PageHeader title="QR Codes" subtitle="Create and manage your QR codes" />
-            
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, mt: 3, px: 3 }}>
-                <Typography variant="h6" sx={{ color: "var(--text-primary)", fontWeight: 800 }}>
-                    My QR Codes
-                </Typography>
-                <Button
-                    variant="contained"
-                    startIcon={<Add />}
-                    onClick={() => setOpenModal(true)}
-                    sx={{ background: "var(--gradient-primary)", px: 3, fontWeight: 700, textTransform: "none", "&:hover": { opacity: 0.9, transform: "translateY(-1px)", boxShadow: "0 4px 12px rgba(0,0,0,0.1)" }, transition: "all 0.2s ease" }}
-                >
-                    Create New
-                </Button>
-            </Box>
+        <Box sx={{ width: '100%' }}>
+            <PageHeader 
+                title="QR Codes" 
+                subtitle="Create and manage your QR codes" 
+                action={
+                    <Button
+                        variant="contained"
+                        startIcon={<Add />}
+                        onClick={() => setOpenModal(true)}
+                        sx={{ background: "var(--gradient-primary)", px: 3, fontWeight: 700, textTransform: "none" }}
+                    >
+                        Create New
+                    </Button>
+                }
+            />
 
-            <Box sx={{ px: 3, pb: 3 }}>
+            <Box sx={{ pb: 3 }}>
                 <DataTable 
                     columns={["S.No", "QR CODE", "DESTINATION", "SCANS", "STATUS", "ACTIONS"]}
                     alignments={["center", "center", "left", "center", "center", "right"]}

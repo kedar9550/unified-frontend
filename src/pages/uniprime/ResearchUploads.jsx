@@ -24,6 +24,8 @@ import {
 import { CloudUpload, Download, Close } from "@mui/icons-material";
 import { toast } from "sonner";
 import axios from "../../api/axios";
+import PageHeader from "../../components/common/PageHeader";
+import { PageContainer } from "../../components/common/design-system";
 
 const uploadCategories = [
   { id: "bookchapters", title: "Book Chapters", template: "bookchapters.csv" },
@@ -117,13 +119,11 @@ const ResearchUploads = () => {
   };
 
   return (
-    <Box sx={{ p: 4, mt: "20px" }}>
-      <Typography variant="h4" sx={{ fontWeight: 800, mb: 1, color: "var(--text-primary)" }}>
-        Research Data Uploads
-      </Typography>
-      <Typography variant="body1" sx={{ color: "text.secondary", mb: 4 }}>
-        Download the specific template, fill in the data, and upload the CSV to batch import records.
-      </Typography>
+    <PageContainer px={0} py={0}>
+      <PageHeader
+        title="Research Data Uploads"
+        subtitle="Download the specific template, fill in the data, and upload the CSV to batch import records."
+      />
 
       <Grid container spacing={3}>
         {uploadCategories.map((cat) => (
@@ -274,7 +274,7 @@ const ResearchUploads = () => {
           </Button>
         </DialogActions>
       </Dialog>
-    </Box>
+    </PageContainer>
   );
 };
 

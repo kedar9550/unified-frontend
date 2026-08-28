@@ -209,54 +209,52 @@ const Reports = () => {
     };
 
     return (
-        <Box sx={{ width: '100%', flexGrow: 1, display: 'flex', flexDirection: 'column', bgcolor: '#f5f7fa', minHeight: '100vh' }}>
-            <Box sx={{ px: { xs: 2, md: 3 }, pt: { xs: 2, md: 3 }, pb: 2 }}>
-                <PageHeader 
-                    title="Reports Dashboard" 
-                    subtitle={isSuperAdmin ? (filters.serviceId === 'all' ? 'All Services' : (departments.find(d => d._id === filters.serviceId)?.name || 'Service Report')) : 'My Services'} 
-                    action={
-                        <Box>
-                            <Button 
-                                variant="contained" 
-                                color="primary"
-                                endIcon={<Download />}
-                                onClick={(e) => setExportAnchorEl(e.currentTarget)}
-                                sx={{ borderRadius: '8px', textTransform: 'none', bgcolor: '#0f4c81' }}
-                            >
-                                Export Report
-                            </Button>
-                            <Menu
-                                anchorEl={exportAnchorEl}
-                                open={Boolean(exportAnchorEl)}
-                                onClose={() => setExportAnchorEl(null)}
-                            >
-                                <MenuItem onClick={exportToExcel}>Export as Excel (.xlsx)</MenuItem>
-                                <MenuItem onClick={exportToPDF}>Export as PDF (.pdf)</MenuItem>
-                            </Menu>
-                        </Box>
-                    }
-                />
-            </Box>
+        <Box sx={{ width: '100%' }}>
+            <PageHeader 
+                title="Reports Dashboard" 
+                subtitle={isSuperAdmin ? (filters.serviceId === 'all' ? 'All Services' : (departments.find(d => d._id === filters.serviceId)?.name || 'Service Report')) : 'My Services'} 
+                action={
+                    <Box>
+                        <Button 
+                            variant="contained" 
+                            color="primary"
+                            endIcon={<Download />}
+                            onClick={(e) => setExportAnchorEl(e.currentTarget)}
+                            sx={{ borderRadius: '8px', textTransform: 'none' }}
+                        >
+                            Export Report
+                        </Button>
+                        <Menu
+                            anchorEl={exportAnchorEl}
+                            open={Boolean(exportAnchorEl)}
+                            onClose={() => setExportAnchorEl(null)}
+                        >
+                            <MenuItem onClick={exportToExcel}>Export as Excel (.xlsx)</MenuItem>
+                            <MenuItem onClick={exportToPDF}>Export as PDF (.pdf)</MenuItem>
+                        </Menu>
+                    </Box>
+                }
+            />
 
             {loading && !stats ? (
                 <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
                     <Loader />
                 </Box>
             ) : (
-                <Box sx={{ px: 3, pb: 3 }}>
-                    <Paper sx={{ p: 3, mb: 4, borderRadius: '12px', background: 'var(--bg-panel)', boxShadow: '0px 2px 10px rgba(0,0,0,0.04)', border: '1px solid var(--border-color)' }}>
-                        <Typography variant="subtitle2" fontWeight={700} color="#333" mb={2}>Filter & Date Range</Typography>
+                <Box>
+                    <Paper sx={{ p: 3, mb: 4, borderRadius: '16px', background: 'var(--bg-panel)', boxShadow: 'var(--shadow-premium)', border: '1px solid var(--border-color)' }}>
+                        <Typography variant="subtitle2" fontWeight={700} color="var(--text-primary)" mb={2}>Filter & Date Range</Typography>
                         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, alignItems: 'flex-end' }}>
                             <Box sx={{ width: { xs: '100%', sm: 'calc(50% - 8px)', md: 'auto' }, flex: { md: 1 } }}>
-                                <Typography variant="caption" color="text.secondary" fontWeight={600} display="block" mb={0.5}>Duration</Typography>
+                                <Typography variant="caption" color="var(--text-secondary)" fontWeight={600} display="block" mb={0.5}>Duration</Typography>
                                 <FormControl fullWidth size="small">
                                     <Select 
                                         name="dateRange" 
                                         value={filters.dateRange} 
                                         onChange={handleFilterChange} 
                                         displayEmpty 
-                                        sx={{ borderRadius: '8px', bgcolor: '#fff' }}
-                                        startAdornment={<CalendarToday sx={{ fontSize: 18, color: 'text.secondary', ml: 1, mr: 1 }} />}
+                                        sx={{ borderRadius: '8px', bgcolor: 'var(--bg-paper)', color: 'var(--text-primary)' }}
+                                        startAdornment={<CalendarToday sx={{ fontSize: 18, color: 'var(--text-secondary)', ml: 1, mr: 1 }} />}
                                     >
                                         <MenuItem value="all">All Time</MenuItem>
                                         <MenuItem value="last10days">Last 10 Days</MenuItem>
@@ -272,19 +270,19 @@ const Reports = () => {
                             {filters.dateRange === 'custom' && (
                                 <>
                                     <Box sx={{ width: { xs: '100%', sm: 'calc(50% - 8px)', md: 'auto' }, flex: { md: 1 } }}>
-                                        <Typography variant="caption" color="text.secondary" fontWeight={600} display="block" mb={0.5}>Start Date</Typography>
+                                        <Typography variant="caption" color="var(--text-secondary)" fontWeight={600} display="block" mb={0.5}>Start Date</Typography>
                                         <TextField 
                                             fullWidth size="small" type="date" 
                                             name="startDate" value={filters.startDate} onChange={handleFilterChange}
-                                            InputLabelProps={{ shrink: true }} sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px', bgcolor: '#fff' } }}
+                                            InputLabelProps={{ shrink: true }} sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px', bgcolor: 'var(--bg-paper)' } }}
                                         />
                                     </Box>
                                     <Box sx={{ width: { xs: '100%', sm: 'calc(50% - 8px)', md: 'auto' }, flex: { md: 1 } }}>
-                                        <Typography variant="caption" color="text.secondary" fontWeight={600} display="block" mb={0.5}>End Date</Typography>
+                                        <Typography variant="caption" color="var(--text-secondary)" fontWeight={600} display="block" mb={0.5}>End Date</Typography>
                                         <TextField 
                                             fullWidth size="small" type="date" 
                                             name="endDate" value={filters.endDate} onChange={handleFilterChange}
-                                            InputLabelProps={{ shrink: true }} sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px', bgcolor: '#fff' } }}
+                                            InputLabelProps={{ shrink: true }} sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px', bgcolor: 'var(--bg-paper)' } }}
                                         />
                                     </Box>
                                 </>
@@ -292,9 +290,9 @@ const Reports = () => {
 
                             {isSuperAdmin && (
                                 <Box sx={{ width: { xs: '100%', sm: 'calc(50% - 8px)', md: 'auto' }, flex: { md: 1 } }}>
-                                    <Typography variant="caption" color="text.secondary" fontWeight={600} display="block" mb={0.5}>Type of Service</Typography>
+                                    <Typography variant="caption" color="var(--text-secondary)" fontWeight={600} display="block" mb={0.5}>Type of Service</Typography>
                                     <FormControl fullWidth size="small">
-                                        <Select name="serviceId" value={filters.serviceId} onChange={handleFilterChange} displayEmpty sx={{ borderRadius: '8px', bgcolor: '#fff' }}>
+                                        <Select name="serviceId" value={filters.serviceId} onChange={handleFilterChange} displayEmpty sx={{ borderRadius: '8px', bgcolor: 'var(--bg-paper)', color: 'var(--text-primary)' }}>
                                             <MenuItem value="all">All Services</MenuItem>
                                             {departments.map(dept => (
                                                 <MenuItem key={dept._id} value={dept._id}>{dept.name}</MenuItem>
@@ -305,9 +303,9 @@ const Reports = () => {
                             )}
 
                             <Box sx={{ width: { xs: '100%', sm: 'calc(50% - 8px)', md: 'auto' }, flex: { md: 1 } }}>
-                                <Typography variant="caption" color="text.secondary" fontWeight={600} display="block" mb={0.5}>Priority</Typography>
+                                <Typography variant="caption" color="var(--text-secondary)" fontWeight={600} display="block" mb={0.5}>Priority</Typography>
                                 <FormControl fullWidth size="small">
-                                    <Select name="priority" value={filters.priority} onChange={handleFilterChange} displayEmpty sx={{ borderRadius: '8px', bgcolor: '#fff' }}>
+                                    <Select name="priority" value={filters.priority} onChange={handleFilterChange} displayEmpty sx={{ borderRadius: '8px', bgcolor: 'var(--bg-paper)', color: 'var(--text-primary)' }}>
                                         <MenuItem value="all">All Priorities</MenuItem>
                                         <MenuItem value="low">Low</MenuItem>
                                         <MenuItem value="medium">Medium</MenuItem>
@@ -317,7 +315,7 @@ const Reports = () => {
                             </Box>
 
                             <Box sx={{ width: { xs: '100%', sm: '100%', md: 'auto' }, flexShrink: { md: 0 } }}>
-                                <Button variant="contained" onClick={applyFilters} sx={{ textTransform: 'none', borderRadius: '8px', height: '40px', px: 3, width: { xs: '100%', md: 'auto' }, fontWeight: 700, fontSize: '13px', bgcolor: '#01214a', backgroundImage: 'linear-gradient(to right, #01214a, #0f4c81)', boxShadow: '0 4px 14px 0 rgba(1, 33, 74, 0.39)' }}>
+                                <Button variant="contained" onClick={applyFilters} sx={{ textTransform: 'none', borderRadius: '8px', height: '40px', px: 3, width: { xs: '100%', md: 'auto' }, fontWeight: 700, fontSize: '13px' }}>
                                     Apply Filters
                                 </Button>
                             </Box>
@@ -326,49 +324,49 @@ const Reports = () => {
 
                     <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 3, mb: 4 }}>
                         <Box sx={{ width: { xs: '100%', md: 'calc(33.333% - 16px)' } }}>
-                            <Paper sx={{ p: 3, height: '100%', borderRadius: '12px', background: 'var(--bg-panel)', boxShadow: '0px 2px 10px rgba(0,0,0,0.04)', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                            <Paper sx={{ p: 3, height: '100%', borderRadius: '16px', background: 'var(--bg-panel)', boxShadow: 'var(--shadow-premium)', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
                                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
                                     <Box sx={{ width: 48, height: 48, borderRadius: '8px', bgcolor: 'rgba(245, 166, 35, 0.15)', color: '#f5a623', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                         <Insights />
                                     </Box>
                                     <Box>
-                                        <Typography variant="caption" color="text.secondary" fontWeight={600}>Resolution Rate</Typography>
-                                        <Typography variant="h5" fontWeight={800} color="#333">{summary?.resolutionRate || '0%'}</Typography>
+                                        <Typography variant="caption" color="var(--text-secondary)" fontWeight={600}>Resolution Rate</Typography>
+                                        <Typography variant="h5" fontWeight={800} color="var(--text-primary)">{summary?.resolutionRate || '0%'}</Typography>
                                     </Box>
                                 </Box>
-                                <Box sx={{ width: '100%', height: '4px', bgcolor: '#f0f0f0', borderRadius: '4px' }}>
+                                <Box sx={{ width: '100%', height: '4px', bgcolor: 'var(--border-color)', borderRadius: '4px' }}>
                                     <Box sx={{ width: summary?.resolutionRate || '0%', height: '100%', bgcolor: '#f5a623', borderRadius: '4px' }} />
                                 </Box>
                             </Paper>
                         </Box>
                         <Box sx={{ width: { xs: '100%', md: 'calc(33.333% - 16px)' } }}>
-                            <Paper sx={{ p: 3, height: '100%', borderRadius: '12px', background: 'var(--bg-panel)', boxShadow: '0px 2px 10px rgba(0,0,0,0.04)', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                            <Paper sx={{ p: 3, height: '100%', borderRadius: '16px', background: 'var(--bg-panel)', boxShadow: 'var(--shadow-premium)', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
                                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
                                     <Box sx={{ width: 48, height: 48, borderRadius: '8px', bgcolor: 'rgba(24, 144, 255, 0.15)', color: '#1890ff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                         <AccessTime />
                                     </Box>
                                     <Box>
-                                        <Typography variant="caption" color="text.secondary" fontWeight={600}>Avg. Handling Time</Typography>
-                                        <Typography variant="h5" fontWeight={800} color="#333">{summary?.avgHandlingTime || '0 Days'}</Typography>
+                                        <Typography variant="caption" color="var(--text-secondary)" fontWeight={600}>Avg. Handling Time</Typography>
+                                        <Typography variant="h5" fontWeight={800} color="var(--text-primary)">{summary?.avgHandlingTime || '0 Days'}</Typography>
                                     </Box>
                                 </Box>
-                                <Box sx={{ width: '100%', height: '4px', bgcolor: '#f0f0f0', borderRadius: '4px' }}>
+                                <Box sx={{ width: '100%', height: '4px', bgcolor: 'var(--border-color)', borderRadius: '4px' }}>
                                     <Box sx={{ width: '60%', height: '100%', bgcolor: '#1890ff', borderRadius: '4px' }} />
                                 </Box>
                             </Paper>
                         </Box>
                         <Box sx={{ width: { xs: '100%', md: 'calc(33.333% - 16px)' } }}>
-                            <Paper sx={{ p: 3, height: '100%', borderRadius: '12px', background: 'var(--bg-panel)', boxShadow: '0px 2px 10px rgba(0,0,0,0.04)', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                            <Paper sx={{ p: 3, height: '100%', borderRadius: '16px', background: 'var(--bg-panel)', boxShadow: 'var(--shadow-premium)', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
                                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
                                     <Box sx={{ width: 48, height: 48, borderRadius: '8px', bgcolor: 'rgba(245, 34, 45, 0.15)', color: '#f5222d', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                         <ErrorOutlined />
                                     </Box>
                                     <Box>
-                                        <Typography variant="caption" color="text.secondary" fontWeight={600}>Overdue Tickets</Typography>
-                                        <Typography variant="h5" fontWeight={800} color="#333">{summary?.overdueTickets || 0}</Typography>
+                                        <Typography variant="caption" color="var(--text-secondary)" fontWeight={600}>Overdue Tickets</Typography>
+                                        <Typography variant="h5" fontWeight={800} color="var(--text-primary)">{summary?.overdueTickets || 0}</Typography>
                                     </Box>
                                 </Box>
-                                <Box sx={{ width: '100%', height: '4px', bgcolor: '#f0f0f0', borderRadius: '4px' }}>
+                                <Box sx={{ width: '100%', height: '4px', bgcolor: 'var(--border-color)', borderRadius: '4px' }}>
                                     <Box sx={{ width: '100%', height: '100%', bgcolor: '#f5222d', borderRadius: '4px' }} />
                                 </Box>
                             </Paper>
@@ -377,8 +375,8 @@ const Reports = () => {
 
                     <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 3, mb: 4 }}>
                         <Box sx={{ width: { xs: '100%', lg: 'calc(66.666% - 12px)' } }}>
-                            <Paper sx={{ p: 3, height: '100%', borderRadius: '12px', background: 'var(--bg-panel)', boxShadow: '0px 2px 10px rgba(0,0,0,0.04)', border: '1px solid var(--border-color)' }}>
-                                <Typography variant="subtitle2" fontWeight={700} color="#333" mb={3}>Tickets Trend (Last 30 Days)</Typography>
+                            <Paper sx={{ p: 3, height: '100%', borderRadius: '16px', background: 'var(--bg-panel)', boxShadow: 'var(--shadow-premium)', border: '1px solid var(--border-color)' }}>
+                                <Typography variant="subtitle2" fontWeight={700} color="var(--text-primary)" mb={3}>Tickets Trend (Last 30 Days)</Typography>
                                 <Box sx={{ height: 250, width: '100%' }}>
                                     {containerReady ? (
                                         <ResponsiveContainer width="100%" height="100%" minWidth={1}>
@@ -393,8 +391,8 @@ const Reports = () => {
                                                         <stop offset="95%" stopColor="#f97316" stopOpacity={0}/>
                                                     </linearGradient>
                                                 </defs>
-                                                <XAxis dataKey="date" tick={{fontSize: 11, fill: '#888'}} tickLine={false} axisLine={false} minTickGap={20} />
-                                                <YAxis tick={{fontSize: 11, fill: '#888'}} tickLine={false} axisLine={false} />
+                                                <XAxis dataKey="date" tick={{fontSize: 11, fill: 'var(--text-secondary)'}} tickLine={false} axisLine={false} minTickGap={20} />
+                                                <YAxis tick={{fontSize: 11, fill: 'var(--text-secondary)'}} tickLine={false} axisLine={false} />
                                                 <RechartsTooltip content={<CustomTooltip />} />
                                                 <Legend verticalAlign="top" align="right" iconType="circle" wrapperStyle={{ paddingBottom: '10px' }} />
                                                 <Area type="monotone" name="Created" dataKey="created" stroke="#22c55e" strokeWidth={3} fillOpacity={1} fill="url(#colorCreated)" />
@@ -411,8 +409,8 @@ const Reports = () => {
                         </Box>
                         
                         <Box sx={{ width: { xs: '100%', lg: 'calc(33.333% - 12px)' } }}>
-                            <Paper sx={{ p: 3, height: '100%', borderRadius: '12px', background: 'var(--bg-panel)', boxShadow: '0px 2px 10px rgba(0,0,0,0.04)', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column' }}>
-                                <Typography variant="subtitle2" fontWeight={700} color="#333" mb={3}>Tickets by Status</Typography>
+                            <Paper sx={{ p: 3, height: '100%', borderRadius: '16px', background: 'var(--bg-panel)', boxShadow: 'var(--shadow-premium)', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column' }}>
+                                <Typography variant="subtitle2" fontWeight={700} color="var(--text-primary)" mb={3}>Tickets by Status</Typography>
                                 <Box sx={{ flexGrow: 1, height: 250, width: '100%', position: 'relative' }}>
                                     {containerReady ? (
                                         <ResponsiveContainer width="100%" height="100%" minWidth={1}>
@@ -431,7 +429,7 @@ const Reports = () => {
                                                     ))}
                                                 </Pie>
                                                 <RechartsTooltip />
-                                                <Legend verticalAlign="bottom" align="right" layout="vertical" iconType="circle" wrapperStyle={{ right: 0, bottom: 20 }} />
+                                                <Legend verticalAlign="bottom" align="right" layout="vertical" iconType="circle" wrapperStyle={{ right: 0, bottom: 20, color: 'var(--text-primary)' }} />
                                             </PieChart>
                                         </ResponsiveContainer>
                                     ) : (
@@ -444,8 +442,8 @@ const Reports = () => {
                         </Box>
                     </Box>
 
-                    <Paper sx={{ p: 3, borderRadius: '12px', background: 'var(--bg-panel)', border: '1px solid var(--border-color)' }}>
-                        <Typography variant="h6" fontWeight={600} mb={3}>Detailed Report Table</Typography>
+                    <Paper sx={{ p: 3, borderRadius: '16px', background: 'var(--bg-panel)', border: '1px solid var(--border-color)', boxShadow: 'var(--shadow-premium)' }}>
+                        <Typography variant="h6" fontWeight={600} color="var(--text-primary)" mb={3}>Detailed Report Table</Typography>
                         <DataTable 
                             columns={columns} 
                             rows={rows} 

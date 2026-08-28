@@ -16,6 +16,8 @@ import ServiceEmpDashboard from "./serviceDesk/ServiceEmpDashboard";
 import StudentEventAdminDashboard from "./studenteventsadmin/StudentEventAdminDashboard";
 import LeadershipDashboard from "./leadership/LeadershipDashboard";
 
+import { PageContainer } from "../components/common/design-system";
+
 function Dashboard() {
   const { activeRole } = useAuth();
 
@@ -25,11 +27,7 @@ function Dashboard() {
   }
 
   return (
-    <Box sx={{ p: { xs: 1, md: 3, lg: 4 } }}>
-      {/* <Typography variant="h4" fontWeight={800} color="#1a237e" mb={3} sx={{ textTransform: 'capitalize' }}>
-       Welcome back! {activeRole.toLowerCase()} 
-      </Typography> */}
-
+    <PageContainer>
       {/*  ROLE-BASED DASHBOARD */}
       {activeRole === "FACULTY" && <FacultyDashboard />}
       {activeRole === "UNIPRIME" && <UniprimeDashboard />}
@@ -45,7 +43,7 @@ function Dashboard() {
       {(activeRole === "STUDENT_EVENT_ADMIN" || activeRole === "EVENT_COORDINATOR" || activeRole === "FACULTY_COORDINATOR" || activeRole === "ACCOMMODATION_COORDINATOR" || activeRole === "SCHOOL_COORDINATOR") && <StudentEventAdminDashboard />}
       {["VICE_CHANCELLOR", "DY_PRO_CHANCELLOR", "REGISTRAR", "PRO_VICE_CHANCELLOR_E_S", "PRO_VICE_CHANCELLOR_A", "PRO_VICE_CHANCELLOR_S_P", "DEAN_IQAC", "DEAN_ADMISSIONS", "CONTROLLER_OF_EXAMINATIONS",
         "VICE CHANCELLOR", "DY. PRO CHANCELLOR", "PRO VICE-CHANCELLOR (E & S)", "PRO VICE-CHANCELLOR (A)", "PRO VICE-CHANCELLOR (S & P)", "DEAN - (IQAC)", "DEAN - (ADMISSIONS)", "CONTROLLER OF EXAMINATIONS"].includes(activeRole) && <LeadershipDashboard />}
-    </Box>
+    </PageContainer>
   );
 }
 

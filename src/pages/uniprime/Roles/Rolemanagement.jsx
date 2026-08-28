@@ -20,6 +20,7 @@ import {
     Person, AdminPanelSettings, School
 } from "@mui/icons-material";
 import PageHeader from "../../../components/common/PageHeader";
+import { PageContainer } from "../../../components/common/design-system";
 import API from "../../../api/axios";
 import { useLocation } from "react-router-dom";
 
@@ -27,6 +28,27 @@ const QUALIFICATION_MAP = {
   "UG": ["B.Tech.", "B.Ed."],
   "PG": ["M.Tech.", "M.E.", "M.Sc.", "M.A.", "M.Com.", "MCA", "MBA", "M.Phil.", "M.Pharm", "PGDM", "MMS", "M.S.", "Pharm.D."],
   "Doctoral": ["Pharm.D.", "Ph.D."]
+};
+
+const getTodayDateStr = () => {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+};
+
+const sanitizeDateInput = (val, maxDateStr = getTodayDateStr()) => {
+    if (!val) return "";
+    const parts = val.split('-');
+    if (parts[0] && parts[0].length > 4) {
+        parts[0] = parts[0].slice(0, 4);
+        val = parts.join('-');
+    }
+    if (val > maxDateStr) {
+        val = maxDateStr;
+    }
+    return val;
 };
 
 const RoleManagement = () => {
@@ -965,7 +987,7 @@ const RoleManagement = () => {
     });
 
     return (
-        <Box sx={{ p: 0 }}>
+        <PageContainer px={0} py={0}>
             <PageHeader
                 title="Employee & Role Management"
                 subtitle="Manage system roles and assign them to employees"
@@ -1760,9 +1782,12 @@ const RoleManagement = () => {
                                                             type="date"
                                                             label="Date of Joining"
                                                             value={editableDoj || ""}
-                                                            onChange={(e) => setEditableDoj(e.target.value)}
+                                                            onChange={(e) => setEditableDoj(sanitizeDateInput(e.target.value))}
                                                             size="small"
-                                                            slotProps={{ inputLabel: { shrink: true } }}
+                                                            slotProps={{ 
+                                                                htmlInput: { max: getTodayDateStr() },
+                                                                inputLabel: { shrink: true } 
+                                                            }}
                                                             sx={{
                                                                 bgcolor: 'var(--bg-glass)',
                                                                 borderRadius: '10px',
@@ -2167,10 +2192,13 @@ const RoleManagement = () => {
                                 type="date"
                                 label="Date of Joining"
                                 value={signupData.dateOfJoining || ""}
-                                onChange={(e) => setSignupData({ ...signupData, dateOfJoining: e.target.value })}
+                                onChange={(e) => setSignupData({ ...signupData, dateOfJoining: sanitizeDateInput(e.target.value) })}
                                 size="small"
                                 fullWidth
-                                slotProps={{ inputLabel: { shrink: true } }}
+                                slotProps={{ 
+                                    htmlInput: { max: getTodayDateStr() },
+                                    inputLabel: { shrink: true } 
+                                }}
                             />
                             <TextField label="Password" type="password" value={signupData.password} onChange={(e) => setSignupData({ ...signupData, password: e.target.value })} size="small" fullWidth />
                             <TextField label="Confirm Password" type="password" value={signupData.confirmPassword} onChange={(e) => setSignupData({ ...signupData, confirmPassword: e.target.value })} size="small" fullWidth />
@@ -2312,7 +2340,7 @@ const RoleManagement = () => {
                 </DialogActions>
             </Dialog>
 
-        </Box>
+        </PageContainer>
     );
 };
 

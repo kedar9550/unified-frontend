@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { 
-    Box, Typography, TextField, MenuItem, Select, FormControl, 
-    InputAdornment, Paper, Button, Table, TableBody, TableCell, 
+import {
+    Box, Typography, TextField, MenuItem, Select, FormControl,
+    InputAdornment, Paper, Button, Table, TableBody, TableCell,
     TableContainer, TableHead, TableRow, TablePagination
 } from '@mui/material';
-import { 
-    Star, Smile, MessageSquare, Search, Download, 
+import {
+    Star, Smile, MessageSquare, Search, Download,
     ShieldCheck
 } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
@@ -34,11 +34,11 @@ const StatCard = ({ title, value, icon: Icon, trend, subtitle, color, progress, 
         display: 'flex',
         flexDirection: 'column',
         borderRadius: '16px',
-        background: 'var(--card-bg)',
-        boxShadow: '0px 2px 10px rgba(0,0,0,0.04)',
+        background: 'var(--bg-panel)',
+        boxShadow: 'var(--shadow-premium)',
+        border: '1px solid var(--border-color)',
         position: 'relative',
         overflow: 'hidden',
-        border: 'none',
         transition: 'transform 0.2s',
         '&:hover': { transform: 'translateY(-2px)' }
     }}>
@@ -52,25 +52,25 @@ const StatCard = ({ title, value, icon: Icon, trend, subtitle, color, progress, 
                 <Icon size={24} strokeWidth={2.5} />
             </Box>
         </Box>
-        
+
         <Box sx={{ position: 'relative', zIndex: 1 }}>
-            <Typography variant={valueVariant} sx={{ fontWeight: 800, color: 'var(--text-color)', mb: 0.5, letterSpacing: valueVariant !== 'h4' ? '-0.5px' : 'normal' }}>
+            <Typography variant={valueVariant} sx={{ fontWeight: 800, color: 'var(--text-primary)', mb: 0.5, letterSpacing: valueVariant !== 'h4' ? '-0.5px' : 'normal' }}>
                 {value}
             </Typography>
-            <Typography variant="body2" sx={{ color: 'var(--secondary-color)', fontWeight: 500, mb: progress !== undefined ? 2 : 0 }}>
+            <Typography variant="body2" sx={{ color: 'var(--text-secondary)', fontWeight: 500, mb: progress !== undefined ? 2 : 0 }}>
                 {title}
             </Typography>
         </Box>
 
         {progress !== undefined && (
-            <Box sx={{ width: '100%', height: '4px', bgcolor: '#f0f0f0', borderRadius: '4px', position: 'relative', zIndex: 1, mt: 'auto' }}>
+            <Box sx={{ width: '100%', height: '4px', bgcolor: 'var(--border-color)', borderRadius: '4px', position: 'relative', zIndex: 1, mt: 'auto' }}>
                 <Box sx={{ width: `${progress}%`, height: '100%', bgcolor: color, borderRadius: '4px' }} />
             </Box>
         )}
-        
+
         {subtitle && (
             <Box sx={{ position: 'relative', zIndex: 1, mt: progress !== undefined ? 1.5 : 'auto' }}>
-                <Typography variant="caption" sx={{ color: 'var(--secondary-color)', display: 'flex', alignItems: 'center', gap: 0.5, fontWeight: 500 }}>
+                <Typography variant="caption" sx={{ color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: 0.5, fontWeight: 500 }}>
                     {trend && (
                         <span style={{ color: typeof trend === 'number' && trend > 0 ? '#22c55e' : '#ef4444', display: 'flex', alignItems: 'center', fontWeight: 700 }}>
                             {typeof trend === 'number' ? (trend > 0 ? '↑' : '↓') : ''} {typeof trend === 'number' ? Math.abs(trend) : trend}
@@ -97,7 +97,7 @@ const FeedbackOverview = () => {
     const [serviceFilter, setServiceFilter] = useState("All Services");
     const [ratingFilter, setRatingFilter] = useState("All Ratings");
     const [statusFilter, setStatusFilter] = useState("All Status");
-    
+
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(10);
     const [allServicesList, setAllServicesList] = useState([]);
@@ -127,7 +127,7 @@ const FeedbackOverview = () => {
                     satisfactionDistribution: result.satisfactionDistribution,
                     ratingDistribution: ratingDist
                 });
-                
+
                 const formattedTrend = (result.trend || []).map(t => ({
                     date: t.month,
                     count: t.count
@@ -171,11 +171,11 @@ const FeedbackOverview = () => {
 
     const filteredRows = useMemo(() => {
         return feedbackData.filter(f => {
-            const matchesSearch = !search || 
+            const matchesSearch = !search ||
                 f.submittedBy?.name?.toLowerCase().includes(search.toLowerCase()) ||
                 f.ticket?.ticketNumber?.toLowerCase().includes(search.toLowerCase()) ||
                 f.ticket?.title?.toLowerCase().includes(search.toLowerCase());
-            
+
             const matchesService = serviceFilter === "All Services" || f.ticket?.service?.name === serviceFilter;
             const matchesRating = ratingFilter === "All Ratings" || Number(f.rating) === Number(ratingFilter);
             const matchesStatus = statusFilter === "All Status" || f.satisfaction === statusFilter;
@@ -185,10 +185,10 @@ const FeedbackOverview = () => {
     }, [feedbackData, search, serviceFilter, ratingFilter, statusFilter]);
 
     const handleExport = () => {
-        const csvContent = "data:text/csv;charset=utf-8," 
+        const csvContent = "data:text/csv;charset=utf-8,"
             + "User,Service,Ticket,Rating,Satisfaction,Comments,Date\n"
             + filteredRows.map(r => `"${r.submittedBy?.name}","${r.ticket?.service?.name}","${r.ticket?.ticketNumber}","${r.rating}","${r.satisfaction}","${(r.comments || '').replace(/"/g, '""')}","${new Date(r.createdAt).toLocaleDateString()}"`).join("\n");
-        
+
         const encodedUri = encodeURI(csvContent);
         const link = document.createElement("a");
         link.setAttribute("href", encodedUri);
@@ -220,7 +220,7 @@ const FeedbackOverview = () => {
         "Very Dissatisfied": "#ef4444"
     };
 
-    const satisfactionData = summary?.satisfactionDistribution ? 
+    const satisfactionData = summary?.satisfactionDistribution ?
         Object.entries(summary.satisfactionDistribution).map(([name, value]) => ({
             name,
             value,
@@ -230,48 +230,46 @@ const FeedbackOverview = () => {
     if (loading) return <Loader />;
 
     return (
-        <Box sx={{ width: '100%', flexGrow: 1, display: 'flex', flexDirection: 'column', bgcolor: '#f5f7fa', minHeight: '100vh' }}>
-            <Box sx={{ px: { xs: 2, md: 3 }, pt: { xs: 2, md: 3 }, pb: 2 }}>
-                <PageHeader title="Feedback Overview" subtitle="Analyze user satisfaction and service quality trends" />
-            </Box>
+        <Box sx={{ width: '100%' }}>
+            <PageHeader title="Feedback Overview" subtitle="Analyze user satisfaction and service quality trends" />
 
-            <Box sx={{ px: 3, pb: 3 }}>
+            <Box>
                 <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 3, mb: 4 }}>
                     <Box sx={{ width: { xs: '100%', sm: 'calc(50% - 12px)', lg: 'calc(25% - 18px)' } }}>
-                        <StatCard 
-                            title="Average Rating" 
-                            value={summary?.averageRating || "0.0"} 
-                            icon={Star} 
-                            subtitle="Out of 5" 
+                        <StatCard
+                            title="Average Rating"
+                            value={summary?.averageRating || "0.0"}
+                            icon={Star}
+                            subtitle="Out of 5"
                             color="#f5a623"
                             bgIcon={Star}
                         />
                     </Box>
                     <Box sx={{ width: { xs: '100%', sm: 'calc(50% - 12px)', lg: 'calc(25% - 18px)' } }}>
-                        <StatCard 
-                            title="Satisfaction Rate" 
-                            value={`${satisfactionRate}%`} 
-                            icon={Smile} 
+                        <StatCard
+                            title="Satisfaction Rate"
+                            value={`${satisfactionRate}%`}
+                            icon={Smile}
                             progress={satisfactionRate}
                             color="#22c55e"
                             bgIcon={Smile}
                         />
                     </Box>
                     <Box sx={{ width: { xs: '100%', sm: 'calc(50% - 12px)', lg: 'calc(25% - 18px)' } }}>
-                        <StatCard 
-                            title="Total Feedback" 
-                            value={summary?.totalFeedback || 0} 
-                            icon={MessageSquare} 
+                        <StatCard
+                            title="Total Feedback"
+                            value={summary?.totalFeedback || 0}
+                            icon={MessageSquare}
                             color="#3b82f6"
                             bgIcon={MessageSquare}
                         />
                     </Box>
                     <Box sx={{ width: { xs: '100%', sm: 'calc(50% - 12px)', lg: 'calc(25% - 18px)' } }}>
-                        <StatCard 
-                            title="Response Quality" 
-                            value={responseQuality.label} 
-                            icon={ShieldCheck} 
-                            subtitle={responseQuality.msg} 
+                        <StatCard
+                            title="Response Quality"
+                            value={responseQuality.label}
+                            icon={ShieldCheck}
+                            subtitle={responseQuality.msg}
                             color={responseQuality.color}
                             bgIcon={ShieldCheck}
                             valueVariant="h5"
@@ -281,19 +279,19 @@ const FeedbackOverview = () => {
 
                 <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 3, mb: 4 }}>
                     <Box sx={{ width: { xs: '100%', lg: 'calc(33.333% - 16px)' } }}>
-                        <Paper sx={{ p: { xs: 3, md: 4 }, height: '100%', borderRadius: '16px', background: 'var(--card-bg)', boxShadow: '0px 2px 10px rgba(0,0,0,0.04)', border: 'none', display: 'flex', flexDirection: 'column' }}>
-                            <Typography variant="subtitle1" fontWeight={700} mb={4}>Rating Distribution</Typography>
+                        <Paper sx={{ p: { xs: 3, md: 4 }, height: '100%', borderRadius: '16px', background: 'var(--bg-panel)', boxShadow: 'var(--shadow-premium)', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column' }}>
+                            <Typography variant="subtitle1" fontWeight={700} mb={4} sx={{ color: 'var(--text-primary)' }}>Rating Distribution</Typography>
                             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, justifyContent: 'center', minHeight: '200px' }}>
                                 {[5, 4, 3, 2, 1].map(rating => {
                                     const count = summary?.ratingDistribution?.[rating] || 0;
                                     const percentage = summary?.totalFeedback > 0 ? ((count / summary.totalFeedback) * 100).toFixed(1) : 0;
                                     return (
                                         <Box key={rating} sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                                            <Typography variant="caption" fontWeight={700} sx={{ minWidth: "45px", color: "var(--text-color)" }}>{rating} Star</Typography>
+                                            <Typography variant="caption" fontWeight={700} sx={{ minWidth: "45px", color: "var(--text-primary)" }}>{rating} Star</Typography>
                                             <Box sx={{ flexGrow: 1, borderRadius: 5, overflow: 'hidden', height: "8px", backgroundColor: "var(--border-color)" }}>
                                                 <Box sx={{ height: '100%', borderRadius: 5, width: `${percentage}%`, backgroundColor: rating >= 4 ? "#22c55e" : rating === 3 ? "#eab308" : "#ef4444", transition: "width 1s ease-in-out" }} />
                                             </Box>
-                                            <Typography variant="caption" sx={{ minWidth: "65px", color: "var(--secondary-color)" }}>{count} ({percentage}%)</Typography>
+                                            <Typography variant="caption" sx={{ minWidth: "65px", color: "var(--text-secondary)" }}>{count} ({percentage}%)</Typography>
                                         </Box>
                                     );
                                 })}
@@ -301,8 +299,8 @@ const FeedbackOverview = () => {
                         </Paper>
                     </Box>
                     <Box sx={{ width: { xs: '100%', md: 'calc(50% - 12px)', lg: 'calc(33.333% - 16px)' } }}>
-                        <Paper sx={{ p: { xs: 3, md: 4 }, height: '100%', borderRadius: '16px', background: 'var(--card-bg)', boxShadow: '0px 2px 10px rgba(0,0,0,0.04)', border: 'none', display: 'flex', flexDirection: 'column' }}>
-                            <Typography variant="subtitle1" fontWeight={700} mb={4}>Satisfaction Level</Typography>
+                        <Paper sx={{ p: { xs: 3, md: 4 }, height: '100%', borderRadius: '16px', background: 'var(--bg-panel)', boxShadow: 'var(--shadow-premium)', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column' }}>
+                            <Typography variant="subtitle1" fontWeight={700} mb={4} sx={{ color: 'var(--text-primary)' }}>Satisfaction Level</Typography>
                             <Box sx={{ height: "200px", width: "100%", position: "relative" }}>
                                 <ResponsiveContainer width="100%" height={200}>
                                     <PieChart>
@@ -313,11 +311,11 @@ const FeedbackOverview = () => {
                                             if (active && payload && payload.length) {
                                                 const data = payload[0].payload;
                                                 return (
-                                                    <Box sx={{ p: 1.5, bgcolor: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '8px', boxShadow: '0 4px 20px rgba(0,0,0,0.08)', minWidth: '120px' }}>
+                                                    <Box sx={{ p: 1.5, bgcolor: 'var(--bg-paper)', border: '1px solid var(--border-color)', borderRadius: '8px', boxShadow: 'var(--shadow-md)', minWidth: '120px' }}>
                                                         <Typography variant="body2" sx={{ fontWeight: 700, color: data.color || "var(--text-primary)", mb: 0.5 }}>
                                                             {data.name}
                                                         </Typography>
-                                                        <Typography variant="body2" sx={{ fontWeight: 600, color: '#334155' }}>
+                                                        <Typography variant="body2" sx={{ fontWeight: 600, color: 'var(--text-secondary)' }}>
                                                             Count: {data.value}
                                                         </Typography>
                                                     </Box>
@@ -325,30 +323,30 @@ const FeedbackOverview = () => {
                                             }
                                             return null;
                                         }} />
-                                        <Legend verticalAlign="middle" align="right" layout="vertical" iconType="circle" wrapperStyle={{ fontSize: "12px", color: "var(--text-color)" }} />
+                                        <Legend verticalAlign="middle" align="right" layout="vertical" iconType="circle" wrapperStyle={{ fontSize: "12px", color: "var(--text-primary)" }} />
                                     </PieChart>
                                 </ResponsiveContainer>
                             </Box>
                         </Paper>
                     </Box>
                     <Box sx={{ width: { xs: '100%', md: 'calc(50% - 12px)', lg: 'calc(33.333% - 16px)' } }}>
-                        <Paper sx={{ p: { xs: 3, md: 4 }, height: '100%', borderRadius: '16px', background: 'var(--card-bg)', boxShadow: '0px 2px 10px rgba(0,0,0,0.04)', border: 'none', display: 'flex', flexDirection: 'column' }}>
-                            <Typography variant="subtitle1" fontWeight={700} mb={4}>Feedback Trend</Typography>
+                        <Paper sx={{ p: { xs: 3, md: 4 }, height: '100%', borderRadius: '16px', background: 'var(--bg-panel)', boxShadow: 'var(--shadow-premium)', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column' }}>
+                            <Typography variant="subtitle1" fontWeight={700} mb={4} sx={{ color: 'var(--text-primary)' }}>Feedback Trend</Typography>
                             <Box sx={{ height: "200px", width: "100%", position: "relative" }}>
                                 <ResponsiveContainer width="100%" height={200}>
                                     <AreaChart data={trendData} margin={{ top: 10, right: 10, left: -30, bottom: 0 }}>
                                         <defs>
                                             <linearGradient id="colorFeedbackOverview" x1="0" y1="0" x2="0" y2="1">
-                                                <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3}/>
-                                                <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                                                <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3} />
+                                                <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
                                             </linearGradient>
                                         </defs>
-                                        <XAxis dataKey="date" tick={{fontSize: 10, fill: "var(--secondary-color)"}} tickLine={false} axisLine={false} minTickGap={20} />
-                                        <YAxis tick={{fontSize: 10, fill: "var(--secondary-color)"}} tickLine={false} axisLine={false} />
+                                        <XAxis dataKey="date" tick={{ fontSize: 10, fill: "var(--text-secondary)" }} tickLine={false} axisLine={false} minTickGap={20} />
+                                        <YAxis tick={{ fontSize: 10, fill: "var(--text-secondary)" }} tickLine={false} axisLine={false} />
                                         <Tooltip content={({ active, payload, label }) => {
                                             if (active && payload && payload.length) {
                                                 return (
-                                                    <div className="p-2 border rounded shadow-sm" style={{ fontSize: "11px", backgroundColor: "var(--card-bg)", color: "var(--text-color)", borderColor: "var(--border-color)", borderRadius: '8px' }}>
+                                                    <div className="p-2 border rounded shadow-sm" style={{ fontSize: "11px", backgroundColor: "var(--bg-paper)", color: "var(--text-primary)", borderColor: "var(--border-color)", borderRadius: '8px' }}>
                                                         <p className="mb-1 fw-bold">{label}</p>
                                                         <p className="mb-0 text-primary">Feedback: {payload[0].value}</p>
                                                     </div>
@@ -364,7 +362,7 @@ const FeedbackOverview = () => {
                     </Box>
                 </Box>
 
-                <Paper sx={{ p: 3, mb: 4, borderRadius: '16px', background: 'var(--card-bg)', boxShadow: '0px 2px 10px rgba(0,0,0,0.04)', border: 'none' }}>
+                <Paper sx={{ p: 3, mb: 4, borderRadius: '16px', background: 'var(--bg-panel)', boxShadow: 'var(--shadow-premium)', border: '1px solid var(--border-color)' }}>
                     <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 3, alignItems: 'center' }}>
                         <Box sx={{ flexGrow: 1, minWidth: { xs: '100%', lg: '300px' } }}>
                             <TextField
@@ -378,12 +376,12 @@ const FeedbackOverview = () => {
                                     input: {
                                         startAdornment: (
                                             <InputAdornment position="start">
-                                                <Search size={18} color="var(--secondary-color)" />
+                                                <Search size={18} color="var(--text-secondary)" />
                                             </InputAdornment>
                                         )
                                     }
                                 }}
-                                sx={{ '& .MuiOutlinedInput-root': { borderRadius: '12px', bgcolor: 'var(--bg-color)' } }}
+                                sx={{ '& .MuiOutlinedInput-root': { borderRadius: '12px', bgcolor: 'var(--bg-paper)' } }}
                             />
                         </Box>
                         <Box sx={{ width: { xs: 'calc(50% - 12px)', lg: '150px' } }}>
@@ -391,7 +389,7 @@ const FeedbackOverview = () => {
                                 <Select
                                     value={serviceFilter}
                                     onChange={(e) => setServiceFilter(e.target.value)}
-                                    sx={{ borderRadius: '12px', bgcolor: 'var(--bg-color)', color: 'var(--text-color)' }}
+                                    sx={{ borderRadius: '12px', bgcolor: 'var(--bg-paper)', color: 'var(--text-primary)' }}
                                 >
                                     {uniqueServices.map(s => <MenuItem key={s} value={s}>{s}</MenuItem>)}
                                 </Select>
@@ -402,7 +400,7 @@ const FeedbackOverview = () => {
                                 <Select
                                     value={ratingFilter}
                                     onChange={(e) => setRatingFilter(e.target.value)}
-                                    sx={{ borderRadius: '12px', bgcolor: 'var(--bg-color)', color: 'var(--text-color)' }}
+                                    sx={{ borderRadius: '12px', bgcolor: 'var(--bg-paper)', color: 'var(--text-primary)' }}
                                 >
                                     <MenuItem value="All Ratings">All Ratings</MenuItem>
                                     {[5, 4, 3, 2, 1].map(r => <MenuItem key={r} value={r}>{r} Stars</MenuItem>)}
@@ -414,7 +412,7 @@ const FeedbackOverview = () => {
                                 <Select
                                     value={statusFilter}
                                     onChange={(e) => setStatusFilter(e.target.value)}
-                                    sx={{ borderRadius: '12px', bgcolor: 'var(--bg-color)', color: 'var(--text-color)' }}
+                                    sx={{ borderRadius: '12px', bgcolor: 'var(--bg-paper)', color: 'var(--text-primary)' }}
                                 >
                                     <MenuItem value="All Status">All Status</MenuItem>
                                     <MenuItem value="Very Satisfied">Very Satisfied</MenuItem>
@@ -426,8 +424,8 @@ const FeedbackOverview = () => {
                             </FormControl>
                         </Box>
                         <Box sx={{ width: { xs: '100%', lg: 'auto' } }}>
-                            <Button 
-                                variant="outlined" 
+                            <Button
+                                variant="outlined"
                                 color="primary"
                                 fullWidth
                                 startIcon={<Download size={18} />}
@@ -442,10 +440,10 @@ const FeedbackOverview = () => {
 
                 <Box mb={5}>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
-                        <Typography variant="h6" sx={{ fontWeight: 600, color: 'var(--text-color)' }}>
+                        <Typography variant="h6" sx={{ fontWeight: 600, color: 'var(--text-primary)' }}>
                             Detailed History
                         </Typography>
-                        <Typography variant="body2" sx={{ color: 'var(--secondary-color)' }}>
+                        <Typography variant="body2" sx={{ color: 'var(--text-secondary)' }}>
                             Showing {filteredRows.length} results
                         </Typography>
                     </Box>
@@ -468,8 +466,8 @@ const FeedbackOverview = () => {
                             <TableBody>
                                 {filteredRows.length > 0 ? (
                                     filteredRows.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((feedback, index) => (
-                                        <TableRow 
-                                            key={feedback._id} 
+                                        <TableRow
+                                            key={feedback._id}
                                             sx={{ "&:hover": { background: "var(--bg-accent-1)" }, transition: "background 0.15s" }}
                                         >
                                             <TableCell sx={{ fontWeight: 600, color: "var(--text-secondary)" }}>
