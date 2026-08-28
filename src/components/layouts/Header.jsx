@@ -53,7 +53,11 @@ const Header = ({ isSidebarCollapsed }) => {
   const location = useLocation();
 
   const handleProfileClick = (event) => {
-    setAnchorEl(event.currentTarget);
+    if (anchorEl) {
+      handleClose();
+    } else {
+      setAnchorEl(event.currentTarget);
+    }
   };
 
   const handleClose = () => {
@@ -151,7 +155,7 @@ const Header = ({ isSidebarCollapsed }) => {
         top: 0,
         left: 0,
         right: 0,
-        zIndex: 1100,
+        zIndex: open ? 1301 : 1100,
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",
@@ -214,12 +218,14 @@ const Header = ({ isSidebarCollapsed }) => {
       </Box>
 
       {/* RIGHT SECTION: Notifications & Profile Pill */}
-      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: { xs: 1, md: 2 }, flex: 1 }}>
+      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: { xs: 1, md: 2 }, flex: 1, position: "relative", zIndex: open ? 1302 : 1 }}>
         <NotificationBell ref={notifRef} />
 
         <Box
           onClick={handleProfileClick}
           sx={{
+            position: "relative",
+            zIndex: open ? 1302 : 1,
             display: "flex",
             alignItems: "center",
             justifyContent: "flex-end", // Anchor avatar to the right
@@ -231,21 +237,23 @@ const Header = ({ isSidebarCollapsed }) => {
             border: open ? "2px solid transparent" : "1px solid var(--border-color)",
             cursor: "pointer",
             transition: "all 0.4s cubic-bezier(0.4, 0, 0.2, 1)",
-            boxShadow: open ? "var(--shadow-premium)" : "none",
+            boxShadow: "none",
             maxWidth: open ? "400px" : "48px", // Collapsed = perfect circle (matches height)
             boxSizing: "border-box",
             overflow: "hidden",
-            "&:hover": {
-              maxWidth: "400px", // Expand on hover
-              background: open
-                ? "linear-gradient(var(--bg-panel), var(--bg-panel)) padding-box, var(--gradient-primary) border-box"
-                : "var(--border-color)",
-              borderColor: open ? "transparent" : "var(--text-secondary)",
-              boxShadow: "0 2px 8px rgba(0,0,0,0.05)"
-            },
-            "&:hover .profile-text-content": {
-              opacity: 1,
-              transform: "translateX(0)"
+            "@media (hover: hover)": {
+              "&:hover": {
+                maxWidth: "400px",
+                background: open
+                  ? "linear-gradient(var(--bg-panel), var(--bg-panel)) padding-box, var(--gradient-primary) border-box"
+                  : "var(--border-color)",
+                borderColor: open ? "transparent" : "var(--text-secondary)",
+                boxShadow: "0 2px 8px rgba(0,0,0,0.05)"
+              },
+              "&:hover .profile-text-content": {
+                opacity: 1,
+                transform: "translateX(0)"
+              }
             },
             userSelect: "none",
             p: 0 // Remove padding so avatar fills the pill
@@ -338,16 +346,18 @@ const Header = ({ isSidebarCollapsed }) => {
             },
             paper: {
               sx: {
-                mt: 1.5,
+                zIndex: 1302,
+                mt: { xs: 2.5, md: 3 },
                 width: { xs: "calc(100vw - 24px)", md: hasManyRoles ? 800 : 280 }, // Dynamic width based on roles count
-                maxHeight: "calc(100vh - 90px)",
+                maxHeight: { xs: "calc(100dvh - 95px)", md: "calc(100vh - 115px)" },
                 borderRadius: "20px", // Smoother corners
                 overflowY: "auto",
                 overscrollBehavior: "contain",
                 boxShadow: "0 15px 50px rgba(0, 0, 0, 0.3)",
                 border: "1px solid var(--border-color)",
                 px: { xs: 0.5, md: hasManyRoles ? 2 : 0.5 }, // Dynamic padding
-                py: { xs: 0.5, md: hasManyRoles ? 2 : 0.5 },
+                pt: { xs: 0.5, md: hasManyRoles ? 2 : 0.5 },
+                pb: { xs: 1.5, md: hasManyRoles ? 2 : 1.5 },
               }
             }
           }}
@@ -480,7 +490,7 @@ const Header = ({ isSidebarCollapsed }) => {
               mx: 1.5,
               mb: 1.5,
               p: { xs: 0.8, md: hasManyRoles ? 2 : 0.8 },
-              maxHeight: { xs: "280px", md: hasManyRoles ? "350px" : "280px" },
+              maxHeight: { xs: "200px", sm: "260px", md: hasManyRoles ? "350px" : "280px" },
               overflowY: "auto",
               overscrollBehavior: "contain",
               borderRadius: "16px",

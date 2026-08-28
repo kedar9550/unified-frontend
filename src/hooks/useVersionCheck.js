@@ -11,9 +11,12 @@ export const useVersionCheck = () => {
   });
 
   const checkForUpdates = async () => {
+    // Skip version checking in dev mode (Vite HMR handles updates)
+    if (import.meta.env.DEV) return;
+
     try {
       // Append timestamp to avoid cached JSON
-      const res = await fetch(`/version.json?t=${new Date().getTime()}`, {
+      const res = await fetch(`/version.json?t=${Date.now()}`, {
         cache: 'no-store',
         headers: {
           'Cache-Control': 'no-cache, no-store, must-revalidate',
@@ -24,7 +27,8 @@ export const useVersionCheck = () => {
       if (!res.ok) return;
       
       const data = await res.json();
-      const latestVersion = data.version;
+      const latestVersion = data?.version;
+      if (!latestVersion) return;
 
       if (!currentVersion) {
         // First time loading the app with versioning
@@ -57,7 +61,7 @@ export const useVersionCheck = () => {
         );
       }
     } catch (err) {
-      console.error("Failed to check for updates", err);
+      // Silently handle network/server errors during restarts or offline state
     }
   };
 

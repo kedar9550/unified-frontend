@@ -94,13 +94,12 @@ const CustomQRCode = React.forwardRef(({
             cornersDotOptions: cornersDotOptions
         };
 
-        if (!qrCode.current) {
-            qrCode.current = new QRCodeStyling(options);
-            if (containerRef.current) {
-                qrCode.current.append(containerRef.current);
-            }
-        } else {
-            qrCode.current.update(options);
+        if (containerRef.current) {
+            containerRef.current.innerHTML = '';
+        }
+        qrCode.current = new QRCodeStyling(options);
+        if (containerRef.current) {
+            qrCode.current.append(containerRef.current);
         }
 
         // Use SVG mask to create a perfect round cutout without square gaps, supporting transparency

@@ -40,49 +40,72 @@ const AcademicManagement = () => {
             No academic years found.
           </Typography>
         ) : (
-          <Grid container spacing={3}>
+          <Box
+            sx={{
+              display: "grid",
+              gridTemplateColumns: {
+                xs: "1fr",
+                sm: "repeat(2, 1fr)",
+                md: "repeat(3, 1fr)"
+              },
+              gap: { xs: 2, md: 3 },
+              width: "100%"
+            }}
+          >
             {years.map((yearDoc) => (
-              <Grid item xs={12} md={6} lg={4} key={yearDoc._id}>
-                <Paper sx={{
-                  p: 3, borderRadius: 2, background: "var(--bg-panel)", border: "1px solid var(--border-color)",
-                  position: "relative", overflow: "hidden",
+              <Paper
+                key={yearDoc._id}
+                sx={{
+                  width: "100%",
+                  p: { xs: 2.5, sm: 3 }, 
+                  borderRadius: "16px", 
+                  background: "var(--bg-panel)", 
+                  border: "1px solid var(--border-color)",
+                  position: "relative", 
+                  overflow: "hidden",
+                  boxShadow: "var(--shadow-premium)",
+                  transition: "all 0.3s ease",
+                  "&:hover": {
+                    transform: "translateY(-4px)",
+                    boxShadow: "0 12px 30px rgba(0,0,0,0.12)"
+                  },
                   "&::after": {
                     content: '""', position: "absolute", top: 0, right: 0, width: "100px", height: "100px",
                     background: yearDoc.active ? "radial-gradient(circle at top right, rgba(16,185,129,0.2), transparent 70%)" : "radial-gradient(circle at top right, var(--color-primary-alpha), transparent 70%)",
                     zIndex: 0, pointerEvents: "none"
                   },
                   borderLeft: yearDoc.active ? "4px solid #10b981" : "4px solid var(--border-color)"
-                }}>
-                  <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", mb: 2 }}>
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-                      <CalendarToday sx={{ color: yearDoc.active ? "#10b981" : "var(--color-primary)" }} />
-                      <Typography variant="h6" sx={{ fontWeight: 700, color: "var(--text-primary)" }}>
-                        {yearDoc.year}
-                      </Typography>
-                    </Box>
-                    {yearDoc.active && (
-                      <Chip size="small" icon={<CheckCircle />} label="Active" color="success" sx={{ fontWeight: 700 }} />
-                    )}
+                }}
+              >
+                <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", mb: 2 }}>
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                    <CalendarToday sx={{ color: yearDoc.active ? "#10b981" : "var(--color-primary)" }} />
+                    <Typography variant="h6" sx={{ fontWeight: 700, color: "var(--text-primary)" }}>
+                      {yearDoc.year}
+                    </Typography>
                   </Box>
-                  
-                  <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
-                    <Box>
-                      <Typography variant="caption" sx={{ color: "var(--text-secondary)" }}>Start Date</Typography>
-                      <Typography variant="body2" sx={{ fontWeight: 600, color: "var(--text-primary)" }}>
-                        {formatDate(yearDoc.startDate)}
-                      </Typography>
-                    </Box>
-                    <Box>
-                      <Typography variant="caption" sx={{ color: "var(--text-secondary)" }}>End Date</Typography>
-                      <Typography variant="body2" sx={{ fontWeight: 600, color: "var(--text-primary)" }}>
-                        {formatDate(yearDoc.endDate)}
-                      </Typography>
-                    </Box>
+                  {yearDoc.active && (
+                    <Chip size="small" icon={<CheckCircle />} label="Active" color="success" sx={{ fontWeight: 700 }} />
+                  )}
+                </Box>
+                
+                <Box sx={{ display: "flex", flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 2, pt: 1.5, borderTop: "1px solid var(--border-color)" }}>
+                  <Box>
+                    <Typography variant="caption" sx={{ color: "var(--text-secondary)", display: "block", mb: 0.3 }}>Start Date</Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)" }}>
+                      {formatDate(yearDoc.startDate)}
+                    </Typography>
                   </Box>
-                </Paper>
-              </Grid>
+                  <Box sx={{ textAlign: "right" }}>
+                    <Typography variant="caption" sx={{ color: "var(--text-secondary)", display: "block", mb: 0.3 }}>End Date</Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)" }}>
+                      {formatDate(yearDoc.endDate)}
+                    </Typography>
+                  </Box>
+                </Box>
+              </Paper>
             ))}
-          </Grid>
+          </Box>
         )}
       </Box>
     </Box>

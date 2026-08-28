@@ -56,18 +56,41 @@ const HeaderSearch = ({ activeRole, variant = "desktop", mobileOpen, onMobileClo
     }
   }, [mobileOpen, variant]);
 
-  // Lock background page scroll when mobile search overlay is active
+  // Lock background page scroll when mobile search overlay is active (iOS Safari compatible)
   useEffect(() => {
     if (variant === 'mobile' && mobileOpen) {
+      const scrollY = window.scrollY || window.pageYOffset || 0;
+      const originalBodyPosition = document.body.style.position;
+      const originalBodyTop = document.body.style.top;
+      const originalBodyWidth = document.body.style.width;
       const originalBodyOverflow = document.body.style.overflow;
       const originalHtmlOverflow = document.documentElement.style.overflow;
 
+      document.body.style.position = 'fixed';
+      document.body.style.top = `-${scrollY}px`;
+      document.body.style.width = '100%';
       document.body.style.overflow = 'hidden';
       document.documentElement.style.overflow = 'hidden';
 
+      const handleTouchMove = (e) => {
+        const isScrollable = e.target.closest('.mobile-search-results-list');
+        if (!isScrollable) {
+          if (e.cancelable) {
+            e.preventDefault();
+          }
+        }
+      };
+
+      document.addEventListener('touchmove', handleTouchMove, { passive: false });
+
       return () => {
+        document.removeEventListener('touchmove', handleTouchMove);
+        document.body.style.position = originalBodyPosition;
+        document.body.style.top = originalBodyTop;
+        document.body.style.width = originalBodyWidth;
         document.body.style.overflow = originalBodyOverflow;
         document.documentElement.style.overflow = originalHtmlOverflow;
+        window.scrollTo(0, scrollY);
       };
     }
   }, [mobileOpen, variant]);
@@ -191,6 +214,7 @@ const HeaderSearch = ({ activeRole, variant = "desktop", mobileOpen, onMobileClo
           
           {/* Search Results Area (Top) */}
           <Box 
+            className="mobile-search-results-list"
             onClick={() => {
               if (query.trim().length === 0 && onMobileClose) onMobileClose();
             }}
@@ -215,16 +239,16 @@ const HeaderSearch = ({ activeRole, variant = "desktop", mobileOpen, onMobileClo
                         borderRadius: '20px',
                         mb: 1.5,
                         p: 2,
-                        border: '1px solid rgba(255, 255, 255, 0.4)',
-                        background: 'rgba(255, 255, 255, 0.4)',
-                        backdropFilter: 'blur(16px)',
-                        boxShadow: '0 8px 32px rgba(31, 38, 135, 0.07)',
+                        border: '1px solid rgba(255, 255, 255, 0.7)',
+                        background: 'rgba(255, 255, 255, 0.75)',
+                        backdropFilter: 'blur(20px)',
+                        boxShadow: '0 8px 24px rgba(0, 0, 0, 0.06)',
                         transition: 'all 0.2s ease-in-out',
                         '&:active': { transform: 'scale(0.98)' },
                         'body.dark-mode &': {
-                          background: 'rgba(30, 41, 59, 0.6) !important',
-                          border: '1px solid rgba(255, 255, 255, 0.12) !important',
-                          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3) !important',
+                          background: 'rgba(30, 41, 59, 0.75) !important',
+                          border: '1px solid rgba(255, 255, 255, 0.15) !important',
+                          boxShadow: '0 8px 24px rgba(0, 0, 0, 0.3) !important',
                         }
                       }}
                     >
@@ -249,13 +273,13 @@ const HeaderSearch = ({ activeRole, variant = "desktop", mobileOpen, onMobileClo
                 <Box sx={{ 
                   p: 4, 
                   textAlign: 'center',
-                  background: 'rgba(255, 255, 255, 0.3)',
-                  backdropFilter: 'blur(16px)',
+                  background: 'rgba(255, 255, 255, 0.75)',
+                  backdropFilter: 'blur(20px)',
                   borderRadius: '24px',
-                  border: '1px solid rgba(255, 255, 255, 0.3)',
+                  border: '1px solid rgba(255, 255, 255, 0.7)',
                   'body.dark-mode &': {
-                    background: 'rgba(30, 41, 59, 0.5) !important',
-                    borderColor: 'rgba(255, 255, 255, 0.1) !important',
+                    background: 'rgba(30, 41, 59, 0.75) !important',
+                    borderColor: 'rgba(255, 255, 255, 0.15) !important',
                   }
                 }}>
                   <Typography sx={{ color: 'var(--text-secondary)', fontSize: '0.95rem', fontWeight: 600 }}>
