@@ -6,6 +6,7 @@ import {
 import { Delete, Lock, LockOpen, Warning, DeleteForever, Download } from '@mui/icons-material';
 import CustomQRCode from '../../components/CustomQRCode';
 import PageHeader from '../../components/common/PageHeader';
+import { PageContainer } from '../../components/common/design-system';
 import DataTable from '../../components/data/DataTable';
 import axios from '../../api/axios';
 import { toast } from 'sonner';
@@ -80,16 +81,10 @@ const ManageQR = () => {
     };
 
     return (
-        <Box>
+        <PageContainer>
             <PageHeader title="Manage QR Codes" subtitle="Admin panel to manage all generated QR codes" />
 
-            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3, mt: 3, px: 3 }}>
-                <Typography variant="h6" sx={{ color: "var(--text-primary)", fontWeight: 800 }}>
-                    All QR Codes
-                </Typography>
-            </Box>
-
-            <Box sx={{ px: 3, pb: 3 }}>
+            <Box>
                 <DataTable 
                     columns={["Creator", "Original URL", "QR Code", "Clicks", "Status", "Actions"]}
                     alignments={["left", "left", "center", "center", "center", "right"]}
@@ -320,7 +315,7 @@ const ManageQR = () => {
                     </Box>
                 </DialogContent>
             </Dialog>
-        </Box>
+        </PageContainer>
     );
 };
 

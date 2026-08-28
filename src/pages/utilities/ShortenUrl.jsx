@@ -5,6 +5,7 @@ import {
 } from '@mui/material';
 import { Add, ContentCopy, OpenInNew, Link as LinkIcon, Block, CheckCircle, Delete } from '@mui/icons-material';
 import PageHeader from '../../components/common/PageHeader';
+import { PageContainer } from '../../components/common/design-system';
 import DataTable from '../../components/data/DataTable';
 import axios from '../../api/axios';
 import { toast } from 'sonner';
@@ -96,7 +97,7 @@ const ShortenUrl = () => {
 
 
     return (
-        <Box sx={{ width: '100%' }}>
+        <PageContainer>
             <PageHeader 
                 title="Short URLs" 
                 subtitle="Create and manage your shortened URLs" 
@@ -257,7 +258,7 @@ const ShortenUrl = () => {
                     </Button>
                 </DialogActions>
             </Dialog>
-        </Box>
+        </PageContainer>
     );
 };
 

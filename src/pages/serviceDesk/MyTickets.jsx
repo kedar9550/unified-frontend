@@ -6,6 +6,7 @@ import {
 import { Visibility, Feedback as FeedbackIcon } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import PageHeader from '../../components/common/PageHeader';
+import { PageContainer } from '../../components/common/design-system';
 import DataTable from '../../components/data/DataTable';
 import API from '../../api/axios';
 import { toast } from 'sonner';
@@ -52,10 +53,10 @@ const MyTickets = () => {
     }, []);
 
     return (
-        <Box>
+        <PageContainer>
             <PageHeader title="My Tickets" subtitle="View and track your Service Desk requests" />
 
-            <Box sx={{ px: 3, pb: 3 }}>
+            <Box>
                 {pendingFeedback.length > 0 && (
                     <Box sx={{ mb: 3 }}>
                         <Alert severity="warning" icon={<FeedbackIcon fontSize="inherit" />} sx={{ borderRadius: '12px' }}>
@@ -155,7 +156,7 @@ const MyTickets = () => {
                     />
                 )}
             </Box>
-        </Box>
+        </PageContainer>
     );
 };
 

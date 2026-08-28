@@ -20,6 +20,7 @@ import {
 } from '@mui/icons-material';
 import { useParams, useNavigate } from 'react-router-dom';
 import PageHeader from '../../components/common/PageHeader';
+import { PageContainer } from '../../components/common/design-system';
 import API from '../../api/axios';
 import { useAuth } from '../../context/AuthContext';
 import { useSocket } from '../../context/SocketContext';
@@ -333,8 +334,8 @@ const TicketDetail = () => {
     };
 
     return (
-        <Box>
-            <Box sx={{ px: 3, pt: 2 }}>
+        <PageContainer>
+            <Box>
                 <Typography 
                     variant="body2" 
                     color="primary" 
@@ -925,7 +926,7 @@ const TicketDetail = () => {
                     </Button>
                 </DialogActions>
             </Dialog>
-        </Box>
+        </PageContainer>
     );
 };
 

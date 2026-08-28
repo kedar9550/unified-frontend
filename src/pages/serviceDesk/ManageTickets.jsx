@@ -7,6 +7,7 @@ import {
 import { Visibility, AssignmentInd as AssignIcon, Block as RejectIcon, Close as CloseIcon } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import PageHeader from '../../components/common/PageHeader';
+import { PageContainer } from '../../components/common/design-system';
 import DataTable from '../../components/data/DataTable';
 import API from '../../api/axios';
 import { toast } from 'sonner';
@@ -172,13 +173,13 @@ const ManageTickets = () => {
     const currentServiceName = adminServices.find(s => s._id === selectedServiceId)?.name || 'Service';
 
     return (
-        <Box>
+        <PageContainer>
             <PageHeader 
                 title="Manage Tickets" 
                 subtitle={`Admin Dashboard for ${currentServiceName}`}
             />
 
-            <Box sx={{ p: 3 }}>
+            <Box>
                 <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <Tabs value={currentTab} onChange={(e, newValue) => setCurrentTab(newValue)}>
                         <Tab label="Active Tickets" value="active" sx={{ fontWeight: 600 }} />
@@ -370,7 +371,7 @@ const ManageTickets = () => {
                 </DialogActions>
             </Dialog>
 
-        </Box>
+        </PageContainer>
     );
 };
 

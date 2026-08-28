@@ -12,6 +12,7 @@ import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, 
 import { Link } from 'react-router-dom';
 import API from '../../api/axios';
 import PageHeader from '../../components/common/PageHeader';
+import { PageContainer } from '../../components/common/design-system';
 import { useAuth } from '../../context/AuthContext';
 import Loader from '../../components/common/Loader';
 
@@ -230,7 +231,7 @@ const FeedbackOverview = () => {
     if (loading) return <Loader />;
 
     return (
-        <Box sx={{ width: '100%' }}>
+        <PageContainer>
             <PageHeader title="Feedback Overview" subtitle="Analyze user satisfaction and service quality trends" />
 
             <Box>
@@ -545,7 +546,7 @@ const FeedbackOverview = () => {
                     />
                 </Box>
             </Box>
-        </Box>
+        </PageContainer>
     );
 };
 

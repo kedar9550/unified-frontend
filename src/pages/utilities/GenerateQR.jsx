@@ -8,6 +8,7 @@ import axios from '../../api/axios';
 import { toast } from 'sonner';
 import CustomQRCode from '../../components/CustomQRCode';
 import PageHeader from '../../components/common/PageHeader';
+import { PageContainer } from '../../components/common/design-system';
 import DataTable from '../../components/data/DataTable';
 import LogoDarkTheme from '../../assets/Logo_Dark_theme.svg';
 
@@ -102,7 +103,7 @@ const GenerateQR = () => {
 
 
     return (
-        <Box sx={{ width: '100%' }}>
+        <PageContainer>
             <PageHeader 
                 title="QR Codes" 
                 subtitle="Create and manage your QR codes" 
@@ -357,7 +358,7 @@ const GenerateQR = () => {
                     </Box>
                 </DialogContent>
             </Dialog>
-        </Box>
+        </PageContainer>
     );
 };
 

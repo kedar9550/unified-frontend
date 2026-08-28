@@ -6,6 +6,7 @@ import {
 import { Visibility } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import PageHeader from '../../components/common/PageHeader';
+import { PageContainer } from '../../components/common/design-system';
 import DataTable from '../../components/data/DataTable';
 import API from '../../api/axios';
 import { toast } from 'sonner';
@@ -49,10 +50,10 @@ const AssignedToMe = () => {
     }, [currentTab]);
 
     return (
-        <Box>
+        <PageContainer>
             <PageHeader title="Assigned to Me" subtitle="Manage and resolve tickets assigned to you" />
 
-            <Box sx={{ borderBottom: 1, borderColor: 'var(--border-color)', mb: 3, px: 3 }}>
+            <Box sx={{ borderBottom: 1, borderColor: 'var(--border-color)', mb: 3 }}>
                 <Tabs 
                     value={currentTab} 
                     onChange={(e, newValue) => setCurrentTab(newValue)}
@@ -79,7 +80,7 @@ const AssignedToMe = () => {
                 </Tabs>
             </Box>
 
-            <Box sx={{ px: 3, pb: 3 }}>
+            <Box>
                 {loading ? (
                     <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
                         <Loader />
@@ -144,7 +145,7 @@ const AssignedToMe = () => {
                     />
                 )}
             </Box>
-        </Box>
+        </PageContainer>
     );
 };
 

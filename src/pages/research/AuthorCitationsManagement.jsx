@@ -45,6 +45,7 @@ import {
 import axiosInstance from "../../api/axios";
 import { toast } from "sonner";
 import PageHeader from "../../components/common/PageHeader";
+import { PageContainer } from "../../components/common/design-system";
 import DataTable from "../../components/data/DataTable";
 
 const THIS_YEAR = new Date().getFullYear();
@@ -190,7 +191,7 @@ function DetailDialog({ open, onClose, type, empid, onChanged }) {
   const chartData = rows.map((r) => ({ year: r.year, value: r.value }));
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth sx={{ "& .MuiDialog-paper": { borderRadius: "16px" } }}>
+    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth slotProps={{ paper: { sx: { borderRadius: "16px", background: "var(--bg-panel)", color: "var(--text-primary)" } } }}>
       <DialogTitle sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontWeight: 800 }}>
         <Box>
           {data?.employeeName || "Employee"} — {cfg.label} History
@@ -582,18 +583,18 @@ function MetricTab({ type }) {
     <>
       <Stack direction="row" spacing={1.5} alignItems="center" justifyContent="flex-end" sx={{ mb: 2 }}>
         <Tooltip title="Refresh Records">
-          <IconButton onClick={() => fetchRecords(searchQuery)} disabled={loading || uploading} sx={{ bgcolor: "var(--bg-paper)", border: "1px solid var(--border-color)" }}>
+          <IconButton onClick={() => fetchRecords(searchQuery)} disabled={loading || uploading} sx={{ bgcolor: "var(--bg-paper)", border: "1px solid var(--border-color)", color: "var(--text-primary)" }}>
             <Refresh className={loading ? "spin-animation" : ""} />
           </IconButton>
         </Tooltip>
-        <Button variant="outlined" onClick={downloadTemplate} startIcon={<Assignment />} sx={{ borderColor: "var(--color-primary)", color: "var(--color-primary)", fontWeight: 700, borderRadius: "10px", textTransform: "none" }}>
+        <Button variant="outlined" onClick={downloadTemplate} startIcon={<Assignment />} sx={{ borderColor: "var(--border-color)", color: "var(--text-primary)", fontWeight: 700, borderRadius: "10px", textTransform: "none", "&:hover": { borderColor: "var(--color-primary)", bgcolor: "var(--bg-paper)" } }}>
           Template
         </Button>
-        <Button variant="outlined" component="label" disabled={uploading} startIcon={uploading ? <Loader size={20} color="inherit" /> : <UploadFile />} sx={{ borderColor: "var(--color-primary)", color: "var(--color-primary)", fontWeight: 700, borderRadius: "10px", textTransform: "none" }}>
+        <Button variant="outlined" component="label" disabled={uploading} startIcon={uploading ? <Loader size={20} color="inherit" /> : <UploadFile />} sx={{ borderColor: "var(--border-color)", color: "var(--text-primary)", fontWeight: 700, borderRadius: "10px", textTransform: "none", "&:hover": { borderColor: "var(--color-primary)", bgcolor: "var(--bg-paper)" } }}>
           {uploading ? "Uploading..." : "Bulk Upload"}
           <input type="file" accept=".csv" hidden onChange={handleBulkUpload} />
         </Button>
-        <Button variant="contained" startIcon={<Add />} onClick={() => setAddOpen(true)} sx={{ background: "var(--gradient-primary)", color: "white", fontWeight: 700, borderRadius: "10px", textTransform: "none", boxShadow: "0 4px 12px var(--color-primary-alpha)" }}>
+        <Button variant="contained" startIcon={<Add />} onClick={() => setAddOpen(true)} sx={{ background: "var(--gradient-primary)", color: "white", fontWeight: 700, borderRadius: "10px", textTransform: "none", boxShadow: "var(--shadow-sm)", "&:hover": { opacity: 0.9 } }}>
           Add Record
         </Button>
       </Stack>
@@ -646,17 +647,40 @@ const AuthorCitationsManagement = () => {
   const [tab, setTab] = useState("citations");
 
   return (
-    <Box sx={{ pb: 6 }}>
+    <PageContainer>
       <PageHeader
         title="Author Citations & H-Index"
         subtitle="Year-wise Scopus metrics per faculty — Scopus ID is managed from the Employee profile"
       />
 
-      <Box sx={{ mt: 3, mx: { xs: 2.5, sm: 4 } }}>
+      <Box>
         <Tabs
           value={tab}
           onChange={(e, v) => setTab(v)}
-          sx={{ mb: 2.5, "& .MuiTab-root": { fontWeight: 700, textTransform: "none" } }}
+          sx={{
+            mb: 2.5,
+            borderBottom: "1px solid var(--border-color)",
+            "& .MuiTab-root": {
+              fontWeight: 700,
+              textTransform: "none",
+              color: "var(--text-secondary)",
+              fontSize: "0.95rem",
+              px: 3,
+              py: 1.5,
+              transition: "all 0.2s ease",
+              "&:hover": {
+                color: "var(--text-primary)"
+              },
+              "&.Mui-selected": {
+                color: "var(--color-primary) !important"
+              }
+            },
+            "& .MuiTabs-indicator": {
+              backgroundColor: "var(--color-primary)",
+              height: "3px",
+              borderRadius: "3px"
+            }
+          }}
         >
           <Tab label="Citations" value="citations" />
           <Tab label="H-Index" value="hindex" />
@@ -665,7 +689,7 @@ const AuthorCitationsManagement = () => {
         {tab === "citations" && <MetricTab type="citations" />}
         {tab === "hindex" && <MetricTab type="hindex" />}
       </Box>
-    </Box>
+    </PageContainer>
   );
 };
 

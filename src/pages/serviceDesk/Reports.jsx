@@ -11,6 +11,7 @@ import { toast } from 'sonner';
 
 import DataTable from '../../components/data/DataTable';
 import PageHeader from '../../components/common/PageHeader';
+import { PageContainer } from '../../components/common/design-system';
 import Loader from '../../components/common/Loader';
 import { Box, Typography, Chip, Tooltip, IconButton, Menu, MenuItem, Select, FormControl, InputLabel, TextField, Button, Grid, Paper } from '@mui/material';
 
@@ -209,7 +210,7 @@ const Reports = () => {
     };
 
     return (
-        <Box sx={{ width: '100%' }}>
+        <PageContainer>
             <PageHeader 
                 title="Reports Dashboard" 
                 subtitle={isSuperAdmin ? (filters.serviceId === 'all' ? 'All Services' : (departments.find(d => d._id === filters.serviceId)?.name || 'Service Report')) : 'My Services'} 
@@ -453,7 +454,7 @@ const Reports = () => {
 
                 </Box>
             )}
-        </Box>
+        </PageContainer>
     );
 };
 

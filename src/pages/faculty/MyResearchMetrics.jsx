@@ -26,6 +26,7 @@ import {
 import axiosInstance from "../../api/axios";
 import { toast } from "sonner";
 import PageHeader from "../../components/common/PageHeader";
+import { PageContainer } from "../../components/common/design-system";
 import Loader from "../../components/common/Loader";
 
 const MyResearchMetrics = () => {
@@ -145,7 +146,7 @@ const MyResearchMetrics = () => {
   };
 
   return (
-    <Box sx={{ p: { xs: 2, md: 3 }, maxWidth: 1200, margin: "0 auto" }}>
+    <PageContainer>
       <PageHeader
         title="My Research Metrics"
         subtitle="View your Citations and H-Index history over time"
@@ -156,11 +157,34 @@ const MyResearchMetrics = () => {
           <Loader color="primary" size={40} />
         </Box>
       ) : (
-        <Box sx={{ display: "flex", flexDirection: "column", gap: 3, mt: 3 }}>
-          <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-            <Tabs value={tab} onChange={(e, v) => setTab(v)} aria-label="research metrics tabs">
-              <Tab label="Citations" value="citations" sx={{ fontWeight: 600 }} />
-              <Tab label="H-Index" value="hindex" sx={{ fontWeight: 600 }} />
+        <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+          <Box>
+            <Tabs
+              value={tab}
+              onChange={(e, v) => setTab(v)}
+              aria-label="research metrics tabs"
+              sx={{
+                borderBottom: "1px solid var(--border-color)",
+                "& .MuiTab-root": {
+                  fontWeight: 700,
+                  textTransform: "none",
+                  color: "var(--text-secondary)",
+                  fontSize: "0.95rem",
+                  px: 3,
+                  py: 1.5,
+                  transition: "all 0.2s ease",
+                  "&:hover": { color: "var(--text-primary)" },
+                  "&.Mui-selected": { color: "var(--color-primary) !important" }
+                },
+                "& .MuiTabs-indicator": {
+                  backgroundColor: "var(--color-primary)",
+                  height: "3px",
+                  borderRadius: "3px"
+                }
+              }}
+            >
+              <Tab label="Citations" value="citations" />
+              <Tab label="H-Index" value="hindex" />
             </Tabs>
           </Box>
 
@@ -170,7 +194,7 @@ const MyResearchMetrics = () => {
           </Box>
         </Box>
       )}
-    </Box>
+    </PageContainer>
   );
 };
 

@@ -1,5 +1,6 @@
 import Loader from "../../components/common/Loader";
 import PageHeader from "../../components/common/PageHeader";
+import { PageContainer } from "../../components/common/design-system";
 import SectionHeader from "../../components/common/SectionHeader";
 import StatCard from "../../components/common/StatCard";
 import ActionButton from "../../components/common/ActionButton";
@@ -64,7 +65,7 @@ export default function FacultyFormatResults() {
         // Remove duplicates if any
         const uniqueYears = Array.from(new Set(years.map(y => y.year)))
           .map(yearName => years.find(y => y.year === yearName));
-          
+
         setAcademicYears(uniqueYears);
         if (uniqueYears.length > 0) {
           // Find active or first
@@ -96,7 +97,7 @@ export default function FacultyFormatResults() {
     setLoading(true);
     try {
       const res = await API.get("/api/faculty-subject-results", {
-        params: { 
+        params: {
           academicYearId: selectedYearId,
           programId: selectedProgramId,
           facultyId: searchFacultyId
@@ -153,12 +154,12 @@ export default function FacultyFormatResults() {
 
       if (err.response?.data) {
         setUploadSummary({
-            totalRecords: err.response.data.totalRecords || 0,
-            successCount: err.response.data.successCount || 0,
-            skippedCount: err.response.data.skippedCount || 0,
-            failedCount: err.response.data.failedCount || (Array.isArray(backendDetails) ? backendDetails.length : 1),
-            errors: Array.isArray(backendDetails) ? backendDetails : [{ row: '-', message: backendError || "Upload failed" }],
-            skipped: skippedDetails
+          totalRecords: err.response.data.totalRecords || 0,
+          successCount: err.response.data.successCount || 0,
+          skippedCount: err.response.data.skippedCount || 0,
+          failedCount: err.response.data.failedCount || (Array.isArray(backendDetails) ? backendDetails.length : 1),
+          errors: Array.isArray(backendDetails) ? backendDetails : [{ row: '-', message: backendError || "Upload failed" }],
+          skipped: skippedDetails
         });
       } else {
         toast.error(backendError || "Upload failed. Please check CSV format.");
@@ -183,7 +184,7 @@ export default function FacultyFormatResults() {
 
   const handleClear = async (mode) => {
     if (!selectedYearId) return;
-    
+
     let confirmMsg = "";
     const params = { academicYearId: selectedYearId };
 
@@ -207,7 +208,7 @@ export default function FacultyFormatResults() {
     }
 
     if (!window.confirm(confirmMsg)) return;
-    
+
     setLoading(true);
     try {
       await API.delete("/api/faculty-subject-results/semester", { params, skipGlobalLoader: true });
@@ -261,7 +262,7 @@ export default function FacultyFormatResults() {
 
 
   return (
-    <>
+    <PageContainer>
       <input
         type="file"
         ref={fileInputRef}
@@ -272,90 +273,55 @@ export default function FacultyFormatResults() {
 
       <PageHeader
         title="Exam Results (Faculty Format)"
-        subtitle="Upload and manage exam results formatted by faculty and courses" />
-
-      <Box sx={{ 
-        mt: 3, 
-        mb: 4, 
-        p: 3, 
-        background: "var(--bg-panel)", 
-        borderRadius: "24px", 
-        border: "1px solid var(--border-color)", 
-        boxShadow: "var(--shadow-premium)",
-        display: "flex",
-        flexDirection: "column",
-        gap: 3
-      }}>
-        {/* Row 1: Header and Primary Actions */}
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-            <Box sx={{ 
-              p: 1.5, 
-              borderRadius: "14px", 
-              background: "linear-gradient(135deg, var(--color-primary) 0%, #1e40af 100%)", 
-              color: "#fff", 
-              display: 'flex',
-              boxShadow: "0 8px 20px rgba(59, 130, 246, 0.2)"
-            }}>
-              <FilterIcon />
-            </Box>
-            <Box>
-              <Typography sx={{ fontWeight: 800, fontSize: 20, color: "var(--text-primary)", lineHeight: 1.2 }}>
-                Faculty Results Management
-              </Typography>
-              <Typography sx={{ fontSize: 13, color: "var(--text-secondary)", fontWeight: 500, mt: 0.5 }}>
-                {results.length} subject records currently displayed
-              </Typography>
-            </Box>
-          </Box>
-          
-          <Box sx={{ display: 'flex', gap: 1.5, width: { xs: '100%', sm: 'auto' } }}>
+        subtitle="Upload and manage exam results formatted by faculty and courses"
+        action={
+          <Box sx={{ display: 'flex', gap: 1.5 }}>
             <ActionButton
               variant="outlined"
               onClick={downloadTemplate}
               startIcon={<DownloadIcon sx={{ fontSize: 18 }} />}
-              sx={{
-                flex: 1,
-                fontWeight: 700,
-                px: 2.5,
-                height: 44,
-                whiteSpace: "nowrap",
-              }}
+              sx={{ fontWeight: 700, px: 2.5, height: 40 }}
             >
               Template
             </ActionButton>
-            
+
             <ActionButton
               onClick={handleUploadClick}
               disabled={uploading}
               startIcon={<UploadIcon sx={{ fontSize: 18 }} />}
-              sx={{
-                flex: 1,
-                fontWeight: 800,
-                px: 3,
-                height: 44,
-                whiteSpace: "nowrap",
-              }}
+              sx={{ fontWeight: 800, px: 3, height: 40 }}
             >
               {uploading ? "Uploading..." : "Upload CSV"}
             </ActionButton>
           </Box>
-        </Box>
+        }
+      />
 
-        <Divider sx={{ borderStyle: 'dashed', opacity: 0.5 }} />
-
-        {/* Info Note Banner for T/P/I */}
-        <Box sx={{ 
-          p: 2, 
-          borderRadius: "14px", 
-          background: "rgba(2, 132, 199, 0.04)", 
-          border: "1px solid rgba(2, 132, 199, 0.12)",
+      {/* Filter Options */}
+      <Box sx={{
+        p: 2.5,
+        mb: 3,
+        background: "var(--bg-panel)",
+        borderRadius: "16px",
+        border: "1px solid var(--border-color)",
+        boxShadow: "var(--shadow-premium)",
+        display: "flex",
+        flexDirection: "column",
+        gap: 2
+      }}>
+        {/* Info Note Banner */}
+        <Box sx={{
+          p: 1.5,
+          px: 2,
+          borderRadius: "10px",
+          background: "var(--bg-paper)",
+          border: "1px solid var(--border-color)",
           display: "flex",
           alignItems: "center",
           gap: 1.5
         }}>
           <InfoIcon sx={{ color: "var(--color-primary)", fontSize: 20 }} />
-          <Typography sx={{ fontSize: 13, color: "var(--text-secondary)", fontWeight: 600 }}>
+          <Typography sx={{ fontSize: 13, color: "var(--text-primary)", fontWeight: 600 }}>
             Subject Type: Use <strong>T</strong> = Theory, <strong>P</strong> = Practical, <strong>I</strong> = Integrated.
           </Typography>
         </Box>
@@ -404,9 +370,9 @@ export default function FacultyFormatResults() {
             </Box>
           </Box>
 
-          <Box sx={{ 
-            display: 'flex', 
-            gap: 2, 
+          <Box sx={{
+            display: 'flex',
+            gap: 2,
             alignItems: 'center',
             width: { xs: '100%', sm: 'auto' },
             flexDirection: { xs: 'column', sm: 'row' }
@@ -463,7 +429,7 @@ export default function FacultyFormatResults() {
             >
               <CleanIcon sx={{ mr: 1, fontSize: 18 }} /> Bulk Actions
             </ActionButton>
-            
+
             <Menu
               anchorEl={deleteMenuAnchor}
               open={Boolean(deleteMenuAnchor)}
@@ -506,17 +472,7 @@ export default function FacultyFormatResults() {
 
 
       {/* 🔹 RESULTS TABLE */}
-      <Box
-        sx={{
-          p: 3,
-          borderRadius: "24px",
-          background: "var(--bg-panel)",
-          backdropFilter: "blur(20px)",
-          boxShadow: "var(--shadow-premium)",
-          border: "1px solid var(--border-color)",
-          minHeight: 400,
-        }}
-      >
+      <Box sx={{ width: '100%' }}>
         <SectionHeader title="Faculty Results" />
 
         {loading ? (
@@ -525,9 +481,9 @@ export default function FacultyFormatResults() {
           </Box>
         ) : results.length === 0 ? (
           <Box
-            sx={{ 
-              textAlign: "center", 
-              py: 12, 
+            sx={{
+              textAlign: "center",
+              py: 12,
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
@@ -538,9 +494,9 @@ export default function FacultyFormatResults() {
               border: "1px dashed var(--border-color)"
             }}
           >
-            <Box sx={{ 
-              fontSize: 60, 
-              mb: 2, 
+            <Box sx={{
+              fontSize: 60,
+              mb: 2,
               filter: "drop-shadow(0 10px 15px rgba(0,0,0,0.1))",
               animation: "float 3s ease-in-out infinite"
             }}>
@@ -561,8 +517,8 @@ export default function FacultyFormatResults() {
             <ActionButton
               variant="outlined"
               onClick={handleUploadClick}
-              sx={{ 
-                mt: 4, 
+              sx={{
+                mt: 4,
                 fontWeight: 700,
                 px: 3,
               }}
@@ -705,12 +661,12 @@ export default function FacultyFormatResults() {
           }
         }}
       >
-        <DialogTitle sx={{ 
-          pb: 2, 
+        <DialogTitle sx={{
+          pb: 2,
           borderBottom: "1px solid var(--border-color)",
-          display: "flex", 
-          justifyContent: "space-between", 
-          alignItems: "center" 
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center"
         }}>
           <Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>
             Upload Summary
@@ -799,7 +755,7 @@ export default function FacultyFormatResults() {
           )}
         </DialogContent>
       </Dialog>
-    </>
+    </PageContainer>
   );
 }
 

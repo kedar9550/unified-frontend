@@ -5,6 +5,7 @@ import {
 } from '@mui/material';
 import { Delete, Lock, LockOpen, Warning, DeleteForever, ContentCopy, OpenInNew } from '@mui/icons-material';
 import PageHeader from '../../components/common/PageHeader';
+import { PageContainer } from '../../components/common/design-system';
 import DataTable from '../../components/data/DataTable';
 import axios from '../../api/axios';
 import { toast } from 'sonner';
@@ -57,15 +58,10 @@ const ManageShortenUrl = () => {
     };
 
     return (
-        <Box>
-            <PageHeader title="Manage Short URLs" subtitle="Admin panel to manage all shortened URLs" />
+        <PageContainer>
+            <PageHeader title="Manage Short URLs" subtitle="Admin panel to manage all generated Short URLs" />
 
-            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3, mt: 3, px: 3 }}>
-                <Typography variant="h6" sx={{ color: "var(--text-primary)", fontWeight: 800 }}>
-                    All Short URLs
-                </Typography>
-            </Box>
-            <Box sx={{ px: 3, pb: 3 }}>
+            <Box>
                 <DataTable 
                     columns={["Creator", "Original URL", "Short Link", "Clicks", "Status", "Actions"]}
                     alignments={["left", "left", "left", "center", "center", "right"]}
@@ -94,7 +90,7 @@ const ManageShortenUrl = () => {
                         },
                         {
                             value: link.shortCode,
-                            display: <Typography variant="body2" color="#0b5299" sx={{ fontWeight: 600 }}>{link.shortCode}</Typography>
+                            display: <Typography variant="body2" sx={{ color: "var(--color-primary)", fontWeight: 600 }}>{link.shortCode}</Typography>
                         },
                         {
                             value: link.clicks,
@@ -164,7 +160,7 @@ const ManageShortenUrl = () => {
                     <Button onClick={handleDelete} color="error" variant="contained">Confirm</Button>
                 </DialogActions>
             </Dialog>
-        </Box>
+        </PageContainer>
     );
 };
 

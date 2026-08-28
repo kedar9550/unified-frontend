@@ -1,5 +1,6 @@
 import Loader from "../../components/common/Loader";
 import PageHeader from "../../components/common/PageHeader";
+import { PageContainer } from "../../components/common/design-system";
 import SectionHeader from "../../components/common/SectionHeader";
 import ActionButton from "../../components/common/ActionButton";
 import DataTable from "../../components/data/DataTable";
@@ -91,7 +92,7 @@ export default function StudentFormatResults() {
 
   // 3. Deletion Logic
   const toggleSelection = (id) => {
-    setSelectedIds(prev => 
+    setSelectedIds(prev =>
       prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
     );
   };
@@ -99,7 +100,7 @@ export default function StudentFormatResults() {
   const toggleSelectAll = (resultsToSelect) => {
     const allIds = resultsToSelect.map(r => r._id);
     const areAllSelected = allIds.every(id => selectedIds.includes(id));
-    
+
     if (areAllSelected) {
       setSelectedIds(prev => prev.filter(id => !allIds.includes(id)));
     } else {
@@ -342,15 +343,15 @@ export default function StudentFormatResults() {
       if (r.yearName) {
         // YEAR program row (Pharma.D etc)
         return [
-          { 
-            value: "", 
+          {
+            value: "",
             display: (
-              <Checkbox 
-                size="small" 
-                checked={selectedIds.includes(r._id)} 
-                onChange={() => toggleSelection(r._id)} 
+              <Checkbox
+                size="small"
+                checked={selectedIds.includes(r._id)}
+                onChange={() => toggleSelection(r._id)}
               />
-            ) 
+            )
           },
           { value: r.studentId, display: <Box sx={{ fontWeight: 600 }}>{r.studentId}</Box> },
           { value: r.studentName, display: <Box>{r.studentName || "—"}</Box> },
@@ -394,15 +395,15 @@ export default function StudentFormatResults() {
       } else {
         // SEM program row (B.Tech, M.Tech etc)
         return [
-          { 
-            value: "", 
+          {
+            value: "",
             display: (
-              <Checkbox 
-                size="small" 
-                checked={selectedIds.includes(r._id)} 
-                onChange={() => toggleSelection(r._id)} 
+              <Checkbox
+                size="small"
+                checked={selectedIds.includes(r._id)}
+                onChange={() => toggleSelection(r._id)}
               />
-            ) 
+            )
           },
           { value: r.studentId, display: <Box sx={{ fontWeight: 600 }}>{r.studentId}</Box> },
           { value: r.studentName, display: <Box>{r.studentName || "—"}</Box> },
@@ -451,7 +452,7 @@ export default function StudentFormatResults() {
   const semResults = results.filter((r) => !r.yearName);
 
   return (
-    <>
+    <PageContainer>
       <input
         type="file"
         ref={fileInputRef}
@@ -462,78 +463,42 @@ export default function StudentFormatResults() {
 
       <PageHeader
         title="Exam Results (Student Format)"
-        subtitle="Upload and manage student exam results and performance" />
-
-      {/* DATA MANAGEMENT CONTROL CENTER */}
-      <Box sx={{ 
-        mt: 3, 
-        mb: 4, 
-        p: 3, 
-        background: "var(--bg-panel)", 
-        borderRadius: "24px", 
-        border: "1px solid var(--border-color)", 
-        boxShadow: "var(--shadow-premium)",
-        display: "flex",
-        flexDirection: "column",
-        gap: 3
-      }}>
-        {/* Row 1: Header and Primary Actions */}
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-            <Box sx={{ 
-              p: 1.5, 
-              borderRadius: "14px", 
-              background: "linear-gradient(135deg, var(--color-primary) 0%, #1e40af 100%)", 
-              color: "#fff", 
-              display: 'flex',
-              boxShadow: "0 8px 20px rgba(59, 130, 246, 0.2)"
-            }}>
-              <FilterIcon />
-            </Box>
-            <Box>
-              <Typography sx={{ fontWeight: 800, fontSize: 20, color: "var(--text-primary)", lineHeight: 1.2 }}>
-                Student Results Management
-              </Typography>
-              <Typography sx={{ fontSize: 13, color: "var(--text-secondary)", fontWeight: 500, mt: 0.5 }}>
-                {results.length} total records found in the database
-              </Typography>
-            </Box>
-          </Box>
-          
-          <Box sx={{ display: 'flex', gap: 1.5, width: { xs: '100%', sm: 'auto' } }}>
+        subtitle="Upload and manage student exam results and performance"
+        action={
+          <Box sx={{ display: 'flex', gap: 1.5 }}>
             <ActionButton
               variant="outlined"
               onClick={downloadTemplate}
               startIcon={<DownloadIcon sx={{ fontSize: 18 }} />}
-              sx={{
-                flex: 1,
-                fontWeight: 700,
-                px: 2.5,
-                height: 44,
-                whiteSpace: "nowrap",
-              }}
+              sx={{ fontWeight: 700, px: 2.5, height: 40 }}
             >
               Template
             </ActionButton>
-            
+
             <ActionButton
               onClick={handleUploadClick}
               disabled={uploading}
               startIcon={<UploadIcon sx={{ fontSize: 18 }} />}
-              sx={{
-                flex: 1,
-                fontWeight: 800,
-                px: 3,
-                height: 44,
-                whiteSpace: "nowrap",
-              }}
+              sx={{ fontWeight: 800, px: 3, height: 40 }}
             >
               {uploading ? "Uploading..." : "Upload CSV"}
             </ActionButton>
           </Box>
-        </Box>
+        }
+      />
 
-        <Divider sx={{ borderStyle: 'dashed', opacity: 0.5 }} />
+      {/* Filter Options */}
+      <Box sx={{
+        p: 2.5,
+        mb: 3,
+        background: "var(--bg-panel)",
+        borderRadius: "16px",
+        border: "1px solid var(--border-color)",
+        boxShadow: "var(--shadow-premium)",
+        display: "flex",
+        flexDirection: "column",
+        gap: 2
+      }}>
 
         {/* Row 2: Filtering and Search */}
         <Box sx={{ display: "flex", gap: 3, alignItems: "center", justifyContent: "space-between", flexWrap: "wrap" }}>
@@ -581,11 +546,11 @@ export default function StudentFormatResults() {
               <Chip
                 label={isYearBased ? "Year-based" : "Sem-based"}
                 size="small"
-                sx={{ 
-                  fontWeight: 800, 
-                  fontSize: 10, 
+                sx={{
+                  fontWeight: 800,
+                  fontSize: 10,
                   letterSpacing: '0.02em',
-                  bgcolor: "rgba(59, 130, 246, 0.1)", 
+                  bgcolor: "rgba(59, 130, 246, 0.1)",
                   color: "var(--color-primary)",
                   borderRadius: "8px",
                   height: 24
@@ -595,9 +560,9 @@ export default function StudentFormatResults() {
           </Box>
 
           {/* Search and Bulk Actions Group */}
-          <Box sx={{ 
-            display: 'flex', 
-            gap: 2, 
+          <Box sx={{
+            display: 'flex',
+            gap: 2,
             alignItems: 'center',
             width: { xs: '100%', sm: 'auto' },
             flexDirection: { xs: 'column', sm: 'row' }
@@ -704,26 +669,16 @@ export default function StudentFormatResults() {
       </Box>
 
       {/* RESULTS TABLE */}
-      <Box
-        sx={{
-          p: 3,
-          borderRadius: "24px",
-          background: "var(--bg-panel)",
-          backdropFilter: "blur(20px)",
-          boxShadow: "var(--shadow-premium)",
-          border: "1px solid var(--border-color)",
-          minHeight: 400,
-        }}
-      >
+      <Box sx={{ width: '100%' }}>
         {loading ? (
           <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>
             <Loader />
           </Box>
         ) : results.length === 0 ? (
           <Box
-            sx={{ 
-              textAlign: "center", 
-              py: 12, 
+            sx={{
+              textAlign: "center",
+              py: 12,
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
@@ -734,9 +689,9 @@ export default function StudentFormatResults() {
               border: "1px dashed var(--border-color)"
             }}
           >
-            <Box sx={{ 
-              fontSize: 60, 
-              mb: 2, 
+            <Box sx={{
+              fontSize: 60,
+              mb: 2,
               filter: "drop-shadow(0 10px 15px rgba(0,0,0,0.1))",
               animation: "float 3s ease-in-out infinite"
             }}>
@@ -757,8 +712,8 @@ export default function StudentFormatResults() {
             <ActionButton
               variant="outlined"
               onClick={handleUploadClick}
-              sx={{ 
-                mt: 4, 
+              sx={{
+                mt: 4,
                 fontWeight: 700,
                 px: 3,
               }}
@@ -833,7 +788,7 @@ export default function StudentFormatResults() {
           </>
         )}
       </Box>
-    </>
+    </PageContainer>
   );
 }
 

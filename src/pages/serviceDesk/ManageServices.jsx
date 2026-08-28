@@ -7,6 +7,7 @@ import {
 } from '@mui/material';
 import { Add as AddIcon, Edit as EditIcon, Delete as DeleteIcon, Security as SecurityIcon, PersonAdd as PersonAddIcon, Close as CloseIcon } from '@mui/icons-material';
 import PageHeader from '../../components/common/PageHeader';
+import { PageContainer } from '../../components/common/design-system';
 import DataTable from '../../components/data/DataTable';
 import API from '../../api/axios';
 import { toast } from 'sonner';
@@ -206,7 +207,7 @@ const ManageServices = () => {
     };
 
     return (
-        <Box>
+        <PageContainer>
             <PageHeader
                 title="Manage Services"
                 subtitle="Create, organize, and manage service categories for the Service Desk. Assign administrators to each service and control their availability for ticket requests."
@@ -222,7 +223,7 @@ const ManageServices = () => {
                 }
             />
 
-            <Box sx={{ p: 3 }}>
+            <Box>
                 {loading ? (
                     <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
                         <Loader />
@@ -420,7 +421,7 @@ const ManageServices = () => {
                 </DialogActions>
             </Dialog>
 
-        </Box>
+        </PageContainer>
     );
 };
 

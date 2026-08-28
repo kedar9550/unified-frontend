@@ -794,7 +794,7 @@ const SDG = () => {
         });
 
     return (
-        <Box sx={{ minHeight: '100vh' }}>
+        <Box sx={{ width: '100%' }}>
             <DeveloperPopup open={showDevPopup} onClose={() => setShowDevPopup(false)} />
 
             {loading ? (

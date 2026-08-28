@@ -6,6 +6,7 @@ import {
 } from '@mui/material';
 import { UploadFile, Close as CloseIcon, Send as SendIcon } from '@mui/icons-material';
 import PageHeader from '../../components/common/PageHeader';
+import { PageContainer } from '../../components/common/design-system';
 import API from '../../api/axios';
 import { toast } from 'sonner';
 import RichTextEditor from '../../components/common/RichTextEditor';
@@ -98,11 +99,11 @@ const RaiseTicket = () => {
     };
 
     return (
-        <Box>
+        <PageContainer>
             <PageHeader title="Raise a Ticket" subtitle="Submit a new request to the Service Desk" />
             
-            <Box sx={{ p: 3, maxWidth: 800, mx: 'auto' }}>
-                <Paper sx={{ p: 4, borderRadius: '16px', background: 'var(--bg-panel)', boxShadow: 'var(--shadow-premium)' }}>
+            <Box>
+                <Paper sx={{ p: 4, borderRadius: '16px', background: 'var(--bg-panel)', boxShadow: 'var(--shadow-premium)', border: '1px solid var(--border-color)' }}>
                         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
                             
                             <FormControl fullWidth required>
@@ -222,7 +223,7 @@ const RaiseTicket = () => {
                         </Box>
                 </Paper>
             </Box>
-        </Box>
+        </PageContainer>
     );
 };
 
