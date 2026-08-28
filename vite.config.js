@@ -1,8 +1,17 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
+import path from 'path'
 
 export default defineConfig({
+  resolve: {
+    alias: {
+      stream: path.resolve(__dirname, 'src/utils/streamMock.js'),
+    },
+  },
+  define: {
+    'process.env': {},
+  },
   plugins: [
     react(),
     VitePWA({
@@ -15,7 +24,7 @@ export default defineConfig({
       },
       manifest: {
         name: 'AUS | Digital Services',
-        short_name: 'AUS Services',
+ short_name: 'AUS Services',
         description: 'Service Request and Ticket Management System',
         theme_color: '#0b5299',
         background_color: '#ffffff',

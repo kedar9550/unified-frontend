@@ -4,7 +4,7 @@ import { Search, ArrowForwardIos, ArrowBack } from '@mui/icons-material';
 import { ROLE_ROUTES } from '../../config/rolesNav';
 import { useNavigate } from 'react-router-dom';
 
-const Transition = React.forwardRef(function Transition(props, ref) {
+const Transition = React.forwardRef(function Transition({ TransitionComponent, PaperProps, TransitionProps, ...props }, ref) {
   return <Slide direction="up" ref={ref} {...props} />;
 });
 
@@ -29,17 +29,46 @@ const HeaderSearch = ({ activeRole, variant = "desktop", mobileOpen, onMobileClo
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
+  const focusInput = () => {
+    if (inputRef.current) {
+      inputRef.current.focus();
+    }
+  };
+
   // Auto focus when mobile dialog opens
   useEffect(() => {
-    if (variant === 'mobile' && mobileOpen && inputRef.current) {
-      // Focus immediately to ensure mobile keyboard opens
-      inputRef.current.focus();
-      
-      // Fallback in case Dialog transition steals focus
-      const timer = setTimeout(() => {
-        if (inputRef.current) inputRef.current.focus();
-      }, 50);
-      return () => clearTimeout(timer);
+    if (variant === 'mobile' && mobileOpen) {
+      focusInput();
+
+      const animationFrame = requestAnimationFrame(focusInput);
+      const timer1 = setTimeout(focusInput, 50);
+      const timer2 = setTimeout(focusInput, 150);
+      const timer3 = setTimeout(focusInput, 350);
+      const timer4 = setTimeout(focusInput, 400);
+
+      return () => {
+        cancelAnimationFrame(animationFrame);
+        clearTimeout(timer1);
+        clearTimeout(timer2);
+        clearTimeout(timer3);
+        clearTimeout(timer4);
+      };
+    }
+  }, [mobileOpen, variant]);
+
+  // Lock background page scroll when mobile search overlay is active
+  useEffect(() => {
+    if (variant === 'mobile' && mobileOpen) {
+      const originalBodyOverflow = document.body.style.overflow;
+      const originalHtmlOverflow = document.documentElement.style.overflow;
+
+      document.body.style.overflow = 'hidden';
+      document.documentElement.style.overflow = 'hidden';
+
+      return () => {
+        document.body.style.overflow = originalBodyOverflow;
+        document.documentElement.style.overflow = originalHtmlOverflow;
+      };
     }
   }, [mobileOpen, variant]);
 
@@ -108,37 +137,57 @@ const HeaderSearch = ({ activeRole, variant = "desktop", mobileOpen, onMobileClo
     return (
       <Dialog
         fullScreen
+        className="mobile-search-dialog"
         open={Boolean(mobileOpen)}
         onClose={() => {
           setQuery('');
           if (onMobileClose) onMobileClose();
         }}
-        TransitionComponent={Transition}
-        transitionDuration={{ enter: 350, exit: 250 }}
-        hideBackdrop
-        PaperProps={{ 
-          style: { 
-            backgroundColor: 'transparent',
-            backgroundImage: 'none',
-            boxShadow: 'none',
-          } 
+        slots={{
+          transition: Transition,
         }}
-        sx={{ zIndex: 1200 }}
-      >
-        <Box sx={{ 
-          display: 'flex', 
-          flexDirection: 'column', 
-          height: '100dvh',
-          backgroundColor: 'var(--bg-glass)', // Fallback
-          background: 'rgba(255, 255, 255, 0.2)',
-          backdropFilter: 'blur(25px) saturate(200%)',
-          WebkitBackdropFilter: 'blur(25px) saturate(200%)',
-          'body.dark-mode &': {
-            background: 'var(--bg-main)', // Use solid background for dark mode to prevent weird transparency issues
-            backdropFilter: 'none',
-            WebkitBackdropFilter: 'none',
+        slotProps={{
+          paper: {
+            style: { 
+              backgroundColor: 'transparent',
+              background: 'transparent',
+              backgroundImage: 'none',
+              boxShadow: 'none',
+            } 
+          },
+          transition: {
+            onEntering: focusInput,
+            onEntered: focusInput,
           }
-        }}>
+        }}
+        disableAutoFocus
+        hideBackdrop
+        sx={{ 
+          zIndex: 1400,
+          '& .MuiDialog-paper': {
+            backgroundColor: 'transparent !important',
+            background: 'transparent !important',
+            backgroundImage: 'none !important',
+            boxShadow: 'none !important',
+          },
+          '& .MuiPaper-root': {
+            backgroundColor: 'transparent !important',
+            background: 'transparent !important',
+            backgroundImage: 'none !important',
+            boxShadow: 'none !important',
+          }
+        }}
+      >
+        <Box 
+          className="mobile-search-overlay"
+          sx={{ 
+            display: 'flex', 
+            flexDirection: 'column', 
+            height: '100dvh',
+            overscrollBehavior: 'contain',
+            touchAction: 'manipulation',
+          }}
+        >
           
           {/* Search Results Area (Top) */}
           <Box 
@@ -146,13 +195,15 @@ const HeaderSearch = ({ activeRole, variant = "desktop", mobileOpen, onMobileClo
               if (query.trim().length === 0 && onMobileClose) onMobileClose();
             }}
             sx={{ 
-            flex: 1, 
-            overflowY: 'auto', 
-            p: 2, 
-            display: 'flex', 
-            flexDirection: 'column', 
-            justifyContent: 'flex-end' 
-          }}>
+              flex: 1, 
+              overflowY: 'auto', 
+              p: 2, 
+              display: 'flex', 
+              flexDirection: 'column', 
+              justifyContent: 'flex-end',
+              overscrollBehavior: 'contain',
+              WebkitOverflowScrolling: 'touch',
+            }}>
             {query.trim().length > 0 ? (
               results.length > 0 ? (
                 <List sx={{ p: 0 }}>
@@ -161,17 +212,24 @@ const HeaderSearch = ({ activeRole, variant = "desktop", mobileOpen, onMobileClo
                       key={idx}
                       onClick={() => handleNavigate(item.path)}
                       sx={{
-                        borderRadius: '16px',
-                        mb: 1,
-                        p: 1.5,
-                        border: '1px solid rgba(255, 255, 255, 0.1)',
-                        background: 'rgba(255, 255, 255, 0.05)',
-                        backdropFilter: 'blur(10px)',
-                        '&:hover': { background: 'rgba(255, 255, 255, 0.1)' }
+                        borderRadius: '20px',
+                        mb: 1.5,
+                        p: 2,
+                        border: '1px solid rgba(255, 255, 255, 0.4)',
+                        background: 'rgba(255, 255, 255, 0.4)',
+                        backdropFilter: 'blur(16px)',
+                        boxShadow: '0 8px 32px rgba(31, 38, 135, 0.07)',
+                        transition: 'all 0.2s ease-in-out',
+                        '&:active': { transform: 'scale(0.98)' },
+                        'body.dark-mode &': {
+                          background: 'rgba(30, 41, 59, 0.6) !important',
+                          border: '1px solid rgba(255, 255, 255, 0.12) !important',
+                          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3) !important',
+                        }
                       }}
                     >
                       {item.icon && (
-                        <ListItemIcon sx={{ minWidth: 40, color: 'var(--color-primary)' }}>
+                        <ListItemIcon sx={{ minWidth: 42, color: 'var(--color-primary)' }}>
                           {React.cloneElement(item.icon, { fontSize: 'small' })}
                         </ListItemIcon>
                       )}
@@ -179,8 +237,8 @@ const HeaderSearch = ({ activeRole, variant = "desktop", mobileOpen, onMobileClo
                         primary={item.text}
                         secondary={item.parentText}
                         slotProps={{
-                          primary: { sx: { fontWeight: 700, fontSize: '0.95rem', color: 'var(--text-primary)' } },
-                          secondary: { sx: { fontSize: '0.8rem', color: 'var(--text-secondary)', mt: 0.5 } }
+                          primary: { sx: { fontWeight: 700, fontSize: '1rem', color: 'var(--text-primary)' } },
+                          secondary: { sx: { fontSize: '0.825rem', color: 'var(--text-secondary)', mt: 0.5 } }
                         }}
                       />
                       <ArrowForwardIos sx={{ fontSize: 14, color: 'var(--text-secondary)' }} />
@@ -188,74 +246,70 @@ const HeaderSearch = ({ activeRole, variant = "desktop", mobileOpen, onMobileClo
                   ))}
                 </List>
               ) : (
-                <Box sx={{ p: 4, textAlign: 'center' }}>
+                <Box sx={{ 
+                  p: 4, 
+                  textAlign: 'center',
+                  background: 'rgba(255, 255, 255, 0.3)',
+                  backdropFilter: 'blur(16px)',
+                  borderRadius: '24px',
+                  border: '1px solid rgba(255, 255, 255, 0.3)',
+                  'body.dark-mode &': {
+                    background: 'rgba(30, 41, 59, 0.5) !important',
+                    borderColor: 'rgba(255, 255, 255, 0.1) !important',
+                  }
+                }}>
                   <Typography sx={{ color: 'var(--text-secondary)', fontSize: '0.95rem', fontWeight: 600 }}>
                     No results found for "{query}"
                   </Typography>
                 </Box>
               )
-            ) : (
-              <Box 
-                sx={{ p: 4, textAlign: 'center', opacity: 0.6, cursor: 'pointer' }}
-                onClick={() => {
-                  setQuery('');
-                  if (onMobileClose) onMobileClose();
-                }}
-              >
-                <Search sx={{ fontSize: 48, color: 'var(--text-secondary)', mb: 2 }} />
-                <Typography sx={{ color: 'var(--text-secondary)', fontSize: '0.95rem', fontWeight: 600 }}>
-                  Tap here to cancel
-                </Typography>
-              </Box>
-            )}
+            ) : null}
           </Box>
 
           {/* Search Input Area (Bottom) */}
-          <Box sx={{ 
+          <Box 
+            onClick={focusInput}
+            sx={{ 
             display: 'flex', 
             alignItems: 'center', 
             p: 1.5, 
             pb: 'calc(12px + env(safe-area-inset-bottom))',
-            borderTop: '1px solid rgba(255, 255, 255, 0.1)', 
             background: 'transparent',
-            'body.dark-mode &': {
-              borderTop: '1px solid var(--border-color)',
-              background: 'var(--bg-panel)',
-            },
             gap: 1
           }}>
-            <Box sx={{
+            <Box 
+              onClick={focusInput}
+              className="mobile-search-input-box"
+              sx={{
               flex: 1,
               display: 'flex',
               alignItems: 'center',
-              background: 'rgba(255, 255, 255, 0.1)',
               borderRadius: '20px',
               px: 2,
-              py: 1,
-              border: '1px solid rgba(255, 255, 255, 0.15)',
-              boxShadow: 'inset 0 2px 10px rgba(0,0,0,0.05)',
-              'body.dark-mode &': {
-                background: 'var(--bg-main)',
-                border: '1px solid var(--border-color)',
-              }
+              py: 0.75,
+              transition: 'all 0.3s ease',
             }}>
-              <Search sx={{ color: 'var(--text-secondary)', mr: 1, fontSize: 22 }} />
+              <Search sx={{ color: 'var(--text-secondary)', mr: 1, fontSize: 20 }} />
               <InputBase
                 inputRef={inputRef}
                 autoFocus={true}
                 type="search"
                 autoComplete="off"
-                placeholder="Search"
+                placeholder="Search..."
                 value={query}
                 onChange={handleChange}
+                inputProps={{
+                  enterKeyHint: 'search'
+                }}
                 style={{ backgroundColor: 'transparent' }}
                 sx={{
                   color: 'var(--text-primary)',
                   flex: 1,
-                  fontSize: '1rem',
+                  fontSize: '0.925rem',
+                  fontWeight: 500,
                   "& .MuiInputBase-input::placeholder": {
                     color: 'var(--text-secondary)',
-                    opacity: 1
+                    opacity: 0.8
                   }
                 }}
               />

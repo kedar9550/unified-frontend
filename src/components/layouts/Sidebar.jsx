@@ -147,7 +147,12 @@ const Sidebar = ({ mobileOpen, onDrawerToggle, isCollapsed, onToggleSidebar }) =
   const [activeSubmenuItem, setActiveSubmenuItem] = useState(null);
   const navigate = useNavigate();
   const location = useLocation();
-  const [weather, setWeather] = useState({ temp: "--", icon: null, desc: "Loading...", hourly: [] });
+  const [weather, setWeather] = useState({
+    temp: "--°C",
+    icon: "https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Travel%20and%20places/Sun.png",
+    desc: "Weather",
+    hourly: []
+  });
   const [weatherExpanded, setWeatherExpanded] = useState(false);
   const [coords, setCoords] = useState({ lat: 17.089845, lon: 82.067751 }); // Default: Aditya University Coords
 
@@ -212,7 +217,7 @@ const Sidebar = ({ mobileOpen, onDrawerToggle, isCollapsed, onToggleSidebar }) =
     const items = ROLE_ROUTES[effectiveRole] || ROLE_ROUTES.STUDENT;
 
     let initialOpenStates = { "VEDA EVENT ": true };
-    
+
     const checkActive = (itemList) => {
       let found = false;
       itemList.forEach(i => {
@@ -227,7 +232,7 @@ const Sidebar = ({ mobileOpen, onDrawerToggle, isCollapsed, onToggleSidebar }) =
       return found;
     };
     checkActive(items);
-    
+
     setOpenStates((prev) => ({ ...prev, ...initialOpenStates }));
   }, [location.pathname]);
 
@@ -235,20 +240,20 @@ const Sidebar = ({ mobileOpen, onDrawerToggle, isCollapsed, onToggleSidebar }) =
     let currentPath = "/dashboard";
     const effectiveRole = activeRole || (user?.roles && user.roles[0]?.role) || "STUDENT";
     const items = ROLE_ROUTES[effectiveRole] || ROLE_ROUTES.STUDENT;
-    
+
     const findActiveItem = (itemList) => {
       itemList.forEach(i => {
         if (i.path && location.pathname === i.path) {
           currentPath = i.path;
         } else if (i.path && location.pathname.startsWith(i.path) && currentPath === "/dashboard") {
-           currentPath = i.path;
+          currentPath = i.path;
         }
         if (i.nested) {
           findActiveItem(i.nested);
         }
       });
     };
-    
+
     findActiveItem(items);
     setActive(currentPath);
   }, [location.pathname, activeRole, user]);
@@ -348,7 +353,7 @@ const Sidebar = ({ mobileOpen, onDrawerToggle, isCollapsed, onToggleSidebar }) =
           const roleUpper = displayedRole.toUpperCase();
           const activeRoleObj = user?.roles?.find(r => r.role === displayedRole);
           const displayedRoleName = activeRoleObj?.name || capitalizeRole(displayedRole);
-          
+
           const roleIcon = {
             FACULTY: <School sx={{ fontSize: "1.2rem" }} />,
             STUDENT: <PersonIcon sx={{ fontSize: "1.2rem" }} />,
@@ -384,10 +389,10 @@ const Sidebar = ({ mobileOpen, onDrawerToggle, isCollapsed, onToggleSidebar }) =
               >
                 <Box sx={{ display: "flex", color: "var(--color-primary)" }}>{roleIcon}</Box>
                 {!isCollapsed && (
-                  <Typography sx={{ 
-                    fontSize: displayedRoleName.length > 20 ? "0.75rem" : "0.85rem", 
-                    fontWeight: 700, 
-                    letterSpacing: "0.5px", 
+                  <Typography sx={{
+                    fontSize: displayedRoleName.length > 20 ? "0.75rem" : "0.85rem",
+                    fontWeight: 700,
+                    letterSpacing: "0.5px",
                     textAlign: "left",
                     lineHeight: 1.2,
                     display: "-webkit-box",
@@ -559,7 +564,7 @@ const Sidebar = ({ mobileOpen, onDrawerToggle, isCollapsed, onToggleSidebar }) =
                                     width: 32, height: 32, borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center',
                                     background: 'var(--bg-accent-4)', color: 'var(--color-primary)'
                                   }}>
-                                    {React.cloneElement(subItem.icon || ITEM_METADATA[subItem.text]?.icon || <Dashboard/>, { sx: { fontSize: 18 } })}
+                                    {React.cloneElement(subItem.icon || ITEM_METADATA[subItem.text]?.icon || <Dashboard />, { sx: { fontSize: 18 } })}
                                   </Box>
                                 </ListItemIcon>
                                 {!isCollapsed && (
@@ -841,7 +846,7 @@ const Item = ({ icon, text, path, active, onClick, nested, isCollapsed }) => {
           </Box>
         </ListItemIcon>
       )}
-      
+
       <ListItemText
         sx={{ m: 0, width: "100%", overflow: "hidden" }}
         primary={

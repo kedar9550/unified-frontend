@@ -50,7 +50,7 @@ html,
 /* =========================================
    DARK MODE OVERRIDES
    ========================================= */
-html:has(body.dark-mode),
+html.dark-mode,
 body.dark-mode {
   color-scheme: dark;
   --bg-main: #020617;
@@ -361,7 +361,7 @@ body.dark-mode [data-sonner-toast][data-type="info"] {
 
 ::-webkit-scrollbar-thumb {
   background: var(--gradient-primary);
-  border-radius: 0px;
+  border-radius: 10px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
@@ -386,4 +386,51 @@ body.dark-mode [data-sonner-toast][data-type="info"] {
   /* Firefox */
   -ms-overflow-style: none;
   /* IE and Edge */
+}
+
+/* ================= Mobile Search Dialog Glassmorphism Overrides ================= */
+.mobile-search-dialog .MuiDialog-paper,
+.mobile-search-dialog .MuiPaper-root,
+body.dark-mode .mobile-search-dialog .MuiDialog-paper,
+body.dark-mode .mobile-search-dialog .MuiPaper-root {
+  background: transparent !important;
+  background-color: transparent !important;
+  background-image: none !important;
+  box-shadow: none !important;
+}
+
+.mobile-search-overlay,
+body.dark-mode .mobile-search-overlay {
+  background: rgba(15, 23, 42, 0.45) !important;
+  backdrop-filter: blur(20px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
+}
+
+body:not(.dark-mode) .mobile-search-overlay {
+  background: rgba(255, 255, 255, 0.25) !important;
+  backdrop-filter: blur(20px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
+}
+
+body.dark-mode .mobile-search-input-box {
+  background: rgba(30, 41, 59, 0.45) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  box-shadow: 0 4px 16px 0 rgba(0, 0, 0, 0.2) !important;
+}
+
+body:not(.dark-mode) .mobile-search-input-box {
+  background: rgba(255, 255, 255, 0.45) !important;
+  border: 1px solid rgba(255, 255, 255, 0.4) !important;
+  box-shadow: 0 4px 16px 0 rgba(31, 38, 135, 0.06) !important;
+}
+
+.mobile-search-input-box .MuiInputBase-root,
+.mobile-search-input-box .MuiInputBase-input,
+body.dark-mode .mobile-search-input-box .MuiInputBase-root,
+body.dark-mode .mobile-search-input-box .MuiInputBase-input {
+  background: transparent !important;
+  background-color: transparent !important;
+  box-shadow: none !important;
+  border: none !important;
+  outline: none !important;
 }

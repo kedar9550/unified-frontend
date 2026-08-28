@@ -318,7 +318,7 @@ const Header = ({ isSidebarCollapsed }) => {
           anchorEl={anchorEl}
           open={open}
           onClose={handleClose}
-          disableScrollLock={true}
+          disableScrollLock={false}
           anchorOrigin={{
             vertical: 'bottom',
             horizontal: 'right',
@@ -329,13 +329,23 @@ const Header = ({ isSidebarCollapsed }) => {
           }}
           //profile container to change the Overall Size
           slotProps={{
+            backdrop: {
+              sx: {
+                backgroundColor: 'rgba(15, 23, 42, 0.45)',
+                backdropFilter: 'blur(6px)',
+                WebkitBackdropFilter: 'blur(6px)',
+              }
+            },
             paper: {
               sx: {
                 mt: 1.5,
                 width: { xs: "calc(100vw - 24px)", md: hasManyRoles ? 800 : 280 }, // Dynamic width based on roles count
+                maxHeight: "calc(100vh - 90px)",
                 borderRadius: "20px", // Smoother corners
-                boxShadow: "0 15px 50px rgba(0, 0, 0, 0.15)",
-                border: "1px solid rgba(255, 255, 255, 0.8)",
+                overflowY: "auto",
+                overscrollBehavior: "contain",
+                boxShadow: "0 15px 50px rgba(0, 0, 0, 0.3)",
+                border: "1px solid var(--border-color)",
                 px: { xs: 0.5, md: hasManyRoles ? 2 : 0.5 }, // Dynamic padding
                 py: { xs: 0.5, md: hasManyRoles ? 2 : 0.5 },
               }
@@ -470,6 +480,9 @@ const Header = ({ isSidebarCollapsed }) => {
               mx: 1.5,
               mb: 1.5,
               p: { xs: 0.8, md: hasManyRoles ? 2 : 0.8 },
+              maxHeight: { xs: "280px", md: hasManyRoles ? "350px" : "280px" },
+              overflowY: "auto",
+              overscrollBehavior: "contain",
               borderRadius: "16px",
               border: "1px solid var(--border-color)",
               background: "var(--bg-paper)",

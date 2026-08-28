@@ -96,7 +96,12 @@ const MobileNavbar = () => {
     const navigate = useNavigate();
     const location = useLocation();
     const [expandedItem, setExpandedItem] = useState(null);
-    const [weather, setWeather] = useState({ temp: "--", icon: null, desc: "Loading...", hourly: [] });
+    const [weather, setWeather] = useState({
+        temp: "--°C",
+        icon: "https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Travel%20and%20places/Sun.png",
+        desc: "Weather",
+        hourly: []
+    });
     const [weatherExpanded, setWeatherExpanded] = useState(false);
     const [searchExpanded, setSearchExpanded] = useState(false);
     const [coords, setCoords] = useState({ lat: 17.089845, lon: 82.067751 }); // Default: Aditya University Coords
@@ -298,7 +303,7 @@ const MobileNavbar = () => {
                 position: 'fixed',
                 bottom: weatherExpanded ? 180 : 80, // Push up if weather is expanded, reduced gap from navbar
                 left: '50%',
-                zIndex: 9999, // Ensure it's on top of everything
+                zIndex: 1100, // Below MUI Menu/Modal backdrop so background is locked
                 display: { xs: 'flex', md: 'none' },
                 flexDirection: 'column',
                 alignItems: 'center',
@@ -316,7 +321,10 @@ const MobileNavbar = () => {
 
                 <Box
                     component="button"
-                    onClick={() => setSearchExpanded(true)}
+                    onClick={(e) => {
+                        if (e?.currentTarget) e.currentTarget.blur();
+                        setSearchExpanded(true);
+                    }}
                     style={{
                         display: searchExpanded ? 'none' : 'flex',
                         alignItems: 'center',

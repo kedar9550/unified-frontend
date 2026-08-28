@@ -12,12 +12,14 @@ export default function ThemeToggle({ onToggle }) {
   });
 
   useEffect(() => {
-    // Apply theme class to body and save to localStorage
+    // Apply theme class to body and documentElement, save to localStorage
     if (isDark) {
       document.body.classList.add("dark-mode");
+      document.documentElement.classList.add("dark-mode");
       localStorage.setItem("theme", "dark");
     } else {
       document.body.classList.remove("dark-mode");
+      document.documentElement.classList.remove("dark-mode");
       localStorage.setItem("theme", "light");
     }
     window.dispatchEvent(new CustomEvent("themeChanged", { detail: { isDark } }));

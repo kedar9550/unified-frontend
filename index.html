@@ -9,10 +9,25 @@
   <meta name="description"
     content="Sign in to access your portal. Welcome to Digital Services Access all your academic resources in one place." />
   <link href="https://fonts.cdnfonts.com/css/product-sans" rel="stylesheet">
-  <link rel="preload" href="/src/assets/Aditya University Gold Logo.png" as="image">
+  <script>
+    (function () {
+      try {
+        var savedTheme = localStorage.getItem("theme");
+        var prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+        if (savedTheme === "dark" || (!savedTheme && prefersDark)) {
+          document.documentElement.classList.add("dark-mode");
+        }
+      } catch (e) { }
+    })();
+  </script>
 </head>
 
 <body>
+  <script>
+    if (document.documentElement.classList.contains("dark-mode")) {
+      document.body.classList.add("dark-mode");
+    }
+  </script>
   <div id="root"></div>
   <script type="module" src="/src/main.jsx"></script>
 </body>
