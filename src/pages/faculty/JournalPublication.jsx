@@ -7,7 +7,7 @@ import {
   Box, TextField, MenuItem, Select, Typography, Button, Table, TableBody,
   TableCell, TableContainer, TableHead, TableRow, Paper,
   Dialog, DialogTitle, DialogContent, DialogActions, IconButton, Stack, Grid, Card, Chip, Divider, FormControl,
-  TablePagination, Tooltip
+  TablePagination, Tooltip, Radio, RadioGroup, FormControlLabel
 } from "@mui/material";
 import { toast } from "sonner";
 import { Search, Close, Download, Description, Groups, Article, Person, AttachFile, Visibility } from "@mui/icons-material";
@@ -290,6 +290,7 @@ export default function JournalPublication() {
     applyingSeedGrant: "",
     completeJournalName: "",
     sdgs: "",
+    isStudentsInvolved: "No",
     // Author details
     totalAuthors: 1,
     userAuthorPosition: 1,
@@ -326,6 +327,8 @@ export default function JournalPublication() {
         const existing = form.otherAuthors.find(a => a.authorPosition === i);
         newOtherAuthors.push(existing || {
           authorPosition: i,
+          CoAuthorType: "faculty",
+          studentId: "",
           affiliationType: "",
           empId: "",
           authorName: "",
@@ -368,6 +371,19 @@ export default function JournalPublication() {
         setDoiFetched(false);
         setDoiFetchedFields({});
         setScannedSdgResults(null);
+      }
+      if (k === "isStudentsInvolved") {
+        if (val === "No") {
+          newForm.otherAuthors = newForm.otherAuthors.map(a => ({
+            ...a,
+            CoAuthorType: "faculty",
+            studentId: "",
+            authorName: a.CoAuthorType === "student" ? "" : a.authorName,
+            empId: a.CoAuthorType === "student" ? "" : a.empId
+          }));
+        } else if (val === "Yes") {
+          newForm.applyIncentive = "No";
+        }
       }
       return newForm;
     });
@@ -597,6 +613,17 @@ export default function JournalPublication() {
     const updated = form.otherAuthors.map(a => {
       if (a.authorPosition !== pos) return a;
       const newA = { ...a, [field]: value };
+
+      if (field === "CoAuthorType") {
+        if (value === "student") {
+          newA.empId = "";
+          newA.authorName = "";
+        } else {
+          newA.studentId = "";
+          newA.authorName = "";
+        }
+      }
+
       if (field === "affiliationType") {
         if (value === "Aditya University") {
           newA.affiliationName = "Aditya University";
@@ -663,7 +690,8 @@ export default function JournalPublication() {
         if (
           !a.affiliationType ||
           (a.affiliationType === "Others" && (!a.authorName || !a.affiliationName)) ||
-          (a.affiliationType === "Aditya University" && (!a.empId || !a.authorName))
+          (a.affiliationType === "Aditya University" && a.CoAuthorType === "faculty" && (!a.empId || !a.authorName)) ||
+          (a.affiliationType === "Aditya University" && a.CoAuthorType === "student" && (!a.studentId || !a.authorName))
         ) {
           toast.error(`Please complete details for Author Position ${a.authorPosition}.`);
           return;
@@ -684,14 +712,16 @@ export default function JournalPublication() {
       const coAuthorsList = form.otherAuthors.map(a => ({
         name: a.authorName || "",
         affiliation: a.affiliationType === "Aditya University" ? "Aditya University" : (a.affiliationName || ""),
-        employeeId: a.affiliationType === "Aditya University" ? a.empId : null,
+        employeeId: (a.affiliationType === "Aditya University" && a.CoAuthorType !== "student") ? a.empId : null,
+        studentId: (a.affiliationType === "Aditya University" && a.CoAuthorType === "student") ? a.studentId : null,
+        CoAuthorType: form.isStudentsInvolved === "Yes" ? (a.CoAuthorType || "faculty") : "faculty",
         authorPosition: a.authorPosition
       })).filter(ca => ca.name && ca.affiliation);
 
       const fields = [
         "doi", "paperTitle", "journalName", "journalType",
         "vol", "issue", "agecReferencingNumbers", "applyIncentive", "publicationScope",
-        "totalAuthors", "userAuthorPosition", "hIndex", "jcrImpactFactor",
+        "totalAuthors", "userAuthorPosition", "hIndex", "jcrImpactFactor", "isStudentsInvolved"
       ];
       fields.forEach(k => {
         fd.append(k, form[k] ?? "");
@@ -875,15 +905,15 @@ export default function JournalPublication() {
         priorYearStr = `${parseInt(parts[0], 10) - 1}-${parseInt(parts[1], 10) - 1}`;
       }
     }
-    
+
     // Only show Active and Prior year
     let filteredYears = academicYears.filter(y => y._id === activeYearDoc?._id || y.year === priorYearStr);
-    
+
     // Ensure active is first
     filteredYears.sort((a, b) => {
-        if (a._id === activeYearDoc?._id) return -1;
-        if (b._id === activeYearDoc?._id) return 1;
-        return 0;
+      if (a._id === activeYearDoc?._id) return -1;
+      if (b._id === activeYearDoc?._id) return 1;
+      return 0;
     });
 
     return (
@@ -1053,6 +1083,13 @@ export default function JournalPublication() {
       <Box sx={{ mt: 3, p: 2, borderRadius: "12px", border: "1px solid var(--border-color)", background: "var(--bg-panel)" }}>
         <Typography sx={{ fontWeight: 700, color: "var(--text-primary)", mb: 2 }}>Author Details</Typography>
         <Grid2>
+          <Box sx={{ gridColumn: { sm: "1 / -1" }, mb: 1, display: "flex", alignItems: "center", gap: 2, flexWrap: "wrap" }}>
+            <Typography sx={{ ...labelStyle, mb: 0 }}>Are students involved in this work as co-authors? *</Typography>
+            <RadioGroup row value={form.isStudentsInvolved || "No"} onChange={set("isStudentsInvolved")}>
+              <FormControlLabel value="Yes" control={<Radio size="small" sx={{ color: "var(--color-primary)", "&.Mui-checked": { color: "var(--color-primary)" } }} />} label={<Typography variant="body2" sx={{ fontWeight: 600 }}>Yes</Typography>} />
+              <FormControlLabel value="No" control={<Radio size="small" sx={{ color: "var(--color-primary)", "&.Mui-checked": { color: "var(--color-primary)" } }} />} label={<Typography variant="body2" sx={{ fontWeight: 600 }}>No</Typography>} />
+            </RadioGroup>
+          </Box>
           <Box>
             <Typography sx={labelStyle}>Total Number of Authors :</Typography>
             <TextField size="small" fullWidth type="number" value={form.totalAuthors} onChange={set("totalAuthors")} slotProps={{ htmlInput: { min: 1 } }} />
@@ -1083,6 +1120,23 @@ export default function JournalPublication() {
                     {ca.authorPosition}
                   </Box>
 
+                  {/* Co-Author Type (if students are involved) */}
+                  {form.isStudentsInvolved === "Yes" && (
+                    <Box sx={{ flex: 1, minWidth: "130px" }}>
+                      <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>CO-AUTHOR TYPE</Typography>
+                      <Select
+                        size="small"
+                        fullWidth
+                        displayEmpty
+                        value={ca.CoAuthorType || "faculty"}
+                        onChange={(e) => handleCoAuthorChange(ca.authorPosition, "CoAuthorType", e.target.value)}
+                      >
+                        <MenuItem value="faculty">Faculty</MenuItem>
+                        <MenuItem value="student">Student</MenuItem>
+                      </Select>
+                    </Box>
+                  )}
+
                   {/* Affiliation Type */}
                   <Box sx={{ flex: 1, minWidth: "150px" }}>
                     <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>AFFILIATION TYPE</Typography>
@@ -1099,34 +1153,59 @@ export default function JournalPublication() {
                     </Select>
                   </Box>
 
-                  {/* Aditya University → EmpID + fetched name */}
+                  {/* Aditya University → EmpID + fetched name OR Student Details */}
                   {ca.affiliationType === "Aditya University" ? (
-                    <>
-                      <Box sx={{ flex: 1, minWidth: "120px" }}>
-                        <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>EMPLOYEE ID</Typography>
-                        <TextField
-                          size="small"
-                          fullWidth
-                          value={ca.empId}
-                          onChange={(e) => {
-                            const val = e.target.value;
-                            if (/^\d*$/.test(val)) handleCoAuthorChange(ca.authorPosition, "empId", val);
-                          }}
-                          placeholder="e.g. 5741"
-                        />
-                      </Box>
-                      <Box sx={{ flex: 2, minWidth: "200px" }}>
-                        <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>CO-AUTHOR NAME</Typography>
-                        <TextField
-                          size="small"
-                          fullWidth
-                          value={ca.authorName}
-                          disabled
-                          placeholder="Fetched from eCap"
-                          sx={{ background: "rgba(0,0,0,0.02)" }}
-                        />
-                      </Box>
-                    </>
+                    ca.CoAuthorType === "student" ? (
+                      <>
+                        <Box sx={{ flex: 1, minWidth: "120px" }}>
+                          <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>STUDENT ROLL NO</Typography>
+                          <TextField
+                            size="small"
+                            fullWidth
+                            value={ca.studentId || ""}
+                            onChange={(e) => handleCoAuthorChange(ca.authorPosition, "studentId", e.target.value)}
+                            placeholder="e.g. 21A91A0501"
+                          />
+                        </Box>
+                        <Box sx={{ flex: 2, minWidth: "200px" }}>
+                          <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>STUDENT NAME</Typography>
+                          <TextField
+                            size="small"
+                            fullWidth
+                            value={ca.authorName}
+                            onChange={(e) => handleCoAuthorChange(ca.authorPosition, "authorName", e.target.value)}
+                            placeholder="Full Name"
+                          />
+                        </Box>
+                      </>
+                    ) : (
+                      <>
+                        <Box sx={{ flex: 1, minWidth: "120px" }}>
+                          <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>EMPLOYEE ID</Typography>
+                          <TextField
+                            size="small"
+                            fullWidth
+                            value={ca.empId}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              if (/^\d*$/.test(val)) handleCoAuthorChange(ca.authorPosition, "empId", val);
+                            }}
+                            placeholder="e.g. 5741"
+                          />
+                        </Box>
+                        <Box sx={{ flex: 2, minWidth: "200px" }}>
+                          <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>CO-AUTHOR NAME</Typography>
+                          <TextField
+                            size="small"
+                            fullWidth
+                            value={ca.authorName}
+                            disabled
+                            placeholder="Fetched from eCap"
+                            sx={{ background: "rgba(0,0,0,0.02)" }}
+                          />
+                        </Box>
+                      </>
+                    )
                   ) : (
                     <>
                       <Box sx={{ flex: 1, minWidth: "180px" }}>
@@ -1202,7 +1281,7 @@ export default function JournalPublication() {
         </Box>
         <Box>
           <Typography sx={labelStyle}>Whether you want to apply for incentive? *</Typography>
-          <Select size="small" fullWidth displayEmpty value={form.applyIncentive} onChange={set("applyIncentive")}>
+          <Select size="small" fullWidth displayEmpty value={form.applyIncentive} onChange={set("applyIncentive")} disabled={form.isStudentsInvolved === "Yes"} sx={form.isStudentsInvolved === "Yes" ? disabledField : {}}>
             <MenuItem value="">Select</MenuItem>
             <MenuItem value="Yes">Yes</MenuItem>
             <MenuItem value="No">No</MenuItem>
@@ -1256,7 +1335,7 @@ export default function JournalPublication() {
       });
       if (res.data.success) {
         setSelectedPubDetails(prev => ({ ...prev, appraisalClaimant: claimantId }));
-        API.get("/api/research/journal").then(r => setPublicationsList(r.data?.data || r.data || [])).catch(()=>{});
+        API.get("/api/research/journal").then(r => setPublicationsList(r.data?.data || r.data || [])).catch(() => { });
         toast.success("Appraisal claimant successfully updated!");
       }
     } catch (err) {
@@ -1461,23 +1540,23 @@ export default function JournalPublication() {
                     );
 
                     if (!data.appraisalClaimant && isApplicant && appraisalConfigActive && uniqueClaimants.length > 1) {
-                        return (
-                            <Select
-                                size="small"
-                                fullWidth
-                                value=""
-                                displayEmpty
-                                onChange={(e) => handleResolveClaim(data._id, "Journal", e.target.value)}
-                                sx={{ mt: 0.5, backgroundColor: "var(--bg-paper)", fontSize: "0.875rem" }}
-                            >
-                                <MenuItem value="" disabled>Select Claimant</MenuItem>
-                                {uniqueClaimants.map(c => (
-                                    <MenuItem key={c.institutionId || c._id} value={c.institutionId || c._id}>
-                                        {c.name} ({c.institutionId})
-                                    </MenuItem>
-                                ))}
-                            </Select>
-                        );
+                      return (
+                        <Select
+                          size="small"
+                          fullWidth
+                          value=""
+                          displayEmpty
+                          onChange={(e) => handleResolveClaim(data._id, "Journal", e.target.value)}
+                          sx={{ mt: 0.5, backgroundColor: "var(--bg-paper)", fontSize: "0.875rem" }}
+                        >
+                          <MenuItem value="" disabled>Select Claimant</MenuItem>
+                          {uniqueClaimants.map(c => (
+                            <MenuItem key={c.institutionId || c._id} value={c.institutionId || c._id}>
+                              {c.name} ({c.institutionId})
+                            </MenuItem>
+                          ))}
+                        </Select>
+                      );
                     }
 
                     return (
@@ -1604,10 +1683,10 @@ export default function JournalPublication() {
 
   return (
     <Box>
-      <PageHeader 
-        title="Journal Publications" 
-        subtitle="Manage and submit your journal publications" 
-        onBack={viewMode !== "list" ? () => setViewMode("list") : undefined} 
+      <PageHeader
+        title="Journal Publications"
+        subtitle="Manage and submit your journal publications"
+        onBack={viewMode !== "list" ? () => setViewMode("list") : undefined}
       />
       {viewMode === "list" && renderList()}
       {viewMode === "select-year" && renderSelectYear()}
