@@ -262,7 +262,7 @@ const StudentCoordinatorManager = () => {
   const [members, setMembers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [openModal, setOpenModal] = useState(false);
-  const [formData, setFormData] = useState({ rollNo: '', status: 'Active' });
+  const [formData, setFormData] = useState({ rollNo: '', status: 'Active', orderNumber: 0 });
   const [editingId, setEditingId] = useState(null);
 
   const fetchMembers = useCallback(async () => {
@@ -284,10 +284,10 @@ const StudentCoordinatorManager = () => {
   const handleOpen = (member = null) => {
     if (member) {
       setEditingId(member._id);
-      setFormData({ rollNo: member.rollNo || '', status: member.status });
+      setFormData({ rollNo: member.rollNo || '', status: member.status, orderNumber: member.orderNumber || 0 });
     } else {
       setEditingId(null);
-      setFormData({ rollNo: '', status: 'Active' });
+      setFormData({ rollNo: '', status: 'Active', orderNumber: 0 });
     }
     setOpenModal(true);
   };
@@ -367,6 +367,7 @@ const StudentCoordinatorManager = () => {
                       <Typography variant="body1" fontWeight={600}>{member.studentName || 'Name not found'}</Typography>
                       <Typography variant="body2" color="textSecondary">Roll No: {member.rollNo || 'N/A'}</Typography>
                       {member.mobileNumber && <Typography variant="caption" color="textSecondary" display="block">Ph: {member.mobileNumber}</Typography>}
+                      <Typography variant="caption" color="primary" sx={{ display: 'block', fontWeight: 'bold' }}>Order No: {member.orderNumber || 0}</Typography>
                     </TableCell>
                     <TableCell>
                       <Chip label={member.status} color={member.status === 'Active' ? 'success' : 'default'} size="small" />
@@ -394,6 +395,14 @@ const StudentCoordinatorManager = () => {
               onChange={(e) => setFormData({ ...formData, rollNo: e.target.value })}
               required
               sx={{ mb: 3, mt: 1 }}
+            />
+            <TextField
+              fullWidth
+              label="Order Number"
+              type="number"
+              value={formData.orderNumber}
+              onChange={(e) => setFormData({ ...formData, orderNumber: e.target.value })}
+              sx={{ mb: 3 }}
             />
             <TextField
               select

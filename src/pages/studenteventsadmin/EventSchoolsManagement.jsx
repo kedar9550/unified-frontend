@@ -62,6 +62,7 @@ const EventSchoolManagement = () => {
   const [shortName, setShortName] = useState('');
   const [content, setContent] = useState('');
   const [status, setStatus] = useState('Active');
+  const [orderNo, setOrderNo] = useState('');
   const [selectedCoordinator, setSelectedCoordinator] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [employeeOptions, setEmployeeOptions] = useState([]);
@@ -238,6 +239,7 @@ const EventSchoolManagement = () => {
     setShortName('');
     setContent('');
     setStatus('Active');
+    setOrderNo('');
     setSelectedCoordinator(null);
     setSearchQuery('');
     setEmployeeOptions([]);
@@ -259,6 +261,7 @@ const EventSchoolManagement = () => {
     setShortName(eventSchool.shortName || '');
     setContent(eventSchool.content || '');
     setStatus(eventSchool.status || 'Active');
+    setOrderNo(eventSchool.orderNo || '');
     setSelectedCoordinator(
       eventSchool.coordinator
         ? {
@@ -310,6 +313,7 @@ const EventSchoolManagement = () => {
     formData.append('shortName', shortName);
     formData.append('content', content);
     formData.append('status', status);
+    formData.append('orderNo', orderNo);
     formData.append('coordinator', JSON.stringify(selectedCoordinator || {}));
 
     if (bannerFile) {
@@ -438,7 +442,17 @@ const EventSchoolManagement = () => {
         eventSchool.coordinator?.employeeCode ||
         '';
       const coordName = eventSchool.coordinator?.employeeName || '—';
-      return code ? `${coordName} (${code})` : coordName;
+      const orderNumber = eventSchool.orderNo || 0;
+      return (
+        <Box>
+          <Typography variant="body2" sx={{ fontWeight: 600 }}>
+            {code ? `${coordName} (${code})` : coordName}
+          </Typography>
+          <Typography variant="caption" color="primary" sx={{ display: 'block', fontWeight: 'bold' }}>
+            Order No: {orderNumber}
+          </Typography>
+        </Box>
+      );
     })(),
     {
       value: eventSchool.status,
@@ -996,7 +1010,7 @@ const EventSchoolManagement = () => {
             <Box
               sx={{
                 display: 'grid',
-                gridTemplateColumns: { xs: '1fr', md: '2.5fr 1fr' },
+                gridTemplateColumns: { xs: '1fr', md: '2fr 1fr 1fr' },
                 gap: 3,
                 width: '100%',
               }}
@@ -1148,6 +1162,28 @@ const EventSchoolManagement = () => {
                     </MenuItem>
                   </Select>
                 </FormControl>
+              </Box>
+
+              <Box sx={{ width: '100%' }}>
+                <Typography
+                  variant="subtitle2"
+                  fontWeight="600"
+                  mb={1}
+                  sx={{ color: 'var(--text-primary)' }}
+                >
+                  Order Number
+                </Typography>
+                <TextField
+                  fullWidth
+                  type="number"
+                  placeholder="e.g. 1"
+                  value={orderNo}
+                  onChange={(e) => setOrderNo(e.target.value)}
+                  slotProps={{
+                    input: { sx: { borderRadius: '12px' } },
+                  }}
+                  variant="outlined"
+                />
               </Box>
             </Box>
 
