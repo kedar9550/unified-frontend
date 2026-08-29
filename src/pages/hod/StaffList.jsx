@@ -17,6 +17,9 @@ import { People as PeopleIcon, Add as AddIcon } from '@mui/icons-material';
 import API from '../../api/axios';
 import DataTable from '../../components/data/DataTable';
 import Loader from '../../components/common/Loader';
+import PageHeader from '../../components/common/PageHeader';
+import { PageContainer } from '../../components/common/design-system';
+import ActionButton from '../../components/common/ActionButton';
 import { toast } from 'sonner';
 
 const StaffList = () => {
@@ -203,79 +206,30 @@ const EmployeeAvatar = ({ item }) => {
   });
 
   return (
-    <Box sx={{ p: { xs: 1, sm: 2, md: 3 } }}>
-      <Card
-        sx={{
-          p: 4,
-          borderRadius: '24px',
-          background: 'var(--bg-panel)',
-          border: '1px solid var(--border-color)',
-          boxShadow: 'var(--shadow-lg)',
-          position: 'relative',
-          overflow: 'hidden',
-          '&::after': {
-            content: '""',
-            position: 'absolute',
-            top: 0,
-            right: 0,
-            width: '180px',
-            height: '180px',
-            background: 'radial-gradient(circle at top right, var(--color-primary-alpha), transparent 70%)',
-            zIndex: 0,
-            pointerEvents: 'none',
-          },
-        }}
-      >
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 4, zIndex: 1, position: 'relative', flexWrap: 'wrap', gap: 2 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-            <Box
-              sx={{
-                p: 1.5,
-                borderRadius: '12px',
-                background: 'var(--bg-accent-1)',
-                color: 'var(--color-primary)',
-                display: 'flex',
-              }}
-            >
-              <PeopleIcon sx={{ fontSize: 28 }} />
-            </Box>
-            <Box>
-              <Typography variant="h5" sx={{ fontWeight: 800, color: 'var(--text-primary)' }}>
-                Department Staff Directory
-              </Typography>
-              <Typography variant="body2" sx={{ color: 'var(--text-secondary)', opacity: 0.8 }}>
-                View and search all active staff members registered in your department.
-              </Typography>
-            </Box>
-          </Box>
-          
-          {canAddStaff && (
-            <Button
-              variant="contained"
+    <PageContainer>
+      <PageHeader
+        title="Department Staff Directory"
+        subtitle="View and search all active staff members registered in your department."
+        icon={<PeopleIcon />}
+        action={
+          canAddStaff && (
+            <ActionButton
               startIcon={<AddIcon />}
               onClick={() => setOpenAddDialog(true)}
-              sx={{
-                textTransform: 'none',
-                fontWeight: 700,
-                borderRadius: '12px',
-                px: 3,
-                py: 1,
-                bgcolor: 'var(--color-primary)',
-                color: '#fff',
-                '&:hover': {
-                  bgcolor: 'var(--color-primary-dark, #1d4ed8)',
-                }
-              }}
             >
               Add Staff
-            </Button>
-          )}
-        </Box>
+            </ActionButton>
+          )
+        }
+      />
 
-        {loading ? null : (
-          <DataTable columns={columns} rows={rows} defaultRowsPerPage={10} />
-        )}
-      </Card>
+      {loading ? (
+        <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+          <Loader />
+        </Box>
+      ) : (
+        <DataTable columns={columns} rows={rows} defaultRowsPerPage={10} />
+      )}
 
       <Dialog
         open={openAddDialog}
@@ -360,26 +314,15 @@ const EmployeeAvatar = ({ item }) => {
           >
             Cancel
           </Button>
-          <Button
-            variant="contained"
+          <ActionButton
             onClick={handleAddStaffSubmit}
             disabled={!selectedEmployee || submitting}
-            sx={{
-              textTransform: 'none',
-              fontWeight: 700,
-              borderRadius: '10px',
-              bgcolor: 'var(--color-primary)',
-              color: '#fff',
-              '&:hover': {
-                bgcolor: 'var(--color-primary-dark, #1d4ed8)',
-              }
-            }}
           >
             {submitting ? "Adding..." : "Add Staff"}
-          </Button>
+          </ActionButton>
         </DialogActions>
       </Dialog>
-    </Box>
+    </PageContainer>
   );
 };
 

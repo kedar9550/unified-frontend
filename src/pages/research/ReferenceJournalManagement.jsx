@@ -50,6 +50,7 @@ import API from "../../api/axios";
 import { toast } from "sonner";
 import Loader from "../../components/common/Loader";
 import PageHeader from "../../components/common/PageHeader";
+import { PageContainer } from "../../components/common/design-system";
 
 const ReferenceJournalManagement = () => {
   const [journals, setJournals] = useState([]);
@@ -535,7 +536,7 @@ const ReferenceJournalManagement = () => {
   };
 
   return (
-    <Box sx={{ width: "100%", p: { xs: 1.5, sm: 2, md: 3 } }}>
+    <PageContainer>
       <PageHeader
         title="Reference Journals"
         subtitle="Manage the database of approved reference journals and their impact factors."
@@ -1922,7 +1923,7 @@ const ReferenceJournalManagement = () => {
           </Box>
         </DialogContent>
       </Dialog>
-    </Box>
+    </PageContainer>
   );
 };
 

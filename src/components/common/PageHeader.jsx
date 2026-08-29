@@ -6,6 +6,8 @@ export default function PageHeader({
   title,
   subtitle,
   action,
+  icon,
+  iconBg = "var(--gradient-primary)",
   showBack = false,
   onBack,
   backPath,
@@ -80,13 +82,12 @@ export default function PageHeader({
       </Box>
 
       {/* LEFT */}
-      <Box sx={{ display: "flex", alignItems: "flex-start", gap: 2, position: "relative", zIndex: 1, pr: { xs: 2, md: 0 }, textAlign: "left" }}>
+      <Box sx={{ display: "flex", alignItems: "center", gap: 2, position: "relative", zIndex: 1, pr: { xs: 2, md: 0 }, textAlign: "left" }}>
         {shouldShowBack && (
           <IconButton
             onClick={handleBack}
             sx={{
               p: 1,
-              mt: 0.5,
               bgcolor: "var(--bg-glass)",
               border: "1px solid var(--border-color)",
               color: "var(--text-primary)",
@@ -107,6 +108,39 @@ export default function PageHeader({
             <ArrowBackIcon sx={{ fontSize: 20 }} />
           </IconButton>
         )}
+
+        {icon && (
+          <Box
+            sx={{
+              width: 48,
+              height: 48,
+              borderRadius: "14px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              background: iconBg,
+              color: "#ffffff",
+              flexShrink: 0,
+              boxShadow: "0 6px 16px rgba(190, 147, 55, 0.25)",
+              position: "relative",
+              overflow: "hidden",
+              "&::after": {
+                content: '""',
+                position: "absolute",
+                inset: 0,
+                background: "linear-gradient(180deg, rgba(255,255,255,0.25), transparent)",
+                borderRadius: "14px",
+              },
+              "& svg": {
+                fontSize: 24,
+                color: "#ffffff",
+              },
+            }}
+          >
+            {icon}
+          </Box>
+        )}
+
         <Box>
           {/* Title */}
           <Typography variant="h4" fontWeight={800} sx={{ color: "var(--text-primary)", fontSize: { xs: "1.5rem", sm: "2rem" }, letterSpacing: "-0.5px" }}>

@@ -10,6 +10,7 @@ import {
   Chip
 } from '@mui/material';
 import PageHeader from '../../components/common/PageHeader';
+import { PageContainer } from '../../components/common/design-system';
 import API from '../../api/axios';
 import { toast } from 'sonner';
 
@@ -113,7 +114,7 @@ const GroupCoordinators = () => {
   }, [groups]);
 
   return (
-    <Box sx={{ p: { xs: 2, md: 3, lg: 4 } }}>
+    <PageContainer>
       <PageHeader
         title="School Coordinators"
         subtitle="List of all staff members coordinating VEDA event schools"
@@ -187,7 +188,7 @@ const GroupCoordinators = () => {
           ))}
         </Grid>
       )}
-    </Box>
+    </PageContainer>
   );
 };
 

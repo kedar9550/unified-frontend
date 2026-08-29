@@ -19,8 +19,10 @@ import {
   Divider,
   Close,
 } from '@mui/material';
-import { Visibility as ViewIcon, Check as ApproveIcon, Close as RejectIcon } from '@mui/icons-material';
+import { Visibility as ViewIcon, Check as ApproveIcon, Close as RejectIcon, Science as ScienceIcon } from '@mui/icons-material';
 import DataTable from '../../components/data/DataTable';
+import PageHeader from '../../components/common/PageHeader';
+import { PageContainer } from '../../components/common/design-system';
 const LabelValueDetails = ({ label, value, chip, horizontal = false }) => (
   <Box sx={{
     p: horizontal ? "10px 16px" : 1.5,
@@ -263,22 +265,23 @@ const ResearchApprovals = () => {
   // Render component
   // ---------------------------------------------------------------------
   return (
-    <Box sx={{ p: { xs: 1, sm: 2, md: 3 } }}>
-      <Card sx={{ p: 3, borderRadius: '20px', background: 'var(--bg-panel)', border: '1px solid var(--border-color)' }}>
-        <Typography variant="h5" sx={{ fontWeight: 800, color: 'var(--text-primary)', mb: 2 }}>
-          Pending Research Approvals
-        </Typography>
-        {loading ? (
-          <Box sx={{ display: 'flex', justifyContent: 'center', py: 5 }}>
-            <Loader />
-          </Box>
-        ) : (
-          <DataTable columns={columns} rows={rows} />
-        )}
-      </Card>
+    <PageContainer>
+      <PageHeader
+        title="Pending Research Approvals"
+        subtitle="Review and approve faculty research publications and project proposals."
+        icon={<ScienceIcon />}
+      />
+
+      {loading ? (
+        <Box sx={{ display: 'flex', justifyContent: 'center', py: 5 }}>
+          <Loader />
+        </Box>
+      ) : (
+        <DataTable columns={columns} rows={rows} />
+      )}
 
       {selected && <DetailDialog />}
-    </Box>
+    </PageContainer>
   );
 };
 

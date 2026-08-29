@@ -24,6 +24,7 @@ import {
   TableBody,
   TableRow,
   TableCell,
+  Paper,
 } from "@mui/material";
 import { toast } from "sonner";
 import { useEffect, useState, useRef } from "react";
@@ -298,13 +299,13 @@ export default function FacultyFormatResults() {
       />
 
       {/* Filter Options */}
-      <Box sx={{
-        p: 2.5,
+      <Paper elevation={0} sx={{
+        p: { xs: 1.5, md: 2.5 },
         mb: 3,
-        background: "var(--bg-panel)",
-        borderRadius: "16px",
-        border: "1px solid var(--border-color)",
-        boxShadow: "var(--shadow-premium)",
+        background: { xs: "transparent", md: "var(--bg-paper)" },
+        border: { xs: "none", md: "1px solid var(--border-color)" },
+        boxShadow: { xs: "none", md: "var(--shadow-premium)" },
+        borderRadius: { xs: "8px", md: "16px" },
         display: "flex",
         flexDirection: "column",
         gap: 2
@@ -314,7 +315,7 @@ export default function FacultyFormatResults() {
           p: 1.5,
           px: 2,
           borderRadius: "10px",
-          background: "var(--bg-paper)",
+          background: "var(--bg-glass)",
           border: "1px solid var(--border-color)",
           display: "flex",
           alignItems: "center",
@@ -468,7 +469,7 @@ export default function FacultyFormatResults() {
             </Menu>
           </Box>
         </Box>
-      </Box>
+      </Paper>
 
 
       {/* 🔹 RESULTS TABLE */}
@@ -583,7 +584,13 @@ export default function FacultyFormatResults() {
               {
                 value: r.courseType,
                 display: (
-                  <Box sx={{ fontWeight: 600, color: "#0b5299" }}>
+                  <Box sx={{
+                    fontWeight: 800,
+                    background: "var(--gradient-primary)",
+                    WebkitBackgroundClip: "text",
+                    WebkitTextFillColor: "transparent",
+                    display: "inline-block"
+                  }}>
                     {r.courseType}
                   </Box>
                 ),
@@ -819,7 +826,12 @@ const filterBox = {
   border: "1px solid var(--border-color)",
   fontSize: 14,
   height: 44,
-  width: { xs: "100%", sm: "auto" }
+  width: { xs: "100%", sm: "auto" },
+  '& .MuiInputBase-root, & .MuiSelect-select': {
+    background: 'transparent !important',
+    backgroundColor: 'transparent !important',
+  },
+  '& .MuiSelect-icon': { color: 'var(--text-primary)', opacity: 0.4 }
 };
 
 

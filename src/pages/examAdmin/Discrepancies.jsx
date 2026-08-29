@@ -513,13 +513,14 @@ export default function Discrepancies() {
         }}
       >
         {Object.entries(STATUS_CONFIG).map(([key, cfg]) => (
-          <Box
+          <Paper
+            elevation={0}
             key={key}
             sx={{
               px: { xs: 2.5, md: 3.5 },
               py: { xs: 2, md: 2.5 },
               borderRadius: "20px",
-              background: "var(--bg-panel)",
+              background: "var(--bg-paper)",
               border: `1.5px solid var(--border-color)`,
               display: "flex",
               alignItems: "center",
@@ -575,18 +576,20 @@ export default function Discrepancies() {
                 {cfg.label}
               </Typography>
             </Box>
-          </Box>
+          </Paper>
         ))}
       </Box>
 
       {/* ── TABLE ─────────────────────────────────────────── */}
-      <Box
+      <Paper
+        elevation={0}
         sx={{
-          p: 3, borderRadius: "24px",
-          background: "var(--bg-panel)",
-          backdropFilter: "blur(20px)",
-          boxShadow: "var(--shadow-premium)",
-          border: "1px solid var(--border-color)",
+          p: { xs: 0, md: 3 },
+          borderRadius: { xs: "8px", md: "24px" },
+          background: { xs: "transparent", md: "var(--bg-paper)" },
+          backdropFilter: { xs: "none", md: "blur(20px)" },
+          boxShadow: { xs: "none", md: "var(--shadow-premium)" },
+          border: { xs: "none", md: "1px solid var(--border-color)" },
           minHeight: 400,
         }}
       >
@@ -820,18 +823,40 @@ export default function Discrepancies() {
               sx={{
                 borderTop: "1px solid var(--border-color)",
                 color: "var(--text-primary)",
-                ".MuiTablePagination-select": { color: "var(--text-primary)" },
+                overflowX: "auto",
+                maxWidth: "100%",
+                width: "100%",
+                "& .MuiTablePagination-toolbar": {
+                  paddingLeft: { xs: 1, sm: 2 },
+                  paddingRight: { xs: 1, sm: 2 },
+                  flexWrap: { xs: "wrap", sm: "nowrap" },
+                  justifyContent: { xs: "space-between", sm: "flex-end" },
+                  gap: { xs: 0.5, sm: 1 },
+                },
+                ".MuiTablePagination-select": {
+                  color: "var(--text-primary)",
+                  fontSize: { xs: "0.725rem", sm: "0.875rem" },
+                  paddingRight: { xs: "20px !important", sm: "24px !important" },
+                },
                 ".MuiTablePagination-selectIcon": { color: "var(--text-secondary)" },
                 ".MuiTablePagination-selectLabel, .MuiTablePagination-displayedRows": {
                   fontWeight: 600,
+                  fontSize: { xs: "0.725rem", sm: "0.875rem" },
                   color: "var(--text-secondary)",
+                  margin: 0,
                 },
+                ".MuiTablePagination-actions": {
+                  marginLeft: { xs: "auto", sm: 2 },
+                },
+                ".MuiTablePagination-actions button": {
+                  padding: { xs: "4px", sm: "8px" },
+                }
               }}
             />
           </Paper>
           </>
         )}
-      </Box>
+      </Paper>
 
       {/* ═══════════════════════════════════════════════════════════════
           RESOLVE DIALOG — shows editable faculty result data

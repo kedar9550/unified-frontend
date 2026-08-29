@@ -33,6 +33,8 @@ import {
 import { useNavigate } from 'react-router-dom';
 import PageHeader from '../../components/common/PageHeader';
 import DataTable from '../../components/data/DataTable';
+import { PageContainer, EmptyState } from '../../components/common/design-system';
+import ActionButton from '../../components/common/ActionButton';
 import API from '../../api/axios';
 import { toast } from 'sonner';
 import { useAuth } from '../../context/AuthContext';
@@ -215,7 +217,7 @@ const Payments = () => {
   };
 
   return (
-    <Box sx={{ p: { xs: 2, md: 3, lg: 4 } }}>
+    <PageContainer>
       <PageHeader
         title="VEDA Event Payments"
         subtitle="View Razorpay payment registrations and invoices for student events"
@@ -229,14 +231,12 @@ const Payments = () => {
             >
               Participants
             </Button>
-            <Button
-              variant="contained"
+            <ActionButton
               onClick={fetchPayments}
               startIcon={<RefreshIcon />}
-              sx={{ borderRadius: '12px', textTransform: 'none', px: 2.5, py: 1 }}
             >
               Refresh
-            </Button>
+            </ActionButton>
           </Box>
         }
       />
@@ -248,14 +248,10 @@ const Payments = () => {
       ) : (
         <Box sx={{ mt: 2 }}>
           {payments.length === 0 ? (
-            <Box sx={{ p: 4, borderRadius: '20px', border: '1px solid var(--border-color)', background: 'var(--bg-panel)', textAlign: 'center' }}>
-              <Typography variant="h6" sx={{ mb: 1 }}>
-                No payment registrations found
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Payment data will appear here once registrations are created or verified.
-              </Typography>
-            </Box>
+            <EmptyState
+              title="No payment registrations found"
+              description="Payment data will appear here once registrations are created or verified."
+            />
           ) : (
             <DataTable
               columns={columns}
@@ -551,7 +547,7 @@ const Payments = () => {
           </Button>
         </DialogActions>
       </Dialog>
-    </Box>
+    </PageContainer>
   );
 };
 

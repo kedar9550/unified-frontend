@@ -146,6 +146,8 @@ const RoleManagement = () => {
     const [hasTypedSearch, setHasTypedSearch] = useState(false);
     const [assignedRoleIds, setAssignedRoleIds] = useState([]);
     const [savingRoles, setSavingRoles] = useState(false);
+    const [isEditingHodDepts, setIsEditingHodDepts] = useState(false);
+    const [isEditingDeanSchools, setIsEditingDeanSchools] = useState(false);
 
     // Delete Confirmation State
     const [deleteConfirm, setDeleteConfirm] = useState({ open: false, userId: null, roleId: null, roleName: "", userName: "" });
@@ -767,22 +769,24 @@ const RoleManagement = () => {
     const selectUser = (user) => {
         setSelectedUser(user);
         const userRoles = user.roles || [];
-        const initialRoleIds = userRoles.map(r => r._id) || [];
+        const initialRoleIds = userRoles.map(r => (r._id ? r._id.toString() : r.toString())) || [];
 
         setAssignedRoleIds(initialRoleIds);
+        setIsEditingHodDepts(false);
+        setIsEditingDeanSchools(false);
 
         // Populate HOD departments if they exist
-        const hod = userRoles.find(r => r.name === "HOD");
-        if (hod && hod.departments) {
-            setSelectedHodDepts(allDepartments.filter(d => hod.departments.includes(d._id)));
+        const hod = userRoles.find(r => r.name === "HOD" || r.key === "HOD");
+        if (hod && hod.departments && hod.departments.length > 0) {
+            setSelectedHodDepts(allDepartments.filter(d => hod.departments.some(hd => hd.toString() === d._id.toString())));
         } else {
             setSelectedHodDepts([]);
         }
         
         // Populate SCHOOL_DEAN schools if they exist
-        const dean = userRoles.find(r => r.key === "SCHOOL_DEAN");
-        if (dean && dean.schools) {
-            setSelectedDeanSchools(allSchools.filter(s => dean.schools.includes(s._id)));
+        const dean = userRoles.find(r => r.key === "SCHOOL_DEAN" || r.name === "SCHOOL_DEAN");
+        if (dean && dean.schools && dean.schools.length > 0) {
+            setSelectedDeanSchools(allSchools.filter(s => dean.schools.some(ds => ds.toString() === s._id.toString())));
         } else {
             setSelectedDeanSchools([]);
         }
@@ -806,7 +810,7 @@ const RoleManagement = () => {
     const handleRoleToggle = (roleId) => {
         if (!selectedUser) return;
         const id = roleId.toString();
-        const role = roles.find(r => r._id === id);
+        const role = roles.find(r => r._id.toString() === id);
 
         // If this role is an identity default role, do not allow toggling it from UI
         if (role && role.defaultRole) {
@@ -814,15 +818,34 @@ const RoleManagement = () => {
         }
 
         setAssignedRoleIds(prev => {
-            const isCurrentlySelected = prev.includes(id);
+            const isCurrentlySelected = prev.some(i => i.toString() === id);
             if (isCurrentlySelected && role?.defaultRole) {
-                const otherSelectedDefaultRoles = roles.filter(r => r.defaultRole && r._id !== id && prev.includes(r._id));
+                const otherSelectedDefaultRoles = roles.filter(r => r.defaultRole && r._id.toString() !== id && prev.some(p => p.toString() === r._id.toString()));
                 if (otherSelectedDefaultRoles.length === 0) {
                     toast.info("Users must have at least one default role based on their identity");
                     return prev;
                 }
             }
-            return isCurrentlySelected ? prev.filter(i => i !== id) : [...prev, id];
+
+            if (isCurrentlySelected) {
+                if (role?.name === 'HOD' || role?.key === 'HOD') {
+                    setSelectedHodDepts([]);
+                    setIsEditingHodDepts(false);
+                }
+                if (role?.key === 'SCHOOL_DEAN' || role?.name === 'SCHOOL_DEAN') {
+                    setSelectedDeanSchools([]);
+                    setIsEditingDeanSchools(false);
+                }
+                return prev.filter(i => i.toString() !== id);
+            } else {
+                if (role?.name === 'HOD' || role?.key === 'HOD') {
+                    setIsEditingHodDepts(true);
+                }
+                if (role?.key === 'SCHOOL_DEAN' || role?.name === 'SCHOOL_DEAN') {
+                    setIsEditingDeanSchools(true);
+                }
+                return [...prev, id];
+            }
         });
     };
 
@@ -1906,38 +1929,84 @@ const RoleManagement = () => {
                                 <Grid container spacing={2} sx={{ pb: 1 }}>
                                     {filteredAssignmentRoles.length > 0 ? filteredAssignmentRoles.map((role) => {
                                         const isIdentityDefault = role.defaultRole;
-                                        const isChecked = assignedRoleIds.includes(role._id.toString());
-                                        const expands = isChecked && (role.name === 'HOD' || role.key === 'SCHOOL_DEAN');
+                                        const isChecked = assignedRoleIds.some(id => id.toString() === role._id.toString());
+                                        const expands = isChecked && ((role.name === 'HOD' && isEditingHodDepts) || (role.key === 'SCHOOL_DEAN' && isEditingDeanSchools));
                                         return (
                                             <Grid size={{ xs: 12, sm: expands ? 12 : 6, md: expands ? 12 : 4 }} key={role._id}>
                                                 <Box onClick={() => handleRoleToggle(role._id)} sx={{ p: 1.5, height: '100%', borderRadius: '12px', background: 'var(--bg-glass)', position: 'relative', border: '1px solid transparent', ...(isChecked && { '&::before': { content: '""', position: 'absolute', inset: 0, borderRadius: 'inherit', padding: '1.5px', background: 'var(--gradient-primary)', WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)', WebkitMaskComposite: 'xor', maskComposite: 'exclude', pointerEvents: 'none', zIndex: 0 } }), cursor: selectedUser ? (isIdentityDefault ? 'not-allowed' : 'pointer') : 'default', opacity: selectedUser ? (isIdentityDefault ? 0.75 : 1) : 0.6, display: 'flex', flexDirection: 'column', transition: '0.2s', '&:hover': selectedUser && !isIdentityDefault ? { background: 'var(--bg-panel)' } : {} }}>
-                                                    <Box sx={{ display: 'flex', alignItems: 'center', width: '100%' }}>
-                                                        <Checkbox checked={isChecked} disabled={!selectedUser || isIdentityDefault} sx={{ p: 0, mr: 1.5, '&.Mui-checked': { color: 'var(--color-primary)' }, '&.MuiCheckbox-root': { color: isChecked ? 'var(--color-primary)' : 'var(--text-secondary)' } }} />
-                                                        <Box sx={{ flex: 1, minWidth: 0 }}>
+                                                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+                                                        <Box sx={{ display: 'flex', alignItems: 'center', minWidth: 0, flex: 1 }}>
+                                                            <Checkbox checked={isChecked} disabled={!selectedUser || isIdentityDefault} sx={{ p: 0, mr: 1.5, '&.Mui-checked': { color: 'var(--color-primary)' }, '&.MuiCheckbox-root': { color: isChecked ? 'var(--color-primary)' : 'var(--text-secondary)' } }} />
                                                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, flexWrap: 'wrap' }}>
-                                                                <Typography variant="body2" fontWeight={700} sx={{ color: isChecked ? 'var(--color-primary)' : 'var(--text-primary)', wordBreak: 'break-word' }}>{role.name}</Typography>
+                                                                <Typography variant="body2" fontWeight={700} sx={{ color: isChecked ? 'var(--color-primary)' : 'var(--text-primary)', whiteSpace: 'nowrap' }}>{role.name}</Typography>
                                                                 {role.defaultRole && <Chip label="Identity Role" size="small" color="success" sx={{ height: 16, fontSize: '0.6rem', fontWeight: 800 }} />}
                                                                 {isIdentityDefault && <Tooltip title="Recommended Default Identity Role"><Star sx={{ fontSize: 16, color: 'var(--color-primary)' }} /></Tooltip>}
                                                             </Box>
                                                         </Box>
+                                                        {role.name === 'HOD' && isChecked && (
+                                                            <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5, ml: 1, flexShrink: 0 }}>
+                                                                {selectedHodDepts.slice(0, 2).map(dept => (
+                                                                    <Chip key={dept._id} label={dept.name} size="small" sx={{ height: 20, fontSize: '0.65rem', fontWeight: 800, background: "var(--gradient-primary)", color: '#fff' }} />
+                                                                ))}
+                                                                {selectedHodDepts.length > 2 && (
+                                                                    <Chip label={`+${selectedHodDepts.length - 2}`} size="small" sx={{ height: 20, fontSize: '0.65rem', fontWeight: 800, background: "rgba(255,255,255,0.15)", color: 'var(--text-primary)' }} />
+                                                                )}
+                                                                <Tooltip title={isEditingHodDepts ? "Close Department Selector" : "Edit Assigned Departments"}>
+                                                                    <IconButton
+                                                                        size="small"
+                                                                        onClick={(e) => {
+                                                                            e.stopPropagation();
+                                                                            setIsEditingHodDepts(prev => !prev);
+                                                                        }}
+                                                                        sx={{ p: 0.5, color: isEditingHodDepts ? 'var(--color-primary)' : 'var(--text-secondary)', opacity: 0.8, '&:hover': { opacity: 1 } }}
+                                                                    >
+                                                                        <Edit sx={{ fontSize: 13 }} />
+                                                                    </IconButton>
+                                                                </Tooltip>
+                                                            </Box>
+                                                        )}
+                                                        {role.key === 'SCHOOL_DEAN' && isChecked && (
+                                                            <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5, ml: 1, flexShrink: 0 }}>
+                                                                {selectedDeanSchools.slice(0, 2).map(school => (
+                                                                    <Chip key={school._id} label={school.name} size="small" sx={{ height: 20, fontSize: '0.65rem', fontWeight: 800, background: "var(--gradient-primary)", color: '#fff' }} />
+                                                                ))}
+                                                                {selectedDeanSchools.length > 2 && (
+                                                                    <Chip label={`+${selectedDeanSchools.length - 2}`} size="small" sx={{ height: 20, fontSize: '0.65rem', fontWeight: 800, background: "rgba(255,255,255,0.15)", color: 'var(--text-primary)' }} />
+                                                                )}
+                                                                <Tooltip title={isEditingDeanSchools ? "Close School Selector" : "Edit Assigned Schools"}>
+                                                                    <IconButton
+                                                                        size="small"
+                                                                        onClick={(e) => {
+                                                                            e.stopPropagation();
+                                                                            setIsEditingDeanSchools(prev => !prev);
+                                                                        }}
+                                                                        sx={{ p: 0.5, color: isEditingDeanSchools ? 'var(--color-primary)' : 'var(--text-secondary)', opacity: 0.8, '&:hover': { opacity: 1 } }}
+                                                                    >
+                                                                        <Edit sx={{ fontSize: 13 }} />
+                                                                    </IconButton>
+                                                                </Tooltip>
+                                                            </Box>
+                                                        )}
                                                     </Box>
 
                                                     {role.name === 'HOD' && (
-                                                        <Collapse in={!!selectedUser && isChecked}>
+                                                        <Collapse in={!!selectedUser && isChecked && isEditingHodDepts}>
                                                             <Box onClick={(e) => e.stopPropagation()} sx={{ mt: 2, pt: 2, borderTop: '1px dashed var(--border-color)', cursor: 'default' }}>
-                                                                <Typography variant="subtitle2" fontWeight={800} color="var(--text-primary)" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                                                    <Security sx={{ fontSize: 18 }} /> HOD Serving Department Assignment
+                                                                <Typography variant="subtitle2" fontWeight={800} color="var(--text-primary)" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1, fontSize: '0.75rem' }}>
+                                                                    <Security sx={{ fontSize: 16 }} /> Serving Department Assignment
                                                                 </Typography>
-                                                                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
-                                                                    {selectedHodDepts.map(dept => (
-                                                                        <Chip key={dept._id} label={dept.name} size="small" onDelete={() => setSelectedHodDepts(prev => prev.filter(d => d._id !== dept._id))} sx={{ background: "var(--gradient-primary)", color: '#fff', fontWeight: 700, borderRadius: '50px' }} />
-                                                                    ))}
-                                                                </Box>
-                                                                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, p: 1, border: '1px dashed var(--text-secondary)', borderRadius: '10px' }}>
+                                                                {selectedHodDepts.length > 0 && (
+                                                                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.8, mb: 1.5 }}>
+                                                                        {selectedHodDepts.map(dept => (
+                                                                            <Chip key={dept._id} label={dept.name} size="small" onDelete={() => setSelectedHodDepts(prev => prev.filter(d => d._id !== dept._id))} sx={{ background: "var(--gradient-primary)", color: '#fff', fontWeight: 700, fontSize: '0.7rem', height: 24, borderRadius: '50px' }} />
+                                                                        ))}
+                                                                    </Box>
+                                                                )}
+                                                                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.8, p: 1.5, border: '1px dashed var(--text-secondary)', borderRadius: '10px' }}>
                                                                     {allDepartments.map(dept => {
                                                                         const isSelected = selectedHodDepts.some(d => d._id === dept._id);
                                                                         return (
-                                                                            <Chip key={dept._id} label={dept.name} onClick={() => { if (isSelected) setSelectedHodDepts(prev => prev.filter(d => d._id !== dept._id)); else setSelectedHodDepts(prev => [...prev, dept]); }} variant={isSelected ? "filled" : "outlined"} size="small" sx={{ cursor: 'pointer', borderRadius: '50px', fontWeight: 700, border: isSelected ? 'none' : '1.5px solid var(--color-primary)', background: isSelected ? "var(--gradient-primary)" : 'transparent', color: isSelected ? '#fff' : 'var(--color-primary)' }} />
+                                                                            <Chip key={dept._id} label={dept.name} onClick={() => { if (isSelected) setSelectedHodDepts(prev => prev.filter(d => d._id !== dept._id)); else setSelectedHodDepts(prev => [...prev, dept]); }} variant={isSelected ? "filled" : "outlined"} size="small" sx={{ cursor: 'pointer', borderRadius: '50px', fontWeight: 700, fontSize: '0.7rem', height: 24, border: isSelected ? 'none' : '1.5px solid var(--color-primary)', background: isSelected ? "var(--gradient-primary)" : 'transparent', color: isSelected ? '#fff' : 'var(--color-primary)' }} />
                                                                         );
                                                                     })}
                                                                 </Box>
@@ -1946,21 +2015,23 @@ const RoleManagement = () => {
                                                     )}
 
                                                     {role.key === 'SCHOOL_DEAN' && (
-                                                        <Collapse in={!!selectedUser && isChecked}>
+                                                        <Collapse in={!!selectedUser && isChecked && isEditingDeanSchools}>
                                                             <Box onClick={(e) => e.stopPropagation()} sx={{ mt: 2, pt: 2, borderTop: '1px dashed var(--border-color)', cursor: 'default' }}>
-                                                                <Typography variant="subtitle2" fontWeight={800} color="var(--text-primary)" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                                                    <School sx={{ fontSize: 18 }} /> SCHOOL_DEAN School Assignment
+                                                                <Typography variant="subtitle2" fontWeight={800} color="var(--text-primary)" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1, fontSize: '0.75rem' }}>
+                                                                    <School sx={{ fontSize: 16 }} /> School Assignment
                                                                 </Typography>
-                                                                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
-                                                                    {selectedDeanSchools.map(school => (
-                                                                        <Chip key={school._id} label={school.name} size="small" onDelete={() => setSelectedDeanSchools(prev => prev.filter(s => s._id !== school._id))} sx={{ background: "var(--gradient-primary)", color: '#fff', fontWeight: 700, borderRadius: '50px' }} />
-                                                                    ))}
-                                                                </Box>
-                                                                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, p: 1, border: '1px dashed var(--text-secondary)', borderRadius: '10px' }}>
+                                                                {selectedDeanSchools.length > 0 && (
+                                                                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.8, mb: 1.5 }}>
+                                                                        {selectedDeanSchools.map(school => (
+                                                                            <Chip key={school._id} label={school.name} size="small" onDelete={() => setSelectedDeanSchools(prev => prev.filter(s => s._id !== school._id))} sx={{ background: "var(--gradient-primary)", color: '#fff', fontWeight: 700, fontSize: '0.7rem', height: 24, borderRadius: '50px' }} />
+                                                                        ))}
+                                                                    </Box>
+                                                                )}
+                                                                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.8, p: 1.5, border: '1px dashed var(--text-secondary)', borderRadius: '10px' }}>
                                                                     {allSchools.map(school => {
                                                                         const isSelected = selectedDeanSchools.some(s => s._id === school._id);
                                                                         return (
-                                                                            <Chip key={school._id} label={school.name} onClick={() => { if (isSelected) setSelectedDeanSchools(prev => prev.filter(s => s._id !== school._id)); else setSelectedDeanSchools(prev => [...prev, school]); }} variant={isSelected ? "filled" : "outlined"} size="small" sx={{ cursor: 'pointer', borderRadius: '50px', fontWeight: 700, border: isSelected ? 'none' : '1.5px solid var(--color-primary)', background: isSelected ? "var(--gradient-primary)" : 'transparent', color: isSelected ? '#fff' : 'var(--color-primary)' }} />
+                                                                            <Chip key={school._id} label={school.name} onClick={() => { if (isSelected) setSelectedDeanSchools(prev => prev.filter(s => s._id !== school._id)); else setSelectedDeanSchools(prev => [...prev, school]); }} variant={isSelected ? "filled" : "outlined"} size="small" sx={{ cursor: 'pointer', borderRadius: '50px', fontWeight: 700, fontSize: '0.7rem', height: 24, border: isSelected ? 'none' : '1.5px solid var(--color-primary)', background: isSelected ? "var(--gradient-primary)" : 'transparent', color: isSelected ? '#fff' : 'var(--color-primary)' }} />
                                                                         );
                                                                     })}
                                                                 </Box>

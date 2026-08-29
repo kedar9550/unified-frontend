@@ -21,6 +21,8 @@ import {
 import PageHeader from "../../components/common/PageHeader";
 import SectionHeader from "../../components/common/SectionHeader";
 import DataTable from "../../components/data/DataTable";
+import { PageContainer } from "../../components/common/design-system";
+import ActionButton from "../../components/common/ActionButton";
 import API from "../../api/axios";
 import { toast } from "sonner";
 
@@ -358,150 +360,116 @@ export default function ResearchReports() {
         ]);
         return (
             <DataTable columns={columns} rows={rows} toolbarLeft={
-                <Button
- variant="contained"
- startIcon={<DownloadIcon />}
- onClick={() => downloadCSV("chapters")}
- sx={{
- 
- textTransform: "none",
- background: "var(--gradient-primary)",
- boxShadow: "0 4px 12px rgba(190, 147, 55, 0.2)",
- "&:hover": {
- background: "var(--gradient-primary)",
- opacity: 0.9,
- boxShadow: "0 6px 16px rgba(190, 147, 55, 0.3)"
- }
- }}
- >
+                <ActionButton
+                    startIcon={<DownloadIcon />}
+                    onClick={() => downloadCSV("chapters")}
+                >
                     Export to Excel
-                </Button>
+                </ActionButton>
             } />
         );
     };
 
     return (
-        <Box sx={{ width: "100%", p: { xs: 1.5, sm: 2, md: 3 } }}>
-            <Stack spacing={3}>
-                <PageHeader
-                    title="Research & Incentive Reports"
-                    subtitle="Generate and export comprehensive research publication and incentive reports"
-                />
+        <PageContainer>
+            <PageHeader
+                title="Research & Incentive Reports"
+                subtitle="Generate and export comprehensive research publication and incentive reports"
+            />
 
-                <Paper sx={{ borderRadius: "16px", border: "1px solid var(--border-color)", background: "var(--bg-panel)", overflow: "hidden" }}>
-                    {/* Toolbar Section */}
-                    <Box sx={{ p: 2.5, borderBottom: "1px solid var(--border-color)", background: "rgba(0,0,0,0.02)" }}>
-                        <Stack direction={{ xs: "column", sm: "row" }} spacing={3} sx={{ width: "100%", alignItems: "center" }}>
-                            <Tabs
-                                value={activeTab}
-                                onChange={handleTabChange}
-                                variant="scrollable"
-                                scrollButtons="auto"
-                                allowScrollButtonsMobile
-                                sx={{
-                                    width: "100%",
-                                    maxWidth: "100%",
+            <Paper elevation={0} sx={{ borderRadius: "16px", border: "1px solid var(--border-color)", background: "var(--bg-paper)", overflow: "hidden" }}>
+                {/* Toolbar Section */}
+                <Box sx={{ p: 2.5, borderBottom: "1px solid var(--border-color)", background: "var(--bg-glass)" }}>
+                    <Stack direction={{ xs: "column", sm: "row" }} spacing={3} sx={{ width: "100%", alignItems: "center" }}>
+                        <Tabs
+                            value={activeTab}
+                            onChange={handleTabChange}
+                            variant="scrollable"
+                            scrollButtons="auto"
+                            allowScrollButtonsMobile
+                            sx={{
+                                width: "100%",
+                                maxWidth: "100%",
+                                minHeight: 48,
+                                "& .MuiTabs-scrollButtons.Mui-disabled": {
+                                    width: 0,
+                                    opacity: 0,
+                                    overflow: "hidden"
+                                },
+                                "& .MuiTabs-indicator": {
+                                    height: 3,
+                                    borderRadius: "3px",
+                                    background: "var(--gradient-primary) !important"
+                                },
+                                "& .MuiTab-root": {
+                                    textTransform: "none",
+                                    fontWeight: 700,
+                                    fontSize: "0.95rem",
                                     minHeight: 48,
-                                    "& .MuiTabs-scrollButtons.Mui-disabled": {
-                                        width: 0,
-                                        opacity: 0,
-                                        overflow: "hidden"
+                                    py: 1.5,
+                                    color: "var(--text-secondary)",
+                                    transition: "all 0.2s ease",
+                                    "&.Mui-selected": {
+                                        color: "var(--color-primary) !important",
                                     },
-                                    "& .MuiTabs-indicator": {
-                                        height: 3,
-                                        borderRadius: "3px",
-                                        background: "var(--gradient-primary) !important"
-                                    },
-                                    "& .MuiTab-root": {
-                                        textTransform: "none",
-                                        fontWeight: 700,
-                                        fontSize: "0.95rem",
-                                        minHeight: 48,
-                                        py: 1.5,
-                                        color: "var(--text-secondary)",
-                                        transition: "all 0.2s ease",
-                                        "&.Mui-selected": {
-                                            color: "var(--color-primary) !important",
-                                        },
-                                        "&.Mui-selected svg": {
-                                            color: "var(--color-primary) !important"
-                                        }
+                                    "&.Mui-selected svg": {
+                                        color: "var(--color-primary) !important"
                                     }
-                                }}
+                                }
+                            }}
+                        >
+                            <Tab icon={<JournalIcon sx={{ fontSize: 20 }} />} iconPosition="start" label="Journals" />
+                            <Tab icon={<BookIcon sx={{ fontSize: 20 }} />} iconPosition="start" label="Text Books" />
+                            <Tab icon={<BookIcon sx={{ fontSize: 20 }} />} iconPosition="start" label="Book Chapters" />
+                            <Tab icon={<AnalyticsIcon sx={{ fontSize: 20 }} />} iconPosition="start" label="Consolidated Report" />
+                        </Tabs>
+
+                        <Box sx={{ flexGrow: 1 }} />
+
+                        <FormControl size="small" sx={{ minWidth: 220 }}>
+                            <InputLabel id="academic-year-label">Academic Year</InputLabel>
+                            <Select
+                                labelId="academic-year-label"
+                                value={selectedYear}
+                                label="Academic Year" 
+                                onChange={(e) => setSelectedYear(e.target.value)}
+                                sx={{ borderRadius: "12px", background: "var(--bg-glass)" }}
                             >
-                                <Tab icon={<JournalIcon sx={{ fontSize: 20 }} />} iconPosition="start" label="Journals" />
-                                <Tab icon={<BookIcon sx={{ fontSize: 20 }} />} iconPosition="start" label="Text Books" />
-                                <Tab icon={<BookIcon sx={{ fontSize: 20 }} />} iconPosition="start" label="Book Chapters" />
-                                <Tab icon={<AnalyticsIcon sx={{ fontSize: 20 }} />} iconPosition="start" label="Consolidated Report" />
-                            </Tabs>
+                                <MenuItem value="All">All Years</MenuItem>
+                                {academicYears.map(y => (
+                                    <MenuItem key={y._id} value={y._id}>{y.year}</MenuItem>
+                                ))}
+                            </Select>
+                        </FormControl>
+                    </Stack>
+                </Box>
 
-                            <Box sx={{ flexGrow: 1 }} />
-
-                            <FormControl size="small" sx={{ minWidth: 220 }}>
-                                <InputLabel id="academic-year-label">Academic Year</InputLabel>
-                                <Select
-                                    labelId="academic-year-label"
-                                    value={selectedYear}
-                                    label="Academic Year" 
-                                    onChange={(e) => setSelectedYear(e.target.value)}
-                                    sx={{ borderRadius: "12px", background: "var(--bg-glass)" }}
+                {/* Content Section */}
+                <Box sx={{ p: 2.5 }}>
+                    <Box>
+                        {activeTab === 0 && renderJournals()}
+                        {activeTab === 1 && renderTextbooks()}
+                        {activeTab === 2 && renderChapters()}
+                        {activeTab === 3 && (
+                            <Box sx={{ textAlign: "center", py: 5 }}>
+                                <AnalyticsIcon sx={{ fontSize: 60, color: "var(--color-primary-alpha)", mb: 2 }} />
+                                <Typography variant="h6" sx={{ color: "var(--text-primary)", mb: 1 }}>Download Consolidated Report</Typography>
+                                <Typography variant="body2" sx={{ color: "var(--text-secondary)", mb: 3 }}>
+                                    This will generate a single file containing all research categories.
+                                </Typography>
+                                <ActionButton
+                                    size="large"
+                                    startIcon={<DownloadIcon />}
+                                    onClick={() => downloadCSV("consolidated")}
+                                    sx={{ px: 4, py: 1.5 }}
                                 >
-                                    <MenuItem value="All">All Years</MenuItem>
-                                    {academicYears.map(y => (
-                                        <MenuItem key={y._id} value={y._id}>{y.year}</MenuItem>
-                                    ))}
-                                </Select>
-                            </FormControl>
-                        </Stack>
+                                    Download Consolidated Report (.csv)
+                                </ActionButton>
+                            </Box>
+                        )}
                     </Box>
-
-                    {/* Content Section */}
-                    <Box sx={{ p: 2.5 }}>
-
-                        {/* {loading ? (
-                        <Box sx={{ display: "flex", justifyContent: "center", py: 10 }}>
-                            <Loader sx={{ color: "var(--color-primary)" }} />
-                        </Box>
-                    ) : ( */}
-                        <Box>
-                            {activeTab === 0 && renderJournals()}
-                            {activeTab === 1 && renderTextbooks()}
-                            {activeTab === 2 && renderChapters()}
-                            {activeTab === 3 && (
-                                <Box sx={{ textAlign: "center", py: 5 }}>
-                                    <AnalyticsIcon sx={{ fontSize: 60, color: "var(--color-primary-alpha)", mb: 2 }} />
-                                    <Typography variant="h6" sx={{ color: "var(--text-primary)", mb: 1 }}>Download Consolidated Report</Typography>
-                                    <Typography variant="body2" sx={{ color: "var(--text-secondary)", mb: 3 }}>
-                                        This will generate a single file containing all research categories.
-                                    </Typography>
-                                    <Button
- variant="contained"
- size="large"
- startIcon={<DownloadIcon />}
- onClick={() => downloadCSV("consolidated")}
- sx={{
- 
- textTransform: "none",
- px: 4,
- py: 1.5,
- background: "var(--gradient-primary)",
- boxShadow: "0 4px 12px rgba(190, 147, 55, 0.2)",
- "&:hover": {
- background: "var(--gradient-primary)",
- opacity: 0.9,
- boxShadow: "0 6px 16px rgba(190, 147, 55, 0.3)"
- }
- }}
- >
-                                        Download Consolidated Report (.csv)
-                                    </Button>
-                                </Box>
-                            )}
-                        </Box>
-                        {/* )} */}
-                    </Box>
-                </Paper>
-            </Stack>
-        </Box>
+                </Box>
+            </Paper>
+        </PageContainer>
     );
 }

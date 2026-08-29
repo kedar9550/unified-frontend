@@ -3,8 +3,10 @@ import PageHeader from "../../components/common/PageHeader";
 import SectionHeader from "../../components/common/SectionHeader";
 import ActionButton from "../../components/common/ActionButton";
 import DataTable from "../../components/data/DataTable";
+import { PageContainer } from "../../components/common/design-system";
 import {
   Box,
+  Paper,
   MenuItem,
   Select,
   IconButton,
@@ -198,7 +200,7 @@ export default function ProctoringUpload() {
   };
 
   return (
-    <>
+    <PageContainer>
       <input
         type="file"
         ref={fileInputRef}
@@ -209,55 +211,15 @@ export default function ProctoringUpload() {
 
       <PageHeader
         title="Proctoring Bulk Upload"
-        subtitle="Upload and manage proctoring data for faculty appraisal" />
-
-      <Box sx={{ 
-        mt: 3, 
-        mb: 4, 
-        p: 3, 
-        background: "var(--bg-panel)", 
-        borderRadius: "24px", 
-        border: "1px solid var(--border-color)", 
-        boxShadow: "var(--shadow-premium)",
-        display: "flex",
-        flexDirection: "column",
-        gap: 3
-      }}>
-        {/* Row 1: Header and Primary Actions */}
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-            <Box sx={{ 
-              p: 1.5, 
-              borderRadius: "14px", 
-              background: "linear-gradient(135deg, var(--color-primary) 0%, #1e40af 100%)", 
-              color: "#fff", 
-              display: 'flex',
-              boxShadow: "0 8px 20px rgba(59, 130, 246, 0.2)"
-            }}>
-              <FilterIcon />
-            </Box>
-            <Box>
-              <Typography sx={{ fontWeight: 800, fontSize: 20, color: "var(--text-primary)", lineHeight: 1.2 }}>
-                Proctoring Management
-              </Typography>
-              <Typography sx={{ fontSize: 13, color: "var(--text-secondary)", fontWeight: 500, mt: 0.5 }}>
-                {results.length} records currently displayed
-              </Typography>
-            </Box>
-          </Box>
-          
-          <Box sx={{ display: 'flex', gap: 1.5, width: { xs: '100%', sm: 'auto' } }}>
+        subtitle="Upload and manage proctoring data for faculty appraisal"
+        icon={<FilterIcon />}
+        action={
+          <Box sx={{ display: "flex", gap: 1.5, flexWrap: "wrap" }}>
             <ActionButton
               variant="outlined"
               onClick={downloadTemplate}
               startIcon={<DownloadIcon sx={{ fontSize: 18 }} />}
-              sx={{
-                flex: 1,
-                fontWeight: 700,
-                px: 2.5,
-                height: 44,
-                whiteSpace: "nowrap",
-              }}
+              sx={{ fontWeight: 700, px: 2.5, height: 44, whiteSpace: "nowrap" }}
             >
               Template
             </ActionButton>
@@ -266,33 +228,42 @@ export default function ProctoringUpload() {
               onClick={handleUploadClick}
               disabled={uploading}
               startIcon={<UploadIcon sx={{ fontSize: 18 }} />}
-              sx={{
-                flex: 1,
-                fontWeight: 800,
-                px: 3,
-                height: 44,
-                whiteSpace: "nowrap",
-              }}
+              sx={{ fontWeight: 800, px: 3, height: 44, whiteSpace: "nowrap" }}
             >
               {uploading ? "Uploading..." : "Upload Excel/CSV"}
             </ActionButton>
           </Box>
-        </Box>
+        }
+      />
 
-        <Divider sx={{ borderStyle: 'dashed', opacity: 0.5 }} />
-
+      {/* Filter Options & Bulk Actions Card */}
+      <Paper
+        elevation={0}
+        sx={{
+          p: { xs: 2, md: 2.5 },
+          mb: 3,
+          background: { xs: "transparent", md: "var(--bg-paper)" },
+          border: { xs: "none", md: "1px solid var(--border-color)" },
+          boxShadow: { xs: "none", md: "var(--shadow-premium)" },
+          borderRadius: { xs: "8px", md: "16px" },
+          display: "flex",
+          flexDirection: "column",
+          gap: 2,
+        }}
+      >
         {/* Info Note Banner */}
         <Box sx={{ 
-          p: 2, 
-          borderRadius: "14px", 
-          background: "rgba(2, 132, 199, 0.04)", 
-          border: "1px solid rgba(2, 132, 199, 0.12)",
+          p: 1.5, 
+          px: 2,
+          borderRadius: "10px", 
+          background: "var(--bg-glass)", 
+          border: "1px solid var(--border-color)",
           display: "flex",
           alignItems: "center",
           gap: 1.5
         }}>
           <InfoIcon sx={{ color: "var(--color-primary)", fontSize: 20 }} />
-          <Typography sx={{ fontSize: 13, color: "var(--text-secondary)", fontWeight: 600 }}>
+          <Typography sx={{ fontSize: 13, color: "var(--text-primary)", fontWeight: 600 }}>
             Upload proctoring details. The academic year will be determined by the data in your file.
           </Typography>
         </Box>
@@ -375,18 +346,17 @@ export default function ProctoringUpload() {
             </Menu>
           </Box>
         </Box>
-      </Box>
+      </Paper>
 
-
-      {/* 🔹 RESULTS TABLE */}
-      <Box
+      {/* RESULTS TABLE */}
+      <Paper
+        elevation={0}
         sx={{
-          p: 3,
-          borderRadius: "24px",
-          background: "var(--bg-panel)",
-          backdropFilter: "blur(20px)",
-          boxShadow: "var(--shadow-premium)",
-          border: "1px solid var(--border-color)",
+          p: { xs: 2, md: 3 },
+          borderRadius: { xs: "8px", md: "16px" },
+          background: { xs: "transparent", md: "var(--bg-paper)" },
+          boxShadow: { xs: "none", md: "var(--shadow-premium)" },
+          border: { xs: "none", md: "1px solid var(--border-color)" },
           minHeight: 400,
         }}
       >
@@ -503,7 +473,7 @@ export default function ProctoringUpload() {
             ])}
           />
         )}
-      </Box>
+      </Paper>
 
       {/* Upload Summary Dialog */}
       <Dialog
@@ -614,7 +584,7 @@ export default function ProctoringUpload() {
           )}
         </DialogContent>
       </Dialog>
-    </>
+    </PageContainer>
   );
 }
 
