@@ -43,6 +43,7 @@ const DepartmentManagement = () => {
 
   // Form state
   const [name, setName] = useState('');
+  const [alternativeNames, setAlternativeNames] = useState('');
   const [status, setStatus] = useState('Active');
 
   const [errors, setErrors] = useState({});
@@ -87,6 +88,7 @@ const DepartmentManagement = () => {
   // ─── Form helpers ───
   const resetForm = () => {
     setName('');
+    setAlternativeNames('');
     setStatus('Active');
     setErrors({});
     setEditingDepartment(null);
@@ -100,6 +102,7 @@ const DepartmentManagement = () => {
   const openEditForm = (department) => {
     setEditingDepartment(department);
     setName(department.name || '');
+    setAlternativeNames(department.alternativeNames || '');
     setStatus(department.status || 'Active');
     setErrors({});
     setView('form');
@@ -118,6 +121,7 @@ const DepartmentManagement = () => {
     setSubmitting(true);
     const payload = {
       name,
+      alternativeNames,
       status
     };
 
@@ -167,11 +171,12 @@ const DepartmentManagement = () => {
   };
 
   // ─── Table columns & rows ───
-  const columns = ['#', 'Name', 'Status', 'Actions'];
+  const columns = ['#', 'Name', 'Alternative Names', 'Status', 'Actions'];
 
   const tableRows = departments.map((department, index) => [
     index + 1,
     department.name,
+    department.alternativeNames || '-',
     {
       value: department.status,
       display: (
@@ -254,8 +259,8 @@ const DepartmentManagement = () => {
           columns={columns}
           rows={tableRows}
           loading={loading}
-          nonSortableColumns={[3]}
-          alignments={['center', 'left', 'center', 'center']}
+          nonSortableColumns={[4]}
+          alignments={['center', 'left', 'left', 'center', 'center']}
         />
 
         {/* Delete Confirmation Dialog */}
@@ -348,6 +353,25 @@ const DepartmentManagement = () => {
                 error={!!errors.name}
                 helperText={errors.name || `${name.length}/200`}
                 slotProps={{ htmlInput: { maxLength: 200 } }}
+                variant="outlined"
+              />
+            </Box>
+
+            {/* Alternative Names */}
+            <Box>
+              <Typography
+                variant="subtitle1"
+                fontWeight="600"
+                mb={1}
+                sx={{ color: 'var(--text-primary)' }}
+              >
+                Alternative Names
+              </Typography>
+              <TextField
+                fullWidth
+                placeholder="Enter alternative names, separated by commas (e.g. CS, CSE, CompSci)"
+                value={alternativeNames}
+                onChange={(e) => setAlternativeNames(e.target.value)}
                 variant="outlined"
               />
             </Box>
