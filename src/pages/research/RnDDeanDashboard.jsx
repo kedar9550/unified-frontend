@@ -36,6 +36,7 @@ import {
 } from 'recharts';
 import { useNavigate } from 'react-router-dom';
 import API from "../../api/axios";
+import StatCardGrid from "../../components/common/StatCardGrid";
 
 const RnDDeanDashboard = ({ activeRole = 'RESEARCH_DEAN' }) => {
   const navigate = useNavigate();
@@ -119,11 +120,12 @@ const RnDDeanDashboard = ({ activeRole = 'RESEARCH_DEAN' }) => {
         </Box>
       </Box>
 
-      {/* Summary Cards */}
-      <Box sx={{ display: "flex", gap: 2, mb: 5, flexWrap: "wrap" }}>
+      <StatCardGrid columns={4} sx={{ mb: 5 }}>
         {summaryCards.map((card, index) => (
-          <Box key={index} sx={{ flex: { xs: "1 1 100%", sm: "1 1 calc(50% - 16px)", lg: 1 }, minWidth: 0 }}>
-            <Card sx={{
+          <Card
+            key={index}
+            onClick={() => card.path && navigate(card.path)}
+            sx={{
               p: 2.5,
               borderRadius: '16px',
               background: 'var(--bg-panel)',
@@ -133,6 +135,7 @@ const RnDDeanDashboard = ({ activeRole = 'RESEARCH_DEAN' }) => {
               flexDirection: 'column',
               justifyContent: 'space-between',
               height: '160px',
+              width: '100%',
               boxSizing: 'border-box',
               gap: 2,
               position: 'relative',
@@ -156,70 +159,70 @@ const RnDDeanDashboard = ({ activeRole = 'RESEARCH_DEAN' }) => {
               '&:hover .view-all-arrow': {
                 transform: 'translateX(4px)'
               }
-            }}>
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, zIndex: 1 }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                  <Box sx={{
-                    width: 48,
-                    height: 48,
-                    borderRadius: '12px',
-                    backgroundColor: card.bg,
-                    color: card.color,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    flexShrink: 0
-                  }}>
-                    {card.icon}
-                  </Box>
-                  <Box sx={{ minWidth: 0, flex: 1 }}>
-                    <Typography variant="h4" sx={{ fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1 }}>{card.value}</Typography>
-                    <Typography sx={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', mt: 0.5 }}>{card.title}</Typography>
-                  </Box>
-                </Box>
-                <Typography sx={{ fontSize: '0.7rem', color: 'var(--text-secondary)', opacity: 0.7 }}>{card.subtitle}</Typography>
-              </Box>
-
-              {card.path && (
+            }}
+          >
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, zIndex: 1 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                 <Box sx={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "flex-end",
-                  gap: 0.8,
-                  pt: 1.5,
-                  borderTop: "1px solid var(--border-color)",
-                  width: "100%",
-                  zIndex: 1,
-                  mt: "auto"
+                  width: 48,
+                  height: 48,
+                  borderRadius: '12px',
+                  backgroundColor: card.bg,
+                  color: card.color,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0
                 }}>
-                  <Typography
-                    className="view-all-text"
-                    sx={{
-                      fontSize: "0.75rem",
-                      fontWeight: 800,
-                      background: "var(--gradient-primary)",
-                      WebkitBackgroundClip: "text",
-                      WebkitTextFillColor: "transparent",
-                      display: "inline-block",
-                      transition: "all 0.2s ease"
-                    }}
-                  >
-                    View Details
-                  </Typography>
-                  <ArrowForward
-                    className="view-all-arrow"
-                    sx={{
-                      fontSize: 14,
-                      color: "var(--color-primary)",
-                      transition: "transform 0.2s ease"
-                    }}
-                  />
+                  {card.icon}
                 </Box>
-              )}
-            </Card>
-          </Box>
+                <Box sx={{ minWidth: 0, flex: 1 }}>
+                  <Typography variant="h4" sx={{ fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1 }}>{card.value}</Typography>
+                  <Typography sx={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', mt: 0.5 }}>{card.title}</Typography>
+                </Box>
+              </Box>
+              <Typography sx={{ fontSize: '0.7rem', color: 'var(--text-secondary)', opacity: 0.7 }}>{card.subtitle}</Typography>
+            </Box>
+
+            {card.path && (
+              <Box sx={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "flex-end",
+                gap: 0.8,
+                pt: 1.5,
+                borderTop: "1px solid var(--border-color)",
+                width: "100%",
+                zIndex: 1,
+                mt: "auto"
+              }}>
+                <Typography
+                  className="view-all-text"
+                  sx={{
+                    fontSize: "0.75rem",
+                    fontWeight: 800,
+                    background: "var(--gradient-primary)",
+                    WebkitBackgroundClip: "text",
+                    WebkitTextFillColor: "transparent",
+                    display: "inline-block",
+                    transition: "all 0.2s ease"
+                  }}
+                >
+                  View Details
+                </Typography>
+                <ArrowForward
+                  className="view-all-arrow"
+                  sx={{
+                    fontSize: 14,
+                    color: "var(--color-primary)",
+                    transition: "transform 0.2s ease"
+                  }}
+                />
+              </Box>
+            )}
+          </Card>
         ))}
-      </Box>
+      </StatCardGrid>
 
       {/* Charts Row */}
       <Box sx={{

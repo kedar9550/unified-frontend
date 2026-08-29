@@ -6,6 +6,7 @@ import {
   Typography,
   MenuItem,
   TextField,
+  Paper,
 } from '@mui/material';
 import {
   Refresh as RefreshIcon,
@@ -13,6 +14,8 @@ import {
 } from '@mui/icons-material';
 import { Card, CardContent, Chip, Avatar } from '@mui/material';
 import PageHeader from '../../components/common/PageHeader';
+import { PageContainer } from '../../components/common/design-system';
+import ActionButton from '../../components/common/ActionButton';
 import API from '../../api/axios';
 import { toast } from 'sonner';
 import { useAuth } from '../../context/AuthContext';
@@ -180,7 +183,7 @@ const Passes = () => {
   };
 
   return (
-    <Box sx={{ p: 3 }}>
+    <PageContainer>
       <Box className="no-print">
         <PageHeader
           title="Bulk Passes"
@@ -195,27 +198,39 @@ const Passes = () => {
               >
                 Refresh
               </Button>
-              <Button
-                variant="contained"
+              <ActionButton
                 startIcon={<DownloadIcon />}
                 onClick={handleDownloadPdf}
                 disabled={loading || filteredParticipants.length === 0}
               >
                 Download PDF
-              </Button>
+              </ActionButton>
             </Box>
           }
         />
 
-        {/* Filters */}
-        <Box sx={{ display: 'flex', gap: 2, mb: 4, flexWrap: 'wrap' }}>
+        {/* Filters Bar */}
+        <Paper
+          variant="outlined"
+          sx={{
+            p: 2,
+            mb: 3,
+            borderRadius: '16px',
+            background: 'var(--bg-paper)',
+            borderColor: 'var(--border-color)',
+            display: 'flex',
+            gap: 2,
+            flexWrap: 'wrap',
+            alignItems: 'center',
+          }}
+        >
           <TextField
             label="Search Participants"
             variant="outlined"
             size="small"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            sx={{ minWidth: 300, bgcolor: 'background.paper' }}
+            sx={{ width: { xs: '100%', sm: 260 }, flex: { sm: 1 } }}
           />
 
           <TextField
@@ -224,7 +239,7 @@ const Passes = () => {
             value={eventFilter}
             onChange={(e) => setEventFilter(e.target.value)}
             size="small"
-            sx={{ minWidth: 200, bgcolor: 'background.paper' }}
+            sx={{ width: { xs: '100%', sm: 200 } }}
           >
             <MenuItem value="ALL">All Events</MenuItem>
             {uniqueEvents.map((event) => (
@@ -233,12 +248,12 @@ const Passes = () => {
               </MenuItem>
             ))}
           </TextField>
-        </Box>
+        </Paper>
       </Box>
 
       {/* Content Area */}
       {loading ? (
-        <Box display="flex" justifyContent="center" alignItems="center" p={4} className="no-print">
+        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', p: 4 }} className="no-print">
           <CircularProgress />
         </Box>
       ) : (
@@ -443,7 +458,7 @@ const Passes = () => {
           )}
         </>
       )}
-    </Box>
+    </PageContainer>
   );
 };
 

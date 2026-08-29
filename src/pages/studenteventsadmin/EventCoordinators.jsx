@@ -9,6 +9,7 @@ import {
   Chip
 } from '@mui/material';
 import PageHeader from '../../components/common/PageHeader';
+import { PageContainer } from '../../components/common/design-system';
 import API from '../../api/axios';
 import { toast } from 'sonner';
 
@@ -114,7 +115,7 @@ const EventCoordinators = () => {
   }, [events]);
 
   return (
-    <Box sx={{ p: { xs: 2, md: 3, lg: 4 } }}>
+    <PageContainer>
       <PageHeader
         title="Faculty Coordinators"
         subtitle="List of all staff members coordinating VEDA events"
@@ -185,7 +186,7 @@ const EventCoordinators = () => {
           ))}
         </Grid>
       )}
-    </Box>
+    </PageContainer>
   );
 };
 

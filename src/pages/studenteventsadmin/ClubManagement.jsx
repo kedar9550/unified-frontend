@@ -30,6 +30,7 @@ import {
   ArrowBack as ArrowBackIcon,
 } from '@mui/icons-material';
 import PageHeader from '../../components/common/PageHeader';
+import { PageContainer } from '../../components/common/design-system';
 import DataTable from '../../components/data/DataTable';
 import API from '../../api/axios';
 import { toast } from 'sonner';
@@ -363,7 +364,7 @@ const ClubManagement = () => {
   // ─── LIST VIEW ───
   if (view === 'list') {
     return (
-      <Box sx={{ p: 3 }}>
+      <PageContainer>
         <PageHeader
           title="Club Management"
           subtitle="Create and manage student clubs"
@@ -438,13 +439,13 @@ const ClubManagement = () => {
             </Button>
           </DialogActions>
         </Dialog>
-      </Box>
+      </PageContainer>
     );
   }
 
   // ─── FORM VIEW (Create / Edit) ───
   return (
-    <Box sx={{ p: 3 }}>
+    <PageContainer>
       <PageHeader
         title={editingClub ? 'Edit Club' : 'Create Club'}
         subtitle={editingClub ? `Editing "${editingClub.name}"` : 'Fill in the details to create a new club'}
@@ -715,7 +716,7 @@ const ClubManagement = () => {
           </Box>
         </CardContent>
       </Card>
-    </Box>
+    </PageContainer>
   );
 };
 

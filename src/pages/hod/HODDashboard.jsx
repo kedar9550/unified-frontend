@@ -1,4 +1,5 @@
 import Loader from "../../components/common/Loader";
+import StatCard from "../../components/common/StatCard";
 import React, { useEffect, useState } from 'react';
 import {
   Box,
@@ -33,6 +34,9 @@ import PlaylistAddCheckIcon from '@mui/icons-material/PlaylistAddCheck';
 import API from "../../api/axios";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
+import PageHeader from "../../components/common/PageHeader";
+import { PageContainer } from "../../components/common/design-system";
+import StatCardGrid from "../../components/common/StatCardGrid";
 import {
   ResponsiveContainer,
   PieChart,
@@ -147,7 +151,7 @@ const HODDashboard = () => {
   ];
 
   return (
-    <Box sx={{ p: { xs: 1, sm: 0 } }}>
+    <PageContainer>
       {/* Header */}
       <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 2 }}>
         <Box>
@@ -178,94 +182,20 @@ const HODDashboard = () => {
       </Box>
 
       {/* Summary Cards Row */}
-      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 3, mb: 4 }}>
+      <StatCardGrid columns={3} sx={{ mb: 4 }}>
         {topCards.map((card, i) => (
-          <Box
+          <StatCard
             key={i}
-            sx={{
-              flex: { xs: '1 1 100%', sm: '1 1 calc(50% - 24px)', md: '1 1 calc(25% - 24px)' },
-              boxSizing: 'border-box'
-            }}
-          >
-            <Card sx={{
-              borderRadius: "16px",
-              background: 'var(--bg-panel)',
-              border: '1px solid var(--border-color)',
-              p: 2.5,
-              display: "flex",
-              flexDirection: "column",
-              position: "relative",
-              overflow: "hidden",
-              transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-              boxShadow: "var(--shadow-premium)",
-              '&:hover': {
-                transform: 'translateY(-5px)',
-                boxShadow: '0 12px 40px rgba(0,0,0,0.12)',
-              }
-            }}>
-              {/* Top Section */}
-              <Box sx={{ display: "flex", alignItems: "flex-start", gap: 2, mb: 3, position: "relative", zIndex: 1 }}>
-                {/* Icon */}
-                <Box sx={{
-                  width: 48,
-                  height: 48,
-                  borderRadius: "12px",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  backgroundColor: card.color,
-                  color: "#fff",
-                  flexShrink: 0,
-                  position: "relative",
-                  boxShadow: "0 8px 16px rgba(0,0,0,0.1)",
-                  "&::after": {
-                    content: '""',
-                    position: "absolute",
-                    inset: 0,
-                    background: "linear-gradient(180deg, #ffffff30, transparent)",
-                    borderRadius: "12px",
-                  },
-                }}>
-                  {card.icon}
-                </Box>
-                {/* Text */}
-                <Box sx={{ textAlign: "left", flex: 1 }}>
-                  <Typography variant="caption" sx={{ color: "var(--text-secondary)", fontWeight: 700, fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: 0.5, display: 'block' }}>
-                    {card.title}
-                  </Typography>
-                  <Typography variant="h4" sx={{ fontWeight: 800, color: "var(--text-primary)", my: 0.5, fontSize: '2.125rem', lineHeight: 1 }}>
-                    {card.value}
-                  </Typography>
-                  <Typography variant="caption" sx={{ color: "var(--text-secondary)", fontWeight: 500, fontSize: '0.75rem' }}>
-                    {card.subtitle}
-                  </Typography>
-                </Box>
-              </Box>
-
-              {/* Divider */}
-              <Box sx={{ borderTop: "1px solid var(--border-color)", mt: 1, pt: 2, display: 'flex', justifyContent: 'flex-end' }}>
-                {/* Bottom Link */}
-                <Button
-                  size="small"
-                  onClick={() => card.path && navigate(card.path)}
-                  endIcon={<ArrowForward sx={{ fontSize: 16 }} />}
-                  sx={{
-                    textTransform: "none",
-                    fontWeight: 700,
-                    color: "var(--color-primary)",
-                    "&:hover": {
-                      background: "transparent",
-                      textDecoration: "underline",
-                    },
-                  }}
-                >
-                  {card.linkText}
-                </Button>
-              </Box>
-            </Card>
-          </Box>
+            title={card.title}
+            value={card.value}
+            subtitle={card.subtitle}
+            icon={card.icon}
+            color={card.color}
+            linkText={card.linkText}
+            onClick={() => card.path && navigate(card.path)}
+          />
         ))}
-      </Box>
+      </StatCardGrid>
 
       {/* Main Container: Pending Approval Hub */}
       <Box sx={{ width: '100%' }}>
@@ -377,7 +307,6 @@ const HODDashboard = () => {
           {dashboard.recentActivities.length > 0 ? (
             <List sx={{ p: 0 }}>
               {dashboard.recentActivities.map((act, idx) => {
-                const statusStyle = getStatusStyle(act.status);
                 const actDate = new Date(act.createdAt).toLocaleDateString("en-GB", {
                   day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit"
                 });
@@ -406,17 +335,6 @@ const HODDashboard = () => {
                         <Typography sx={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 500 }}>
                           {actDate}
                         </Typography>
-                        <Chip
-                          label={act.status}
-                          size="small"
-                          sx={{
-                            bgcolor: statusStyle.bg,
-                            color: statusStyle.color,
-                            fontWeight: 700,
-                            fontSize: '0.7rem',
-                            borderRadius: '6px'
-                          }}
-                        />
                       </Stack>
                     </ListItem>
                     {idx < dashboard.recentActivities.length - 1 && <Divider component="li" sx={{ opacity: 0.5 }} />}
@@ -431,7 +349,7 @@ const HODDashboard = () => {
           )}
         </Card>
       </Box>
-    </Box>
+    </PageContainer>
   );
 };
 

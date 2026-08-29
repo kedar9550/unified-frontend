@@ -25,6 +25,7 @@ import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
 import { useNavigate } from "react-router-dom";
 import API from "../../api/axios";
 import { useAuth } from "../../context/AuthContext";
+import StatCardGrid from "../../components/common/StatCardGrid";
 
 const ExamDashboard = () => {
   const { user } = useAuth();
@@ -155,98 +156,98 @@ const ExamDashboard = () => {
         </Box>
       </Box>
 
-      {/* Row 1: Summary Cards (Box System) */}
-      <Box sx={{ display: "flex", gap: 2, mb: 4, flexWrap: "wrap" }}>
+      {/* Row 1: Summary Cards (StatCardGrid System) */}
+      <StatCardGrid columns={4} sx={{ mb: 4 }}>
         {topCards.map((card, i) => (
-          <Box key={i} sx={{ flex: { xs: "1 1 100%", sm: "1 1 calc(50% - 16px)", lg: 1 }, minWidth: 0 }}>
-            <Card
-              onClick={() => card.path && navigate(card.path)}
-              sx={{
-                borderRadius: "16px",
-                border: "1px solid var(--border-color)",
-                background: "var(--bg-panel)",
-                boxShadow: "var(--shadow-premium)",
-                p: 2.5,
-                height: "160px",
-                boxSizing: "border-box",
-                display: "flex",
-                flexDirection: "column",
-                justifyContent: "space-between",
-                gap: 2,
-                transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-                cursor: card.path ? "pointer" : "default",
-                position: "relative",
-                overflow: "hidden",
-                "&:hover": {
-                  transform: card.path ? "translateY(-5px)" : "none",
-                  boxShadow: "0 12px 40px rgba(0,0,0,0.12)",
-                },
-                "&::after": {
-                  content: '""',
-                  position: "absolute",
-                  top: 0,
-                  right: 0,
-                  width: "120px",
-                  height: "120px",
-                  background: `radial-gradient(circle at top right, ${card.color}25, transparent 70%)`,
-                  zIndex: 0,
-                  pointerEvents: "none"
-                },
-                "&:hover .view-all-arrow": {
-                  transform: "translateX(4px)"
-                }
-              }}
-            >
-              <Box sx={{ display: "flex", alignItems: "center", gap: 2, zIndex: 1 }}>
-                <Box sx={{ width: 48, height: 48, borderRadius: "14px", display: "flex", alignItems: "center", justifyContent: "center", backgroundColor: card.bgColor, color: card.color, flexShrink: 0 }}>
-                  {card.icon}
-                </Box>
-                <Box sx={{ minWidth: 0, flex: 1 }}>
-                  <Typography variant="caption" sx={{ color: "var(--text-secondary)", fontWeight: 700, textTransform: "uppercase", fontSize: "0.65rem", letterSpacing: "0.02em", display: "block" }}>{card.title}</Typography>
-                  <Typography variant="h5" sx={{ fontWeight: 800, color: "var(--text-primary)", my: 0.1 }}>{card.value}</Typography>
-                </Box>
+          <Card
+            key={i}
+            onClick={() => card.path && navigate(card.path)}
+            sx={{
+              borderRadius: "16px",
+              border: "1px solid var(--border-color)",
+              background: "var(--bg-panel)",
+              boxShadow: "var(--shadow-premium)",
+              p: 2.5,
+              height: "160px",
+              width: "100%",
+              boxSizing: "border-box",
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: "space-between",
+              gap: 2,
+              transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+              cursor: card.path ? "pointer" : "default",
+              position: "relative",
+              overflow: "hidden",
+              "&:hover": {
+                transform: card.path ? "translateY(-5px)" : "none",
+                boxShadow: "0 12px 40px rgba(0,0,0,0.12)",
+              },
+              "&::after": {
+                content: '""',
+                position: "absolute",
+                top: 0,
+                right: 0,
+                width: "120px",
+                height: "120px",
+                background: `radial-gradient(circle at top right, ${card.color}25, transparent 70%)`,
+                zIndex: 0,
+                pointerEvents: "none"
+              },
+              "&:hover .view-all-arrow": {
+                transform: "translateX(4px)"
+              }
+            }}
+          >
+            <Box sx={{ display: "flex", alignItems: "center", gap: 2, zIndex: 1 }}>
+              <Box sx={{ width: 48, height: 48, borderRadius: "14px", display: "flex", alignItems: "center", justifyContent: "center", backgroundColor: card.bgColor, color: card.color, flexShrink: 0 }}>
+                {card.icon}
               </Box>
+              <Box sx={{ minWidth: 0, flex: 1 }}>
+                <Typography variant="caption" sx={{ color: "var(--text-secondary)", fontWeight: 700, textTransform: "uppercase", fontSize: "0.65rem", letterSpacing: "0.02em", display: "block" }}>{card.title}</Typography>
+                <Typography variant="h5" sx={{ fontWeight: 800, color: "var(--text-primary)", my: 0.1 }}>{card.value}</Typography>
+              </Box>
+            </Box>
 
-              {card.path && (
-                <Box sx={{ 
-                  display: "flex", 
-                  alignItems: "center", 
-                  justifyContent: "flex-end", 
-                  gap: 0.8,
-                  pt: 1.5, 
-                  borderTop: "1px solid var(--border-color)", 
-                  width: "100%",
-                  zIndex: 1,
-                  mt: "auto"
-                }}>
-                  <Typography 
-                    className="view-all-text"
-                    sx={{ 
-                      fontSize: "0.75rem", 
-                      fontWeight: 800, 
-                      background: "var(--gradient-primary)",
-                      WebkitBackgroundClip: "text",
-                      WebkitTextFillColor: "transparent",
-                      display: "inline-block",
-                      transition: "all 0.2s ease"
-                    }}
-                  >
-                    View Details
-                  </Typography>
-                  <ArrowForward 
-                    className="view-all-arrow"
-                    sx={{ 
-                      fontSize: 14, 
-                      color: "var(--color-primary)",
-                      transition: "transform 0.2s ease"
-                    }} 
-                  />
-                </Box>
-              )}
-            </Card>
-          </Box>
+            {card.path && (
+              <Box sx={{ 
+                display: "flex", 
+                alignItems: "center", 
+                justifyContent: "flex-end", 
+                gap: 0.8,
+                pt: 1.5, 
+                borderTop: "1px solid var(--border-color)", 
+                width: "100%",
+                zIndex: 1,
+                mt: "auto"
+              }}>
+                <Typography 
+                  className="view-all-text"
+                  sx={{ 
+                    fontSize: "0.75rem", 
+                    fontWeight: 800, 
+                    background: "var(--gradient-primary)",
+                    WebkitBackgroundClip: "text",
+                    WebkitTextFillColor: "transparent",
+                    display: "inline-block",
+                    transition: "all 0.2s ease"
+                  }}
+                >
+                  View Details
+                </Typography>
+                <ArrowForward 
+                  className="view-all-arrow"
+                  sx={{ 
+                    fontSize: 14, 
+                    color: "var(--color-primary)",
+                    transition: "transform 0.2s ease"
+                  }} 
+                />
+              </Box>
+            )}
+          </Card>
         ))}
-      </Box>
+      </StatCardGrid>
 
       {/* Main Content Layout (Box System) */}
       <Box sx={{ display: "flex", gap: 3, mb: 4, flexWrap: { xs: "wrap", lg: "nowrap" }, alignItems: "stretch" }}>

@@ -6,6 +6,7 @@ import {
 } from '@mui/material';
 import { Add as AddIcon, Edit as EditIcon, Delete as DeleteIcon } from '@mui/icons-material';
 import PageHeader from '../../components/common/PageHeader';
+import { PageContainer } from '../../components/common/design-system';
 import API from '../../api/axios';
 import { toast } from 'sonner';
 
@@ -533,7 +534,7 @@ const OrganisationCommittee = () => {
   };
 
   return (
-    <Box sx={{ p: { xs: 2, md: 3, lg: 4 } }}>
+    <PageContainer>
       <PageHeader
         title="Organisation Committee"
         subtitle="Manage Conveners, Members, and view Coordinators"
@@ -555,7 +556,7 @@ const OrganisationCommittee = () => {
         {tabValue === 3 && <ReadOnlyCoordinators type="Faculty" />}
         {tabValue === 4 && <StudentCoordinatorManager />}
       </Box>
-    </Box>
+    </PageContainer>
   );
 };
 

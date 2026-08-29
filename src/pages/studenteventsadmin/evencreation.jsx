@@ -32,6 +32,8 @@ import {
 } from '@mui/icons-material';
 import PageHeader from '../../components/common/PageHeader';
 import DataTable from '../../components/data/DataTable';
+import { PageContainer } from '../../components/common/design-system';
+import ActionButton from '../../components/common/ActionButton';
 import { fetchEventDepartments } from '../../api/eventDepartmentApi';
 import API from '../../api/axios';
 import { toast } from 'sonner';
@@ -510,20 +512,18 @@ const EventCreation = () => {
 
   if (view === 'list') {
     return (
-      <Box sx={{ p: 3 }}>
+      <PageContainer>
         <PageHeader
           title="Event Management"
           subtitle="Create and manage VEDA events"
           action={
             activeRole !== 'FACULTY_COORDINATOR' && (
-              <Button
-                variant="contained"
+              <ActionButton
                 startIcon={<AddIcon />}
                 onClick={openCreateForm}
-                sx={{ borderRadius: '12px', px: 3, py: 1.2, textTransform: 'none' }}
               >
                 Create Event
-              </Button>
+              </ActionButton>
             )
           }
         />
@@ -571,7 +571,7 @@ const EventCreation = () => {
             </Button>
           </DialogActions>
         </Dialog>
-      </Box>
+      </PageContainer>
     );
   }
 
@@ -664,7 +664,7 @@ const EventCreation = () => {
   };
 
   return (
-    <Box sx={{ p: 3 }}>
+    <PageContainer>
       <PageHeader
         title={editingEvent ? 'Edit Event' : 'Create Event'}
         subtitle={editingEvent ? `Editing ${editingEvent.eventName}` : 'Fill in the details to create a new event'}
@@ -672,7 +672,7 @@ const EventCreation = () => {
         onBack={cancelForm}
       />
 
-      <Card sx={{ mt: 3, maxWidth: 900, mx: 'auto', boxShadow: 3 }}>
+      <Card sx={{ mt: 3, maxWidth: 900, mx: 'auto', boxShadow: 'var(--shadow-premium)', background: 'var(--bg-paper)', border: '1px solid var(--border-color)', borderRadius: '16px' }}>
         <CardContent sx={{ p: 4 }}>
           <Stack spacing={3}>
             <FormControl fullWidth error={!!errors.eventSchool}>
@@ -1081,7 +1081,7 @@ const EventCreation = () => {
           </Stack>
         </CardContent>
       </Card>
-    </Box>
+    </PageContainer>
   );
 };
 

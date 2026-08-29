@@ -8,7 +8,8 @@ import {
   FormControl, Select, MenuItem
 } from '@mui/material';
 import PageHeader from '../../components/common/PageHeader';
-import { Visibility as ViewIcon, Check as ApproveIcon, Close as RejectIcon, Close } from '@mui/icons-material';
+import { PageContainer } from '../../components/common/design-system';
+import { Visibility as ViewIcon, Check as ApproveIcon, Close as RejectIcon, Close, EmojiEvents as AwardIcon } from '@mui/icons-material';
 import DataTable from '../../components/data/DataTable';
 import { toast } from 'sonner';
 
@@ -167,44 +168,41 @@ const ContributionApproval = () => {
   };
 
   return (
-    <Box sx={{ width: "100%", mb: 3, p: { xs: 1, sm: 2, md: 3 } }}>
-      <Stack spacing={3} sx={{ width: "100%" }}>
-        <PageHeader
-          title="Department Contribution Approvals"
-          subtitle="Approve, reject, and track department contribution submissions"
+    <PageContainer>
+      <PageHeader
+        title="Department Contribution Approvals"
+        subtitle="Approve, reject, and track department contribution submissions"
+        icon={<AwardIcon />}
+      />
+      {loading ? (
+        <Box sx={{ display: 'flex', justifyContent: 'center', py: 5 }}><Loader /></Box>
+      ) : (
+        <DataTable 
+          columns={columns} 
+          rows={rows} 
+          toolbarLeft={
+            <FormControl size="small" sx={{ minWidth: 200 }}>
+              <Typography variant="caption" sx={{ fontWeight: 700, mb: 0.5, color: "var(--text-secondary)" }}>Status</Typography>
+              <Select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                sx={{
+                  borderRadius: "10px",
+                  background: "var(--bg-paper)",
+                  "& .MuiOutlinedInput-notchedOutline": { borderColor: "var(--border-color)" }
+                }}
+              >
+                <MenuItem value="Pending at HOD">Pending</MenuItem>
+                <MenuItem value="Approved">Approved</MenuItem>
+                <MenuItem value="Rejected">Rejected</MenuItem>
+                <MenuItem value="All">All Requests</MenuItem>
+              </Select>
+            </FormControl>
+          }
         />
-        <Card sx={{ p: 3, borderRadius: '20px', background: 'var(--bg-panel)', border: '1px solid var(--border-color)' }}>
-          {loading ? (
-            <Box sx={{ display: 'flex', justifyContent: 'center', py: 5 }}><Loader /></Box>
-          ) : (
-            <DataTable 
-              columns={columns} 
-              rows={rows} 
-              toolbarLeft={
-                <FormControl size="small" sx={{ minWidth: 200 }}>
-                  <Typography variant="caption" sx={{ fontWeight: 700, mb: 0.5, color: "var(--text-secondary)" }}>Status</Typography>
-                  <Select
-                    value={statusFilter}
-                    onChange={(e) => setStatusFilter(e.target.value)}
-                    sx={{
-                      borderRadius: "10px",
-                      background: "var(--bg-paper)",
-                      "& .MuiOutlinedInput-notchedOutline": { borderColor: "var(--border-color)" }
-                    }}
-                  >
-                    <MenuItem value="Pending at HOD">Pending</MenuItem>
-                    <MenuItem value="Approved">Approved</MenuItem>
-                    <MenuItem value="Rejected">Rejected</MenuItem>
-                    <MenuItem value="All">All Requests</MenuItem>
-                  </Select>
-                </FormControl>
-              }
-            />
-          )}
-        </Card>
-      </Stack>
+      )}
       {selected && <DetailDialog />}
-    </Box>
+    </PageContainer>
   );
 };
 

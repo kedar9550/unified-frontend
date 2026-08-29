@@ -31,6 +31,7 @@ import {
 } from "@mui/icons-material";
 import PageHeader from "../../components/common/PageHeader";
 import SectionHeader from "../../components/common/SectionHeader";
+import { PageContainer } from "../../components/common/design-system";
 import API from "../../api/axios";
 import { toast } from "sonner";
 
@@ -204,10 +205,12 @@ export default function HODDiscrepancies() {
   };
 
   return (
-    <>
+    <PageContainer>
       <PageHeader
         title="Department Discrepancies"
-        subtitle="Review and resolve proctoring discrepancies" />
+        subtitle="Review and resolve proctoring discrepancies"
+        icon={<PendingIcon />}
+      />
 
       {/* ── STAT PILLS ────────────────────── */}
       <Box
@@ -219,17 +222,18 @@ export default function HODDiscrepancies() {
         }}
       >
         {Object.entries(STATUS_CONFIG).map(([key, cfg]) => (
-          <Box
+          <Paper
+            elevation={0}
             key={key}
             sx={{
               px: 3, py: 2.5,
               borderRadius: "20px",
-              background: "var(--bg-panel)",
-              border: `1.5px solid var(--border-color)`,
+              background: "var(--bg-paper)",
+              border: `1px solid var(--border-color)`,
+              boxShadow: "var(--shadow-premium)",
               display: "flex",
               alignItems: "center",
               gap: 2.5,
-              boxShadow: `var(--shadow-premium)`,
               transition: "transform 0.2s",
               "&:hover": { transform: "translateY(-4px)" }
             }}
@@ -245,7 +249,7 @@ export default function HODDiscrepancies() {
                 {cfg.label}
               </Typography>
             </Box>
-          </Box>
+          </Paper>
         ))}
       </Box>
 
@@ -435,6 +439,6 @@ export default function HODDiscrepancies() {
           </DialogActions>
         )}
       </Dialog>
-    </>
+    </PageContainer>
   );
 }

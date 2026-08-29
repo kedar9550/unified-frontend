@@ -29,6 +29,7 @@ import {
   Groups as ClubIcon,
 } from '@mui/icons-material';
 import PageHeader from '../../components/common/PageHeader';
+import { PageContainer } from '../../components/common/design-system';
 import API from '../../api/axios';
 import { toast } from 'sonner';
 
@@ -124,8 +125,8 @@ const EventAssignment = () => {
                   sx={{
                     p: 2,
                     borderRadius: '12px',
-                    bgcolor: 'background.paper',
-                    border: '1px solid rgba(148, 163, 184, 0.22)',
+                    bgcolor: 'var(--bg-paper)',
+                    border: '1px solid var(--border-color)',
                     boxShadow: 1,
                   }}
                 >
@@ -341,7 +342,7 @@ const EventAssignment = () => {
 
   if (view === 'list') {
     return (
-      <Box sx={{ p: { xs: 2, md: 3 } }}>
+      <PageContainer>
         <PageHeader
           title="Event Assignment"
           subtitle="Choose an event type to manage its assignments"
@@ -441,15 +442,15 @@ const EventAssignment = () => {
           </Box>
         </Box>
 
-        <Box sx={{ mt: 4, maxWidth: 1100, mx: 'auto', display: 'grid', gap: 2.5 }}>
+        <Box sx={{ mt: 2 }}>
           {renderSelectedAssignmentSection()}
         </Box>
 
-        <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)} PaperProps={{ sx: { borderRadius: '16px' } }}>
-          <DialogTitle sx={{ fontWeight: 700 }}>Delete Assignment</DialogTitle>
+        <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>
+          <DialogTitle sx={{ fontWeight: 700 }}>Confirm Deletion</DialogTitle>
           <DialogContent>
-            <DialogContentText>
-              Are you sure you want to delete this assignment? Assigned users will retain their roles in the system until manually revoked, but this record will be deleted.
+            <DialogContentText sx={{ color: 'text.secondary', pt: 1 }}>
+              Are you sure you want to delete this assignment? This action cannot be undone.
             </DialogContentText>
           </DialogContent>
           <DialogActions sx={{ px: 3, pb: 2 }}>
@@ -457,12 +458,12 @@ const EventAssignment = () => {
             <Button onClick={confirmDelete} variant="contained" color="error" sx={{ borderRadius: '10px' }}>Delete</Button>
           </DialogActions>
         </Dialog>
-      </Box>
+      </PageContainer>
     );
   }
 
   return (
-    <Box sx={{ p: 3 }}>
+    <PageContainer>
       <PageHeader
         title={editingAssignment ? 'Edit Assignment' : 'Create Assignment'}
         subtitle={editingAssignment ? 'Update the details for this assignment' : 'Assign employees to an event or club'}
@@ -651,7 +652,7 @@ const EventAssignment = () => {
 
         </CardContent>
       </Card>
-    </Box>
+    </PageContainer>
   );
 };
 

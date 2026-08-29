@@ -40,6 +40,7 @@ import {
   Share,
   Flag,
 } from "@mui/icons-material";
+import StatCardGrid from "../../components/common/StatCardGrid";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import MenuBook from "@mui/icons-material/MenuBook";
 import API from "../../api/axios";
@@ -264,136 +265,120 @@ const UniprimeDashboard = () => {
 
 
 
-          <Box
-            sx={{
-              display: "flex",
-              flexWrap: "wrap",
-              gap: { xs: 2, md: 3 },
-              mb: 4,
-              width: "100%",
-            }}
-          >
+          <StatCardGrid columns={4} sx={{ mb: 4 }}>
             {topCards.map((card, i) => (
-              <Box
+              <Card
                 key={i}
                 sx={{
-                  flex: { xs: "1 1 100%", sm: "1 1 calc(50% - 24px)", md: "1 1 calc(33.33% - 24px)", lg: "1 1 calc(16.66% - 24px)" },
-                  display: 'flex',
-                  minWidth: "200px"
+                  position: "relative",
+                  borderRadius: "16px",
+                  boxShadow: "var(--shadow-premium)",
+                  transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+                  "&:hover": {
+                    transform: "translateY(-5px)",
+                    boxShadow: "0 12px 40px rgba(0,0,0,0.12)",
+                  },
+                  height: "160px",
+                  width: "100%",
+                  display: "flex",
+                  flexDirection: "column",
+                  justifyContent: "space-between",
+                  p: 2.5,
+                  border: "1px solid var(--border-color)",
+                  background: "var(--bg-panel)",
+                  overflow: "hidden",
+                  "&::after": {
+                    content: '""',
+                    position: "absolute",
+                    top: 0,
+                    right: 0,
+                    width: "120px",
+                    height: "120px",
+                    background: `radial-gradient(circle at top right, ${card.color}25, transparent 70%)`,
+                    zIndex: 0
+                  }
                 }}
               >
-                <Card
-                  sx={{
-                    position: "relative",
-                    borderRadius: "16px",
-                    boxShadow: "var(--shadow-premium)",
-                    transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-                    "&:hover": {
-                      transform: "translateY(-5px)",
-                      boxShadow: "0 12px 40px rgba(0,0,0,0.12)",
-                    },
-                    height: "160px",
-                    width: "100%",
-                    display: "flex",
-                    flexDirection: "column",
-                    justifyContent: "space-between",
-                    p: 2.5,
-                    border: "1px solid var(--border-color)",
-                    background: "var(--bg-panel)",
-                    overflow: "hidden",
-                    "&::after": {
-                      content: '""',
-                      position: "absolute",
-                      top: 0,
-                      right: 0,
-                      width: "120px",
-                      height: "120px",
-                      background: `radial-gradient(circle at top right, ${card.color}25, transparent 70%)`,
-                      zIndex: 0
-                    }
-                  }}
-                >
-                  {/* Top Content: Left Aligned */}
-                  <Box sx={{
-                    display: "flex",
-                    flexDirection: "row",
-                    alignItems: "flex-start",
-                    gap: 2,
-                    textAlign: "left",
-                    position: "relative",
-                    zIndex: 1
-                  }}>
-                    {/* Icon */}
-                    <Box
-                      sx={{
-                        width: 50,
-                        height: 50,
-                        borderRadius: "14px",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        background: card.gradient,
-                        color: "#fff",
-                        flexShrink: 0,
-                        mt: 0.5,
-                        boxShadow: `0 8px 25px ${card.color}35`,
-                      }}>
-                      {React.cloneElement(card.icon, { fontSize: "medium" })}
-                    </Box>
+                {/* Top Content: Left Aligned */}
+                <Box sx={{
+                  display: "flex",
+                  flexDirection: "row",
+                  alignItems: "flex-start",
+                  gap: 2,
+                  textAlign: "left",
+                  position: "relative",
+                  zIndex: 1
+                }}>
+                  {/* Icon */}
+                  <Box
+                    sx={{
+                      width: 50,
+                      height: 50,
+                      borderRadius: "14px",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      background: card.gradient,
+                      color: "#fff",
+                      flexShrink: 0,
+                      mt: 0.5,
+                      boxShadow: `0 8px 25px ${card.color}35`,
+                    }}>
+                    {React.cloneElement(card.icon, { fontSize: "medium" })}
+                  </Box>
 
-                    {/* Text */}
-                    <Box sx={{ display: "flex", flexDirection: "column", alignItems: "flex-start" }}>
+                  {/* Text */}
+                  <Box sx={{ display: "flex", flexDirection: "column", alignItems: "flex-start" }}>
+                    <Typography
+                      variant="body2"
+                      sx={{ color: "var(--text-secondary)", fontWeight: 600, fontSize: "0.8rem", textTransform: "capitalize", letterSpacing: "0.5px" }}
+                    >
+                      {card.title}
+                    </Typography>
+
+                    <Box sx={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 0.5 }}>
                       <Typography
-                        variant="body2"
-                        sx={{ color: "var(--text-secondary)", fontWeight: 600, fontSize: "0.8rem", textTransform: "capitalize", letterSpacing: "0.5px" }}
+                        sx={{
+                          fontWeight: 800,
+                          color: "var(--text-primary)",
+                          mt: 0.5,
+                          fontSize: card.value.toString().length > 6 ? "1.2rem" : "1.6rem",
+                          lineHeight: 1
+                        }}
                       >
-                        {card.title}
+                        {card.value}
                       </Typography>
 
-                      <Box sx={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 0.5 }}>
-                        <Typography
-                          sx={{
-                            fontWeight: 800,
-                            color: "var(--text-primary)",
-                            mt: 0.5,
-                            fontSize: card.value.toString().length > 6 ? "1.2rem" : "1.6rem",
-                            lineHeight: 1
-                          }}
-                        >
-                          {card.value}
-                        </Typography>
-
-                        {card.subtitle && (
-                          <Box sx={{ mt: 0.5 }}>
-                            {card.subtitle}
-                          </Box>
-                        )}
-                      </Box>
+                      {card.subtitle && (
+                        <Box sx={{ mt: 0.5 }}>
+                          {card.subtitle}
+                        </Box>
+                      )}
                     </Box>
                   </Box>
+                </Box>
 
-                  {/* Bottom Link: Right Aligned */}
-                  <Box sx={{ display: 'flex', justifyContent: 'flex-end', position: "relative", zIndex: 1 }}>
-                    <Button
-                      size="small"
-                      endIcon={<ArrowForward sx={{ fontSize: 14 }} />}
-                      onClick={() => navigate(card.path)}
-                      sx={{
-                        textTransform: "none",
-                        fontSize: "0.8rem",
-                        fontWeight: 700,
-                        color: "var(--color-primary)",
-                        p: 0,
-                        "&:hover": { background: "transparent", opacity: 0.8 },
-                      }}
-                    >
-                      {card.linkText}
-                    </Button>
-                  </Box>
-                </Card>
-              </Box>
+                {/* Bottom Link: Right Aligned */}
+                <Box sx={{ display: 'flex', justifyContent: 'flex-end', position: "relative", zIndex: 1 }}>
+                  <Button
+                    size="small"
+                    endIcon={<ArrowForward sx={{ fontSize: 14 }} />}
+                    onClick={() => navigate(card.path)}
+                    sx={{
+                      textTransform: "none",
+                      fontSize: "0.8rem",
+                      fontWeight: 700,
+                      color: "var(--color-primary)",
+                      p: 0,
+                      "&:hover": { background: "transparent", opacity: 0.8 },
+                    }}
+                  >
+                    {card.linkText}
+                  </Button>
+                </Box>
+              </Card>
             ))}
-          </Box>
+          </StatCardGrid>
 
           {/* Row 2: Middle Panels */}
           <Box sx={{ display: "flex", gap: { xs: 2, md: 3 }, mb: 3, flexWrap: { xs: "wrap", lg: "nowrap" }, width: "100%" }}>
