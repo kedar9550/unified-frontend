@@ -25,6 +25,7 @@ import {
   Check as CheckIcon,
 } from '@mui/icons-material';
 import PageHeader from '../../components/common/PageHeader';
+import { PageContainer } from '../../components/common/design-system';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 import API from '../../api/axios';
@@ -146,16 +147,17 @@ const FormAssign = () => {
   };
 
   return (
-    <Box sx={{ p: 3 }}>
+    <PageContainer>
       <PageHeader
         title="Form Assign"
         subtitle="Assign form fields to specific events"
+        showBack={false}
       />
 
-      <Card sx={{ mt: 3, maxWidth: 1000, mx: 'auto', boxShadow: 3, borderRadius: '16px', overflow: 'hidden' }}>
-        <Box sx={{ px: { xs: 2.5, sm: 4 }, pt: { xs: 2.5, sm: 4 }, pb: 2, borderBottom: '1px solid', borderColor: 'divider' }}>
-          <Typography variant="h6" fontWeight={800}>Assign form to Events</Typography>
-          <Typography variant="body2" color="text.secondary">
+      <Card sx={{ maxWidth: 1000, mx: 'auto', width: '100%', boxShadow: 'var(--shadow-premium)', borderRadius: '16px', border: '1px solid var(--border-color)', background: 'var(--bg-panel)', overflow: 'hidden' }}>
+        <Box sx={{ px: { xs: 2.5, sm: 4 }, pt: { xs: 2.5, sm: 4 }, pb: 2, borderBottom: '1px solid var(--border-color)' }}>
+          <Typography variant="h6" fontWeight={800} sx={{ color: 'var(--text-primary)' }}>Assign form to Events</Typography>
+          <Typography variant="body2" sx={{ color: 'var(--text-secondary)' }}>
             Define the registration form fields and select which events require them.
           </Typography>
         </Box>
@@ -165,11 +167,11 @@ const FormAssign = () => {
             <Table stickyHeader aria-label="form assignment table">
               <TableHead>
                 <TableRow>
-                  <TableCell sx={{ fontWeight: 700, width: 60, textAlign: 'center', bgcolor: 'rgba(248, 250, 252, 1)' }}>#</TableCell>
-                  <TableCell sx={{ fontWeight: 700, minWidth: 200, bgcolor: 'rgba(248, 250, 252, 1)' }}>Fieldname</TableCell>
-                  <TableCell sx={{ fontWeight: 700, minWidth: 150, bgcolor: 'rgba(248, 250, 252, 1)' }}>Field Type</TableCell>
+                  <TableCell sx={{ fontWeight: 700, width: 60, textAlign: 'center', bgcolor: 'var(--bg-paper)', color: 'var(--text-primary)', borderBottom: '1px solid var(--border-color)' }}>#</TableCell>
+                  <TableCell sx={{ fontWeight: 700, minWidth: 200, bgcolor: 'var(--bg-paper)', color: 'var(--text-primary)', borderBottom: '1px solid var(--border-color)' }}>Fieldname</TableCell>
+                  <TableCell sx={{ fontWeight: 700, minWidth: 150, bgcolor: 'var(--bg-paper)', color: 'var(--text-primary)', borderBottom: '1px solid var(--border-color)' }}>Field Type</TableCell>
                   {events.map((event, i) => (
-                    <TableCell key={event.name || i} sx={{ fontWeight: 700, textAlign: 'center', minWidth: 100, bgcolor: 'rgba(248, 250, 252, 1)' }}>
+                    <TableCell key={event.name || i} sx={{ fontWeight: 700, textAlign: 'center', minWidth: 100, bgcolor: 'var(--bg-paper)', color: 'var(--text-primary)', borderBottom: '1px solid var(--border-color)' }}>
                       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1 }}>
                         {event.name}
                         {event.status === 'Active' && (
@@ -178,33 +180,33 @@ const FormAssign = () => {
                       </Box>
                     </TableCell>
                   ))}
-                  <TableCell sx={{ width: 60, bgcolor: 'rgba(248, 250, 252, 1)' }}></TableCell>
+                  <TableCell sx={{ width: 60, bgcolor: 'var(--bg-paper)', borderBottom: '1px solid var(--border-color)' }}></TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
                 {loading ? (
                   <TableRow key="loading">
-                    <TableCell colSpan={3 + Math.max(events.length, 1) + 1} sx={{ textAlign: 'center', py: 4 }}>
-                      <Typography variant="body2" color="text.secondary">Loading events...</Typography>
+                    <TableCell colSpan={3 + Math.max(events.length, 1) + 1} sx={{ textAlign: 'center', py: 4, borderColor: 'var(--border-color)' }}>
+                      <Typography variant="body2" sx={{ color: 'var(--text-secondary)' }}>Loading events...</Typography>
                     </TableCell>
                   </TableRow>
                 ) : events.length === 0 ? (
                   <TableRow key="no-events">
-                    <TableCell colSpan={4} sx={{ textAlign: 'center', py: 5 }}>
-                      <Typography variant="subtitle1" fontWeight={700} color="text.secondary">
+                    <TableCell colSpan={4} sx={{ textAlign: 'center', py: 5, borderColor: 'var(--border-color)' }}>
+                      <Typography variant="subtitle1" fontWeight={700} sx={{ color: 'var(--text-primary)' }}>
                         No active events found for Cultural Fest.
                       </Typography>
-                      <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                      <Typography variant="body2" sx={{ color: 'var(--text-secondary)', mt: 0.5 }}>
                         Please create or activate an event under Fest Groups -&gt; Cultural Fest Event Management first.
                       </Typography>
                     </TableCell>
                   </TableRow>
                 ) : fields.map((field, index) => (
-                  <TableRow key={field.id} hover>
-                    <TableCell sx={{ textAlign: 'center', color: 'text.secondary' }}>
+                  <TableRow key={field.id} hover sx={{ '&:hover': { background: 'var(--bg-panel)' } }}>
+                    <TableCell sx={{ textAlign: 'center', color: 'var(--text-secondary)', borderColor: 'var(--border-color)' }}>
                       {index + 1}.
                     </TableCell>
-                    <TableCell>
+                    <TableCell sx={{ borderColor: 'var(--border-color)' }}>
                       <TextField
                         size="small"
                         fullWidth
@@ -212,15 +214,15 @@ const FormAssign = () => {
                         placeholder="Enter field name"
                         value={field.name}
                         onChange={(e) => handleFieldChange(field.id, 'name', e.target.value)}
-                        sx={{ bgcolor: 'background.paper', '& .MuiOutlinedInput-root': { borderRadius: '8px' } }}
+                        sx={{ bgcolor: 'var(--bg-paper)', '& .MuiOutlinedInput-root': { borderRadius: '8px' } }}
                       />
                     </TableCell>
-                    <TableCell>
+                    <TableCell sx={{ borderColor: 'var(--border-color)' }}>
                       <FormControl fullWidth size="small">
                         <Select
                           value={field.type}
                           onChange={(e) => handleFieldChange(field.id, 'type', e.target.value)}
-                          sx={{ bgcolor: 'background.paper', borderRadius: '8px' }}
+                          sx={{ bgcolor: 'var(--bg-paper)', borderRadius: '8px' }}
                         >
                           {fieldTypes.map((type) => (
                             <MenuItem key={type} value={type}>
@@ -231,22 +233,22 @@ const FormAssign = () => {
                       </FormControl>
                     </TableCell>
                     {events.map((event, i) => (
-                      <TableCell key={event.name || i} sx={{ textAlign: 'center' }}>
+                      <TableCell key={event.name || i} sx={{ textAlign: 'center', borderColor: 'var(--border-color)' }}>
                         <Checkbox
                           color="primary"
                           checked={!!field.mappedEvents[event.name]}
                           onChange={(e) => handleMappingChange(field.id, event.name, e.target.checked)}
-                          sx={{ '&.Mui-checked': { color: '#0f766e' } }}
+                          sx={{ '&.Mui-checked': { color: 'var(--color-primary)' } }}
                         />
                       </TableCell>
                     ))}
-                    <TableCell sx={{ textAlign: 'center' }}>
+                    <TableCell sx={{ textAlign: 'center', borderColor: 'var(--border-color)' }}>
                       <IconButton
                         size="small"
                         color="error"
                         onClick={() => handleRemoveRow(field.id)}
                         disabled={fields.length === 1}
-                        sx={{ bgcolor: 'rgba(220, 38, 38, 0.05)' }}
+                        sx={{ bgcolor: 'rgba(220, 38, 38, 0.1)' }}
                       >
                         <DeleteIcon fontSize="small" />
                       </IconButton>
@@ -257,11 +259,11 @@ const FormAssign = () => {
             </Table>
           </TableContainer>
 
-          <Box sx={{ p: 3, display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: '1px solid', borderColor: 'divider', bgcolor: 'rgba(248, 250, 252, 0.5)' }}>
+          <Box sx={{ p: 3, display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: '1px solid var(--border-color)', bgcolor: 'var(--bg-paper)' }}>
             <Button
               startIcon={<AddIcon />}
               onClick={handleAddRow}
-              sx={{ fontWeight: 600, borderRadius: '8px', color: '#0f766e', bgcolor: 'rgba(15, 118, 110, 0.1)', '&:hover': { bgcolor: 'rgba(15, 118, 110, 0.15)' } }}
+              sx={{ fontWeight: 600, borderRadius: '8px', color: 'var(--color-primary)', bgcolor: 'var(--bg-accent-4)', '&:hover': { bgcolor: 'var(--bg-accent-3)' } }}
             >
               Add row
             </Button>
@@ -276,7 +278,7 @@ const FormAssign = () => {
           </Box>
         </CardContent>
       </Card>
-    </Box>
+    </PageContainer>
   );
 };
 
