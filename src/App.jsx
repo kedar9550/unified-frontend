@@ -82,6 +82,7 @@ import FeedbackOverview from "./pages/serviceDesk/FeedbackOverview";
 //Student Event Admin
 import EventCreation from "./pages/studenteventsadmin/evencreation";
 import EventCoordinators from "./pages/studenteventsadmin/EventCoordinators";
+import StudentCoordinators from "./pages/studenteventsadmin/StudentCoordinators";
 import ClubManagement from "./pages/studenteventsadmin/ClubManagement";
 import EventAssignment from "./pages/studenteventsadmin/EventAssignment";
 import FestManagement from "./pages/convener/FestManagement";
@@ -294,6 +295,7 @@ function App() {
         <Route path="/Eventveda/event-schools/coordinators" element={<ProtectedRoute element={<GroupCoordinators />} />} />
         <Route path="/Eventveda/events" element={<ProtectedRoute element={<EventCreation />} />} />
         <Route path="/Eventveda/events/coordinators" element={<ProtectedRoute element={<EventCoordinators />} />} />
+        <Route path="/Eventveda/events/student-coordinators" element={<ProtectedRoute element={<StudentCoordinators />} />} />
         <Route path="/Eventveda/organisation-committee" element={<ProtectedRoute element={<OrganisationCommittee />} />} />
         <Route path="/Eventveda/departments" element={<ProtectedRoute element={<DepartmentManagement />} />} />
         <Route path="/Eventveda/payments" element={<ProtectedRoute element={<Payments />} />} />

@@ -21,6 +21,9 @@ import {
   Chip,
   Autocomplete,
   CircularProgress,
+  Radio,
+  RadioGroup,
+  FormControlLabel,
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -46,7 +49,7 @@ const EventCreation = () => {
   const [view, setView] = useState('list');
   const [events, setEvents] = useState([]);
   const [eventSchools, setEventSchools] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [eventToDelete, setEventToDelete] = useState(null);
@@ -76,8 +79,14 @@ const EventCreation = () => {
   const [extraAmountPerHead, setExtraAmountPerHead] = useState('0');
   const [overview, setOverview] = useState('');
   const [rules, setRules] = useState(['']);
+  const [wantTheme, setWantTheme] = useState(false);
+  const [themes, setThemes] = useState(['']);
   const [errors, setErrors] = useState({});
   const [selectedCoordinators, setSelectedCoordinators] = useState([]);
+  const [studentCoordinators, setStudentCoordinators] = useState([]);
+  const [studentRollNoInput, setStudentRollNoInput] = useState('');
+  const [isFetchingStudent, setIsFetchingStudent] = useState(false);
+  const [studentError, setStudentError] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [employeeOptions, setEmployeeOptions] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
@@ -211,7 +220,12 @@ const EventCreation = () => {
     setExtraAmountPerHead('0');
     setOverview('');
     setRules(['']);
+    setWantTheme(false);
+    setThemes(['']);
     setSelectedCoordinators([]);
+    setStudentCoordinators([]);
+    setStudentRollNoInput('');
+    setStudentError('');
     setSearchQuery('');
     setEmployeeOptions([]);
     setIsSearching(false);
@@ -265,6 +279,10 @@ const EventCreation = () => {
     setExtraAmountPerHead(event.extraAmountPerHead != null ? String(event.extraAmountPerHead) : '0');
     setOverview(event.overview || '');
     setRules(event.rules && event.rules.length > 0 ? event.rules : ['']);
+    const hasThemes = event.themes && event.themes.length > 0;
+    setWantTheme(hasThemes);
+    setThemes(hasThemes ? event.themes : ['']);
+    setStudentCoordinators(event.studentCoordinators || []);
     setBannerFile(null);
     setBannerPreview(event.bannerImage ? `${BACKEND_URL}${event.bannerImage}` : null);
     setBannerError('');
@@ -336,6 +354,13 @@ const EventCreation = () => {
       newErrors.rules = 'Add at least one regulation.';
     }
 
+    if (wantTheme) {
+      const themeErrors = themes.map((theme) => !theme.trim());
+      if (themeErrors.every((isEmpty) => isEmpty)) {
+        newErrors.themes = 'Add at least one theme.';
+      }
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -362,13 +387,19 @@ const EventCreation = () => {
     rules.filter((rule) => rule.trim()).forEach(rule => {
       formData.append('rules[]', rule);
     });
+    if (wantTheme) {
+      themes.filter((theme) => theme.trim()).forEach(theme => {
+        formData.append('themes[]', theme);
+      });
+    }
     formData.append('department', JSON.stringify(departments));
     formData.append('facultyCoordinators', JSON.stringify(selectedCoordinators.map((coordinator) => ({
       employeeId: coordinator?.employeeId || coordinator?.institutionId || coordinator?.employeeCode || '',
       employeeName: coordinator?.employeeName || coordinator?.name || '',
       department: coordinator?.department || '',
-      designation: coordinator?.designation || '',
+      designation: coordinator?.designation || ''
     }))));
+    formData.append('studentCoordinators', JSON.stringify(studentCoordinators));
 
     if (bannerFile) {
       formData.append('bannerImage', bannerFile);
@@ -412,6 +443,61 @@ const EventCreation = () => {
   const addRule = () => setRules((currentRules) => [...currentRules, '']);
 
   const removeRule = (index) => setRules((currentRules) => currentRules.filter((_, i) => i !== index));
+
+  const handleThemeChange = (index, value) => {
+    setThemes((currentThemes) => currentThemes.map((theme, i) => (i === index ? value : theme)));
+    setErrors((prev) => ({ ...prev, themes: null }));
+  };
+
+  const addTheme = () => setThemes((currentThemes) => [...currentThemes, '']);
+
+  const removeTheme = (index) => setThemes((currentThemes) => currentThemes.filter((_, i) => i !== index));
+
+  const handleAddStudentCoordinator = async () => {
+    const rollNo = studentRollNoInput.trim().toUpperCase();
+    if (!rollNo) {
+      setStudentError('Please enter a roll number');
+      return;
+    }
+    if (studentCoordinators.some(s => s.rollNo === rollNo)) {
+      setStudentError('Student already added');
+      return;
+    }
+    
+    setIsFetchingStudent(true);
+    setStudentError('');
+    try {
+      const targetUrl = `/adityaapi/api/studentdata/${encodeURIComponent(rollNo)}`;
+      const res = await fetch(targetUrl);
+      if (res.ok) {
+        const json = await res.json();
+        const norm = Array.isArray(json) ? json : (json ? [json] : []);
+        if (norm.length > 0 && !norm[0].error && norm[0].studentname) {
+          const student = norm[0];
+          setStudentCoordinators(prev => [...prev, {
+            rollNo: student.rollno || rollNo,
+            name: student.studentname,
+            department: student.department || '',
+            branch: student.branch || ''
+          }]);
+          setStudentRollNoInput('');
+        } else {
+          setStudentError('Student not found');
+        }
+      } else {
+        setStudentError('Failed to fetch student data');
+      }
+    } catch (err) {
+      console.error(err);
+      setStudentError('Error connecting to API');
+    } finally {
+      setIsFetchingStudent(false);
+    }
+  };
+
+  const handleRemoveStudentCoordinator = (rollNoToRemove) => {
+    setStudentCoordinators(prev => prev.filter(s => s.rollNo !== rollNoToRemove));
+  };
 
   const handleDeleteClick = (event) => {
     setEventToDelete(event);
@@ -829,17 +915,61 @@ const EventCreation = () => {
               )}
               isOptionEqualToValue={(option, value) => option?.institutionId === value?.institutionId || option?.employeeId === value?.employeeId}
               renderTags={(value, getTagProps) =>
-                value.map((option, index) => (
-                  <Chip
-                    label={`${option.employeeName || option.name || ''} (${option.employeeId || option.institutionId || ''})`}
-                    {...getTagProps({ index })}
-                    key={option.employeeId || option.institutionId || option._id || index}
-                  />
-                ))
+                value.map((option, index) => {
+                  const { key, ...tagProps } = getTagProps({ index });
+                  return (
+                    <Chip
+                      key={key}
+                      label={`${option.employeeName || option.name || ''} (${option.employeeId || option.institutionId || ''})`}
+                      {...tagProps}
+                    />
+                  );
+                })
               }
             />
 
-            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '2fr 1fr 1fr' }, gap: 2 }}>
+            <Box sx={{ border: '1px solid #e0e0e0', borderRadius: 1, p: 2, mt: 2 }}>
+              <Typography variant="subtitle2" mb={2}>Student Coordinators</Typography>
+              <Box sx={{ display: 'flex', gap: 2, alignItems: 'flex-start' }}>
+                <TextField
+                  label="Roll Number"
+                  value={studentRollNoInput}
+                  onChange={(e) => setStudentRollNoInput(e.target.value)}
+                  error={!!studentError}
+                  helperText={studentError}
+                  size="small"
+                  sx={{ flexGrow: 1 }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handleAddStudentCoordinator();
+                    }
+                  }}
+                />
+                <Button 
+                  variant="contained" 
+                  onClick={handleAddStudentCoordinator}
+                  disabled={isFetchingStudent}
+                >
+                  {isFetchingStudent ? <CircularProgress size={24} color="inherit" /> : 'Add Student'}
+                </Button>
+              </Box>
+              {studentCoordinators.length > 0 && (
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mt: 2 }}>
+                  {studentCoordinators.map((student) => (
+                    <Chip
+                      key={student.rollNo}
+                      label={`${student.name} (${student.rollNo})`}
+                      onDelete={() => handleRemoveStudentCoordinator(student.rollNo)}
+                      color="primary"
+                      variant="outlined"
+                    />
+                  ))}
+                </Box>
+              )}
+            </Box>
+
+            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '2fr 1fr 1fr' }, gap: 2, mt: 2 }}>
               <TextField
                 fullWidth
                 label="Event Name"
@@ -1066,6 +1196,70 @@ const EventCreation = () => {
                 </Button>
               </Box>
             </Box>
+
+            <Box sx={{ mt: 4, mb: 2 }}>
+              <FormControl component="fieldset">
+                <Typography variant="subtitle1" fontWeight={600} mb={1}>
+                  Do you want a theme for this event?
+                </Typography>
+                <RadioGroup
+                  row
+                  value={wantTheme ? 'yes' : 'no'}
+                  onChange={(e) => setWantTheme(e.target.value === 'yes')}
+                >
+                  <FormControlLabel value="yes" control={<Radio />} label="Yes" />
+                  <FormControlLabel value="no" control={<Radio />} label="No" />
+                </RadioGroup>
+              </FormControl>
+            </Box>
+
+            {wantTheme && (
+              <Box sx={{ mb: 4 }}>
+                <Box sx={{ mb: 2 }}>
+                  <Typography variant="subtitle1" fontWeight={600}>
+                    Themes (Enter the themes)
+                  </Typography>
+                </Box>
+
+                <Stack spacing={2}>
+                  {themes.map((theme, index) => (
+                    <Box key={`theme-${index}`} sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr auto' }, gap: 2 }}>
+                      <TextField
+                        fullWidth
+                        label={`Theme ${index + 1}`}
+                        value={theme}
+                        onChange={(e) => handleThemeChange(index, e.target.value)}
+                        error={!!errors.themes && !theme.trim()}
+                        helperText={index === themes.length - 1 && errors.themes ? errors.themes : ''}
+                      />
+                      <IconButton
+                        aria-label="remove theme"
+                        onClick={() => removeTheme(index)}
+                        disabled={themes.length === 1}
+                        sx={{ alignSelf: 'center', ml: 0.5 }}
+                      >
+                        <RemoveIcon />
+                      </IconButton>
+                    </Box>
+                  ))}
+                  <Box>
+                    <Button
+                      startIcon={<AddIcon />}
+                      onClick={addTheme}
+                      variant="contained"
+                      sx={{
+                        bgcolor: '#0d9488',
+                        '&:hover': { bgcolor: '#0f766e' },
+                        textTransform: 'none',
+                        px: 3
+                      }}
+                    >
+                      Add Theme
+                    </Button>
+                  </Box>
+                </Stack>
+              </Box>
+            )}
 
             <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2, mt: 1 }}>
               <Button variant="outlined" startIcon={<ArrowBackIcon />} onClick={cancelForm}>
