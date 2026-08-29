@@ -13,11 +13,13 @@ import {
   IconButton,
   Stack
 } from "@mui/material";
-import { RateReview, Visibility } from "@mui/icons-material";
+import { RateReview, Visibility, Assignment as AssignmentIcon } from "@mui/icons-material";
 import axiosInstance from "../../api/axios";
 import { toast } from "sonner";
 import DataTable from "../../components/data/DataTable";
 import PageHeader from "../../components/common/PageHeader";
+import { PageContainer } from "../../components/common/design-system";
+import ActionButton from "../../components/common/ActionButton";
 
 const AppraisalEvaluation = () => {
   const navigate = useNavigate();
@@ -68,101 +70,93 @@ const AppraisalEvaluation = () => {
   };
 
   return (
-    <Box p={4} sx={{ maxWidth: "100%", margin: "0 auto", animation: "fadeIn 0.5s ease" }}>
+    <PageContainer>
       {loading && <Loader />}
       
-      <Stack spacing={3} sx={{ width: "100%", mb: 3 }}>
-        <PageHeader
-          title="Appraisal Verification Desk"
-          subtitle="Review and evaluate faculty self-appraisal submissions"
-        />
-      </Stack>
+      <PageHeader
+        title="Appraisal Verification Desk"
+        subtitle="Review and evaluate faculty self-appraisal submissions"
+        icon={<AssignmentIcon />}
+      />
 
-      <Box>
-        <Card sx={{ borderRadius: "16px", background: "var(--bg-panel)", border: "1px solid var(--border-color)", boxShadow: "var(--shadow-premium)", p: 3 }}>
-          <DataTable
-            columns={["FACULTY NAME", "EMPLOYEE ID", "DEPARTMENT", "ACADEMIC YEAR", "STATUS", "ACTION"]}
-            rows={filteredList.map((appr) => {
-              const displayStatus = appr.status === "Submitted to HOD"
-                ? "Pending at HOD"
-                : appr.status; // Show the actual backend status (e.g., Pending at Dean)
-              const statusColor = getStatusColor(displayStatus);
-              const name = appr.facultyId?.name || "N/A";
-              const empId = appr.facultyId?.institutionId || "N/A";
-              const dept = appr.personalInfoSnapshot?.departmentName || "N/A";
-              const year = appr.academicYearId?.year || "N/A";
+      <DataTable
+        columns={["FACULTY NAME", "EMPLOYEE ID", "DEPARTMENT", "ACADEMIC YEAR", "STATUS", "ACTION"]}
+        rows={filteredList.map((appr) => {
+          const displayStatus = appr.status === "Submitted to HOD"
+            ? "Pending at HOD"
+            : appr.status;
+          const statusColor = getStatusColor(displayStatus);
+          const name = appr.facultyId?.name || "N/A";
+          const empId = appr.facultyId?.institutionId || "N/A";
+          const dept = appr.personalInfoSnapshot?.departmentName || "N/A";
+          const year = appr.academicYearId?.year || "N/A";
 
-              return [
-                { value: name, display: <Typography sx={{ fontWeight: 700, color: "var(--text-primary)", fontSize: "0.88rem" }}>{name}</Typography> },
-                { value: empId, display: <Typography sx={{ fontWeight: 600 }}>{empId}</Typography> },
-                { value: dept, display: dept },
-                { value: year, display: <Typography sx={{ fontWeight: 600 }}>{year}</Typography> },
-                {
-                  value: displayStatus,
-                  display: (
-                    <Chip
-                      label={displayStatus}
-                      size="small"
-                      sx={{
-                        bgcolor: statusColor.bg,
-                        color: statusColor.color,
-                        fontWeight: 800,
-                        borderRadius: "6px"
-                      }}
-                    />
-                  )
-                },
-                {
-                  value: "",
-                  display: appr.status === "Submitted to HOD" ? (
-                    <Button
-                      variant="contained"
-                      size="small"
-                      startIcon={<RateReview />}
-                      onClick={() => handleSelectAppraisal(appr)}
-                      color="primary"
-                      sx={{ textTransform: "none", fontWeight: 700 }}
-                    >
-                      Evaluate
-                    </Button>
-                  ) : (
-                    <IconButton
-                      onClick={() => handleSelectAppraisal(appr)}
-                      color="secondary"
-                      size="small"
-                      title="View"
-                    >
-                      <Visibility fontSize="small" />
-                    </IconButton>
-                  )
-                }
-              ];
-            })}
-            alignments={["left", "center", "left", "center", "center", "center"]}
-            nonSortableColumns={[5]}
-            toolbarLeft={(
-              <FormControl size="small" sx={{ minWidth: 200 }}>
-                <Typography variant="caption" sx={{ fontWeight: 700, mb: 0.5, color: "var(--text-secondary)" }}>Status</Typography>
-                <Select
-                  value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value)}
+          return [
+            { value: name, display: <Typography sx={{ fontWeight: 700, color: "var(--text-primary)", fontSize: "0.88rem" }}>{name}</Typography> },
+            { value: empId, display: <Typography sx={{ fontWeight: 600 }}>{empId}</Typography> },
+            { value: dept, display: dept },
+            { value: year, display: <Typography sx={{ fontWeight: 600 }}>{year}</Typography> },
+            {
+              value: displayStatus,
+              display: (
+                <Chip
+                  label={displayStatus}
+                  size="small"
                   sx={{
-                    borderRadius: "10px",
-                    background: "var(--bg-paper)",
-                    "& .MuiOutlinedInput-notchedOutline": { borderColor: "var(--border-color)" }
+                    bgcolor: statusColor.bg,
+                    color: statusColor.color,
+                    fontWeight: 800,
+                    borderRadius: "6px"
                   }}
+                />
+              )
+            },
+            {
+              value: "",
+              display: appr.status === "Submitted to HOD" ? (
+                <ActionButton
+                  size="small"
+                  startIcon={<RateReview />}
+                  onClick={() => handleSelectAppraisal(appr)}
                 >
-                  <MenuItem value="Pending">Pending at HOD</MenuItem>
-                  <MenuItem value="Approved">Approved by HOD</MenuItem>
-                  <MenuItem value="Rejected">Rejected by HOD</MenuItem>
-                  <MenuItem value="All">All Requests</MenuItem>
-                </Select>
-              </FormControl>
-            )}
-          />
-        </Card>
-      </Box>
-    </Box>
+                  Evaluate
+                </ActionButton>
+              ) : (
+                <IconButton
+                  onClick={() => handleSelectAppraisal(appr)}
+                  color="secondary"
+                  size="small"
+                  title="View"
+                >
+                  <Visibility fontSize="small" />
+                </IconButton>
+              )
+            }
+          ];
+        })}
+        alignments={["left", "center", "left", "center", "center", "center"]}
+        nonSortableColumns={[5]}
+        toolbarLeft={(
+          <FormControl size="small" sx={{ minWidth: 200 }}>
+            <Typography variant="caption" sx={{ fontWeight: 700, mb: 0.5, color: "var(--text-secondary)" }}>Status</Typography>
+            <Select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              sx={{
+                borderRadius: "10px",
+                background: "var(--bg-paper)",
+                "& .MuiOutlinedInput-notchedOutline": { borderColor: "var(--border-color)" }
+              }}
+            >
+              <MenuItem value="Pending">Pending at HOD</MenuItem>
+              <MenuItem value="Approved">Approved by HOD</MenuItem>
+              <MenuItem value="Rejected">Rejected by HOD</MenuItem>
+              <MenuItem value="All">All Requests</MenuItem>
+            </Select>
+          </FormControl>
+        )}
+      />
+    </PageContainer>
   );
 };
 

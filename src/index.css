@@ -191,8 +191,15 @@ body.dark-mode .MuiOutlinedInput-notchedOutline {
   border-color: var(--border-color) !important;
 }
 
-body.dark-mode .MuiInputBase-root {
+body.dark-mode .MuiOutlinedInput-root,
+body.dark-mode .MuiFilledInput-root {
   background-color: rgba(2, 6, 23, 0.3) !important;
+}
+
+body.dark-mode .MuiInput-underline.MuiInputBase-root,
+body.dark-mode .MuiInput-root,
+body.dark-mode .MuiSelect-select {
+  background-color: transparent !important;
 }
 
 body.dark-mode .MuiInputLabel-root {
@@ -256,6 +263,41 @@ body.dark-mode .MuiRadio-root.Mui-checked svg {
 
 body.dark-mode .MuiCheckbox-root {
   color: var(--text-secondary);
+}
+
+/* Responsive TablePagination to fit mobile screen width */
+.MuiTablePagination-root {
+  overflow-x: auto;
+  max-width: 100%;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+@media (max-width: 600px) {
+  .MuiTablePagination-toolbar {
+    padding-left: 8px !important;
+    padding-right: 8px !important;
+    min-height: 44px !important;
+    flex-wrap: wrap !important;
+    justify-content: space-between !important;
+    gap: 4px;
+  }
+  .MuiTablePagination-selectLabel,
+  .MuiTablePagination-displayedRows {
+    font-size: 0.725rem !important;
+    margin: 0 !important;
+  }
+  .MuiTablePagination-select {
+    font-size: 0.725rem !important;
+    padding-left: 4px !important;
+    padding-right: 20px !important;
+  }
+  .MuiTablePagination-actions {
+    margin-left: auto !important;
+  }
+  .MuiTablePagination-actions button {
+    padding: 4px !important;
+  }
 }
 
 

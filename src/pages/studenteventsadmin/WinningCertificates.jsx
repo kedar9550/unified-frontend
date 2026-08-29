@@ -36,10 +36,14 @@ import {
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import PageHeader from '../../components/common/PageHeader';
+import { PageContainer, EmptyState } from '../../components/common/design-system';
+import ActionButton from '../../components/common/ActionButton';
 import DataTable from '../../components/data/DataTable';
 import API from '../../api/axios';
 import { toast } from 'sonner';
 import { useAuth } from '../../context/AuthContext';
+import StatCard from '../../components/common/StatCard';
+import StatCardGrid from '../../components/common/StatCardGrid';
 
 const formatDate = (value) => {
   if (!value) return '-';
@@ -361,121 +365,96 @@ const WinningCertificates = () => {
   });
 
   return (
-    <Box sx={{ p: { xs: 2, md: 3, lg: 4 } }}>
+    <PageContainer>
       <PageHeader
         title="Winning Certificates"
         subtitle="View winning certificates for student events"
         action={
           <Box sx={{ display: 'flex', gap: 1.5 }}>
             <Button
-              variant="outlined"
+              variant="contained"
               onClick={handleDownloadCSV}
               startIcon={<DownloadIcon />}
-              sx={{ borderRadius: '12px', textTransform: 'none', px: 2.5, py: 1 }}
+              sx={{
+                borderRadius: '10px',
+                textTransform: 'none',
+                px: 2.5,
+                py: 0.8,
+                fontWeight: 700,
+                background: 'var(--gradient-primary)',
+                color: '#ffffff',
+                boxShadow: '0 4px 14px rgba(59, 130, 246, 0.35)',
+                '&:hover': {
+                  boxShadow: '0 6px 20px rgba(59, 130, 246, 0.5)',
+                },
+              }}
             >
               Export CSV
             </Button>
-            <Button
-              variant="contained"
+            <ActionButton
               onClick={fetchPayments}
               startIcon={<RefreshIcon />}
-              sx={{ borderRadius: '12px', textTransform: 'none', px: 2.5, py: 1 }}
             >
               Refresh
-            </Button>
+            </ActionButton>
           </Box>
         }
       />
 
-      <Box sx={{ p: { xs: 2, sm: 3 } }}>
-        <Grid container spacing={3} sx={{ mb: 4 }}>
-          {[
-            { label: 'Total Teams', value: stats.teamCount, color: '#3b82f6', bg: 'rgba(59, 130, 246, 0.1)', icon: <GroupIcon /> },
-            { label: 'Total Winners', value: stats.winnersCount, color: '#10b981', bg: 'rgba(16, 185, 129, 0.1)', icon: <CheckCircleIcon /> },
-            { label: '1st Prize', value: stats.firstPrizeCount, color: '#d97706', bg: 'rgba(245, 158, 11, 0.15)', icon: <EmojiEventsIcon /> },
-            { label: '2nd Prize', value: stats.secondPrizeCount, color: '#64748b', bg: 'rgba(148, 163, 184, 0.15)', icon: <EmojiEventsIcon /> },
-            { label: '3rd Prize', value: stats.thirdPrizeCount, color: '#92400e', bg: 'rgba(180, 83, 9, 0.15)', icon: <EmojiEventsIcon /> },
-          ].map((stat, idx) => (
-            <Grid item xs={12} sm={6} md={2.4} key={idx}>
-              <Paper
-                elevation={0}
-                sx={{
-                  p: 2.5,
-                  borderRadius: '20px',
-                  border: '1px solid',
-                  borderColor: 'var(--border-color)',
-                  background: `linear-gradient(135deg, var(--bg-panel, #ffffff) 0%, ${stat.bg} 100%)`,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 2.5,
-                  position: 'relative',
-                  overflow: 'hidden',
-                  transition: 'transform 0.2s',
-                  '&:hover': {
-                    transform: 'translateY(-4px)',
-                    boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.05)',
-                  }
-                }}
-              >
-                <Box
-                  sx={{
-                    width: 48,
-                    height: 48,
-                    borderRadius: '14px',
-                    background: stat.bg,
-                    color: stat.color,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    boxShadow: `0 4px 12px ${stat.bg}`
-                  }}
-                >
-                  {React.cloneElement(stat.icon, { sx: { fontSize: 26 } })}
-                </Box>
-                <Box>
-                  <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 700, textTransform: 'uppercase', mb: 0.5, letterSpacing: '0.5px', fontSize: '0.7rem' }}>
-                    {stat.label}
-                  </Typography>
-                  <Typography variant="h5" sx={{ fontWeight: 900, color: 'var(--text-primary)', lineHeight: 1 }}>
-                    {stat.value}
-                  </Typography>
-                </Box>
+      <StatCardGrid columns={5} sx={{ mb: 3 }}>
+        <StatCard
+          title="Total Teams"
+          value={stats.teamCount}
+          color="#3b82f6"
+          icon={<GroupIcon />}
+        />
+        <StatCard
+          title="Total Winners"
+          value={stats.winnersCount}
+          color="#10b981"
+          icon={<CheckCircleIcon />}
+        />
+        <StatCard
+          title="1st Prize"
+          value={stats.firstPrizeCount}
+          color="#d97706"
+          icon={<EmojiEventsIcon />}
+        />
+        <StatCard
+          title="2nd Prize"
+          value={stats.secondPrizeCount}
+          color="#64748b"
+          icon={<EmojiEventsIcon />}
+        />
+        <StatCard
+          title="3rd Prize"
+          value={stats.thirdPrizeCount}
+          color="#b45309"
+          icon={<EmojiEventsIcon />}
+        />
+      </StatCardGrid>
 
-                {/* Background watermark icon */}
-                <Box sx={{ position: 'absolute', right: -10, bottom: -15, opacity: 0.05, color: stat.color, transform: 'scale(2.5)' }}>
-                  {React.cloneElement(stat.icon)}
-                </Box>
-              </Paper>
-            </Grid>
-          ))}
-        </Grid>
-
-        {loading ? (
-          <Box sx={{ display: 'grid', placeItems: 'center', py: 10 }}>
-            <CircularProgress size={32} />
-          </Box>
-        ) : (
-          <Box sx={{ mt: 2 }}>
-            {payments.length === 0 ? (
-              <Box sx={{ p: 4, borderRadius: '20px', border: '1px solid var(--border-color)', background: 'var(--bg-panel)', textAlign: 'center' }}>
-                <Typography variant="h6" sx={{ mb: 1 }}>
-                  No payment registrations found
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  Payment data will appear here once registrations are created or verified.
-                </Typography>
-              </Box>
-            ) : (
-              <DataTable
-                columns={columns}
-                rows={rows}
-                nonSortableColumns={[0, 6, 7, 8]}
-                alignments={['center', 'left', 'left', 'left', 'center', 'center', 'center', 'center', 'center']}
-              />
-            )}
-          </Box>
-        )}
-      </Box>
+      {loading ? (
+        <Box sx={{ display: 'grid', placeItems: 'center', py: 10 }}>
+          <CircularProgress size={32} />
+        </Box>
+      ) : (
+        <Box sx={{ mt: 2 }}>
+          {payments.length === 0 ? (
+            <EmptyState
+              title="No payment registrations found"
+              description="Payment data will appear here once registrations are created or verified."
+            />
+          ) : (
+            <DataTable
+              columns={columns}
+              rows={rows}
+              nonSortableColumns={[0, 6, 7, 8]}
+              alignments={['center', 'left', 'left', 'left', 'center', 'center', 'center', 'center', 'center']}
+            />
+          )}
+        </Box>
+      )}
 
       {/* Invoice Popup Dialog */}
       {selectedPayment && (
@@ -732,7 +711,7 @@ const WinningCertificates = () => {
           </Button>
         </DialogActions>
       </Dialog>
-    </Box>
+    </PageContainer>
   );
 };
 

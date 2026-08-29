@@ -33,6 +33,10 @@ import PlaylistAddCheckIcon from '@mui/icons-material/PlaylistAddCheck';
 import API from "../../api/axios";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
+import PageHeader from "../../components/common/PageHeader";
+import { PageContainer } from "../../components/common/design-system";
+import StatCardGrid from "../../components/common/StatCardGrid";
+import StatCard from "../../components/common/StatCard";
 import {
   ResponsiveContainer,
   PieChart,
@@ -60,7 +64,7 @@ const SchoolDeanDashboard = () => {
         setLoading(false);
       }
     };
-    fetchDashboardData();   
+    fetchDashboardData();
   }, [user]);
 
   const getStatusStyle = (status) => {
@@ -148,7 +152,7 @@ const SchoolDeanDashboard = () => {
   ];
 
   return (
-    <Box sx={{ p: { xs: 1, sm: 0 } }}>
+    <PageContainer>
       {/* Header */}
       <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 2 }}>
         <Box>
@@ -193,190 +197,116 @@ const SchoolDeanDashboard = () => {
       </Box>
 
       {/* Summary Cards Row */}
-      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 3, mb: 4 }}>
+      <StatCardGrid columns={4} sx={{ mb: 4 }}>
         {topCards.map((card, i) => (
-          <Box
+          <StatCard
             key={i}
-            sx={{
-              flex: { xs: '1 1 100%', sm: '1 1 calc(50% - 24px)', md: '1 1 calc(33.333% - 24px)', lg: '1 1 calc(20% - 24px)' },
-              boxSizing: 'border-box'
-            }}
-          >
-            <Card sx={{
-              borderRadius: "16px",
-              background: 'var(--bg-panel)',
-              border: '1px solid var(--border-color)',
-              p: 2.5,
-              display: "flex",
-              flexDirection: "column",
-              position: "relative",
-              overflow: "hidden",
-              transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-              boxShadow: "var(--shadow-premium)",
-              '&:hover': {
-                transform: 'translateY(-5px)',
-                boxShadow: '0 12px 40px rgba(0,0,0,0.12)',
-              }
-            }}>
-              {/* Top Section */}
-              <Box sx={{ display: "flex", alignItems: "flex-start", gap: 2, mb: 3, position: "relative", zIndex: 1 }}>
-                {/* Icon */}
-                <Box sx={{
-                  width: 48,
-                  height: 48,
-                  borderRadius: "12px",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  backgroundColor: card.color,
-                  color: "#fff",
-                  flexShrink: 0,
-                  position: "relative",
-                  boxShadow: "0 8px 16px rgba(0,0,0,0.1)",
-                  "&::after": {
-                    content: '""',
-                    position: "absolute",
-                    inset: 0,
-                    background: "linear-gradient(180deg, #ffffff30, transparent)",
-                    borderRadius: "12px",
-                  },
-                }}>
-                  {card.icon}
-                </Box>
-                {/* Text */}
-                <Box sx={{ textAlign: "left", flex: 1 }}>
-                  <Typography variant="caption" sx={{ color: "var(--text-secondary)", fontWeight: 700, fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: 0.5, display: 'block' }}>
-                    {card.title}
-                  </Typography>
-                  <Typography variant="h4" sx={{ fontWeight: 800, color: "var(--text-primary)", my: 0.5, fontSize: '2.125rem', lineHeight: 1 }}>
-                    {card.value}
-                  </Typography>
-                  <Typography variant="caption" sx={{ color: "var(--text-secondary)", fontWeight: 500, fontSize: '0.75rem' }}>
-                    {card.subtitle}
-                  </Typography>
-                </Box>
-              </Box>
-              
-              {/* Divider */}
-              <Box sx={{ borderTop: "1px solid var(--border-color)", mt: 1, pt: 2, display: 'flex', justifyContent: 'flex-end' }}>
-                {/* Bottom Link */}
-                <Button
-                  size="small"
-                  endIcon={<ArrowForward sx={{ fontSize: 16 }} />}
-                  onClick={() => navigate(card.path)}
-                  sx={{
-                    textTransform: "none",
-                    fontWeight: 700,
-                    color: "var(--color-primary)",
-                    "&:hover": {
-                      background: "transparent",
-                      textDecoration: "underline",
-                    },
-                  }}
-                >
-                  {card.linkText}
-                </Button>
-              </Box>
-            </Card>
-          </Box>
+            title={card.title}
+            value={card.value}
+            subtitle={card.subtitle}
+            icon={card.icon}
+            color={card.color}
+            linkText={card.linkText}
+            onClick={() => card.path && navigate(card.path)}
+          />
         ))}
-      </Box>
+      </StatCardGrid>
 
       {/* Main Container: Pending Approval Hub */}
       <Box sx={{ width: '100%' }}>
         <Box sx={{ mb: 4 }}>
-            <Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)", mb: 2 }}>
-              Pending Action Items Hub
-            </Typography>
-            <Stack spacing={2}>
-              {pendingActions.map((action, i) => (
-                <Paper
-                  key={i}
-                  sx={{
-                    borderRadius: "20px",
-                    border: "1px solid var(--border-color)",
-                    background: "var(--bg-panel)",
-                    p: 2.5,
+          <Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)", mb: 2 }}>
+            Pending Action Items Hub
+          </Typography>
+          <Stack spacing={2}>
+            {pendingActions.map((action, i) => (
+              <Paper
+                key={i}
+                sx={{
+                  borderRadius: "20px",
+                  border: "1px solid var(--border-color)",
+                  background: "var(--bg-panel)",
+                  p: 2.5,
+                  display: "flex",
+                  flexDirection: { xs: "column", sm: "row" },
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  gap: 2,
+                  transition: "all 0.3s ease",
+                  position: "relative",
+                  overflow: "hidden",
+                  "&:hover": {
+                    borderColor: action.color,
+                    boxShadow: "var(--shadow-premium)",
+                    transform: "scale(1.005)"
+                  }
+                }}
+              >
+                <Box sx={{ display: "flex", alignItems: "flex-start", gap: 2, flex: 1 }}>
+                  <Box sx={{
+                    width: 44,
+                    height: 44,
+                    borderRadius: "12px",
                     display: "flex",
-                    flexDirection: { xs: "column", sm: "row" },
                     alignItems: "center",
-                    justifyContent: "space-between",
-                    gap: 2,
-                    transition: "all 0.3s ease",
-                    position: "relative",
-                    overflow: "hidden",
-                    "&:hover": {
-                      borderColor: action.color,
-                      boxShadow: "var(--shadow-premium)",
-                      transform: "scale(1.005)"
-                    }
-                  }}
-                >
-                  <Box sx={{ display: "flex", alignItems: "flex-start", gap: 2, flex: 1 }}>
-                    <Box sx={{
-                      width: 44,
-                      height: 44,
-                      borderRadius: "12px",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      backgroundColor: `${action.color}15`,
-                      color: action.color,
-                      flexShrink: 0,
-                      mt: 0.5
-                    }}>
-                      {action.icon}
-                    </Box>
-                    <Box>
-                      <Typography variant="subtitle1" sx={{ fontWeight: 800, color: "var(--text-primary)", mb: 0.5 }}>
-                        {action.title}
-                      </Typography>
-                      <Typography variant="body2" sx={{ color: "var(--text-secondary)", opacity: 0.8, fontSize: '0.8rem', lineHeight: 1.4 }}>
-                        {action.desc}
-                      </Typography>
-                    </Box>
+                    justifyContent: "center",
+                    backgroundColor: `${action.color}15`,
+                    color: action.color,
+                    flexShrink: 0,
+                    mt: 0.5
+                  }}>
+                    {action.icon}
                   </Box>
+                  <Box>
+                    <Typography variant="subtitle1" sx={{ fontWeight: 800, color: "var(--text-primary)", mb: 0.5 }}>
+                      {action.title}
+                    </Typography>
+                    <Typography variant="body2" sx={{ color: "var(--text-secondary)", opacity: 0.8, fontSize: '0.8rem', lineHeight: 1.4 }}>
+                      {action.desc}
+                    </Typography>
+                  </Box>
+                </Box>
 
-                  <Box sx={{ display: "flex", alignItems: "center", gap: 3, width: { xs: "100%", sm: "auto" }, justifyContent: "space-between" }}>
-                    <Chip
-                      label={action.count > 0 ? `${action.count} Pending` : "0 Pending"}
-                      sx={{
-                        fontWeight: 700,
-                        fontSize: "0.75rem",
-                        bgcolor: action.count > 0 ? `${action.color}20` : "var(--bg-accent-4)",
-                        color: action.count > 0 ? action.color : "var(--text-secondary)",
-                        border: `1px solid ${action.count > 0 ? `${action.color}35` : "var(--border-color)"}`,
-                        borderRadius: "8px",
-                        px: 0.5
-                      }}
-                    />
-                    <Button
- variant="contained"
- onClick={() => navigate(action.path)}
- endIcon={<ArrowForward sx={{ fontSize: 16 }} />}
- sx={{
- 
- textTransform: "none",
- fontWeight: 700,
- px: 2.5,
- py: 1,
- bgcolor: action.count > 0 ? action.color : "var(--text-secondary)",
- color: "#fff",
- boxShadow: "none",
- "&:hover": {
- bgcolor: action.count > 0 ? `${action.color}dd` : "var(--text-primary)",
- boxShadow: "none"
- }
- }}
- >
-                      Review
-                    </Button>
-                  </Box>
-                </Paper>
-              ))}
-            </Stack>
-          </Box>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 3, width: { xs: "100%", sm: "auto" }, justifyContent: "space-between" }}>
+                  <Chip
+                    label={action.count > 0 ? `${action.count} Pending` : "0 Pending"}
+                    sx={{
+                      fontWeight: 700,
+                      fontSize: "0.75rem",
+                      bgcolor: action.count > 0 ? `${action.color}20` : "var(--bg-accent-4)",
+                      color: action.count > 0 ? action.color : "var(--text-secondary)",
+                      border: `1px solid ${action.count > 0 ? `${action.color}35` : "var(--border-color)"}`,
+                      borderRadius: "8px",
+                      px: 0.5
+                    }}
+                  />
+                  <Button
+                    variant="contained"
+                    onClick={() => navigate(action.path)}
+                    endIcon={<ArrowForward sx={{ fontSize: 16 }} />}
+                    sx={{
+
+                      textTransform: "none",
+                      fontWeight: 700,
+                      px: 2.5,
+                      py: 1,
+                      bgcolor: action.count > 0 ? action.color : "var(--text-secondary)",
+                      color: "#fff",
+                      boxShadow: "none",
+                      "&:hover": {
+                        bgcolor: action.count > 0 ? `${action.color}dd` : "var(--text-primary)",
+                        boxShadow: "none"
+                      }
+                    }}
+                  >
+                    Review
+                  </Button>
+                </Box>
+              </Paper>
+            ))}
+          </Stack>
         </Box>
+      </Box>
 
       {/* Recent Activities Log */}
       <Box sx={{ mt: 4, mb: 2 }}>
@@ -421,17 +351,6 @@ const SchoolDeanDashboard = () => {
                         <Typography sx={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 500 }}>
                           {actDate}
                         </Typography>
-                        <Chip
-                          label={act.status}
-                          size="small"
-                          sx={{
-                            bgcolor: statusStyle.bg,
-                            color: statusStyle.color,
-                            fontWeight: 700,
-                            fontSize: '0.7rem',
-                            borderRadius: '6px'
-                          }}
-                        />
                       </Stack>
                     </ListItem>
                     {idx < dashboard.recentActivities.length - 1 && <Divider component="li" sx={{ opacity: 0.5 }} />}
@@ -446,7 +365,7 @@ const SchoolDeanDashboard = () => {
           )}
         </Card>
       </Box>
-    </Box>
+    </PageContainer>
   );
 };
 

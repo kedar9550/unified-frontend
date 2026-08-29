@@ -39,6 +39,7 @@ import {
   Cancel as CancelIcon,
 } from '@mui/icons-material';
 import PageHeader from '../../components/common/PageHeader';
+import { PageContainer } from '../../components/common/design-system';
 import DataTable from '../../components/data/DataTable';
 import API from '../../api/axios';
 import { toast } from 'sonner';
@@ -662,7 +663,7 @@ const EventSchoolManagement = () => {
   // ─── LIST VIEW ───
   if (view === 'list') {
     return (
-      <Box sx={{ p: 3 }}>
+      <PageContainer>
         <PageHeader
           title="School Management"
           subtitle="Create and manage VEDA event schools"
@@ -787,13 +788,13 @@ const EventSchoolManagement = () => {
             />
           </Box>
         </Dialog>
-      </Box>
+      </PageContainer>
     );
   }
 
   // ─── FORM VIEW (Create / Edit) ───
   return (
-    <Box sx={{ p: { xs: 2, sm: 3 } }}>
+    <PageContainer>
       <PageHeader
         title={editingEventSchool ? 'Edit School' : 'Create School'}
         subtitle={
@@ -1242,7 +1243,7 @@ const EventSchoolManagement = () => {
           </Stack>
         </CardContent>
       </Card>
-    </Box>
+    </PageContainer>
   );
 };
 

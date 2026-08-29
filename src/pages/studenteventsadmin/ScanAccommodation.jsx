@@ -26,12 +26,14 @@ import QrCodeScannerIcon from '@mui/icons-material/QrCodeScanner';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import { Html5QrcodeScanner } from 'html5-qrcode';
 import html2pdf from 'html2pdf.js';
+import PageHeader from '../../components/common/PageHeader';
+import { PageContainer } from '../../components/common/design-system';
 import api from '../../api/axios';
 import { useAuth } from '../../context/AuthContext';
 
 const ScanAccommodation = () => {
   const { activeRole, user } = useAuth();
-  
+
   const ACCOMMODATION_DAYS = parseInt(import.meta.env.VITE_ACCOMMODATION_DAYS) || 2;
   const ACCOMMODATION_COST_PER_DAY = parseInt(import.meta.env.VITE_ACCOMMODATION_COST_PER_DAY) || 1;
   const TOTAL_ACCOMMODATION_COST = ACCOMMODATION_DAYS * ACCOMMODATION_COST_PER_DAY;
@@ -49,7 +51,7 @@ const ScanAccommodation = () => {
   const [paymentModalOpen, setPaymentModalOpen] = useState(false);
   const [pendingParticipant, setPendingParticipant] = useState(null);
   const [paymentLoading, setPaymentLoading] = useState(false);
-  
+
   // Invoice Modal State
   const [invoiceModalOpen, setInvoiceModalOpen] = useState(false);
   const [selectedInvoice, setSelectedInvoice] = useState(null);
@@ -71,9 +73,9 @@ const ScanAccommodation = () => {
           const events = eventsRes.data?.events || [];
           const userEvents = events.filter(e => {
             const coords = e.facultyCoordinators || (e.facultyCoordinator ? [e.facultyCoordinator] : []);
-            return coords.some(c => 
-              c.employeeId === user.institutionId || 
-              c.employeeId === user.employeeId || 
+            return coords.some(c =>
+              c.employeeId === user.institutionId ||
+              c.employeeId === user.employeeId ||
               c.employeeId === user.employeeCode
             );
           });
@@ -82,13 +84,13 @@ const ScanAccommodation = () => {
 
         const response = await api.get('/api/razorpay/registrations');
         let payments = response.data.payments || [];
-        
+
         if (allowedEventNames) {
           payments = payments.filter(p => allowedEventNames.includes(p.eventName || p.category));
         }
 
         const previousScans = [];
-        
+
         payments.forEach(payment => {
           if (payment.participants && Array.isArray(payment.participants)) {
             payment.participants.forEach(p => {
@@ -103,7 +105,7 @@ const ScanAccommodation = () => {
             });
           }
         });
-        
+
         // Sort descending by simulated scannedAt (updatedAt)
         previousScans.sort((a, b) => b.scannedAt - a.scannedAt);
         setScannedParticipants(previousScans);
@@ -118,7 +120,7 @@ const ScanAccommodation = () => {
   const processScan = async (codeToScan) => {
     if (!codeToScan || !codeToScan.trim()) return;
     if (loadingRef.current) return;
-    
+
     // Prevent immediate duplicate scans from camera
     if (lastScannedRef.current === codeToScan) return;
     lastScannedRef.current = codeToScan;
@@ -140,7 +142,7 @@ const ScanAccommodation = () => {
     } catch (err) {
       setError(err.response?.data?.error || 'Failed to scan barcode.');
       if (err.response?.data?.participant) {
-         setBarcode(''); // Reset even if already scanned
+        setBarcode(''); // Reset even if already scanned
       }
     } finally {
       setLoading(false);
@@ -207,7 +209,7 @@ const ScanAccommodation = () => {
               signature: response.razorpay_signature,
               amount: amount
             });
-            
+
             // Payment success!
             setPaymentModalOpen(false);
             setScannedParticipants(prev => [{ ...verifyRes.data, scannedAt: Date.now() }, ...prev]);
@@ -282,58 +284,121 @@ const ScanAccommodation = () => {
   }, [cameraActive]);
 
   return (
-    <Box p={3} maxWidth="xl" mx="auto">
-      <Typography variant="h4" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-        <QrCodeScannerIcon fontSize="large" color="primary" />
-        Scan Accommodation Pass
-      </Typography>
+    <PageContainer>
+      <PageHeader
+        title="Scan Accommodation Pass"
+        subtitle="Use your device camera to scan the accommodation pass, or manually enter the pass code"
+      />
 
       <Grid container spacing={4}>
         {/* Left Side: Scanner */}
         <Grid item xs={12} sm={5} md={4}>
-          <Paper sx={{ p: 3, mb: 4, textAlign: 'center', height: '100%' }}>
-        <Typography variant="body1" color="textSecondary" mb={3}>
-          Use your device camera to scan the pass, or manually enter the pass code.
-        </Typography>
-
-        <Box display="flex" justifyContent="center" mb={3}>
-          <Button
-            variant={cameraActive ? "outlined" : "contained"}
-            color="secondary"
-            onClick={() => setCameraActive(!cameraActive)}
-            startIcon={<QrCodeScannerIcon />}
+          <Paper
+            elevation={0}
+            sx={{
+              p: 3,
+              mb: 4,
+              textAlign: 'center',
+              height: '100%',
+              borderRadius: '20px',
+              background: 'var(--bg-paper)',
+              border: '1px solid var(--border-color)',
+              boxShadow: 'var(--shadow-premium)',
+            }}
           >
-            {cameraActive ? 'Turn Off Camera' : 'Turn On Camera'}
-          </Button>
-        </Box>
+            <Typography variant="body1" color="textSecondary" mb={3}>
+              Use your device camera to scan the pass, or manually enter the pass code.
+            </Typography>
 
-        {cameraActive && (
-          <Box id="reader" sx={{ width: '100%', maxWidth: 500, mx: 'auto', mb: 3 }} />
-        )}
+            <Box display="flex" justifyContent="center" sx={{ mb: 4, mt: 1 }}>
+              <Button
+                variant="contained"
+                onClick={() => setCameraActive(!cameraActive)}
+                startIcon={<QrCodeScannerIcon />}
+                sx={{
+                  borderRadius: '24px',
+                  px: 3,
+                  py: 1,
+                  fontWeight: 700,
+                  textTransform: 'none',
+                  background: cameraActive
+                    ? 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)'
+                    : 'var(--gradient-primary)',
+                  color: '#ffffff',
+                  boxShadow: cameraActive
+                    ? '0 6px 20px rgba(239, 68, 68, 0.4)'
+                    : '0 6px 20px rgba(59, 130, 246, 0.35)',
+                  transition: 'all 0.3s ease',
+                  '&:hover': {
+                    transform: 'translateY(-2px)',
+                    boxShadow: cameraActive
+                      ? '0 8px 25px rgba(239, 68, 68, 0.55)'
+                      : '0 8px 25px rgba(59, 130, 246, 0.5)',
+                  },
+                }}
+              >
+                {cameraActive ? 'Close Camera' : 'Scan'}
+              </Button>
+            </Box>
 
-        {!cameraActive && (
-        <form onSubmit={handleScan} style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
-          <TextField
-            inputRef={inputRef}
-            label="Barcode / Pass Code"
-            variant="outlined"
-            value={barcode}
-            onChange={(e) => setBarcode(e.target.value)}
-            disabled={loading}
-            autoFocus
-            sx={{ flexGrow: 1, maxWidth: 400 }}
-          />
-          <Button
-            type="submit"
-            variant="contained"
-            color="primary"
-            disabled={loading || !barcode.trim()}
-            sx={{ minWidth: 120 }}
-          >
-            {loading ? <CircularProgress size={24} color="inherit" /> : 'Scan'}
-          </Button>
-        </form>
-        )}
+            {cameraActive && (
+              <Box id="reader" sx={{ width: '100%', maxWidth: 500, mx: 'auto', mb: 3 }} />
+            )}
+
+            {!cameraActive && (
+              <Box
+                component="form"
+                onSubmit={handleScan}
+                sx={{
+                  display: 'flex',
+                  flexDirection: { xs: 'column', sm: 'row' },
+                  gap: 2,
+                  justifyContent: 'center',
+                  alignItems: 'stretch',
+                  maxWidth: 640,
+                  margin: '20px auto 0',
+                  width: '100%',
+                }}
+              >
+                <TextField
+                  inputRef={inputRef}
+                  label="Barcode / Pass Code"
+                  variant="outlined"
+                  value={barcode}
+                  onChange={(e) => setBarcode(e.target.value)}
+                  disabled={loading}
+                  autoFocus
+                  fullWidth
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      borderRadius: '14px',
+                      bgcolor: 'var(--bg-panel, rgba(15, 23, 42, 0.6))',
+                      '& fieldset': { borderColor: 'var(--border-color)' },
+                      '&:hover fieldset': { borderColor: 'var(--color-primary)' },
+                      '&.Mui-focused fieldset': { borderColor: 'var(--color-primary)', borderWidth: '2px' },
+                    },
+                    '& .MuiInputLabel-root.Mui-focused': { color: 'var(--color-primary)' },
+                  }}
+                />
+                <Button
+                  type="submit"
+                  variant="contained"
+                  disabled={loading || !barcode.trim()}
+                  sx={{
+                    minWidth: { xs: '100%', sm: 120 },
+                    height: 52,
+                    borderRadius: '24px',
+                    fontWeight: 800,
+                    fontSize: '0.95rem',
+                    textTransform: 'none',
+                    background: 'var(--gradient-primary)',
+                    boxShadow: '0 6px 20px rgba(59, 130, 246, 0.35)',
+                  }}
+                >
+                  {loading ? <CircularProgress size={24} color="inherit" /> : 'Verify'}
+                </Button>
+              </Box>
+            )}
           </Paper>
         </Grid>
 
@@ -361,18 +426,18 @@ const ScanAccommodation = () => {
                 </TableHead>
                 <TableBody>
                   {scannedParticipants.map((data, index) => (
-                    <TableRow 
+                    <TableRow
                       key={data.scannedAt + '-' + index}
-                      sx={{ 
+                      sx={{
                         bgcolor: index === 0 ? '#f0fdf4' : 'inherit', // highlight latest scan
                         '&:hover': { bgcolor: '#f1f5f9' },
                         transition: 'background-color 0.2s'
                       }}
                     >
                       <TableCell>
-                        <Chip 
-                          icon={<CheckCircleIcon />} 
-                          label={data.isDuplicate ? "Already Checked-In" : "Checked-In"} 
+                        <Chip
+                          icon={<CheckCircleIcon />}
+                          label={data.isDuplicate ? "Already Checked-In" : "Checked-In"}
                           color={index === 0 ? (data.isDuplicate ? "warning" : "success") : (data.isDuplicate ? "warning" : "default")}
                           variant={index === 0 ? "filled" : "outlined"}
                           size="small"
@@ -383,18 +448,18 @@ const ScanAccommodation = () => {
                       <TableCell>{data.participant.roll}</TableCell>
                       <TableCell>{data.eventName}</TableCell>
                       <TableCell>
-                        {data.participant.college === 'Other College' 
-                          ? data.participant.otherCollege 
+                        {data.participant.college === 'Other College'
+                          ? data.participant.otherCollege
                           : data.participant.college}
                       </TableCell>
                       <TableCell>
                         {data.participant.accommodationPayment?.paid ? (
-                          <Button 
-                            variant="outlined" 
-                            size="small" 
+                          <Button
+                            variant="outlined"
+                            size="small"
                             onClick={() => {
-                               setSelectedInvoice(data);
-                               setInvoiceModalOpen(true);
+                              setSelectedInvoice(data);
+                              setInvoiceModalOpen(true);
                             }}
                           >
                             View Invoice
@@ -438,10 +503,10 @@ const ScanAccommodation = () => {
           <Button onClick={() => setPaymentModalOpen(false)} disabled={paymentLoading}>
             Cancel
           </Button>
-          <Button 
-            variant="contained" 
-            color="primary" 
-            onClick={handlePayment} 
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={handlePayment}
             disabled={paymentLoading}
           >
             {paymentLoading ? <CircularProgress size={24} color="inherit" /> : 'Pay Now'}
@@ -488,7 +553,7 @@ const ScanAccommodation = () => {
                   </Grid>
                 </Grid>
               </Box>
-              
+
               <Box sx={{ mt: 4, p: 2, bgcolor: '#f8fafc', borderRadius: 2 }}>
                 <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold' }}>Payment Information</Typography>
                 <Grid container spacing={2}>
@@ -529,7 +594,7 @@ const ScanAccommodation = () => {
           <Button onClick={() => setInvoiceModalOpen(false)}>Close</Button>
         </DialogActions>
       </Dialog>
-    </Box>
+    </PageContainer>
   );
 };
 

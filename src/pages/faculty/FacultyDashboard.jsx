@@ -42,6 +42,7 @@ import ProctorStudentsModal from "../../components/faculty/ProctorStudentsModal"
 
 import { useNavigate } from "react-router-dom";
 import PageHeader from "../../components/common/PageHeader";
+import StatCardGrid from "../../components/common/StatCardGrid";
 
 const FacultyDashboard = () => {
   const { user } = useAuth();
@@ -184,38 +185,43 @@ const FacultyDashboard = () => {
 
   return (
     <Box sx={{ display: "flex", flexDirection: "column", gap: "var(--space-6)" }}>
-      {/* Header */}
-      <PageHeader
-        title={`Welcome back, ${user?.name || "Faculty"}`}
-        subtitle="Faculty Dashboard • Manage your teaching, research and academic activities"
-        action={
-          <Select
-            size="small"
-            value={selectedYear}
-            onChange={(e) => {
-              setSelectedYear(e.target.value);
-              blurActiveElement();
-            }}
-            onClose={blurActiveElement}
-            MenuProps={selectMenuProps}
-            sx={{
-              borderRadius: "var(--radius-md)",
-              borderColor: "var(--border-color)",
-              color: "var(--text-primary)",
-              background: "var(--bg-paper)",
-              backdropFilter: "blur(10px)",
-              "& fieldset": { borderColor: "var(--border-color)" },
-              "&:hover fieldset": { borderColor: "var(--color-primary)" },
-              "&.Mui-focused fieldset": { borderColor: "var(--color-primary)" },
-              minWidth: 150
-            }}
-          >
-            {academicYears.map((y) => (
-              <MenuItem key={y._id} value={y.year}>{y.year}</MenuItem>
-            ))}
-          </Select>
-        }
-      />
+      {/* Clean Text Header (No Card Box Design) */}
+      <Box sx={{ mb: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 2 }}>
+        <Box>
+          <Typography variant="h4" sx={{ fontWeight: 800, color: "var(--text-primary)", mb: 0.5 }}>
+            Welcome back, {user?.name || "Faculty"}
+          </Typography>
+          <Typography variant="body1" sx={{ color: "var(--text-secondary)", opacity: 0.8 }}>
+            Faculty Dashboard • Manage your teaching, research and academic activities
+          </Typography>
+        </Box>
+
+        <Select
+          size="small"
+          value={selectedYear}
+          onChange={(e) => {
+            setSelectedYear(e.target.value);
+            blurActiveElement();
+          }}
+          onClose={blurActiveElement}
+          MenuProps={selectMenuProps}
+          sx={{
+            borderRadius: "var(--radius-md)",
+            borderColor: "var(--border-color)",
+            color: "var(--text-primary)",
+            background: "var(--bg-paper)",
+            backdropFilter: "blur(10px)",
+            "& fieldset": { borderColor: "var(--border-color)" },
+            "&:hover fieldset": { borderColor: "var(--color-primary)" },
+            "&.Mui-focused fieldset": { borderColor: "var(--color-primary)" },
+            minWidth: 150
+          }}
+        >
+          {academicYears.map((y) => (
+            <MenuItem key={y._id} value={y.year}>{y.year}</MenuItem>
+          ))}
+        </Select>
+      </Box>
 
       {/* Main Content Area */}
       {loadingDashboard ? (
@@ -223,168 +229,147 @@ const FacultyDashboard = () => {
       ) : (
         <>
           {/* Row 1: Summary Cards */}
-          <Box
-            sx={{
-              display: "flex",
-              flexWrap: "wrap",
-              gap: 2.5,
-              mb: 4,
-              width: "100%",
-            }}
-          >
+          <StatCardGrid columns={4} sx={{ mb: 4 }}>
             {topCards.map((card, i) => (
-              <Box
+              <Card
                 key={i}
                 sx={{
-                  flex: {
-                    xs: "1 1 100%",
-                    sm: "1 1 calc(50% - 10px)",
-                    md: "1 1 calc(50% - 10px)",
-                    lg: "1 1 calc(50% - 10px)",
-                    xl: "1 1 calc(25% - 19px)",
+                  position: "relative",
+                  borderRadius: "16px",
+                  background: "var(--bg-panel)",
+                  border: "1px solid var(--border-color)",
+                  boxShadow: "var(--shadow-premium)",
+                  transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+                  overflow: "hidden",
+                  "&:hover": {
+                    transform: "translateY(-5px)",
+                    boxShadow: "0 12px 40px rgba(0,0,0,0.12)",
                   },
-                  minWidth: 0,
+                  height: "100%",
+                  minHeight: "175px",
+                  display: "flex",
+                  flexDirection: "column",
+                  justifyContent: "space-between",
+                  p: 2.5,
+                  "&::after": {
+                    content: '""',
+                    position: "absolute",
+                    top: 0,
+                    right: 0,
+                    width: "120px",
+                    height: "120px",
+                    background: `radial-gradient(circle at top right, ${card.color}25, transparent 70%)`,
+                    zIndex: 0
+                  }
                 }}
               >
-                <Card
-                  sx={{
-                    position: "relative",
-                    borderRadius: "16px",
-                    background: "var(--bg-panel)",
-                    border: "1px solid var(--border-color)",
-                    boxShadow: "var(--shadow-premium)",
-                    transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-                    overflow: "hidden",
-                    "&:hover": {
-                      transform: "translateY(-5px)",
-                      boxShadow: "0 12px 40px rgba(0,0,0,0.12)",
-                    },
-                    height: "100%",
-                    minHeight: "175px",
-                    display: "flex",
-                    flexDirection: "column",
-                    justifyContent: "space-between",
-                    p: 2,
-                    "&::after": {
-                      content: '""',
-                      position: "absolute",
-                      top: 0,
-                      right: 0,
-                      width: "120px",
-                      height: "120px",
-                      background: `radial-gradient(circle at top right, ${card.color}25, transparent 70%)`,
-                      zIndex: 0
-                    }
-                  }}
-                >
-                  <Box sx={{ display: "flex", alignItems: "flex-start", gap: 1.5, position: "relative", zIndex: 1 }}>
-                    <Box
-                      sx={{
-                        width: 48,
-                        height: 48,
-                        borderRadius: 1,
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        background: card.gradient,
-                        color: "#fff",
-                        position: "relative",
-                        overflow: "hidden",
-                        flexShrink: 0,
-                        boxShadow: "0 8px 16px rgba(0,0,0,0.1)",
-                        "&::after": {
-                          content: '""',
-                          position: "absolute",
-                          inset: 0,
-                          background:
-                            "linear-gradient(180deg, #ffffff30, transparent)",
-                          borderRadius: 1,
-                        },
-                      }}
-                    >
-                      {React.cloneElement(card.icon, { fontSize: "medium" })}
-                    </Box>
-                    <Box sx={{ display: "flex", flexDirection: "column", gap: 0.3, minWidth: 0, flex: 1 }}>
-                      <Typography
-                        variant="body2"
-                        sx={{
-                          color: "var(--text-secondary)",
-                          fontWeight: 600,
-                          fontSize: "0.75rem",
-                          textTransform: "uppercase",
-                          letterSpacing: "0.05em",
-                        }}
-                      >
-                        {card.title}
-                      </Typography>
-                      <Typography
-                        variant="h4"
-                        sx={{
-                          fontWeight: 800,
-                          color: "var(--text-primary)",
-                          mt: 0.5,
-                          lineHeight: 1.2,
-                          wordBreak: "break-word",
-                          fontSize: typeof card.value === "string" ? (card.value.length > 15 ? "1.15rem" : card.value.length > 8 ? "1.4rem" : "2rem") : "2rem"
-                        }}
-                      >
-                        {card.value}
-                      </Typography>
-                      <Typography
-                        variant="caption"
-                        sx={{ color: "var(--text-secondary)", opacity: 0.7 }}
-                      >
-                        {card.subtitle}
-                      </Typography>
-                      {card.progress !== undefined && (
-                        <Box sx={{ width: '100%', mt: 1 }}>
-                          <LinearProgress
-                            variant="determinate"
-                            value={card.progress}
-                            sx={{
-                              height: 6,
-                              borderRadius: 3,
-                              bgcolor: `${card.color}30`,
-                              '& .MuiLinearProgress-bar': {
-                                bgcolor: card.color,
-                                borderRadius: 3
-                              }
-                            }}
-                          />
-                        </Box>
-                      )}
-                    </Box>
-                  </Box>
+                <Box sx={{ display: "flex", alignItems: "flex-start", gap: 1.5, position: "relative", zIndex: 1 }}>
                   <Box
                     sx={{
-                      mt: 3,
-                      pt: 2,
-                      borderTop: "1px solid var(--border-color)",
+                      width: 48,
+                      height: 48,
+                      borderRadius: 1,
                       display: "flex",
-                      justifyContent: "flex-end",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      background: card.gradient,
+                      color: "#fff",
+                      position: "relative",
+                      overflow: "hidden",
+                      flexShrink: 0,
+                      boxShadow: "0 8px 16px rgba(0,0,0,0.1)",
+                      "&::after": {
+                        content: '""',
+                        position: "absolute",
+                        inset: 0,
+                        background:
+                          "linear-gradient(180deg, #ffffff30, transparent)",
+                        borderRadius: 1,
+                      },
                     }}
                   >
-                    <Button
-                      size="small"
-                      endIcon={<ArrowForward sx={{ fontSize: 16 }} />}
-                      sx={{
-                        textTransform: "none",
-                        fontWeight: 700,
-                        color: "var(--color-primary)",
-                        "&:hover": {
-                          background: "transparent",
-                          textDecoration: "underline",
-                        },
-                      }}
-                      onClick={card.onClick}
-                    >
-                      {card.linkText}
-                    </Button>
+                    {React.cloneElement(card.icon, { fontSize: "medium" })}
                   </Box>
-                </Card>
-              </Box>
+                  <Box sx={{ display: "flex", flexDirection: "column", gap: 0.3, minWidth: 0, flex: 1 }}>
+                    <Typography
+                      variant="body2"
+                      sx={{
+                        color: "var(--text-secondary)",
+                        fontWeight: 600,
+                        fontSize: "0.75rem",
+                        textTransform: "uppercase",
+                        letterSpacing: "0.05em",
+                      }}
+                    >
+                      {card.title}
+                    </Typography>
+                    <Typography
+                      variant="h4"
+                      sx={{
+                        fontWeight: 800,
+                        color: "var(--text-primary)",
+                        mt: 0.5,
+                        lineHeight: 1.2,
+                        wordBreak: "break-word",
+                        fontSize: typeof card.value === "string" ? (card.value.length > 15 ? "1.15rem" : card.value.length > 8 ? "1.4rem" : "2rem") : "2rem"
+                      }}
+                    >
+                      {card.value}
+                    </Typography>
+                    <Typography
+                      variant="caption"
+                      sx={{ color: "var(--text-secondary)", opacity: 0.7 }}
+                    >
+                      {card.subtitle}
+                    </Typography>
+                    {card.progress !== undefined && (
+                      <Box sx={{ width: '100%', mt: 1 }}>
+                        <LinearProgress
+                          variant="determinate"
+                          value={card.progress}
+                          sx={{
+                            height: 6,
+                            borderRadius: 3,
+                            bgcolor: `${card.color}30`,
+                            '& .MuiLinearProgress-bar': {
+                              bgcolor: card.color,
+                              borderRadius: 3
+                            }
+                          }}
+                        />
+                      </Box>
+                    )}
+                  </Box>
+                </Box>
+                <Box
+                  sx={{
+                    mt: 3,
+                    pt: 2,
+                    borderTop: "1px solid var(--border-color)",
+                    display: "flex",
+                    justifyContent: "flex-end",
+                  }}
+                >
+                  <Button
+                    size="small"
+                    endIcon={<ArrowForward sx={{ fontSize: 16 }} />}
+                    sx={{
+                      textTransform: "none",
+                      fontWeight: 700,
+                      color: "var(--color-primary)",
+                      "&:hover": {
+                        background: "transparent",
+                        textDecoration: "underline",
+                      },
+                    }}
+                    onClick={card.onClick}
+                  >
+                    {card.linkText}
+                  </Button>
+                </Box>
+              </Card>
             ))}
-          </Box>
+          </StatCardGrid>
 
           {/* Row 2: Research Overview and Quick Actions */}
           <Box

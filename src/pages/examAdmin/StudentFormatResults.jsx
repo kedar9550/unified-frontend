@@ -17,6 +17,7 @@ import {
   TextField,
   InputAdornment,
   Checkbox,
+  Paper,
 } from "@mui/material";
 import { toast } from "sonner";
 import { useEffect, useState, useRef } from "react";
@@ -488,13 +489,13 @@ export default function StudentFormatResults() {
       />
 
       {/* Filter Options */}
-      <Box sx={{
-        p: 2.5,
+      <Paper elevation={0} sx={{
+        p: { xs: 1.5, md: 2.5 },
         mb: 3,
-        background: "var(--bg-panel)",
-        borderRadius: "16px",
-        border: "1px solid var(--border-color)",
-        boxShadow: "var(--shadow-premium)",
+        background: { xs: "transparent", md: "var(--bg-paper)" },
+        border: { xs: "none", md: "1px solid var(--border-color)" },
+        boxShadow: { xs: "none", md: "var(--shadow-premium)" },
+        borderRadius: { xs: "8px", md: "16px" },
         display: "flex",
         flexDirection: "column",
         gap: 2
@@ -666,7 +667,7 @@ export default function StudentFormatResults() {
             </Menu>
           </Box>
         </Box>
-      </Box>
+      </Paper>
 
       {/* RESULTS TABLE */}
       <Box sx={{ width: '100%' }}>
@@ -806,5 +807,10 @@ const filterBox = {
   border: "1px solid var(--border-color)",
   fontSize: 14,
   height: 44,
-  width: { xs: "100%", sm: "auto" }
+  width: { xs: "100%", sm: "auto" },
+  '& .MuiInputBase-root, & .MuiSelect-select': {
+    background: 'transparent !important',
+    backgroundColor: 'transparent !important',
+  },
+  '& .MuiSelect-icon': { color: 'var(--text-primary)', opacity: 0.4 }
 };

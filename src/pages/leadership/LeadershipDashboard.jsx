@@ -12,6 +12,9 @@ import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 import API from "../../api/axios";
 import { useAuth } from "../../context/AuthContext";
 import { useNavigate } from "react-router-dom";
+import { PageContainer } from "../../components/common/design-system";
+import StatCardGrid from "../../components/common/StatCardGrid";
+import StatCard from "../../components/common/StatCard";
 
 const LeadershipDashboard = () => {
   const navigate = useNavigate();
@@ -123,11 +126,11 @@ const LeadershipDashboard = () => {
   };
 
   return (
-    <Box sx={{ p: { xs: 2, md: 3 }, maxWidth: '100%', overflowX: 'hidden' }}>
+    <PageContainer>
       {/* Header */}
       <Box sx={{ mb: 4 }}>
         <Typography variant="h4" fontWeight={800} color="var(--text-primary)" gutterBottom>
-          Leadership Dashboard
+          Leadership Dashboard 👋
         </Typography>
         <Typography variant="body1" color="var(--text-secondary)" fontWeight={500}>
          Overview of appraisal verification and team performance.
@@ -135,108 +138,20 @@ const LeadershipDashboard = () => {
       </Box>
 
       {/* Metric Cards */}
-      <Box sx={{ display: 'flex', gap: 3, mb: 4, flexWrap: 'wrap', width: '100%' }}>
-        {topCards.map((card, idx) => (
-          <Box key={idx} sx={{ flex: 1, minWidth: "220px", display: "flex" }}>
-            <Card
-              sx={{
-                width: "100%",
-                borderRadius: "16px",
-                boxShadow: "0px 4px 12px rgba(0, 0, 0, 0.03)",
-                display: "flex",
-                flexDirection: "column",
-                position: "relative",
-                p: 2.5,
-                border: "1px solid var(--border-color)",
-                background: "var(--bg-panel)",
-                overflow: "hidden",
-                "&::after": {
-                  content: '""',
-                  position: "absolute",
-                  top: 0,
-                  right: 0,
-                  width: "120px",
-                  height: "120px",
-                  background: `radial-gradient(circle at top right, ${card.color}25, transparent 70%)`,
-                  zIndex: 0
-                }
-              }}
-            >
-              {/* Top Content: Left Aligned */}
-              <Box sx={{
-                display: "flex",
-                flexDirection: "row",
-                alignItems: "flex-start",
-                gap: 2,
-                textAlign: "left",
-                position: "relative",
-                zIndex: 1
-              }}>
-                {/* Icon */}
-                <Box
-                  sx={{
-                    width: 50,
-                    height: 50,
-                    borderRadius: "14px",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    background: card.gradient,
-                    color: "#fff",
-                    flexShrink: 0,
-                    mt: 0.5,
-                    boxShadow: `0 8px 25px ${card.color}35`,
-                  }}>
-                  {React.cloneElement(card.icon, { fontSize: "medium" })}
-                </Box>
-
-                {/* Text */}
-                <Box sx={{ display: "flex", flexDirection: "column", alignItems: "flex-start" }}>
-                  <Typography
-                    variant="body2"
-                    sx={{ color: "var(--text-secondary)", fontWeight: 600, fontSize: "0.8rem", textTransform: "capitalize", letterSpacing: "0.5px" }}
-                  >
-                    {card.title}
-                  </Typography>
-
-                  <Box sx={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 0.5 }}>
-                    <Typography
-                      sx={{
-                        fontWeight: 800,
-                        color: "var(--text-primary)",
-                        mt: 0.5,
-                        fontSize: card.value.toString().length > 6 ? "1.2rem" : "1.6rem",
-                        lineHeight: 1
-                      }}
-                    >
-                      {card.value}
-                    </Typography>
-                  </Box>
-                </Box>
-              </Box>
-
-              {/* Bottom Link: Right Aligned */}
-              <Box sx={{ display: 'flex', justifyContent: 'flex-end', position: "relative", zIndex: 1, mt: 2 }}>
-                <Button
-                  size="small"
-                  endIcon={<ArrowForward sx={{ fontSize: 14 }} />}
-                  onClick={() => navigate(card.path)}
-                  sx={{
-                    textTransform: "none",
-                    fontSize: "0.8rem",
-                    fontWeight: 700,
-                    color: "var(--color-primary)",
-                    p: 0,
-                    "&:hover": { background: "transparent", opacity: 0.8 },
-                  }}
-                >
-                  {card.linkText}
-                </Button>
-              </Box>
-            </Card>
-          </Box>
+      <StatCardGrid columns={4} sx={{ mb: 4 }}>
+        {topCards.map((card, i) => (
+          <StatCard
+            key={i}
+            title={card.title}
+            value={card.value}
+            icon={card.icon}
+            color={card.color}
+            gradient={card.gradient}
+            linkText={card.linkText}
+            onClick={() => navigate(card.path)}
+          />
         ))}
-      </Box>
+      </StatCardGrid>
 
       {/* Middle Section */}
       <Box sx={{ display: 'flex', gap: 3, mb: 4, flexWrap: { xs: "wrap", xl: "nowrap" }, width: "100%" }}>
@@ -621,7 +536,7 @@ const LeadershipDashboard = () => {
           </Table>
         </TableContainer>
       </Card>
-    </Box>
+    </PageContainer>
   );
 };
 

@@ -270,19 +270,27 @@ export default function DataTable({ columns, rows, toolbarLeft, nonSortableColum
         sx={{
           color: "var(--text-primary)",
           borderBottom: "none",
+          overflowX: "auto",
+          maxWidth: "100%",
+          width: "100%",
           "& .MuiTablePagination-toolbar": {
             paddingLeft: { xs: 1, sm: 2 },
             paddingRight: { xs: 1, sm: 2 },
+            flexWrap: { xs: "wrap", sm: "nowrap" },
+            justifyContent: { xs: "space-between", sm: "flex-end" },
+            gap: { xs: 0.5, sm: 1 },
           },
           "& .MuiTablePagination-selectLabel, & .MuiTablePagination-displayedRows": {
-            fontSize: { xs: "0.7rem", sm: "0.875rem" },
-            margin: { xs: 0, sm: "auto" },
+            fontSize: { xs: "0.725rem", sm: "0.875rem" },
+            margin: 0,
           },
           "& .MuiSelect-select": {
-            fontSize: { xs: "0.7rem", sm: "0.875rem" },
+            fontSize: { xs: "0.725rem", sm: "0.875rem" },
+            paddingLeft: { xs: "4px", sm: "8px" },
+            paddingRight: { xs: "20px !important", sm: "24px !important" },
           },
           "& .MuiTablePagination-actions": {
-            marginLeft: { xs: 0, sm: 2 },
+            marginLeft: { xs: "auto", sm: 2 },
           },
           "& .MuiTablePagination-actions button": {
             background: "var(--bg-panel)",

@@ -35,6 +35,10 @@ import {
 import { useNavigate } from 'react-router-dom';
 import PageHeader from '../../components/common/PageHeader';
 import DataTable from '../../components/data/DataTable';
+import { PageContainer, EmptyState } from '../../components/common/design-system';
+import ActionButton from '../../components/common/ActionButton';
+import StatCard from '../../components/common/StatCard';
+import StatCardGrid from '../../components/common/StatCardGrid';
 import API from '../../api/axios';
 import { toast } from 'sonner';
 import { QRCodeSVG } from 'qrcode.react';
@@ -430,7 +434,7 @@ const Participants = ({ mode = 'all' }) => {
   });
 
   return (
-    <Box sx={{ p: { xs: 2, md: 3, lg: 4 } }}>
+    <PageContainer>
       <PageHeader
         title="Participants List"
         subtitle="View all event participants and their attendance status"
@@ -449,271 +453,48 @@ const Participants = ({ mode = 'all' }) => {
       />
 
       {/* Summary Cards */}
-      <Grid container spacing={2.5} sx={{ mt: 1, mb: 3 }}>
-        <Grid item xs={12} sm={6} md={3}>
-          <Paper
-            variant="outlined"
-            sx={{
-              p: 2.5,
-              borderRadius: '16px',
-              background: 'linear-gradient(135deg, rgba(56, 189, 248, 0.08) 0%, rgba(99, 102, 241, 0.08) 100%)',
-              borderColor: 'rgba(56, 189, 248, 0.2)',
-            }}
-          >
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-              <Box
-                sx={{
-                  width: 44,
-                  height: 44,
-                  borderRadius: '12px',
-                  background: 'var(--color-primary, #0284c7)',
-                  color: '#fff',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-              >
-                <PeopleIcon />
-              </Box>
-              <Box>
-                <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase', fontWeight: 700 }}>
-                  {mode === 'all' ? 'Total Participants' : mode === 'accommodation' ? 'Accommodation Needed' : 'No Accommodation'}
-                </Typography>
-                <Typography variant="h5" sx={{ fontWeight: 900 }}>
-                  {mode === 'all' ? allParticipants.length : filteredParticipants.length}
-                </Typography>
-              </Box>
-            </Box>
-          </Paper>
-        </Grid>
-
-        {/* {mode === 'all' && (
-          <Grid item xs={12} sm={6} md={3}>
-            <Paper
-            variant="outlined"
-            sx={{
-              p: 2.5,
-              borderRadius: '16px',
-              background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.08) 0%, rgba(217, 119, 6, 0.08) 100%)',
-              borderColor: 'rgba(245, 158, 11, 0.2)',
-            }}
-          >
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-              <Box
-                sx={{
-                  width: 44,
-                  height: 44,
-                  borderRadius: '12px',
-                  background: '#d97706',
-                  color: '#fff',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-              >
-                <AccommodationIcon />
-              </Box>
-              <Box>
-                <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase', fontWeight: 700 }}>
-                  Accommodation Needed
-                </Typography>
-                <Typography variant="h5" sx={{ fontWeight: 900 }}>
-                  {accommodationCount}
-                </Typography>
-              </Box>
-            </Box>
-          </Paper>
-        </Grid>
-        )} */}
-
+      <StatCardGrid sx={{ mt: 1, mb: 3 }}>
+        <StatCard
+          title={mode === 'all' ? 'Total Participants' : mode === 'accommodation' ? 'Accommodation Needed' : 'No Accommodation'}
+          value={mode === 'all' ? allParticipants.length : filteredParticipants.length}
+          color="#d97706"
+          icon={<PeopleIcon />}
+        />
         {mode !== 'all' && (
           <>
-            <Grid item xs={12} sm={6} md={3}>
-              <Paper
-                variant="outlined"
-                sx={{
-                  p: 2.5,
-                  borderRadius: '16px',
-                  background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.08) 0%, rgba(37, 99, 235, 0.08) 100%)',
-                  borderColor: 'rgba(59, 130, 246, 0.2)',
-                }}
-              >
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                  <Box
-                    sx={{
-                      width: 44,
-                      height: 44,
-                      borderRadius: '12px',
-                      background: '#2563eb',
-                      color: '#fff',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                    }}
-                  >
-                    <PeopleIcon />
-                  </Box>
-                  <Box>
-                    <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase', fontWeight: 700 }}>
-                      Male Participants
-                    </Typography>
-                    <Typography variant="h5" sx={{ fontWeight: 900 }}>
-                      {maleCount}
-                    </Typography>
-                  </Box>
-                </Box>
-              </Paper>
-            </Grid>
-            <Grid item xs={12} sm={6} md={3}>
-              <Paper
-                variant="outlined"
-                sx={{
-                  p: 2.5,
-                  borderRadius: '16px',
-                  background: 'linear-gradient(135deg, rgba(236, 72, 153, 0.08) 0%, rgba(219, 39, 119, 0.08) 100%)',
-                  borderColor: 'rgba(236, 72, 153, 0.2)',
-                }}
-              >
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                  <Box
-                    sx={{
-                      width: 44,
-                      height: 44,
-                      borderRadius: '12px',
-                      background: '#db2777',
-                      color: '#fff',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                    }}
-                  >
-                    <PeopleIcon />
-                  </Box>
-                  <Box>
-                    <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase', fontWeight: 700 }}>
-                      Female Participants
-                    </Typography>
-                    <Typography variant="h5" sx={{ fontWeight: 900 }}>
-                      {femaleCount}
-                    </Typography>
-                  </Box>
-                </Box>
-              </Paper>
-            </Grid>
+            <StatCard
+              title="Male Participants"
+              value={maleCount}
+              color="#2563eb"
+              icon={<PeopleIcon />}
+            />
+            <StatCard
+              title="Female Participants"
+              value={femaleCount}
+              color="#db2777"
+              icon={<PeopleIcon />}
+            />
           </>
         )}
-
-        <Grid item xs={12} sm={6} md={3}>
-          <Paper
-            variant="outlined"
-            sx={{
-              p: 2.5,
-              borderRadius: '16px',
-              background: 'linear-gradient(135deg, rgba(168, 85, 247, 0.08) 0%, rgba(147, 51, 234, 0.08) 100%)',
-              borderColor: 'rgba(168, 85, 247, 0.2)',
-            }}
-          >
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-              <Box
-                sx={{
-                  width: 44,
-                  height: 44,
-                  borderRadius: '12px',
-                  background: '#9333ea',
-                  color: '#fff',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-              >
-                <EventIcon />
-              </Box>
-              <Box>
-                <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase', fontWeight: 700 }}>
-                  Events
-                </Typography>
-                <Typography variant="h5" sx={{ fontWeight: 900 }}>
-                  {uniqueEvents.length}
-                </Typography>
-              </Box>
-            </Box>
-          </Paper>
-        </Grid>
-
-        <Grid item xs={12} sm={6} md={3}>
-          <Paper
-            variant="outlined"
-            sx={{
-              p: 2.5,
-              borderRadius: '16px',
-              background: 'linear-gradient(135deg, rgba(34, 197, 94, 0.08) 0%, rgba(16, 185, 129, 0.08) 100%)',
-              borderColor: 'rgba(34, 197, 94, 0.2)',
-            }}
-          >
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-              <Box
-                sx={{
-                  width: 44,
-                  height: 44,
-                  borderRadius: '12px',
-                  background: '#16a34a',
-                  color: '#fff',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-              >
-                <CheckCircleIcon />
-              </Box>
-              <Box>
-                <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase', fontWeight: 700 }}>
-                  Present
-                </Typography>
-                <Typography variant="h5" sx={{ fontWeight: 900 }}>
-                  {presentCount}
-                </Typography>
-              </Box>
-            </Box>
-          </Paper>
-        </Grid>
-
-        <Grid item xs={12} sm={6} md={3}>
-          <Paper
-            variant="outlined"
-            sx={{
-              p: 2.5,
-              borderRadius: '16px',
-              background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.08) 0%, rgba(220, 38, 38, 0.08) 100%)',
-              borderColor: 'rgba(239, 68, 68, 0.2)',
-            }}
-          >
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-              <Box
-                sx={{
-                  width: 44,
-                  height: 44,
-                  borderRadius: '12px',
-                  background: '#dc2626',
-                  color: '#fff',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-              >
-                <CancelIcon />
-              </Box>
-              <Box>
-                <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase', fontWeight: 700 }}>
-                  Absent
-                </Typography>
-                <Typography variant="h5" sx={{ fontWeight: 900 }}>
-                  {absentCount}
-                </Typography>
-              </Box>
-            </Box>
-          </Paper>
-        </Grid>
-      </Grid>
+        <StatCard
+          title="Events"
+          value={uniqueEvents.length}
+          color="#9333ea"
+          icon={<EventIcon />}
+        />
+        <StatCard
+          title="Present"
+          value={presentCount}
+          color="#16a34a"
+          icon={<CheckCircleIcon />}
+        />
+        <StatCard
+          title="Absent"
+          value={absentCount}
+          color="#dc2626"
+          icon={<CancelIcon />}
+        />
+      </StatCardGrid>
 
       {/* Filter Controls Bar */}
       <Paper
@@ -734,7 +515,7 @@ const Participants = ({ mode = 'all' }) => {
           size="small"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          sx={{ width: { xs: '100%', sm: 260 } }}
+          sx={{ width: { xs: '100%', sm: 260 }, flex: { sm: 1 } }}
         />
 
         <TextField
@@ -743,7 +524,7 @@ const Participants = ({ mode = 'all' }) => {
           size="small"
           value={eventFilter}
           onChange={(e) => setEventFilter(e.target.value)}
-          sx={{ minWidth: 180 }}
+          sx={{ width: { xs: '100%', sm: 200 } }}
         >
           <MenuItem value="ALL">All Events</MenuItem>
           {uniqueEvents.map((evt) => (
@@ -753,28 +534,13 @@ const Participants = ({ mode = 'all' }) => {
           ))}
         </TextField>
 
-        {/* {mode === 'all' && (
-          <TextField
-            select
-            label="Accommodation"
-            size="small"
-            value={accommodationFilter}
-            onChange={(e) => setAccommodationFilter(e.target.value)}
-            sx={{ minWidth: 160 }}
-          >
-            <MenuItem value="ALL">All Participants</MenuItem>
-            <MenuItem value="YES">Requested (Yes)</MenuItem>
-            <MenuItem value="NO">No Accommodation</MenuItem>
-          </TextField>
-        )} */}
-
         <TextField
           select
           size="small"
           label="Attendance"
           value={attendanceFilter}
           onChange={(e) => setAttendanceFilter(e.target.value)}
-          sx={{ minWidth: 160 }}
+          sx={{ width: { xs: '100%', sm: 160 } }}
         >
           <MenuItem value="ALL">All Status</MenuItem>
           <MenuItem value="PRESENT">Present</MenuItem>
@@ -787,19 +553,38 @@ const Participants = ({ mode = 'all' }) => {
           size="small"
           value={genderFilter}
           onChange={(e) => setGenderFilter(e.target.value)}
-          sx={{ minWidth: 120 }}
+          sx={{ width: { xs: '100%', sm: 140 } }}
         >
           <MenuItem value="ALL">All Genders</MenuItem>
           <MenuItem value="MALE">Male</MenuItem>
           <MenuItem value="FEMALE">Female</MenuItem>
         </TextField>
 
-        <Box sx={{ ml: 'auto' }}>
+        <Box sx={{ ml: { sm: 'auto' }, width: { xs: '100%', sm: 'auto' } }}>
           <Button
-            variant="outlined"
+            variant="contained"
             onClick={handleExportCSV}
             startIcon={<DownloadIcon />}
-            sx={{ borderRadius: '10px', textTransform: 'none', px: 2 }}
+            disabled={filteredParticipants.length === 0}
+            sx={{
+              borderRadius: '10px',
+              textTransform: 'none',
+              px: 2.5,
+              py: 0.8,
+              fontWeight: 700,
+              width: { xs: '100%', sm: 'auto' },
+              background: 'var(--gradient-primary)',
+              color: '#ffffff',
+              boxShadow: '0 4px 14px rgba(59, 130, 246, 0.35)',
+              '&:hover': {
+                boxShadow: '0 6px 20px rgba(59, 130, 246, 0.5)',
+              },
+              '&.Mui-disabled': {
+                background: 'rgba(148, 163, 184, 0.12)',
+                color: 'var(--text-secondary, #64748b)',
+                opacity: 0.5,
+              },
+            }}
           >
             Export CSV
           </Button>
@@ -814,22 +599,10 @@ const Participants = ({ mode = 'all' }) => {
       ) : (
         <Box sx={{ mt: 2 }}>
           {filteredParticipants.length === 0 ? (
-            <Box
-              sx={{
-                p: 4,
-                borderRadius: '20px',
-                border: '1px solid var(--border-color)',
-                background: 'var(--bg-panel)',
-                textAlign: 'center',
-              }}
-            >
-              <Typography variant="h6" sx={{ mb: 1 }}>
-                No Participants found
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Try adjusting your search query or filter criteria.
-              </Typography>
-            </Box>
+            <EmptyState
+              title="No Participants found"
+              description="Try adjusting your search query or filter criteria."
+            />
           ) : (
             <DataTable
               columns={columns}
@@ -1034,7 +807,7 @@ const Participants = ({ mode = 'all' }) => {
           </Button>
         </DialogActions>
       </Dialog>
-    </Box>
+    </PageContainer>
   );
 };
 

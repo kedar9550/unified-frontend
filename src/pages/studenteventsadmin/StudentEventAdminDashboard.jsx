@@ -40,6 +40,9 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 import PageHeader from '../../components/common/PageHeader';
+import StatCard from '../../components/common/StatCard';
+import StatCardGrid from '../../components/common/StatCardGrid';
+import { PageContainer } from '../../components/common/design-system';
 import API from '../../api/axios';
 import { toast } from 'sonner';
 
@@ -267,32 +270,32 @@ const StudentEventAdminDashboard = () => {
   const groupFilteredRevenueTotal = groupBarData.reduce((acc, curr) => acc + (curr['₹ Revenue'] || 0), 0);
 
   return (
-    <Box sx={{ p: { xs: 1.5, md: 3, lg: 4 }, display: 'flex', flexDirection: 'column', gap: 3 }}>
+    <PageContainer sx={{ maxWidth: '100%', width: '100%', overflowX: 'hidden' }}>
       <PageHeader
         title="Veda Event Admin Dashboard"
         subtitle="Overview of VEDA event participation, department/group analytics and registration metrics"
       />
 
       {/* ── Summary Cards ─────────────────────────────────────────────── */}
-      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)', xl: 'repeat(6, 1fr)' }, gap: 2 }}>
-        <SummaryCard label="Total Teams" value={stats?.totalTeams} color="#0d9488" icon={<GroupsIcon />} />
-        <SummaryCard label="Total Students" value={stats?.totalStudents} color="#2563eb" icon={<PeopleIcon />} />
-        <SummaryCard label="Total Attended" value={stats?.totalAttended} color="#16a34a" icon={<PeopleIcon />} />
-        <SummaryCard label="Total Revenue (₹)" value={stats?.revenue?.total} color="#7c3aed" icon={<CurrencyRupeeIcon />} />
-        <SummaryCard label="Schools (Groups)" value={schoolStats?.length} color="#ea580c" icon={<SchoolIcon />} />
-        <SummaryCard label="Departments" value={deptStats?.length} color="#9333ea" icon={<BusinessIcon />} />
-      </Box>
+      <StatCardGrid columns={4}>
+        <StatCard title="Total Teams" value={stats?.totalTeams || 0} color="#0d9488" icon={<GroupsIcon />} />
+        <StatCard title="Total Students" value={stats?.totalStudents || 0} color="#2563eb" icon={<PeopleIcon />} />
+        <StatCard title="Total Attended" value={stats?.totalAttended || 0} color="#16a34a" icon={<PeopleIcon />} />
+        <StatCard title="Total Revenue" subtitle="(₹)" value={`₹${fmt(stats?.revenue?.total)}`} color="#7c3aed" icon={<CurrencyRupeeIcon />} />
+        <StatCard title="Schools (Groups)" value={schoolStats?.length || 0} color="#ea580c" icon={<SchoolIcon />} />
+        <StatCard title="Departments" value={deptStats?.length || 0} color="#9333ea" icon={<BusinessIcon />} />
+      </StatCardGrid>
 
       {/* ── Section 1: Department filter + Teams, Students & Events per Department ───────── */}
-      <Paper variant="outlined" sx={{ p: 3, borderRadius: '16px' }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 2, mb: 2 }}>
+      <Paper elevation={0} sx={{ p: { xs: 2, sm: 3 }, borderRadius: '16px', background: 'var(--bg-paper)', border: '1px solid var(--border-color)', width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
+        <Box sx={{ display: 'flex', alignItems: { xs: 'stretch', sm: 'center' }, justifyContent: 'space-between', flexDirection: { xs: 'column', sm: 'row' }, gap: 2, mb: 2 }}>
           <Box>
             <SectionTitle>Teams, Students & Events Count by Department</SectionTitle>
-            <Typography variant="body2" color="text.secondary">
+            <Typography variant="body2" sx={{ color: 'var(--text-secondary)' }}>
               Aggregated across all departments from the event departments collection
             </Typography>
           </Box>
-          <FormControl size="small" sx={{ minWidth: 220 }}>
+          <FormControl size="small" sx={{ minWidth: { xs: '100%', sm: 220 } }}>
             <InputLabel>Choose Department</InputLabel>
             <Select value={deptFilter} label="Choose Department" onChange={(e) => setDeptFilter(e.target.value)}>
               {deptOptions.map((d) => (
@@ -301,13 +304,13 @@ const StudentEventAdminDashboard = () => {
             </Select>
           </FormControl>
         </Box>
-        <Box sx={{ overflowX: 'auto', pb: 1 }}>
-          <Box sx={{ minWidth: 700 }}>
+        <Box sx={{ overflowX: 'auto', pb: 1, width: '100%', maxWidth: '100%', display: 'flex', justifyContent: 'center' }}>
+          <Box sx={{ minWidth: { xs: '100%', sm: 650 }, mx: 'auto' }}>
             <ResponsiveContainer width="100%" height={340}>
-              <BarChart data={deptBarData} margin={{ top: 10, right: 20, left: 0, bottom: 65 }}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" angle={-30} textAnchor="end" tick={{ fontSize: 11 }} interval={0} />
-                <YAxis tick={{ fontSize: 11 }} />
+              <BarChart data={deptBarData} margin={{ top: 10, right: 15, left: -10, bottom: 65 }}>
+                <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
+                <XAxis dataKey="name" angle={-30} textAnchor="end" tick={{ fontSize: 11, fill: 'var(--text-secondary)' }} interval={0} />
+                <YAxis tick={{ fontSize: 11, fill: 'var(--text-secondary)' }} />
                 <Tooltip formatter={(val, name) => [name === '₹ Revenue' ? `₹${fmt(val)}` : fmt(val), name]} />
                 <Legend verticalAlign="bottom" wrapperStyle={{ paddingTop: 10 }} />
                 <Bar dataKey="Teams count" fill={DEPT_BAR_COLORS.teams} radius={[4, 4, 0, 0]} />
@@ -317,23 +320,23 @@ const StudentEventAdminDashboard = () => {
             </ResponsiveContainer>
           </Box>
         </Box>
-        <Box sx={{ mt: 2, textAlign: 'center', p: 1.5, borderRadius: '12px', background: 'var(--bg-glass, #f8fafc)' }}>
-          <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>
+        <Box sx={{ mt: 2, textAlign: 'center', p: 1.5, borderRadius: '12px', background: 'var(--bg-glass)', border: '1px solid var(--border-color)' }}>
+          <Typography variant="subtitle2" sx={{ fontWeight: 800, color: 'var(--text-primary)', fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
             Filtered Teams: {fmt(filteredTeamsTotal)}&nbsp;&nbsp;|&nbsp;&nbsp;Filtered Students: {fmt(filteredStudentsTotal)}&nbsp;&nbsp;|&nbsp;&nbsp;Filtered Revenue: ₹{fmt(filteredRevenueTotal)}
           </Typography>
         </Box>
       </Paper>
 
       {/* ── Section 2: Group (School) filter + Teams, Students & Events per Group ───────── */}
-      <Paper variant="outlined" sx={{ p: 3, borderRadius: '16px' }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 2, mb: 2 }}>
+      <Paper elevation={0} sx={{ p: { xs: 2, sm: 3 }, borderRadius: '16px', background: 'var(--bg-paper)', border: '1px solid var(--border-color)', width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
+        <Box sx={{ display: 'flex', alignItems: { xs: 'stretch', sm: 'center' }, justifyContent: 'space-between', flexDirection: { xs: 'column', sm: 'row' }, gap: 2, mb: 2 }}>
           <Box>
             <SectionTitle>Teams, Students & Events Count by Group (School)</SectionTitle>
-            <Typography variant="body2" color="text.secondary">
+            <Typography variant="body2" sx={{ color: 'var(--text-secondary)' }}>
               Aggregated across the 5 primary groups (SOE, SOC, SOS, SOB, FEATURED EVENTS)
             </Typography>
           </Box>
-          <FormControl size="small" sx={{ minWidth: 220 }}>
+          <FormControl size="small" sx={{ minWidth: { xs: '100%', sm: 220 } }}>
             <InputLabel>Choose Group</InputLabel>
             <Select value={schoolFilter} label="Choose Group" onChange={(e) => setSchoolFilter(e.target.value)}>
               {schoolOptions.map((g) => (
@@ -342,13 +345,13 @@ const StudentEventAdminDashboard = () => {
             </Select>
           </FormControl>
         </Box>
-        <Box sx={{ overflowX: 'auto', pb: 1 }}>
-          <Box sx={{ minWidth: 600 }}>
+        <Box sx={{ overflowX: 'auto', pb: 1, width: '100%', maxWidth: '100%', display: 'flex', justifyContent: 'center' }}>
+          <Box sx={{ minWidth: { xs: '100%', sm: 550 }, mx: 'auto' }}>
             <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={groupBarData} margin={{ top: 10, right: 20, left: 0, bottom: 45 }}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" angle={-15} textAnchor="end" tick={{ fontSize: 11 }} interval={0} />
-                <YAxis tick={{ fontSize: 11 }} />
+              <BarChart data={groupBarData} margin={{ top: 10, right: 15, left: -10, bottom: 45 }}>
+                <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
+                <XAxis dataKey="name" angle={-15} textAnchor="end" tick={{ fontSize: 11, fill: 'var(--text-secondary)' }} interval={0} />
+                <YAxis tick={{ fontSize: 11, fill: 'var(--text-secondary)' }} />
                 <Tooltip formatter={(val, name) => [name === '₹ Revenue' ? `₹${fmt(val)}` : fmt(val), name]} />
                 <Legend verticalAlign="bottom" wrapperStyle={{ paddingTop: 10 }} />
                 <Bar dataKey="Teams count" fill={DEPT_BAR_COLORS.teams} radius={[4, 4, 0, 0]} />
@@ -358,44 +361,58 @@ const StudentEventAdminDashboard = () => {
             </ResponsiveContainer>
           </Box>
         </Box>
-        <Box sx={{ mt: 2, textAlign: 'center', p: 1.5, borderRadius: '12px', background: 'var(--bg-glass, #f8fafc)' }}>
-          <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>
+        <Box sx={{ mt: 2, textAlign: 'center', p: 1.5, borderRadius: '12px', background: 'var(--bg-glass)', border: '1px solid var(--border-color)' }}>
+          <Typography variant="subtitle2" sx={{ fontWeight: 800, color: 'var(--text-primary)', fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
             Filtered Teams: {fmt(groupFilteredTeamsTotal)}&nbsp;&nbsp;|&nbsp;&nbsp;Filtered Students: {fmt(groupFilteredStudentsTotal)}&nbsp;&nbsp;|&nbsp;&nbsp;Filtered Revenue: ₹{fmt(groupFilteredRevenueTotal)}
           </Typography>
         </Box>
       </Paper>
 
       {/* ── Section 3: Year cards + Campus-wise Years ─────────────────── */}
-      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '280px 1fr' }, gap: 2 }}>
+      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: '340px 1fr' }, gap: 2, alignItems: 'stretch', width: '100%', maxWidth: '100%', minWidth: 0, boxSizing: 'border-box' }}>
         {/* Year cards */}
-        <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2, alignContent: 'start' }}>
+        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gridTemplateRows: { lg: '1fr 1fr', xs: 'auto' }, gap: 2, height: '100%', width: '100%', maxWidth: '100%', minWidth: 0, boxSizing: 'border-box' }}>
           {yearKeys.map((yr, idx) => (
             <Paper
               key={yr}
-              variant="outlined"
+              elevation={0}
               sx={{
-                p: 2,
-                borderRadius: '14px',
-                borderColor: `${YEAR_COLORS[idx]}55`,
-                background: `linear-gradient(135deg, ${YEAR_COLORS[idx]}15 0%, ${YEAR_COLORS[idx]}08 100%)`,
+                p: { xs: 2, sm: 2.5 },
+                borderRadius: '16px',
+                border: `1px solid ${YEAR_COLORS[idx]}44`,
+                background: `linear-gradient(135deg, ${YEAR_COLORS[idx]}18 0%, ${YEAR_COLORS[idx]}08 100%)`,
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'space-between',
+                height: '100%',
+                width: '100%',
+                maxWidth: '100%',
+                minWidth: 0,
+                boxSizing: 'border-box',
+                boxShadow: 'var(--shadow-premium)',
+                transition: 'transform 0.2s',
+                '&:hover': { transform: 'translateY(-2px)' },
               }}
             >
               <Box
                 sx={{
                   display: 'inline-block',
+                  alignSelf: 'flex-start',
                   px: 1.5,
-                  py: 0.4,
+                  py: 0.5,
                   borderRadius: '8px',
                   background: YEAR_COLORS[idx],
-                  color: '#fff',
+                  color: '#ffffff',
                   fontWeight: 800,
                   fontSize: '0.75rem',
-                  mb: 0.8,
+                  letterSpacing: '0.03em',
+                  boxShadow: `0 4px 12px ${YEAR_COLORS[idx]}40`,
+                  mb: 1.5,
                 }}
               >
                 {yearLabels[idx]}
               </Box>
-              <Typography variant="h5" sx={{ fontWeight: 900, color: '#0f172a' }}>
+              <Typography variant="h4" sx={{ fontWeight: 900, color: 'var(--text-primary)', lineHeight: 1 }}>
                 {fmt(stats?.yearCounts?.[yr])}
               </Typography>
             </Paper>
@@ -403,12 +420,12 @@ const StudentEventAdminDashboard = () => {
         </Box>
 
         {/* Campus-wise years bar */}
-        <Paper variant="outlined" sx={{ p: 3, borderRadius: '16px' }}>
+        <Paper elevation={0} sx={{ p: { xs: 2, sm: 3 }, borderRadius: '16px', background: 'var(--bg-paper)', border: '1px solid var(--border-color)', height: '100%', width: '100%', maxWidth: '100%', minWidth: 0, boxSizing: 'border-box', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
           <SectionTitle>Campus wise Years</SectionTitle>
-          <Box sx={{ overflowX: 'auto', pb: 1 }}>
-            <Box sx={{ minWidth: 400 }}>
+          <Box sx={{ overflowX: 'auto', pb: 1, width: '100%', maxWidth: '100%', minWidth: 0, display: 'flex', justifyContent: 'center' }}>
+            <Box sx={{ width: '100%', maxWidth: '100%', minWidth: { xs: 280, sm: '100%' }, mx: 'auto' }}>
               <ResponsiveContainer width="100%" height={260}>
-                <BarChart data={campusYearData} margin={{ top: 10, right: 20, left: 0, bottom: 10 }}>
+                <BarChart data={campusYearData} margin={{ top: 10, right: 15, left: -20, bottom: 10 }}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="name" tick={{ fontSize: 12 }} />
                   <YAxis tick={{ fontSize: 11 }} />
@@ -426,27 +443,27 @@ const StudentEventAdminDashboard = () => {
       </Box>
 
       {/* ── Section 4: Overall Department Synopsis Table ─────────────────────────── */}
-      <Paper variant="outlined" sx={{ p: 3, borderRadius: '16px' }}>
+      <Paper elevation={0} sx={{ p: { xs: 2, sm: 3 }, borderRadius: '16px', background: 'var(--bg-paper)', border: '1px solid var(--border-color)' }}>
         <SectionTitle>Overall Department Synopsis (from Event Departments)</SectionTitle>
         <Box sx={{ overflowX: 'auto' }}>
           <Table size="small">
             <TableHead>
-              <TableRow sx={{ background: 'var(--bg-glass, #f8fafc)' }}>
+              <TableRow sx={{ background: 'var(--bg-glass)' }}>
                 {['Department', 'Events Count', 'Revenue (₹)', 'AUS', 'ACET', 'Other', 'Total Teams Registered', 'Total Students Registered', 'Participated Students'].map((h) => (
-                  <TableCell key={h} sx={{ fontWeight: 800, whiteSpace: 'nowrap' }}>{h}</TableCell>
+                  <TableCell key={h} sx={{ fontWeight: 800, whiteSpace: 'nowrap', color: 'var(--text-primary)' }}>{h}</TableCell>
                 ))}
               </TableRow>
             </TableHead>
             <TableBody>
               {deptStats.map((row, idx) => (
                 <TableRow key={idx} hover>
-                  <TableCell sx={{ fontWeight: 700, color: 'var(--color-primary, #0d9488)' }}>{row.name || row.dept}</TableCell>
+                  <TableCell sx={{ fontWeight: 700, color: 'var(--color-primary)' }}>{row.name || row.dept}</TableCell>
                   <TableCell sx={{ fontWeight: 700 }}>{row.eventCount}</TableCell>
                   <TableCell sx={{ fontWeight: 700, color: '#7c3aed' }}>₹{fmt(row.revenue)}</TableCell>
                   <TableCell>{fmt(row.aus)}</TableCell>
                   <TableCell>{fmt(row.acet)}</TableCell>
                   <TableCell>{fmt(row.other)}</TableCell>
-                  <TableCell sx={{ fontWeight: 700, color: 'var(--color-primary, #0d9488)' }}>{fmt(row.teamCount)}</TableCell>
+                  <TableCell sx={{ fontWeight: 700, color: 'var(--color-primary)' }}>{fmt(row.teamCount)}</TableCell>
                   <TableCell>{fmt(row.studentCount)}</TableCell>
                   <TableCell sx={{ fontWeight: 700, color: '#d97706' }}>{fmt(row.participatedStudents)}</TableCell>
                 </TableRow>
@@ -457,27 +474,27 @@ const StudentEventAdminDashboard = () => {
       </Paper>
 
       {/* ── Section 5: Overall Group (School) Synopsis Table ─────────────────────────── */}
-      <Paper variant="outlined" sx={{ p: 3, borderRadius: '16px' }}>
+      <Paper elevation={0} sx={{ p: { xs: 2, sm: 3 }, borderRadius: '16px', background: 'var(--bg-paper)', border: '1px solid var(--border-color)' }}>
         <SectionTitle>Overall Group (School) Synopsis</SectionTitle>
         <Box sx={{ overflowX: 'auto' }}>
           <Table size="small">
             <TableHead>
-              <TableRow sx={{ background: 'var(--bg-glass, #f8fafc)' }}>
+              <TableRow sx={{ background: 'var(--bg-glass)' }}>
                 {['Group (School)', 'Events Count', 'Revenue (₹)', 'AUS', 'ACET', 'Other', 'Total Teams Registered', 'Total Students Registered', 'Participated Students'].map((h) => (
-                  <TableCell key={h} sx={{ fontWeight: 800, whiteSpace: 'nowrap' }}>{h}</TableCell>
+                  <TableCell key={h} sx={{ fontWeight: 800, whiteSpace: 'nowrap', color: 'var(--text-primary)' }}>{h}</TableCell>
                 ))}
               </TableRow>
             </TableHead>
             <TableBody>
               {schoolStats.map((row, idx) => (
                 <TableRow key={idx} hover>
-                  <TableCell sx={{ fontWeight: 700, color: 'var(--color-primary, #ea580c)' }}>{row.shortName || row.name || row.group}</TableCell>
+                  <TableCell sx={{ fontWeight: 700, color: '#ea580c' }}>{row.shortName || row.name || row.group}</TableCell>
                   <TableCell sx={{ fontWeight: 700 }}>{row.eventCount}</TableCell>
                   <TableCell sx={{ fontWeight: 700, color: '#7c3aed' }}>₹{fmt(row.revenue)}</TableCell>
                   <TableCell>{fmt(row.aus)}</TableCell>
                   <TableCell>{fmt(row.acet)}</TableCell>
                   <TableCell>{fmt(row.other)}</TableCell>
-                  <TableCell sx={{ fontWeight: 700, color: 'var(--color-primary, #ea580c)' }}>{fmt(row.teamCount)}</TableCell>
+                  <TableCell sx={{ fontWeight: 700, color: '#ea580c' }}>{fmt(row.teamCount)}</TableCell>
                   <TableCell>{fmt(row.studentCount)}</TableCell>
                   <TableCell sx={{ fontWeight: 700, color: '#d97706' }}>{fmt(row.participatedStudents)}</TableCell>
                 </TableRow>
@@ -488,36 +505,38 @@ const StudentEventAdminDashboard = () => {
       </Paper>
 
       {/* ── Section 6: Gender chart ──────────────────── */}
-      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr' }, gap: 2 }}>
+      <Box sx={{ display: 'grid', gridTemplateColumns: '1fr', gap: 2, width: '100%', maxWidth: '100%', minWidth: 0, boxSizing: 'border-box' }}>
         {/* Gender Pie */}
-        <Paper variant="outlined" sx={{ p: 3, borderRadius: '16px' }}>
+        <Paper elevation={0} sx={{ p: { xs: 2, sm: 3 }, borderRadius: '16px', background: 'var(--bg-paper)', border: '1px solid var(--border-color)', width: '100%', maxWidth: '100%', minWidth: 0, boxSizing: 'border-box' }}>
           <SectionTitle>Gender Chart</SectionTitle>
-          <ResponsiveContainer width="100%" height={240}>
-            <PieChart>
-              <Pie data={genderPieData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={90} label={({ name, percent }) => `${(percent * 100).toFixed(1)}%`}>
-                {genderPieData.map((_, i) => (
-                  <Cell key={i} fill={GENDER_PIE[i % GENDER_PIE.length]} />
-                ))}
-              </Pie>
-              <Legend />
-              <Tooltip />
-            </PieChart>
-          </ResponsiveContainer>
+          <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', width: '100%' }}>
+            <ResponsiveContainer width="100%" height={240}>
+              <PieChart>
+                <Pie data={genderPieData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={90} label={({ name, percent }) => `${(percent * 100).toFixed(1)}%`}>
+                  {genderPieData.map((_, i) => (
+                    <Cell key={i} fill={GENDER_PIE[i % GENDER_PIE.length]} />
+                  ))}
+                </Pie>
+                <Legend />
+                <Tooltip />
+              </PieChart>
+            </ResponsiveContainer>
+          </Box>
         </Paper>
       </Box>
 
       {/* ── Section 7: Campus Wise Gender (line) + Campus Wise Count (pie) */}
-      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 2, mb: 2 }}>
+      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: '1fr 1fr' }, gap: 2, mb: 2, width: '100%', maxWidth: '100%', minWidth: 0, boxSizing: 'border-box' }}>
         {/* Campus gender line */}
-        <Paper variant="outlined" sx={{ p: 3, borderRadius: '16px' }}>
+        <Paper elevation={0} sx={{ p: { xs: 2, sm: 3 }, borderRadius: '16px', background: 'var(--bg-paper)', border: '1px solid var(--border-color)', width: '100%', maxWidth: '100%', minWidth: 0, boxSizing: 'border-box' }}>
           <SectionTitle>Campus Wise Gender</SectionTitle>
-          <Box sx={{ overflowX: 'auto', pb: 1 }}>
-            <Box sx={{ minWidth: 400 }}>
+          <Box sx={{ overflowX: 'auto', pb: 1, width: '100%', maxWidth: '100%', minWidth: 0, display: 'flex', justifyContent: 'center' }}>
+            <Box sx={{ width: '100%', maxWidth: '100%', minWidth: { xs: 280, sm: '100%' }, mx: 'auto' }}>
               <ResponsiveContainer width="100%" height={240}>
-                <LineChart data={campusGenderLineData} margin={{ top: 10, right: 20, left: 0, bottom: 10 }}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="campus" tick={{ fontSize: 12 }} />
-                  <YAxis tick={{ fontSize: 11 }} />
+                <LineChart data={campusGenderLineData} margin={{ top: 10, right: 15, left: -20, bottom: 10 }}>
+                  <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
+                  <XAxis dataKey="campus" tick={{ fontSize: 12, fill: 'var(--text-secondary)' }} />
+                  <YAxis tick={{ fontSize: 11, fill: 'var(--text-secondary)' }} />
                   <Tooltip />
                   <Legend />
                   {Object.keys(CAMPUS_GENDER_COLORS).map((key) => (
@@ -530,30 +549,32 @@ const StudentEventAdminDashboard = () => {
         </Paper>
 
         {/* Campus count pie */}
-        <Paper variant="outlined" sx={{ p: 3, borderRadius: '16px' }}>
+        <Paper elevation={0} sx={{ p: { xs: 2, sm: 3 }, borderRadius: '16px', background: 'var(--bg-paper)', border: '1px solid var(--border-color)', width: '100%', maxWidth: '100%', minWidth: 0, boxSizing: 'border-box' }}>
           <SectionTitle>Campus Wise Count</SectionTitle>
-          <ResponsiveContainer width="100%" height={240}>
-            <PieChart>
-              <Pie data={campusCountPieData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={90} label={({ name }) => name}>
-                {campusCountPieData.map((_, i) => (
-                  <Cell key={i} fill={CAMPUS_COUNT_COLORS[i % CAMPUS_COUNT_COLORS.length]} />
-                ))}
-              </Pie>
-              <Legend />
-              <Tooltip />
-            </PieChart>
-          </ResponsiveContainer>
+          <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', width: '100%' }}>
+            <ResponsiveContainer width="100%" height={240}>
+              <PieChart>
+                <Pie data={campusCountPieData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={90} label={({ name }) => name}>
+                  {campusCountPieData.map((_, i) => (
+                    <Cell key={i} fill={CAMPUS_COUNT_COLORS[i % CAMPUS_COUNT_COLORS.length]} />
+                  ))}
+                </Pie>
+                <Legend />
+                <Tooltip />
+              </PieChart>
+            </ResponsiveContainer>
+          </Box>
         </Paper>
       </Box>
 
       {/* ── Section 8: Revenue Charts (including Department Revenue) ─────────────────────────── */}
-      <Paper variant="outlined" sx={{ p: 3, borderRadius: '16px', borderColor: `${REVENUE_COLOR}33` }}>
+      <Paper elevation={0} sx={{ p: { xs: 2, sm: 3 }, borderRadius: '16px', background: 'var(--bg-paper)', border: '1px solid var(--border-color)', width: '100%', maxWidth: '100%', minWidth: 0, boxSizing: 'border-box' }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
           <TrendingUpIcon sx={{ color: REVENUE_COLOR }} />
           <SectionTitle>Revenue Overview</SectionTitle>
         </Box>
 
-        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 3 }}>
+        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: '1fr 1fr' }, gap: 3 }}>
           {/* Revenue Trend Line */}
           <Box>
             <Typography variant="body2" sx={{ fontWeight: 700, mb: 1.5, color: 'text.secondary' }}>Daily Revenue Trend (₹)</Typography>
@@ -597,7 +618,7 @@ const StudentEventAdminDashboard = () => {
           </Box>
         </Box>
 
-        <Box sx={{ mt: 3, display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 3 }}>
+        <Box sx={{ mt: 3, display: 'grid', gridTemplateColumns: { xs: '1fr', lg: '1fr 1fr' }, gap: 3 }}>
           {/* Revenue by Department (filtered by deptFilter) */}
           <Box>
             <Typography variant="body2" sx={{ fontWeight: 700, mb: 1.5, color: 'text.secondary' }}>
@@ -639,7 +660,7 @@ const StudentEventAdminDashboard = () => {
           )}
         </Box>
       </Paper>
-    </Box>
+    </PageContainer>
   );
 };
 

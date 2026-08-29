@@ -33,6 +33,10 @@ import {
 import { useNavigate } from 'react-router-dom';
 import PageHeader from '../../components/common/PageHeader';
 import DataTable from '../../components/data/DataTable';
+import { PageContainer, EmptyState } from '../../components/common/design-system';
+import ActionButton from '../../components/common/ActionButton';
+import StatCard from '../../components/common/StatCard';
+import StatCardGrid from '../../components/common/StatCardGrid';
 import API from '../../api/axios';
 import { toast } from 'sonner';
 import { QRCodeSVG } from 'qrcode.react';
@@ -408,7 +412,7 @@ const Registrations = () => {
   });
 
   return (
-    <Box sx={{ p: { xs: 2, md: 3, lg: 4 } }}>
+    <PageContainer>
       <PageHeader
         title="VEDA Event Registrations"
         subtitle="View and manage all registered student event registrations"
@@ -422,205 +426,31 @@ const Registrations = () => {
             >
               View Payments
             </Button>
-            <Button
-              variant="contained"
+            <ActionButton
               onClick={fetchPayments}
               startIcon={<RefreshIcon />}
-              sx={{ borderRadius: '12px', textTransform: 'none', px: 2.5, py: 1 }}
             >
               Refresh
-            </Button>
+            </ActionButton>
           </Box>
         }
       />
 
       {/* Summary Cards */}
-      <Grid container spacing={2.5} sx={{ mt: 1, mb: 3 }}>
-        <Grid item xs={12} sm={6} md={3}>
-          <Paper
-            variant="outlined"
-            sx={{
-              p: 2.5,
-              borderRadius: '16px',
-              background: 'linear-gradient(135deg, rgba(56, 189, 248, 0.08) 0%, rgba(99, 102, 241, 0.08) 100%)',
-              borderColor: 'rgba(56, 189, 248, 0.2)',
-            }}
-          >
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-              <Box
-                sx={{
-                  width: 44,
-                  height: 44,
-                  borderRadius: '12px',
-                  background: 'var(--color-primary, #0284c7)',
-                  color: '#fff',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-              >
-                <PeopleIcon />
-              </Box>
-              <Box>
-                <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase', fontWeight: 700 }}>
-                  Total Registrations
-                </Typography>
-                <Typography variant="h5" sx={{ fontWeight: 900 }}>
-                  {allParticipants.length}
-                </Typography>
-              </Box>
-            </Box>
-          </Paper>
-        </Grid>
-
-        {/* <Grid item xs={12} sm={6} md={3}>
-          <Paper
-            variant="outlined"
-            sx={{
-              p: 2.5,
-              borderRadius: '16px',
-              background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.08) 0%, rgba(217, 119, 6, 0.08) 100%)',
-              borderColor: 'rgba(245, 158, 11, 0.2)',
-            }}
-          >
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-              <Box
-                sx={{
-                  width: 44,
-                  height: 44,
-                  borderRadius: '12px',
-                  background: '#d97706',
-                  color: '#fff',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-              >
-                <AccommodationIcon />
-              </Box>
-              <Box>
-                <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase', fontWeight: 700 }}>
-                  Accommodation Needed
-                </Typography>
-                <Typography variant="h5" sx={{ fontWeight: 900 }}>
-                  {accommodationCount}
-                </Typography>
-              </Box>
-            </Box>
-          </Paper>
-        </Grid> */}
-
-        <Grid item xs={12} sm={6} md={3}>
-          <Paper
-            variant="outlined"
-            sx={{
-              p: 2.5,
-              borderRadius: '16px',
-              background: 'linear-gradient(135deg, rgba(168, 85, 247, 0.08) 0%, rgba(147, 51, 234, 0.08) 100%)',
-              borderColor: 'rgba(168, 85, 247, 0.2)',
-            }}
-          >
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-              <Box
-                sx={{
-                  width: 44,
-                  height: 44,
-                  borderRadius: '12px',
-                  background: '#9333ea',
-                  color: '#fff',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-              >
-                <EventIcon />
-              </Box>
-              <Box>
-                <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase', fontWeight: 700 }}>
-                  Events
-                </Typography>
-                <Typography variant="h5" sx={{ fontWeight: 900 }}>
-                  {uniqueEvents.length}
-                </Typography>
-              </Box>
-            </Box>
-          </Paper>
-        </Grid>
-
-        {/* <Grid item xs={12} sm={6} md={3}>
-          <Paper
-            variant="outlined"
-            sx={{
-              p: 2.5,
-              borderRadius: '16px',
-              background: 'linear-gradient(135deg, rgba(234, 88, 12, 0.08) 0%, rgba(194, 65, 12, 0.08) 100%)',
-              borderColor: 'rgba(234, 88, 12, 0.2)',
-            }}
-          >
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-              <Box
-                sx={{
-                  width: 44,
-                  height: 44,
-                  borderRadius: '12px',
-                  background: '#ea580c',
-                  color: '#fff',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-              >
-                <AccommodationIcon />
-              </Box>
-              <Box>
-                <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase', fontWeight: 700 }}>
-                  Accomm. (Male)
-                </Typography>
-                <Typography variant="h5" sx={{ fontWeight: 900 }}>
-                  {maleAccommodationCount}
-                </Typography>
-              </Box>
-            </Box>
-          </Paper>
-        </Grid> */}
-
-        {/* <Grid item xs={12} sm={6} md={3}>
-          <Paper
-            variant="outlined"
-            sx={{
-              p: 2.5,
-              borderRadius: '16px',
-              background: 'linear-gradient(135deg, rgba(236, 72, 153, 0.08) 0%, rgba(219, 39, 119, 0.08) 100%)',
-              borderColor: 'rgba(236, 72, 153, 0.2)',
-            }}
-          >
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-              <Box
-                sx={{
-                  width: 44,
-                  height: 44,
-                  borderRadius: '12px',
-                  background: '#db2777',
-                  color: '#fff',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-              >
-                <AccommodationIcon />
-              </Box>
-              <Box>
-                <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase', fontWeight: 700 }}>
-                  Accomm. (Female)
-                </Typography>
-                <Typography variant="h5" sx={{ fontWeight: 900 }}>
-                  {femaleAccommodationCount}
-                </Typography>
-              </Box>
-            </Box>
-          </Paper>
-        </Grid> */}
-      </Grid>
+      <StatCardGrid columns={2} sx={{ mt: 1, mb: 3 }}>
+        <StatCard
+          title="Total Registrations"
+          value={allParticipants.length}
+          color="#d97706"
+          icon={<PeopleIcon />}
+        />
+        <StatCard
+          title="Events"
+          value={uniqueEvents.length}
+          color="#9333ea"
+          icon={<EventIcon />}
+        />
+      </StatCardGrid>
 
       {/* Filter Controls Bar */}
       <Paper
@@ -650,7 +480,7 @@ const Registrations = () => {
           size="small"
           value={eventFilter}
           onChange={(e) => setEventFilter(e.target.value)}
-          sx={{ minWidth: 180 }}
+          sx={{ width: { xs: '100%', sm: 200 } }}
         >
           <MenuItem value="ALL">All Events</MenuItem>
           {uniqueEvents.map((evt) => (
@@ -706,22 +536,10 @@ const Registrations = () => {
       ) : (
         <Box sx={{ mt: 2 }}>
           {filteredParticipants.length === 0 ? (
-            <Box
-              sx={{
-                p: 4,
-                borderRadius: '20px',
-                border: '1px solid var(--border-color)',
-                background: 'var(--bg-panel)',
-                textAlign: 'center',
-              }}
-            >
-              <Typography variant="h6" sx={{ mb: 1 }}>
-                No Registrations found
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Try adjusting your search query or filter criteria.
-              </Typography>
-            </Box>
+            <EmptyState
+              title="No Registrations found"
+              description="Try adjusting your search query or filter criteria."
+            />
           ) : (
             <DataTable
               columns={columns}
@@ -926,7 +744,7 @@ const Registrations = () => {
           </Button>
         </DialogActions>
       </Dialog>
-    </Box>
+    </PageContainer>
   );
 };
 

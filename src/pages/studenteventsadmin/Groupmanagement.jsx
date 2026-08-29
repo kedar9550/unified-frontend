@@ -29,6 +29,8 @@ import {
   Close as CloseIcon,
 } from '@mui/icons-material';
 import PageHeader from '../../components/common/PageHeader';
+import { PageContainer } from '../../components/common/design-system';
+import ActionButton from '../../components/common/ActionButton';
 import DataTable from '../../components/data/DataTable';
 import API from '../../api/axios';
 import { toast } from 'sonner';
@@ -512,31 +514,17 @@ const GroupManagement = () => {
   // ─── LIST VIEW ───
   if (view === 'list') {
     return (
-      <Box sx={{ p: 3 }}>
+      <PageContainer>
         <PageHeader
           title="School Management"
           subtitle="Create and manage VEDA event schools"
           action={
-            <Button
-              variant="contained"
+            <ActionButton
               startIcon={<AddIcon />}
               onClick={openCreateForm}
-              sx={{
-                borderRadius: '12px',
-                px: 3,
-                py: 1.2,
-                fontWeight: 600,
-                textTransform: 'none',
-                fontSize: '0.9rem',
-                background: 'var(--gradient-primary)',
-                boxShadow: '0 4px 14px rgba(59, 130, 246, 0.3)',
-                '&:hover': {
-                  boxShadow: '0 6px 20px rgba(59, 130, 246, 0.45)',
-                },
-              }}
             >
               Create School
-            </Button>
+            </ActionButton>
           }
         />
 
@@ -563,7 +551,7 @@ const GroupManagement = () => {
           }}
         >
           <DialogTitle sx={{ fontWeight: 700, color: 'var(--text-primary)' }}>
-            Delete Group
+            Delete School
           </DialogTitle>
           <DialogContent>
             <DialogContentText sx={{ color: 'var(--text-secondary)' }}>
@@ -637,13 +625,13 @@ const GroupManagement = () => {
             />
           </Box>
         </Dialog>
-      </Box>
+      </PageContainer>
     );
   }
 
   // ─── FORM VIEW (Create / Edit) ───
   return (
-    <Box sx={{ p: 3 }}>
+    <PageContainer>
       <PageHeader
         title={editingGroup ? 'Edit School' : 'Create School'}
         subtitle={
@@ -833,17 +821,23 @@ const GroupManagement = () => {
                     />
                   );
                 }}
-                renderOption={(props, option) => (
-                  <Box component="li" {...props} key={option.employeeId || option._id}>
-                    <Box sx={{ display: 'flex', flexDirection: 'column' }}>
-                      <Typography variant="body2" fontWeight={600}>{option.name}</Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        {option.designation || 'Staff'} • {option.department || 'Unknown'}
-                      </Typography>
+                renderOption={(props, option) => {
+                  const { key, ...optionProps } = props;
+                  return (
+                    <Box
+                      component="li"
+                      key={key || option.institutionId || option.employeeId || option._id}
+                      {...optionProps}
+                    >
+                      <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+                        <Typography variant="body2" fontWeight={600}>{option.employeeName || option.name}</Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          {option.designation || 'Staff'} • {option.department || 'Unknown'}
+                        </Typography>
+                      </Box>
                     </Box>
-                  </Box>
-                )}
-                isOptionEqualToValue={(option, value) => option?.employeeId === value?.employeeId}
+                  );
+                }}
               />
             </Box>
 
@@ -906,7 +900,7 @@ const GroupManagement = () => {
           </Box>
         </CardContent>
       </Card>
-    </Box>
+    </PageContainer>
   );
 };
 

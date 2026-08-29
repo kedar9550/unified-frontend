@@ -23,6 +23,7 @@ import {
   Add as AddIcon,
 } from '@mui/icons-material';
 import PageHeader from '../../components/common/PageHeader';
+import { PageContainer } from '../../components/common/design-system';
 import DataTable from '../../components/data/DataTable';
 import {
   fetchEventDepartments,
@@ -227,7 +228,7 @@ const DepartmentManagement = () => {
   // ─── LIST VIEW ───
   if (view === 'list') {
     return (
-      <Box sx={{ p: 3 }}>
+      <PageContainer>
         <PageHeader
           title="Department Management"
           subtitle="Create and manage VEDA event departments"
@@ -304,13 +305,13 @@ const DepartmentManagement = () => {
             </Button>
           </DialogActions>
         </Dialog>
-      </Box>
+      </PageContainer>
     );
   }
 
   // ─── FORM VIEW (Create / Edit) ───
   return (
-    <Box sx={{ p: 3 }}>
+    <PageContainer>
       <PageHeader
         title={editingDepartment ? 'Edit Department' : 'Create Department'}
         subtitle={
@@ -435,7 +436,7 @@ const DepartmentManagement = () => {
           </Box>
         </CardContent>
       </Card>
-    </Box>
+    </PageContainer>
   );
 };
 

@@ -1,5 +1,5 @@
 import Loader from "../../components/common/Loader";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { useLoading } from "../../context/LoadingContext";
 
@@ -27,8 +27,8 @@ import pdfWorker from "pdfjs-dist/build/pdf.worker.min.mjs?url";
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorker;
 
 // ─── Constants ───────────────────────────────────────────────────────────────
-const JOURNAL_TYPES = ["SCI", "SCIE", "ESCI", "WoS", "SCOPUS"];
-const QUARTILE_OPTIONS = ["Q1", "Q2", "Q3", "Q4"];
+const JOURNAL_TYPES = ["SCI", "SCIE", "ESCI", "WoS", "None"];
+const QUARTILE_OPTIONS = ["Q1", "Q2", "Q3", "Q4", "None"];
 const INCENTIVE_OPTIONS = ["National", "International"];
 
 const getSdgName = (sdgCode) => {
@@ -58,196 +58,6 @@ const getSdgName = (sdgCode) => {
   return mapping[key] || cleanCode;
 };
 
-// ─── Scopus / Elsevier API keys ───────────────────────────────────────────────
-const ELSEVIER_API_KEY = import.meta.env.VITE_ELSEVIER_API_KEY;
-
-// ─── DOI Fetch Helper ─────────────────────────────────────────────────────────
-async function fetchJournalDataByDOI(doi) {
-  const headers = {
-    "X-ELS-APIKey": ELSEVIER_API_KEY,
-    Accept: "application/json",
-  };
-
-  // 1. Abstract / article metadata
-  const abstractRes = await fetch(
-    `https://api.elsevier.com/content/search/scopus?query=DOI(${encodeURIComponent(doi)})`,
-    { method: "GET", headers }
-  );
-  if (!abstractRes.ok) {
-    if (abstractRes.status === 429) {
-      throw new Error("Elsevier/Scopus API rate limit exceeded (HTTP 429). Please try again later or fill fields manually.");
-    } else if (abstractRes.status === 401) {
-      throw new Error("Invalid or unauthorized Elsevier API key. Please check your configuration.");
-    } else {
-      throw new Error("DOI not found in Scopus. Please fill fields manually.");
-    }
-  }
-  const abstractJson = await abstractRes.json();
-  const entry = abstractJson?.["search-results"]?.entry?.[0];
-  if (!entry || entry.error || (!entry["dc:title"] && !entry["prism:publicationName"])) {
-    throw new Error("DOI not found in Scopus. Please fill fields manually");
-  }
-
-  if (entry.subtype === "cp" || entry["prism:aggregationType"] === "Conference Proceeding") {
-    throw new Error("Only journal papers are allowed. Conference papers are not accepted.");
-  }
-
-  const title = entry["dc:title"] || "";
-  const journalName = entry["prism:publicationName"] || "";
-  const vol = entry["prism:volume"] || "";
-  const issue = entry["prism:issueIdentifier"] || "";
-  const pageRange = entry["prism:pageRange"] || "";
-  const coverDisplayDate = entry["prism:coverDisplayDate"] || "";
-
-  // Clean ISSN
-  const rawIssn = entry["prism:issn"] || "";
-  const rawEissn = entry["prism:eIssn"] || "";
-
-  let extractedIssn = null;
-  let extractedEissn = null;
-
-  if (rawIssn) extractedIssn = rawIssn.split(" ")[0].replace(/-/g, "");
-  if (rawEissn) extractedEissn = rawEissn.split(" ")[0].replace(/-/g, "");
-
-  const activeIssn = extractedIssn || extractedEissn;
-
-  // Format ISSN with hyphen for WoS check
-  const formatISSNWithHyphen = (raw) => {
-    if (!raw) return "";
-    const digits = raw.split(" ")[0].replace(/-/g, "");
-    if (digits.length === 8) return digits.slice(0, 4) + "-" + digits.slice(4);
-    return raw.split(" ")[0];
-  };
-
-  // Parse month/year from coverDisplayDate e.g. "January 2024" or "2024-01-15"
-  let month = "";
-  let year = "";
-  if (coverDisplayDate) {
-    const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-    const shortMonths = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-    const yearMatch = coverDisplayDate.match(/\b(19|20)\d{2}\b/);
-    if (yearMatch) year = yearMatch[0];
-    for (let i = 0; i < 12; i++) {
-      if (
-        coverDisplayDate.toLowerCase().includes(monthNames[i].toLowerCase()) ||
-        coverDisplayDate.toLowerCase().includes(shortMonths[i].toLowerCase())
-      ) {
-        month = monthNames[i];
-        break;
-      }
-    }
-    // ISO date fallback: 2024-01-15
-    if (!month) {
-      const isoMatch = coverDisplayDate.match(/\d{4}-(\d{2})/);
-      if (isoMatch) month = monthNames[parseInt(isoMatch[1], 10) - 1] || "";
-    }
-  }
-
-  // 2. Serial / journal metrics (H-Index, jcrImpactFactor, quartile) via ISSN
-  let hIndex = "";
-  let jcrImpactFactor = "";
-  let quartile = "N/A";
-  let journalType = "SCOPUS";
-
-  if (activeIssn) {
-    try {
-      let serialDataFetched = false;
-      let entry = {};
-
-      if (extractedIssn) {
-        const serialRes = await fetch(
-          `https://api.elsevier.com/content/serial/title/issn/${extractedIssn}?view=CITESCORE`,
-          { method: "GET", headers }
-        );
-        if (serialRes.ok) {
-          const serialJson = await serialRes.json();
-          entry = serialJson?.["serial-metadata-response"]?.entry?.[0] || {};
-          serialDataFetched = true;
-        }
-      }
-
-      if (!serialDataFetched && extractedEissn) {
-        const serialRes = await fetch(
-          `https://api.elsevier.com/content/serial/title/issn/${extractedEissn}?view=CITESCORE`,
-          { method: "GET", headers }
-        );
-        if (serialRes.ok) {
-          const serialJson = await serialRes.json();
-          entry = serialJson?.["serial-metadata-response"]?.entry?.[0] || {};
-          serialDataFetched = true;
-        }
-      }
-
-      if (serialDataFetched) {
-
-        // H-Index and Impact Factor are NOT fetched from API to prevent wrong/incorrect values
-        hIndex = "";
-        jcrImpactFactor = "";
-
-        // Quartile from CiteScore Percentiles
-        const csYearInfo = entry?.citeScoreYearInfoList?.citeScoreYearInfo;
-        let highestPercentile = null;
-
-        if (Array.isArray(csYearInfo) && csYearInfo.length > 0) {
-          const sortedYears = [...csYearInfo].sort((a, b) => parseInt(b["@year"] || 0) - parseInt(a["@year"] || 0));
-          const latestYearInfo = sortedYears[0];
-
-          const infoList = latestYearInfo.citeScoreInformationList || [];
-          let percentiles = [];
-          infoList.forEach(info => {
-            const csInfo = info.citeScoreInfo || [];
-            csInfo.forEach(cs => {
-              const subjectRanks = cs.citeScoreSubjectRank || [];
-              subjectRanks.forEach(sr => {
-                if (sr.percentile) {
-                  const pVal = parseFloat(sr.percentile);
-                  if (!isNaN(pVal)) percentiles.push(pVal);
-                }
-              });
-            });
-          });
-
-          if (percentiles.length > 0) {
-            highestPercentile = Math.max(...percentiles);
-          }
-        }
-
-        if (highestPercentile !== null) {
-          if (highestPercentile >= 75) quartile = "Q1";
-          else if (highestPercentile >= 50) quartile = "Q2";
-          else if (highestPercentile >= 25) quartile = "Q3";
-          else quartile = "Q4";
-        }
-      }
-    } catch (_) { /* ignore serial fetch errors */ }
-
-    // 3. Clarivate WoS proxy check for SCI / SCIE / ESCI / WoS flags
-    try {
-      let clarivateSuccess = false;
-
-      if (extractedIssn) {
-        const wosIssn = formatISSNWithHyphen(extractedIssn);
-        const wosRes = await API.post("/api/research/journal/wos-type", { issn: wosIssn });
-        if (wosRes.data?.success && wosRes.data?.journalType) {
-          journalType = wosRes.data.journalType;
-          clarivateSuccess = true;
-        }
-      }
-
-      if (!clarivateSuccess && extractedEissn) {
-        const wosEissn = formatISSNWithHyphen(extractedEissn);
-        const wosRes = await API.post("/api/research/journal/wos-type", { issn: wosEissn });
-        if (wosRes.data?.success && wosRes.data?.journalType) {
-          journalType = wosRes.data.journalType;
-          clarivateSuccess = true;
-        }
-      }
-    } catch (_) { /* ignore WoS proxy errors */ }
-  }
-
-  return { title, journalName, vol, issue, pageRange, month, year, hIndex, jcrImpactFactor, quartile, journalType, issn: activeIssn };
-}
-
 // ─── Component ────────────────────────────────────────────────────────────────
 export default function JournalPublication() {
   const { user } = useAuth();
@@ -255,6 +65,7 @@ export default function JournalPublication() {
   const [viewMode, setViewMode] = useState("list"); // 'list' | 'select-year' | 'form'
   const [academicYears, setAcademicYears] = useState([]);
   const [selectedYear, setSelectedYear] = useState("");
+  const academicYearSelectRef = useRef(null);
   const [noActiveYearAlertOpen, setNoActiveYearAlertOpen] = useState(false);
   const [publicationsList, setPublicationsList] = useState([]);
   const [selectedPubDetails, setSelectedPubDetails] = useState(null);
@@ -291,6 +102,9 @@ export default function JournalPublication() {
     completeJournalName: "",
     sdgs: "",
     isStudentsInvolved: "No",
+    issn: "",
+    eissn: "",
+    isScopus: "No",
     // Author details
     totalAuthors: 1,
     userAuthorPosition: 1,
@@ -368,6 +182,9 @@ export default function JournalPublication() {
         newForm.year = "";
         newForm.sdgs = "";
         newForm.completeJournalName = "";
+        newForm.issn = "";
+        newForm.eissn = "";
+        newForm.isScopus = "No";
         setDoiFetched(false);
         setDoiFetchedFields({});
         setScannedSdgResults(null);
@@ -542,13 +359,13 @@ export default function JournalPublication() {
     }));
   };
 
-  // ── DOI Fetch ────────────────────────────────────────────────────────────────
   const fetchDOIData = async () => {
     if (!form.doi.trim()) { toast.warning("Please enter a DOI first"); return; }
     setDoiFetching(true);
     startLoading();
     try {
-      const data = await fetchJournalDataByDOI(form.doi.trim());
+      const res = await API.post("/api/research/journal/fetch-doi", { doi: form.doi.trim() });
+      const data = res.data?.data;
 
       const fetched = {};
       const patch = {};
@@ -561,17 +378,17 @@ export default function JournalPublication() {
         pageNos: data.pageRange,
         month: data.month,
         year: data.year,
-        hIndex: String(data.hIndex || ""),
-        jcrImpactFactor: String(data.jcrImpactFactor || data.impactFactor || ""),
-        journalQuartile: data.quartile,
+        journalQuartile: data.journalQuartile,
         journalType: data.journalType,
+        issn: data.issn || "",
+        eissn: data.eissn || "",
+        isScopus: data.isScopus || "No"
       };
 
       Object.entries(map).forEach(([k, v]) => {
         if (v) {
           patch[k] = v;
-          // Don't lock the quartile field when API returns "N/A" — let user select manually
-          if (!(k === "journalQuartile" && v === "N/A")) {
+          if (k !== "issn" && k !== "eissn" && k !== "isScopus") {
             fetched[k] = true;
           }
         }
@@ -586,7 +403,7 @@ export default function JournalPublication() {
       setDoiFetchedFields(fetched);
       toast.success("Journal details fetched successfully!");
     } catch (err) {
-      toast.error(err.message || "Failed to fetch DOI details");
+      toast.error(err.response?.data?.message || err.message || "Failed to fetch DOI details");
     } finally {
       setDoiFetching(false);
       stopLoading();
@@ -721,7 +538,8 @@ export default function JournalPublication() {
       const fields = [
         "doi", "paperTitle", "journalName", "journalType",
         "vol", "issue", "agecReferencingNumbers", "applyIncentive", "publicationScope",
-        "totalAuthors", "userAuthorPosition", "hIndex", "jcrImpactFactor", "isStudentsInvolved"
+        "totalAuthors", "userAuthorPosition", "hIndex", "jcrImpactFactor", "isStudentsInvolved",
+        "issn", "eissn", "isScopus"
       ];
       fields.forEach(k => {
         fd.append(k, form[k] ?? "");
@@ -920,7 +738,22 @@ export default function JournalPublication() {
       <Box sx={{ maxWidth: 500, mx: "auto", mt: 5 }}>
         <FormCard title="Select Academic Year">
           <Typography sx={{ mb: 2, color: "var(--text-secondary)", fontWeight: 500 }}>Please select the academic year for this publication submission:</Typography>
-          <Select fullWidth size="small" displayEmpty value={selectedYear} onChange={(e) => setSelectedYear(e.target.value)}>
+          <Select
+            fullWidth
+            size="small"
+            displayEmpty
+            value={selectedYear}
+            onChange={(e) => setSelectedYear(e.target.value)}
+            inputRef={academicYearSelectRef}
+            onClose={() => {
+              // Return focus to the select element to prevent aria-hidden accessibility warnings
+              setTimeout(() => {
+                if (academicYearSelectRef.current) {
+                  academicYearSelectRef.current.focus();
+                }
+              }, 0);
+            }}
+          >
             <MenuItem value="" disabled>Select Academic Year</MenuItem>
             {filteredYears.map(y => <MenuItem key={y._id} value={y._id}>{y.year}</MenuItem>)}
           </Select>
@@ -952,7 +785,7 @@ export default function JournalPublication() {
           DOI (Digital Object Identifier) : *
           <span style={{ fontWeight: 400, textTransform: "none", fontSize: 10, opacity: 0.7 }}> — Enter DOI to auto-fill details (only journal papers accepted)</span>
         </Typography>
-        <Box sx={{ display: "flex", gap: 1.5, alignItems: "flex-start" }}>
+        <Box sx={{ display: "flex", gap: 1.5, flexDirection: { xs: "column", sm: "row" }, alignItems: { xs: "stretch", sm: "flex-start" } }}>
           <TextField
             size="small"
             fullWidth
@@ -974,6 +807,7 @@ export default function JournalPublication() {
             onClick={fetchDOIData}
             disabled={doiFetching || !form.doi.trim()}
             sx={{
+              width: { xs: "100%", sm: "auto" },
               minWidth: 110,
               height: "40px",
               background: "var(--gradient-primary)",
@@ -988,8 +822,10 @@ export default function JournalPublication() {
           </Button>
         </Box>
         {doiFetched && (
-          <Typography sx={{ mt: 1, fontSize: 11, color: "#10b981", fontWeight: 700 }}>
-            ✓ Details auto-filled from Scopus. Review and complete any remaining fields below.
+          <Typography sx={{ mt: 1, fontSize: 11, color: form.isScopus === "Yes" ? "#10b981" : "#f59e0b", fontWeight: 700 }}>
+            {form.isScopus === "Yes"
+              ? "✓ Details auto-filled from Scopus. Review and complete any remaining fields below."
+              : "✓ Details auto-filled from Crossref (Not found in Scopus). Review and complete any remaining fields below."}
           </Typography>
         )}
       </Box>
@@ -1000,20 +836,20 @@ export default function JournalPublication() {
         {/* Title */}
         <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
           <Typography sx={labelStyle}>Title of the Article : *</Typography>
-          <TextField size="small" fullWidth multiline rows={2} value={form.paperTitle} onChange={set("paperTitle")} disabled={isFetched("paperTitle")} sx={isFetched("paperTitle") ? disabledField : {}} />
+          <TextField size="small" fullWidth multiline rows={2} value={form.paperTitle} onChange={set("paperTitle")} disabled={true} sx={disabledField} placeholder="Auto-filled from DOI" />
         </Box>
 
         {/* Journal Name */}
         <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
           <Typography sx={labelStyle}>Name of the Journal : *</Typography>
-          <TextField size="small" fullWidth value={form.journalName} onChange={set("journalName")} disabled={isFetched("journalName")} sx={isFetched("journalName") ? disabledField : {}} />
+          <TextField size="small" fullWidth value={form.journalName} onChange={set("journalName")} disabled={true} sx={disabledField} placeholder="Auto-filled from DOI" />
         </Box>
 
         {/* Quartile */}
         <Box>
           <Typography sx={labelStyle}>Journal Quartile : *</Typography>
-          <Select size="small" fullWidth displayEmpty value={form.journalQuartile} onChange={set("journalQuartile")} disabled={isFetched("journalQuartile")} sx={isFetched("journalQuartile") ? disabledField : {}}>
-            <MenuItem value="">Select</MenuItem>
+          <Select size="small" fullWidth displayEmpty value={form.journalQuartile} onChange={set("journalQuartile")} disabled={true} sx={disabledField}>
+            <MenuItem value="">Auto-filled from DOI</MenuItem>
             {QUARTILE_OPTIONS.map(q => <MenuItem key={q} value={q}>{q}</MenuItem>)}
           </Select>
         </Box>
@@ -1021,13 +857,19 @@ export default function JournalPublication() {
         {/* Journal Type */}
         <Box>
           <Typography sx={labelStyle}>Type of Journal :</Typography>
-          <Select size="small" fullWidth displayEmpty value={form.journalType || ""} onChange={set("journalType")} disabled={isFetched("journalType")} sx={isFetched("journalType") ? disabledField : {}}>
-            <MenuItem value="">Select</MenuItem>
+          <Select size="small" fullWidth displayEmpty value={form.journalType || ""} onChange={set("journalType")} disabled={true} sx={disabledField}>
+            <MenuItem value="">Auto-filled from DOI</MenuItem>
             {(form.journalType && !JOURNAL_TYPES.includes(form.journalType)
               ? [...JOURNAL_TYPES, form.journalType]
               : JOURNAL_TYPES
             ).map(t => <MenuItem key={t} value={t}>{t}</MenuItem>)}
           </Select>
+        </Box>
+
+        {/* Indexed in Scopus */}
+        <Box>
+          <Typography sx={labelStyle}>Indexed in Scopus :</Typography>
+          <TextField size="small" fullWidth value={form.isScopus || ""} disabled={true} sx={disabledField} placeholder="Auto-filled from DOI" />
         </Box>
 
         {/* Vol */}
@@ -1122,7 +964,7 @@ export default function JournalPublication() {
 
                   {/* Co-Author Type (if students are involved) */}
                   {form.isStudentsInvolved === "Yes" && (
-                    <Box sx={{ flex: 1, minWidth: "130px" }}>
+                    <Box sx={{ flex: 1, minWidth: { xs: "100%", sm: "130px" } }}>
                       <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>CO-AUTHOR TYPE</Typography>
                       <Select
                         size="small"
@@ -1138,7 +980,7 @@ export default function JournalPublication() {
                   )}
 
                   {/* Affiliation Type */}
-                  <Box sx={{ flex: 1, minWidth: "150px" }}>
+                  <Box sx={{ flex: 1, minWidth: { xs: "100%", sm: "150px" } }}>
                     <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>AFFILIATION TYPE</Typography>
                     <Select
                       size="small"
@@ -1157,7 +999,7 @@ export default function JournalPublication() {
                   {ca.affiliationType === "Aditya University" ? (
                     ca.CoAuthorType === "student" ? (
                       <>
-                        <Box sx={{ flex: 1, minWidth: "120px" }}>
+                        <Box sx={{ flex: 1, minWidth: { xs: "100%", sm: "120px" } }}>
                           <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>STUDENT ROLL NO</Typography>
                           <TextField
                             size="small"
@@ -1167,7 +1009,7 @@ export default function JournalPublication() {
                             placeholder="e.g. 21A91A0501"
                           />
                         </Box>
-                        <Box sx={{ flex: 2, minWidth: "200px" }}>
+                        <Box sx={{ flex: 2, minWidth: { xs: "100%", sm: "200px" } }}>
                           <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>STUDENT NAME</Typography>
                           <TextField
                             size="small"
@@ -1180,7 +1022,7 @@ export default function JournalPublication() {
                       </>
                     ) : (
                       <>
-                        <Box sx={{ flex: 1, minWidth: "120px" }}>
+                        <Box sx={{ flex: 1, minWidth: { xs: "100%", sm: "120px" } }}>
                           <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>EMPLOYEE ID</Typography>
                           <TextField
                             size="small"
@@ -1193,7 +1035,7 @@ export default function JournalPublication() {
                             placeholder="e.g. 5741"
                           />
                         </Box>
-                        <Box sx={{ flex: 2, minWidth: "200px" }}>
+                        <Box sx={{ flex: 2, minWidth: { xs: "100%", sm: "200px" } }}>
                           <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>CO-AUTHOR NAME</Typography>
                           <TextField
                             size="small"
@@ -1208,7 +1050,7 @@ export default function JournalPublication() {
                     )
                   ) : (
                     <>
-                      <Box sx={{ flex: 1, minWidth: "180px" }}>
+                      <Box sx={{ flex: 1, minWidth: { xs: "100%", sm: "180px" } }}>
                         <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>CO-AUTHOR NAME</Typography>
                         <TextField
                           size="small"
@@ -1221,7 +1063,7 @@ export default function JournalPublication() {
                           placeholder="Full Name"
                         />
                       </Box>
-                      <Box sx={{ flex: 2, minWidth: "200px" }}>
+                      <Box sx={{ flex: 2, minWidth: { xs: "100%", sm: "200px" } }}>
                         <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>AFFILIATION</Typography>
                         <TextField
                           size="small"
@@ -1539,7 +1381,7 @@ export default function JournalPublication() {
                       (c._id && c._id.toString() === (data.appraisalClaimant?._id || data.appraisalClaimant || "").toString())
                     );
 
-                    if (!data.appraisalClaimant && isApplicant && appraisalConfigActive && uniqueClaimants.length > 1) {
+                    if (!data.appraisalClaimant && isApplicant && appraisalConfigActive && uniqueClaimants.length > 1 && data.status === "Approved" && data.appraisalEligible === "Yes") {
                       return (
                         <Select
                           size="small"
@@ -1561,7 +1403,7 @@ export default function JournalPublication() {
 
                     return (
                       <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>
-                        {currentClaimantObj ? `${currentClaimantObj.name} (${currentClaimantObj.institutionId})` : `Not Yet Designated (Debug: isApp=${isApplicant}, cfg=${appraisalConfigActive}, len=${uniqueClaimants.length}, fac=${data.facultyId?._id}, user=${user?._id || user?.userId})`}
+                        {currentClaimantObj ? `${currentClaimantObj.name} (${currentClaimantObj.institutionId})` : (data.status === "Approved" && data.appraisalEligible === "Yes" ? `Not Yet Designated` : `N/A - Not Eligible or Not Approved`)}
                       </Typography>
                     );
                   })()
