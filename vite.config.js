@@ -61,7 +61,15 @@ export default defineConfig({
       }
     })
   ],
-
+  server: {
+    proxy: {
+      '/adityaapi': {
+        target: 'https://info.aec.edu.in',
+        changeOrigin: true,
+        secure: false,
+      }
+    }
+  },
   // This is your server preview block
   preview: {
     host: '0.0.0.0',
