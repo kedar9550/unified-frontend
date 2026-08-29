@@ -175,7 +175,6 @@ const theme = createTheme({
     MuiMenu: {
       defaultProps: {
         disableScrollLock: true,
-        disableRestoreFocus: true,
       },
     },
     MuiTypography: {
