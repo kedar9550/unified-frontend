@@ -13,7 +13,7 @@ import {
 } from 'recharts';
 import { useNavigate } from 'react-router-dom';
 import API from '../../api/axios';
-import PageHeader from '../../components/common/PageHeader';
+import StatCardGrid from '../../components/common/StatCardGrid';
 
 // ─── Helpers ───────────────────────────────────────────────────────────────
 const STATUS_META = {
@@ -59,7 +59,6 @@ const StatCard = ({ title, value, iconColor, bg, sub, icon: SIcon, gradient, lin
     flexDirection: "column",
     justifyContent: "space-between",
     p: 2.5,
-    flex: '1 1 200px', 
     minWidth: 0,
     "&::after": {
       content: '""',
@@ -216,18 +215,25 @@ const ServiceEmpDashboard = () => {
   return (
     <Box sx={{ width: '100%' }}>
       {/* ── Header ─────────────────────────────────────────────────── */}
-      <Box sx={{ mb: 3 }}>
-        <PageHeader title="My Work Dashboard" subtitle="Your assigned tasks and activity overview" showBack={false} />
+      <Box sx={{ mb: 3.5, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
+        <Box>
+          <Typography variant="h4" fontWeight={800} sx={{ color: 'var(--text-primary)', letterSpacing: '-0.5px' }}>
+            My Work Dashboard 👋
+          </Typography>
+          <Typography variant="body1" sx={{ color: 'var(--text-secondary)', mt: 0.5 }}>
+            Your assigned tasks and activity overview
+          </Typography>
+        </Box>
       </Box>
 
       {/* ── Stat Cards ─────────────────────────────────────────────── */}
-      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mb: 3 }}>
+      <StatCardGrid columns={4} sx={{ mb: 4 }}>
         <StatCard title="Total Assigned"   value={tickets.length}          icon={AssignmentInd} iconColor="#3b82f6" bg="rgba(59,130,246,0.12)" gradient="linear-gradient(135deg, #3B82F6, #2563EB)" linkText="View Tasks" onClick={() => navigate('/service-desk/assigned-to-me')} />
         <StatCard title="Active Tasks"     value={activeTickets.length}    icon={HourglassTop}  iconColor="#f59e0b" bg="rgba(245,158,11,0.12)" gradient="linear-gradient(135deg, #F59E0B, #D97706)" sub="Need action" linkText="View Tasks" onClick={() => navigate('/service-desk/assigned-to-me')} />
         <StatCard title="In Progress"      value={inProgress.length}       icon={TrendingUp}    iconColor="#8b5cf6" bg="rgba(139,92,246,0.12)" gradient="linear-gradient(135deg, #8B5CF6, #6D28D9)" linkText="View Tasks" onClick={() => navigate('/service-desk/assigned-to-me')} />
         <StatCard title="Resolved by Me"   value={resolvedTickets.length}  icon={CheckCircle}   iconColor="#10b981" bg="rgba(16,185,129,0.12)" gradient="linear-gradient(135deg, #10B981, #059669)" linkText="View Tasks" onClick={() => navigate('/service-desk/assigned-to-me')} />
         <StatCard title="Urgent Tasks"     value={urgent.length}           icon={PriorityHigh}  iconColor="#ef4444" bg="rgba(239,68,68,0.12)" gradient="linear-gradient(135deg, #EF4444, #DC2626)" sub="Critical + High" linkText="View Tasks" onClick={() => navigate('/service-desk/assigned-to-me')} />
-      </Box>
+      </StatCardGrid>
 
       {/* ── Charts Row ─────────────────────────────────────────────── */}
       {activeTickets.length > 0 && (

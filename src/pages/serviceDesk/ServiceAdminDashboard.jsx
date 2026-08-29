@@ -15,7 +15,7 @@ import {
 } from 'recharts';
 import { useNavigate } from 'react-router-dom';
 import API from '../../api/axios';
-import PageHeader from '../../components/common/PageHeader';
+import StatCardGrid from '../../components/common/StatCardGrid';
 
 // ─── Status / Priority helpers ─────────────────────────────────────────────
 const STATUS_META = {
@@ -166,8 +166,15 @@ const ServiceAdminDashboard = () => {
   return (
     <Box sx={{ width: '100%' }}>
       {/* ── Header ─────────────────────────────────────────────────── */}
-      <Box sx={{ display: 'flex', alignItems: { xs: 'flex-start', sm: 'center' }, justifyContent: 'space-between', flexWrap: 'wrap', gap: 2, mb: 3 }}>
-        <PageHeader title="Service Admin Dashboard" subtitle={`Monitoring · ${selectedSvcName}`} showBack={false} />
+      <Box sx={{ display: 'flex', alignItems: { xs: 'flex-start', sm: 'center' }, justifyContent: 'space-between', flexWrap: 'wrap', gap: 2, mb: 3.5 }}>
+        <Box>
+          <Typography variant="h4" fontWeight={800} sx={{ color: 'var(--text-primary)', letterSpacing: '-0.5px' }}>
+            Service Admin Dashboard 👋
+          </Typography>
+          <Typography variant="body1" sx={{ color: 'var(--text-secondary)', mt: 0.5 }}>
+            {`Monitoring · ${selectedSvcName}`}
+          </Typography>
+        </Box>
         {memberships.length > 1 && (
           <FormControl size="small" sx={{ minWidth: 200 }}>
             <Select
@@ -187,14 +194,14 @@ const ServiceAdminDashboard = () => {
       </Box>
 
       {/* ── Stat Cards ─────────────────────────────────────────────── */}
-      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mb: 3 }}>
+      <StatCardGrid columns={4} sx={{ mb: 4 }}>
         <StatCard title="Total Tickets"  value={ticketsLoading ? '—' : stats.total}      icon={ConfirmationNumber} iconColor="#3b82f6" bg="rgba(59,130,246,0.12)" />
         <StatCard title="Open / Awaiting" value={ticketsLoading ? '—' : stats.open}      icon={Schedule}          iconColor="#f59e0b" bg="rgba(245,158,11,0.12)" sub="Need assignment" />
         <StatCard title="In Progress"    value={ticketsLoading ? '—' : stats.inProgress}  icon={AccessTime}        iconColor="#8b5cf6" bg="rgba(139,92,246,0.12)" />
         <StatCard title="Resolved"       value={ticketsLoading ? '—' : stats.resolved + stats.closed} icon={CheckCircle} iconColor="#10b981" bg="rgba(16,185,129,0.12)" sub="Resolved + Closed" />
         <StatCard title="High Priority"  value={ticketsLoading ? '—' : stats.critical}   icon={PriorityHigh}      iconColor="#ef4444" bg="rgba(239,68,68,0.12)"   sub="Critical + High" />
         <StatCard title="Team Members"   value={team.length}                              icon={Group}             iconColor="#0ea5e9" bg="rgba(14,165,233,0.12)" />
-      </Box>
+      </StatCardGrid>
 
       {/* ── Charts Row ─────────────────────────────────────────────── */}
       <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 3, mb: 3 }}>

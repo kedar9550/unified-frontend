@@ -30,6 +30,7 @@ import {
 import { toast } from 'sonner';
 import API from '../../api/axios';
 import PageHeader from '../../components/common/PageHeader';
+import { PageContainer } from '../../components/common/design-system';
 
 const initialForm = { eventName: '', status: 'Active', coordinator: null };
 
@@ -271,11 +272,12 @@ const MajorEventGroups = () => {
 
   if (view === 'list') {
     return (
-      <Box sx={{ p: 3 }}>
-      <PageHeader
-        title="Fest Groups"
-        subtitle="Select a group to create and manage its events"
-      />
+      <PageContainer>
+        <PageHeader
+          title="Fest Groups"
+          subtitle="Select a group to create and manage its events"
+          showBack={false}
+        />
 
       <Box sx={{ mt: 3, maxWidth: 1100, mx: 'auto' }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.75, flexWrap: 'wrap' }}>
@@ -520,12 +522,12 @@ const MajorEventGroups = () => {
           </Button>
         </DialogActions>
       </Dialog>
-    </Box>
+    </PageContainer>
     );
   }
 
   return (
-    <Box sx={{ p: 3 }}>
+    <PageContainer>
       <PageHeader
         title={editingEvent ? 'Edit Event' : 'Create Event'}
         subtitle={editingEvent ? 'Update the details for this event' : 'Add a new event to the selected group'}
@@ -613,7 +615,7 @@ const MajorEventGroups = () => {
           </Box>
         </CardContent>
       </Card>
-    </Box>
+    </PageContainer>
   );
 };
 

@@ -490,7 +490,7 @@ const Header = ({ isSidebarCollapsed }) => {
               mx: 1.5,
               mb: 1.5,
               p: { xs: 0.8, md: hasManyRoles ? 2 : 0.8 },
-              maxHeight: { xs: "200px", sm: "260px", md: hasManyRoles ? "350px" : "280px" },
+              maxHeight: { xs: "200px", sm: "260px", md: hasManyRoles ? "265px" : "280px" },
               overflowY: "auto",
               overscrollBehavior: "contain",
               borderRadius: "16px",
@@ -499,7 +499,9 @@ const Header = ({ isSidebarCollapsed }) => {
               boxShadow: "0 2px 8px rgba(0,0,0,0.02)",
               display: { xs: "block", md: hasManyRoles ? "grid" : "block" },
               gridTemplateColumns: { xs: "1fr", md: hasManyRoles ? "repeat(3, 1fr)" : "1fr" },
-              gap: { xs: 0.5, md: hasManyRoles ? 1.5 : 0 }
+              gap: { xs: 0.5, md: hasManyRoles ? 1.5 : 0 },
+              "&::-webkit-scrollbar": { width: 6 },
+              "&::-webkit-scrollbar-thumb": { background: "var(--border-color)", borderRadius: 4 }
             }}
           >
             {user?.roles?.map((r) => {
