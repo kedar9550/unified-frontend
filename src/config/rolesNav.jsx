@@ -507,7 +507,8 @@ export const ROLE_ROUTES = {
             { text: "Winning Certificates", path: "/Eventveda/winning-certificates", icon: <WorkspacePremium /> },
             { text: "Participation Certificates", path: "/Eventveda/participation-certificates", icon: <WorkspacePremium /> }
           ]
-        }
+        },
+        { text: "Enquiries", path: "/Eventveda/enquiries", icon: <EmailIcon /> }
       ]
     },
     // { text: "Send Mail", path: "/Eventveda/send-mail", icon: <EmailIcon /> }
@@ -616,7 +617,8 @@ export const ROLE_ROUTES = {
         { text: "Winning Certificates", path: "/Eventveda/winning-certificates", icon: <WorkspacePremium /> },
         { text: "Participation Certificates", path: "/Eventveda/participation-certificates", icon: <WorkspacePremium /> }
       ]
-    }
+    },
+    { text: "Enquiries", path: "/Eventveda/enquiries", icon: <EmailIcon /> }
   ],
 
   // ACCOMMODATION Coordinator

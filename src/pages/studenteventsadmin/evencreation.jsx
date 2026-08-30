@@ -246,10 +246,10 @@ const EventCreation = () => {
     const group = eventSchools.find((g) => String(g._id) === String(event.eventSchool?._id || event.eventSchool)) || null;
     setEditingEvent(event);
     setSelectedGroup(group || null);
-    
+
     // Set departments (assuming event.department is now an array of ObjectIds or objects)
-    const eventDepartments = Array.isArray(event.department) 
-      ? event.department.map(d => d._id || d) 
+    const eventDepartments = Array.isArray(event.department)
+      ? event.department.map(d => d._id || d)
       : [];
     setDepartments(eventDepartments);
 
@@ -465,7 +465,7 @@ const EventCreation = () => {
       setStudentError('Student already added');
       return;
     }
-    
+
     setIsFetchingStudent(true);
     setStudentError('');
     try {
@@ -546,25 +546,25 @@ const EventCreation = () => {
       index + 1,
       event.eventSchool?.name || '',
       Array.isArray(event.department)
-        ? (departmentsList.length > 0 && event.department.length === departmentsList.length 
-            ? (
-                <Typography 
-                  variant="body2" 
-                  sx={{ color: '#3b82f6', cursor: 'pointer', textDecoration: 'underline' }} 
-                  onClick={() => { setDepartmentsToView(event.department); setDepartmentsDialogOpen(true); }}
-                >
-                  All Departments
-                </Typography>
-              )
-            : event.department.map(d => d?.name || d).join(' & ')) 
+        ? (departmentsList.length > 0 && event.department.length === departmentsList.length
+          ? (
+            <Typography
+              variant="body2"
+              sx={{ color: '#3b82f6', cursor: 'pointer', textDecoration: 'underline' }}
+              onClick={() => { setDepartmentsToView(event.department); setDepartmentsDialogOpen(true); }}
+            >
+              All Departments
+            </Typography>
+          )
+          : event.department.map(d => d?.name || d).join(' & '))
         : (event.department || 'N/A'),
       coordinatorLabel,
       event.eventName,
       event.venueType === 'Indoor' && event.building && event.floor
         ? `${event.building.name}, ${event.floor.name} (Room: ${event.roomNo})`
         : event.venueType === 'Outdoor' && event.ground
-        ? `${event.ground.name} (Room: ${event.roomNo})`
-        : event.venue || 'N/A',
+          ? `${event.ground.name} (Room: ${event.roomNo})`
+          : event.venue || 'N/A',
       event.maxTeamSize || '',
       event.price != null && event.price > 0 ? `₹${event.price} (${event.priceType || 'Per Head'})` : '',
     ];
@@ -913,7 +913,6 @@ const EventCreation = () => {
                   </Box>
                 </Box>
               )}
-              isOptionEqualToValue={(option, value) => option?.institutionId === value?.institutionId || option?.employeeId === value?.employeeId}
               renderTags={(value, getTagProps) =>
                 value.map((option, index) => {
                   const { key, ...tagProps } = getTagProps({ index });
@@ -946,8 +945,8 @@ const EventCreation = () => {
                     }
                   }}
                 />
-                <Button 
-                  variant="contained" 
+                <Button
+                  variant="contained"
                   onClick={handleAddStudentCoordinator}
                   disabled={isFetchingStudent}
                 >
@@ -1197,7 +1196,7 @@ const EventCreation = () => {
               </Box>
             </Box>
 
-            <Box sx={{ mt: 4, mb: 2 }}>
+            {/* <Box sx={{ mt: 4, mb: 2 }}>
               <FormControl component="fieldset">
                 <Typography variant="subtitle1" fontWeight={600} mb={1}>
                   Do you want a theme for this event?
@@ -1211,7 +1210,7 @@ const EventCreation = () => {
                   <FormControlLabel value="no" control={<Radio />} label="No" />
                 </RadioGroup>
               </FormControl>
-            </Box>
+            </Box> */}
 
             {wantTheme && (
               <Box sx={{ mb: 4 }}>
