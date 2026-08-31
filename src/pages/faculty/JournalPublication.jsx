@@ -1430,6 +1430,7 @@ export default function JournalPublication() {
                     { label: "DOI", value: data.doi || "-", icon: <LinkIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
                     { label: "Applicant Author Position", value: data.userAuthorPosition ? `${data.userAuthorPosition} / ${data.totalAuthors}` : (data.firstAuthor === "Yes" ? "1" : data.authorPosition || "-"), icon: <PersonOutlineIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
                     { label: "Journal Quartile", value: data.journalQuartile || data.categoryOfJournal || "-", icon: <ShowChartIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
+                    { label: "Scopus", value: data.isScopus || "-", icon: <CheckCircleOutlineIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
                     { label: "Journal Type", value: data.journalType || "-", icon: <MenuBookIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
                     { label: "Volume", value: data.vol || "-", icon: <MenuBookIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
                     { label: "Issue", value: data.issue || "-", icon: <Article sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },

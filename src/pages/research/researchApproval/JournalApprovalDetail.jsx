@@ -2,7 +2,8 @@ import Loader from "../../../components/common/Loader";
 import React, { useState, useEffect } from "react";
 import {
     Box, Typography, Grid, Card, Button, TextField,
-    Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Chip, IconButton, Stack, Select, MenuItem
+    Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Chip, IconButton, Stack, Select, MenuItem,
+    Accordion, AccordionSummary, AccordionDetails, Avatar
 } from "@mui/material";
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import MenuBookIcon from '@mui/icons-material/MenuBook';
@@ -13,12 +14,14 @@ import AttachFileIcon from '@mui/icons-material/AttachFile';
 import HistoryIcon from '@mui/icons-material/History';
 import GavelIcon from '@mui/icons-material/Gavel';
 import DownloadIcon from '@mui/icons-material/Download';
+import CreditCardIcon from '@mui/icons-material/CreditCard';
 import CheckIcon from '@mui/icons-material/Check';
 import CloseIcon from '@mui/icons-material/Close';
 import ArticleIcon from '@mui/icons-material/Article';
 import { toast } from "sonner";
 import API from "../../../api/axios";
 import EditResearchDetailsDialog from "./EditResearchDetailsDialog";
+import { useAuth } from "../../../context/AuthContext";
 import FormatListBulletedIcon from '@mui/icons-material/FormatListBulleted';
 import SchoolIcon from '@mui/icons-material/School';
 import LinkIcon from '@mui/icons-material/Link';
@@ -29,6 +32,7 @@ import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import BarChartIcon from '@mui/icons-material/BarChart';
 import FormatQuoteIcon from '@mui/icons-material/FormatQuote';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import GrassIcon from '@mui/icons-material/Grass';
 import PublicIcon from '@mui/icons-material/Public';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutlined';
@@ -76,6 +80,7 @@ const getMatchedSdgBadgeList = (sdgInput) => {
 
 
 const JournalApprovalDetail = ({ id, onBack, role }) => {
+    const { user } = useAuth();
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [remarks, setRemarks] = useState("");
@@ -89,6 +94,8 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
     const [actionLoading, setActionLoading] = useState(false);
     const [imgError, setImgError] = useState(false);
     const [sdgMap, setSdgMap] = useState({});
+    const [profileImageSrc, setProfileImageSrc] = useState(null);
+    const [editOpen, setEditOpen] = useState(false);
 
     const [leftCardHeight, setLeftCardHeight] = useState(null);
     const observerRef = React.useRef(null);
@@ -133,6 +140,56 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
         const key = `SDG-${cleanCode}`;
         return sdgMap[key] || cleanCode;
     };
+
+    useEffect(() => {
+        if (!data?.facultyId) return;
+
+        if (data.facultyId.profileImage) {
+            setProfileImageSrc(data.facultyId.profileImage.startsWith('http') ? data.facultyId.profileImage : `${API.defaults.baseURL || 'http://localhost:9022'}${data.facultyId.profileImage}`);
+            return;
+        }
+
+        const checkImage = (url) => {
+            return new Promise((resolve) => {
+                const img = new Image();
+                img.onload = () => resolve(true);
+                img.onerror = () => resolve(false);
+                img.src = url;
+            });
+        };
+
+        let isMounted = true;
+        const resolveProfileImage = async () => {
+            const empId = data.facultyId.institutionId;
+            if (!empId) {
+                if (isMounted) setProfileImageSrc(null);
+                return;
+            }
+
+            const ausUrl = `https://info.aec.edu.in/aus/employeephotos/${empId}.jpg`;
+            const aecUrl = `https://info.aec.edu.in/aec/employeephotos/${empId}.jpg`;
+            const acetUrl = `https://info.aec.edu.in/acet/employeephotos/${empId}.jpg`;
+            const studentUrl = `https://info.aec.edu.in/adityacentral/StudentPhotos/${empId}.jpg`;
+
+            if (await checkImage(ausUrl)) {
+                if (isMounted) setProfileImageSrc(ausUrl);
+            } else if (await checkImage(aecUrl)) {
+                if (isMounted) setProfileImageSrc(aecUrl);
+            } else if (await checkImage(acetUrl)) {
+                if (isMounted) setProfileImageSrc(acetUrl);
+            } else if (await checkImage(studentUrl)) {
+                if (isMounted) setProfileImageSrc(studentUrl);
+            } else {
+                if (isMounted) setProfileImageSrc(null);
+            }
+        };
+
+        resolveProfileImage();
+
+        return () => {
+            isMounted = false;
+        };
+    }, [data?.facultyId]);
 
     const isHOD = !role || role === 'HOD';
     const isDean = role === 'RESEARCH_DEAN';
@@ -279,7 +336,7 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
         const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(filepath);
 
         return (
-            <Grid key={index} item xs={12} sm={6} md={3}>
+            <Grid key={index} xs={12} sm={6} md={3}>
                 <Box sx={{ mb: 1, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                     <Typography variant="subtitle2" sx={{ fontWeight: 800, color: "var(--color-primary)", fontSize: "0.75rem", textTransform: "uppercase" }}>
                         {index}. {title}
@@ -374,6 +431,83 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
                 </Box>
             </Card>
 
+            <Accordion
+                sx={{
+                    mb: 3,
+                    borderRadius: "16px !important",
+                    border: "1px solid var(--border-color)",
+                    boxShadow: "none",
+                    "&:before": { display: "none" },
+                    background: "var(--bg-paper)",
+                    overflow: "hidden"
+                }}
+            >
+                <AccordionSummary expandIcon={<ExpandMoreIcon sx={{ color: "var(--text-secondary)" }} />} sx={{ p: 3, pb: 2, pt: 2 }}>
+                    <Box sx={{ 
+                        display: "flex", 
+                        alignItems: { xs: "flex-start", sm: "center" }, 
+                        justifyContent: "space-between", 
+                        width: "100%", 
+                        pr: { xs: 0, sm: 2 }, 
+                        flexDirection: { xs: "column", sm: "row" }, 
+                        gap: { xs: 2, sm: 0 } 
+                    }}>
+                        <Box sx={{ display: "flex", alignItems: "center", gap: 2, width: "100%" }}>
+                            <Avatar 
+                                src={profileImageSrc || ""} 
+                                sx={{ width: 52, height: 52, bgcolor: "var(--color-primary)", fontSize: "1.2rem", fontWeight: 800, flexShrink: 0 }}
+                            >
+                                {data.facultyId?.name?.charAt(0) || "A"}
+                            </Avatar>
+                            <Box sx={{ flexGrow: 1, minWidth: 0 }}>
+                                <Typography variant="body1" sx={{ fontWeight: 800, color: "var(--text-primary)", wordBreak: "break-word" }}>
+                                    {data.facultyId?.name || "Unknown Applicant"}
+                                </Typography>
+                                <Typography variant="body2" sx={{ color: "var(--text-secondary)", fontWeight: 600 }}>
+                                    {data.facultyId?.designation || "Applicant"}
+                                </Typography>
+                            </Box>
+                        </Box>
+                        <Chip label="Applicant Details" size="small" sx={{ alignSelf: { xs: "flex-start", sm: "auto" }, fontWeight: 600, color: "var(--color-primary)", bgcolor: "rgba(0, 78, 146, 0.1)", borderRadius: "6px" }} />
+                    </Box>
+                </AccordionSummary>
+                <AccordionDetails sx={{ borderTop: "1px solid var(--border-color)", p: 0 }}>
+                    <Box sx={{ display: "flex", flexDirection: "column" }}>
+                        {[
+                            { label: "Institution ID / Emp ID", value: data.facultyId?.institutionId || "-", icon: <PersonOutlineIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
+                            { label: "Department", value: [data.facultyId?.coreDepartment?.name ? `${data.facultyId.coreDepartment.name} (Parent)` : null, data.facultyId?.department?.name ? `${data.facultyId.department.name} (Serving)` : null].filter(Boolean).join(" / ") || "-", icon: <GroupsIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
+                            { label: "College", value: data.facultyId?.college || data.college || "-", icon: <SchoolIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
+                            { label: "PAN Number", value: data.panNumber || data.facultyId?.panNumber || "-", icon: <CreditCardIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
+                            { label: "Contact Number", value: data.facultyId?.phone || data.facultyId?.contactNumber || "-", icon: <PersonIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> }
+                        ].map((item, idx, arr) => (
+                            <Box
+                                key={idx}
+                                sx={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "space-between",
+                                    px: 3,
+                                    py: 1.6,
+                                    borderBottom: idx === arr.length - 1 ? "none" : "1px solid var(--border-color)",
+                                    "&:hover": { bgcolor: "rgba(0,0,0,0.015)" },
+                                    transition: "background 0.2s"
+                                }}
+                            >
+                                <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                                    {item.icon}
+                                    <Typography variant="body2" sx={{ color: "var(--text-secondary)", fontWeight: 600, fontSize: "0.875rem" }}>
+                                        {item.label}
+                                    </Typography>
+                                </Box>
+                                <Typography variant="body2" sx={{ fontWeight: 800, color: "var(--text-primary)", textAlign: "right" }}>
+                                    {item.value}
+                                </Typography>
+                            </Box>
+                        ))}
+                    </Box>
+                </AccordionDetails>
+            </Accordion>
+
             {/* Main Grid: Left Column (Publication Details) + Right Column (Scope & SDGs) */}
             <Box sx={{
                 display: "grid",
@@ -411,6 +545,7 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
                                 { label: "DOI", value: data.doi || "-", icon: <LinkIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
                                 { label: "Applicant Author Position", value: data.userAuthorPosition ? `${data.userAuthorPosition} / ${data.totalAuthors}` : (data.firstAuthor === "Yes" ? "1" : data.authorPosition || "-"), icon: <PersonOutlineIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
                                 { label: "Journal Quartile", value: data.journalQuartile || data.categoryOfJournal || "-", icon: <ShowChartIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
+                                { label: "Scopus", value: data.isScopus || "-", icon: <CheckCircleOutlineIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
                                 { label: "Journal Type", value: data.journalType || "-", icon: <MenuBookIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
                                 { label: "Volume", value: data.vol || "-", icon: <MenuBookIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
                                 { label: "Issue", value: data.issue || "-", icon: <ArticleIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
@@ -513,7 +648,7 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
                                         if (uniqueClaimants.length <= 1) {
                                             return (
                                                 <Typography variant="body2" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>
-                                                    {user?.name || data.facultyId?.name || "AMALAPURAPU KEDARNADH"} <Typography component="span" variant="caption" sx={{ fontWeight: 600, color: "var(--text-secondary)" }}>(Auto-assigned)</Typography>
+                                                    {data.facultyId?.name || "-"} <Typography component="span" variant="caption" sx={{ fontWeight: 600, color: "var(--text-secondary)" }}>(Auto-assigned)</Typography>
                                                 </Typography>
                                             );
                                         }
@@ -686,7 +821,7 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
                         renderFilePreview("Complete Journal", data.completeJournal, 3)
                     ) : (
                         data.completeJournalName && (
-                            <Grid item xs={12} sm={6} md={3}>
+                            <Grid xs={12} sm={6} md={3}>
                                 <Box sx={{ mb: 1 }}>
                                     <Typography variant="subtitle2" sx={{ fontWeight: 800, color: "var(--color-primary)", fontSize: "0.75rem", textTransform: "uppercase" }}>
                                         3. Complete Journal
