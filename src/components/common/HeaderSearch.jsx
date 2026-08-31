@@ -33,40 +33,33 @@ const HeaderSearch = ({ activeRole, variant = "desktop", mobileOpen, onMobileOpe
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isMobile]);
 
-  // Focus timing: Focus input near the end of 450ms expansion animation (360ms)
+  // Immediate Focus & Input Visibility (Simultaneous Expansion & Keyboard Focus)
   useEffect(() => {
     if (!isMobile) return;
 
-    let visibilityTimer;
-    let focusTimer;
-
     if (mobileOpen) {
-      visibilityTimer = setTimeout(() => {
-        setIsInputVisible(true);
-      }, 100);
+      setIsInputVisible(true);
 
-      focusTimer = setTimeout(() => {
+      const triggerFocus = () => {
         if (inputRef.current) {
           inputRef.current.focus();
-          try {
-            const isObscured = inputRef.current.getBoundingClientRect().top > window.innerHeight - 100;
-            if (isObscured) {
-              inputRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            }
-          } catch (err) {}
         }
-      }, 360);
+      };
+
+      triggerFocus();
+      const rafId = requestAnimationFrame(triggerFocus);
+      const timerId = setTimeout(triggerFocus, 40);
+
+      return () => {
+        cancelAnimationFrame(rafId);
+        clearTimeout(timerId);
+      };
     } else {
       setIsInputVisible(false);
       if (inputRef.current) {
         inputRef.current.blur();
       }
     }
-
-    return () => {
-      clearTimeout(visibilityTimer);
-      clearTimeout(focusTimer);
-    };
   }, [mobileOpen, isMobile]);
 
   // Cross-platform Virtual Viewport (iOS Safari & Android Chrome)
@@ -80,20 +73,9 @@ const HeaderSearch = ({ activeRole, variant = "desktop", mobileOpen, onMobileOpe
       if (!window.visualViewport) return;
 
       const vv = window.visualViewport;
-      const windowHeight = window.innerHeight;
-      const kbHeight = Math.max(0, windowHeight - vv.height - vv.offsetTop);
-
-      if (kbHeight > 50) {
-        setKeyboardOffset(kbHeight + vv.offsetTop);
-
-        if (inputRef.current) {
-          try {
-            const rect = inputRef.current.getBoundingClientRect();
-            if (rect.bottom > vv.height) {
-              inputRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            }
-          } catch (err) {}
-        }
+      // On iOS Safari offsetTop can be > 0 during scroll/virtual keyboard view shift
+      if (vv.offsetTop > 0) {
+        setKeyboardOffset(vv.offsetTop);
       } else {
         setKeyboardOffset(0);
       }
@@ -118,7 +100,7 @@ const HeaderSearch = ({ activeRole, variant = "desktop", mobileOpen, onMobileOpe
     };
   }, [mobileOpen, isMobile]);
 
-  // Page Scroll Lock when search overlay is active (iOS Safari & Android Chrome)
+  // Page Scroll Lock when search overlay is active
   useEffect(() => {
     if (isMobile && mobileOpen) {
       const scrollY = window.scrollY || window.pageYOffset || 0;
@@ -194,6 +176,20 @@ const HeaderSearch = ({ activeRole, variant = "desktop", mobileOpen, onMobileOpe
     }
   };
 
+  const handlePillClick = (e) => {
+    if (!mobileOpen) {
+      // Synchronous focus inside User Gesture (Mandatory for iOS Safari)
+      if (inputRef.current) {
+        try {
+          inputRef.current.focus();
+        } catch (err) {}
+      }
+      if (onMobileOpen) {
+        onMobileOpen();
+      }
+    }
+  };
+
   const handleClose = () => {
     setAnchorEl(null);
   };
@@ -224,19 +220,21 @@ const HeaderSearch = ({ activeRole, variant = "desktop", mobileOpen, onMobileOpe
   const open = Boolean(anchorEl) && query.trim().length > 0;
 
   if (isMobile) {
-    const defaultBottom = weatherExpanded
+    const defaultClosedBottom = weatherExpanded
       ? 'calc(178px + env(safe-area-inset-bottom, 0px))'
       : 'calc(84px + env(safe-area-inset-bottom, 0px))';
 
-    const containerBottom = keyboardOffset > 50
-      ? `${keyboardOffset + 12}px`
-      : defaultBottom;
+    const containerBottom = mobileOpen
+      ? (keyboardOffset > 0
+          ? `calc(${keyboardOffset + 16}px + env(safe-area-inset-bottom, 0px))`
+          : 'calc(16px + env(safe-area-inset-bottom, 0px))')
+      : defaultClosedBottom;
 
-    const resultsBottom = keyboardOffset > 50
-      ? `${keyboardOffset + 68}px`
-      : (weatherExpanded
-          ? 'calc(234px + env(safe-area-inset-bottom, 0px))'
-          : 'calc(140px + env(safe-area-inset-bottom, 0px))');
+    const resultsBottom = mobileOpen
+      ? (keyboardOffset > 0
+          ? `calc(${keyboardOffset + 72}px + env(safe-area-inset-bottom, 0px))`
+          : 'calc(72px + env(safe-area-inset-bottom, 0px))')
+      : 'calc(140px + env(safe-area-inset-bottom, 0px))';
 
     return (
       <>
@@ -327,9 +325,12 @@ const HeaderSearch = ({ activeRole, variant = "desktop", mobileOpen, onMobileOpe
 
         {/* Morphing Search Container (Pill <-> Input Bar) */}
         <Box
-          onClick={() => {
-            if (!mobileOpen && onMobileOpen) {
-              onMobileOpen();
+          onClick={handlePillClick}
+          onTouchStart={(e) => {
+            if (!mobileOpen && inputRef.current) {
+              try {
+                inputRef.current.focus();
+              } catch (err) {}
             }
           }}
           sx={{
@@ -389,15 +390,18 @@ const HeaderSearch = ({ activeRole, variant = "desktop", mobileOpen, onMobileOpe
             </Typography>
           )}
 
-          {/* Input Base Element (Shown when open) */}
+          {/* Input Base Element (Mounted in DOM for iOS gesture focus) */}
           <Box
             sx={{
               flex: 1,
-              display: mobileOpen ? 'flex' : 'none',
+              display: 'flex',
               alignItems: 'center',
-              opacity: isInputVisible ? 1 : 0,
+              opacity: mobileOpen ? (isInputVisible ? 1 : 0) : 0,
+              pointerEvents: mobileOpen ? 'auto' : 'none',
               transition: 'opacity 300ms ease 120ms',
               minWidth: 0,
+              width: mobileOpen ? '100%' : '0px',
+              overflow: 'hidden',
             }}
           >
             <InputBase
