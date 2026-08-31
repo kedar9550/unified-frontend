@@ -208,6 +208,12 @@ const MobileNavbar = () => {
     const displayItems = menuItems;
 
     const handleNavClick = (event, newValue) => {
+        if (event?.currentTarget) {
+            event.currentTarget.blur();
+        }
+        if (document.activeElement instanceof HTMLElement) {
+            document.activeElement.blur();
+        }
         const item = displayItems[newValue];
         if (item) {
             if (item.nested) {
@@ -220,8 +226,17 @@ const MobileNavbar = () => {
     };
 
     useEffect(() => {
+        if (document.activeElement instanceof HTMLElement) {
+            document.activeElement.blur();
+        }
         setExpandedItem(null);
     }, [location.pathname]);
+
+    useEffect(() => {
+        if (expandedItem && document.activeElement instanceof HTMLElement) {
+            document.activeElement.blur();
+        }
+    }, [expandedItem]);
 
     const getWeatherIcon = (code) => {
         if (code >= 95) return "https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Travel%20and%20places/Cloud%20with%20Lightning%20and%20Rain.png";
