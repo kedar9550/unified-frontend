@@ -278,12 +278,12 @@ const UniprimeDashboard = () => {
                     transform: "translateY(-5px)",
                     boxShadow: "0 12px 40px rgba(0,0,0,0.12)",
                   },
-                  height: "160px",
+                  height: { xs: "135px", sm: "160px" },
                   width: "100%",
                   display: "flex",
                   flexDirection: "column",
                   justifyContent: "space-between",
-                  p: 2.5,
+                  p: { xs: 1.5, sm: 2.5 },
                   border: "1px solid var(--border-color)",
                   background: "var(--bg-panel)",
                   overflow: "hidden",
@@ -292,8 +292,8 @@ const UniprimeDashboard = () => {
                     position: "absolute",
                     top: 0,
                     right: 0,
-                    width: "120px",
-                    height: "120px",
+                    width: { xs: "90px", sm: "120px" },
+                    height: { xs: "90px", sm: "120px" },
                     background: `radial-gradient(circle at top right, ${card.color}25, transparent 70%)`,
                     zIndex: 0
                   }
@@ -304,7 +304,7 @@ const UniprimeDashboard = () => {
                   display: "flex",
                   flexDirection: "row",
                   alignItems: "flex-start",
-                  gap: 2,
+                  gap: { xs: 1, sm: 2 },
                   textAlign: "left",
                   position: "relative",
                   zIndex: 1
@@ -312,9 +312,9 @@ const UniprimeDashboard = () => {
                   {/* Icon */}
                   <Box
                     sx={{
-                      width: 50,
-                      height: 50,
-                      borderRadius: "14px",
+                      width: { xs: 38, sm: 50 },
+                      height: { xs: 38, sm: 50 },
+                      borderRadius: { xs: "10px", sm: "14px" },
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
@@ -323,15 +323,19 @@ const UniprimeDashboard = () => {
                       flexShrink: 0,
                       mt: 0.5,
                       boxShadow: `0 8px 25px ${card.color}35`,
+                      "& svg": {
+                        fontSize: { xs: "1.1rem", sm: "1.5rem" }
+                      }
                     }}>
-                    {React.cloneElement(card.icon, { fontSize: "medium" })}
+                    {React.cloneElement(card.icon)}
                   </Box>
 
                   {/* Text */}
-                  <Box sx={{ display: "flex", flexDirection: "column", alignItems: "flex-start" }}>
+                  <Box sx={{ display: "flex", flexDirection: "column", alignItems: "flex-start", minWidth: 0 }}>
                     <Typography
                       variant="body2"
-                      sx={{ color: "var(--text-secondary)", fontWeight: 600, fontSize: "0.8rem", textTransform: "capitalize", letterSpacing: "0.5px" }}
+                      noWrap
+                      sx={{ color: "var(--text-secondary)", fontWeight: 600, fontSize: { xs: "0.7rem", sm: "0.8rem" }, textTransform: "capitalize", letterSpacing: "0.5px" }}
                     >
                       {card.title}
                     </Typography>
@@ -342,7 +346,7 @@ const UniprimeDashboard = () => {
                           fontWeight: 800,
                           color: "var(--text-primary)",
                           mt: 0.5,
-                          fontSize: card.value.toString().length > 6 ? "1.2rem" : "1.6rem",
+                          fontSize: card.value.toString().length > 6 ? { xs: "1rem", sm: "1.2rem" } : { xs: "1.25rem", sm: "1.6rem" },
                           lineHeight: 1
                         }}
                       >
@@ -362,11 +366,11 @@ const UniprimeDashboard = () => {
                 <Box sx={{ display: 'flex', justifyContent: 'flex-end', position: "relative", zIndex: 1 }}>
                   <Button
                     size="small"
-                    endIcon={<ArrowForward sx={{ fontSize: 14 }} />}
+                    endIcon={<ArrowForward sx={{ fontSize: { xs: 12, sm: 14 } }} />}
                     onClick={() => navigate(card.path)}
                     sx={{
                       textTransform: "none",
-                      fontSize: "0.8rem",
+                      fontSize: { xs: "0.725rem", sm: "0.8rem" },
                       fontWeight: 700,
                       color: "var(--color-primary)",
                       p: 0,
@@ -388,7 +392,7 @@ const UniprimeDashboard = () => {
                 sx={{
                   borderRadius: "16px",
                   boxShadow: "var(--shadow-premium)",
-                  p: 3,
+                  p: { xs: 2, sm: 3 },
                   height: "100%",
                   display: "flex",
                   flexDirection: "column",
@@ -403,8 +407,8 @@ const UniprimeDashboard = () => {
                 }}
               >
                 {/* Header */}
-                <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 4, position: "relative", zIndex: 1 }}>
-                  <Typography sx={{ fontWeight: 800, fontSize: "1.1rem", color: "var(--text-primary)" }}>
+                <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3, position: "relative", zIndex: 1 }}>
+                  <Typography sx={{ fontWeight: 800, fontSize: { xs: "0.95rem", sm: "1.1rem" }, color: "var(--text-primary)" }}>
                     Academic Structure Overview
                   </Typography>
                   <Button
@@ -412,32 +416,41 @@ const UniprimeDashboard = () => {
                     onClick={() => navigate("/academics/department")}
                     sx={{
                       textTransform: "none",
-                      fontSize: "0.8rem",
-                      fontWeight: 700,
-                      color: "#3b82f6",
-                      bgcolor: "rgba(59, 130, 246, 0.06)",
+                      bgcolor: "rgba(59, 130, 246, 0.08)",
                       px: 2,
                       py: 0.5,
                       borderRadius: "20px",
-                      "&:hover": { bgcolor: "rgba(59, 130, 246, 0.12)" }
+                      "&:hover": { bgcolor: "rgba(59, 130, 246, 0.16)" }
                     }}
                   >
-                    View All
+                    <Box
+                      component="span"
+                      sx={{
+                        fontSize: "0.8rem",
+                        fontWeight: 800,
+                        background: "var(--gradient-primary)",
+                        WebkitBackgroundClip: "text",
+                        WebkitTextFillColor: "transparent",
+                        display: "inline-block"
+                      }}
+                    >
+                      View All
+                    </Box>
                   </Button>
                 </Box>
 
                 {/* Hierarchical Tree Content */}
-                <Box sx={{ display: "flex", flexDirection: "column", gap: 3, position: "relative", zIndex: 1, pb: 2 }}>
+                <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5, position: "relative", zIndex: 1, pb: 1 }}>
                   
                   {/* Row 1: Schools */}
                   <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", position: "relative" }}>
-                    {/* Vertical Connector Line (down to Branches) */}
-                    <Box sx={{ position: "absolute", left: 22, top: 22, bottom: -24, borderLeft: "2.5px dotted #818cf8", opacity: 0.8, zIndex: 0 }} />
+                    {/* Vertical Connector Line */}
+                    <Box sx={{ position: "absolute", left: { xs: 18, sm: 22 }, top: 20, bottom: -20, borderLeft: "2px dotted #818cf8", opacity: 0.8, zIndex: 0 }} />
                     
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 2, zIndex: 1 }}>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: { xs: 1.2, sm: 2 }, zIndex: 1 }}>
                       <Box sx={{ 
-                        width: 44, 
-                        height: 44, 
+                        width: { xs: 36, sm: 44 }, 
+                        height: { xs: 36, sm: 44 }, 
                         borderRadius: "50%", 
                         bgcolor: "rgba(129, 140, 248, 0.12)", 
                         display: "flex", 
@@ -445,28 +458,28 @@ const UniprimeDashboard = () => {
                         justifyContent: "center",
                         border: "1.5px solid rgba(129, 140, 248, 0.25)"
                       }}>
-                        <School sx={{ color: "#4f46e5", fontSize: 22 }} />
+                        <School sx={{ color: "#4f46e5", fontSize: { xs: 18, sm: 22 } }} />
                       </Box>
-                      <Typography sx={{ fontWeight: 700, color: "var(--text-primary)", fontSize: "0.95rem" }}>Schools</Typography>
+                      <Typography sx={{ fontWeight: 700, color: "var(--text-primary)", fontSize: { xs: "0.85rem", sm: "0.95rem" } }}>Schools</Typography>
                     </Box>
-                    <Box sx={{ bgcolor: "rgba(129, 140, 248, 0.1)", px: 2, py: 0.5, borderRadius: "20px" }}>
+                    <Box sx={{ bgcolor: "rgba(129, 140, 248, 0.1)", px: 1.5, py: 0.25, borderRadius: "20px" }}>
                       <Typography sx={{ fontWeight: 800, color: "#4f46e5", fontSize: "0.85rem" }}>{dashboardData.schoolsCount}</Typography>
                     </Box>
                   </Box>
 
                   {/* Row 2: Departments */}
-                  <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", pl: 5, position: "relative" }}>
-                    {/* Horizontal Connector Branch (from Schools vertical line) */}
-                    <Box sx={{ position: "absolute", left: 22, top: 22, width: 18, borderTop: "2.5px dotted #818cf8", opacity: 0.8, zIndex: 0 }} />
-                    {/* Vertical Connector Line (from Schools down to Branches/Specializations) */}
-                    <Box sx={{ position: "absolute", left: 22, top: -24, bottom: -24, borderLeft: "2.5px dotted #818cf8", opacity: 0.8, zIndex: 0 }} />
-                    {/* Vertical Connector Line (from Departments down to Programs) */}
-                    <Box sx={{ position: "absolute", left: 62, top: 22, bottom: -24, borderLeft: "2.5px dotted #3b82f6", opacity: 0.8, zIndex: 0 }} />
+                  <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", pl: { xs: 2.5, sm: 5 }, position: "relative" }}>
+                    {/* Horizontal Connector Branch */}
+                    <Box sx={{ position: "absolute", left: { xs: 18, sm: 22 }, top: 20, width: { xs: 12, sm: 18 }, borderTop: "2px dotted #818cf8", opacity: 0.8, zIndex: 0 }} />
+                    {/* Vertical Connector Line */}
+                    <Box sx={{ position: "absolute", left: { xs: 18, sm: 22 }, top: -20, bottom: -20, borderLeft: "2px dotted #818cf8", opacity: 0.8, zIndex: 0 }} />
+                    {/* Vertical Connector Line */}
+                    <Box sx={{ position: "absolute", left: { xs: 44, sm: 62 }, top: 20, bottom: -20, borderLeft: "2px dotted #3b82f6", opacity: 0.8, zIndex: 0 }} />
                     
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 2, zIndex: 1 }}>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: { xs: 1.2, sm: 2 }, zIndex: 1 }}>
                       <Box sx={{ 
-                        width: 44, 
-                        height: 44, 
+                        width: { xs: 36, sm: 44 }, 
+                        height: { xs: 36, sm: 44 }, 
                         borderRadius: "50%", 
                         bgcolor: "rgba(59, 130, 246, 0.12)", 
                         display: "flex", 
@@ -474,28 +487,28 @@ const UniprimeDashboard = () => {
                         justifyContent: "center",
                         border: "1.5px solid rgba(59, 130, 246, 0.25)"
                       }}>
-                        <AccountBalance sx={{ color: "#2563eb", fontSize: 22 }} />
+                        <AccountBalance sx={{ color: "#2563eb", fontSize: { xs: 18, sm: 22 } }} />
                       </Box>
-                      <Typography sx={{ fontWeight: 700, color: "var(--text-primary)", fontSize: "0.95rem" }}>Serving Departments</Typography>
+                      <Typography sx={{ fontWeight: 700, color: "var(--text-primary)", fontSize: { xs: "0.85rem", sm: "0.95rem" } }}>Serving Departments</Typography>
                     </Box>
-                    <Box sx={{ bgcolor: "rgba(59, 130, 246, 0.1)", px: 2, py: 0.5, borderRadius: "20px" }}>
+                    <Box sx={{ bgcolor: "rgba(59, 130, 246, 0.1)", px: 1.5, py: 0.25, borderRadius: "20px" }}>
                       <Typography sx={{ fontWeight: 800, color: "#2563eb", fontSize: "0.85rem" }}>{dashboardData.departmentsCount}</Typography>
                     </Box>
                   </Box>
 
                   {/* Row 3: Programs */}
-                  <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", pl: 10, position: "relative" }}>
-                    {/* Horizontal Connector Branch (from Departments vertical line) */}
-                    <Box sx={{ position: "absolute", left: 62, top: 22, width: 18, borderTop: "2.5px dotted #3b82f6", opacity: 0.8, zIndex: 0 }} />
-                    {/* Vertical Connector Line segment (Departments to Programs) */}
-                    <Box sx={{ position: "absolute", left: 62, top: -24, height: 46, borderLeft: "2.5px dotted #3b82f6", opacity: 0.8, zIndex: 0 }} />
-                    {/* Vertical Connector Line (from Schools down to Branches/Specializations) */}
-                    <Box sx={{ position: "absolute", left: 22, top: -24, bottom: -24, borderLeft: "2.5px dotted #818cf8", opacity: 0.8, zIndex: 0 }} />
+                  <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", pl: { xs: 5, sm: 10 }, position: "relative" }}>
+                    {/* Horizontal Connector Branch */}
+                    <Box sx={{ position: "absolute", left: { xs: 44, sm: 62 }, top: 20, width: { xs: 12, sm: 18 }, borderTop: "2px dotted #3b82f6", opacity: 0.8, zIndex: 0 }} />
+                    {/* Vertical Connector Line segment */}
+                    <Box sx={{ position: "absolute", left: { xs: 44, sm: 62 }, top: -20, height: 40, borderLeft: "2px dotted #3b82f6", opacity: 0.8, zIndex: 0 }} />
+                    {/* Vertical Connector Line */}
+                    <Box sx={{ position: "absolute", left: { xs: 18, sm: 22 }, top: -20, bottom: -20, borderLeft: "2px dotted #818cf8", opacity: 0.8, zIndex: 0 }} />
                     
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 2, zIndex: 1 }}>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: { xs: 1.2, sm: 2 }, zIndex: 1 }}>
                       <Box sx={{ 
-                        width: 44, 
-                        height: 44, 
+                        width: { xs: 36, sm: 44 }, 
+                        height: { xs: 36, sm: 44 }, 
                         borderRadius: "50%", 
                         bgcolor: "rgba(16, 185, 129, 0.12)", 
                         display: "flex", 
@@ -503,26 +516,26 @@ const UniprimeDashboard = () => {
                         justifyContent: "center",
                         border: "1.5px solid rgba(16, 185, 129, 0.25)"
                       }}>
-                        <School sx={{ color: "#10b981", fontSize: 20 }} />
+                        <School sx={{ color: "#10b981", fontSize: { xs: 16, sm: 20 } }} />
                       </Box>
-                      <Typography sx={{ fontWeight: 700, color: "var(--text-primary)", fontSize: "0.95rem" }}>Programs</Typography>
+                      <Typography sx={{ fontWeight: 700, color: "var(--text-primary)", fontSize: { xs: "0.85rem", sm: "0.95rem" } }}>Programs</Typography>
                     </Box>
-                    <Box sx={{ bgcolor: "rgba(16, 185, 129, 0.1)", px: 2, py: 0.5, borderRadius: "20px" }}>
+                    <Box sx={{ bgcolor: "rgba(16, 185, 129, 0.1)", px: 1.5, py: 0.25, borderRadius: "20px" }}>
                       <Typography sx={{ fontWeight: 800, color: "#10b981", fontSize: "0.85rem" }}>{dashboardData.programsCount}</Typography>
                     </Box>
                   </Box>
 
                   {/* Row 4: Branches / Specializations */}
-                  <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", pl: 5, position: "relative" }}>
-                    {/* Horizontal Connector Branch (from Schools vertical line) */}
-                    <Box sx={{ position: "absolute", left: 22, top: 22, width: 18, borderTop: "2.5px dotted #818cf8", opacity: 0.8, zIndex: 0 }} />
-                    {/* Vertical Connector Line segment (stopping at row center) */}
-                    <Box sx={{ position: "absolute", left: 22, top: -24, height: 46, borderLeft: "2.5px dotted #818cf8", opacity: 0.8, zIndex: 0 }} />
+                  <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", pl: { xs: 2.5, sm: 5 }, position: "relative" }}>
+                    {/* Horizontal Connector Branch */}
+                    <Box sx={{ position: "absolute", left: { xs: 18, sm: 22 }, top: 20, width: { xs: 12, sm: 18 }, borderTop: "2px dotted #818cf8", opacity: 0.8, zIndex: 0 }} />
+                    {/* Vertical Connector Line segment */}
+                    <Box sx={{ position: "absolute", left: { xs: 18, sm: 22 }, top: -20, height: 40, borderLeft: "2px dotted #818cf8", opacity: 0.8, zIndex: 0 }} />
                     
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 2, zIndex: 1 }}>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: { xs: 1.2, sm: 2 }, zIndex: 1 }}>
                       <Box sx={{ 
-                        width: 44, 
-                        height: 44, 
+                        width: { xs: 36, sm: 44 }, 
+                        height: { xs: 36, sm: 44 }, 
                         borderRadius: "50%", 
                         bgcolor: "rgba(239, 68, 68, 0.12)", 
                         display: "flex", 
@@ -530,11 +543,11 @@ const UniprimeDashboard = () => {
                         justifyContent: "center",
                         border: "1.5px solid rgba(239, 68, 68, 0.25)"
                       }}>
-                        <Share sx={{ color: "#ef4444", fontSize: 20 }} />
+                        <Share sx={{ color: "#ef4444", fontSize: { xs: 16, sm: 20 } }} />
                       </Box>
-                      <Typography sx={{ fontWeight: 700, color: "var(--text-primary)", fontSize: "0.95rem" }}>Branches / Specializations</Typography>
+                      <Typography sx={{ fontWeight: 700, color: "var(--text-primary)", fontSize: { xs: "0.825rem", sm: "0.95rem" } }}>Branches / Specializations</Typography>
                     </Box>
-                    <Box sx={{ bgcolor: "rgba(239, 68, 68, 0.1)", px: 2, py: 0.5, borderRadius: "20px" }}>
+                    <Box sx={{ bgcolor: "rgba(239, 68, 68, 0.1)", px: 1.5, py: 0.25, borderRadius: "20px" }}>
                       <Typography sx={{ fontWeight: 800, color: "#ef4444", fontSize: "0.85rem" }}>{dashboardData.branchesCount}</Typography>
                     </Box>
                   </Box>
@@ -662,14 +675,24 @@ const UniprimeDashboard = () => {
                       onClick={() => navigate("/role-management", { state: { activeTab: 1 } })}
                       sx={{ 
                         textTransform: "none", 
-                        fontSize: "0.8rem", 
-                        fontWeight: 700, 
-                        color: "#1d4ed8",
                         p: 0,
+                        minWidth: "auto",
                         "&:hover": { background: "transparent", opacity: 0.8 }
                       }}
                     >
-                      View All Users &gt;
+                      <Box
+                        component="span"
+                        sx={{
+                          fontSize: "0.85rem", 
+                          fontWeight: 800, 
+                          background: "var(--gradient-primary)",
+                          WebkitBackgroundClip: "text",
+                          WebkitTextFillColor: "transparent",
+                          display: "inline-block"
+                        }}
+                      >
+                        View All Users &gt;
+                      </Box>
                     </Button>
                   </Box>
 

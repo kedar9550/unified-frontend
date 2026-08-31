@@ -55,8 +55,8 @@ export default function StatCard({
         width: "100%",
         height: "100%",
         boxSizing: "border-box",
-        p: 2.5,
-        borderRadius: "20px",
+        p: { xs: 1.5, sm: 2.5 },
+        borderRadius: { xs: "14px", sm: "20px" },
         background: "var(--bg-paper)",
         border: "1px solid var(--border-color)",
         boxShadow: "var(--shadow-premium)",
@@ -67,7 +67,7 @@ export default function StatCard({
         display: "flex",
         flexDirection: "column",
         justifyContent: "space-between",
-        minHeight: "165px",
+        minHeight: { xs: "130px", sm: "165px" },
         "&:hover": {
           transform: "translateY(-4px)",
           boxShadow: "0 12px 35px rgba(0, 0, 0, 0.16)",
@@ -78,8 +78,8 @@ export default function StatCard({
           position: "absolute",
           top: 0,
           right: 0,
-          width: "140px",
-          height: "140px",
+          width: { xs: "90px", sm: "140px" },
+          height: { xs: "90px", sm: "140px" },
           background: `radial-gradient(circle at top right, ${cardColor}20, transparent 70%)`,
           zIndex: 0,
           pointerEvents: "none",
@@ -88,13 +88,13 @@ export default function StatCard({
       }}
     >
       {/* Top Section: Icon + Text Details */}
-      <Box sx={{ display: "flex", alignItems: "flex-start", gap: 2, zIndex: 1, position: "relative" }}>
+      <Box sx={{ display: "flex", alignItems: "flex-start", gap: { xs: 1, sm: 2 }, zIndex: 1, position: "relative" }}>
         {icon && (
           <Box
             sx={{
-              width: 48,
-              height: 48,
-              borderRadius: "14px",
+              width: { xs: 38, sm: 48 },
+              height: { xs: 38, sm: 48 },
+              borderRadius: { xs: "10px", sm: "14px" },
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
@@ -109,10 +109,10 @@ export default function StatCard({
                 position: "absolute",
                 inset: 0,
                 background: "linear-gradient(180deg, rgba(255,255,255,0.25), transparent)",
-                borderRadius: "14px",
+                borderRadius: { xs: "10px", sm: "14px" },
               },
               "& svg": {
-                fontSize: 24,
+                fontSize: { xs: 18, sm: 24 },
                 color: "#ffffff",
               },
             }}
@@ -125,13 +125,13 @@ export default function StatCard({
           {displayTitle && (
             <Typography
               sx={{
-                fontSize: "0.75rem",
+                fontSize: { xs: "0.7rem", sm: "0.75rem" },
                 fontWeight: 800,
                 color: "var(--text-secondary)",
                 textTransform: "uppercase",
                 letterSpacing: "0.05em",
                 mb: 0.5,
-                lineHeight: 1.25,
+                lineHeight: 1.2,
                 wordBreak: "break-word",
               }}
             >
@@ -141,7 +141,7 @@ export default function StatCard({
 
           <Typography
             sx={{
-              fontSize: "2rem",
+              fontSize: { xs: "1.3rem", sm: "2rem" },
               fontWeight: 900,
               color: "var(--text-primary)",
               lineHeight: 1,
@@ -155,7 +155,7 @@ export default function StatCard({
             <Typography
               noWrap
               sx={{
-                fontSize: "0.75rem",
+                fontSize: { xs: "0.7rem", sm: "0.75rem" },
                 fontWeight: 600,
                 color: "var(--text-secondary)",
                 opacity: 0.85,
@@ -172,8 +172,8 @@ export default function StatCard({
       {displayLink && (
         <Box
           sx={{
-            mt: 2,
-            pt: 1.5,
+            mt: { xs: 1, sm: 2 },
+            pt: { xs: 1, sm: 1.5 },
             borderTop: "1px solid var(--border-color)",
             display: "flex",
             justifyContent: "flex-end",
@@ -185,10 +185,10 @@ export default function StatCard({
           <Button
             size="small"
             onClick={handleActionClick}
-            endIcon={<ArrowForwardIcon sx={{ fontSize: "16px !important", color: "var(--color-primary)" }} />}
+            endIcon={<ArrowForwardIcon sx={{ fontSize: "14px !important", color: "var(--color-primary)" }} />}
             sx={{
               textTransform: "none",
-              fontSize: "0.825rem",
+              fontSize: { xs: "0.75rem", sm: "0.825rem" },
               fontWeight: 700,
               color: "var(--color-primary)",
               p: 0,

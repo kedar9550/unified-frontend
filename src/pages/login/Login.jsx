@@ -217,7 +217,7 @@ export default function Login({ defaultSignUp = false }) {
           if (res.data?.success) {
             const allDepts = res.data.data || [];
             setAllPublicDepartments(allDepts);
-            const fedDepts = allDepts.filter(dept => 
+            const fedDepts = allDepts.filter(dept =>
               /^(fed-1|fed-2|fed-3|fed-4|fed-5)$/i.test(dept.name.trim()) ||
               /^(fed-1|fed-2|fed-3|fed-4|fed-5)$/i.test(dept.code.trim())
             );
@@ -448,7 +448,7 @@ export default function Login({ defaultSignUp = false }) {
 
   const handleSignUpSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!signupData.email.trim()) {
       setSignupMsg({ text: "Email ID is required", type: "error" });
       return;
@@ -696,7 +696,7 @@ export default function Login({ defaultSignUp = false }) {
                   </div>
 
                   <button type="button" className="auth-forgot auth-forgot-center" onClick={toggleForgot}>
-                    BACK TO LOGIN
+                    Back to Login
                   </button>
                 </form>
               )}

@@ -21,6 +21,16 @@
     color: var(--text-primary);
 }
 
+@media (max-width: 600px) {
+    .ql-toolbar.ql-snow {
+        padding: 6px 8px !important;
+    }
+    .ql-editor {
+        padding: 8px 10px !important;
+        min-height: 100px;
+    }
+}
+
 .ql-editor.ql-blank::before {
     color: var(--text-secondary) !important;
     opacity: 0.6;
