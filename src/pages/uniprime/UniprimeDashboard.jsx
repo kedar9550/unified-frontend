@@ -278,12 +278,13 @@ const UniprimeDashboard = () => {
                     transform: "translateY(-5px)",
                     boxShadow: "0 12px 40px rgba(0,0,0,0.12)",
                   },
-                  height: { xs: "135px", sm: "160px" },
+                  height: { xs: "auto", sm: "160px" },
+                  minHeight: { xs: "135px", sm: "160px" },
                   width: "100%",
                   display: "flex",
                   flexDirection: "column",
                   justifyContent: "space-between",
-                  p: { xs: 1.5, sm: 2.5 },
+                  p: { xs: 2, sm: 2.5 },
                   border: "1px solid var(--border-color)",
                   background: "var(--bg-panel)",
                   overflow: "hidden",
@@ -304,7 +305,7 @@ const UniprimeDashboard = () => {
                   display: "flex",
                   flexDirection: "row",
                   alignItems: "flex-start",
-                  gap: { xs: 1, sm: 2 },
+                  gap: { xs: 1.5, sm: 2 },
                   textAlign: "left",
                   position: "relative",
                   zIndex: 1
@@ -312,9 +313,9 @@ const UniprimeDashboard = () => {
                   {/* Icon */}
                   <Box
                     sx={{
-                      width: { xs: 38, sm: 50 },
-                      height: { xs: 38, sm: 50 },
-                      borderRadius: { xs: "10px", sm: "14px" },
+                      width: { xs: 42, sm: 50 },
+                      height: { xs: 42, sm: 50 },
+                      borderRadius: { xs: "12px", sm: "14px" },
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
@@ -324,7 +325,7 @@ const UniprimeDashboard = () => {
                       mt: 0.5,
                       boxShadow: `0 8px 25px ${card.color}35`,
                       "& svg": {
-                        fontSize: { xs: "1.1rem", sm: "1.5rem" }
+                        fontSize: { xs: "1.25rem", sm: "1.5rem" }
                       }
                     }}>
                     {React.cloneElement(card.icon)}
@@ -334,8 +335,7 @@ const UniprimeDashboard = () => {
                   <Box sx={{ display: "flex", flexDirection: "column", alignItems: "flex-start", minWidth: 0 }}>
                     <Typography
                       variant="body2"
-                      noWrap
-                      sx={{ color: "var(--text-secondary)", fontWeight: 600, fontSize: { xs: "0.7rem", sm: "0.8rem" }, textTransform: "capitalize", letterSpacing: "0.5px" }}
+                      sx={{ color: "var(--text-secondary)", fontWeight: 600, fontSize: { xs: "0.775rem", sm: "0.8rem" }, textTransform: "capitalize", letterSpacing: "0.5px" }}
                     >
                       {card.title}
                     </Typography>

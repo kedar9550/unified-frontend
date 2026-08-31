@@ -24,8 +24,13 @@ export const SocketProvider = ({ children }) => {
 
         const token = localStorage.getItem('token') || localStorage.getItem('authToken');
         // Initialize Socket
-        const newSocket = io(import.meta.env.VITE_BACKEND_URL || 'http://localhost:9000', {
+        const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:9022';
+        const newSocket = io(backendUrl, {
             withCredentials: true,
+            transports: ['polling', 'websocket'],
+            reconnection: true,
+            reconnectionAttempts: 5,
+            reconnectionDelay: 2000,
             auth: {
                 token: token
             }

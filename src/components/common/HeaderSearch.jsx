@@ -1,22 +1,26 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Box, InputBase, Typography, Popover, List, ListItemButton, ListItemIcon, ListItemText, Dialog, IconButton, Slide } from '@mui/material';
-import { Search, ArrowForwardIos, ArrowBack } from '@mui/icons-material';
+import { Box, InputBase, Typography, Popover, List, ListItemButton, ListItemIcon, ListItemText, IconButton } from '@mui/material';
+import { Search, ArrowForwardIos, Close } from '@mui/icons-material';
 import { ROLE_ROUTES } from '../../config/rolesNav';
 import { useNavigate } from 'react-router-dom';
 
-const Transition = React.forwardRef(function Transition({ TransitionComponent, PaperProps, TransitionProps, ...props }, ref) {
-  return <Slide direction="up" ref={ref} {...props} />;
-});
+const EASE_CURVE = "cubic-bezier(0.22, 1, 0.36, 1)";
 
-const HeaderSearch = ({ activeRole, variant = "desktop", mobileOpen, onMobileClose }) => {
+const HeaderSearch = ({ activeRole, variant = "desktop", mobileOpen, onMobileOpen, onMobileClose, weatherExpanded = false }) => {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState([]);
   const [anchorEl, setAnchorEl] = useState(null);
+  const [isInputVisible, setIsInputVisible] = useState(false);
+  const [keyboardOffset, setKeyboardOffset] = useState(0);
+
   const inputRef = useRef(null);
   const navigate = useNavigate();
 
-  // Handle Ctrl+K shortcut
+  const isMobile = variant === "mobile";
+
+  // Handle Ctrl+K shortcut on desktop
   useEffect(() => {
+    if (isMobile) return;
     const handleKeyDown = (e) => {
       if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
         e.preventDefault();
@@ -27,43 +31,41 @@ const HeaderSearch = ({ activeRole, variant = "desktop", mobileOpen, onMobileClo
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
+  }, [isMobile]);
 
-  const focusInput = () => {
-    if (inputRef.current) {
-      inputRef.current.focus();
-    }
-  };
-
-  // Auto focus when mobile dialog opens
+  // Immediate Focus & Input Visibility (Simultaneous Expansion & Keyboard Focus)
   useEffect(() => {
-    if (variant === 'mobile' && mobileOpen) {
-      focusInput();
+    if (!isMobile) return;
 
-      const animationFrame = requestAnimationFrame(focusInput);
-      const timer1 = setTimeout(focusInput, 50);
-      const timer2 = setTimeout(focusInput, 150);
-      const timer3 = setTimeout(focusInput, 350);
-      const timer4 = setTimeout(focusInput, 400);
+    if (mobileOpen) {
+      setIsInputVisible(true);
+
+      const triggerFocus = () => {
+        if (inputRef.current) {
+          inputRef.current.focus();
+        }
+      };
+
+      triggerFocus();
+      const rafId = requestAnimationFrame(triggerFocus);
+      const timerId = setTimeout(triggerFocus, 40);
 
       return () => {
-        cancelAnimationFrame(animationFrame);
-        clearTimeout(timer1);
-        clearTimeout(timer2);
-        clearTimeout(timer3);
-        clearTimeout(timer4);
+        cancelAnimationFrame(rafId);
+        clearTimeout(timerId);
       };
+    } else {
+      setIsInputVisible(false);
+      if (inputRef.current) {
+        inputRef.current.blur();
+      }
     }
-  }, [mobileOpen, variant]);
+  }, [mobileOpen, isMobile]);
 
-  const [viewportStyle, setViewportStyle] = useState({});
-  const [isKeyboardOpen, setIsKeyboardOpen] = useState(false);
-
-  // Dynamic visualViewport logic for iOS Safari software keyboard
+  // Cross-platform Virtual Viewport (iOS Safari & Android Chrome)
   useEffect(() => {
-    if (variant !== 'mobile' || !mobileOpen) {
-      setViewportStyle({});
-      setIsKeyboardOpen(false);
+    if (!isMobile || !mobileOpen) {
+      setKeyboardOffset(0);
       return;
     }
 
@@ -71,29 +73,11 @@ const HeaderSearch = ({ activeRole, variant = "desktop", mobileOpen, onMobileClo
       if (!window.visualViewport) return;
 
       const vv = window.visualViewport;
-      const windowHeight = window.innerHeight;
-      const keyboardHeight = Math.max(0, windowHeight - vv.height - vv.offsetTop);
-
-      if (keyboardHeight > 50) {
-        setIsKeyboardOpen(true);
-        setViewportStyle({
-          height: `${vv.height}px`,
-          transform: `translateY(${vv.offsetTop}px)`,
-        });
-
-        if (inputRef.current) {
-          try {
-            inputRef.current.scrollIntoView({ block: 'end', behavior: 'smooth' });
-          } catch (err) {
-            // fallback
-          }
-        }
+      // On iOS Safari offsetTop can be > 0 during scroll/virtual keyboard view shift
+      if (vv.offsetTop > 0) {
+        setKeyboardOffset(vv.offsetTop);
       } else {
-        setIsKeyboardOpen(false);
-        setViewportStyle({
-          height: '100dvh',
-          transform: 'none',
-        });
+        setKeyboardOffset(0);
       }
     };
 
@@ -114,11 +98,11 @@ const HeaderSearch = ({ activeRole, variant = "desktop", mobileOpen, onMobileClo
         window.visualViewport.removeEventListener('scroll', handleVisualViewportChange);
       }
     };
-  }, [mobileOpen, variant]);
+  }, [mobileOpen, isMobile]);
 
-  // Lock background page scroll when mobile search overlay is active (iOS Safari compatible)
+  // Page Scroll Lock when search overlay is active
   useEffect(() => {
-    if (variant === 'mobile' && mobileOpen) {
+    if (isMobile && mobileOpen) {
       const scrollY = window.scrollY || window.pageYOffset || 0;
       const originalBodyPosition = document.body.style.position;
       const originalBodyTop = document.body.style.top;
@@ -134,10 +118,8 @@ const HeaderSearch = ({ activeRole, variant = "desktop", mobileOpen, onMobileClo
 
       const handleTouchMove = (e) => {
         const isScrollable = e.target.closest('.mobile-search-results-list');
-        if (!isScrollable) {
-          if (e.cancelable) {
-            e.preventDefault();
-          }
+        if (!isScrollable && e.cancelable) {
+          e.preventDefault();
         }
       };
 
@@ -153,9 +135,9 @@ const HeaderSearch = ({ activeRole, variant = "desktop", mobileOpen, onMobileClo
         window.scrollTo(0, scrollY);
       };
     }
-  }, [mobileOpen, variant]);
+  }, [mobileOpen, isMobile]);
 
-  // Search logic
+  // Search filter logic
   useEffect(() => {
     if (!query.trim()) {
       setResults([]);
@@ -163,7 +145,6 @@ const HeaderSearch = ({ activeRole, variant = "desktop", mobileOpen, onMobileClo
     }
     const roleRoutes = ROLE_ROUTES[activeRole] || ROLE_ROUTES.STUDENT;
 
-    // Flatten routes
     const allRoutes = [];
     roleRoutes.forEach(item => {
       if (item.path) allRoutes.push(item);
@@ -184,14 +165,28 @@ const HeaderSearch = ({ activeRole, variant = "desktop", mobileOpen, onMobileClo
 
   const handleChange = (e) => {
     setQuery(e.target.value);
-    if (!anchorEl && variant !== 'mobile') {
-      setAnchorEl(e.currentTarget); // Anchor popover to the input box for desktop
+    if (!anchorEl && !isMobile) {
+      setAnchorEl(e.currentTarget);
     }
   };
 
   const handleFocus = (e) => {
-    if (query.trim() && variant !== 'mobile') {
+    if (query.trim() && !isMobile) {
       setAnchorEl(e.currentTarget);
+    }
+  };
+
+  const handlePillClick = (e) => {
+    if (!mobileOpen) {
+      // Synchronous focus inside User Gesture (Mandatory for iOS Safari)
+      if (inputRef.current) {
+        try {
+          inputRef.current.focus();
+        } catch (err) {}
+      }
+      if (onMobileOpen) {
+        onMobileOpen();
+      }
     }
   };
 
@@ -199,236 +194,243 @@ const HeaderSearch = ({ activeRole, variant = "desktop", mobileOpen, onMobileClo
     setAnchorEl(null);
   };
 
-  const handleNavigate = (path) => {
-    navigate(path);
-    if (variant === 'mobile' && onMobileClose) {
-      onMobileClose();
-    } else {
-      handleClose();
-    }
+  const handleCloseMobile = () => {
     setQuery('');
     if (inputRef.current) {
       inputRef.current.blur();
     }
+    if (onMobileClose) {
+      onMobileClose();
+    }
+  };
+
+  const handleNavigate = (path) => {
+    navigate(path);
+    if (isMobile) {
+      handleCloseMobile();
+    } else {
+      handleClose();
+      setQuery('');
+      if (inputRef.current) {
+        inputRef.current.blur();
+      }
+    }
   };
 
   const open = Boolean(anchorEl) && query.trim().length > 0;
-  
-  const isMobile = variant === "mobile";
 
   if (isMobile) {
+    const defaultClosedBottom = weatherExpanded
+      ? 'calc(178px + env(safe-area-inset-bottom, 0px))'
+      : 'calc(84px + env(safe-area-inset-bottom, 0px))';
+
+    const containerBottom = mobileOpen
+      ? (keyboardOffset > 0
+          ? `calc(${keyboardOffset + 16}px + env(safe-area-inset-bottom, 0px))`
+          : 'calc(16px + env(safe-area-inset-bottom, 0px))')
+      : defaultClosedBottom;
+
+    const resultsBottom = mobileOpen
+      ? (keyboardOffset > 0
+          ? `calc(${keyboardOffset + 72}px + env(safe-area-inset-bottom, 0px))`
+          : 'calc(72px + env(safe-area-inset-bottom, 0px))')
+      : 'calc(140px + env(safe-area-inset-bottom, 0px))';
+
     return (
-      <Dialog
-        fullScreen
-        className="mobile-search-dialog"
-        open={Boolean(mobileOpen)}
-        onClose={() => {
-          setQuery('');
-          if (onMobileClose) onMobileClose();
-        }}
-        slots={{
-          transition: Transition,
-        }}
-        slotProps={{
-          paper: {
-            style: { 
-              backgroundColor: 'transparent',
-              background: 'transparent',
-              backgroundImage: 'none',
-              boxShadow: 'none',
-            } 
-          },
-          transition: {
-            onEntering: focusInput,
-            onEntered: focusInput,
-          }
-        }}
-        disableAutoFocus
-        hideBackdrop
-        sx={{ 
-          zIndex: 1400,
-          '& .MuiDialog-paper': {
-            backgroundColor: 'transparent !important',
-            background: 'transparent !important',
-            backgroundImage: 'none !important',
-            boxShadow: 'none !important',
-          },
-          '& .MuiPaper-root': {
-            backgroundColor: 'transparent !important',
-            background: 'transparent !important',
-            backgroundImage: 'none !important',
-            boxShadow: 'none !important',
-          }
-        }}
-      >
-        <Box 
-          className="mobile-search-overlay"
-          sx={{ 
-            display: 'flex', 
-            flexDirection: 'column', 
-            height: '100dvh',
-            overscrollBehavior: 'contain',
-            touchAction: 'manipulation',
-            transition: 'height 0.15s ease-out, transform 0.15s ease-out',
-            ...viewportStyle,
+      <>
+        {/* Dark Backdrop Overlay */}
+        <Box
+          onClick={handleCloseMobile}
+          sx={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 1390,
+            background: 'rgba(0, 0, 0, 0.45)',
+            backdropFilter: 'blur(4px)',
+            opacity: mobileOpen ? 1 : 0,
+            pointerEvents: mobileOpen ? 'auto' : 'none',
+            transition: `opacity 400ms ${EASE_CURVE}`,
           }}
-        >
-          
-          {/* Search Results Area (Top) */}
-          <Box 
+        />
+
+        {/* Search Results Overlay Card */}
+        {mobileOpen && query.trim().length > 0 && (
+          <Box
             className="mobile-search-results-list"
-            onClick={() => {
-              if (query.trim().length === 0 && onMobileClose) onMobileClose();
-            }}
-            sx={{ 
-              flex: 1, 
-              overflowY: 'auto', 
-              p: 2, 
-              display: 'flex', 
-              flexDirection: 'column', 
-              justifyContent: 'flex-end',
+            sx={{
+              position: 'fixed',
+              bottom: resultsBottom,
+              left: 16,
+              right: 16,
+              maxWidth: 540,
+              mx: 'auto',
+              maxHeight: 'calc(100dvh - 220px)',
+              overflowY: 'auto',
+              zIndex: 1405,
+              borderRadius: '24px',
+              p: 1.5,
+              background: 'var(--bg-panel)',
+              backdropFilter: 'blur(25px) saturate(180%)',
+              border: '1px solid var(--border-color)',
+              boxShadow: '0 16px 40px rgba(0, 0, 0, 0.25)',
+              opacity: mobileOpen ? 1 : 0,
+              transform: mobileOpen ? 'translateY(0)' : 'translateY(12px)',
+              transition: `opacity 350ms ${EASE_CURVE} 100ms, transform 350ms ${EASE_CURVE} 100ms, bottom 400ms ${EASE_CURVE}`,
               overscrollBehavior: 'contain',
               WebkitOverflowScrolling: 'touch',
-            }}>
-            {query.trim().length > 0 ? (
-              results.length > 0 ? (
-                <List sx={{ p: 0 }}>
-                  {results.map((item, idx) => (
-                    <ListItemButton
-                      key={idx}
-                      onClick={() => handleNavigate(item.path)}
-                      sx={{
-                        borderRadius: '20px',
-                        mb: 1.5,
-                        p: 2,
-                        border: '1px solid rgba(255, 255, 255, 0.7)',
-                        background: 'rgba(255, 255, 255, 0.75)',
-                        backdropFilter: 'blur(20px)',
-                        boxShadow: '0 8px 24px rgba(0, 0, 0, 0.06)',
-                        transition: 'all 0.2s ease-in-out',
-                        '&:active': { transform: 'scale(0.98)' },
-                        'body.dark-mode &': {
-                          background: 'rgba(30, 41, 59, 0.75) !important',
-                          border: '1px solid rgba(255, 255, 255, 0.15) !important',
-                          boxShadow: '0 8px 24px rgba(0, 0, 0, 0.3) !important',
-                        }
+            }}
+          >
+            {results.length > 0 ? (
+              <List sx={{ p: 0 }}>
+                {results.map((item, idx) => (
+                  <ListItemButton
+                    key={idx}
+                    onClick={() => handleNavigate(item.path)}
+                    sx={{
+                      borderRadius: '16px',
+                      mb: 1,
+                      p: 1.5,
+                      border: '1px solid var(--border-color)',
+                      background: 'var(--bg-glass)',
+                      transition: 'all 0.2s ease',
+                      '&:active': { transform: 'scale(0.98)' },
+                    }}
+                  >
+                    {item.icon && (
+                      <ListItemIcon sx={{ minWidth: 40, color: 'var(--color-primary)' }}>
+                        {React.cloneElement(item.icon, { fontSize: 'small' })}
+                      </ListItemIcon>
+                    )}
+                    <ListItemText
+                      primary={item.text}
+                      secondary={item.parentText}
+                      slotProps={{
+                        primary: { sx: { fontWeight: 700, fontSize: '0.95rem', color: 'var(--text-primary)' } },
+                        secondary: { sx: { fontSize: '0.75rem', color: 'var(--text-secondary)', mt: 0.25 } }
                       }}
-                    >
-                      {item.icon && (
-                        <ListItemIcon sx={{ minWidth: 42, color: 'var(--color-primary)' }}>
-                          {React.cloneElement(item.icon, { fontSize: 'small' })}
-                        </ListItemIcon>
-                      )}
-                      <ListItemText
-                        primary={item.text}
-                        secondary={item.parentText}
-                        slotProps={{
-                          primary: { sx: { fontWeight: 700, fontSize: '1rem', color: 'var(--text-primary)' } },
-                          secondary: { sx: { fontSize: '0.825rem', color: 'var(--text-secondary)', mt: 0.5 } }
-                        }}
-                      />
-                      <ArrowForwardIos sx={{ fontSize: 14, color: 'var(--text-secondary)' }} />
-                    </ListItemButton>
-                  ))}
-                </List>
-              ) : (
-                <Box sx={{ 
-                  p: 4, 
-                  textAlign: 'center',
-                  background: 'rgba(255, 255, 255, 0.75)',
-                  backdropFilter: 'blur(20px)',
-                  borderRadius: '24px',
-                  border: '1px solid rgba(255, 255, 255, 0.7)',
-                  'body.dark-mode &': {
-                    background: 'rgba(30, 41, 59, 0.75) !important',
-                    borderColor: 'rgba(255, 255, 255, 0.15) !important',
-                  }
-                }}>
-                  <Typography sx={{ color: 'var(--text-secondary)', fontSize: '0.95rem', fontWeight: 600 }}>
-                    No results found for "{query}"
-                  </Typography>
-                </Box>
-              )
-            ) : null}
+                    />
+                    <ArrowForwardIos sx={{ fontSize: 14, color: 'var(--text-secondary)' }} />
+                  </ListItemButton>
+                ))}
+              </List>
+            ) : (
+              <Box sx={{ p: 3, textAlign: 'center' }}>
+                <Typography sx={{ color: 'var(--text-secondary)', fontSize: '0.9rem', fontWeight: 600 }}>
+                  No results found for "{query}"
+                </Typography>
+              </Box>
+            )}
           </Box>
+        )}
 
-          {/* Search Input Area (Bottom) */}
-          <Box 
-            onClick={focusInput}
-            sx={{ 
-            display: 'flex', 
-            alignItems: 'center', 
-            p: 1.5, 
-            pb: isKeyboardOpen ? '12px' : 'calc(12px + env(safe-area-inset-bottom))',
-            background: 'transparent',
-            gap: 1
-          }}>
-            <Box 
-              onClick={focusInput}
-              className="mobile-search-input-box"
+        {/* Morphing Search Container (Pill <-> Input Bar) */}
+        <Box
+          onClick={handlePillClick}
+          onTouchStart={(e) => {
+            if (!mobileOpen && inputRef.current) {
+              try {
+                inputRef.current.focus();
+              } catch (err) {}
+            }
+          }}
+          sx={{
+            position: 'fixed',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            zIndex: 1400,
+            bottom: containerBottom,
+            width: mobileOpen ? 'calc(100vw - 32px)' : '84px',
+            maxWidth: '540px',
+            height: mobileOpen ? '46px' : '32px',
+            borderRadius: mobileOpen ? '23px' : '16px',
+            px: mobileOpen ? 1.75 : 1.5,
+            background: mobileOpen ? 'var(--bg-panel)' : 'var(--bg-glass)',
+            backdropFilter: 'blur(25px) saturate(180%)',
+            boxShadow: mobileOpen
+              ? '0 16px 40px rgba(0, 0, 0, 0.25)'
+              : '0 8px 32px rgba(0, 0, 0, 0.15)',
+            border: '1px solid var(--border-color)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: mobileOpen ? 'space-between' : 'center',
+            transition: `width 450ms ${EASE_CURVE}, height 450ms ${EASE_CURVE}, border-radius 450ms ${EASE_CURVE}, bottom 450ms ${EASE_CURVE}, background-color 450ms ${EASE_CURVE}, box-shadow 450ms ${EASE_CURVE}`,
+            boxSizing: 'border-box',
+            cursor: mobileOpen ? 'text' : 'pointer',
+            userSelect: 'none',
+            WebkitTapHighlightColor: 'transparent',
+            outline: 'none',
+          }}
+        >
+          {/* Stable Search Icon */}
+          <Search
+            sx={{
+              fontSize: mobileOpen ? 20 : 16,
+              mr: mobileOpen ? 1 : 0.5,
+              flexShrink: 0,
+              color: 'var(--color-primary)',
+              transition: `font-size 450ms ${EASE_CURVE}, margin-right 450ms ${EASE_CURVE}, color 450ms ${EASE_CURVE}`,
+            }}
+          />
+
+          {/* Pill Label Text (Shown when closed) */}
+          {!mobileOpen && (
+            <Typography
               sx={{
+                fontSize: '0.75rem',
+                fontWeight: 600,
+                background: 'var(--gradient-primary)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                whiteSpace: 'nowrap',
+                opacity: mobileOpen ? 0 : 1,
+                transition: 'opacity 200ms ease',
+              }}
+            >
+              Search
+            </Typography>
+          )}
+
+          {/* Input Base Element (Mounted in DOM for iOS gesture focus) */}
+          <Box
+            sx={{
               flex: 1,
               display: 'flex',
               alignItems: 'center',
-              borderRadius: '9999px',
-              px: 2,
-              py: 0.75,
-              transition: 'all 0.3s ease',
-            }}>
-              <Search sx={{ color: 'var(--text-secondary)', mr: 1, fontSize: 20 }} />
-              <InputBase
-                inputRef={inputRef}
-                autoFocus={true}
-                type="search"
-                autoComplete="off"
-                placeholder="Search..."
-                value={query}
-                onChange={handleChange}
-                onFocus={(e) => {
-                  if (variant === 'mobile') {
-                    setTimeout(() => {
-                      if (window.visualViewport) {
-                        const vv = window.visualViewport;
-                        const windowHeight = window.innerHeight;
-                        const kbHeight = Math.max(0, windowHeight - vv.height - vv.offsetTop);
-                        if (kbHeight > 50) {
-                          setIsKeyboardOpen(true);
-                          setViewportStyle({
-                            height: `${vv.height}px`,
-                            transform: `translateY(${vv.offsetTop}px)`,
-                          });
-                        }
-                      }
-                      if (inputRef.current) {
-                        try {
-                          inputRef.current.scrollIntoView({ block: 'end', behavior: 'smooth' });
-                        } catch (err) {}
-                      }
-                    }, 100);
-                  }
-                }}
-                inputProps={{
-                  enterKeyHint: 'search'
-                }}
-                style={{ backgroundColor: 'transparent' }}
-                sx={{
-                  color: 'var(--text-primary)',
-                  flex: 1,
-                  fontSize: '0.925rem',
-                  fontWeight: 500,
-                  "& .MuiInputBase-input::placeholder": {
-                    color: 'var(--text-secondary)',
-                    opacity: 0.8
-                  }
-                }}
-              />
-            </Box>
+              opacity: mobileOpen ? (isInputVisible ? 1 : 0) : 0,
+              pointerEvents: mobileOpen ? 'auto' : 'none',
+              transition: 'opacity 300ms ease 120ms',
+              minWidth: 0,
+              width: mobileOpen ? '100%' : '0px',
+              overflow: 'hidden',
+            }}
+          >
+            <InputBase
+              inputRef={inputRef}
+              type="search"
+              autoComplete="off"
+              placeholder="Search..."
+              value={query}
+              onChange={handleChange}
+              inputProps={{ enterKeyHint: 'search' }}
+              style={{ backgroundColor: 'transparent', width: '100%' }}
+              sx={{
+                color: 'var(--text-primary)',
+                flex: 1,
+                fontSize: '0.95rem',
+                fontWeight: 500,
+                "& .MuiInputBase-input::placeholder": {
+                  color: 'var(--text-secondary)',
+                  opacity: 0.8,
+                },
+              }}
+            />
           </Box>
         </Box>
-      </Dialog>
+      </>
     );
   }
 
+  // Desktop layout
   return (
     <>
       <Box
