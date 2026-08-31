@@ -8,3 +8,4 @@ export { default as Loader } from "./Loader";
 export { default as SunLoader } from "./SunLoader";
 export { default as NotificationBell } from "./NotificationBell";
 export { default as Themetoggle } from "./Themetoggle";
+export { default as CustomTabs } from "./CustomTabs";

@@ -143,7 +143,7 @@ export default function PageHeader({
 
         <Box>
           {/* Title */}
-          <Typography variant="h4" fontWeight={800} sx={{ color: "var(--text-primary)", fontSize: { xs: "1.5rem", sm: "2rem" }, letterSpacing: "-0.5px" }}>
+          <Typography variant="h4" sx={{ color: "var(--text-primary)", fontSize: { xs: "1.5rem", sm: "2rem" }, fontWeight: 700, letterSpacing: "-0.5px" }}>
             {title}
           </Typography>
           {/* Subtitle */}

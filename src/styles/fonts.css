@@ -1,0 +1,129 @@
+/* ==========================================================================
+   LOCAL FONT CONFIGURATION: STEM
+   ========================================================================== */
+
+@font-face {
+  font-family: 'Stem';
+  src: url('../assets/fonts/stem/Stem-Hairline.woff2') format('woff2'),
+       url('../assets/fonts/stem/Stem-Hairline.woff') format('woff');
+  font-weight: 100;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Stem';
+  src: url('../assets/fonts/stem/Stem-Thin.woff2') format('woff2'),
+       url('../assets/fonts/stem/Stem-Thin.woff') format('woff');
+  font-weight: 200;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Stem';
+  src: url('../assets/fonts/stem/Stem-ExtraLight.woff2') format('woff2'),
+       url('../assets/fonts/stem/Stem-ExtraLight.woff') format('woff');
+  font-weight: 200;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Stem';
+  src: url('../assets/fonts/stem/Stem-ExtraLightItalic.woff2') format('woff2'),
+       url('../assets/fonts/stem/Stem-ExtraLightItalic.woff') format('woff');
+  font-weight: 200;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Stem';
+  src: url('../assets/fonts/stem/Stem-Light.woff2') format('woff2'),
+       url('../assets/fonts/stem/Stem-Light.woff') format('woff');
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Stem';
+  src: url('../assets/fonts/stem/Stem-LightItalic.woff2') format('woff2'),
+       url('../assets/fonts/stem/Stem-LightItalic.woff') format('woff');
+  font-weight: 300;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Stem';
+  src: url('../assets/fonts/stem/Stem-Regular.woff2') format('woff2'),
+       url('../assets/fonts/stem/Stem-Regular.woff') format('woff');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Stem';
+  src: url('../assets/fonts/stem/Stem-Italic.woff2') format('woff2'),
+       url('../assets/fonts/stem/Stem-Italic.woff') format('woff');
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Stem';
+  src: url('../assets/fonts/stem/Stem-Medium.woff2') format('woff2'),
+       url('../assets/fonts/stem/Stem-Medium.woff') format('woff');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Stem';
+  src: url('../assets/fonts/stem/Stem-MediumItalic.woff2') format('woff2'),
+       url('../assets/fonts/stem/Stem-MediumItalic.woff') format('woff');
+  font-weight: 500;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Stem';
+  src: url('../assets/fonts/stem/Stem-Bold.woff2') format('woff2'),
+       url('../assets/fonts/stem/Stem-Bold.woff') format('woff');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Stem';
+  src: url('../assets/fonts/stem/Stem-Bold.woff2') format('woff2'),
+       url('../assets/fonts/stem/Stem-Bold.woff') format('woff');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Stem';
+  src: url('../assets/fonts/stem/Stem-Bold.woff2') format('woff2'),
+       url('../assets/fonts/stem/Stem-Bold.woff') format('woff');
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Stem';
+  src: url('../assets/fonts/stem/Stem-BoldItalic.woff2') format('woff2'),
+       url('../assets/fonts/stem/Stem-BoldItalic.woff') format('woff');
+  font-weight: 700;
+  font-style: italic;
+  font-display: swap;
+}

@@ -39,7 +39,7 @@ body.dark-mode .app-footer {
   font-size: 0.85rem;
   font-weight: 600;
   color: #838383;
-  font-family: 'Product Sans', sans-serif;
+  font-family: 'Stem', sans-serif;
   transition: color 0.3s;
 }
 
@@ -51,7 +51,7 @@ body.dark-mode .footer-title {
   margin: 0;
   font-size: 0.72rem;
   color: #838383;
-  font-family: 'Product Sans', sans-serif;
+  font-family: 'Stem', sans-serif;
   transition: color 0.3s;
 }
 
@@ -70,7 +70,7 @@ body.dark-mode .footer-developed {
   font-size: 0.76rem;
   color: rgba(255, 255, 255, 0.6);
   text-decoration: none;
-  font-family: 'Product Sans', sans-serif;
+  font-family: 'Stem', sans-serif;
   transition: color 0.2s;
 }
 

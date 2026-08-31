@@ -51,8 +51,8 @@ const MainLayout = ({ children }) => {
             display: "flex",
             flexDirection: "column",
             px: { xs: "var(--page-padding-mobile)", md: 3 },
-            pt: { xs: "calc(70px + 12px)", md: "calc(88px + 20px)" },
-            pb: { xs: "calc(70px + 16px)", md: 3 },
+            pt: { xs: "calc(70px + 8px + env(safe-area-inset-top, 0px))", md: "calc(88px + 20px)" },
+            pb: { xs: "calc(70px + 18px + env(safe-area-inset-bottom, 0px))", md: 3 },
             transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
             overflow: "hidden",
           }}
@@ -61,21 +61,23 @@ const MainLayout = ({ children }) => {
             sx={{
               flex: 1,
               minWidth: 0,
-              borderRadius: { xs: "8px", md: "var(--radius-xl)" },
-              background: "var(--bg-glass)",
-              backdropFilter: "blur(2px) saturate(160%)",
-              WebkitBackdropFilter: "blur(2px) saturate(160%)",
-              boxShadow: "var(--shadow-premium)",
-              border: "1px solid var(--border-color)",
+              borderRadius: { xs: "0px", md: "var(--radius-xl)" },
+              background: { xs: "transparent", md: "var(--bg-glass)" },
+              backdropFilter: { xs: "none", md: "blur(2px) saturate(160%)" },
+              WebkitBackdropFilter: { xs: "none", md: "blur(2px) saturate(160%)" },
+              boxShadow: { xs: "none", md: "var(--shadow-premium)" },
+              border: { xs: "none", md: "1px solid var(--border-color)" },
               display: "flex",
               flexDirection: "column",
               overflow: "hidden",
             }}
           >
-            <Box sx={{ flex: 1, minWidth: 0, px: { xs: "var(--mobile-padding-x)", md: "var(--page-padding-x)" }, py: { xs: "var(--mobile-padding-y)", md: "var(--page-padding-y)" }, overflowY: "auto", overflowX: "hidden" }}>
+            <Box sx={{ flex: 1, minWidth: 0, px: { xs: 1, md: "var(--page-padding-x)" }, py: { xs: 1.5, md: "var(--page-padding-y)" }, overflowY: "auto", overflowX: "hidden" }}>
               {children}
             </Box>
-            <Footer />
+            <Box sx={{ mt: { xs: 1.5, md: 0 } }}>
+              <Footer />
+            </Box>
           </Box>
         </Box>
       </Box>

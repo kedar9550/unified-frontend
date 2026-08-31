@@ -1,3 +1,10 @@
+@import './styles/fonts.css';
+
+html,
+body {
+  font-family: 'Stem', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
 * {
   margin: 0;
   padding: 0;
@@ -525,6 +532,7 @@ body.dark-mode .mobile-search-input-box {
   -webkit-backdrop-filter: blur(24px) saturate(180%) !important;
   border: 1px solid rgba(255, 255, 255, 0.18) !important;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35) !important;
+  border-radius: 9999px !important;
 }
 
 body:not(.dark-mode) .mobile-search-input-box {
@@ -533,6 +541,7 @@ body:not(.dark-mode) .mobile-search-input-box {
   -webkit-backdrop-filter: blur(24px) saturate(180%) !important;
   border: 1px solid rgba(255, 255, 255, 0.8) !important;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08) !important;
+  border-radius: 9999px !important;
 }
 
 .mobile-search-input-box .MuiInputBase-root,
