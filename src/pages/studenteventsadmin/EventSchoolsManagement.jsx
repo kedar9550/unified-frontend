@@ -64,7 +64,7 @@ const EventSchoolManagement = () => {
   const [content, setContent] = useState('');
   const [status, setStatus] = useState('Active');
   const [orderNo, setOrderNo] = useState('');
-  const [selectedCoordinator, setSelectedCoordinator] = useState(null);
+  const [selectedCoordinators, setSelectedCoordinators] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [employeeOptions, setEmployeeOptions] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
@@ -226,8 +226,8 @@ const EventSchoolManagement = () => {
       newErrors.content = 'Content cannot exceed 5000 characters.';
     }
 
-    if (!selectedCoordinator) {
-      newErrors.coordinator = 'Coordinator is required.';
+    if (!selectedCoordinators || selectedCoordinators.length === 0) {
+      newErrors.coordinators = 'At least one Coordinator is required.';
     }
 
     setErrors(newErrors);
@@ -241,7 +241,7 @@ const EventSchoolManagement = () => {
     setContent('');
     setStatus('Active');
     setOrderNo('');
-    setSelectedCoordinator(null);
+    setSelectedCoordinators([]);
     setSearchQuery('');
     setEmployeeOptions([]);
     setBannerFile(null);
@@ -263,26 +263,18 @@ const EventSchoolManagement = () => {
     setContent(eventSchool.content || '');
     setStatus(eventSchool.status || 'Active');
     setOrderNo(eventSchool.orderNo || '');
-    setSelectedCoordinator(
-      eventSchool.coordinator
-        ? {
-          employeeId:
-            eventSchool.coordinator.employeeId ||
-            eventSchool.coordinator.institutionId ||
-            eventSchool.coordinator.employeeCode ||
-            '',
-          institutionId:
-            eventSchool.coordinator.institutionId ||
-            eventSchool.coordinator.employeeId ||
-            eventSchool.coordinator.employeeCode ||
-            '',
-          employeeName: eventSchool.coordinator.employeeName || eventSchool.coordinator.name || '',
-          name: eventSchool.coordinator.employeeName || eventSchool.coordinator.name || '',
-          department: eventSchool.coordinator.department,
-          designation: eventSchool.coordinator.designation,
-        }
-        : null
-    );
+    
+    const parsedCoordinators = eventSchool.coordinators && Array.isArray(eventSchool.coordinators) 
+      ? eventSchool.coordinators.map(coord => ({
+          employeeId: coord.employeeId || coord.institutionId || coord.employeeCode || '',
+          institutionId: coord.institutionId || coord.employeeId || coord.employeeCode || '',
+          employeeName: coord.employeeName || coord.name || '',
+          name: coord.employeeName || coord.name || '',
+          department: coord.department,
+          designation: coord.designation,
+        }))
+      : [];
+    setSelectedCoordinators(parsedCoordinators);
 
     setBannerFile(null);
     const bannerUrl =
@@ -315,7 +307,7 @@ const EventSchoolManagement = () => {
     formData.append('content', content);
     formData.append('status', status);
     formData.append('orderNo', orderNo);
-    formData.append('coordinator', JSON.stringify(selectedCoordinator || {}));
+    formData.append('coordinators', JSON.stringify(selectedCoordinators || []));
 
     if (bannerFile) {
       formData.append('banner', bannerFile);
@@ -377,7 +369,7 @@ const EventSchoolManagement = () => {
   };
 
   // ─── Table columns & rows ───
-  const columns = ['#', 'Banner', 'Name', 'Short Name', 'School Coordinator', 'Status', 'Actions'];
+  const columns = ['#', 'Banner', 'Name', 'Short Name', 'School Coordinators', 'Status', 'Actions'];
 
   const tableRows = eventSchools.map((eventSchool, index) => [
     index + 1,
@@ -437,20 +429,30 @@ const EventSchoolManagement = () => {
     eventSchool.name,
     eventSchool.shortName || '—',
     (() => {
-      const code =
-        eventSchool.coordinator?.institutionId ||
-        eventSchool.coordinator?.employeeId ||
-        eventSchool.coordinator?.employeeCode ||
-        '';
-      const coordName = eventSchool.coordinator?.employeeName || '—';
-      const orderNumber = eventSchool.orderNo || 0;
+      if (!eventSchool.coordinators || eventSchool.coordinators.length === 0) {
+        return (
+          <Box>
+            <Typography variant="body2" sx={{ fontWeight: 600 }}>—</Typography>
+            <Typography variant="caption" color="primary" sx={{ display: 'block', fontWeight: 'bold' }}>
+              Order No: {eventSchool.orderNo || 0}
+            </Typography>
+          </Box>
+        );
+      }
+
       return (
         <Box>
-          <Typography variant="body2" sx={{ fontWeight: 600 }}>
-            {code ? `${coordName} (${code})` : coordName}
-          </Typography>
-          <Typography variant="caption" color="primary" sx={{ display: 'block', fontWeight: 'bold' }}>
-            Order No: {orderNumber}
+          {eventSchool.coordinators.map((coord, i) => {
+            const code = coord.institutionId || coord.employeeId || coord.employeeCode || '';
+            const coordName = coord.employeeName || '—';
+            return (
+              <Typography key={i} variant="body2" sx={{ fontWeight: 600, display: 'block', mb: 0.5 }}>
+                {code ? `${coordName} (${code})` : coordName}
+              </Typography>
+            );
+          })}
+          <Typography variant="caption" color="primary" sx={{ display: 'block', fontWeight: 'bold', mt: 0.5 }}>
+            Order No: {eventSchool.orderNo || 0}
           </Typography>
         </Box>
       );
@@ -1023,9 +1025,10 @@ const EventSchoolManagement = () => {
                   mb={1}
                   sx={{ color: 'var(--text-primary)' }}
                 >
-                  School Coordinator *
+                  School Coordinators *
                 </Typography>
                 <Autocomplete
+                  multiple
                   fullWidth
                   sx={{ width: '100%' }}
                   options={employeeOptions}
@@ -1035,20 +1038,23 @@ const EventSchoolManagement = () => {
                     const code = option.institutionId || option.employeeId || option.employeeCode || '';
                     return code ? `${coordName} (${code})` : coordName;
                   }}
-                  value={selectedCoordinator}
+                  value={selectedCoordinators}
                   onChange={(_, newValue) => {
                     if (newValue) {
-                      const code = newValue.institutionId || newValue.employeeId || newValue.employeeCode || '';
-                      setSelectedCoordinator({
-                        ...newValue,
-                        employeeId: code,
-                        institutionId: code,
-                        employeeName: newValue.employeeName || newValue.name || '',
+                      const formattedValue = newValue.map(val => {
+                        const code = val.institutionId || val.employeeId || val.employeeCode || '';
+                        return {
+                          ...val,
+                          employeeId: code,
+                          institutionId: code,
+                          employeeName: val.employeeName || val.name || '',
+                        };
                       });
+                      setSelectedCoordinators(formattedValue);
                     } else {
-                      setSelectedCoordinator(null);
+                      setSelectedCoordinators([]);
                     }
-                    setErrors((prev) => ({ ...prev, coordinator: null }));
+                    setErrors((prev) => ({ ...prev, coordinators: null }));
                   }}
                   inputValue={searchQuery}
                   onInputChange={(_, newInputValue) => {
@@ -1069,8 +1075,8 @@ const EventSchoolManagement = () => {
                         {...params}
                         fullWidth
                         placeholder="Search employee by name or ID"
-                        error={!!errors.coordinator}
-                        helperText={errors.coordinator}
+                        error={!!errors.coordinators}
+                        helperText={errors.coordinators}
                         InputProps={{
                           ...inputProps,
                           sx: { borderRadius: '12px' },
