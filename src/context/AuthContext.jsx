@@ -20,6 +20,12 @@ export const AuthProvider = ({ children }) => {
     return userData;
   };
 
+  const updateUser = (newUserData) => {
+    const updatedUser = normalizeRoles(newUserData);
+    setUser(updatedUser);
+    localStorage.setItem("user", JSON.stringify(updatedUser));
+  };
+
   const logout = async () => {
     try {
       const fcmToken = localStorage.getItem("fcmToken");
@@ -137,7 +143,7 @@ export const AuthProvider = ({ children }) => {
 
 
   return (
-    <AuthContext.Provider value={{ user, activeRole, switchRole, loading, login, signup, logout }}>
+    <AuthContext.Provider value={{ user, activeRole, switchRole, loading, login, signup, logout, updateUser }}>
       {!loading && children}
     </AuthContext.Provider>
   );

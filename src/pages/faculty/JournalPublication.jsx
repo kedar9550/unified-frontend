@@ -468,7 +468,7 @@ export default function JournalPublication() {
       toast.error("Please update your profile with PAN Number and College before submitting");
       return;
     }
-    if (!form.doi || !form.paperTitle || !form.journalName || !form.vol || !form.issue || !form.month || !form.year) {
+    if (!form.doi || !form.paperTitle || !form.journalName || !form.month || !form.year) {
       toast.error("Please fill all required fields");
       return;
     }
@@ -874,13 +874,13 @@ export default function JournalPublication() {
 
         {/* Vol */}
         <Box>
-          <Typography sx={labelStyle}>Vol : *</Typography>
+          <Typography sx={labelStyle}>Vol :</Typography>
           <TextField size="small" fullWidth value={form.vol} onChange={set("vol")} disabled={isFetched("vol")} sx={isFetched("vol") ? disabledField : {}} />
         </Box>
 
         {/* Issue */}
         <Box>
-          <Typography sx={labelStyle}>Issue : *</Typography>
+          <Typography sx={labelStyle}>Issue :</Typography>
           <TextField size="small" fullWidth value={form.issue} onChange={set("issue")} disabled={isFetched("issue")} sx={isFetched("issue") ? disabledField : {}} />
         </Box>
 
@@ -1337,6 +1337,13 @@ export default function JournalPublication() {
               <LabelValue
                 label="Publication Scope"
                 value={data.publicationScope || data.incentiveApplied || "-"}
+              />
+            </Box>
+
+            <Box sx={{ gridColumn: { xs: "span 12", sm: "span 6" }, display: "flex", flexDirection: "column" }}>
+              <LabelValue
+                label="Article Eligibility For Appraisal"
+                value={data.status === "Approved" ? (data.appraisalEligible || "No") : "Not yet decided"}
               />
             </Box>
             {data.status === "Approved" && data.approvedAmount && (
