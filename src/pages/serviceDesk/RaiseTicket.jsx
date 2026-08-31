@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Loader from "../../components/common/Loader";
 import {
     Box, Typography, TextField, Button, MenuItem, Select, FormControl,
-    InputLabel, Paper, Chip
+    InputLabel, Paper, Chip, Grid
 } from '@mui/material';
 import { UploadFile, Close as CloseIcon, Send as SendIcon } from '@mui/icons-material';
 import PageHeader from '../../components/common/PageHeader';
@@ -103,29 +103,45 @@ const RaiseTicket = () => {
             <PageHeader title="Raise a Ticket" subtitle="Submit a new request to the Service Desk" />
             
             <Box>
-                <Paper sx={{ p: 4, borderRadius: '16px', background: 'var(--bg-panel)', boxShadow: 'var(--shadow-premium)', border: '1px solid var(--border-color)' }}>
-                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                <Paper sx={{ p: { xs: 2.5, sm: 3, md: 4 }, mb: { xs: 2.5, md: 0 }, borderRadius: '16px', background: 'var(--bg-panel)', boxShadow: 'var(--shadow-premium)', border: '1px solid var(--border-color)' }}>
+                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: { xs: 2.5, sm: 3 } }}>
                             
-                            <FormControl fullWidth required>
-                                <InputLabel>Service Category</InputLabel>
-                                <Select
-                                    name="service"
-                                    value={formData.service}
-                                    onChange={handleChange}
-                                    label="Service Category"
-                                    disabled={loadingServices}
-                                >
-                                    {loadingServices ? (
-                                        <MenuItem value="" disabled>Loading services...</MenuItem>
-                                    ) : services.length === 0 ? (
-                                        <MenuItem value="" disabled>No services available</MenuItem>
-                                    ) : (
-                                        services.map(s => (
-                                            <MenuItem key={s._id} value={s._id}>{s.name}</MenuItem>
-                                        ))
-                                    )}
-                                </Select>
-                            </FormControl>
+                            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: { xs: 2.5, sm: 3 }, width: '100%' }}>
+                                <FormControl fullWidth required>
+                                    <InputLabel>Service Category</InputLabel>
+                                    <Select
+                                        name="service"
+                                        value={formData.service}
+                                        onChange={handleChange}
+                                        label="Service Category"
+                                        disabled={loadingServices}
+                                    >
+                                        {loadingServices ? (
+                                            <MenuItem value="" disabled>Loading services...</MenuItem>
+                                        ) : services.length === 0 ? (
+                                            <MenuItem value="" disabled>No services available</MenuItem>
+                                        ) : (
+                                            services.map(s => (
+                                                <MenuItem key={s._id} value={s._id}>{s.name}</MenuItem>
+                                            ))
+                                        )}
+                                    </Select>
+                                </FormControl>
+
+                                <FormControl fullWidth>
+                                    <InputLabel>Priority (Optional)</InputLabel>
+                                    <Select
+                                        name="priority"
+                                        value={formData.priority}
+                                        onChange={handleChange}
+                                        label="Priority (Optional)"
+                                    >
+                                        <MenuItem value="LOW">Low</MenuItem>
+                                        <MenuItem value="MEDIUM">Medium</MenuItem>
+                                        <MenuItem value="HIGH">High</MenuItem>
+                                    </Select>
+                                </FormControl>
+                            </Box>
 
                             <TextField
                                 label="Title"
@@ -137,7 +153,7 @@ const RaiseTicket = () => {
                                 placeholder="Brief summary of your request"
                             />
 
-                            <Box sx={{ mb: 6 }}>
+                            <Box sx={{ mb: { xs: 2, sm: 6 } }}>
                                 <Typography variant="subtitle2" sx={{ mb: 1, color: 'text.secondary' }}>
                                     Description *
                                 </Typography>
@@ -148,21 +164,7 @@ const RaiseTicket = () => {
                                 />
                             </Box>
 
-                            <FormControl fullWidth>
-                                <InputLabel>Priority (Optional)</InputLabel>
-                                <Select
-                                    name="priority"
-                                    value={formData.priority}
-                                    onChange={handleChange}
-                                    label="Priority (Optional)"
-                                >
-                                    <MenuItem value="LOW">Low</MenuItem>
-                                    <MenuItem value="MEDIUM">Medium</MenuItem>
-                                    <MenuItem value="HIGH">High</MenuItem>
-                                </Select>
-                            </FormControl>
-
-                            <Box>
+                            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: { xs: 'center', sm: 'flex-start' }, textAlign: { xs: 'center', sm: 'left' } }}>
                                 <Typography variant="subtitle2" sx={{ mb: 1, color: 'text.secondary' }}>
                                     Attachments
                                 </Typography>
@@ -170,7 +172,7 @@ const RaiseTicket = () => {
                                     variant="outlined"
                                     component="label"
                                     startIcon={<UploadFile />}
-                                    sx={{ mb: 2 }}
+                                    sx={{ mb: 2, borderRadius: '20px' }}
                                 >
                                     Select Files
                                     <input
@@ -182,7 +184,7 @@ const RaiseTicket = () => {
                                 </Button>
 
                                 {attachments.length > 0 && (
-                                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                                    <Box sx={{ display: 'flex', flexWrap: 'wrap', justifyContent: { xs: 'center', sm: 'flex-start' }, gap: 1 }}>
                                         {attachments.map((file, index) => (
                                             <Chip
                                                 key={index}
@@ -196,13 +198,14 @@ const RaiseTicket = () => {
                                 )}
                             </Box>
 
-                            <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
+                            <Box sx={{ display: 'flex', justifyContent: 'center', mt: { xs: 1, sm: 2 } }}>
                                 <Button
                                     onClick={handleSubmit}
                                     variant="contained"
                                     disabled={submitting}
                                     startIcon={submitting ? <Loader size={20} color="inherit" /> : <SendIcon />}
                                     sx={{ 
+                                        width: { xs: '100%', sm: 'auto' },
                                         px: 4, 
                                         py: 1.5, 
                                         background: "var(--gradient-primary)",

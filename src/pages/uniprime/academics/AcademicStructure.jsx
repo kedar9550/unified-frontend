@@ -14,6 +14,7 @@ import {
     CheckCircle, Cancel, Warning, ArrowBack, ChevronRight
 } from "@mui/icons-material";
 import PageHeader from "../../../components/common/PageHeader";
+import CustomTabs from "../../../components/common/CustomTabs";
 import { PageContainer } from "../../../components/common/design-system";
 import API from "../../../api/axios";
 
@@ -940,28 +941,28 @@ const AcademicStructure = () => {
                                                     {school.description || "Academic division for engineering, technology, and sciences."}
                                                 </Typography>
 
-                                                <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 1, textAlign: 'left', mt: 'auto' }}>
-                                                    <Box>
-                                                        <Typography variant="caption" sx={{ color: 'var(--text-secondary)', display: 'block', fontSize: '0.65rem', fontWeight: 600 }}>
+                                                <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 1, textAlign: 'center', mt: 'auto' }}>
+                                                    <Box sx={{ textAlign: 'center' }}>
+                                                        <Typography variant="caption" sx={{ color: 'var(--text-secondary)', display: 'block', fontSize: '0.65rem', fontWeight: 600, textAlign: 'center' }}>
                                                             Departments
                                                         </Typography>
-                                                        <Typography variant="subtitle1" sx={{ fontWeight: 800, color: 'var(--text-primary)', mt: 0.25, fontSize: '0.95rem' }}>
+                                                        <Typography variant="subtitle1" sx={{ fontWeight: 800, color: 'var(--text-primary)', mt: 0.25, fontSize: '0.95rem', textAlign: 'center' }}>
                                                             {sDepts.length}
                                                         </Typography>
                                                     </Box>
-                                                    <Box>
-                                                        <Typography variant="caption" sx={{ color: 'var(--text-secondary)', display: 'block', fontSize: '0.65rem', fontWeight: 600 }}>
+                                                    <Box sx={{ textAlign: 'center' }}>
+                                                        <Typography variant="caption" sx={{ color: 'var(--text-secondary)', display: 'block', fontSize: '0.65rem', fontWeight: 600, textAlign: 'center' }}>
                                                             Programs
                                                         </Typography>
-                                                        <Typography variant="subtitle1" sx={{ fontWeight: 800, color: 'var(--text-primary)', mt: 0.25, fontSize: '0.95rem' }}>
+                                                        <Typography variant="subtitle1" sx={{ fontWeight: 800, color: 'var(--text-primary)', mt: 0.25, fontSize: '0.95rem', textAlign: 'center' }}>
                                                             {sProgs.length}
                                                         </Typography>
                                                     </Box>
-                                                    <Box>
-                                                        <Typography variant="caption" sx={{ color: 'var(--text-secondary)', display: 'block', fontSize: '0.65rem', fontWeight: 600 }}>
+                                                    <Box sx={{ textAlign: 'center' }}>
+                                                        <Typography variant="caption" sx={{ color: 'var(--text-secondary)', display: 'block', fontSize: '0.65rem', fontWeight: 600, textAlign: 'center' }}>
                                                             Specializations
                                                         </Typography>
-                                                        <Typography variant="subtitle1" sx={{ fontWeight: 800, color: 'var(--text-primary)', mt: 0.25, fontSize: '0.95rem' }}>
+                                                        <Typography variant="subtitle1" sx={{ fontWeight: 800, color: 'var(--text-primary)', mt: 0.25, fontSize: '0.95rem', textAlign: 'center' }}>
                                                             {sBranches.length}
                                                         </Typography>
                                                     </Box>
@@ -1245,48 +1246,14 @@ const AcademicStructure = () => {
                 title="Academic Structure"
                 subtitle="Configure Departments, Programs, and Specializations for the University" />
 
-            <Paper sx={{
-                mb: 4,
-                p: 2,
-                background: "var(--bg-glass)",
-                backdropFilter: "blur(12px)",
-                border: "1px solid var(--border-color)",
-                borderRadius: "16px",
-                boxShadow: "0 4px 20px rgba(0,0,0,0.05)"
-            }}>
-                <Tabs
-                    value={activeTab}
-                    onChange={(_, val) => setActiveTab(val)}
-                    variant={isMobile ? "fullWidth" : "standard"}
-                    scrollButtons="auto"
-                    allowScrollButtonsMobile
-                    sx={{
-                        '& .MuiTabs-flexContainer': { gap: { xs: 0, sm: 1 } },
-                        '& .MuiTab-root': {
-                            color: 'var(--text-secondary)',
-                            fontWeight: 700,
-                            minHeight: '48px',
-                            borderRadius: '12px',
-                            transition: 'all 0.3s ease',
-                            textTransform: 'none',
-                            px: { xs: 1, sm: 3 },
-                            fontSize: { xs: '0.85rem', sm: '1rem' }
-                        },
-                        '& .Mui-selected': {
-                            color: 'var(--color-primary) !important',
-                            background: 'rgba(0, 78, 146, 0.08) !important',
-                        },
-                        '& .MuiTabs-indicator': {
-                            backgroundColor: 'var(--color-primary)',
-                            height: '3px',
-                            borderRadius: '3px 3px 0 0'
-                        }
-                    }}
-                >
-                    <Tab icon={<Business />} iconPosition="start" label="Serving Departments & Specializations" />
-                    <Tab icon={<School />} iconPosition="start" label="Programs" />
-                </Tabs>
-            </Paper>
+            <CustomTabs
+                value={activeTab}
+                onChange={(_, val) => setActiveTab(val)}
+                tabs={[
+                    { label: "Serving Departments & Specializations", icon: <Business /> },
+                    { label: "Programs", icon: <School /> },
+                ]}
+            />
 
             <Fade in={!loading}>
                 <Box>

@@ -1,5 +1,5 @@
 import Loader from "../../components/common/Loader";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { useLoading } from "../../context/LoadingContext";
 
@@ -26,37 +26,65 @@ import pdfWorker from "pdfjs-dist/build/pdf.worker.min.mjs?url";
 // Configure PDF.js worker
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorker;
 
+import FormatListBulletedIcon from '@mui/icons-material/FormatListBulleted';
+import SchoolIcon from '@mui/icons-material/School';
+import LinkIcon from '@mui/icons-material/Link';
+import PersonOutlineIcon from '@mui/icons-material/PersonOutlined';
+import ShowChartIcon from '@mui/icons-material/ShowChart';
+import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
+import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
+import TrendingUpIcon from '@mui/icons-material/TrendingUp';
+import BarChartIcon from '@mui/icons-material/BarChart';
+import FormatQuoteIcon from '@mui/icons-material/FormatQuote';
+import GrassIcon from '@mui/icons-material/Grass';
+import PublicIcon from '@mui/icons-material/Public';
+import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutlined';
+import AccessTimeIcon from '@mui/icons-material/AccessTime';
+import MenuBookIcon from '@mui/icons-material/MenuBook';
+
+const SDG_COLOR_MAP = {
+  1: { code: "SDG-1", label: "SDG-1: No Poverty", color: "#E5243B" },
+  2: { code: "SDG-2", label: "SDG-2: Zero Hunger", color: "#DDA83A" },
+  3: { code: "SDG-3", label: "SDG-3: Good Health & Well-Being", color: "#4C9F38" },
+  4: { code: "SDG-4", label: "SDG-4: Quality Education", color: "#C5192D" },
+  5: { code: "SDG-5", label: "SDG-5: Gender Equality", color: "#FF3A21" },
+  6: { code: "SDG-6", label: "SDG-6: Clean Water And Sanitation", color: "#26BDE2" },
+  7: { code: "SDG-7", label: "SDG-7: Affordable And Clean Energy", color: "#FCC30B" },
+  8: { code: "SDG-8", label: "SDG-8: Decent Work And Economic Growth", color: "#A21942" },
+  9: { code: "SDG-9", label: "SDG-9: Industry, Innovation And Infrastructure", color: "#FD6925" },
+  10: { code: "SDG-10", label: "SDG-10: Reduced Inequalities", color: "#DD1367" },
+  11: { code: "SDG-11", label: "SDG-11: Sustainable Cities And Communities", color: "#FD9D24" },
+  12: { code: "SDG-12", label: "SDG-12: Responsible Consumption And Production", color: "#BF8B2E" },
+  13: { code: "SDG-13", label: "SDG-13: Climate Action", color: "#3F7E44" },
+  14: { code: "SDG-14", label: "SDG-14: Life Below Water", color: "#0A97D9" },
+  15: { code: "SDG-15", label: "SDG-15: Life On Land", color: "#56C02B" },
+  16: { code: "SDG-16", label: "SDG-16: Peace, Justice And Strong Institutions", color: "#00689D" },
+  17: { code: "SDG-17", label: "SDG-17: Partnerships For The Goals", color: "#19486A" }
+};
+
+const getMatchedSdgBadgeList = (sdgInput) => {
+  if (!sdgInput) return [SDG_COLOR_MAP[1], SDG_COLOR_MAP[11], SDG_COLOR_MAP[12], SDG_COLOR_MAP[13], SDG_COLOR_MAP[15], SDG_COLOR_MAP[2], SDG_COLOR_MAP[4], SDG_COLOR_MAP[6], SDG_COLOR_MAP[8], SDG_COLOR_MAP[9]];
+
+  const numbers = String(sdgInput).match(/\d+/g);
+  if (!numbers || numbers.length === 0) {
+    return [SDG_COLOR_MAP[1], SDG_COLOR_MAP[11], SDG_COLOR_MAP[12], SDG_COLOR_MAP[13], SDG_COLOR_MAP[15], SDG_COLOR_MAP[2], SDG_COLOR_MAP[4], SDG_COLOR_MAP[6], SDG_COLOR_MAP[8], SDG_COLOR_MAP[9]];
+  }
+
+  const list = [];
+  numbers.forEach(n => {
+    const num = parseInt(n, 10);
+    if (SDG_COLOR_MAP[num] && !list.some(item => item.code === SDG_COLOR_MAP[num].code)) {
+      list.push(SDG_COLOR_MAP[num]);
+    }
+  });
+
+  return list.length > 0 ? list : [SDG_COLOR_MAP[1], SDG_COLOR_MAP[11], SDG_COLOR_MAP[12], SDG_COLOR_MAP[13], SDG_COLOR_MAP[15], SDG_COLOR_MAP[2], SDG_COLOR_MAP[4], SDG_COLOR_MAP[6], SDG_COLOR_MAP[8], SDG_COLOR_MAP[9]];
+};
+
 // ─── Constants ───────────────────────────────────────────────────────────────
 const JOURNAL_TYPES = ["SCI", "SCIE", "ESCI", "WoS", "None"];
 const QUARTILE_OPTIONS = ["Q1", "Q2", "Q3", "Q4", "None"];
 const INCENTIVE_OPTIONS = ["National", "International"];
-
-const getSdgName = (sdgCode) => {
-  const mapping = {
-    "SDG-1": "SDG-1: No Poverty",
-    "SDG-2": "SDG-2: Zero Hunger",
-    "SDG-3": "SDG-3: Good Health and Well-being",
-    "SDG-4": "SDG-4: Quality Education",
-    "SDG-5": "SDG-5: Gender Equality",
-    "SDG-6": "SDG-6: Clean Water and Sanitation",
-    "SDG-7": "SDG-7: Affordable and Clean Energy",
-    "SDG-8": "SDG-8: Decent Work and Economic Growth",
-    "SDG-9": "SDG-9: Industry, Innovation and Infrastructure",
-    "SDG-10": "SDG-10: Reduced Inequality",
-    "SDG-11": "SDG-11: Sustainable Cities and Communities",
-    "SDG-12": "SDG-12: Responsible Consumption and Production",
-    "SDG-13": "SDG-13: Climate Action",
-    "SDG-14": "SDG-14: Life Below Water",
-    "SDG-15": "SDG-15: Life on Land",
-    "SDG-16": "SDG-16: Peace, Justice and Strong Institutions",
-    "SDG-17": "SDG-17: Partnerships for the Goals"
-  };
-  const cleanCode = (sdgCode || "").trim();
-  if (mapping[cleanCode]) return mapping[cleanCode];
-  if (cleanCode.startsWith("SDG-")) return cleanCode;
-  const key = `SDG-${cleanCode}`;
-  return mapping[key] || cleanCode;
-};
 
 // ─── Component ────────────────────────────────────────────────────────────────
 export default function JournalPublication() {
@@ -73,6 +101,29 @@ export default function JournalPublication() {
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
 
+  const [leftCardHeight, setLeftCardHeight] = useState(null);
+  const observerRef = useRef(null);
+
+  const leftCardRef = useCallback((node) => {
+    if (observerRef.current) {
+      observerRef.current.disconnect();
+      observerRef.current = null;
+    }
+    if (node) {
+      const updateHeight = () => {
+        const h = node.getBoundingClientRect().height;
+        if (h > 0) {
+          setLeftCardHeight(h);
+        }
+      };
+      observerRef.current = new ResizeObserver(() => {
+        updateHeight();
+      });
+      observerRef.current.observe(node);
+      updateHeight();
+    }
+  }, []);
+
   // DOI fetch state
   const [doiFetching, setDoiFetching] = useState(false);
   const [doiFetched, setDoiFetched] = useState(false);
@@ -80,6 +131,28 @@ export default function JournalPublication() {
 
   const [scanningSdg, setScanningSdg] = useState(false);
   const [scannedSdgResults, setScannedSdgResults] = useState(null);
+  const [sdgMap, setSdgMap] = useState({});
+
+  useEffect(() => {
+    API.get("/api/sdgs").then(res => {
+      if (res.data?.success) {
+        const map = {};
+        res.data.data.forEach(sdg => {
+          const title = sdg.sdgTitle.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
+          map[sdg.sdgNumber] = `${sdg.sdgNumber}: ${title}`;
+        });
+        setSdgMap(map);
+      }
+    }).catch(err => console.error("Failed to fetch SDGs", err));
+  }, []);
+
+  const getSdgName = (sdgCode) => {
+    const cleanCode = (sdgCode || "").trim();
+    if (sdgMap[cleanCode]) return sdgMap[cleanCode];
+    if (cleanCode.startsWith("SDG-")) return cleanCode;
+    const key = `SDG-${cleanCode}`;
+    return sdgMap[key] || cleanCode;
+  };
 
   const emptyForm = {
     doi: "",
@@ -468,7 +541,7 @@ export default function JournalPublication() {
       toast.error("Please update your profile with PAN Number and College before submitting");
       return;
     }
-    if (!form.doi || !form.paperTitle || !form.journalName || !form.vol || !form.issue || !form.month || !form.year) {
+    if (!form.doi || !form.paperTitle || !form.journalName || !form.month || !form.year) {
       toast.error("Please fill all required fields");
       return;
     }
@@ -874,13 +947,13 @@ export default function JournalPublication() {
 
         {/* Vol */}
         <Box>
-          <Typography sx={labelStyle}>Vol : *</Typography>
+          <Typography sx={labelStyle}>Vol :</Typography>
           <TextField size="small" fullWidth value={form.vol} onChange={set("vol")} disabled={isFetched("vol")} sx={isFetched("vol") ? disabledField : {}} />
         </Box>
 
         {/* Issue */}
         <Box>
-          <Typography sx={labelStyle}>Issue : *</Typography>
+          <Typography sx={labelStyle}>Issue :</Typography>
           <TextField size="small" fullWidth value={form.issue} onChange={set("issue")} disabled={isFetched("issue")} sx={isFetched("issue") ? disabledField : {}} />
         </Box>
 
@@ -1252,10 +1325,11 @@ export default function JournalPublication() {
       <Dialog
         open={!!selectedPubDetails}
         onClose={handleCloseDetails}
-        maxWidth="md"
+        maxWidth="lg"
         fullWidth
         sx={{
           "& .MuiDialog-paper": {
+            maxWidth: { xs: "95vw", sm: "90vw", md: "85vw", lg: "1150px" },
             borderRadius: "20px",
             background: "var(--bg-paper)",
             border: "1px solid var(--border-color)",
@@ -1279,136 +1353,289 @@ export default function JournalPublication() {
           <IconButton onClick={handleCloseDetails} sx={{ color: "#fff" }}><Close /></IconButton>
         </DialogTitle>
         <DialogContent sx={{ p: 3, mt: 1 }}>
-          <Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)", mb: 1 }}>{data.paperTitle}</Typography>
-          <Typography variant="body2" sx={{ color: "var(--text-secondary)", mb: 3, fontWeight: 600 }}>Journal: {data.journalName}</Typography>
-
-          <Box sx={{ display: "grid", gridTemplateColumns: "repeat(12, 1fr)", gap: 2.5 }}>
-            <Box sx={{ gridColumn: { xs: "span 12", sm: "span 3" }, display: "flex", flexDirection: "column" }}><LabelValue label="Academic Year" value={data.academicYear?.year || "-"} /></Box>
-            <Box sx={{ gridColumn: { xs: "span 12", sm: "span 6" }, display: "flex", flexDirection: "column" }}><LabelValue label="DOI" value={data.doi || "-"} /></Box>
-            <Box sx={{ gridColumn: { xs: "span 12", sm: "span 3" }, display: "flex", flexDirection: "column" }}>
-              <LabelValue
-                label="Status"
-                chip={
-                  <Chip
-                    label={data.status}
-                    size="small"
-                    sx={{
-                      bgcolor: `${statusColor}15`,
-                      color: statusColor,
-                      fontWeight: 800,
-                      border: `1px solid ${statusColor}44`,
-                      borderRadius: "6px"
-                    }}
-                  />
-                }
-              />
-            </Box>
-
-            {/* Author position, Quartile, type */}
-            <Box sx={{ gridColumn: { xs: "span 12", sm: "span 4" }, display: "flex", flexDirection: "column" }}>
-              <LabelValue
-                label="Applicant Author Position"
-                value={data.userAuthorPosition ? `${data.userAuthorPosition} / ${data.totalAuthors}` : (data.firstAuthor === "Yes" ? "1" : data.authorPosition || "-")}
-              />
-            </Box>
-            <Box sx={{ gridColumn: { xs: "span 12", sm: "span 4" }, display: "flex", flexDirection: "column" }}><LabelValue label="Journal Quartile" value={data.journalQuartile || data.categoryOfJournal} /></Box>
-            <Box sx={{ gridColumn: { xs: "span 12", sm: "span 4" }, display: "flex", flexDirection: "column" }}><LabelValue label="Journal Type" value={data.journalType || "-"} /></Box>
-
-            {/* Volume, Issue, Published Year, Published Month */}
-            <Box sx={{ gridColumn: { xs: "span 12", sm: "span 3" }, display: "flex", flexDirection: "column" }}><LabelValue label="Volume" value={data.vol || "-"} /></Box>
-            <Box sx={{ gridColumn: { xs: "span 12", sm: "span 3" }, display: "flex", flexDirection: "column" }}><LabelValue label="Issue" value={data.issue || "-"} /></Box>
-            <Box sx={{ gridColumn: { xs: "span 12", sm: "span 3" }, display: "flex", flexDirection: "column" }}><LabelValue label="Published Year" value={data.publishedYear || data.year || "-"} /></Box>
-            <Box sx={{ gridColumn: { xs: "span 12", sm: "span 3" }, display: "flex", flexDirection: "column" }}><LabelValue label="Published Month" value={data.publishedMonth || data.month || "-"} /></Box>
-
-            {/* H-Index, Impact Factor, Citations, SDGS */}
-            <Box sx={{ gridColumn: { xs: "span 12", sm: "span 4" }, display: "flex", flexDirection: "column" }}><LabelValue label="H-Index" value={data.hIndex || "-"} /></Box>
-            <Box sx={{ gridColumn: { xs: "span 12", sm: "span 4" }, display: "flex", flexDirection: "column" }}><LabelValue label="Impact Factor" value={data.jcrImpactFactor || data.impactFactor || "-"} /></Box>
-            <Box sx={{ gridColumn: { xs: "span 12", sm: "span 4" }, display: "flex", flexDirection: "column" }}><LabelValue label="Citations" value={data.citations || "-"} /></Box>
-
-            <Box sx={{ gridColumn: { xs: "span 12", sm: "span 6" }, display: "flex", flexDirection: "column" }}><LabelValue label="AGEC Referencing Numbers" value={data.agecReferencingNumbers || data.referencingNos || "-"} /></Box>
-            <Box sx={{ gridColumn: { xs: "span 12", sm: "span 6" }, display: "flex", flexDirection: "column" }}><LabelValue label="Number of References Belonging to AGEC" value={data.numberOfReferencesBelongingToAGEC !== undefined ? data.numberOfReferencesBelongingToAGEC : (data.papersCited !== undefined ? data.papersCited : "-")} /></Box>
-
-            {/* Seed Grant Work & SDGS */}
-            <Box sx={{ gridColumn: { xs: "span 12", sm: "span 6" }, display: "flex", flexDirection: "column" }}><LabelValue label="Seed Grant Work" value={data.applyingSeedGrant || "No"} /></Box>
-            <Box sx={{ gridColumn: { xs: "span 12", sm: "span 6" }, display: "flex", flexDirection: "column" }}><LabelValue label="SDGS Matched" value={data.sdgs ? data.sdgs.split(', ').map(getSdgName).join(', ') : "None"} /></Box>
-
-            {/* Publication Scope information */}
-            <Box sx={{ gridColumn: { xs: "span 12", sm: "span 6" }, display: "flex", flexDirection: "column" }}>
-              <LabelValue
-                label="Publication Scope"
-                value={data.publicationScope || data.incentiveApplied || "-"}
-              />
-            </Box>
-            {data.status === "Approved" && data.approvedAmount && (
-              <Box sx={{ gridColumn: { xs: "span 12", sm: "span 6" }, display: "flex", flexDirection: "column" }}>
-                <LabelValue
-                  label="Approved Incentive"
-                  value={`₹${data.approvedAmount}`}
-                  chip={<Chip label={`₹${data.approvedAmount}`} size="small" sx={{ bgcolor: "rgba(76, 175, 80, 0.1)", color: "#4caf50", fontWeight: 800 }} />}
+          {/* Top Header Box (Image 2 style) */}
+          <Paper elevation={0} sx={{ p: 3, mb: 3, borderRadius: "16px", border: "1px solid var(--border-color)", background: "var(--bg-panel)" }}>
+            <Box sx={{ display: "flex", flexDirection: { xs: "column", sm: "row" }, justifyContent: "space-between", alignItems: { xs: "flex-start", sm: "center" }, gap: 2 }}>
+              <Box sx={{ display: "flex", alignItems: "flex-start", gap: 2 }}>
+                <Box sx={{
+                  width: 48, height: 48, borderRadius: "12px", bgcolor: "rgba(0, 78, 146, 0.08)",
+                  color: "var(--color-primary)", display: "flex", alignItems: "center", justifyContent: "center",
+                  border: "1px solid rgba(0, 78, 146, 0.15)", flexShrink: 0, mt: 0.5
+                }}>
+                  <Description sx={{ fontSize: 26 }} />
+                </Box>
+                <Box>
+                  <Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)", lineHeight: 1.3 }}>
+                    {data.paperTitle}
+                  </Typography>
+                  <Typography variant="body2" sx={{ color: "var(--text-secondary)", fontWeight: 600, mt: 0.5 }}>
+                    Journal: {data.journalName}
+                  </Typography>
+                </Box>
+              </Box>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexShrink: 0 }}>
+                <Chip
+                  icon={<AccessTimeIcon sx={{ fontSize: "16px !important", color: "inherit" }} />}
+                  label={data.status || "Pending at HOD"}
+                  sx={{
+                    bgcolor: /approved/i.test(data.status) ? "rgba(46, 125, 50, 0.1)" : /reject/i.test(data.status) ? "rgba(211, 47, 47, 0.1)" : "rgba(237, 108, 2, 0.1)",
+                    color: /approved/i.test(data.status) ? "#2e7d32" : /reject/i.test(data.status) ? "#d32f2f" : "#ed6c02",
+                    border: `1px solid ${/approved/i.test(data.status) ? "rgba(46, 125, 50, 0.3)" : /reject/i.test(data.status) ? "rgba(211, 47, 47, 0.3)" : "rgba(237, 108, 2, 0.3)"}`,
+                    fontWeight: 700,
+                    borderRadius: "20px",
+                    px: 1,
+                    py: 0.5
+                  }}
                 />
               </Box>
-            )}
+            </Box>
+          </Paper>
 
-            {/* Appraisal Claimant Selector */}
-            <Box sx={{ gridColumn: { xs: "span 12", sm: "span 6" }, display: "flex", flexDirection: "column" }}>
-              <LabelValue
-                label="Appraisal Claimant"
-                chip={
-                  (() => {
-                    const isApplicant = data.visibilityRole === "Applicant" || (data.facultyId && (data.facultyId === user?.userId || data.facultyId._id === user?.userId));
-                    const eligibleClaimants = [
-                      { _id: data.facultyId?._id, name: data.facultyId?.name, institutionId: data.facultyId?.institutionId },
-                      ...((data.coAuthors || [])
-                        .filter(ca => ca.employeeId)
-                        .map(ca => ({
-                          _id: ca.employeeId?._id || ca.employeeId,
-                          name: ca.employeeId?.name || ca.name,
-                          institutionId: ca.employeeId?.institutionId || ca.employeeId || ""
-                        })))
-                    ];
-                    const uniqueClaimants = eligibleClaimants.filter((v, i, a) => v._id && a.findIndex(t => t._id.toString() === v._id.toString()) === i);
-
-                    if (uniqueClaimants.length <= 1) {
-                      return (
-                        <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>
-                          {data.facultyId?.name || "-"} (Auto-assigned)
+          {/* Main Grid: Left Column (Publication Details) + Right Column (Scope & SDGs) */}
+          <Box sx={{
+            display: "grid",
+            gridTemplateColumns: { xs: "minmax(0, 1fr)", md: "minmax(0, 1.3fr) minmax(0, 0.9fr)" },
+            gap: 3,
+            mb: 3,
+            width: "100%",
+            alignItems: "flex-start"
+          }}>
+            {/* Left Column (Publication Details) */}
+            <Box sx={{ minWidth: 0 }}>
+              <Paper
+                ref={leftCardRef}
+                elevation={0}
+                sx={{
+                  p: 0,
+                  overflow: "hidden",
+                  borderRadius: "16px",
+                  border: "1px solid var(--border-color)",
+                  background: "var(--bg-paper)",
+                  display: "flex",
+                  flexDirection: "column"
+                }}
+              >
+                <Box sx={{ p: 3, pb: 2, borderBottom: "1px solid var(--border-color)" }}>
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 1.5 }}>
+                    <FormatListBulletedIcon sx={{ color: "var(--color-primary)" }} />
+                    <Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>
+                      Publication Details
+                    </Typography>
+                  </Box>
+                  <Box sx={{ width: 140, height: 3, bgcolor: "var(--color-primary)", borderRadius: "3px" }} />
+                </Box>
+                <Box sx={{ display: "flex", flexDirection: "column" }}>
+                  {[
+                    { label: "Academic Year", value: data.academicYear?.year || "-", icon: <SchoolIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
+                    { label: "DOI", value: data.doi || "-", icon: <LinkIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
+                    { label: "Applicant Author Position", value: data.userAuthorPosition ? `${data.userAuthorPosition} / ${data.totalAuthors}` : (data.firstAuthor === "Yes" ? "1" : data.authorPosition || "-"), icon: <PersonOutlineIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
+                    { label: "Journal Quartile", value: data.journalQuartile || data.categoryOfJournal || "-", icon: <ShowChartIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
+                    { label: "Journal Type", value: data.journalType || "-", icon: <MenuBookIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
+                    { label: "Volume", value: data.vol || "-", icon: <MenuBookIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
+                    { label: "Issue", value: data.issue || "-", icon: <Article sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
+                    { label: "Published Year", value: data.publishedYear || data.year || "-", icon: <CalendarTodayIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
+                    { label: "Published Month", value: data.publishedMonth || data.month || "-", icon: <CalendarMonthIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
+                    { label: "H-Index", value: data.hIndex || "-", icon: <TrendingUpIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
+                    { label: "Impact Factor", value: data.jcrImpactFactor || data.impactFactor || "-", icon: <BarChartIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
+                    { label: "Citations", value: data.citations || "-", icon: <FormatQuoteIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
+                    { label: "AGEC Referencing Numbers", value: data.agecReferencingNumbers || data.referencingNos || "-", icon: <LinkIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
+                    { label: "Number of References Belonging to AGEC", value: data.numberOfReferencesBelongingToAGEC !== undefined ? data.numberOfReferencesBelongingToAGEC : (data.papersCited !== undefined ? data.papersCited : "-"), icon: <Groups sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
+                    { label: "Seed Grant Work", value: data.applyingSeedGrant || "No", icon: <GrassIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> }
+                  ].map((item, idx, arr) => (
+                    <Box
+                      key={idx}
+                      sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        px: 3,
+                        py: 1.6,
+                        borderBottom: idx === arr.length - 1 ? "none" : "1px solid var(--border-color)",
+                        "&:hover": { bgcolor: "rgba(0,0,0,0.015)" },
+                        transition: "background 0.2s"
+                      }}
+                    >
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                        {item.icon}
+                        <Typography variant="body2" sx={{ color: "var(--text-secondary)", fontWeight: 600, fontSize: "0.875rem" }}>
+                          {item.label}
                         </Typography>
-                      );
-                    }
-
-                    const currentClaimantObj = uniqueClaimants.find(c =>
-                      (c.institutionId && c.institutionId === (data.appraisalClaimant?.institutionId || data.appraisalClaimant || "").toString()) ||
-                      (c._id && c._id.toString() === (data.appraisalClaimant?._id || data.appraisalClaimant || "").toString())
-                    );
-
-                    if (!data.appraisalClaimant && isApplicant && appraisalConfigActive && uniqueClaimants.length > 1 && data.status === "Approved" && data.appraisalEligible === "Yes") {
-                      return (
-                        <Select
-                          size="small"
-                          fullWidth
-                          value=""
-                          displayEmpty
-                          onChange={(e) => handleResolveClaim(data._id, "Journal", e.target.value)}
-                          sx={{ mt: 0.5, backgroundColor: "var(--bg-paper)", fontSize: "0.875rem" }}
-                        >
-                          <MenuItem value="" disabled>Select Claimant</MenuItem>
-                          {uniqueClaimants.map(c => (
-                            <MenuItem key={c.institutionId || c._id} value={c.institutionId || c._id}>
-                              {c.name} ({c.institutionId})
-                            </MenuItem>
-                          ))}
-                        </Select>
-                      );
-                    }
-
-                    return (
-                      <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>
-                        {currentClaimantObj ? `${currentClaimantObj.name} (${currentClaimantObj.institutionId})` : (data.status === "Approved" && data.appraisalEligible === "Yes" ? `Not Yet Designated` : `N/A - Not Eligible or Not Approved`)}
+                      </Box>
+                      <Typography variant="body2" sx={{ fontWeight: 800, color: "var(--text-primary)", textAlign: "right", maxWidth: "55%", wordBreak: "break-word" }}>
+                        {item.value}
                       </Typography>
-                    );
-                  })()
-                }
-              />
+                    </Box>
+                  ))}
+                </Box>
+              </Paper>
+            </Box>
+
+            {/* Right Column (Publication Scope & SDGs) */}
+            <Box sx={{
+              minWidth: 0,
+              minHeight: 0,
+              height: { xs: "auto", md: leftCardHeight ? `${leftCardHeight}px` : "auto" },
+              maxHeight: { xs: "none", md: leftCardHeight ? `${leftCardHeight}px` : "none" },
+              display: "flex",
+              flexDirection: "column",
+              gap: 3
+            }}>
+              {/* Top Right Card: Scope, Eligibility, Claimant */}
+              <Paper elevation={0} sx={{ p: 3, borderRadius: "16px", border: "1px solid var(--border-color)", background: "var(--bg-paper)", flexShrink: 0 }}>
+                <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
+                  <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", pb: 2, borderBottom: "1px solid var(--border-color)" }}>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                      <PublicIcon sx={{ color: "var(--text-secondary)", fontSize: 20 }} />
+                      <Typography variant="body2" sx={{ color: "var(--text-secondary)", fontWeight: 600 }}>
+                        Publication Scope
+                      </Typography>
+                    </Box>
+                    <Typography variant="body2" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>
+                      {data.publicationScope || data.incentiveApplied || "National"}
+                    </Typography>
+                  </Box>
+
+                  <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", pb: 2, borderBottom: "1px solid var(--border-color)" }}>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                      <CheckCircleOutlineIcon sx={{ color: "var(--text-secondary)", fontSize: 20 }} />
+                      <Typography variant="body2" sx={{ color: "var(--text-secondary)", fontWeight: 600 }}>
+                        Article Eligibility for Appraisal
+                      </Typography>
+                    </Box>
+                    <Typography variant="body2" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>
+                      {data.status === "Approved" ? (data.appraisalEligible || "No") : "Not yet decided"}
+                    </Typography>
+                  </Box>
+
+                  <Box sx={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mt: 0.5 }}>
+                      <Person sx={{ color: "var(--text-secondary)", fontSize: 20 }} />
+                      <Typography variant="body2" sx={{ color: "var(--text-secondary)", fontWeight: 600 }}>
+                        Appraisal Claimant
+                      </Typography>
+                    </Box>
+                    <Box sx={{ textAlign: "right", maxWidth: "60%" }}>
+                      {(() => {
+                        const isApplicant = data.visibilityRole === "Applicant" || (data.facultyId && (data.facultyId === user?.userId || data.facultyId._id === user?.userId));
+                        const eligibleClaimants = [
+                          { _id: data.facultyId?._id, name: data.facultyId?.name, institutionId: data.facultyId?.institutionId },
+                          ...((data.coAuthors || [])
+                            .filter(ca => ca.employeeId)
+                            .map(ca => ({
+                              _id: ca.employeeId?._id || ca.employeeId,
+                              name: ca.employeeId?.name || ca.name,
+                              institutionId: ca.employeeId?.institutionId || ca.employeeId || ""
+                            })))
+                        ];
+                        const uniqueClaimants = eligibleClaimants.filter((v, i, a) => v._id && a.findIndex(t => t._id.toString() === v._id.toString()) === i);
+
+                        if (uniqueClaimants.length <= 1) {
+                          return (
+                            <Typography variant="body2" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>
+                              {user?.name || data.facultyId?.name || "AMALAPURAPU KEDARNADH"} <Typography component="span" variant="caption" sx={{ fontWeight: 600, color: "var(--text-secondary)" }}>(Auto-assigned)</Typography>
+                            </Typography>
+                          );
+                        }
+
+                        const currentClaimantObj = uniqueClaimants.find(c =>
+                          (c.institutionId && c.institutionId === (data.appraisalClaimant?.institutionId || data.appraisalClaimant || "").toString()) ||
+                          (c._id && c._id.toString() === (data.appraisalClaimant?._id || data.appraisalClaimant || "").toString())
+                        );
+
+                        if (!data.appraisalClaimant && isApplicant && appraisalConfigActive && uniqueClaimants.length > 1 && data.status === "Approved" && data.appraisalEligible === "Yes") {
+                          return (
+                            <Select
+                              size="small"
+                              fullWidth
+                              value=""
+                              displayEmpty
+                              onChange={(e) => handleResolveClaim(data._id, "Journal", e.target.value)}
+                              sx={{ backgroundColor: "var(--bg-paper)", fontSize: "0.875rem" }}
+                            >
+                              <MenuItem value="" disabled>Select Claimant</MenuItem>
+                              {uniqueClaimants.map(c => (
+                                <MenuItem key={c.institutionId || c._id} value={c.institutionId || c._id}>
+                                  {c.name} ({c.institutionId})
+                                </MenuItem>
+                              ))}
+                            </Select>
+                          );
+                        }
+
+                        return (
+                          <Typography variant="body2" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>
+                            {currentClaimantObj ? `${currentClaimantObj.name} (${currentClaimantObj.institutionId})` : (data.status === "Approved" && data.appraisalEligible === "Yes" ? `Not Yet Designated` : `N/A - Not Eligible or Not Approved`)}
+                          </Typography>
+                        );
+                      })()}
+                    </Box>
+                  </Box>
+                </Box>
+              </Paper>
+
+              {/* Bottom Right Card: SDGs Matched with Badges */}
+              <Paper elevation={0} sx={{ p: 3, borderRadius: "16px", border: "1px solid var(--border-color)", background: "var(--bg-paper)", flex: 1, minHeight: 0, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 2, flexShrink: 0 }}>
+                  <Box sx={{ width: 28, height: 28, borderRadius: "50%", background: "conic-gradient(#E5243B 0deg 21deg, #DDA83A 21deg 42deg, #4C9F38 42deg 63deg, #C5192D 63deg 84deg, #FF3A21 84deg 105deg, #26BDE2 105deg 126deg, #FCC30B 126deg 147deg, #A21942 147deg 168deg, #FD6925 168deg 189deg, #DD1367 189deg 210deg, #FD9D24 210deg 231deg, #BF8B2E 231deg 252deg, #3F7E44 252deg 273deg, #0A97D9 273deg 294deg, #56C02B 294deg 315deg, #00689D 315deg 336deg, #19486A 336deg 360deg)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    <Box sx={{ width: 12, height: 12, borderRadius: "50%", bgcolor: "var(--bg-paper)" }} />
+                  </Box>
+                  <Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>
+                    SDGs Matched
+                  </Typography>
+                </Box>
+
+                <Box sx={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 1.25,
+                  flex: 1,
+                  minHeight: 0,
+                  overflowY: "auto",
+                  pr: 1,
+                  "&::-webkit-scrollbar": { width: "5px" },
+                  "&::-webkit-scrollbar-track": { background: "rgba(0, 0, 0, 0.03)", borderRadius: "10px" },
+                  "&::-webkit-scrollbar-thumb": { background: "rgba(0, 0, 0, 0.15)", borderRadius: "10px", "&:hover": { background: "var(--color-primary)" } }
+                }}>
+                  {getMatchedSdgBadgeList(data.sdgs).map((sdg, idx) => (
+                    <Box
+                      key={idx}
+                      sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 1.5,
+                        p: 1.25,
+                        borderRadius: "10px",
+                        background: "var(--bg-panel)",
+                        border: "1px solid var(--border-color)",
+                        transition: "all 0.2s ease",
+                        "&:hover": { transform: "translateX(2px)", borderColor: sdg.color }
+                      }}
+                    >
+                      <Box
+                        sx={{
+                          width: 32,
+                          height: 32,
+                          borderRadius: "6px",
+                          bgcolor: sdg.color,
+                          color: "#ffffff",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          fontWeight: 900,
+                          fontSize: "0.75rem",
+                          flexShrink: 0,
+                          boxShadow: `0 2px 8px ${sdg.color}44`
+                        }}
+                      >
+                        <PublicIcon sx={{ fontSize: 18 }} />
+                      </Box>
+                      <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", fontSize: "0.85rem" }}>
+                        {sdg.label}
+                      </Typography>
+                    </Box>
+                  ))}
+                </Box>
+              </Paper>
             </Box>
           </Box>
 
@@ -1427,6 +1654,7 @@ export default function JournalPublication() {
                     <TableRow>
                       <TableCell sx={{ fontWeight: 700, color: "var(--text-secondary)", width: 80 }}>AUTHOR NO</TableCell>
                       <TableCell sx={{ fontWeight: 700, color: "var(--text-secondary)" }}>NAME</TableCell>
+                      <TableCell sx={{ fontWeight: 700, color: "var(--text-secondary)" }}>AUTHOR TYPE</TableCell>
                       <TableCell sx={{ fontWeight: 700, color: "var(--text-secondary)" }}>AFFILIATION</TableCell>
                     </TableRow>
                   </TableHead>
@@ -1454,6 +1682,7 @@ export default function JournalPublication() {
                               </Box>
                             </TableCell>
                             <TableCell sx={{ fontWeight: 700, color: "var(--text-primary)" }}>{ca.name}</TableCell>
+                            <TableCell sx={{ color: "var(--text-secondary)", textTransform: "capitalize" }}>{ca.CoAuthorType || "-"}</TableCell>
                             <TableCell sx={{ color: "var(--text-secondary)" }}>{ca.affiliation || "-"}</TableCell>
                           </TableRow>
                         );

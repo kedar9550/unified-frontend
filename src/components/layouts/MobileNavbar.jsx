@@ -208,6 +208,12 @@ const MobileNavbar = () => {
     const displayItems = menuItems;
 
     const handleNavClick = (event, newValue) => {
+        if (event?.currentTarget) {
+            event.currentTarget.blur();
+        }
+        if (document.activeElement instanceof HTMLElement) {
+            document.activeElement.blur();
+        }
         const item = displayItems[newValue];
         if (item) {
             if (item.nested) {
@@ -220,8 +226,17 @@ const MobileNavbar = () => {
     };
 
     useEffect(() => {
+        if (document.activeElement instanceof HTMLElement) {
+            document.activeElement.blur();
+        }
         setExpandedItem(null);
     }, [location.pathname]);
+
+    useEffect(() => {
+        if (expandedItem && document.activeElement instanceof HTMLElement) {
+            document.activeElement.blur();
+        }
+    }, [expandedItem]);
 
     const getWeatherIcon = (code) => {
         if (code >= 95) return "https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Travel%20and%20places/Cloud%20with%20Lightning%20and%20Rain.png";
@@ -248,17 +263,17 @@ const MobileNavbar = () => {
             <Box
                 sx={{
                     position: 'fixed',
-                    bottom: 85,
+                    bottom: 'calc(84px + env(safe-area-inset-bottom, 0px))',
                     right: 15,
                     zIndex: 1090,
                     width: weatherExpanded ? 'calc(100% - 30px)' : '0px',
                     height: weatherExpanded ? 90 : 0,
                     visibility: weatherExpanded ? 'visible' : 'hidden',
                     opacity: weatherExpanded ? 1 : 0,
-                    transition: 'all 0.6s cubic-bezier(0.4, 0, 0.2, 1)',
+                    transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
                     background: 'var(--bg-glass)',
                     backdropFilter: 'blur(25px) saturate(180%)',
-                    borderRadius: '12px',
+                    borderRadius: '16px',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -298,68 +313,15 @@ const MobileNavbar = () => {
                 ))}
             </Box>
 
-            {/* Floating Search Button & Container */}
-            <Box sx={{
-                position: 'fixed',
-                bottom: weatherExpanded ? 180 : 80, // Push up if weather is expanded, reduced gap from navbar
-                left: '50%',
-                zIndex: 1100, // Below MUI Menu/Modal backdrop so background is locked
-                display: { xs: 'flex', md: 'none' },
-                flexDirection: 'column',
-                alignItems: 'center',
-                gap: 1.5,
-                transition: 'bottom 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
-                transform: 'translateX(-50%)'
-            }}>
-                {/* Full Screen Search Dialog */}
-                <HeaderSearch
-                    activeRole={activeRole}
-                    variant="mobile"
-                    mobileOpen={searchExpanded}
-                    onMobileClose={() => setSearchExpanded(false)}
-                />
-
-                <Box
-                    component="button"
-                    onClick={(e) => {
-                        if (e?.currentTarget) e.currentTarget.blur();
-                        setSearchExpanded(true);
-                    }}
-                    style={{
-                        display: searchExpanded ? 'none' : 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        background: 'var(--bg-glass)',
-                        backdropFilter: 'blur(20px) saturate(180%)',
-                        height: '32px',
-                        padding: '0 12px',
-                        borderRadius: '16px',
-                        boxShadow: '0 8px 32px rgba(0,0,0,0.15)',
-                        border: '1px solid var(--border-color)',
-                        transition: 'background 0.3s, transform 0.3s',
-                        cursor: 'pointer',
-                        outline: 'none',
-                        userSelect: 'none',
-                        WebkitTapHighlightColor: 'transparent'
-                    }}
-                    onMouseDown={(e) => e.currentTarget.style.transform = 'scale(0.95)'}
-                    onMouseUp={(e) => e.currentTarget.style.transform = 'scale(1)'}
-                    onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
-                    onTouchStart={(e) => e.currentTarget.style.transform = 'scale(0.95)'}
-                    onTouchEnd={(e) => e.currentTarget.style.transform = 'scale(1)'}
-                >
-                    <Search sx={{ fontSize: 16, mr: 0.5, fill: 'url(#mobile-nav-gradient)' }} />
-                    <Typography sx={{
-                        fontSize: '0.75rem',
-                        fontWeight: 600,
-                        background: 'var(--gradient-primary)',
-                        WebkitBackgroundClip: 'text',
-                        WebkitTextFillColor: 'transparent'
-                    }}>
-                        Search
-                    </Typography>
-                </Box>
-            </Box>
+            {/* Morphing Mobile Search Component */}
+            <HeaderSearch
+                activeRole={activeRole}
+                variant="mobile"
+                mobileOpen={searchExpanded}
+                onMobileOpen={() => setSearchExpanded(true)}
+                onMobileClose={() => setSearchExpanded(false)}
+                weatherExpanded={weatherExpanded}
+            />
 
             <Drawer
                 anchor="bottom"
@@ -498,7 +460,7 @@ const MobileNavbar = () => {
                     backdropFilter: 'blur(10px)',
                     borderTop: '1px solid var(--border-color)',
                     borderRadius: '12px 12px 0 0',
-                    pb: 'env(safe-area-inset-bottom)',
+                    pb: 'calc(env(safe-area-inset-bottom, 0px) + 6px)',
                     boxShadow: '0 -4px 20px rgba(0,0,0,0.1)',
                     overflow: 'hidden'
                 }}

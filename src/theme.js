@@ -21,7 +21,7 @@ const theme = createTheme({
   },
 
   typography: {
-    fontFamily: "'Product Sans', sans-serif",
+    fontFamily: "'Stem', -apple-system, BlinkMacSystemFont, sans-serif",
     button: {
       textTransform: "none", // Disable default all-caps on buttons
     },

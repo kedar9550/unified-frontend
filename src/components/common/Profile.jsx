@@ -125,7 +125,7 @@ const QUALIFICATION_MAP = {
 };
 
 const Profile = () => {
-  const { user, activeRole } = useAuth();
+  const { user, activeRole, updateUser } = useAuth();
   const [isEditing, setIsEditing] = React.useState(false);
   const [profileData, setProfileData] = React.useState(null);
   const [form, setForm] = React.useState({
@@ -167,6 +167,7 @@ const Profile = () => {
           college: res.data.user.college || "",
           qualifications: res.data.user.qualifications || []
         });
+        if (updateUser) updateUser(res.data.user);
         toast.success("Profile details synced  successfully!");
       } else {
         toast.error("Failed to sync");
@@ -300,6 +301,7 @@ const Profile = () => {
       // Re-fetch latest data from backend
       const res = await API.get("/api/employees/me");
       setProfileData(res.data.user);
+      if (updateUser) updateUser(res.data.user);
       toast.success("Profile updated successfully!");
       setIsEditing(false);
     } catch (err) {

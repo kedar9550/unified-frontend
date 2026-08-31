@@ -20,6 +20,7 @@ import {
     Person, AdminPanelSettings, School
 } from "@mui/icons-material";
 import PageHeader from "../../../components/common/PageHeader";
+import CustomTabs from "../../../components/common/CustomTabs";
 import { PageContainer } from "../../../components/common/design-system";
 import API from "../../../api/axios";
 import { useLocation } from "react-router-dom";
@@ -1039,34 +1040,15 @@ const RoleManagement = () => {
                 }
             />
 
-            <Tabs
+            <CustomTabs
                 value={activeTab}
                 onChange={(e, newValue) => setActiveTab(newValue)}
-                sx={{
-                    mt: 3,
-                    mb: 2,
-                    borderBottom: '1px solid var(--border-color)',
-                    '& .MuiTab-root': {
-                        textTransform: 'none',
-                        fontWeight: 700,
-                        fontSize: '0.95rem',
-                        color: 'var(--text-secondary)',
-                        pb: 1.5,
-                        '&.Mui-selected': {
-                            color: 'var(--color-primary)'
-                        }
-                    },
-                    '& .MuiTabs-indicator': {
-                        backgroundColor: 'var(--color-primary)',
-                        height: '3px',
-                        borderRadius: '3px'
-                    }
-                }}
-            >
-                <Tab label="Add Employees" icon={<PersonAdd />} iconPosition="start" />
-                <Tab label="All Users" icon={<People />} iconPosition="start" />
-                <Tab label="All Roles" icon={<AdminPanelSettings />} iconPosition="start" />
-            </Tabs>
+                tabs={[
+                    { label: "Add Employees", icon: <PersonAdd /> },
+                    { label: "All Users", icon: <People /> },
+                    { label: "All Roles", icon: <AdminPanelSettings /> },
+                ]}
+            />
 
             {activeTab === 0 && (
                 <>
