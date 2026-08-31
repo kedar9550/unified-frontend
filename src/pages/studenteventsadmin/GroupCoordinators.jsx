@@ -85,8 +85,14 @@ const GroupCoordinators = () => {
     const coordsMap = new Map();
 
     groups.forEach(group => {
-      if (group.coordinator) {
-        const c = group.coordinator;
+      const coordsToProcess = [];
+      if (group.coordinators && Array.isArray(group.coordinators)) {
+        coordsToProcess.push(...group.coordinators);
+      } else if (group.coordinator) {
+        coordsToProcess.push(group.coordinator);
+      }
+
+      coordsToProcess.forEach(c => {
         const id = c.institutionId || c.employeeId || c.employeeCode;
         if (id) {
           let deptName = c.department || '';
@@ -107,7 +113,7 @@ const GroupCoordinators = () => {
             coordsMap.get(id).event_schools.push(group.name);
           }
         }
-      }
+      });
     });
 
     return Array.from(coordsMap.values());
