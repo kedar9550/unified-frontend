@@ -263,17 +263,17 @@ const MobileNavbar = () => {
             <Box
                 sx={{
                     position: 'fixed',
-                    bottom: weatherExpanded ? 'calc(186px + env(safe-area-inset-bottom, 0px))' : 'calc(86px + env(safe-area-inset-bottom, 0px))',
+                    bottom: 'calc(84px + env(safe-area-inset-bottom, 0px))',
                     right: 15,
                     zIndex: 1090,
                     width: weatherExpanded ? 'calc(100% - 30px)' : '0px',
                     height: weatherExpanded ? 90 : 0,
                     visibility: weatherExpanded ? 'visible' : 'hidden',
                     opacity: weatherExpanded ? 1 : 0,
-                    transition: 'all 0.6s cubic-bezier(0.4, 0, 0.2, 1)',
+                    transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
                     background: 'var(--bg-glass)',
                     backdropFilter: 'blur(25px) saturate(180%)',
-                    borderRadius: '12px',
+                    borderRadius: '16px',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -316,7 +316,7 @@ const MobileNavbar = () => {
             {/* Floating Search Button & Container */}
             <Box sx={{
                 position: 'fixed',
-                bottom: weatherExpanded ? 'calc(186px + env(safe-area-inset-bottom, 0px))' : 'calc(86px + env(safe-area-inset-bottom, 0px))', // Push up if weather is expanded
+                bottom: weatherExpanded ? 'calc(178px + env(safe-area-inset-bottom, 0px))' : 'calc(84px + env(safe-area-inset-bottom, 0px))', // 8px margin above mobile nav
                 left: '50%',
                 zIndex: 1100, // Below MUI Menu/Modal backdrop so background is locked
                 display: { xs: 'flex', md: 'none' },
