@@ -20,32 +20,7 @@ import { toast } from "sonner";
 import API from "../../../api/axios";
 import EditResearchDetailsDialog from "./EditResearchDetailsDialog";
 
-const getSdgName = (sdgCode) => {
-    const mapping = {
-        "SDG-1": "SDG-1: No Poverty",
-        "SDG-2": "SDG-2: Zero Hunger",
-        "SDG-3": "SDG-3: Good Health and Well-being",
-        "SDG-4": "SDG-4: Quality Education",
-        "SDG-5": "SDG-5: Gender Equality",
-        "SDG-6": "SDG-6: Clean Water and Sanitation",
-        "SDG-7": "SDG-7: Affordable and Clean Energy",
-        "SDG-8": "SDG-8: Decent Work and Economic Growth",
-        "SDG-9": "SDG-9: Industry, Innovation and Infrastructure",
-        "SDG-10": "SDG-10: Reduced Inequality",
-        "SDG-11": "SDG-11: Sustainable Cities and Communities",
-        "SDG-12": "SDG-12: Responsible Consumption and Production",
-        "SDG-13": "SDG-13: Climate Action",
-        "SDG-14": "SDG-14: Life Below Water",
-        "SDG-15": "SDG-15: Life on Land",
-        "SDG-16": "SDG-16: Peace, Justice and Strong Institutions",
-        "SDG-17": "SDG-17: Partnerships for the Goals"
-    };
-    const cleanCode = (sdgCode || "").trim();
-    if (mapping[cleanCode]) return mapping[cleanCode];
-    if (cleanCode.startsWith("SDG-")) return cleanCode;
-    const key = `SDG-${cleanCode}`;
-    return mapping[key] || cleanCode;
-};
+
 
 const JournalApprovalDetail = ({ id, onBack, role }) => {
     const [data, setData] = useState(null);
@@ -61,6 +36,28 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
     const [actionLoading, setActionLoading] = useState(false);
     const [imgError, setImgError] = useState(false);
     const [editOpen, setEditOpen] = useState(false);
+    const [sdgMap, setSdgMap] = useState({});
+
+    useEffect(() => {
+        API.get("/api/sdgs").then(res => {
+            if (res.data?.success) {
+                const map = {};
+                res.data.data.forEach(sdg => {
+                    const title = sdg.sdgTitle.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
+                    map[sdg.sdgNumber] = `${sdg.sdgNumber}: ${title}`;
+                });
+                setSdgMap(map);
+            }
+        }).catch(err => console.error("Failed to fetch SDGs", err));
+    }, []);
+
+    const getSdgName = (sdgCode) => {
+        const cleanCode = (sdgCode || "").trim();
+        if (sdgMap[cleanCode]) return sdgMap[cleanCode];
+        if (cleanCode.startsWith("SDG-")) return cleanCode;
+        const key = `SDG-${cleanCode}`;
+        return sdgMap[key] || cleanCode;
+    };
 
     const isHOD = !role || role === 'HOD';
     const isDean = role === 'RESEARCH_DEAN';
