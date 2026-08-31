@@ -90,23 +90,28 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
     const [imgError, setImgError] = useState(false);
     const [sdgMap, setSdgMap] = useState({});
 
-    const leftCardRef = React.useRef(null);
     const [leftCardHeight, setLeftCardHeight] = useState(null);
+    const observerRef = React.useRef(null);
 
-    useEffect(() => {
-        if (!data || !leftCardRef.current) return;
-        const element = leftCardRef.current;
-        const observer = new ResizeObserver((entries) => {
-            for (let entry of entries) {
-                if (entry.contentRect) {
-                    setLeftCardHeight(entry.target.getBoundingClientRect().height);
+    const leftCardRef = React.useCallback((node) => {
+        if (observerRef.current) {
+            observerRef.current.disconnect();
+            observerRef.current = null;
+        }
+        if (node) {
+            const updateHeight = () => {
+                const h = node.getBoundingClientRect().height;
+                if (h > 0) {
+                    setLeftCardHeight(h);
                 }
-            }
-        });
-        observer.observe(element);
-        setLeftCardHeight(element.getBoundingClientRect().height);
-        return () => observer.disconnect();
-    }, [data]);
+            };
+            observerRef.current = new ResizeObserver(() => {
+                updateHeight();
+            });
+            observerRef.current.observe(node);
+            updateHeight();
+        }
+    }, []);
 
     useEffect(() => {
         API.get("/api/sdgs").then(res => {
