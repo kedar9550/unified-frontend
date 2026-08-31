@@ -1434,6 +1434,7 @@ export default function JournalPublication() {
                     <TableRow>
                       <TableCell sx={{ fontWeight: 700, color: "var(--text-secondary)", width: 80 }}>AUTHOR NO</TableCell>
                       <TableCell sx={{ fontWeight: 700, color: "var(--text-secondary)" }}>NAME</TableCell>
+                      <TableCell sx={{ fontWeight: 700, color: "var(--text-secondary)" }}>AUTHOR TYPE</TableCell>
                       <TableCell sx={{ fontWeight: 700, color: "var(--text-secondary)" }}>AFFILIATION</TableCell>
                     </TableRow>
                   </TableHead>
@@ -1461,6 +1462,7 @@ export default function JournalPublication() {
                               </Box>
                             </TableCell>
                             <TableCell sx={{ fontWeight: 700, color: "var(--text-primary)" }}>{ca.name}</TableCell>
+                            <TableCell sx={{ color: "var(--text-secondary)", textTransform: "capitalize" }}>{ca.CoAuthorType || "-"}</TableCell>
                             <TableCell sx={{ color: "var(--text-secondary)" }}>{ca.affiliation || "-"}</TableCell>
                           </TableRow>
                         );
