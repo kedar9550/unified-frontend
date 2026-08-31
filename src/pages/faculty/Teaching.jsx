@@ -1058,6 +1058,7 @@ export default function Teaching() {
               color: "#fff",
               fontSize: 13,
               fontWeight: 700,
+              fontFamily: "'Stem', -apple-system, BlinkMacSystemFont, sans-serif",
               boxShadow: "0 4px 12px rgba(0, 78, 146, 0.2)",
               letterSpacing: "0.5px"
             }}
@@ -1086,6 +1087,7 @@ export default function Teaching() {
               py: 8,
               color: "var(--text-secondary)",
               fontSize: 15,
+              fontFamily: "'Stem', -apple-system, BlinkMacSystemFont, sans-serif",
               background: "var(--bg-glass)",
               borderRadius: "16px",
               border: "1px dashed var(--border-color)"
@@ -1148,6 +1150,7 @@ export default function Teaching() {
               py: 6,
               color: "var(--text-secondary)",
               fontSize: 15,
+              fontFamily: "'Stem', -apple-system, BlinkMacSystemFont, sans-serif",
               border: "1px dashed var(--border-color)",
               borderRadius: "16px",
               background: "var(--bg-glass)",
@@ -1258,6 +1261,7 @@ const filterBox = {
   boxShadow: "var(--shadow-premium)",
   border: "1px solid var(--border-color)",
   fontSize: 14,
+  fontFamily: "'Stem', -apple-system, BlinkMacSystemFont, sans-serif",
 };
 
 const sectionCard = {
@@ -1270,6 +1274,7 @@ const sectionCard = {
   mb: 3,
   position: "relative",
   overflow: "hidden",
+  fontFamily: "'Stem', -apple-system, BlinkMacSystemFont, sans-serif",
   "&::after": {
     content: '""',
     position: "absolute",

@@ -56,6 +56,66 @@ const HeaderSearch = ({ activeRole, variant = "desktop", mobileOpen, onMobileClo
     }
   }, [mobileOpen, variant]);
 
+  const [viewportStyle, setViewportStyle] = useState({});
+  const [isKeyboardOpen, setIsKeyboardOpen] = useState(false);
+
+  // Dynamic visualViewport logic for iOS Safari software keyboard
+  useEffect(() => {
+    if (variant !== 'mobile' || !mobileOpen) {
+      setViewportStyle({});
+      setIsKeyboardOpen(false);
+      return;
+    }
+
+    const updateViewport = () => {
+      if (!window.visualViewport) return;
+
+      const vv = window.visualViewport;
+      const windowHeight = window.innerHeight;
+      const keyboardHeight = Math.max(0, windowHeight - vv.height - vv.offsetTop);
+
+      if (keyboardHeight > 50) {
+        setIsKeyboardOpen(true);
+        setViewportStyle({
+          height: `${vv.height}px`,
+          transform: `translateY(${vv.offsetTop}px)`,
+        });
+
+        if (inputRef.current) {
+          try {
+            inputRef.current.scrollIntoView({ block: 'end', behavior: 'smooth' });
+          } catch (err) {
+            // fallback
+          }
+        }
+      } else {
+        setIsKeyboardOpen(false);
+        setViewportStyle({
+          height: '100dvh',
+          transform: 'none',
+        });
+      }
+    };
+
+    const handleVisualViewportChange = () => {
+      requestAnimationFrame(updateViewport);
+    };
+
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', handleVisualViewportChange);
+      window.visualViewport.addEventListener('scroll', handleVisualViewportChange);
+    }
+
+    updateViewport();
+
+    return () => {
+      if (window.visualViewport) {
+        window.visualViewport.removeEventListener('resize', handleVisualViewportChange);
+        window.visualViewport.removeEventListener('scroll', handleVisualViewportChange);
+      }
+    };
+  }, [mobileOpen, variant]);
+
   // Lock background page scroll when mobile search overlay is active (iOS Safari compatible)
   useEffect(() => {
     if (variant === 'mobile' && mobileOpen) {
@@ -209,6 +269,8 @@ const HeaderSearch = ({ activeRole, variant = "desktop", mobileOpen, onMobileClo
             height: '100dvh',
             overscrollBehavior: 'contain',
             touchAction: 'manipulation',
+            transition: 'height 0.15s ease-out, transform 0.15s ease-out',
+            ...viewportStyle,
           }}
         >
           
@@ -297,7 +359,7 @@ const HeaderSearch = ({ activeRole, variant = "desktop", mobileOpen, onMobileClo
             display: 'flex', 
             alignItems: 'center', 
             p: 1.5, 
-            pb: 'calc(12px + env(safe-area-inset-bottom))',
+            pb: isKeyboardOpen ? '12px' : 'calc(12px + env(safe-area-inset-bottom))',
             background: 'transparent',
             gap: 1
           }}>
@@ -308,7 +370,7 @@ const HeaderSearch = ({ activeRole, variant = "desktop", mobileOpen, onMobileClo
               flex: 1,
               display: 'flex',
               alignItems: 'center',
-              borderRadius: '20px',
+              borderRadius: '9999px',
               px: 2,
               py: 0.75,
               transition: 'all 0.3s ease',
@@ -322,6 +384,29 @@ const HeaderSearch = ({ activeRole, variant = "desktop", mobileOpen, onMobileClo
                 placeholder="Search..."
                 value={query}
                 onChange={handleChange}
+                onFocus={(e) => {
+                  if (variant === 'mobile') {
+                    setTimeout(() => {
+                      if (window.visualViewport) {
+                        const vv = window.visualViewport;
+                        const windowHeight = window.innerHeight;
+                        const kbHeight = Math.max(0, windowHeight - vv.height - vv.offsetTop);
+                        if (kbHeight > 50) {
+                          setIsKeyboardOpen(true);
+                          setViewportStyle({
+                            height: `${vv.height}px`,
+                            transform: `translateY(${vv.offsetTop}px)`,
+                          });
+                        }
+                      }
+                      if (inputRef.current) {
+                        try {
+                          inputRef.current.scrollIntoView({ block: 'end', behavior: 'smooth' });
+                        } catch (err) {}
+                      }
+                    }, 100);
+                  }
+                }}
                 inputProps={{
                   enterKeyHint: 'search'
                 }}

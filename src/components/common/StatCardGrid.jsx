@@ -11,6 +11,9 @@ export default function StatCardGrid({ children, columns = 4, gap = 2.5, sx = {}
   // Determine percentage basis & minWidth based on columns prop (default 4 max per row)
   const cols = Number(columns) || 4;
 
+  const mobileBasis = cols === 1 ? '100%' : 'calc(50% - 6px)';
+  const tabletBasis = cols === 1 ? '100%' : 'calc(50% - 12px)';
+
   let desktopBasis = 'calc(25% - 16px)';
   if (cols === 1) desktopBasis = '100%';
   else if (cols === 2) desktopBasis = 'calc(50% - 12px)';
@@ -18,25 +21,23 @@ export default function StatCardGrid({ children, columns = 4, gap = 2.5, sx = {}
   else if (cols === 4) desktopBasis = 'calc(25% - 16px)';
   else if (cols === 5) desktopBasis = 'calc(20% - 16px)';
 
-  const tabletBasis = cols === 1 ? '100%' : 'calc(50% - 12px)';
-
   return (
     <Box
       sx={{
         display: 'flex',
         flexWrap: 'wrap',
-        gap,
+        gap: { xs: 1.5, sm: gap },
         mb: 3,
         width: '100%',
         boxSizing: 'border-box',
         '& > *': {
           flex: {
-            xs: '1 1 100%',
+            xs: `1 1 ${mobileBasis}`,
             sm: `1 1 ${tabletBasis}`,
             md: `1 1 ${desktopBasis}`,
           },
           minWidth: {
-            xs: '100%',
+            xs: mobileBasis,
             sm: tabletBasis,
             md: desktopBasis,
           },

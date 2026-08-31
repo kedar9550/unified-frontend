@@ -31,7 +31,7 @@ export default function SectionHeader({ title, action }) {
             flexShrink: 0,
           }}
         />
-        <Typography component="div" fontWeight={600} sx={{ wordBreak: "break-word" }}>{title}</Typography>
+        <Typography component="div" fontWeight={700} sx={{ wordBreak: "break-word", fontFamily: "'Stem', -apple-system, BlinkMacSystemFont, sans-serif" }}>{title}</Typography>
       </Box>
 
       {action && (
