@@ -40,42 +40,34 @@ import devProfileImg from "../../assets/K.Sudheer.jpeg";
 // Configure PDF.js worker
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorker;
 
-import sdg1 from '../../assets/sdg-en-01.png';
-import sdg2 from '../../assets/sdg-en-02.png';
-import sdg3 from '../../assets/sdg-en-03.png';
-import sdg4 from '../../assets/sdg-en-04.png';
-import sdg5 from '../../assets/sdg-en-05.png';
-import sdg6 from '../../assets/sdg-en-06.png';
-import sdg7 from '../../assets/sdg-en-07.png';
-import sdg8 from '../../assets/sdg-en-08.png';
-import sdg9 from '../../assets/sdg-en-09.png';
-import sdg10 from '../../assets/sdg-en-10.png';
-import sdg11 from '../../assets/sdg-en-11.png';
-import sdg12 from '../../assets/sdg-en-12.png';
-import sdg13 from '../../assets/sdg-en-13.png';
-import sdg14 from '../../assets/sdg-en-14.png';
-import sdg15 from '../../assets/sdg-en-15.png';
-import sdg16 from '../../assets/sdg-en-16.png';
-import sdg17 from '../../assets/sdg-en-17.png';
-
-const SDG_IMAGE_MAP = {
-    "SDG-1": sdg1, "SDG-2": sdg2, "SDG-3": sdg3, "SDG-4": sdg4,
-    "SDG-5": sdg5, "SDG-6": sdg6, "SDG-7": sdg7, "SDG-8": sdg8,
-    "SDG-9": sdg9, "SDG-10": sdg10, "SDG-11": sdg11, "SDG-12": sdg12,
-    "SDG-13": sdg13, "SDG-14": sdg14, "SDG-15": sdg15, "SDG-16": sdg16,
-    "SDG-17": sdg17
+const getSdgColor = (sdgItem, fallbackId) => {
+    if (sdgItem && typeof sdgItem === "object") {
+        if (sdgItem.backgroundColor) return sdgItem.backgroundColor;
+        if (sdgItem.color) return sdgItem.color;
+    }
+    return "var(--bg-accent-2)";
 };
 
-const SDG_COLOR_MAP = {
-    "SDG-1": "#E1222D", "SDG-2": "#D4A21D", "SDG-3": "#2F953F", "SDG-4": "#C42734",
-    "SDG-5": "#E63D29", "SDG-6": "#22ACD9", "SDG-7": "#FAB805", "SDG-8": "#96273B",
-    "SDG-9": "#EC6926", "SDG-10": "#DD1D7B", "SDG-11": "#F59D21", "SDG-12": "#D28E22",
-    "SDG-13": "#4F7A3D", "SDG-14": "#177CBC", "SDG-15": "#43A73D", "SDG-16": "#1D5388",
-    "SDG-17": "#2D3B66"
+const getSdgImageUrl = (sdgItem, id) => {
+    if (!sdgItem && !id) return "";
+    const rawUrl = typeof sdgItem === "string" ? sdgItem : (sdgItem?.imageUrl || sdgItem?.image);
+    if (rawUrl) {
+        if (rawUrl.startsWith("http")) return rawUrl;
+        const backendURL = (import.meta.env.VITE_BACKEND_URL || "http://localhost:9000").replace(/\/$/, "");
+        return `${backendURL}${rawUrl.startsWith("/") ? "" : "/"}${rawUrl}`;
+    }
+    const numStr = (typeof sdgItem === "string" ? sdgItem : (sdgItem?.id || sdgItem?.sdgNumber || id || ""));
+    const numMatch = String(numStr).match(/\d+/);
+    if (numMatch) {
+        const padded = numMatch[0].padStart(2, '0');
+        const backendURL = (import.meta.env.VITE_BACKEND_URL || "http://localhost:9000").replace(/\/$/, "");
+        return `${backendURL}/uploads/sdgs/sdg-en-${padded}.png`;
+    }
+    return "";
 };
 
 const SDGCard = ({ id, sdg, imageUrl, isExpanded, toggleExpand }) => {
-    const brandColor = SDG_COLOR_MAP[id];
+    const brandColor = getSdgColor(sdg, id);
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
@@ -111,10 +103,7 @@ const SDGCard = ({ id, sdg, imageUrl, isExpanded, toggleExpand }) => {
                         position: 'relative',
                         background: brandColor,
                         transition: 'all 0.4s ease',
-                        cursor: isMobile ? 'pointer' : 'default',
-                        '&:hover': isMobile ? {
-                            filter: 'brightness(1.05)'
-                        } : {}
+                        cursor: isMobile ? 'pointer' : 'default'
                     }}
                 >
                     <Box
@@ -125,11 +114,7 @@ const SDGCard = ({ id, sdg, imageUrl, isExpanded, toggleExpand }) => {
                             width: '100%',
                             height: '100%',
                             objectFit: 'contain',
-                            display: 'block',
-                            transition: 'transform 0.5s ease',
-                            '&:hover': {
-                                transform: isMobile ? 'none' : 'scale(1.05)'
-                            }
+                            display: 'block'
                         }}
                     />
                 </Box>
@@ -378,7 +363,9 @@ const SDG = () => {
                     res.data.data.forEach(item => {
                         dataObj[item.sdgNumber] = {
                             title: item.sdgTitle,
-                            keywords: item.keywords
+                            keywords: item.keywords,
+                            backgroundColor: item.backgroundColor || item.color || "",
+                            imageUrl: item.imageUrl || ""
                         };
                     });
                     setSdgData(dataObj);
@@ -703,14 +690,14 @@ const SDG = () => {
                                     overflow: 'hidden',
                                     '&:hover': {
                                         transform: 'translateY(-5px)',
-                                        borderColor: SDG_COLOR_MAP[id],
+                                        borderColor: getSdgColor(data, id),
                                         background: 'var(--bg-accent-1)'
                                     }
                                 }}>
                                     <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', mb: 2 }}>
                                         <Box
                                             component="img"
-                                            src={SDG_IMAGE_MAP[id]}
+                                            src={getSdgImageUrl(data, id)}
                                             sx={{ width: 50, height: 50, borderRadius: '8px', objectFit: 'contain' }}
                                         />
                                         <Box sx={{ overflow: 'hidden' }}>
@@ -731,7 +718,7 @@ const SDG = () => {
                                     </Box>
 
                                     <Box sx={{ mb: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
-                                        <Typography sx={{ fontSize: '1.2rem', fontWeight: 800, color: SDG_COLOR_MAP[id] }}>
+                                        <Typography sx={{ fontSize: '1.2rem', fontWeight: 800, color: getSdgColor(data, id) }}>
                                             {count}
                                         </Typography>
                                         <Typography sx={{ fontSize: '0.7rem', color: 'var(--text-secondary)', fontWeight: 500 }}>
@@ -750,7 +737,7 @@ const SDG = () => {
                                         <Box sx={{
                                             height: '100%',
                                             width: `${Math.max(10, percentage)}%`,
-                                            background: SDG_COLOR_MAP[id],
+                                            background: getSdgColor(data, id),
                                             borderRadius: '3px'
                                         }} />
                                     </Box>
@@ -786,7 +773,13 @@ const SDG = () => {
     };
 
     const currentSdgList = Object.entries(sdgData)
-        .map(([id, data]) => ({ id, title: data.title, keywords: data.keywords }))
+        .map(([id, data]) => ({
+            id,
+            title: data.title,
+            keywords: data.keywords,
+            backgroundColor: data.backgroundColor,
+            imageUrl: data.imageUrl
+        }))
         .sort((a, b) => {
             const numA = parseInt(a.id.replace('SDG-', ''));
             const numB = parseInt(b.id.replace('SDG-', ''));
@@ -968,7 +961,7 @@ const SDG = () => {
                                             key={sdg.id}
                                             id={sdg.id}
                                             sdg={sdg}
-                                            imageUrl={SDG_IMAGE_MAP[sdg.id]}
+                                            imageUrl={getSdgImageUrl(sdg, sdg.id)}
                                             isExpanded={expandedId === sdg.id}
                                             toggleExpand={toggleExpand}
                                         />

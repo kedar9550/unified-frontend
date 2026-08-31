@@ -29,44 +29,33 @@ import {
   Check as CheckIcon,
   ExpandMore as ExpandMoreIcon,
   ExpandLess as ExpandLessIcon,
+  CloudUpload as CloudUploadIcon,
 } from "@mui/icons-material";
 import API from "../../api/axios";
 import PageHeader from "../../components/common/PageHeader";
 import { PageContainer } from "../../components/common/design-system";
 
-// SDG Asset Imports
-import sdg1 from '../../assets/sdg-en-01.png';
-import sdg2 from '../../assets/sdg-en-02.png';
-import sdg3 from '../../assets/sdg-en-03.png';
-import sdg4 from '../../assets/sdg-en-04.png';
-import sdg5 from '../../assets/sdg-en-05.png';
-import sdg6 from '../../assets/sdg-en-06.png';
-import sdg7 from '../../assets/sdg-en-07.png';
-import sdg8 from '../../assets/sdg-en-08.png';
-import sdg9 from '../../assets/sdg-en-09.png';
-import sdg10 from '../../assets/sdg-en-10.png';
-import sdg11 from '../../assets/sdg-en-11.png';
-import sdg12 from '../../assets/sdg-en-12.png';
-import sdg13 from '../../assets/sdg-en-13.png';
-import sdg14 from '../../assets/sdg-en-14.png';
-import sdg15 from '../../assets/sdg-en-15.png';
-import sdg16 from '../../assets/sdg-en-16.png';
-import sdg17 from '../../assets/sdg-en-17.png';
-
-const SDG_IMAGE_MAP = {
-  "SDG-1": sdg1, "SDG-2": sdg2, "SDG-3": sdg3, "SDG-4": sdg4,
-  "SDG-5": sdg5, "SDG-6": sdg6, "SDG-7": sdg7, "SDG-8": sdg8,
-  "SDG-9": sdg9, "SDG-10": sdg10, "SDG-11": sdg11, "SDG-12": sdg12,
-  "SDG-13": sdg13, "SDG-14": sdg14, "SDG-15": sdg15, "SDG-16": sdg16,
-  "SDG-17": sdg17
+const getSdgColor = (sdg) => {
+  if (!sdg) return "var(--bg-accent-2)";
+  return sdg.backgroundColor || sdg.color || "var(--bg-accent-2)";
 };
 
-const SDG_COLOR_MAP = {
-  "SDG-1": "#E1222D", "SDG-2": "#D4A21D", "SDG-3": "#2F953F", "SDG-4": "#C42734",
-  "SDG-5": "#E63D29", "SDG-6": "#22ACD9", "SDG-7": "#FAB805", "SDG-8": "#96273B",
-  "SDG-9": "#EC6926", "SDG-10": "#DD1D7B", "SDG-11": "#F59D21", "SDG-12": "#D28E22",
-  "SDG-13": "#4F7A3D", "SDG-14": "#177CBC", "SDG-15": "#43A73D", "SDG-16": "#1D5388",
-  "SDG-17": "#2D3B66"
+const getSdgImageUrl = (sdg) => {
+  if (!sdg) return "";
+  const rawUrl = sdg.imageUrl || sdg.image;
+  if (rawUrl) {
+    if (rawUrl.startsWith("http")) return rawUrl;
+    const backendURL = (import.meta.env.VITE_BACKEND_URL || "http://localhost:9000").replace(/\/$/, "");
+    return `${backendURL}${rawUrl.startsWith("/") ? "" : "/"}${rawUrl}`;
+  }
+  const numStr = sdg.sdgNumber || "";
+  const numMatch = numStr.match(/\d+/);
+  if (numMatch) {
+    const padded = numMatch[0].padStart(2, '0');
+    const backendURL = (import.meta.env.VITE_BACKEND_URL || "http://localhost:9000").replace(/\/$/, "");
+    return `${backendURL}/uploads/sdgs/sdg-en-${padded}.png`;
+  }
+  return "";
 };
 
 const SDGManagement = () => {
@@ -119,7 +108,29 @@ const SDGManagement = () => {
     }
   };
 
+  const [reanalyzing, setReanalyzing] = useState(false);
+
+  const handleReanalyzeColors = async () => {
+    setReanalyzing(true);
+    try {
+      const res = await API.post("/api/sdgs/reanalyze-colors");
+      if (res.data?.success) {
+        toast.success(res.data.message || "Analyzed background colors successfully");
+        fetchSdgs();
+      }
+    } catch (err) {
+      toast.error("Failed to analyze SDG background colors");
+      console.error(err);
+    } finally {
+      setReanalyzing(false);
+    }
+  };
+
+  const [selectedImageFile, setSelectedImageFile] = useState(null);
+  const [imagePreviewUrl, setImagePreviewUrl] = useState("");
+
   const handleOpenDialog = (sdg = null) => {
+    setSelectedImageFile(null);
     if (sdg) {
       setIsEdit(true);
       setCurrentSdg(sdg);
@@ -128,6 +139,7 @@ const SDGManagement = () => {
         sdgTitle: sdg.sdgTitle,
         keywords: sdg.keywords.join(", "),
       });
+      setImagePreviewUrl(getSdgImageUrl(sdg));
     } else {
       setIsEdit(false);
       setFormData({
@@ -135,6 +147,7 @@ const SDGManagement = () => {
         sdgTitle: "",
         keywords: "",
       });
+      setImagePreviewUrl("");
     }
     setOpenDialog(true);
   };
@@ -142,6 +155,8 @@ const SDGManagement = () => {
   const handleCloseDialog = () => {
     setOpenDialog(false);
     setCurrentSdg(null);
+    setSelectedImageFile(null);
+    setImagePreviewUrl("");
   };
 
   const handleFormChange = (e) => {
@@ -150,17 +165,37 @@ const SDGManagement = () => {
 
   const handleSubmit = async () => {
     try {
-      const payload = {
-        ...formData,
-        keywords: formData.keywords.split(",").map((k) => k.trim()).filter((k) => k !== ""),
-      };
+      if (selectedImageFile) {
+        const dataForm = new FormData();
+        dataForm.append("sdgNumber", formData.sdgNumber);
+        dataForm.append("sdgTitle", formData.sdgTitle);
+        dataForm.append("keywords", formData.keywords);
+        dataForm.append("image", selectedImageFile);
 
-      if (isEdit) {
-        await API.put(`/api/sdgs/${currentSdg._id}`, payload);
-        toast.success("SDG updated successfully");
+        if (isEdit) {
+          await API.put(`/api/sdgs/${currentSdg._id}`, dataForm, {
+            headers: { "Content-Type": "multipart/form-data" }
+          });
+          toast.success("SDG updated successfully");
+        } else {
+          await API.post("/api/sdgs", dataForm, {
+            headers: { "Content-Type": "multipart/form-data" }
+          });
+          toast.success("SDG created successfully");
+        }
       } else {
-        await API.post("/api/sdgs", payload);
-        toast.success("SDG created successfully");
+        const payload = {
+          ...formData,
+          keywords: formData.keywords.split(",").map((k) => k.trim()).filter((k) => k !== ""),
+        };
+
+        if (isEdit) {
+          await API.put(`/api/sdgs/${currentSdg._id}`, payload);
+          toast.success("SDG updated successfully");
+        } else {
+          await API.post("/api/sdgs", payload);
+          toast.success("SDG created successfully");
+        }
       }
       fetchSdgs();
       handleCloseDialog();
@@ -283,309 +318,419 @@ const SDGManagement = () => {
     }
   };
 
+  const validateSdgImageFile = (file) => {
+    return new Promise((resolve) => {
+      const ext = file.name.split('.').pop().toLowerCase();
+      if (file.type !== "image/png" || ext !== "png") {
+        toast.error("Only PNG image format is allowed (.png)");
+        return resolve(false);
+      }
+
+      if (file.size > 100 * 1024) {
+        toast.error(`File size must be <= 100 KB. (Uploaded size: ${(file.size / 1024).toFixed(1)} KB)`);
+        return resolve(false);
+      }
+
+      const img = new Image();
+      const objectUrl = URL.createObjectURL(file);
+      img.onload = () => {
+        URL.revokeObjectURL(objectUrl);
+        if (img.width !== 400 || img.height !== 400) {
+          toast.error(`Image dimensions must be exactly 400 x 400 pixels. (Uploaded: ${img.width} x ${img.height} px)`);
+          return resolve(false);
+        }
+        resolve(true);
+      };
+      img.onerror = () => {
+        URL.revokeObjectURL(objectUrl);
+        toast.error("Invalid or corrupt PNG image file");
+        resolve(false);
+      };
+      img.src = objectUrl;
+    });
+  };
+
+  const handleImageUpload = async (sdgId, e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const isValid = await validateSdgImageFile(file);
+    if (!isValid) {
+      e.target.value = "";
+      return;
+    }
+
+    const formDataUpload = new FormData();
+    formDataUpload.append("image", file);
+
+    try {
+      const res = await API.post(`/api/sdgs/${sdgId}/image`, formDataUpload, {
+        headers: { "Content-Type": "multipart/form-data" }
+      });
+      if (res.data?.success || res.data?.data) {
+        toast.success("SDG image updated successfully");
+        fetchSdgs();
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error(err.response?.data?.message || "Failed to upload SDG image");
+    }
+  };
+
   return (
     <PageContainer px={0} py={0}>
       <PageHeader
-        title="SDG Keywords Management"
-        subtitle="Manage Sustainable Development Goals and their associated keywords for document analysis."
+        title="SDG Management"
+        subtitle="Manage Sustainable Development Goals, associated keywords, and images."
         action={
-          <Button
-            variant="contained"
-            startIcon={<AddIcon />}
-            onClick={() => handleOpenDialog()}
-            sx={{
-              width: { xs: '100%', sm: 'auto' },
-              borderRadius: "50px",
-              px: 3,
-              background: 'var(--gradient-primary)',
-              color: '#ffffff',
-              fontWeight: 700,
-              textTransform: 'none'
-            }}
-          >
-            Add New SDG Goal
-          </Button>
+          <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap' }}>
+            <Button
+              variant="outlined"
+              startIcon={<AutoFixHighIcon />}
+              onClick={handleReanalyzeColors}
+              disabled={reanalyzing}
+              sx={{
+                width: { xs: '100%', sm: 'auto' },
+                borderRadius: "50px",
+                px: 2.5,
+                borderColor: "var(--border-color)",
+                color: "var(--text-primary)",
+                fontWeight: 700,
+                textTransform: 'none',
+                "&:hover": {
+                  borderColor: "var(--color-primary)",
+                  background: "var(--bg-accent-1)"
+                }
+              }}
+            >
+              {reanalyzing ? "Analyzing Colors..." : "Re-analyze Colors"}
+            </Button>
+            <Button
+              variant="contained"
+              startIcon={<AddIcon />}
+              onClick={() => handleOpenDialog()}
+              sx={{
+                width: { xs: '100%', sm: 'auto' },
+                borderRadius: "50px",
+                px: 3,
+                background: 'var(--gradient-primary)',
+                color: '#ffffff',
+                fontWeight: 700,
+                textTransform: 'none'
+              }}
+            >
+              Add New SDG Goal
+            </Button>
+          </Box>
         }
       />
 
 
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-          {sdgs.sort((a, b) => {
-            const numA = parseInt(a.sdgNumber.split('-')[1]) || 0;
-            const numB = parseInt(b.sdgNumber.split('-')[1]) || 0;
-            return numA - numB;
-          }).map((sdg) => {
-            const brandColor = SDG_COLOR_MAP[sdg.sdgNumber] || 'var(--color-primary)';
-            const imageUrl = SDG_IMAGE_MAP[sdg.sdgNumber];
-            const isExpanded = expandedId === sdg._id;
+        {sdgs.sort((a, b) => {
+          const numA = parseInt((a.sdgNumber || "").replace(/\D/g, '')) || 0;
+          const numB = parseInt((b.sdgNumber || "").replace(/\D/g, '')) || 0;
+          return numA - numB;
+        }).map((sdg) => {
+          const brandColor = getSdgColor(sdg);
+          const imageUrl = getSdgImageUrl(sdg);
+          const isExpanded = expandedId === sdg._id;
 
-            return (
-              <Box
-                key={sdg._id}
-                onClick={() => isMobile && handleToggleExpand(sdg._id)}
-                sx={{
-                  display: 'flex',
-                  flexDirection: { xs: 'column', md: 'row' },
-                  background: 'var(--bg-glass)',
-                  borderRadius: '20px',
-                  border: '1px solid var(--border-color)',
-                  overflow: 'hidden',
-                  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                  position: 'relative',
-                  cursor: isMobile ? 'pointer' : 'default',
-                  '&:hover': {
-                    boxShadow: 'var(--shadow-premium)',
-                    borderColor: brandColor,
-                    transform: isMobile ? 'translateY(-2px)' : 'none'
-                  },
-                  '&::after': {
-                    content: '""',
-                    position: "absolute",
-                    top: 0,
-                    right: 0,
-                    width: "120px",
-                    height: "120px",
-                    background: `radial-gradient(circle at top right, ${brandColor}25, transparent 70%)`,
-                    zIndex: 0,
-                    pointerEvents: 'none'
-                  }
-                }}
-              >
-                {/* Left Color Section */}
-                <Box sx={{
-                  width: { xs: '100%', md: 200 },
-                  height: { xs: 120, md: 'auto' },
-                  background: brandColor,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  flexShrink: 0,
-                  p: 2,
-                  position: 'relative',
-                  transition: 'all 0.3s ease'
-                }}>
-                  <Box
-                    component="img"
-                    src={imageUrl}
-                    alt={sdg.sdgTitle}
+          return (
+            <Box
+              key={sdg._id}
+              onClick={() => isMobile && handleToggleExpand(sdg._id)}
+              sx={{
+                display: 'flex',
+                flexDirection: { xs: 'column', md: 'row' },
+                background: 'var(--bg-glass)',
+                borderRadius: '20px',
+                border: '1px solid var(--border-color)',
+                overflow: 'hidden',
+                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                position: 'relative',
+                cursor: isMobile ? 'pointer' : 'default',
+                '&:hover': {
+                  boxShadow: 'var(--shadow-premium)',
+                  borderColor: brandColor,
+                  transform: isMobile ? 'translateY(-2px)' : 'none'
+                },
+                '&::after': {
+                  content: '""',
+                  position: "absolute",
+                  top: 0,
+                  right: 0,
+                  width: "120px",
+                  height: "120px",
+                  background: `radial-gradient(circle at top right, ${brandColor}25, transparent 70%)`,
+                  zIndex: 0,
+                  pointerEvents: 'none'
+                }
+              }}
+            >
+              {/* Left Color Section with Image Upload Overlay */}
+              <Box sx={{
+                width: { xs: '100%', md: 200 },
+                height: { xs: 120, md: 'auto' },
+                background: brandColor,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+                p: 2,
+                position: 'relative',
+                transition: 'all 0.3s ease',
+                '&:hover .img-upload-btn': { opacity: 1 }
+              }}>
+                <Box
+                  component="img"
+                  src={imageUrl}
+                  alt={sdg.sdgTitle}
+                  sx={{
+                    height: '100%',
+                    maxWidth: '100%',
+                    objectFit: 'contain',
+                    filter: 'none'
+                  }}
+                />
+                <input
+                  type="file"
+                  accept="image/png"
+                  id={`sdg-img-upload-${sdg._id}`}
+                  style={{ display: 'none' }}
+                  onChange={(e) => handleImageUpload(sdg._id, e)}
+                />
+                <Tooltip title="Upload / Change SDG Image">
+                  <IconButton
+                    component="label"
+                    htmlFor={`sdg-img-upload-${sdg._id}`}
+                    className="img-upload-btn"
+                    onClick={(e) => e.stopPropagation()}
                     sx={{
-                      height: '100%',
-                      maxWidth: '100%',
-                      objectFit: 'contain',
-                      filter: 'none'
+                      position: 'absolute',
+                      bottom: 8,
+                      right: 8,
+                      opacity: 0,
+                      transition: 'opacity 0.2s ease',
+                      background: 'rgba(0, 0, 0, 0.6)',
+                      color: '#ffffff',
+                      '&:hover': { background: 'rgba(0, 0, 0, 0.85)' }
                     }}
-                  />
-                </Box>
+                  >
+                    <CloudUploadIcon fontSize="small" />
+                  </IconButton>
+                </Tooltip>
+              </Box>
 
-                {/* Content Section */}
-                <Box sx={{ flexGrow: 1, p: { xs: 2, sm: 3 }, position: 'relative' }}>
-                  <Box sx={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'flex-start',
-                    mb: isExpanded ? 2 : 0,
-                    position: 'relative',
-                    transition: 'margin 0.3s ease'
-                  }}>
-                    <Box sx={{ flex: 1, pr: 2 }}>
-                      <Typography variant="h5" sx={{ fontWeight: 900, color: 'var(--text-primary)', lineHeight: 1.2 }}>
-                        {sdg.sdgNumber}
-                      </Typography>
-                      <Typography variant="subtitle1" sx={{
-                        fontWeight: 700,
-                        color: brandColor,
-                        mt: 0,
-                        textTransform: 'uppercase',
-                        fontSize: '0.9rem',
-                        letterSpacing: '0.5px'
-                      }}>
-                        {sdg.sdgTitle}
-                      </Typography>
-                    </Box>
-
-                    {/* Action Buttons */}
-                    <Box sx={{
-                      display: "flex",
-                      gap: 1,
-                      position: { xs: "static", md: "absolute" },
-                      top: 0,
-                      right: 0,
-                      zIndex: 2,
-                      alignItems: 'center'
+              {/* Content Section */}
+              <Box sx={{ flexGrow: 1, p: { xs: 2, sm: 3 }, position: 'relative' }}>
+                <Box sx={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'flex-start',
+                  mb: isExpanded ? 2 : 0,
+                  position: 'relative',
+                  transition: 'margin 0.3s ease'
+                }}>
+                  <Box sx={{ flex: 1, pr: 2 }}>
+                    <Typography variant="h5" sx={{ fontWeight: 900, color: 'var(--text-primary)', lineHeight: 1.2 }}>
+                      {sdg.sdgNumber}
+                    </Typography>
+                    <Typography variant="subtitle1" sx={{
+                      fontWeight: 700,
+                      color: brandColor,
+                      mt: 0,
+                      textTransform: 'uppercase',
+                      fontSize: '0.9rem',
+                      letterSpacing: '0.5px'
                     }}>
-                      {/* Manage Keywords Inline Toggle */}
-                      <Tooltip title={editingSdgId === sdg._id ? "Done Managing Keywords" : "Manage Keywords"}>
-                        <IconButton
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            if (editingSdgId === sdg._id) {
-                              setEditingSdgId(null);
-                            } else {
-                              setEditingSdgId(sdg._id);
-                            }
-                          }}
-                          sx={{
-                            color: editingSdgId === sdg._id ? "#22c55e" : "var(--color-primary)",
-                            background: editingSdgId === sdg._id ? "rgba(34, 197, 94, 0.1)" : "var(--bg-accent-4)",
-                            "&:hover": {
-                              background: editingSdgId === sdg._id ? "rgba(34, 197, 94, 0.2)" : "var(--bg-panel)"
-                            }
-                          }}
-                        >
-                          {editingSdgId === sdg._id ? <CheckIcon fontSize="small" /> : <SettingsIcon fontSize="small" />}
-                        </IconButton>
-                      </Tooltip>
-
-                      {/* Edit SDG Details */}
-                      <Tooltip title="Edit SDG Details">
-                        <IconButton
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleOpenDialog(sdg);
-                          }}
-                          sx={{
-                            color: "var(--text-secondary)",
-                            background: "var(--bg-accent-4)",
-                            "&:hover": {
-                              color: "var(--color-primary)",
-                              background: "var(--bg-panel)"
-                            }
-                          }}
-                        >
-                          <EditIcon fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
-
-                      {/* Delete SDG */}
-                      <Tooltip title="Delete SDG">
-                        <IconButton
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDelete(sdg._id);
-                          }}
-                          sx={{
-                            color: "var(--text-secondary)",
-                            background: "var(--bg-accent-4)",
-                            "&:hover": {
-                              color: "#ef4444",
-                              background: "rgba(239, 68, 68, 0.1)"
-                            }
-                          }}
-                        >
-                          <DeleteIcon fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
-
-                      {/* Mobile Expand Indicator */}
-                      {isMobile && (
-                        <IconButton
-                          sx={{
-                            color: "var(--text-secondary)",
-                            background: "var(--bg-accent-4)",
-                            pointerEvents: 'none'
-                          }}
-                        >
-                          {isExpanded ? <ExpandLessIcon fontSize="small" /> : <ExpandMoreIcon fontSize="small" />}
-                        </IconButton>
-                      )}
-                    </Box>
+                      {sdg.sdgTitle}
+                    </Typography>
                   </Box>
 
-                  <Collapse in={!isMobile || isExpanded} timeout="auto" unmountOnExit={isMobile}>
-                    <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, pt: 1 }}>
-                      {sdg.keywords.map((kw, i) => {
-                        const isEditingThisCard = editingSdgId === sdg._id;
-                        return (
-                          <Chip
-                            key={i}
-                            label={
-                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                                <span>{kw}</span>
-                                {isEditingThisCard && (
-                                  <IconButton
-                                    size="small"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      handleOpenEditKeyword(sdg, kw);
-                                    }}
-                                    sx={{
-                                      p: 0,
-                                      ml: 0.5,
-                                      color: 'var(--text-secondary)',
-                                      '&:hover': {
-                                        color: brandColor,
-                                        transform: 'scale(1.15)'
-                                      },
-                                      transition: 'all 0.2s ease'
-                                    }}
-                                  >
-                                    <EditIcon sx={{ fontSize: '0.75rem' }} />
-                                  </IconButton>
-                                )}
-                              </Box>
-                            }
-                            size="small"
-                            onDelete={isEditingThisCard ? (e) => {
-                              e.stopPropagation();
-                              handleDeleteKeyword(sdg, kw);
-                            } : undefined}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                            }}
-                            sx={{
-                              background: isEditingThisCard ? 'rgba(239, 68, 68, 0.05)' : 'var(--bg-accent-4)',
-                              color: isEditingThisCard ? 'var(--text-primary)' : 'var(--text-secondary)',
-                              border: `1px solid ${isEditingThisCard ? 'rgba(239, 68, 68, 0.2)' : 'var(--border-color)'}`,
-                              fontSize: '0.75rem',
-                              fontWeight: 600,
-                              transition: 'all 0.2s ease',
-                              '& .MuiChip-deleteIcon': {
-                                color: '#ef4444',
-                                '&:hover': {
-                                  color: '#dc2626',
-                                }
-                              },
-                              '&:hover': {
-                                background: isEditingThisCard ? 'rgba(239, 68, 68, 0.1)' : 'var(--bg-accent-1)',
-                                color: 'var(--text-primary)',
-                              }
-                            }}
-                          />
-                        );
-                      })}
-                      {editingSdgId === sdg._id && (
+                  {/* Action Buttons */}
+                  <Box sx={{
+                    display: "flex",
+                    gap: 1,
+                    position: { xs: "static", md: "absolute" },
+                    top: 0,
+                    right: 0,
+                    zIndex: 2,
+                    alignItems: 'center'
+                  }}>
+                    {/* Manage Keywords Inline Toggle */}
+                    <Tooltip title={editingSdgId === sdg._id ? "Done Managing Keywords" : "Manage Keywords"}>
+                      <IconButton
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (editingSdgId === sdg._id) {
+                            setEditingSdgId(null);
+                          } else {
+                            setEditingSdgId(sdg._id);
+                          }
+                        }}
+                        sx={{
+                          color: editingSdgId === sdg._id ? "#22c55e" : "var(--color-primary)",
+                          background: editingSdgId === sdg._id ? "rgba(34, 197, 94, 0.1)" : "var(--bg-accent-4)",
+                          "&:hover": {
+                            background: editingSdgId === sdg._id ? "rgba(34, 197, 94, 0.2)" : "var(--bg-panel)"
+                          }
+                        }}
+                      >
+                        {editingSdgId === sdg._id ? <CheckIcon fontSize="small" /> : <EditIcon fontSize="small" />}
+                      </IconButton>
+                    </Tooltip>
+
+                    {/* Edit SDG Details */}
+                    {/* <Tooltip title="Edit SDG Details">
+                      <IconButton
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleOpenDialog(sdg);
+                        }}
+                        sx={{
+                          color: "var(--text-secondary)",
+                          background: "var(--bg-accent-4)",
+                          "&:hover": {
+                            color: "var(--color-primary)",
+                            background: "var(--bg-panel)"
+                          }
+                        }}
+                      >
+                        <EditIcon fontSize="small" />
+                      </IconButton>
+                    </Tooltip> */}
+
+                    {/* Delete SDG */}
+                    <Tooltip title="Delete SDG">
+                      <IconButton
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDelete(sdg._id);
+                        }}
+                        sx={{
+                          color: "var(--text-secondary)",
+                          background: "var(--bg-accent-4)",
+                          "&:hover": {
+                            color: "#ef4444",
+                            background: "rgba(239, 68, 68, 0.1)"
+                          }
+                        }}
+                      >
+                        <DeleteIcon fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
+
+                    {/* Mobile Expand Indicator */}
+                    {isMobile && (
+                      <IconButton
+                        sx={{
+                          color: "var(--text-secondary)",
+                          background: "var(--bg-accent-4)",
+                          pointerEvents: 'none'
+                        }}
+                      >
+                        {isExpanded ? <ExpandLessIcon fontSize="small" /> : <ExpandMoreIcon fontSize="small" />}
+                      </IconButton>
+                    )}
+                  </Box>
+                </Box>
+
+                <Collapse in={!isMobile || isExpanded} timeout="auto" unmountOnExit={isMobile}>
+                  <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, pt: 1 }}>
+                    {sdg.keywords.map((kw, i) => {
+                      const isEditingThisCard = editingSdgId === sdg._id;
+                      return (
                         <Chip
-                          icon={<AddIcon size="small" style={{ color: 'var(--color-primary)' }} />}
-                          label="Add"
+                          key={i}
+                          label={
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                              <span>{kw}</span>
+                              {isEditingThisCard && (
+                                <IconButton
+                                  size="small"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleOpenEditKeyword(sdg, kw);
+                                  }}
+                                  sx={{
+                                    p: 0,
+                                    ml: 0.5,
+                                    color: 'var(--text-secondary)',
+                                    '&:hover': {
+                                      color: brandColor,
+                                      transform: 'scale(1.15)'
+                                    },
+                                    transition: 'all 0.2s ease'
+                                  }}
+                                >
+                                  <EditIcon sx={{ fontSize: '0.75rem' }} />
+                                </IconButton>
+                              )}
+                            </Box>
+                          }
                           size="small"
+                          onDelete={isEditingThisCard ? (e) => {
+                            e.stopPropagation();
+                            handleDeleteKeyword(sdg, kw);
+                          } : undefined}
                           onClick={(e) => {
                             e.stopPropagation();
-                            handleOpenAddKeyword(sdg);
                           }}
                           sx={{
-                            background: 'var(--color-primary-alpha)',
-                            color: 'var(--color-primary)',
-                            border: '1px dashed var(--color-primary)',
+                            background: isEditingThisCard ? 'rgba(239, 68, 68, 0.05)' : 'var(--bg-accent-4)',
+                            color: isEditingThisCard ? 'var(--text-primary)' : 'var(--text-secondary)',
+                            border: `1px solid ${isEditingThisCard ? 'rgba(239, 68, 68, 0.2)' : 'var(--border-color)'}`,
                             fontSize: '0.75rem',
-                            fontWeight: 700,
-                            cursor: 'pointer',
-                            '&:hover': {
-                              background: 'var(--color-primary)',
-                              color: '#fff',
-                              '& .MuiChip-icon': {
-                                color: '#fff !important'
+                            fontWeight: 600,
+                            transition: 'all 0.2s ease',
+                            '& .MuiChip-deleteIcon': {
+                              color: '#ef4444',
+                              '&:hover': {
+                                color: '#dc2626',
                               }
+                            },
+                            '&:hover': {
+                              background: isEditingThisCard ? 'rgba(239, 68, 68, 0.1)' : 'var(--bg-accent-1)',
+                              color: 'var(--text-primary)',
                             }
                           }}
                         />
-                      )}
-                    </Box>
-                  </Collapse>
-                </Box>
+                      );
+                    })}
+                    {editingSdgId === sdg._id && (
+                      <Chip
+                        icon={<AddIcon size="small" style={{ color: 'var(--color-primary)' }} />}
+                        label="Add"
+                        size="small"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleOpenAddKeyword(sdg);
+                        }}
+                        sx={{
+                          background: 'var(--color-primary-alpha)',
+                          color: 'var(--color-primary)',
+                          border: '1px dashed var(--color-primary)',
+                          fontSize: '0.75rem',
+                          fontWeight: 700,
+                          cursor: 'pointer',
+                          '&:hover': {
+                            background: 'var(--color-primary)',
+                            color: '#fff',
+                            '& .MuiChip-icon': {
+                              color: '#fff !important'
+                            }
+                          }
+                        }}
+                      />
+                    )}
+                  </Box>
+                </Collapse>
               </Box>
-            );
-          })}
-        </Box>
+            </Box>
+          );
+        })}
+      </Box>
 
       {/* Add/Edit Dialog */}
       <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="md" fullWidth
@@ -603,8 +748,8 @@ const SDGManagement = () => {
       >
         <DialogTitle sx={{
           fontWeight: 800,
-          color: isEdit ? (SDG_COLOR_MAP[formData.sdgNumber] || 'var(--text-primary)') : 'var(--text-primary)',
-          borderBottom: `2px solid ${isEdit ? (SDG_COLOR_MAP[formData.sdgNumber] || 'var(--border-color)') : 'var(--border-color)'}`,
+          color: isEdit ? (getSdgColor(currentSdg) || 'var(--text-primary)') : 'var(--text-primary)',
+          borderBottom: `2px solid ${isEdit ? (getSdgColor(currentSdg) || 'var(--border-color)') : 'var(--border-color)'}`,
           pb: 2
         }}>
           {isEdit ? `Edit ${formData.sdgNumber} Keywords` : "Add New SDG"}
@@ -637,7 +782,7 @@ const SDGManagement = () => {
               <TextField
                 fullWidth
                 multiline
-                rows={6}
+                rows={4}
                 label="Keywords (Comma separated)"
                 name="keywords"
                 placeholder="Poverty, Hunger, Basic services..."
@@ -646,6 +791,71 @@ const SDGManagement = () => {
                 variant="outlined"
                 helperText="Enter keywords separated by commas. Each keyword will be used for document analysis."
               />
+            </Grid>
+
+            {/* SDG Image Upload Section */}
+            <Grid size={{ xs: 12 }}>
+              <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1, color: 'var(--text-primary)' }}>
+                SDG Image
+              </Typography>
+              <Box sx={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                textAlign: 'center',
+                gap: 1.5,
+                p: 3,
+                borderRadius: '16px',
+                border: '1px dashed var(--border-color)',
+                background: 'var(--bg-accent-1)'
+              }}>
+                {imagePreviewUrl ? (
+                  <Box
+                    component="img"
+                    src={imagePreviewUrl}
+                    alt="SDG Preview"
+                    sx={{
+                      width: 80,
+                      height: 80,
+                      borderRadius: '12px',
+                      objectFit: 'contain',
+                      background: 'var(--bg-panel)',
+                      p: 1,
+                      border: '1px solid var(--border-color)',
+                      mb: 0.5
+                    }}
+                  />
+                ) : null}
+                <Button
+                  variant="outlined"
+                  component="label"
+                  startIcon={<CloudUploadIcon />}
+                  sx={{ borderRadius: '10px', textTransform: 'none', fontWeight: 700, px: 3, py: 1 }}
+                >
+                  {imagePreviewUrl ? "Change SDG Image" : "Upload SDG Image"}
+                  <input
+                    type="file"
+                    accept="image/png"
+                    hidden
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        const isValid = await validateSdgImageFile(file);
+                        if (isValid) {
+                          setSelectedImageFile(file);
+                          setImagePreviewUrl(URL.createObjectURL(file));
+                        } else {
+                          e.target.value = "";
+                        }
+                      }
+                    }}
+                  />
+                </Button>
+                <Typography variant="caption" sx={{ color: 'var(--text-secondary)', fontWeight: 600 }}>
+                  PNG format only • Exactly 400 x 400 pixels • Max 100 KB
+                </Typography>
+              </Box>
             </Grid>
           </Grid>
         </DialogContent>
@@ -666,11 +876,11 @@ const SDGManagement = () => {
               py: 1,
               fontWeight: 700,
               textTransform: 'none',
-              boxShadow: isEdit ? `0 4px 12px ${SDG_COLOR_MAP[formData.sdgNumber]}40` : '0 4px 12px var(--color-primary-alpha)',
+              boxShadow: isEdit ? `0 4px 12px ${getSdgColor(currentSdg)}40` : '0 4px 12px var(--color-primary-alpha)',
               '&:hover': {
-                background: isEdit ? (SDG_COLOR_MAP[formData.sdgNumber] || 'var(--gradient-primary)') : 'var(--gradient-primary)',
+                background: isEdit ? (getSdgColor(currentSdg) || 'var(--gradient-primary)') : 'var(--gradient-primary)',
                 filter: 'brightness(1.1)',
-                boxShadow: isEdit ? `0 8px 20px ${SDG_COLOR_MAP[formData.sdgNumber]}60` : '0 8px 20px var(--color-primary-alpha)',
+                boxShadow: isEdit ? `0 8px 20px ${getSdgColor(currentSdg)}60` : '0 8px 20px var(--color-primary-alpha)',
                 transform: 'translateY(-1px)'
               },
               '&.Mui-disabled': {
@@ -709,8 +919,8 @@ const SDGManagement = () => {
       >
         <DialogTitle sx={{
           fontWeight: 850,
-          color: activeSdgForAdd ? (SDG_COLOR_MAP[activeSdgForAdd.sdgNumber] || 'var(--text-primary)') : 'var(--text-primary)',
-          borderBottom: `2px solid ${activeSdgForAdd ? (SDG_COLOR_MAP[activeSdgForAdd.sdgNumber] || 'var(--border-color)') : 'var(--border-color)'}`,
+          color: activeSdgForAdd ? (getSdgColor(activeSdgForAdd) || 'var(--text-primary)') : 'var(--text-primary)',
+          borderBottom: `2px solid ${activeSdgForAdd ? (getSdgColor(activeSdgForAdd) || 'var(--border-color)') : 'var(--border-color)'}`,
           pb: 2
         }}>
           Add Keyword to {activeSdgForAdd?.sdgNumber}
@@ -735,9 +945,9 @@ const SDGManagement = () => {
           />
         </DialogContent>
         <DialogActions sx={{ p: 2, px: 3, borderTop: '1px solid var(--border-color)' }}>
-          <Button 
-            onClick={handleCloseAddKeyword} 
-            startIcon={<CancelIcon />} 
+          <Button
+            onClick={handleCloseAddKeyword}
+            startIcon={<CancelIcon />}
             color="inherit"
             sx={{
               borderRadius: '10px',
@@ -765,7 +975,7 @@ const SDGManagement = () => {
               px: 3,
               fontWeight: 700,
               textTransform: 'none',
-              boxShadow: activeSdgForAdd ? `0 4px 12px ${SDG_COLOR_MAP[activeSdgForAdd.sdgNumber]}40` : '0 4px 12px var(--color-primary-alpha)',
+              boxShadow: activeSdgForAdd ? `0 4px 12px ${getSdgColor(activeSdgForAdd)}40` : '0 4px 12px var(--color-primary-alpha)',
               transition: 'all 0.3s ease',
               '&::after': {
                 content: '""',
@@ -825,8 +1035,8 @@ const SDGManagement = () => {
       >
         <DialogTitle sx={{
           fontWeight: 850,
-          color: activeSdgForEditKw ? (SDG_COLOR_MAP[activeSdgForEditKw.sdgNumber] || 'var(--text-primary)') : 'var(--text-primary)',
-          borderBottom: `2px solid ${activeSdgForEditKw ? (SDG_COLOR_MAP[activeSdgForEditKw.sdgNumber] || 'var(--border-color)') : 'var(--border-color)'}`,
+          color: activeSdgForEditKw ? (getSdgColor(activeSdgForEditKw) || 'var(--text-primary)') : 'var(--text-primary)',
+          borderBottom: `2px solid ${activeSdgForEditKw ? (getSdgColor(activeSdgForEditKw) || 'var(--border-color)') : 'var(--border-color)'}`,
           pb: 2
         }}>
           Edit Keyword in {activeSdgForEditKw?.sdgNumber}
@@ -851,9 +1061,9 @@ const SDGManagement = () => {
           />
         </DialogContent>
         <DialogActions sx={{ p: 2, px: 3, borderTop: '1px solid var(--border-color)' }}>
-          <Button 
-            onClick={handleCloseEditKeyword} 
-            startIcon={<CancelIcon />} 
+          <Button
+            onClick={handleCloseEditKeyword}
+            startIcon={<CancelIcon />}
             color="inherit"
             sx={{
               borderRadius: '10px',
@@ -881,7 +1091,7 @@ const SDGManagement = () => {
               px: 3,
               fontWeight: 700,
               textTransform: 'none',
-              boxShadow: activeSdgForEditKw ? `0 4px 12px ${SDG_COLOR_MAP[activeSdgForEditKw.sdgNumber]}40` : '0 4px 12px var(--color-primary-alpha)',
+              boxShadow: activeSdgForEditKw ? `0 4px 12px ${getSdgColor(activeSdgForEditKw)}40` : '0 4px 12px var(--color-primary-alpha)',
               transition: 'all 0.3s ease',
               '&::after': {
                 content: '""',
