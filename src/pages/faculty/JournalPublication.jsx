@@ -1,5 +1,5 @@
 import Loader from "../../components/common/Loader";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { useLoading } from "../../context/LoadingContext";
 
@@ -101,23 +101,28 @@ export default function JournalPublication() {
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
 
-  const leftCardRef = useRef(null);
   const [leftCardHeight, setLeftCardHeight] = useState(null);
+  const observerRef = useRef(null);
 
-  useEffect(() => {
-    if (!selectedPubDetails || !leftCardRef.current) return;
-    const element = leftCardRef.current;
-    const observer = new ResizeObserver((entries) => {
-      for (let entry of entries) {
-        if (entry.contentRect) {
-          setLeftCardHeight(entry.target.getBoundingClientRect().height);
+  const leftCardRef = useCallback((node) => {
+    if (observerRef.current) {
+      observerRef.current.disconnect();
+      observerRef.current = null;
+    }
+    if (node) {
+      const updateHeight = () => {
+        const h = node.getBoundingClientRect().height;
+        if (h > 0) {
+          setLeftCardHeight(h);
         }
-      }
-    });
-    observer.observe(element);
-    setLeftCardHeight(element.getBoundingClientRect().height);
-    return () => observer.disconnect();
-  }, [selectedPubDetails]);
+      };
+      observerRef.current = new ResizeObserver(() => {
+        updateHeight();
+      });
+      observerRef.current.observe(node);
+      updateHeight();
+    }
+  }, []);
 
   // DOI fetch state
   const [doiFetching, setDoiFetching] = useState(false);
