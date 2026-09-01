@@ -274,7 +274,7 @@ const MobileNavbar = () => {
                     background: 'var(--bg-glass)',
                     backdropFilter: 'blur(25px) saturate(180%)',
                     borderRadius: '16px',
-                    display: 'flex',
+                    display: { xs: 'flex', md: 'none' },
                     alignItems: 'center',
                     justifyContent: 'center',
                     gap: 2,

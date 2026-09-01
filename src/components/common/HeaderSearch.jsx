@@ -242,6 +242,7 @@ const HeaderSearch = ({ activeRole, variant = "desktop", mobileOpen, onMobileOpe
         <Box
           onClick={handleCloseMobile}
           sx={{
+            display: { xs: 'block', md: 'none' },
             position: 'fixed',
             inset: 0,
             zIndex: 1390,
@@ -258,6 +259,7 @@ const HeaderSearch = ({ activeRole, variant = "desktop", mobileOpen, onMobileOpe
           <Box
             className="mobile-search-results-list"
             sx={{
+              display: { xs: 'block', md: 'none' },
               position: 'fixed',
               bottom: resultsBottom,
               left: 16,
@@ -350,7 +352,7 @@ const HeaderSearch = ({ activeRole, variant = "desktop", mobileOpen, onMobileOpe
               ? '0 16px 40px rgba(0, 0, 0, 0.25)'
               : '0 8px 32px rgba(0, 0, 0, 0.15)',
             border: '1px solid var(--border-color)',
-            display: 'flex',
+            display: { xs: 'flex', md: 'none' },
             alignItems: 'center',
             justifyContent: mobileOpen ? 'space-between' : 'center',
             transition: `width 450ms ${EASE_CURVE}, height 450ms ${EASE_CURVE}, border-radius 450ms ${EASE_CURVE}, bottom 450ms ${EASE_CURVE}, background-color 450ms ${EASE_CURVE}, box-shadow 450ms ${EASE_CURVE}`,

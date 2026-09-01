@@ -26,12 +26,28 @@ import ActionButton from "../../components/common/ActionButton";
 import API from "../../api/axios";
 import { toast } from "sonner";
 
+const getAlignments = (columns) => {
+    return columns.map(col => {
+        const lowerCol = col.toLowerCase();
+        // Left align names, titles, authors, categories, organizations, agencies
+        if (lowerCol.includes("name") || lowerCol.includes("title") || lowerCol.includes("author") || lowerCol.includes("inventor") || lowerCol.includes("developer") || lowerCol.includes("investigator") || lowerCol.includes("agency") || lowerCol.includes("organisation") || lowerCol.includes("publisher") || lowerCol.includes("category") || lowerCol === "dept") {
+            return "left";
+        }
+        // Right align amounts/money
+        if (lowerCol.includes("amount") || lowerCol.includes("cost")) {
+            return "right";
+        }
+        // Center everything else (S.No, IDs, Years, Statuses, Booleans, etc.)
+        return "center";
+    });
+};
+
 export default function ResearchReports() {
     const [activeTab, setActiveTab] = useState(0);
     const [academicYears, setAcademicYears] = useState([]);
     const [selectedYear, setSelectedYear] = useState("");
     const [loading, setLoading] = useState(false);
-    const [data, setData] = useState({ journals: [], textbooks: [], chapters: [] });
+    const [data, setData] = useState({ journals: [], textbooks: [], chapters: [], conferences: [], patents: [], products: [], projects: [], consultancy: [] });
 
     useEffect(() => {
         // Fetch Academic Years
@@ -85,32 +101,38 @@ export default function ResearchReports() {
         let filename = "";
 
         if (type === "journals") {
-            headers = ["S.No", "Emp Id", "Name of Faculty", "Dept", "PAN No", "Name of the Journal", "Amount (Rs)"];
-            rows = data.journals.map((item, i) => [
+            headers = ["S.No", "Emp Id", "Name of Faculty", "Dept", "PAN No", "Name of the Journal", "Paper Title", "Academic Year", "Amount (Rs)", "Status", "Co-Authors"];
+            rows = (data.journals || []).map((item, i) => [
                 i + 1,
                 item.empId,
                 item.facultyName,
                 item.dept,
                 item.panNo,
                 item.journalName,
-                item.amount
+                item.paperTitle,
+                item.year,
+                item.amount,
+                item.status,
+                item.coAuthorsText || "N/A"
             ]);
             filename = `Journal_Incentives_Report_${selectedYear}.csv`;
         } else if (type === "textbooks") {
-            headers = ["S.No", "Dept", "Name of Faculty", "Title of the Book", "Name of the Publisher", "ISBN Number", "Academic Year"];
-            rows = data.textbooks.map((item, i) => [
+            headers = ["S.No", "Dept", "Name of Faculty", "Title of the Book", "Name of the Publisher", "ISBN Number", "Academic Year", "Status", "Co-Authors"];
+            rows = (data.textbooks || []).map((item, i) => [
                 i + 1,
                 item.dept,
                 item.facultyName,
                 item.title,
                 item.publisher,
                 item.isbn,
-                item.year
+                item.year,
+                item.status,
+                item.coAuthorsText || "N/A"
             ]);
             filename = `Textbooks_Report_${selectedYear}.csv`;
         } else if (type === "chapters") {
-            headers = ["S.No", "Dept", "Name of Faculty", "Name of Book Chapter", "Name of the Book", "Name of Publisher", "Academic Year", "Month & Year"];
-            rows = data.chapters.map((item, i) => [
+            headers = ["S.No", "Dept", "Name of Faculty", "Name of Book Chapter", "Name of the Book", "Name of Publisher", "Academic Year", "Month & Year", "Status", "Co-Authors"];
+            rows = (data.chapters || []).map((item, i) => [
                 i + 1,
                 item.dept,
                 item.facultyName,
@@ -118,9 +140,95 @@ export default function ResearchReports() {
                 item.bookName,
                 item.publisher,
                 item.year,
-                item.month
+                item.month,
+                item.status,
+                item.coAuthorsText || "N/A"
             ]);
             filename = `Book_Chapters_Report_${selectedYear}.csv`;
+        } else if (type === "conferences") {
+            headers = ["S.No", "Emp Id", "Name of Faculty", "Dept", "PAN No", "Conference Name", "Paper Title", "Academic Year", "Amount (Rs)", "Status", "Co-Authors"];
+            rows = (data.conferences || []).map((item, i) => [
+                i + 1,
+                item.empId,
+                item.facultyName,
+                item.dept,
+                item.panNo,
+                item.conferenceName,
+                item.paperTitle,
+                item.year,
+                item.amount,
+                item.status,
+                item.coAuthorsText || "N/A"
+            ]);
+            filename = `Conferences_Report_${selectedYear}.csv`;
+        } else if (type === "patents") {
+            headers = ["S.No", "Emp Id", "Name of Faculty", "Dept", "PAN No", "Patent Title", "Filing No", "Academic Year", "Amount (Rs)", "Status", "Co-Inventors"];
+            rows = (data.patents || []).map((item, i) => [
+                i + 1,
+                item.empId,
+                item.facultyName,
+                item.dept,
+                item.panNo,
+                item.title,
+                item.filingNo,
+                item.year,
+                item.amount,
+                item.status,
+                item.coAuthorsText || "N/A"
+            ]);
+            filename = `Patents_Report_${selectedYear}.csv`;
+        } else if (type === "products") {
+            headers = ["S.No", "Emp Id", "Name of Faculty", "Dept", "PAN No", "Product Name", "Category", "Organisation", "Academic Year", "Status", "Co-Developers"];
+            rows = (data.products || []).map((item, i) => [
+                i + 1,
+                item.empId,
+                item.facultyName,
+                item.dept,
+                item.panNo,
+                item.title,
+                item.category,
+                item.organization,
+                item.year,
+                item.status,
+                item.coAuthorsText || "N/A"
+            ]);
+            filename = `Novel_Products_Report_${selectedYear}.csv`;
+        } else if (type === "projects") {
+            headers = ["S.No", "Emp Id", "Name of Faculty", "Dept", "PAN No", "Project Title", "Funding Agency", "Academic Year", "Sanctioned Amount (Rs)", "Incentive Amount (Rs)", "Project Status", "Status", "Co-Investigators"];
+            rows = (data.projects || []).map((item, i) => [
+                i + 1,
+                item.empId,
+                item.facultyName,
+                item.dept,
+                item.panNo,
+                item.title,
+                item.agency,
+                item.year,
+                item.sanctionedAmount,
+                item.amount,
+                item.projectStatus,
+                item.status,
+                item.coAuthorsText || "N/A"
+            ]);
+            filename = `Funded_Projects_Report_${selectedYear}.csv`;
+        } else if (type === "consultancy") {
+            headers = ["S.No", "Emp Id", "Name of Faculty", "Dept", "PAN No", "Consultancy Title", "Agency", "Academic Year", "Sanctioned Amount (Rs)", "Incentive Amount (Rs)", "Project Status", "Status", "Co-Investigators"];
+            rows = (data.consultancy || []).map((item, i) => [
+                i + 1,
+                item.empId,
+                item.facultyName,
+                item.dept,
+                item.panNo,
+                item.title,
+                item.agency,
+                item.year,
+                item.sanctionedAmount,
+                item.amount,
+                item.projectStatus,
+                item.status,
+                item.coAuthorsText || "N/A"
+            ]);
+            filename = `Consultancy_Report_${selectedYear}.csv`;
         }
 
         const csvContent = [
@@ -165,7 +273,10 @@ export default function ResearchReports() {
                 "PAN Number",
                 "Journal Name",
                 "Paper Title",
-                "Amount"
+                "Academic Year",
+                "Amount",
+                "Status",
+                "Co-Authors"
             ].join(","));
 
             journals.forEach((item, index) => {
@@ -177,7 +288,10 @@ export default function ResearchReports() {
                     item.panNo,
                     item.journalName,
                     item.paperTitle || "-",
-                    item.amount
+                    item.year,
+                    item.amount,
+                    item.status,
+                    item.coAuthorsText || "N/A"
                 ].map(v => `"${String(v).replace(/"/g, '""')}"`).join(","));
             });
 
@@ -209,10 +323,12 @@ export default function ResearchReports() {
             "Book Title",
             "Publisher",
             "ISBN",
-            "Amount"
+            "Amount",
+            "Status",
+            "Co-Authors"
         ].join(","));
 
-        data.textbooks.forEach((item, index) => {
+        (data.textbooks || []).forEach((item, index) => {
             lines.push([
                 index + 1,
                 item.empId,
@@ -222,7 +338,9 @@ export default function ResearchReports() {
                 item.title,
                 item.publisher,
                 item.isbn,
-                item.amount || "-"
+                item.amount || "-",
+                item.status,
+                item.coAuthorsText || "N/A"
             ].map(v => `"${String(v).replace(/"/g, '""')}"`).join(","));
         });
 
@@ -244,10 +362,12 @@ export default function ResearchReports() {
             "Chapter Title",
             "Book Name",
             "Publisher",
-            "Amount"
+            "Amount",
+            "Status",
+            "Co-Authors"
         ].join(","));
 
-        data.chapters.forEach((item, index) => {
+        (data.chapters || []).forEach((item, index) => {
             lines.push([
                 index + 1,
                 item.empId,
@@ -257,7 +377,212 @@ export default function ResearchReports() {
                 item.chapterTitle,
                 item.bookName,
                 item.publisher,
-                item.amount || "-"
+                item.amount || "-",
+                item.status,
+                item.coAuthorsText || "N/A"
+            ].map(v => `"${String(v).replace(/"/g, '""')}"`).join(","));
+        });
+
+        lines.push("");
+        lines.push("");
+
+        // ===============================
+        // CONFERENCES
+        // ===============================
+
+        lines.push(`"CONFERENCE PUBLICATIONS"`);
+
+        lines.push([
+            "S.No",
+            "Emp ID",
+            "Faculty Name",
+            "Serving Department",
+            "PAN Number",
+            "Conference Name",
+            "Paper Title",
+            "Academic Year",
+            "Amount",
+            "Status",
+            "Co-Authors"
+        ].join(","));
+
+        (data.conferences || []).forEach((item, index) => {
+            lines.push([
+                index + 1,
+                item.empId,
+                item.facultyName,
+                item.dept,
+                item.panNo,
+                item.conferenceName,
+                item.paperTitle || "-",
+                item.year,
+                item.amount || "-",
+                item.status,
+                item.coAuthorsText || "N/A"
+            ].map(v => `"${String(v).replace(/"/g, '""')}"`).join(","));
+        });
+
+        lines.push("");
+        lines.push("");
+
+        // ===============================
+        // PATENTS
+        // ===============================
+
+        lines.push(`"PATENTS"`);
+
+        lines.push([
+            "S.No",
+            "Emp ID",
+            "Faculty Name",
+            "Serving Department",
+            "PAN Number",
+            "Patent Title",
+            "Filing No",
+            "Academic Year",
+            "Amount",
+            "Status",
+            "Co-Inventors"
+        ].join(","));
+
+        (data.patents || []).forEach((item, index) => {
+            lines.push([
+                index + 1,
+                item.empId,
+                item.facultyName,
+                item.dept,
+                item.panNo,
+                item.title,
+                item.filingNo || "-",
+                item.year,
+                item.amount || "-",
+                item.status,
+                item.coAuthorsText || "N/A"
+            ].map(v => `"${String(v).replace(/"/g, '""')}"`).join(","));
+        });
+
+        lines.push("");
+        lines.push("");
+
+        // ===============================
+        // NOVEL PRODUCTS
+        // ===============================
+
+        lines.push(`"NOVEL PRODUCTS"`);
+
+        lines.push([
+            "S.No",
+            "Emp ID",
+            "Faculty Name",
+            "Serving Department",
+            "PAN Number",
+            "Product Name",
+            "Category",
+            "Organisation",
+            "Academic Year",
+            "Status",
+            "Co-Developers"
+        ].join(","));
+
+        (data.products || []).forEach((item, index) => {
+            lines.push([
+                index + 1,
+                item.empId,
+                item.facultyName,
+                item.dept,
+                item.panNo,
+                item.title,
+                item.category || "-",
+                item.organization,
+                item.year,
+                item.status,
+                item.coAuthorsText || "N/A"
+            ].map(v => `"${String(v).replace(/"/g, '""')}"`).join(","));
+        });
+
+        lines.push("");
+        lines.push("");
+
+        // ===============================
+        // FUNDED PROJECTS
+        // ===============================
+
+        lines.push(`"FUNDED PROJECTS"`);
+
+        lines.push([
+            "S.No",
+            "Emp ID",
+            "Faculty Name",
+            "Serving Department",
+            "PAN Number",
+            "Project Title",
+            "Funding Agency",
+            "Academic Year",
+            "Sanctioned Amount",
+            "Incentive Amount",
+            "Project Status",
+            "Status",
+            "Co-Investigators"
+        ].join(","));
+
+        (data.projects || []).forEach((item, index) => {
+            lines.push([
+                index + 1,
+                item.empId,
+                item.facultyName,
+                item.dept,
+                item.panNo,
+                item.title,
+                item.agency || "-",
+                item.year,
+                item.sanctionedAmount,
+                item.amount || "-",
+                item.projectStatus,
+                item.status,
+                item.coAuthorsText || "N/A"
+            ].map(v => `"${String(v).replace(/"/g, '""')}"`).join(","));
+        });
+
+        lines.push("");
+        lines.push("");
+
+        // ===============================
+        // CONSULTANCY
+        // ===============================
+
+        lines.push(`"CONSULTANCY"`);
+
+        lines.push([
+            "S.No",
+            "Emp ID",
+            "Faculty Name",
+            "Serving Department",
+            "PAN Number",
+            "Consultancy Title",
+            "Agency",
+            "Academic Year",
+            "Sanctioned Amount",
+            "Incentive Amount",
+            "Project Status",
+            "Status",
+            "Co-Investigators"
+        ].join(","));
+
+        (data.consultancy || []).forEach((item, index) => {
+            lines.push([
+                index + 1,
+                item.empId,
+                item.facultyName,
+                item.dept,
+                item.panNo,
+                item.title,
+                item.agency || "-",
+                item.year,
+                item.sanctionedAmount,
+                item.amount || "-",
+                item.projectStatus,
+                item.status,
+                item.coAuthorsText || "N/A"
             ].map(v => `"${String(v).replace(/"/g, '""')}"`).join(","));
         });
 
@@ -280,32 +605,36 @@ export default function ResearchReports() {
     };
 
     const renderJournals = () => {
-        const columns = ["S.No", "Emp Id", "Faculty Name", "Dept", "Journal Name"];
-        const rows = data.journals.map((item, i) => [
+        const columns = ["S.No", "Emp Id", "Faculty Name", "Dept", "Journal Name", "Paper Title", "Academic Year", "Status", "Co-Authors"];
+        const rows = (data.journals || []).map((item, i) => [
             i + 1,
             item.empId,
             item.facultyName,
             item.dept,
-            item.journalName
+            item.journalName,
+            item.paperTitle,
+            item.year,
+            item.status,
+            item.coAuthorsText || "N/A"
         ]);
+        const alignments = getAlignments(columns);
         return (
-            <DataTable columns={columns} rows={rows} toolbarLeft={
+            <DataTable columns={columns} alignments={alignments} rows={rows} toolbarLeft={
                 <Button
- variant="contained"
- startIcon={<DownloadIcon />}
- onClick={() => downloadCSV("journals")}
- sx={{
- 
- textTransform: "none",
- background: "var(--gradient-primary)",
- boxShadow: "0 4px 12px rgba(190, 147, 55, 0.2)",
- "&:hover": {
- background: "var(--gradient-primary)",
- opacity: 0.9,
- boxShadow: "0 6px 16px rgba(190, 147, 55, 0.3)"
- }
- }}
- >
+                    variant="contained"
+                    startIcon={<DownloadIcon />}
+                    onClick={() => downloadCSV("journals")}
+                    sx={{
+                        textTransform: "none",
+                        background: "var(--gradient-primary)",
+                        boxShadow: "0 4px 12px rgba(190, 147, 55, 0.2)",
+                        "&:hover": {
+                            background: "var(--gradient-primary)",
+                            opacity: 0.9,
+                            boxShadow: "0 6px 16px rgba(190, 147, 55, 0.3)"
+                        }
+                    }}
+                >
                     Export to Excel
                 </Button>
             } />
@@ -313,34 +642,36 @@ export default function ResearchReports() {
     };
 
     const renderTextbooks = () => {
-        const columns = ["S.No", "Dept", "Faculty Name", "Book Title", "Publisher", "ISBN", "Year"];
-        const rows = data.textbooks.map((item, i) => [
+        const columns = ["S.No", "Dept", "Faculty Name", "Book Title", "Publisher", "ISBN", "Year", "Status", "Co-Authors"];
+        const rows = (data.textbooks || []).map((item, i) => [
             i + 1,
             item.dept,
             item.facultyName,
             item.title,
             item.publisher,
             item.isbn,
-            item.year
+            item.year,
+            item.status,
+            item.coAuthorsText || "N/A"
         ]);
+        const alignments = getAlignments(columns);
         return (
-            <DataTable columns={columns} rows={rows} toolbarLeft={
+            <DataTable columns={columns} alignments={alignments} rows={rows} toolbarLeft={
                 <Button
- variant="contained"
- startIcon={<DownloadIcon />}
- onClick={() => downloadCSV("textbooks")}
- sx={{
- 
- textTransform: "none",
- background: "var(--gradient-primary)",
- boxShadow: "0 4px 12px rgba(190, 147, 55, 0.2)",
- "&:hover": {
- background: "var(--gradient-primary)",
- opacity: 0.9,
- boxShadow: "0 6px 16px rgba(190, 147, 55, 0.3)"
- }
- }}
- >
+                    variant="contained"
+                    startIcon={<DownloadIcon />}
+                    onClick={() => downloadCSV("textbooks")}
+                    sx={{
+                        textTransform: "none",
+                        background: "var(--gradient-primary)",
+                        boxShadow: "0 4px 12px rgba(190, 147, 55, 0.2)",
+                        "&:hover": {
+                            background: "var(--gradient-primary)",
+                            opacity: 0.9,
+                            boxShadow: "0 6px 16px rgba(190, 147, 55, 0.3)"
+                        }
+                    }}
+                >
                     Export to Excel
                 </Button>
             } />
@@ -348,21 +679,159 @@ export default function ResearchReports() {
     };
 
     const renderChapters = () => {
-        const columns = ["S.No", "Dept", "Faculty Name", "Chapter Title", "Book Name", "Publisher", "Year"];
-        const rows = data.chapters.map((item, i) => [
+        const columns = ["S.No", "Dept", "Faculty Name", "Chapter Title", "Book Name", "Publisher", "Year", "Status", "Co-Authors"];
+        const rows = (data.chapters || []).map((item, i) => [
             i + 1,
             item.dept,
             item.facultyName,
             item.chapterTitle,
             item.bookName,
             item.publisher,
-            item.year
+            item.year,
+            item.status,
+            item.coAuthorsText || "N/A"
         ]);
+        const alignments = getAlignments(columns);
         return (
-            <DataTable columns={columns} rows={rows} toolbarLeft={
+            <DataTable columns={columns} alignments={alignments} rows={rows} toolbarLeft={
                 <ActionButton
                     startIcon={<DownloadIcon />}
                     onClick={() => downloadCSV("chapters")}
+                >
+                    Export to Excel
+                </ActionButton>
+            } />
+        );
+    };
+
+    const renderConferences = () => {
+        const columns = ["S.No", "Emp Id", "Faculty Name", "Dept", "Conference Name", "Academic Year", "Status", "Co-Authors"];
+        const rows = (data.conferences || []).map((item, i) => [
+            i + 1,
+            item.empId,
+            item.facultyName,
+            item.dept,
+            item.conferenceName,
+            item.year,
+            item.status,
+            item.coAuthorsText || "N/A"
+        ]);
+        const alignments = getAlignments(columns);
+        return (
+            <DataTable columns={columns} alignments={alignments} rows={rows} toolbarLeft={
+                <ActionButton
+                    startIcon={<DownloadIcon />}
+                    onClick={() => downloadCSV("conferences")}
+                >
+                    Export to Excel
+                </ActionButton>
+            } />
+        );
+    };
+
+    const renderPatents = () => {
+        const columns = ["S.No", "Emp Id", "Faculty Name", "Dept", "Patent Title", "Academic Year", "Status", "Co-Inventors"];
+        const rows = (data.patents || []).map((item, i) => [
+            i + 1,
+            item.empId,
+            item.facultyName,
+            item.dept,
+            item.title,
+            item.year,
+            item.status,
+            item.coAuthorsText || "N/A"
+        ]);
+        const alignments = getAlignments(columns);
+        return (
+            <DataTable columns={columns} alignments={alignments} rows={rows} toolbarLeft={
+                <ActionButton
+                    startIcon={<DownloadIcon />}
+                    onClick={() => downloadCSV("patents")}
+                >
+                    Export to Excel
+                </ActionButton>
+            } />
+        );
+    };
+
+    const renderProducts = () => {
+        const columns = ["S.No", "Emp Id", "Faculty Name", "Dept", "Product Name", "Category", "Organisation", "Academic Year", "Status", "Co-Developers"];
+        const rows = (data.products || []).map((item, i) => [
+            i + 1,
+            item.empId,
+            item.facultyName,
+            item.dept,
+            item.title,
+            item.category,
+            item.organization,
+            item.year,
+            item.status,
+            item.coAuthorsText || "N/A"
+        ]);
+        const alignments = getAlignments(columns);
+        return (
+            <DataTable columns={columns} alignments={alignments} rows={rows} toolbarLeft={
+                <ActionButton
+                    startIcon={<DownloadIcon />}
+                    onClick={() => downloadCSV("products")}
+                >
+                    Export to Excel
+                </ActionButton>
+            } />
+        );
+    };
+
+    const renderProjects = () => {
+        const columns = ["S.No", "Emp Id", "Faculty Name", "Dept", "Project Title", "Funding Agency", "Academic Year", "Sanctioned Amount", "Incentive Amount", "Project Status", "Status", "Co-Investigators"];
+        const rows = (data.projects || []).map((item, i) => [
+            i + 1,
+            item.empId,
+            item.facultyName,
+            item.dept,
+            item.title,
+            item.agency || "-",
+            item.year,
+            item.sanctionedAmount,
+            item.amount,
+            item.projectStatus,
+            item.status,
+            item.coAuthorsText || "N/A"
+        ]);
+        const alignments = getAlignments(columns);
+        return (
+            <DataTable columns={columns} alignments={alignments} rows={rows} toolbarLeft={
+                <ActionButton
+                    startIcon={<DownloadIcon />}
+                    onClick={() => downloadCSV("projects")}
+                >
+                    Export to Excel
+                </ActionButton>
+            } />
+        );
+    };
+
+    const renderConsultancy = () => {
+        const columns = ["S.No", "Emp Id", "Faculty Name", "Dept", "Consultancy Title", "Agency", "Academic Year", "Sanctioned Amount", "Incentive Amount", "Project Status", "Status", "Co-Investigators"];
+        const rows = (data.consultancy || []).map((item, i) => [
+            i + 1,
+            item.empId,
+            item.facultyName,
+            item.dept,
+            item.title,
+            item.agency || "-",
+            item.year,
+            item.sanctionedAmount,
+            item.amount,
+            item.projectStatus,
+            item.status,
+            item.coAuthorsText || "N/A"
+        ]);
+        const alignments = getAlignments(columns);
+        return (
+            <DataTable columns={columns} alignments={alignments} rows={rows} toolbarLeft={
+                <ActionButton
+                    startIcon={<DownloadIcon />}
+                    onClick={() => downloadCSV("consultancy")}
                 >
                     Export to Excel
                 </ActionButton>
@@ -421,7 +890,11 @@ export default function ResearchReports() {
                             <Tab icon={<JournalIcon sx={{ fontSize: 20 }} />} iconPosition="start" label="Journals" />
                             <Tab icon={<BookIcon sx={{ fontSize: 20 }} />} iconPosition="start" label="Text Books" />
                             <Tab icon={<BookIcon sx={{ fontSize: 20 }} />} iconPosition="start" label="Book Chapters" />
-                            <Tab icon={<AnalyticsIcon sx={{ fontSize: 20 }} />} iconPosition="start" label="Consolidated Report" />
+                            <Tab icon={<BookIcon sx={{ fontSize: 20 }} />} iconPosition="start" label="Conferences" />
+                            <Tab icon={<BookIcon sx={{ fontSize: 20 }} />} iconPosition="start" label="Patents" />
+                            <Tab icon={<BookIcon sx={{ fontSize: 20 }} />} iconPosition="start" label="Novel Products" />
+                            <Tab icon={<BookIcon sx={{ fontSize: 20 }} />} iconPosition="start" label="Funded Projects" />
+                            <Tab icon={<BookIcon sx={{ fontSize: 20 }} />} iconPosition="start" label="Consultancy" />
                         </Tabs>
 
                         <Box sx={{ flexGrow: 1 }} />
@@ -450,23 +923,11 @@ export default function ResearchReports() {
                         {activeTab === 0 && renderJournals()}
                         {activeTab === 1 && renderTextbooks()}
                         {activeTab === 2 && renderChapters()}
-                        {activeTab === 3 && (
-                            <Box sx={{ textAlign: "center", py: 5 }}>
-                                <AnalyticsIcon sx={{ fontSize: 60, color: "var(--color-primary-alpha)", mb: 2 }} />
-                                <Typography variant="h6" sx={{ color: "var(--text-primary)", mb: 1 }}>Download Consolidated Report</Typography>
-                                <Typography variant="body2" sx={{ color: "var(--text-secondary)", mb: 3 }}>
-                                    This will generate a single file containing all research categories.
-                                </Typography>
-                                <ActionButton
-                                    size="large"
-                                    startIcon={<DownloadIcon />}
-                                    onClick={() => downloadCSV("consolidated")}
-                                    sx={{ px: 4, py: 1.5 }}
-                                >
-                                    Download Consolidated Report (.csv)
-                                </ActionButton>
-                            </Box>
-                        )}
+                        {activeTab === 3 && renderConferences()}
+                        {activeTab === 4 && renderPatents()}
+                        {activeTab === 5 && renderProducts()}
+                        {activeTab === 6 && renderProjects()}
+                        {activeTab === 7 && renderConsultancy()}
                     </Box>
                 </Box>
             </Paper>
