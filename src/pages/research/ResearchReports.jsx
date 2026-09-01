@@ -11,7 +11,8 @@ import {
     InputLabel,
     Select,
     MenuItem,
-    Paper} from "@mui/material";
+    Paper
+} from "@mui/material";
 import {
     Download as DownloadIcon,
     Analytics as AnalyticsIcon,
@@ -90,11 +91,18 @@ export default function ResearchReports() {
         setActiveTab(newValue);
     };
 
+    const getYearName = () => {
+        const found = academicYears.find(y => y._id === selectedYear);
+        return found ? found.year : (selectedYear === "All" ? "All_Years" : selectedYear);
+    };
+
     const downloadCSV = (type) => {
         if (type === "consolidated") {
             handleConsolidatedDownload();
             return;
         }
+
+        const yearName = getYearName();
 
         let headers = [];
         let rows = [];
@@ -115,7 +123,7 @@ export default function ResearchReports() {
                 item.status,
                 item.coAuthorsText || "N/A"
             ]);
-            filename = `Journal_Incentives_Report_${selectedYear}.csv`;
+            filename = `Journal_Incentives_Report_${yearName}.csv`;
         } else if (type === "textbooks") {
             headers = ["S.No", "Dept", "Name of Faculty", "Title of the Book", "Name of the Publisher", "ISBN Number", "Academic Year", "Status", "Co-Authors"];
             rows = (data.textbooks || []).map((item, i) => [
@@ -129,7 +137,7 @@ export default function ResearchReports() {
                 item.status,
                 item.coAuthorsText || "N/A"
             ]);
-            filename = `Textbooks_Report_${selectedYear}.csv`;
+            filename = `Textbooks_Report_${yearName}.csv`;
         } else if (type === "chapters") {
             headers = ["S.No", "Dept", "Name of Faculty", "Name of Book Chapter", "Name of the Book", "Name of Publisher", "Academic Year", "Month & Year", "Status", "Co-Authors"];
             rows = (data.chapters || []).map((item, i) => [
@@ -144,7 +152,7 @@ export default function ResearchReports() {
                 item.status,
                 item.coAuthorsText || "N/A"
             ]);
-            filename = `Book_Chapters_Report_${selectedYear}.csv`;
+            filename = `Book_Chapters_Report_${yearName}.csv`;
         } else if (type === "conferences") {
             headers = ["S.No", "Emp Id", "Name of Faculty", "Dept", "PAN No", "Conference Name", "Paper Title", "Academic Year", "Amount (Rs)", "Status", "Co-Authors"];
             rows = (data.conferences || []).map((item, i) => [
@@ -160,7 +168,7 @@ export default function ResearchReports() {
                 item.status,
                 item.coAuthorsText || "N/A"
             ]);
-            filename = `Conferences_Report_${selectedYear}.csv`;
+            filename = `Conferences_Report_${yearName}.csv`;
         } else if (type === "patents") {
             headers = ["S.No", "Emp Id", "Name of Faculty", "Dept", "PAN No", "Patent Title", "Filing No", "Academic Year", "Amount (Rs)", "Status", "Co-Inventors"];
             rows = (data.patents || []).map((item, i) => [
@@ -176,7 +184,7 @@ export default function ResearchReports() {
                 item.status,
                 item.coAuthorsText || "N/A"
             ]);
-            filename = `Patents_Report_${selectedYear}.csv`;
+            filename = `Patents_Report_${yearName}.csv`;
         } else if (type === "products") {
             headers = ["S.No", "Emp Id", "Name of Faculty", "Dept", "PAN No", "Product Name", "Category", "Organisation", "Academic Year", "Status", "Co-Developers"];
             rows = (data.products || []).map((item, i) => [
@@ -192,7 +200,7 @@ export default function ResearchReports() {
                 item.status,
                 item.coAuthorsText || "N/A"
             ]);
-            filename = `Novel_Products_Report_${selectedYear}.csv`;
+            filename = `Novel_Products_Report_${yearName}.csv`;
         } else if (type === "projects") {
             headers = ["S.No", "Emp Id", "Name of Faculty", "Dept", "PAN No", "Project Title", "Funding Agency", "Academic Year", "Sanctioned Amount (Rs)", "Incentive Amount (Rs)", "Project Status", "Status", "Co-Investigators"];
             rows = (data.projects || []).map((item, i) => [
@@ -210,7 +218,7 @@ export default function ResearchReports() {
                 item.status,
                 item.coAuthorsText || "N/A"
             ]);
-            filename = `Funded_Projects_Report_${selectedYear}.csv`;
+            filename = `Funded_Projects_Report_${yearName}.csv`;
         } else if (type === "consultancy") {
             headers = ["S.No", "Emp Id", "Name of Faculty", "Dept", "PAN No", "Consultancy Title", "Agency", "Academic Year", "Sanctioned Amount (Rs)", "Incentive Amount (Rs)", "Project Status", "Status", "Co-Investigators"];
             rows = (data.consultancy || []).map((item, i) => [
@@ -228,7 +236,7 @@ export default function ResearchReports() {
                 item.status,
                 item.coAuthorsText || "N/A"
             ]);
-            filename = `Consultancy_Report_${selectedYear}.csv`;
+            filename = `Consultancy_Report_${yearName}.csv`;
         }
 
         const csvContent = [
@@ -604,6 +612,18 @@ export default function ResearchReports() {
         document.body.removeChild(link);
     };
 
+    const exportButtonSx = {
+        width: { xs: "100%", sm: "auto" },
+        textTransform: "none",
+        background: "var(--gradient-primary)",
+        boxShadow: "0 4px 12px rgba(190, 147, 55, 0.2)",
+        "&:hover": {
+            background: "var(--gradient-primary)",
+            opacity: 0.9,
+            boxShadow: "0 6px 16px rgba(190, 147, 55, 0.3)"
+        }
+    };
+
     const renderJournals = () => {
         const columns = ["S.No", "Emp Id", "Faculty Name", "Dept", "Journal Name", "Paper Title", "Academic Year", "Status", "Co-Authors"];
         const rows = (data.journals || []).map((item, i) => [
@@ -624,16 +644,7 @@ export default function ResearchReports() {
                     variant="contained"
                     startIcon={<DownloadIcon />}
                     onClick={() => downloadCSV("journals")}
-                    sx={{
-                        textTransform: "none",
-                        background: "var(--gradient-primary)",
-                        boxShadow: "0 4px 12px rgba(190, 147, 55, 0.2)",
-                        "&:hover": {
-                            background: "var(--gradient-primary)",
-                            opacity: 0.9,
-                            boxShadow: "0 6px 16px rgba(190, 147, 55, 0.3)"
-                        }
-                    }}
+                    sx={exportButtonSx}
                 >
                     Export to Excel
                 </Button>
@@ -661,16 +672,7 @@ export default function ResearchReports() {
                     variant="contained"
                     startIcon={<DownloadIcon />}
                     onClick={() => downloadCSV("textbooks")}
-                    sx={{
-                        textTransform: "none",
-                        background: "var(--gradient-primary)",
-                        boxShadow: "0 4px 12px rgba(190, 147, 55, 0.2)",
-                        "&:hover": {
-                            background: "var(--gradient-primary)",
-                            opacity: 0.9,
-                            boxShadow: "0 6px 16px rgba(190, 147, 55, 0.3)"
-                        }
-                    }}
+                    sx={exportButtonSx}
                 >
                     Export to Excel
                 </Button>
@@ -694,12 +696,14 @@ export default function ResearchReports() {
         const alignments = getAlignments(columns);
         return (
             <DataTable columns={columns} alignments={alignments} rows={rows} toolbarLeft={
-                <ActionButton
+                <Button
+                    variant="contained"
                     startIcon={<DownloadIcon />}
                     onClick={() => downloadCSV("chapters")}
+                    sx={exportButtonSx}
                 >
                     Export to Excel
-                </ActionButton>
+                </Button>
             } />
         );
     };
@@ -719,12 +723,14 @@ export default function ResearchReports() {
         const alignments = getAlignments(columns);
         return (
             <DataTable columns={columns} alignments={alignments} rows={rows} toolbarLeft={
-                <ActionButton
+                <Button
+                    variant="contained"
                     startIcon={<DownloadIcon />}
                     onClick={() => downloadCSV("conferences")}
+                    sx={exportButtonSx}
                 >
                     Export to Excel
-                </ActionButton>
+                </Button>
             } />
         );
     };
@@ -744,12 +750,14 @@ export default function ResearchReports() {
         const alignments = getAlignments(columns);
         return (
             <DataTable columns={columns} alignments={alignments} rows={rows} toolbarLeft={
-                <ActionButton
+                <Button
+                    variant="contained"
                     startIcon={<DownloadIcon />}
                     onClick={() => downloadCSV("patents")}
+                    sx={exportButtonSx}
                 >
                     Export to Excel
-                </ActionButton>
+                </Button>
             } />
         );
     };
@@ -771,12 +779,14 @@ export default function ResearchReports() {
         const alignments = getAlignments(columns);
         return (
             <DataTable columns={columns} alignments={alignments} rows={rows} toolbarLeft={
-                <ActionButton
+                <Button
+                    variant="contained"
                     startIcon={<DownloadIcon />}
                     onClick={() => downloadCSV("products")}
+                    sx={exportButtonSx}
                 >
                     Export to Excel
-                </ActionButton>
+                </Button>
             } />
         );
     };
@@ -800,12 +810,14 @@ export default function ResearchReports() {
         const alignments = getAlignments(columns);
         return (
             <DataTable columns={columns} alignments={alignments} rows={rows} toolbarLeft={
-                <ActionButton
+                <Button
+                    variant="contained"
                     startIcon={<DownloadIcon />}
                     onClick={() => downloadCSV("projects")}
+                    sx={exportButtonSx}
                 >
                     Export to Excel
-                </ActionButton>
+                </Button>
             } />
         );
     };
@@ -829,12 +841,14 @@ export default function ResearchReports() {
         const alignments = getAlignments(columns);
         return (
             <DataTable columns={columns} alignments={alignments} rows={rows} toolbarLeft={
-                <ActionButton
+                <Button
+                    variant="contained"
                     startIcon={<DownloadIcon />}
                     onClick={() => downloadCSV("consultancy")}
+                    sx={exportButtonSx}
                 >
                     Export to Excel
-                </ActionButton>
+                </Button>
             } />
         );
     };
@@ -849,7 +863,7 @@ export default function ResearchReports() {
             <Paper elevation={0} sx={{ borderRadius: "16px", border: "1px solid var(--border-color)", background: "var(--bg-paper)", overflow: "hidden" }}>
                 {/* Toolbar Section */}
                 <Box sx={{ p: 2.5, borderBottom: "1px solid var(--border-color)", background: "var(--bg-glass)" }}>
-                    <Stack direction={{ xs: "column", sm: "row" }} spacing={3} sx={{ width: "100%", alignItems: "center" }}>
+                    <Stack direction={{ xs: "column", sm: "row" }} spacing={2} sx={{ width: "100%", alignItems: { xs: "stretch", sm: "center" } }}>
                         <Tabs
                             value={activeTab}
                             onChange={handleTabChange}
@@ -899,14 +913,14 @@ export default function ResearchReports() {
 
                         <Box sx={{ flexGrow: 1 }} />
 
-                        <FormControl size="small" sx={{ minWidth: 220 }}>
+                        <FormControl size="small" sx={{ width: { xs: "100%", sm: "auto" }, minWidth: { xs: "100%", sm: 220 } }}>
                             <InputLabel id="academic-year-label">Academic Year</InputLabel>
                             <Select
                                 labelId="academic-year-label"
                                 value={selectedYear}
-                                label="Academic Year" 
+                                label="Academic Year"
                                 onChange={(e) => setSelectedYear(e.target.value)}
-                                sx={{ borderRadius: "12px", background: "var(--bg-glass)" }}
+                                sx={{ borderRadius: "12px", background: "var(--bg-glass)", width: "100%" }}
                             >
                                 <MenuItem value="All">All Years</MenuItem>
                                 {academicYears.map(y => (

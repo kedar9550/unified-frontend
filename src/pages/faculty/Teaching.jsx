@@ -1190,6 +1190,7 @@ export default function Teaching() {
               py: 6,
               color: "var(--text-secondary)",
               fontSize: 15,
+              fontFamily: "'Stem', -apple-system, BlinkMacSystemFont, sans-serif",
               border: "1px dashed var(--border-color)",
               borderRadius: "16px",
               background: "var(--bg-glass)"
