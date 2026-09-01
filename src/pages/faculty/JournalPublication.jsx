@@ -133,9 +133,11 @@ export default function JournalPublication() {
   const [scannedSdgResults, setScannedSdgResults] = useState(null);
   const [sdgMap, setSdgMap] = useState({});
 
+  const [sdgList, setSdgList] = useState([]);
   useEffect(() => {
     API.get("/api/sdgs").then(res => {
       if (res.data?.success) {
+        setSdgList(res.data.data);
         const map = {};
         res.data.data.forEach(sdg => {
           const title = sdg.sdgTitle.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
@@ -663,7 +665,7 @@ export default function JournalPublication() {
         mb: 3
       }}>
         <Typography variant="h6" sx={{ color: "var(--text-primary)", fontWeight: 800, textAlign: { xs: "center", sm: "left" } }}>My Journal Publications</Typography>
-        {/* <Button
+        <Button
           variant="contained"
           onClick={() => {
             const activeYear = academicYears.length > 0;
@@ -677,7 +679,7 @@ export default function JournalPublication() {
           sx={{ background: "var(--gradient-primary)", px: 3, fontWeight: 700, textTransform: "none", "&:hover": { opacity: 0.9, transform: "translateY(-1px)", boxShadow: "0 4px 12px rgba(0,0,0,0.1)" }, transition: "all 0.2s ease" }}
         >
           Apply New
-        </Button> */}
+        </Button>
       </Box>
       {(!publicationsList || publicationsList.length === 0) ? (
         <Box sx={{
@@ -1597,44 +1599,62 @@ export default function JournalPublication() {
                   "&::-webkit-scrollbar-track": { background: "rgba(0, 0, 0, 0.03)", borderRadius: "10px" },
                   "&::-webkit-scrollbar-thumb": { background: "rgba(0, 0, 0, 0.15)", borderRadius: "10px", "&:hover": { background: "var(--color-primary)" } }
                 }}>
-                  {getMatchedSdgBadgeList(data.sdgs).map((sdg, idx) => (
-                    <Box
-                      key={idx}
-                      sx={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 1.5,
-                        p: 1.25,
-                        borderRadius: "10px",
-                        background: "var(--bg-panel)",
-                        border: "1px solid var(--border-color)",
-                        transition: "all 0.2s ease",
-                        "&:hover": { transform: "translateX(2px)", borderColor: sdg.color }
-                      }}
-                    >
-                      <Box
-                        sx={{
-                          width: 32,
-                          height: 32,
-                          borderRadius: "6px",
-                          bgcolor: sdg.color,
-                          color: "#ffffff",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          fontWeight: 900,
-                          fontSize: "0.75rem",
-                          flexShrink: 0,
-                          boxShadow: `0 2px 8px ${sdg.color}44`
-                        }}
-                      >
-                        <PublicIcon sx={{ fontSize: 18 }} />
-                      </Box>
-                      <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", fontSize: "0.85rem" }}>
-                        {sdg.label}
-                      </Typography>
-                    </Box>
-                  ))}
+                  {(() => {
+                    const numbers = data.sdgs ? String(data.sdgs).match(/\d+/g) : null;
+                    if (!numbers) return null;
+                    const matchedNumbers = [...new Set(numbers.map(n => parseInt(n, 10)))].sort((a, b) => a - b);
+                    return matchedNumbers.map((num, idx) => {
+                      const dbSdg = sdgList.find(s => parseInt(s.sdgNumber, 10) === num);
+                      const fallback = SDG_COLOR_MAP[num] || { code: `SDG-${num}`, label: `SDG-${num}`, color: "#000" };
+                      const color = dbSdg?.backgroundColor || fallback.color;
+                      const imageUrl = dbSdg?.imageUrl ? `${API.defaults.baseURL || ''}${dbSdg.imageUrl}` : null;
+                      const label = dbSdg?.sdgTitle ? `SDG-${num}: ${dbSdg.sdgTitle}` : fallback.label;
+                      
+                      return (
+                        <Box
+                          key={idx}
+                          sx={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 1.5,
+                            p: 1.25,
+                            borderRadius: "10px",
+                            background: "var(--bg-panel)",
+                            border: "1px solid var(--border-color)",
+                            transition: "all 0.2s ease",
+                            "&:hover": { transform: "translateX(2px)", borderColor: color }
+                          }}
+                        >
+                          <Box
+                            sx={{
+                              width: 32,
+                              height: 32,
+                              borderRadius: "6px",
+                              bgcolor: color,
+                              color: "#ffffff",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              fontWeight: 900,
+                              fontSize: "0.75rem",
+                              flexShrink: 0,
+                              boxShadow: `0 2px 8px ${color}44`,
+                              overflow: 'hidden'
+                            }}
+                          >
+                            {imageUrl ? (
+                              <img src={imageUrl} alt={`SDG ${num}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                            ) : (
+                              <PublicIcon sx={{ fontSize: 18 }} />
+                            )}
+                          </Box>
+                          <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", fontSize: "0.85rem" }}>
+                            {label}
+                          </Typography>
+                        </Box>
+                      );
+                    });
+                  })()}
                 </Box>
               </Paper>
             </Box>
