@@ -80,6 +80,7 @@ const EventCreation = () => {
   const [extraTeamSize, setExtraTeamSize] = useState('0');
   const [extraAmountPerHead, setExtraAmountPerHead] = useState('0');
   const [overview, setOverview] = useState('');
+  const [registrationStop, setRegistrationStop] = useState('No');
   const [rules, setRules] = useState(['']);
   const [wantTheme, setWantTheme] = useState(false);
   const [themes, setThemes] = useState(['']);
@@ -221,6 +222,7 @@ const EventCreation = () => {
     setExtraTeamSize('0');
     setExtraAmountPerHead('0');
     setOverview('');
+    setRegistrationStop('No');
     setRules(['']);
     setWantTheme(false);
     setThemes(['']);
@@ -280,6 +282,7 @@ const EventCreation = () => {
     setExtraTeamSize(event.extraTeamSize != null ? String(event.extraTeamSize) : '0');
     setExtraAmountPerHead(event.extraAmountPerHead != null ? String(event.extraAmountPerHead) : '0');
     setOverview(event.overview || '');
+    setRegistrationStop(event.registrationStop || 'No');
     setRules(event.rules && event.rules.length > 0 ? event.rules : ['']);
     const hasThemes = event.themes && event.themes.length > 0;
     setWantTheme(hasThemes);
@@ -386,6 +389,7 @@ const EventCreation = () => {
     formData.append('extraTeamSize', Number(extraTeamSize));
     formData.append('extraAmountPerHead', Number(extraAmountPerHead));
     formData.append('overview', overview.trim());
+    formData.append('registrationStop', registrationStop);
     rules.filter((rule) => rule.trim()).forEach(rule => {
       formData.append('rules[]', rule);
     });
@@ -528,7 +532,7 @@ const EventCreation = () => {
     setView('list');
   };
 
-  const tableColumns = ['#', 'Event School', 'Department', 'FACULTY Coordinators', 'Event Name', 'Venue', 'Max Team Size', 'Price'];
+  const tableColumns = ['#', 'Event School', 'Department', 'FACULTY Coordinators', 'Event Name', 'Venue', 'Max Team Size', 'Price', 'Registration Status'];
   if (activeRole !== 'FACULTY_COORDINATOR') {
     tableColumns.push('Actions');
   }
@@ -567,6 +571,20 @@ const EventCreation = () => {
           : event.venue || 'N/A',
       event.maxTeamSize || '',
       event.price != null && event.price > 0 ? `₹${event.price} (${event.priceType || 'Per Head'})` : '',
+      {
+        value: event.registrationStop || 'No',
+        display: (
+          <Chip 
+            label={event.registrationStop === 'Yes' ? 'Stopped' : 'Active'} 
+            size="small" 
+            sx={{ 
+              bgcolor: event.registrationStop === 'Yes' ? '#ef4444' : '#22c55e', 
+              color: 'white',
+              fontWeight: 500
+            }} 
+          />
+        )
+      },
     ];
 
     if (activeRole !== 'FACULTY_COORDINATOR') {
@@ -617,11 +635,11 @@ const EventCreation = () => {
         <DataTable
           columns={tableColumns}
           rows={tableRows}
-          nonSortableColumns={activeRole !== 'FACULTY_COORDINATOR' ? [8] : []}
+          nonSortableColumns={activeRole !== 'FACULTY_COORDINATOR' ? [9] : []}
           alignments={
             activeRole !== 'FACULTY_COORDINATOR'
-              ? ['center', 'left', 'left', 'left', 'left', 'center', 'center', 'center', 'center']
-              : ['center', 'left', 'left', 'left', 'left', 'center', 'center', 'center']
+              ? ['center', 'left', 'left', 'left', 'left', 'center', 'center', 'center', 'center', 'center']
+              : ['center', 'left', 'left', 'left', 'left', 'center', 'center', 'center', 'center']
           }
         />
 
@@ -1138,6 +1156,19 @@ const EventCreation = () => {
                 </FormHelperText>
               )}
             </Box>
+
+            <FormControl fullWidth>
+              <InputLabel id="registration-stop-label">Registration Stop</InputLabel>
+              <Select
+                labelId="registration-stop-label"
+                value={registrationStop}
+                label="Registration Stop"
+                onChange={(e) => setRegistrationStop(e.target.value)}
+              >
+                <MenuItem value="Yes">Yes</MenuItem>
+                <MenuItem value="No">No</MenuItem>
+              </Select>
+            </FormControl>
 
             <TextField
               fullWidth
