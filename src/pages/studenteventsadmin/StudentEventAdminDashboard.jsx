@@ -106,6 +106,7 @@ const StudentEventAdminDashboard = () => {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [deptFilter, setDeptFilter] = useState('ALL');
+  const [globalDeptFilter, setGlobalDeptFilter] = useState('ALL');
   const [schoolFilter, setSchoolFilter] = useState('ALL');
 
   const fetchStats = useCallback(async () => {
@@ -158,6 +159,29 @@ const StudentEventAdminDashboard = () => {
       '₹ Revenue': d.revenue,
     }));
   }, [deptStats, deptFilter]);
+
+  // Compute global stats based on filter
+  const globalSummary = useMemo(() => {
+    if (globalDeptFilter === 'ALL' || !deptStats.length) {
+      return {
+        teams: stats?.totalTeams || 0,
+        students: stats?.totalStudents || 0,
+        attended: stats?.totalAttended || 0,
+        revenue: stats?.revenue?.total || 0,
+        schools: schoolStats?.length || 0,
+        departments: deptStats?.length || 0
+      };
+    }
+    const dStats = deptStats.find(d => (d.name === globalDeptFilter || d.dept === globalDeptFilter)) || {};
+    return {
+      teams: dStats.teamCount || 0,
+      students: dStats.studentCount || 0,
+      attended: dStats.participatedStudents || 0,
+      revenue: dStats.revenue || 0,
+      schools: '-',
+      departments: 1
+    };
+  }, [globalDeptFilter, stats, deptStats, schoolStats]);
 
   // Group Bar Data
   const groupBarData = useMemo(() => {
@@ -274,16 +298,30 @@ const StudentEventAdminDashboard = () => {
       <PageHeader
         title="Veda Event Admin Dashboard"
         subtitle="Overview of VEDA event participation, department/group analytics and registration metrics"
+        action={
+          <FormControl size="small" sx={{ minWidth: 200, bgcolor: 'background.paper', borderRadius: 1 }}>
+            <InputLabel>Department Filter</InputLabel>
+            <Select 
+              value={globalDeptFilter} 
+              label="Department Filter" 
+              onChange={(e) => setGlobalDeptFilter(e.target.value)}
+            >
+              {deptOptions.map((d) => (
+                <MenuItem key={d} value={d}>{d}</MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        }
       />
 
       {/* ── Summary Cards ─────────────────────────────────────────────── */}
       <StatCardGrid columns={4}>
-        <StatCard title="Total Teams" value={stats?.totalTeams || 0} color="#0d9488" icon={<GroupsIcon />} />
-        <StatCard title="Total Students" value={stats?.totalStudents || 0} color="#2563eb" icon={<PeopleIcon />} />
-        <StatCard title="Total Attended" value={stats?.totalAttended || 0} color="#16a34a" icon={<PeopleIcon />} />
-        <StatCard title="Total Revenue" subtitle="(₹)" value={`₹${fmt(stats?.revenue?.total)}`} color="#7c3aed" icon={<CurrencyRupeeIcon />} />
-        <StatCard title="Schools (Groups)" value={schoolStats?.length || 0} color="#ea580c" icon={<SchoolIcon />} />
-        <StatCard title="Departments" value={deptStats?.length || 0} color="#9333ea" icon={<BusinessIcon />} />
+        <StatCard title="Total Teams" value={globalSummary.teams} color="#0d9488" icon={<GroupsIcon />} />
+        <StatCard title="Total Students" value={globalSummary.students} color="#2563eb" icon={<PeopleIcon />} />
+        <StatCard title="Total Attended" value={globalSummary.attended} color="#16a34a" icon={<PeopleIcon />} />
+        <StatCard title="Total Revenue" subtitle="(₹)" value={`₹${fmt(globalSummary.revenue)}`} color="#7c3aed" icon={<CurrencyRupeeIcon />} />
+        <StatCard title="Schools (Groups)" value={globalSummary.schools} color="#ea580c" icon={<SchoolIcon />} />
+        <StatCard title="Departments" value={globalSummary.departments} color="#9333ea" icon={<BusinessIcon />} />
       </StatCardGrid>
 
       {/* ── Section 1: Department filter + Teams, Students & Events per Department ───────── */}
