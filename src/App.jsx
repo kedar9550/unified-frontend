@@ -35,6 +35,7 @@ import SDGManagement from "./pages/uniprime/SDGManagement";
 import ProctoringUpload from "./pages/uniprime/ProctoringUpload";
 import UniprimeDiscrepancies from "./pages/uniprime/UniprimeDiscrepancies";
 import ResearchUploads from "./pages/uniprime/ResearchUploads";
+import HierarchyMapping from "./pages/uniprime/HierarchyMapping";
 import DOIFetcher from "./pages/faculty/DOITest";
 import FacultyAdministration from "./pages/faculty/FacultyAdministration";
 import EventCoordination from "./pages/faculty/EventCoordination";
@@ -220,6 +221,7 @@ function App() {
         <Route path="/uniprime/proctoring-upload" element={<ProtectedRoute element={<ProctoringUpload />} />} />
         <Route path="/uniprime/discrepancies" element={<ProtectedRoute element={<UniprimeDiscrepancies />} />} />
         <Route path="/uniprime/research-uploads" element={<ProtectedRoute element={<ResearchUploads />} />} />
+        <Route path="/uniprime/hierarchy-mapping" element={<ProtectedRoute element={<HierarchyMapping />} />} />
 
         {/* Value Addition Modules */}
         <Route path="/value-addition/resource-utilization" element={<ProtectedRoute element={<ResourceUtilization />} />} />

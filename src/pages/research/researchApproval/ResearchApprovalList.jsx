@@ -213,7 +213,7 @@ const ResearchApprovalList = ({ role }) => {
                                 MenuProps={{ disableAriaHidden: true }}
                             >
                                 <MenuItem value="All">All Status</MenuItem>
-                                <MenuItem value="Pending">{isResearchAdmin ? 'Pending at R&D' : 'Pending at HOD / Dean'}</MenuItem>
+                                <MenuItem value="Pending">Pending at R&D</MenuItem>
                                 <MenuItem value="Approved">Approved</MenuItem>
                                 <MenuItem value="Rejected">Rejected</MenuItem>
                             </Select>

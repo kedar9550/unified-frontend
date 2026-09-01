@@ -129,6 +129,11 @@ export const ROLE_ROUTES = {
       path: "/role-management",
       icon: <People />
     },
+    {
+      text: "Hierarchy Mapping",
+      path: "/uniprime/hierarchy-mapping",
+      icon: <AccountTree />
+    },
     // {
     //   text: "Students",
     //   icon: <PersonIcon />,
@@ -188,7 +193,7 @@ export const ROLE_ROUTES = {
   "HOD": [
     { text: "Dashboard", path: "/dashboard", icon: <Dashboard /> },
     {
-      text: "Approvals",
+      text: "Submissions (Info)",
       icon: <Verified />,
       nested: [
         {
@@ -221,7 +226,7 @@ export const ROLE_ROUTES = {
   "SCHOOL_DEAN": [
     { text: "Dashboard", path: "/dashboard", icon: <Dashboard /> },
     {
-      text: "Approvals",
+      text: "Submissions (Info)",
       icon: <Verified />,
       nested: [
         {
