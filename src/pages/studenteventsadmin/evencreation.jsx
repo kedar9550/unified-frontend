@@ -128,10 +128,17 @@ const EventCreation = () => {
       const response = await API.get('/api/event-schools');
       let activeGroups = (response.data?.eventSchools || []).filter((group) => group.status === 'Active');
       if (activeRole === 'SCHOOL_COORDINATOR' && user) {
-        activeGroups = activeGroups.filter(school => school.coordinator?.employeeId === String(user.institutionId || user.employeeId || user.employeeCode));
+        const userEmpId = String(user.institutionId || user.employeeId || user.employeeCode || '').trim();
+        activeGroups = activeGroups.filter(school => {
+          const isSingle = String(school.coordinator?.employeeId || school.coordinator?.institutionId || school.coordinator?.employeeCode || '').trim() === userEmpId;
+          const isMulti = Array.isArray(school.coordinators) && school.coordinators.some(c => 
+            String(c.employeeId || c.institutionId || c.employeeCode || '').trim() === userEmpId
+          );
+          return isSingle || isMulti;
+        });
       }
       setEventSchools(activeGroups);
-      if (activeRole === 'SCHOOL_COORDINATOR' && activeGroups.length > 0) {
+      if (activeRole === 'SCHOOL_COORDINATOR' && activeGroups.length === 1) {
         setSelectedGroup(activeGroups[0]);
       }
     } catch (error) {
@@ -203,7 +210,7 @@ const EventCreation = () => {
 
   const resetForm = () => {
     setEditingEvent(null);
-    if (activeRole === 'SCHOOL_COORDINATOR' && eventSchools.length > 0) {
+    if (activeRole === 'SCHOOL_COORDINATOR' && eventSchools.length === 1) {
       setSelectedGroup(eventSchools[0]);
     } else {
       setSelectedGroup(null);
@@ -245,7 +252,9 @@ const EventCreation = () => {
   };
 
   const openEditForm = (event) => {
-    const group = eventSchools.find((g) => String(g._id) === String(event.eventSchool?._id || event.eventSchool)) || null;
+    const eventSchoolId = String(event.eventSchool?._id || event.eventSchool || '');
+    const group = eventSchools.find((g) => String(g._id) === eventSchoolId) || 
+                  (event.eventSchool && typeof event.eventSchool === 'object' ? event.eventSchool : null);
     setEditingEvent(event);
     setSelectedGroup(group || null);
 
@@ -785,7 +794,7 @@ const EventCreation = () => {
                 labelId="group-label"
                 value={selectedGroup?._id || ''}
                 label="School"
-                disabled={activeRole === 'SCHOOL_COORDINATOR'}
+                disabled={activeRole === 'SCHOOL_COORDINATOR' && eventSchools.length <= 1}
                 onChange={(e) => {
                   const group = eventSchools.find((g) => g._id === e.target.value) || null;
                   setSelectedGroup(group);

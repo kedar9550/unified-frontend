@@ -63,9 +63,10 @@ const Passes = () => {
           ...p,
           venue: eventMatch ? (
             eventMatch.venueType === 'Indoor' && eventMatch.building && eventMatch.floor
-              ? `${eventMatch.roomNo ? `Room No: ${eventMatch.roomNo}, ` : ''}${eventMatch.building.name || eventMatch.building} - ${eventMatch.floor.name || eventMatch.floor}`
+              ? `${eventMatch.building.name || eventMatch.building}-${eventMatch.floor.name || eventMatch.floor}${eventMatch.roomNo ? `, Room No: ${eventMatch.roomNo}` : ''
+              }`
               : eventMatch.venueType === 'Outdoor' && eventMatch.ground
-                ? `${eventMatch.roomNo ? `Room No: ${eventMatch.roomNo}, ` : ''}${eventMatch.ground.name || eventMatch.ground}`
+                ? `${eventMatch.ground.name || eventMatch.ground}${eventMatch.roomNo ? `, Room No: ${eventMatch.roomNo}` : ''}`
                 : eventMatch.venue
           ) : null
         };
